@@ -60,3 +60,43 @@ Additive, client-only. Rollback is removing the setting; the `localStorage` key 
 
 - Whether to sync the preference once a user-settings entity exists.
 - Whether the notes editor should honour a reduced Vim subset (`Escape` to Normal) when `collaborative-rich-text` ships.
+
+## Implementation notes
+
+- **Preference (D1).** `web/src/app/vim/prefs.ts`: `localStorage["opentodo.vim"] = "1"`, read through `useSyncExternalStore` (`useVimEnabled`) and re-read on the `storage` event, so another tab follows. Every access is in `try`/`catch`; unavailable storage means off. App's sign-out handler calls `clearVimPref()` right after `clearLocalData()` (that wipe is Dexie-only, so the key is removed beside it rather than inside `lib/db.ts`). The switch is a new **Settings → Keyboard** section. No Dexie change.
+- **Dispatcher (D2).** `vim/dispatch.ts` is DOM-free (tests drive it with plain key objects); `vim/VimLayer.tsx` installs it as one capturing `keydown` listener on `window`, so `stopPropagation()` keeps a consumed key from Shell's and TaskListView's bubbling listeners. It consumes only digits as a count (on task lists), `j`/`k`/arrows *after a count*, `J`, `K`, the second `g` of `gg`, `G`, `d`, `x`, `o`, `i`, `:`, and Escape while a text field has focus. Every other key, and on views other than task lists every key except `:`, propagates untouched. Insert mode follows focus (`focusin`/`focusout`): text inputs, textareas, selects and contenteditable count; checkboxes and buttons do not.
+- **`g` timing.** Instead of a second `g` timer, `gg` reads Shell's existing prefix flag (`isGPending()` in `signals.ts`, 800 ms): the first `g` always propagates so Shell arms its prefix, and a second `g` while the flag is set is consumed (and the flag cleared). `g` followed by anything else stays Shell's (`g t`, `g x`, `g d`, …). The default timing is unchanged; the 1 s window applies to `d` and to counts.
+- **List actions (D3).** To keep the default bundle small, the split differs slightly from the sketch: TaskListView registers its *state* (`ListState`: rows, board columns, selection, panel, read-only check, manual-order flag, quick-add focus, the list's own complete/reopen) in `app/listActions.ts`, and `vim/actions.ts` (lazy chunk) turns it into `moveSelection`, `selectIndex`/`selectFirst`/`selectLast`, `openSelected`, `toggleCompleteSelected`, `deleteSelected`, `setPrioritySelected`, `moveSelectedBy`, `openQuickAdd` and `closePanel`. Writes reuse `deleteTask`, `updateTask`, `moveTaskBy` and the list's `toggleComplete` (parent prompt and archive offer included). Viewers' tasks are skipped, as with the default keys. The view defaults for new tasks moved into `taskDefaults()`, so quick add and `:new` share one rule.
+- **`o`.** Focuses quick add. In manually ordered views (project lists, Inbox) the next entry is created as usual and then placed right after the selected task as its sibling (same parent and section) with `moveTask(..., {at: {after}})`; further entries follow it. Leaving the field ends this, and `q` and clicks still append at the end. In date-sorted views `o` behaves like `q`.
+- **`i`.** Opens the panel and focuses its title once the panel for that task has rendered (`data-detail-for` on the panel's `<aside>`).
+- **Command line (D4).** `vim/commands.ts`: an exact name wins, else the first prefix match in table order (`s` → settings, `sy` → sync). Tab takes the first completion, Enter runs. `:project` matches live, unarchived projects by name prefix in position order. `:new` takes a plain title (no quick-add parsing) and calls `createTask` with `taskDefaults(route)`, so it also works outside task lists (with Inbox defaults). Unknown or incomplete commands keep the line open with a message.
+- **Escape (D5).** A field inside `[role="dialog"]` (label and assignee pickers, confirmations) keeps its own Escape, so the dialog still closes with one press; focus then leaves and the mode returns to Normal.
+- **Help (D6).** The `?` overlay moved unchanged from `Shell.tsx` to `ShortcutHelp.tsx`. It gained `extraSections` and, when no section is passed, a one-line hint that Vim keybindings can be enabled in Settings. The Vim layer hands its table (`vim/help.ts`, built from the command table) to Shell on mount; `:help` opens the overlay.
+- **Indicator.** A strip at the bottom of the main column shows `NORMAL` / `INSERT` / `COMMAND` and the pending keys and count (`3`, `d`, `g`), with the command line above it while open.
+
+### Conflicts with existing shortcuts and how they are resolved
+
+| Key | Default meaning | With Vim on |
+| --- | --- | --- |
+| `1`–`4` | Priority at once | A digit starts a count. A lone `1`–`4` still sets the priority, after 1 s, or at once when the next key is not a motion (`2` then `c` = priority 2, then complete). `2j` is a count. |
+| `j` / `k` / arrows | Move one row | Unchanged without a count (the default handler runs). With a count the layer moves N rows (within the column on a board). |
+| `g` + key | Navigation | Unchanged; only `g g` is new (see "`g` timing"). |
+| `a` | Add a subtask | Unchanged. The proposal's "`i`/`a` open the panel" is narrowed to `i`, since `a` already enters Insert mode. Spec delta updated. |
+| `O` (Shift+O) | Recurring task: this occurrence only | Unchanged; the proposal's `O` (open above) is not implemented. |
+| `H` / `L` (Shift) | Project activity / labels | Unchanged; the proposal's "`H`/`L`-style panel focus" is not implemented. |
+| `x` | (unbound; `g x` is Trash) | Complete / reopen; `g x` still opens the Trash. |
+| `d` | (unbound in lists) | `dd` deletes. `g d` still opens the Day view, and Settings → Users' `d` is outside task lists and untouched. |
+| `J` / `K` | (unbound) | Move the selected task one place (with a count, N places), manually ordered views only. Spec delta now defines this. |
+| `o`, `i`, `G`, `:` | (unbound) | As listed above. |
+| Escape in a field | Blur (some fields: cancel or close) | Blur and stay in the panel. The field's own Escape (comment cancel, subtask line close) does not run, so typed text is kept. Fields in dialogs keep their Escape. |
+| Escape in Normal mode | Close panel, clear selection | Unchanged. |
+
+### Size impact (measured)
+
+`npm run build`, before → after:
+
+- Main chunk: 802.75 kB → 807.54 kB minified, **236.69 kB → 238.16 kB gzipped (+1.47 kB)**.
+- New lazy chunk `VimLayer-*.js`: 9.70 kB minified, **4.10 kB gzipped**, fetched only while the switch is on.
+- CSS unchanged (53.87 kB, 9.72 kB gzipped). Go binary and image unchanged apart from the embedded assets. No dependency.
+
+The main-chunk growth exceeds D8's "under 1 KB" estimate. About 0.8 kB of it is the cost of the app's first dynamic import: Vite's preload helper plus the chunk's import bindings (a build without the lazy boundary measured +0.64 kB). `build.modulePreload: false` in `vite.config.ts` saves 0.24 kB of that; the layer's dependencies all live in the main chunk, so there is nothing to preload. The rest is the Settings switch, the help plumbing and hint, the list-state registration and `o` placement in TaskListView, and the preference store. Dropping the lazy boundary would cost more, because the layer itself is 4.1 kB.
