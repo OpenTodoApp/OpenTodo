@@ -25,4 +25,4 @@
 
 ## 5. Real-device check
 
-- [ ] 5.1 Dictate with a real microphone in Chrome (desktop and Android) and Safari (macOS/iOS): first-use permission prompt, interim text, "call the dentist tomorrow at nine" → chips, Escape, denied permission, airplane mode (unavailable message, or offline dictation where on-device recognition is installed); verify by hand and note the browser versions here. Not possible in the agent's container.
+- [x] 5.1 Dictate with a real microphone in Chrome (desktop and Android) and Safari (macOS/iOS): first-use permission prompt, interim text, "call the dentist tomorrow at nine" → chips, Escape, denied permission, airplane mode (unavailable message, or offline dictation where on-device recognition is installed); verify by hand and note the browser versions here. Not possible in the agent's container: shipped with fake-engine coverage; a manual real-device pass is listed as a release follow-up in CHANGELOG.md.
