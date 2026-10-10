@@ -455,6 +455,18 @@ export type WebhookDeliveryStatus = 'pending' | 'retry' | 'delivered' | 'failed'
 
 /** One entry of a webhook's delivery log. */
 /** The CalDAV endpoint's state (OpenSpec `caldav`); only the owner may change `enabled`. */
+/** Settings → Email to task (OpenSpec `email-to-task`): the account's secret inbox address. */
+export interface EmailInbox {
+  /** False when the operator has not configured OPENTODO_EMAIL_*; then address is null. */
+  enabledByOperator: boolean
+  address: string | null
+  enabled: boolean
+  /** Sender addresses allowed to create tasks; empty means anyone who knows the address. */
+  allowlist: string[]
+  /** Most tasks created from email per rolling hour. */
+  hourlyLimit: number
+}
+
 export interface CaldavSetting {
   enabled: boolean
   /** The address calendar apps are configured with (…/dav/). */
