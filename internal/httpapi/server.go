@@ -19,6 +19,7 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/ids"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/webhook"
 )
 
 const sessionCookie = "opentodo_session"
@@ -36,6 +37,8 @@ type Server struct {
 	limiter *rateLimiter
 	// inviteLimiter caps invitation creation per account (20/hour).
 	inviteLimiter *rateLimiter
+	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
+	hooks *webhook.Service
 
 	clockMu sync.Mutex
 	lastTS  int64
@@ -53,9 +56,12 @@ func (s *Server) opTS() int64 {
 }
 
 // New builds the router. web may be nil when only the API is wanted (tests).
-func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) http.Handler {
+func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string, opts ...Option) http.Handler {
 	s := &Server{cfg: cfg, auth: authSvc, audit: authSvc.Audit(), sync: syncSvc, web: web, log: log, version: version,
 		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour)}
+	for _, o := range opts {
+		o(s)
+	}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", s.handleHealth)
@@ -82,6 +88,9 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("GET /api/v1/settings/audit", s.requireAuth(s.handleGetAuditSettings))
 	mux.Handle("PUT /api/v1/settings/audit", s.requireAuth(s.handlePutAuditSettings))
 	mux.Handle("GET /api/v1/me/activity", s.requireAuth(s.handleMyActivity))
+	// Webhooks (OpenSpec `webhooks`): /api/v1/webhooks* and /api/v1/settings/webhooks,
+	// all behind requireAuth; literal patterns win over the {collection} routes below.
+	s.registerWebhookRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))

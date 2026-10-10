@@ -51,12 +51,12 @@ func loadSettings(ctx context.Context, q execer) (Settings, error) {
 }
 
 func readSetting(ctx context.Context, q execer, key string) (string, error) {
-	var v string
+	var v sql.NullString // the shared table allows NULL values
 	err := q.QueryRowContext(ctx, "SELECT value FROM settings WHERE key = ?", key).Scan(&v)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
-	return v, err
+	return v.String, err
 }
 
 func (r *Recorder) writeSetting(ctx context.Context, q execer, key, value string) error {

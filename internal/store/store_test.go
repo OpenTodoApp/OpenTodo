@@ -19,7 +19,7 @@ func TestOpenMigratesEmptyDataDir(t *testing.T) {
 	if want := highestEmbeddedVersion(t); version != want {
 		t.Fatalf("user_version = %d, want %d", version, want)
 	}
-	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations", "audit_events", "settings"} {
+	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations", "settings", "webhooks", "webhook_deliveries", "audit_events"} {
 		var name string
 		err := db.QueryRowContext(context.Background(), "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", table).Scan(&name)
 		if err != nil {

@@ -28,7 +28,7 @@ Planned hardening is tracked in `ROADMAP.md`: passkeys (WebAuthn), OIDC, MFA, op
 
 The server keeps an audit log of security-relevant events in its database (`opentodo.db` in the data directory, so it is part of every backup of that directory). The owner reads it in **Settings → Audit log** or through `GET /api/v1/audit`; every user sees their own sign-in activity in **Settings → Security**. The full event catalogue and payloads are in [docs/api.md](docs/api.md#audit-log).
 
-Recorded today: sign-in success and failure (with a reason code), sign-out, API token creation and revocation, invitation creation, acceptance and revocation, audit settings changes, data exports and audit exports. Second-factor, passkey, single sign-on, role and backup events are recorded once those features ship.
+Recorded today: sign-in success and failure (with a reason code), sign-out, API token creation and revocation, invitation creation, acceptance and revocation, audit settings and webhook private-network policy changes, data exports and audit exports. Second-factor, passkey, single sign-on, role and backup events are recorded once those features ship.
 
 Each event stores the time, the event name, the outcome, the acting and target account ids, a truncated user agent (200 bytes) and a small detail payload restricted by an allow-list in code (credential ids and names, setting names and values, reason codes, an email snapshot so history stays readable after an account is deleted).
 

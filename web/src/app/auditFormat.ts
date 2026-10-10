@@ -34,6 +34,7 @@ const REASONS: Record<string, string> = {
 const SETTINGS: Record<string, string> = {
   'audit.retention_days': 'Audit retention (days)',
   'audit.log_ip': 'Address logging',
+  webhooks_allow_private: 'Private webhook targets',
 }
 
 /** One-line summary of an event's allow-listed details. */

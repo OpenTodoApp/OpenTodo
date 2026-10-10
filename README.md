@@ -19,6 +19,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
   <a href="docs/self-hosting/docker.md">Docker</a> ·
   <a href="docs/api.md">API</a> ·
   <a href="docs/cli.md">CLI</a> ·
+  <a href="docs/filters.md">Filters</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -40,7 +41,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 - **Local-first.** The app keeps a full copy of your data on every device and works entirely offline. The server only syncs, backs up and, later, shares.
 - **Your data, one folder.** Everything lives in a single `/data` volume: one SQLite file. Back that up and you have backed up everything. Export to JSON any time from Settings.
 - **Tiny footprint.** One container, one static binary, around 12 MB. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no build step at runtime.
-- **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts. Sign-up is closed by default after the owner account is created; add people with single-use invitation links from **Settings → Members**.
+- **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts. The server only sends requests to webhook URLs you configure yourself. Sign-up is closed by default after the owner account is created; add people with single-use invitation links from **Settings → Members**.
 - **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today. Press `?` in the app for the full list.
 - **Built in the open with specs.** Every feature starts as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change under [`openspec/`](openspec/), so behavior is documented before it is built.
 
@@ -55,6 +56,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Capture | Quick-add from any view, keyboard shortcut `q`; new tasks in Today get today's date, in a project get that project |
 | Organise | Projects with colours, Inbox, Today, Upcoming (grouped by day), Completed |
 | Labels | Cross-project labels with colours: `L` on a task opens a type-ahead picker that creates on Enter, chips on every row, a Labels group in the sidebar with live counts, one view per label grouped by project, rename / recolour / reorder / delete / merge duplicates |
+| Filters | One-line queries such as `@work & due <= tomorrow & p1`: labels, projects (`##` includes sub-projects), priority, due and created dates, keywords like `overdue` or `no date`, text search, combined with `&`, `\|`, `!` and parentheses. Evaluated on the device, so results are live and work offline; `g` `f` opens the view, ↑ / ↓ recall recent queries. See [docs/filters.md](docs/filters.md) |
 | Sub-projects | Nest projects to any depth; collapsible sidebar tree (Left / Right, remembered per device) with rolled-up counts; "Move to" from the project menu or `m`; a project view lists its sub-projects; archiving cascades, deleting moves sub-projects up a level; concurrent moves on two devices never leave a project nested inside itself |
 | Tasks | Title, notes, project, priority P1–P4, floating due date with optional time, complete / reopen, delete |
 | Subtasks | Nest tasks to any depth; parents show `done/total` progress; completing or deleting a parent cascades; `a` adds a subtask, Tab / Shift+Tab indent and outdent, Left / Right collapse and expand; concurrent moves on two devices never leave a task nested inside itself |
@@ -63,10 +65,11 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Accounts | First-run owner setup, email + password sign-in, sessions, optional open sign-up |
 | Audit log | Owner-visible record of sign-ins, failed sign-ins, tokens, invitations, exports and setting changes, with filters, NDJSON export and retention (90 days by default); every user sees their own recent sign-in activity. Never contains task content; client addresses only if the owner opts in |
 | API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
+| Webhooks | Signed outbound webhooks on task and project events for Home Assistant, n8n or a Telegram relay: retries with backoff, delivery log, test ping, private-network protection, see [docs/webhooks.md](docs/webhooks.md) |
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), filter queries, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), saved and pinned filter views, recurring tasks, reminders, sharing and comments, CalDAV, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
 
 ## Quick start
 

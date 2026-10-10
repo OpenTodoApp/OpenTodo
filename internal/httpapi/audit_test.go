@@ -134,3 +134,26 @@ func TestLoginRateLimitRecordsOneEvent(t *testing.T) {
 		t.Fatalf("wrong_password = %d (want 10), rate_limited = %d (want 1)", wrong, limited)
 	}
 }
+
+func TestWebhookPolicyChangeRecorded(t *testing.T) {
+	owner, member := memberEnv(t)
+	ownerID := owner.userID()
+	owner.allowPrivate(true)
+	owner.allowPrivate(true) // unchanged: no second event
+	owner.allowPrivate(false)
+	resp, out := member.do("PUT", "/api/v1/settings/webhooks", map[string]any{"allowPrivate": true})
+	member.mustStatus(resp, 403, out)
+	var policy []audit.Entry
+	for _, ev := range owner.events(audit.SettingsChangedName) {
+		if ev.Details["setting"] == "webhooks_allow_private" {
+			policy = append(policy, ev)
+		}
+	}
+	if len(policy) != 2 {
+		t.Fatalf("webhook policy events = %+v, want 2", policy)
+	}
+	if str(policy[0].ActorID) != ownerID || policy[0].Details["from"] != "true" || policy[0].Details["to"] != "false" ||
+		policy[1].Details["from"] != "false" || policy[1].Details["to"] != "true" {
+		t.Fatalf("webhook policy events = %+v", policy)
+	}
+}

@@ -1,4 +1,7 @@
-import type { AuditEvent, AuditFilters, AuditSettings, AuthStatus, Invitation, InvitationPreview, Op, User } from './types'
+import type {
+  AuditEvent, AuditFilters, AuditSettings, AuthStatus, Invitation, InvitationPreview, Op, User,
+  Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
+} from './types'
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) {
@@ -56,6 +59,25 @@ export const api = {
   getAuditSettings: () => request<AuditSettings>('GET', '/api/v1/settings/audit'),
   updateAuditSettings: (patch: Partial<AuditSettings>) => request<AuditSettings>('PUT', '/api/v1/settings/audit', patch),
   myActivity: () => request<{ events: AuditEvent[] }>('GET', '/api/v1/me/activity'),
+
+  // Webhooks (per user). The secret is returned once, in the create response.
+  listWebhooks: () => request<{ webhooks: Webhook[]; events: WebhookEvent[] }>('GET', '/api/v1/webhooks'),
+  createWebhook: (input: WebhookInput) => request<{ webhook: Webhook }>('POST', '/api/v1/webhooks', input),
+  updateWebhook: (id: string, input: WebhookInput) =>
+    request<{ webhook: Webhook }>('PATCH', `/api/v1/webhooks/${encodeURIComponent(id)}`, input),
+  deleteWebhook: (id: string) => request<void>('DELETE', `/api/v1/webhooks/${encodeURIComponent(id)}`),
+  testWebhook: (id: string) =>
+    request<{ ok: boolean; delivery: WebhookDelivery }>('POST', `/api/v1/webhooks/${encodeURIComponent(id)}/test`),
+  listDeliveries: (id: string) =>
+    request<{ deliveries: WebhookDelivery[] }>('GET', `/api/v1/webhooks/${encodeURIComponent(id)}/deliveries`),
+  redeliver: (id: string, deliveryId: string) =>
+    request<{ delivery: WebhookDelivery }>(
+      'POST', `/api/v1/webhooks/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}/redeliver`,
+    ),
+  // Owner-only policy: allow webhook targets on private networks (Home Assistant, n8n on the LAN).
+  getWebhookPolicy: () => request<{ allowPrivate: boolean }>('GET', '/api/v1/settings/webhooks'),
+  setWebhookPolicy: (allowPrivate: boolean) =>
+    request<{ allowPrivate: boolean }>('PUT', '/api/v1/settings/webhooks', { allowPrivate }),
 }
 
 function auditQuery(f: AuditFilters): URLSearchParams {

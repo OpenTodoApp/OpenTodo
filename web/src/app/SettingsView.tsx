@@ -4,6 +4,7 @@ import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
 import { MembersPanel } from './MembersPanel'
 import { SecuritySettings } from './ActivityPanel'
+import { WebhooksPanel } from './WebhooksPanel'
 
 interface TokenRow { id: string; name: string; createdAt: number; lastUsedAt: number | null }
 
@@ -56,6 +57,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       </section>
 
       {user.role === 'owner' && <MembersPanel />}
+
+      <WebhooksPanel isOwner={user.role === 'owner'} />
 
       <SecuritySettings user={user} />
 

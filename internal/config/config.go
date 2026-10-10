@@ -20,6 +20,10 @@ type Config struct {
 	AllowSignup bool
 	SessionTTL  time.Duration
 	LogLevel    slog.Level
+	// WebhooksAllowPrivate presets the owner's "allow private network targets"
+	// webhook policy on first start only (nil when OPENTODO_WEBHOOKS_ALLOW_PRIVATE
+	// is unset). Afterwards the value set in Settings is authoritative.
+	WebhooksAllowPrivate *bool
 }
 
 // Load reads OPENTODO_* variables from the environment.
@@ -50,6 +54,13 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_SESSION_DAYS must be a positive integer, got %q", v)
 		}
 		c.SessionTTL = time.Duration(d) * 24 * time.Hour
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_WEBHOOKS_ALLOW_PRIVATE")); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return c, fmt.Errorf("OPENTODO_WEBHOOKS_ALLOW_PRIVATE must be true or false, got %q", v)
+		}
+		c.WebhooksAllowPrivate = &b
 	}
 	switch strings.ToLower(getenv("OPENTODO_LOG_LEVEL", "info")) {
 	case "debug":

@@ -49,11 +49,13 @@ func TestMigrationAuditLog(t *testing.T) {
 		VALUES(1,'logout','success','u',NULL,NULL,'ua','{}')`); err != nil {
 		t.Fatalf("audit_events shape: %v", err)
 	}
-	if _, err := db.ExecContext(ctx, "INSERT INTO settings(key,value) VALUES('audit.log_ip','false')"); err != nil {
+	// The shared settings table may have been created by an earlier migration
+	// (webhooks) with nullable columns; the audit code writes all three.
+	if _, err := db.ExecContext(ctx, "INSERT INTO settings(key,value,updated_at) VALUES('audit.log_ip','false',7)"); err != nil {
 		t.Fatalf("settings shape: %v", err)
 	}
 	var updatedAt int64
-	if err := db.QueryRowContext(ctx, "SELECT updated_at FROM settings WHERE key='audit.log_ip'").Scan(&updatedAt); err != nil || updatedAt != 0 {
+	if err := db.QueryRowContext(ctx, "SELECT updated_at FROM settings WHERE key='audit.log_ip'").Scan(&updatedAt); err != nil || updatedAt != 7 {
 		t.Fatalf("settings.updated_at = %d, %v", updatedAt, err)
 	}
 	for _, idx := range []string{"audit_events_ts", "audit_events_actor_ts", "audit_events_target_ts", "audit_events_name_ts"} {
