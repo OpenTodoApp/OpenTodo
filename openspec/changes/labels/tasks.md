@@ -22,13 +22,13 @@
 
 ## 4. UI
 
-- [ ] 4.1 Label chips in `TaskRow.tsx` and label editor in `TaskDetail.tsx`; verify browser flow: chip appears immediately after assigning, hidden for deleted labels
-- [ ] 4.2 Label picker opened with `L` on a selected task: type-ahead, create-on-Enter, multi-select, Escape closes; shortcuts suppressed while typing; verify browser flow matching "Assign from the picker" and "Create while assigning"
-- [ ] 4.3 Sidebar "Labels" group with counts, reorder, rename, recolour, delete and merge menu, duplicate marker; `g l` overview; verify browser flow matching "Rename propagates" (one outbox op) and "Merge duplicates"
-- [ ] 4.4 Label view (open tasks grouped by project) wired into the router; verify browser flow: count in sidebar equals rows in the view
-- [ ] 4.5 Update `?` help; `npm run build` passes with bundle growth under 6 KB gzipped; verify by comparing `dist` sizes
+- [x] 4.1 Label chips in `TaskRow.tsx` and label editor in `TaskDetail.tsx`; verify browser flow: chip appears immediately after assigning, hidden for deleted labels
+- [x] 4.2 Label picker opened with `L` on a selected task: type-ahead, create-on-Enter, multi-select, Escape closes; shortcuts suppressed while typing; verify browser flow matching "Assign from the picker" and "Create while assigning"
+- [x] 4.3 Sidebar "Labels" group with counts, reorder, rename, recolour, delete and merge menu, duplicate marker; `g l` overview; verify browser flow matching "Rename propagates" (one outbox op) and "Merge duplicates"
+- [x] 4.4 Label view (open tasks grouped by project) wired into the router; verify browser flow: count in sidebar equals rows in the view
+- [x] 4.5 Update `?` help; `npm run build` passes with bundle growth under 6 KB gzipped; verify by comparing `dist` sizes
 
 ## 5. Integration and docs
 
-- [ ] 5.1 Two-device browser run: create the same label name on both devices offline, reconnect, merge; rename on A while assigning on B offline; verify identical chips and counts on both devices after sync
-- [ ] 5.2 README feature list and CHANGELOG under Unreleased; verify `make check` passes
+- [x] 5.1 Two-device browser run: create the same label name on both devices offline, reconnect, merge; rename on A while assigning on B offline; verify identical chips and counts on both devices after sync
+- [x] 5.2 README feature list and CHANGELOG under Unreleased; verify `make check` passes
