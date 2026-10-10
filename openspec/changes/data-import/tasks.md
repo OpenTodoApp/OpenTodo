@@ -24,9 +24,9 @@
 
 ## 4. Web app
 
-- [ ] 4.1 `lib/api.ts` wrappers for preview, start, jobs, undo; verify typecheck (`npm run build`)
+- [x] 4.1 `lib/api.ts` wrappers for preview, start, jobs, undo; verify typecheck (`npm run build`)
 - [ ] 4.2 Settings → Import screen: file picker, detected format and override, options (target project, time zone defaulting to the browser zone, sections, duplicates, errors), preview table with per-row outcomes and warnings, confirm, progress polling, job history with undo; verify in the browser flow that a CSV import appears in views without reload and that every control is reachable with Tab/Enter
-- [ ] 4.3 Offline behaviour: picker disabled with explanation when `useSyncStatus` reports offline; last job list remains visible; verify `importScreen.test.tsx` renders the offline state (`npm test`)
+- [x] 4.3 Offline behaviour: picker disabled with explanation when `useSyncStatus` reports offline; last job list remains visible; verify `importScreen.test.tsx` renders the offline state (`npm test`)
 - [ ] 4.4 Keyboard: `g i` opens Import from anywhere, listed in the `?` help; verify in the browser flow
 
 ## 5. Integration and docs

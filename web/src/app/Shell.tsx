@@ -4,6 +4,7 @@ import { navigate, useRoute } from './router'
 import { LabelsView } from './LabelsView'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
+import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { SyncStatus } from './SyncStatus'
 
@@ -34,6 +35,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         if (e.key === 'c') navigate({ view: 'completed' })
         if (e.key === 'l') navigate({ view: 'labels' })
         if (e.key === 's') navigate({ view: 'settings' })
+        // `g i` is the Inbox, so Import is `g` then Shift+I.
+        if (e.key === 'I') navigate({ view: 'import' })
         return
       }
       if (e.key === '?') {
@@ -67,6 +70,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {route.view === 'settings' ? (
             <SettingsView user={user} onLogout={onLogout} />
+          ) : route.view === 'import' ? (
+            <ImportScreen />
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
           ) : (
@@ -103,6 +108,7 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['L', 'Labels of selected task (type to find, Enter adds or creates)'],
     ['Delete', 'Delete selected task (and its subtasks)'],
     ['g then i / t / u / c / l / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Settings'],
+    ['g then Shift+I', 'Go to Settings → Import data'],
     ['Enter (on an invitation)', 'Settings → Members: copy the invite link created in this session'],
     ['Delete (on an invitation)', 'Settings → Members: revoke a pending invitation'],
     ['Esc', 'Close panel, clear selection'],

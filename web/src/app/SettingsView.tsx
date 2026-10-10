@@ -3,6 +3,7 @@ import { api, ApiError } from '../lib/api'
 import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
 import { MembersPanel } from './MembersPanel'
+import { navigate } from './router'
 
 interface TokenRow { id: string; name: string; createdAt: number; lastUsedAt: number | null }
 
@@ -46,9 +47,14 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       <section className="space-y-2">
         <h2 className="font-semibold">Your data</h2>
         <p className="text-sm text-slate-500">
-          Everything you see is stored on this device and on your server. Export it any time as JSON.
+          Everything you see is stored on this device and on your server. Export it any time as JSON, or import an export,
+          a CSV file or another task manager's JSON export (<span className="kbd">g</span> <span className="kbd">Shift+I</span>).
         </p>
-        <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/api/v1/export" download="opentodo-export.json">Download export (JSON)</a>
+        <div className="flex flex-wrap gap-2">
+          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/api/v1/export" download="opentodo-export.json">Download export (JSON)</a>
+          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/settings/import"
+            onClick={(e) => { e.preventDefault(); navigate({ view: 'import' }) }}>Import data…</a>
+        </div>
         <p className="text-xs text-slate-400">
           Sync: {sync.state}{sync.pending ? `, ${sync.pending} change(s) waiting to upload` : ''}.
         </p>
