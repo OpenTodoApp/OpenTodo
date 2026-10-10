@@ -467,6 +467,15 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		for _, id := range sections {
 			add(purgeTarget{t.scope, "section", id})
 		}
+		// Every member's personal preferences for the project (activity-feed D1)
+		// go too; each lives in its owner's personal scope.
+		prefScopes, err := scopesHolding(ctx, tx, "project_prefs", t.id)
+		if err != nil {
+			return nil, err
+		}
+		for _, sc := range prefScopes {
+			add(purgeTarget{sc, "project_prefs", t.id})
+		}
 	}
 	// Deleted descendants, breadth first; the seen set stops cycles.
 	for i := 0; i < len(tasks); i++ {
@@ -513,6 +522,24 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		}
 	}
 	return out, nil
+}
+
+// scopesHolding lists the scopes that hold fields of one entity.
+func scopesHolding(ctx context.Context, q querier, entity, id string) ([]string, error) {
+	rows, err := q.QueryContext(ctx, `SELECT DISTINCT scope_id FROM scope_fields WHERE entity = ? AND entity_id = ? ORDER BY scope_id`, entity, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var sc string
+		if err := rows.Scan(&sc); err != nil {
+			return nil, err
+		}
+		out = append(out, sc)
+	}
+	return out, rows.Err()
 }
 
 // commentIDsOf lists the comments of a task inside a scope.

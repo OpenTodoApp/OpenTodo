@@ -54,6 +54,8 @@ Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log, `user_id` = a
 
 Comments are a synced entity (`comment`) stored like tasks in the task's scope; `sync.Apply` checks authorship per op (author equals submitter, only the author edits, the author, admins and the owner delete, viewers may comment), filters mentions to members and hands `notify.Mentioned` events to the sinks after commit. There is no activity table on the server: `GET /api/v1/{tasks|projects}/{id}/activity` reads the op log (`ActivityOps`, the same read path as revision history) and runs `activity.Derive` on every request; served ops carry `actor` (from `ops.user_id`) so devices can attribute changes. Each device records the task, project and comment ops it applies (author, old value) in a local `activity` table bounded to 500 events per project and derives the same events offline.
 
+The activity feed (OpenSpec `activity-feed`) adds no server table: `GET /api/v1/activity` reads each shared project scope the caller belongs to (`sync.Service.FeedOps`), derives every project on its own and pages the merged list. What a user has seen is the personal entity `project_prefs` (`feed_seen_at`), which the scope resolver always places in the author's personal scope; unread counts and the feed itself are computed on the device from the local `activity` table (`lib/feed.ts`) and refresh through Dexie live queries whenever a sync writes ops.
+
 ### Live updates
 
 `GET /api/v1/sync/events` is a server-sent event stream per device (`httpapi/events.go`). It carries only the latest op cursor, never data; the client reacts by running the ordinary sync exchange. `sync.Notifier` is the in-memory per-user fan-out; see `docs/sync.md`.
@@ -62,8 +64,8 @@ Comments are a synced entity (`comment`) stored like tasks in the task's scope; 
 
 | Module | Responsibility |
 | --- | --- |
-| `lib/db.ts` | Dexie database: `projects`, `tasks`, `labels`, `views`, `reminders`, `comments`, `outbox`, `meta`, plus caches (`memberships`, `notifications`) and the local `activity` log |
-| `lib/comments.ts`, `lib/activity.ts`, `lib/markdown.ts` | Comment writes, thread order and mention helpers; the shared activity rule, local recording with per-project retention and merging of older server pages; the in-house markdown subset (parsed to data, rendered by `app/Markdown.tsx` as React elements, so raw HTML never reaches the DOM) |
+| `lib/db.ts` | Dexie database: `projects`, `tasks`, `labels`, `views`, `reminders`, `comments`, `outbox`, `meta`, plus caches (`memberships`, `notifications`), the local `activity` log and `prefs` (synced `project_prefs`, activity-feed) |
+| `lib/comments.ts`, `lib/activity.ts`, `lib/markdown.ts` | Comment writes, thread order and mention helpers; the shared activity rule, local recording with per-project retention and merging of older server pages (`lib/feed.ts`: the cross-project feed, unread counts and seen markers); the in-house markdown subset (parsed to data, rendered by `app/Markdown.tsx` as React elements, so raw HTML never reaches the DOM) |
 | `lib/types.ts` | Entity types; field names mirror `internal/sync/ops.go` |
 | `lib/hlc.ts` | Hybrid logical clock and the shared `wins()` rule |
 | `lib/ops.ts` | `applyOps` (per-field LWW into IndexedDB), `mutate` (local apply + outbox + notify), entity helpers |

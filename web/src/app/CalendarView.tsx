@@ -8,10 +8,11 @@ import {
   blockFor, calendarTasks, clamp, DAY_MINUTES, dayLoad, DEFAULT_GRID_PREFS, formatLoad, formatTime, GRID_PREFS_META_KEY, LAST_SLOT,
   normalizeGridPrefs, nudgeDue, placementStart, SLOT_MINUTES, stepEstimate, weekDates, type Block, type GridPrefs,
 } from '../lib/calendar'
-import { addDaysISO, compareDue, dueFromView, formatShort, localDueOf, viewedTask } from '../lib/dates'
+import { addDaysISO, dueFromView, formatShort, localDueOf, viewedTask } from '../lib/dates'
 import { db, getMeta } from '../lib/db'
 import { formatMinutes } from '../lib/duration'
 import { layoutDay, type DayLayout } from '../lib/layout'
+import { compareByPosition, compareDueThenPriority } from '../lib/ordering'
 import { setTaskCompleted, updateTask } from '../lib/ops'
 import type { Label, Project, Task } from '../lib/types'
 import { useCalendarDrag, type DropTarget } from './calendarDrag'
@@ -96,7 +97,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       if (b) blocks.set(t.id, b)
       else lane.push(t)
     }
-    lane.sort((a, b) => a.priority - b.priority || a.position - b.position)
+    lane.sort((a, b) => a.priority - b.priority || compareByPosition(a, b))
     return { date: d, lane, blocks, layout: layoutDay([...blocks.values()]) }
   }), [dates, shown])
 
@@ -696,7 +697,7 @@ function PlanTray({ source, onSource, tasks, projects, today, onPointerDown, onP
     else if (source === 'overdue') out = open.filter((t) => t.due && localDueOf(t.due).date < today)
     else if (source.startsWith('project:')) out = open.filter((t) => t.project_id === source.slice(8))
     else out = open.filter((t) => t.project_id === null)
-    return out.sort((a, b) => compareDue(a.due, b.due) || a.priority - b.priority || a.position - b.position).slice(0, 200)
+    return out.sort(compareDueThenPriority).slice(0, 200)
   }, [tasks, archived, source, today])
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-l border-slate-200 dark:border-slate-800 md:flex" aria-label="Tasks to plan">

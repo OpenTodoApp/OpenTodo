@@ -22,6 +22,7 @@ export type Route =
   | { view: 'reset'; token: string }
   | { view: 'share' }
   | { view: 'trash' }
+  | { view: 'feed' }
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.split('/').filter(Boolean)
@@ -51,6 +52,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'share' }
     case 'trash':
       return { view: 'trash' }
+    case 'activity':
+      return { view: 'feed' }
     case 'views':
       return { view: 'views' }
     case 'view':
@@ -94,6 +97,8 @@ export function routePath(r: Route): string {
       return '/'
     case 'import':
       return '/settings/import'
+    case 'feed':
+      return '/activity'
     default:
       return `/${r.view}`
   }

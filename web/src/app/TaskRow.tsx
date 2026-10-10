@@ -23,7 +23,7 @@ const DUE_TONE = {
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
 export const MAX_INDENT = 3
 
-export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown }: {
+export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null }: {
   task: Task
   project?: Project
   /** Already resolved: unknown and deleted label ids are not in this list. */
@@ -46,8 +46,12 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   onToggleCollapse?: () => void
   /** Board card styling (board-view). */
   card?: boolean
-  /** Starts a drag (board-view: move between sections). */
+  /** Starts a drag (board-view: move between sections; manual-ordering: place in a list). */
   onPointerDown?: (e: React.PointerEvent<HTMLLIElement>) => void
+  /** Drop target key for lib/dnd (manual-ordering): the row accepts drops before, after or inside it. */
+  dropKey?: string
+  /** Where the dragged task would land relative to this row (manual-ordering). */
+  dropIndicator?: 'before' | 'after' | 'inside' | null
 }) {
   const due = describeDue(task.due)
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
@@ -58,10 +62,17 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
     <li
       data-task-id={task.id}
       data-depth={depth}
+      data-drop-target={dropKey}
+      data-draggable={onPointerDown ? '' : undefined}
       onPointerDown={onPointerDown}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group flex items-start gap-2 rounded-md px-2 py-2 ${card ? `border border-slate-200 shadow-sm dark:border-slate-700 ${selected ? '' : 'bg-white dark:bg-slate-950'}` : ''} ${selected ? 'bg-slate-100 ring-1 ring-emerald-500/50 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
+      className={`group relative flex items-start gap-2 rounded-md px-2 py-2 ${dropIndicator === 'inside' ? 'ring-2 ring-emerald-500' : ''} ${card ? `border border-slate-200 shadow-sm dark:border-slate-700 ${selected ? '' : 'bg-white dark:bg-slate-950'}` : ''} ${selected ? 'bg-slate-100 ring-1 ring-emerald-500/50 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
     >
+      {(dropIndicator === 'before' || dropIndicator === 'after') && (
+        // 2 px drop indicator between rows (manual-ordering design D5).
+        <span aria-hidden="true" data-drop-indicator={dropIndicator}
+          className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-emerald-500 ${dropIndicator === 'before' ? '-top-px' : '-bottom-px'}`} />
+      )}
       {onToggleCollapse && (
         // Tree views reserve a fixed slot so circles line up whether or not a row has children.
         <span className="mt-0.5 flex h-5 w-4 shrink-0 items-center justify-center">

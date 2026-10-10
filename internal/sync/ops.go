@@ -183,6 +183,16 @@ var Schema = map[string]map[string]kind{
 		"edited_at":  kNullableNumber,
 		"deleted_at": kNullableNumber,
 	},
+	// project_prefs: one user's personal preferences for a project, keyed by the
+	// project id (OpenSpec change `activity-feed`, design D1). It always resolves
+	// to the author's personal scope, even for a shared project, so it syncs to
+	// the author's own devices and never to other members. feed_seen_at is the
+	// time (an event's ts, Unix ms) up to which the user has seen the project's
+	// activity; clients never write a smaller value than the one they hold. Later
+	// per-project preferences are additive fields here.
+	"project_prefs": {
+		"feed_seen_at": kNumber,
+	},
 }
 
 // Plural maps REST collection names to entity names.

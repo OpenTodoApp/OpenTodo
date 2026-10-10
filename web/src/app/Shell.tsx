@@ -12,6 +12,7 @@ import { ViewsView } from './ViewsView'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
 import { TrashView } from './TrashView'
+import { FeedView } from './FeedView'
 import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { SyncStatus } from './SyncStatus'
@@ -99,6 +100,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         }
         if (e.key === 's') navigate({ view: 'settings' })
         if (e.key === 'x') navigate({ view: 'trash' })
+        // `g f` is the Filter view, so the activity feed is `g h` (activity-feed).
+        if (e.key === 'h') navigate({ view: 'feed' })
         // `g i` is the Inbox, so Import is `g` then Shift+I.
         if (e.key === 'I') navigate({ view: 'import' })
         return
@@ -159,6 +162,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <SavedViewRoute id={route.id} />
           ) : route.view === 'trash' ? (
             <TrashView />
+          ) : route.view === 'feed' ? (
+            <FeedView />
           ) : route.view === 'day' || route.view === 'week' ? (
             <CalendarView mode={route.view} date={route.date} />
           ) : (
@@ -190,6 +195,10 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['a', 'Add a subtask to the selected task'],
     ['Shift+A', 'Assign the selected task (type to find a member, Enter assigns)'],
     ['Tab / Shift+Tab', 'Indent under previous sibling / outdent'],
+    ['Alt+↑ / Alt+↓', 'Move the selected task, or the focused sidebar project, one place within its list (it stays selected)'],
+    ['Alt+Shift+↑ / Alt+Shift+↓', 'Move it to the top / bottom of its list'],
+    ['Drag (touch: press and hold)', 'Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels'],
+    ['Today, Upcoming, Assigned, Completed, labels, filters', 'Sorted by date (or their own rule): no drag or Alt moves there'],
     ['← / →', 'Collapse / expand subtasks of the selected task, or sub-projects of the focused sidebar project'],
     ['m', 'Move the current project under another project or to the top level'],
     ['v', 'Toggle the current project between list and board (remembered per project on this device)'],
@@ -207,6 +216,7 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['g then i / t / u / c / l / f / v / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings'],
     ['g then a', 'Go to Assigned to me'],
     ['g then x', 'Go to the Trash'],
+    ['g then h', 'Go to Activity: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters)'],
     ['j / k, r, Delete (in the Trash)', 'Select, restore, delete permanently (Enter confirms, Esc cancels)'],
     ['Enter (after completing the last task of a project)', 'Archive the project; any other key dismisses'],
     ['g then Shift+I', 'Go to Settings → Import data'],

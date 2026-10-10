@@ -134,6 +134,7 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | PATCH | `/api/v1/comments/{id}` | yes | `{body?, mentions?}` → 200 comment with `edited_at` set; 403 `forbidden` unless you wrote it |
 | DELETE | `/api/v1/comments/{id}` | yes | 204; allowed for the author, project admins and the owner, 403 `forbidden` otherwise |
 | GET | `/api/v1/tasks/{id}/activity`, `/api/v1/projects/{id}/activity` | yes | `{events, more, cursor?}` newest first, derived from the operation log; `?before=<cursor>&limit=<1-200>` (default 50) |
+| GET | `/api/v1/activity` | yes | `{events, more, cursor?}`: the activity feed across every shared project you are a member of, newest first; `?cursor=&limit=&project=&actor=&kind=`; see [Activity feed](#activity-feed) |
 | GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
@@ -295,7 +296,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
 | `section_id` | string or null | section of the task's project; see [Sections](#sections). `400 invalid_input` for an unknown or deleted section or one of another project. Changing `project_id` without naming a section clears it |
 | `ical_extra` | string or null | opaque iCalendar lines a CalDAV client sent that the app does not model (alarms, `X-` properties…); kept so calendar apps do not lose them. See [caldav.md](caldav.md#what-maps-to-what) |
-| `position` | number | sort order inside a list |
+| `position` | number | sort order inside a list: ascending, ties by id; clients move a task by writing the midpoint between its new neighbours (see [docs/sync.md](sync.md#manual-order)) |
 | `completed_at`, `deleted_at` | unix ms or null | |
 | `created_at` | unix ms | set by the server on create if missing |
 
@@ -808,6 +809,32 @@ curl -sS "$OT/api/v1/projects/$P/activity?limit=2" -H "Authorization: Bearer $TO
 ```
 
 Kinds: `created`, `completed`, `reopened`, `deleted`, `restored`, `rescheduled`, `assigned`, `unassigned`, `moved`, `archived`, `unarchived`, `edited`, `commented`, `comment_edited`, `comment_deleted`. A malformed `before` or a `limit` outside 1–200 answers `400 invalid_input`.
+
+### Activity feed
+
+`GET /api/v1/activity` (OpenSpec `activity-feed`) returns events from every shared project the caller is a member of, newest first, with the same shape and the same cursor as the per-project route plus `projectId` and `projectName`. Each project's events are derived exactly as `GET /api/v1/projects/{id}/activity` derives them, so an event has the same id in both. Personal projects and the Inbox never appear (their activity is in the project view), nor do projects you are not a member of, even when named in `project`.
+
+Query parameters, all optional:
+
+- `cursor` — the `cursor` of the previous page (`before` is accepted too); pages never overlap.
+- `limit` — 1–200, default 50.
+- `project` — a project id; a project you are not a member of yields no events.
+- `actor` — an account id.
+- `kind` — a feed category: `completed` (completed, reopened), `created`, `commented` (commented, comment_edited, comment_deleted), `assigned` (assigned, unassigned), `rescheduled`, `other` (every other kind).
+
+```sh
+curl -sS "$OT/api/v1/activity?kind=completed&limit=1" -H "Authorization: Bearer $TOKEN"
+# 200 {"events":[
+#   {"id":"…","kind":"completed","actor":"<bob>","actorName":"Bob","entity":"task","entityId":"<task>","taskId":"<task>",
+#    "taskTitle":"Milk","projectId":"<project>","projectName":"Home","ts":1760090500000,"opIds":["…"],
+#    "changes":[{"field":"completed_at","from":null,"to":1760090500000}]}],
+#  "more":true,"cursor":"1760090500000:…"}
+
+curl -sS "$OT/api/v1/activity?cursor=junk" -H "Authorization: Bearer $TOKEN"
+# 400 {"error":{"code":"invalid_input","message":"cursor must be a cursor returned by this route"}}
+```
+
+Without credentials the route answers `401 unauthorized`; an unknown `kind`, a malformed cursor or a `limit` outside 1–200 answers `400 invalid_input`. What a user has already seen is not stored by this route: it is the `project_prefs.feed_seen_at` field in the user's personal scope, written through sync like any other op (see [sync](sync.md#project-preferences-and-the-activity-feed)). REST clients may write it with `POST /api/v1/sync` but have no collection route for it.
 
 ### Import
 

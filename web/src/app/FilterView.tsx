@@ -4,7 +4,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
-import { compareDue } from '../lib/dates'
+import { compareDueThenPriority } from '../lib/ordering'
 import { addFilterHistory, compile, getFilterHistory, parse, type Node } from '../lib/filter'
 import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
@@ -92,7 +92,7 @@ export function FilterView() {
     return order.filter((k) => byProject.has(k)).map((k) => ({
       key: k || 'inbox',
       heading: k ? heading(k) : 'Inbox',
-      tasks: byProject.get(k)!.sort((a, b) => compareDue(a.due, b.due) || a.priority - b.priority || a.position - b.position),
+      tasks: byProject.get(k)!.sort(compareDueThenPriority),
     }))
   }, [result, projects, projectMap])
   const rows = useMemo(() => groups.flatMap((g) => g.tasks), [groups])
