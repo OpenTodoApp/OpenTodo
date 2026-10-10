@@ -68,8 +68,11 @@ func (s *Service) SignupAllowed(ctx context.Context) (bool, error) {
 	return n == 0 || s.allowSignup, nil
 }
 
-// Register creates an account. The first account gets the owner role.
-func (s *Service) Register(ctx context.Context, email, name, password string) (*User, error) {
+// Register creates an account. The first account gets the owner role. After
+// that, a non-empty invitation secret admits one member even while sign-up is
+// closed; the invitation is consumed in the same transaction so it can create at
+// most one account. Without an invitation the open sign-up policy applies.
+func (s *Service) Register(ctx context.Context, email, name, password, invitation string) (*User, error) {
 	email = normalizeEmail(email)
 	if _, err := mail.ParseAddress(email); err != nil || email == "" {
 		return nil, ErrInvalidEmail
@@ -90,14 +93,23 @@ func (s *Service) Register(ctx context.Context, email, name, password string) (*
 	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&n); err != nil {
 		return nil, err
 	}
-	if n > 0 && !s.allowSignup {
+	now := time.Now().UnixMilli()
+	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: "member", CreatedAt: now}
+	invitation = strings.TrimSpace(invitation)
+	switch {
+	case n == 0:
+		u.Role = "owner"
+	case invitation != "":
+		// Validate before inserting so a bad link is reported ahead of email_taken,
+		// and the invitation stays pending whenever the account is not created.
+		role, err := s.checkInvitation(ctx, tx, invitation, email, now)
+		if err != nil {
+			return nil, err
+		}
+		u.Role = role
+	case !s.allowSignup:
 		return nil, ErrSignupClosed
 	}
-	role := "member"
-	if n == 0 {
-		role = "owner"
-	}
-	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: role, CreatedAt: time.Now().UnixMilli()}
 	_, err = tx.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
 		u.ID, u.Email, u.Name, hash, u.Role, u.CreatedAt)
 	if err != nil {
@@ -105,6 +117,13 @@ func (s *Service) Register(ctx context.Context, email, name, password string) (*
 			return nil, ErrEmailTaken
 		}
 		return nil, err
+	}
+	if n > 0 && invitation != "" {
+		// Spent in the same transaction: either both the account and the acceptance
+		// commit, or neither does.
+		if err := s.markInvitationAccepted(ctx, tx, invitation, u.ID, now); err != nil {
+			return nil, err
+		}
 	}
 	return u, tx.Commit()
 }

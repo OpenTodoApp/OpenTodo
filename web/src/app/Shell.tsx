@@ -63,7 +63,12 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           </button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {route.view === 'settings' ? <SettingsView user={user} onLogout={onLogout} /> : <TaskListView route={route} />}
+          {route.view === 'settings' ? (
+            <SettingsView user={user} onLogout={onLogout} />
+          ) : (
+            // App renders the invite screen itself; a stray /invite route inside the shell falls back to the Inbox.
+            <TaskListView route={route.view === 'invite' ? { view: 'inbox' } : route} />
+          )}
         </div>
       </main>
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} />}
@@ -92,6 +97,8 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['1 – 4', 'Set priority of selected task'],
     ['Delete', 'Delete selected task (and its subtasks)'],
     ['g then i / t / u / c / s', 'Go to Inbox / Today / Upcoming / Completed / Settings'],
+    ['Enter (on an invitation)', 'Settings → Members: copy the invite link created in this session'],
+    ['Delete (on an invitation)', 'Settings → Members: revoke a pending invitation'],
     ['Esc', 'Close panel, clear selection'],
     ['?', 'Toggle this help'],
   ]

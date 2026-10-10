@@ -12,7 +12,7 @@ import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 
-type ListRoute = Exclude<Route, { view: 'settings' }>
+type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'invite' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 interface Row {

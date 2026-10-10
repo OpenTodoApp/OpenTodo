@@ -70,6 +70,30 @@ export interface AuthStatus {
   version: string
 }
 
+export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked'
+
+/** Owner's view of an invitation (server-side account data, never synced). Never carries the secret. */
+export interface Invitation {
+  id: string
+  status: InvitationStatus
+  email: string | null
+  role: 'member'
+  createdBy: string
+  createdByName: string
+  createdAt: number
+  expiresAt: number
+  acceptedAt: number | null
+  acceptedBy: { id: string; email: string; name: string } | null
+  revokedAt: number | null
+}
+
+/** What an anonymous invitee may learn about an invitation before accepting. */
+export interface InvitationPreview {
+  inviterName: string
+  email: string | null
+  expiresAt: number
+}
+
 export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'unauthenticated'
 
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const

@@ -30,12 +30,16 @@ type Server struct {
 	web     http.Handler
 	log     *slog.Logger
 	version string
+	// limiter guards the unauthenticated auth routes per client IP (10/min).
 	limiter *rateLimiter
+	// inviteLimiter caps invitation creation per account (20/hour).
+	inviteLimiter *rateLimiter
 }
 
 // New builds the router. web may be nil when only the API is wanted (tests).
 func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) http.Handler {
-	s := &Server{cfg: cfg, auth: authSvc, sync: syncSvc, web: web, log: log, version: version, limiter: newRateLimiter(10, time.Minute)}
+	s := &Server{cfg: cfg, auth: authSvc, sync: syncSvc, web: web, log: log, version: version,
+		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour)}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", s.handleHealth)
@@ -48,6 +52,13 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
 	mux.Handle("POST /api/v1/tokens", s.requireAuth(s.handleCreateToken))
 	mux.Handle("DELETE /api/v1/tokens/{id}", s.requireAuth(s.handleDeleteToken))
+	// Invitations: owner-only management plus the one public preview route the
+	// spec defines (the invitee has no account yet). Both must be registered before
+	// the generic {collection} routes so the mux prefers these literal patterns.
+	mux.Handle("GET /api/v1/invitations", s.requireAuth(s.handleListInvitations))
+	mux.Handle("POST /api/v1/invitations", s.requireAuth(s.handleCreateInvitation))
+	mux.Handle("DELETE /api/v1/invitations/{id}", s.requireAuth(s.handleRevokeInvitation))
+	mux.HandleFunc("GET /api/v1/invitations/{token}", s.handlePreviewInvitation)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
 	mux.Handle("GET /api/v1/{collection}", s.requireAuth(s.handleList))
@@ -202,6 +213,9 @@ type credentials struct {
 	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
+	// Invitation is an optional invitation secret that admits one member while
+	// sign-up is closed (OpenSpec `invitations`).
+	Invitation string `json:"invitation"`
 }
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -218,10 +232,16 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
 		return
 	}
-	u, err := s.auth.Register(r.Context(), c.Email, c.Name, c.Password)
+	u, err := s.auth.Register(r.Context(), c.Email, c.Name, c.Password, c.Invitation)
 	switch {
 	case errors.Is(err, auth.ErrSignupClosed):
 		writeError(w, http.StatusForbidden, "signup_closed", err.Error())
+		return
+	case errors.Is(err, auth.ErrInvitationInvalid):
+		writeError(w, http.StatusNotFound, "invitation_invalid", err.Error())
+		return
+	case errors.Is(err, auth.ErrInvitationEmailMismatch):
+		writeError(w, http.StatusForbidden, "invitation_email_mismatch", err.Error())
 		return
 	case errors.Is(err, auth.ErrEmailTaken):
 		writeError(w, http.StatusConflict, "email_taken", err.Error())
@@ -323,6 +343,128 @@ func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ---- handlers: invitations ----
+
+// requireInviter answers 403 unless the signed-in user may manage invitations.
+func (s *Server) requireInviter(w http.ResponseWriter, r *http.Request) *auth.User {
+	u := userFrom(r.Context())
+	if !s.auth.CanInvite(u) {
+		writeError(w, http.StatusForbidden, "forbidden", "only the owner can manage invitations")
+		return nil
+	}
+	return u
+}
+
+func (s *Server) handleListInvitations(w http.ResponseWriter, r *http.Request) {
+	if s.requireInviter(w, r) == nil {
+		return
+	}
+	list, err := s.auth.ListInvitations(r.Context())
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"invitations": list})
+}
+
+func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) {
+	u := s.requireInviter(w, r)
+	if u == nil {
+		return
+	}
+	if !s.inviteLimiter.allow(u.ID) {
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many invitations created, try again later")
+		return
+	}
+	var in struct {
+		Email          string   `json:"email"`
+		ExpiresInHours *float64 `json:"expiresInHours"`
+	}
+	if err := readJSON(r, &in); err != nil {
+		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		return
+	}
+	ttl := auth.DefaultInvitationTTL
+	if in.ExpiresInHours != nil {
+		h := *in.ExpiresInHours
+		if h != float64(int64(h)) || h < 1 || h > 720 {
+			writeError(w, http.StatusBadRequest, "invalid_input", auth.ErrInvalidExpiry.Error())
+			return
+		}
+		ttl = time.Duration(h) * time.Hour
+	}
+	inv, secret, err := s.auth.CreateInvitation(r.Context(), u, in.Email, ttl)
+	switch {
+	case errors.Is(err, auth.ErrInvalidEmail):
+		writeError(w, http.StatusBadRequest, "invalid_input", "email: "+err.Error())
+		return
+	case errors.Is(err, auth.ErrInvalidExpiry):
+		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		return
+	case err != nil:
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"invitation": inv, "link": s.publicOrigin(r) + "/invite/" + secret})
+}
+
+func (s *Server) handleRevokeInvitation(w http.ResponseWriter, r *http.Request) {
+	if s.requireInviter(w, r) == nil {
+		return
+	}
+	err := s.auth.RevokeInvitation(r.Context(), r.PathValue("id"))
+	switch {
+	case errors.Is(err, auth.ErrNotFound):
+		writeError(w, http.StatusNotFound, "not_found", "invitation not found")
+		return
+	case errors.Is(err, auth.ErrInvitationSpent):
+		writeError(w, http.StatusConflict, "invitation_spent", err.Error())
+		return
+	case err != nil:
+		s.internal(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// handlePreviewInvitation is public: the invitee has no account yet. It shares
+// the sign-in limiter so token guessing is as expensive as password guessing,
+// and every failure is the same 404.
+func (s *Server) handlePreviewInvitation(w http.ResponseWriter, r *http.Request) {
+	if !s.limiter.allow(clientIP(r)) {
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
+		return
+	}
+	p, err := s.auth.PreviewInvitation(r.Context(), r.PathValue("token"))
+	if errors.Is(err, auth.ErrInvitationInvalid) {
+		writeError(w, http.StatusNotFound, "invitation_invalid", err.Error())
+		return
+	}
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, p)
+}
+
+// publicOrigin is the base for links handed to users: the configured base URL
+// when set, otherwise the origin of the request (honouring the proxy headers the
+// origin check already trusts) so LAN installs still get a working link.
+func (s *Server) publicOrigin(r *http.Request) string {
+	if o := s.cfg.Origin(); o != "" {
+		return o
+	}
+	host := r.Host
+	if fwd := r.Header.Get("X-Forwarded-Host"); fwd != "" {
+		host = strings.TrimSpace(strings.Split(fwd, ",")[0])
+	}
+	scheme := "http"
+	if r.TLS != nil || strings.EqualFold(strings.TrimSpace(strings.Split(r.Header.Get("X-Forwarded-Proto"), ",")[0]), "https") {
+		scheme = "https"
+	}
+	return scheme + "://" + host
 }
 
 // ---- handlers: sync ----
