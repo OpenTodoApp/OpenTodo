@@ -123,11 +123,13 @@ Response:
   "generation": "4f1c0a9e2b7d4c55a1e0f3b2c8d9e7f6",
   "rejected": [ { "id": "op-17", "reason": "forbidden" } ],
   "memberships": [ { "projectId": "…", "role": "editor", "ownerId": "…",
-                     "members": [ { "userId": "…", "name": "Alice", "email": "…", "role": "owner" } ] } ]
+                     "members": [ { "userId": "…", "name": "Alice", "email": "…", "role": "owner" } ] } ],
+  "purged": [ { "entity": "task", "entityId": "…" } ],
+  "trashRetentionDays": 30
 }
 ```
 
-`rejected` and `memberships` are additive (see [Sharing scopes](#sharing-scopes)); older clients ignore them.
+`rejected` and `memberships` are additive (see [Sharing scopes](#sharing-scopes)); so are `purged` and `trashRetentionDays` (see [Purge](#purge)). Older clients ignore them.
 
 Client loop (`web/src/lib/sync.ts`):
 
@@ -195,7 +197,27 @@ The cursor scheme assumes the server's log only grows. A [restore from a backup]
 
 ## Deletes
 
-Deletion sets `deleted_at`. Lists filter tombstones out; export includes them. Because a tombstone is just another field under LWW, a delete made on one device wins over older edits from another and the entity never reappears.
+Deletion sets `deleted_at`. Lists filter tombstones out; export includes them. Because a tombstone is just another field under LWW, a delete made on one device wins over older edits from another and the entity never reappears. Restoring from the Trash writes `deleted_at: null`; between a delete and a restore made concurrently, the op with the greater timestamp wins.
+
+Deleting a project writes only the project's tombstone (plus moving its direct sub-projects to its parent). Its tasks keep `project_id` and clients hide every task whose project is deleted, so restoring the project is one op and brings the tasks back exactly as they were. Deleting a shared project additionally tombstones its tasks and copies the owner's open tasks into the owner's Inbox (project-sharing).
+
+## Purge
+
+Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's) are purged too.
+
+Three rules keep replicas convergent:
+
+1. **Markers share the op sequence.** A marker's `seq` is reserved from the same AUTOINCREMENT sequence as ops, so `Pull` reports markers with `seq > cursor` (and, on a partial page, `seq <=` the page's last op) in `purged`, and the returned cursor moves past them. Ops and markers are read in one snapshot. Clients delete the listed rows locally, together with any outbox ops for them.
+2. **Late ops are discarded.** `Apply` drops ops for an entity that has a marker in a scope the author can see and counts them as `duplicates`; a device that edited the entity offline therefore cannot recreate a partial copy. Markers are kept indefinitely (a few dozen bytes each).
+3. **Purge is requested online only.** The client never deletes locally before the server confirms; offline, the Trash marks the item as pending and nothing is lost if the request fails.
+
+Everyone who can see the purged entity's scope receives the marker and is woken over the live channel. Older clients ignore `purged`; the entity stays tombstoned (invisible) on them.
+
+**Retention.** At startup and every 24 hours the server purges tasks and projects whose `deleted_at` is older than `OPENTODO_TRASH_RETENTION_DAYS` (default 30; `0` disables automatic purge), through the same path. The value is reported as `trashRetentionDays` so the Trash can show remaining days. A database restored from a backup is consistent with itself: markers and the log live in the same database.
+
+## History
+
+`GET /api/v1/{tasks|projects}/{id}/history` reads the entity's ops from the scopes the caller can see, ordered by `(ts, device)` and grouped into change sets of one timestamp and device. An op that arrived after a newer write to the same field is marked `lost`. Restoring an earlier value from the history writes a new op with the current clock, so history stays append-only and the restore converges like any edit.
 
 ## Trees: subtasks
 

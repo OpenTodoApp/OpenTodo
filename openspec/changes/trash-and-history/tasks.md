@@ -9,7 +9,7 @@
 - [x] 1.5 Routes `GET /api/v1/{tasks,projects}/{id}/history`, `DELETE /api/v1/{tasks,projects}/{id}/purge` (409 `not_deleted` when not tombstoned), `POST /api/v1/trash/purge`, all with `requireAuth`; verify `TestHistoryRequiresAuthAnd404`, `TestPurgeRejectsLiveEntity`, `TestTrashPurgeRequiresAuth` (`go test ./...`)
 - [x] 1.6 Project DELETE via REST no longer moves tasks to the Inbox; verify `TestProjectDeleteKeepsTaskReferences` (`go test ./...`)
 - [x] 1.7 Retention job (`OPENTODO_TRASH_RETENTION_DAYS`, default 30, `0` disables, invalid value fails startup) at startup and every 24 h; verify `TestRetentionPurgesOldTombstones`, `TestConfigRejectsInvalidRetention` (`go test ./...`)
-- [ ] 1.8 Docs: `docs/api.md` (history, purge), `docs/sync.md` (purge markers, `purged`), `.env.example` and `docs/self-hosting/*.md` (retention variable); verify documented routes and codes match handler tests
+- [x] 1.8 Docs: `docs/api.md` (history, purge), `docs/sync.md` (purge markers, `purged`), `.env.example` and `docs/self-hosting/*.md` (retention variable); verify documented routes and codes match handler tests
 
 ## 2. Client data layer
 
