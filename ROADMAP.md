@@ -14,7 +14,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Keyboard navigation (q, j/k, c, 1–4, g+key, ?) | `bootstrap-core-platform` | |
 | ✅ | Live push of changes between devices (no 30 s polling) | `realtime-sync-channel` | Server-sent events or WebSocket wake-up; protocol stays op-based |
 | 📝 | Rich text with collaborative editing for notes and comments | `collaborative-rich-text` | Yjs documents stored as op values; evaluate size impact first |
-| 📝 | Vim-style modal navigation option | `vim-keybindings` | |
+| ✅ | Vim-style modal navigation option | `vim-keybindings` | |
 
 ## 2. Capture and input
 
@@ -68,7 +68,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | JSON export | `bootstrap-core-platform` |
 | ✅ | JSON / CSV import, including export files from popular commercial task apps | `data-import` |
 | ✅ | Scheduled backups to local disk, S3 or WebDAV | `backups` |
-| 📝 | CalDAV two-way sync (Apple Reminders, Thunderbird, Nextcloud) | `caldav` |
+| ✅ | CalDAV two-way sync (Apple Reminders, Thunderbird, Nextcloud) | `caldav` |
 | ✅ | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
 | 📝 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 

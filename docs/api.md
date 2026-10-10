@@ -295,6 +295,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
 | `section_id` | string or null | section of the task's project; see [Sections](#sections). `400 invalid_input` for an unknown or deleted section or one of another project. Changing `project_id` without naming a section clears it |
+| `ical_extra` | string or null | opaque iCalendar lines a CalDAV client sent that the app does not model (alarms, `X-` properties…); kept so calendar apps do not lose them. See [caldav.md](caldav.md#what-maps-to-what) |
 | `position` | number | sort order inside a list: ascending, ties by id; clients move a task by writing the midpoint between its new neighbours (see [docs/sync.md](sync.md#manual-order)) |
 | `completed_at`, `deleted_at` | unix ms or null | |
 | `created_at` | unix ms | set by the server on create if missing |
@@ -639,6 +640,7 @@ The server records security-relevant events in its own database (never synced to
 | `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`, `unknown_passkey`, `passkey_rejected`, `passkey_counter_regression`, `deactivated`) |
 | `logout` | success | actor = user | |
 | `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name` |
+| `app_password.created`, `app_password.revoked` | success | actor = user | `app_password_id`, `app_password_name` |
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
 | `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
 | `invitation.revoked` | success | actor = owner | `invitation_id` |
@@ -881,6 +883,20 @@ JOB=$(curl -sS "$OT/api/v1/import" -H "Authorization: Bearer $TOKEN" -F file=@ta
 curl -sS "$OT/api/v1/import/jobs/$JOB" -H "Authorization: Bearer $TOKEN" | jq .job.status
 curl -sS -X POST "$OT/api/v1/import/jobs/$JOB/undo" -H "Authorization: Bearer $TOKEN"
 ```
+
+### CalDAV and app passwords
+
+The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV, not this JSON API; see [caldav.md](caldav.md). It authenticates only with HTTP Basic (account email plus an app password). These JSON routes manage it; all require a session or token.
+
+| Method | Path | Who | Body / result |
+| --- | --- | --- | --- |
+| `GET` | `/api/v1/app-passwords` | any user | `{"appPasswords":[{"id","name","createdAt","lastUsedAt","revokedAt"}]}`, newest first, revoked ones included. Never the secret. |
+| `POST` | `/api/v1/app-passwords` | any user, recent sign-in (`403 reauth_required` otherwise, like token creation) | `{"name":"iPhone"}` → `201 {"appPassword":{…},"secret":"otap_…"}`. The secret is shown only here. |
+| `DELETE` | `/api/v1/app-passwords/{id}` | owner of the app password | `204`; `404 not_found` for an unknown, foreign or already revoked id. |
+| `GET` | `/api/v1/settings/caldav` | any user | `{"enabled":false,"url":"https://todo.example.com/dav/","secure":true}`; `url` is what calendar apps are configured with, `secure` is false for plain http. |
+| `PUT` | `/api/v1/settings/caldav` | owner | `{"enabled":true}` → the same shape. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members. Recorded as `settings.changed` (`caldav.enabled`). |
+
+App passwords are refused by every `/api/v1` route, and API tokens, passwords and session cookies are refused by `/dav/`. Creating and revoking one records `app_password.created` / `app_password.revoked` in the audit log.
 
 ### Webhooks
 

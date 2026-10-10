@@ -37,6 +37,8 @@ func allConstructors() []Event {
 		PasskeyDeleted("u", "u", "pk1", "YubiKey"),
 		TokenCreated("u", "t1", "laptop script"),
 		TokenRevoked("u", "t1", "laptop script"),
+		AppPasswordCreated("u", "a1", "iPhone"),
+		AppPasswordRevoked("u", "a1", "iPhone"),
 		InvitationCreated("o", "i1", "a@example.com"),
 		InvitationAccepted("u", "u@example.com", "i1"),
 		InvitationRevoked("o", "i1"),

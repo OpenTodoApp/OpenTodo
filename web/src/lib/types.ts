@@ -85,6 +85,12 @@ export interface Task {
    * as "No section" and never repaired by a write (design D3).
    */
   section_id: string | null
+  /**
+   * Calendar properties the app does not model (OpenSpec `caldav`): the unmapped
+   * iCalendar lines of the task's VTODO (alarms, X- properties, unsupported
+   * RRULEs), kept so CalDAV clients do not lose them. Opaque; never shown or edited.
+   */
+  ical_extra: string | null
   _clock: Clock
 }
 
@@ -448,6 +454,24 @@ export interface Webhook {
 export type WebhookDeliveryStatus = 'pending' | 'retry' | 'delivered' | 'failed'
 
 /** One entry of a webhook's delivery log. */
+/** The CalDAV endpoint's state (OpenSpec `caldav`); only the owner may change `enabled`. */
+export interface CaldavSetting {
+  enabled: boolean
+  /** The address calendar apps are configured with (…/dav/). */
+  url: string
+  /** False when the address is plain http: app passwords would travel unencrypted. */
+  secure: boolean
+}
+
+/** A CalDAV-only credential (never the secret, which is shown once on creation). */
+export interface AppPassword {
+  id: string
+  name: string
+  createdAt: number
+  lastUsedAt: number | null
+  revokedAt: number | null
+}
+
 export interface WebhookDelivery {
   id: string
   webhookId: string
@@ -540,7 +564,7 @@ export const AUDIT_EVENT_NAMES = [
   'login.succeeded', 'login.failed', 'logout',
   'mfa.enrolled', 'mfa.disabled', 'mfa.reset', 'mfa.challenge_failed',
   'passkey.registered', 'passkey.deleted',
-  'token.created', 'token.revoked',
+  'token.created', 'token.revoked', 'app_password.created', 'app_password.revoked',
   'invitation.created', 'invitation.accepted', 'invitation.revoked',
   'role.changed', 'settings.changed',
   'identity.linked', 'identity.unlinked',

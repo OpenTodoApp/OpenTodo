@@ -107,7 +107,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   }
 
   return (
-    <aside className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950 md:static md:shadow-none">
+    <aside data-detail-for={task.id} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950 md:static md:shadow-none">
       <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-2 dark:border-slate-800">
         <button className="btn-ghost text-xs" onClick={() => toggle(task)} disabled={readOnly}>
           {task.completed_at ? '↶ Reopen' : '✓ Complete'}

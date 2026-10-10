@@ -28,6 +28,7 @@ import { SubProjects } from './SubProjects'
 import { estimateFocus, isGPending, openTask, placeInDay } from './signals'
 import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
+import { registerListState, taskDefaults } from './listActions'
 
 type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
@@ -282,8 +283,8 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
   }, [board, columns, groups])
   const [dropAt, setDropAt] = useState<DropAt | null>(null)
   // The drag session outlives renders; it reads the latest rows through this ref.
-  const dragState = useRef({ rows, sectionOfRow, tree, board })
-  dragState.current = { rows, sectionOfRow, tree, board }
+  const dragState = useRef({ rows, sectionOfRow, tree, board, sectionMap })
+  dragState.current = { rows, sectionOfRow, tree, board, sectionMap }
 
   /**
    * Pointer drag (lib/dnd) of a row or card: onto another row places it before,
@@ -362,17 +363,32 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
     }
   }, [taskMap, prompt])
 
+  /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
+  const insertAfter = useRef<string | null>(null)
+
   // The view supplies defaults; attributes typed in the quick-add line override them.
   const onAdd = useCallback(async ({ labels: typed, ...rest }: QuickAddInput) => {
-    await createTask({
-      project_id: route.view === 'project' ? route.id : null,
-      due: route.view === 'today' ? { date: today } : route.view === 'upcoming' ? { date: addDays(today, 1) } : null,
+    // In Assigned to me a new task is yours (Inbox unless a #project was typed).
+    const { labels: viewLabels, ...defaults } = taskDefaults(route, today, userId)
+    const id = await createTask({
+      ...defaults,
       ...rest,
       // Labels are multi-valued: a label view's label is kept alongside typed @labels.
-      labels: [...new Set([...(route.view === 'label' ? [route.id] : []), ...(typed ?? [])])],
-      // In Assigned to me a new task is yours (Inbox unless a #project was typed).
-      ...(route.view === 'assigned' && userId ? { assignee_id: userId } : {}),
+      labels: [...new Set([...viewLabels, ...(typed ?? [])])],
     })
+    const after = insertAfter.current
+    if (after) {
+      // Opened with `o`: place it right after the anchor, as its sibling; the next entry follows it.
+      insertAfter.current = id
+      const anchor = await db.tasks.get(after)
+      if (anchor) {
+        await moveTask(id, {
+          parent_id: anchor.parent_id,
+          ...(anchor.parent_id === null ? { section_id: effectiveSection(anchor, dragState.current.sectionMap) } : {}),
+          at: { after },
+        })
+      }
+    }
   }, [route, today, userId])
 
   /** Complete or reopen; after completing the last open subtask, offer the parent (design D5). */
@@ -619,6 +635,38 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
     return () => window.removeEventListener('keydown', onKey)
   }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, assignFor, userId, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent, isReadOnly, projectReadOnly,
     projectId, board, columns, projectEditable, toggleViewMode, moveToSection, manual])
+
+  // List actions for the optional Vim layer (vim-keybindings, design D3); getters
+  // read the latest render through a ref so the registration happens once.
+  const live = useRef({ rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete })
+  live.current = { rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete }
+  useEffect(() => registerListState({
+    rows: () => live.current.rows.map((r) => r.task),
+    columns: () => (live.current.board ? live.current.columns.map((c) => c.cards) : null),
+    selected: () => live.current.selectedId,
+    select: setSelectedId,
+    openId: () => live.current.openId,
+    open: setOpenId,
+    readOnly: (t) => live.current.isReadOnly(t),
+    manual: () => live.current.manual,
+    focusQuickAdd: (after) => {
+      const input = quickAddRef.current
+      if (!input) return false
+      insertAfter.current = after
+      input.focus()
+      return true
+    },
+    toggleComplete: (id, completed) => live.current.toggleComplete(id, completed),
+  }), [])
+  useEffect(() => {
+    // Leaving the quick-add line ends an `o` insertion; `q` and clicks add at the end as before.
+    const input = quickAddRef.current
+    insertAfter.current = null
+    if (!input) return
+    const reset = () => (insertAfter.current = null)
+    input.addEventListener('blur', reset)
+    return () => input.removeEventListener('blur', reset)
+  }, [route, projectReadOnly])
 
   useEffect(() => {
     if (!selectedId) return
@@ -914,8 +962,3 @@ function EmptyState({ view }: { view: ListRoute['view'] }) {
   return <p className="px-2 py-8 text-center text-sm text-slate-400">{text}</p>
 }
 
-
-function addDays(iso: string, n: number): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return todayISO(new Date(y, m - 1, d + n))
-}

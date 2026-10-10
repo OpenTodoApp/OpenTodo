@@ -1,5 +1,6 @@
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
+  AppPassword, CaldavSetting,
   AccountRole, ActivityPage, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
@@ -170,6 +171,12 @@ export const api = {
   listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
   createToken: (name: string) => request<{ token: { id: string; name: string }; secret: string }>('POST', '/api/v1/tokens', { name }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
+  // CalDAV (OpenSpec change `caldav`): the owner toggle and per-user app passwords.
+  caldavSetting: () => request<CaldavSetting>('GET', '/api/v1/settings/caldav'),
+  setCaldavEnabled: (enabled: boolean) => request<CaldavSetting>('PUT', '/api/v1/settings/caldav', { enabled }),
+  listAppPasswords: () => request<{ appPasswords: AppPassword[] }>('GET', '/api/v1/app-passwords'),
+  createAppPassword: (name: string) => request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', { name }),
+  revokeAppPassword: (id: string) => request<void>('DELETE', `/api/v1/app-passwords/${encodeURIComponent(id)}`),
   // Passkeys (OpenSpec change `passkeys`). Binary fields are base64url strings.
   passkeyLoginOptions: () => request<{ publicKey: RequestOptionsJSON }>('POST', '/api/v1/auth/passkey/options', {}),
   /** A passkey without user verification on an enrolled account also answers with a challenge. */

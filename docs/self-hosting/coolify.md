@@ -46,6 +46,7 @@ If you prefer not to use compose:
 | `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days a deleted item stays in the Trash before it is purged for good (0–3650; `0` never purges automatically). See [sync](../sync.md#purge) |
 | `OPENTODO_PUSH` | `on` | `off` disables web push for reminders (no outbound requests to push services); reminders are still shown in the app. See [docker.md](docker.md#reminders-and-web-push) |
 | `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | Presets "allow private network targets" for webhooks on first start; afterwards Settings → Webhooks decides. See [webhooks](../webhooks.md#private-network-protection) |
+| `OPENTODO_CALDAV` | unset | `true` presets the CalDAV endpoint for calendar apps on first start; afterwards Settings → Calendar apps decides. See [caldav](../caldav.md) |
 
 ## Passkeys
 
