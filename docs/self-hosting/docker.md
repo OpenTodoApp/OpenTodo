@@ -95,6 +95,21 @@ The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, API tokens,
 - **Disk use** is roughly 200 bytes per event: a household produces a few MB per year; a public server under credential stuffing records one `rate_limited` event per address per minute rather than one per attempt.
 - **Export** the log as newline-delimited JSON from the same panel to archive it beyond the retention window.
 
+## Two-factor authentication
+
+Users turn on two-factor authentication in **Settings → Two-factor authentication**. The owner can require it for themselves or for every account there. Nothing needs configuring, but two things are worth knowing:
+
+- **Keep the host clock right.** Codes are checked against the server's own clock with 30 seconds of tolerance either way, so a host that drifts by a minute or more rejects valid codes. Docker uses the host's clock: make sure the host runs NTP (`timedatectl` should report `System clock synchronized: yes`; Raspberry Pi OS and every major distribution do this by default). The enrolment step catches large drift straight away with a "code does not match" message.
+- **Owner locked out.** If the owner loses both their authenticator and their recovery codes, reset the second factor from the host while the container is stopped, then sign in with the password and enrol again:
+
+  ```bash
+  docker compose stop opentodo
+  docker compose run --rm --no-deps opentodo mfa-reset owner@example.com
+  docker compose start opentodo
+  ```
+
+  The command works only on the data volume (shell access to the host is the proof of ownership), refuses to run while the server holds it, and is recorded as `mfa.reset` in the audit log. Members who are locked out are reset by the owner through `POST /api/v1/members/{id}/mfa/reset` ([docs/api.md](../api.md#two-factor-authentication)).
+
 ## Health
 
 `GET /healthz` returns `{"status":"ok","version":"..."}`. The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.

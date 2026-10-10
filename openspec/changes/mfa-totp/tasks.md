@@ -26,5 +26,5 @@
 
 ## 4. Docs and release
 
-- [ ] 4.1 `README.md` feature list, `docs/self-hosting/docker.md` note on NTP and the `mfa-reset` subcommand, CHANGELOG entry; verify links resolve and `make check` passes
+- [x] 4.1 `README.md` feature list, `docs/self-hosting/docker.md` note on NTP and the `mfa-reset` subcommand, CHANGELOG entry; verify links resolve and `make check` passes
 - [ ] 4.2 End-to-end run: enrol → sign out → two-step sign-in with remember → sign-in skips step → forget devices → recovery code sign-in → stale session token creation triggers re-authentication → owner sets policy to everyone → unenrolled member restricted → owner resets member; verify the run completes without console errors
