@@ -31,6 +31,20 @@ type Config struct {
 	// PushDisabled turns web push off (OPENTODO_PUSH=off): the /api/v1/push routes
 	// answer 404 and the reminder scheduler does not run. Push is on by default.
 	PushDisabled bool
+	// OIDC holds the optional OPENTODO_OIDC_* overrides of the single sign-on
+	// settings (OpenSpec `oidc-login`). Each set variable overrides the value from
+	// Settings and locks that field; nothing is required.
+	OIDC OIDCEnv
+}
+
+// OIDCEnv mirrors oidc.Env (converted by the HTTP layer) so this package stays
+// free of feature imports.
+type OIDCEnv struct {
+	Issuer       string
+	ClientID     string
+	ClientSecret string
+	DisplayName  string
+	SSOOnly      *bool
 }
 
 // Import file size bounds for OPENTODO_IMPORT_MAX_MB.
@@ -89,6 +103,24 @@ func Load() (Config, error) {
 		c.PushDisabled = true
 	default:
 		return c, fmt.Errorf("OPENTODO_PUSH must be on or off, got %q", os.Getenv("OPENTODO_PUSH"))
+	}
+	c.OIDC = OIDCEnv{
+		Issuer:       strings.TrimRight(strings.TrimSpace(os.Getenv("OPENTODO_OIDC_ISSUER")), "/"),
+		ClientID:     strings.TrimSpace(os.Getenv("OPENTODO_OIDC_CLIENT_ID")),
+		ClientSecret: strings.TrimSpace(os.Getenv("OPENTODO_OIDC_CLIENT_SECRET")),
+		DisplayName:  strings.TrimSpace(os.Getenv("OPENTODO_OIDC_DISPLAY_NAME")),
+	}
+	if c.OIDC.Issuer != "" {
+		if u, err := url.Parse(c.OIDC.Issuer); err != nil || u.Scheme != "https" || u.Host == "" {
+			return c, fmt.Errorf("OPENTODO_OIDC_ISSUER must be an https URL, got %q", c.OIDC.Issuer)
+		}
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_OIDC_SSO_ONLY")); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return c, fmt.Errorf("OPENTODO_OIDC_SSO_ONLY must be true or false, got %q", v)
+		}
+		c.OIDC.SSOOnly = &b
 	}
 	switch strings.ToLower(getenv("OPENTODO_LOG_LEVEL", "info")) {
 	case "debug":

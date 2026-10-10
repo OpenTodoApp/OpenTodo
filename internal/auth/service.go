@@ -61,6 +61,9 @@ type Service struct {
 	// is the time source of the second-factor code, replaceable by tests.
 	mfaChallenges *loginChallenges
 	clock         func() time.Time
+
+	// ssoOnly reports SSO-only mode (oidc.go); nil means never.
+	ssoOnly func(ctx context.Context) bool
 }
 
 // NewService wires a Service. It owns the audit recorder for the same database,
