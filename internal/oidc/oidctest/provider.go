@@ -20,7 +20,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/pixari/opentodo/internal/oidc"
@@ -66,8 +65,16 @@ type grant struct {
 	user                                    User
 }
 
+// TB is the part of testing.TB the provider needs, so a manual smoke run can
+// start it outside a test too.
+type TB interface {
+	Helper()
+	Fatal(args ...any)
+	Cleanup(func())
+}
+
 // New starts a provider; it is closed with the test.
-func New(t testing.TB) *Provider {
+func New(t TB) *Provider {
 	t.Helper()
 	p := &Provider{ClientID: "opentodo", ClientSecret: "s3cret-value-1234", alg: "RS256", codes: map[string]grant{},
 		user: User{Subject: "user-1", Email: "member@example.com", EmailVerified: true, Name: "Member"}}
