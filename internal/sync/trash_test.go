@@ -300,3 +300,32 @@ func seedUsers(t *testing.T, s *Service, ids ...string) {
 		}
 	}
 }
+
+func TestRetentionPurgesOldTombstones(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
+	s.now = func() time.Time { return now }
+	old := now.Add(-31 * 24 * time.Hour).UnixMilli()
+	fresh := now.UnixMilli() - 1000
+	mustApply(t, s, "u1",
+		op("1", "project", "P", "deleted_at", jsonNum(old), old, "A"),
+		op("2", "task", "InP", "project_id", `"P"`, old, "A"),
+		op("3", "task", "Fresh", "deleted_at", jsonNum(fresh), fresh, "A"),
+	)
+	// Disabled retention purges nothing.
+	if res, err := s.RetentionPass(ctx, 0); err != nil || res.Tasks+res.Projects != 0 {
+		t.Fatalf("disabled pass = %+v %v", res, err)
+	}
+	res, err := s.RetentionPass(ctx, 30)
+	if err != nil || res.Projects != 1 || res.Tasks != 1 {
+		t.Fatalf("default pass = %+v %v", res, err)
+	}
+	r, err := s.PullAll(ctx, "u1", 0, "B", 0)
+	if err != nil || len(r.Purged) != 2 {
+		t.Fatalf("devices not told: %+v %v", r.Purged, err)
+	}
+	if e, _ := s.Get(ctx, "u1", "task", "Fresh"); e == nil {
+		t.Fatal("fresh tombstone purged")
+	}
+}
