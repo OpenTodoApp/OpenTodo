@@ -2,7 +2,7 @@
 
 ## 1. Storage and settings
 
-- [ ] 1.1 Migration adding `settings(key, value, updated_at)` and `backup_runs(...)`, plus a `generation` value created on first start; verify `TestMigrationAddsSettingsAndGeneration` on a v1 database (`go test ./...`)
+- [x] 1.1 Migration adding `settings(key, value, updated_at)` and `backup_runs(...)`, plus a `generation` value created on first start; verify `TestMigrationAddsSettingsAndGeneration` on a v1 database (`go test ./...`)
 - [ ] 1.2 `internal/settings`: typed get/set for JSON settings with owner-only semantics; secrets file `<data>/secrets/backup.json` created `0600`, read/write helpers, presence flags; verify `TestSecretsFileModeAndNeverSerialised` (`go test ./...`)
 - [ ] 1.3 `internal/config`: optional `OPENTODO_BACKUP_*` presets (destination, schedule, retention, credentials) applied once when no settings exist; verify `TestBackupPresetsSeedOnce` and that invalid values stop startup naming the variable (`go test ./...`)
 
