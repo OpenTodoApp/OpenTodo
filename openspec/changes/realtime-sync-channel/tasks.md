@@ -2,11 +2,11 @@
 
 ## 1. Server: notifier and stream endpoint
 
-- [ ] 1.1 Add `Notifier` to `internal/sync` (per-user subscriber set, device exclusion, non-blocking coalescing send, per-user cap of 16 with oldest eviction, unsubscribe on close); verify `go test ./...` passes new `TestNotifierExcludesOriginDevice`, `TestNotifierCoalescesSlowSubscriber`, `TestNotifierEvictsOldestOverCap`
-- [ ] 1.2 Call the notifier with the latest `seq` after every committed `Apply` in the sync handler and in the REST write-through; verify `go test ./...` passes `TestRestWriteWakesDevices` (a subscriber for the user receives an event after `POST /api/v1/tasks`)
-- [ ] 1.3 Add `GET /api/v1/sync/events` behind `requireAuth`: require `device` query parameter (400 `bad_request` when missing), SSE headers (`text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`), flush per write, `: ping` heartbeat every 25 s with session re-validation, cursor-only `ops` event payload, clean close on request cancel and server shutdown; verify `go test ./...` passes `TestEventsRequiresAuth` (401 envelope), `TestEventsRequiresDevice`, `TestEventsDeliversCursorOnlyPayload`, `TestEventsClosedOnShutdown`
-- [ ] 1.4 Confirm cross-user isolation at the HTTP level; verify `go test ./...` passes `TestEventsAreIsolatedPerUser` (user B's write produces no event on user A's stream)
-- [ ] 1.5 Document the route in `docs/api.md` and the channel in `docs/sync.md` ("Live updates" section: payload, heartbeat, exclusion, fallback); verify the examples match the handler's route, query parameter and event format
+- [x] 1.1 Add `Notifier` to `internal/sync` (per-user subscriber set, device exclusion, non-blocking coalescing send, per-user cap of 16 with oldest eviction, unsubscribe on close); verify `go test ./...` passes new `TestNotifierExcludesOriginDevice`, `TestNotifierCoalescesSlowSubscriber`, `TestNotifierEvictsOldestOverCap`
+- [x] 1.2 Call the notifier with the latest `seq` after every committed `Apply` in the sync handler and in the REST write-through; verify `go test ./...` passes `TestRestWriteWakesDevices` (a subscriber for the user receives an event after `POST /api/v1/tasks`)
+- [x] 1.3 Add `GET /api/v1/sync/events` behind `requireAuth`: require `device` query parameter (400 `bad_request` when missing), SSE headers (`text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`), flush per write, `: ping` heartbeat every 25 s with session re-validation, cursor-only `ops` event payload, clean close on request cancel and server shutdown; verify `go test ./...` passes `TestEventsRequiresAuth` (401 envelope), `TestEventsRequiresDevice`, `TestEventsDeliversCursorOnlyPayload`, `TestEventsClosedOnShutdown`
+- [x] 1.4 Confirm cross-user isolation at the HTTP level; verify `go test ./...` passes `TestEventsAreIsolatedPerUser` (user B's write produces no event on user A's stream)
+- [x] 1.5 Document the route in `docs/api.md` and the channel in `docs/sync.md` ("Live updates" section: payload, heartbeat, exclusion, fallback); verify the examples match the handler's route, query parameter and event format
 
 ## 2. Client: channel lifecycle and fallback
 

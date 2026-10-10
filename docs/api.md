@@ -38,6 +38,7 @@ export TOKEN=ot_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete → 204 |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects |
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md` |
+| GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
 | GET | `/api/v1/export` | yes | full JSON export, including deleted items |
 
 ### Task fields
@@ -86,9 +87,21 @@ Export everything:
 curl -sS "$OT/api/v1/export" -H "Authorization: Bearer $TOKEN" -o opentodo-export.json
 ```
 
+Follow live updates (the response is a `text/event-stream` that stays open; `-N` disables curl's buffering):
+
+```bash
+curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $TOKEN"
+# : connected
+# event: ops
+# data: {"cursor":158}
+# : ping
+```
+
+`device` is required (400 `bad_request` without it) and names the subscriber; operations pushed by that same device id through `POST /sync` do not wake it. Each `ops` event carries only the user's latest cursor; fetch the changes with a sync exchange or the REST reads.
+
 ## Behaviour notes
 
-- Every write through this API is recorded in the operation log with server time, so connected devices see it on their next sync (within 30 s, or immediately when they next edit or regain focus).
+- Every write through this API is recorded in the operation log with server time. Connected devices are woken over the event stream and sync within a second or two; devices without a live stream pick the change up on their next poll (within 30 s), or immediately when they next edit or regain focus.
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
 - Rate limits apply to `auth/login` and `auth/register` (10 per minute per IP).
