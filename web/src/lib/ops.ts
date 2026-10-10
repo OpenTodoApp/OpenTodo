@@ -8,7 +8,7 @@ import { relativeFireAt } from './reminderTime'
 import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
-import { ENTITIES, type Clock, type Comment, type Entity, type Label, type Op, type Project, type Reminder, type Section, type Task, type View } from './types'
+import { ENTITIES, type Clock, type Comment, type Entity, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Section, type Task, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 
 let devicePromise: Promise<string> | null = null
@@ -43,6 +43,7 @@ function tableFor(entity: Entity) {
     case 'reminder': return db.reminders
     case 'section': return db.sections
     case 'comment': return db.comments
+    case 'project_prefs': return db.prefs
     default: return db.tasks
   }
 }
@@ -73,9 +74,11 @@ const SECTION_DEFAULTS: Omit<Section, 'id' | '_clock'> = {
 const COMMENT_DEFAULTS: Omit<Comment, 'id' | '_clock'> = {
   task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null,
 }
+/** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
+const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0 }
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
-  comment: COMMENT_DEFAULTS,
+  comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS,
 }
 
 /**
@@ -110,7 +113,7 @@ export async function applyOps(ops: Op[], opts: { actor?: string } = {}): Promis
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
       const table = tableFor(entity)
-      const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder | Section | Comment) | undefined
+      const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder | Section | Comment | ProjectPrefs) | undefined
       const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing

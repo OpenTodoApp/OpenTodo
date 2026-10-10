@@ -188,7 +188,18 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
   if (list.length === 0) return
   await db.transaction('rw', [...entityTables(), db.outbox, db.meta], async () => {
     const gone = new Map<string, Entity>()
-    for (const p of list) gone.set(p.entityId, p.entity)
+    // project_prefs share their project's id (activity-feed): they go with a purged
+    // project and are tracked apart so they never shadow the project in `gone`.
+    const prefs = new Set<string>()
+    for (const p of list) {
+      if (p.entity === 'project_prefs' || p.entity === 'project') prefs.add(p.entityId)
+      if (p.entity !== 'project_prefs') gone.set(p.entityId, p.entity)
+    }
+    if (prefs.size) {
+      await db.prefs.bulkDelete([...prefs])
+      const queuedPrefs = await db.outbox.filter((o) => o.entity === 'project_prefs' && prefs.has(o.entityId)).primaryKeys()
+      await db.outbox.bulkDelete(queuedPrefs as number[])
+    }
     if (cascade) {
       const tasks = await db.tasks.toArray()
       const taskIds = new Set<string>()
