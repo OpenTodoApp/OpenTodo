@@ -15,13 +15,12 @@ An open-source, local-first task manager you can host yourself. Everything you e
 </p>
 
 <p align="center">
-  <a href="docs/self-hosting/coolify.md">Deploy on Coolify</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="docs/self-hosting/coolify.md">Coolify</a> ·
   <a href="docs/self-hosting/docker.md">Docker</a> ·
+  <a href="docs/README.md">Documentation</a> ·
   <a href="docs/api.md">API</a> ·
-  <a href="docs/cli.md">CLI</a> ·
-  <a href="docs/quick-add.md">Quick add syntax</a> ·
-  <a href="docs/filters.md">Filters</a> ·
-  <a href="docs/capture.md">Capture</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -44,79 +43,94 @@ An open-source, local-first task manager you can host yourself. Everything you e
 ## Why OpenTodo
 
 - **No subscription, no lock-in.** Free software under the AGPL. Nobody can paywall your task list or shut it down with the company.
-- **Local-first.** The app keeps a full copy of your data on every device and works entirely offline. The server only syncs, backs up and shares.
-- **Your data, one folder.** Everything lives in a single `/data` volume: one SQLite file. Back that up and you have backed up everything. Export to JSON any time from Settings, and import it (or a CSV, or another app's export) on any instance.
-- **Tiny footprint.** One container, one static binary, around 12 MB. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no build step at runtime.
-- **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts. The server only sends requests to webhook URLs you configure yourself, to the single sign-on provider you configure (if any) and, for devices that enable notifications, end-to-end encrypted pushes to the push service their own browser chose (`OPENTODO_PUSH=off` turns that off). Sign-up is closed by default after the owner account is created; add people with single-use invitation links from **Settings → Members**.
-- **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today. Press `?` in the app for the full list. Optional Vim keybindings (**Settings → Keyboard**) add modes, counts, `gg`/`G`, `dd` and a `:` command line.
-- **Built in the open with specs.** Every feature starts as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change under [`openspec/`](openspec/), so behavior is documented before it is built.
-
-OpenTodo belongs to the growing family of open-source, self-hostable replacements for subscription apps: a polished, modern app that gives you the comfort of a commercial product with software you run yourself.
+- **Local-first.** Every device keeps a full copy of your data and works entirely offline. The server syncs, backs up and shares; it is never in the way of an edit.
+- **Your data, one folder.** Everything lives in one `/data` volume around a single SQLite file. Export to JSON at any time, import it (or a CSV, or another app's export) on any instance, and schedule encrypted backups to disk, S3 or WebDAV.
+- **Tiny footprint.** One container, one static binary of about 16 MB with the web app inside, around 20 MB of memory when idle. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no mandatory configuration.
+- **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts or fonts. The server only contacts what you configure (see [Privacy](#privacy)).
+- **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today, `?` for the full list, and optional Vim keybindings.
+- **Built in the open with specs.** Every feature starts as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change under [`openspec/`](openspec/), so behaviour is documented before it is built.
 
 ## Features
 
-**Today** (v0.1, the walking skeleton)
+### Capture
 
-| Area | What works |
-| --- | --- |
-| Capture | Quick-add from any view, keyboard shortcut `q`; new tasks in Today get today's date, in a project get that project. Natural language in six languages, offline: `Call Sarah next Wed 3pm #work @call p1 +30m` sets the date, time, project, label, priority and estimate, with dismissible preview chips; see [docs/quick-add.md](docs/quick-add.md) |
-| Voice capture | Opt-in per device: dictate into quick add with the microphone button or `Shift+V`; spoken words become quick-add text ("hashtag home priority two" → `#home p2`) and nothing is saved until Enter. Uses the browser's speech recognition (on-device when offered); OpenTodo's server never receives audio or transcripts. See [docs/quick-add.md](docs/quick-add.md#voice) |
-| Share capture | Send pages to OpenTodo from the phone or desktop share sheet (installed app), a bookmarklet in Settings → Capture, or the browser extension in `extension/` (Chromium and Firefox): a capture screen prefilled with title, selected text and link, Enter to save into the Inbox or a project. Works offline, holds no token, see [docs/capture.md](docs/capture.md) |
-| Organise | Projects with colours, Inbox, Today, Upcoming (grouped by day), Completed |
-| Sharing | Share a project with other accounts on your server as viewer, editor or admin (`Shift+S` in a project): members edit offline and converge like your own devices, viewers see it read-only, admins and the owner manage members, ownership can be transferred, and leaving or being removed takes the project off every device. Roles are enforced by the server on sync and REST. See [docs/api.md](docs/api.md#sharing) and [docs/sync.md](docs/sync.md#sharing-scopes) |
-| Sections and board | Split a project into sections (headings with counts, quick add, collapse, rename, reorder, delete) and switch it to a Kanban board with `v` (remembered per project on each device). Move tasks between columns by drag and drop (mouse or touch), `Shift+←/→`, or the section picker; all offline and convergent. `/api/v1/sections` and the export include sections. See [docs/api.md](docs/api.md#sections) |
-| Assignees | Assign a task in a shared project to one member (detail panel or `Shift+A`, works offline); rows show the assignee, **Assigned to me** (`g a`) lists your open tasks across projects with a sidebar count, and the assignee gets an in-app notification. The server checks every assignment against the project's members and unassigns people who leave. See [docs/api.md](docs/api.md#assignment-and-notifications) |
-| Labels | Cross-project labels with colours: `L` on a task opens a type-ahead picker that creates on Enter, chips on every row, a Labels group in the sidebar with live counts, one view per label grouped by project, rename / recolour / reorder / delete / merge duplicates |
-| Filters | One-line queries such as `@work & due <= tomorrow & p1`: labels, projects (`##` includes sub-projects), priority, due and created dates, keywords like `overdue` or `no date`, text search, combined with `&`, `\|`, `!` and parentheses. Evaluated on the device, so results are live and work offline; `g` `f` opens the view, ↑ / ↓ recall recent queries. See [docs/filters.md](docs/filters.md) |
-| Manual ordering | Drag tasks into place in project lists, board columns and the Inbox (mouse, or press and hold on touch; a 2 px indicator shows where it lands, the middle of a row nests it as a subtask, `Esc` cancels), and drag sidebar projects among siblings or into another project. From the keyboard: `Alt+↑/↓` one place, `Alt+Shift+↑/↓` to the top or bottom. A move is one op (fractional positions, rare local renumbering), works offline, and every device converges to the same order. Date-sorted views keep their sort |
-| Vim keybindings | Opt-in per device (**Settings → Keyboard**, off by default; the code is only downloaded when on). Normal, Insert and Command modes with an indicator at the bottom; a focused text field is Insert mode and `Esc` returns to Normal while keeping the text. Counts (`3j`, `4G`), `gg` / `G`, `dd` delete, `x` complete, `o` add after the selection, `i` edit the title, `J` / `K` move the task. `:` commands with Tab completion: `:inbox`, `:today`, `:upcoming`, `:completed`, `:settings`, `:project <name>`, `:new <title>`, `:q`, `:sync`, `:help`. Every default shortcut keeps working; edits are ordinary ops, so they work offline. `?` lists the Vim keys while it is on |
-| Saved views | Save a filter with `s` as a named view that syncs: pinned to the sidebar with live counts, grouping (project, due date, priority, label) and sort options, editable query, `g` `v` overview, a start view per device, and dashboards of up to six views side by side. REST `/api/v1/views`. See [docs/filters.md](docs/filters.md#saving-views) |
-| Sub-projects | Nest projects to any depth; collapsible sidebar tree (Left / Right, remembered per device) with rolled-up counts; "Move to" from the project menu or `m`; a project view lists its sub-projects; archiving cascades, deleting moves sub-projects up a level; concurrent moves on two devices never leave a project nested inside itself |
-| Tasks | Title, notes, project, priority P1–P4, floating due date with optional time, complete / reopen, delete |
-| Rich-text notes | Notes with headings, **bold**, _italic_, ~~strike~~, `code`, links, bullet, numbered and check lists; keyboard shortcuts for everything (`Ctrl+B`, `Ctrl+Shift+9` for a check list, `Ctrl+Enter` to tick…) and Markdown typing (`- `, `1. `, `# `, `[ ] `, `**bold**`). Edits from several devices or people **merge character by character**, offline too, instead of one overwriting the other. Scripts, CalDAV, MCP and the export keep reading the note as Markdown text in `description`. The editor is downloaded only when a note is first opened |
-| Trash and history | Deleted tasks and projects go to the **Trash** (`g` `x`) and can be restored, offline too; a deleted project keeps its tasks and brings them back on restore. Every task and project has a **History** of its changes from the sync log (which device, when, old and new value) with "restore this value". Permanent deletion really removes the data from the server, for one item or the whole Trash, and devices drop their copy on the next sync; the server empties items older than 30 days (`OPENTODO_TRASH_RETENTION_DAYS`). Projects whose tasks are all done are offered for archiving and archived automatically after 30 days (opt out per device). See [docs/sync.md](docs/sync.md#purge) |
-| Comments and activity | Threaded **markdown comments** on every task, offline too: reply, edit (marked "edited"), delete (a placeholder keeps the thread), `@mention` project members, who get an in-app notification. Viewers of a shared project can comment; only the author edits, the author and project admins delete. An **activity log** from the sync history ("Bob completed", "Carol moved the due date to Friday", "Alice commented") sits between the comments in the task panel and per project with person and kind filters (`Shift+H`); it works offline and loads older history on demand. Task rows show a comment count. See [docs/sync.md](docs/sync.md#comments) |
-| Activity feed | One **Activity** view (`g h`) for every shared project you belong to: who completed, created, commented, assigned or rescheduled what, newest first, grouped by day, with project, person and kind filters and `j`/`k`/Enter to open a task. The sidebar shows **unread counts** per shared project and in total; your own changes never count. Opening the feed or a project's activity marks it seen, and that mark syncs to your other devices only (never to other members). Works offline, updates live over the sync channel, loads older history on demand. See [docs/sync.md](docs/sync.md#project-preferences-and-the-activity-feed) |
-| Time blocking | Duration estimates (`e` on a task: `20`, `45m`, `1h30`, or presets) shown on every row, and **Day** / **Week** calendars (`g` `d`, `g` `w`) with a 15-minute grid: a task with a due time is a block as long as its estimate, date-only tasks wait in the day's unscheduled lane, overlapping blocks sit side by side, each day shows planned hours against your day length. Drag from the lane, the task list beside the grid or the grid itself; drag a block's lower edge to change the estimate; or do all of it from the keyboard (`s` on a list task opens placement mode, arrows move, Shift+arrows resize). Duration filter chips (Quick wins, Under 30 min, Over 1 h, Unestimated) in Inbox, Today, Upcoming and projects. Works offline; moves converge like any other edit |
-| Recurring tasks | Rules you type and read: `every weekday`, `every last weekday`, `every 2nd tuesday`, `every 3 days after completion`, optionally `until 2026-12-31` or `for 10 times`. Completing records the occurrence in Completed and moves the task to its next date (overdue tasks catch up instead of piling up); skip (`Shift+S`) or detach one occurrence (`Shift+O`); a live preview of the next three dates. Two devices completing the same occurrence offline end with one entry. See [docs/recurrence.md](docs/recurrence.md) |
-| Reminders | Any number per task: "30 minutes before" (follows the due date, also to the next occurrence of a recurring task) or at a set date and time, on undated tasks too. In-app notifications with Snooze (10 min, 1 h, tomorrow 09:00) and Dismiss that work offline; per-device web push in **Settings → Notifications** so a closed app still notifies, with no vendor account and no configuration (payloads carry ids only unless you opt in to titles). See [docs/reminders.md](docs/reminders.md) |
-| Time zones | Dates are floating by default (the same day and time everywhere); a timed task can be **fixed to a time zone** (detail panel toggle or `z`) for meetings and flights, and is then shown converted to each device's zone with the original time as a hint (`00:00 (09:00 Berlin)`), across daylight-saving changes. See [Floating vs fixed times](#floating-vs-fixed-times) |
-| Subtasks | Nest tasks to any depth; parents show `done/total` progress; completing or deleting a parent cascades; `a` adds a subtask, Tab / Shift+Tab indent and outdent, Left / Right collapse and expand; concurrent moves on two devices never leave a task nested inside itself |
-| Offline | Every change is applied locally first and queued; the app loads and works with no network. Installable PWA |
-| Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs. Live push: a change on one device shows up on the others within a second or two, with polling as the fallback |
-| Accounts | First-run owner setup, email + password sign-in, sessions, optional open sign-up. **Settings → Users** for the owner and admins: roles (owner, admin, member), last sign-in, deactivate and reactivate, single-use password reset links you copy and send yourself, delete with email confirmation, owner transfer; every user changes their own password in Settings. Owner forgot the password: `opentodo reset-owner-password` on the host |
-| Audit log | Owner-visible record of sign-ins, failed sign-ins, tokens, invitations, exports and setting changes, with filters, NDJSON export and retention (90 days by default); every user sees their own recent sign-in activity. Never contains task content; client addresses only if the owner opts in |
-| End-to-end encryption | Optional per account (**Settings → End-to-end encryption**): titles, descriptions, project, label, section and view names and your comments are encrypted on your devices (Web Crypto, AES-256-GCM, passphrase + recovery key), so the server, backups and integrations hold only ciphertext; sync, offline use and merging work unchanged. New devices unlock with the passphrase; dates, priorities and structure stay visible to the server, shared projects are not encrypted, CalDAV is unavailable. Threat model: [docs/e2ee.md](docs/e2ee.md) |
-| Two-factor authentication | Optional six-digit codes from any authenticator app (TOTP). The QR code is drawn in the browser and the server checks codes with its own clock, so nothing leaves your server. Includes ten single-use recovery codes, "remember this device" for 30 days, an owner policy that can require it for the owner or for everyone, and a password or code prompt before sensitive changes such as new API tokens. API tokens are never asked for a code. Lost access: the owner resets a member, or runs `opentodo mfa-reset <email>` on the host |
-| Single sign-on | Sign in with the identity provider you already run (Authentik, Keycloak, Authelia, Zitadel, any OpenID Connect provider): configured by the owner in **Settings → Single sign-on** or with optional `OPENTODO_OIDC_*` variables, existing accounts linked by verified email, optional new accounts on first sign-in, link and unlink in Settings, an "SSO only" mode that keeps the owner's password as break-glass, optional sign-out at the provider. Standard library only, off until configured. See [docs/self-hosting/sso.md](docs/self-hosting/sso.md) |
-| Passkeys | Sign in without a password using your device's fingerprint, face or PIN (WebAuthn), including browser autofill; several named passkeys per account, managed in Settings → Security; needs an https `OPENTODO_BASE_URL`. The password keeps working as a fallback |
-| API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
-| Backups | Scheduled, consistent backups of the whole server to a folder, S3-compatible storage or WebDAV, with retention, optional encryption (AES-256-GCM, argon2id) and `opentodo restore`; devices re-sync their newer edits after a restore. Owner only, in **Settings → Backups**. See [docs/backups.md](docs/backups.md) |
-| AI assistants (MCP) | Read-only [Model Context Protocol](docs/mcp.md) endpoint so an assistant can answer "what is on my plate today?": off until the owner enables it, read-scoped API tokens, five tools and `opentodo://` resources, sees only the token owner's own and shared projects, never contacts anything itself |
-| Calendar apps | Two-way CalDAV sync with Apple Reminders, Thunderbird and Android tasks apps via DAVx⁵: projects are lists, the Inbox is a list, edits from either side converge field by field through the op log. Off until the owner enables it; per-device app passwords; alarms and other client properties survive round trips. See [docs/caldav.md](docs/caldav.md) |
-| Email to task | Forward any email to your secret address (`todo+…@example.com`) and it becomes an Inbox task: subject as title, text as description, attachment names listed. Optional: the operator points OpenTodo at one IMAP mailbox with plus addressing; no mail server, port or DNS change. Rotate, switch off or limit senders in Settings. See [docs/email.md](docs/email.md) |
-| Webhooks | Signed outbound webhooks on task and project events for Home Assistant, n8n or a Telegram relay: retries with backoff, delivery log, test ping, private-network protection, see [docs/webhooks.md](docs/webhooks.md) |
-| Import | **Settings → Import data** (`g` `Shift+I`): the app's own JSON export (exact round trip between instances), CSV with documented columns, and JSON exports of other task managers; a preview before anything is written, duplicate detection, per-row errors, undo of a whole import. See [docs/import.md](docs/import.md) |
-| CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
-| Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
+- **Quick add from anywhere** (`q`), with the view's context as defaults: today in Today, the current project in a project.
+- **Natural language in six languages, offline**: `Call Sarah next Wed 3pm #work @call p1 +30m` sets the date, time, project, label, priority and estimate, with dismissible preview chips. English, German, French, Italian, Spanish and Portuguese. [Syntax](docs/quick-add.md)
+- **Voice capture** (opt-in per device): dictate into quick add with the microphone button or `Shift+V`; "hashtag home priority two" becomes `#home p2`. Uses the browser's own speech recognition; the server never receives audio. [Voice](docs/quick-add.md#voice)
+- **Share sheet, bookmarklet and browser extension**: send a page from the phone's share menu, any desktop browser or the Chromium/Firefox extension in [`extension/`](extension/) to a prefilled capture screen. Works offline, holds no token. [Capture](docs/capture.md)
+- **Email to task**: forward a mail to your secret address (`todo+…@example.com`) and it lands in the Inbox. Optional; the operator points OpenTodo at one IMAP mailbox. [Email](docs/email.md)
+- **Command line**: `ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts. [CLI](docs/cli.md)
+
+### Organisation and views
+
+- **Inbox, Today, Upcoming, Completed** and projects with colours, nested to any depth, with rolled-up counts.
+- **Subtasks** to any depth with `done/total` progress; Tab and Shift+Tab indent and outdent.
+- **Sections and Kanban board** per project (`v` toggles list and board), drag and drop on mouse and touch, or `Shift+←/→`.
+- **Manual ordering** by drag and drop or `Alt+↑/↓`, convergent across devices.
+- **Labels** across projects with colours, a type-ahead picker (`L`), per-label views and merging of duplicates.
+- **Filters**: one-line queries such as `@work & due <= tomorrow & p1`, evaluated on the device, live and offline. [Filters](docs/filters.md)
+- **Saved views and dashboards**: pin a filter to the sidebar with live counts, choose grouping and sort, combine up to six views on one dashboard. [Saving views](docs/filters.md#saving-views)
+- **Rich-text notes** with headings, lists, check lists, links and Markdown shortcuts; edits from several devices or people merge character by character, offline too. Scripts and integrations keep reading the note as Markdown.
+- **Trash and history**: restore deleted tasks and projects, browse each item's change history with "restore this value", empty the Trash for good; old items are purged after 30 days. Projects whose tasks are all done are archived automatically. [Purge](docs/sync.md#purge)
+- **Vim keybindings** (opt-in per device): modes, counts, `gg`/`G`, `dd` and a `:` command line.
+
+### Time
+
+- **Floating due dates with optional time**, the same day and time wherever you are; a timed task can be **fixed to a time zone** (`z`) for meetings and flights. See [Floating vs fixed times](#floating-vs-fixed-times).
+- **Recurring tasks** with rules you can read: `every weekday`, `every last weekday`, `every 3 days after completion`, `until 2026-12-31`, `for 10 times`; skip or detach one occurrence. [Recurrence](docs/recurrence.md)
+- **Reminders**: any number per task, relative to the due time or at a fixed moment, with snooze and dismiss. In the app offline, and as **web push** to devices that opt in, with no vendor account. [Reminders](docs/reminders.md)
+- **Time blocking**: duration estimates (`e`), Day and Week calendars (`g d`, `g w`) with a 15-minute grid, drag to schedule or resize, planned hours against your day length, full keyboard control.
+
+### Collaboration
+
+- **Shared projects** with the accounts on your server as viewer, editor or admin (`Shift+S`); members edit offline and converge like your own devices; roles are enforced by the server. [Sharing](docs/api.md#sharing)
+- **Assignees** (`Shift+A`), an **Assigned to me** view and in-app notifications. [Assignment](docs/api.md#assignment-and-notifications)
+- **Threaded Markdown comments** with `@mentions`, and a per-task and per-project **activity log** derived from the sync history. [Comments](docs/api.md#comments-and-activity)
+- **Activity feed** (`g h`) across every shared project, with unread counts that sync between your own devices only. [Activity feed](docs/api.md#activity-feed)
+- **Invitations and user administration**: single-use invitation links, admin and member roles, deactivation, reset links you send yourself, owner transfer. [Adding people](#adding-people)
+
+### Integrations and data
+
+- **REST API and API tokens** (full or read-only) that write through the same op log as the app. [API](docs/api.md)
+- **Calendar apps (CalDAV)**: two-way sync with Apple Reminders, Thunderbird and Android tasks apps via DAVx⁵, with per-device app passwords. Off until the owner enables it. [CalDAV](docs/caldav.md)
+- **AI assistants (MCP)**: a read-only Model Context Protocol endpoint so an assistant can answer "what is on my plate today?". Off until the owner enables it. [MCP](docs/mcp.md)
+- **Webhooks** on task and project events for Home Assistant, n8n or a Telegram relay: signed, retried, logged, with private-network protection. [Webhooks](docs/webhooks.md)
+- **Import** the app's own export, CSV or other task managers' JSON exports, with a preview, duplicate detection and undo. [Import](docs/import.md)
+- **Export** everything as JSON from Settings or `GET /api/v1/export`.
+- **Scheduled backups** of the whole server to a folder, S3-compatible storage or WebDAV, with retention, optional encryption and `opentodo restore`. [Backups](docs/backups.md)
+
+### Security and privacy
+
+- **Closed sign-up by default** after the owner account is created; argon2id passwords, `HttpOnly` sessions, strict origin checks, CSP, rate limits.
+- **Passkeys** (WebAuthn) with browser autofill; needs an https `OPENTODO_BASE_URL`.
+- **Two-factor authentication** (TOTP) with recovery codes, "remember this device", an owner policy to require it, and step-up confirmation before sensitive changes.
+- **Single sign-on** with your own OpenID Connect provider (Authentik, Keycloak, Authelia, Zitadel…), including an SSO-only mode with owner break-glass. [SSO](docs/self-hosting/sso.md)
+- **Audit log** of sign-ins, credentials, invitations, exports and setting changes; never task content, client addresses only if the owner opts in. [What is logged](SECURITY.md#what-is-logged)
+- **Optional end-to-end encryption** per account: titles, notes, names and comments are encrypted on your devices, so the server, backups and integrations hold only ciphertext. [Threat model](docs/e2ee.md)
+
+### Everywhere
+
+- **Offline and installable**: every change is applied locally first and queued; the app loads and works with no network.
+- **Live sync**: field-level, conflict-free sync across devices with no "pick a version" dialogs; a change shows up on your other devices within a second or two, with polling as the fallback. [Sync protocol](docs/sync.md)
 
 ### Floating vs fixed times
 
 A due date such as "pay rent on the 1st" or "call mum Sunday 18:00" is **floating**: it means that calendar day and clock time wherever you are, so it never moves when you travel. That is the default for every task.
 
-Some times are instants: a stand-up at 09:00 Berlin time, a flight that departs at 14:35 in Lisbon. Open the task, set a time and tick **Fixed to time zone** (or press `z` with the task panel open): the time is pinned to your current zone. A teammate or your own laptop in Los Angeles then sees the stand-up at 00:00, with `09:00 Berlin` as a hint, and Today, Upcoming, sorting, filters, reminders and the calendar all use the converted time. Untick it to release the task to a floating time at what you currently see. Fixed times follow daylight-saving rules (a time skipped by the clock change moves to the first valid minute after it). The API takes the same shape: `"due":{"date":"2026-10-11","time":"09:00","tz":"Europe/Berlin"}`.
-
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): assignees and comments, CalDAV, OIDC.
+Some times are instants: a stand-up at 09:00 Berlin time, a flight that departs at 14:35 in Lisbon. Open the task, set a time and tick **Fixed to time zone** (or press `z`): the time is pinned to your current zone. A device in Los Angeles then shows the stand-up at 00:00 with `09:00 Berlin` as a hint, and Today, Upcoming, sorting, filters, reminders and the calendar all use the converted time, across daylight-saving changes. The API takes the same shape: `"due":{"date":"2026-10-11","time":"09:00","tz":"Europe/Berlin"}`.
 
 ## Quick start
 
-### Coolify (recommended)
+No environment variable is required. Open the app, create the owner account, and you are done; everything else is optional.
 
-1. In Coolify: **New Resource → Docker Compose → Public Repository**, URL `https://github.com/pixari/opentodo`.
-2. Coolify picks up `docker-compose.yml`, assigns a domain to the `opentodo` service and provisions HTTPS.
-3. Deploy, open the domain, create the owner account.
+### Docker
 
-No environment variables are required. Details, including building from source and persistent storage, are in [docs/self-hosting/coolify.md](docs/self-hosting/coolify.md).
+```bash
+docker run -d --name opentodo -p 8080:8080 -v opentodo-data:/data \
+  ghcr.io/pixari/opentodo:latest
+```
+
+Open <http://localhost:8080> and create the owner account. Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
 
 ### Docker Compose
 
@@ -127,7 +141,15 @@ cp .env.example .env          # optional, every value has a default
 docker compose up -d
 ```
 
-Open <http://localhost:8080> and create the owner account. Data is kept in the `opentodo-data` volume.
+Data is kept in the `opentodo-data` volume.
+
+### Coolify
+
+1. **New Resource → Public Repository**, URL `https://github.com/pixari/opentodo`, build pack **Docker Compose**.
+2. Assign a domain to the `opentodo` service; Coolify provisions HTTPS and passes the URL to the app.
+3. Deploy, open the domain, create the owner account.
+
+Details, including building from your fork: [docs/self-hosting/coolify.md](docs/self-hosting/coolify.md).
 
 ### Single binary
 
@@ -136,9 +158,11 @@ make build                    # needs Go 1.26+ and Node 22+
 ./bin/opentodo                # serves on :8080, data in ./data
 ```
 
-### Command line
+The binary is fully static (`CGO_ENABLED=0`, pure-Go SQLite) and also offers `opentodo restore`, `opentodo mfa-reset`, `opentodo reset-owner-password`, `opentodo healthcheck` and `opentodo version`.
 
-`ot` talks to any OpenTodo server over the REST API with a token it creates for you at login. It is a separate static binary (release assets for Linux, macOS and Windows, or `go install github.com/pixari/opentodo/cmd/ot@latest`) and is not part of the container image.
+### Command line client
+
+`ot` talks to any OpenTodo server over the REST API with a token it creates at login. It is a separate static binary (release assets for Linux, macOS and Windows, or `go install github.com/pixari/opentodo/cmd/ot@latest`) and is not part of the container image.
 
 ```bash
 ot login https://todo.example.com
@@ -148,32 +172,38 @@ ot done 8c2a                  # full id or unique prefix
 ot list --json | jq '.[].title'
 ```
 
-Stable `--json` output and exit codes make it usable from cron and scripts. Full reference: [docs/cli.md](docs/cli.md).
+Full reference: [docs/cli.md](docs/cli.md).
 
 ## Configuration
 
-All settings are environment variables with safe defaults. See [`.env.example`](.env.example).
+Every setting is an optional environment variable with a safe default; an invalid value stops startup with a message naming the variable. The container image sets `OPENTODO_ADDR=:8080` and `OPENTODO_DATA_DIR=/data`. See [`.env.example`](.env.example) for a commented template.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `OPENTODO_ADDR` | `:8080` | Listen address |
-| `OPENTODO_DATA_DIR` | `/data` (image) / `./data` (binary) | Where the SQLite database lives |
-| `OPENTODO_BASE_URL` | inferred | Public URL; enables the `Secure` cookie flag and strict origin checks behind a proxy; passkeys are offered only when it is https |
+| `OPENTODO_DATA_DIR` | `./data` (binary), `/data` (image) | Directory for the SQLite database, secrets, the VAPID key and local backups |
+| `OPENTODO_BASE_URL` | unset (inferred from requests) | Public URL. With https: `Secure` cookies, passkeys and web push; also used for strict origin checks and in invitation, reset and CalDAV links |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner exists. Prefer [invitations](#adding-people) |
-| `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime |
-| `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
-| `OPENTODO_BACKUP_*` | unset | Optional presets for scheduled backups, applied once; Settings wins afterwards. See [docs/backups.md](docs/backups.md#environment-presets) |
-| `OPENTODO_IMPORT_MAX_MB` | `20` | Largest file accepted by [import](docs/import.md), 1–200 |
-| `OPENTODO_MCP` | unset | `true` presets the [AI assistants (MCP) endpoint](docs/mcp.md) on the first start; afterwards Settings → AI assistants decides. Off by default |
+| `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime in days |
+| `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
+| `OPENTODO_IMPORT_MAX_MB` | `20` | Largest [import](docs/import.md) file, 1–200 |
+| `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days a deleted task or project stays in the Trash before it is purged, 0–3650; `0` never purges automatically. See [Purge](docs/sync.md#purge) |
 | `OPENTODO_PUSH` | `on` | `off` disables web push for [reminders](docs/reminders.md): no requests to push services; reminders still show in the app |
-| `OPENTODO_CALDAV` | unset | `true` presets the CalDAV endpoint for [calendar apps](docs/caldav.md) on first start; afterwards Settings → Calendar apps decides. Off by default |
-| `OPENTODO_EMAIL_*` | unset | Optional [email to task](docs/email.md): `ADDRESS`, `IMAP_HOST`, `IMAP_USER` and `IMAP_PASSWORD` (or `IMAP_PASSWORD_FILE`) together turn it on; `IMAP_MAILBOX`, `POLL_SECONDS`, `PROCESSED` tune it. Off when unset |
-| `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days a deleted task or project stays in the Trash before the server purges it; `0` never purges automatically |
-| `OPENTODO_OIDC_*` | unset | Optional single sign-on settings (`ISSUER`, `CLIENT_ID`, `CLIENT_SECRET`, `DISPLAY_NAME`, `SSO_ONLY`) that override and lock the fields in Settings → Single sign-on. See [docs/self-hosting/sso.md](docs/self-hosting/sso.md) |
+| `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | `true`/`false` presets the owner's "allow private network targets" [webhook](docs/webhooks.md#private-network-protection) policy on first start; afterwards Settings decides |
+| `OPENTODO_MCP` | unset (off) | `true` presets the [AI assistants (MCP)](docs/mcp.md) endpoint on first start; afterwards Settings → AI assistants decides |
+| `OPENTODO_CALDAV` | unset (off) | `true` presets the [CalDAV](docs/caldav.md) endpoint on first start; afterwards Settings → Calendar apps decides |
+| `OPENTODO_OIDC_ISSUER`, `_CLIENT_ID`, `_CLIENT_SECRET`, `_DISPLAY_NAME`, `_SSO_ONLY` | unset | Optional [single sign-on](docs/self-hosting/sso.md) settings; each one set overrides and locks that field in Settings → Single sign-on. The issuer must be https |
+| `OPENTODO_EMAIL_ADDRESS`, `_IMAP_HOST`, `_IMAP_USER`, `_IMAP_PASSWORD` (or `_IMAP_PASSWORD_FILE`) | unset (off) | [Email to task](docs/email.md): all four together turn it on; setting only some stops startup |
+| `OPENTODO_EMAIL_IMAP_MAILBOX`, `_POLL_SECONDS`, `_PROCESSED` | `INBOX`, `60`, `move:OpenTodo/Processed` | Email to task tuning (minimum poll 15 s; `_PROCESSED` may be `delete`) |
+| `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](docs/backups.md#environment-presets) (`DESTINATION`, `SCHEDULE`, `TIME`, `WEEKDAY`, `KEEP`, `MAX_AGE_DAYS`, `COMPRESS`, `LOCAL_DIR`, `S3_*`, `WEBDAV_*`, `PASSPHRASE`/`PASSPHRASE_FILE`), applied once; Settings → Backups wins afterwards |
+
+`OPENTODO_PORT` in `.env` only changes the host port published by `docker-compose.yml`. The `ot` client reads its own variables (`OPENTODO_URL`, `OPENTODO_TOKEN`, `OPENTODO_PROFILE`, `OPENTODO_CONFIG`), see [docs/cli.md](docs/cli.md).
 
 ## Adding people
 
-Sign-up stays closed after the owner account exists. To add a partner or a colleague, open **Settings → Members**, optionally enter their email, pick an expiry (1 hour to 30 days, default 7 days) and create an invitation. Copy the link (it is shown once) and send it however you like; OpenTodo sends no email. The link creates exactly one `member` account and then stops working; you can revoke a pending link at any time. Admins can create invitations too. Manage accounts afterwards in **Settings → Users** ([docs/self-hosting/docker.md](docs/self-hosting/docker.md#managing-users)). Setting `OPENTODO_ALLOW_SIGNUP=true` instead opens registration to anyone who can reach the server. Set `OPENTODO_BASE_URL` so links point at your public URL. API details: [docs/api.md](docs/api.md#invitations).
+Sign-up stays closed after the owner account exists. To add a partner or a colleague, open **Settings → Members**, optionally enter their email, pick an expiry (1 hour to 30 days, default 7 days) and create an invitation. Copy the link (it is shown once) and send it however you like; OpenTodo sends no email. The link creates exactly one `member` account and then stops working; you can revoke a pending link at any time. Admins can create invitations too.
+
+Manage accounts afterwards in **Settings → Users**: promote admins, deactivate and reactivate, issue password reset links, delete accounts, transfer ownership ([docs/self-hosting/docker.md](docs/self-hosting/docker.md#managing-users)). If the owner forgets their password, `opentodo reset-owner-password` on the host prints a reset link. With single sign-on configured, people can also sign in through your identity provider. Set `OPENTODO_BASE_URL` so links point at your public URL. API details: [docs/api.md](docs/api.md#invitations).
 
 ## How it works
 
@@ -182,39 +212,52 @@ Sign-up stays closed after the owner account exists. To add a partner or a colle
 │ React PWA  ──►  IndexedDB (source of truth)              │      │ Go binary + SQLite             │
 │                 │ every edit = field ops {ts, device}    │ sync │  ops log (append-only)         │
 │                 └► outbox ──────────────────────────────►├─────►│  fields (last-writer-wins)     │
-│                 ◄─ ops from other devices ◄──────────────┤◄─────┤  REST API writes through ops   │
-└──────────────────────────────────────────────────────────┘      └────────────────────────────────┘
+│                 ◄─ ops from other devices ◄──────────────┤◄─────┤  REST, CalDAV, email, import   │
+└──────────────────────────────────────────────────────────┘      │  all write through ops         │
+                                                                  └────────────────────────────────┘
 ```
 
 - Every change is a small operation that sets one field of one entity, stamped with a hybrid logical clock and the device id.
-- Clients apply ops locally first, then push the outbox and pull what other devices wrote. The same per-field last-writer-wins rule runs on every replica, so all devices converge on the same state no matter the order ops arrive in.
-- Connected devices keep a lightweight server-sent event stream open; when the server records new ops it pokes the user's other devices (no data on the wire, only "sync now"), so changes propagate live. If the stream is unavailable the app polls as before.
-- The REST API writes through the same log, so a script that creates a task via `curl` shows up on your phone right away.
-- Deletes are tombstones, which keeps sync correct and makes an undo / trash feature possible later.
+- Clients apply ops locally first, then push the outbox and pull what other devices wrote. The same per-field last-writer-wins rule runs on every replica, so all devices converge no matter the order ops arrive in. Rich-text notes are mergeable documents, so concurrent edits to one note combine instead of replacing each other.
+- Each op belongs to a sharing scope (your personal data, or one shared project); the server checks the author's role when it receives an op.
+- Connected devices keep a lightweight server-sent event stream open; when the server records new ops it tells the other devices "sync now" (no data on the wire). If the stream is unavailable the app polls.
+- The REST API, CalDAV, email capture and imports write through the same log, so a task created with `curl` shows up on your phone right away.
+- Deletes are tombstones, which keeps sync correct and powers the Trash.
 
 More in [docs/architecture.md](docs/architecture.md) and [docs/sync.md](docs/sync.md).
+
+## Documentation
+
+All guides are indexed in [docs/README.md](docs/README.md):
+
+- **Using OpenTodo**: [quick add](docs/quick-add.md) · [filters and saved views](docs/filters.md) · [recurring tasks](docs/recurrence.md) · [reminders](docs/reminders.md) · [capture](docs/capture.md) · [import](docs/import.md) · [end-to-end encryption](docs/e2ee.md)
+- **Self-hosting**: [Docker](docs/self-hosting/docker.md) · [Coolify](docs/self-hosting/coolify.md) · [single sign-on](docs/self-hosting/sso.md) · [backups](docs/backups.md) · [email to task](docs/email.md) · [calendar apps (CalDAV)](docs/caldav.md)
+- **Integrations**: [REST API](docs/api.md) · [CLI](docs/cli.md) · [webhooks](docs/webhooks.md) · [AI assistants (MCP)](docs/mcp.md)
+- **Internals**: [architecture](docs/architecture.md) · [sync protocol](docs/sync.md)
+- **Project**: [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security](SECURITY.md) · [contributing](CONTRIBUTING.md)
 
 ## Development
 
 ```bash
 make dev        # Go API on :8080 + Vite with hot reload on :5173
-make check      # vet, typecheck, Go + web tests, OpenSpec validation (what CI runs)
+make check      # vet, typecheck, Go + web + extension tests, OpenSpec validation (what CI runs)
 ```
 
 Repository layout:
 
 ```
-cmd/opentodo/        server entry point (serve, healthcheck, version)
+cmd/opentodo/        server entry point (serve, restore, mfa-reset, reset-owner-password, healthcheck, version)
 cmd/ot/              command-line client entry point (logic in internal/cli)
-internal/            Go packages: config, store (SQLite + migrations), auth, sync (op log), httpapi, web (embed), cli
+internal/            Go packages: store, sync, auth, httpapi, caldav, mcp, email, push, backup, … (see docs/architecture.md)
 web/                 React 19 + Vite + Tailwind PWA; builds into internal/web/dist
-openspec/            specs (live behavior contracts) and changes (proposals in flight / archived)
-docs/                architecture, sync protocol, API, self-hosting guides
+extension/           browser capture extension (Manifest V3, plain JS)
+openspec/            specs (live behaviour contracts) and changes (proposals in flight and archived)
+docs/                user, operator and protocol documentation
 ```
 
 ### Working with specs
 
-This repository uses [OpenSpec](https://github.com/Fission-AI/OpenSpec). The current behavior of the product is described in `openspec/specs/<capability>/spec.md`; each new feature is a change folder with a proposal, delta specs, a design and a task list. With Claude Code or any supported assistant:
+This repository uses [OpenSpec](https://github.com/Fission-AI/OpenSpec). The current behaviour of the product is described in `openspec/specs/<capability>/spec.md`; each new feature is a change folder with a proposal, delta specs, a design and a task list. With Claude Code or any supported assistant:
 
 ```
 /opsx:propose "natural language quick add"   # plan a change
@@ -226,11 +269,19 @@ Validate everything with `npx @fission-ai/openspec validate --all --strict` (als
 
 ## Privacy
 
-OpenTodo makes no network requests except to your own server. If you enable notifications on a device, your server sends that device's reminders through the push service its browser uses (Google, Mozilla, Apple); the payload is encrypted end to end and carries only ids unless you opt in to task titles. There are no analytics, crash reporters, update pings or third-party fonts. The only data that leaves your device is your own task data, sent to the server you chose. The server's audit log records security events (sign-ins, tokens, invitations, exports), never task content, and stores client addresses only if the owner turns that on; see [SECURITY.md](SECURITY.md#what-is-logged). With optional [end-to-end encryption](docs/e2ee.md) your server holds only ciphertext for task content.
+The web app makes no network requests except to your own server: no analytics, crash reporters, update pings or third-party fonts. The server makes outbound requests only for features you configure:
+
+- web push to the push service a device's browser chose (Google, Mozilla, Apple), end-to-end encrypted and carrying only ids unless the device opts in to titles (`OPENTODO_PUSH=off` turns push off);
+- webhook URLs you add;
+- backup destinations (S3 or WebDAV) you configure;
+- the single sign-on issuer you configure;
+- the IMAP mailbox you configure for email to task.
+
+The CalDAV and MCP endpoints only answer requests; they never call out. The audit log records security events (sign-ins, tokens, invitations, exports), never task content, and stores client addresses only if the owner turns that on; see [SECURITY.md](SECURITY.md#what-is-logged). With optional [end-to-end encryption](docs/e2ee.md) the server holds only ciphertext for task content.
 
 ## Contributing
 
-Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md): changes that alter behavior go through an OpenSpec change first. Security issues go to the address in [SECURITY.md](SECURITY.md).
+Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md): changes that alter behaviour go through an OpenSpec change first. Security issues go to the address in [SECURITY.md](SECURITY.md).
 
 ## License
 

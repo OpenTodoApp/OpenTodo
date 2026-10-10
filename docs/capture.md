@@ -10,7 +10,7 @@ Many tasks start as "deal with this page later". OpenTodo can receive a page fro
 
 The capture screen proposes:
 
-- **Title**: the page title, or the link's host name when there is no title. Natural-language quick add applies here once it ships.
+- **Title**: the page title, or the link's host name when there is no title. The title field is a regular [quick-add](quick-add.md) line, so typing `tomorrow #work p1` into it sets the date, project and priority.
 - **Description**: the selected or shared text, followed by the link.
 - **Project**: the Inbox by default; pick any project.
 

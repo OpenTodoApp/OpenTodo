@@ -96,4 +96,4 @@ For an account with [end-to-end encryption](e2ee.md) the server creates the task
 
 ## Limits and what is not included
 
-Not in this version: a built-in SMTP receiver for operators who own an MX record (planned as `email-smtp-receiver`), storing attachments, replying to or sending mail, per-project addresses, parsing dates and projects from the subject, and OAuth mailbox sign-in. This implementation was tested against an in-process IMAP server and realistic RFC 5322 messages, not yet against each provider listed above.
+Not in this version: a built-in SMTP receiver for operators who own an MX record (a [future idea](../ROADMAP.md#future-ideas), `email-smtp-receiver`), storing attachments, replying to or sending mail, per-project addresses, parsing dates and projects from the subject, and OAuth mailbox sign-in. This implementation was tested against an in-process IMAP server and realistic RFC 5322 messages, not yet against each provider listed above.
