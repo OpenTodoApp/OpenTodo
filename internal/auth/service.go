@@ -215,6 +215,11 @@ func (s *Service) UserBySession(ctx context.Context, secret string) (*User, erro
 	return &u, err
 }
 
+// SessionHash returns the stored identifier of the session behind a cookie
+// value, so other tables (push subscriptions) can reference the session and be
+// removed with it when it is revoked.
+func SessionHash(secret string) string { return hashToken(secret) }
+
 // UserByEmail looks an account up by its exact email (case-insensitive), or
 // returns ErrNotFound. Used to add project members; there is no listing route.
 func (s *Service) UserByEmail(ctx context.Context, email string) (*User, error) {

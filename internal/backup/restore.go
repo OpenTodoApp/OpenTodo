@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"archive/tar"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -127,6 +128,10 @@ func Restore(o RestoreOptions) (RestoreResult, error) {
 	if err != nil {
 		return res, fmt.Errorf("%w: %v", ErrIntegrity, err)
 	}
+	extras, err := readExtras(tr, m)
+	if err != nil {
+		return res, err
+	}
 	if err := finish(); err != nil {
 		return res, err
 	}
@@ -167,6 +172,11 @@ func Restore(o RestoreOptions) (RestoreResult, error) {
 		return res, fmt.Errorf("replace database: %w", err)
 	}
 	keep = true
+	for name, raw := range extras {
+		if err := writeFileAtomic(filepath.Join(o.DataDir, name), raw); err != nil {
+			return res, fmt.Errorf("restore %s: %w", name, err)
+		}
+	}
 	if d, err := os.Open(o.DataDir); err == nil {
 		_ = d.Sync()
 		d.Close()
@@ -265,4 +275,66 @@ func (s *Service) recordPendingRestore(ctx context.Context) {
 		s.log.Error("backup: clear restore marker", "err", err)
 	}
 	s.log.Info("database was restored from a backup", "archive", name)
+}
+
+// readExtras reads the ExtraFiles that follow the database in an archive,
+// verifying each against the manifest. Unknown entries are skipped so a newer
+// archive still restores its database.
+func readExtras(tr *tar.Reader, m Manifest) (map[string][]byte, error) {
+	listed := map[string]ManifestFile{}
+	for _, f := range m.Files {
+		listed[f.Name] = f
+	}
+	allowed := map[string]bool{}
+	for _, name := range ExtraFiles {
+		allowed[name] = true
+	}
+	out := map[string][]byte{}
+	for {
+		h, err := tr.Next()
+		if errors.Is(err, io.EOF) {
+			return out, nil
+		}
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrIntegrity, err)
+		}
+		want, ok := listed[h.Name]
+		if !allowed[h.Name] || !ok {
+			continue
+		}
+		raw, err := io.ReadAll(io.LimitReader(tr, maxExtraFileSize+1))
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrIntegrity, err)
+		}
+		digest := sha256.Sum256(raw)
+		if int64(len(raw)) != want.Size || hex.EncodeToString(digest[:]) != want.SHA256 {
+			return nil, fmt.Errorf("%w: %s checksum does not match the manifest", ErrIntegrity, h.Name)
+		}
+		out[h.Name] = raw
+	}
+}
+
+// writeFileAtomic replaces path with data (mode 0600) via a temp file and rename.
+func writeFileAtomic(path string, data []byte) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".restore-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+	if err := tmp.Chmod(0o600); err != nil {
+		tmp.Close()
+		return err
+	}
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmp.Name(), path)
 }

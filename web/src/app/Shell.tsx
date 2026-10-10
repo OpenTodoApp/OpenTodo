@@ -14,7 +14,9 @@ import { TaskListView } from './TaskListView'
 import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { SyncStatus } from './SyncStatus'
-import { isGPending, setGPending } from './signals'
+import { ReminderToasts } from './ReminderToasts'
+import { isGPending, openTaskInList, setGPending } from './signals'
+import { db } from '../lib/db'
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -26,6 +28,13 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // Start view (per device, OpenSpec `custom-views`): applied once per launch, and only
   // when the app opens at its root, so deep links and reloads keep their page.
   useEffect(() => {
+    // A notification click opens /?task=<id>: show that task instead of the start view.
+    const taskParam = new URLSearchParams(location.search).get('task')
+    if (taskParam) {
+      history.replaceState(null, '', location.pathname)
+      void db.tasks.get(taskParam).then((t) => t && openTaskInList(t))
+      return
+    }
     if (location.pathname !== '/') return
     let cancelled = false
     void resolveStartView().then((start) => {
@@ -140,6 +149,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         </div>
       </main>
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} />}
+      <ReminderToasts />
     </div>
   )
 }

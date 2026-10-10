@@ -7,6 +7,7 @@ import { BackupsPanel } from './BackupsPanel'
 import { QuickAddSettingsSection } from './QuickAddSettings'
 import { CalendarSettingsSection } from './CalendarSettings'
 import { MembersPanel } from './MembersPanel'
+import { NotificationsSettings } from './NotificationsSettings'
 import { SecuritySettings } from './ActivityPanel'
 import { SecurityPanel } from './SecurityPanel'
 import { TwoFactorPanel } from './TwoFactorPanel'
@@ -76,6 +77,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       <CalendarSettingsSection />
 
       <TwoFactorPanel user={user} />
+      <NotificationsSettings />
+
       <SecurityPanel />
       <section className="space-y-2">
         <h2 className="font-semibold">Start view</h2>

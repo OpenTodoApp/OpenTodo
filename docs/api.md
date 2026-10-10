@@ -102,9 +102,13 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
+| GET | `/api/v1/push/vapid-key` | yes | `{publicKey}`; with `?device={id}` also `subscription` (that device's status or `null`) |
+| POST | `/api/v1/push/subscriptions` | yes | `{deviceId, endpoint, keys:{p256dh, auth}, includeContent?}` → 201 `{subscription}` (200 when the device's subscription was replaced) |
+| DELETE | `/api/v1/push/subscriptions/{id}` | yes | 204, or 404 `not_found` |
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md`; the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -303,6 +307,32 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `created_at`, `deleted_at` | unix ms (or null) | |
 
 Values outside the listed sets are rejected with 400 `invalid_input` on `POST` and `PATCH` and nothing is written. The sync endpoint, by contrast, accepts any string for `kind`, `group_by`, `sort_by` and `sort_dir` so that a future option stays additive; clients show the default for a value they do not know (see `docs/sync.md`, "Saved views"). Deleting a view sets its tombstone only; dashboards that list it keep the id and the app shows a "View removed" placeholder in that panel. The start view each device opens on launch is a device setting and is not part of the API.
+
+### Reminders and push
+
+A reminder belongs to one task and fires at an instant (OpenSpec change `reminders`; data model in [`docs/sync.md`](sync.md#reminders), behaviour in [`docs/reminders.md`](reminders.md)).
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `task_id` | string | required on create; must name an existing, non-deleted task |
+| `kind` | `"relative"` or `"absolute"` | default `absolute` |
+| `offset_minutes` | integer or null | relative only: minutes from the task's due time, negative = before (−525600…525600) |
+| `fire_at` | unix ms or null | absolute: required. Relative: computed by the server from the task's due date when omitted (09:00 for a date-only due, in the zone offset the user's devices last reported, UTC until then); null while the task has no due date |
+| `delivered_at` | unix ms or null | written by the server when it pushed the reminder |
+| `dismissed_at`, `created_at`, `deleted_at` | unix ms (or null) | |
+
+`PATCH /api/v1/tasks/{id}` that changes `due` (including completing a recurring task, which moves the series) recomputes `fire_at` of the task's relative reminders in the same batch, with the same timestamp as the due op.
+
+**Push subscriptions** are per device and outside the op log and the export. `POST /api/v1/push/subscriptions` takes the browser's `PushSubscription.toJSON()` plus the device id:
+
+```json
+{"deviceId": "8c1f…", "endpoint": "https://fcm.googleapis.com/fcm/send/…",
+ "keys": {"p256dh": "BCVx…", "auth": "BTBZ…"}, "includeContent": false}
+```
+
+It answers 201 `{"subscription": {"id", "deviceId", "includeContent", "createdAt", "lastOkAt", "lastError", "failures", "needsRenewal"}}`; the endpoint and keys are never returned. Posting again for the same device replaces its subscription (200). A body without an `https` endpoint URL, an uncompressed P-256 `p256dh` key or a 16-byte `auth` secret is rejected with 400 `invalid_input`. A subscription created with a browser session is deleted when that session signs out or is revoked; the push service answering 404/410 deletes it as well, and `needsRenewal` turns true after 5 consecutive failed sends. With `OPENTODO_PUSH=off` every `/api/v1/push/` route answers 404 `not_found`.
+
+`POST /api/v1/sync` accepts an optional `tzOffset` (minutes east of UTC, −840…840): the device's zone, used for the REST recomputation above.
 
 ### Invitations
 

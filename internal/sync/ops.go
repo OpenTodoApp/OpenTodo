@@ -50,7 +50,18 @@ const (
 	// recurrence.MaxLen characters). Clients store the canonical form; any
 	// parseable spelling is accepted so the op log is never rewritten.
 	kRecurrence
+	// kID is a non-empty id string of at most MaxIDLen characters (reminder.task_id).
+	kID
+	// kReminderKind is "relative" or "absolute" (OpenSpec change reminders).
+	kReminderKind
+	// kOffsetMinutes is null or an integer within ±MaxReminderOffset minutes.
+	kOffsetMinutes
+	// kInstant is null or a positive Unix millisecond timestamp (reminder.fire_at).
+	kInstant
 )
+
+// MaxReminderOffset bounds reminder.offset_minutes: one year before or after the due time.
+const MaxReminderOffset = 525600
 
 // MaxPositiveInt bounds kPositiveInt fields; for estimate_minutes it is one week.
 const MaxPositiveInt = 10080
@@ -112,10 +123,25 @@ var Schema = map[string]map[string]kind{
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
 	},
+	// reminder: fires relative to its task's due time or at an absolute instant
+	// (OpenSpec change reminders, docs/sync.md). fire_at is always the resolved
+	// instant, recomputed by the device that changes the task's due; the server
+	// scheduler only compares it with the clock. delivered_at is written by the
+	// server (device "server") when a push went out.
+	"reminder": {
+		"task_id":        kID,
+		"kind":           kReminderKind,
+		"offset_minutes": kOffsetMinutes,
+		"fire_at":        kInstant,
+		"delivered_at":   kNullableNumber,
+		"dismissed_at":   kNullableNumber,
+		"created_at":     kNumber,
+		"deleted_at":     kNullableNumber,
+	},
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
@@ -225,6 +251,32 @@ func checkKind(k kind, raw json.RawMessage) error {
 		}
 		if _, err := recurrence.Parse(s); err != nil {
 			return err
+		}
+	case kID:
+		var s string
+		if err := json.Unmarshal(raw, &s); err != nil || s == "" || len(s) > MaxIDLen {
+			return errors.New("must be an id string")
+		}
+	case kReminderKind:
+		var s string
+		if err := json.Unmarshal(raw, &s); err != nil || (s != "relative" && s != "absolute") {
+			return errors.New(`must be "relative" or "absolute"`)
+		}
+	case kOffsetMinutes:
+		if isNull {
+			return nil
+		}
+		var n int64
+		if err := json.Unmarshal(raw, &n); err != nil || n < -MaxReminderOffset || n > MaxReminderOffset {
+			return fmt.Errorf("must be null or an integer from -%d to %d", MaxReminderOffset, MaxReminderOffset)
+		}
+	case kInstant:
+		if isNull {
+			return nil
+		}
+		var f float64
+		if err := json.Unmarshal(raw, &f); err != nil || f <= 0 {
+			return errors.New("must be null or a positive unix millisecond timestamp")
 		}
 	}
 	return nil

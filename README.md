@@ -47,7 +47,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 - **Local-first.** The app keeps a full copy of your data on every device and works entirely offline. The server only syncs, backs up and shares.
 - **Your data, one folder.** Everything lives in a single `/data` volume: one SQLite file. Back that up and you have backed up everything. Export to JSON any time from Settings, and import it (or a CSV, or another app's export) on any instance.
 - **Tiny footprint.** One container, one static binary, around 12 MB. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no build step at runtime.
-- **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts. The server only sends requests to webhook URLs you configure yourself. Sign-up is closed by default after the owner account is created; add people with single-use invitation links from **Settings → Members**.
+- **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts. The server only sends requests to webhook URLs you configure yourself and, for devices that enable notifications, end-to-end encrypted pushes to the push service their own browser chose (`OPENTODO_PUSH=off` turns that off). Sign-up is closed by default after the owner account is created; add people with single-use invitation links from **Settings → Members**.
 - **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today. Press `?` in the app for the full list.
 - **Built in the open with specs.** Every feature starts as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change under [`openspec/`](openspec/), so behavior is documented before it is built.
 
@@ -70,6 +70,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Tasks | Title, notes, project, priority P1–P4, floating due date with optional time, complete / reopen, delete |
 | Time blocking | Duration estimates (`e` on a task: `20`, `45m`, `1h30`, or presets) shown on every row, and **Day** / **Week** calendars (`g` `d`, `g` `w`) with a 15-minute grid: a task with a due time is a block as long as its estimate, date-only tasks wait in the day's unscheduled lane, overlapping blocks sit side by side, each day shows planned hours against your day length. Drag from the lane, the task list beside the grid or the grid itself; drag a block's lower edge to change the estimate; or do all of it from the keyboard (`s` on a list task opens placement mode, arrows move, Shift+arrows resize). Duration filter chips (Quick wins, Under 30 min, Over 1 h, Unestimated) in Inbox, Today, Upcoming and projects. Works offline; moves converge like any other edit |
 | Recurring tasks | Rules you type and read: `every weekday`, `every last weekday`, `every 2nd tuesday`, `every 3 days after completion`, optionally `until 2026-12-31` or `for 10 times`. Completing records the occurrence in Completed and moves the task to its next date (overdue tasks catch up instead of piling up); skip (`Shift+S`) or detach one occurrence (`Shift+O`); a live preview of the next three dates. Two devices completing the same occurrence offline end with one entry. See [docs/recurrence.md](docs/recurrence.md) |
+| Reminders | Any number per task: "30 minutes before" (follows the due date, also to the next occurrence of a recurring task) or at a set date and time, on undated tasks too. In-app notifications with Snooze (10 min, 1 h, tomorrow 09:00) and Dismiss that work offline; per-device web push in **Settings → Notifications** so a closed app still notifies, with no vendor account and no configuration (payloads carry ids only unless you opt in to titles). See [docs/reminders.md](docs/reminders.md) |
 | Subtasks | Nest tasks to any depth; parents show `done/total` progress; completing or deleting a parent cascades; `a` adds a subtask, Tab / Shift+Tab indent and outdent, Left / Right collapse and expand; concurrent moves on two devices never leave a task nested inside itself |
 | Offline | Every change is applied locally first and queued; the app loads and works with no network. Installable PWA |
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs. Live push: a change on one device shows up on the others within a second or two, with polling as the fallback |
@@ -84,7 +85,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): reminders, assignees and comments, CalDAV, OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): assignees and comments, CalDAV, OIDC, optional end-to-end encryption.
 
 ## Quick start
 
@@ -142,6 +143,7 @@ All settings are environment variables with safe defaults. See [`.env.example`](
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `OPENTODO_BACKUP_*` | unset | Optional presets for scheduled backups, applied once; Settings wins afterwards. See [docs/backups.md](docs/backups.md#environment-presets) |
 | `OPENTODO_IMPORT_MAX_MB` | `20` | Largest file accepted by [import](docs/import.md), 1–200 |
+| `OPENTODO_PUSH` | `on` | `off` disables web push for [reminders](docs/reminders.md): no requests to push services; reminders still show in the app |
 
 ## Adding people
 
@@ -198,7 +200,7 @@ Validate everything with `npx @fission-ai/openspec validate --all --strict` (als
 
 ## Privacy
 
-OpenTodo makes no network requests except to your own server. There are no analytics, crash reporters, update pings or third-party fonts. The only data that leaves your device is your own task data, sent to the server you chose. The server's audit log records security events (sign-ins, tokens, invitations, exports), never task content, and stores client addresses only if the owner turns that on; see [SECURITY.md](SECURITY.md#what-is-logged).
+OpenTodo makes no network requests except to your own server. If you enable notifications on a device, your server sends that device's reminders through the push service its browser uses (Google, Mozilla, Apple); the payload is encrypted end to end and carries only ids unless you opt in to task titles. There are no analytics, crash reporters, update pings or third-party fonts. The only data that leaves your device is your own task data, sent to the server you chose. The server's audit log records security events (sign-ins, tokens, invitations, exports), never task content, and stores client addresses only if the owner turns that on; see [SECURITY.md](SECURITY.md#what-is-logged).
 
 ## Contributing
 

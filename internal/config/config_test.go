@@ -107,3 +107,19 @@ func TestConfigImportMaxMB(t *testing.T) {
 		}
 	}
 }
+
+func TestPushSwitchIsOptional(t *testing.T) {
+	t.Setenv("OPENTODO_PUSH", "")
+	c, err := Load()
+	if err != nil || c.PushDisabled {
+		t.Fatalf("default: %v disabled=%v", err, c.PushDisabled)
+	}
+	t.Setenv("OPENTODO_PUSH", "off")
+	if c, err = Load(); err != nil || !c.PushDisabled {
+		t.Fatalf("off: %v disabled=%v", err, c.PushDisabled)
+	}
+	t.Setenv("OPENTODO_PUSH", "maybe")
+	if _, err = Load(); err == nil {
+		t.Fatal("invalid OPENTODO_PUSH accepted")
+	}
+}

@@ -7,6 +7,7 @@ import { api, ApiError } from './api'
 import { db, entityTables, getMeta, setMeta } from './db'
 import { hlcObserveServerTime } from './hlc'
 import { applyOps, getDeviceId, onLocalMutation } from './ops'
+import { followSharedDueChanges } from './reminders'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
 import type { Clock, Entity, Op, SyncState } from './types'
 
@@ -117,7 +118,7 @@ async function runOnce(): Promise<void> {
       const cursor = await getMeta<number>('cursor', 0)
       const batch = await db.outbox.orderBy('local').limit(BATCH).toArray()
       const sent = batch.map(({ local: _local, ...op }) => op)
-      const res = await api.sync(device, cursor, sent)
+      const res = await api.sync(device, cursor, sent, -new Date().getTimezoneOffset())
       hlcObserveServerTime(res.serverTime)
       if (batch.length > 0) {
         await db.outbox.bulkDelete(batch.map((o) => o.local as number))
@@ -129,6 +130,8 @@ async function runOnce(): Promise<void> {
       await dropUnconfirmed(keys)
       if (notice) addRejected(notice)
       if (res.memberships) await storeMemberships(res.memberships)
+      // Reminders are personal: another member moving a shared task does not move ours.
+      await followSharedDueChanges(res.ops)
       if (await generationChanged(res.generation)) {
         // The server was restored from a backup: its log went back in time, so our
         // cursor means nothing there and it may lack edits we hold. Re-send every
@@ -204,7 +207,7 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
     }
     // Every synced entity kind (keep in step with ENTITIES / entityTables()).
     const tables: [Entity, unknown][] = [
-      ['project', db.projects], ['task', db.tasks], ['label', db.labels], ['view', db.views],
+      ['project', db.projects], ['task', db.tasks], ['label', db.labels], ['view', db.views], ['reminder', db.reminders],
     ]
     for (const [entity, table] of tables) {
       const rows = (await (table as unknown as { toArray(): Promise<Record<string, unknown>[]> }).toArray())

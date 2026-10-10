@@ -65,6 +65,12 @@ Troubleshooting "live updates disconnected" (the status pill says **Polling** in
 2. If it works but drops after a fixed time, a timeout somewhere in the chain is shorter than the heartbeat; raise it above 25 s.
 3. Nothing is lost either way: while the stream is down the app polls every 30 s exactly as before.
 
+## Reminders and web push
+
+Reminders are shown in the app on every device and, for devices that enable notifications in **Settings → Notifications**, sent as web push so a closed app still notifies. Nothing needs configuring: on first use the server generates a VAPID key pair at `<data>/push_vapid.pem` (mode 0600). Keep it with the database: it is included in backup archives and restored with them, and existing subscriptions only work with the key they were created for.
+
+Sending a push is the one outbound request the server makes: it goes to the push service the user's own browser chose when it subscribed (Google, Mozilla, Apple…), carries an encrypted payload the push service cannot read, and by default contains only ids (the device opts in to task titles). Browsers require https for push, so set `OPENTODO_BASE_URL` to your public https URL (it is also sent as the VAPID contact). To forbid outbound traffic set `OPENTODO_PUSH=off`: the push routes answer 404, no push is sent, and reminders are still shown in the app.
+
 ## Bind mounts
 
 The container runs as uid 65532 (distroless `nonroot`). A bind-mounted data directory must be writable by that user:

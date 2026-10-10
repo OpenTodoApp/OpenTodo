@@ -10,6 +10,7 @@ import type { Label, Priority, Project, Task } from '../lib/types'
 import { EstimateField } from './EstimateField'
 import { LabelChip, LabelPicker } from './LabelPicker'
 import { RecurrenceField } from './RecurrenceField'
+import { RemindersField } from './RemindersField'
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 1, label: 'P1', cls: 'text-red-600 border-red-500' },
@@ -180,6 +181,10 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
               onChange={(e) => task.due && void updateTask(task.id, { due: e.target.value ? { date: task.due.date, time: e.target.value } : { date: task.due.date } })} />
             {task.due && <button className="btn-ghost" onClick={() => void updateTask(task.id, { due: null })} aria-label="Clear due date">✕</button>}
           </div>
+        </Field>
+
+        <Field label="Reminders">
+          <RemindersField task={task} />
         </Field>
 
         <Field label="Estimate">

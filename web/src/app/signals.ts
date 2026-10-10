@@ -4,7 +4,7 @@
 // React context: the requests survive a route change and are consumed once.
 
 import type { Task } from '../lib/types'
-import { navigate } from './router'
+import { navigate, routePath } from './router'
 
 let gPending = false
 let gTimer: ReturnType<typeof setTimeout> | undefined
@@ -29,6 +29,10 @@ function channel() {
     request(id: string) {
       pending = id
       listeners.forEach((fn) => fn(id))
+    },
+    /** Leave a request for whoever mounts or navigates next, without notifying current listeners. */
+    set(id: string) {
+      pending = id
     },
     /** Take a pending request for `id` (or any id when omitted); returns the id or null. */
     take(id?: string): string | null {
@@ -55,4 +59,23 @@ export function placeInDay(task: Pick<Task, 'id' | 'due'>, today: string): void 
   placement.request(task.id)
   const date = task.due?.date
   navigate({ view: 'day', date: date && date !== today ? date : undefined })
+}
+
+/**
+ * Open a task's detail panel from outside a list (a reminder toast, a notification
+ * click): go to the task's project (or the Inbox) and open it there. When the list
+ * is already showing, its subscriber opens it at once; otherwise the list takes the
+ * request when the route changes.
+ */
+export const openTask = channel()
+
+export function openTaskInList(task: Pick<Task, 'id' | 'project_id'>): void {
+  const route = task.project_id ? { view: 'project' as const, id: task.project_id } : { view: 'inbox' as const }
+  const path = routePath(route)
+  if (typeof location !== 'undefined' && (location.pathname === path || (path === '/' && location.pathname === '/inbox'))) {
+    openTask.request(task.id)
+    return
+  }
+  openTask.set(task.id)
+  navigate(route)
 }

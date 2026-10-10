@@ -31,11 +31,16 @@ OpenTodo is a local-first application with a thin sync server.
 | `auth` | Users, argon2id passwords, sessions, API tokens |
 | `sync` | Op schema and validation, `Apply` (idempotent, LWW), `Pull` (cursor), `List`/`Get` (materialized entities), `Notifier` (per-user live wake-ups); after each committed batch it reports the winning changes to an optional observer |
 | `webhook` | Outbound webhooks: maps observed changes to events, durable queue in SQLite, one worker with retries, HMAC signing, SSRF-safe HTTP client. See [webhooks.md](webhooks.md) |
+| `push` | Reminders over web push (OpenSpec `reminders`): VAPID key pair in `<data>/push_vapid.pem`, ES256 JWTs and RFC 8291 `aes128gcm` encryption with the standard library, per-device `push_subscriptions`, and the scheduler goroutine (every 30 s) that pushes due reminders and records `delivered_at` as a `server` op. See [reminders.md](reminders.md) |
 | `httpapi` | Router, middleware (auth, origin check, security headers, logging), handlers for auth, sync, collections, export, backups (owner only), health |
 | `web` | Embeds the Vite build and serves it with SPA fallback and cache headers |
 | `ids` | UUID v4 and random secrets without external dependencies |
 
-Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log, `user_id` = author, `seq` autoincrement), `op_scopes` (the sharing scope of each op: `user:<id>` or `project:<id>`), `scope_fields` (current winner per field within a scope), `project_scopes` and `project_members` (shared projects and their roles, authorization data outside the op log), `member_backfills` (history replay progress per member device), `invitations`, `settings` (owner key/value policy), `webhooks` and `webhook_deliveries` (queue and delivery log), `backup_runs`; `settings` also holds the log `generation`.
+Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log, `user_id` = author, `seq` autoincrement), `op_scopes` (the sharing scope of each op: `user:<id>` or `project:<id>`), `scope_fields` (current winner per field within a scope), `project_scopes` and `project_members` (shared projects and their roles, authorization data outside the op log), `member_backfills` (history replay progress per member device), `invitations`, `settings` (owner key/value policy), `webhooks` and `webhook_deliveries` (queue and delivery log), `backup_runs`, `push_subscriptions` (one per user and device, removed with the session that created it); `settings` also holds the log `generation`.
+
+### Reminder scheduler
+
+`push.Service.Run` (started by `cmd/opentodo` unless `OPENTODO_PUSH=off`) runs one pass at startup and then every 30 s: a single query over `scope_fields` (personal scopes: reminders are always personal, even on a task in a shared project) selects reminders whose `fire_at` has passed, that are not deleted, not delivered or dismissed for the current firing (a `delivered_at`/`dismissed_at` older than `fire_at` belongs to an earlier one) and whose task is open. Each is encrypted and posted to every subscription of the owner (404/410 removes the subscription, other failures are counted), then `delivered_at` is written through `sync.Apply` as device `server`, which also wakes the user's devices. Delivery state lives in the op log, so a restart neither loses nor repeats a push (a crash between send and write can repeat one).
 
 ### Request flow for a REST write
 
@@ -49,12 +54,14 @@ Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log, `user_id` = a
 
 | Module | Responsibility |
 | --- | --- |
-| `lib/db.ts` | Dexie database: `projects`, `tasks`, `outbox`, `meta` |
+| `lib/db.ts` | Dexie database: `projects`, `tasks`, `labels`, `views`, `reminders`, `outbox`, `meta` |
 | `lib/types.ts` | Entity types; field names mirror `internal/sync/ops.go` |
 | `lib/hlc.ts` | Hybrid logical clock and the shared `wins()` rule |
 | `lib/ops.ts` | `applyOps` (per-field LWW into IndexedDB), `mutate` (local apply + outbox + notify), entity helpers |
 | `lib/sync.ts` | Background push/pull loop, triggers, live-update channel (`EventSource` with backoff), status store (`useSyncStatus`) |
 | `lib/api.ts` | Fetch wrappers and `ApiError` |
+| `lib/reminders.ts`, `lib/reminderTime.ts`, `lib/reminderWatcher.ts`, `lib/push.ts` | Reminder writes and time arithmetic (relative reminders follow `due` inside `mutateMany`), the in-app watcher that drives the toasts, and the device's push subscription |
+| `public/push-sw.js` | Imported by the generated service worker: `push` (defers to a focused window, otherwise a notification titled from IndexedDB), `notificationclick` (snooze / dismiss written as ops into IndexedDB and the outbox, uploaded by an open window or a direct `/api/v1/sync`), `notificationclose` |
 | `app/` | Router, auth screens, shell, views, detail panel, settings |
 
 The UI never talks to the server for task data. Views subscribe to IndexedDB with `useLiveQuery`; both local edits and remote ops surface through the same path.

@@ -147,7 +147,7 @@ func (s *Service) backupTo(ctx context.Context, dest Destination, set Settings, 
 		f.Close()
 		os.Remove(f.Name())
 	}()
-	if err := writeArchive(f, snap, m, archiveOptions{compress: set.Compress, passphrase: pass}); err != nil {
+	if err := writeArchive(f, snap, m, archiveOptions{compress: set.Compress, passphrase: pass, extras: s.extraFiles()}); err != nil {
 		return nil, fmt.Errorf("write archive: %w", err)
 	}
 	size, err := f.Seek(0, io.SeekCurrent)
@@ -223,4 +223,16 @@ func retentionVictims(objs []Object, pol Retention, justWritten string, now time
 		}
 	}
 	return victims
+}
+
+// extraFiles lists the ExtraFiles present in the data directory.
+func (s *Service) extraFiles() []string {
+	var out []string
+	for _, name := range ExtraFiles {
+		p := filepath.Join(s.dataDir, name)
+		if st, err := os.Stat(p); err == nil && st.Mode().IsRegular() {
+			out = append(out, p)
+		}
+	}
+	return out
 }

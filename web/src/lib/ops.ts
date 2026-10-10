@@ -4,10 +4,11 @@ import { db, entityTables, getMeta, setMeta } from './db'
 import { todayISO } from './dates'
 import { hlcNow, hlcSeed, wins } from './hlc'
 import { firstOccurrence, parseRule } from './recurrence'
+import { relativeFireAt } from './reminderTime'
 import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
-import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Task, type View } from './types'
+import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Reminder, type Task, type View } from './types'
 
 let devicePromise: Promise<string> | null = null
 
@@ -38,6 +39,7 @@ function tableFor(entity: Entity) {
     case 'project': return db.projects
     case 'label': return db.labels
     case 'view': return db.views
+    case 'reminder': return db.reminders
     default: return db.tasks
   }
 }
@@ -57,8 +59,12 @@ export const VIEW_DEFAULTS: Omit<View, 'id' | '_clock'> = {
   name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false,
   position: 0, color: '#64748b', panels: [], created_at: 0, deleted_at: null,
 }
+const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = {
+  task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null,
+  created_at: 0, deleted_at: null,
+}
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
-  project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS,
+  project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS,
 }
 
 /**
@@ -81,7 +87,7 @@ export async function applyOps(ops: Op[]): Promise<void> {
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
       const table = tableFor(entity)
-      const existing = (await table.get(entityId)) as (Project | Task | Label | View) | undefined
+      const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder) | undefined
       const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing
@@ -129,6 +135,7 @@ export function mutationTables() {
  */
 export async function mutateMany(changes: Change[]): Promise<void> {
   const device = await getDeviceId()
+  changes = [...changes, ...(await reminderFollowUps(changes))]
   const ts = hlcNow()
   const ops: Op[] = []
   for (const { entity, entityId, patch } of changes) {
@@ -143,6 +150,35 @@ export async function mutateMany(changes: Change[]): Promise<void> {
     await db.meta.put({ key: 'hlc', value: ts })
   })
   for (const fn of mutationListeners) fn()
+}
+
+/**
+ * Relative reminders follow their task's due time (OpenSpec change `reminders`,
+ * design D2): every change that sets a task's `due` (an edit, a reschedule, a
+ * recurring series rolling forward or skipping) carries a new `fire_at` for each
+ * live relative reminder of that task. They join the same batch, so they share the
+ * due op's HLC timestamp and device and last-writer-wins picks the due date and the
+ * firing times from the same edit. `fire_at` is always written, even when unchanged,
+ * for that reason; a firing that moved also clears delivered/dismissed state.
+ */
+async function reminderFollowUps(changes: Change[]): Promise<Change[]> {
+  const out: Change[] = []
+  for (const { entity, entityId, patch } of changes) {
+    if (entity !== 'task' || !('due' in patch)) continue
+    const due = (patch.due ?? null) as Task['due']
+    const reminders = await db.reminders.where('task_id').equals(entityId).toArray()
+    for (const r of reminders) {
+      if (r.deleted_at || r.kind !== 'relative') continue
+      const fireAt = relativeFireAt(due, r.offset_minutes)
+      const p: Record<string, unknown> = { fire_at: fireAt }
+      if (fireAt !== r.fire_at) {
+        if (r.delivered_at !== null) p.delivered_at = null
+        if (r.dismissed_at !== null) p.dismissed_at = null
+      }
+      out.push({ entity: 'reminder', entityId: r.id, patch: p })
+    }
+  }
+  return out
 }
 
 /** Record field changes for one entity: apply locally and enqueue for the server. */

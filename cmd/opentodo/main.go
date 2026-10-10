@@ -28,6 +28,7 @@ import (
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/httpapi"
+	"github.com/pixari/opentodo/internal/push"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/web"
@@ -105,7 +106,16 @@ func run() error {
 		log.Info("backup settings seeded from OPENTODO_BACKUP_* variables")
 	}
 	backups.Start(ctx)
-	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version, httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups))
+	// Reminders: web push to subscribed devices (docs/reminders.md). On unless
+	// OPENTODO_PUSH=off; the VAPID key pair is created under the data directory on
+	// first use. In-app reminders work either way.
+	opts := []httpapi.Option{httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups)}
+	var pushSvc *push.Service
+	if !cfg.PushDisabled {
+		pushSvc = push.New(db, syncSvc, cfg.DataDir, push.Options{Log: log, Subject: cfg.Origin()})
+		opts = append(opts, httpapi.WithPush(pushSvc))
+	}
+	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version, opts...)
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
@@ -123,6 +133,10 @@ func run() error {
 
 	// Prune audit events past the owner's retention at startup and hourly.
 	go authSvc.Audit().RunPruner(ctx, audit.PruneInterval)
+
+	if pushSvc != nil {
+		go pushSvc.Run(ctx)
+	}
 
 	workerDone := make(chan struct{})
 	go func() {

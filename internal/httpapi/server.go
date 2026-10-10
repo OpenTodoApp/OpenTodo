@@ -20,6 +20,7 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/importer"
+	"github.com/pixari/opentodo/internal/push"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/webhook"
 )
@@ -56,6 +57,10 @@ type Server struct {
 
 	// backups is nil when the server runs without the backup service (tests).
 	backups *backup.Service
+	// push is nil when web push is not wired (tests); see push.go.
+	push *push.Service
+	// tzOffsets caches each user's last reported zone offset (minutes east of UTC).
+	tzOffsets sync.Map
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -136,6 +141,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/backups/test", s.requireAuth(s.handleBackupTest))
 	// Project sharing (OpenSpec `project-sharing`): literal patterns win over {collection}.
 	s.registerSharingRoutes(mux)
+	// Web push (OpenSpec `reminders`): registered only while push is enabled.
+	s.registerPushRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
@@ -641,6 +648,9 @@ type syncRequest struct {
 	Device string      `json:"device"`
 	Cursor int64       `json:"cursor"`
 	Ops    []opsync.Op `json:"ops"`
+	// TZOffset is the device's zone offset in minutes east of UTC (optional,
+	// additive); REST writes that move a due date recompute relative reminders in it.
+	TZOffset *int `json:"tzOffset,omitempty"`
 }
 
 func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
@@ -654,6 +664,7 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	uid := userFrom(r.Context()).ID
+	s.recordTZOffset(r.Context(), uid, in.TZOffset)
 	res, err := s.sync.Apply(r.Context(), uid, in.Ops)
 	if errors.Is(err, opsync.ErrInvalidOp) {
 		writeError(w, http.StatusBadRequest, "invalid_op", err.Error())
@@ -786,7 +797,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	if entity == "view" {
 		applyViewDefaults(body)
 	}
-	if _, has := body["position"]; !has {
+	if _, has := body["position"]; !has && entity != "reminder" {
 		body["position"] = json.RawMessage(fmt.Sprint(now))
 	}
 	delete(body, "id")
@@ -799,6 +810,15 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	if entity == "task" {
 		canonicalizeRecurrence(body)
+	}
+	if entity == "reminder" {
+		if msg, err := s.completeReminderBody(r.Context(), userFrom(r.Context()).ID, body, nil); err != nil {
+			s.internal(w, err)
+			return
+		} else if msg != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", msg)
+			return
+		}
 	}
 	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
 		s.internal(w, err)
@@ -1027,6 +1047,16 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	var extra []opsync.Op
+	ts := s.opTS()
+	if entity == "reminder" {
+		if msg, err := s.completeReminderBody(r.Context(), userFrom(r.Context()).ID, body, existing); err != nil {
+			s.internal(w, err)
+			return
+		} else if msg != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", msg)
+			return
+		}
+	}
 	if entity == "task" {
 		canonicalizeRecurrence(body)
 		// Completing a recurring task records the occurrence and moves the series.
@@ -1036,10 +1066,19 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if ok {
-			extra = fieldOps("task", recordID, record, s.opTS())
+			extra = fieldOps("task", recordID, record, ts)
+		}
+		// Relative reminders follow the due date, stamped like the due op (reminders D2).
+		if dueRaw, has := body["due"]; has {
+			rops, err := s.reminderOpsForDue(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), dueRaw, ts)
+			if err != nil {
+				s.internal(w, err)
+				return
+			}
+			extra = append(extra, rops...)
 		}
 	}
-	s.writeFieldsWith(w, r, entity, r.PathValue("id"), body, http.StatusOK, extra)
+	s.writeFieldsAt(w, r, entity, r.PathValue("id"), body, http.StatusOK, extra, ts)
 }
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
@@ -1078,7 +1117,12 @@ func fieldOps(entity, id string, body map[string]json.RawMessage, ts int64) []op
 // writeFieldsWith is writeFields plus extra ops (other entities) applied in the
 // same batch; the response still describes entity/id.
 func (s *Server) writeFieldsWith(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int, extra []opsync.Op) {
-	ops := append(fieldOps(entity, id, body, s.opTS()), extra...)
+	s.writeFieldsAt(w, r, entity, id, body, status, extra, s.opTS())
+}
+
+// writeFieldsAt is writeFieldsWith with the body's op timestamp chosen by the caller.
+func (s *Server) writeFieldsAt(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int, extra []opsync.Op, ts int64) {
+	ops := append(fieldOps(entity, id, body, ts), extra...)
 	uid := userFrom(r.Context()).ID
 	// REST writes are all or nothing: one refused field refuses the request.
 	res, err := s.sync.ApplyStrict(r.Context(), uid, ops)

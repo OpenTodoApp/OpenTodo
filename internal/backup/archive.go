@@ -125,11 +125,22 @@ func fileDigest(path string) (int64, string, error) {
 	return n, hex.EncodeToString(h.Sum(nil)), nil
 }
 
+// ExtraFiles are data-directory files packaged after the database when they
+// exist: the web push key pair (internal/push.KeyFile, OpenSpec `reminders`), so
+// a restored server keeps serving the key existing subscriptions are bound to.
+// Restore puts them back next to the database; archives without them are fine.
+var ExtraFiles = []string{"push_vapid.pem"}
+
+// maxExtraFileSize bounds an extra file read from an archive.
+const maxExtraFileSize = 64 << 10
+
 // archiveOptions select the outer layers of an archive.
 type archiveOptions struct {
 	compress   bool
 	passphrase string
 	chunkSize  int // encryption chunk size; 0 = DefaultChunkSize
+	// extras are paths of extra files (see ExtraFiles), stored under their base name.
+	extras []string
 }
 
 // writeArchive streams tar(manifest.json, opentodo.db) through optional gzip and
@@ -146,6 +157,13 @@ func writeArchive(w io.Writer, snapshotPath string, m Manifest, o archiveOptions
 		return fmt.Errorf("checksum snapshot: %w", err)
 	}
 	m.Files = []ManifestFile{{Name: store.DBFile, Size: size, SHA256: sum}}
+	for _, p := range o.extras {
+		n, sum, err := fileDigest(p)
+		if err != nil {
+			return fmt.Errorf("checksum %s: %w", filepath.Base(p), err)
+		}
+		m.Files = append(m.Files, ManifestFile{Name: filepath.Base(p), Size: n, SHA256: sum})
+	}
 	manifest, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		return err
@@ -183,6 +201,21 @@ func writeArchive(w io.Writer, snapshotPath string, m Manifest, o archiveOptions
 	}
 	if _, err := io.Copy(tw, f); err != nil {
 		return err
+	}
+	for i, p := range o.extras {
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		if int64(len(raw)) != m.Files[i+1].Size {
+			return fmt.Errorf("%s changed while archiving", filepath.Base(p))
+		}
+		if err := tw.WriteHeader(&tar.Header{Name: filepath.Base(p), Mode: 0o600, Size: int64(len(raw)), ModTime: mtime, Typeflag: tar.TypeReg}); err != nil {
+			return err
+		}
+		if _, err := tw.Write(raw); err != nil {
+			return err
+		}
 	}
 	if err := tw.Close(); err != nil {
 		return err

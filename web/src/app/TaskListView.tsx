@@ -16,7 +16,7 @@ import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { SubProjects } from './SubProjects'
-import { estimateFocus, isGPending, placeInDay } from './signals'
+import { estimateFocus, isGPending, openTask, placeInDay } from './signals'
 
 type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
@@ -189,12 +189,19 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
   const quickAddRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    setSelectedId(null)
-    setOpenId(null)
+    // A pending "open this task" request (reminder toast, notification click) survives the route change.
+    const want = openTask.take()
+    setSelectedId(want)
+    setOpenId(want)
     setAddingUnder(null)
     setPrompt(null)
     setPickerFor(null)
   }, [route])
+  useEffect(() => openTask.subscribe((id) => {
+    openTask.take(id)
+    setSelectedId(id)
+    setOpenId(id)
+  }), [])
 
   useEffect(() => {
     if (openId && !rows.some((r) => r.task.id === openId)) {

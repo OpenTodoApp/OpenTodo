@@ -1,6 +1,6 @@
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, SyncResponse, TrustedDevice, User,
+  AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PushSubscriptionStatus, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -119,7 +119,9 @@ export const api = {
   setMfaPolicy: (required: MfaPolicy) => request<{ required: MfaPolicy }>('PUT', '/api/v1/settings/mfa', { required }),
   resetMemberMfa: (userId: string) => request<void>('POST', `/api/v1/members/${encodeURIComponent(userId)}/mfa/reset`, {}),
   logout: () => request<void>('POST', '/api/v1/auth/logout'),
-  sync: (device: string, cursor: number, ops: Op[]) => request<SyncResponse>('POST', '/api/v1/sync', { device, cursor, ops }),
+  /** `tzOffset` (minutes east of UTC) lets REST writes recompute relative reminders in this zone. */
+  sync: (device: string, cursor: number, ops: Op[], tzOffset?: number) =>
+    request<SyncResponse>('POST', '/api/v1/sync', tzOffset === undefined ? { device, cursor, ops } : { device, cursor, ops, tzOffset }),
   // Project sharing: membership is server-side authorization data, changed only through these routes.
   listMembers: (projectId: string) => request<Membership>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/members`),
   addMember: (projectId: string, email: string, role: ProjectRole) =>
@@ -130,6 +132,14 @@ export const api = {
     request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`),
   transferProject: (projectId: string, userId: string) =>
     request<Membership>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/transfer`, { userId }),
+  // Web push (OpenSpec change `reminders`). 404 when the operator turned push off.
+  pushKey: (device?: string) =>
+    request<{ publicKey: string; subscription?: PushSubscriptionStatus | null }>(
+      'GET', `/api/v1/push/vapid-key${device ? `?device=${encodeURIComponent(device)}` : ''}`,
+    ),
+  pushSubscribe: (body: { deviceId: string; endpoint: string; keys: { p256dh: string; auth: string }; includeContent: boolean }) =>
+    request<{ subscription: PushSubscriptionStatus }>('POST', '/api/v1/push/subscriptions', body),
+  pushUnsubscribe: (id: string) => request<void>('DELETE', `/api/v1/push/subscriptions/${encodeURIComponent(id)}`),
   listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
   createToken: (name: string) => request<{ token: { id: string; name: string }; secret: string }>('POST', '/api/v1/tokens', { name }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
