@@ -1,6 +1,6 @@
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  AccountRole, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
+  AccountRole, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -118,7 +118,15 @@ export const api = {
   getMfaPolicy: () => request<{ required: MfaPolicy }>('GET', '/api/v1/settings/mfa'),
   setMfaPolicy: (required: MfaPolicy) => request<{ required: MfaPolicy }>('PUT', '/api/v1/settings/mfa', { required }),
   resetMemberMfa: (userId: string) => request<void>('POST', `/api/v1/members/${encodeURIComponent(userId)}/mfa/reset`, {}),
-  logout: () => request<void>('POST', '/api/v1/auth/logout'),
+  /** Ends the session. `redirect` is the provider's end-session URL when the owner enabled provider sign-out. */
+  logout: () => request<{ redirect?: string } | undefined>('POST', '/api/v1/auth/logout'),
+  // Single sign-on (OpenSpec `oidc-login`): the sign-in itself is a browser navigation to oidcStartUrl.
+  getOidcSettings: () => request<OidcSettings>('GET', '/api/v1/settings/oidc'),
+  saveOidcSettings: (input: OidcSettingsInput) => request<OidcSettings>('PUT', '/api/v1/settings/oidc', input),
+  /** Runs discovery against `issuer`, or the saved issuer when omitted. */
+  testOidc: (issuer?: string) => request<OidcTestResult>('POST', '/api/v1/settings/oidc/test', issuer ? { issuer } : {}),
+  listIdentities: () => request<{ identities: LinkedIdentity[]; provider: OidcStatus }>('GET', '/api/v1/me/identities'),
+  unlinkIdentity: (id: string) => request<void>('DELETE', `/api/v1/me/identities/${encodeURIComponent(id)}`),
   /** `tzOffset` (minutes east of UTC) lets REST writes recompute relative reminders in this zone. */
   sync: (device: string, cursor: number, ops: Op[], tzOffset?: number) =>
     request<SyncResponse>('POST', '/api/v1/sync', tzOffset === undefined ? { device, cursor, ops } : { device, cursor, ops, tzOffset }),
@@ -260,6 +268,12 @@ export function auditExportUrl(filters: AuditFilters = {}): string {
   const qs = auditQuery(filters).toString()
   return `/api/v1/audit/export${qs ? `?${qs}` : ''}`
 }
+
+/**
+ * Where the browser goes to sign in with the provider. With a session the same
+ * route links the provider to the signed-in account instead.
+ */
+export const OIDC_START_URL = '/api/v1/auth/oidc/start'
 
 /** True for failures that mean "no server reachable" rather than a server answer. */
 export function isNetworkError(err: unknown): boolean {

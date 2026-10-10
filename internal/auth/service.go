@@ -65,6 +65,8 @@ type Service struct {
 	// beforeDelete removes an account's synced data inside DeleteUser's
 	// transaction (users.go); nil leaves ops and fields alone.
 	beforeDelete AccountDataHook
+	// ssoOnly reports SSO-only mode (oidc.go); nil means never.
+	ssoOnly func(ctx context.Context) bool
 }
 
 // NewService wires a Service. It owns the audit recorder for the same database,

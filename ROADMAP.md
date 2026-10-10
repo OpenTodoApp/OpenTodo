@@ -79,7 +79,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Owner setup, password sign-in, sessions, closed sign-up by default, rate limiting, CSP | `bootstrap-core-platform` |
 | ✅ | Invitations for new members | `invitations` |
 | ✅ | Passkeys (WebAuthn) | `passkeys` |
-| 📝 | OIDC / OAuth2 single sign-on | `oidc-login` |
+| ✅ | OIDC / OAuth2 single sign-on | `oidc-login` |
 | ✅ | Multi-factor authentication (TOTP) | `mfa-totp` |
 | ✅ | Audit log | `audit-log` |
 | ✅ | User administration: list users, admin role, deactivate, delete, password reset, owner transfer | `user-management` |

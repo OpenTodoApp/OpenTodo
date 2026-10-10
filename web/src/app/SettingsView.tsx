@@ -13,6 +13,7 @@ import { AdministrationSections } from './UsersPanel'
 import { NotificationsSettings } from './NotificationsSettings'
 import { SecuritySettings } from './ActivityPanel'
 import { SecurityPanel } from './SecurityPanel'
+import { LinkedAccountsPanel, SsoPanel } from './SsoPanel'
 import { TwoFactorPanel } from './TwoFactorPanel'
 import { navigate } from './router'
 import { WebhooksPanel } from './WebhooksPanel'
@@ -84,6 +85,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       <NotificationsSettings />
 
       <SecurityPanel />
+      <LinkedAccountsPanel />
       <section className="space-y-2">
         <h2 className="font-semibold">Start view</h2>
         <p className="text-sm text-slate-500">The view this device opens on launch. Each device keeps its own choice; it is not synced.</p>
@@ -107,6 +109,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       <AutoArchiveSection />
 
       <AdministrationSections user={user} />
+      {user.role === 'owner' && <SsoPanel />}
 
       <WebhooksPanel isOwner={user.role === 'owner'} />
       <QuickAddSettingsSection />

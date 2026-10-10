@@ -186,6 +186,59 @@ export interface AuthStatus {
   passkeysAvailable?: boolean
   /** Second-factor state of the signed-in account (absent when anonymous). */
   mfa?: MfaStatus
+  /** Single sign-on (OpenSpec `oidc-login`); absent on servers without it. */
+  oidc?: OidcStatus
+}
+
+/** Whether a provider is configured, as the sign-in screen needs it. */
+export interface OidcStatus {
+  enabled: boolean
+  displayName: string
+  /** Members must use the provider; the owner keeps local sign-in (`?owner=1`). */
+  ssoOnly: boolean
+}
+
+/** Owner view of the provider configuration. The secret is never returned, only masked. */
+export interface OidcSettings {
+  enabled: boolean
+  issuer: string
+  clientId: string
+  /** `••••` plus the last four characters, or empty when unset. */
+  clientSecret: string
+  clientSecretSet: boolean
+  displayName: string
+  scopes: string
+  allowProvision: boolean
+  ssoOnly: boolean
+  providerLogout: boolean
+  /** Paste this into the provider's client configuration. */
+  redirectUri: string
+  /** False when the redirect URI was derived from the request (set OPENTODO_BASE_URL). */
+  baseUrlConfigured: boolean
+  /** Field name to "env" (locked by an OPENTODO_OIDC_* variable) or "settings". */
+  managedBy: Record<string, 'env' | 'settings'>
+}
+
+/** A settings change; omitted fields are kept. `clientSecret: ''` removes the secret. */
+export type OidcSettingsInput = Partial<Pick<OidcSettings,
+  'issuer' | 'clientId' | 'clientSecret' | 'displayName' | 'scopes' | 'allowProvision' | 'ssoOnly' | 'providerLogout'>>
+
+/** Result of POST /api/v1/settings/oidc/test. */
+export interface OidcTestResult {
+  ok: boolean
+  issuer: string
+  authorizationHost: string
+  tokenHost: string
+  endSessionSupported: boolean
+}
+
+/** A provider identity linked to the account. Server account data, never synced. */
+export interface LinkedIdentity {
+  id: string
+  issuer: string
+  email: string
+  createdAt: number
+  lastLoginAt: number | null
 }
 
 /** Owner policy for the second factor (OpenSpec `mfa-totp`). */

@@ -1,7 +1,8 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
-import { api, ApiError } from '../lib/api'
+import { api, ApiError, OIDC_START_URL } from '../lib/api'
 import { conditionalMediationAvailable, getPasskey, isCancellation, passkeysSupported } from '../lib/passkeys'
 import type { AuthStatus, InvitationPreview, LoginResult } from '../lib/types'
+import { oidcErrorMessage, ssoLayout, takeQueryParam } from './sso'
 
 /** When set, the screen is the acceptance form of an invitation (OpenSpec `invitations`). */
 export interface InviteContext {
@@ -14,12 +15,16 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
   const [email, setEmail] = useState(invite?.preview.email ?? '')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  // Single sign-on (OpenSpec `oidc-login`): the provider action on plain sign-in;
+  // SSO-only mode hides local sign-in unless the owner uses `?owner=1`.
+  const sso = invite ? { provider: null, local: true, breakGlass: false } : ssoLayout(status, typeof location === 'undefined' ? '' : location.search)
+  // A failed provider callback returns here with ?error=<code>.
+  const [error, setError] = useState<string | null>(() => oidcErrorMessage(takeQueryParam('error'), sso.provider ?? undefined))
   const [busy, setBusy] = useState(false)
   const emailLocked = !!invite?.preview.email
   // Passkeys are offered only on plain sign-in (not setup, not invitation
   // acceptance), when the server and browser support them.
-  const passkeys = mode === 'login' && !invite && !status.setupRequired && status.passkeysAvailable === true && passkeysSupported()
+  const passkeys = sso.local && mode === 'login' && !invite && !status.setupRequired && status.passkeysAvailable === true && passkeysSupported()
   const conditional = useRef<AbortController | null>(null)
   // Second step (OpenSpec `mfa-totp`): set when the first factor answered with a challenge.
   const [challenge, setChallenge] = useState<string | null>(null)
@@ -152,7 +157,19 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
           </p>
         )}
 
-        <form onSubmit={(e) => void submit(e)} className="space-y-3">
+        {sso.provider && mode === 'login' && (
+          <ProviderSignIn name={sso.provider} primary={!sso.local} />
+        )}
+        {sso.provider && mode === 'login' && sso.local && <OrDivider />}
+        {!sso.local && error && <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+        {!sso.local && <p className="mt-3 text-center text-xs text-slate-500">This server uses single sign-on for every account.</p>}
+        {sso.breakGlass && (
+          <p className="mb-3 rounded-md bg-amber-50 p-2 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+            Owner sign-in: only the server owner can sign in with a password while single sign-on is required.
+          </p>
+        )}
+
+        {sso.local && <form onSubmit={(e) => void submit(e)} className="space-y-3">
           {mode === 'register' && (
             <label className="block text-sm">
               <span className="mb-1 block text-slate-600 dark:text-slate-300">Name</span>
@@ -176,13 +193,11 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
           <button className="btn-primary w-full" disabled={busy}>
             {busy ? 'Please wait…' : mode === 'register' ? (status.setupRequired ? 'Create owner account' : invite ? 'Accept invitation' : 'Create account') : 'Sign in'}
           </button>
-        </form>
+        </form>}
 
         {passkeys && (
           <>
-            <div className="my-4 flex items-center gap-3 text-xs text-slate-400" aria-hidden="true">
-              <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />or<span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
-            </div>
+            <OrDivider />
             <button type="button" className="btn-ghost w-full border border-slate-300 dark:border-slate-700" disabled={busy}
               onClick={() => void signInWithPasskey()}>
               Sign in with a passkey
@@ -190,7 +205,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
           </>
         )}
 
-        {!status.setupRequired && status.signupAllowed && !invite && (
+        {sso.local && !status.setupRequired && status.signupAllowed && !invite && (
           <button className="btn-ghost mt-3 w-full" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
             {mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
           </button>
@@ -201,6 +216,24 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
           </p>
         )}
     </AuthCard>
+  )
+}
+
+/** "Sign in with <provider>": a plain link, so the browser navigates to the provider. */
+export function ProviderSignIn({ name, primary }: { name: string; primary: boolean }) {
+  return (
+    <a href={OIDC_START_URL} className={`${primary ? 'btn-primary' : 'btn-ghost border border-slate-300 dark:border-slate-700'} flex w-full justify-center`}
+      data-testid="sso-sign-in">
+      Sign in with {name}
+    </a>
+  )
+}
+
+function OrDivider() {
+  return (
+    <div className="my-4 flex items-center gap-3 text-xs text-slate-400" aria-hidden="true">
+      <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />or<span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+    </div>
   )
 }
 
@@ -308,6 +341,8 @@ export function describeAuthError(err: unknown): string {
       return 'Sign-up is closed on this server. Ask the owner for an invitation link.'
     case 'account_deactivated':
       return 'This account has been deactivated. Ask the server owner or an admin to reactivate it.'
+    case 'sso_required':
+      return 'This server requires single sign-on for your account. Use the "Sign in with" button instead.'
     default:
       return err.message
   }

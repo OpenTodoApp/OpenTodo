@@ -33,7 +33,7 @@ When a provider is configured, `GET /api/v1/auth/oidc/start` SHALL redirect to t
 
 #### Scenario: State mismatch or replay
 - **WHEN** the callback carries a `state` that was not issued, has expired after ten minutes, or was already used
-- **THEN** the response is a 400 `oidc_state_invalid` error and no session is created
+- **THEN** the response is a 400 `oidc_state_invalid` error (a browser navigation is instead returned to the sign-in screen with that indication) and no session is created
 
 #### Scenario: Provider refuses or token invalid
 - **WHEN** the provider returns an error, or the identity token fails any verification step
@@ -78,7 +78,7 @@ A signed-in user SHALL be able to list linked identities through `GET /api/v1/me
 
 #### Scenario: Identity already linked elsewhere
 - **WHEN** the identity returned by the provider is already linked to a different account
-- **THEN** the link is refused with a 409 `identity_taken` error
+- **THEN** the link is refused with a 409 `identity_taken` error (a browser navigation is instead returned to Settings with that indication)
 
 #### Scenario: Unlink the last way in
 - **WHEN** SSO-only mode is on and a member tries to unlink their only identity, or an anonymous request calls the route

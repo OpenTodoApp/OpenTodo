@@ -21,7 +21,9 @@ import (
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/importer"
 	"github.com/pixari/opentodo/internal/notify"
+	"github.com/pixari/opentodo/internal/oidc"
 	"github.com/pixari/opentodo/internal/push"
+	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/webhook"
 )
@@ -69,6 +71,10 @@ type Server struct {
 	tzOffsets sync.Map
 	// inbox serves in-app notifications (OpenSpec `task-assignment`).
 	inbox *notify.InApp
+	// oidc is single sign-on (OpenSpec `oidc-login`); oidcLimiter guards its
+	// anonymous start and callback routes per client address (20/min).
+	oidc        *oidc.Service
+	oidcLimiter *rateLimiter
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -92,10 +98,16 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		passkeyOptions: newRateLimiter(10, time.Minute),
 		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
 		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
-		importer: importer.New(syncSvc.DB(), syncSvc, log)}
+		oidcLimiter: newRateLimiter(20, time.Minute),
+		importer:    importer.New(syncSvc.DB(), syncSvc, log)}
 	for _, o := range opts {
 		o(s)
 	}
+	if s.oidc == nil {
+		s.oidc = oidc.New(settings.New(syncSvc.DB()), cfg.DataDir, oidc.Options{Env: oidc.Env(cfg.OIDC)})
+	}
+	// SSO-only mode refuses local sign-in for members (oidc-login D6).
+	authSvc.SetSSOOnly(s.oidc.SSOOnly)
 	if s.inbox == nil {
 		s.inbox = notify.NewInApp(syncSvc.DB(), log)
 		syncSvc.AddSink(s.inbox)
@@ -122,6 +134,9 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// Second factor (OpenSpec `mfa-totp`): the second sign-in step is anonymous
 	// (it carries the challenge), everything else requires a session or token.
 	s.registerMFARoutes(mux)
+	// Single sign-on (OpenSpec `oidc-login`): start and callback are part of the
+	// sign-in flow (anonymous, rate limited); settings and identities require auth.
+	s.registerOIDCRoutes(mux)
 
 	mux.Handle("GET /api/v1/me", s.requireAuth(s.handleMe))
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
@@ -363,6 +378,7 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		"user":              u,
 		"version":           s.version,
 		"passkeysAvailable": s.cfg.PasskeysAvailable(),
+		"oidc":              s.oidcStatus(r.Context()),
 	}
 	if u != nil {
 		st, err := s.auth.MFAStatusFor(r.Context(), u, sess != nil)
@@ -396,6 +412,12 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var c credentials
 	if err := readJSON(r, &c); err != nil {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		return
+	}
+	// In SSO-only mode new accounts come from the provider, never a password
+	// form (the first account is the owner and can always be created).
+	if n, err := s.auth.UserCount(r.Context()); err == nil && n > 0 && s.auth.SSOOnly(r.Context()) {
+		writeError(w, http.StatusForbidden, "sso_required", auth.ErrSSORequired.Error())
 		return
 	}
 	u, err := s.auth.Register(r.Context(), c.Email, c.Name, c.Password, c.Invitation)
@@ -464,6 +486,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	// SSO-only mode: members must use the provider (oidc-login D6).
+	if s.ssoRequired(w, r, u) {
+		return
+	}
 	// An enrolled account needs its second factor, unless this browser was
 	// remembered (mfa-totp D3, D6).
 	if done := s.secondStep(w, r, u, "password"); done {
@@ -478,31 +504,53 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 // the second factor as satisfied for the session. It reports whether the
 // session was created.
 func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *auth.User, status int, mfa bool) bool {
+	if _, ok := s.issueSession(w, r, u, mfa); !ok {
+		return false
+	}
+	writeJSON(w, status, map[string]any{"user": u})
+	return true
+}
+
+// issueSession creates the session and sets its cookie without writing a body
+// (the provider callback redirects instead). It returns the cookie value.
+func (s *Server) issueSession(w http.ResponseWriter, r *http.Request, u *auth.User, mfa bool) (string, bool) {
 	secret, exp, err := s.auth.CreateSessionMFA(r.Context(), u.ID, r.UserAgent(), mfa)
 	if errors.Is(err, auth.ErrAccountDeactivated) {
 		writeError(w, http.StatusForbidden, "account_deactivated", "this account has been deactivated; ask the server owner or an admin")
-		return false
+		return "", false
 	}
 	if err != nil {
 		s.internal(w, err)
-		return false
+		return "", false
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name: sessionCookie, Value: secret, Path: "/", Expires: exp,
 		HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode,
 	})
-	writeJSON(w, status, map[string]any{"user": u})
-	return true
+	return secret, true
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	redirect := ""
 	if c, err := r.Cookie(sessionCookie); err == nil {
 		u, lookupErr := s.auth.UserBySession(r.Context(), c.Value)
+		// The identity-token hint is read before the session (and the hint with
+		// it) is deleted; only sessions that started through the provider have one.
+		idToken, viaProvider, _ := s.auth.SessionIDToken(r.Context(), c.Value)
 		if err := s.auth.DeleteSession(r.Context(), c.Value); err == nil && lookupErr == nil {
 			s.audit.Record(r.Context(), audit.Logout(u.ID))
+			if viaProvider {
+				redirect = s.providerLogoutURL(r, idToken)
+			}
 		}
 	}
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode})
+	// Provider sign-out (oidc-login D7): the local session is already gone; the
+	// client follows the redirect to the provider's end-session endpoint.
+	if redirect != "" {
+		writeJSON(w, http.StatusOK, map[string]any{"redirect": redirect})
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

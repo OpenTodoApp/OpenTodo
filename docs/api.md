@@ -37,14 +37,21 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
-| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable, mfa?}` (`mfa` when signed in, see [Two-factor authentication](#two-factor-authentication)) |
+| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, mfa?}` (`mfa` when signed in, see [Two-factor authentication](#two-factor-authentication); `oidc` see [Single sign-on](#single-sign-on)) |
 | POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?}` → 201 `{user}` + cookie. First account becomes owner; afterwards an `invitation` secret admits one member while sign-up is closed |
 | POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie, or `{mfaRequired:true, challenge, expiresAt}` and no cookie when the account has a second factor |
 | POST | `/api/v1/auth/mfa` | none | `{challenge, code}` or `{challenge, recoveryCode}`, optional `remember` → `{user}` + cookie (+ `ot_trust` cookie when `remember`) |
 | POST | `/api/v1/auth/reauth` | cookie | `{password}` or `{code}` → `{reauthAt, validForMs}`; unlocks sensitive routes for 10 minutes |
 | POST | `/api/v1/auth/passkey/options` | none | → `{publicKey}` sign-in options, see [Passkeys](#passkeys) |
 | POST | `/api/v1/auth/passkey` | none | `{credential}` → `{user}` + cookie |
-| POST | `/api/v1/auth/logout` | cookie | 204 |
+| POST | `/api/v1/auth/logout` | cookie | 204, or 200 `{redirect}` (provider sign-out, see [Single sign-on](#single-sign-on)) |
+| GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links instead when signed in) |
+| GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
+| GET | `/api/v1/settings/oidc` | owner | provider configuration, secret masked |
+| PUT | `/api/v1/settings/oidc` | owner, fresh | change the provider configuration |
+| POST | `/api/v1/settings/oidc/test` | owner | `{issuer?}` → `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` |
+| GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
+| DELETE | `/api/v1/me/identities/{id}` | yes | 204, or 409 `last_credential` |
 | GET | `/api/v1/me` | yes | `{user, mfa}` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,createdAt,lastUsedAt}]}` |
 | POST | `/api/v1/tokens` | yes, fresh | `{name}` → 201 `{token, secret}` (secret shown once) |
@@ -212,6 +219,58 @@ A challenge lasts five minutes and allows five wrong codes. Each wrong code gets
 | `rate_limited` | 429 | more than 10 requests per minute per address to `auth/mfa`, or to `auth/reauth` (separate windows) |
 
 Wrong codes are recorded as `mfa.challenge_failed` with a reason (`wrong_code`, `wrong_recovery_code`) and never the code. Enrolment, disabling and resets are recorded as `mfa.enrolled`, `mfa.disabled` and `mfa.reset`, and policy changes as `settings.changed` (`setting: mfa.required`). A completed sign-in is `login.succeeded` with method `password+totp`, `password+recovery_code`, `password+trusted_device` or `passkey+totp`.
+
+### Single sign-on
+
+The owner can connect one OpenID Connect provider (Authentik, Keycloak, Authelia, Zitadel, a hosted login service). It is off until configured; setup steps are in [self-hosting/sso.md](self-hosting/sso.md). When, and only when, a provider is configured, the server contacts that issuer's discovery document and the token and key endpoints it names (10-second timeout, no redirects followed).
+
+**Status.** `auth/status` always carries `{"oidc":{"enabled":true,"displayName":"Home SSO","ssoOnly":false}}` (`enabled:false` when no provider is configured).
+
+**Sign-in** is a browser navigation, not an API call: `GET /api/v1/auth/oidc/start` redirects to the provider with the authorization-code flow, PKCE (S256), a single-use `state` and a `nonce`, and sets a 10-minute `HttpOnly`, `SameSite=Lax` cookie `ot_oidc` (path `/api/v1/auth/oidc`) holding the signed flow state. The provider returns to `GET /api/v1/auth/oidc/callback`, which exchanges the code, verifies the identity token (RS256, PS256, ES256 or EdDSA signature from the provider's JWKS; issuer, audience, expiry, issued-at and nonce, with 60 seconds of clock leeway) and answers `303` to `/` with the usual `opentodo_session` cookie. The session counts as having passed the second factor: the provider applies its own policy, so an account with TOTP is not asked for a code. The owner's two-factor enrolment policy still applies to the session like any other.
+
+The identity is matched by issuer and subject first; a first-time identity whose **verified** email equals an account's email is linked to that account; otherwise a `member` account is created only if open sign-up is on or the owner enabled `allowProvision`. Failures redirect to the sign-in screen with `?error=`:
+
+| `error` | When |
+| --- | --- |
+| `oidc_failed` | the provider refused, the code exchange failed or the identity token failed a check (details only in the server log) |
+| `oidc_email_unverified` | a first-time identity without an email marked verified |
+| `signup_closed` | no matching account and provisioning is not allowed |
+
+`start` while signed in **links** the provider identity to the current account instead (Settings → Linked accounts) and returns to `/settings?linked=1`. If that identity is already linked to the same account, the flow is a fresh proof of identity for the session (the *fresh* routes work for ten minutes) and returns to `/settings?reauthenticated=1`.
+
+The callback answers `400 oidc_state_invalid` (missing, forged, expired or already used state) and `409 identity_taken` (linking an identity that belongs to another account) as JSON; a browser navigation (`Accept: text/html`) is redirected to `/?error=<code>` or `/settings?error=<code>` instead, so people never see raw JSON.
+
+**Owner settings.** `GET /api/v1/settings/oidc`:
+
+```json
+{
+  "enabled": true, "issuer": "https://sso.example.com/application/o/opentodo", "clientId": "opentodo",
+  "clientSecret": "••••a1b2", "clientSecretSet": true, "displayName": "Home SSO", "scopes": "openid email profile",
+  "allowProvision": false, "ssoOnly": false, "providerLogout": false,
+  "redirectUri": "https://todo.example.com/api/v1/auth/oidc/callback", "baseUrlConfigured": true,
+  "managedBy": { "issuer": "settings", "clientId": "settings", "clientSecret": "env", "displayName": "settings",
+                 "scopes": "settings", "allowProvision": "settings", "ssoOnly": "settings", "providerLogout": "settings" }
+}
+```
+
+`PUT` takes any subset of `issuer`, `clientId`, `clientSecret`, `displayName`, `scopes`, `allowProvision`, `ssoOnly`, `providerLogout` and returns the same shape. A new issuer must be an https URL whose discovery document is reachable and names the same issuer, or the answer is `400 invalid_input` and the previous configuration stays. `clientSecret` is write-only: omit it (or send the masked value back) to keep it, send `""` to remove it. A field set by an `OPENTODO_OIDC_*` variable is reported as `managedBy: "env"` and cannot be changed (`400 invalid_input`). An empty `issuer` turns single sign-on off (links are kept). `PUT` needs a fresh session. `POST /api/v1/settings/oidc/test` with optional `{"issuer":"…"}` runs discovery and answers `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` or `400 invalid_input`. Changes are recorded as `settings.changed` (the secret as `(changed)`).
+
+**SSO-only mode** (`ssoOnly: true`, effective only while a provider is configured): password and passkey sign-in, and registration through the password form, answer `403 sso_required` for every account except the owner (recorded as `login.failed` with reason `sso_required`). The owner keeps local sign-in as break-glass (the sign-in screen shows the password form at `/?owner=1`). Bearer tokens keep working.
+
+**Linked identities.** `GET /api/v1/me/identities` → `{identities:[{id, issuer, email, createdAt, lastLoginAt}], provider:{enabled, displayName, ssoOnly}}`. `DELETE /api/v1/me/identities/{id}` → 204, or `409 last_credential` when the account would have no way left to sign in under the current mode (another identity counts while a provider is configured; a password or passkey counts unless SSO-only mode refuses it for this account). Linking and unlinking are recorded as `identity.linked` / `identity.unlinked`; a provider sign-in as `login.succeeded` with method `oidc`.
+
+**Sign-out.** `POST /auth/logout` always deletes the local session. When `providerLogout` is on and the session started through the provider, it answers `200 {"redirect":"https://sso…/end-session?client_id=…&id_token_hint=…&post_logout_redirect_uri=https://todo.example.com/"}` instead of 204, and the web app follows it after clearing local data.
+
+| Code | Status | When |
+| --- | --- | --- |
+| `oidc_disabled` | 404 | `auth/oidc/start` or `callback` while no provider is configured |
+| `oidc_state_invalid` | 400 | callback with a missing, forged, expired or reused state |
+| `identity_taken` | 409 | linking an identity that is linked to another account |
+| `last_credential` | 409 | unlinking the account's last way to sign in |
+| `sso_required` | 403 | password or passkey sign-in, or password registration, by a non-owner in SSO-only mode |
+| `invalid_input` | 400 | issuer not https, discovery failed or names another issuer, client id missing, scopes without `openid`, changing an environment-managed field |
+| `forbidden` | 403 | `settings/oidc` by a non-owner |
+| `rate_limited` | 429 | more than 20 requests per minute per address to `auth/oidc/start` and `callback` together |
 
 ### Task fields
 
@@ -878,16 +937,21 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
 - Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB).
-- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey` and the invitation preview share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; invitation creation is limited to 20 per hour per account.
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey` and the invitation preview share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; invitation creation is limited to 20 per hour per account.
 
 ### Error codes
 
 | Code | Status | Where |
 | --- | --- | --- |
 | `unauthorized` | 401 | any protected route without a valid session or token |
-| `forbidden` | 403 | invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; backups, audit log, audit settings, webhook policy, two-factor policy or member reset by a non-owner; a write or membership change your project role does not allow |
+| `forbidden` | 403 | invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; backups, audit log, audit settings, webhook policy, two-factor policy, single sign-on settings or member reset by a non-owner; a write or membership change your project role does not allow |
 | `reauth_required` | 403 | a sensitive route on a cookie session that has not proved its identity in the last ten minutes; see [Two-factor authentication](#two-factor-authentication) |
 | `mfa_enrolment_required` | 403 | the owner's policy requires a second factor that this account has not set up yet |
+| `sso_required` | 403 | password or passkey sign-in (or password registration) by a non-owner while SSO-only mode is on; see [Single sign-on](#single-sign-on) |
+| `oidc_disabled` | 404 | single sign-on routes while no provider is configured |
+| `oidc_state_invalid` | 400 | provider callback with a missing, forged, expired or reused state |
+| `identity_taken` | 409 | linking a provider identity that belongs to another account |
+| `last_credential` | 409 | unlinking the last way to sign in to the account |
 | `mfa_required_by_policy` | 403 | turning off a second factor that the policy requires |
 | `mfa_code_invalid` | 400/401 | wrong, reused or expired one-time or recovery code |
 | `mfa_challenge_invalid` | 401 | expired or exhausted sign-in challenge: enter the password again |
