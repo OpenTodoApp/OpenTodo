@@ -9,11 +9,11 @@
 
 ## 2. Parser module (client)
 
-- [ ] 2.1 `web/src/lib/nlp/tokenize.ts`: quote-aware tokenizer with character spans; verify `nlp.test.ts` cases for quotes and whitespace collapsing (`npm test`)
-- [ ] 2.2 `web/src/lib/nlp/attributes.ts`: `#project` (exact then unique prefix, skips archived/deleted), `@label`, `p1`–`p4`, `+duration`; verify tests for the full-line, unknown-project and ambiguous-prefix scenarios
-- [ ] 2.3 `web/src/lib/nlp/vocab/{en,de,fr,it,es,pt}.ts`: day words, weekdays, months, qualifiers, units; verify a test asserts every vocabulary defines the same keys
-- [ ] 2.4 `web/src/lib/nlp/dates.ts`: phrase grammar and resolver (bare weekday, next, in N, next week/month, month-day, numeric, times 12h/24h, "at", day/month order); verify table-driven tests with fixed reference dates, including "next Wed at 3pm", "16:30" alone, "3 Feb" rolling forward, and German/French/Italian/Spanish/Portuguese phrases
-- [ ] 2.5 `web/src/lib/nlp/parse.ts`: `parse(line, {today, now, languages, projects, dismissed})` returning title, attributes and spans; verify determinism test (same input twice, and with shuffled project list, yields deep-equal output) and that dismissed spans are skipped
+- [x] 2.1 `web/src/lib/nlp/tokenize.ts`: quote-aware tokenizer with character spans; verify `nlp.test.ts` cases for quotes and whitespace collapsing (`npm test`)
+- [x] 2.2 `web/src/lib/nlp/attributes.ts`: `#project` (exact then unique prefix, skips archived/deleted), `@label`, `p1`–`p4`, `+duration`; verify tests for the full-line, unknown-project and ambiguous-prefix scenarios
+- [x] 2.3 `web/src/lib/nlp/vocab/{en,de,fr,it,es,pt}.ts`: day words, weekdays, months, qualifiers, units; verify a test asserts every vocabulary defines the same keys
+- [x] 2.4 `web/src/lib/nlp/dates.ts`: phrase grammar and resolver (bare weekday, next, in N, next week/month, month-day, numeric, times 12h/24h, "at", day/month order); verify table-driven tests with fixed reference dates, including "next Wed at 3pm", "16:30" alone, "3 Feb" rolling forward, and German/French/Italian/Spanish/Portuguese phrases
+- [x] 2.5 `web/src/lib/nlp/parse.ts`: `parse(line, {today, now, languages, projects, dismissed})` returning title, attributes and spans; verify determinism test (same input twice, and with shuffled project list, yields deep-equal output) and that dismissed spans are skipped
 
 ## 3. Quick add UI
 

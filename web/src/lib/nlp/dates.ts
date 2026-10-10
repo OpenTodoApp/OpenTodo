@@ -359,15 +359,19 @@ function numericDateAt(tokens: readonly Token[], j: number, ctx: DateContext): {
   }
   const m = NUMERIC_RE.exec(t.norm)
   if (!m) return null
+  const dotted = m[2] === '.'
   // A trailing dot only belongs to the German "12.11." form.
-  if (t.norm.endsWith('.') && m[2] !== '.') return null
+  if (t.norm.endsWith('.') && !dotted) return null
+  // "9.30" is a time or a number in month/day locales; dotted dates are D.M only.
+  if (dotted && ctx.dayMonthOrder !== 'DM') return null
   const a = Number(m[1])
   const b = Number(m[3])
   let year = m[4] ? Number(m[4]) : 0
   if (year && year < 100) year += 2000
   let [day, month] = ctx.dayMonthOrder === 'DM' ? [a, b] : [b, a]
   const probeYear = year || fromISO(ctx.today)[0]
-  if (!isValidDate(probeYear, month, day) && isValidDate(probeYear, day, month)) [day, month] = [month, day]
+  // "25/12" in a M/D locale can only mean 25 December; dotted forms are never swapped.
+  if (!dotted && !isValidDate(probeYear, month, day) && isValidDate(probeYear, day, month)) [day, month] = [month, day]
   const date = resolveMonthDay(ctx.today, year, month, day)
   return date ? { date, n: 1 } : null
 }
@@ -438,17 +442,13 @@ function clockAt(tokens: readonly Token[], j: number, v: Vocabulary, o: { afterA
     const h = Number(m[1])
     const min = Number(m[2])
     if (min > 59) return null
-    let n = 1
-    let ampm = m[3] ? { n: 0, pm: m[3].startsWith('p') } : meridiem(tokens, j + 1, v)
-    if (ampm && !m[3]) n += ampm.n
+    const ampm = m[3] ? { n: 0, pm: m[3].startsWith('p') } : meridiem(tokens, j + 1, v)
     if (ampm) {
       if (h < 1 || h > 12) return null
-      return { time: clock(to24(h, ampm.pm), min), n }
+      return { time: clock(to24(h, ampm.pm), min), n: 1 + ampm.n }
     }
     if (h > 23) return null
-    ampm = null
-    n += hourWord(j + 1)
-    return { time: clock(h, min), n }
+    return { time: clock(h, min), n: 1 + hourWord(j + 1) }
   }
   if ((m = HDOTM_RE.exec(s))) {
     const h = Number(m[1])

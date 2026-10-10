@@ -77,17 +77,22 @@ function balancedQuotes(line: string): Set<number> {
 }
 
 /**
- * Build the saved title: drop every removed span, then collapse runs of
- * whitespace and trim. Spans may overlap or be unordered.
+ * Build the saved title: replace every `remove` span by a word break, delete every
+ * `drop` span outright (quote characters), then collapse whitespace and trim.
+ * Spans may overlap or be unordered.
  */
-export function stripSpans(line: string, remove: readonly Span[]): string {
-  if (remove.length === 0) return line.replace(/\s+/g, ' ').trim()
+export function stripSpans(line: string, remove: readonly Span[], drop: readonly Span[] = []): string {
   const cut = new Uint8Array(line.length)
-  for (const s of remove) for (let i = Math.max(0, s.start); i < Math.min(line.length, s.end); i++) cut[i] = 1
+  const mark = (spans: readonly Span[], v: number) => {
+    for (const s of spans) for (let i = Math.max(0, s.start); i < Math.min(line.length, s.end); i++) cut[i] = v
+  }
+  mark(drop, 2)
+  mark(remove, 1)
   let out = ''
   for (let i = 0; i < line.length; i++) {
-    // A removed span acts as a word boundary so "milk tomorrow p2" never glues words.
-    out += cut[i] ? ' ' : line[i]
+    // A removed token acts as a word boundary so "milk tomorrow p2" never glues words.
+    if (cut[i] === 1) out += ' '
+    else if (cut[i] === 0) out += line[i]
   }
   return out.replace(/\s+/g, ' ').trim()
 }
