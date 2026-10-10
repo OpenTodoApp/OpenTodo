@@ -15,7 +15,7 @@ import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { SubProjects } from './SubProjects'
 
-type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'invite' } | { view: 'labels' }>
+type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'invite' } | { view: 'labels' } | { view: 'filter' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 interface Row {

@@ -1,0 +1,174 @@
+# Filter queries
+
+The **Filter** view (sidebar, or `g` then `f`) lists the tasks that match a one-line query such as:
+
+```text
+@work & due <= tomorrow & p1
+```
+
+Queries run entirely on your device, over the data the app already holds: they work offline, make no network request, and the results update live as you edit tasks or as changes from your other devices arrive.
+
+## Grammar
+
+```text
+query    := or
+or       := and ( "|" and )*
+and      := not ( "&" not )*
+not      := "!" not | "(" or ")" | term
+term     := "@" name                       label
+          | "##" name | "#" name           project with / without sub-projects
+          | "p1" | "p2" | "p3" | "p4"      priority
+          | ("due" | "created") cmp date
+          | keyword
+          | "search:" text
+cmp      := "<" | "<=" | "=" | ">=" | ">" | "before" | "after"
+date     := "today" | "tomorrow" | "yesterday" | weekday | YYYY-MM-DD
+          | INT "days" | INT "days ago"
+weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
+keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
+          | "no labels" | "no time" | "completed" | "open" | "subtask"
+name     := word | '"' chars '"'
+text     := word | '"' chars '"'
+```
+
+### Precedence and connectives
+
+- `!` (not) binds tightest, then `&` (and), then `|` (or). `@errand | @call & p1` means `@errand | (@call & p1)`.
+- Use parentheses to group: `(@errand | @call) & p1`.
+- `&` and `|` are the only connectives. There is no implicit "and": `@work p1` is an error, write `@work & p1`.
+- Whitespace between tokens is ignored, so `due<=tomorrow` and `due <= tomorrow` are the same.
+
+### Names, quoting and case
+
+- A bare name (`@errand`, `#Work`) runs until whitespace, a double quote, or one of the operator characters `& | ! ( ) < > =`. Any other character, including `#`, `-`, `/`, `.` and non-Latin letters, is part of the name.
+- Put names with spaces or operator characters in double quotes: `#"Client A"`, `@"follow up"`. Inside quotes, `\"` is a literal quote and `\\` a literal backslash.
+- Keywords, comparison words, weekday names, label names and project names all ignore case: `#work`, `#Work` and `#WORK` are the same.
+
+## Terms
+
+| Term | Matches |
+| --- | --- |
+| `@name` | tasks carrying the label with that name |
+| `#name` | tasks in the project with that name |
+| `##name` | tasks in that project or in any of its sub-projects, at any depth |
+| `p1` … `p4` | tasks with that priority (`p1` is the highest, `p4` the default) |
+| `due <cmp> <date>` | tasks whose due date compares as asked; a task without a due date never matches |
+| `created <cmp> <date>` | tasks whose creation day, in your time zone, compares as asked |
+| `overdue` | due before today |
+| `today` | due today |
+| `tomorrow` | due tomorrow |
+| `no date` | no due date |
+| `no time` | a due date without a time of day |
+| `no project` | Inbox tasks (no project) |
+| `no labels` | tasks with no label |
+| `subtask` | tasks that have a parent task |
+| `completed` | completed tasks |
+| `open` | open (not completed) tasks |
+| `search: text` | title or notes contain the text, ignoring case; quote several words: `search: "oat milk"` |
+
+### Open, completed and deleted tasks
+
+A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it. `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match. Like the other cross-project views, the Filter view leaves out tasks of archived projects.
+
+### Dates
+
+Dates compare **calendar days** in your local time zone, the same way Today and Upcoming do; the time of day is ignored.
+
+| Expression | Meaning (when today is Saturday 2026-10-10) |
+| --- | --- |
+| `today`, `tomorrow`, `yesterday` | 2026-10-10, 2026-10-11, 2026-10-09 |
+| `monday` … `sunday` | the next such day, today included: `friday` is 2026-10-16, `saturday` is 2026-10-10 |
+| `2026-12-01` | that date |
+| `3 days` | three days from today: 2026-10-13 |
+| `7 days ago` | seven days before today: 2026-10-03 |
+
+`before` is the same as `<` and `after` the same as `>`. `today` on its own is the keyword (due today); `due = today` is the same comparison written out, and `due <= today` also includes overdue tasks. Only English weekday names are accepted.
+
+### Labels and projects that change
+
+Names are looked up every time the query runs, so renaming a label or project is picked up immediately. When several labels or projects share a name (two devices can create the same name while offline), the term matches any of them. A name that matches nothing is **not** an error: the view shows a warning such as `No label named "errands"`, that term matches no task, and the rest of the query still works. A saved or remembered query therefore survives a rename or deletion.
+
+## Errors
+
+A query that does not follow the grammar shows a message under the input, and the previous results stay on screen until the query is valid again. Positions count characters from 1:
+
+| Query | Message |
+| --- | --- |
+| `@errand &` | `Expected a term after "&" at position 9` |
+| `(p1 \| p2` | `Missing ")" at end of query` |
+| `@work p1` | `Expected "&" or "\|" before "p1" at position 7` |
+| `p1 & urgent` | `Unknown term "urgent" at position 6` |
+| `p5` | `Priority must be p1, p2, p3 or p4 at position 1` |
+| `due today` | `Expected a comparison (<, <=, =, >=, >, before or after) after "due" at position 1` |
+| `due > 7` | `Expected "days" after "7" at position 7` |
+
+An empty query shows a short usage hint and no results.
+
+## The Filter view
+
+- `g` then `f`, or **Filter** in the sidebar, opens the view with the cursor in the query input. Results update about 150 ms after you stop typing.
+- Results are grouped by project: Inbox first, then projects in sidebar order, each heading showing the project's path (`Work › Client A`). Within a group, tasks are ordered by due date, then priority.
+- **Enter** in the input runs the query at once and moves to the first result; **Esc** returns to the input. In the list, the usual keys work: `j` / `k`, Enter to open, `c` to complete, `1`–`4` for priority, `L` for labels, Delete.
+- **↑ / ↓** in the input step through the last 20 distinct queries you ran on this device. The history lives in the browser's local storage for the app, is never synced, and is cleared when you sign out.
+
+## Examples
+
+### 1. Work due by tomorrow, high priority
+
+```filter
+@work & due <= tomorrow & p1
+```
+
+### 2. Anything overdue that is not filed in a project
+
+```filter
+overdue & no project
+```
+
+### 3. Errands or calls, outside the Work project
+
+```filter
+(@errand | @call) & !#Work
+```
+
+### 4. Everything under Work, including its sub-projects, due this week
+
+```filter
+##Work & due <= 6 days
+```
+
+### 5. Tasks for a client whose names contain spaces
+
+```filter
+#"Client A" & @"follow up"
+```
+
+### 6. Captured in the last week and still unscheduled
+
+```filter
+created > 7 days ago & no date
+```
+
+### 7. Due on Friday, either priority 1 or 2
+
+```filter
+due = friday & (p1 | p2)
+```
+
+### 8. Find a task by a phrase in its title or notes
+
+```filter
+search: "oat milk" | search: groceries
+```
+
+### 9. Completed subtasks of the Home project
+
+```filter
+#Home & subtask & completed
+```
+
+### 10. Due before the end of November, unlabelled, with no fixed time
+
+```filter
+due before 2026-12-01 & no labels & no time & !today
+```

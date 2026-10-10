@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { User } from '../lib/types'
 import { navigate, useRoute } from './router'
+import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
@@ -33,6 +34,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         if (e.key === 'u') navigate({ view: 'upcoming' })
         if (e.key === 'c') navigate({ view: 'completed' })
         if (e.key === 'l') navigate({ view: 'labels' })
+        if (e.key === 'f') {
+          // The Filter view focuses its input on mount; keep this "f" out of it.
+          e.preventDefault()
+          navigate({ view: 'filter' })
+        }
         if (e.key === 's') navigate({ view: 'settings' })
         return
       }
@@ -69,6 +75,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <SettingsView user={user} onLogout={onLogout} />
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
+          ) : route.view === 'filter' ? (
+            <FilterView />
           ) : (
             // App renders the invite screen itself; a stray /invite route inside the shell falls back to the Inbox.
             <TaskListView route={route.view === 'invite' ? { view: 'inbox' } : route} />
@@ -102,7 +110,9 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['1 – 4', 'Set priority of selected task'],
     ['L', 'Labels of selected task (type to find, Enter adds or creates)'],
     ['Delete', 'Delete selected task (and its subtasks)'],
-    ['g then i / t / u / c / l / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Settings'],
+    ['g then i / t / u / c / l / f / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Settings'],
+    ['Enter / Esc (in Filter)', 'Jump from the query to the first result / back to the query'],
+    ['↑ / ↓ (in the filter query)', 'Recall recent queries on this device'],
     ['Enter (on an invitation)', 'Settings → Members: copy the invite link created in this session'],
     ['Delete (on an invitation)', 'Settings → Members: revoke a pending invitation'],
     ['Esc', 'Close panel, clear selection'],

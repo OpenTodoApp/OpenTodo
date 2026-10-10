@@ -110,6 +110,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         {item({ view: 'today' }, 'Today', '📅', counts.today)}
         {item({ view: 'upcoming' }, 'Upcoming', '🗓️')}
         {item({ view: 'completed' }, 'Completed', '✅')}
+        {item({ view: 'filter' }, 'Filter', '🔎')}
       </nav>
       <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Projects
