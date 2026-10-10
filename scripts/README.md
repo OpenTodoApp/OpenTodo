@@ -11,16 +11,17 @@ OPENTODO_SMOKE_PORT=18081 ./scripts/cli-smoke.sh
 
 ## `e2e-smoke.mjs`
 
-Drives the production binary in headless Chromium through the whole walking skeleton: owner setup, capture, projects, detail edits, keyboard shortcuts, views, sync verified through the REST API, a second device, an offline edit that uploads on reconnect, settings and tokens, mobile layout. It also refreshes the screenshots in `docs/screenshots/`.
+Drives the production binary in headless Chromium through the whole walking skeleton: owner setup, capture, natural-language quick add (preview chips, then the parsed date and priority checked on the server), projects, detail edits, keyboard shortcuts, views, sync verified through the REST API, a second device, an offline edit that uploads on reconnect, settings and tokens, mobile layout. Selectors are scoped by role and label (a task row is the button whose name starts with its title; detail fields are looked up inside the detail panel), so the Parent task picker and subtask lists never make them ambiguous. Pass a directory as the first argument to also save screenshots of the run.
 
 Run it against a **fresh** data directory (the script creates the owner account):
 
 ```bash
 make build
 OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
-npx -y -p playwright@1.56.1 node scripts/e2e-smoke.mjs            # downloads Chromium on first run
+npm i -g playwright@1.56.1 && npx playwright install chromium   # once
+node scripts/e2e-smoke.mjs [screenshot-dir]
 # or, with a Chromium already on disk:
-CHROMIUM_PATH=/path/to/chrome npx -y -p playwright@1.56.1 node scripts/e2e-smoke.mjs
+CHROMIUM_PATH=/path/to/chrome node scripts/e2e-smoke.mjs
 ```
 
 Environment: `OPENTODO_URL` (default `http://127.0.0.1:8080`), `CHROMIUM_PATH` (optional). Exit code is non-zero on any failed step or browser console error.
@@ -37,4 +38,4 @@ CHROMIUM_PATH=/path/to/chrome npx -y -p playwright@1.56.1 node scripts/e2e-views
 
 ## `screenshots.mjs`
 
-Seeds a fresh server with a realistic set of projects and tasks and captures the screenshots used in `README.md` and the website (`docs/screenshots/*.png`, high-DPI). Same prerequisites and environment variables as the smoke test; run it against an **empty** data directory, then copy the PNGs into `website/assets/`.
+Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the screenshots used by `README.md` (`docs/screenshots/*.png`) and the website (`website/assets/shots/*.webp`). Run it against an **empty** data directory; see [`website/README.md`](../website/README.md#refresh-the-screenshots) for the full recipe.
