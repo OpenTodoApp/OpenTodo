@@ -16,6 +16,7 @@ import { SecuritySettings } from './ActivityPanel'
 import { SecurityPanel } from './SecurityPanel'
 import { LinkedAccountsPanel, SsoPanel } from './SsoPanel'
 import { TwoFactorPanel } from './TwoFactorPanel'
+import { EncryptionPanel } from './EncryptionPanel'
 import { navigate } from './router'
 import { TokensSection } from './TokensSection'
 import { WebhooksPanel } from './WebhooksPanel'
@@ -60,6 +61,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 
       <PasswordSection />
       <TwoFactorPanel user={user} />
+      <EncryptionPanel />
       <NotificationsSettings />
 
       <SecurityPanel />

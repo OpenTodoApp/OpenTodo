@@ -5,6 +5,9 @@ import type { Label, Project, Task } from '../lib/types'
 import { LabelChip } from './LabelPicker'
 import { AssigneeChip } from './AssigneePicker'
 import { useCommentCount } from './useCommentCounts'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../lib/db'
+import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 
 const PRIORITY_RING: Record<number, string> = {
   1: 'border-red-500 bg-red-50 dark:bg-red-950/40',
@@ -58,6 +61,12 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   const hint = zoneHint(task.due)
   const done = !!task.completed_at
   const comments = useCommentCount(task.id)
+  // End-to-end encryption (OpenSpec e2ee): content the server still holds in
+  // plaintext is marked until an unlocked device has re-written it.
+  const enc = useEncryption()
+  const shared = useLiveQuery(async () => (enc.enabled && task.project_id ? !!(await db.memberships.get(task.project_id)) : false), [enc.enabled, task.project_id], false)
+  const unencrypted = notYetEncrypted(task as unknown as Record<string, unknown>, 'task', !shared)
+  const undecryptable = !!task._e2ee?.raw?.title
   return (
     <li
       data-task-id={task.id}
@@ -100,7 +109,13 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
       </button>
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
         <div className={`truncate text-sm ${done ? 'text-slate-400 line-through' : ''}`}>
-          {task.title || <span className="italic text-slate-400">Untitled</span>}
+          {undecryptable ? <span className="italic text-slate-400" title="This title could not be decrypted with this device's key">{task.title}</span>
+            : task.title || <span className="italic text-slate-400">Untitled</span>}
+          {unencrypted && (
+            <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[11px] text-amber-800 dark:bg-amber-900/40 dark:text-amber-200" title="The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.">
+              not yet encrypted
+            </span>
+          )}
           {progress && progress.total > 0 && (
             <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 align-middle font-mono text-[11px] text-slate-500 dark:bg-slate-800 dark:text-slate-400" title="Completed subtasks">
               {progress.done}/{progress.total}

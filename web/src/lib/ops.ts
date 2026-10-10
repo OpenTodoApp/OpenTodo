@@ -11,7 +11,10 @@ import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
 import { ENTITIES, type Clock, type Comment, type Entity, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Section, type Task, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
-import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, type RichText } from './docfields'
+import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, type RichText } from './docfields'
+import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
+import { encryptionSnapshot, isContentField } from './e2ee'
+import type { RowEncryption } from './types'
 
 let devicePromise: Promise<string> | null = null
 
@@ -98,7 +101,9 @@ const SERVER_REWRITTEN = new Set(['comment.mentions'])
  * Task, project and comment ops are also recorded for the activity log with their
  * author (`op.actor`, else `opts.actor` for local edits) and old value.
  */
-export async function applyOps(ops: Op[], opts: { actor?: string; local?: boolean } = {}): Promise<void> {
+export async function applyOps(
+  ops: Op[], opts: { actor?: string; local?: boolean; wire?: Map<string, { kind: 'p' | 'c' | 'x'; raw?: string }> } = {},
+): Promise<void> {
   if (ops.length === 0) return
   // Remote document ops are merged, not just replaced (collaborative-rich-text):
   // load the document code before the transaction, which must not await imports.
@@ -142,6 +147,19 @@ export async function applyOps(ops: Op[], opts: { actor?: string; local?: boolea
         row[op.field] = op.value
         clock[op.field] = { ts: op.ts, device: op.device }
         changed = true
+        // End-to-end encryption bookkeeping (OpenSpec e2ee), local only: the form
+        // the server holds for a remote value, and the envelope of a value this
+        // device cannot decrypt. A local edit replaces an undecryptable value.
+        const info = opts.wire?.get(op.id)
+        const enc = row._e2ee as RowEncryption | undefined
+        if (info || enc?.raw?.[op.field]) {
+          const wire = { ...enc?.wire }
+          const raw = { ...enc?.raw }
+          if (info) wire[op.field] = info.kind
+          if (info?.raw) raw[op.field] = info.raw
+          else delete raw[op.field]
+          row._e2ee = { wire, raw }
+        }
       }
       rows.set(`${entity}:${entityId}`, row)
       if (changed) {
@@ -191,7 +209,9 @@ const sameClock = (a?: { ts: number; device: string }, b?: { ts: number; device:
 export function reconcileNote(rt: RichText, row: Pick<Task, 'notes_doc' | 'description' | '_clock'>, merged?: string): { notes_doc: string; description: string } | null {
   const winner = row.notes_doc ?? ''
   let doc = merged ?? winner
-  if (!doc || !rt.isReadable(doc)) return null
+  // A stored value this device cannot read (another format, undecryptable) is
+  // never overwritten automatically.
+  if (!doc || !rt.isReadable(doc) || !rt.isReadable(winner)) return null
   const cd = row._clock?.description
   const cn = row._clock?.notes_doc
   let publish = merged !== undefined && rt.adds(winner, merged)
@@ -232,13 +252,18 @@ export function mutationTables() {
  * `db.transaction('rw', mutationTables(), …)` after awaiting getDeviceId() once.
  */
 export async function mutateMany(changes: Change[]): Promise<void> {
+  checkEncryptedSize(changes)
   const device = await getDeviceId()
   changes = [...changes, ...(await reminderFollowUps(changes))]
   if (!changes.some((c) => Object.keys(c.patch).length > 0)) return
   const rt = await richTextFor(changes)
   const ts = hlcNow()
   await db.transaction('rw', mutationTables(), async () => {
-    if (rt) changes = await withNotePairs(rt, changes, ts, device)
+    if (rt) {
+      changes = await withNotePairs(rt, changes, ts, device)
+      // The pair adds a projection and a merged document: check them too (e2ee).
+      checkEncryptedSize(changes)
+    }
     const ops: Op[] = []
     for (const { entity, entityId, patch } of changes) {
       for (const [field, value] of Object.entries(patch)) {
@@ -301,6 +326,10 @@ async function withNotePairs(rt: RichText, changes: Change[], ts: number, device
       patch.description = rt.projectDoc(patch.notes_doc as string)
     }
     if (typeof patch.notes_doc === 'string' && patch.notes_doc.length > MAX_DOC_CHARS) throw new DocTooLargeError(patch.notes_doc.length)
+    // The projection is an ordinary string field: it must fit the 64 KB value cap.
+    if (typeof patch.description === 'string' && patch.notes_doc !== undefined && JSON.stringify(patch.description).length > MAX_TEXT_VALUE) {
+      throw new DocTooLargeError(JSON.stringify(patch.description).length, MAX_TEXT_VALUE)
+    }
     out.push({ ...c, patch })
   }
   return out
@@ -361,6 +390,31 @@ async function reminderFollowUps(changes: Change[]): Promise<Change[]> {
     }
   }
   return out
+}
+
+/** A content value too long to fit the server's value limit once encrypted (OpenSpec e2ee, design D3). */
+export class PlaintextTooLongError extends Error {
+  constructor(public entity: Entity, public entityId: string, public field: string) {
+    super(`This ${field === 'title' || field === 'name' ? field : 'text'} is too long to encrypt (at most ${MAX_PLAINTEXT_BYTES.toLocaleString('en')} bytes). Shorten it and try again.`)
+  }
+}
+
+/** Refuse, before any op exists, content an encrypted account could not upload. */
+function checkEncryptedSize(changes: Change[]): void {
+  if (!encryptionSnapshot().enabled) return
+  for (const { entity, entityId, patch } of changes) {
+    for (const [field, value] of Object.entries(patch)) {
+      // A note document (ASCII envelope) has its own, larger cap: its ciphertext
+      // must fit MaxDocBytes (collaborative-rich-text).
+      if (typeof value === 'string' && isDocField(entity, field) && isContentField(entity, field)) {
+        if (value.length > MAX_DOC_CHARS_ENCRYPTED) throw new DocTooLargeError(value.length, MAX_DOC_CHARS_ENCRYPTED)
+        continue
+      }
+      if (typeof value === 'string' && value.length > MAX_PLAINTEXT_BYTES / 4 && isContentField(entity, field) && byteLength(value) > MAX_PLAINTEXT_BYTES) {
+        throw new PlaintextTooLongError(entity, entityId, field)
+      }
+    }
+  }
 }
 
 /** Record field changes for one entity: apply locally and enqueue for the server. */

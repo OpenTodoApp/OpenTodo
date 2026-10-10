@@ -129,6 +129,13 @@ func TaskID(userID, messageID string) string {
 
 // taskOps builds the ops of a new Inbox task: title, description, priority 4,
 // no due date, no project.
+//
+// End-to-end encryption (OpenSpec `e2ee`): the server holds no key, so for an
+// encrypted account these values are plaintext like any REST write. The mail
+// already crossed mail servers in the clear; the next unlocked device that
+// syncs re-writes title and description as ciphertext (encrypt-on-sight) and
+// POST /api/v1/encryption/purge-history removes the plaintext ops afterwards.
+// See docs/e2ee.md, "Server-side integrations".
 func taskOps(userID string, msg *Parsed, now time.Time) []opsync.Op {
 	id := TaskID(userID, msg.MessageID)
 	ms := now.UnixMilli()

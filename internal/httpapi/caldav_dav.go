@@ -87,6 +87,18 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// End-to-end encryption (OpenSpec `e2ee`): calendar clients can neither read
+	// ciphertext titles nor write ciphertext back, and serving placeholders would
+	// let a client overwrite real titles with them. The endpoint refuses the
+	// account explicitly instead.
+	if on, err := s.encryptionEnabled(r.Context(), u.ID); err != nil {
+		s.log.Error("caldav encryption check failed", "err", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	} else if on {
+		http.Error(w, "CalDAV is not available for accounts with end-to-end encryption", http.StatusForbidden)
+		return
+	}
 	w.Header().Set("DAV", "1, 3, calendar-access")
 	p, ok := parseDavPath(r.URL.Path, u.ID)
 	if !ok {

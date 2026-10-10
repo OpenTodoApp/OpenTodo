@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixari/opentodo/internal/e2ee"
 	"github.com/pixari/opentodo/internal/ids"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/webhook"
@@ -275,7 +276,11 @@ func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder,
 		if t == nil || t.Deleted() || !isNull(t["completed_at"]) {
 			continue
 		}
-		d.Title = jsonString(t["title"])
+		// An end-to-end encrypted title (OpenSpec `e2ee`) is never pushed, not even
+		// as ciphertext: the notification falls back to the content-free text.
+		if title := jsonString(t["title"]); !e2ee.IsCiphertext(title) {
+			d.Title = title
+		}
 		out = append(out, d)
 		if len(out) == batchLimit {
 			break

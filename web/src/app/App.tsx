@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, onEnrolmentRequired } from '../lib/api'
 import { clearLocalData } from '../lib/db'
+import { adoptProfile, forgetMemoryKeys, loadEncryptionState, useEncryption } from '../lib/e2ee'
+import { UnlockScreen } from './UnlockScreen'
 import { unsubscribeOnSignOut } from '../lib/push'
 import { startSync, stopSync, useSyncStatus } from '../lib/sync'
 import type { AuthStatus, User } from '../lib/types'
@@ -28,6 +30,7 @@ export function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
   const route = useRoute()
   const sync = useSyncStatus()
+  const enc = useEncryption()
   // Shown on the sign-in screen after a password reset (OpenSpec `user-management`).
   const [signInNotice, setSignInNotice] = useState<string | undefined>(undefined)
 
@@ -37,6 +40,9 @@ export function App() {
       if (status.authenticated && status.user) {
         localStorage.setItem('opentodo.user', JSON.stringify(status.user))
         cacheMfa(status.mfa ?? null)
+        // End-to-end encryption (OpenSpec e2ee): learn the account mode before the
+        // first sync, so a new device unlocks before anything is pulled.
+        await adoptProfile(status.encryption, status.minClientVersion).catch(() => undefined)
         setPhase({ kind: status.mfa?.restricted ? 'restricted' : 'ready', user: status.user })
       } else {
         localStorage.removeItem('opentodo.user')
@@ -46,6 +52,7 @@ export function App() {
     } catch {
       // Server unreachable: trust the last known account so the app still opens offline.
       const cached = localStorage.getItem('opentodo.user')
+      await loadEncryptionState().catch(() => undefined)
       if (cached) setPhase({ kind: 'ready', user: JSON.parse(cached) as User })
       else setPhase({ kind: 'offline-unknown' })
     }
@@ -95,6 +102,7 @@ export function App() {
     } finally {
       stopSync()
       await clearLocalData()
+      forgetMemoryKeys()
       localStorage.removeItem('opentodo.user')
       clearVimPref()
       cacheMfa(null)
@@ -165,10 +173,23 @@ export function App() {
       const notice = route.view === 'share' ? 'Sign in to add the shared page to OpenTodo. It is kept on this screen until then.' : signInNotice
       return <AuthScreen status={phase.status} notice={notice} onAuthenticated={() => void refresh()} />
     }
+    // Encrypted account without the key on this device (OpenSpec e2ee, design D5).
+    if (enc.enabled && !enc.unlocked) {
+      return <UnlockScreen onLogout={() => void logout()} />
+    }
     if (route.view === 'share') {
       return <ShareCapture />
     }
-    return <Shell user={phase.user} onLogout={() => void logout()} />
+    return (
+      <>
+        {enc.updateRequired && (
+          <div role="alert" className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+            A newer version of OpenTodo is required to read your data. <button className="underline" onClick={() => window.location.reload()}>Reload to update</button>
+          </div>
+        )}
+        <Shell user={phase.user} onLogout={() => void logout()} />
+      </>
+    )
   }
 }
 

@@ -1,0 +1,447 @@
+// End-to-end encryption on the client (OpenSpec e2ee, tasks 1.2 and 2.1–2.4):
+// key storage and unlocking, the field split, encryption at upload, decryption
+// on receipt, encrypt-on-sight, the locked state and the migration job. Several
+// devices share one in-memory server that stores ops exactly as received, so
+// the tests can assert what the server holds.
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { KeyRecord } from './crypto'
+import type { Op } from './types'
+
+type Stored = Op & { seq: number }
+const { server, MockApiError } = vi.hoisted(() => {
+  class MockApiError extends Error {
+    constructor(public status: number, public code: string, message: string) {
+      super(message)
+    }
+  }
+  const server = {
+    log: [] as (Op & { seq: number })[],
+    seq: 0,
+    record: null as KeyRecord | null,
+    /** Number of further sync calls that fail like a dropped connection. */
+    failNext: 0,
+    calls: [] as { device: string; ops: Op[] }[],
+  }
+  return { server, MockApiError }
+})
+
+vi.mock('./api', () => ({
+  ApiError: MockApiError,
+  api: {
+    sync: async (device: string, cursor: number, ops: Op[]) => {
+      if (server.failNext > 0) {
+        server.failNext--
+        throw new TypeError('network down')
+      }
+      server.calls.push({ device, ops: structuredClone(ops) })
+      let applied = 0
+      for (const op of ops) {
+        if (server.log.some((o) => o.id === op.id)) continue
+        server.log.push({ ...structuredClone(op), seq: ++server.seq })
+        applied++
+      }
+      return { applied, ops: server.log.filter((o) => o.seq > cursor && o.device !== device), cursor: server.seq, hasMore: false, serverTime: Date.now() }
+    },
+    encryptionKeys: async () => {
+      if (!server.record) throw new MockApiError(404, 'encryption_disabled', 'not enabled')
+      return { keys: structuredClone(server.record) }
+    },
+    putEncryptionKeys: async (r: KeyRecord) => {
+      if (r.version !== (server.record?.version ?? 0) + 1) throw new MockApiError(409, 'encryption_conflict', 'conflict')
+      server.record = { ...r, createdAt: server.record?.createdAt ?? Date.now() + server.seq, updatedAt: Date.now() }
+      return { keys: structuredClone(server.record) }
+    },
+    deleteEncryptionKeys: async () => {
+      if (!server.record) throw new MockApiError(404, 'encryption_disabled', 'not enabled')
+      server.record = null
+    },
+    purgeEncryptionHistory: async () => ({ purged: 0, notice: 'Backups may still contain plaintext' }),
+    listNotifications: async () => ({ notifications: [], unread: 0 }),
+  },
+}))
+
+import { decryptValue, isEnvelope, MAX_PLAINTEXT_BYTES } from './crypto'
+import { db, getMeta, setMeta, useDatabase } from './db'
+import {
+  changePassphrase, currentKey, disableEncryption, enableEncryption, EncryptionConflictError, encryptionSnapshot, loadEncryptionState, lock,
+  MAX_FAILURES, notYetEncrypted, resetPassphrase, unlock, UnlockThrottledError, UNDECRYPTABLE,
+} from './e2ee'
+import { decryptIncoming, MIGRATION_BATCH, normalizeOnSight, prepareOutgoing, runMigration, startMigration } from './e2eeSync'
+import { applyOps, mutate, PlaintextTooLongError, resetDeviceId } from './ops'
+import { syncNow, syncSnapshot } from './sync'
+
+const PASS = 'correct horse battery staple'
+const FAST = { iterations: 1000 }
+let run = 0
+
+/** Switch the global database to one device's. */
+async function on(name: string) {
+  useDatabase(`e2ee-${run}-${name}`)
+  resetDeviceId()
+  await loadEncryptionState()
+}
+
+/** The server's current value of a field (last-writer-wins over the stored log). */
+function current(entity: string, id: string, field: string): unknown {
+  let best: Stored | undefined
+  for (const o of server.log) {
+    if (o.entity !== entity || o.entityId !== id || o.field !== field) continue
+    if (!best || o.ts > best.ts || (o.ts === best.ts && o.device > best.device)) best = o
+  }
+  return best?.value
+}
+
+const sentAfter = (n: number) => server.calls.slice(n).flatMap((c) => c.ops)
+
+beforeEach(() => {
+  run++
+  server.log = []
+  server.seq = 0
+  server.record = null
+  server.failNext = 0
+  server.calls = []
+})
+afterEach(() => vi.useRealTimers())
+
+async function seedTasks() {
+  await mutate('project', 'p1', { name: 'Health', color: '#ef4444', position: 1, archived: false, parent_id: null, created_at: 1, deleted_at: null })
+  await mutate('label', 'l1', { name: 'errand', color: '#22c55e', position: 1, created_at: 1, deleted_at: null })
+  await mutate('task', 't1', {
+    title: 'Dentist', description: 'Ask about the crown', project_id: 'p1', parent_id: null, priority: 1, due: { date: '2026-10-11' },
+    labels: ['l1'], position: 1, created_at: 1, completed_at: null, deleted_at: null,
+  })
+  await syncNow()
+}
+
+async function enableOnA() {
+  await on('A')
+  await seedTasks()
+  const { recoveryKey } = await enableEncryption(PASS, FAST)
+  await startMigration('encrypt')
+  await syncNow()
+  return recoveryKey
+}
+
+describe('key storage and unlocking (task 1.2)', () => {
+  it('keeps a non-extractable key in IndexedDB; lock forgets it and pauses sync', async () => {
+    await enableOnA()
+    const stored = await getMeta<CryptoKey | null>('e2ee.key', null)
+    expect(stored).not.toBeNull()
+    expect(stored!.extractable).toBe(false)
+    expect(encryptionSnapshot()).toMatchObject({ enabled: true, unlocked: true, keyVersion: 1 })
+    await lock()
+    expect(await getMeta('e2ee.key', null)).toBeNull()
+    expect(await currentKey()).toBeNull()
+    const before = server.calls.length
+    await syncNow()
+    expect(syncSnapshot().state).toBe('locked')
+    expect(server.calls.length).toBe(before)
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    expect(syncSnapshot().state).toBe('idle')
+    expect(server.calls.length).toBe(before + 1)
+  })
+
+  it('delays attempts after 5 failures within a minute, then allows them again', async () => {
+    await enableOnA()
+    await lock()
+    const t0 = Date.now()
+    for (let i = 0; i < MAX_FAILURES; i++) await expect(unlock('wrong passphrase!', 'passphrase', { now: t0 + i })).rejects.toThrow()
+    await expect(unlock(PASS, 'passphrase', { now: t0 + 10 })).rejects.toBeInstanceOf(UnlockThrottledError)
+    expect(await currentKey()).toBeNull()
+    await unlock(PASS, 'passphrase', { now: t0 + 61_000 })
+    expect(await currentKey()).not.toBeNull()
+  })
+
+  it('unlocks offline with the cached key record', async () => {
+    await enableOnA()
+    await lock()
+    const api = (await import('./api')).api as unknown as { encryptionKeys: () => Promise<unknown> }
+    const original = api.encryptionKeys
+    api.encryptionKeys = async () => {
+      throw new TypeError('offline')
+    }
+    try {
+      await unlock(PASS, 'passphrase')
+    } finally {
+      api.encryptionKeys = original
+    }
+    expect(await currentKey()).not.toBeNull()
+  })
+
+  it('a second device creating its own record gets a conflict and must unlock instead', async () => {
+    await enableOnA()
+    await on('B')
+    await expect(enableEncryption('another passphrase', FAST)).rejects.toBeInstanceOf(EncryptionConflictError)
+    expect(server.record!.version).toBe(1)
+    expect(encryptionSnapshot().enabled).toBe(true)
+  })
+})
+
+describe('field split and transport (task 2.1)', () => {
+  it('TestEncryptedFieldSplit: content is ciphertext on the server, due and priority stay plaintext', async () => {
+    await enableOnA()
+    expect(isEnvelope(current('task', 't1', 'title'))).toBe(true)
+    expect(isEnvelope(current('task', 't1', 'description'))).toBe(true)
+    expect(isEnvelope(current('project', 'p1', 'name'))).toBe(true)
+    expect(isEnvelope(current('label', 'l1', 'name'))).toBe(true)
+    expect(current('task', 't1', 'due')).toEqual({ date: '2026-10-11' })
+    expect(current('task', 't1', 'priority')).toBe(1)
+    expect(current('task', 't1', 'labels')).toEqual(['l1'])
+    expect(current('project', 'p1', 'color')).toBe('#ef4444')
+    // Locally everything is plaintext.
+    expect((await db.tasks.get('t1'))!.title).toBe('Dentist')
+  })
+
+  it('the server never receives plaintext content after enabling, including offline edits', async () => {
+    await enableOnA()
+    const mark = server.calls.length
+    const logMark = server.log.length
+    await mutate('task', 't1', { title: 'Dentist on Friday' })
+    await mutate('task', 't2', { title: 'Offline idea', description: 'secret plan', due: null, priority: 4, project_id: null, labels: [] })
+    await mutate('view', 'v1', { name: 'Health stuff', query: 'search: crown' })
+    await mutate('section', 's1', { name: 'Later', project_id: 'p1', position: 1, created_at: 1, deleted_at: null })
+    await syncNow()
+    const content = sentAfter(mark).filter((o) => ['title', 'description', 'name', 'query', 'body'].includes(o.field))
+    expect(content.length).toBeGreaterThanOrEqual(6)
+    for (const o of content) expect(isEnvelope(o.value), `${o.entity}.${o.field}`).toBe(true)
+    expect(JSON.stringify(server.log.slice(logMark))).not.toMatch(/Offline idea|secret plan|Health stuff|crown"|Friday/)
+  })
+
+  it('does not encrypt content of shared projects', async () => {
+    await enableOnA()
+    await db.memberships.put({ projectId: 'shared1', role: 'owner', ownerId: 'u1', members: [] })
+    await mutate('task', 'ts', { title: 'Team task', project_id: 'shared1' })
+    await syncNow()
+    expect(current('task', 'ts', 'title')).toBe('Team task')
+  })
+
+  it('refuses content too long to encrypt before an op exists', async () => {
+    await enableOnA()
+    const before = await db.outbox.count()
+    await expect(mutate('task', 't1', { description: 'x'.repeat(MAX_PLAINTEXT_BYTES + 1) })).rejects.toBeInstanceOf(PlaintextTooLongError)
+    expect(await db.outbox.count()).toBe(before)
+  })
+
+  it('ciphertext variants: order independence, idempotency and stale remote ops', async () => {
+    const key = await (async () => {
+      await enableOnA()
+      return (await currentKey())!
+    })()
+    const { encryptValue } = await import('./crypto')
+    const mk = async (id: string, value: string, ts: number, device: string): Promise<Op> =>
+      ({ id, entity: 'task', entityId: 'tx', field: 'title', value: await encryptValue(key, 'task', 'tx', 'title', value), ts, device })
+    const ops = [await mk('x1', 'old', 100, 'A'), await mk('x2', 'new', 200, 'B'), await mk('x3', 'tie-low', 200, 'A')]
+    const results: string[] = []
+    for (const order of [[0, 1, 2], [2, 1, 0], [1, 0, 2, 1, 0]]) {
+      await on(`order-${order.join('')}`)
+      // Share the key with this scratch device.
+      await setMeta('e2ee.key', key)
+      await setMeta('e2ee.enabled', true)
+      await loadEncryptionState()
+      for (const i of order) {
+        const inc = await decryptIncoming([ops[i]])
+        await applyOps(inc.ops, { wire: inc.wire })
+      }
+      results.push((await db.tasks.get('tx'))!.title)
+    }
+    expect(results).toEqual(['new', 'new', 'new'])
+  })
+})
+
+describe('two devices', () => {
+  it('a second device enrols with the passphrase and both converge on concurrent edits', async () => {
+    await enableOnA()
+    // B signs in: it learns that the account encrypts and is locked until unlocked.
+    await on('B')
+    await syncNow()
+    expect(syncSnapshot().state).toBe('locked')
+    expect(await db.tasks.count()).toBe(0)
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    expect((await db.tasks.get('t1'))!.title).toBe('Dentist')
+    expect((await db.labels.get('l1'))!.name).toBe('errand')
+    // Concurrent offline edits: A edits the title, B the title and the due date.
+    await on('A')
+    await mutate('task', 't1', { title: 'Dentist (A)' })
+    await new Promise((r) => setTimeout(r, 3))
+    await on('B')
+    await mutate('task', 't1', { title: 'Dentist (B)', due: { date: '2026-10-20' } })
+    await syncNow()
+    await on('A')
+    await syncNow()
+    await on('B')
+    await syncNow()
+    const seen: string[] = []
+    for (const d of ['A', 'B']) {
+      await on(d)
+      const t = (await db.tasks.get('t1'))!
+      seen.push(`${t.title}|${t.due?.date}`)
+    }
+    expect(seen[0]).toBe(seen[1])
+    expect(seen[0]).toBe('Dentist (B)|2026-10-20')
+    expect(isEnvelope(current('task', 't1', 'title'))).toBe(true)
+  })
+
+  it('encrypt-on-sight: REST plaintext becomes ciphertext; two racing devices converge and stop', async () => {
+    await enableOnA()
+    await on('B')
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    // A script writes a plaintext task through the REST API (device "server").
+    const ts = Date.now()
+    server.log.push(
+      { id: 'rest1', entity: 'task', entityId: 'tr', field: 'title', value: 'From a script', ts, device: 'server', seq: ++server.seq },
+      { id: 'rest2', entity: 'task', entityId: 'tr', field: 'due', value: { date: '2026-10-12' }, ts, device: 'server', seq: ++server.seq },
+    )
+    // B pulls it, queues the re-write, then loses the connection before uploading.
+    server.failNext = 0
+    const api = (await import('./api')).api as unknown as { sync: (...a: unknown[]) => Promise<unknown> }
+    const realSync = api.sync
+    let callsB = 0
+    api.sync = async (...a: unknown[]) => {
+      if (++callsB > 1) throw new TypeError('network down')
+      return realSync(...a)
+    }
+    await syncNow()
+    api.sync = realSync
+    expect((await db.tasks.get('tr'))!.title).toBe('From a script')
+    expect(await db.outbox.count()).toBe(1)
+    // A pulls the plaintext too and re-writes it.
+    await on('A')
+    await syncNow()
+    expect(isEnvelope(current('task', 'tr', 'title'))).toBe(true)
+    await on('B')
+    await syncNow()
+    await on('A')
+    await syncNow()
+    const settled = server.log.length
+    for (const d of ['A', 'B', 'A', 'B']) {
+      await on(d)
+      await syncNow()
+      expect((await db.tasks.get('tr'))!.title).toBe('From a script')
+      expect(await db.outbox.count()).toBe(0)
+    }
+    // Termination: no device writes anything more.
+    expect(server.log.length).toBe(settled)
+    expect(isEnvelope(current('task', 'tr', 'title'))).toBe(true)
+    expect(current('task', 'tr', 'due')).toEqual({ date: '2026-10-12' })
+    const t = (await db.tasks.get('tr'))!
+    expect(notYetEncrypted(t as never, 'task')).toBe(false)
+  })
+
+  it('a value moved to another task shows the placeholder and keeps the op', async () => {
+    await enableOnA()
+    const moved = current('task', 't1', 'title') as string
+    server.log.push({ id: 'evil', entity: 'task', entityId: 't9', field: 'title', value: moved, ts: Date.now() + 10, device: 'mallory', seq: ++server.seq })
+    await syncNow()
+    const t9 = (await db.tasks.get('t9'))!
+    expect(t9.title).toBe(UNDECRYPTABLE)
+    expect(t9._e2ee?.raw?.title).toBe(moved)
+    expect(server.log.some((o) => o.id === 'evil')).toBe(true)
+    // Nothing is re-written for it (it is not plaintext), and the key still opens the original.
+    expect(await db.outbox.count()).toBe(0)
+    expect(await decryptValue((await currentKey())!, 'task', 't1', 'title', moved)).toBe('Dentist')
+  })
+})
+
+describe('passphrase change, recovery and disabling', () => {
+  it('change passphrase: no content op; a new device unlocks with the new one; reset with the recovery key', async () => {
+    const recovery = await enableOnA()
+    const ops = server.log.length
+    await changePassphrase(PASS, 'a different passphrase', FAST)
+    expect(server.log.length).toBe(ops)
+    expect(server.record!.version).toBe(2)
+    await on('C')
+    await syncNow()
+    await expect(unlock(PASS, 'passphrase')).rejects.toThrow()
+    await unlock('a different passphrase', 'passphrase')
+    await syncNow()
+    expect((await db.tasks.get('t1'))!.title).toBe('Dentist')
+    // Forgotten passphrase: the recovery key resets it and is replaced.
+    const { recoveryKey } = await resetPassphrase(recovery, 'third passphrase here', FAST)
+    expect(recoveryKey).not.toBe(recovery)
+    await lock()
+    await expect(unlock(recovery, 'recovery')).rejects.toThrow()
+    await unlock(recoveryKey, 'recovery')
+    expect(await currentKey()).not.toBeNull()
+    // A is unaffected: still unlocked with its cached key.
+    await on('A')
+    await syncNow()
+    expect(syncSnapshot().state).toBe('idle')
+  })
+
+  it('disable: content is re-written as plaintext and other devices stop encrypting', async () => {
+    await enableOnA()
+    await on('B')
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    await on('A')
+    await disableEncryption()
+    await startMigration('decrypt')
+    await syncNow()
+    expect(server.record).toBeNull()
+    expect(current('task', 't1', 'title')).toBe('Dentist')
+    expect(current('label', 'l1', 'name')).toBe('errand')
+    const settled = server.log.length
+    await on('B')
+    await syncNow()
+    expect(encryptionSnapshot().enabled).toBe(false)
+    expect((await db.tasks.get('t1'))!.title).toBe('Dentist')
+    await on('A')
+    await syncNow()
+    expect(server.log.length).toBe(settled)
+  })
+})
+
+describe('migration job (task 2.4)', () => {
+  it('resumes after an interrupted run and ends with no plaintext content fields', async () => {
+    await on('A')
+    const many = MIGRATION_BATCH * 2 + 50
+    const ops: Op[] = []
+    for (let i = 0; i < many; i++) {
+      const id = `t${String(i).padStart(4, '0')}`
+      ops.push({ id: `seed-${i}`, entity: 'task', entityId: id, field: 'title', value: `Task ${i}`, ts: 100, device: 'old' })
+      if (i % 3 === 0) ops.push({ id: `seedd-${i}`, entity: 'task', entityId: id, field: 'description', value: `Notes ${i}`, ts: 100, device: 'old' })
+    }
+    await applyOps(ops)
+    await enableEncryption(PASS, FAST)
+    await expect(startMigration('encrypt', { failAfterBatches: 1 })).rejects.toThrow(/interrupted/)
+    const progress = await getMeta<{ done: number; total: number } | null>('e2ee.migration', null)
+    expect(progress).toMatchObject({ done: MIGRATION_BATCH, total: many })
+    expect(await runMigration()).toBe(true)
+    expect(await getMeta('e2ee.migration', null)).toBeNull()
+    const outbox = await db.outbox.toArray()
+    // Every task re-written exactly once, every content field ciphertext on the wire.
+    const titles = outbox.filter((o) => o.field === 'title')
+    expect(new Set(titles.map((o) => o.entityId)).size).toBe(many)
+    expect(titles.length).toBe(many)
+    const wire = await prepareOutgoing(outbox.map(({ local: _l, ...o }) => o))
+    for (const o of wire) expect(isEnvelope(o.value)).toBe(true)
+    expect(encryptionSnapshot().migration).toBeNull()
+  })
+
+  it('normalizeOnSight ignores plaintext ops that no longer win', async () => {
+    await enableOnA()
+    const inc = await decryptIncoming([{ id: 'stale', entity: 'task', entityId: 't1', field: 'title', value: 'Old plaintext', ts: 5, device: 'server' }])
+    await applyOps(inc.ops, { wire: inc.wire })
+    expect(await normalizeOnSight(inc)).toBe(0)
+    expect((await db.tasks.get('t1'))!.title).toBe('Dentist')
+  })
+})
+
+describe('server reads shown in the UI', () => {
+  it('history and activity values are decrypted for display; foreign envelopes show the placeholder', async () => {
+    await enableOnA()
+    const { decryptActivityPage, decryptChanges } = await import('./e2ee')
+    const title = current('task', 't1', 'title') as string
+    const changes = await decryptChanges('task', 't1', [
+      { field: 'title', from: 'Dentist', to: title },
+      { field: 'due', from: null, to: { date: '2026-10-11' } },
+      { field: 'description', from: title, to: '' },
+    ])
+    expect(changes.map((c) => [c.from, c.to])).toEqual([['Dentist', 'Dentist'], [null, { date: '2026-10-11' }], [UNDECRYPTABLE, '']])
+    const page = await decryptActivityPage({ events: [{ entity: 'task' as const, entityId: 't1', taskId: 't1', taskTitle: title, changes: [] }] })
+    expect(page.events[0].taskTitle).toBe('Dentist')
+  })
+})

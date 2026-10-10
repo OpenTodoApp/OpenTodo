@@ -111,6 +111,14 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", "role must be viewer, editor or admin")
 		return
 	}
+	// End-to-end encryption (OpenSpec `e2ee`, design D8): sharing would move the
+	// project's ciphertext into a scope whose members hold no key, so an
+	// encrypted account cannot share a project that is not shared yet. A project
+	// shared before encryption was enabled was never encrypted (only the
+	// personal scope is) and keeps working.
+	if len(m.Members) <= 1 && s.refuseIfEncrypted(w, r, "sharing is not available for accounts with end-to-end encryption yet") {
+		return
+	}
 	target, err := s.auth.UserByEmail(ctx, in.Email)
 	if errors.Is(err, auth.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "user_not_found", "no account with this email exists on this server")

@@ -47,7 +47,13 @@ export function CaldavView(p: CaldavViewProps) {
       ) : (
         <p className="text-sm">{on ? 'CalDAV is on for this server.' : 'CalDAV is off. Ask the server owner to turn it on in Settings.'}</p>
       )}
-      {p.setting && on && (
+      {p.setting?.encryption && (
+        <p role="status" className="text-sm text-amber-700 dark:text-amber-300">
+          Not available for your account: end-to-end encryption is on, and calendar apps cannot read or write encrypted titles.
+          The server refuses CalDAV for encrypted accounts.
+        </p>
+      )}
+      {p.setting && on && !p.setting.encryption && (
         <div className="space-y-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
           <p>
             Server address: <code className="break-all rounded bg-slate-100 px-1 dark:bg-slate-800">{p.setting.url}</code>

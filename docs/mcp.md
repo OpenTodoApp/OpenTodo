@@ -101,6 +101,10 @@ Errors: a missing or malformed argument (for example `priority: 7`) is a JSON-RP
 
 Contents are `application/json`. Views use UTC; append `?tz=Europe/Rome` to the URI for another zone. A resource holds at most 200 tasks and says `"truncated": true` when there were more (use `list_tasks` to page). Reading a deleted or foreign project or task is a `-32002` "resource not found" error, the same for both.
 
+## End-to-end encryption
+
+The server holds no key. For an account with [end-to-end encryption](e2ee.md), encrypted titles, descriptions and project, label and section names are reported as `"Encrypted item"` with `"encrypted": true` on the task; `search_tasks` never matches encrypted text. Due dates, priorities, completion and structure are still reported because they are stored in plaintext.
+
 ## Protocol details
 
 - JSON-RPC 2.0 over `POST /mcp` (streamable HTTP, stateless). Supported protocol versions: `2025-11-25`, `2025-06-18` and `2025-03-26`; `initialize` echoes the client's version when supported and answers the newest otherwise. Capabilities: `tools` and `resources`; no prompts, sampling, subscriptions or list-change notifications.

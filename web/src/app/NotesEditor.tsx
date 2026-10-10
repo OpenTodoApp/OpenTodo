@@ -4,10 +4,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { EditorView } from 'prosemirror-view'
 import * as Y from 'yjs'
-import { DocTooLargeError } from '../lib/docfields'
+import { byteLength, MAX_PLAINTEXT_BYTES } from '../lib/crypto'
+import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE } from '../lib/docfields'
+import { encryptionSnapshot } from '../lib/e2ee'
 import { foldNote, updateTask } from '../lib/ops'
-import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, toModel, WARN_DOC_CHARS } from '../lib/richtext'
-import { applyBody, createState, markdownSlice, remoteKey, writeBody, type EditorHooks } from '../lib/richtextEditor'
+import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
+import { applyBody, createState, markdownSlice, pmToModel, remoteKey, writeBody, type EditorHooks } from '../lib/richtextEditor'
 import type { Task } from '../lib/types'
 import { Markdown } from './Markdown'
 
@@ -15,6 +17,20 @@ import { Markdown } from './Markdown'
 const SAVE_MS = 400
 const LOCAL = 'local'
 const REMOTE = 'remote'
+
+/**
+ * How full the note is, scaled to MAX_DOC_CHARS (the unit the editor's input cap
+ * uses): the larger of the encoded document against its cap and the Markdown
+ * projection against the cap of an ordinary text value. Both are lower for an
+ * account with end-to-end encryption.
+ */
+function usage(doc: Y.Doc, pm: import('prosemirror-model').Node): number {
+  const encrypted = encryptionSnapshot().enabled
+  const docCap = encrypted ? MAX_DOC_CHARS_ENCRYPTED : MAX_DOC_CHARS
+  const textCap = encrypted ? MAX_PLAINTEXT_BYTES : MAX_TEXT_VALUE
+  const text = byteLength(JSON.stringify(renderMarkdown(pmToModel(pm))))
+  return Math.ceil(Math.max(encodeDoc(doc).length / docCap, text / textCap) * MAX_DOC_CHARS)
+}
 
 export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: boolean }) {
   const host = useRef<HTMLDivElement>(null)
@@ -62,7 +78,7 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
     setUnreadable(false)
     ydoc.current = doc
     bodyName.current = activeBodyName(doc)
-    size.current = (task.notes_doc ?? '').length
+    size.current = 0
     const hooks: EditorHooks = {
       askLink: (current) => window.prompt('Link address (empty to remove)', current || 'https://'),
       onEscape: () => view.current?.dom.blur(),
@@ -103,7 +119,7 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
         if (!tr.docChanged || tr.getMeta(remoteKey) || !ydoc.current) return
         const d = ydoc.current
         d.transact(() => writeBody(activeBody(d), next.doc), LOCAL)
-        size.current = encodeDoc(d).length
+        size.current = usage(d, next.doc)
         setSizeNote(size.current >= WARN_DOC_CHARS ? `This note is ${Math.round((size.current / MAX_DOC_CHARS) * 100)}% of the size limit.` : null)
         dirty.current = true
         if (timer.current) clearTimeout(timer.current)
@@ -111,6 +127,7 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
       },
     })
     view.current = v
+    size.current = usage(doc, v.state.doc)
     const onHide = () => {
       if (document.visibilityState === 'hidden') flush.current()
     }
@@ -150,7 +167,6 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
     } catch {
       return
     }
-    size.current = Math.max(size.current, (task.notes_doc ?? '').length)
     const name = activeBodyName(d)
     if (name !== bodyName.current) {
       // A plain-text write was folded in: the note was replaced as a whole.
@@ -158,6 +174,7 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
     }
     const tr = applyBody(v.state, activeBody(d))
     if (tr) v.dispatch(tr)
+    size.current = usage(d, v.state.doc)
   }, [task.notes_doc, unreadable])
 
   if (unreadable) {

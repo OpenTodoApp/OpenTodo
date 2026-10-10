@@ -304,6 +304,27 @@ func TestPayloadOmitsContentByDefault(t *testing.T) {
 	}
 }
 
+// TestPayloadNeverCarriesCiphertext: an end-to-end encrypted title (OpenSpec
+// e2ee) is not pushed even to a device that opted in to content.
+func TestPayloadNeverCarriesCiphertext(t *testing.T) {
+	e := newTestEnv(t)
+	withTitle := newFakePush(t)
+	ctx := context.Background()
+	s := e.service()
+	if _, _, err := s.Upsert(ctx, "u1", "", withTitle.input("laptop", true)); err != nil {
+		t.Fatal(err)
+	}
+	now := e.clock.UnixMilli()
+	e.apply(t, "u1", map[string]map[string]any{"task:t1": {"title": "enc:v1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}})
+	e.reminder(t, "u1", "r1", "t1", now-1)
+	if n, err := s.Tick(ctx); err != nil || n != 1 {
+		t.Fatalf("tick = %d, %v", n, err)
+	}
+	if got := withTitle.received(); len(got) != 1 || got[0].Title != "" || got[0].TaskID != "t1" {
+		t.Fatalf("payload = %+v", got)
+	}
+}
+
 func TestGoneSubscriptionIsRemoved(t *testing.T) {
 	e := newTestEnv(t)
 	gone, flaky, ok := newFakePush(t), newFakePush(t), newFakePush(t)

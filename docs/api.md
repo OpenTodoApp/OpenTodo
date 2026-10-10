@@ -39,7 +39,7 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
-| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, mfa?}` (`mfa` when signed in, see [Two-factor authentication](#two-factor-authentication); `oidc` see [Single sign-on](#single-sign-on)) |
+| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, mfa?, encryption?, minClientVersion?}` (`mfa`, `encryption` and `minClientVersion` when signed in, see [End-to-end encryption](#end-to-end-encryption); see [Two-factor authentication](#two-factor-authentication); `oidc` see [Single sign-on](#single-sign-on)) |
 | POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?}` → 201 `{user}` + cookie. First account becomes owner; afterwards an `invitation` secret admits one member while sign-up is closed |
 | POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie, or `{mfaRequired:true, challenge, expiresAt}` and no cookie when the account has a second factor |
 | POST | `/api/v1/auth/mfa` | none | `{challenge, code}` or `{challenge, recoveryCode}`, optional `remember` → `{user}` + cookie (+ `ot_trust` cookie when `remember`) |
@@ -54,7 +54,11 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | POST | `/api/v1/settings/oidc/test` | owner | `{issuer?}` → `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` |
 | GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
 | DELETE | `/api/v1/me/identities/{id}` | yes | 204, or 409 `last_credential` |
-| GET | `/api/v1/me` | yes | `{user, mfa}` |
+| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion}` |
+| GET | `/api/v1/encryption/keys` | yes | `{keys}`: the wrapped key record, or 404 `encryption_disabled`; see [End-to-end encryption](#end-to-end-encryption) |
+| PUT | `/api/v1/encryption/keys` | yes (fresh when replacing) | create (`version: 1`) or replace (`version` = stored + 1) the key record → 201/200 `{keys}`; 409 `encryption_conflict` |
+| DELETE | `/api/v1/encryption/keys` | yes, fresh | 204; turns encryption off for the account (404 `encryption_disabled` without a record) |
+| POST | `/api/v1/encryption/purge-history` | yes | → `{purged, notice}`; deletes superseded content operations; 409 `encryption_disabled` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}` |
 | POST | `/api/v1/tokens` | yes, fresh | `{name, scope?}` (`full` default, or `read`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input` |
 | GET | `/api/v1/settings/mcp` | yes | `{enabled, endpoint}`: whether the [MCP endpoint](mcp.md) is on and its URL |
@@ -985,6 +989,41 @@ Response (201):
 
 **Owner policy** — `GET`/`PUT /api/v1/settings/webhooks` with `{"allowPrivate": true|false}` allows targets on private networks (Home Assistant or n8n on the LAN) for every account. Owner only: members get 403 `forbidden`. The optional `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` environment variable presets it on the first start.
 
+### End-to-end encryption
+
+Optional per-account encryption of task content ([e2ee.md](e2ee.md) has the threat model). The server stores only the key record the browser produced and never decrypts. For an encrypted account, the content fields of personal data — task `title`, `description`, `ical_extra`; project, label and section `name`; view `name` and `query`; comment `body` — hold ciphertext strings in every REST read, the export and `/api/v1/sync`:
+
+```
+"enc:v1:" + base64url(nonce(12) || AES-256-GCM(utf8(plaintext)) || tag(16))
+additional authenticated data = utf8(entity + "\0" + entityId + "\0" + field)
+```
+
+All other fields (`due`, `priority`, `completed_at`, `project_id`, `labels`, …) stay plaintext. Plaintext REST writes are accepted for an encrypted account; the next unlocked device re-writes them as ciphertext.
+
+```sh
+# Create the key record (version 1). Only wrapped keys and parameters: salt 16 bytes,
+# wrapped keys 40 bytes each (AES-KW of a 256-bit key), base64url without padding.
+curl -X PUT -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"version":1,"kdf":1,"salt":"AQEBAQEBAQEBAQEBAQEBAQ","iterations":600000,"wrappedByPassphrase":"…","wrappedByRecovery":"…"}' \
+  https://todo.example.com/api/v1/encryption/keys
+# 201 {"keys":{"version":1,"kdf":1,"salt":"…","iterations":600000,"wrappedByPassphrase":"…","wrappedByRecovery":"…","createdAt":1760000000000,"updatedAt":1760000000000}}
+# again with version 1 (another device was first):
+# 409 {"error":{"code":"encryption_conflict","message":"the encryption key record was created or changed by another device; unlock with the existing passphrase"}}
+# a malformed record (for example 1000 iterations):
+# 400 {"error":{"code":"invalid_input","message":"iterations must be between 600000 and 10000000"}}
+
+# A REST read of an encrypted task: ciphertext title, plaintext due date
+curl -H "Authorization: Bearer $TOKEN" https://todo.example.com/api/v1/tasks/<id>
+# 200 {"id":"…","title":"enc:v1:oKGio6Slpqeoqaqron0SWSy4dh8xioWkMvJuPN5GjNypnM8","due":{"date":"2026-10-11"},"priority":1,…}
+
+# Delete superseded content operations (plaintext history) for your account
+curl -X POST -H "Authorization: Bearer $TOKEN" https://todo.example.com/api/v1/encryption/purge-history
+# 200 {"purged":3,"notice":"Superseded content operations were deleted from the server. Backups made before this point, …"}
+# without a key record: 409 {"error":{"code":"encryption_disabled",…}}
+```
+
+Replacing the record (passphrase change, recovery reset) and `DELETE` need a fresh re-authentication on cookie sessions (403 `reauth_required`). `GET /api/v1/me` and `GET /api/v1/auth/status` carry `"encryption":{"enabled":true,"keyVersion":2}` and `"minClientVersion":1`. The export adds `"encryption"`: the key record, or `null`. Refused for encrypted accounts with 409 `encryption_enabled`: the first share of a project (`POST /api/v1/projects/{id}/members` on an unshared project) and `POST /api/v1/app-passwords`; `/dav/` answers 403. `GET /api/v1/settings/caldav` adds `"encryption": true|false` for the caller.
+
 ## Examples
 
 Create a task due tomorrow at 9:00 in a project:
@@ -1137,6 +1176,9 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | `destination_error` | 502 | `POST /backups/test` when the destination refuses or cannot be reached |
 | `passkeys_unavailable` | 409 | any passkey route when `OPENTODO_BASE_URL` is not https or localhost |
 | `invalid_input` | 400 | validation failure naming the field |
+| `encryption_disabled` | 404/409 | 404 for `GET`/`DELETE /api/v1/encryption/keys` without a key record; 409 for the history purge without one |
+| `encryption_conflict` | 409 | `PUT /api/v1/encryption/keys` with a version that is not the stored version + 1 (another device created or changed the record) |
+| `encryption_enabled` | 409 | sharing a project for the first time, or creating a CalDAV app password, while the account uses end-to-end encryption |
 | `passkey_challenge_invalid` | 400 | passkey ceremony with an expired, reused or foreign challenge; see [Passkeys](#passkeys) |
 | `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
 | `limit_reached` | 409 | more than 20 webhooks on one account |

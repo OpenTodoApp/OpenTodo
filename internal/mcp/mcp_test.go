@@ -423,6 +423,42 @@ func TestSearchTasks(t *testing.T) {
 	}
 }
 
+// TestEncryptedContentIsOpaque (OpenSpec e2ee): ciphertext titles, project and
+// label names reach the assistant as the placeholder with encrypted: true, and
+// never match a search, not even for the placeholder's own words.
+func TestEncryptedContentIsOpaque(t *testing.T) {
+	f := newFixture(t)
+	const env = "enc:v1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	f.put("u1", "project", "p1", map[string]any{"name": env})
+	f.put("u1", "label", "l1", map[string]any{"name": env})
+	f.task("u1", "t1", env, map[string]any{"project_id": "p1", "labels": []string{"l1"}, "description": env})
+	f.task("u1", "t2", "Plain dentist", nil)
+	res := f.tool("u1", "list_tasks", map[string]any{})
+	raw, _ := json.Marshal(res)
+	if strings.Contains(string(raw), "enc:v1:") {
+		t.Fatalf("ciphertext reached the assistant: %s", raw)
+	}
+	var found bool
+	for _, it := range res["tasks"].([]any) {
+		m := it.(map[string]any)
+		if m["id"] == "t1" {
+			found = true
+			if m["title"] != "Encrypted item" || m["encrypted"] != true || m["project"] != "Encrypted item" {
+				t.Fatalf("encrypted task = %v", m)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("encrypted task missing from list_tasks")
+	}
+	for _, q := range []string{"encrypted", "enc:", "AAAA"} {
+		res = f.tool("u1", "search_tasks", map[string]any{"query": q})
+		if n := len(res["tasks"].([]any)); n != 0 {
+			t.Fatalf("search %q matched %d encrypted tasks", q, n)
+		}
+	}
+}
+
 func TestTodaySummaryCounts(t *testing.T) {
 	f := newFixture(t)
 	f.put("u1", "project", "p1", map[string]any{"name": "Garden", "position": 1, "archived": false, "created_at": 1})

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/pixari/opentodo/internal/e2ee"
 	"github.com/pixari/opentodo/internal/notify"
 )
 
@@ -84,10 +85,13 @@ func (s *Service) rawField(ctx context.Context, scope, entity, id, field string)
 	return v
 }
 
+// stringField reads a string value for server-built text (notifications). A
+// ciphertext value (OpenSpec `e2ee`) becomes e2ee.Placeholder: the server cannot
+// read it and must never show the envelope to people.
 func (s *Service) stringField(ctx context.Context, scope, entity, id, field string) string {
 	var out string
 	if raw := s.rawField(ctx, scope, entity, id, field); raw != "" {
 		_ = json.Unmarshal([]byte(raw), &out)
 	}
-	return out
+	return e2ee.Display(out)
 }

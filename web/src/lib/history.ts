@@ -4,11 +4,15 @@
 // Restoring an earlier value is an ordinary edit with the current clock, so it
 // applies locally at once, appears in the history itself and converges by LWW.
 import { api } from './api'
+import { decryptChanges } from './e2ee'
 import { updateProject, updateTask } from './ops'
 import type { ChangeSet, HistoryPage, Membership, Project, Task } from './types'
 
-export function fetchHistory(entity: 'task' | 'project', id: string, before?: number): Promise<HistoryPage> {
-  return api.history(entity, id, before)
+/** One page of history; ciphertext values (OpenSpec e2ee) are decrypted for display. */
+export async function fetchHistory(entity: 'task' | 'project', id: string, before?: number): Promise<HistoryPage> {
+  const page = await api.history(entity, id, before)
+  const changeSets = await Promise.all(page.changeSets.map(async (s) => ({ ...s, changes: await decryptChanges(entity, id, s.changes) })))
+  return { ...page, changeSets }
 }
 
 /**

@@ -13,7 +13,9 @@ import { followSharedDueChanges } from './reminders'
 import { refreshNotifications } from './notifications'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
 import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
-import type { Clock, Entity, Op, SyncState } from './types'
+import type { Clock, Entity, Op, RowEncryption, SyncState } from './types'
+import { currentKey, isEnabled } from './e2ee'
+import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
 
 const BATCH = 500
 /** Poll interval while the live channel is disconnected (the historical default). */
@@ -124,6 +126,12 @@ async function runOnce(): Promise<void> {
     publish({ state: 'offline' })
     return
   }
+  // End-to-end encryption (OpenSpec e2ee, design D5): a device without the key
+  // of an encrypted account neither pulls nor pushes.
+  if ((await isEnabled()) && !(await currentKey())) {
+    publish({ state: 'locked', error: null })
+    return
+  }
   publish({ state: 'syncing', error: null })
   try {
     const device = await getDeviceId()
@@ -134,17 +142,27 @@ async function runOnce(): Promise<void> {
       const cursor = await getMeta<number>('cursor', 0)
       const batch = await db.outbox.orderBy('local').limit(BATCH).toArray()
       const sent = batch.map(({ local: _local, ...op }) => op)
-      const res = await api.sync(device, cursor, sent, -new Date().getTimezoneOffset())
+      // The only place ops leave the device: content is encrypted here.
+      const wireOps = await prepareOutgoing(sent)
+      const res = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset())
       hlcObserveServerTime(res.serverTime)
       if (batch.length > 0) {
         await db.outbox.bulkDelete(batch.map((o) => o.local as number))
+        await markSent(sent, wireOps)
+      }
+      const incoming = await decryptIncoming(res.ops)
+      if ((await reconcileMode(incoming)) === 'locked') {
+        // Encryption was enabled elsewhere and this device has no key: keep the
+        // cursor so the batch is pulled again after unlocking.
+        publish({ state: 'locked', error: null, pending: await db.outbox.count() })
+        return
       }
       // Refused ops (project-sharing): forget their local clocks so the server's
       // values, which travel in res.ops, win; drop rows that only existed here.
       const { keys, notice } = await forgetRejected(sent, res.rejected ?? [])
       // A refused op never happened: drop it from the local activity log too.
       await forgetActivity((res.rejected ?? []).map((r) => r.id))
-      await applyOps(res.ops)
+      await applyOps(incoming.ops, { wire: incoming.wire })
       if (res.ops.length > 0) received = true
       await dropUnconfirmed(keys)
       if (notice) addRejected(notice)
@@ -154,6 +172,9 @@ async function runOnce(): Promise<void> {
       if (typeof res.trashRetentionDays === 'number') await setMeta(RETENTION_KEY, res.trashRetentionDays)
       // Reminders are personal: another member moving a shared task does not move ours.
       await followSharedDueChanges(res.ops)
+      // Encrypt-on-sight (OpenSpec e2ee, design D7): queued re-writes upload in
+      // the next round of this loop.
+      await normalizeOnSight(incoming)
       if (await generationChanged(res.generation)) {
         // The server was restored from a backup: its log went back in time, so our
         // cursor means nothing there and it may lack edits we hold. Re-send every
@@ -187,6 +208,10 @@ async function runOnce(): Promise<void> {
       // The owner now requires a second factor for this account. Nothing was
       // accepted, so the outbox stays queued and uploads after enrolment.
       publish({ state: 'restricted', error: 'Set up two-factor authentication to keep syncing.' })
+      return
+    }
+    if (err instanceof LockedError) {
+      publish({ state: 'locked', error: null })
       return
     }
     if (err instanceof TypeError) {
@@ -251,9 +276,12 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
         // members' comments come back from their own devices.
         if (entity === 'comment' && row.author_id !== me) continue
         const clock = (row._clock ?? {}) as Clock
+        // A value this device could not decrypt goes back as its envelope, never
+        // as the placeholder (OpenSpec e2ee).
+        const raw = (row._e2ee as RowEncryption | undefined)?.raw ?? {}
         for (const [field, c] of Object.entries(clock)) {
           if (!(field in row)) continue
-          chunk.push({ id: crypto.randomUUID(), entity, entityId: row.id as string, field, value: row[field], ts: c.ts, device: c.device })
+          chunk.push({ id: crypto.randomUUID(), entity, entityId: row.id as string, field, value: raw[field] ?? row[field], ts: c.ts, device: c.device })
           if (chunk.length >= RESEED_CHUNK) await flush()
         }
       }
@@ -408,6 +436,8 @@ export function startSync(): void {
   armTimer()
   requestSync(0)
   connectLive()
+  // An encryption re-write job interrupted by a reload continues (OpenSpec e2ee).
+  void runMigration().then((ran) => ran && requestSync(0), () => undefined)
 }
 
 export function stopSync(): void {

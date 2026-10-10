@@ -98,6 +98,10 @@ Not supported: events (VEVENT), scheduling and invitations, free/busy, calendar 
 
 The three target clients were exercised only with recorded-style fixtures and protocol tests in this repository (`internal/caldav/testdata/`, `internal/httpapi/caldav_test.go`); a manual run against real Apple Reminders, Thunderbird and DAVx⁵ installations is still pending.
 
+## End-to-end encryption
+
+CalDAV is not available for accounts with [end-to-end encryption](e2ee.md): calendar clients can neither read encrypted titles nor write them back, and serving placeholders would let a client overwrite the real titles. For such an account `/dav/` answers 403 and creating an app password answers 409 `encryption_enabled`; existing app passwords stop working until encryption is turned off.
+
 ## Downgrading
 
 An older server answers 404 for `/dav/` and refuses `ical_extra` operations from newer devices. Remove the CalDAV accounts from your calendar apps before downgrading.

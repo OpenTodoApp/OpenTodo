@@ -9,14 +9,24 @@ export const DOC_FIELDS: Record<string, string> = { 'task.notes_doc': 'descripti
 /** Envelope length cap; identical to MaxDocBytes in internal/sync/ops.go. */
 export const MAX_DOC_CHARS = 256 * 1024
 
+/**
+ * The cap for an account with end-to-end encryption (OpenSpec e2ee): the
+ * ciphertext "enc:v1:" + base64url(nonce || ciphertext || tag) of the envelope
+ * must still fit MAX_DOC_CHARS.
+ */
+export const MAX_DOC_CHARS_ENCRYPTED = Math.floor(((MAX_DOC_CHARS - 'enc:v1:'.length) * 3) / 4) - 28 - 64
+
+/** The value cap of an ordinary string field such as the `description` projection (MaxValueBytes, JSON-encoded). */
+export const MAX_TEXT_VALUE = 64 * 1024
+
 export function isDocField(entity: string, field: string): boolean {
   return `${entity}.${field}` in DOC_FIELDS
 }
 
 /** Thrown by mutate() when a document would exceed MAX_DOC_CHARS; nothing is written. */
 export class DocTooLargeError extends Error {
-  constructor(public size: number) {
-    super(`This note is too large to save (${Math.ceil(size / 1024)} KB of ${MAX_DOC_CHARS / 1024} KB). Remove some text.`)
+  constructor(public size: number, public limit = MAX_DOC_CHARS) {
+    super(`This note is too large to save (${Math.ceil(size / 1024)} KB of ${Math.floor(limit / 1024)} KB). Remove some text.`)
     this.name = 'DocTooLargeError'
   }
 }
