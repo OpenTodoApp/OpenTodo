@@ -21,20 +21,14 @@ import (
 )
 
 type env struct {
-<<<<<<< HEAD
-	t      *testing.T
-	srv    *httptest.Server
-	client *http.Client
-	db     *sql.DB
-	// ip, when set, is sent as X-Forwarded-For so clients get separate rate-limit windows.
-	ip string
-=======
 	t       *testing.T
 	srv     *httptest.Server
 	client  *http.Client
+	db      *sql.DB
 	handler http.Handler
 	sync    *opsync.Service
->>>>>>> feat/realtime-sync-channel
+	// ip, when set, is sent as X-Forwarded-For so clients get separate rate-limit windows.
+	ip string
 }
 
 func newEnv(t *testing.T, allowSignup bool) *env {
@@ -53,11 +47,7 @@ func newEnv(t *testing.T, allowSignup bool) *env {
 	// Open event streams would otherwise hold srv.Close; mirror main.go's shutdown hook.
 	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
-<<<<<<< HEAD
-	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db}
-=======
-	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, handler: h, sync: syncSvc}
->>>>>>> feat/realtime-sync-channel
+	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}
 }
 
 func (e *env) do(method, path string, body any, headers ...string) (*http.Response, map[string]any) {
