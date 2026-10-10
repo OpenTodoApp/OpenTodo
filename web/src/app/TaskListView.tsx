@@ -28,7 +28,7 @@ import { SubProjects } from './SubProjects'
 import { estimateFocus, isGPending, openTask, placeInDay } from './signals'
 import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
-import { makeListActions, registerListActions, taskDefaults } from './listActions'
+import { registerListState, taskDefaults } from './listActions'
 
 type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
@@ -640,7 +640,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
   // read the latest render through a ref so the registration happens once.
   const live = useRef({ rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete })
   live.current = { rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete }
-  useEffect(() => registerListActions(makeListActions({
+  useEffect(() => registerListState({
     rows: () => live.current.rows.map((r) => r.task),
     columns: () => (live.current.board ? live.current.columns.map((c) => c.cards) : null),
     selected: () => live.current.selectedId,
@@ -657,7 +657,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       return true
     },
     toggleComplete: (id, completed) => live.current.toggleComplete(id, completed),
-  })), [])
+  }), [])
   useEffect(() => {
     // Leaving the quick-add line ends an `o` insertion; `q` and clicks add at the end as before.
     const input = quickAddRef.current

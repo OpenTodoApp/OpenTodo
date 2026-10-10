@@ -183,7 +183,7 @@ function KeyboardSection() {
         Vim keybindings (this device)
       </label>
       <p className="text-sm text-slate-500">
-        Adds Normal, Insert and Command modes on top of the usual shortcuts: counts (<span className="kbd">3j</span>), <span className="kbd">gg</span> / <span className="kbd">G</span>, <span className="kbd">dd</span>, <span className="kbd">x</span>, <span className="kbd">o</span>, <span className="kbd">i</span> and a <span className="kbd">:</span> command line. Escape in a field returns to Normal mode. Press <span className="kbd">?</span> for every shortcut. Stored on this device only.
+        Normal, Insert and Command modes on top of the usual shortcuts: counts, <span className="kbd">gg</span>, <span className="kbd">dd</span>, <span className="kbd">:</span> commands. This device only; <span className="kbd">?</span> lists them.
       </p>
     </section>
   )

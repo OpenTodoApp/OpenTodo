@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../lib/ops'
 import type { Task } from '../lib/types'
-import { listActions, makeListActions, registerListActions, taskDefaults, type ListState } from './listActions'
+import { registerListState, taskDefaults, type ListState } from './listActions'
+import { listActions, makeListActions } from './vim/actions'
 
 let n = 0
 beforeEach(() => {
@@ -113,8 +114,10 @@ describe('list actions', () => {
   })
 
   it('registers and unregisters', () => {
-    const { actions } = { actions: makeListActions(actionsState({ rows: [], selected: null, open: null })) }
-    const off = registerListActions(actions)
+    const state = actionsState({ rows: [], selected: null, open: null })
+    const off = registerListState(state)
+    const actions = listActions()
+    expect(actions).not.toBeNull()
     expect(listActions()).toBe(actions)
     off()
     expect(listActions()).toBeNull()
