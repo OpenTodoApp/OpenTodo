@@ -32,6 +32,7 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/httpapi"
 	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/push"
@@ -132,6 +133,10 @@ func run() error {
 		pushSvc = push.New(db, syncSvc, cfg.DataDir, push.Options{Log: log, Subject: cfg.Origin()})
 		opts = append(opts, httpapi.WithPush(pushSvc))
 	}
+	// Email to task (docs/email.md): off unless OPENTODO_EMAIL_* configure a
+	// mailbox; then one goroutine polls it over IMAP.
+	emailSvc := email.New(db, syncSvc, cfg.Email, email.Options{Log: log, Audit: authSvc.Audit()})
+	opts = append(opts, httpapi.WithEmail(emailSvc))
 	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version, opts...)
 
 	srv := &http.Server{
@@ -154,6 +159,7 @@ func run() error {
 	if pushSvc != nil {
 		go pushSvc.Run(ctx)
 	}
+	go emailSvc.Run(ctx)
 
 	// Purge items that outlived the Trash retention at startup and daily
 	// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).

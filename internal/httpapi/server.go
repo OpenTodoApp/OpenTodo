@@ -18,6 +18,7 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/importer"
 	"github.com/pixari/opentodo/internal/notify"
@@ -79,6 +80,10 @@ type Server struct {
 	// authentications per client address (10/min; OpenSpec `caldav`).
 	caldav     caldavState
 	davLimiter *rateLimiter
+	// email is email capture (OpenSpec `email-to-task`); emailLimiter caps
+	// inbox changes and rotations per account (30/hour).
+	email        *email.Service
+	emailLimiter *rateLimiter
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -103,7 +108,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
 		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
 		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
-		importer: importer.New(syncSvc.DB(), syncSvc, log)}
+		emailLimiter: newRateLimiter(30, time.Hour),
+		importer:     importer.New(syncSvc.DB(), syncSvc, log)}
 	for _, o := range opts {
 		o(s)
 	}
@@ -112,6 +118,10 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	}
 	// SSO-only mode refuses local sign-in for members (oidc-login D6).
 	authSvc.SetSSOOnly(s.oidc.SSOOnly)
+	if s.email == nil {
+		// Disabled unless cfg.Email is set; only cmd/opentodo starts the poller.
+		s.email = email.New(syncSvc.DB(), syncSvc, cfg.Email, email.Options{Log: log, Audit: authSvc.Audit()})
+	}
 	if s.inbox == nil {
 		s.inbox = notify.NewInApp(syncSvc.DB(), log)
 		syncSvc.AddSink(s.inbox)
@@ -190,6 +200,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerCaldavRoutes(mux)
 	// Comments and activity (OpenSpec `comments-and-activity`): literal patterns win over {collection}.
 	s.registerCommentRoutes(mux)
+	// Email to task (OpenSpec `email-to-task`): literal patterns win over {collection}.
+	s.registerEmailRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))

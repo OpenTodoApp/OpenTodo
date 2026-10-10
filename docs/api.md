@@ -641,6 +641,8 @@ The server records security-relevant events in its own database (never synced to
 | `logout` | success | actor = user | |
 | `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name` |
 | `app_password.created`, `app_password.revoked` | success | actor = user | `app_password_id`, `app_password_name` |
+| `email_inbox.created`, `email_inbox.rotated` | success | actor = user | (never the secret) |
+| `email_inbox.updated` | success | actor = user | `setting` (`enabled` or `allowlist`), `from`, `to` (true/false, or the number of allowlist entries; never the addresses) |
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
 | `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
 | `invitation.revoked` | success | actor = owner | `invitation_id` |
@@ -897,6 +899,31 @@ The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV
 | `PUT` | `/api/v1/settings/caldav` | owner | `{"enabled":true}` → the same shape. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members. Recorded as `settings.changed` (`caldav.enabled`). |
 
 App passwords are refused by every `/api/v1` route, and API tokens, passwords and session cookies are refused by `/dav/`. Creating and revoking one records `app_password.created` / `app_password.revoked` in the audit log.
+
+### Email to task
+
+Each account can have a secret inbox address; mail sent to it becomes an Inbox task (see [email.md](email.md)). The feature exists only when the operator configured a mailbox with `OPENTODO_EMAIL_*`. All routes require a session or API token and act on the caller's account. No response ever contains the operator's mail server, mailbox user or password.
+
+| Method | Path | Who | Body / result |
+| --- | --- | --- | --- |
+| `GET` | `/api/v1/email-inbox` | any user | `{"enabledByOperator":true,"address":"todo+k3f9…@example.com","enabled":true,"allowlist":[],"hourlyLimit":60}`. The first call creates the address (enabled). With no operator configuration: `{"enabledByOperator":false,"address":null,"enabled":false,"allowlist":[],"hourlyLimit":60}` and nothing is created. |
+| `PATCH` | `/api/v1/email-inbox` | any user | `{"enabled":false}` and/or `{"allowlist":["me@example.org"]}` → the same shape. `allowlist` must be an array of at most 50 bare email addresses (stored lowercased, duplicates dropped; `[]` clears it), otherwise `400 invalid_input` and nothing changes. `409 email_disabled` when the operator has not configured email capture. |
+| `POST` | `/api/v1/email-inbox/rotate` | any user | → the same shape with a new address; the old one stops working at once. `409 email_disabled` as above. |
+
+Changes and rotations are limited to 30 per account per hour (`429 rate_limited`). They are recorded as `email_inbox.created`, `email_inbox.rotated` and `email_inbox.updated` in the audit log.
+
+```sh
+curl -s -H "Authorization: Bearer $TOKEN" https://todo.example.com/api/v1/email-inbox
+# 200 {"enabledByOperator":true,"address":"todo+k3f9…@example.com","enabled":true,"allowlist":[],"hourlyLimit":60}
+curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"allowlist":["Me@Example.org"]}' https://todo.example.com/api/v1/email-inbox
+# 200 {..., "allowlist":["me@example.org"], ...}
+curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"allowlist":"me@example.org"}' https://todo.example.com/api/v1/email-inbox
+# 400 {"error":{"code":"invalid_input","message":"allowlist: allowlist must be a list of at most 50 email addresses"}}
+```
+
+Tasks created from mail are ordinary operations with device `server` (title, description, priority 4, created_at, position; no project, no due date), so they arrive through `POST /api/v1/sync` like any other change.
 
 ### Webhooks
 
