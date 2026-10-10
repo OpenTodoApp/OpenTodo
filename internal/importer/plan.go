@@ -78,6 +78,9 @@ type Totals struct {
 	Entities           int `json:"entities"`
 	Written            int `json:"written"`
 	Ops                int `json:"ops"`
+	// Refused counts ops the sync engine refused for authorization reasons (for
+	// example a shared project whose role changed during the import); additive.
+	Refused int `json:"refused,omitempty"`
 }
 
 // Columns lists the recognised and ignored CSV columns.

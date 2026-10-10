@@ -415,3 +415,30 @@ func (s *Service) TransferOwnership(ctx context.Context, actorID, projectID, tar
 		return MemberChange{From: current, To: RoleOwner}, nil
 	})
 }
+
+// ProjectAccess is the caller's role on one shared project and its owner.
+type ProjectAccess struct {
+	Role    string
+	OwnerID string
+}
+
+// SharedProjects maps every shared project the user belongs to onto their role
+// and the owner (REST collections and the export annotate projects with it).
+func (s *Service) SharedProjects(ctx context.Context, userID string) (map[string]ProjectAccess, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT m.project_id, m.role, p.owner_id FROM project_members m
+		JOIN project_scopes p ON p.project_id = m.project_id WHERE m.user_id = ?`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]ProjectAccess{}
+	for rows.Next() {
+		var pid string
+		var a ProjectAccess
+		if err := rows.Scan(&pid, &a.Role, &a.OwnerID); err != nil {
+			return nil, err
+		}
+		out[pid] = a
+	}
+	return out, rows.Err()
+}

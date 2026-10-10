@@ -10,12 +10,12 @@
 
 - [x] 2.1 Role table (viewer/editor/admin/owner × entity/field) and per-op evaluation at receipt time in `Apply`, returning `rejected: [{id, reason}]` without failing the batch; verify `TestViewerWritesAreRejectedPerOp`, `TestEditorCannotEditProjectFields`, `TestRejectionIsIdempotentOnRetry` via `go test ./...`
 - [x] 2.2 Include the current winning op for each refused field in the same response; verify `TestRejectedFieldsComeBackWithServerValue` via `go test ./...`
-- [ ] 2.3 `Pull` over the caller's scopes, backfill replay for new memberships with monotonic cursor and `hasMore`, `memberships` in every response; verify `TestPullIsScopedToMemberships`, `TestNewMemberReplaysHistoryBehindCursor`, `TestRemovedMemberReceivesNothing` via `go test ./...`
+- [x] 2.3 `Pull` over the caller's scopes, backfill replay for new memberships with monotonic cursor and `hasMore`, `memberships` in every response; verify `TestPullIsScopedToMemberships`, `TestNewMemberReplaysHistoryBehindCursor`, `TestRemovedMemberReceivesNothing` via `go test ./...`
 
 ## 3. Membership REST routes
 
-- [ ] 3.1 Handlers for list/add/change-role/remove/leave/transfer behind `requireAuth`, 404 for non-members, `user_not_found`, `owner_must_transfer`, `forbidden` envelopes; verify `TestMembershipRoutesAuthAndErrors`, `TestOwnerTransferDemotesPreviousOwner` via `go test ./...`
-- [ ] 3.2 Collection, get, patch, delete and export include shared scopes with role enforcement and `role`/`owner_id` on shared projects; verify `TestRestReadsUnionScopes`, `TestExportIncludesSharedProjects`, `TestRestPatchByViewerIsForbidden` via `go test ./...`
+- [x] 3.1 Handlers for list/add/change-role/remove/leave/transfer behind `requireAuth`, 404 for non-members, `user_not_found`, `owner_must_transfer`, `forbidden` envelopes; verify `TestMembershipRoutesAuthAndErrors`, `TestOwnerTransferDemotesPreviousOwner` via `go test ./...`
+- [x] 3.2 Collection, get, patch, delete and export include shared scopes with role enforcement and `role`/`owner_id` on shared projects; verify `TestRestReadsUnionScopes`, `TestExportIncludesSharedProjects`, `TestRestPatchByViewerIsForbidden` via `go test ./...`
 - [ ] 3.3 Document routes, error codes, scopes, rejections and catch-up in `docs/api.md` and `docs/sync.md`; verify the documented payloads match `TestMembershipRoutesAuthAndErrors` fixtures and `make check` passes
 
 ## 4. Client data layer

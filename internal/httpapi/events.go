@@ -62,7 +62,13 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 		case <-sub.Done():
 			return
 		case seq := <-sub.C():
-			if _, err := fmt.Fprintf(w, "event: ops\ndata: {\"cursor\":%d}\n\n", seq); err != nil {
+			data := fmt.Sprintf(`{"cursor":%d}`, seq)
+			if seq < 0 {
+				// A membership change adds no op (project-sharing): no cursor, so
+				// every device runs the exchange and learns its new memberships.
+				data = `{}`
+			}
+			if _, err := fmt.Fprintf(w, "event: ops\ndata: %s\n\n", data); err != nil {
 				return
 			}
 			if err := rc.Flush(); err != nil {

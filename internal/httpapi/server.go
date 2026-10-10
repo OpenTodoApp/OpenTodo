@@ -126,6 +126,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("PUT /api/v1/backups/settings", s.requireAuth(s.handlePutBackupSettings))
 	mux.Handle("POST /api/v1/backups/run", s.requireAuth(s.handleBackupRun))
 	mux.Handle("POST /api/v1/backups/test", s.requireAuth(s.handleBackupTest))
+	// Project sharing (OpenSpec `project-sharing`): literal patterns win over {collection}.
+	s.registerSharingRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
@@ -603,13 +605,26 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if res.Applied > 0 {
-		// Wake the user's other devices; this one learns the cursor from the response.
-		s.sync.Notifier().Notify(uid, in.Device, res.Seq)
+		// Wake the other devices of everyone who can see the change; this one
+		// learns the cursor from the response.
+		s.sync.NotifyApplied(res, in.Device)
 	}
 	ops, cursor, more, err := s.sync.Pull(r.Context(), uid, in.Cursor, in.Device, opsync.MaxOpsPerRequest)
 	if err != nil {
 		s.internal(w, err)
 		return
+	}
+	// The server's value of every refused field travels with the response, so the
+	// device restores it without another round trip (project-sharing design D3).
+	ops = append(ops, res.Restore...)
+	memberships, err := s.sync.Memberships(r.Context(), uid)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	rejected := res.Rejected
+	if rejected == nil {
+		rejected = []opsync.Rejection{}
 	}
 	gen, err := s.sync.Generation(r.Context())
 	if err != nil {
@@ -625,6 +640,9 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		"serverTime": time.Now().UnixMilli(),
 		// generation changes only when the server is restored from a backup (additive field).
 		"generation": gen,
+		// Additive (project-sharing): refused ops and the caller's shared projects.
+		"rejected":    rejected,
+		"memberships": memberships,
 	})
 }
 
@@ -648,6 +666,10 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	if err := s.annotateProjects(r.Context(), entity, list...); err != nil {
+		s.internal(w, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{r.PathValue("collection"): list})
 }
 
@@ -664,6 +686,10 @@ func (s *Server) handleGet(w http.ResponseWriter, r *http.Request) {
 	}
 	if e == nil || e.Deleted() {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
+		return
+	}
+	if err := s.annotateProjects(r.Context(), entity, e); err != nil {
+		s.internal(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, e)
@@ -705,6 +731,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		body["position"] = json.RawMessage(fmt.Sprint(now))
 	}
 	delete(body, "id")
+	stripAnnotations(entity, body)
 	if entity == "view" {
 		if err := s.checkView(r.Context(), userFrom(r.Context()).ID, id, body, nil); err != nil {
 			s.viewError(w, err)
@@ -906,6 +933,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	delete(body, "id")
+	stripAnnotations(entity, body)
 	if len(body) == 0 {
 		writeError(w, http.StatusBadRequest, "bad_request", "no fields to update")
 		return
@@ -966,18 +994,26 @@ func (s *Server) writeFields(w http.ResponseWriter, r *http.Request, entity, id 
 		ops = append(ops, opsync.Op{ID: ids.New(), Entity: entity, EntityID: id, Field: field, Value: value, TS: now, Device: serverDevice})
 	}
 	uid := userFrom(r.Context()).ID
-	res, err := s.sync.Apply(r.Context(), uid, ops)
+	// REST writes are all or nothing: one refused field refuses the request.
+	res, err := s.sync.ApplyStrict(r.Context(), uid, ops)
 	if err != nil {
-		if errors.Is(err, opsync.ErrInvalidOp) {
+		var rej *opsync.RejectedError
+		switch {
+		case errors.Is(err, opsync.ErrInvalidOp):
 			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
-			return
+		case errors.As(err, &rej) && rej.Reason == opsync.ReasonScopeChange:
+			writeError(w, http.StatusBadRequest, "scope_change",
+				"task.project_id: the target project is shared differently; create a copy there and delete this task instead")
+		case errors.As(err, &rej):
+			writeError(w, http.StatusForbidden, "forbidden", "your role on this project does not allow changing "+rej.Op.Entity+"."+rej.Op.Field)
+		default:
+			s.internal(w, err)
 		}
-		s.internal(w, err)
 		return
 	}
 	if res.Applied > 0 {
 		// REST writes come from no browser device, so every connected device is woken.
-		s.sync.Notifier().Notify(uid, serverDevice, res.Seq)
+		s.sync.NotifyApplied(res, serverDevice)
 	}
 	if status == http.StatusNoContent {
 		w.WriteHeader(status)
@@ -985,6 +1021,10 @@ func (s *Server) writeFields(w http.ResponseWriter, r *http.Request, entity, id 
 	}
 	e, err := s.sync.Get(r.Context(), uid, entity, id)
 	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	if err := s.annotateProjects(r.Context(), entity, e); err != nil {
 		s.internal(w, err)
 		return
 	}
@@ -997,6 +1037,10 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	for plural, entity := range opsync.Plural {
 		list, err := s.sync.List(r.Context(), uid, entity, true)
 		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		if err := s.annotateProjects(r.Context(), entity, list...); err != nil {
 			s.internal(w, err)
 			return
 		}

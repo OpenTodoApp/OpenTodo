@@ -154,6 +154,13 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 		if p == nil || p.Deleted() {
 			return nil, &OptionError{"targetProject: no such project in your account"}
 		}
+		shared, err := s.sync.SharedProjects(ctx, uid)
+		if err != nil {
+			return nil, err
+		}
+		if a, ok := shared[opts.TargetProject]; ok && !opsync.CanWrite(a.Role, KindTask, "title") {
+			return nil, &OptionError{"targetProject: your role on this shared project does not allow adding tasks"}
+		}
 	}
 	parsed, err := Parse(data, opts)
 	if err != nil {
@@ -329,6 +336,7 @@ func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []
 	}
 	job.Totals.Written += len(batch)
 	job.Totals.Ops += res.Applied
+	job.Totals.Refused += len(res.Rejected)
 	totals, _ := json.Marshal(job.Totals)
 	if _, err := tx.ExecContext(ctx, `UPDATE import_jobs SET totals_json = ? WHERE id = ?`, string(totals), job.ID); err != nil {
 		return err
@@ -337,8 +345,9 @@ func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []
 		return err
 	}
 	if res.Applied > 0 {
-		// Device "import" belongs to no browser, so every connected device is woken.
-		s.sync.Notifier().Notify(uid, Device, res.Seq)
+		// Device "import" belongs to no browser, so every connected device of
+		// everyone who can see the data is woken.
+		s.sync.NotifyApplied(res, Device)
 	}
 	return nil
 }
@@ -478,7 +487,7 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 			return nil, err
 		}
 		if res.Applied > 0 {
-			s.sync.Notifier().Notify(uid, Device, res.Seq)
+			s.sync.NotifyApplied(res, Device)
 		}
 	}
 	if _, err := s.db.ExecContext(ctx, `UPDATE import_jobs SET status = ?, undone_at = ? WHERE id = ? AND user_id = ?`, StatusUndone, now, id, uid); err != nil {
