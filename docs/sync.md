@@ -11,12 +11,13 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 ```json
 {
   "id": "0d1f…",                 // unique per op (UUID v4)
-  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder"
+  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "comment"
   "entityId": "8c2a…",           // UUID of the entity
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
   "ts": 1760060000123,           // hybrid logical clock, unix ms
-  "device": "3c54…"              // id of the producing device ("server" for REST writes)
+  "device": "3c54…",             // id of the producing device ("server" for REST writes)
+  "actor": "a1b2…"               // served ops only: the author's account id (ignored on input)
 }
 ```
 
@@ -56,6 +57,14 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | reminder | `delivered_at`, `dismissed_at` | number or null |
 | reminder | `created_at` | number |
 | reminder | `deleted_at` | number or null |
+| comment | `task_id`, `author_id` | string (task id, account id; required, fixed at creation) |
+| comment | `parent_id` | string (comment id) or null |
+| comment | `body` | string (markdown, at most 64 KB like every value) |
+| comment | `mentions` | array of strings (account ids; filtered to members at receipt) |
+| comment | `created_at` | number |
+| comment | `edited_at`, `deleted_at` | number or null |
+
+`actor` on served ops (OpenSpec `comments-and-activity`) is the account that wrote the op, taken from `ops.user_id`, which the server always sets from the authenticated submitter; a value sent by a client is ignored. It is additive and optional: older clients ignore it, and ops from an older server simply lack it.
 
 Adding fields is backwards compatible. Renaming or removing is not; it needs an OpenSpec change with a migration plan.
 
@@ -74,6 +83,31 @@ A `reminder` belongs to one task (`task_id`) and fires at `fire_at`, always a re
 - A reminder is shown when `fire_at` ≤ now, it is not deleted, not dismissed for the current firing, and its task exists and is neither completed nor deleted.
 - Reminders are **personal**: every reminder op is stored in its author's personal scope (`user:<id>`), also when the task is in a shared project, so only the author's devices receive it and any member, viewers included, can keep reminders on a shared task. Because another member's device cannot write them, a device that pulls a `due` change for a task in a shared project recomputes its own relative reminders for that task (new ops, not the same batch). A REST due change recomputes only the caller's reminders.
 - Push subscriptions are device state on the server (`push_subscriptions`), never ops, and are not exported.
+
+### Comments
+
+A `comment` is a threaded markdown note on a task (OpenSpec `comments-and-activity`). It is an ordinary entity, so comments are written offline, queue in the outbox and converge per field; the body is one LWW register like `description` (two offline edits of one comment keep the newer body).
+
+- **Scope.** A comment lives in the scope of its task: the shared project's scope, or the author's personal scope for a task in the Inbox or an unshared project. A comment created in the same batch as its task follows that task's `project_id` like a new task does. Sharing a project later relabels its tasks' comments with them; purging a task purges its comments (and leaves markers for them).
+- **Authorship, checked per op at receipt.** On the op that creates a comment, `author_id` must equal the submitting account; `task_id` and `author_id` can never change afterwards. `body`, `mentions`, `edited_at`, `parent_id` and `created_at` are accepted only from the author. `deleted_at` is accepted from the author, a project admin and the owner. A violation is refused with reason `forbidden` and the server's value travels back in `ops`, like any refused field. A comment on a task the author cannot read, or on a task that does not exist, is refused; ops for a comment whose task was purged are discarded as duplicates.
+- **Viewers may comment.** Commenting is the one write a viewer of a shared project is expected to make, so a viewer may create comments and edit or delete their own. This is the only exception to "viewers write nothing".
+- **Mentions.** The server keeps only ids of current members of the task's shared project (none on a personal task), without duplicates, and stores the op with the filtered value. The filtered op goes back to the author's device in the same response with the original `(ts, device)`; the client adopts a server value that carries the clock its row already has for this field only (`comment.mentions`), so every device converges on the filtered list. Each account newly added to a comment's mentions gets an in-app notification (`kind: "mentioned"`) after commit, through the same notification sink as assignments.
+- **Rate limit.** Each account may create 60 comments per minute (fixed window, sync and REST together); further creations are refused with reason `rate_limited` and are not stored.
+- **Delete** sets `deleted_at`; clients show a "comment deleted" placeholder in its place in the thread and the REST API stops serving it. A delete and a concurrent edit resolve per field: the comment stays deleted, whatever body won.
+- **Threads** are derived from `parent_id`: a reply to a reply belongs to the same thread, a reply whose parent is unknown, on another task or part of a cycle starts its own thread. `sync.ThreadOrder` and `web/src/lib/comments.ts` implement the same order.
+- **Reseeding after a restore** re-sends only the device user's own comments (the server would refuse anyone else's).
+
+### Activity
+
+The activity log is derived from ops, never written (design D4). `internal/activity` (server) and `web/src/lib/activity.ts` (client) implement one rule, and both test suites run `internal/activity/testdata/activity_fixture.json`:
+
+1. Only task, project and comment ops count.
+2. Ops are ordered by `(ts, device)`, ties in `seq` order: the order the winner rule resolves them in.
+3. An op's old value is the previous value of its field in that order.
+4. Ops by one actor on one entity within 5 s of the first op of that actor's open group for the entity fold into one event.
+5. An event is classified by the fields it touched, in this order: `created_at` → created; `completed_at` → completed / reopened; `deleted_at` → deleted / restored; `due` → rescheduled; `assignee_id` → assigned / unassigned; `project_id` → moved; `archived` → archived / unarchived; anything else → edited. A comment group is commented (creation), comment_deleted or comment_edited. A group that changed nothing is dropped.
+
+The event id is the id of its first op. Devices record every task, project and comment op they apply (author, old value from the local row, project) in a local `activity` table and derive events from it, so per-task and per-project activity works offline and shows the device's unsent ops as pending. The table keeps at most 500 events per project, dropping the oldest; `GET /api/v1/{tasks|projects}/{id}/activity` serves the full history from the op log, and clients merge older pages by event id and op ids. A device that receives ops out of timestamp order may fold an event slightly differently from the server; the merge never shows an op twice.
 
 ### Task labels
 
@@ -151,7 +185,7 @@ Every op and every materialized field belongs to one scope (OpenSpec `project-sh
 - **Which scope an op belongs to.** A project op goes to the project's scope once it is shared, otherwise to the author's personal scope. A task op goes to the scope the task already lives in; a new task goes to the scope of the `project_id` sent in the same batch (no project = Inbox = personal). Labels and views are always personal.
 - **A task never changes scope.** A `project_id` that would move a task into another scope is refused with reason `scope_change`. Clients move across scopes by copying the task (new id) into the destination and tombstoning the original; deleting a shared project tombstones the project and its tasks and the owner's device copies the open tasks into the owner's Inbox.
 - **First share.** Sharing a project relabels the project and its tasks from the owner's personal scope to the project scope in one transaction. Only the scope label changes; `seq`, op ids and content stay, so the owner's devices keep their cursor.
-- **Authorization at receipt.** Each op is checked against the author's membership when the server receives it, never against `op.ts`: viewer → nothing; editor → tasks; admin → tasks and project fields except `deleted_at`; owner → everything; non-members → nothing. A refused op is not stored and is listed in `rejected` with its id and reason (`forbidden`, `scope_change` or `not_a_member`) in a 200 response; the rest of the batch is applied. The response's `ops` also carry the current winning op of every refused field the caller can see, so the device drops its local change and shows the server's value without another round trip. Resending an already refused op gives the same answer.
+- **Authorization at receipt.** Each op is checked against the author's membership when the server receives it, never against `op.ts`: viewer → nothing (except comments, see [Comments](#comments)); editor → tasks; admin → tasks and project fields except `deleted_at`; owner → everything; non-members → nothing. A refused op is not stored and is listed in `rejected` with its id and reason (`forbidden`, `scope_change` or `not_a_member`) in a 200 response; the rest of the batch is applied. The response's `ops` also carry the current winning op of every refused field the caller can see, so the device drops its local change and shows the server's value without another round trip. Resending an already refused op gives the same answer.
 - **Catch-up for a new member.** A device whose cursor is past part of a project's history when its user joins receives that history first: pages of the project's ops up to the device's cursor at its first exchange after joining, with `cursor` unchanged and `hasMore: true`, then the regular pull. Progress is kept per device (`member_backfills`), so each of the member's devices replays the history once. A replay page lost in transit is not resent; re-syncing from cursor 0 recovers it.
 - **Membership** lives outside the op log (`project_members`) and changes only through the REST routes, so offline devices cannot race on it. Every exchange returns the caller's `memberships`; a device purges a project (and its tasks) that it knew as shared and that is no longer listed. A membership change wakes the affected devices with an event that carries no cursor (`data: {}`), so they always run the exchange.
 - **Assignment** (OpenSpec `task-assignment`). A non-null `task.assignee_id` must name a current member of the task's shared project, or the author for a task in a personal scope; otherwise the op is refused with reason `not_a_member` (plus the server's value in `ops`, as for `forbidden`). Viewers are refused with `forbidden` like any other write. When a member leaves or is removed, the server writes `assignee_id: null` ops (device `server`, author = whoever removed them) for every task of that project assigned to them, in the same transaction as the membership change and stamped later than the value they replace, so every device converges on "unassigned" without client logic. An assignment to someone other than its author that wins on the server emits an internal assignment event after commit (`internal/notify`), which becomes an in-app notification (`GET /api/v1/notifications`).
@@ -205,7 +239,7 @@ Deleting a project writes only the project's tombstone (plus moving its direct s
 
 ## Purge
 
-Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's) are purged too.
+Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's) and their comments are purged too.
 
 Three rules keep replicas convergent:
 

@@ -106,7 +106,9 @@ describe('createView / updateView / deleteView', () => {
     await updateView(id, { group_by: 'due' })
     const local = await db.views.get(id)
     // Another device changed the sort meanwhile (older timestamp, different field): both survive.
-    await applyOps([{ id: 'r1', entity: 'view', entityId: id, field: 'sort_by', value: 'priority', ts: local!._clock.group_by.ts - 1, device: 'B' } as Op])
+    // Its device id sorts after any local UUID, so a tie with the creation's timestamp (both
+    // local writes in consecutive milliseconds) still resolves in its favour.
+    await applyOps([{ id: 'r1', entity: 'view', entityId: id, field: 'sort_by', value: 'priority', ts: local!._clock.group_by.ts - 1, device: '~B' } as Op])
     expect(await db.views.get(id)).toMatchObject({ group_by: 'due', sort_by: 'priority' })
   })
 })

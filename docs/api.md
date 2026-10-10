@@ -109,9 +109,14 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md`; the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
 | GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
-| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders}}`; 409 `not_deleted` otherwise |
-| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{tasks,projects,reminders}}` |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
+| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders,comments}}`; 409 `not_deleted` otherwise |
+| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{tasks,projects,reminders,comments}}` |
+| GET | `/api/v1/tasks/{id}/comments` | yes | `{comments}`: the task's live comments in thread order; 404 for a task you cannot read; see [Comments and activity](#comments-and-activity) |
+| POST | `/api/v1/tasks/{id}/comments` | yes | `{body, parent_id?, mentions?}` → 201 comment; 404 for a task you cannot read; 429 `rate_limited` past 60 new comments a minute |
+| PATCH | `/api/v1/comments/{id}` | yes | `{body?, mentions?}` → 200 comment with `edited_at` set; 403 `forbidden` unless you wrote it |
+| DELETE | `/api/v1/comments/{id}` | yes | 204; allowed for the author, project admins and the owner, 403 `forbidden` otherwise |
+| GET | `/api/v1/tasks/{id}/activity`, `/api/v1/projects/{id}/activity` | yes | `{events, more, cursor?}` newest first, derived from the operation log; `?before=<cursor>&limit=<1-200>` (default 50) |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `comments`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -605,6 +610,43 @@ curl -sS -X DELETE "$OT/api/v1/tasks/$ID/purge" -H "Authorization: Bearer $TOKEN
 
 Purging a project also purges every task that references it; purging a task also purges its deleted subtasks. In a shared project the role table applies: editors may purge tasks, only the owner may purge the project (403 `forbidden`); emptying the Trash skips items your role cannot delete. Purge is final and cannot be undone. The server also purges items that have been in the Trash longer than `OPENTODO_TRASH_RETENTION_DAYS` (default 30, `0` disables); see [sync](sync.md#purge).
 
+### Comments and activity
+
+Comments (OpenSpec `comments-and-activity`) are threaded markdown notes on a task. They are stored in the operation log like tasks, in the task's sharing scope, so every route answers `404 not_found` for a task or comment you cannot read, exactly as for an unknown id. Anyone who can read the task may comment, viewers included. Only the author may edit a comment; the author, project admins and the owner may delete it (`403 forbidden` otherwise). `author_id`, `task_id` and the timestamps are set by the server and cannot be sent. `mentions` lists account ids; the server keeps only current members of the task's shared project (always none on a personal task) and notifies each newly mentioned member (`kind: "mentioned"` in `GET /api/v1/notifications`, payload `{recipientId, actorId, actorName, commentId, taskId, taskTitle, projectId?, projectName?, excerpt, at}`). Each account may create 60 comments a minute (`429 rate_limited`). Bodies are markdown; clients render a safe subset and the server never renders them.
+
+```sh
+curl -sS -X POST "$OT/api/v1/tasks/$TASK/comments" -H "Authorization: Bearer $TOKEN" \
+  -d '{"body":"Whole or **skimmed**? @bob","mentions":["<bob>","<not a member>"]}'
+# 201 {"author_id":"<you>","body":"Whole or **skimmed**? @bob","created_at":1760090000000,"deleted_at":null,
+#      "edited_at":null,"id":"…","mentions":["<bob>"],"parent_id":null,"task_id":"<task>"}
+
+curl -sS -X POST "$OT/api/v1/tasks/$TASK/comments" -H "Authorization: Bearer $BOB" -d '{"body":"Whole","parent_id":"<comment>"}'
+# 201 reply; parent_id must be a comment on the same task (400 invalid_input otherwise)
+
+curl -sS "$OT/api/v1/tasks/$TASK/comments" -H "Authorization: Bearer $TOKEN"
+# 200 {"comments":[ …top-level comments by creation time, each followed by its replies… ]}
+
+curl -sS -X PATCH "$OT/api/v1/comments/$C" -H "Authorization: Bearer $BOB" -d '{"body":"hijack"}'
+# 403 {"error":{"code":"forbidden","message":"only the author can edit a comment; the author, project admins and the owner can delete it"}}
+
+curl -sS -X DELETE "$OT/api/v1/comments/$C" -H "Authorization: Bearer $TOKEN"
+# 204; the comment is no longer listed (devices show a placeholder in the thread)
+```
+
+Activity is derived from the operation log on request, never stored (see [sync](sync.md#activity) for the rule shared with the client). A task's activity covers the task and its comments; a project's covers its tasks, their comments and the project. Events are newest first; `cursor` is present when `more` is true and is passed back as `before` for the next page (pages never overlap). `actor` is the author's account id, `actorName` and `taskTitle` are resolved for display, `changes` lists each touched field with its old and new value (empty for comment events), `opIds` the operations the event folds.
+
+```sh
+curl -sS "$OT/api/v1/projects/$P/activity?limit=2" -H "Authorization: Bearer $TOKEN"
+# 200 {"events":[
+#   {"id":"…","kind":"completed","actor":"<bob>","actorName":"Bob","entity":"task","entityId":"<task>","taskId":"<task>",
+#    "taskTitle":"Milk","ts":1760090500000,"opIds":["…"],"changes":[{"field":"completed_at","from":null,"to":1760090500000}]},
+#   {"id":"…","kind":"commented","actor":"<you>","actorName":"Alice","entity":"comment","entityId":"<comment>",
+#    "taskId":"<task>","taskTitle":"Milk","ts":1760090000000,"opIds":["…","…"],"changes":[]}],
+#  "more":true,"cursor":"1760090000000:…"}
+```
+
+Kinds: `created`, `completed`, `reopened`, `deleted`, `restored`, `rescheduled`, `assigned`, `unassigned`, `moved`, `archived`, `unarchived`, `edited`, `commented`, `comment_edited`, `comment_deleted`. A malformed `before` or a `limit` outside 1–200 answers `400 invalid_input`.
+
 ### Import
 
 Import tasks and projects from the app's own export, CSV, or JSON exports of other task managers. Formats, the CSV columns, mapping rules and limits are documented in [import.md](import.md). Every imported field is written to the operation log with server time and the device id `import`, so devices receive imports like any other write.
@@ -841,4 +883,4 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
 | `limit_reached` | 409 | more than 20 webhooks on one account |
 | `not_found` | 404 | unknown id, including another account's webhook or delivery |
-| `rate_limited` | 429 | too many attempts in the window |
+| `rate_limited` | 429 | too many attempts in the window; more than 60 new comments a minute on one account |

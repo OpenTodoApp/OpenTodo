@@ -30,7 +30,8 @@ OpenTodo is a local-first application with a thin sync server.
 | `backup` | Snapshots (`VACUUM INTO`), tar/gzip archives, `OTBK1` encryption, local / S3 (SigV4) / WebDAV destinations, scheduler, retention, `Restore`; see [backups.md](backups.md) |
 | `auth` | Users, argon2id passwords, sessions, API tokens |
 | `sync` | Op schema and validation, `Apply` (idempotent, LWW), `Pull` (cursor), `List`/`Get` (materialized entities), `Notifier` (per-user live wake-ups); after each committed batch it reports the winning changes to an optional observer |
-| `notify` | Post-commit events for people (OpenSpec `task-assignment`): the `Sink` interface the sync service calls after a batch commits (`Service.AddSink`), and the in-app sink that stores `notifications` rows for `GET /api/v1/notifications`. Further sinks (web push, webhooks) register next to it; a service without sinks emits nothing |
+| `notify` | Post-commit events for people (OpenSpec `task-assignment`): the `Sink` interface the sync service calls after a batch commits (`Service.AddSink`), and the in-app sink that stores `notifications` rows for `GET /api/v1/notifications`. Mentions in comments (`comments-and-activity`) use the optional `MentionSink` interface, so existing sinks keep compiling. Further sinks (web push, webhooks) register next to it; a service without sinks emits nothing |
+| `activity` | Pure derivation of attributed activity events from ops (OpenSpec `comments-and-activity`, design D4): fold by actor and entity within 5 s, classify by touched fields, page newest first. `sync.Service.ActivityOps` reads the ops of one task or project from the scopes the caller can see; `web/src/lib/activity.ts` implements the same rule, pinned by `internal/activity/testdata/activity_fixture.json` |
 | `webhook` | Outbound webhooks: maps observed changes to events, durable queue in SQLite, one worker with retries, HMAC signing, SSRF-safe HTTP client. See [webhooks.md](webhooks.md) |
 | `push` | Reminders over web push (OpenSpec `reminders`): VAPID key pair in `<data>/push_vapid.pem`, ES256 JWTs and RFC 8291 `aes128gcm` encryption with the standard library, per-device `push_subscriptions`, and the scheduler goroutine (every 30 s) that pushes due reminders and records `delivered_at` as a `server` op. See [reminders.md](reminders.md) |
 | `httpapi` | Router, middleware (auth, origin check, security headers, logging), handlers for auth, sync, collections, export, backups (owner only), health |
@@ -48,6 +49,10 @@ Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log, `user_id` = a
 
 `POST /api/v1/tasks` → auth middleware resolves the user → body fields become ops with `ts = now`, `device = "server"` → `sync.ApplyStrict` resolves each op's scope and checks the caller's role (after commit, the observer queues webhook deliveries for genuine changes, for every member who can see the scope) → `sync.NotifyApplied` wakes the open event streams of everyone who can see the change → entity re-read from `scope_fields` → JSON response. The ops land in the log, so devices receive them on their next sync, which the wake-up triggers right away.
 
+### Comments and activity
+
+Comments are a synced entity (`comment`) stored like tasks in the task's scope; `sync.Apply` checks authorship per op (author equals submitter, only the author edits, the author, admins and the owner delete, viewers may comment), filters mentions to members and hands `notify.Mentioned` events to the sinks after commit. There is no activity table on the server: `GET /api/v1/{tasks|projects}/{id}/activity` reads the op log (`ActivityOps`, the same read path as revision history) and runs `activity.Derive` on every request; served ops carry `actor` (from `ops.user_id`) so devices can attribute changes. Each device records the task, project and comment ops it applies (author, old value) in a local `activity` table bounded to 500 events per project and derives the same events offline.
+
 ### Live updates
 
 `GET /api/v1/sync/events` is a server-sent event stream per device (`httpapi/events.go`). It carries only the latest op cursor, never data; the client reacts by running the ordinary sync exchange. `sync.Notifier` is the in-memory per-user fan-out; see `docs/sync.md`.
@@ -56,7 +61,8 @@ Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log, `user_id` = a
 
 | Module | Responsibility |
 | --- | --- |
-| `lib/db.ts` | Dexie database: `projects`, `tasks`, `labels`, `views`, `reminders`, `outbox`, `meta` |
+| `lib/db.ts` | Dexie database: `projects`, `tasks`, `labels`, `views`, `reminders`, `comments`, `outbox`, `meta`, plus caches (`memberships`, `notifications`) and the local `activity` log |
+| `lib/comments.ts`, `lib/activity.ts`, `lib/markdown.ts` | Comment writes, thread order and mention helpers; the shared activity rule, local recording with per-project retention and merging of older server pages; the in-house markdown subset (parsed to data, rendered by `app/Markdown.tsx` as React elements, so raw HTML never reaches the DOM) |
 | `lib/types.ts` | Entity types; field names mirror `internal/sync/ops.go` |
 | `lib/hlc.ts` | Hybrid logical clock and the shared `wins()` rule |
 | `lib/ops.ts` | `applyOps` (per-field LWW into IndexedDB), `mutate` (local apply + outbox + notify), entity helpers |
