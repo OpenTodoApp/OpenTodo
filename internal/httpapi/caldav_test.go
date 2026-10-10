@@ -467,7 +467,7 @@ func TestDeleteIsTombstone(t *testing.T) {
 	}
 }
 
-func TestCompletionAndLaterReopenWins(t *testing.T) {
+func TestLaterReopenWinsOverCaldavComplete(t *testing.T) {
 	e, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:A"), 201)
 	_, cursor, _ := syncAll(e, "laptop", 0)
@@ -653,7 +653,7 @@ func TestSyncCollectionReportsRemoved(t *testing.T) {
 	c.must("REPORT", c.cal("inbox"), fmt.Sprintf(syncReport, "garbage"), 403, "Depth", "1")
 }
 
-func TestCalendarMultigetAndQueryTimeRange(t *testing.T) {
+func TestCalendarQueryTimeRange(t *testing.T) {
 	_, c := davSetup(t)
 	c.must("PUT", c.cal("inbox")+"oct.ics", vtodoBody("oct", "SUMMARY:Oct", "DUE;VALUE=DATE:20261015"), 201)
 	c.must("PUT", c.cal("inbox")+"dec.ics", vtodoBody("dec", "SUMMARY:Dec", "DUE:20261215T100000"), 201)

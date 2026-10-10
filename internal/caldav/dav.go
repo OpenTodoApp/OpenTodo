@@ -124,8 +124,16 @@ type PropValue struct {
 	Inner string
 }
 
-// Esc escapes text for element content and attributes.
-func Esc(s string) string {
+// textEscaper escapes element content. Quotes stay literal (valid in content)
+// so ETags read "abc" even for clients that compare without decoding entities;
+// carriage returns are kept as references so calendar data survives parsing.
+var textEscaper = strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", "\r", "&#xD;")
+
+// Esc escapes text for element content.
+func Esc(s string) string { return textEscaper.Replace(s) }
+
+// escAttr escapes text for a double-quoted attribute value.
+func escAttr(s string) string {
 	var b strings.Builder
 	_ = xml.EscapeText(&b, []byte(s))
 	return b.String()
@@ -138,7 +146,7 @@ func openTag(n PropName) (open, close string) {
 	if p, ok := prefixes[n.Space]; ok {
 		return "<" + p + ":" + n.Local, "</" + p + ":" + n.Local + ">"
 	}
-	return `<x:` + n.Local + ` xmlns:x="` + Esc(n.Space) + `"`, "</x:" + n.Local + ">"
+	return `<x:` + n.Local + ` xmlns:x="` + escAttr(n.Space) + `"`, "</x:" + n.Local + ">"
 }
 
 func writeProp(b *bytes.Buffer, v PropValue) {

@@ -3,11 +3,11 @@
 ## MODIFIED Requirements
 
 ### Requirement: Task fields
-A task SHALL have a title, a description, an optional project, a priority from 1 (highest) to 4 (lowest, default), an optional due date, labels, a sort position, creation time, optional completion time, optional deletion time and an optional opaque `ical_extra` text holding calendar properties the app does not model. Fields reserved for later changes (`parent_id`, `labels`) and `ical_extra` SHALL be stored and synced even before the client offers an interface for them.
+A task SHALL have a title, a description, an optional project, a priority from 1 (highest) to 4 (lowest, default), an optional due date, labels, an optional assignee, a sort position, creation time, optional completion time, optional deletion time and an optional opaque `ical_extra` text holding calendar properties the app does not model. Fields reserved for later changes (`parent_id`, `labels`) and `ical_extra` SHALL be stored and synced even before the client offers an interface for them. Every field SHALL be editable offline and SHALL converge by per-field last-writer-wins.
 
 #### Scenario: Default values on creation
 - **WHEN** a task is created with only a title
-- **THEN** it has priority 4, no project (Inbox), no due date, empty description and labels, no `ical_extra`, and is neither completed nor deleted
+- **THEN** it has priority 4, no project (Inbox), no due date, no assignee, empty description and labels, no `ical_extra`, and is neither completed nor deleted
 
 #### Scenario: Invalid field values
 - **WHEN** a client submits a priority outside 1 to 4, a non-string title, or a due date that is not `YYYY-MM-DD` with an optional `HH:MM` time
