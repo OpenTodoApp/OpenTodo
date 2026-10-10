@@ -1,0 +1,37 @@
+{
+  "lists": [
+    {
+      "id": "L1",
+      "title": "Errands",
+      "tasks": [
+        {
+          "id": "a",
+          "title": "Pick up parcel",
+          "notes": "Post office closes at 6",
+          "due": "2026-10-12T00:00:00.000Z",
+          "status": "needsAction",
+          "starred": true
+        },
+        {
+          "id": "b",
+          "title": "Bring ID",
+          "parent": "a",
+          "status": "completed",
+          "completed": "2026-10-09T18:20:00.000Z",
+          "links": [{ "link": "https://example.com" }]
+        }
+      ]
+    },
+    {
+      "id": "L2",
+      "title": "Reading",
+      "tasks": [
+        {
+          "id": "c",
+          "title": "Finish the novel",
+          "subtasks": [ { "id": "d", "title": "Chapter 12" } ]
+        }
+      ]
+    }
+  ]
+}

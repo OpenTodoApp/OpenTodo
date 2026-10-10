@@ -2,19 +2,19 @@
 
 ## 1. Importer core (Go)
 
-- [ ] 1.1 `internal/importer`: `Row` model, `Options`, `Profile` interface, format detection order (own export, JSON profiles, CSV) and user override; verify `TestDetectFormat` covers each profile and the `unsupported_format` case (`go test ./...`)
+- [x] 1.1 `internal/importer`: `Row` model, `Options`, `Profile` interface, format detection order (own export, JSON profiles, CSV) and user override; verify `TestDetectFormat` covers each profile and the `unsupported_format` case (`go test ./...`)
 - [ ] 1.2 `opentodo` profile: read export v1 including tombstones and ids, map projects then tasks; verify `TestRoundTripExportImportExport` produces an equivalent export (`go test ./...`)
-- [ ] 1.3 `csv` profile: streamed reader, header mapping for the documented columns, priority and date parsing, per-row errors with row numbers; verify `TestCSVMappingAndRowErrors` (`go test ./...`)
-- [ ] 1.4 Foreign JSON profiles with fixtures in `internal/importer/testdata/`, mapping projects, sections, subtasks, labels, priority, due, completion, and warnings for dropped attributes; verify one `TestProfile_<name>` per profile asserting the normalised rows (`go test ./...`)
-- [ ] 1.5 Normalisation: project matching by name, section→label option, parent resolution independent of row order, time-zone conversion of zoned date-times to floating values; verify `TestResolveParentsAnyOrder`, `TestZonedDueBecomesFloating` (`go test ./...`)
+- [x] 1.3 `csv` profile: streamed reader, header mapping for the documented columns, priority and date parsing, per-row errors with row numbers; verify `TestCSVMappingAndRowErrors` (`go test ./...`)
+- [x] 1.4 Foreign JSON profiles with fixtures in `internal/importer/testdata/`, mapping projects, sections, subtasks, labels, priority, due, completion, and warnings for dropped attributes; verify one `TestProfile_<name>` per profile asserting the normalised rows (`go test ./...`)
+- [x] 1.5 Normalisation: project matching by name, section→label option, parent resolution independent of row order, time-zone conversion of zoned date-times to floating values; verify `TestResolveParentsAnyOrder`, `TestZonedDueBecomesFloating` (`go test ./...`)
 
 ## 2. Duplicate detection, jobs and write-through
 
-- [ ] 2.1 Migration `0002_import.sql` with `import_jobs` and `import_items`; verify `store.Open` on an existing v1 database applies it and `TestMigrationsIdempotent` passes (`go test ./...`)
-- [ ] 2.2 Duplicate rules (id, remembered source id, title/project/due fingerprint) and preview outcomes `create|update|skip|possible_duplicate|error`; verify `TestDuplicateDetectionOrder`, `TestReimportSameFileSkipsAll` (`go test ./...`)
-- [ ] 2.3 Commit: ops with `device: "import"` and server timestamps applied through `sync.Apply` in batches of 1,000, `skip_rows` vs `abort`, persisted progress, one job per user; verify `TestCommitWritesOnlyOps` (no direct row writes), `TestAbortLeavesAccountUnchanged`, `TestSecondJobConflicts` (`go test ./...`)
-- [ ] 2.4 Overwrite mode writes only differing fields and never resurrects tombstones; verify `TestOverwriteKeepsNewerDeviceEdit` and `TestImportDoesNotResurrectDeleted` (`go test ./...`)
-- [ ] 2.5 Undo: tombstone ops for every `created` item, idempotent, job marked `undone`; verify `TestUndoTombstonesCreatedOnly` and that undone tasks disappear on a client's next sync in `TestUndoReachesDevices` (`go test ./...`)
+- [x] 2.1 Migration `0002_import.sql` with `import_jobs` and `import_items`; verify `store.Open` on an existing v1 database applies it and `TestMigrationsIdempotent` passes (`go test ./...`)
+- [x] 2.2 Duplicate rules (id, remembered source id, title/project/due fingerprint) and preview outcomes `create|update|skip|possible_duplicate|error`; verify `TestDuplicateDetectionOrder`, `TestReimportSameFileSkipsAll` (`go test ./...`)
+- [x] 2.3 Commit: ops with `device: "import"` and server timestamps applied through `sync.Apply` in batches of 1,000, `skip_rows` vs `abort`, persisted progress, one job per user; verify `TestCommitWritesOnlyOps` (no direct row writes), `TestAbortLeavesAccountUnchanged`, `TestSecondJobConflicts` (`go test ./...`)
+- [x] 2.4 Overwrite mode writes only differing fields and never resurrects tombstones; verify `TestOverwriteKeepsNewerDeviceEdit` and `TestImportDoesNotResurrectDeleted` (`go test ./...`)
+- [x] 2.5 Undo: tombstone ops for every `created` item, idempotent, job marked `undone`; verify `TestUndoTombstonesCreatedOnly` and that undone tasks disappear on a client's next sync in `TestUndoReachesDevices` (`go test ./...`)
 
 ## 3. HTTP API
 
