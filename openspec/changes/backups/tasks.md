@@ -28,7 +28,7 @@
 
 ## 5. Restore and device convergence
 
-- [ ] 5.1 `opentodo restore <archive> [--passphrase-file]`: verify checksum, decrypt, schema version check, exclusive-lock check, safety copy, swap, new generation; verify `TestRestoreRoundTrip`, `TestRestoreRefusesNewerSchema`, `TestRestoreRefusesWhileLocked` (`go test ./...`)
+- [x] 5.1 `opentodo restore <archive> [--passphrase-file]`: verify checksum, decrypt, schema version check, exclusive-lock check, safety copy, swap, new generation; verify `TestRestoreRoundTrip`, `TestRestoreRefusesNewerSchema`, `TestRestoreRefusesWhileLocked` (`go test ./...`)
 - [ ] 5.2 Server: include `generation` in `/api/v1/sync` responses; verify `TestSyncResponseCarriesGeneration` (`go test ./...`)
 - [ ] 5.3 Client: store `meta.generation`; on mismatch reset cursor, keep outbox, re-emit all local fields with stored `(ts, device)` in batches, show "re-syncing after restore" status; verify `sync.test.ts` cases `reseedsAfterGenerationChange`, `reseedKeepsOriginalClocks`, `reseedDoesNotDuplicateEntities` (`npm test`)
 - [ ] 5.4 End-to-end: back up, create a task on device A, restore, sync A and B, confirm the task exists everywhere once and concurrent edits resolve by timestamp; verify the run finishes with no console errors

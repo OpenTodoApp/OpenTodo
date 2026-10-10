@@ -2,18 +2,21 @@
 //
 //	opentodo              start the server (configured via OPENTODO_* env vars)
 //	opentodo healthcheck  exit 0 when a local server answers /healthz (used by Docker)
+//	opentodo restore      replace the database with a backup archive (server stopped)
 //	opentodo version      print the version
 package main
 
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -38,8 +41,10 @@ func main() {
 			return
 		case "healthcheck":
 			os.Exit(healthcheck())
+		case "restore":
+			os.Exit(restore(os.Args[2:]))
 		case "help", "--help", "-h":
-			fmt.Print("usage: opentodo [healthcheck|version]\n\nConfiguration is read from OPENTODO_* environment variables; see .env.example.\n")
+			fmt.Print("usage: opentodo [healthcheck|restore|version]\n\nConfiguration is read from OPENTODO_* environment variables; see .env.example.\nRun `opentodo restore -h` for the restore procedure (docs/backups.md).\n")
 			return
 		default:
 			fmt.Fprintf(os.Stderr, "unknown command %q\n", os.Args[1])
@@ -119,6 +124,65 @@ func run() error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return srv.Shutdown(shutdownCtx)
+}
+
+// restore implements `opentodo restore [--data-dir DIR] [--passphrase-file FILE] <archive>`.
+func restore(args []string) int {
+	fs := flag.NewFlagSet("restore", flag.ContinueOnError)
+	dataDir := fs.String("data-dir", "", "data directory (default: $OPENTODO_DATA_DIR or ./data)")
+	passFile := fs.String("passphrase-file", "", "file containing the passphrase of an encrypted archive")
+	fs.Usage = func() {
+		fmt.Fprint(fs.Output(), `usage: opentodo restore [--data-dir DIR] [--passphrase-file FILE] <archive>
+
+Replaces the database with the one in a backup archive. Stop the server first.
+The archive is verified (checksum, decryption, schema version) before anything
+changes; the current database is kept as opentodo.db.pre-restore-<timestamp>.
+Start the server afterwards: pending migrations run and devices re-sync.
+See docs/backups.md.
+
+`)
+		fs.PrintDefaults()
+	}
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return 2
+	}
+	if fs.NArg() != 1 {
+		fs.Usage()
+		return 2
+	}
+	dir := *dataDir
+	if dir == "" {
+		dir = os.Getenv("OPENTODO_DATA_DIR")
+	}
+	if dir == "" {
+		dir = "./data"
+	}
+	var pass string
+	if *passFile != "" {
+		raw, err := os.ReadFile(*passFile)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "opentodo restore:", err)
+			return 1
+		}
+		pass = strings.TrimRight(string(raw), "\r\n")
+	}
+	res, err := backup.Restore(backup.RestoreOptions{DataDir: dir, Archive: fs.Arg(0), Passphrase: pass})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "opentodo restore:", err)
+		return 1
+	}
+	m := res.Manifest
+	fmt.Printf("restored %s into %s\n", filepath.Base(fs.Arg(0)), dir)
+	fmt.Printf("  backup created %s by opentodo %s (schema %d)\n", m.CreatedAt, m.AppVersion, m.SchemaVersion)
+	if res.SafetyCopy != "" {
+		fmt.Printf("  previous database kept as %s\n", res.SafetyCopy)
+	}
+	fmt.Printf("  new log generation %s: devices re-send their local changes on their next sync\n", res.Generation)
+	fmt.Println("start the server to apply pending migrations")
+	return 0
 }
 
 func healthcheck() int {
