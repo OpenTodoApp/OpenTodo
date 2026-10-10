@@ -131,6 +131,8 @@ func (s *Settings) Validate(sec settings.Secrets) error {
 			return fieldErr("s3.endpoint", "required")
 		case err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "":
 			return fieldErr("s3.endpoint", "must be an http(s) URL such as https://s3.eu-central-1.amazonaws.com")
+		case u.User != nil:
+			return fieldErr("s3.endpoint", "must not contain credentials")
 		case strings.TrimSpace(s.S3.Bucket) == "":
 			return fieldErr("s3.bucket", "required")
 		case strings.TrimSpace(s.S3.AccessKey) == "":
@@ -151,6 +153,8 @@ func (s *Settings) Validate(sec settings.Secrets) error {
 			return fieldErr("webdav.url", "required")
 		case err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "":
 			return fieldErr("webdav.url", "must be an http(s) URL")
+		case u.User != nil:
+			return fieldErr("webdav.url", "must not contain credentials; use the username and password fields")
 		case u.Scheme == "http" && !s.WebDAV.AllowHTTP:
 			return fieldErr("webdav.url", "plain http sends the password unencrypted; use https or set allowHttp")
 		}
