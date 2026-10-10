@@ -1,0 +1,55 @@
+[
+  {
+    "request": {"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {"protocolVersion": "2025-11-25", "capabilities": {"sampling": {}, "roots": {"listChanged": true}}, "clientInfo": {"name": "inspector-cli", "version": "0.17.0"}}},
+    "headers": {"Accept": "application/json, text/event-stream", "Content-Type": "application/json"},
+    "status": 200,
+    "expect": {"id": 0, "result": {"protocolVersion": "2025-11-25", "capabilities": {"tools": {}, "resources": {}}}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "method": "notifications/initialized"},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-11-25"},
+    "status": 202
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 1, "method": "ping"},
+    "headers": {"MCP-Protocol-Version": "2025-11-25"},
+    "status": 200,
+    "expect": {"id": 1, "result": {}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {"cursor": null}},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-11-25"},
+    "status": 200,
+    "expect": {"id": 2, "result": {"tools": [{"name": "list_projects"}]}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "list_tasks", "arguments": {"view": "today", "timezone": "America/New_York", "limit": 10}}},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-11-25"},
+    "status": 200,
+    "expect": {"id": 3, "result": {"structuredContent": {"tasks": [{"title": "Fixture task", "project": "Inbox", "due": {"date": "2020-01-01"}}], "next_cursor": null, "server_time": "*"}}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "list_tasks", "arguments": {"priority": 9}}},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-11-25"},
+    "status": 200,
+    "expect": {"id": 4, "error": {"code": -32602}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 5, "method": "resources/templates/list"},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-11-25"},
+    "status": 200,
+    "expect": {"id": 5, "result": {"resourceTemplates": [{"uriTemplate": "opentodo://projects/{id}"}, {"uriTemplate": "opentodo://tasks/{id}"}]}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 6, "method": "resources/read", "params": {"uri": "opentodo://views/today?tz=Asia/Tokyo"}},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-11-25"},
+    "status": 200,
+    "expect": {"id": 6, "result": {"contents": [{"uri": "opentodo://views/today?tz=Asia/Tokyo", "mimeType": "application/json", "text": "*"}]}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 7, "method": "resources/read", "params": {"uri": "opentodo://tasks/does-not-exist"}},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-11-25"},
+    "status": 200,
+    "expect": {"id": 7, "error": {"code": -32002}}
+  }
+]
