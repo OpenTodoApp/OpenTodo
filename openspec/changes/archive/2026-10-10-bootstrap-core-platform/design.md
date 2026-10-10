@@ -48,11 +48,11 @@ New tables: `users`, `sessions`, `api_tokens`, `ops`, `fields`. Migrations are e
 ### D6. Authentication: email + password, cookie sessions, bearer tokens
 argon2id (19 MiB, t=2, p=1), 256-bit session secrets stored as SHA-256, `HttpOnly; SameSite=Lax` cookie, `Secure` when `OPENTODO_BASE_URL` is https. CSRF defence: cookie-authenticated writes must have no `Origin` header or one equal to the configured/base origin (including `X-Forwarded-Host` for proxies). Bearer tokens (`ot_` prefix) for scripts, stored hashed, shown once. Fixed-window rate limit on login/register per IP.
 - Why: smallest secure baseline that works on day one without external services. Passkeys and OIDC are planned as additive changes (`passkeys`, `oidc-login`); the session layer is independent of the credential type.
-- Alternative: passkeys-only like openGym. Rejected for v0.1 because passkeys require https even for a first LAN test and complicate CLI use.
+- Alternative: passkeys-only sign-in. Rejected for v0.1 because passkeys require https even for a first LAN test and complicate CLI use.
 
 ### D7. Client stack
 React 19 + Vite 8 + Tailwind 4 + Dexie 4 (IndexedDB) + `vite-plugin-pwa`. A 40-line history router instead of react-router. Live views use `useLiveQuery` so every component re-renders from IndexedDB changes, which is also how remote ops surface in the UI with no extra plumbing. Bundle: ~110 KB gzipped JS, 6 KB CSS.
-- Alternatives: Svelte (smaller output, but React has the larger contributor pool and the openGym precedent); SQLite-WASM in the browser (another 1 MB and OPFS complexity; IndexedDB is enough for the data volume of a personal task list).
+- Alternatives: Svelte (smaller output, but React has the larger contributor pool); SQLite-WASM in the browser (another 1 MB and OPFS complexity; IndexedDB is enough for the data volume of a personal task list).
 
 ### D8. Serving and security headers
 The Go server serves `/api/v1/*` and `/healthz`, everything else falls back to the embedded `index.html` (hashed assets cached immutable, shell `no-cache`). CSP: `default-src 'self'`, `script-src 'self'` (the PWA registration script is an external file, no inline scripts), `style-src 'self' 'unsafe-inline'` (Tailwind output plus inline colour swatches), `frame-ancestors 'none'`.

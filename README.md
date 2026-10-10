@@ -43,7 +43,7 @@ An open-source, local-first task manager you can host yourself. Built to replace
 - **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today. Press `?` in the app for the full list.
 - **Built in the open with specs.** Every feature starts as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change under [`openspec/`](openspec/), so behavior is documented before it is built.
 
-OpenTodo follows the path of projects like [openGym](https://github.com/DuarteSantos8/openGym) and [OpenNutriTracker](https://github.com/simonoppowa/OpenNutriTracker): a polished, modern app that replaces a commercial subscription with software you run yourself.
+OpenTodo belongs to the growing family of open-source, self-hostable replacements for subscription apps: a polished, modern app that gives you the comfort of a commercial product with software you run yourself.
 
 ## Features
 
