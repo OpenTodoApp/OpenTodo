@@ -6,7 +6,8 @@ import type { EmailInbox } from '../lib/types'
 // secret inbox address with copy and rotate, the on/off switch and the sender
 // allowlist. The pure EmailInboxView renders every state; EmailInboxPanel loads
 // and acts. Controls are native elements in tab order: copy, rotate, switch,
-// allowlist, save.
+// allowlist, save. Busy states use aria-disabled (the handlers ignore input
+// while a request runs) so keyboard focus is not lost after an action.
 
 export interface EmailInboxViewProps {
   inbox: EmailInbox | null
@@ -51,10 +52,10 @@ export function EmailInboxView(p: EmailInboxViewProps) {
                 className={'break-all rounded bg-slate-100 px-1 text-sm dark:bg-slate-800' + (inbox.enabled ? '' : ' text-slate-400 line-through')}>
                 {inbox.address}
               </code>
-              <button className="btn-ghost border border-slate-300 text-xs dark:border-slate-700" disabled={p.busy} onClick={p.onCopy}>
+              <button className="btn-ghost border border-slate-300 text-xs dark:border-slate-700" onClick={p.onCopy}>
                 Copy address
               </button>
-              <button className="btn-ghost border border-slate-300 text-xs dark:border-slate-700" disabled={p.busy} onClick={p.onRotate}>
+              <button className="btn-ghost border border-slate-300 text-xs dark:border-slate-700" aria-disabled={p.busy} onClick={p.onRotate}>
                 New address…
               </button>
               {p.copied && <span className="text-xs text-emerald-700 dark:text-emerald-400" role="status">Copied.</span>}
@@ -65,13 +66,13 @@ export function EmailInboxView(p: EmailInboxViewProps) {
             </p>
           </div>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={inbox.enabled} disabled={p.busy} onChange={(e) => p.onToggle(e.target.checked)} />
+            <input type="checkbox" checked={inbox.enabled} aria-disabled={p.busy} onChange={(e) => p.onToggle(e.target.checked)} />
             Create tasks from email sent to this address
           </label>
           <div className="space-y-1">
             <label className="block text-sm font-medium" htmlFor="email-inbox-allowlist">Only accept mail from (optional)</label>
             <textarea id="email-inbox-allowlist" className="input font-mono text-xs" rows={3} value={p.draft}
-              placeholder="you@example.com" disabled={p.busy} onChange={(e) => p.onDraftChange(e.target.value)} />
+              placeholder="you@example.com" onChange={(e) => p.onDraftChange(e.target.value)} />
             <p className="text-xs text-slate-500">
               One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters
               mistakes and casual spam; the secret address is the real protection.
@@ -104,6 +105,7 @@ export function EmailInboxPanel() {
   }, [])
 
   async function run(fn: () => Promise<void>) {
+    if (busy) return
     setBusy(true)
     setError(null)
     try {
