@@ -20,11 +20,12 @@
 ## 3. Web app
 
 - [x] 3.1 Add the QR encoder dependency and record its gzipped size in `design.md`; `web/src/lib/api.ts` functions for all routes, global `reauth_required` and `mfa_enrolment_required` handling with one retry; verify `npm test` passes `api.reauth.test.ts` (mocked fetch sequence) and `npm run build`
-- [ ] 3.2 Sign-in screen: code step with recovery toggle and remember-device checkbox; verify component tests for `mfaRequired`, wrong code, and exhausted challenge in `npm test`, plus a browser run
-- [ ] 3.3 Security panel: enrolment wizard (QR, manual key, confirm), recovery codes once with copy/download, remaining count, trusted devices, owner policy select, `ReauthDialog`; offline read-only; keyboard reachable; verify component tests and a browser run; `npm run build` passes
-- [ ] 3.4 Sync status maps `mfa_enrolment_required` to an actionable message linking to the wizard; verify by enabling the policy for a signed-in unenrolled member and observing the status and that queued edits upload after enrolment
+- [x] 3.2 Sign-in screen: code step with recovery toggle and remember-device checkbox; verify component tests for `mfaRequired`, wrong code, and exhausted challenge in `npm test`, plus a browser run
+- [x] 3.3 Security panel: enrolment wizard (QR, manual key, confirm), recovery codes once with copy/download, remaining count, trusted devices, owner policy select, `ReauthDialog`; offline read-only; keyboard reachable; verify component tests and a browser run; `npm run build` passes
+- [x] 3.4 Sync status maps `mfa_enrolment_required` to an actionable message linking to the wizard; verify by enabling the policy for a signed-in unenrolled member and observing the status and that queued edits upload after enrolment
 
 ## 4. Docs and release
 
 - [x] 4.1 `README.md` feature list, `docs/self-hosting/docker.md` note on NTP and the `mfa-reset` subcommand, CHANGELOG entry; verify links resolve and `make check` passes
 - [ ] 4.2 End-to-end run: enrol → sign out → two-step sign-in with remember → sign-in skips step → forget devices → recovery code sign-in → stale session token creation triggers re-authentication → owner sets policy to everyone → unenrolled member restricted → owner resets member; verify the run completes without console errors
+  - The Playwright run on Chromium passed every step except the last, with no console errors: enrol (QR as SVG, manual key, 10 codes, acknowledgement), stale-session token creation with the re-auth dialog and one retry, sign-out, wrong code, two-step sign-in with remember, remembered sign-in skips the step, forget all browsers, recovery-code sign-in (9 left), invitation, policy set to everyone, the invited member gets the enrolment gate and `mfa_enrolment_required`, then enrols and reaches the app. "Owner resets member" was not run in the browser because there is no UI for it on main (no member list until `user-management`). It is covered by `TestOwnerResetClearsEverything`, so the box stays unchecked.
