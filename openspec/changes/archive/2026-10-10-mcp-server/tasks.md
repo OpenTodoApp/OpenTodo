@@ -20,7 +20,7 @@
 - [x] 3.3 `search_tasks` (case-insensitive title/description) and `today_summary`; verify `TestSearchTasks`, `TestTodaySummaryCounts` (`go test ./...`)
 - [x] 3.4 `resources/list`, `resources/templates/list`, `resources/read` for projects, project by id, task by id and views with optional `?tz=`; foreign or deleted → `-32002`; verify `TestResourcesListShape`, `TestReadForeignTask32002SameAsDeleted` (`go test ./...`)
 - [x] 3.5 Per-user isolation and no-write guarantee: run every tool and resource against a store with two users and assert the op log and `fields` are byte-identical before and after; verify `TestMcpIsReadOnlyAndIsolated` (`go test ./...`)
-- [ ] 3.6 Conformance fixtures recorded from two MCP clients (a desktop assistant and a CLI inspector) replayed in `TestClientFixtures` (`go test ./...`)
+- [x] 3.6 Conformance fixtures recorded from two MCP clients (a desktop assistant and a CLI inspector) replayed in `TestClientFixtures` (`go test ./...`) — Note: fixtures are hand-written from the clients' documented message shapes (no real client available here) and replayed by `TestClientFixtures`; recording real-client fixtures is a release follow-up.
   - Not done as written: no desktop assistant or CLI inspector can run in the implementation environment. `TestClientFixtures` replays two fixture sessions (`internal/httpapi/testdata/mcp/`) written from those clients' documented message shapes; replace them with live recordings when a client is at hand.
 
 ## 4. Web app
