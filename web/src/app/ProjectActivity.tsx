@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, fetchActivity, isPending, KIND_FILTERS, mergeOlder, pendingOpIds, projectActivity } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
 import { db } from '../lib/db'
+import { markSeen } from '../lib/feed'
 import { useOnline } from '../lib/online'
 import { currentUserId, memberName, membershipMap } from '../lib/sharing'
 import type { ActivityEvent, Membership, Project, Task } from '../lib/types'
@@ -58,6 +59,13 @@ function ActivityList({ project }: { project: Project }) {
     setCursor(undefined)
     setMore(true)
   }, [project.id])
+
+  // Opening a shared project's activity marks it seen up to its newest event
+  // (activity-feed); markSeen debounces and never moves the mark backwards.
+  const shared = memberships.has(project.id)
+  useEffect(() => {
+    if (shared && local.length > 0) markSeen(project.id, local[0].ts)
+  }, [shared, local, project.id])
 
   const events = useMemo(() => mergeOlder(local, older), [local, older])
   const names = useMemo(() => {
