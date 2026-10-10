@@ -24,7 +24,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Natural-language quick add, multi-language ("Meeting with Sarah next Wed at 3pm #work @call +30m") | `nlp-quick-add` |
 | ✅ | REST API + API tokens for scripts | `bootstrap-core-platform` |
 | ✅ | Command-line client | `cli-client` |
-| 📝 | Email-to-task (forward to an inbox address) | `email-to-task` |
+| ✅ | Email-to-task (forward to an inbox address) | `email-to-task` |
 | ✅ | Browser extension and mobile share-sheet target | `share-capture` |
 | ✅ | Voice capture via the Web Speech API | `voice-capture` |
 
@@ -70,7 +70,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Scheduled backups to local disk, S3 or WebDAV | `backups` |
 | ✅ | CalDAV two-way sync (Apple Reminders, Thunderbird, Nextcloud) | `caldav` |
 | ✅ | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
-| 📝 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
+| ✅ | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 
 ## 7. Security and access
 

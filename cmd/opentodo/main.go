@@ -32,7 +32,9 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/httpapi"
+	"github.com/pixari/opentodo/internal/mcp"
 	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/push"
 	"github.com/pixari/opentodo/internal/store"
@@ -126,12 +128,24 @@ func run() error {
 	// Reminders: web push to subscribed devices (docs/reminders.md). On unless
 	// OPENTODO_PUSH=off; the VAPID key pair is created under the data directory on
 	// first use. In-app reminders work either way.
-	opts := []httpapi.Option{httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups), httpapi.WithNotifications(inbox)}
+	// Read-only MCP endpoint for AI assistants (docs/mcp.md): off until the owner
+	// enables it; OPENTODO_MCP presets the toggle on first start only.
+	mcpSettings := mcp.NewSettings(db)
+	if seeded, err := mcpSettings.Seed(ctx, cfg.MCP); err != nil {
+		return err
+	} else if seeded {
+		log.Info("MCP setting seeded from OPENTODO_MCP", "enabled", *cfg.MCP)
+	}
+	opts := []httpapi.Option{httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups), httpapi.WithNotifications(inbox), httpapi.WithMCPSettings(mcpSettings)}
 	var pushSvc *push.Service
 	if !cfg.PushDisabled {
 		pushSvc = push.New(db, syncSvc, cfg.DataDir, push.Options{Log: log, Subject: cfg.Origin()})
 		opts = append(opts, httpapi.WithPush(pushSvc))
 	}
+	// Email to task (docs/email.md): off unless OPENTODO_EMAIL_* configure a
+	// mailbox; then one goroutine polls it over IMAP.
+	emailSvc := email.New(db, syncSvc, cfg.Email, email.Options{Log: log, Audit: authSvc.Audit()})
+	opts = append(opts, httpapi.WithEmail(emailSvc))
 	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version, opts...)
 
 	srv := &http.Server{
@@ -154,6 +168,7 @@ func run() error {
 	if pushSvc != nil {
 		go pushSvc.Run(ctx)
 	}
+	go emailSvc.Run(ctx)
 
 	// Purge items that outlived the Trash retention at startup and daily
 	// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).

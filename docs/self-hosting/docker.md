@@ -31,6 +31,10 @@ docker run -d --name opentodo \
 
 OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure`, the origin check matches and invitation links point at the public address. The server also honours `X-Forwarded-Host` and `X-Forwarded-For` for the origin check and rate limiting.
 
+### Email to task
+
+[Email to task](../email.md) needs no port, proxy rule or DNS record: OpenTodo makes one outbound IMAP connection (TLS, port 993 by default) to the mailbox you configure with `OPENTODO_EMAIL_*`. If your host restricts outbound traffic, allow that one host and port. Keep the password in a Docker secret and point `OPENTODO_EMAIL_IMAP_PASSWORD_FILE` at it (example in the guide).
+
 ### Calendar apps (CalDAV) through the proxy
 
 When the owner enables [CalDAV](../caldav.md), calendar apps use `/dav/` and `/.well-known/caldav` with WebDAV methods (`PROPFIND`, `REPORT`, `MKCALENDAR`, `PROPPATCH`). Most proxies (Caddy, Traefik, nginx) forward them unchanged; make sure no rule limits methods to GET/POST or blocks `/.well-known/`, and that the `Authorization` header is passed through. App passwords travel in every request, so serve CalDAV over https only.
@@ -74,6 +78,10 @@ Troubleshooting "live updates disconnected" (the status pill says **Polling** in
 Reminders are shown in the app on every device and, for devices that enable notifications in **Settings → Notifications**, sent as web push so a closed app still notifies. Nothing needs configuring: on first use the server generates a VAPID key pair at `<data>/push_vapid.pem` (mode 0600). Keep it with the database: it is included in backup archives and restored with them, and existing subscriptions only work with the key they were created for.
 
 Sending a push is the one outbound request the server makes: it goes to the push service the user's own browser chose when it subscribed (Google, Mozilla, Apple…), carries an encrypted payload the push service cannot read, and by default contains only ids (the device opts in to task titles). Browsers require https for push, so set `OPENTODO_BASE_URL` to your public https URL (it is also sent as the VAPID contact). To forbid outbound traffic set `OPENTODO_PUSH=off`: the push routes answer 404, no push is sent, and reminders are still shown in the app.
+
+## AI assistants (MCP)
+
+The read-only [MCP endpoint](../mcp.md) at `/mcp` is off until the owner enables it in **Settings → AI assistants** (or `OPENTODO_MCP=true` presets it on the first start). It needs no extra port or container: assistants reach it through the same URL and reverse proxy as the app, with a read-only API token in the `Authorization` header. Proxies that buffer or rewrite requests need nothing special, since every answer is a plain JSON response (no event stream). The server makes no outbound request for it. If your proxy logs request headers, exclude `Authorization`.
 
 ## Bind mounts
 

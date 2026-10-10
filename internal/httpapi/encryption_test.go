@@ -63,7 +63,11 @@ func TestEncryptionKeysRoutesAuthAndConflict(t *testing.T) {
 		func() map[string]any { r := keyRecord(1, 1); r["iterations"] = 1000; return r }(),
 		func() map[string]any { r := keyRecord(1, 1); r["kdf"] = 9; return r }(),
 		func() map[string]any { r := keyRecord(1, 1); r["salt"] = "short"; return r }(),
-		func() map[string]any { r := keyRecord(1, 1); r["wrappedByRecovery"] = base64.RawURLEncoding.EncodeToString(make([]byte, 32)); return r }(),
+		func() map[string]any {
+			r := keyRecord(1, 1)
+			r["wrappedByRecovery"] = base64.RawURLEncoding.EncodeToString(make([]byte, 32))
+			return r
+		}(),
 	} {
 		resp, out = e.do("PUT", "/api/v1/encryption/keys", bad)
 		e.mustStatus(resp, 400, out)

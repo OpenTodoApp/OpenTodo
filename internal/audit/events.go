@@ -38,6 +38,10 @@ const (
 	// CalDAV app passwords (OpenSpec `caldav`).
 	AppPasswordCreatedName Name = "app_password.created"
 	AppPasswordRevokedName Name = "app_password.revoked"
+	// Email capture inbox address (OpenSpec `email-to-task`).
+	EmailInboxCreatedName  Name = "email_inbox.created"
+	EmailInboxRotatedName  Name = "email_inbox.rotated"
+	EmailInboxUpdatedName  Name = "email_inbox.updated"
 	InvitationCreatedName  Name = "invitation.created"
 	InvitationAcceptedName Name = "invitation.accepted"
 	InvitationRevokedName  Name = "invitation.revoked"
@@ -67,6 +71,7 @@ var Names = []Name{
 	PasskeyRegisteredName, PasskeyDeletedName,
 	TokenCreatedName, TokenRevokedName,
 	AppPasswordCreatedName, AppPasswordRevokedName,
+	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	RoleChangedName, SettingsChangedName,
 	IdentityLinkedName, IdentityUnlinkedName,
@@ -85,6 +90,7 @@ var PersonalNames = []Name{
 	PasskeyRegisteredName, PasskeyDeletedName,
 	TokenCreatedName, TokenRevokedName,
 	AppPasswordCreatedName, AppPasswordRevokedName,
+	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	PasswordResetCompletedName, PasswordChangedName,
 }
@@ -128,6 +134,7 @@ var allowedDetailKeys = map[string]bool{
 	"reason":            true, // short failure reason code
 	"token_id":          true,
 	"token_name":        true,
+	"token_scope":       true, // full | read (mcp-server)
 	"app_password_id":   true,
 	"app_password_name": true,
 	"invitation_id":     true,
@@ -243,6 +250,11 @@ func TokenCreated(userID, tokenID, name string) Event {
 	return ev(TokenCreatedName, Success, userID, "", "token_id", tokenID, "token_name", name)
 }
 
+// TokenCreatedScoped records a new API token with its scope (never its secret).
+func TokenCreatedScoped(userID, tokenID, name, scope string) Event {
+	return ev(TokenCreatedName, Success, userID, "", "token_id", tokenID, "token_name", name, "token_scope", scope)
+}
+
 // TokenRevoked records a revoked API token.
 func TokenRevoked(userID, tokenID, name string) Event {
 	return ev(TokenRevokedName, Success, userID, "", "token_id", tokenID, "token_name", name)
@@ -258,6 +270,27 @@ func AppPasswordCreated(userID, id, name string) Event {
 // AppPasswordRevoked records a revoked CalDAV app password.
 func AppPasswordRevoked(userID, id, name string) Event {
 	return ev(AppPasswordRevokedName, Success, userID, "", "app_password_id", id, "app_password_name", name)
+}
+
+// ---- email capture ----
+
+// EmailInboxCreated records the creation of an account's inbox address (never
+// its secret).
+func EmailInboxCreated(userID string) Event {
+	return ev(EmailInboxCreatedName, Success, userID, "")
+}
+
+// EmailInboxRotated records a new inbox address secret; the old one stops
+// working at once.
+func EmailInboxRotated(userID string) Event {
+	return ev(EmailInboxRotatedName, Success, userID, "")
+}
+
+// EmailInboxUpdated records a change of an inbox setting: setting is "enabled"
+// (from/to true or false) or "allowlist" (from/to are entry counts, never the
+// addresses).
+func EmailInboxUpdated(userID, setting, from, to string) Event {
+	return ev(EmailInboxUpdatedName, Success, userID, "", "setting", setting, "from", from, "to", to)
 }
 
 // ---- invitations ----

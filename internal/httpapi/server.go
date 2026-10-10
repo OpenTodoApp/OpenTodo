@@ -18,8 +18,10 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/importer"
+	"github.com/pixari/opentodo/internal/mcp"
 	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/oidc"
 	"github.com/pixari/opentodo/internal/push"
@@ -79,6 +81,14 @@ type Server struct {
 	// authentications per client address (10/min; OpenSpec `caldav`).
 	caldav     caldavState
 	davLimiter *rateLimiter
+	// mcpSettings is the owner's AI assistants toggle and mcp the read-only MCP
+	// server behind /mcp (OpenSpec `mcp-server`); see mcp.go.
+	mcpSettings *mcp.Settings
+	mcp         *mcp.Server
+	// email is email capture (OpenSpec `email-to-task`); emailLimiter caps
+	// inbox changes and rotations per account (30/hour).
+	email        *email.Service
+	emailLimiter *rateLimiter
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -103,7 +113,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
 		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
 		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
-		importer: importer.New(syncSvc.DB(), syncSvc, log)}
+		emailLimiter: newRateLimiter(30, time.Hour),
+		importer:     importer.New(syncSvc.DB(), syncSvc, log)}
 	for _, o := range opts {
 		o(s)
 	}
@@ -112,6 +123,10 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	}
 	// SSO-only mode refuses local sign-in for members (oidc-login D6).
 	authSvc.SetSSOOnly(s.oidc.SSOOnly)
+	if s.email == nil {
+		// Disabled unless cfg.Email is set; only cmd/opentodo starts the poller.
+		s.email = email.New(syncSvc.DB(), syncSvc, cfg.Email, email.Options{Log: log, Audit: authSvc.Audit()})
+	}
 	if s.inbox == nil {
 		s.inbox = notify.NewInApp(syncSvc.DB(), log)
 		syncSvc.AddSink(s.inbox)
@@ -192,6 +207,10 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerCommentRoutes(mux)
 	// End-to-end encryption (OpenSpec `e2ee`): wrapped key record and history purge.
 	s.registerEncryptionRoutes(mux)
+	// Read-only MCP endpoint and its owner toggle (OpenSpec `mcp-server`).
+	s.registerMCPRoutes(mux)
+	// Email to task (OpenSpec `email-to-task`): literal patterns win over {collection}.
+	s.registerEmailRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
@@ -246,7 +265,7 @@ func sessionFrom(ctx context.Context) *auth.Session {
 
 func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, sess, viaCookie, err := s.authenticateSession(r)
+		u, sess, viaCookie, scope, err := s.authenticateScoped(r)
 		if err != nil {
 			s.log.Error("auth lookup failed", "err", err)
 			writeError(w, http.StatusInternalServerError, "internal", "internal error")
@@ -254,6 +273,11 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 		}
 		if u == nil {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required")
+			return
+		}
+		// Read-scoped API tokens (mcp-server D2) never reach a handler that writes.
+		if scope == auth.ScopeRead && isWriteRequest(r) {
+			writeError(w, http.StatusForbidden, "insufficient_scope", "this API token is read-only")
 			return
 		}
 		if viaCookie && r.Method != http.MethodGet && r.Method != http.MethodHead && !s.originAllowed(r) {
@@ -282,25 +306,42 @@ func (s *Server) authenticate(r *http.Request) (*auth.User, bool, error) {
 // authenticateSession resolves the bearer token or session cookie. The session
 // is nil for bearer tokens.
 func (s *Server) authenticateSession(r *http.Request) (*auth.User, *auth.Session, bool, error) {
+	u, sess, viaCookie, _, err := s.authenticateScoped(r)
+	return u, sess, viaCookie, err
+}
+
+// authenticateScoped is authenticateSession plus the API token's scope
+// (auth.ScopeFull for sessions).
+func (s *Server) authenticateScoped(r *http.Request) (*auth.User, *auth.Session, bool, string, error) {
 	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
-		u, err := s.auth.UserByToken(r.Context(), strings.TrimSpace(strings.TrimPrefix(h, "Bearer ")))
+		u, scope, err := s.auth.UserByTokenScope(r.Context(), strings.TrimSpace(strings.TrimPrefix(h, "Bearer ")))
 		if errors.Is(err, auth.ErrNotFound) {
-			return nil, nil, false, nil
+			return nil, nil, false, "", nil
 		}
-		return u, nil, false, err
+		return u, nil, false, scope, err
 	}
 	c, err := r.Cookie(sessionCookie)
 	if err != nil {
-		return nil, nil, false, nil
+		return nil, nil, false, "", nil
 	}
 	sess, err := s.auth.LookupSession(r.Context(), c.Value)
 	if errors.Is(err, auth.ErrNotFound) {
-		return nil, nil, true, nil
+		return nil, nil, true, "", nil
 	}
 	if err != nil {
-		return nil, nil, true, err
+		return nil, nil, true, "", err
 	}
-	return sess.User, sess, true, nil
+	return sess.User, sess, true, auth.ScopeFull, nil
+}
+
+// isWriteRequest reports whether a request may change state: every method but
+// GET, HEAD and OPTIONS, and the sync route whatever its method (mcp-server D2).
+func isWriteRequest(r *http.Request) bool {
+	switch r.Method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return r.URL.Path == "/api/v1/sync"
+	}
+	return true
 }
 
 // originAllowed defends cookie-authenticated writes against cross-site requests.
@@ -591,13 +632,18 @@ func (s *Server) handleListTokens(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Name string `json:"name"`
+		Name  string `json:"name"`
+		Scope string `json:"scope"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
 		return
 	}
-	t, plain, err := s.auth.CreateToken(r.Context(), userFrom(r.Context()).ID, in.Name)
+	t, plain, err := s.auth.CreateTokenScoped(r.Context(), userFrom(r.Context()).ID, in.Name, in.Scope)
+	if errors.Is(err, auth.ErrInvalidScope) {
+		writeError(w, http.StatusBadRequest, "invalid_input", "scope: must be full or read")
+		return
+	}
 	if err != nil {
 		s.internal(w, err)
 		return
@@ -1385,6 +1431,15 @@ type window struct {
 
 func newRateLimiter(limit int, w time.Duration) *rateLimiter {
 	return &rateLimiter{limit: limit, window: w, hits: map[string]*window{}}
+}
+
+// blocked reports whether key already used up its window, without counting an
+// attempt (callers that count only failures check this first, then hit).
+func (l *rateLimiter) blocked(key string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	w, ok := l.hits[key]
+	return ok && time.Since(w.start) <= l.window && w.count >= l.limit
 }
 
 func (l *rateLimiter) allow(key string) bool {

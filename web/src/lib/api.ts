@@ -1,6 +1,7 @@
+import type { ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  AppPassword, CaldavSetting,
+  AppPassword, CaldavSetting, EmailInbox,
   AccountRole, ActivityPage, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
@@ -168,8 +169,13 @@ export const api = {
   // In-app notifications (task-assignment): server-side account data, cached locally.
   listNotifications: () => request<{ notifications: AppNotification[]; unread: number }>('GET', '/api/v1/notifications'),
   readNotification: (id: string) => request<void>('POST', `/api/v1/notifications/${encodeURIComponent(id)}/read`),
-  listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
-  createToken: (name: string) => request<{ token: { id: string; name: string }; secret: string }>('POST', '/api/v1/tokens', { name }),
+  listTokens: () => request<{ tokens: ApiToken[] }>('GET', '/api/v1/tokens'),
+  /** scope `read` tokens are refused on every write route (mcp-server). */
+  createToken: (name: string, scope?: TokenScope) =>
+    request<{ token: ApiToken; secret: string }>('POST', '/api/v1/tokens', scope ? { name, scope } : { name }),
+  // AI assistants (mcp-server): status for everyone, the toggle for the owner.
+  getMcpSettings: () => request<McpStatus>('GET', '/api/v1/settings/mcp'),
+  setMcpSettings: (enabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { enabled }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
   // CalDAV (OpenSpec change `caldav`): the owner toggle and per-user app passwords.
   caldavSetting: () => request<CaldavSetting>('GET', '/api/v1/settings/caldav'),
@@ -177,6 +183,10 @@ export const api = {
   listAppPasswords: () => request<{ appPasswords: AppPassword[] }>('GET', '/api/v1/app-passwords'),
   createAppPassword: (name: string) => request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', { name }),
   revokeAppPassword: (id: string) => request<void>('DELETE', `/api/v1/app-passwords/${encodeURIComponent(id)}`),
+  // Email to task (OpenSpec change `email-to-task`): the caller's secret inbox address.
+  emailInbox: () => request<EmailInbox>('GET', '/api/v1/email-inbox'),
+  updateEmailInbox: (patch: { enabled?: boolean; allowlist?: string[] }) => request<EmailInbox>('PATCH', '/api/v1/email-inbox', patch),
+  rotateEmailInbox: () => request<EmailInbox>('POST', '/api/v1/email-inbox/rotate'),
   // Passkeys (OpenSpec change `passkeys`). Binary fields are base64url strings.
   passkeyLoginOptions: () => request<{ publicKey: RequestOptionsJSON }>('POST', '/api/v1/auth/passkey/options', {}),
   /** A passkey without user verification on an enrolled account also answers with a challenge. */

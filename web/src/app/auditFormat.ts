@@ -14,6 +14,9 @@ export const AUDIT_LABELS: Record<AuditEventName, string> = {
   'token.revoked': 'API token revoked',
   'app_password.created': 'Calendar app password created',
   'app_password.revoked': 'Calendar app password revoked',
+  'email_inbox.created': 'Email-to-task address created',
+  'email_inbox.rotated': 'Email-to-task address rotated',
+  'email_inbox.updated': 'Email-to-task setting changed',
   'invitation.created': 'Invitation created',
   'invitation.accepted': 'Invitation accepted',
   'invitation.revoked': 'Invitation revoked',
@@ -48,6 +51,7 @@ const SETTINGS: Record<string, string> = {
   'audit.retention_days': 'Audit retention (days)',
   'audit.log_ip': 'Address logging',
   webhooks_allow_private: 'Private webhook targets',
+  'mcp.enabled': 'AI assistants (MCP)',
 }
 
 /** One-line summary of an event's allow-listed details. */
@@ -56,7 +60,7 @@ export function eventSummary(ev: AuditEvent): string {
   const parts: string[] = []
   if (d.reason) parts.push(REASONS[d.reason] ?? d.reason.replace(/_/g, ' '))
   if (d.method && d.method !== 'password') parts.push(d.method === 'register' ? 'new account' : `via ${d.method}`)
-  if (d.token_name) parts.push(`“${d.token_name}”`)
+  if (d.token_name) parts.push(`“${d.token_name}”${d.token_scope === 'read' ? ' (read-only)' : ''}`)
   if (d.passkey_name) parts.push(`“${d.passkey_name}”`)
   if (d.invited_email) parts.push(`for ${d.invited_email}`)
   if (d.setting) parts.push(`${SETTINGS[d.setting] ?? d.setting}: ${d.from ?? '?'} → ${d.to ?? '?'}`)

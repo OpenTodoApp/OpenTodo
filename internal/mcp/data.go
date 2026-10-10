@@ -1,0 +1,451 @@
+package mcp
+
+import (
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"math"
+	"sort"
+	"strings"
+	"time"
+
+	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/zoned"
+)
+
+// snapshot is everything one tool call needs, read once through the
+// materialised reads (design D3: personal data volumes, filtered in memory).
+// Tombstoned entities are never loaded.
+type snapshot struct {
+	projects map[string]opsync.Entity
+	projList []opsync.Entity
+	labels   map[string]string // id → name
+	sections map[string]string // id → name
+	tasks    []opsync.Entity
+	people   map[string]string // account id → display name
+	shared   map[string]opsync.ProjectAccess
+}
+
+func (s *Server) load(ctx context.Context, userID string) (*snapshot, error) {
+	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}}
+	var err error
+	if snap.projList, err = s.sync.List(ctx, userID, "project", false); err != nil {
+		return nil, err
+	}
+	for _, p := range snap.projList {
+		snap.projects[str(p, "id")] = p
+	}
+	labels, err := s.sync.List(ctx, userID, "label", false)
+	if err != nil {
+		return nil, err
+	}
+	for _, l := range labels {
+		snap.labels[str(l, "id")] = str(l, "name")
+	}
+	sections, err := s.sync.List(ctx, userID, "section", false)
+	if err != nil {
+		return nil, err
+	}
+	for _, sec := range sections {
+		snap.sections[str(sec, "id")] = str(sec, "name")
+	}
+	if snap.tasks, err = s.sync.List(ctx, userID, "task", false); err != nil {
+		return nil, err
+	}
+	if snap.shared, err = s.sync.SharedProjects(ctx, userID); err != nil {
+		return nil, err
+	}
+	if len(snap.shared) > 0 {
+		ms, err := s.sync.Memberships(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range ms {
+			for _, mem := range m.Members {
+				name := mem.Name
+				if name == "" {
+					name = mem.Email
+				}
+				snap.people[mem.UserID] = name
+			}
+		}
+	}
+	return snap, nil
+}
+
+// visible reports whether a task belongs in cross-project results: its project
+// (if any) is loaded, i.e. not deleted, and not archived unless asked for.
+func (snap *snapshot) visible(t opsync.Entity, includeArchived bool) bool {
+	pid := str(t, "project_id")
+	if pid == "" {
+		return true
+	}
+	p, ok := snap.projects[pid]
+	if !ok {
+		return false
+	}
+	return includeArchived || !boolean(p, "archived")
+}
+
+func (snap *snapshot) projectName(pid string) string {
+	if pid == "" {
+		return "Inbox"
+	}
+	if p, ok := snap.projects[pid]; ok {
+		return str(p, "name")
+	}
+	return ""
+}
+
+// ---- entity field helpers ----
+
+func str(e opsync.Entity, field string) string {
+	var v string
+	if raw, ok := e[field]; ok {
+		_ = json.Unmarshal(raw, &v)
+	}
+	return v
+}
+
+func strPtr(e opsync.Entity, field string) *string {
+	v := str(e, field)
+	if v == "" {
+		return nil
+	}
+	return &v
+}
+
+func num(e opsync.Entity, field string) float64 {
+	var v float64
+	if raw, ok := e[field]; ok {
+		_ = json.Unmarshal(raw, &v)
+	}
+	return v
+}
+
+func boolean(e opsync.Entity, field string) bool {
+	var v bool
+	if raw, ok := e[field]; ok {
+		_ = json.Unmarshal(raw, &v)
+	}
+	return v
+}
+
+func isOpen(t opsync.Entity) bool { return num(t, "completed_at") == 0 }
+
+func priority(t opsync.Entity) int {
+	p := int(num(t, "priority"))
+	if p < 1 || p > 4 {
+		return 4
+	}
+	return p
+}
+
+func stringList(e opsync.Entity, field string) []string {
+	var v []string
+	if raw, ok := e[field]; ok {
+		_ = json.Unmarshal(raw, &v)
+	}
+	return v
+}
+
+// isoTime renders a Unix millisecond timestamp for assistants (nil for 0).
+func isoTime(ms float64) *string {
+	if ms <= 0 {
+		return nil
+	}
+	s := time.UnixMilli(int64(ms)).UTC().Format(time.RFC3339)
+	return &s
+}
+
+// ---- due dates ----
+
+type due struct {
+	Date string  `json:"date"`
+	Time *string `json:"time,omitempty"`
+	TZ   *string `json:"tz,omitempty"`
+}
+
+// dueOut is a task's due as stored plus, for a zoned due, its wall date and
+// time in the requested time zone.
+type dueOut struct {
+	due
+	LocalDate string `json:"local_date,omitempty"`
+	LocalTime string `json:"local_time,omitempty"`
+}
+
+func taskDue(t opsync.Entity) *due {
+	raw, ok := t["due"]
+	if !ok || string(raw) == "null" {
+		return nil
+	}
+	var d due
+	if json.Unmarshal(raw, &d) != nil || d.Date == "" {
+		return nil
+	}
+	return &d
+}
+
+// localDue is the calendar date and clock ("" without time) of a due seen from
+// loc: a floating due is the same everywhere, a zoned one is converted.
+func localDue(d *due, loc *time.Location) (date, clock string) {
+	if d.Time != nil {
+		clock = *d.Time
+	}
+	if d.TZ == nil || d.Time == nil {
+		return d.Date, clock
+	}
+	zl, err := zoned.Load(*d.TZ)
+	if err != nil {
+		return d.Date, clock
+	}
+	at, err := zoned.Instant(d.Date, *d.Time, zl)
+	if err != nil {
+		return d.Date, clock
+	}
+	return zoned.Local(at, loc)
+}
+
+// ---- output shapes ----
+
+type person struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type taskOut struct {
+	ID              string   `json:"id"`
+	Title           string   `json:"title"`
+	Description     *string  `json:"description,omitempty"`
+	ProjectID       *string  `json:"project_id"`
+	Project         string   `json:"project"`
+	SectionID       *string  `json:"section_id,omitempty"`
+	Section         string   `json:"section,omitempty"`
+	ParentID        *string  `json:"parent_id,omitempty"`
+	Priority        int      `json:"priority"`
+	Due             *dueOut  `json:"due"`
+	Overdue         bool     `json:"overdue,omitempty"`
+	Labels          []string `json:"labels"`
+	Assignee        *person  `json:"assignee,omitempty"`
+	Recurrence      *string  `json:"recurrence,omitempty"`
+	EstimateMinutes *int     `json:"estimate_minutes,omitempty"`
+	Completed       bool     `json:"completed"`
+	CompletedAt     *string  `json:"completed_at,omitempty"`
+	CreatedAt       *string  `json:"created_at,omitempty"`
+}
+
+// render builds the assistant-facing view of a task, evaluating dates in loc
+// against today (a YYYY-MM-DD in loc).
+func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, withDescription bool) taskOut {
+	out := taskOut{
+		ID: str(t, "id"), Title: str(t, "title"),
+		ProjectID: strPtr(t, "project_id"), ParentID: strPtr(t, "parent_id"),
+		Priority: priority(t), Labels: []string{},
+		Recurrence: strPtr(t, "recurrence"), Completed: !isOpen(t),
+		CompletedAt: isoTime(num(t, "completed_at")), CreatedAt: isoTime(num(t, "created_at")),
+	}
+	out.Project = snap.projectName(str(t, "project_id"))
+	if withDescription {
+		d := str(t, "description")
+		out.Description = &d
+	}
+	if sid := str(t, "section_id"); sid != "" {
+		if name, ok := snap.sections[sid]; ok {
+			out.SectionID, out.Section = &sid, name
+		}
+	}
+	for _, lid := range stringList(t, "labels") {
+		if name, ok := snap.labels[lid]; ok {
+			out.Labels = append(out.Labels, name)
+		}
+	}
+	if aid := str(t, "assignee_id"); aid != "" {
+		out.Assignee = &person{ID: aid, Name: snap.people[aid]}
+	}
+	if m := int(num(t, "estimate_minutes")); m > 0 {
+		out.EstimateMinutes = &m
+	}
+	if d := taskDue(t); d != nil {
+		o := &dueOut{due: *d}
+		date, clock := localDue(d, loc)
+		if d.TZ != nil {
+			o.LocalDate, o.LocalTime = date, clock
+		}
+		out.Due = o
+		out.Overdue = isOpen(t) && date < today
+	}
+	return out
+}
+
+// ---- ordering and cursors ----
+
+// taskKey orders tasks by local due date and time (undated last), then
+// priority and creation time; ids break ties.
+func taskKey(t opsync.Entity, loc *time.Location) string {
+	date, clock := "~", "~"
+	if d := taskDue(t); d != nil {
+		date, clock = localDue(d, loc)
+		if clock == "" {
+			clock = "~"
+		}
+	}
+	return fmt.Sprintf("%s|%s|%d|%s", date, clock, priority(t), sortableFloat(num(t, "created_at")))
+}
+
+// sortableFloat encodes f so that string order matches numeric order.
+func sortableFloat(f float64) string {
+	b := math.Float64bits(f)
+	if b&(1<<63) != 0 {
+		b = ^b
+	} else {
+		b |= 1 << 63
+	}
+	return fmt.Sprintf("%016x", b)
+}
+
+type keyed[T any] struct {
+	key, id string
+	v       T
+}
+
+type cursorData struct {
+	K string `json:"k"`
+	I string `json:"i"`
+}
+
+func encodeCursor(key, id string) string {
+	b, _ := json.Marshal(cursorData{K: key, I: id})
+	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+func decodeCursor(c string) (cursorData, error) {
+	var d cursorData
+	b, err := base64.RawURLEncoding.DecodeString(c)
+	if err != nil || json.Unmarshal(b, &d) != nil || d.I == "" {
+		return d, invalidParams("cursor: invalid cursor")
+	}
+	return d, nil
+}
+
+// page sorts items by (key, id) and returns at most limit of them after the
+// cursor, with the cursor of the next page ("" when this is the last).
+func page[T any](items []keyed[T], cursor string, limit int) ([]T, string, error) {
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].key != items[j].key {
+			return items[i].key < items[j].key
+		}
+		return items[i].id < items[j].id
+	})
+	start := 0
+	if cursor != "" {
+		c, err := decodeCursor(cursor)
+		if err != nil {
+			return nil, "", err
+		}
+		start = sort.Search(len(items), func(i int) bool {
+			if items[i].key != c.K {
+				return items[i].key > c.K
+			}
+			return items[i].id > c.I
+		})
+	}
+	end := min(start+limit, len(items))
+	out := make([]T, 0, end-start)
+	for _, it := range items[start:end] {
+		out = append(out, it.v)
+	}
+	next := ""
+	if end < len(items) && end > start {
+		last := items[end-1]
+		next = encodeCursor(last.key, last.id)
+	}
+	return out, next, nil
+}
+
+// ---- argument parsing ----
+
+type args map[string]json.RawMessage
+
+func (a args) present(name string) bool {
+	raw, ok := a[name]
+	return ok && string(raw) != "null"
+}
+
+func (a args) str(name string) (string, error) {
+	if !a.present(name) {
+		return "", nil
+	}
+	var v string
+	if json.Unmarshal(a[name], &v) != nil {
+		return "", invalidParams(name + ": must be a string")
+	}
+	return strings.TrimSpace(v), nil
+}
+
+func (a args) boolean(name string) (bool, error) {
+	if !a.present(name) {
+		return false, nil
+	}
+	var v bool
+	if json.Unmarshal(a[name], &v) != nil {
+		return false, invalidParams(name + ": must be true or false")
+	}
+	return v, nil
+}
+
+// integer reads an integral JSON number (2 and 2.0 are accepted, 2.5 is not).
+func (a args) integer(name string) (int, bool, error) {
+	if !a.present(name) {
+		return 0, false, nil
+	}
+	var f float64
+	if json.Unmarshal(a[name], &f) != nil || f != math.Trunc(f) || math.Abs(f) > 1e9 {
+		return 0, false, invalidParams(name + ": must be an integer")
+	}
+	return int(f), true, nil
+}
+
+func (a args) limit() (int, error) {
+	n, ok, err := a.integer("limit")
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return MaxItems, nil
+	}
+	if n < 1 {
+		return 0, invalidParams("limit: must be at least 1")
+	}
+	return min(n, MaxItems), nil
+}
+
+func (a args) location() (*time.Location, error) {
+	tz, err := a.str("timezone")
+	if err != nil {
+		return nil, err
+	}
+	return parseZone(tz, "timezone")
+}
+
+func parseZone(tz, name string) (*time.Location, error) {
+	if tz == "" || tz == "UTC" {
+		return time.UTC, nil
+	}
+	loc, err := zoned.Load(tz)
+	if err != nil {
+		return nil, invalidParams(name + ": unknown IANA time zone " + fmt.Sprintf("%q", tz))
+	}
+	return loc, nil
+}
+
+func (a args) date(name string) (string, error) {
+	v, err := a.str(name)
+	if err != nil || v == "" {
+		return "", err
+	}
+	if t, perr := time.Parse("2006-01-02", v); perr != nil || t.Format("2006-01-02") != v {
+		return "", invalidParams(name + ": must be a date in YYYY-MM-DD form")
+	}
+	return v, nil
+}

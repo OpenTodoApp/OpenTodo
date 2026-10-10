@@ -11,7 +11,9 @@ Base path: `/api/v1`. All requests and responses are JSON. Errors look like:
 Two options:
 
 - **Session cookie** (the web app). Obtained from `auth/register` or `auth/login`. State-changing requests must come from the app's own origin.
-- **Bearer token** (scripts, CLI). Create one in **Settings → API tokens** or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
+- **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → API tokens** or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
+
+A token has a **scope**: `full` (the default) or `read`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
 ```bash
 export OT=https://todo.example.com
@@ -53,8 +55,11 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
 | DELETE | `/api/v1/me/identities/{id}` | yes | 204, or 409 `last_credential` |
 | GET | `/api/v1/me` | yes | `{user, mfa}` |
-| GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,createdAt,lastUsedAt}]}` |
-| POST | `/api/v1/tokens` | yes, fresh | `{name}` → 201 `{token, secret}` (secret shown once) |
+| GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}` |
+| POST | `/api/v1/tokens` | yes, fresh | `{name, scope?}` (`full` default, or `read`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input` |
+| GET | `/api/v1/settings/mcp` | yes | `{enabled, endpoint}`: whether the [MCP endpoint](mcp.md) is on and its URL |
+| PUT | `/api/v1/settings/mcp` | owner | `{enabled}` → `{enabled, endpoint}`; recorded as `settings.changed` (`mcp.enabled`) in the audit log |
+| POST | `/mcp` | bearer token only | read-only Model Context Protocol endpoint for AI assistants, 404 while disabled; see [docs/mcp.md](mcp.md) |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
 | POST | `/api/v1/passkeys/register/options` | yes | → `{publicKey}` creation options |
 | POST | `/api/v1/passkeys/register` | yes | `{name, credential}` → 201 `{passkey}` |
@@ -639,12 +644,14 @@ The server records security-relevant events in its own database (never synced to
 | `login.succeeded` | success | actor = user | `email`, `method` (`password`, `register`, `passkey`; later `oidc`) |
 | `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`, `unknown_passkey`, `passkey_rejected`, `passkey_counter_regression`, `deactivated`) |
 | `logout` | success | actor = user | |
-| `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name` |
+| `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name`; `token.created` also `token_scope` (`full` or `read`) |
 | `app_password.created`, `app_password.revoked` | success | actor = user | `app_password_id`, `app_password_name` |
+| `email_inbox.created`, `email_inbox.rotated` | success | actor = user | (never the secret) |
+| `email_inbox.updated` | success | actor = user | `setting` (`enabled` or `allowlist`), `from`, `to` (true/false, or the number of allowlist entries; never the addresses) |
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
 | `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
 | `invitation.revoked` | success | actor = owner | `invitation_id` |
-| `settings.changed` | success | actor = owner | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`), `from`, `to` |
+| `settings.changed` | success | actor = owner | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mcp.enabled`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
 | `mfa.enrolled`, `mfa.disabled`, `mfa.reset`, `mfa.challenge_failed` | | | `method`, `reason` (emitted once `mfa-totp` ships) |
@@ -898,6 +905,31 @@ The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV
 
 App passwords are refused by every `/api/v1` route, and API tokens, passwords and session cookies are refused by `/dav/`. Creating and revoking one records `app_password.created` / `app_password.revoked` in the audit log.
 
+### Email to task
+
+Each account can have a secret inbox address; mail sent to it becomes an Inbox task (see [email.md](email.md)). The feature exists only when the operator configured a mailbox with `OPENTODO_EMAIL_*`. All routes require a session or API token and act on the caller's account. No response ever contains the operator's mail server, mailbox user or password.
+
+| Method | Path | Who | Body / result |
+| --- | --- | --- | --- |
+| `GET` | `/api/v1/email-inbox` | any user | `{"enabledByOperator":true,"address":"todo+k3f9…@example.com","enabled":true,"allowlist":[],"hourlyLimit":60}`. The first call creates the address (enabled). With no operator configuration: `{"enabledByOperator":false,"address":null,"enabled":false,"allowlist":[],"hourlyLimit":60}` and nothing is created. |
+| `PATCH` | `/api/v1/email-inbox` | any user | `{"enabled":false}` and/or `{"allowlist":["me@example.org"]}` → the same shape. `allowlist` must be an array of at most 50 bare email addresses (stored lowercased, duplicates dropped; `[]` clears it), otherwise `400 invalid_input` and nothing changes. `409 email_disabled` when the operator has not configured email capture. |
+| `POST` | `/api/v1/email-inbox/rotate` | any user | → the same shape with a new address; the old one stops working at once. `409 email_disabled` as above. |
+
+Changes and rotations are limited to 30 per account per hour (`429 rate_limited`). They are recorded as `email_inbox.created`, `email_inbox.rotated` and `email_inbox.updated` in the audit log.
+
+```sh
+curl -s -H "Authorization: Bearer $TOKEN" https://todo.example.com/api/v1/email-inbox
+# 200 {"enabledByOperator":true,"address":"todo+k3f9…@example.com","enabled":true,"allowlist":[],"hourlyLimit":60}
+curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"allowlist":["Me@Example.org"]}' https://todo.example.com/api/v1/email-inbox
+# 200 {..., "allowlist":["me@example.org"], ...}
+curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"allowlist":"me@example.org"}' https://todo.example.com/api/v1/email-inbox
+# 400 {"error":{"code":"invalid_input","message":"allowlist: allowlist must be a list of at most 50 email addresses"}}
+```
+
+Tasks created from mail are ordinary operations with device `server` (title, description, priority 4, created_at, position; no project, no due date), so they arrive through `POST /api/v1/sync` like any other change.
+
 ### Webhooks
 
 Outbound webhooks notify a URL you choose when your tasks and projects change. Event list, payload format, signature verification, retries and receiver recipes are in [docs/webhooks.md](webhooks.md); this section covers the management routes. Every route requires authentication and only ever sees the caller's own webhooks: another account's webhook id answers 404 `not_found`. Webhooks are server configuration: they never go through the op log, never sync and are not in the export.
@@ -1059,14 +1091,14 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
 - Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB).
-- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey` and the invitation preview share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; invitation creation is limited to 20 per hour per account.
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey` and the invitation preview share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window; invitation creation is limited to 20 per hour per account.
 
 ### Error codes
 
 | Code | Status | Where |
 | --- | --- | --- |
 | `unauthorized` | 401 | any protected route without a valid session or token |
-| `forbidden` | 403 | invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; backups, audit log, audit settings, webhook policy, two-factor policy, single sign-on settings or member reset by a non-owner; a write or membership change your project role does not allow |
+| `forbidden` | 403 | invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; backups, audit log, audit settings, webhook policy, two-factor policy, single sign-on settings, the MCP setting or member reset by a non-owner; a write or membership change your project role does not allow |
 | `reauth_required` | 403 | a sensitive route on a cookie session that has not proved its identity in the last ten minutes; see [Two-factor authentication](#two-factor-authentication) |
 | `mfa_enrolment_required` | 403 | the owner's policy requires a second factor that this account has not set up yet |
 | `sso_required` | 403 | password or passkey sign-in (or password registration) by a non-owner while SSO-only mode is on; see [Single sign-on](#single-sign-on) |
@@ -1084,7 +1116,8 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | `not_deleted` | 409 | purging a task or project that is not in the Trash |
 | `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
 | `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
-| `bad_origin` | 403 | cookie-authenticated write from another origin |
+| `bad_origin` | 403 | cookie-authenticated write from another origin; any `/mcp` request whose `Origin` is not this server |
+| `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` API token |
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
 | `invitation_invalid` | 404 | unknown, expired, revoked or already accepted invitation |

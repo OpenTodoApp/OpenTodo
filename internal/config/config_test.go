@@ -79,6 +79,22 @@ func TestWebhooksAllowPrivateIsOptional(t *testing.T) {
 	}
 }
 
+func TestMCPPresetIsOptional(t *testing.T) {
+	t.Setenv("OPENTODO_MCP", "")
+	c, err := Load()
+	if err != nil || c.MCP != nil {
+		t.Fatalf("unset variable must leave MCP to Settings: %v %v", c.MCP, err)
+	}
+	t.Setenv("OPENTODO_MCP", "true")
+	if c, err = Load(); err != nil || c.MCP == nil || !*c.MCP {
+		t.Fatalf("true: %v %v", c.MCP, err)
+	}
+	t.Setenv("OPENTODO_MCP", "maybe")
+	if _, err = Load(); err == nil || !strings.Contains(err.Error(), "OPENTODO_MCP") {
+		t.Fatalf("invalid value: %v", err)
+	}
+}
+
 func TestCaldavPresetIsOptional(t *testing.T) {
 	t.Setenv("OPENTODO_CALDAV", "")
 	c, err := Load()

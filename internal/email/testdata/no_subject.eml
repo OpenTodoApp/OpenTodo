@@ -1,0 +1,8 @@
+Message-ID: <nosubj-1@example.org>
+From: bob@example.org
+To: todo+SECRET@example.com
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+
+CgpCdXkgbWlsayBhbmQgZWdncwpBbmQgYnJlYWQK

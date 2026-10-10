@@ -26,6 +26,10 @@ type Config struct {
 	// webhook policy on first start only (nil when OPENTODO_WEBHOOKS_ALLOW_PRIVATE
 	// is unset). Afterwards the value set in Settings is authoritative.
 	WebhooksAllowPrivate *bool
+	// MCP presets the owner's "AI assistants (MCP)" toggle on first start only
+	// (nil when OPENTODO_MCP is unset; OpenSpec `mcp-server`). Afterwards the
+	// value set in Settings is authoritative. The endpoint is off by default.
+	MCP *bool
 	// Backup holds the optional OPENTODO_BACKUP_* presets (see backup.go).
 	Backup BackupPreset
 	// PushDisabled turns web push off (OPENTODO_PUSH=off): the /api/v1/push routes
@@ -43,6 +47,9 @@ type Config struct {
 	// OPENTODO_CALDAV is unset; OpenSpec `caldav`). Afterwards the value set in
 	// Settings is authoritative.
 	CalDAV *bool
+	// Email holds the optional OPENTODO_EMAIL_* settings of email capture
+	// (OpenSpec `email-to-task`, see email.go); off unless fully configured.
+	Email EmailConfig
 }
 
 // OIDCEnv mirrors oidc.Env (converted by the HTTP layer) so this package stays
@@ -113,6 +120,13 @@ func Load() (Config, error) {
 		}
 		c.WebhooksAllowPrivate = &b
 	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_MCP")); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return c, fmt.Errorf("OPENTODO_MCP must be true or false, got %q", v)
+		}
+		c.MCP = &b
+	}
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_CALDAV")); v != "" {
 		b, err := strconv.ParseBool(v)
 		if err != nil {
@@ -169,6 +183,9 @@ func Load() (Config, error) {
 		return c, err
 	}
 	c.Backup = b
+	if c.Email, err = loadEmail(); err != nil {
+		return c, err
+	}
 	return c, nil
 }
 

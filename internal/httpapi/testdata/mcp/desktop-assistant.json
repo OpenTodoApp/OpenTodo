@@ -1,0 +1,42 @@
+[
+  {
+    "request": {"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {"protocolVersion": "2025-06-18", "capabilities": {"roots": {"listChanged": true}, "sampling": {}, "elicitation": {}}, "clientInfo": {"name": "desktop-assistant", "version": "0.12.0"}}},
+    "headers": {"Accept": "application/json, text/event-stream"},
+    "status": 200,
+    "expect": {"jsonrpc": "2.0", "id": 0, "result": {"protocolVersion": "2025-06-18", "capabilities": {"tools": {"listChanged": false}, "resources": {"subscribe": false}}, "serverInfo": {"name": "opentodo", "version": "*"}, "instructions": "*"}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "method": "notifications/initialized"},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-06-18"},
+    "status": 202
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-06-18"},
+    "status": 200,
+    "expect": {"id": 1, "result": {"tools": [{"name": "list_projects", "inputSchema": {"type": "object"}, "annotations": {"readOnlyHint": true}}, {"name": "list_tasks"}, {"name": "get_task"}, {"name": "search_tasks"}, {"name": "today_summary"}]}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 2, "method": "resources/list", "params": {}},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-06-18"},
+    "status": 200,
+    "expect": {"id": 2, "result": {"resources": [{"uri": "opentodo://projects", "mimeType": "application/json"}]}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 3, "method": "prompts/list", "params": {}},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-06-18"},
+    "status": 200,
+    "expect": {"id": 3, "error": {"code": -32601}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "today_summary", "arguments": {"timezone": "Europe/Berlin"}, "_meta": {"progressToken": 4}}},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-06-18"},
+    "status": 200,
+    "expect": {"id": 4, "result": {"content": [{"type": "text", "text": "*"}], "structuredContent": {"timezone": "Europe/Berlin", "overdue": [{"title": "Fixture task", "overdue": true}], "counts": {"overdue": 1, "inbox": 1}}}}
+  },
+  {
+    "request": {"jsonrpc": "2.0", "method": "notifications/cancelled", "params": {"requestId": 4, "reason": "user aborted"}},
+    "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-06-18"},
+    "status": 202
+  }
+]

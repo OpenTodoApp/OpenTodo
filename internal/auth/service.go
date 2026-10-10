@@ -29,9 +29,24 @@ type User struct {
 type Token struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
+	Scope      string `json:"scope"`
 	CreatedAt  int64  `json:"createdAt"`
 	LastUsedAt *int64 `json:"lastUsedAt"`
 }
+
+// Token scopes (OpenSpec change `mcp-server`, design D2). A `read` token is
+// refused on every route that writes; tokens created before scopes existed
+// have no scope row and keep full access.
+const (
+	ScopeFull = "full"
+	ScopeRead = "read"
+)
+
+// ValidScope reports whether scope can be given to a new token.
+func ValidScope(scope string) bool { return scope == ScopeFull || scope == ScopeRead }
+
+// ErrInvalidScope is returned by CreateTokenScoped for an unknown scope.
+var ErrInvalidScope = errors.New("scope must be full or read")
 
 var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
@@ -263,15 +278,27 @@ func (s *Service) DeleteSession(ctx context.Context, secret string) error {
 	return err
 }
 
-// CreateToken issues an API token. The plaintext is returned exactly once. The
-// token row and its token.created audit event are written in one transaction.
+// CreateToken issues a full-access API token; see CreateTokenScoped.
 func (s *Service) CreateToken(ctx context.Context, userID, name string) (*Token, string, error) {
+	return s.CreateTokenScoped(ctx, userID, name, ScopeFull)
+}
+
+// CreateTokenScoped issues an API token with the given scope ("" means full).
+// The plaintext is returned exactly once. The token row, its scope and its
+// token.created audit event are written in one transaction.
+func (s *Service) CreateTokenScoped(ctx context.Context, userID, name, scope string) (*Token, string, error) {
+	if scope == "" {
+		scope = ScopeFull
+	}
+	if !ValidScope(scope) {
+		return nil, "", ErrInvalidScope
+	}
 	name = strings.TrimSpace(name)
 	if name == "" {
 		name = "API token"
 	}
 	plain := "ot_" + ids.Secret(32)
-	t := &Token{ID: ids.New(), Name: truncate(name, 100), CreatedAt: time.Now().UnixMilli()}
+	t := &Token{ID: ids.New(), Name: truncate(name, 100), Scope: scope, CreatedAt: time.Now().UnixMilli()}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, "", err
@@ -281,12 +308,15 @@ func (s *Service) CreateToken(ctx context.Context, userID, name string) (*Token,
 		t.ID, userID, t.Name, hashToken(plain), t.CreatedAt); err != nil {
 		return nil, "", err
 	}
+	if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_scopes(token_id,scope) VALUES(?,?)", t.ID, scope); err != nil {
+		return nil, "", err
+	}
 	if s.afterTokenInsert != nil {
 		if err := s.afterTokenInsert(); err != nil {
 			return nil, "", err
 		}
 	}
-	if err := s.audit.RecordTx(ctx, tx, audit.TokenCreated(userID, t.ID, t.Name)); err != nil {
+	if err := s.audit.RecordTx(ctx, tx, audit.TokenCreatedScoped(userID, t.ID, t.Name, scope)); err != nil {
 		return nil, "", err
 	}
 	if err := tx.Commit(); err != nil {
@@ -297,25 +327,33 @@ func (s *Service) CreateToken(ctx context.Context, userID, name string) (*Token,
 
 // UserByToken resolves an API token to its user, or ErrNotFound.
 func (s *Service) UserByToken(ctx context.Context, plain string) (*User, error) {
-	var u User
-	var id string
-	err := s.db.QueryRowContext(ctx, `SELECT t.id,u.id,u.email,u.name,u.role,u.created_at FROM api_tokens t
-		JOIN users u ON u.id = t.user_id WHERE t.token_hash = ?
-		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`, hashToken(plain)).
-		Scan(&id, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotFound
-	}
-	if err != nil {
-		return nil, err
-	}
-	_, _ = s.db.ExecContext(ctx, "UPDATE api_tokens SET last_used_at = ? WHERE id = ?", time.Now().UnixMilli(), id)
-	return &u, nil
+	u, _, err := s.UserByTokenScope(ctx, plain)
+	return u, err
 }
 
-// ListTokens returns a user's tokens.
+// UserByTokenScope resolves an API token to its user and scope, or ErrNotFound.
+// Tokens of deactivated accounts never resolve.
+func (s *Service) UserByTokenScope(ctx context.Context, plain string) (*User, string, error) {
+	var u User
+	var id, scope string
+	err := s.db.QueryRowContext(ctx, `SELECT t.id,COALESCE(sc.scope,'full'),u.id,u.email,u.name,u.role,u.created_at FROM api_tokens t
+		JOIN users u ON u.id = t.user_id LEFT JOIN api_token_scopes sc ON sc.token_id = t.id WHERE t.token_hash = ?
+		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`, hashToken(plain)).
+		Scan(&id, &scope, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, "", ErrNotFound
+	}
+	if err != nil {
+		return nil, "", err
+	}
+	_, _ = s.db.ExecContext(ctx, "UPDATE api_tokens SET last_used_at = ? WHERE id = ?", time.Now().UnixMilli(), id)
+	return &u, scope, nil
+}
+
+// ListTokens returns a user's tokens with their scopes.
 func (s *Service) ListTokens(ctx context.Context, userID string) ([]Token, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT id,name,created_at,last_used_at FROM api_tokens WHERE user_id = ? ORDER BY created_at DESC", userID)
+	rows, err := s.db.QueryContext(ctx, `SELECT t.id,t.name,COALESCE(sc.scope,'full'),t.created_at,t.last_used_at FROM api_tokens t
+		LEFT JOIN api_token_scopes sc ON sc.token_id = t.id WHERE t.user_id = ? ORDER BY t.created_at DESC`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +361,7 @@ func (s *Service) ListTokens(ctx context.Context, userID string) ([]Token, error
 	out := []Token{}
 	for rows.Next() {
 		var t Token
-		if err := rows.Scan(&t.ID, &t.Name, &t.CreatedAt, &t.LastUsedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Scope, &t.CreatedAt, &t.LastUsedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, t)
