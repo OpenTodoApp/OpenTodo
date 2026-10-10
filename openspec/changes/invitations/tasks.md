@@ -2,9 +2,9 @@
 
 ## 1. Server: storage and service
 
-- [ ] 1.1 Add migration `internal/store/migrations/0002_invitations.sql` with the `invitations` table and indexes on `created_by` and `expires_at`; verify `go test ./internal/store/...` opens an empty data dir and reaches `user_version` 2
-- [ ] 1.2 `internal/auth`: `CreateInvitation`, `ListInvitations`, `RevokeInvitation`, `PreviewInvitation`, derived status helper and `CanInvite`; verify `TestInvitationLifecycle` (create → list pending → revoke → preview refused) with `go test ./...`
-- [ ] 1.3 `internal/auth.Register` accepts an invitation secret, consumes it in the same transaction and enforces the email binding; verify `TestRegisterWithInvitationWhileSignupClosed`, `TestInvitationSingleUseUnderConcurrency`, `TestInvitationEmailMismatch` with `go test ./...`
+- [x] 1.1 Add migration `internal/store/migrations/0002_invitations.sql` with the `invitations` table and indexes on `created_by` and `expires_at`; verify `go test ./internal/store/...` opens an empty data dir and reaches `user_version` 2
+- [x] 1.2 `internal/auth`: `CreateInvitation`, `ListInvitations`, `RevokeInvitation`, `PreviewInvitation`, derived status helper and `CanInvite`; verify `TestInvitationLifecycle` (create → list pending → revoke → preview refused) with `go test ./...`
+- [x] 1.3 `internal/auth.Register` accepts an invitation secret, consumes it in the same transaction and enforces the email binding; verify `TestRegisterWithInvitationWhileSignupClosed`, `TestInvitationSingleUseUnderConcurrency`, `TestInvitationEmailMismatch` with `go test ./...`
 
 ## 2. Server: HTTP API
 
