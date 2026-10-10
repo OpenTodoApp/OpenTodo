@@ -568,6 +568,35 @@
           ]
         }
       ]
+    },
+    {
+      "name": "note documents are left out, their description projection counts",
+      "ops": [
+        {"id":"r1","seq":1,"actor":"alice","entity":"task","entityId":"t9","field":"description","value":"- [ ] call the plumber","ts":1000,"device":"da"},
+        {"id":"r2","seq":2,"actor":"alice","entity":"task","entityId":"t9","field":"notes_doc","value":"ydoc:v1:AQLBlvjtAgAHAQ==","ts":1000,"device":"da"},
+        {"id":"r3","seq":3,"actor":"bob","entity":"task","entityId":"t9","field":"notes_doc","value":"ydoc:v1:AgLBlvjtAgAHAQ==","ts":90000,"device":"db"}
+      ],
+      "events": [
+        {
+          "id": "r1",
+          "kind": "edited",
+          "actor": "alice",
+          "entity": "task",
+          "entityId": "t9",
+          "taskId": "t9",
+          "ts": 1000,
+          "opIds": [
+            "r1"
+          ],
+          "changes": [
+            {
+              "field": "description",
+              "from": null,
+              "to": "- [ ] call the plumber"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

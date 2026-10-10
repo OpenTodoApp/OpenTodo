@@ -102,6 +102,12 @@ func (s *Service) History(ctx context.Context, userID, entity, id string, before
 			rows.Close()
 			return h, err
 		}
+		// An opaque document (task.notes_doc) is not a readable revision: its
+		// projection (description) is in the same change set and is what a user
+		// restores (collaborative-rich-text).
+		if IsDocField(entity, o.field) {
+			continue
+		}
 		ops = append(ops, o)
 	}
 	rows.Close()

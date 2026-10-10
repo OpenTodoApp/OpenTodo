@@ -538,6 +538,12 @@ func (s *Service) enqueue(ctx context.Context, changes []opsync.Change) error {
 	usersByScope := map[string][]string{}
 	subsByUser := map[string][]subscription{}
 	for _, c := range changes {
+		// Opaque documents (task.notes_doc) are not part of a delivery; a change
+		// that touched nothing else (a merged note republished with the same
+		// text) is not an event (collaborative-rich-text).
+		if c = withoutDocFields(c); len(c.Fields) == 0 {
+			continue
+		}
 		users, ok := usersByScope[c.ScopeID]
 		if !ok {
 			if c.ScopeID == "" {
