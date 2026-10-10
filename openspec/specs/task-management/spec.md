@@ -6,7 +6,7 @@ Defines the task entity and its lifecycle: capture, editing of its fields, prior
 ## Requirements
 
 ### Requirement: Task fields
-A task SHALL have a title, a description, an optional project, a priority from 1 (highest) to 4 (lowest, default), an optional due date, labels, an optional assignee, a sort position, creation time, optional completion time, optional deletion time and an optional opaque `ical_extra` text holding calendar properties the app does not model. Fields reserved for later changes (`parent_id`, `labels`) and `ical_extra` SHALL be stored and synced even before the client offers an interface for them. Every field SHALL be editable offline and SHALL converge by per-field last-writer-wins.
+A task SHALL have a title, description, optional project, priority 1 (highest) to 4 (lowest, default), optional due date, labels, optional assignee, sort position, creation time, optional completion and deletion times, and an optional opaque `ical_extra` text of calendar properties the app does not model. Fields without an interface yet SHALL still be stored and synced. Every field SHALL be editable offline and converge by per-field last-writer-wins.
 
 #### Scenario: Default values on creation
 - **WHEN** a task is created with only a title
