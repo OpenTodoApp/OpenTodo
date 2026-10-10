@@ -8,7 +8,7 @@ const project: Project = { id: 'p', name: 'Work', color: '#000', position: 0, ar
 const section = (id: string, name: string, position: number): Section => ({ id, name, project_id: 'p', position, created_at: 0, deleted_at: null, _clock: {} })
 const task = (id: string, section_id: string | null, position: number): Task => ({
   id, title: id, description: '', project_id: 'p', parent_id: null, priority: 4, due: null, labels: [], position, created_at: 0,
-  completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, section_id, _clock: {},
+  completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, section_id, ical_extra: null, _clock: {},
 })
 
 function render(editable: boolean) {

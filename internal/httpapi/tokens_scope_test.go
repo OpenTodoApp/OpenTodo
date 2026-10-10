@@ -20,7 +20,9 @@ func (e *env) token(scope string) string {
 	return out["secret"].(string)
 }
 
-func bearer(secret string) []string { return []string{"Authorization", "Bearer " + secret, "Cookie", ""} }
+func bearer(secret string) []string {
+	return []string{"Authorization", "Bearer " + secret, "Cookie", ""}
+}
 
 // bearerClient is a cookie-less client of the same server.
 func (e *env) bearerClient() *env { return newClientAt(e, "203.0.113.50") }

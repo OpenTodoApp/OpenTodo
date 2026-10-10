@@ -95,6 +95,23 @@ func TestMCPPresetIsOptional(t *testing.T) {
 	}
 }
 
+func TestCaldavPresetIsOptional(t *testing.T) {
+	t.Setenv("OPENTODO_CALDAV", "")
+	c, err := Load()
+	if err != nil || c.CalDAV != nil {
+		t.Fatalf("unset: %v %v", c.CalDAV, err)
+	}
+	t.Setenv("OPENTODO_CALDAV", "true")
+	c, err = Load()
+	if err != nil || c.CalDAV == nil || !*c.CalDAV {
+		t.Fatalf("true: %v %v", c.CalDAV, err)
+	}
+	t.Setenv("OPENTODO_CALDAV", "maybe")
+	if _, err = Load(); err == nil || !strings.Contains(err.Error(), "OPENTODO_CALDAV") {
+		t.Fatalf("invalid value: %v", err)
+	}
+}
+
 func TestConfigImportMaxMB(t *testing.T) {
 	t.Setenv("OPENTODO_IMPORT_MAX_MB", "")
 	c, err := Load()

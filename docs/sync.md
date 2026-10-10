@@ -42,6 +42,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `series_id` | string (task id) or null |
 | task | `assignee_id` | string (account id) or null; checked against the task's scope at receipt (see "Assignment" under [Sharing scopes](#sharing-scopes)) |
 | task | `section_id` | string (section id) or null; see [Sections](#sections) |
+| task | `ical_extra` | string or null: opaque iCalendar lines from CalDAV clients, see [CalDAV](#caldav) |
 | section | `name` | string |
 | section | `project_id` | string (project id, required; never changes) |
 | section | `position`, `created_at` | number |
@@ -320,6 +321,12 @@ The implementation lives in `web/src/lib/tree.ts` (generic `buildTree`, `descend
 ## REST writes
 
 REST handlers translate request bodies into ops stamped with server time and `device: "server"`, then call the same `Apply`. There is exactly one write path.
+
+## CalDAV
+
+Calendar apps (OpenSpec change `caldav`, [caldav.md](caldav.md)) write through the same path: the server turns each `PUT`, `DELETE`, `MKCALENDAR` or `PROPPATCH` into ops with server time and the device id `caldav:<app password id>`, one op per property whose value actually changed, applied with `ApplyStrict` and announced to every device with the usual wake-up. Calendar apps never pull ops; they read the materialized state, and their ETags, CTags and sync tokens are derived from it and from the op cursor (the same `seq` as the exchange, purge markers included).
+
+`task.ical_extra` carries the VTODO lines the app does not model (alarms, `X-` properties, unsupported `RRULE`s). It is one LWW register like any string field: devices store and sync it without interpreting it and never write it themselves, so a title edit on a phone and an alarm change in Thunderbird converge with both changes; two calendar apps changing their preserved properties concurrently end with the later set.
 
 ## Limits
 

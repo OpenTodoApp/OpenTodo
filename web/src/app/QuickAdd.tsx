@@ -1,4 +1,4 @@
-import { type FormEvent, forwardRef, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { describeDue, todayISO } from '../lib/dates'
 import { createLabel, LabelExistsError } from '../lib/labels'
 import {
@@ -6,6 +6,7 @@ import {
   type ProjectRef, type QuickAddInput, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span, toTaskInput,
 } from '../lib/nlp'
 import type { Due } from '../lib/types'
+import { useDictation } from './useDictation'
 
 export type { QuickAddInput }
 
@@ -93,8 +94,13 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   autoFocus?: boolean
   /** Accessible name of the input; "Add a task" by default. */
   label?: string
-}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label }, ref) {
+  /** Shift+V outside text fields dictates into this quick add (the view's main one only). */
+  voiceShortcut?: boolean
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut }, ref) {
   const [value, setValue] = useState(initialValue ?? '')
+  const valueRef = useRef(value)
+  const inputRef = useRef<HTMLInputElement>(null)
+  useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, [])
   const [dismissed, setDismissed] = useState<Span[]>([])
   const [highlight, setHighlight] = useState<number | null>(null)
   const [settings, setSettings] = useState(loadQuickAddSettings)
@@ -116,10 +122,17 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const emptyTitle = parsed !== null && parsed.title === ''
 
   function change(next: string) {
-    setDismissed((d) => rebaseDismissed(value, next, d))
+    // The previous text comes from a ref: dictation calls this from engine events.
+    const prev = valueRef.current
+    valueRef.current = next
+    setDismissed((d) => rebaseDismissed(prev, next, d))
     setValue(next)
     setHighlight(null)
   }
+
+  const voice = useDictation({
+    inputRef, getText: () => valueRef.current, setText: change, settings, projects, labels, shortcut: voiceShortcut,
+  })
 
   function dismiss(chip: Chip) {
     setDismissed((d) => dismissChip(d, chip))
@@ -133,6 +146,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     if (parsed && !parsed.title) return // only attributes typed so far; wait for a title
     const snapshot = parsed
     // Clear first so the next entry can be typed while labels are being created.
+    valueRef.current = ''
     setValue('')
     setDismissed([])
     setHighlight(null)
@@ -146,7 +160,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
       <div className="flex items-center gap-2">
         <span className="text-xl leading-none text-emerald-600">+</span>
         <input
-          ref={ref}
+          ref={inputRef}
           className="input border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent"
           placeholder={placeholder}
           value={value}
@@ -179,8 +193,38 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           autoFocus={autoFocus}
           aria-describedby={chips.length ? 'quick-add-preview' : undefined}
         />
+        {voice.enabled && (
+          <button
+            type="button"
+            className={`relative shrink-0 rounded-full p-1.5 ${voice.listening ? 'bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'}`}
+            aria-pressed={voice.listening}
+            aria-label={voice.listening ? 'Stop dictation' : 'Dictate a task'}
+            title={voice.listening ? 'Stop dictation (Esc)' : voiceShortcut ? 'Dictate a task (Shift+V)' : 'Dictate a task'}
+            data-voice-button
+            // Keep focus and caret in the input: the transcript goes where the caret is.
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={voice.toggle}
+          >
+            {voice.listening && <span className="absolute inset-0 animate-ping rounded-full bg-red-400/40 motion-reduce:hidden" aria-hidden="true" />}
+            <svg viewBox="0 0 24 24" className="relative h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="9" y="3" width="6" height="11" rx="3" />
+              <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+            </svg>
+          </button>
+        )}
         {!hideHint && <span className="kbd hidden sm:inline">q</span>}
       </div>
+      {voice.enabled && (
+        <>
+          <span className="sr-only" role="status" aria-live="polite" data-voice-status>{voice.view.announcement}</span>
+          {voice.view.message && (
+            <p className="mt-1 flex items-start gap-2 pl-6 text-xs text-amber-800 dark:text-amber-300" data-voice-message>
+              <span className="flex-1">{voice.view.message}</span>
+              <button type="button" className="underline" onClick={voice.dismissMessage}>Dismiss</button>
+            </p>
+          )}
+        </>
+      )}
       <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
         {chips.length > 0 && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-6 text-xs">

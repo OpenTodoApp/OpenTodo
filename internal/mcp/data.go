@@ -215,24 +215,24 @@ type person struct {
 }
 
 type taskOut struct {
-	ID              string    `json:"id"`
-	Title           string    `json:"title"`
-	Description     *string   `json:"description,omitempty"`
-	ProjectID       *string   `json:"project_id"`
-	Project         string    `json:"project"`
-	SectionID       *string   `json:"section_id,omitempty"`
-	Section         string    `json:"section,omitempty"`
-	ParentID        *string   `json:"parent_id,omitempty"`
-	Priority        int       `json:"priority"`
-	Due             *dueOut   `json:"due"`
-	Overdue         bool      `json:"overdue,omitempty"`
-	Labels          []string  `json:"labels"`
-	Assignee        *person   `json:"assignee,omitempty"`
-	Recurrence      *string   `json:"recurrence,omitempty"`
-	EstimateMinutes *int      `json:"estimate_minutes,omitempty"`
-	Completed       bool      `json:"completed"`
-	CompletedAt     *string   `json:"completed_at,omitempty"`
-	CreatedAt       *string   `json:"created_at,omitempty"`
+	ID              string   `json:"id"`
+	Title           string   `json:"title"`
+	Description     *string  `json:"description,omitempty"`
+	ProjectID       *string  `json:"project_id"`
+	Project         string   `json:"project"`
+	SectionID       *string  `json:"section_id,omitempty"`
+	Section         string   `json:"section,omitempty"`
+	ParentID        *string  `json:"parent_id,omitempty"`
+	Priority        int      `json:"priority"`
+	Due             *dueOut  `json:"due"`
+	Overdue         bool     `json:"overdue,omitempty"`
+	Labels          []string `json:"labels"`
+	Assignee        *person  `json:"assignee,omitempty"`
+	Recurrence      *string  `json:"recurrence,omitempty"`
+	EstimateMinutes *int     `json:"estimate_minutes,omitempty"`
+	Completed       bool     `json:"completed"`
+	CompletedAt     *string  `json:"completed_at,omitempty"`
+	CreatedAt       *string  `json:"created_at,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc

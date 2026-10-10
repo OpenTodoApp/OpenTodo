@@ -12,6 +12,8 @@ export const AUDIT_LABELS: Record<AuditEventName, string> = {
   'passkey.deleted': 'Passkey removed',
   'token.created': 'API token created',
   'token.revoked': 'API token revoked',
+  'app_password.created': 'Calendar app password created',
+  'app_password.revoked': 'Calendar app password revoked',
   'invitation.created': 'Invitation created',
   'invitation.accepted': 'Invitation accepted',
   'invitation.revoked': 'Invitation revoked',

@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("BEGIN:VCALENDAR\nBEGIN:VTODO\nUID:0\\n0\nEND:VTODO\nEND:VCALENDAR")

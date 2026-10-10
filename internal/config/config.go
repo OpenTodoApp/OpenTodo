@@ -43,6 +43,10 @@ type Config struct {
 	// settings (OpenSpec `oidc-login`). Each set variable overrides the value from
 	// Settings and locks that field; nothing is required.
 	OIDC OIDCEnv
+	// CalDAV presets the owner's CalDAV toggle on first start only (nil when
+	// OPENTODO_CALDAV is unset; OpenSpec `caldav`). Afterwards the value set in
+	// Settings is authoritative.
+	CalDAV *bool
 }
 
 // OIDCEnv mirrors oidc.Env (converted by the HTTP layer) so this package stays
@@ -119,6 +123,13 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_MCP must be true or false, got %q", v)
 		}
 		c.MCP = &b
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_CALDAV")); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return c, fmt.Errorf("OPENTODO_CALDAV must be true or false, got %q", v)
+		}
+		c.CalDAV = &b
 	}
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_TRASH_RETENTION_DAYS")); v != "" {
 		n, err := strconv.Atoi(v)
