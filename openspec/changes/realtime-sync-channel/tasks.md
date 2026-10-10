@@ -14,15 +14,15 @@
 - [x] 2.2 On `ops` events compare the event cursor with the stored cursor and call `requestSync(0)` only when newer; verify `npm test` passes `wake-up with stale cursor does not sync` and `wake-up with newer cursor syncs`
 - [x] 2.3 Reconnect with jittered exponential backoff (1 s base, 30 s cap), reset on `open`, sync immediately on every `open`, skip attempts while offline and retry on `online`; verify `npm test` passes `reconnects with capped backoff`, `syncs on reconnect`, `does not connect while offline`
 - [x] 2.4 Switch the periodic interval to 5 minutes while `live` is true and back to 30 s when it drops; verify `npm test` passes `interval relaxes when live and restores on disconnect`
-- [ ] 2.5 Show the live state in `SyncStatus` (connected vs. polling) without changing the existing offline/pending display; verify `npm run build` succeeds and, in the browser, the pill shows the connected state after sign-in and the polling state when the server is stopped
+- [x] 2.5 Show the live state in `SyncStatus` (connected vs. polling) without changing the existing offline/pending display; verify `npm run build` succeeds and, in the browser, the pill shows the connected state after sign-in and the polling state when the server is stopped
 
 ## 3. Deployment and docs
 
-- [ ] 3.1 Confirm the service worker configuration excludes `/api/v1/sync/events` from every caching strategy (navigation fallback and runtime caching); verify `npm run build` output precache manifest contains no `/api/` entry and the stream works in the installed PWA
+- [x] 3.1 Confirm the service worker configuration excludes `/api/v1/sync/events` from every caching strategy (navigation fallback and runtime caching); verify `npm run build` output precache manifest contains no `/api/` entry and the stream works in the installed PWA
 - [ ] 3.2 Add proxy notes to `docs/self-hosting/docker.md` and `docs/self-hosting/coolify.md` (buffering, idle timeouts, HTTP/2 recommendation, troubleshooting "live updates disconnected"); verify the compose deployment keeps a stream open for 10 minutes idle and delivers a change within 2 s afterwards
-- [ ] 3.3 Update `README.md` feature list and `CHANGELOG.md` Unreleased; verify links resolve
+- [x] 3.3 Update `README.md` feature list and `CHANGELOG.md` Unreleased; verify links resolve
 
 ## 4. Integration
 
-- [ ] 4.1 Two-browser end-to-end run against the production binary: sign in on A and B, edit on B, A updates within 2 s with no poll; stop the server, A shows polling state, restart, A reconnects and syncs; create a task via REST with a token, both browsers update; verify the run finishes with "E2E OK" and no console errors
+- [x] 4.1 Two-browser end-to-end run against the production binary: sign in on A and B, edit on B, A updates within 2 s with no poll; stop the server, A shows polling state, restart, A reconnects and syncs; create a task via REST with a token, both browsers update; verify the run finishes with "E2E OK" and no console errors
 - [ ] 4.2 Run `make check`; verify it passes including `openspec validate --all --strict`
