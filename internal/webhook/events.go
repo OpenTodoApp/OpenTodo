@@ -87,7 +87,7 @@ func BuildPayload(deliveryID, webhookID, event string, timeMs int64, origin, ent
 		if entity == nil {
 			data[entityKind] = nil
 		} else {
-			data[entityKind] = entity
+			data[entityKind] = withoutDocValues(entityKind, entity)
 		}
 	}
 	rawData, err := json.Marshal(data)
@@ -125,4 +125,42 @@ func isNull(v json.RawMessage) bool { return len(v) == 0 || string(v) == "null" 
 func isTrue(v json.RawMessage) bool {
 	var b bool
 	return json.Unmarshal(v, &b) == nil && b
+}
+
+// withoutDocFields returns c without opaque document fields (opsync.DocFields).
+func withoutDocFields(c opsync.Change) opsync.Change {
+	has := false
+	for f := range c.Fields {
+		has = has || opsync.IsDocField(c.Entity, f)
+	}
+	if !has {
+		return c
+	}
+	out := make(map[string]opsync.FieldChange, len(c.Fields))
+	for f, fc := range c.Fields {
+		if !opsync.IsDocField(c.Entity, f) {
+			out[f] = fc
+		}
+	}
+	c.Fields = out
+	return c
+}
+
+// withoutDocValues returns e without opaque document fields: deliveries carry
+// the readable projection (description), not the encoded note.
+func withoutDocValues(kind string, e opsync.Entity) opsync.Entity {
+	has := false
+	for f := range e {
+		has = has || opsync.IsDocField(kind, f)
+	}
+	if !has {
+		return e
+	}
+	out := make(opsync.Entity, len(e))
+	for f, v := range e {
+		if !opsync.IsDocField(kind, f) {
+			out[f] = v
+		}
+	}
+	return out
 }

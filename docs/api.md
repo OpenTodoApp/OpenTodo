@@ -36,40 +36,124 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 
 ### Endpoints
 
+Auth column: **none** = public; **yes** = any session or token (a `read` token only on `GET`); **owner**, **admin** = that account role; **member** = a member of the project; **fresh** = a step-up route (see [Two-factor authentication](#two-factor-authentication)); **cookie** = a browser session. Every `/api/v1` route not listed as public requires authentication.
+
+#### Health and authentication
+
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
-| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, mfa?, encryption?, minClientVersion?}` (`mfa`, `encryption` and `minClientVersion` when signed in, see [End-to-end encryption](#end-to-end-encryption); see [Two-factor authentication](#two-factor-authentication); `oidc` see [Single sign-on](#single-sign-on)) |
-| POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?}` → 201 `{user}` + cookie. First account becomes owner; afterwards an `invitation` secret admits one member while sign-up is closed |
+| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, mfa?, encryption?, minClientVersion?}`; `mfa`, `encryption` and `minClientVersion` only when signed in (see [Two-factor authentication](#two-factor-authentication), [Single sign-on](#single-sign-on), [End-to-end encryption](#end-to-end-encryption)) |
+| POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?}` → 201 `{user}` + cookie. The first account becomes owner; afterwards an `invitation` secret admits one member while sign-up is closed |
 | POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie, or `{mfaRequired:true, challenge, expiresAt}` and no cookie when the account has a second factor |
 | POST | `/api/v1/auth/mfa` | none | `{challenge, code}` or `{challenge, recoveryCode}`, optional `remember` → `{user}` + cookie (+ `ot_trust` cookie when `remember`) |
-| POST | `/api/v1/auth/reauth` | cookie | `{password}` or `{code}` → `{reauthAt, validForMs}`; unlocks sensitive routes for 10 minutes |
+| POST | `/api/v1/auth/reauth` | cookie | `{password}` or `{code}` → `{reauthAt, validForMs}`; unlocks *fresh* routes for 10 minutes |
 | POST | `/api/v1/auth/passkey/options` | none | → `{publicKey}` sign-in options, see [Passkeys](#passkeys) |
 | POST | `/api/v1/auth/passkey` | none | `{credential}` → `{user}` + cookie |
 | POST | `/api/v1/auth/logout` | cookie | 204, or 200 `{redirect}` (provider sign-out, see [Single sign-on](#single-sign-on)) |
-| GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links instead when signed in) |
+| GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in) |
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
-| GET | `/api/v1/settings/oidc` | owner | provider configuration, secret masked |
-| PUT | `/api/v1/settings/oidc` | owner, fresh | change the provider configuration |
-| POST | `/api/v1/settings/oidc/test` | owner | `{issuer?}` → `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` |
+| GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid`, see [Invitations](#invitations) |
+| GET | `/api/v1/password-resets/{token}` | none | preview `{email, expiresAt}` or 404 `reset_invalid` |
+| POST | `/api/v1/password-resets/{token}` | none | `{password}` → 204 or 404 `reset_invalid` |
+
+#### Your account and credentials
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion}` |
+| POST | `/api/v1/me/password` | yes, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
+| GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
 | DELETE | `/api/v1/me/identities/{id}` | yes | 204, or 409 `last_credential` |
-| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion}` |
-| GET | `/api/v1/encryption/keys` | yes | `{keys}`: the wrapped key record, or 404 `encryption_disabled`; see [End-to-end encryption](#end-to-end-encryption) |
-| PUT | `/api/v1/encryption/keys` | yes (fresh when replacing) | create (`version: 1`) or replace (`version` = stored + 1) the key record → 201/200 `{keys}`; 409 `encryption_conflict` |
-| DELETE | `/api/v1/encryption/keys` | yes, fresh | 204; turns encryption off for the account (404 `encryption_disabled` without a record) |
-| POST | `/api/v1/encryption/purge-history` | yes | → `{purged, notice}`; deletes superseded content operations; 409 `encryption_disabled` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}` |
 | POST | `/api/v1/tokens` | yes, fresh | `{name, scope?}` (`full` default, or `read`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input` |
-| GET | `/api/v1/settings/mcp` | yes | `{enabled, endpoint}`: whether the [MCP endpoint](mcp.md) is on and its URL |
-| PUT | `/api/v1/settings/mcp` | owner | `{enabled}` → `{enabled, endpoint}`; recorded as `settings.changed` (`mcp.enabled`) in the audit log |
-| POST | `/mcp` | bearer token only | read-only Model Context Protocol endpoint for AI assistants, 404 while disabled; see [docs/mcp.md](mcp.md) |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
 | POST | `/api/v1/passkeys/register/options` | yes | → `{publicKey}` creation options |
 | POST | `/api/v1/passkeys/register` | yes | `{name, credential}` → 201 `{passkey}` |
 | GET | `/api/v1/passkeys` | yes | `{passkeys:[{id,name,createdAt,lastUsedAt,suspiciousAt,backedUp}]}` |
 | PATCH | `/api/v1/passkeys/{id}` | yes | `{name}` → `{passkey}` |
 | DELETE | `/api/v1/passkeys/{id}` | yes | 204 |
+| GET | `/api/v1/mfa` | yes | `{mfa}`, see [Two-factor authentication](#two-factor-authentication) |
+| POST | `/api/v1/mfa/totp/enroll` | yes | → `{secret, uri, expiresAt}` (pending for 10 minutes; the only time the secret is returned) |
+| POST | `/api/v1/mfa/totp/confirm` | yes | `{code}` → `{recoveryCodes:[10], mfa}` (codes shown once) |
+| DELETE | `/api/v1/mfa/totp` | yes, fresh | turn the second factor off → 204 |
+| POST | `/api/v1/mfa/recovery-codes/regenerate` | yes, fresh | → `{recoveryCodes:[10]}`; every earlier code stops working |
+| GET | `/api/v1/mfa/trusted-devices` | yes | `{devices:[{id,userAgent,createdAt,expiresAt,lastUsedAt}]}` |
+| DELETE | `/api/v1/mfa/trusted-devices` | yes | forget every remembered browser → 204 |
+| DELETE | `/api/v1/mfa/trusted-devices/{id}` | yes | forget one → 204 |
+| GET | `/api/v1/encryption/keys` | yes | `{keys}`: the wrapped key record, or 404 `encryption_disabled`; see [End-to-end encryption](#end-to-end-encryption) |
+| PUT | `/api/v1/encryption/keys` | yes (fresh when replacing) | create (`version: 1`) or replace (`version` = stored + 1) the key record → 201/200 `{keys}`; 409 `encryption_conflict` |
+| DELETE | `/api/v1/encryption/keys` | yes, fresh | 204; turns encryption off for the account (404 `encryption_disabled` without a record) |
+| POST | `/api/v1/encryption/purge-history` | yes | → `{purged, notice}`; deletes superseded content operations; 409 `encryption_disabled` |
+| GET | `/api/v1/notifications` | yes | your in-app notifications and the unread count, see [Assignment and notifications](#assignment-and-notifications) |
+| POST | `/api/v1/notifications/{id}/read` | yes | mark one read → 204 |
+| GET | `/api/v1/push/vapid-key` | yes | `{publicKey}`; with `?device={id}` also `subscription` (that device's status or `null`), see [Reminders and push](#reminders-and-push) |
+| POST | `/api/v1/push/subscriptions` | yes | `{deviceId, endpoint, keys:{p256dh, auth}, includeContent?}` → 201 `{subscription}` (200 when the device's subscription was replaced) |
+| DELETE | `/api/v1/push/subscriptions/{id}` | yes | 204, or 404 `not_found` |
+
+#### Tasks, projects and other synced data
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones |
+| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields) |
+| GET | `/api/v1/tasks/{id}` | yes | task or 404 |
+| PATCH | `/api/v1/tasks/{id}` | yes | partial update → task |
+| DELETE | `/api/v1/tasks/{id}` | yes | soft delete (to the Trash) → 204 |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects, see [Project fields](#project-fields) |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/sections…` | yes | same shape for sections, see [Sections](#sections) |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels, see [Label fields](#label-fields) |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
+| GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
+| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders,sections,comments}}`; 409 `not_deleted` otherwise |
+| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{…}}` |
+| GET | `/api/v1/tasks/{id}/comments` | yes | `{comments}`: the task's live comments in thread order; see [Comments and activity](#comments-and-activity) |
+| POST | `/api/v1/tasks/{id}/comments` | yes | `{body, parent_id?, mentions?}` → 201 comment; 429 `rate_limited` past 60 new comments a minute |
+| PATCH | `/api/v1/comments/{id}` | yes | `{body?, mentions?}` → 200 comment with `edited_at` set; 403 `forbidden` unless you wrote it |
+| DELETE | `/api/v1/comments/{id}` | yes | 204; allowed for the author, project admins and the owner |
+| GET | `/api/v1/tasks/{id}/activity`, `/api/v1/projects/{id}/activity` | yes | `{events, more, cursor?}` newest first, derived from the operation log; `?before=<cursor>&limit=<1-200>` (default 50) |
+| GET | `/api/v1/activity` | yes | the activity feed across every shared project you are a member of; `?cursor=&limit=&project=&actor=&kind=`; see [Activity feed](#activity-feed) |
+| GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}]}`, see [Sharing](#sharing) |
+| POST | `/api/v1/projects/{id}/members` | owner, admin of the project | `{email, role}` → 201 membership (shares the project on first use) |
+| PATCH | `/api/v1/projects/{id}/members/{userId}` | owner, admin of the project | `{role}` → membership |
+| DELETE | `/api/v1/projects/{id}/members/{userId}` | member | remove a member, or leave with your own id or `me` → 204 |
+| POST | `/api/v1/projects/{id}/transfer` | owner of the project | `{userId}` → membership; the previous owner becomes an admin |
+| POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
+| GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `encryption`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
+| POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
+| POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
+| GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
+| GET | `/api/v1/import/jobs/{id}` | yes | `{job}` with status, counts and row errors |
+| POST | `/api/v1/import/jobs/{id}/undo` | yes | tombstone everything the job created → `{job}` (status `undone`); idempotent |
+
+#### Integrations
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/webhooks` | yes | `{webhooks:[…], events:[…]}`, see [Webhooks](#webhooks) |
+| POST | `/api/v1/webhooks` | yes | `{url, events, projectId?, enabled?}` → 201 `{webhook}` (includes `secret`, shown once) |
+| GET | `/api/v1/webhooks/{id}` | yes | `{webhook}` (never the secret) |
+| PATCH | `/api/v1/webhooks/{id}` | yes | partial `{url?, events?, projectId?, enabled?}` → `{webhook}` |
+| DELETE | `/api/v1/webhooks/{id}` | yes | delete with its delivery log → 204 |
+| POST | `/api/v1/webhooks/{id}/test` | yes | send a `ping` now → `{ok, delivery}` |
+| GET | `/api/v1/webhooks/{id}/deliveries` | yes | `{deliveries:[…]}`, newest 100 |
+| POST | `/api/v1/webhooks/{id}/deliveries/{did}/redeliver` | yes | queue the same body with a new id → 202 `{delivery}` |
+| GET | `/api/v1/app-passwords` | yes | `{appPasswords:[…]}`, see [CalDAV and app passwords](#caldav-and-app-passwords) |
+| POST | `/api/v1/app-passwords` | yes, fresh | `{name}` → 201 `{appPassword, secret}` (secret shown once) |
+| DELETE | `/api/v1/app-passwords/{id}` | yes | revoke → 204 |
+| GET | `/api/v1/email-inbox` | yes | your email-to-task address and settings, see [Email to task](#email-to-task) |
+| PATCH | `/api/v1/email-inbox` | yes | `{enabled?, allowlist?}` → the same shape |
+| POST | `/api/v1/email-inbox/rotate` | yes | new address; the old one stops working |
+| * | `/dav/`, `/.well-known/caldav` | HTTP Basic with an app password | CalDAV (WebDAV methods), 404 while disabled; see [caldav.md](caldav.md) |
+| POST | `/mcp` | bearer token only | read-only Model Context Protocol endpoint, 404 while disabled; see [mcp.md](mcp.md) |
+
+#### Administration (owner and admins)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
 | GET | `/api/v1/invitations` | owner, admin | `{invitations:[…]}`, see [Invitations](#invitations) |
 | POST | `/api/v1/invitations` | owner, admin, fresh | `{email?, expiresInHours?}` → 201 `{invitation, link}` (link shown once) |
 | DELETE | `/api/v1/invitations/{id}` | owner, admin | revoke a pending invitation → 204 |
@@ -80,76 +164,27 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | DELETE | `/api/v1/users/{id}` | owner, admin, fresh | `{confirmEmail}` → 204; deletes the account and its data |
 | POST | `/api/v1/users/{id}/password-reset` | owner, admin, fresh | `{expiresInHours?}` → 201 `{expiresAt, link}` (link shown once) |
 | POST | `/api/v1/users/{id}/transfer-ownership` | owner, fresh | `{password}` → `{user}` |
-| POST | `/api/v1/me/password` | yes, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
-| GET | `/api/v1/password-resets/{token}` | none | preview `{email, expiresAt}` or 404 `reset_invalid` |
-| POST | `/api/v1/password-resets/{token}` | none | `{password}` → 204 or 404 `reset_invalid` |
-| GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid` |
-| GET | `/api/v1/mfa` | yes | `{mfa}`, see [Two-factor authentication](#two-factor-authentication) |
-| POST | `/api/v1/mfa/totp/enroll` | yes | → `{secret, uri, expiresAt}` (pending for 10 minutes; the only time the secret is returned) |
-| POST | `/api/v1/mfa/totp/confirm` | yes | `{code}` → `{recoveryCodes:[10], mfa}` (codes shown once) |
-| DELETE | `/api/v1/mfa/totp` | yes, fresh | turn the second factor off → 204 |
-| POST | `/api/v1/mfa/recovery-codes/regenerate` | yes, fresh | → `{recoveryCodes:[10]}`; every earlier code stops working |
-| GET | `/api/v1/mfa/trusted-devices` | yes | `{devices:[{id,userAgent,createdAt,expiresAt,lastUsedAt}]}` |
-| DELETE | `/api/v1/mfa/trusted-devices` | yes | forget every remembered browser → 204 |
-| DELETE | `/api/v1/mfa/trusted-devices/{id}` | yes | forget one → 204 |
+| POST | `/api/v1/members/{id}/mfa/reset` | owner, fresh | remove a member's second factor, recovery codes and remembered browsers → 204 |
 | GET | `/api/v1/settings/mfa` | owner | `{required: "none"\|"owner"\|"all"}` |
 | PUT | `/api/v1/settings/mfa` | owner, fresh | `{required}` → `{required}` |
-| POST | `/api/v1/members/{id}/mfa/reset` | owner, fresh | remove a member's second factor, recovery codes and remembered browsers → 204 |
+| GET | `/api/v1/settings/oidc` | owner | provider configuration, secret masked, see [Single sign-on](#single-sign-on) |
+| PUT | `/api/v1/settings/oidc` | owner, fresh | change the provider configuration |
+| POST | `/api/v1/settings/oidc/test` | owner | `{issuer?}` → `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` |
+| GET | `/api/v1/settings/mcp` | yes | `{enabled, endpoint}`: whether the [MCP endpoint](mcp.md) is on and its URL |
+| PUT | `/api/v1/settings/mcp` | owner | `{enabled}` → `{enabled, endpoint}` |
+| GET | `/api/v1/settings/caldav` | yes | `{enabled, url, secure, encryption}` |
+| PUT | `/api/v1/settings/caldav` | owner | `{enabled}` → the same shape |
+| GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
+| PUT | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` → `{allowPrivate}` |
+| GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
+| GET | `/api/v1/audit/export` | owner | the filtered log as `application/x-ndjson` download; records `audit.exported` |
+| GET | `/api/v1/settings/audit` | owner | `{retentionDays, logIp}` |
+| PUT | `/api/v1/settings/audit` | owner | `{retentionDays?: 7–3650, logIp?}` → settings; disabling `logIp` erases stored addresses |
 | GET | `/api/v1/backups` | owner | backup status, see [Backups](#backups) |
 | GET | `/api/v1/backups/settings` | owner | `{settings, secrets}` (secret presence flags only) |
 | PUT | `/api/v1/backups/settings` | owner | `{settings, secrets?}` → `{settings, secrets}` |
 | POST | `/api/v1/backups/run` | owner | start a backup now → 202, or 409 `conflict` while one runs |
 | POST | `/api/v1/backups/test` | owner | write and delete a probe object at the saved destination → 200 `{ok:true}` or 502 `destination_error` |
-| GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
-| GET | `/api/v1/audit/export` | owner | the filtered log as `application/x-ndjson` download; records `audit.exported` |
-| GET | `/api/v1/settings/audit` | owner | `{retentionDays, logIp}` |
-| PUT | `/api/v1/settings/audit` | owner | `{retentionDays?: 7–3650, logIp?}` → settings; disabling `logIp` erases stored addresses |
-| GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
-| GET | `/api/v1/webhooks` | yes | `{webhooks:[…], events:[…]}`, see [Webhooks](#webhooks) |
-| POST | `/api/v1/webhooks` | yes | `{url, events, projectId?, enabled?}` → 201 `{webhook}` (includes `secret`, shown once) |
-| GET | `/api/v1/webhooks/{id}` | yes | `{webhook}` (never the secret) |
-| PATCH | `/api/v1/webhooks/{id}` | yes | partial `{url?, events?, projectId?, enabled?}` → `{webhook}` |
-| DELETE | `/api/v1/webhooks/{id}` | yes | delete with its delivery log → 204 |
-| POST | `/api/v1/webhooks/{id}/test` | yes | send a `ping` now → `{ok, delivery}` |
-| GET | `/api/v1/webhooks/{id}/deliveries` | yes | `{deliveries:[…]}`, newest 100 |
-| POST | `/api/v1/webhooks/{id}/deliveries/{did}/redeliver` | yes | queue the same body with a new id → 202 `{delivery}` |
-| GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
-| PUT | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` → `{allowPrivate}` |
-| GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}]}`, see [Sharing](#sharing) |
-| POST | `/api/v1/projects/{id}/members` | owner, admin | `{email, role}` → 201 membership (shares the project on first use) |
-| PATCH | `/api/v1/projects/{id}/members/{userId}` | owner, admin | `{role}` → membership |
-| DELETE | `/api/v1/projects/{id}/members/{userId}` | member | remove a member, or leave with your own id or `me` → 204 |
-| POST | `/api/v1/projects/{id}/transfer` | owner | `{userId}` → membership; the previous owner becomes an admin |
-| GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones |
-| POST | `/api/v1/tasks` | yes | create → 201 task |
-| GET | `/api/v1/tasks/{id}` | yes | task or 404 |
-| PATCH | `/api/v1/tasks/{id}` | yes | partial update → task |
-| DELETE | `/api/v1/tasks/{id}` | yes | soft delete → 204 |
-| GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects |
-| GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels |
-| GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
-| GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
-| GET/POST/GET/PATCH/DELETE | `/api/v1/sections…` | yes | same shape for sections of projects, see [Sections](#sections) |
-| GET | `/api/v1/push/vapid-key` | yes | `{publicKey}`; with `?device={id}` also `subscription` (that device's status or `null`) |
-| POST | `/api/v1/push/subscriptions` | yes | `{deviceId, endpoint, keys:{p256dh, auth}, includeContent?}` → 201 `{subscription}` (200 when the device's subscription was replaced) |
-| DELETE | `/api/v1/push/subscriptions/{id}` | yes | 204, or 404 `not_found` |
-| POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md`; the response carries the log `generation` |
-| GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
-| GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
-| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders,sections,comments}}`; 409 `not_deleted` otherwise |
-| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{tasks,projects,reminders,sections,comments}}` |
-| GET | `/api/v1/tasks/{id}/comments` | yes | `{comments}`: the task's live comments in thread order; 404 for a task you cannot read; see [Comments and activity](#comments-and-activity) |
-| POST | `/api/v1/tasks/{id}/comments` | yes | `{body, parent_id?, mentions?}` → 201 comment; 404 for a task you cannot read; 429 `rate_limited` past 60 new comments a minute |
-| PATCH | `/api/v1/comments/{id}` | yes | `{body?, mentions?}` → 200 comment with `edited_at` set; 403 `forbidden` unless you wrote it |
-| DELETE | `/api/v1/comments/{id}` | yes | 204; allowed for the author, project admins and the owner, 403 `forbidden` otherwise |
-| GET | `/api/v1/tasks/{id}/activity`, `/api/v1/projects/{id}/activity` | yes | `{events, more, cursor?}` newest first, derived from the operation log; `?before=<cursor>&limit=<1-200>` (default 50) |
-| GET | `/api/v1/activity` | yes | `{events, more, cursor?}`: the activity feed across every shared project you are a member of, newest first; `?cursor=&limit=&project=&actor=&kind=`; see [Activity feed](#activity-feed) |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
-| POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
-| POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
-| GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
-| GET | `/api/v1/import/jobs/{id}` | yes | `{job}` with status, counts and row errors |
-| POST | `/api/v1/import/jobs/{id}/undo` | yes | tombstone everything the job created → `{job}` (status `undone`); idempotent |
 
 ### Passkeys
 
@@ -293,7 +328,8 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | Field | Type | Notes |
 | --- | --- | --- |
 | `title` | string | |
-| `description` | string | |
+| `description` | string | the note as **Markdown** text (headings, `**bold**`, `_italic_`, `~~strike~~`, `` `code` ``, links, `-`/`1.` lists, `- [ ]`/`- [x]` check items). Readable and writable as plain text: a write here is folded into the rich-text document by the next app that opens the note. At most 64 KB |
+| `notes_doc` | string | the note as a mergeable rich-text document: `""` or `"ydoc:v1:<base64>"` (at most 256 KB). Opaque; scripts normally ignore it and use `description`. `400 invalid_input` when it is not a valid envelope. See [sync.md](sync.md#mergeable-documents) |
 | `project_id` | string or null | null = Inbox |
 | `parent_id` | string or null | parent task for subtasks, any depth; see [Subtasks](#subtasks) |
 | `priority` | 1–4 | 1 highest, 4 default |
@@ -645,7 +681,7 @@ The server records security-relevant events in its own database (never synced to
 
 | Event | Outcome | Actor / target | `details` keys |
 | --- | --- | --- | --- |
-| `login.succeeded` | success | actor = user | `email`, `method` (`password`, `register`, `passkey`; later `oidc`) |
+| `login.succeeded` | success | actor = user | `email`, `method` (`password`, `register`, `passkey`, `oidc`, or a two-step method such as `password+totp`) |
 | `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`, `unknown_passkey`, `passkey_rejected`, `passkey_counter_regression`, `deactivated`) |
 | `logout` | success | actor = user | |
 | `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name`; `token.created` also `token_scope` (`full` or `read`) |
@@ -655,12 +691,14 @@ The server records security-relevant events in its own database (never synced to
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
 | `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
 | `invitation.revoked` | success | actor = owner | `invitation_id` |
-| `settings.changed` | success | actor = owner | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mcp.enabled`), `from`, `to` |
+| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `caldav.enabled`, `oidc.*`, `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
-| `mfa.enrolled`, `mfa.disabled`, `mfa.reset`, `mfa.challenge_failed` | | | `method`, `reason` (emitted once `mfa-totp` ships) |
+| `mfa.enrolled`, `mfa.disabled` | success | actor = user (or the owner, target = account) | `method` |
+| `mfa.reset` | success | actor = owner (none from the command line), target = account | |
+| `mfa.challenge_failed` | failure | target = account | `reason` (`wrong_code`, `wrong_recovery_code`; never the code) |
 | `passkey.registered`, `passkey.deleted` | success | actor = user | `passkey_id`, `passkey_name` |
-| `identity.linked`, `identity.unlinked` | | | `provider` (once `oidc-login` ships) |
+| `identity.linked`, `identity.unlinked` | success | actor = user | `provider` |
 | `role.changed` | success | actor = owner, target = account | `from`, `to` (account roles, or `project.<role>` for project membership) |
 | `user.deactivated`, `user.reactivated` | success | actor = owner or admin, target = account | |
 | `user.deleted` | success | actor = owner or admin, target = account | `email` (snapshot) |
@@ -778,7 +816,7 @@ curl -sS "$OT/api/v1/tasks/$ID/history" -H "Authorization: Bearer $TOKEN"
 
 # Permanently delete a trashed task (its operations, values and reminders)
 curl -sS -X DELETE "$OT/api/v1/tasks/$ID/purge" -H "Authorization: Bearer $TOKEN"
-# 200 {"purged":{"tasks":1,"projects":0,"reminders":0}}
+# 200 {"purged":{"tasks":1,"projects":0,"reminders":0,"sections":0,"comments":0}}
 # 409 {"error":{"code":"not_deleted","message":"only items in the Trash can be permanently deleted; delete it first"}}
 ```
 
@@ -991,7 +1029,7 @@ Response (201):
 
 ### End-to-end encryption
 
-Optional per-account encryption of task content ([e2ee.md](e2ee.md) has the threat model). The server stores only the key record the browser produced and never decrypts. For an encrypted account, the content fields of personal data — task `title`, `description`, `ical_extra`; project, label and section `name`; view `name` and `query`; comment `body` — hold ciphertext strings in every REST read, the export and `/api/v1/sync`:
+Optional per-account encryption of task content ([e2ee.md](e2ee.md) has the threat model). The server stores only the key record the browser produced and never decrypts. For an encrypted account, the content fields of personal data — task `title`, `description`, `ical_extra`, `notes_doc`; project, label and section `name`; view `name` and `query`; comment `body` — hold ciphertext strings in every REST read, the export and `/api/v1/sync`:
 
 ```
 "enc:v1:" + base64url(nonce(12) || AES-256-GCM(utf8(plaintext)) || tag(16))
@@ -1130,57 +1168,80 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
 - Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB).
-- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey` and the invitation preview share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window; invitation creation is limited to 20 per hour per account.
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview and the password-reset routes share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour.
 
 ### Error codes
 
+Every error answers `{"error":{"code","message"}}`; some validation errors add `field`. Codes by area (the sections above give the details):
+
+**General**
+
 | Code | Status | Where |
 | --- | --- | --- |
+| `bad_request` | 400 | malformed JSON, a JSON body over 4 MB, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
+| `invalid_input` | 400 | validation failure naming the field or parameter |
+| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
-| `forbidden` | 403 | invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; backups, audit log, audit settings, webhook policy, two-factor policy, single sign-on settings, the MCP setting or member reset by a non-owner; a write or membership change your project role does not allow |
-| `reauth_required` | 403 | a sensitive route on a cookie session that has not proved its identity in the last ten minutes; see [Two-factor authentication](#two-factor-authentication) |
-| `mfa_enrolment_required` | 403 | the owner's policy requires a second factor that this account has not set up yet |
-| `sso_required` | 403 | password or passkey sign-in (or password registration) by a non-owner while SSO-only mode is on; see [Single sign-on](#single-sign-on) |
-| `oidc_disabled` | 404 | single sign-on routes while no provider is configured |
-| `oidc_state_invalid` | 400 | provider callback with a missing, forged, expired or reused state |
-| `identity_taken` | 409 | linking a provider identity that belongs to another account |
-| `last_credential` | 409 | unlinking the last way to sign in to the account |
-| `mfa_required_by_policy` | 403 | turning off a second factor that the policy requires |
-| `mfa_code_invalid` | 400/401 | wrong, reused or expired one-time or recovery code |
-| `mfa_challenge_invalid` | 401 | expired or exhausted sign-in challenge: enter the password again |
-| `mfa_already_enrolled` / `mfa_not_enrolled` | 409 | enrolling twice, or disabling/regenerating without a second factor |
-| `user_not_found` | 404 | adding a project member by an email that has no account |
-| `owner_must_transfer` | 409 | the project owner leaving the project |
-| `already_member` | 409 | adding an account that is already a member of the project |
-| `not_deleted` | 409 | purging a task or project that is not in the Trash |
-| `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
-| `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
+| `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
 | `bad_origin` | 403 | cookie-authenticated write from another origin; any `/mcp` request whose `Origin` is not this server |
 | `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` API token |
-| `signup_closed` | 403 | registration without an invitation while sign-up is closed |
+| `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
+| `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running |
+| `too_large` | 413 | `/mcp` body over 1 MB; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
+| `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
+| `internal` | 500 | unexpected server error (details only in the server log) |
+| `unavailable` | 503 | backups or webhooks are not available on this server |
+
+**Sign-in, accounts and credentials**
+
+| Code | Status | Where |
+| --- | --- | --- |
+| `invalid_credentials` | 401/403 | 401 for a wrong sign-in or passkey; 403 for a wrong current password at `/me/password` or `transfer-ownership` |
+| `signup_closed` | 403 | registration without an invitation while sign-up is closed; first sign-in through the provider when provisioning is not allowed |
+| `email_taken` | 409 | registration with an existing email |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
 | `invitation_invalid` | 404 | unknown, expired, revoked or already accepted invitation |
 | `invitation_spent` | 409 | revoking an accepted invitation |
+| `reset_invalid` | 404 | unknown, used, expired or revoked password reset link |
 | `self_action` | 409 | a `/users` action on your own account |
 | `account_deactivated` | 403/409 | 403 at sign-in with the correct password of a deactivated account; 409 for an administrative action on a deactivated account |
 | `account_active` | 409 | reactivating an active account |
 | `confirmation_mismatch` | 400 | deleting an account without its email in `confirmEmail` |
-| `reset_invalid` | 404 | unknown, used, expired or revoked password reset link |
-| `invalid_credentials` | 401/403 | 401 for a wrong sign-in; 403 for a wrong current password at `/me/password` or `transfer-ownership` |
-| `conflict` | 409 | starting or undoing an import while another import of yours runs |
+| `reauth_required` | 403 | a *fresh* route on a cookie session that has not proved its identity in the last ten minutes |
+| `mfa_code_invalid` | 400/401 | 400 confirming enrolment with a wrong or late code; 401 for a wrong, reused or replayed code or recovery code |
+| `mfa_challenge_invalid` | 401 | unknown, expired or exhausted sign-in challenge: enter the password again |
+| `mfa_already_enrolled` / `mfa_not_enrolled` | 409 | enrolling twice, or disabling/regenerating without a second factor |
+| `mfa_required_by_policy` | 403 | turning off a second factor that the owner's policy requires |
+| `mfa_enrolment_required` | 403 | any other route while the owner's policy requires a second factor this account has not set up |
+| `passkeys_unavailable` | 409 | any passkey route when `OPENTODO_BASE_URL` is not https or localhost |
+| `passkey_challenge_invalid` | 400 | passkey ceremony with an expired, reused or foreign challenge |
+| `sso_required` | 403 | password or passkey sign-in (or password registration) by a non-owner while SSO-only mode is on |
+| `oidc_disabled` | 404 | single sign-on routes while no provider is configured |
+| `oidc_state_invalid` | 400 | provider callback with a missing, forged, expired or reused state |
+| `identity_taken` | 409 | linking a provider identity that belongs to another account |
+| `last_credential` | 409 | unlinking the last way to sign in to the account |
+
+**Data, sharing and features**
+
+| Code | Status | Where |
+| --- | --- | --- |
+| `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
+| `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
+| `user_not_found` | 404 | adding a project member by an email that has no account |
+| `already_member` | 409 | adding an account that is already a member of the project |
+| `owner_must_transfer` | 409 | the project owner leaving the project |
+| `not_deleted` | 409 | purging a task or project that is not in the Trash |
 | `unsupported_format` | 400 | import file in no supported format |
 | `invalid_file` | 400 | import file recognised but unreadable |
-| `too_large` | 413 | import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
-| `email_taken` | 409 | registration with an existing email |
-| `conflict` | 409 | `POST /backups/run` while a backup is running |
+| `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
+| `limit_reached` | 409 | more than 20 webhooks on one account |
 | `destination_error` | 502 | `POST /backups/test` when the destination refuses or cannot be reached |
-| `passkeys_unavailable` | 409 | any passkey route when `OPENTODO_BASE_URL` is not https or localhost |
-| `invalid_input` | 400 | validation failure naming the field |
+| `email_disabled` | 409 | changing or rotating the email-to-task address when the operator has not configured email capture |
 | `encryption_disabled` | 404/409 | 404 for `GET`/`DELETE /api/v1/encryption/keys` without a key record; 409 for the history purge without one |
 | `encryption_conflict` | 409 | `PUT /api/v1/encryption/keys` with a version that is not the stored version + 1 (another device created or changed the record) |
 | `encryption_enabled` | 409 | sharing a project for the first time, or creating a CalDAV app password, while the account uses end-to-end encryption |
-| `passkey_challenge_invalid` | 400 | passkey ceremony with an expired, reused or foreign challenge; see [Passkeys](#passkeys) |
-| `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
-| `limit_reached` | 409 | more than 20 webhooks on one account |
-| `not_found` | 404 | unknown id, including another account's webhook or delivery |
-| `rate_limited` | 429 | too many attempts in the window; more than 60 new comments a minute on one account |
+| `method_not_allowed` | 405 | `/mcp` with a method other than `POST` |
+| `not_acceptable` | 406 | `/mcp` with an `Accept` header that admits only `text/event-stream` |
+| `unsupported_protocol_version` | 400 | `/mcp` with an `MCP-Protocol-Version` header naming an unsupported version |
+
+CalDAV (`/dav/`) answers with WebDAV status codes and precondition elements instead of this envelope; MCP tool errors are JSON-RPC errors (see [mcp.md](mcp.md#protocol-details)).

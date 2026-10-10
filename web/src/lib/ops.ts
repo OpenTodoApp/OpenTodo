@@ -11,6 +11,7 @@ import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
 import { ENTITIES, type Clock, type Comment, type Entity, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Section, type Task, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
+import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
 import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
@@ -58,7 +59,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null,
+  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '',
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -100,8 +101,14 @@ const SERVER_REWRITTEN = new Set(['comment.mentions'])
  * Task, project and comment ops are also recorded for the activity log with their
  * author (`op.actor`, else `opts.actor` for local edits) and old value.
  */
-export async function applyOps(ops: Op[], opts: { actor?: string; wire?: Map<string, { kind: 'p' | 'c' | 'x'; raw?: string }> } = {}): Promise<void> {
+export async function applyOps(
+  ops: Op[], opts: { actor?: string; local?: boolean; wire?: Map<string, { kind: 'p' | 'c' | 'x'; raw?: string }> } = {},
+): Promise<void> {
   if (ops.length === 0) return
+  // Remote document ops are merged, not just replaced (collaborative-rich-text):
+  // load the document code before the transaction, which must not await imports.
+  const rt = !opts.local && ops.some((o) => isDocField(o.entity, o.field)) ? await loadRichText() : null
+  const republish: Change[] = []
   const grouped = new Map<string, Op[]>()
   for (const op of ops) {
     if (!ENTITIES.includes(op.entity)) continue
@@ -121,12 +128,20 @@ export async function applyOps(ops: Op[], opts: { actor?: string; wire?: Map<str
       const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing
+      // The union of every document value seen for this row in this batch.
+      let merged: string | undefined
+      let docTs = 0
       for (const op of list) {
         const c = clock[op.field]
         const won = wins(op.ts, op.device, c)
         // A losing op still happened: its old value is unknown here, the activity
         // rule takes it from the op before it in timestamp order.
         recorded.push({ op, actor: op.actor ?? opts.actor ?? '', from: won ? row[op.field] ?? null : undefined, projectKey: '' })
+        if (rt && isDocField(entity, op.field)) {
+          // Winning or not, the received document is merged with the local one.
+          merged = rt.mergeDocs(merged ?? String(row[op.field] ?? ''), String(op.value ?? ''))
+          docTs = Math.max(docTs, op.ts, c?.ts ?? 0)
+        }
         const rewritten = !won && c && c.ts === op.ts && c.device === op.device && SERVER_REWRITTEN.has(`${entity}.${op.field}`)
         if (!won && !rewritten) continue
         row[op.field] = op.value
@@ -151,6 +166,14 @@ export async function applyOps(ops: Op[], opts: { actor?: string; wire?: Map<str
         row._clock = clock
         await (table as unknown as { put(v: unknown): Promise<unknown> }).put(row)
       }
+      if (rt && merged !== undefined && entity === 'task') {
+        const patch = reconcileNote(rt, row as unknown as Task, merged)
+        if (patch) {
+          // The republished pair must beat the values it extends or folds in.
+          hlcSeed(Math.max(docTs, clock.description?.ts ?? 0))
+          republish.push({ entity, entityId, patch })
+        }
+      }
     }
     // Place each recorded op in its task and project once every row is written.
     for (const r of recorded) {
@@ -166,6 +189,38 @@ export async function applyOps(ops: Op[], opts: { actor?: string; wire?: Map<str
     }
     await recordActivity(recorded)
   })
+  // Merge-and-republish (design D1): only when the merge grew the winning value.
+  if (republish.length) await mutateMany(republish)
+}
+
+const sameClock = (a?: { ts: number; device: string }, b?: { ts: number; device: string }) => !!a && !!b && a.ts === b.ts && a.device === b.device
+
+/**
+ * The note rules of collaborative-rich-text (design D1/D2) for a task row whose
+ * stored fields are already decided by last-writer-wins. `merged` is the union of
+ * the local and received documents. Returns the pair to publish, or null:
+ * - the merge holds something the stored winner lacks: publish the union;
+ * - a newer plain-text `description` (no `notes_doc` with its clock: REST, an older
+ *   client) is folded into the document first;
+ * - an unpaired, older `description` that differs from the document is re-projected.
+ * A note without a document, or with one this build cannot read, is left alone
+ * (legacy notes are upgraded when opened, see foldNote).
+ */
+export function reconcileNote(rt: RichText, row: Pick<Task, 'notes_doc' | 'description' | '_clock'>, merged?: string): { notes_doc: string; description: string } | null {
+  const winner = row.notes_doc ?? ''
+  let doc = merged ?? winner
+  // A stored value this device cannot read (another format, undecryptable) is
+  // never overwritten automatically.
+  if (!doc || !rt.isReadable(doc) || !rt.isReadable(winner)) return null
+  const cd = row._clock?.description
+  const cn = row._clock?.notes_doc
+  let publish = merged !== undefined && rt.adds(winner, merged)
+  if (cd && !sameClock(cd, cn) && wins(cd.ts, cd.device, cn)) {
+    doc = rt.foldText(doc, row.description ?? '', cd.ts, cd.device)
+    publish = true
+  } else if (!publish && !sameClock(cd, cn) && rt.projectDoc(doc) !== (row.description ?? '')) publish = true
+  if (!publish) return null
+  return { notes_doc: doc, description: rt.projectDoc(doc) }
 }
 
 type Listener = () => void
@@ -200,23 +255,113 @@ export async function mutateMany(changes: Change[]): Promise<void> {
   checkEncryptedSize(changes)
   const device = await getDeviceId()
   changes = [...changes, ...(await reminderFollowUps(changes))]
+  if (!changes.some((c) => Object.keys(c.patch).length > 0)) return
+  const rt = await richTextFor(changes)
   const ts = hlcNow()
-  const ops: Op[] = []
-  for (const { entity, entityId, patch } of changes) {
-    for (const [field, value] of Object.entries(patch)) {
-      ops.push({ id: crypto.randomUUID(), entity, entityId, field, value, ts, device })
-    }
-  }
-  if (ops.length === 0) return
   await db.transaction('rw', mutationTables(), async () => {
+    if (rt) {
+      changes = await withNotePairs(rt, changes, ts, device)
+      // The pair adds a projection and a merged document: check them too (e2ee).
+      checkEncryptedSize(changes)
+    }
+    const ops: Op[] = []
+    for (const { entity, entityId, patch } of changes) {
+      for (const [field, value] of Object.entries(patch)) {
+        ops.push({ id: crypto.randomUUID(), entity, entityId, field, value, ts, device })
+      }
+    }
     // The author of local edits, read inside the transaction (activity log).
     const actor = ((await db.meta.get('userId'))?.value as string | undefined) ?? ''
-    await applyOps(ops, { actor })
+    await applyOps(ops, { actor, local: true })
+    // One pending document per field (design D3): a newer state supersedes the queued one.
+    const docOps = ops.filter((o) => isDocField(o.entity, o.field))
+    if (docOps.length) {
+      const stale = await db.outbox
+        .filter((o) => docOps.some((d) => d.entity === o.entity && d.entityId === o.entityId && d.field === o.field))
+        .primaryKeys()
+      if (stale.length) await db.outbox.bulkDelete(stale)
+    }
     await db.outbox.bulkAdd(ops)
     await db.meta.put({ key: 'hlc', value: ts })
   })
   for (const fn of mutationListeners) fn()
 }
+
+/**
+ * Load the document code when a batch writes a note document, or a plain-text
+ * note of a task that already has a document (it must be folded in). Plain
+ * notes of plain tasks never load it.
+ */
+async function richTextFor(changes: Change[]): Promise<RichText | null> {
+  const notes = changes.filter((c) => c.entity === 'task' && ('notes_doc' in c.patch || 'description' in c.patch))
+  if (notes.length === 0) return null
+  if (notes.some((c) => 'notes_doc' in c.patch)) return loadRichText()
+  const rows = await db.tasks.bulkGet(notes.map((c) => c.entityId))
+  return rows.some((t) => t?.notes_doc) ? loadRichText() : null
+}
+
+/**
+ * Keep notes_doc and description a pair in every local batch (design D2/D3):
+ * a document write is merged with the stored document (so a remote change that
+ * arrived while the editor held an older copy is never undone) and carries its
+ * projection; a plain-text write to a task that has a document is folded into it
+ * with this batch's clock. Refuses a document over the size cap.
+ */
+async function withNotePairs(rt: RichText, changes: Change[], ts: number, device: string): Promise<Change[]> {
+  const out: Change[] = []
+  for (const c of changes) {
+    if (c.entity !== 'task' || !('notes_doc' in c.patch || 'description' in c.patch)) {
+      out.push(c)
+      continue
+    }
+    const row = await db.tasks.get(c.entityId)
+    const stored = row?.notes_doc ?? ''
+    const patch = { ...c.patch }
+    if ('notes_doc' in patch) {
+      const doc = rt.mergeDocs(stored, String(patch.notes_doc ?? ''))
+      patch.notes_doc = doc
+      if (doc && rt.isReadable(doc)) patch.description = rt.projectDoc(doc)
+    } else if (stored && rt.isReadable(stored)) {
+      patch.notes_doc = rt.foldText(stored, String(patch.description ?? ''), ts, device)
+      patch.description = rt.projectDoc(patch.notes_doc as string)
+    }
+    if (typeof patch.notes_doc === 'string' && patch.notes_doc.length > MAX_DOC_CHARS) throw new DocTooLargeError(patch.notes_doc.length)
+    // The projection is an ordinary string field: it must fit the 64 KB value cap.
+    if (typeof patch.description === 'string' && patch.notes_doc !== undefined && JSON.stringify(patch.description).length > MAX_TEXT_VALUE) {
+      throw new DocTooLargeError(JSON.stringify(patch.description).length, MAX_TEXT_VALUE)
+    }
+    out.push({ ...c, patch })
+  }
+  return out
+}
+
+/**
+ * Bring a note's document up to date when it is opened (design D2 and Migration
+ * Plan): a legacy note (no document) becomes one built from description, a
+ * newer plain-text write is folded in, an unpaired projection is refreshed. The
+ * fold is deterministic, so devices doing this concurrently converge. Returns
+ * true when something was written.
+ */
+export async function foldNote(taskId: string): Promise<boolean> {
+  const rt = await loadRichText()
+  const task = await db.tasks.get(taskId)
+  if (!task || task.deleted_at) return false
+  if (!task.notes_doc) {
+    if (!task.description) return false
+    const c = task._clock?.description ?? { ts: 0, device: '' }
+    const doc = rt.foldText('', task.description, c.ts, c.device)
+    if (doc.length > MAX_DOC_CHARS) return false
+    hlcSeed(c.ts)
+    await mutate('task', taskId, { notes_doc: doc })
+    return true
+  }
+  const patch = reconcileNote(rt, task)
+  if (!patch) return false
+  hlcSeed(Math.max(task._clock?.description?.ts ?? 0, task._clock?.notes_doc?.ts ?? 0))
+  await mutate('task', taskId, patch)
+  return true
+}
+
 
 /**
  * Relative reminders follow their task's due time (OpenSpec change `reminders`,
@@ -259,6 +404,12 @@ function checkEncryptedSize(changes: Change[]): void {
   if (!encryptionSnapshot().enabled) return
   for (const { entity, entityId, patch } of changes) {
     for (const [field, value] of Object.entries(patch)) {
+      // A note document (ASCII envelope) has its own, larger cap: its ciphertext
+      // must fit MaxDocBytes (collaborative-rich-text).
+      if (typeof value === 'string' && isDocField(entity, field) && isContentField(entity, field)) {
+        if (value.length > MAX_DOC_CHARS_ENCRYPTED) throw new DocTooLargeError(value.length, MAX_DOC_CHARS_ENCRYPTED)
+        continue
+      }
       if (typeof value === 'string' && value.length > MAX_PLAINTEXT_BYTES / 4 && isContentField(entity, field) && byteLength(value) > MAX_PLAINTEXT_BYTES) {
         throw new PlaintextTooLongError(entity, entityId, field)
       }
@@ -413,7 +564,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * tombstones are new. `section_id` is deliberately absent: every copy lands in a
  * different project, and changing a task's project clears its section (board-view).
  */
-const COPY_FIELDS = ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'position', 'created_at'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'position', 'created_at'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
@@ -433,6 +584,8 @@ function copyTasks(
     // assigned in the destination; the server would refuse it otherwise.
     // An unassigned copy needs no op (null is the default; rows synced before the
     // field existed hold undefined, which must never be sent).
+    // A copy carries the note's document only when there is one (collaborative-rich-text).
+    if (typeof patch.notes_doc !== 'string' || !patch.notes_doc) delete patch.notes_doc
     if (typeof patch.assignee_id !== 'string') delete patch.assignee_id
     else if (!assignable.has(patch.assignee_id)) patch.assignee_id = null
     patch.project_id = projectId

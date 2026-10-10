@@ -15,6 +15,7 @@ To add more people, keep sign-up closed and create single-use invitation links i
 
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`.
+- Every variable in the [configuration table](../../README.md#configuration) can be set in `.env`; the compose file passes them to the container. With `docker run`, pass them with `-e`.
 - To build locally instead of pulling: replace `image: ghcr.io/pixari/opentodo:latest` with `build: .`.
 
 ## Plain `docker run`
@@ -77,7 +78,7 @@ Troubleshooting "live updates disconnected" (the status pill says **Polling** in
 
 Reminders are shown in the app on every device and, for devices that enable notifications in **Settings → Notifications**, sent as web push so a closed app still notifies. Nothing needs configuring: on first use the server generates a VAPID key pair at `<data>/push_vapid.pem` (mode 0600). Keep it with the database: it is included in backup archives and restored with them, and existing subscriptions only work with the key they were created for.
 
-Sending a push is the one outbound request the server makes: it goes to the push service the user's own browser chose when it subscribed (Google, Mozilla, Apple…), carries an encrypted payload the push service cannot read, and by default contains only ids (the device opts in to task titles). Browsers require https for push, so set `OPENTODO_BASE_URL` to your public https URL (it is also sent as the VAPID contact). To forbid outbound traffic set `OPENTODO_PUSH=off`: the push routes answer 404, no push is sent, and reminders are still shown in the app.
+Push is the only outbound traffic that is on by default (webhooks, backups to S3 or WebDAV, single sign-on and email to task contact only what you configure; see [Privacy](../../README.md#privacy)). A push goes to the push service the user's own browser chose when it subscribed (Google, Mozilla, Apple…), carries an encrypted payload the push service cannot read, and by default contains only ids (the device opts in to task titles). Browsers require https for push, so set `OPENTODO_BASE_URL` to your public https URL (it is also sent as the VAPID contact). To forbid outbound traffic set `OPENTODO_PUSH=off`: the push routes answer 404, no push is sent, and reminders are still shown in the app.
 
 ## AI assistants (MCP)
 
@@ -110,7 +111,7 @@ Deleted tasks and projects stay in the Trash, restorable, for 30 days; then the 
 
 ## Audit log
 
-The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, API tokens, invitations, exports and audit setting changes in **Settings → Audit log** (API: [docs/api.md](../api.md#audit-log)). It is stored in `opentodo.db` inside `/data`, so it is part of every backup of the volume, and it never contains task content. Nothing needs configuring:
+The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials (API tokens, app passwords, passkeys, second factors), invitations, user administration, exports, backups and setting changes in **Settings → Audit log** (API: [docs/api.md](../api.md#audit-log)). It is stored in `opentodo.db` inside `/data`, so it is part of every backup of the volume, and it never contains task content. Nothing needs configuring:
 
 - **Retention** defaults to 90 days (7–3650, set in Settings). Expired events are pruned at startup, hourly and right after you lower the retention.
 - **Client addresses** are not recorded unless you turn on address logging in Settings. Behind a reverse proxy the address is the first `X-Forwarded-For` entry, so make sure the proxy sets that header (Caddy, Traefik and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` do) and that the container is not reachable around the proxy, or a client could send its own header. Turning address logging off erases every stored address immediately.
@@ -155,4 +156,4 @@ The command needs only the data volume: shell access to the host is the proof of
 
 ## Resource usage
 
-Idle memory is around 25 MB; the binary is about 12 MB. A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty.
+Idle memory is around 20 MB (18 MB measured on a fresh instance); the static binary is about 16 MB with the web app embedded, and the image adds only the distroless base (about 2 MB). A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty.

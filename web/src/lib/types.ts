@@ -91,6 +91,13 @@ export interface Task {
    * RRULEs), kept so CalDAV clients do not lose them. Opaque; never shown or edited.
    */
   ical_extra: string | null
+  /**
+   * The note as a mergeable rich-text document (OpenSpec `collaborative-rich-text`):
+   * "" or an envelope "ydoc:v1:<base64 Yjs update>" (docs/sync.md "Mergeable
+   * documents"). `description` is its Markdown projection, written in the same
+   * batch. Rows synced before the field existed hold undefined; read it with `?? ''`.
+   */
+  notes_doc?: string
   _clock: Clock
   /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
   _e2ee?: RowEncryption
@@ -539,7 +546,7 @@ export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
-  'assignee_id', 'section_id',
+  'assignee_id', 'section_id', 'notes_doc',
 ] as const
 export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const

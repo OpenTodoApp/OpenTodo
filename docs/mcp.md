@@ -70,7 +70,7 @@ All tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `openWor
 
 `today` lists open tasks due today or earlier, overdue first; `upcoming` lists open tasks due after today. Tasks are ordered by due date and time (undated last), then priority. Tasks in archived projects are left out unless `project_id` names that project.
 
-A task in a result looks like this (`description` only in `get_task` and `search_tasks`):
+A task in a result looks like this (`description`, the note as Markdown text, only in `get_task` and `search_tasks`; the opaque rich-text document `notes_doc` is never returned):
 
 ```json
 {

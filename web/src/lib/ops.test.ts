@@ -606,6 +606,20 @@ describe('sections (board-view)', () => {
     expect((await db.tasks.get('remote'))?.section_id).toBeNull()
   })
 
+  it('new task has empty notes_doc (collaborative-rich-text) and plain notes stay plain', async () => {
+    const id = await createTask({ title: 'Plain', description: 'just text' })
+    const t = await db.tasks.get(id)
+    expect(t?.notes_doc).toBe('')
+    expect(t?.description).toBe('just text')
+    // No document op is sent until the note is edited as rich text.
+    expect((await db.outbox.toArray()).some((o) => o.field === 'notes_doc')).toBe(false)
+    await updateTask(id, { description: 'still plain' })
+    expect((await db.tasks.get(id))?.notes_doc).toBe('')
+    // A row from an older peer without the field also reads ''.
+    await applyOps([op({ entityId: 'older', field: 'title', value: 'x', ts: 1, device: 'Z' })])
+    expect((await db.tasks.get('older'))?.notes_doc).toBe('')
+  })
+
   it('unknown entity is ignored', async () => {
     const future = { id: 'f1', entity: 'checklist', entityId: 'c1', field: 'name', value: 'x', ts: 1, device: 'Z' } as unknown as Op
     await expect(applyOps([future, op({ entityId: 'known', field: 'title', value: 'kept', ts: 1, device: 'Z' })])).resolves.toBeUndefined()

@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { removeLabel, resolveLabels } from '../lib/labels'
 import { createSubtask, deleteTask, setTaskCompleted, setTaskParent, updateTask } from '../lib/ops'
@@ -18,6 +18,11 @@ import { AssigneePicker } from './AssigneePicker'
 import { markTaskNotificationsRead } from '../lib/notifications'
 import { HistoryPanel } from './HistoryPanel'
 import { TaskConversation } from './TaskConversation'
+import { Markdown } from './Markdown'
+
+// The rich-text editor and its libraries are a separate chunk, fetched when a
+// note is first opened (collaborative-rich-text, task 3.1).
+const NotesEditor = lazy(() => import('./NotesEditor'))
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 1, label: 'P1', cls: 'text-red-600 border-red-500' },
@@ -42,7 +47,6 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
 }) {
   const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
   const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
   const [parentError, setParentError] = useState<string | null>(null)
 
   // Open, non-deleted tasks of the same project: the candidates for the parent picker.
@@ -71,9 +75,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   useEffect(() => {
     if (task) {
       setTitle(task.title)
-      setDescription(task.description)
     }
-  }, [task?.id, task?.title, task?.description]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [task?.id, task?.title]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => setParentError(null), [taskId])
   // Opening a task reads its notifications (task-assignment); works offline.
@@ -87,9 +90,6 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     const t = title.trim()
     if (t && t !== task.title) void updateTask(task.id, { title: t })
     else setTitle(task.title)
-  }
-  const commitDescription = () => {
-    if (description !== task.description) void updateTask(task.id, { description })
   }
   // A move into another sharing scope creates a copy (project-sharing); follow it.
   const moveTo = async (projectId: string | null) => {
@@ -147,14 +147,11 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
           aria-label="Title"
         />
-        <textarea
-          className="input min-h-28 resize-y"
-          placeholder="Notes…"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          onBlur={commitDescription}
-          aria-label="Description"
-        />
+        <NotesBoundary task={task} readOnly={readOnly}>
+          <Suspense fallback={<NotesPreview text={task.description} />}>
+            <NotesEditor key={task.id} task={task} readOnly={readOnly} />
+          </Suspense>
+        </NotesBoundary>
 
         <Field label="Project">
           <select className="input" aria-label="Project" value={task.project_id ?? ''} onChange={(e) => void moveTo(e.target.value || null)}>
@@ -306,4 +303,46 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   )
+}
+
+/** The note as rendered Markdown while the editor chunk loads. */
+function NotesPreview({ text }: { text: string }) {
+  return (
+    <div className="notes-host" aria-busy="true">
+      <div className="notes-editor">{text ? <Markdown source={text} /> : <p className="text-slate-400">Notes…</p>}</div>
+    </div>
+  )
+}
+
+/** Plain-text notes, the fallback when the editor cannot load (e.g. its chunk is missing offline). */
+function PlainNotes({ task, readOnly }: { task: Task; readOnly: boolean }) {
+  const [text, setText] = useState(task.description)
+  useEffect(() => setText(task.description), [task.id, task.description])
+  return (
+    <textarea
+      className="input min-h-28 resize-y"
+      placeholder="Notes…"
+      value={text}
+      disabled={readOnly}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={() => {
+        if (text !== task.description) void updateTask(task.id, { description: text })
+      }}
+      aria-label="Notes"
+    />
+  )
+}
+
+/** Falls back to plain-text notes when the rich-text editor fails to load or render. */
+class NotesBoundary extends Component<{ task: Task; readOnly: boolean; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true }
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children
+    return <PlainNotes task={this.props.task} readOnly={this.props.readOnly} />
+  }
 }

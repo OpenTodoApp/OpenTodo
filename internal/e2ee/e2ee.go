@@ -36,7 +36,7 @@ const Placeholder = "Encrypted item"
 // task.labels holds label ids, so the label names are encrypted instead).
 // Keep in step with CONTENT_FIELDS in web/src/lib/e2ee.ts.
 var ContentFields = map[string][]string{
-	"task":    {"title", "description", "ical_extra"},
+	"task":    {"title", "description", "ical_extra", "notes_doc"},
 	"project": {"name"},
 	"label":   {"name"},
 	"section": {"name"},

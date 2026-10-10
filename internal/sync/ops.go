@@ -5,9 +5,12 @@
 package sync
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/pixari/opentodo/internal/recurrence"
@@ -37,6 +40,10 @@ const (
 	MaxValueBytes    = 64 * 1024
 	MaxIDLen         = 64
 	MaxFutureSkewMs  = 5 * 60 * 1000
+	// MaxDocBytes caps a kDoc value (OpenSpec change collaborative-rich-text): the
+	// length of the envelope string, i.e. 256 KB of base64 text. Every other kind
+	// keeps MaxValueBytes.
+	MaxDocBytes = 256 * 1024
 )
 
 type kind int
@@ -67,7 +74,52 @@ const (
 	// kNullableText is null or any string, bounded by MaxValueBytes like every
 	// value (task.ical_extra, OpenSpec change caldav).
 	kNullableText
+	// kDoc is an opaque, mergeable document (OpenSpec change
+	// collaborative-rich-text, docs/sync.md "Mergeable documents"): "" (no
+	// document) or an envelope "<format>:v<n>:<base64>" of at most MaxDocBytes
+	// characters. The server checks only the envelope shape and that the payload
+	// is base64 (standard or URL alphabet, padding optional); it never decodes
+	// the document, so a client format (or an end-to-end encrypted value) can
+	// change without a server change.
+	kDoc
 )
+
+// docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
+// version, e.g. "ydoc:v1:" (a Yjs update) or "enc:v1:" (e2ee ciphertext).
+var docEnvelope = regexp.MustCompile(`^[a-z][a-z0-9]{0,15}:v[0-9]{1,3}:`)
+
+// DocFields lists the kDoc fields as "entity.field". Readers that present
+// values to people (history, webhooks; internal/activity keeps its own copy)
+// leave these out: the field's plain-text projection (task.description for
+// task.notes_doc) carries the readable content.
+var DocFields = map[string]bool{"task.notes_doc": true}
+
+// IsDocField reports whether entity.field holds an opaque document.
+func IsDocField(entity, field string) bool { return DocFields[entity+"."+field] }
+
+// ValidDoc reports whether s is an acceptable kDoc value (see kDoc).
+func ValidDoc(s string) bool {
+	if s == "" {
+		return true
+	}
+	if len(s) > MaxDocBytes {
+		return false
+	}
+	m := docEnvelope.FindStringIndex(s)
+	if m == nil {
+		return false
+	}
+	payload := strings.TrimRight(s[m[1]:], "=")
+	if payload == "" {
+		return false
+	}
+	enc := base64.RawStdEncoding
+	if strings.ContainsAny(payload, "-_") {
+		enc = base64.RawURLEncoding
+	}
+	_, err := enc.DecodeString(payload)
+	return err == nil
+}
 
 // MaxReminderOffset bounds reminder.offset_minutes: one year before or after the due time.
 const MaxReminderOffset = 525600
@@ -115,6 +167,10 @@ var Schema = map[string]map[string]kind{
 		// Unmapped iCalendar content lines of the task's VTODO (OpenSpec change
 		// caldav, design D3): opaque text, stored and synced, never shown.
 		"ical_extra": kNullableText,
+		// The note as a mergeable rich-text document (OpenSpec change
+		// collaborative-rich-text); additive. description stays its Markdown
+		// projection, written by clients in the same batch. Opaque here.
+		"notes_doc": kDoc,
 	},
 	// section: a named, ordered container inside one project (OpenSpec change
 	// board-view). It lives in the sharing scope of its project like a task does;
@@ -220,7 +276,12 @@ func Validate(op Op) error {
 	if !ok {
 		return fmt.Errorf("%w: unknown field %q for %s", ErrInvalidOp, op.Field, op.Entity)
 	}
-	if len(op.Value) == 0 || len(op.Value) > MaxValueBytes {
+	limit := MaxValueBytes
+	if k == kDoc {
+		// The JSON string adds its quotes; the envelope length is checked by checkKind.
+		limit = MaxDocBytes + 2
+	}
+	if len(op.Value) == 0 || len(op.Value) > limit {
 		return fmt.Errorf("%w: value for %s.%s missing or too large", ErrInvalidOp, op.Entity, op.Field)
 	}
 	if !json.Valid(op.Value) {
@@ -343,6 +404,11 @@ func checkKind(k kind, raw json.RawMessage) error {
 		var s string
 		if err := json.Unmarshal(raw, &s); err != nil || !utf8.ValidString(s) {
 			return errors.New("must be null or a string")
+		}
+	case kDoc:
+		var s string
+		if err := json.Unmarshal(raw, &s); isNull || err != nil || !ValidDoc(s) {
+			return fmt.Errorf(`must be "" or a document envelope "<format>:v<n>:<base64>" of at most %d characters`, MaxDocBytes)
 		}
 	case kInstant:
 		if isNull {
