@@ -217,9 +217,11 @@ func (s *Service) Start(ctx context.Context, uid string, data []byte, opts Optio
 		s.release(uid)
 		return nil, err
 	}
+	// The caller gets a snapshot: the running job mutates its own copy.
+	snapshot := *job
 	s.wg.Add(1)
 	go s.run(uid, job, plan)
-	return job, nil
+	return &snapshot, nil
 }
 
 func capErrors(errs []RowError) []RowError {

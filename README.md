@@ -38,7 +38,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 
 - **No subscription, no lock-in.** Free software under the AGPL. Nobody can paywall your task list or shut it down with the company.
 - **Local-first.** The app keeps a full copy of your data on every device and works entirely offline. The server only syncs, backs up and, later, shares.
-- **Your data, one folder.** Everything lives in a single `/data` volume: one SQLite file. Back that up and you have backed up everything. Export to JSON any time from Settings.
+- **Your data, one folder.** Everything lives in a single `/data` volume: one SQLite file. Back that up and you have backed up everything. Export to JSON any time from Settings, and import it (or a CSV, or another app's export) on any instance.
 - **Tiny footprint.** One container, one static binary, around 12 MB. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no build step at runtime.
 - **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts. Sign-up is closed by default after the owner account is created; add people with single-use invitation links from **Settings → Members**.
 - **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today. Press `?` in the app for the full list.
@@ -62,10 +62,11 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs. Live push: a change on one device shows up on the others within a second or two, with polling as the fallback |
 | Accounts | First-run owner setup, email + password sign-in, sessions, optional open sign-up |
 | API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
+| Import | **Settings → Import data** (`g` `Shift+I`): the app's own JSON export (exact round trip between instances), CSV with documented columns, and JSON exports of other task managers; a preview before anything is written, duplicate detection, per-row errors, undo of a whole import. See [docs/import.md](docs/import.md) |
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), filter queries, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), filter queries, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, passkeys and OIDC, optional end-to-end encryption.
 
 ## Quick start
 

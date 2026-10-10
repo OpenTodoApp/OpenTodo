@@ -25,11 +25,11 @@
 ## 4. Web app
 
 - [x] 4.1 `lib/api.ts` wrappers for preview, start, jobs, undo; verify typecheck (`npm run build`)
-- [ ] 4.2 Settings → Import screen: file picker, detected format and override, options (target project, time zone defaulting to the browser zone, sections, duplicates, errors), preview table with per-row outcomes and warnings, confirm, progress polling, job history with undo; verify in the browser flow that a CSV import appears in views without reload and that every control is reachable with Tab/Enter
+- [x] 4.2 Settings → Import screen: file picker, detected format and override, options (target project, time zone defaulting to the browser zone, sections, duplicates, errors), preview table with per-row outcomes and warnings, confirm, progress polling, job history with undo; verify in the browser flow that a CSV import appears in views without reload and that every control is reachable with Tab/Enter
 - [x] 4.3 Offline behaviour: picker disabled with explanation when `useSyncStatus` reports offline; last job list remains visible; verify `importScreen.test.tsx` renders the offline state (`npm test`)
 - [ ] 4.4 Keyboard: `g i` opens Import from anywhere, listed in the `?` help; verify in the browser flow
 
 ## 5. Integration and docs
 
-- [ ] 5.1 End-to-end: export from instance A, import into empty instance B, export B, compare; then import a CSV, undo it, confirm a second device hides the undone tasks after sync; verify the run finishes with no console errors and `go test ./...` plus `npm test` green
-- [ ] 5.2 README feature list, `ROADMAP.md` status for `data-import`, `CHANGELOG.md` Unreleased entry; verify links resolve and `make check` passes
+- [x] 5.1 End-to-end: export from instance A, import into empty instance B, export B, compare; then import a CSV, undo it, confirm a second device hides the undone tasks after sync; verify the run finishes with no console errors and `go test ./...` plus `npm test` green
+- [x] 5.2 README feature list, `ROADMAP.md` status for `data-import`, `CHANGELOG.md` Unreleased entry; verify links resolve and `make check` passes

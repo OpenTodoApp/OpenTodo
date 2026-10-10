@@ -22,6 +22,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       const target = e.target as HTMLElement | null
       const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
       if (typing) return
+      // Pressing Shift on its own (for `g` then Shift+I) must not end the `g` sequence.
+      if (e.key === 'Shift') return
       if (e.key === 'g') {
         pendingG = true
         setTimeout(() => (pendingG = false), 800)
