@@ -286,6 +286,8 @@ func (s *Service) Deactivate(ctx context.Context, actorID, targetID string) (*Ad
 				ON CONFLICT(user_id) DO UPDATE SET deactivated_at = excluded.deactivated_at`, []any{target.ID, now}},
 			{"DELETE FROM sessions WHERE user_id = ?", []any{target.ID}},
 			{"DELETE FROM api_tokens WHERE user_id = ?", []any{target.ID}},
+			// CalDAV app passwords are revoked too (OpenSpec `caldav`).
+			{"UPDATE app_passwords SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL", []any{now, target.ID}},
 			{"UPDATE invitations SET revoked_at = ? WHERE created_by = ? AND accepted_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
 			{"UPDATE password_resets SET revoked_at = ? WHERE user_id = ? AND used_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
 		} {

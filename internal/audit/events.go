@@ -35,6 +35,9 @@ const (
 	PasskeyDeletedName     Name = "passkey.deleted"
 	TokenCreatedName       Name = "token.created"
 	TokenRevokedName       Name = "token.revoked"
+	// CalDAV app passwords (OpenSpec `caldav`).
+	AppPasswordCreatedName Name = "app_password.created"
+	AppPasswordRevokedName Name = "app_password.revoked"
 	InvitationCreatedName  Name = "invitation.created"
 	InvitationAcceptedName Name = "invitation.accepted"
 	InvitationRevokedName  Name = "invitation.revoked"
@@ -63,6 +66,7 @@ var Names = []Name{
 	MFAEnrolledName, MFADisabledName, MFAResetName, MFAChallengeFailedName,
 	PasskeyRegisteredName, PasskeyDeletedName,
 	TokenCreatedName, TokenRevokedName,
+	AppPasswordCreatedName, AppPasswordRevokedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	RoleChangedName, SettingsChangedName,
 	IdentityLinkedName, IdentityUnlinkedName,
@@ -80,6 +84,7 @@ var PersonalNames = []Name{
 	MFAEnrolledName, MFADisabledName, MFAResetName, MFAChallengeFailedName,
 	PasskeyRegisteredName, PasskeyDeletedName,
 	TokenCreatedName, TokenRevokedName,
+	AppPasswordCreatedName, AppPasswordRevokedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	PasswordResetCompletedName, PasswordChangedName,
 }
@@ -118,23 +123,25 @@ const (
 // add a key that could hold a field of a synced entity, a password, a token
 // secret, a one-time code or a recovery code.
 var allowedDetailKeys = map[string]bool{
-	"method":        true, // sign-in method: password, register, passkey, oidc
-	"email":         true, // snapshot of the account's email (readable after deletion)
-	"reason":        true, // short failure reason code
-	"token_id":      true,
-	"token_name":    true,
-	"invitation_id": true,
-	"invited_email": true, // email an invitation is bound to, if any
-	"passkey_id":    true,
-	"passkey_name":  true,
-	"setting":       true, // settings key, e.g. audit.retention_days
-	"from":          true, // previous value of a setting or role
-	"to":            true, // new value of a setting or role
-	"provider":      true, // identity provider name
-	"format":        true, // export format
-	"count":         true, // number of exported events
-	"backup_id":     true,
-	"reset_id":      true, // id of a password reset link (never its secret)
+	"method":            true, // sign-in method: password, register, passkey, oidc
+	"email":             true, // snapshot of the account's email (readable after deletion)
+	"reason":            true, // short failure reason code
+	"token_id":          true,
+	"token_name":        true,
+	"app_password_id":   true,
+	"app_password_name": true,
+	"invitation_id":     true,
+	"invited_email":     true, // email an invitation is bound to, if any
+	"passkey_id":        true,
+	"passkey_name":      true,
+	"setting":           true, // settings key, e.g. audit.retention_days
+	"from":              true, // previous value of a setting or role
+	"to":                true, // new value of a setting or role
+	"provider":          true, // identity provider name
+	"format":            true, // export format
+	"count":             true, // number of exported events
+	"backup_id":         true,
+	"reset_id":          true, // id of a password reset link (never its secret)
 }
 
 // Event is one security-relevant occurrence. Build it with a constructor.
@@ -239,6 +246,18 @@ func TokenCreated(userID, tokenID, name string) Event {
 // TokenRevoked records a revoked API token.
 func TokenRevoked(userID, tokenID, name string) Event {
 	return ev(TokenRevokedName, Success, userID, "", "token_id", tokenID, "token_name", name)
+}
+
+// ---- CalDAV app passwords ----
+
+// AppPasswordCreated records a new CalDAV app password (never its secret).
+func AppPasswordCreated(userID, id, name string) Event {
+	return ev(AppPasswordCreatedName, Success, userID, "", "app_password_id", id, "app_password_name", name)
+}
+
+// AppPasswordRevoked records a revoked CalDAV app password.
+func AppPasswordRevoked(userID, id, name string) Event {
+	return ev(AppPasswordRevokedName, Success, userID, "", "app_password_id", id, "app_password_name", name)
 }
 
 // ---- invitations ----

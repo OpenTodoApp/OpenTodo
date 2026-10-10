@@ -64,6 +64,9 @@ const (
 	kOffsetMinutes
 	// kInstant is null or a positive Unix millisecond timestamp (reminder.fire_at).
 	kInstant
+	// kNullableText is null or any string, bounded by MaxValueBytes like every
+	// value (task.ical_extra, OpenSpec change caldav).
+	kNullableText
 )
 
 // MaxReminderOffset bounds reminder.offset_minutes: one year before or after the due time.
@@ -109,6 +112,9 @@ var Schema = map[string]map[string]kind{
 		// additive. A reference to a deleted, foreign or unknown section is a
 		// display rule on clients ("No section"), never rejected on the sync path.
 		"section_id": kNullableString,
+		// Unmapped iCalendar content lines of the task's VTODO (OpenSpec change
+		// caldav, design D3): opaque text, stored and synced, never shown.
+		"ical_extra": kNullableText,
 	},
 	// section: a named, ordered container inside one project (OpenSpec change
 	// board-view). It lives in the sharing scope of its project like a task does;
@@ -319,6 +325,14 @@ func checkKind(k kind, raw json.RawMessage) error {
 		var n int64
 		if err := json.Unmarshal(raw, &n); err != nil || n < -MaxReminderOffset || n > MaxReminderOffset {
 			return fmt.Errorf("must be null or an integer from -%d to %d", MaxReminderOffset, MaxReminderOffset)
+		}
+	case kNullableText:
+		if isNull {
+			return nil
+		}
+		var s string
+		if err := json.Unmarshal(raw, &s); err != nil || !utf8.ValidString(s) {
+			return errors.New("must be null or a string")
 		}
 	case kInstant:
 		if isNull {
