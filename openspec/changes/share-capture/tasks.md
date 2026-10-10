@@ -3,7 +3,7 @@
 ## 1. Share target and capture screen
 
 - [x] 1.1 Add `share_target` (GET `/share`, params title/text/url) to the manifest in `web/vite.config.ts`; verify the built `manifest.webmanifest` contains it and `npm run build` passes
-- [ ] 1.2 `web/src/lib/share.ts`: parse and sanitise the payload (title ≤ 500, text ≤ 16 KB with note, http(s)-only URL, URL-from-text fallback); verify `share.test.ts` covers `javascript:` drop, truncation and URL extraction (`npm test`)
+- [x] 1.2 `web/src/lib/share.ts`: parse and sanitise the payload (title ≤ 500, text ≤ 16 KB with note, http(s)-only URL, URL-from-text fallback); verify `share.test.ts` covers `javascript:` drop, truncation and URL extraction (`npm test`)
 - [ ] 1.3 `web/src/app/ShareCapture.tsx` and the `/share` route: quick-add title field, description, project picker, Save on Enter, Cancel on Escape, popup close vs navigate; verify in the browser that `/share?title=Interesting%20article&text=quoted&url=https://example.org/post` saves a task with the expected description and returns to the Inbox
 - [ ] 1.4 Signed-out flow: hold the payload in memory, route through sign-in, return to the capture screen; verify browser flow on a signed-out device ends on a prefilled capture screen
 - [ ] 1.5 Offline check: open `/share` with the network off in the installed app, save, reconnect; verify the task reaches a second device after sync (browser flow)
