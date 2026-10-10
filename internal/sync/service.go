@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"sort"
 	"time"
+
+	"github.com/pixari/opentodo/internal/notify"
 )
 
 // Service persists ops and materializes current field values.
@@ -17,6 +19,8 @@ type Service struct {
 	now      func() time.Time
 	observer Observer
 	notifier *Notifier
+	// sinks receive assignment events after commit (task-assignment design D4).
+	sinks notify.Multi
 }
 
 // FieldChange is one field's transition within a batch. From is nil (JSON null)
@@ -195,11 +199,11 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	if err := tx.Commit(); err != nil {
 		return res, err
 	}
-	if s.observer != nil {
-		if changes := tracker.changes(); len(changes) > 0 {
-			s.observer(ctx, changes)
-		}
+	changes := tracker.changes()
+	if s.observer != nil && len(changes) > 0 {
+		s.observer(ctx, changes)
 	}
+	s.emitAssignments(ctx, userID, nowMs, changes)
 	return res, nil
 }
 

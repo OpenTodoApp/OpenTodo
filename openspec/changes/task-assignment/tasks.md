@@ -10,7 +10,7 @@ Prerequisite: `project-sharing` is archived (scopes, memberships, per-op rejecti
 
 ## 2. Notification hook (server)
 
-- [ ] 2.1 `internal/notify` sink interface, post-commit emission from `Apply` when `assignee != author`, in-app sink writing `notifications`; migration `0003_assignment.sql`; verify `TestAssignmentEmitsNotificationAfterCommit` via `go test ./...`
+- [x] 2.1 `internal/notify` sink interface, post-commit emission from `Apply` when `assignee != author`, in-app sink writing `notifications`; migration `0003_assignment.sql`; verify `TestAssignmentEmitsNotificationAfterCommit` via `go test ./...`
 - [ ] 2.2 `GET /api/v1/notifications` and `POST /api/v1/notifications/{id}/read` behind `requireAuth`, 404 for other users' rows, start-up retention sweep; verify `TestNotificationRoutesAuthAndOwnership` via `go test ./...`
 - [ ] 2.3 Document field, rejection reason and routes in `docs/api.md`; verify examples match handler payloads and `make check` passes
 
