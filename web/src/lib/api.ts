@@ -1,6 +1,6 @@
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, Op, Passkey, User,
+  AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, Op, Passkey, PushSubscriptionStatus, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -46,10 +46,19 @@ export const api = {
     request<{ user: User }>('POST', '/api/v1/auth/register', invitation ? { email, name, password, invitation } : { email, name, password }),
   login: (email: string, password: string) => request<{ user: User }>('POST', '/api/v1/auth/login', { email, password }),
   logout: () => request<void>('POST', '/api/v1/auth/logout'),
-  sync: (device: string, cursor: number, ops: Op[]) =>
+  /** `tzOffset` (minutes east of UTC) lets REST writes recompute relative reminders in this zone. */
+  sync: (device: string, cursor: number, ops: Op[], tzOffset?: number) =>
     request<{ applied: number; ops: Op[]; cursor: number; hasMore: boolean; serverTime: number; generation?: string }>(
-      'POST', '/api/v1/sync', { device, cursor, ops },
+      'POST', '/api/v1/sync', tzOffset === undefined ? { device, cursor, ops } : { device, cursor, ops, tzOffset },
     ),
+  // Web push (OpenSpec change `reminders`). 404 when the operator turned push off.
+  pushKey: (device?: string) =>
+    request<{ publicKey: string; subscription?: PushSubscriptionStatus | null }>(
+      'GET', `/api/v1/push/vapid-key${device ? `?device=${encodeURIComponent(device)}` : ''}`,
+    ),
+  pushSubscribe: (body: { deviceId: string; endpoint: string; keys: { p256dh: string; auth: string }; includeContent: boolean }) =>
+    request<{ subscription: PushSubscriptionStatus }>('POST', '/api/v1/push/subscriptions', body),
+  pushUnsubscribe: (id: string) => request<void>('DELETE', `/api/v1/push/subscriptions/${encodeURIComponent(id)}`),
   listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
   createToken: (name: string) => request<{ token: { id: string; name: string }; secret: string }>('POST', '/api/v1/tokens', { name }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),

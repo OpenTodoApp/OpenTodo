@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import { clearLocalData } from '../lib/db'
+import { unsubscribeOnSignOut } from '../lib/push'
 import { startSync, stopSync } from '../lib/sync'
 import type { AuthStatus, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
@@ -44,6 +45,8 @@ export function App() {
 
   const logout = useCallback(async () => {
     try {
+      // Remove this device's push subscription first (the server also drops it with the session).
+      await unsubscribeOnSignOut()
       await api.logout()
     } finally {
       stopSync()

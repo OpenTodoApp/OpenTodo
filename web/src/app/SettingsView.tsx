@@ -7,6 +7,7 @@ import { BackupsPanel } from './BackupsPanel'
 import { QuickAddSettingsSection } from './QuickAddSettings'
 import { CalendarSettingsSection } from './CalendarSettings'
 import { MembersPanel } from './MembersPanel'
+import { NotificationsSettings } from './NotificationsSettings'
 import { SecuritySettings } from './ActivityPanel'
 import { SecurityPanel } from './SecurityPanel'
 import { navigate } from './router'
@@ -73,6 +74,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       </section>
 
       <CalendarSettingsSection />
+
+      <NotificationsSettings />
 
       <SecurityPanel />
       <section className="space-y-2">

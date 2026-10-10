@@ -46,6 +46,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallbackDenylist: [/^\/api\//, /^\/healthz/],
         cleanupOutdatedCaches: true,
+        // Reminder push, notification actions and the shown set (OpenSpec `reminders`).
+        importScripts: ['push-sw.js'],
       },
     }),
   ],

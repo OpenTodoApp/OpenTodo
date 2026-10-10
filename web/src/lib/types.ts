@@ -131,6 +131,19 @@ export interface Reminder {
   _clock: Clock
 }
 
+/** A device's push subscription as the server reports it (never the endpoint or keys). */
+export interface PushSubscriptionStatus {
+  id: string
+  deviceId: string
+  includeContent: boolean
+  createdAt: number
+  lastOkAt: number | null
+  lastError: string
+  failures: number
+  /** The push service failed repeatedly: the device should re-enable notifications. */
+  needsRenewal: boolean
+}
+
 export interface User {
   id: string
   email: string

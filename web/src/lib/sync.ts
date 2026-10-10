@@ -97,7 +97,7 @@ async function runOnce(): Promise<void> {
     for (;;) {
       const cursor = await getMeta<number>('cursor', 0)
       const batch = await db.outbox.orderBy('local').limit(BATCH).toArray()
-      const res = await api.sync(device, cursor, batch.map(({ local: _local, ...op }) => op))
+      const res = await api.sync(device, cursor, batch.map(({ local: _local, ...op }) => op), -new Date().getTimezoneOffset())
       hlcObserveServerTime(res.serverTime)
       if (batch.length > 0) {
         await db.outbox.bulkDelete(batch.map((o) => o.local as number))
