@@ -68,7 +68,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | JSON export | `bootstrap-core-platform` |
 | ✅ | JSON / CSV import, including export files from popular commercial task apps | `data-import` |
 | ✅ | Scheduled backups to local disk, S3 or WebDAV | `backups` |
-| 📝 | CalDAV two-way sync (Apple Reminders, Thunderbird, Nextcloud) | `caldav` |
+| ✅ | CalDAV two-way sync (Apple Reminders, Thunderbird, Nextcloud) | `caldav` |
 | ✅ | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
 | 📝 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 
