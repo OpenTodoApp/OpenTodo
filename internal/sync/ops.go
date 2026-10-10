@@ -85,6 +85,9 @@ var Schema = map[string]map[string]kind{
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
 		"recurrence": kRecurrence,
 		"series_id":  kNullableString,
+		// Account id of the assignee or null (OpenSpec change task-assignment);
+		// additive. Apply checks it against the task scope's membership at receipt.
+		"assignee_id": kNullableString,
 	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {

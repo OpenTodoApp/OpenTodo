@@ -3,10 +3,17 @@ package sync
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
+
+	"github.com/pixari/opentodo/internal/ids"
 )
+
+// ServerDevice is the device id of ops the server writes itself: REST writes and
+// the unassignments that follow a member's departure.
+const ServerDevice = "server"
 
 // Membership management (OpenSpec change `project-sharing`, design D5).
 // Membership is authorization data that lives outside the op log: it changes only
@@ -53,6 +60,12 @@ type MemberChange struct {
 	From     string
 	To       string
 	Audience []string
+	// Unassigned lists the tasks whose assignee was cleared by server-written ops
+	// because the target left the project (task-assignment design D3).
+	Unassigned []string
+	// changes are the winning field changes of those ops, handed to the observer
+	// after commit like any Apply batch.
+	changes []Change
 }
 
 // ValidMemberRole reports whether role can be granted through add or change-role
@@ -201,6 +214,9 @@ func (s *Service) membershipTx(ctx context.Context, actorID, projectID string, f
 	}
 	if err := tx.Commit(); err != nil {
 		return MemberChange{}, err
+	}
+	if s.observer != nil && len(ch.changes) > 0 {
+		s.observer(ctx, ch.changes)
 	}
 	seen := map[string]bool{}
 	for _, u := range append(append([]string{actorID}, before...), after...) {
@@ -379,8 +395,66 @@ func (s *Service) RemoveMember(ctx context.Context, actorID, projectID, targetID
 		if _, err := tx.ExecContext(ctx, `DELETE FROM member_backfills WHERE project_id = ? AND user_id = ?`, projectID, targetID); err != nil {
 			return MemberChange{}, err
 		}
-		return MemberChange{From: current, To: ""}, nil
+		unassigned, changes, err := s.unassignDeparted(ctx, tx, actorID, projectID, targetID)
+		if err != nil {
+			return MemberChange{}, err
+		}
+		return MemberChange{From: current, To: "", Unassigned: unassigned, changes: changes}, nil
 	})
+}
+
+// unassignDeparted writes, inside the membership transaction, an
+// `assignee_id = null` op with device "server" for every task of the project
+// currently assigned to the departed user (task-assignment design D3). The ops
+// are ordinary log entries authored by the actor, so every member's devices
+// receive them on their next pull and converge without client logic. Each op is
+// stamped with server time, or just after the value it replaces when that value
+// carries a (clamped) future timestamp, so the unassignment always wins on the
+// server; assignments to the departed user that arrive later are refused by
+// Apply with reason not_a_member.
+func (s *Service) unassignDeparted(ctx context.Context, tx *sql.Tx, actorID, projectID, departed string) ([]string, []Change, error) {
+	scope := ProjectScope(projectID)
+	want, err := json.Marshal(departed)
+	if err != nil {
+		return nil, nil, err
+	}
+	rows, err := tx.QueryContext(ctx, `SELECT entity_id, ts FROM scope_fields
+		WHERE scope_id = ? AND entity = 'task' AND field = 'assignee_id' AND value = ? ORDER BY entity_id`, scope, string(want))
+	if err != nil {
+		return nil, nil, err
+	}
+	type hit struct {
+		id string
+		ts int64
+	}
+	var hits []hit
+	for rows.Next() {
+		var h hit
+		if err := rows.Scan(&h.id, &h.ts); err != nil {
+			rows.Close()
+			return nil, nil, err
+		}
+		hits = append(hits, h)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	if len(hits) == 0 {
+		return nil, nil, nil
+	}
+	nowMs := s.now().UnixMilli()
+	tracker := newChangeTracker(actorID)
+	out := make([]string, 0, len(hits))
+	for _, h := range hits {
+		op := Op{ID: ids.New(), Entity: "task", EntityID: h.id, Field: "assignee_id", Value: json.RawMessage("null"),
+			TS: max(nowMs, h.ts+1), Device: ServerDevice}
+		if _, err := writeOp(ctx, tx, actorID, op, scope, nowMs, tracker); err != nil {
+			return nil, nil, err
+		}
+		out = append(out, h.id)
+	}
+	return out, tracker.changes(), nil
 }
 
 // TransferOwnership makes an existing member the owner; the previous owner

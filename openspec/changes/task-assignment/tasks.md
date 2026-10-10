@@ -4,9 +4,9 @@ Prerequisite: `project-sharing` is archived (scopes, memberships, per-op rejecti
 
 ## 1. Schema and validation (server)
 
-- [ ] 1.1 Add `assignee_id` (nullable string) to the op schema in `internal/sync/ops.go` and to `docs/sync.md`; verify `TestValidateAcceptsAssigneeId` via `go test ./...`
-- [ ] 1.2 Membership validation of non-null assignments at receipt time with `not_a_member` rejections and server value echo; verify `TestAssignToNonMemberIsRejected`, `TestPersonalTaskAssigneeMustBeOwner`, `TestViewerAssignmentIsForbidden` via `go test ./...`
-- [ ] 1.3 Unassign on remove/leave in the same transaction, as `device="server"` ops; verify `TestRemovingMemberUnassignsTheirTasks` and `TestOfflineAssignmentToDepartedMemberConverges` via `go test ./...`
+- [x] 1.1 Add `assignee_id` (nullable string) to the op schema in `internal/sync/ops.go` and to `docs/sync.md`; verify `TestValidateAcceptsAssigneeId` via `go test ./...`
+- [x] 1.2 Membership validation of non-null assignments at receipt time with `not_a_member` rejections and server value echo; verify `TestAssignToNonMemberIsRejected`, `TestPersonalTaskAssigneeMustBeOwner`, `TestViewerAssignmentIsForbidden` via `go test ./...`
+- [x] 1.3 Unassign on remove/leave in the same transaction, as `device="server"` ops; verify `TestRemovingMemberUnassignsTheirTasks` and `TestOfflineAssignmentToDepartedMemberConverges` via `go test ./...`
 
 ## 2. Notification hook (server)
 

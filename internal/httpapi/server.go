@@ -648,7 +648,7 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 
 // ---- handlers: REST collections (write-through to the op log) ----
 
-const serverDevice = "server"
+const serverDevice = opsync.ServerDevice
 
 func collection(r *http.Request) (string, bool) {
 	e, ok := opsync.Plural[r.PathValue("collection")]
@@ -1031,6 +1031,9 @@ func (s *Server) writeFieldsWith(w http.ResponseWriter, r *http.Request, entity,
 		case errors.As(err, &rej) && rej.Reason == opsync.ReasonScopeChange:
 			writeError(w, http.StatusBadRequest, "scope_change",
 				"task.project_id: the target project is shared differently; create a copy there and delete this task instead")
+		case errors.As(err, &rej) && rej.Reason == opsync.ReasonNotAMember:
+			writeError(w, http.StatusBadRequest, "not_a_member",
+				"task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)")
 		case errors.As(err, &rej):
 			writeError(w, http.StatusForbidden, "forbidden", "your role on this project does not allow changing "+rej.Op.Entity+"."+rej.Op.Field)
 		default:

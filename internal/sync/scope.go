@@ -141,10 +141,12 @@ type resolver struct {
 	// batchProject is the winning project_id op per task id in the batch, used to
 	// place tasks that do not exist yet.
 	batchProject map[string]Op
+	// assignable caches "scope NUL user" -> whether user may be a task's assignee there.
+	assignable map[string]bool
 }
 
 func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolver {
-	r := &resolver{ctx: ctx, tx: tx, acc: acc, shared: map[string]bool{}, taskScope: map[string]string{}, batchProject: map[string]Op{}}
+	r := &resolver{ctx: ctx, tx: tx, acc: acc, shared: map[string]bool{}, taskScope: map[string]string{}, batchProject: map[string]Op{}, assignable: map[string]bool{}}
 	for _, op := range ops {
 		if op.Entity != "task" || op.Field != "project_id" {
 			continue
@@ -268,7 +270,40 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 			return "", ReasonScopeChange, nil
 		}
 	}
+	if op.Entity == "task" && op.Field == "assignee_id" {
+		if assignee := idValue(op.Value); assignee != "" {
+			ok, err := r.canBeAssigned(scope, assignee)
+			if err != nil {
+				return "", "", err
+			}
+			if !ok {
+				return "", ReasonNotAMember, nil
+			}
+		}
+	}
 	return scope, "", nil
+}
+
+// canBeAssigned reports whether user may be the assignee of a task in scope
+// (task-assignment design D2): a current member of a shared project, or the
+// author themselves in their personal scope. Membership is server-only data, so
+// the answer is the same for every device that sends the op at the same moment.
+func (r *resolver) canBeAssigned(scope, user string) (bool, error) {
+	if scope == r.acc.personal {
+		return user == r.acc.userID, nil
+	}
+	key := scope + "\x00" + user
+	if v, ok := r.assignable[key]; ok {
+		return v, nil
+	}
+	pid, _ := strings.CutPrefix(scope, "project:")
+	var one int
+	err := r.tx.QueryRowContext(r.ctx, `SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?`, pid, user).Scan(&one)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return false, err
+	}
+	r.assignable[key] = err == nil
+	return err == nil, nil
 }
 
 // restoreOps returns the current winning op of every refused field the author
