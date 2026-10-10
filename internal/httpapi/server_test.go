@@ -396,6 +396,23 @@ func TestProjectPatchRejectsCycle(t *testing.T) {
 	e.mustStatus(resp, 400, out)
 }
 
+// Back-to-back REST writes to one field must each take effect, even within a
+// millisecond: they share device "server", so equal timestamps would tie.
+func TestRapidPatchesAllApply(t *testing.T) {
+	e, _, clientA, _, home := projectTreeEnv(t)
+	for i := 0; i < 50; i++ {
+		want := any(home)
+		if i%2 == 1 {
+			want = nil
+		}
+		resp, out := e.do("PATCH", "/api/v1/projects/"+clientA, map[string]any{"parent_id": want})
+		e.mustStatus(resp, 200, out)
+		if out["parent_id"] != want {
+			t.Fatalf("patch %d: parent_id = %v, want %v", i, out["parent_id"], want)
+		}
+	}
+}
+
 func TestProjectPatchParentRequiresAuth(t *testing.T) {
 	e, work, clientA, _, _ := projectTreeEnv(t)
 	bare := &env{t: t, srv: e.srv, client: &http.Client{}}

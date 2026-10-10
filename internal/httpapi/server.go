@@ -31,6 +31,20 @@ type Server struct {
 	log     *slog.Logger
 	version string
 	limiter *rateLimiter
+
+	clockMu sync.Mutex
+	lastTS  int64
+}
+
+// opTS stamps REST-originated ops. They all carry device "server", so two writes
+// to one field within the same millisecond would tie under the winner rule and the
+// second would be silently dropped; like the client HLC, issue strictly increasing
+// timestamps instead.
+func (s *Server) opTS() int64 {
+	s.clockMu.Lock()
+	defer s.clockMu.Unlock()
+	s.lastTS = max(time.Now().UnixMilli(), s.lastTS+1)
+	return s.lastTS
 }
 
 // New builds the router. web may be nil when only the API is wanted (tests).
@@ -627,7 +641,7 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 // writeFields turns a REST body into ops stamped with server time and applies them.
 func (s *Server) writeFields(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int) {
-	now := time.Now().UnixMilli()
+	now := s.opTS()
 	ops := make([]opsync.Op, 0, len(body))
 	for field, value := range body {
 		ops = append(ops, opsync.Op{ID: ids.New(), Entity: entity, EntityID: id, Field: field, Value: value, TS: now, Device: serverDevice})
