@@ -256,3 +256,27 @@ func TestBackupTestEndpoint(t *testing.T) {
 		t.Fatalf("test error = %v", out)
 	}
 }
+
+// Every sync response carries the log generation; it is stable until a restore
+// changes it (simulated here by rewriting the settings row, as restore does).
+func TestSyncResponseCarriesGeneration(t *testing.T) {
+	e := newEnv(t, true)
+	e.register("a@example.com")
+	resp, out := e.do("POST", "/api/v1/sync", map[string]any{"device": "d1", "cursor": 0, "ops": []any{}})
+	e.mustStatus(resp, 200, out)
+	gen, _ := out["generation"].(string)
+	if len(gen) != 32 {
+		t.Fatalf("generation = %v", out["generation"])
+	}
+	_, out = e.do("POST", "/api/v1/sync", map[string]any{"device": "d2", "cursor": 0, "ops": []any{}})
+	if out["generation"] != gen {
+		t.Fatalf("generation not stable: %v vs %s", out["generation"], gen)
+	}
+	if _, err := e.db.Exec(`UPDATE settings SET value = 'ffffffffffffffffffffffffffffffff' WHERE key = 'generation'`); err != nil {
+		t.Fatal(err)
+	}
+	_, out = e.do("POST", "/api/v1/sync", map[string]any{"device": "d1", "cursor": 0, "ops": []any{}})
+	if out["generation"] != "ffffffffffffffffffffffffffffffff" {
+		t.Fatalf("generation after restore = %v", out["generation"])
+	}
+}

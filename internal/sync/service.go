@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -188,6 +189,18 @@ func (s *Service) Get(ctx context.Context, userID, entity, id string) (Entity, e
 		e[field] = json.RawMessage(value)
 	}
 	return e, rows.Err()
+}
+
+// Generation returns the op-log generation. It changes only when the database is
+// restored from a backup; devices that see a new value re-seed the server from
+// their local copy (docs/sync.md, "Log generation").
+func (s *Service) Generation(ctx context.Context) (string, error) {
+	var g string
+	err := s.db.QueryRowContext(ctx, `SELECT value FROM settings WHERE key = 'generation'`).Scan(&g)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return g, err
 }
 
 func (e Entity) deleted() bool {

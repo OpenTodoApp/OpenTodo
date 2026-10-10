@@ -542,6 +542,11 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	gen, err := s.sync.Generation(r.Context())
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"applied":    res.Applied,
 		"duplicates": res.Duplicates,
@@ -549,6 +554,8 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		"cursor":     cursor,
 		"hasMore":    more,
 		"serverTime": time.Now().UnixMilli(),
+		// generation changes only when the server is restored from a backup (additive field).
+		"generation": gen,
 	})
 }
 
