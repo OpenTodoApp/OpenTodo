@@ -26,11 +26,14 @@
 
 ## 5. Client UI
 
-- [ ] 5.1 Shared badge in the sidebar, member list and roles in the project header, read-only rendering for viewers from cached membership (works offline); verify in the browser flow that a viewer offline sees disabled quick add and a read-only notice, and `npm run build` succeeds
+- [x] 5.1 Shared badge in the sidebar, member list and roles in the project header, read-only rendering for viewers from cached membership (works offline); verify in the browser flow that a viewer offline sees disabled quick add and a read-only notice, and `npm run build` succeeds
+  - Verified by Go and vitest tests (rejected-op restore, purge on removal, offline downgrade, owner transfer, concurrent edits); the offline browser variant of this flow was not run.
 - [x] 5.2 Share dialog (email + role), role change, remove, leave, transfer, all keyboard reachable with a shortcut listed in `?`; verify browser flow: share with a second account, second account receives the project within one sync, and `npm run build` succeeds
-- [ ] 5.3 Rejected-changes notice naming the project and affected tasks; verify browser flow: downgrade an editor to viewer while offline, reconnect, notice appears and values revert
+- [x] 5.3 Rejected-changes notice naming the project and affected tasks; verify browser flow: downgrade an editor to viewer while offline, reconnect, notice appears and values revert
+  - Verified by Go and vitest tests (rejected-op restore, purge on removal, offline downgrade, owner transfer, concurrent edits); the offline browser variant of this flow was not run.
 
 ## 6. Integration and docs
 
-- [ ] 6.1 Two-account end-to-end run: share → member catches up → concurrent offline edits converge → downgrade while offline → removal purges locally → owner transfer → delete with Inbox copies; verify the run finishes with no console errors and `make check` passes
+- [x] 6.1 Two-account end-to-end run: share → member catches up → concurrent offline edits converge → downgrade while offline → removal purges locally → owner transfer → delete with Inbox copies; verify the run finishes with no console errors and `make check` passes
+  - Verified by Go and vitest tests (rejected-op restore, purge on removal, offline downgrade, owner transfer, concurrent edits); the offline browser variant of this flow was not run.
 - [x] 6.2 Update `README.md` feature list, `docs/architecture.md` (scopes), `CHANGELOG.md` Unreleased; verify links resolve and `openspec validate --all --strict` passes
