@@ -89,6 +89,8 @@ describe('audit filters', () => {
 
   it('summarises settings changes and shortens agents', () => {
     expect(eventSummary(ev({ name: 'settings.changed', details: { setting: 'audit.log_ip', from: 'true', to: 'false' } }))).toBe('Address logging: true → false')
+    expect(eventSummary(ev({ name: 'settings.changed', details: { setting: 'mcp.enabled', from: 'false', to: 'true' } }))).toBe('AI assistants (MCP): false → true')
+    expect(eventSummary(ev({ name: 'token.created', details: { token_id: 't', token_name: 'AI assistant', token_scope: 'read' } }))).toBe('“AI assistant” (read-only)')
     expect(shortAgent('')).toBe('unknown client')
     expect(shortAgent('curl/8.5.0')).toBe('curl/8.5.0')
   })

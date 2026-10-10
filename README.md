@@ -89,6 +89,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Passkeys | Sign in without a password using your device's fingerprint, face or PIN (WebAuthn), including browser autofill; several named passkeys per account, managed in Settings → Security; needs an https `OPENTODO_BASE_URL`. The password keeps working as a fallback |
 | API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
 | Backups | Scheduled, consistent backups of the whole server to a folder, S3-compatible storage or WebDAV, with retention, optional encryption (AES-256-GCM, argon2id) and `opentodo restore`; devices re-sync their newer edits after a restore. Owner only, in **Settings → Backups**. See [docs/backups.md](docs/backups.md) |
+| AI assistants (MCP) | Read-only [Model Context Protocol](docs/mcp.md) endpoint so an assistant can answer "what is on my plate today?": off until the owner enables it, read-scoped API tokens, five tools and `opentodo://` resources, sees only the token owner's own and shared projects, never contacts anything itself |
 | Webhooks | Signed outbound webhooks on task and project events for Home Assistant, n8n or a Telegram relay: retries with backoff, delivery log, test ping, private-network protection, see [docs/webhooks.md](docs/webhooks.md) |
 | Import | **Settings → Import data** (`g` `Shift+I`): the app's own JSON export (exact round trip between instances), CSV with documented columns, and JSON exports of other task managers; a preview before anything is written, duplicate detection, per-row errors, undo of a whole import. See [docs/import.md](docs/import.md) |
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
@@ -158,6 +159,7 @@ All settings are environment variables with safe defaults. See [`.env.example`](
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `OPENTODO_BACKUP_*` | unset | Optional presets for scheduled backups, applied once; Settings wins afterwards. See [docs/backups.md](docs/backups.md#environment-presets) |
 | `OPENTODO_IMPORT_MAX_MB` | `20` | Largest file accepted by [import](docs/import.md), 1–200 |
+| `OPENTODO_MCP` | unset | `true` presets the [AI assistants (MCP) endpoint](docs/mcp.md) on the first start; afterwards Settings → AI assistants decides. Off by default |
 | `OPENTODO_PUSH` | `on` | `off` disables web push for [reminders](docs/reminders.md): no requests to push services; reminders still show in the app |
 | `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days a deleted task or project stays in the Trash before the server purges it; `0` never purges automatically |
 | `OPENTODO_OIDC_*` | unset | Optional single sign-on settings (`ISSUER`, `CLIENT_ID`, `CLIENT_SECRET`, `DISPLAY_NAME`, `SSO_ONLY`) that override and lock the fields in Settings → Single sign-on. See [docs/self-hosting/sso.md](docs/self-hosting/sso.md) |

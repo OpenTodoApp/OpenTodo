@@ -70,7 +70,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Scheduled backups to local disk, S3 or WebDAV | `backups` |
 | 📝 | CalDAV two-way sync (Apple Reminders, Thunderbird, Nextcloud) | `caldav` |
 | ✅ | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
-| 📝 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
+| ✅ | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 
 ## 7. Security and access
 
