@@ -1,4 +1,5 @@
--- Passkeys (WebAuthn credentials). Additive; independent of 0002. The WebAuthn
+-- Passkeys (WebAuthn credentials). Additive and self-contained: it depends only on
+-- users from 0001, not on 0002 (invitations) or 0003 (webhooks). The WebAuthn
 -- user handle is users.id, so no column is added to users. Nothing here is
 -- synced: credentials are server-side account data.
 CREATE TABLE passkeys (
