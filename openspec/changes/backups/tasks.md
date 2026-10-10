@@ -9,7 +9,7 @@
 ## 2. Snapshot, archive and encryption
 
 - [x] 2.1 `internal/backup`: snapshot via `VACUUM INTO` a temp file while writers are active, tar + optional gzip archive with `manifest.json` first, exclusion of `secrets/` and `backups/`; verify `TestSnapshotIsConsistentUnderConcurrentWrites` and `TestArchiveExcludesSecrets` (`go test ./...`)
-- [ ] 2.2 Streaming encryption (`OTBK1` header, argon2id, AES-256-GCM 1 MiB chunks, final-chunk flag) and decryption; verify `TestEncryptDecryptRoundTrip`, `TestTamperedChunkFails`, `TestTruncatedArchiveFails` (`go test ./...`)
+- [x] 2.2 Streaming encryption (`OTBK1` header, argon2id, AES-256-GCM 1 MiB chunks, final-chunk flag) and decryption; verify `TestEncryptDecryptRoundTrip`, `TestTamperedChunkFails`, `TestTruncatedArchiveFails` (`go test ./...`)
 - [ ] 2.3 Document the archive and encryption formats byte-for-byte in `docs/backups.md`; verify a test fixture encrypted by the code is decrypted by a reference implementation in the test (`TestFormatMatchesDocumentedLayout`)
 
 ## 3. Destinations, schedule and retention
