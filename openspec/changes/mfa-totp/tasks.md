@@ -15,7 +15,7 @@
   - Done except two routes that do not exist on main: there is no password-change route and no `PUT /api/v1/settings/oidc` (`oidc-login` not merged). Whoever adds them wraps them as `s.requireAuth(s.requireFresh(h))`. Fresh-gated today: `POST /api/v1/tokens`, `POST /api/v1/invitations`, `PUT /api/v1/settings/mfa`, `DELETE /api/v1/mfa/totp`, `POST /api/v1/mfa/recovery-codes/regenerate`, `POST /api/v1/members/{id}/mfa/reset`. All three tests pass.
 - [x] 2.3 Policy `GET/PUT /api/v1/settings/mfa` (owner only) and the enrolment-restricted session check with its allowlist; verify `TestPolicyRestrictsUnenrolledSessions`, `TestPolicyRequiresOwner`
 - [x] 2.4 Enrolment routes (`enroll`, `confirm`, `DELETE totp`, `recovery-codes/regenerate`, trusted devices list/delete), owner `POST /api/v1/members/{id}/mfa/reset`, `opentodo mfa-reset <email>` subcommand; verify `TestEnrolConfirmDisable`, `TestDisableRefusedByPolicy`, `TestOwnerResetClearsEverything`, and the subcommand against a temp data dir
-- [ ] 2.5 `docs/api.md` with every route, the two-step login shape and error codes; `SECURITY.md`; verify documented payloads match handler tests
+- [x] 2.5 `docs/api.md` with every route, the two-step login shape and error codes; `SECURITY.md`; verify documented payloads match handler tests
 
 ## 3. Web app
 

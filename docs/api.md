@@ -30,20 +30,24 @@ Bearer tokens are minted by a signed-in user, so a client that only has an email
 
 Login is rate limited (10 attempts per minute per address); a token created in Settings and passed to `ot auth set-token` skips the session entirely.
 
+If the account has two-factor authentication, step 1 answers `{"mfaRequired":true,"challenge":"…"}` without a cookie. Post the challenge and a code to `POST /api/v1/auth/mfa` to get the cookie, then continue with step 2 (see [Two-factor authentication](#two-factor-authentication)). The fresh session can create the token without re-authenticating. Bearer tokens are never asked for a code.
+
 ### Endpoints
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
-| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable}` |
+| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable, mfa?}` (`mfa` when signed in, see [Two-factor authentication](#two-factor-authentication)) |
 | POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?}` → 201 `{user}` + cookie. First account becomes owner; afterwards an `invitation` secret admits one member while sign-up is closed |
-| POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie |
+| POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie, or `{mfaRequired:true, challenge, expiresAt}` and no cookie when the account has a second factor |
+| POST | `/api/v1/auth/mfa` | none | `{challenge, code}` or `{challenge, recoveryCode}`, optional `remember` → `{user}` + cookie (+ `ot_trust` cookie when `remember`) |
+| POST | `/api/v1/auth/reauth` | cookie | `{password}` or `{code}` → `{reauthAt, validForMs}`; unlocks sensitive routes for 10 minutes |
 | POST | `/api/v1/auth/passkey/options` | none | → `{publicKey}` sign-in options, see [Passkeys](#passkeys) |
 | POST | `/api/v1/auth/passkey` | none | `{credential}` → `{user}` + cookie |
 | POST | `/api/v1/auth/logout` | cookie | 204 |
-| GET | `/api/v1/me` | yes | `{user}` |
+| GET | `/api/v1/me` | yes | `{user, mfa}` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,createdAt,lastUsedAt}]}` |
-| POST | `/api/v1/tokens` | yes | `{name}` → 201 `{token, secret}` (secret shown once) |
+| POST | `/api/v1/tokens` | yes, fresh | `{name}` → 201 `{token, secret}` (secret shown once) |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
 | POST | `/api/v1/passkeys/register/options` | yes | → `{publicKey}` creation options |
 | POST | `/api/v1/passkeys/register` | yes | `{name, credential}` → 201 `{passkey}` |
@@ -51,9 +55,20 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | PATCH | `/api/v1/passkeys/{id}` | yes | `{name}` → `{passkey}` |
 | DELETE | `/api/v1/passkeys/{id}` | yes | 204 |
 | GET | `/api/v1/invitations` | owner | `{invitations:[…]}`, see [Invitations](#invitations) |
-| POST | `/api/v1/invitations` | owner | `{email?, expiresInHours?}` → 201 `{invitation, link}` (link shown once) |
+| POST | `/api/v1/invitations` | owner, fresh | `{email?, expiresInHours?}` → 201 `{invitation, link}` (link shown once) |
 | DELETE | `/api/v1/invitations/{id}` | owner | revoke a pending invitation → 204 |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid` |
+| GET | `/api/v1/mfa` | yes | `{mfa}`, see [Two-factor authentication](#two-factor-authentication) |
+| POST | `/api/v1/mfa/totp/enroll` | yes | → `{secret, uri, expiresAt}` (pending for 10 minutes; the only time the secret is returned) |
+| POST | `/api/v1/mfa/totp/confirm` | yes | `{code}` → `{recoveryCodes:[10], mfa}` (codes shown once) |
+| DELETE | `/api/v1/mfa/totp` | yes, fresh | turn the second factor off → 204 |
+| POST | `/api/v1/mfa/recovery-codes/regenerate` | yes, fresh | → `{recoveryCodes:[10]}`; every earlier code stops working |
+| GET | `/api/v1/mfa/trusted-devices` | yes | `{devices:[{id,userAgent,createdAt,expiresAt,lastUsedAt}]}` |
+| DELETE | `/api/v1/mfa/trusted-devices` | yes | forget every remembered browser → 204 |
+| DELETE | `/api/v1/mfa/trusted-devices/{id}` | yes | forget one → 204 |
+| GET | `/api/v1/settings/mfa` | owner | `{required: "none"\|"owner"\|"all"}` |
+| PUT | `/api/v1/settings/mfa` | owner, fresh | `{required}` → `{required}` |
+| POST | `/api/v1/members/{id}/mfa/reset` | owner, fresh | remove a member's second factor, recovery codes and remembered browsers → 204 |
 | GET | `/api/v1/backups` | owner | backup status, see [Backups](#backups) |
 | GET | `/api/v1/backups/settings` | owner | `{settings, secrets}` (secret presence flags only) |
 | PUT | `/api/v1/backups/settings` | owner | `{settings, secrets?}` → `{settings, secrets}` |
@@ -124,6 +139,57 @@ For sign-in, `response` carries `clientDataJSON`, `authenticatorData` and `signa
 | `rate_limited` | 429 | more than 10 requests per minute per address to `auth/login`, `auth/register`, `auth/passkey` and the invitation preview combined (one shared window), or more than 10 per minute to `auth/passkey/options` (its own window, so the sign-in screen's autofill request never uses up password attempts) |
 
 The anonymous `auth/passkey` routes apply the same `Origin` check as `auth/login`. A successful passkey sign-in sets the same `opentodo_session` cookie as a password sign-in. Bearer tokens can list, rename and delete passkeys, but a CLI cannot run a ceremony.
+
+### Two-factor authentication
+
+Accounts can add a time-based one-time password (TOTP, RFC 6238: HMAC-SHA1, 6 digits, 30-second steps) from any authenticator app. The server generates and checks the codes with its own clock and contacts nothing, so keep the host's clock synchronised (NTP). A code is accepted one step (30 s) either side of the server's time. Each code completes at most one authentication.
+
+**Profile.** `GET /api/v1/me`, `GET /api/v1/mfa` and `auth/status` (when signed in) carry:
+
+```json
+{ "mfa": { "enrolled": true, "recoveryCodesRemaining": 9, "policy": "owner", "required": true, "restricted": false } }
+```
+
+`required` means the owner's policy covers this account. `restricted` means the session may only enrol, because the account is required to have a second factor and has none yet. Bearer-token requests are never restricted.
+
+**Enrolment.** `POST /mfa/totp/enroll` returns a fresh `secret` (base32) and its provisioning `uri` (`otpauth://totp/OpenTodo:<email>?secret=…&issuer=OpenTodo&algorithm=SHA1&digits=6&period=30`). The web app renders the QR code locally. Confirm within ten minutes with `POST /mfa/totp/confirm {"code":"123456"}`. The answer contains ten recovery codes such as `ABCDE-FGH23`, shown only this once and stored as SHA-256 hashes. A recovery code can stand in for an app code at sign-in (dash and case optional) and is used up by that sign-in.
+
+**Two-step sign-in.** For an enrolled account, a correct password answers 200 with no cookie:
+
+```bash
+curl -sS -c jar -X POST "$OT/api/v1/auth/login" -H 'Content-Type: application/json' \
+  -d '{"email":"me@example.com","password":"…"}'
+# {"challenge":"Zk3…","expiresAt":1760000300000,"mfaRequired":true}
+curl -sS -c jar -X POST "$OT/api/v1/auth/mfa" -H 'Content-Type: application/json' \
+  -d '{"challenge":"Zk3…","code":"492039","remember":true}'
+# {"user":{…}} + opentodo_session cookie (+ ot_trust cookie)
+```
+
+A challenge lasts five minutes and allows five wrong codes. Each wrong code gets `401 mfa_code_invalid`; after the fifth, the challenge is gone and the next attempt gets `401 mfa_challenge_invalid`, which means "enter the password again". `remember: true` sets `ot_trust`, an `HttpOnly`, `SameSite=Lax` cookie (`Secure` on https) limited to `/api/v1/auth` and valid for a fixed 30 days. While that cookie is present, the password step starts the session directly for that account on that browser. A passkey sign-in whose authenticator reports user verification (biometric or PIN) counts as two factors and is never asked for a code. A passkey without user verification answers with the same challenge as a password.
+
+**Step-up.** For cookie sessions, the routes marked *fresh* in the table require a proof of identity within the last ten minutes. A sign-in counts, and so does `POST /auth/reauth` with `{"password":"…"}` or `{"code":"123456"}`. Otherwise they answer `403 reauth_required` and change nothing. The web app then shows a re-authentication dialog and repeats the request once. Bearer-token requests are never challenged.
+
+**Owner policy.** `PUT /settings/mfa {"required":"none"|"owner"|"all"}`. When the policy covers an account that has no second factor, sign-in still works. Every route except `GET /me`, `/mfa/*`, `/auth/reauth` and `/auth/logout` then answers `403 mfa_enrolment_required` until the account enrols. That includes `/sync`, so a device keeps its changes queued and uploads them after enrolment. An account the policy covers cannot turn its second factor off (`403 mfa_required_by_policy`).
+
+**Recovery.** The owner resets a member's second factor with `POST /members/{id}/mfa/reset`. If the owner loses both their authenticator and their recovery codes, stop the server and run `opentodo mfa-reset [--data-dir DIR] <email>` on the host (see [SECURITY.md](../SECURITY.md)). Both are recorded as `mfa.reset`.
+
+| Code | Status | When |
+| --- | --- | --- |
+| `mfa_code_invalid` | 400 | confirming enrolment with a wrong code or after the ten-minute window |
+| `mfa_code_invalid` | 401 | wrong, reused or replayed code or recovery code at `auth/mfa` or `auth/reauth` |
+| `mfa_challenge_invalid` | 401 | unknown, expired or exhausted sign-in challenge |
+| `mfa_already_enrolled` | 409 | enrol or confirm when a second factor is already active |
+| `mfa_not_enrolled` | 409 | disable or regenerate without a second factor |
+| `mfa_required_by_policy` | 403 | disabling while the owner's policy covers the account |
+| `mfa_enrolment_required` | 403 | any other route while the session is restricted |
+| `reauth_required` | 403 | a *fresh* route on a cookie session older than ten minutes since its last proof |
+| `invalid_credentials` | 401 | wrong password at `auth/reauth` |
+| `invalid_input` | 400 | missing challenge or code, empty re-authentication body, unknown policy value, `auth/reauth` with a bearer token |
+| `forbidden` | 403 | `settings/mfa` or a member reset by a non-owner |
+| `not_found` | 404 | unknown member id or trusted device |
+| `rate_limited` | 429 | more than 10 requests per minute per address to `auth/mfa`, or to `auth/reauth` (separate windows) |
+
+Wrong codes are recorded as `mfa.challenge_failed` with a reason (`wrong_code`, `wrong_recovery_code`) and never the code. Enrolment, disabling and resets are recorded as `mfa.enrolled`, `mfa.disabled` and `mfa.reset`, and policy changes as `settings.changed` (`setting: mfa.required`). A completed sign-in is `login.succeeded` with method `password+totp`, `password+recovery_code`, `password+trusted_device` or `passkey+totp`.
 
 ### Task fields
 
@@ -612,14 +678,20 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
 - Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB).
-- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey` and the invitation preview share one window of 10 per minute; `auth/passkey/options` has its own window of 10 per minute; invitation creation is limited to 20 per hour per account.
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey` and the invitation preview share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; invitation creation is limited to 20 per hour per account.
 
 ### Error codes
 
 | Code | Status | Where |
 | --- | --- | --- |
 | `unauthorized` | 401 | any protected route without a valid session or token |
-| `forbidden` | 403 | invitation management, backups, audit log, audit settings or webhook policy by a non-owner |
+| `forbidden` | 403 | invitation management, backups, audit log, audit settings, webhook policy, two-factor policy or member reset by a non-owner |
+| `reauth_required` | 403 | a sensitive route on a cookie session that has not proved its identity in the last ten minutes; see [Two-factor authentication](#two-factor-authentication) |
+| `mfa_enrolment_required` | 403 | the owner's policy requires a second factor that this account has not set up yet |
+| `mfa_required_by_policy` | 403 | turning off a second factor that the policy requires |
+| `mfa_code_invalid` | 400/401 | wrong, reused or expired one-time or recovery code |
+| `mfa_challenge_invalid` | 401 | expired or exhausted sign-in challenge: enter the password again |
+| `mfa_already_enrolled` / `mfa_not_enrolled` | 409 | enrolling twice, or disabling/regenerating without a second factor |
 | `bad_origin` | 403 | cookie-authenticated write from another origin |
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
