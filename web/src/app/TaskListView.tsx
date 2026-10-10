@@ -5,6 +5,7 @@ import { compareDue, formatDateHeading, todayISO } from '../lib/dates'
 import { resolveLabels } from '../lib/labels'
 import { createSubtask, createTask, deleteTask, setTaskCompleted, setTaskParent, updateTask } from '../lib/ops'
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
+import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
 import { flattenTree, type Tree } from '../lib/tree'
 import type { Label, Priority, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
@@ -14,8 +15,9 @@ import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { SubProjects } from './SubProjects'
+import { estimateFocus, isGPending } from './signals'
 
-type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' }>
+type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 interface Row {
@@ -69,7 +71,19 @@ export function TaskListView({ route }: { route: ListRoute }) {
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
 
-  const tasks = useMemo(() => {
+  // Duration filter chips (OpenSpec `time-blocking`): per view, per device.
+  const filterKey = durationFilterKey(route)
+  const [duration, setDuration] = useState<DurationFilter | null>(() => (filterKey ? loadDurationFilter(filterKey) : null))
+  useEffect(() => {
+    setDuration(filterKey ? loadDurationFilter(filterKey) : null)
+  }, [filterKey])
+  const chooseDuration = useCallback((kind: DurationFilter | null) => {
+    if (!filterKey) return
+    setDuration(kind)
+    saveDurationFilter(filterKey, kind)
+  }, [filterKey])
+
+  const viewTasks = useMemo(() => {
     // Tasks of archived projects stay out of the cross-project views.
     const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
     const all = allTasks.filter((t) => !t.project_id || !hidden.has(t.project_id) || (route.view === 'project' && t.project_id === route.id))
@@ -88,6 +102,12 @@ export function TaskListView({ route }: { route: ListRoute }) {
         return all.filter((t) => !t.completed_at && t.labels.includes(route.id)).sort(byPosition)
     }
   }, [allTasks, projects, route, today])
+
+  const tasks = useMemo(() => {
+    if (!duration || !filterKey) return viewTasks
+    const keep = durationPredicate(duration)
+    return viewTasks.filter(keep)
+  }, [viewTasks, duration, filterKey])
 
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed)
   const toggleCollapsed = useCallback((id: string, force?: boolean) => {
@@ -248,7 +268,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
         else setSelectedId(null)
         return
       }
-      if (typing) return
+      if (typing || isGPending()) return
       const idx = rows.findIndex((r) => r.task.id === selectedId)
       const row = idx >= 0 ? rows[idx] : undefined
       switch (e.key) {
@@ -304,6 +324,13 @@ export function TaskListView({ route }: { route: ListRoute }) {
           if (row) {
             e.preventDefault()
             setPickerFor(row.task.id)
+          }
+          break
+        case 'e':
+          if (row) {
+            e.preventDefault()
+            estimateFocus.request(row.task.id)
+            setOpenId(row.task.id)
           }
           break
         case '1':
@@ -371,7 +398,13 @@ export function TaskListView({ route }: { route: ListRoute }) {
             </div>
           )}
 
-          {rows.length === 0 && <EmptyState view={route.view} />}
+          {filterKey && <DurationChips active={duration} onChange={chooseDuration} />}
+
+          {rows.length === 0 && (duration ? (
+            <p className="px-2 py-8 text-center text-sm text-slate-400">
+              No task matches this duration filter. <button className="underline" onClick={() => chooseDuration(null)}>Clear the filter</button>
+            </p>
+          ) : <EmptyState view={route.view} />)}
 
           {groups.map((g) => (
             <section key={g.key} className="mb-4">
@@ -472,6 +505,44 @@ function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number;
         onBlur={() => { if (!value) onClose() }}
       />
     </form>
+  )
+}
+
+/** Views that offer the duration filter, each with its own per-device setting. */
+function durationFilterKey(route: ListRoute): string | null {
+  switch (route.view) {
+    case 'inbox':
+    case 'today':
+    case 'upcoming':
+      return route.view
+    case 'project':
+      return `project:${route.id}`
+    default:
+      return null
+  }
+}
+
+function DurationChips({ active, onChange }: { active: DurationFilter | null; onChange: (kind: DurationFilter | null) => void }) {
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Duration filter">
+      {DURATION_FILTERS.map((f) => (
+        <button
+          key={f.kind}
+          type="button"
+          title={f.title}
+          aria-pressed={active === f.kind}
+          onClick={() => onChange(active === f.kind ? null : f.kind)}
+          className={`rounded-full border px-2.5 py-0.5 text-xs ${active === f.kind ? 'border-emerald-500 bg-emerald-50 font-medium text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'}`}
+        >
+          {f.label}
+        </button>
+      ))}
+      {active && (
+        <button type="button" className="btn-ghost px-2 py-0.5 text-xs" onClick={() => onChange(null)} data-clear-duration>
+          ✕ Clear filter
+        </button>
+      )}
+    </div>
   )
 }
 

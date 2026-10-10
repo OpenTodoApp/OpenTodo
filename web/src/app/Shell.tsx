@@ -11,6 +11,7 @@ import { TaskListView } from './TaskListView'
 import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { SyncStatus } from './SyncStatus'
+import { isGPending, setGPending } from './signals'
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -48,18 +49,20 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       // Pressing Shift on its own (for `g` then Shift+I) must not end the `g` sequence.
       if (e.key === 'Shift') return
       if (e.key === 'g') {
-        pendingG = true
-        setTimeout(() => (pendingG = false), 800)
+        setGPending(true)
         return
       }
-      if (pendingG) {
-        pendingG = false
+      if (isGPending()) {
+        // Cleared after this event: list and calendar handlers check the flag for the same key.
+        setTimeout(() => setGPending(false), 0)
         if (e.key === 'i') navigate({ view: 'inbox' })
         if (e.key === 't') navigate({ view: 'today' })
         if (e.key === 'u') navigate({ view: 'upcoming' })
         if (e.key === 'c') navigate({ view: 'completed' })
         if (e.key === 'l') navigate({ view: 'labels' })
         if (e.key === 'v') navigate({ view: 'views' })
+        if (e.key === 'd') navigate({ view: 'day' })
+        if (e.key === 'w') navigate({ view: 'week' })
         if (e.key === 'f') {
           // The Filter view focuses its input on mount; keep this "f" out of it.
           e.preventDefault()
@@ -119,7 +122,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <SavedViewRoute id={route.id} />
           ) : (
             // App renders the invite and capture screens itself; a stray /invite or /share route inside the shell falls back to the Inbox.
-            <TaskListView route={route.view === 'invite' || route.view === 'share' ? { view: 'inbox' } : route} />
+            <TaskListView route={route.view === 'invite' || route.view === 'share' ? { view: 'inbox' } : route.view === 'day' || route.view === 'week' ? { view: 'today' } : route} />
           )}
         </div>
       </main>
@@ -127,8 +130,6 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     </div>
   )
 }
-
-let pendingG = false
 
 function ShortcutHelp({ onClose }: { onClose: () => void }) {
   useEffect(() => {

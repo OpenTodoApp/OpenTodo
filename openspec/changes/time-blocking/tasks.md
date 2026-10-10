@@ -13,8 +13,8 @@
 
 ## 2. Estimate UI and duration filter
 
-- [ ] 2.1 Detail panel estimate control with presets and shorthand, `e` shortcut from a selected row, duration badge in rows; verify browser flow: `e`, type `1h30`, Enter shows `1h 30m` on the row; `npm run build` passes
-- [ ] 2.2 `durationPredicate` in `src/lib/filters.ts` and filter chips in Inbox, Today, Upcoming and project views persisted per device; verify `filters.test.ts` for all four kinds (`npm test`) and browser flow: filter survives an offline reload
+- [x] 2.1 Detail panel estimate control with presets and shorthand, `e` shortcut from a selected row, duration badge in rows; verify browser flow: `e`, type `1h30`, Enter shows `1h 30m` on the row; `npm run build` passes
+- [x] 2.2 `durationPredicate` in `src/lib/filters.ts` and filter chips in Inbox, Today, Upcoming and project views persisted per device; verify `filters.test.ts` for all four kinds (`npm test`) and browser flow: filter survives an offline reload
 
 ## 3. Calendar grid
 
