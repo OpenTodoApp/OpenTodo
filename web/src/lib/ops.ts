@@ -8,6 +8,7 @@ import { relativeFireAt } from './reminderTime'
 import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
+import { GAP } from './ordering'
 import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Reminder, type Section, type Task, type View } from './types'
 
 let devicePromise: Promise<string> | null = null
@@ -276,10 +277,20 @@ export async function createTask(input: {
   if (input.section_id) extra.section_id = input.section_id
   await mutate('task', id, {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
-    priority: input.priority ?? 4, due, labels: input.labels ?? [], position: now, created_at: now,
+    priority: input.priority ?? 4, due, labels: input.labels ?? [], position: await nextTaskPosition(now), created_at: now,
     completed_at: null, deleted_at: null, estimate_minutes: input.estimate_minutes ?? null, ...extra,
   })
   return id
+}
+
+/**
+ * New tasks are appended at the end of their list (manual-ordering): the creation
+ * time, unless some task was moved past it (a move to the bottom writes last + GAP),
+ * then just past the largest position anywhere. One indexed read.
+ */
+async function nextTaskPosition(now: number): Promise<number> {
+  const last = await db.tasks.orderBy('position').last()
+  return last && Number.isFinite(last.position) && last.position >= now ? last.position + GAP : now
 }
 
 /** A new subtask lives in its parent's project, with default priority and no due date. */

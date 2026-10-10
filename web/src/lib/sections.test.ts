@@ -62,20 +62,20 @@ describe('per-device preferences', () => {
 
 describe('ordering helpers', () => {
   it('appends after the maximum and finds midpoints', () => {
-    expect(positionAtEnd([{ id: 'a', position: 3 }, { id: 'b', position: 9 }])).toBe(10)
+    expect(positionAtEnd([{ id: 'a', position: 3 }, { id: 'b', position: 9 }])).toBe(1009)
     expect(positionAtEnd([{ id: 'a', position: 3 }], 'a', 77)).toBe(77)
     expect(positionBetween(1, 2)).toBe(1.5)
-    expect(positionBetween(null, 5)).toBe(4)
-    expect(positionBetween(5, null)).toBe(6)
+    expect(positionBetween(null, 5)).toBe(-995)
+    expect(positionBetween(5, null)).toBe(1005)
     expect(positionBetween(null, null, 11)).toBe(11)
   })
 
   it('steps one place up or down', () => {
     const list = [{ id: 'a', position: 1 }, { id: 'b', position: 2 }, { id: 'c', position: 3 }]
     expect(positionForStep(list, 'c', -1)).toBe(1.5)
-    expect(positionForStep(list, 'b', -1)).toBe(0)
+    expect(positionForStep(list, 'b', -1)).toBe(-999)
     expect(positionForStep(list, 'a', 1)).toBe(2.5)
-    expect(positionForStep(list, 'b', 1)).toBe(4)
+    expect(positionForStep(list, 'b', 1)).toBe(1003)
     expect(positionForStep(list, 'a', -1)).toBeNull()
     expect(positionForStep(list, 'c', 1)).toBeNull()
   })

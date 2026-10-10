@@ -553,7 +553,7 @@ describe('sections (board-view)', () => {
     await moveTaskToSection(t, doing)
     const moved = await db.tasks.get(t)
     expect(moved?.section_id).toBe(doing)
-    expect(moved?.position).toBe(5_000_000_000_001)
+    expect(moved?.position).toBe(5_000_000_001_000)
     const ops = await db.outbox.toArray()
     expect(ops.map((o) => o.field).sort()).toEqual(['position', 'section_id'])
     expect(ops[0].ts).toBe(ops[1].ts)

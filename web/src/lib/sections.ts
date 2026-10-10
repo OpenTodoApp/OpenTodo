@@ -4,7 +4,7 @@
 // in the local `meta` table and are never synced (design D5).
 import { db, getMeta, setMeta } from './db'
 import { mutate, mutateMany, type Change } from './ops'
-import { byPosition, positionAtEnd, positionForStep } from './ordering'
+import { byPosition, planStep, positionAtEnd } from './ordering'
 import type { Section, Task } from './types'
 
 /** Live sections of a project, in display order. */
@@ -33,15 +33,17 @@ export async function renameSection(id: string, name: string): Promise<void> {
 }
 
 /**
- * Move a section one place up (-1) or down (+1) among its project's sections: one
- * position op between the new neighbours. Returns false when it cannot move.
+ * Move a section one place up (-1) or down (+1), or to the first or last place,
+ * among its project's sections: usually one position op between the new
+ * neighbours; when that gap is exhausted, the few neighbours around it are
+ * renumbered in the same batch (manual-ordering D2). Returns false when it cannot move.
  */
-export async function reorderSection(id: string, delta: -1 | 1): Promise<boolean> {
+export async function reorderSection(id: string, delta: -1 | 1 | 'top' | 'bottom'): Promise<boolean> {
   const s = await db.sections.get(id)
   if (!s || s.deleted_at) return false
-  const position = positionForStep(await projectSections(s.project_id), id, delta)
-  if (position === null) return false
-  await mutate('section', id, { position })
+  const plan = planStep(await projectSections(s.project_id), id, delta)
+  if (!plan) return false
+  await mutateMany(plan.map((c) => ({ entity: 'section' as const, entityId: c.id, patch: { position: c.position } })))
   return true
 }
 

@@ -4,6 +4,7 @@
 // part of the input set makes its children roots, and a cycle produced by
 // concurrent moves is broken identically on every device by treating the member
 // whose `parent_id` has the newest clock as a root. No repair op is ever issued.
+import { compareByPosition } from './ordering'
 
 export interface ClockStamp {
   ts: number
@@ -17,7 +18,7 @@ export interface TreeOptions<T> {
   parentId: (item: T) => string | null | undefined
   /** LWW clock of the parent pointer; defaults to `item._clock?.parent_id`. */
   clockOf: (item: T) => ClockStamp | undefined
-  /** Sibling order; defaults to `position`, then `created_at`, then id. */
+  /** Sibling order; defaults to `position`, then id (manual-ordering). */
   compare: (a: T, b: T) => number
 }
 
@@ -40,7 +41,8 @@ function defaults<T>(opts?: Partial<TreeOptions<T>>): TreeOptions<T> {
     compare: opts?.compare ?? ((a, b) => {
       const ra = a as unknown as Rec
       const rb = b as unknown as Rec
-      return (ra.position ?? 0) - (rb.position ?? 0) || (ra.created_at ?? 0) - (rb.created_at ?? 0) || (ra.id < rb.id ? -1 : ra.id > rb.id ? 1 : 0)
+      // The manual order rule (manual-ordering D1): position, then id.
+      return compareByPosition({ id: ra.id, position: ra.position ?? 0 }, { id: rb.id, position: rb.position ?? 0 })
     }),
   }
 }
