@@ -8,7 +8,7 @@ import { relativeFireAt } from './reminderTime'
 import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
-import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Reminder, type Task, type View } from './types'
+import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Reminder, type Section, type Task, type View } from './types'
 
 let devicePromise: Promise<string> | null = null
 
@@ -40,6 +40,7 @@ function tableFor(entity: Entity) {
     case 'label': return db.labels
     case 'view': return db.views
     case 'reminder': return db.reminders
+    case 'section': return db.sections
     default: return db.tasks
   }
 }
@@ -50,7 +51,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null,
-  assignee_id: null,
+  assignee_id: null, section_id: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -64,8 +65,11 @@ const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = {
   task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null,
   created_at: 0, deleted_at: null,
 }
+const SECTION_DEFAULTS: Omit<Section, 'id' | '_clock'> = {
+  name: '', project_id: '', position: 0, created_at: 0, deleted_at: null,
+}
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
-  project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS,
+  project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
 }
 
 /**
@@ -88,7 +92,7 @@ export async function applyOps(ops: Op[]): Promise<void> {
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
       const table = tableFor(entity)
-      const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder) | undefined
+      const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder | Section) | undefined
       const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing
@@ -253,6 +257,8 @@ export async function createTask(input: {
   recurrence?: string | null
   /** Assignee account id (task-assignment); only sent when set. */
   assignee_id?: string | null
+  /** Section of `project_id` (board-view); only sent when set. */
+  section_id?: string | null
 }): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
@@ -266,6 +272,8 @@ export async function createTask(input: {
     if (!due) due = { date: firstOccurrence(parsed.rule, todayISO()) }
   }
   if (input.assignee_id) extra.assignee_id = input.assignee_id
+  // Only tasks created in a section carry the field (board-view).
+  if (input.section_id) extra.section_id = input.section_id
   await mutate('task', id, {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: now, created_at: now,
@@ -310,7 +318,11 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
   await mutate('task', id, { parent_id: parentId, position })
 }
 
-/** Fields a cross-scope copy carries over (project-sharing); ids, tree links and tombstones are new. */
+/**
+ * Fields a cross-scope copy carries over (project-sharing); ids, tree links and
+ * tombstones are new. `section_id` is deliberately absent: every copy lands in a
+ * different project, and changing a task's project clears its section (board-view).
+ */
 const COPY_FIELDS = ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'position', 'created_at'] as const
 
 /**
@@ -387,10 +399,15 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
         const parent = all.find((t) => t.id === task.parent_id)
         if (!parent || parent.project_id !== patch.project_id) next.parent_id = null
       }
+      // A section belongs to one project: a project change clears it in the same
+      // batch (board-view), unless the caller picked a section of the new project.
+      if (!('section_id' in patch) && task.section_id) next.section_id = null
       const changes: Change[] = [{ entity: 'task', entityId: id, patch: next }]
       for (const d of descendants(id, all)) {
         const t = all.find((x) => x.id === d)
-        if (t && t.project_id !== patch.project_id) changes.push({ entity: 'task', entityId: d, patch: { project_id: patch.project_id } })
+        if (t && t.project_id !== patch.project_id) {
+          changes.push({ entity: 'task', entityId: d, patch: t.section_id ? { project_id: patch.project_id, section_id: null } : { project_id: patch.project_id } })
+        }
       }
       await mutateMany(changes)
       return id

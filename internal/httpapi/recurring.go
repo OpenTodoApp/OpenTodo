@@ -127,6 +127,10 @@ func (s *Server) recurringCompletion(ctx context.Context, uid, id string, body m
 			record[f] = v
 		}
 	}
+	// The record stays in the series' column (board-view); only sent when set, like the client.
+	if sid := idOf(merged["section_id"]); sid != "" {
+		record["section_id"] = mustJSON(sid)
+	}
 	nd := due{Date: next}
 	if cur != nil {
 		nd.Time = cur.Time

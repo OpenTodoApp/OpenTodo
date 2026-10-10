@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section']
 
 export interface Op {
   id: string
@@ -68,6 +68,26 @@ export interface Task {
    * a personal task, and refuses anything else with reason `not_a_member`.
    */
   assignee_id: string | null
+  /**
+   * Section of the task's project or null (OpenSpec `board-view`). A reference to a
+   * deleted section, a section of another project or one not received yet is shown
+   * as "No section" and never repaired by a write (design D3).
+   */
+  section_id: string | null
+  _clock: Clock
+}
+
+/**
+ * A named, ordered container inside one project (OpenSpec `board-view`): a heading
+ * in the list view, a column on the board. `project_id` never changes after creation.
+ */
+export interface Section {
+  id: string
+  name: string
+  project_id: string
+  position: number
+  created_at: number
+  deleted_at: number | null
   _clock: Clock
 }
 
@@ -299,7 +319,9 @@ export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
+  'assignee_id', 'section_id',
 ] as const
+export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const
 
 // ---- backups (owner-only server settings; never synced) ----
@@ -558,6 +580,8 @@ export interface PurgeCounts {
   tasks: number
   projects: number
   reminders: number
+  /** Sections of purged projects (board-view); absent from older servers. */
+  sections?: number
 }
 
 /** Payload of an `assigned` notification (task-assignment); names resolved by the server. */
