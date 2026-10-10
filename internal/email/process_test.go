@@ -158,7 +158,7 @@ func TestUnknownSecretDiscarded(t *testing.T) {
 	cases := map[string]Outcome{
 		string(message("zzzzzzzzzzzzzzzzzzzzzzzzzz", "<u1@x>", "x@y.example", "Secret subject", "secret body")): UnknownInbox,
 		string(message("short", "<u2@x>", "x@y.example", "Secret subject", "secret body")):                      UnknownInbox,
-		"From: x@y.example\r\nTo: someone@example.com\r\nSubject: Secret subject\r\n\r\nsecret body":                Unroutable,
+		"From: x@y.example\r\nTo: someone@example.com\r\nSubject: Secret subject\r\n\r\nsecret body":            Unroutable,
 	}
 	for raw, want := range cases {
 		if out, err := h.proc.Process(h.ctx, []byte(raw)); err != nil || out != want {
