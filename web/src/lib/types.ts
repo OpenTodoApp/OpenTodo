@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label']
+export type Entity = 'project' | 'task' | 'label' | 'view'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view']
 
 export interface Op {
   id: string
@@ -63,6 +63,39 @@ export interface Label {
   name: string
   color: string
   position: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+}
+
+export type ViewKind = 'list' | 'dashboard'
+export type GroupBy = 'project' | 'due' | 'priority' | 'label' | 'none'
+export type SortBy = 'due' | 'priority' | 'position' | 'created' | 'title'
+export type SortDir = 'asc' | 'desc'
+
+export const VIEW_KINDS: readonly ViewKind[] = ['list', 'dashboard']
+export const GROUP_BY_OPTIONS: readonly GroupBy[] = ['project', 'due', 'priority', 'label', 'none']
+export const SORT_BY_OPTIONS: readonly SortBy[] = ['due', 'priority', 'position', 'created', 'title']
+export const SORT_DIR_OPTIONS: readonly SortDir[] = ['asc', 'desc']
+
+/**
+ * A saved view (OpenSpec `custom-views`): a filter query plus presentation options.
+ * The enumerations are stored as received; a value this build does not know (sent by
+ * a newer client) is kept in the row and mapped to the default when read, see
+ * `viewOptions` in lib/views.ts. `panels` holds view ids and is only used by dashboards.
+ */
+export interface View {
+  id: string
+  name: string
+  query: string
+  kind: string
+  group_by: string
+  sort_by: string
+  sort_dir: string
+  pinned: boolean
+  position: number
+  color: string
+  panels: string[]
   created_at: number
   deleted_at: number | null
   _clock: Clock
@@ -286,3 +319,8 @@ export interface ImportJob {
   finishedAt: number | null
   undoneAt: number | null
 }
+
+export const VIEW_FIELDS = [
+  'name', 'query', 'kind', 'group_by', 'sort_by', 'sort_dir', 'pinned', 'position', 'color', 'panels',
+  'created_at', 'deleted_at',
+] as const

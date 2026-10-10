@@ -1,0 +1,315 @@
+// End-to-end check of saved views (OpenSpec change `custom-views`) against a running
+// server with a FRESH data directory: saving from the Filter view, editing, grouping
+// and sort, sidebar order and counts, unpin and the g v overview, dashboards (Tab
+// between panels, live counts, removed-view placeholder, stacking), the per-device
+// start view with its fallback, and two devices converging on a view edited offline.
+// See scripts/README.md.
+import { chromium } from 'playwright'
+
+const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
+const shots = process.argv[2] ?? null
+const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
+const errors = []
+const step = (s) => console.log('·', s)
+const shot = async (page, name) => { if (shots) await page.screenshot({ path: `${shots}/${name}` }) }
+const assert = (c, msg) => { if (!c) throw new Error('ASSERT: ' + msg) }
+
+function iso(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const now = new Date()
+const TODAY = iso(now)
+const TOMORROW = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1))
+const YESTERDAY = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1))
+const LATER = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 9))
+
+async function device(name) {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } })
+  const page = await ctx.newPage()
+  page.on('pageerror', (e) => errors.push(`${name} pageerror: ${e.message}`))
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_INTERNET_DISCONNECTED|net::/.test(m.text())) errors.push(`${name} console: ${m.text()}`) })
+  page.on('dialog', (d) => d.accept())
+  return { ctx, page }
+}
+
+const A = await device('A')
+const api = A.ctx.request
+let r = await api.post(`${base}/api/v1/auth/register`, { data: { email: 'ada@example.com', name: 'Ada', password: 'correct horse battery staple' } })
+assert(r.status() === 201, 'register ' + r.status())
+const post = async (path, data) => { const res = await api.post(`${base}/api/v1/${path}`, { data }); assert(res.ok(), `${path} ${res.status()} ${await res.text()}`); return res.json() }
+const get = async (path) => (await api.get(`${base}/api/v1/${path}`)).json()
+
+step('seed labels, projects and tasks through the API')
+const work = (await post('labels', { name: 'work' })).id
+const waiting = (await post('labels', { name: 'waiting' })).id
+const errand = (await post('labels', { name: 'errand' })).id
+const pWork = (await post('projects', { name: 'Work' })).id
+const seed = [
+  { title: 'Overdue report', priority: 1, due: { date: YESTERDAY }, labels: [work], project_id: pWork },
+  { title: 'Ship release', priority: 1, due: { date: TODAY }, labels: [work], project_id: pWork },
+  { title: 'Review PR', priority: 3, due: { date: TODAY }, labels: [work] },
+  { title: 'Plan sprint', priority: 1, due: { date: TOMORROW }, labels: [work, waiting], project_id: pWork },
+  { title: 'Prepare demo', priority: 1, due: { date: TOMORROW }, labels: [work] },
+  { title: 'Quarterly goals', priority: 1, due: { date: LATER }, labels: [work] },
+  { title: 'Hear back from landlord', priority: 4, labels: [waiting] },
+  { title: 'Buy stamps', priority: 2, due: { date: TODAY }, labels: [errand] },
+  { title: 'Pick up parcel', priority: 1, due: { date: TODAY }, labels: [errand] },
+]
+for (const t of seed) await post('tasks', t)
+
+const pageA = A.page
+await pageA.goto(base)
+await pageA.getByText('Hear back from landlord').waitFor()
+
+step('Filter view: run a query, press s, save "Work tomorrow"')
+await pageA.keyboard.press('g'); await pageA.keyboard.press('f')
+const q = pageA.getByLabel('Filter query')
+await q.fill('@work & due <= tomorrow & p1')
+await q.press('Enter')
+await pageA.getByText('Plan sprint').waitFor()
+const filterCount = await pageA.locator('h1 span.text-slate-400').first().textContent()
+assert(filterCount === '4', 'filter count ' + filterCount)
+await pageA.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === 'Filter results')
+await pageA.keyboard.press('s')
+await pageA.getByLabel('View name').fill('Work tomorrow')
+await pageA.getByLabel('View name').press('Enter')
+await pageA.getByRole('heading', { name: 'Work tomorrow' }).waitFor()
+const sidebarViews = pageA.getByRole('navigation', { name: 'Views' })
+await sidebarViews.getByText('Work tomorrow').waitFor()
+const viewCount = await pageA.locator('h1 + span').first().textContent()
+assert(viewCount === '4', 'view result count ' + viewCount)
+await pageA.waitForFunction(() => [...document.querySelectorAll('nav[aria-label="Views"] button')].some((b) => b.textContent === '≡Work tomorrow4'))
+await shot(pageA, 'views-saved.png')
+
+step('Edit a saved query: / then add "& !@waiting", Enter')
+await pageA.locator('body').click({ position: { x: 900, y: 700 } })
+await pageA.keyboard.press('/')
+const vq = pageA.getByLabel('View query')
+assert(await vq.evaluate((el) => el === document.activeElement), '/ focuses the query')
+await vq.press('End')
+await vq.type(' & !@waiting')
+await vq.press('Enter')
+await pageA.waitForFunction(() => document.querySelector('h1 + span')?.textContent === '3')
+assert(!(await pageA.getByText('Plan sprint').isVisible()), 'Plan sprint filtered out')
+let serverViews = (await get('views')).views
+for (let i = 0; i < 20 && serverViews[0]?.query !== '@work & due <= tomorrow & p1 & !@waiting'; i++) {
+  await pageA.waitForTimeout(250); serverViews = (await get('views')).views
+}
+assert(serverViews[0].query === '@work & due <= tomorrow & p1 & !@waiting', 'query synced to server: ' + serverViews[0]?.query)
+const workId = serverViews[0].id
+
+step('Invalid query edit shows the parse error and keeps the saved query')
+await vq.fill('@work p1')
+await vq.press('Enter')
+await pageA.getByRole('alert').filter({ hasText: 'Expected "&" or "|" before "p1" at position 7' }).waitFor()
+await vq.press('Escape')
+assert((await vq.inputValue()) === '@work & due <= tomorrow & p1 & !@waiting', 'Esc restores the query')
+
+step('Group by due date: Overdue, Today, Tomorrow headings in order; sort by priority descending')
+await pageA.getByLabel('Group by').selectOption('due')
+await pageA.getByRole('heading', { name: 'Overdue', level: 2 }).waitFor()
+const headings = await pageA.locator('[aria-label="View results"] h2').allTextContents()
+assert(JSON.stringify(headings) === JSON.stringify(['Overdue', 'Today', 'Tomorrow']), 'headings ' + headings)
+await pageA.getByLabel('Sort by').selectOption('priority')
+await pageA.getByLabel('Sort direction').selectOption('desc')
+// keyboard reachability: options are selects in tab order after the query input
+await vq.focus()
+await pageA.keyboard.press('Tab')
+assert(await pageA.evaluate(() => document.activeElement?.getAttribute('aria-label')) === 'Group by', 'Tab reaches Group by')
+await shot(pageA, 'views-grouped.png')
+
+step('Save a second view "Waiting" and move it first in the sidebar')
+await pageA.keyboard.press('Escape')
+await pageA.locator('body').click({ position: { x: 900, y: 700 } })
+await pageA.keyboard.press('g'); await pageA.keyboard.press('f')
+await pageA.getByLabel('Filter query').fill('@waiting')
+await pageA.getByLabel('Filter query').press('Enter')
+await pageA.getByText('Hear back from landlord').waitFor()
+await pageA.getByRole('button', { name: 'Save view' }).click()
+await pageA.getByLabel('View name').fill('Waiting')
+await pageA.getByLabel('View name').press('Enter')
+await pageA.getByRole('heading', { name: 'Waiting' }).waitFor()
+await sidebarViews.getByLabel('Menu for view Waiting').click()
+await sidebarViews.getByRole('button', { name: 'Move up' }).click()
+await pageA.waitForFunction(() => {
+  const t = [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].map((b) => b.textContent)
+  return t[0] === '≡Waiting2' && t[1] === '≡Work tomorrow3'
+})
+await shot(pageA, 'views-sidebar-order.png')
+
+step('Device B signs in and sees the same order and counts after sync')
+const B = await device('B')
+const pageB = B.page
+r = await B.ctx.request.post(`${base}/api/v1/auth/login`, { data: { email: 'ada@example.com', password: 'correct horse battery staple' } })
+assert(r.ok(), 'login B')
+await pageB.goto(base)
+const sidebarB = pageB.getByRole('navigation', { name: 'Views' })
+await pageB.waitForFunction(() => {
+  const t = [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].map((b) => b.textContent)
+  return t[0] === '≡Waiting2' && t[1] === '≡Work tomorrow3'
+}, null, { timeout: 15000 })
+// The edited query arrived on B too.
+await sidebarB.getByText('Work tomorrow').click()
+assert((await pageB.getByLabel('View query').inputValue()) === '@work & due <= tomorrow & p1 & !@waiting', 'B sees edited query')
+assert((await pageB.getByLabel('Group by').inputValue()) === 'due', 'B sees grouping')
+
+step('Unpin "Waiting": leaves the sidebar, still in the g v overview')
+await sidebarViews.getByLabel('Menu for view Waiting').click()
+await sidebarViews.getByRole('button', { name: 'Unpin from sidebar' }).click()
+await sidebarViews.getByText('Waiting').waitFor({ state: 'detached' })
+await pageA.locator('body').click({ position: { x: 900, y: 700 } })
+await pageA.keyboard.press('g'); await pageA.keyboard.press('v')
+await pageA.getByRole('heading', { name: 'Views', level: 1 }).waitFor()
+const notPinned = pageA.locator('h2:has-text("Not pinned") + ul')
+await notPinned.getByText('Waiting', { exact: true }).waitFor()
+await shot(pageA, 'views-overview.png')
+await pageB.waitForFunction(() => ![...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].some((b) => b.textContent?.includes('Waiting')), null, { timeout: 15000 })
+await notPinned.getByRole('button', { name: 'Pin Waiting' }).click()
+
+step('Morning review dashboard with three panels')
+const mk = async (name, query) => { await post('views', { name, query, pinned: false }) }
+await mk('Today p1', 'today & p1')
+await mk('Errands', '@errand')
+await pageA.getByRole('button', { name: '+ New dashboard' }).click()
+await pageA.getByLabel('Dashboard name').fill('Morning')
+await pageA.getByLabel('Dashboard name').press('Enter')
+await pageA.getByRole('heading', { name: 'Morning' }).waitFor()
+for (const n of ['Today p1', 'Waiting', 'Errands']) {
+  await pageA.getByLabel('Add panel').selectOption({ label: n })
+  await pageA.locator(`section[aria-label="${n}"]`).waitFor()
+}
+const panelText = async (n) => pageA.locator(`section[aria-label="${n}"] h2 + span`).textContent()
+assert(await panelText('Today p1') === '2', 'Today p1 count ' + await panelText('Today p1'))
+assert(await panelText('Waiting') === '2', 'Waiting count')
+assert(await panelText('Errands') === '2', 'Errands count')
+await pageA.locator('section[aria-label="Errands"]').getByText('Pick up parcel').waitFor()
+step('Tab / Shift+Tab move between panels, j/k inside one')
+await pageA.locator('body').click({ position: { x: 1200, y: 830 } })
+await pageA.keyboard.press('Tab')
+const focusedPanel = () => pageA.evaluate(() => document.activeElement?.getAttribute('aria-label'))
+assert(await focusedPanel() === 'Today p1', 'Tab → first panel, got ' + await focusedPanel())
+await pageA.keyboard.press('Tab')
+assert(await focusedPanel() === 'Waiting', 'Tab → second panel')
+await pageA.keyboard.press('Shift+Tab')
+assert(await focusedPanel() === 'Today p1', 'Shift+Tab → first panel')
+await pageA.keyboard.press('j')
+await pageA.locator('section[aria-label="Today p1"] li.ring-1').waitFor()
+step('Live update: completing a task through the API updates the panel')
+const tasks = (await get('tasks')).tasks
+const parcel = tasks.find((t) => t.title === 'Pick up parcel')
+await api.patch(`${base}/api/v1/tasks/${parcel.id}`, { data: { completed_at: Date.now() } })
+await pageA.waitForFunction(() => document.querySelector('section[aria-label="Errands"] h2 + span')?.textContent === '1', null, { timeout: 15000 })
+await shot(pageA, 'views-dashboard.png')
+const dashId = (await get('views')).views.find((v) => v.name === 'Morning').id
+await pageB.goto(`${base}/view/${dashId}`)
+await pageB.locator('section[aria-label="Errands"]').waitFor({ timeout: 15000 })
+
+step('Panel view deleted: placeholder with a remove action, other panels keep working')
+const errandsId = (await get('views')).views.find((v) => v.name === 'Errands').id
+await api.delete(`${base}/api/v1/views/${errandsId}`)
+await pageA.getByText('View removed').waitFor({ timeout: 15000 })
+assert(await panelText('Waiting') === '2', 'other panels still work')
+await shot(pageA, 'views-panel-removed.png')
+await pageA.getByRole('button', { name: 'Remove panel' }).click()
+await pageA.getByText('View removed').waitFor({ state: 'detached' })
+
+step('Narrow screen: panels stack')
+await pageA.setViewportSize({ width: 380, height: 800 })
+await pageA.waitForTimeout(400) // let the sidebar transition finish
+const xs = await pageA.locator('section[data-panel-index]').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)))
+assert(new Set(xs).size === 1, 'stacked panels ' + xs)
+await shot(pageA, 'views-dashboard-mobile.png')
+await pageA.setViewportSize({ width: 1280, height: 860 })
+
+step('Start view per device: A starts on "Work tomorrow", B keeps the Inbox')
+await pageA.goto(`${base}/settings`)
+await pageA.getByLabel('Start view on this device').selectOption({ label: 'Work tomorrow' })
+await pageA.waitForTimeout(200)
+await pageA.goto(base)
+await pageA.waitForURL(`**/view/${workId}`)
+await pageA.getByRole('heading', { name: 'Work tomorrow' }).waitFor()
+await pageB.goto(base)
+await pageB.waitForTimeout(800)
+assert(new URL(pageB.url()).pathname === '/', 'B stays on the Inbox: ' + pageB.url())
+await pageB.getByLabel('Add a task').waitFor()
+step('B sets its own start view from a view menu')
+await pageB.getByRole('navigation', { name: 'Views' }).getByLabel('Menu for view Morning').click()
+await pageB.getByRole('button', { name: 'Set as start view on this device' }).click()
+await pageB.goto(base)
+await pageB.waitForURL(`**/view/${dashId}`)
+await pageA.goto(base)
+await pageA.waitForURL(`**/view/${workId}`)
+
+step('Deleted start view: B deletes "Work tomorrow"; A syncs, relaunches on the Inbox with a notice')
+await pageB.getByRole('navigation', { name: 'Views' }).getByLabel('Menu for view Work tomorrow').click()
+await pageB.getByRole('button', { name: 'Delete view' }).click()
+await pageA.getByText('This view does not exist').waitFor({ timeout: 15000 })
+await pageA.goto(base)
+await pageA.getByRole('status').filter({ hasText: 'start view was deleted' }).waitFor()
+assert(new URL(pageA.url()).pathname === '/', 'A fell back to the Inbox')
+await shot(pageA, 'views-start-fallback.png')
+
+step('Two devices offline: A saves and pins a view offline, B sees it after A reconnects')
+await pageA.getByRole('button', { name: 'Dismiss' }).click()
+await A.ctx.setOffline(true)
+await pageA.keyboard.press('g'); await pageA.keyboard.press('f')
+await pageA.getByLabel('Filter query').fill('@work & p1')
+await pageA.getByLabel('Filter query').press('Enter')
+await pageA.getByText('Quarterly goals').waitFor()
+await pageA.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === 'Filter results')
+await pageA.keyboard.press('s')
+await pageA.getByLabel('View name').fill('Work p1')
+await pageA.getByLabel('View name').press('Enter')
+await pageA.getByRole('heading', { name: 'Work p1' }).waitFor()
+await sidebarViews.getByText('Work p1').waitFor()
+await pageA.waitForTimeout(500)
+assert(!(await get('views')).views.some((v) => v.name === 'Work p1'), 'not on server while offline')
+await A.ctx.setOffline(false)
+await pageB.getByRole('navigation', { name: 'Views' }).getByText('Work p1').waitFor({ timeout: 20000 })
+const wp1 = (await get('views')).views.find((v) => v.name === 'Work p1').id
+
+step('Both offline: A changes sort and grouping, B later changes grouping; reconnect and converge')
+await pageB.goto(`${base}/view/${wp1}`)
+await pageB.getByRole('heading', { name: 'Work p1' }).waitFor()
+await pageA.goto(`${base}/view/${wp1}`)
+await pageA.getByRole('heading', { name: 'Work p1' }).waitFor()
+await A.ctx.setOffline(true)
+await B.ctx.setOffline(true)
+await pageA.getByLabel('Group by').selectOption('priority')
+await pageA.getByLabel('Sort by').selectOption('title')
+await pageA.waitForTimeout(50)
+await pageB.getByLabel('Group by').selectOption('due')
+await pageA.waitForTimeout(300)
+await A.ctx.setOffline(false)
+await B.ctx.setOffline(false)
+const converged = async (p) => p.waitForFunction(() => {
+  const g = document.querySelector('select[aria-label="Group by"]')?.value
+  const s = document.querySelector('select[aria-label="Sort by"]')?.value
+  return g === 'due' && s === 'title'
+}, null, { timeout: 30000 })
+await converged(pageA)
+await converged(pageB)
+const sideCounts = (p) => p.evaluate(() => [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].map((b) => b.textContent))
+const ca = await sideCounts(pageA), cb = await sideCounts(pageB)
+assert(JSON.stringify(ca) === JSON.stringify(cb), `identical sidebars ${ca} / ${cb}`)
+const ha = await pageA.locator('[aria-label="View results"] h2').allTextContents()
+const hb = await pageB.locator('[aria-label="View results"] h2').allTextContents()
+assert(JSON.stringify(ha) === JSON.stringify(hb) && ha[0] === 'Overdue', `identical groups ${ha} / ${hb}`)
+const sv = (await get('views')).views.find((v) => v.id === wp1)
+assert(sv.group_by === 'due' && sv.sort_by === 'title', 'server converged ' + JSON.stringify(sv))
+console.log('  A sidebar:', ca.join(' | '))
+console.log('  B sidebar:', cb.join(' | '))
+await shot(pageA, 'views-converged-A.png')
+await shot(pageB, 'views-converged-B.png')
+
+step('Help lists the new shortcuts')
+await pageA.locator('body').click({ position: { x: 900, y: 700 } })
+await pageA.keyboard.press('?')
+await pageA.getByText('Save the query as a view, pinned to the sidebar').waitFor()
+
+await browser.close()
+if (errors.length) {
+  console.log('ERRORS:\n' + errors.join('\n'))
+  process.exit(1)
+}
+console.log('OK: all saved-view flows passed')

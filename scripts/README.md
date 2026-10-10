@@ -25,6 +25,16 @@ CHROMIUM_PATH=/path/to/chrome npx -y -p playwright@1.56.1 node scripts/e2e-smoke
 
 Environment: `OPENTODO_URL` (default `http://127.0.0.1:8080`), `CHROMIUM_PATH` (optional). Exit code is non-zero on any failed step or browser console error.
 
+## `e2e-views.mjs`
+
+Browser check of saved views and dashboards (OpenSpec change `custom-views`) with two devices (two browser contexts on one account): saving from the Filter view with `s`, editing the query, grouping by due date and sorting, sidebar order and counts on both devices, unpin and the `g v` overview, a dashboard with three panels (Tab / Shift+Tab, live counts, the "View removed" placeholder, stacking at phone width), the per-device start view and its fallback after a deletion elsewhere, and a view saved offline on one device, then edited offline on both, converging after reconnect. Seeds its data through the REST API. Run it against a **fresh** data directory like the smoke test; pass a directory to also save screenshots:
+
+```bash
+make build
+OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
+CHROMIUM_PATH=/path/to/chrome npx -y -p playwright@1.56.1 node scripts/e2e-views.mjs [screenshot-dir]
+```
+
 ## `screenshots.mjs`
 
 Seeds a fresh server with a realistic set of projects and tasks and captures the screenshots used in `README.md` and the website (`docs/screenshots/*.png`, high-DPI). Same prerequisites and environment variables as the smoke test; run it against an **empty** data directory, then copy the PNGs into `website/assets/`.

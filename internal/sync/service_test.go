@@ -183,6 +183,55 @@ func TestValidateAcceptsLabelOps(t *testing.T) {
 	}
 }
 
+func TestValidateAcceptsViewOps(t *testing.T) {
+	good := []Op{
+		op("1", "view", "v1", "name", `"Work tomorrow"`, 1, "A"),
+		op("2", "view", "v1", "query", `"@work & due <= tomorrow & p1"`, 1, "A"),
+		op("3", "view", "v1", "kind", `"list"`, 1, "A"),
+		op("4", "view", "v1", "group_by", `"project"`, 1, "A"),
+		op("5", "view", "v1", "sort_by", `"due"`, 1, "A"),
+		op("6", "view", "v1", "sort_dir", `"asc"`, 1, "A"),
+		op("7", "view", "v1", "pinned", `true`, 1, "A"),
+		op("8", "view", "v1", "position", `1700000000000`, 1, "A"),
+		op("9", "view", "v1", "color", `"#3b82f6"`, 1, "A"),
+		op("10", "view", "v1", "panels", `[]`, 1, "A"),
+		op("11", "view", "v1", "created_at", `1700000000000`, 1, "A"),
+		op("12", "view", "v1", "deleted_at", `null`, 1, "A"),
+		// Unknown enumeration values are accepted by sync (additive); clients fall back at read time.
+		op("13", "view", "v2", "group_by", `"colour"`, 1, "A"),
+		op("14", "view", "v2", "panels", `["v1","v3"]`, 1, "A"),
+	}
+	for i, g := range good {
+		if err := Validate(g); err != nil {
+			t.Errorf("case %d should pass: %v", i, err)
+		}
+	}
+	bad := []Op{
+		op("1", "view", "v1", "pinned", `"yes"`, 1, "A"),
+		op("1", "view", "v1", "panels", `"v1"`, 1, "A"),
+		op("1", "view", "v1", "panels", `null`, 1, "A"),
+		op("1", "view", "v1", "query", `42`, 1, "A"),
+		op("1", "view", "v1", "archived", `true`, 1, "A"),
+	}
+	for i, b := range bad {
+		if err := Validate(b); err == nil {
+			t.Errorf("case %d should fail", i)
+		}
+	}
+	if Plural["views"] != "view" {
+		t.Fatalf("Plural[views] = %q", Plural["views"])
+	}
+	ctx := context.Background()
+	s := newTestService(t)
+	if _, err := s.Apply(ctx, "u", good[:12]); err != nil {
+		t.Fatal(err)
+	}
+	list, err := s.List(ctx, "u", "view", false)
+	if err != nil || len(list) != 1 || string(list[0]["query"]) != `"@work & due <= tomorrow & p1"` {
+		t.Fatalf("list = %v, %v", list, err)
+	}
+}
+
 func TestFutureTimestampsAreClamped(t *testing.T) {
 	ctx := context.Background()
 	s := newTestService(t)

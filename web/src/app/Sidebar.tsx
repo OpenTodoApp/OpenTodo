@@ -6,7 +6,10 @@ import { createProject } from '../lib/ops'
 import { COLLAPSED_PROJECTS_KEY, buildProjectTree, expandAncestorsOf, openCountsByProject, toggleCollapsedProject, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { User } from '../lib/types'
+import { evaluateViews, isDashboard } from '../lib/views'
 import { LabelRow, NewLabelForm, useLabelData } from './LabelsView'
+import { ViewMenu, viewIcon } from './ViewsView'
+import { useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
 import { navigate, type Route } from './router'
 
@@ -52,6 +55,16 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
   const { labels, counts: labelCounts, duplicates } = useLabelData()
+
+  // Pinned saved views with live open-task counts: every pinned list view's compiled
+  // query runs over the open tasks this sidebar already observes, in one pass.
+  const views = useViews()
+  const pinnedViews = useMemo(() => views.filter((v) => v.pinned), [views])
+  const allProjects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
+  const viewCounts = useMemo(
+    () => evaluateViews(pinnedViews, { today: todayISO(), labels, projects: allProjects, tasks: openTasks }, 0),
+    [pinnedViews, labels, allProjects, openTasks],
+  )
   const [labelsOpen, setLabelsOpen] = useState(true)
   const [addingLabel, setAddingLabel] = useState(false)
   const [parentId, setParentId] = useState('')
@@ -111,6 +124,30 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         {item({ view: 'upcoming' }, 'Upcoming', '🗓️')}
         {item({ view: 'completed' }, 'Completed', '✅')}
         {item({ view: 'filter' }, 'Filter', '🔎')}
+      </nav>
+      <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Views
+        <button className={`rounded px-1 text-[10px] normal-case hover:bg-slate-200 dark:hover:bg-slate-800 ${route.view === 'views' ? 'text-emerald-700 dark:text-emerald-300' : ''}`}
+          onClick={() => navigate({ view: 'views' })} title="All views (g v)">All</button>
+      </div>
+      <nav className="space-y-0.5" aria-label="Views">
+        {pinnedViews.map((v) => {
+          const active = route.view === 'view' && route.id === v.id
+          const c = viewCounts.get(v.id)
+          return (
+            <div key={v.id} className={`group flex items-center rounded-md ${active ? ACTIVE : IDLE}`}>
+              <button data-view-id={v.id} onClick={() => navigate({ view: 'view', id: v.id })} className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm">
+                <span className="w-5 text-center" style={{ color: v.color }} aria-hidden>{viewIcon(v)}</span>
+                <span className="flex-1 truncate">{v.name}</span>
+                {!isDashboard(v) && c && (c.ok ? (c.count ? <span className="text-xs text-slate-400">{c.count}</span> : null) : <span className="text-xs text-red-500" title={c.error}>!</span>)}
+              </button>
+              <ViewMenu view={v} className="opacity-0 focus-within:opacity-100 group-hover:opacity-100 [&[open]]:opacity-100" />
+            </div>
+          )
+        })}
+        {pinnedViews.length === 0 && (
+          <p className="px-2 py-1 text-xs text-slate-400">Save a filter with <span className="kbd">s</span> to pin it here.</p>
+        )}
       </nav>
       <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Projects

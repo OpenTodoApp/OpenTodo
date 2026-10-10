@@ -678,10 +678,19 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			body["color"] = json.RawMessage(fmt.Sprintf("%q", labelPalette[int(now)%len(labelPalette)]))
 		}
 	}
+	if entity == "view" {
+		applyViewDefaults(body)
+	}
 	if _, has := body["position"]; !has {
 		body["position"] = json.RawMessage(fmt.Sprint(now))
 	}
 	delete(body, "id")
+	if entity == "view" {
+		if err := s.checkView(r.Context(), userFrom(r.Context()).ID, id, body, nil); err != nil {
+			s.viewError(w, err)
+			return
+		}
+	}
 	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
 		s.internal(w, err)
 		return
@@ -900,6 +909,12 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	if err := s.validateParent(r.Context(), entity, r.PathValue("id"), body, existing); err != nil {
 		s.parentError(w, err)
 		return
+	}
+	if entity == "view" {
+		if err := s.checkView(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing); err != nil {
+			s.viewError(w, err)
+			return
+		}
 	}
 	s.writeFields(w, r, entity, r.PathValue("id"), body, http.StatusOK)
 }

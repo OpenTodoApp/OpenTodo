@@ -7,6 +7,7 @@ import {
 import { wins } from './hlc'
 import { parentReadyToComplete } from './subtasks'
 import type { Op } from './types'
+import { viewOptions } from './views'
 
 let n = 0
 beforeEach(() => {
@@ -56,6 +57,24 @@ describe('applyOps', () => {
     const l = await db.labels.get('lab')
     expect(l).toMatchObject({ id: 'lab', name: 'errand', color: '#ef4444', position: 0, deleted_at: null })
     expect(await db.tasks.count()).toBe(0)
+  })
+
+  it('applies view ops into the views table with defaults and maps unknown option values at read time', async () => {
+    const db = useDatabase(`view-${Date.now()}`)
+    const v = (field: string, value: unknown, ts = 1): Op => ({ id: crypto.randomUUID(), entity: 'view', entityId: 'v1', field, value, ts, device: 'A' })
+    await applyOps([v('name', 'Work tomorrow'), v('query', '@work & due <= tomorrow & p1'), v('pinned', true), v('group_by', 'colour'), v('sort_by', 'title', 2), v('sort_dir', 'sideways')])
+    const row = await db.views.get('v1')
+    expect(row).toMatchObject({
+      id: 'v1', name: 'Work tomorrow', query: '@work & due <= tomorrow & p1', kind: 'list', pinned: true,
+      panels: [], position: 0, deleted_at: null,
+    })
+    // Unknown values are stored as received (never rewritten) and read as defaults.
+    expect(row?.group_by).toBe('colour')
+    expect(row?.sort_dir).toBe('sideways')
+    expect(viewOptions(row!)).toEqual({ kind: 'list', groupBy: 'project', sortBy: 'title', sortDir: 'asc' })
+    expect(viewOptions({ kind: 'grid', group_by: 'label', sort_by: 'mood', sort_dir: 'desc' })).toEqual({ kind: 'list', groupBy: 'label', sortBy: 'due', sortDir: 'desc' })
+    expect(await db.tasks.count()).toBe(0)
+    expect(await db.outbox.count()).toBe(0)
   })
 
   it('skips ops for entities this build does not know instead of failing the batch', async () => {

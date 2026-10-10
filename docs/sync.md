@@ -11,7 +11,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 ```json
 {
   "id": "0d1f…",                 // unique per op (UUID v4)
-  "entity": "task",              // "task" | "project" | "label"
+  "entity": "task",              // "task" | "project" | "label" | "view"
   "entityId": "8c2a…",           // UUID of the entity
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
@@ -40,6 +40,12 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | label | `name`, `color` | string |
 | label | `position`, `created_at` | number |
 | label | `deleted_at` | number or null |
+| view | `name`, `query`, `color` | string |
+| view | `kind`, `group_by`, `sort_by`, `sort_dir` | string (enumeration, see "Saved views") |
+| view | `pinned` | boolean |
+| view | `panels` | array of strings (view ids) |
+| view | `position`, `created_at` | number |
+| view | `deleted_at` | number or null |
 
 Adding fields is backwards compatible. Renaming or removing is not; it needs an OpenSpec change with a migration plan.
 
@@ -52,6 +58,15 @@ A client that receives an op for an entity it does not know (an older build talk
 The array is a single LWW register: every write replaces the whole value, and when two devices write different arrays for the same task offline, every replica ends with the array that carries the greater `(ts, device)`. Concretely, if device A adds `errand` and device B adds `call` to the same task while both are offline, only one of the two labels survives on every device. To keep the common case safe the client reads the task's current array in the same transaction as the write, so sequential edits on one device never lose a label, and remote ops are applied live so the window is only the offline period. Deleting a label removes its id from every carrying task with one op per task; a concurrent array write elsewhere can resurrect the id, which is why deleted ids are hidden rather than trusted to be absent. Merging a label rewrites each carrying task's array once (source id → target id, de-duplicated) and tombstones the source.
 
 The path to per-element semantics is recorded in `openspec/changes/labels/design.md`: an add-wins set encoded as additional per-element fields would be additive to this schema.
+
+### Saved views
+
+A `view` is a saved filter query with its presentation options (OpenSpec `custom-views`). It is the first synced entity that holds a preference rather than task content, and it follows the same per-field LWW rules: changing the grouping on one device and the sort on another, both offline, leaves every device with both changes.
+
+- `query` is the query string exactly as typed, in the grammar of `docs/filters.md`, never a parsed form. Each client parses it when the view is shown; a query a client cannot parse (for example a term added by a newer version) shows the parse error and no results instead of wrong results.
+- `kind` is `list` or `dashboard`; `group_by` is `project`, `due`, `priority`, `label` or `none`; `sort_by` is `due`, `priority`, `position`, `created` or `title`; `sort_dir` is `asc` or `desc`. On the wire these are plain strings so a future value is additive. The op schema accepts any string; a client that meets a value it does not know shows the default (`list`, `project`, `due`, `asc`) without rewriting the field, so the newer device keeps its choice. Only the REST API rejects unknown values, because REST requests are sequential and safe to refuse.
+- `panels` holds the ordered view ids shown by a dashboard (empty for lists). Like `task.labels` it is a single LWW register: two devices editing the panel list offline end with the newer list. A panel whose view is missing or deleted is shown as a placeholder; clients refuse to add a dashboard as a panel.
+- The start view (the view a device opens on launch) is **not** synced: it lives in the device's `meta` table under `startView`, like the collapsed projects.
 
 ## Winner rule
 
@@ -155,4 +170,4 @@ REST handlers translate request bodies into ops stamped with server time and `de
 ## Limits
 
 - 1000 ops per request, 64 KB per value, 4 MB per request body.
-- `labels` is replaced as a whole value (see "Task labels" above; set semantics are a future change).
+- `labels` is replaced as a whole value (see "Task labels" above; set semantics are a future change). The same holds for `view.panels`.

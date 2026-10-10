@@ -76,10 +76,10 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete → 204 |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`), including deleted items; never contains audit events |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`), including deleted items |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`), including deleted items; never contains audit events |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -187,6 +187,26 @@ curl -sS -X PATCH "$OT/api/v1/projects/<id>" -H "Authorization: Bearer $TOKEN" -
 | `created_at`, `deleted_at` | unix ms (or null) | |
 
 Tasks reference labels by id, so renaming a label is one PATCH and never rewrites tasks. Deleting a label through the API only sets its tombstone; tasks that still carry the id keep it (the app hides ids of deleted labels), and the app's own delete additionally removes the id from every carrying task.
+
+### View fields
+
+A saved view is a named filter query with presentation options (OpenSpec `custom-views`). The app pins views to the sidebar and composes dashboards from them; queries are evaluated on each device, the server only checks that they parse.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `name` | string | required on create, must not be blank |
+| `query` | string | required on create for list views; must parse under the grammar in [`docs/filters.md`](filters.md), otherwise 400 with the parser's message (`view.query: Unknown term "urgent" at position 6`); may be empty for dashboards |
+| `kind` | `"list"` or `"dashboard"` | default `list`; cannot be changed after creation |
+| `group_by` | `"project"`, `"due"`, `"priority"`, `"label"` or `"none"` | default `project` |
+| `sort_by` | `"due"`, `"priority"`, `"position"`, `"created"` or `"title"` | default `due` (undated tasks last) |
+| `sort_dir` | `"asc"` or `"desc"` | default `asc`; for `priority`, `desc` lists priority 1 first |
+| `pinned` | boolean | shown in the sidebar's Views group; default `false` |
+| `position` | number | sidebar order; defaults to the creation time |
+| `color` | string | CSS colour; default `#64748b` |
+| `panels` | string[] | dashboards only: up to 6 ids of existing, non-deleted **list** views, no duplicates, never the dashboard itself; replaced as a whole on PATCH |
+| `created_at`, `deleted_at` | unix ms (or null) | |
+
+Values outside the listed sets are rejected with 400 `invalid_input` on `POST` and `PATCH` and nothing is written. The sync endpoint, by contrast, accepts any string for `kind`, `group_by`, `sort_by` and `sort_dir` so that a future option stays additive; clients show the default for a value they do not know (see `docs/sync.md`, "Saved views"). Deleting a view sets its tombstone only; dashboards that list it keep the id and the app shows a "View removed" placeholder in that panel. The start view each device opens on launch is a device setting and is not part of the API.
 
 ### Invitations
 
@@ -436,13 +456,42 @@ curl -sS -X PATCH "$OT/api/v1/labels/$LABEL" -H "Authorization: Bearer $TOKEN" -
   -d '{"name":"errands"}'
 ```
 
+Save a view and pin it (the response carries `id`, `position` and the default grouping and sort; devices show it after their next sync):
+
+```bash
+curl -sS "$OT/api/v1/views" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Waiting","query":"@waiting","pinned":true}'
+# 201 {"color":"#64748b","created_at":1760090000000,"group_by":"project","id":"…","kind":"list","name":"Waiting",
+#      "panels":[],"pinned":true,"position":1760090000000,"query":"@waiting","sort_by":"due","sort_dir":"asc"}
+```
+
+Group it by due date with priority 1 first, then build a dashboard from it:
+
+```bash
+curl -sS -X PATCH "$OT/api/v1/views/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"group_by":"due","sort_by":"priority","sort_dir":"desc"}'
+curl -sS "$OT/api/v1/views" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Morning","kind":"dashboard","panels":["<id>"],"pinned":true}'
+```
+
+An option outside the allowed set, or a query that does not parse, is refused and nothing is created:
+
+```bash
+curl -sS "$OT/api/v1/views" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"x","query":"p1","group_by":"colour"}'
+# 400 {"error":{"code":"invalid_input","message":"view.group_by must be one of project, due, priority, label, none"}}
+curl -sS "$OT/api/v1/views" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"x","query":"@work p1"}'
+# 400 {"error":{"code":"invalid_input","message":"view.query: Expected \"\u0026\" or \"|\" before \"p1\" at position 7"}}
+```
+
 Export everything:
 
 ```bash
 curl -sS "$OT/api/v1/export" -H "Authorization: Bearer $TOKEN" -o opentodo-export.json
 ```
 
-The export resolves label ids: `tasks[].labels` holds ids and the top-level `labels` array (including deleted labels) carries their names and colours.
+The export includes saved views (`views`, deleted ones too) next to projects, tasks and labels. It resolves label ids: `tasks[].labels` holds ids and the top-level `labels` array (including deleted labels) carries their names and colours.
 
 Follow live updates (the response is a `text/event-stream` that stays open; `-N` disables curl's buffering):
 
