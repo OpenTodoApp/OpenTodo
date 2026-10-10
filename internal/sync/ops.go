@@ -23,6 +23,11 @@ type Op struct {
 	TS       int64           `json:"ts"`
 	Device   string          `json:"device"`
 	Seq      int64           `json:"seq,omitempty"`
+	// Actor is the account id of the op's author, stamped by the server from the
+	// authenticated submitter on every served op (OpenSpec change
+	// `comments-and-activity`, design D3). A value sent by a client is ignored:
+	// Apply always records the session's account.
+	Actor string `json:"actor,omitempty"`
 }
 
 // Limits protect the server from abusive or buggy clients.
@@ -140,6 +145,21 @@ var Schema = map[string]map[string]kind{
 		"dismissed_at":   kNullableNumber,
 		"created_at":     kNumber,
 		"deleted_at":     kNullableNumber,
+	},
+	// comment: a threaded markdown comment on a task (OpenSpec change
+	// `comments-and-activity`, design D1). It lives in its task's scope; Apply
+	// checks authorship per op (author_id equals the submitter, only the author
+	// edits, the author, admins and the owner delete; viewers may comment) and
+	// keeps only mentions of current members. See docs/sync.md.
+	"comment": {
+		"task_id":    kID,
+		"parent_id":  kNullableString,
+		"body":       kString,
+		"author_id":  kID,
+		"mentions":   kStringList,
+		"created_at": kNumber,
+		"edited_at":  kNullableNumber,
+		"deleted_at": kNullableNumber,
 	},
 }
 

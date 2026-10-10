@@ -1,0 +1,573 @@
+{
+  "about": "Shared fixture for the activity rule (OpenSpec comments-and-activity, design D4). internal/activity (Go) and web/src/lib/activity.ts (TypeScript) must both derive exactly these events from these ops. Ops are listed in seq order; events oldest first.",
+  "cases": [
+    {
+      "name": "create folded into one event",
+      "ops": [
+        {"id":"o1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Buy milk","ts":1000,"device":"da"},
+        {"id":"o2","seq":2,"actor":"alice","entity":"task","entityId":"t1","field":"project_id","value":"p1","ts":1000,"device":"da"},
+        {"id":"o3","seq":3,"actor":"alice","entity":"task","entityId":"t1","field":"priority","value":4,"ts":1000,"device":"da"},
+        {"id":"o4","seq":4,"actor":"alice","entity":"task","entityId":"t1","field":"due","value":null,"ts":1000,"device":"da"},
+        {"id":"o5","seq":5,"actor":"alice","entity":"task","entityId":"t1","field":"created_at","value":1000,"ts":1000,"device":"da"},
+        {"id":"o6","seq":6,"actor":"alice","entity":"task","entityId":"t1","field":"completed_at","value":null,"ts":1000,"device":"da"}
+      ],
+      "events": [
+        {
+          "id": "o1",
+          "kind": "created",
+          "actor": "alice",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 1000,
+          "opIds": [
+            "o1",
+            "o2",
+            "o3",
+            "o4",
+            "o5",
+            "o6"
+          ],
+          "changes": [
+            {
+              "field": "completed_at",
+              "from": null,
+              "to": null
+            },
+            {
+              "field": "created_at",
+              "from": null,
+              "to": 1000
+            },
+            {
+              "field": "due",
+              "from": null,
+              "to": null
+            },
+            {
+              "field": "priority",
+              "from": null,
+              "to": 4
+            },
+            {
+              "field": "project_id",
+              "from": null,
+              "to": "p1"
+            },
+            {
+              "field": "title",
+              "from": null,
+              "to": "Buy milk"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "meaningful changes by several members",
+      "ops": [
+        {"id":"a1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Buy milk","ts":1000,"device":"da"},
+        {"id":"a2","seq":2,"actor":"alice","entity":"task","entityId":"t1","field":"created_at","value":1000,"ts":1000,"device":"da"},
+        {"id":"b1","seq":3,"actor":"bob","entity":"task","entityId":"t1","field":"completed_at","value":11000,"ts":11000,"device":"db"},
+        {"id":"c1","seq":4,"actor":"carol","entity":"task","entityId":"t1","field":"due","value":{"date":"2026-10-12"},"ts":21000,"device":"dc"},
+        {"id":"a3","seq":5,"actor":"alice","entity":"task","entityId":"t1","field":"assignee_id","value":"bob","ts":31000,"device":"da"},
+        {"id":"a4","seq":6,"actor":"alice","entity":"task","entityId":"t1","field":"project_id","value":"p2","ts":41000,"device":"da"},
+        {"id":"b2","seq":7,"actor":"bob","entity":"task","entityId":"t1","field":"completed_at","value":null,"ts":51000,"device":"db"},
+        {"id":"b3","seq":8,"actor":"bob","entity":"task","entityId":"t1","field":"assignee_id","value":null,"ts":61000,"device":"db"},
+        {"id":"b4","seq":9,"actor":"bob","entity":"task","entityId":"t1","field":"deleted_at","value":71000,"ts":71000,"device":"db"},
+        {"id":"a5","seq":10,"actor":"alice","entity":"task","entityId":"t1","field":"deleted_at","value":null,"ts":81000,"device":"da"}
+      ],
+      "events": [
+        {
+          "id": "a1",
+          "kind": "created",
+          "actor": "alice",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 1000,
+          "opIds": [
+            "a1",
+            "a2"
+          ],
+          "changes": [
+            {
+              "field": "created_at",
+              "from": null,
+              "to": 1000
+            },
+            {
+              "field": "title",
+              "from": null,
+              "to": "Buy milk"
+            }
+          ]
+        },
+        {
+          "id": "b1",
+          "kind": "completed",
+          "actor": "bob",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 11000,
+          "opIds": [
+            "b1"
+          ],
+          "changes": [
+            {
+              "field": "completed_at",
+              "from": null,
+              "to": 11000
+            }
+          ]
+        },
+        {
+          "id": "c1",
+          "kind": "rescheduled",
+          "actor": "carol",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 21000,
+          "opIds": [
+            "c1"
+          ],
+          "changes": [
+            {
+              "field": "due",
+              "from": null,
+              "to": {
+                "date": "2026-10-12"
+              }
+            }
+          ]
+        },
+        {
+          "id": "a3",
+          "kind": "assigned",
+          "actor": "alice",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 31000,
+          "opIds": [
+            "a3"
+          ],
+          "changes": [
+            {
+              "field": "assignee_id",
+              "from": null,
+              "to": "bob"
+            }
+          ]
+        },
+        {
+          "id": "a4",
+          "kind": "moved",
+          "actor": "alice",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 41000,
+          "opIds": [
+            "a4"
+          ],
+          "changes": [
+            {
+              "field": "project_id",
+              "from": null,
+              "to": "p2"
+            }
+          ]
+        },
+        {
+          "id": "b2",
+          "kind": "reopened",
+          "actor": "bob",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 51000,
+          "opIds": [
+            "b2"
+          ],
+          "changes": [
+            {
+              "field": "completed_at",
+              "from": 11000,
+              "to": null
+            }
+          ]
+        },
+        {
+          "id": "b3",
+          "kind": "unassigned",
+          "actor": "bob",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 61000,
+          "opIds": [
+            "b3"
+          ],
+          "changes": [
+            {
+              "field": "assignee_id",
+              "from": "bob",
+              "to": null
+            }
+          ]
+        },
+        {
+          "id": "b4",
+          "kind": "deleted",
+          "actor": "bob",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 71000,
+          "opIds": [
+            "b4"
+          ],
+          "changes": [
+            {
+              "field": "deleted_at",
+              "from": null,
+              "to": 71000
+            }
+          ]
+        },
+        {
+          "id": "a5",
+          "kind": "restored",
+          "actor": "alice",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 81000,
+          "opIds": [
+            "a5"
+          ],
+          "changes": [
+            {
+              "field": "deleted_at",
+              "from": 71000,
+              "to": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quick edits fold and the window splits",
+      "ops": [
+        {"id":"e1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Milk","ts":100000,"device":"da"},
+        {"id":"e2","seq":2,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Milk and eggs","ts":103000,"device":"da"},
+        {"id":"e3","seq":3,"actor":"alice","entity":"task","entityId":"t1","field":"priority","value":1,"ts":105000,"device":"da"},
+        {"id":"e4","seq":4,"actor":"alice","entity":"task","entityId":"t1","field":"description","value":"two litres","ts":105001,"device":"da"},
+        {"id":"e5","seq":5,"actor":"bob","entity":"task","entityId":"t1","field":"labels","value":["l1"],"ts":105500,"device":"db"}
+      ],
+      "events": [
+        {
+          "id": "e1",
+          "kind": "edited",
+          "actor": "alice",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 100000,
+          "opIds": [
+            "e1",
+            "e2",
+            "e3"
+          ],
+          "changes": [
+            {
+              "field": "priority",
+              "from": null,
+              "to": 1
+            },
+            {
+              "field": "title",
+              "from": null,
+              "to": "Milk and eggs"
+            }
+          ]
+        },
+        {
+          "id": "e4",
+          "kind": "edited",
+          "actor": "alice",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 105001,
+          "opIds": [
+            "e4"
+          ],
+          "changes": [
+            {
+              "field": "description",
+              "from": null,
+              "to": "two litres"
+            }
+          ]
+        },
+        {
+          "id": "e5",
+          "kind": "edited",
+          "actor": "bob",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 105500,
+          "opIds": [
+            "e5"
+          ],
+          "changes": [
+            {
+              "field": "labels",
+              "from": null,
+              "to": [
+                "l1"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "old values follow last-writer-wins order, not arrival",
+      "ops": [
+        {"id":"w1","seq":1,"actor":"dave","entity":"task","entityId":"t1","field":"title","value":"B","ts":20000,"device":"dd"},
+        {"id":"w2","seq":2,"actor":"carol","entity":"task","entityId":"t1","field":"title","value":"A","ts":10000,"device":"dc"},
+        {"id":"w3","seq":3,"actor":"erin","entity":"task","entityId":"t1","field":"title","value":"C","ts":20000,"device":"de"}
+      ],
+      "events": [
+        {
+          "id": "w2",
+          "kind": "edited",
+          "actor": "carol",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 10000,
+          "opIds": [
+            "w2"
+          ],
+          "changes": [
+            {
+              "field": "title",
+              "from": null,
+              "to": "A"
+            }
+          ]
+        },
+        {
+          "id": "w1",
+          "kind": "edited",
+          "actor": "dave",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 20000,
+          "opIds": [
+            "w1"
+          ],
+          "changes": [
+            {
+              "field": "title",
+              "from": "A",
+              "to": "B"
+            }
+          ]
+        },
+        {
+          "id": "w3",
+          "kind": "edited",
+          "actor": "erin",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 20000,
+          "opIds": [
+            "w3"
+          ],
+          "changes": [
+            {
+              "field": "title",
+              "from": "B",
+              "to": "C"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "no-op writes are dropped and other entities ignored",
+      "ops": [
+        {"id":"n1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Same","ts":1000,"device":"da"},
+        {"id":"n2","seq":2,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Same","ts":60000,"device":"da"},
+        {"id":"n3","seq":3,"actor":"alice","entity":"label","entityId":"l1","field":"name","value":"Home","ts":61000,"device":"da"},
+        {"id":"n4","seq":4,"actor":"alice","entity":"reminder","entityId":"r1","field":"task_id","value":"t1","ts":62000,"device":"da"},
+        {"id":"n5","seq":5,"actor":"alice","entity":"view","entityId":"v1","field":"query","value":"today","ts":63000,"device":"da"}
+      ],
+      "events": [
+        {
+          "id": "n1",
+          "kind": "edited",
+          "actor": "alice",
+          "entity": "task",
+          "entityId": "t1",
+          "taskId": "t1",
+          "ts": 1000,
+          "opIds": [
+            "n1"
+          ],
+          "changes": [
+            {
+              "field": "title",
+              "from": null,
+              "to": "Same"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "comment created, edited, deleted by an admin",
+      "ops": [
+        {"id":"k1","seq":1,"actor":"bob","entity":"comment","entityId":"c1","field":"task_id","value":"t1","ts":5000,"device":"db"},
+        {"id":"k2","seq":2,"actor":"bob","entity":"comment","entityId":"c1","field":"author_id","value":"bob","ts":5000,"device":"db"},
+        {"id":"k3","seq":3,"actor":"bob","entity":"comment","entityId":"c1","field":"body","value":"Looks good @Alice","ts":5000,"device":"db"},
+        {"id":"k4","seq":4,"actor":"bob","entity":"comment","entityId":"c1","field":"parent_id","value":null,"ts":5000,"device":"db"},
+        {"id":"k5","seq":5,"actor":"bob","entity":"comment","entityId":"c1","field":"mentions","value":["alice"],"ts":5000,"device":"db"},
+        {"id":"k6","seq":6,"actor":"bob","entity":"comment","entityId":"c1","field":"created_at","value":5000,"ts":5000,"device":"db"},
+        {"id":"k7","seq":7,"actor":"bob","entity":"comment","entityId":"c1","field":"body","value":"Looks great @Alice","ts":65000,"device":"db"},
+        {"id":"k8","seq":8,"actor":"bob","entity":"comment","entityId":"c1","field":"edited_at","value":65000,"ts":65000,"device":"db"},
+        {"id":"k9","seq":9,"actor":"alice","entity":"comment","entityId":"c1","field":"deleted_at","value":125000,"ts":125000,"device":"da"}
+      ],
+      "events": [
+        {
+          "id": "k1",
+          "kind": "commented",
+          "actor": "bob",
+          "entity": "comment",
+          "entityId": "c1",
+          "taskId": "t1",
+          "ts": 5000,
+          "opIds": [
+            "k1",
+            "k2",
+            "k3",
+            "k4",
+            "k5",
+            "k6"
+          ],
+          "changes": []
+        },
+        {
+          "id": "k7",
+          "kind": "comment_edited",
+          "actor": "bob",
+          "entity": "comment",
+          "entityId": "c1",
+          "taskId": "t1",
+          "ts": 65000,
+          "opIds": [
+            "k7",
+            "k8"
+          ],
+          "changes": []
+        },
+        {
+          "id": "k9",
+          "kind": "comment_deleted",
+          "actor": "alice",
+          "entity": "comment",
+          "entityId": "c1",
+          "taskId": "t1",
+          "ts": 125000,
+          "opIds": [
+            "k9"
+          ],
+          "changes": []
+        }
+      ]
+    },
+    {
+      "name": "project created, renamed, archived",
+      "ops": [
+        {"id":"p1","seq":1,"actor":"alice","entity":"project","entityId":"p1","field":"name","value":"Home","ts":1000,"device":"da"},
+        {"id":"p2","seq":2,"actor":"alice","entity":"project","entityId":"p1","field":"created_at","value":1000,"ts":1000,"device":"da"},
+        {"id":"p3","seq":3,"actor":"alice","entity":"project","entityId":"p1","field":"name","value":"House","ts":2000,"device":"da"},
+        {"id":"p4","seq":4,"actor":"alice","entity":"project","entityId":"p1","field":"name","value":"Household","ts":90000,"device":"da"},
+        {"id":"p5","seq":5,"actor":"bob","entity":"project","entityId":"p1","field":"archived","value":true,"ts":95000,"device":"db"}
+      ],
+      "events": [
+        {
+          "id": "p1",
+          "kind": "created",
+          "actor": "alice",
+          "entity": "project",
+          "entityId": "p1",
+          "ts": 1000,
+          "opIds": [
+            "p1",
+            "p2",
+            "p3"
+          ],
+          "changes": [
+            {
+              "field": "created_at",
+              "from": null,
+              "to": 1000
+            },
+            {
+              "field": "name",
+              "from": null,
+              "to": "House"
+            }
+          ]
+        },
+        {
+          "id": "p4",
+          "kind": "edited",
+          "actor": "alice",
+          "entity": "project",
+          "entityId": "p1",
+          "ts": 90000,
+          "opIds": [
+            "p4"
+          ],
+          "changes": [
+            {
+              "field": "name",
+              "from": "House",
+              "to": "Household"
+            }
+          ]
+        },
+        {
+          "id": "p5",
+          "kind": "archived",
+          "actor": "bob",
+          "entity": "project",
+          "entityId": "p1",
+          "ts": 95000,
+          "opIds": [
+            "p5"
+          ],
+          "changes": [
+            {
+              "field": "archived",
+              "from": null,
+              "to": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

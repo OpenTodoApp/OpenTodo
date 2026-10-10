@@ -60,6 +60,19 @@ func (n *InApp) Assigned(ctx context.Context, e Assigned) {
 	}
 }
 
+// Mentioned stores a "mentioned" notification for the mentioned member
+// (OpenSpec change `comments-and-activity`).
+func (n *InApp) Mentioned(ctx context.Context, e Mentioned) {
+	payload, err := json.Marshal(e)
+	if err == nil {
+		_, err = n.db.ExecContext(ctx, `INSERT INTO notifications(id,user_id,kind,payload,created_at) VALUES(?,?,?,?,?)`,
+			ids.New(), e.RecipientID, KindMentioned, string(payload), n.now().UnixMilli())
+	}
+	if err != nil {
+		n.log.Error("store notification", "kind", KindMentioned, "err", err)
+	}
+}
+
 // List returns the user's notifications, newest first, and the number unread.
 func (n *InApp) List(ctx context.Context, userID string) ([]Notification, int, error) {
 	rows, err := n.db.QueryContext(ctx, `SELECT id, kind, payload, created_at, read_at FROM notifications
