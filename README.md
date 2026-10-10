@@ -59,11 +59,12 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Offline | Every change is applied locally first and queued; the app loads and works with no network. Installable PWA |
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs |
 | Accounts | First-run owner setup, email + password sign-in, sessions, optional open sign-up |
+| Passkeys | Sign in without a password using your device's fingerprint, face or PIN (WebAuthn), including browser autofill; several named passkeys per account, managed in Settings → Security; needs an https `OPENTODO_BASE_URL`. The password keeps working as a fallback |
 | API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), labels and filter queries, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), labels and filter queries, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, import from other task apps, OIDC, optional end-to-end encryption.
 
 ## Quick start
 
@@ -115,7 +116,7 @@ All settings are environment variables with safe defaults. See [`.env.example`](
 | --- | --- | --- |
 | `OPENTODO_ADDR` | `:8080` | Listen address |
 | `OPENTODO_DATA_DIR` | `/data` (image) / `./data` (binary) | Where the SQLite database lives |
-| `OPENTODO_BASE_URL` | inferred | Public URL; enables the `Secure` cookie flag and strict origin checks behind a proxy |
+| `OPENTODO_BASE_URL` | inferred | Public URL; enables the `Secure` cookie flag and strict origin checks behind a proxy; passkeys are offered only when it is https |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner exists |
 | `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |

@@ -16,16 +16,18 @@
 
 ## 3. Web app: client library
 
-- [ ] 3.1 `web/src/lib/passkeys.ts`: base64url helpers, support detection, conditional mediation detection, create/get wrappers with abort support; verify `npm test` passes `passkeys.test.ts` for encoding round-trips and feature detection with a mocked credential API
-- [ ] 3.2 `web/src/lib/api.ts`: functions for the seven routes and the new status field; verify typed responses compile in `npm run build`
+- [x] 3.1 `web/src/lib/passkeys.ts`: base64url helpers, support detection, conditional mediation detection, create/get wrappers with abort support; verify `npm test` passes `passkeys.test.ts` for encoding round-trips and feature detection with a mocked credential API
+- [x] 3.2 `web/src/lib/api.ts`: functions for the seven routes and the new status field; verify typed responses compile in `npm run build`
 
 ## 4. Web app: UI
 
 - [ ] 4.1 Sign-in screen: "Sign in with a passkey" button and conditional autofill on the email field when `passkeysAvailable`, cancel falls back to the password form silently; verify in the browser against an https dev origin that autofill sign-in works and that cancelling leaves no error
-- [ ] 4.2 Settings `SecurityPanel`: list with name, created, last used, suspicious badge; add (name prompt → ceremony), rename, delete with confirm; hidden when unavailable; offline read-only; verify in the browser plus component tests for the hidden and offline states in `npm test`; `npm run build` passes
-- [ ] 4.3 Keyboard reachability of the panel and the sign-in button, `?` help updated; verify by adding, renaming and deleting a passkey without a mouse
+  - Apply note: implemented. Verified in Chromium (Playwright) with a CDP virtual authenticator against `OPENTODO_BASE_URL=http://localhost:18080`, a secure-context development origin but not an https one. Autofill (conditional mediation) sign-in worked without typing a password; the email field has `autocomplete="username webauthn"`; a device with no passkey fell back to the password form with no error. Left unchecked until it is repeated on a real https origin with a real authenticator.
+- [x] 4.2 Settings `SecurityPanel`: list with name, created, last used, suspicious badge; add (name prompt → ceremony), rename, delete with confirm; hidden when unavailable; offline read-only; verify in the browser plus component tests for the hidden and offline states in `npm test`; `npm run build` passes
+- [x] 4.3 Keyboard reachability of the panel and the sign-in button, `?` help updated; verify by adding, renaming and deleting a passkey without a mouse
 
 ## 5. Docs and release
 
-- [ ] 5.1 `docs/self-hosting/docker.md` and `coolify.md`: explain that passkeys need an https `OPENTODO_BASE_URL` and what happens when the domain changes; `README.md` feature list; CHANGELOG entry; verify links resolve and `make check` passes
+- [x] 5.1 `docs/self-hosting/docker.md` and `coolify.md`: explain that passkeys need an https `OPENTODO_BASE_URL` and what happens when the domain changes; `README.md` feature list; CHANGELOG entry; verify links resolve and `make check` passes
 - [ ] 5.2 End-to-end run on an https origin: register passkey on device A → sign out → passwordless sign-in → register on device B → delete A's passkey from B → A's passkey refused → password still works; verify the run completes without console errors
+  - Apply note: the whole sequence passed on `http://localhost:18080` using two isolated browser contexts, each with its own virtual authenticator: register on A → sign out → passwordless sign-in (autofill and the button, by keyboard) → register on B → delete A's passkey from B → A refused with "That passkey is not registered on this server" → password works. There were no page errors; the one console line is Chromium's network log of the intended 401 refusal. Left unchecked because it did not run on an https origin with real devices.

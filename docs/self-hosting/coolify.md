@@ -13,7 +13,7 @@ OpenTodo is built to be a one-click Coolify resource: one service, one volume, n
 What the compose file does for you:
 
 - `SERVICE_FQDN_OPENTODO_8080` tells Coolify which service and internal port receive the domain.
-- `OPENTODO_BASE_URL=${SERVICE_URL_OPENTODO}` passes the public https URL to the app so cookies are `Secure` and cross-site writes are rejected.
+- `OPENTODO_BASE_URL=${SERVICE_URL_OPENTODO}` passes the public https URL to the app so cookies are `Secure`, cross-site writes are rejected, and passkeys are available (see [Passkeys](#passkeys)).
 - `opentodo-data:/data` is a named volume Coolify manages; it holds the single SQLite database.
 - The health check uses the binary itself, so Coolify shows the service as healthy or unhealthy correctly.
 - `ports:` is ignored by Coolify's proxy routing and only matters for plain Docker.
@@ -38,10 +38,14 @@ If you prefer not to use compose:
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `OPENTODO_BASE_URL` | set by Coolify | Public URL. Enables `Secure` cookies and strict origin checks |
+| `OPENTODO_BASE_URL` | set by Coolify | Public URL. Enables `Secure` cookies, strict origin checks and, when https, passkeys |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Allow others to create accounts after the owner |
 | `OPENTODO_SESSION_DAYS` | `90` | Session lifetime |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug` logs every API request |
+
+## Passkeys
+
+Users can add passkeys in **Settings → Security** once the domain is https, which Coolify provisions when the domain starts with `https://`. Passkeys are tied to the domain's host. If you later change the domain assigned to the service, existing passkeys stop working: users sign in with their password and register new ones. Passwords are never disabled by passkeys. Details in [Running with Docker](docker.md#passkeys-need-an-https-base-url).
 
 ## Backups
 
@@ -55,5 +59,6 @@ Redeploy the resource. Coolify pulls the new image (or rebuilds), the new versio
 
 - **"No Available Server" on the domain**: make sure the domain is assigned to the `opentodo` service with port `8080` (the compose file does this through `SERVICE_FQDN_OPENTODO_8080`).
 - **Sign-in works on desktop but not on the phone**: the domain must be https. Coolify handles this when the domain starts with `https://`.
+- **No "Sign in with a passkey" button / 409 `passkeys_unavailable`**: `OPENTODO_BASE_URL` is missing or not `https://`. Set it to the URL users open.
 - **Cookie rejected / 403 `bad_origin`**: `OPENTODO_BASE_URL` must match the URL users open, including the scheme.
 - **Permission denied writing `/data`**: when using a bind mount instead of a named volume, the directory must be writable by uid 65532 (`chown 65532:65532 ./data`).
