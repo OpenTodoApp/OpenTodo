@@ -1,0 +1,38 @@
+import type { AuthStatus, Op, User } from './types'
+
+export class ApiError extends Error {
+  constructor(public status: number, public code: string, message: string) {
+    super(message)
+  }
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method,
+    headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+    credentials: 'same-origin',
+  })
+  if (res.status === 204) return undefined as T
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const err = (data as { error?: { code: string; message: string } }).error
+    throw new ApiError(res.status, err?.code ?? 'error', err?.message ?? res.statusText)
+  }
+  return data as T
+}
+
+export const api = {
+  authStatus: () => request<AuthStatus>('GET', '/api/v1/auth/status'),
+  register: (email: string, name: string, password: string) =>
+    request<{ user: User }>('POST', '/api/v1/auth/register', { email, name, password }),
+  login: (email: string, password: string) => request<{ user: User }>('POST', '/api/v1/auth/login', { email, password }),
+  logout: () => request<void>('POST', '/api/v1/auth/logout'),
+  sync: (device: string, cursor: number, ops: Op[]) =>
+    request<{ applied: number; ops: Op[]; cursor: number; hasMore: boolean; serverTime: number }>(
+      'POST', '/api/v1/sync', { device, cursor, ops },
+    ),
+  listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
+  createToken: (name: string) => request<{ token: { id: string; name: string }; secret: string }>('POST', '/api/v1/tokens', { name }),
+  deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
+}

@@ -1,0 +1,35 @@
+# OpenTodo — one container, one volume.
+#
+# Plain Docker:   cp .env.example .env && docker compose up -d   → http://localhost:8080
+# Coolify:        New resource → Docker Compose → point at this repository.
+#                 Coolify reads SERVICE_URL_OPENTODO / SERVICE_FQDN_OPENTODO below,
+#                 assigns the domain and provisions HTTPS. No variables are required.
+#
+# To build from source instead of pulling the published image, replace the
+# `image:` line with `build: .`.
+
+services:
+  opentodo:
+    image: ghcr.io/pixari/opentodo:latest
+    restart: unless-stopped
+    environment:
+      # Coolify magic variables (ignored by plain docker compose).
+      - SERVICE_FQDN_OPENTODO_8080
+      - OPENTODO_BASE_URL=${SERVICE_URL_OPENTODO:-${OPENTODO_BASE_URL:-}}
+      - OPENTODO_ALLOW_SIGNUP=${OPENTODO_ALLOW_SIGNUP:-false}
+      - OPENTODO_SESSION_DAYS=${OPENTODO_SESSION_DAYS:-90}
+      - OPENTODO_LOG_LEVEL=${OPENTODO_LOG_LEVEL:-info}
+    volumes:
+      - opentodo-data:/data
+    ports:
+      # Only used outside Coolify; Coolify routes through its proxy to port 8080.
+      - "${OPENTODO_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "/opentodo", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  opentodo-data:

@@ -1,0 +1,45 @@
+schema: spec-driven
+
+# Project context: constraints that must guide every OpenSpec artifact.
+# Keep discoverable codebase facts out of here; they belong in AGENTS.md and docs/.
+context: |
+  OpenTodo is an open-source, self-hosted, local-first task manager positioned as a
+  Todoist replacement. Product principles that every change must respect:
+  - Local-first: the client is the source of truth and works fully offline;
+    the server exists to sync, back up, and share.
+  - Data ownership: everything lives under one data directory, exports are
+    always available, no telemetry, no phone-home, no paid tier.
+  - Zero-bloat self-hosting: one container, one volume, runs on a Raspberry Pi,
+    deployable on Coolify from docker-compose.yml with no mandatory env vars.
+  - Convergent sync: every mutation is an idempotent op in an append-only log;
+    concurrent edits must converge on all devices without manual conflict
+    resolution. Never introduce a write path that bypasses the op log.
+  - Security by default: authentication is required for every API route except
+    health and auth bootstrap; new routes default to requiring a session or token.
+  - Keyboard-first UI; every action reachable without a mouse.
+  Specs are written for behavior, not implementation. Each capability lives in a
+  flat directory under openspec/specs/<capability>/.
+
+rules:
+  proposal:
+    - State explicitly what is out of scope and which ROADMAP.md item(s) the change advances
+    - Flag any new mandatory environment variable or breaking change to the op log format as **BREAKING**
+  specs:
+    - Every requirement that touches data must state offline behavior and convergence behavior
+    - Every new API route needs an authentication scenario and an error scenario
+  design:
+    - Record the data model impact (new fields on existing entities are additive; never rename op fields)
+    - State the expected effect on container image size and runtime memory when adding dependencies
+  tasks:
+    - Each task names the test, command, or observable behavior that verifies it
+    - Backend tasks run `go test ./...`; frontend tasks run `npm test` and `npm run build` in web/
+
+operations:
+  apply:
+    guidance:
+      - Run `make check` before marking the last task done
+      - Keep docs/ and README.md in sync with user-visible behavior changes
+  archive:
+    guidance:
+      - Confirm `openspec validate --all --strict` passes after archiving
+      - Add a CHANGELOG.md entry under Unreleased

@@ -1,0 +1,28 @@
+# Build outputs
+/bin/
+/dist/
+/internal/web/dist/*
+!/internal/web/dist/.gitkeep
+/web/dist/
+/web/dev-dist/
+
+# Dependencies
+/web/node_modules/
+
+# Runtime data
+/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Environment
+.env
+.env.local
+
+# Tooling
+coverage.out
+*.log
+.DS_Store
+/web/.vite/
+/web/playwright-report/
+/web/test-results/

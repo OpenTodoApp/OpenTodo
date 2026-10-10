@@ -1,0 +1,13 @@
+.git
+.github
+data
+bin
+web/node_modules
+web/dist
+internal/web/dist
+openspec
+docs
+*.md
+!README.md
+.env
+.env.*

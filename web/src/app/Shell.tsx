@@ -1,0 +1,113 @@
+import { useEffect, useState } from 'react'
+import type { User } from '../lib/types'
+import { navigate, useRoute } from './router'
+import { Sidebar } from './Sidebar'
+import { TaskListView } from './TaskListView'
+import { SettingsView } from './SettingsView'
+import { SyncStatus } from './SyncStatus'
+
+export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
+  const route = useRoute()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [route])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target as HTMLElement | null
+      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
+      if (typing) return
+      if (e.key === 'g') {
+        pendingG = true
+        setTimeout(() => (pendingG = false), 800)
+        return
+      }
+      if (pendingG) {
+        pendingG = false
+        if (e.key === 'i') navigate({ view: 'inbox' })
+        if (e.key === 't') navigate({ view: 'today' })
+        if (e.key === 'u') navigate({ view: 'upcoming' })
+        if (e.key === 'c') navigate({ view: 'completed' })
+        if (e.key === 's') navigate({ view: 'settings' })
+        return
+      }
+      if (e.key === '?') {
+        e.preventDefault()
+        setShowHelp((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const [showHelp, setShowHelp] = useState(false)
+
+  return (
+    <div className="flex h-full">
+      {sidebarOpen && <div className="fixed inset-0 z-20 bg-black/30 md:hidden" onClick={() => setSidebarOpen(false)} />}
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 w-64 transform border-r border-slate-200 bg-slate-50 transition-transform dark:border-slate-800 dark:bg-slate-900 md:static md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <Sidebar route={route} user={user} />
+      </aside>
+      <main className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center gap-2 border-b border-slate-200 px-3 py-2 dark:border-slate-800 md:px-6">
+          <button className="btn-ghost md:hidden" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>☰</button>
+          <div className="flex-1" />
+          <SyncStatus />
+          <button className="btn-ghost text-xs" onClick={() => setShowHelp(true)} title="Keyboard shortcuts">
+            <span className="kbd">?</span>
+          </button>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {route.view === 'settings' ? <SettingsView user={user} onLogout={onLogout} /> : <TaskListView route={route} />}
+        </div>
+      </main>
+      {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} />}
+    </div>
+  )
+}
+
+let pendingG = false
+
+function ShortcutHelp({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  const rows: [string, string][] = [
+    ['q', 'Quick add a task'],
+    ['j / k', 'Move selection down / up'],
+    ['Enter', 'Open selected task'],
+    ['c', 'Complete / reopen selected task'],
+    ['1 – 4', 'Set priority of selected task'],
+    ['Delete', 'Delete selected task'],
+    ['g then i / t / u / c / s', 'Go to Inbox / Today / Upcoming / Completed / Settings'],
+    ['Esc', 'Close panel, clear selection'],
+    ['?', 'Toggle this help'],
+  ]
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
+        <h2 className="mb-3 text-base font-semibold">Keyboard shortcuts</h2>
+        <table className="w-full text-sm">
+          <tbody>
+            {rows.map(([k, d]) => (
+              <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
+                <td className="py-1.5 pr-4"><span className="kbd">{k}</span></td>
+                <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button className="btn-ghost mt-4 w-full" onClick={onClose}>Close</button>
+      </div>
+    </div>
+  )
+}

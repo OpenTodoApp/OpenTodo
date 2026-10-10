@@ -1,0 +1,53 @@
+/// <reference types="vitest/config" />
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
+
+// The production bundle is written into the Go module so it can be embedded in
+// the single binary (see internal/web/web.go).
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: 'script-defer',
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'OpenTodo',
+        short_name: 'OpenTodo',
+        description: 'Your tasks, your server. Open-source, local-first task manager.',
+        theme_color: '#0f172a',
+        background_color: '#0f172a',
+        display: 'standalone',
+        start_url: '/',
+        scope: '/',
+        icons: [
+          { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        navigateFallbackDenylist: [/^\/api\//, /^\/healthz/],
+        cleanupOutdatedCaches: true,
+      },
+    }),
+  ],
+  build: {
+    outDir: '../internal/web/dist',
+    emptyOutDir: false,
+    sourcemap: false,
+  },
+  server: {
+    port: 5173,
+    proxy: { '/api': 'http://localhost:8080', '/healthz': 'http://localhost:8080' },
+  },
+  test: {
+    environment: 'node',
+    setupFiles: ['./src/test-setup.ts'],
+    include: ['src/**/*.test.ts'],
+  },
+})
