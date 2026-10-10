@@ -1,0 +1,346 @@
+// Filter view (OpenSpec change `filter-query-language`): a query input over the
+// local store. Parsing and evaluation are pure (lib/filter); results are a live
+// query, so local edits and synced ops update them without a reload, offline too.
+import { useLiveQuery } from 'dexie-react-hooks'
+import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { db } from '../lib/db'
+import { compareDue, todayISO } from '../lib/dates'
+import { addFilterHistory, compile, getFilterHistory, parse, type Node } from '../lib/filter'
+import { resolveLabels } from '../lib/labels'
+import { deleteTask, setTaskCompleted, updateTask } from '../lib/ops'
+import { buildProjectTree } from '../lib/projects'
+import { breadcrumbOf, progressMap } from '../lib/subtasks'
+import { ancestors, flattenTree } from '../lib/tree'
+import type { Label, Priority, Project, Task } from '../lib/types'
+import { LabelPicker } from './LabelPicker'
+import { TaskDetail } from './TaskDetail'
+import { TaskRow } from './TaskRow'
+
+const DEBOUNCE_MS = 150
+
+type Parsed = { ok: true; ast: Node | null } | { ok: false; error: string }
+
+function tryParse(src: string): Parsed {
+  try {
+    return { ok: true, ast: parse(src) }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/** The local calendar date, re-read every minute so "today" rolls over while the view is open. */
+function useToday(): string {
+  const [today, setToday] = useState(todayISO)
+  useEffect(() => {
+    const id = setInterval(() => setToday(todayISO()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+  return today
+}
+
+interface Group {
+  key: string
+  heading: string
+  tasks: Task[]
+}
+
+export function FilterView() {
+  const today = useToday()
+  const [query, setQuery] = useState('')
+  const [debounced, setDebounced] = useState('')
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(query), DEBOUNCE_MS)
+    return () => clearTimeout(id)
+  }, [query])
+
+  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
+  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
+  const allTasks = useLiveQuery(() => db.tasks.filter((t) => !t.deleted_at).toArray(), [], [] as Task[])
+  const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
+  const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
+  const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
+  const progress = useMemo(() => progressMap(allTasks), [allTasks])
+
+  // A syntax error keeps the last valid query (and so the previous results) on screen.
+  const parsed = useMemo(() => tryParse(debounced), [debounced])
+  const [good, setGood] = useState<{ src: string; ast: Node | null }>({ src: '', ast: null })
+  if (parsed.ok && good.src !== debounced) setGood({ src: debounced, ast: parsed.ast })
+
+  const result = useMemo(() => {
+    if (!good.ast) return null
+    // Like the other cross-project views, tasks of archived projects stay out.
+    const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
+    const { test, warnings } = compile(good.ast, { today, labels, projects })
+    const tasks = allTasks.filter((t) => !(t.project_id && archived.has(t.project_id)) && test(t))
+    return { tasks, warnings }
+  }, [good, allTasks, labels, projects, today])
+
+  const groups = useMemo<Group[]>(() => {
+    if (!result) return []
+    const byProject = new Map<string, Task[]>()
+    for (const t of result.tasks) {
+      const k = t.project_id ?? ''
+      const list = byProject.get(k)
+      if (list) list.push(t)
+      else byProject.set(k, [t])
+    }
+    // Inbox first, then projects in sidebar (tree) order, then anything else.
+    const order = ['', ...flattenTree(buildProjectTree(projects).roots).map((n) => n.id)]
+    for (const k of byProject.keys()) if (!order.includes(k)) order.push(k)
+    const heading = (id: string) => {
+      const p = projectMap.get(id)
+      if (!p) return 'Project'
+      return [...ancestors(id, projectMap).reverse(), p].map((x) => x.name).join(' › ')
+    }
+    return order.filter((k) => byProject.has(k)).map((k) => ({
+      key: k || 'inbox',
+      heading: k ? heading(k) : 'Inbox',
+      tasks: byProject.get(k)!.sort((a, b) => compareDue(a.due, b.due) || a.priority - b.priority || a.position - b.position),
+    }))
+  }, [result, projects, projectMap])
+  const rows = useMemo(() => groups.flatMap((g) => g.tasks), [groups])
+
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [pickerFor, setPickerFor] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  // ---- per-device history (local meta, never synced) ----
+  const [history, setHistory] = useState<string[]>([])
+  const [histIdx, setHistIdx] = useState(-1)
+  const draft = useRef('')
+  useEffect(() => {
+    void getFilterHistory().then(setHistory)
+  }, [])
+  const remember = useCallback((q: string) => {
+    if (q.trim()) void addFilterHistory(q).then(setHistory)
+  }, [])
+  // Leaving the view keeps the last valid query in the history too.
+  const lastValid = useRef('')
+  lastValid.current = good.src
+  useEffect(() => () => remember(lastValid.current), [remember])
+
+  // Enter: run now and move to the first result once it is rendered.
+  const [focusFirst, setFocusFirst] = useState(false)
+  useEffect(() => {
+    if (!focusFirst || debounced !== query || good.src !== query) return
+    setFocusFirst(false)
+    if (rows.length === 0) return
+    setSelectedId(rows[0].id)
+    listRef.current?.focus()
+  }, [focusFirst, debounced, query, good, rows])
+
+  function onInputKey(e: ReactKeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      setDebounced(query)
+      if (!tryParse(query).ok) return
+      remember(query)
+      setHistIdx(-1)
+      setFocusFirst(true)
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault()
+      const next = e.key === 'ArrowUp' ? Math.min(history.length - 1, histIdx + 1) : Math.max(-1, histIdx - 1)
+      if (next === histIdx) return
+      if (histIdx === -1) draft.current = query
+      setHistIdx(next)
+      setQuery(next === -1 ? draft.current : history[next])
+    } else if (e.key === 'Escape') {
+      e.stopPropagation()
+    }
+  }
+
+  // ---- list keyboard navigation (only while focus is outside text fields) ----
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target as HTMLElement | null
+      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
+      if (typing) return
+      if (e.key === 'Escape') {
+        if (pickerFor) setPickerFor(null)
+        else if (openId) setOpenId(null)
+        else {
+          setSelectedId(null)
+          inputRef.current?.focus()
+        }
+        return
+      }
+      const idx = rows.findIndex((t) => t.id === selectedId)
+      const row = idx >= 0 ? rows[idx] : undefined
+      switch (e.key) {
+        case 'j':
+        case 'ArrowDown':
+          e.preventDefault()
+          setSelectedId(rows[Math.min(rows.length - 1, idx + 1)]?.id ?? null)
+          break
+        case 'k':
+        case 'ArrowUp':
+          e.preventDefault()
+          setSelectedId(rows[Math.max(0, idx - 1)]?.id ?? null)
+          break
+        case 'Enter':
+          if (row) {
+            e.preventDefault()
+            setOpenId(row.id)
+          }
+          break
+        case 'c':
+          if (row) void setTaskCompleted(row.id, !row.completed_at)
+          break
+        case 'L':
+          if (row) {
+            e.preventDefault()
+            setPickerFor(row.id)
+          }
+          break
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+          if (row) void updateTask(row.id, { priority: Number(e.key) as Priority })
+          break
+        case 'Delete':
+        case 'Backspace':
+          if (row) {
+            e.preventDefault()
+            void deleteTask(row.id)
+            setSelectedId(rows[idx + 1]?.id ?? rows[idx - 1]?.id ?? null)
+          }
+          break
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [rows, selectedId, openId, pickerFor])
+
+  useEffect(() => {
+    if (selectedId) document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
+  }, [selectedId])
+
+  const error = parsed.ok ? null : parsed.error
+  const warnings = !error && good.src === debounced ? result?.warnings ?? [] : []
+
+  return (
+    <div className="flex h-full">
+      <div className="min-w-0 flex-1 px-4 py-5 md:px-8">
+        <div className="mx-auto max-w-3xl">
+          <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
+            Filter
+            {result && <span className="text-sm font-normal text-slate-400">{rows.length}</span>}
+          </h1>
+          <div className="mb-3 border-b border-slate-200 pb-2 dark:border-slate-800">
+            <input
+              ref={inputRef}
+              className="input font-mono"
+              placeholder="@work & due <= tomorrow & p1"
+              aria-label="Filter query"
+              aria-invalid={!!error}
+              aria-describedby="filter-message"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setHistIdx(-1)
+              }}
+              onKeyDown={onInputKey}
+            />
+            <div id="filter-message" className="min-h-5 px-1 pt-1 text-xs" aria-live="polite">
+              {error ? (
+                <p role="alert" className="text-red-600 dark:text-red-400">{error}</p>
+              ) : warnings.length > 0 ? (
+                <p className="text-amber-700 dark:text-amber-400">{warnings.join(' · ')}</p>
+              ) : null}
+            </div>
+          </div>
+
+          {!good.ast && <UsageHint />}
+          {result && rows.length === 0 && <p className="px-2 py-8 text-center text-sm text-slate-400">No task matches this filter.</p>}
+
+          <div ref={listRef} tabIndex={-1} className="outline-none" aria-label="Filter results">
+            {groups.map((g) => (
+              <section key={g.key} className="mb-4">
+                <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{g.heading}</h2>
+                <ul>
+                  {g.tasks.map((t) => (
+                    <TaskRow
+                      key={t.id}
+                      task={t}
+                      project={t.project_id ? projectMap.get(t.project_id) : undefined}
+                      labels={resolveLabels(t.labels, labelMap)}
+                      showProject={false}
+                      selected={t.id === selectedId}
+                      progress={progress.get(t.id)}
+                      breadcrumb={t.parent_id ? breadcrumbOf(t, taskMap) : null}
+                      onToggle={() => void setTaskCompleted(t.id, !t.completed_at)}
+                      onOpen={() => {
+                        setSelectedId(t.id)
+                        setOpenId(t.id)
+                      }}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        </div>
+      </div>
+      {openId && (
+        <TaskDetail
+          key={openId}
+          taskId={openId}
+          projects={projects}
+          labelMap={labelMap}
+          onClose={() => setOpenId(null)}
+          onOpen={(id) => { setSelectedId(id); setOpenId(id) }}
+          onToggleComplete={(t) => void setTaskCompleted(t.id, !t.completed_at)}
+        />
+      )}
+      {pickerFor && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/30 p-4 pt-24" onClick={() => setPickerFor(null)}>
+          <div className="w-full max-w-sm rounded-xl bg-white p-3 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Labels for task">
+            <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
+            <p className="mt-2 px-1 text-[11px] text-slate-400">Enter toggles or creates · Esc closes</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const HINT: [string, string][] = [
+  ['@errand  #Work  ##Work', 'label, project, project with sub-projects'],
+  ['p1 … p4', 'priority'],
+  ['due <= tomorrow  created > 7 days ago', '< <= = >= > before after: today, tomorrow, yesterday, monday…, 2026-12-01, 3 days, 3 days ago'],
+  ['overdue  today  tomorrow  no date  no time', 'due date keywords'],
+  ['no project  no labels  subtask', 'Inbox, unlabelled, has a parent'],
+  ['completed  open', 'open tasks only unless one of these appears'],
+  ['search: "oat milk"', 'title or notes contain the text'],
+  ['&  |  !  ( )', 'and, or, not, grouping; quote names with spaces: @"follow up"'],
+]
+
+function UsageHint() {
+  return (
+    <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700">
+      <p className="mb-2">Type a query to list matching tasks. Enter jumps to the results, Esc comes back, ↑ / ↓ recall recent queries.</p>
+      <table className="w-full text-xs">
+        <tbody>
+          {HINT.map(([k, d]) => (
+            <tr key={k} className="border-t border-slate-100 align-top dark:border-slate-800">
+              <td className="py-1 pr-3 font-mono text-slate-700 dark:text-slate-300">{k}</td>
+              <td className="py-1">{d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
