@@ -1,0 +1,22 @@
+# Reminders and notifications
+
+A task can carry any number of reminders (OpenSpec change `reminders`). Open a task, then use the **Reminders** section of the detail panel.
+
+- **Relative** reminders fire a number of minutes before or after the task's due time ("30 minutes before"). A task with a date but no time counts as due at 09:00. When the due date or time changes, on any device or through the API, the reminder moves with it; recurring tasks carry their relative reminders to the next occurrence. Without a due date a relative reminder is kept but does not fire.
+- **Absolute** reminders fire at a moment you pick and never move with the due date. They work on undated tasks and are shown in each device's local time.
+
+## Delivery
+
+**In the app.** While the app is open, a reminder whose time has come appears as a notification in the corner with **Snooze 10 min**, **1 hour**, **Tomorrow 09:00** and **Dismiss** (focus moves to it; <kbd>Esc</kbd> dismisses). This needs no network and no permission, and is skipped for completed or deleted tasks. When the tab is in the background and the browser allows notifications, a system notification is shown instead.
+
+**Web push.** In **Settings → Notifications** each device can enable push so reminders arrive while the app is closed. Enabling asks for the browser permission and registers the device with the server; disabling or signing out removes it. The server checks for due reminders every 30 seconds and sends each one once per firing time to every enabled device of the task's owner, then records the delivery on the reminder (an op by device `server`) so all devices know it fired. System notifications offer **Snooze 10 min** and **Dismiss**; these work offline and are uploaded on the next sync. If the app is focused when a push arrives, the reminder is shown in the app only.
+
+**Privacy.** A push payload carries only the reminder id, the task id and the firing time, encrypted end to end (RFC 8291) so the push service cannot read it. The device shows the title from its own copy of the task. Enable **Include task titles** if a device should be able to show the title before it has synced the task; the description is never sent.
+
+## Snooze and dismiss
+
+Snoozing sets a new firing time (in 10 minutes, in an hour, or tomorrow at 09:00) and the reminder fires again, also by push. Dismissing silences the current firing. Both are ordinary synced edits: when one device dismisses and another later snoozes the same reminder, the later edit wins on every device.
+
+## For operators
+
+Nothing to configure. The VAPID key pair is generated on first use at `<data>/push_vapid.pem` and travels with backup archives. `OPENTODO_PUSH=off` turns push off entirely (routes answer 404, no outbound requests); in-app reminders keep working. Push requires the app to be served over https (`OPENTODO_BASE_URL`), as browsers only allow push subscriptions on secure origins. See [self-hosting](self-hosting/docker.md#reminders-and-web-push) and [API](api.md#reminders-and-push).

@@ -209,6 +209,11 @@ func (s *Service) UserBySession(ctx context.Context, secret string) (*User, erro
 	return &u, err
 }
 
+// SessionHash returns the stored identifier of the session behind a cookie
+// value, so other tables (push subscriptions) can reference the session and be
+// removed with it when it is revoked.
+func SessionHash(secret string) string { return hashToken(secret) }
+
 // DeleteSession revokes a session.
 func (s *Service) DeleteSession(ctx context.Context, secret string) error {
 	_, err := s.db.ExecContext(ctx, "DELETE FROM sessions WHERE token_hash = ?", hashToken(secret))

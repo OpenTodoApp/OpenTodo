@@ -239,3 +239,35 @@ func TestRestoreTamperedArchiveFails(t *testing.T) {
 		}
 	}
 }
+
+// TestRestoreBringsBackPushKey: the web push key pair travels with the archive
+// (OpenSpec reminders), so restored subscriptions keep working on a new host.
+func TestRestoreBringsBackPushKey(t *testing.T) {
+	e := newTestEnv(t)
+	seed(t, e)
+	key := []byte("-----BEGIN EC PRIVATE KEY-----\nfake\n-----END EC PRIVATE KEY-----\n")
+	keyPath := filepath.Join(e.dir, ExtraFiles[0])
+	if err := os.WriteFile(keyPath, key, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	archive := backupOnce(t, e, "pw")
+	e.db.Close()
+	// A new host: the key file is gone.
+	if err := os.Remove(keyPath); err != nil {
+		t.Fatal(err)
+	}
+	res, err := Restore(RestoreOptions{DataDir: e.dir, Archive: archive, Passphrase: "pw"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Manifest.Files) != 2 || res.Manifest.Files[1].Name != ExtraFiles[0] {
+		t.Fatalf("manifest files = %+v", res.Manifest.Files)
+	}
+	got, err := os.ReadFile(keyPath)
+	if err != nil || !bytes.Equal(got, key) {
+		t.Fatalf("restored key = %q, %v", got, err)
+	}
+	if st, _ := os.Stat(keyPath); st.Mode().Perm() != 0o600 {
+		t.Fatalf("restored key mode = %v", st.Mode().Perm())
+	}
+}

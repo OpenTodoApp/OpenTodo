@@ -238,10 +238,13 @@ opentodo-<YYYYMMDD-HHMMSS>-<generation8>.tar[.gz][.enc]
 - `generation8` is the first 8 characters of the server's [log generation](sync.md#log-generation).
 - `.gz` is present when compression is on (the default), `.enc` when a passphrase is set.
 
-Inside is a `tar` stream with exactly two entries, in this order:
+Inside is a `tar` stream with these entries, in this order:
 
 1. `manifest.json`: what the archive holds.
 2. `opentodo.db`: a transactionally consistent copy of the database.
+3. `push_vapid.pem` (only when it exists): the web push key pair of [reminders](reminders.md).
+   Restore puts it back next to the database, so devices that enabled notifications
+   keep receiving them on the new host. Archives without it restore as before.
 
 The database copy is taken with SQLite's `VACUUM INTO` while the server keeps
 running. It contains every account, session, API token, invitation, project,
@@ -250,7 +253,7 @@ is needed to read it.
 
 The archive never contains `<data>/secrets/` (destination credentials and the
 passphrase) or `<data>/backups/` (earlier archives): only the database snapshot
-is packaged.
+and the push key are packaged.
 
 ### `manifest.json`
 

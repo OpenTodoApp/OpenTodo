@@ -10,18 +10,18 @@
 
 ## 2. Push keys and subscriptions (server)
 
-- [ ] 2.1 Generate and load the VAPID P-256 key pair at `<DATA_DIR>/push_vapid.pem` (0600) on first need; verify `TestVapidKeyPersistsAcrossRestart` creates the file once and reuses it (`go test ./...`)
-- [ ] 2.2 Migration `0002_push_subscriptions.sql` and store methods (upsert by device, delete, list by user, record failure); verify `TestPushSubscriptionUpsertReplacesDevice` (`go test ./...`)
-- [ ] 2.3 Routes `GET /api/v1/push/vapid-key`, `POST /api/v1/push/subscriptions`, `DELETE /api/v1/push/subscriptions/{id}` behind `requireAuth`, honouring `OPENTODO_PUSH=off` with 404; verify `TestPushRoutesRequireAuth`, `TestPushSubscribeRejectsMissingKeys`, `TestPushDisabledReturnsNotFound` (`go test ./...`)
-- [ ] 2.4 Delete a user's subscriptions on sign-out and session revocation; verify `TestSignOutRemovesPushSubscription` (`go test ./...`)
-- [ ] 2.5 Document the routes in `docs/api.md` and the `OPENTODO_PUSH` switch in `.env.example` and `docs/self-hosting/docker.md`; verify the documented payloads match the handlers
+- [x] 2.1 Generate and load the VAPID P-256 key pair at `<DATA_DIR>/push_vapid.pem` (0600) on first need; verify `TestVapidKeyPersistsAcrossRestart` creates the file once and reuses it (`go test ./...`)
+- [x] 2.2 Migration `0002_push_subscriptions.sql` and store methods (upsert by device, delete, list by user, record failure); verify `TestPushSubscriptionUpsertReplacesDevice` (`go test ./...`)
+- [x] 2.3 Routes `GET /api/v1/push/vapid-key`, `POST /api/v1/push/subscriptions`, `DELETE /api/v1/push/subscriptions/{id}` behind `requireAuth`, honouring `OPENTODO_PUSH=off` with 404; verify `TestPushRoutesRequireAuth`, `TestPushSubscribeRejectsMissingKeys`, `TestPushDisabledReturnsNotFound` (`go test ./...`)
+- [x] 2.4 Delete a user's subscriptions on sign-out and session revocation; verify `TestSignOutRemovesPushSubscription` (`go test ./...`)
+- [x] 2.5 Document the routes in `docs/api.md` and the `OPENTODO_PUSH` switch in `.env.example` and `docs/self-hosting/docker.md`; verify the documented payloads match the handlers
 
 ## 3. Web push sender and scheduler (server)
 
-- [ ] 3.1 Implement VAPID JWT signing and `aes128gcm` payload encryption with the standard library; verify `TestWebPushEncryptionVector` against the RFC 8291 example and `TestVapidHeader` (`go test ./...`)
-- [ ] 3.2 Scheduler goroutine: select due, undelivered, undismissed reminders on open tasks every 30 s, send to each subscription, write `delivered_at` op with `device="server"`; verify `TestSchedulerDeliversOnceAcrossRestart` using a fake push endpoint (`go test ./...`)
-- [ ] 3.3 Payload builder: ids and `fire_at` only, title added when `include_content` is set; verify `TestPayloadOmitsContentByDefault` (`go test ./...`)
-- [ ] 3.4 Subscription hygiene: remove on 404/410, count other failures, expose `last_ok_at`; verify `TestGoneSubscriptionIsRemoved` (`go test ./...`)
+- [x] 3.1 Implement VAPID JWT signing and `aes128gcm` payload encryption with the standard library; verify `TestWebPushEncryptionVector` against the RFC 8291 example and `TestVapidHeader` (`go test ./...`)
+- [x] 3.2 Scheduler goroutine: select due, undelivered, undismissed reminders on open tasks every 30 s, send to each subscription, write `delivered_at` op with `device="server"`; verify `TestSchedulerDeliversOnceAcrossRestart` using a fake push endpoint (`go test ./...`)
+- [x] 3.3 Payload builder: ids and `fire_at` only, title added when `include_content` is set; verify `TestPayloadOmitsContentByDefault` (`go test ./...`)
+- [x] 3.4 Subscription hygiene: remove on 404/410, count other failures, expose `last_ok_at`; verify `TestGoneSubscriptionIsRemoved` (`go test ./...`)
 
 ## 4. Client delivery
 

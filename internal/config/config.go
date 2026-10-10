@@ -28,6 +28,9 @@ type Config struct {
 	WebhooksAllowPrivate *bool
 	// Backup holds the optional OPENTODO_BACKUP_* presets (see backup.go).
 	Backup BackupPreset
+	// PushDisabled turns web push off (OPENTODO_PUSH=off): the /api/v1/push routes
+	// answer 404 and the reminder scheduler does not run. Push is on by default.
+	PushDisabled bool
 }
 
 // Import file size bounds for OPENTODO_IMPORT_MAX_MB.
@@ -79,6 +82,13 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_WEBHOOKS_ALLOW_PRIVATE must be true or false, got %q", v)
 		}
 		c.WebhooksAllowPrivate = &b
+	}
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("OPENTODO_PUSH"))) {
+	case "", "on", "true", "1", "yes":
+	case "off", "false", "0", "no":
+		c.PushDisabled = true
+	default:
+		return c, fmt.Errorf("OPENTODO_PUSH must be on or off, got %q", os.Getenv("OPENTODO_PUSH"))
 	}
 	switch strings.ToLower(getenv("OPENTODO_LOG_LEVEL", "info")) {
 	case "debug":
