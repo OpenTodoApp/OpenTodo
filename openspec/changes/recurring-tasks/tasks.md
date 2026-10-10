@@ -18,11 +18,11 @@
 
 ## 3. UI
 
-- [ ] 3.1 Detail panel recurrence field with suggestions, validation message and next-three preview; skip and "This occurrence only" actions with keyboard shortcuts listed in `?`; verify browser flow: typing `every last weekday` previews three month-end weekdays offline; `npm run build` passes
-- [ ] 3.2 Repeat indicator in task rows and Completed listing occurrence records; verify browser flow: complete a daily task, it stays in Today for tomorrow and an entry appears in Completed
-- [ ] 3.3 Reopen behaviour for occurrence records and ended series; verify browser flow: reopening a completed occurrence yields a standalone task and the series due date does not change
+- [x] 3.1 Detail panel recurrence field with suggestions, validation message and next-three preview; skip and "This occurrence only" actions with keyboard shortcuts listed in `?`; verify browser flow: typing `every last weekday` previews three month-end weekdays offline; `npm run build` passes
+- [x] 3.2 Repeat indicator in task rows and Completed listing occurrence records; verify browser flow: complete a daily task, it stays in Today for tomorrow and an entry appears in Completed
+- [x] 3.3 Reopen behaviour for occurrence records and ended series; verify browser flow: reopening a completed occurrence yields a standalone task and the series due date does not change
 
 ## 4. Integration and docs
 
-- [ ] 4.1 Two-device flow: set `every 3 days after completion` on A, complete on A offline Monday and on B offline Tuesday, reconnect; verify one Completed entry and the same due date on both with no console errors
-- [ ] 4.2 `README.md` feature list, `CHANGELOG.md` Unreleased with the mixed-version note; verify `make check` passes
+- [x] 4.1 Two-device flow: set `every 3 days after completion` on A, complete on A offline Monday and on B offline Tuesday, reconnect; verify one Completed entry and the same due date on both with no console errors
+- [x] 4.2 `README.md` feature list, `CHANGELOG.md` Unreleased with the mixed-version note; verify `make check` passes

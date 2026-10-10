@@ -59,7 +59,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
       <div className="flex gap-2">
         <input
           className="input"
-          aria-label="Repeat"
+          aria-label="Repeat rule"
           list="recurrence-suggestions"
           placeholder="Does not repeat (e.g. every weekday)"
           value={draft}

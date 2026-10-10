@@ -62,6 +62,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Filters | One-line queries such as `@work & due <= tomorrow & p1`: labels, projects (`##` includes sub-projects), priority, due and created dates, keywords like `overdue` or `no date`, text search, combined with `&`, `\|`, `!` and parentheses. Evaluated on the device, so results are live and work offline; `g` `f` opens the view, ↑ / ↓ recall recent queries. See [docs/filters.md](docs/filters.md) |
 | Sub-projects | Nest projects to any depth; collapsible sidebar tree (Left / Right, remembered per device) with rolled-up counts; "Move to" from the project menu or `m`; a project view lists its sub-projects; archiving cascades, deleting moves sub-projects up a level; concurrent moves on two devices never leave a project nested inside itself |
 | Tasks | Title, notes, project, priority P1–P4, floating due date with optional time, complete / reopen, delete |
+| Recurring tasks | Rules you type and read: `every weekday`, `every last weekday`, `every 2nd tuesday`, `every 3 days after completion`, optionally `until 2026-12-31` or `for 10 times`. Completing records the occurrence in Completed and moves the task to its next date (overdue tasks catch up instead of piling up); skip (`Shift+S`) or detach one occurrence (`Shift+O`); a live preview of the next three dates. Two devices completing the same occurrence offline end with one entry. See [docs/recurrence.md](docs/recurrence.md) |
 | Subtasks | Nest tasks to any depth; parents show `done/total` progress; completing or deleting a parent cascades; `a` adds a subtask, Tab / Shift+Tab indent and outdent, Left / Right collapse and expand; concurrent moves on two devices never leave a task nested inside itself |
 | Offline | Every change is applied locally first and queued; the app loads and works with no network. Installable PWA |
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs. Live push: a change on one device shows up on the others within a second or two, with polling as the fallback |
@@ -74,7 +75,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): saved and pinned filter views, recurring tasks, reminders, sharing and comments, CalDAV, import from other task apps, OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): saved and pinned filter views, reminders, sharing and comments, CalDAV, import from other task apps, OIDC, optional end-to-end encryption.
 
 ## Quick start
 
