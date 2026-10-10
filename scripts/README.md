@@ -15,3 +15,7 @@ CHROMIUM_PATH=/path/to/chrome npx -y -p playwright@1.56.1 node scripts/e2e-smoke
 ```
 
 Environment: `OPENTODO_URL` (default `http://127.0.0.1:8080`), `CHROMIUM_PATH` (optional). Exit code is non-zero on any failed step or browser console error.
+
+## `screenshots.mjs`
+
+Seeds a fresh server with a realistic set of projects and tasks and captures the screenshots used in `README.md` and the website (`docs/screenshots/*.png`, high-DPI). Same prerequisites and environment variables as the smoke test; run it against an **empty** data directory, then copy the PNGs into `website/assets/`.
