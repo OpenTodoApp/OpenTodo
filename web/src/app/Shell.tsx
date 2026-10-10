@@ -217,6 +217,10 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['Enter (on an invitation)', 'Settings → Members: copy the invite link created in this session'],
     ['Delete (on an invitation)', 'Settings → Members: revoke a pending invitation'],
     ['g then s, Tab', 'Settings → Security: add, rename (Enter saves, Esc cancels) or delete passkeys'],
+    ['Shift+C', 'Comment on the open task: focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)'],
+    ['Ctrl+Enter / ⌘+Enter (in a comment)', 'Post the comment, reply or edit; Esc cancels or leaves the field'],
+    ['Tab, Enter (in the comment thread)', 'Reach Reply, Edit and Delete on a comment; Load older activity at the end'],
+    ['Shift+H (in a project)', 'Show or hide the project activity; Tab reaches the person and kind filters'],
     ['Esc', 'Close panel, clear selection'],
     ['?', 'Toggle this help'],
   ]

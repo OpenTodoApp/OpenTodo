@@ -4,6 +4,7 @@ import type { Progress } from '../lib/subtasks'
 import type { Label, Project, Task } from '../lib/types'
 import { LabelChip } from './LabelPicker'
 import { AssigneeChip } from './AssigneePicker'
+import { useCommentCount } from './useCommentCounts'
 
 const PRIORITY_RING: Record<number, string> = {
   1: 'border-red-500 bg-red-50 dark:bg-red-950/40',
@@ -46,6 +47,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
 }) {
   const due = describeDue(task.due)
   const done = !!task.completed_at
+  const comments = useCommentCount(task.id)
   return (
     <li
       data-task-id={task.id}
@@ -102,6 +104,11 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           ) : null}
           {assignee && <AssigneeChip name={assignee} me={assignedToMe} />}
           {task.description && <span className="text-slate-400">≡</span>}
+          {comments > 0 && (
+            <span className="text-slate-400" title={`${comments} comment${comments === 1 ? '' : 's'}`} aria-label={`${comments} comment${comments === 1 ? '' : 's'}`} data-comments>
+              💬 {comments}
+            </span>
+          )}
           {labels.length > 0 && (
             <span className="flex flex-wrap gap-1">{labels.map((l) => <LabelChip key={l.id} label={l} />)}</span>
           )}
