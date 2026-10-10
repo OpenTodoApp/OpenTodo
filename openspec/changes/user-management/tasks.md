@@ -36,7 +36,7 @@
 - [x] 5.2 Add `UsersPanel` in Settings for the owner and admins: the list with status and last sign-in, actions per row from `roles.ts`, a delete dialog that requires the email, a reset link shown once with copy, a transfer dialog with a password prompt, a role toggle for the owner, and an offline disabled state with nothing stored in Dexie. Verify with the component test `UsersPanel.test.ts` (fake-indexeddb shows no user data in the database) under `npm test`, and check that `npm run build` passes.
 - [x] 5.3 Extend `MembersPanel` so it is visible to admins. Verify with a component test in which an admin sees the panel and a member does not, under `npm test`.
 - [x] 5.4 Add a `PasswordSection` in Settings for every user, and the `/reset/:token` route with preview, form, invalid-link state, sign-out-first prompt for a signed-in visitor, and offline retry. Verify with `ResetScreen.test.ts` under `npm test`, and check that `npm run build` passes.
-- [ ] 5.5 Add keyboard access: focusable rows, `d`, `r` and `Delete` with confirmation, documented in `?` help. Verify by doing deactivate → reactivate → reset → delete in the browser without a mouse.
+- [x] 5.5 Add keyboard access: focusable rows, `d`, `r` and `Delete` with confirmation, documented in `?` help. Verify by doing deactivate → reactivate → reset → delete in the browser without a mouse.
 - [ ] 5.6 Browser flow against `./bin/opentodo`. Verify that it completes without console errors:
   1. The owner invites B and C, and both accept.
   2. The owner promotes B to admin.
@@ -46,6 +46,7 @@
   6. C changes the password again in Settings.
   7. The owner transfers ownership to B. The list shows B as owner and the previous owner as admin.
   8. B deletes C after typing C's email.
+  - Implementation note: a shortened smoke run passed against the built binary (owner sees Users; owner promotes B; owner deactivates C with `d`, C's open tab drops to sign-in and C's sign-in shows the deactivated message; owner reactivates C, issues a reset link with `r`, C sets a new password through it and signs in; the reset link offered sign-out to a signed-in visitor; owner transfers ownership to B; B deletes C with `Delete` after typing the email). Only network-status console messages appeared (expected 401/403 for C, 404 for the push key with push off). Steps 3 (B as the actor), 4 and 6 in the browser are covered by Go/vitest tests only, so the box stays open.
 
 ## 6. Audit integration
 
@@ -58,3 +59,4 @@
 ## 8. Two-factor integration (carried over from `mfa-totp`)
 
 - [ ] 8.1 Wrap the self-service password-change route as `s.requireAuth(s.requireFresh(h))`, and add an owner action in the Users panel that calls `POST /api/v1/members/{id}/mfa/reset`; verify with `TestPasswordChangeRequiresFreshSession` and the browser flow step "owner resets a member's two-factor"
+  - Implementation note: done in code (both wraps, plus every admin route; "Reset 2FA" row action for the owner) and `TestPasswordChangeRequiresFreshSession` passes; the browser step was not run, so the box stays open.
