@@ -34,4 +34,4 @@ Any static host works too: publish the contents of this folder as-is.
 
 When the app UI changes, refresh the screenshots in `assets/` from `docs/screenshots/`.
 
-Social previews need absolute URLs: once the domain is known, set `og:image` to `https://<domain>/assets/og.png` and add `og:url`.
+Live at https://opentodo.pixari.dev. The canonical, `og:url` and `og:image` URLs in `index.html` are absolute; update them if the domain changes.
