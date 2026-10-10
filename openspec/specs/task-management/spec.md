@@ -17,7 +17,7 @@ A task SHALL have a title, a description, an optional project, a priority from 1
 - **THEN** the write is rejected as invalid and no field changes
 
 ### Requirement: Quick capture
-The client SHALL offer a single-line quick-add input in every task view that creates a task on Enter and stays focused for the next entry. The line SHALL be parsed for natural-language attributes (due date and time, project, labels, priority, estimate) as defined by the natural-language-capture capability. The new task SHALL inherit the context of the view (the current project in a project view, today's date in Today, tomorrow's date in Upcoming) for every attribute the line does not set explicitly.
+The client SHALL offer a single-line quick-add input in every task view that creates a task on Enter and stays focused for the next entry. The line SHALL be parsed for attributes as defined by the natural-language-capture capability. The new task SHALL inherit the view's context (project, Today's date, Upcoming's tomorrow) for every attribute the line does not set.
 
 #### Scenario: Capture in a project
 - **WHEN** the user types a title in a project view and presses Enter
