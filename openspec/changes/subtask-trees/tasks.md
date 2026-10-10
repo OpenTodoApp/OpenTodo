@@ -2,12 +2,12 @@
 
 ## 1. Data layer (web/src/lib)
 
-- [ ] 1.1 Generic `tree.ts` (`buildTree`, `descendants`, `isDescendant`, deterministic cycle breaking by newest `parent_id` clock) or extend it if `project-hierarchy` landed first; verify `tree.test.ts` for tasks: depth, orphans at top level, cycle broken identically for both op orders (`npm test`)
-- [ ] 1.2 `createSubtask(parentId, title)` inheriting the parent's project; verify `ops.test.ts` "subtask inherits project" (`npm test`)
-- [ ] 1.3 `setTaskParent(id, parentId | null)` refusing self/descendants and cross-project parents, appending last among siblings; verify `ops.test.ts` rejects a descendant and a different-project parent (`npm test`)
-- [ ] 1.4 Cascades: `updateTask` with `project_id` moves descendants; `setTaskCompleted(id, true)` completes open descendants; `deleteTask` tombstones descendants; reopen does not cascade; verify `ops.test.ts` "complete cascades", "reopen does not cascade", "delete cascades", "concurrent delete and edit keeps tombstone" (`npm test`)
-- [ ] 1.5 Progress helper `progressOf(task, tasks)` over direct non-deleted children; verify `tree.test.ts` "3/5" and live update after a remote completion op (`npm test`)
-- [ ] 1.6 Display-state helper marking children of missing, deleted or completed parents as top-level with breadcrumb; verify `tree.test.ts` "concurrent complete and add shows new subtask at top level" (`npm test`)
+- [x] 1.1 Generic `tree.ts` (`buildTree`, `descendants`, `isDescendant`, deterministic cycle breaking by newest `parent_id` clock) or extend it if `project-hierarchy` landed first; verify `tree.test.ts` for tasks: depth, orphans at top level, cycle broken identically for both op orders (`npm test`)
+- [x] 1.2 `createSubtask(parentId, title)` inheriting the parent's project; verify `ops.test.ts` "subtask inherits project" (`npm test`)
+- [x] 1.3 `setTaskParent(id, parentId | null)` refusing self/descendants and cross-project parents, appending last among siblings; verify `ops.test.ts` rejects a descendant and a different-project parent (`npm test`)
+- [x] 1.4 Cascades: `updateTask` with `project_id` moves descendants; `setTaskCompleted(id, true)` completes open descendants; `deleteTask` tombstones descendants; reopen does not cascade; verify `ops.test.ts` "complete cascades", "reopen does not cascade", "delete cascades", "concurrent delete and edit keeps tombstone" (`npm test`)
+- [x] 1.5 Progress helper `progressOf(task, tasks)` over direct non-deleted children; verify `tree.test.ts` "3/5" and live update after a remote completion op (`npm test`)
+- [x] 1.6 Display-state helper marking children of missing, deleted or completed parents as top-level with breadcrumb; verify `tree.test.ts` "concurrent complete and add shows new subtask at top level" (`npm test`)
 
 ## 2. Server (Go)
 

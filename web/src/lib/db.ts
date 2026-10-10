@@ -25,6 +25,10 @@ class OpenTodoDB extends Dexie {
       outbox: '++local, id',
       meta: 'key',
     })
+    // v2 (subtask-trees): index tasks by parent so subtree lookups stay cheap.
+    this.version(2).stores({
+      tasks: 'id, project_id, parent_id, completed_at, position',
+    })
   }
 }
 

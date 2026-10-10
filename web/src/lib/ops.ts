@@ -2,6 +2,7 @@
 // immediately (optimistic, offline-safe) and queued for the server.
 import { db, getMeta, setMeta } from './db'
 import { hlcNow, hlcSeed, wins } from './hlc'
+import { descendants, isDescendant } from './tree'
 import type { Clock, Entity, Op, Project, Task } from './types'
 
 let devicePromise: Promise<string> | null = null
@@ -111,27 +112,99 @@ export async function createProject(input: { name: string; color?: string }): Pr
   return id
 }
 
-export async function createTask(input: { title: string; project_id?: string | null; due?: Task['due']; priority?: Task['priority'] }): Promise<string> {
+export async function createTask(input: {
+  title: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']
+}): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
   await mutate('task', id, {
-    title: input.title.trim(), description: '', project_id: input.project_id ?? null, parent_id: null,
+    title: input.title.trim(), description: '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due: input.due ?? null, labels: [], position: now, created_at: now,
     completed_at: null, deleted_at: null,
   })
   return id
 }
 
+/** A new subtask lives in its parent's project, with default priority and no due date. */
+export async function createSubtask(parentId: string, title: string): Promise<string> {
+  const parent = await db.tasks.get(parentId)
+  if (!parent || parent.deleted_at) throw new Error('parent task not found')
+  return createTask({ title, project_id: parent.project_id, parent_id: parentId })
+}
+
+/** Every non-deleted task; the tree helpers take the whole set so cycles are handled. */
+async function liveTasks(): Promise<Task[]> {
+  return db.tasks.filter((t) => !t.deleted_at).toArray()
+}
+
+/**
+ * Re-parent a task. Refuses the task itself, any of its descendants and a parent in
+ * another project; the REST API enforces the same rules. The task is placed last
+ * among its new siblings. One op per changed field, so the move converges by LWW.
+ */
+export async function setTaskParent(id: string, parentId: string | null): Promise<void> {
+  const task = await db.tasks.get(id)
+  if (!task || task.deleted_at) throw new Error('task not found')
+  if (parentId === task.parent_id) return
+  const all = await liveTasks()
+  if (parentId !== null) {
+    if (parentId === id) throw new Error('a task cannot be its own parent')
+    const parent = all.find((t) => t.id === parentId)
+    if (!parent) throw new Error('parent task not found')
+    if (parent.project_id !== task.project_id) throw new Error('parent must be in the same project')
+    if (isDescendant(parentId, id, all)) throw new Error('parent cannot be a descendant of the task')
+  }
+  let position = Date.now()
+  for (const t of all) {
+    if (t.id !== id && t.parent_id === parentId && t.project_id === task.project_id && t.position >= position) position = t.position + 1
+  }
+  await mutate('task', id, { parent_id: parentId, position })
+}
+
+/**
+ * Edit fields. Changing `project_id` moves the whole subtree (one op per descendant)
+ * and detaches the task from a parent that stays behind, so a subtask is always in
+ * its parent's project.
+ */
 export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<void> {
+  if ('project_id' in patch) {
+    const task = await db.tasks.get(id)
+    if (task && patch.project_id !== task.project_id) {
+      const all = await liveTasks()
+      const next = { ...patch }
+      if (task.parent_id) {
+        const parent = all.find((t) => t.id === task.parent_id)
+        if (!parent || parent.project_id !== patch.project_id) next.parent_id = null
+      }
+      await mutate('task', id, next)
+      for (const d of descendants(id, all)) {
+        const t = all.find((x) => x.id === d)
+        if (t && t.project_id !== patch.project_id) await mutate('task', d, { project_id: patch.project_id })
+      }
+      return
+    }
+  }
   await mutate('task', id, patch)
 }
 
+/** Completing a parent completes every open descendant; reopening touches only the task. */
 export async function setTaskCompleted(id: string, completed: boolean): Promise<void> {
-  await mutate('task', id, { completed_at: completed ? Date.now() : null })
+  const now = Date.now()
+  await mutate('task', id, { completed_at: completed ? now : null })
+  if (!completed) return
+  const all = await liveTasks()
+  for (const d of descendants(id, all)) {
+    const t = all.find((x) => x.id === d)
+    if (t && !t.completed_at) await mutate('task', d, { completed_at: now })
+  }
 }
 
+/** Deleting a task tombstones its whole subtree, one op per task. */
 export async function deleteTask(id: string): Promise<void> {
-  await mutate('task', id, { deleted_at: Date.now() })
+  const now = Date.now()
+  const all = await liveTasks()
+  await mutate('task', id, { deleted_at: now })
+  for (const d of descendants(id, all)) await mutate('task', d, { deleted_at: now })
 }
 
 export async function updateProject(id: string, patch: Partial<Omit<Project, 'id' | '_clock'>>): Promise<void> {
