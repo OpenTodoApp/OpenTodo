@@ -13,6 +13,10 @@ import { useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
 import { navigate, type Route } from './router'
 import { visibleTasks } from '../lib/trash'
+import { beginDrag } from '../lib/dnd'
+import { moveProjectBy, moveProjectTo } from '../lib/move'
+import { canEditProject, roleOf } from '../lib/sharing'
+import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
 
 const ACTIVE = 'bg-emerald-100 font-medium text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100'
 const IDLE = 'text-slate-700 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-slate-800'
@@ -23,7 +27,12 @@ const INDENT_REM = 0.75
 export function Sidebar({ route, user }: { route: Route; user: User }) {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at && !p.archived).toArray(), [], [])
   // Shared projects carry a badge (project-sharing); read from the cached memberships.
-  const sharedIds = useLiveQuery(async () => new Set((await db.memberships.toArray()).map((m) => m.projectId)), [], new Set<string>())
+  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [])
+  const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
+  const sharedIds = useMemo(() => new Set(memberMap.keys()), [memberMap])
+  // Manual ordering (OpenSpec `manual-ordering`): a project's position is a project
+  // field, so only its owner or an admin may move it (project-sharing roles).
+  const movable = (id: string) => canEditProject(roleOf(id, memberMap))
   // Per-device collapse state lives in the local meta table (never synced); reading it
   // through a live query keeps every Sidebar instance in step.
   const collapsedIds = useLiveQuery(() => getMeta<string[]>(COLLAPSED_PROJECTS_KEY, []), [], [] as string[])
@@ -94,9 +103,63 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   const focusRow = (id: string | null) => {
     if (id) document.querySelector<HTMLElement>(`[data-project-id="${id}"]`)?.focus()
   }
+  // A moved row is re-inserted in the DOM, which can drop focus: restore it once
+  // the reordered tree renders.
+  const refocus = useRef<string | null>(null)
+  useEffect(() => {
+    if (!refocus.current) return
+    const id = refocus.current
+    refocus.current = null
+    if (document.activeElement?.getAttribute('data-project-id') !== id) focusRow(id)
+  }, [rows])
 
-  /** Left collapses (or climbs to the parent), Right expands (or descends to the first child). */
+  // Drag and drop of sidebar projects (lib/dnd): the top or bottom quarter of a row
+  // places before / after it (among its siblings), the middle nests inside it
+  // (project-hierarchy re-parenting). Keyboard alternatives: Alt+Up/Down, and `m`.
+  const [dropAt, setDropAt] = useState<DropAt | null>(null)
+  const treeRef = useRef(tree)
+  treeRef.current = tree
+  const collapsedRef = useRef(collapsed)
+  collapsedRef.current = collapsed
+  function startDrag(e: React.PointerEvent, n: ProjectNode) {
+    if (!movable(n.id)) return
+    const own = new Set(flattenTree([n]).map((x) => x.id))
+    let current: DropAt | null = null
+    const show = (d: DropAt | null) => {
+      if (sameDrop(d, current)) return
+      current = d
+      setDropAt(d)
+    }
+    beginDrag(e, {
+      label: n.item.name,
+      onMove: (target, _x, y) => {
+        const id = target?.startsWith('project:') ? target.slice('project:'.length) : null
+        const zone = id && !own.has(id) ? zoneUnder('data-project-row', id, y, true) : null
+        show(id && zone ? { id, zone } : null)
+      },
+      onDrop: () => {
+        const d = current
+        const row = d ? treeRef.current.nodes.get(d.id) : undefined
+        if (!d || !row) return
+        const t = dropTarget({ id: row.id, parent: row.parent, expanded: row.children.length > 0 && !collapsedRef.current.has(row.id) }, d.zone)
+        if (t.parent_id) void toggleCollapsedProject(t.parent_id, false)
+        void moveProjectTo(n.id, t)
+      },
+      onEnd: () => show(null),
+    })
+  }
+
+  /** Left collapses (or climbs to the parent), Right expands (or descends to the first child). Alt+Up/Down reorders. */
   function onRowKey(e: KeyboardEvent<HTMLButtonElement>, n: ProjectNode) {
+    if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      // Keyboard move among siblings (manual-ordering); the row keeps focus.
+      e.preventDefault()
+      e.stopPropagation()
+      const up = e.key === 'ArrowUp'
+      refocus.current = n.id
+      void moveProjectBy(n.id, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1)
+      return
+    }
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
     e.preventDefault()
     e.stopPropagation()
@@ -172,9 +235,16 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
             const has = n.children.length > 0
             const isCollapsed = collapsed.has(n.id)
             const count = counts.byProject.get(n.id)
+            const drop = dropAt?.id === n.id ? dropAt.zone : null
             return (
               <li key={n.id} role="treeitem" aria-level={n.depth + 1} aria-expanded={has ? !isCollapsed : undefined}
-                className="flex items-center" style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
+                data-project-row={n.id} data-drop-target={`project:${n.id}`}
+                onPointerDown={movable(n.id) ? (e) => startDrag(e, n) : undefined}
+                className={`relative flex items-center rounded-md ${drop === 'inside' ? 'ring-2 ring-emerald-500' : ''}`} style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
+                {(drop === 'before' || drop === 'after') && (
+                  <span aria-hidden="true" data-drop-indicator={drop}
+                    className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-emerald-500 ${drop === 'before' ? '-top-px' : '-bottom-px'}`} />
+                )}
                 <span className="flex h-6 w-4 shrink-0 items-center justify-center">
                   {has && (
                     <button type="button" tabIndex={-1} aria-label={isCollapsed ? `Expand ${p.name}` : `Collapse ${p.name}`}

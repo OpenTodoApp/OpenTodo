@@ -11,6 +11,8 @@ import { canEditTasks, memberName, roleOf } from '../lib/sharing'
 import { flattenTree, type Tree, type TreeNode } from '../lib/tree'
 import type { Label, Priority, Project, Section, Task } from '../lib/types'
 import { beginDrag } from '../lib/dnd'
+import { moveTask, moveTaskBy } from '../lib/move'
+import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
 import { effectiveSection, groupBySection, loadCollapsedSections, loadViewMode, moveTaskToSection, saveViewMode, setSectionCollapsed } from '../lib/sections'
 import { BoardView, sectionTarget, type BoardColumn } from './BoardView'
 import { AddSection, SectionHeader, SectionQuickAdd } from './Sections'
@@ -264,18 +266,63 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
     void moveTaskToSection(task.id, key || null).catch(() => undefined)
   }, [sectionMap])
 
-  /** Pointer drag of a card or top-level row onto a column or heading (lib/dnd). */
+  // Manual ordering (OpenSpec `manual-ordering`): project lists and boards (editors
+  // and above) and the Inbox. Date and filter views keep their own sort.
+  const manual = (route.view === 'project' && projectEditable) || route.view === 'inbox'
+  /** Section key ('' = "No section") of each top-level row or card in a sectioned project. */
+  const sectionOfRow = useMemo(() => {
+    const m = new Map<string, string>()
+    if (board) for (const c of columns) for (const t of c.cards) m.set(t.id, c.key)
+    else for (const g of groups) if (g.section !== undefined) for (const r of g.rows) if (r.parent === null) m.set(r.task.id, g.section?.id ?? '')
+    return m
+  }, [board, columns, groups])
+  const [dropAt, setDropAt] = useState<DropAt | null>(null)
+  // The drag session outlives renders; it reads the latest rows through this ref.
+  const dragState = useRef({ rows, sectionOfRow, tree, board })
+  dragState.current = { rows, sectionOfRow, tree, board }
+
+  /**
+   * Pointer drag (lib/dnd) of a row or card: onto another row places it before,
+   * after or (list only) inside it; onto a section heading or column moves it to
+   * the end of that section. Escape or a drop outside any list changes nothing.
+   */
   const startDrag = useCallback((e: React.PointerEvent, task: Task) => {
-    if (!projectEditable) return
+    if (!manual) return
+    const st = dragState.current
+    const node = st.tree?.nodes.get(task.id)
+    const own = new Set(node ? flattenTree([node]).map((n) => n.id) : [task.id])
+    let current: DropAt | null = null
+    const show = (d: DropAt | null) => {
+      if (sameDrop(d, current)) return
+      current = d
+      setDropAt(d)
+    }
     beginDrag(e, {
       label: task.title,
+      onMove: (target, _x, y) => {
+        const id = target?.startsWith('task:') ? target.slice('task:'.length) : null
+        const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, !dragState.current.board) : null
+        show(id && zone ? { id, zone } : null)
+      },
       onDrop: (target) => {
-        if (!target.startsWith('section:')) return
-        moveToSection(task, target.slice('section:'.length))
+        const { rows: rs, sectionOfRow: secs, board: b } = dragState.current
+        if (target.startsWith('task:')) {
+          const r = current ? rs.find((x) => x.task.id === current?.id) : undefined
+          if (!r || !current) return
+          const t = dropTarget({ id: r.task.id, parent: r.parent, expanded: !b && r.hasChildren && !r.collapsed }, current.zone)
+          const section = t.parent_id === null ? secs.get(r.task.id) : undefined
+          void moveTask(task.id, { ...t, ...(section !== undefined ? { section_id: section } : {}) })
+        } else if (target.startsWith('section:')) {
+          const key = target.slice('section:'.length)
+          const row = rs.find((x) => x.task.id === task.id)
+          if (row && row.parent === null) moveToSection(task, key)
+          else void moveTask(task.id, { parent_id: null, section_id: key, at: 'bottom' })
+        } else return
         setSelectedId(task.id)
       },
+      onEnd: () => show(null),
     })
-  }, [projectEditable, moveToSection])
+  }, [manual, moveToSection])
 
   useEffect(() => {
     // A pending "open this task" request (reminder toast, notification click) survives the route change.
@@ -365,9 +412,19 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
       const target = e.target as HTMLElement | null
       const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
+      if (e.altKey && !e.metaKey && !e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        // Keyboard moves (manual-ordering): Alt+Up/Down one place, with Shift to the
+        // top / bottom of the task's list. Only in manually ordered views, never
+        // while typing; the selection stays on the moved task; edges do nothing.
+        if (typing || isGPending() || !manual || !selectedId || document.querySelector('[role="dialog"]')) return
+        e.preventDefault()
+        const up = e.key === 'ArrowUp'
+        void moveTaskBy(selectedId, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1)
+        return
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return
       if (e.key === 'Escape') {
         if (typing) (target as HTMLElement).blur()
         else if (pickerFor) setPickerFor(null)
@@ -552,15 +609,15 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, assignFor, userId, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent, isReadOnly, projectReadOnly,
-    projectId, board, columns, projectEditable, toggleViewMode, moveToSection])
+    projectId, board, columns, projectEditable, toggleViewMode, moveToSection, manual])
 
   useEffect(() => {
     if (!selectedId) return
     document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [selectedId])
 
-  /** One task line (or a board card); `draggable` rows can be dropped on a section. */
-  const renderRow = (r: Row, draggable: boolean) => (
+  /** One task line (or a board card); in manually ordered views rows drag and accept drops. */
+  const renderRow = (r: Row) => (
     <Fragment key={r.task.id}>
       <TaskRow
         task={r.task}
@@ -578,7 +635,9 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
         collapsed={r.collapsed}
         readOnly={isReadOnly(r.task)}
         card={board}
-        onPointerDown={draggable && projectEditable ? (e) => startDrag(e, r.task) : undefined}
+        onPointerDown={manual ? (e) => startDrag(e, r.task) : undefined}
+        dropKey={manual ? `task:${r.task.id}` : undefined}
+        dropIndicator={dropAt?.id === r.task.id ? dropAt.zone : null}
         onToggle={() => void toggleComplete(r.task.id, !r.task.completed_at)}
         onToggleCollapse={treeView && !board ? () => toggleCollapsed(r.task.id) : undefined}
         onOpen={() => {
@@ -636,6 +695,9 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
               {title}
               {route.view === 'today' && <span className="ml-2 text-sm font-normal text-slate-400">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>}
               {route.view === 'label' && <span className="text-sm font-normal text-slate-400">{rows.length}</span>}
+              {(route.view === 'today' || route.view === 'upcoming' || route.view === 'assigned') && (
+                <span className="ml-auto text-xs font-normal text-slate-400" title="This view is sorted by date: drag and Alt+↑/↓ are off here" data-sort-note>sorted by date</span>
+              )}
             </h1>
           )}
 
@@ -669,7 +731,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
               setAddingTo={setAddingTo}
               projects={projects}
               labels={labels}
-              renderCard={(t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null }, true)}
+              renderCard={(t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })}
             />
           ) : groups.map((g, gi) => g.section !== undefined && currentProject ? (
             // Project list grouped by section (board-view): headings are drop targets.
@@ -688,12 +750,12 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
               {addingTo === (g.section?.id ?? '') && projectEditable && (
                 <SectionQuickAdd project={currentProject} sectionId={g.section?.id ?? null} sectionName={g.heading ?? 'No section'} projects={projects} labels={labels} onClose={() => setAddingTo(null)} />
               )}
-              <ul>{g.rows.map((r) => renderRow(r, r.depth === 0))}</ul>
+              <ul>{g.rows.map((r) => renderRow(r))}</ul>
             </section>
           ) : (
             <section key={g.key} className="mb-4">
               {g.heading && <h2 className={`mb-1 px-2 text-xs font-semibold uppercase tracking-wide ${g.key === 'overdue' ? 'text-red-600' : 'text-slate-400'}`}>{g.heading}</h2>}
-              <ul>{g.rows.map((r) => renderRow(r, false))}</ul>
+              <ul>{g.rows.map((r) => renderRow(r))}</ul>
             </section>
           ))}
           {route.view === 'project' && !board && projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
