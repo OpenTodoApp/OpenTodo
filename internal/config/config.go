@@ -20,6 +20,8 @@ type Config struct {
 	AllowSignup bool
 	SessionTTL  time.Duration
 	LogLevel    slog.Level
+	// Backup holds the optional OPENTODO_BACKUP_* presets (see backup.go).
+	Backup BackupPreset
 }
 
 // Load reads OPENTODO_* variables from the environment.
@@ -63,6 +65,11 @@ func Load() (Config, error) {
 	default:
 		return c, fmt.Errorf("OPENTODO_LOG_LEVEL must be debug, info, warn or error")
 	}
+	b, err := loadBackupPreset()
+	if err != nil {
+		return c, err
+	}
+	c.Backup = b
 	return c, nil
 }
 
