@@ -11,7 +11,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 ```json
 {
   "id": "0d1f…",                 // unique per op (UUID v4)
-  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "section" | "comment"
+  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "section" | "comment" | "project_prefs"
   "entityId": "8c2a…",           // UUID of the entity
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
@@ -68,6 +68,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | comment | `mentions` | array of strings (account ids; filtered to members at receipt) |
 | comment | `created_at` | number |
 | comment | `edited_at`, `deleted_at` | number or null |
+| project_prefs | `feed_seen_at` | number (Unix ms: the activity-feed "seen until" time; personal scope only) |
 
 `actor` on served ops (OpenSpec `comments-and-activity`) is the account that wrote the op, taken from `ops.user_id`, which the server always sets from the authenticated submitter; a value sent by a client is ignored. It is additive and optional: older clients ignore it, and ops from an older server simply lack it.
 
@@ -122,6 +123,12 @@ The activity log is derived from ops, never written (design D4). `internal/activ
 5. An event is classified by the fields it touched, in this order: `created_at` → created; `completed_at` → completed / reopened; `deleted_at` → deleted / restored; `due` → rescheduled; `assignee_id` → assigned / unassigned; `project_id` → moved; `archived` → archived / unarchived; anything else → edited. A comment group is commented (creation), comment_deleted or comment_edited. A group that changed nothing is dropped.
 
 The event id is the id of its first op. Devices record every task, project and comment op they apply (author, old value from the local row, project) in a local `activity` table and derive events from it, so per-task and per-project activity works offline and shows the device's unsent ops as pending. The table keeps at most 500 events per project, dropping the oldest; `GET /api/v1/{tasks|projects}/{id}/activity` serves the full history from the op log, and clients merge older pages by event id and op ids. A device that receives ops out of timestamp order may fold an event slightly differently from the server; the merge never shows an op twice.
+
+### Project preferences and the activity feed
+
+`project_prefs` (OpenSpec `activity-feed`, design D1) holds one user's personal preferences for a project; its `entityId` is the project id. Its ops always resolve to the **author's personal scope**, also for a shared project, so they sync to the author's own devices and never to other members; any member, viewers included, may write their own. Today it has one field, `feed_seen_at`: the time up to which the user has seen the project's activity, taken from the newest displayed event's `ts` (an op timestamp, not the device clock). A client never writes a value smaller than the one it holds, and LWW on `(ts, device)` keeps the later mark, so two devices converge to the later time. Purging a project purges every member's `project_prefs` for it (with markers, so a stale mark cannot bring it back); sharing a project or leaving it does not touch them.
+
+Unread counts are computed locally: events of a shared project by another actor with `ts` greater than `feed_seen_at`. A device with no `feed_seen_at` for a project uses the time of its first sync after the upgrade (stored per device as `feedBaseline`), so existing history does not show up as unread. `GET /api/v1/activity` serves the cross-project feed from the op log (see [api.md](api.md#activity-feed)).
 
 ### Task labels
 
@@ -263,7 +270,7 @@ Deleting a project writes only the project's tombstone (plus moving its direct s
 
 ## Purge
 
-Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task and section that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's) and their comments are purged too.
+Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task and section that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's) and their comments are purged too, and so are every member's `project_prefs` of a purged project.
 
 Three rules keep replicas convergent:
 

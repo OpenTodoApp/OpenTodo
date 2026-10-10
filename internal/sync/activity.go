@@ -72,6 +72,32 @@ func (s *Service) ActivityOps(ctx context.Context, userID, entity, id string) ([
 	return out, nil
 }
 
+// FeedOps returns, per shared project the user is a member of, the operations
+// the project's activity is derived from (OpenSpec change `activity-feed`,
+// design D4): every task, comment and project op of its scope, in seq order.
+// Personal data never appears. projectID, when not empty, narrows the result
+// to that project, and to nothing when the user is not a member of it.
+func (s *Service) FeedOps(ctx context.Context, userID, projectID string) (map[string][]Op, error) {
+	acc, err := loadAccess(ctx, s.db, userID)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string][]Op{}
+	const q = `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device,o.user_id FROM ops o JOIN op_scopes s ON s.seq = o.seq
+		WHERE s.scope_id = ? AND o.entity IN ('task','project','comment') ORDER BY o.seq`
+	for _, pid := range acc.projects {
+		if projectID != "" && pid != projectID {
+			continue
+		}
+		ops, err := s.readOps(ctx, q, ProjectScope(pid))
+		if err != nil {
+			return nil, err
+		}
+		out[pid] = ops
+	}
+	return out, nil
+}
+
 func (s *Service) readOps(ctx context.Context, query string, args ...any) ([]Op, error) {
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {

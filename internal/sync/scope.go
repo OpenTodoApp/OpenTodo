@@ -291,6 +291,8 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 	default:
 		// Labels, saved views and reminders are personal: a reminder on a task in a
 		// shared project still belongs to its creator only (OpenSpec `reminders`).
+		// So are project_prefs (activity-feed D1): keyed by a project id, even a
+		// shared one, they never leave the author's personal scope.
 		return r.acc.personal, "", nil
 	}
 	if !CanWrite(r.acc.roleIn(scope), op.Entity, op.Field) {
