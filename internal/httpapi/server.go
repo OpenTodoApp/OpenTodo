@@ -75,6 +75,13 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/invitations", s.requireAuth(s.handleCreateInvitation))
 	mux.Handle("DELETE /api/v1/invitations/{id}", s.requireAuth(s.handleRevokeInvitation))
 	mux.HandleFunc("GET /api/v1/invitations/{token}", s.handlePreviewInvitation)
+	// Audit log: owner-only reads, export and settings; personal activity for
+	// everyone. Literal patterns, so they win over the {collection} routes below.
+	mux.Handle("GET /api/v1/audit", s.requireAuth(s.handleAuditList))
+	mux.Handle("GET /api/v1/audit/export", s.requireAuth(s.handleAuditExport))
+	mux.Handle("GET /api/v1/settings/audit", s.requireAuth(s.handleGetAuditSettings))
+	mux.Handle("PUT /api/v1/settings/audit", s.requireAuth(s.handlePutAuditSettings))
+	mux.Handle("GET /api/v1/me/activity", s.requireAuth(s.handleMyActivity))
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))

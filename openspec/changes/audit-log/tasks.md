@@ -13,8 +13,8 @@
 
 ## 3. Server: routes
 
-- [ ] 3.1 Owner-only `GET /api/v1/audit` with filters, cursor pagination and `limit<=200`, `GET /api/v1/audit/export` as newline-delimited JSON recording `audit.exported`, `GET/PUT /api/v1/settings/audit` with bounds; verify `TestAuditRoutesRequireOwner` (401 anonymous, 403 member), `TestAuditFiltersAndCursor`, `TestAuditExportRecordsItself`, `TestAuditSettingsBounds`
-- [ ] 3.2 `GET /api/v1/me/activity` bound to the session user; verify `TestActivityShowsOnlyOwnEvents` and that `/api/v1/export` output contains no audit events (`TestUserExportExcludesAudit`)
+- [x] 3.1 Owner-only `GET /api/v1/audit` with filters, cursor pagination and `limit<=200`, `GET /api/v1/audit/export` as newline-delimited JSON recording `audit.exported`, `GET/PUT /api/v1/settings/audit` with bounds; verify `TestAuditRoutesRequireOwner` (401 anonymous, 403 member), `TestAuditFiltersAndCursor`, `TestAuditExportRecordsItself`, `TestAuditSettingsBounds`
+- [x] 3.2 `GET /api/v1/me/activity` bound to the session user; verify `TestActivityShowsOnlyOwnEvents` and that `/api/v1/export` output contains no audit events (`TestUserExportExcludesAudit`)
 - [ ] 3.3 `docs/api.md` routes, filters and event catalogue; `SECURITY.md` section "What is logged"; verify documented payloads match handler tests
 
 ## 4. Web app
