@@ -2,10 +2,10 @@
 
 ## 1. Parser (web/src/lib/filter)
 
-- [ ] 1.1 Tokenizer: operators, parentheses, `@`/`#`/`##` prefixes, `pN`, comparison operators, quoted and bare words, positions; verify `filter.test.ts` tokenises `@"follow up" & !(#Work | p1)` into the expected token list (`npm test`)
-- [ ] 1.2 Recursive-descent parser producing the AST with precedence `!` > `&` > `|`; verify `filter.test.ts` precedence and grouping cases from the spec (`npm test`)
-- [ ] 1.3 Error reporting with position and expected set; verify `filter.test.ts` messages `Expected a term after "&" at position 9` and `Missing ")" at end of query` (`npm test`)
-- [ ] 1.4 Date expression parsing (`today`, `tomorrow`, `yesterday`, weekday, ISO date, `N days`, `N days ago`) resolved against an injected "today"; verify `filter.test.ts` weekday case for Saturday 2026-10-10 → 2026-10-16 (`npm test`)
+- [x] 1.1 Tokenizer: operators, parentheses, `@`/`#`/`##` prefixes, `pN`, comparison operators, quoted and bare words, positions; verify `filter.test.ts` tokenises `@"follow up" & !(#Work | p1)` into the expected token list (`npm test`)
+- [x] 1.2 Recursive-descent parser producing the AST with precedence `!` > `&` > `|`; verify `filter.test.ts` precedence and grouping cases from the spec (`npm test`)
+- [x] 1.3 Error reporting with position and expected set; verify `filter.test.ts` messages `Expected a term after "&" at position 9` and `Missing ")" at end of query` (`npm test`)
+- [x] 1.4 Date expression parsing (`today`, `tomorrow`, `yesterday`, weekday, ISO date, `N days`, `N days ago`) resolved against an injected "today"; verify `filter.test.ts` weekday case for Saturday 2026-10-10 → 2026-10-16 (`npm test`)
 
 ## 2. Evaluator
 
