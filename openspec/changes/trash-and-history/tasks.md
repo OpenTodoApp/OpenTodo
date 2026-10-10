@@ -3,9 +3,9 @@
 ## 1. Server: history and purge
 
 - [x] 1.1 Migration `0002_purges.sql` (`user_id`, `entity`, `entity_id`, `seq`, `purged_at`); verify `store.Open` on an old database applies it (`TestMigrationsApplyPurges`, `go test ./...`)
-- [ ] 1.2 `sync.History(user, entity, id, before, limit)` grouping ops by `(ts, device)` and marking losers; verify `TestHistoryIncludesLosingOps` (`go test ./...`)
-- [ ] 1.3 `sync.Purge(user, entity, ids)` deleting ops and fields, inserting markers from the shared sequence, cascading project → tasks; verify `TestPurgeRemovesOpsAndCascades` (`go test ./...`)
-- [ ] 1.4 `Apply` discards ops for purged ids (counted as duplicates); `Pull` returns `purged` after the cursor; verify `TestApplyDiscardsPurgedEntity`, `TestPullReportsPurged` (`go test ./...`)
+- [x] 1.2 `sync.History(user, entity, id, before, limit)` grouping ops by `(ts, device)` and marking losers; verify `TestHistoryIncludesLosingOps` (`go test ./...`)
+- [x] 1.3 `sync.Purge(user, entity, ids)` deleting ops and fields, inserting markers from the shared sequence, cascading project → tasks; verify `TestPurgeRemovesOpsAndCascades` (`go test ./...`)
+- [x] 1.4 `Apply` discards ops for purged ids (counted as duplicates); `Pull` returns `purged` after the cursor; verify `TestApplyDiscardsPurgedEntity`, `TestPullReportsPurged` (`go test ./...`)
 - [ ] 1.5 Routes `GET /api/v1/{tasks,projects}/{id}/history`, `DELETE /api/v1/{tasks,projects}/{id}/purge` (409 `not_deleted` when not tombstoned), `POST /api/v1/trash/purge`, all with `requireAuth`; verify `TestHistoryRequiresAuthAnd404`, `TestPurgeRejectsLiveEntity`, `TestTrashPurgeRequiresAuth` (`go test ./...`)
 - [ ] 1.6 Project DELETE via REST no longer moves tasks to the Inbox; verify `TestProjectDeleteKeepsTaskReferences` (`go test ./...`)
 - [ ] 1.7 Retention job (`OPENTODO_TRASH_RETENTION_DAYS`, default 30, `0` disables, invalid value fails startup) at startup and every 24 h; verify `TestRetentionPurgesOldTombstones`, `TestConfigRejectsInvalidRetention` (`go test ./...`)
