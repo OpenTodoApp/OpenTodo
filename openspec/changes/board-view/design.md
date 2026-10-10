@@ -57,5 +57,16 @@ Pointer-event based drag (pointerdown, move threshold, pointerup) with a ghost e
 ## Migration Plan
 Additive schema; no data migration. Rollback to a build without sections: the server rejects `section` ops from newer clients with `invalid_op`, so the outbox would stall until the client is also rolled back (same binary, so this happens together); already-stored section ops are ignored by the old reader and preserved in the log.
 
+## Implementation notes
+
+- **Sharing scopes.** A section lives in the scope of its project, resolved like a task (`internal/sync/scope.go`: tasks and sections are "project children"): a new section's `project_id` in the batch decides its scope, sharing a project relabels its sections with its tasks, and a cross-scope `project_id` is refused with `scope_change`. Role table: editors, admins and the owner may write sections (they organize tasks, which editors already edit); viewers are refused per op with `forbidden` and get the server's value back. Departed members' devices drop the project's sections with its tasks.
+- **Trash.** Sections are not Trash items (a deleted section's tasks were already moved out). Purging a project purges its sections, live or deleted, in the same scope; `PurgeResult` gains `sections`; devices delete them from the purge markers. Tombstones of sections of live projects stay in the log, like labels.
+- **Copies.** `section_id` is not in `COPY_FIELDS`: every cross-scope copy (move across scopes, shared project deletion, restore into the Inbox) lands in another project, where the section does not apply. Recurring occurrence records keep the series' section (same project), client and server.
+- **Subtasks.** Sections group top-level tasks; subtasks render under their parent regardless of their own `section_id`. Board cards are top-level tasks with a subtask progress badge; the detail panel's picker is disabled for subtasks.
+- **REST.** Task patches that change `project_id` without a `section_id` write `section_id: null` in the same batch; section deletes clear `section_id` on the section's open tasks in the same batch.
+- **Client database.** Dexie version 9 (version 8 is reserved by a parallel change) adds `sections` indexed by `[project_id+position]` and `project_id`, and indexes `tasks.section_id`.
+- **Ordering.** `web/src/lib/ordering.ts` holds the position arithmetic (`positionAtEnd`, `positionBetween`, `positionForStep`, `byPosition`) used for moves and section reordering (one op between new neighbours); `manual-ordering` builds on it and on `lib/dnd.ts` (`onMove` exposes the pointer for within-list placement).
+- **Size.** Measured with `npm run build`: JS 733.60 → 750.04 kB (215.97 → 220.60 kB gzipped, +4.6 KB), CSS 51.43 → 53.27 kB (9.29 → 9.59 kB gzipped, +0.3 KB): +4.9 KB gzipped in total, within the 10 KB budget. No dependency added; server binary and container image unchanged apart from the embedded bundle.
+
 ## Open Questions
 - Whether completed tasks should be visible per column behind a toggle; deferred until there is usage feedback.

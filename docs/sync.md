@@ -11,7 +11,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 ```json
 {
   "id": "0d1f…",                 // unique per op (UUID v4)
-  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder"
+  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "section"
   "entityId": "8c2a…",           // UUID of the entity
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
@@ -40,6 +40,11 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `recurrence` | recurrence rule string (at most 200 characters, must parse under [the grammar](recurrence.md)) or null |
 | task | `series_id` | string (task id) or null |
 | task | `assignee_id` | string (account id) or null; checked against the task's scope at receipt (see "Assignment" under [Sharing scopes](#sharing-scopes)) |
+| task | `section_id` | string (section id) or null; see [Sections](#sections) |
+| section | `name` | string |
+| section | `project_id` | string (project id, required; never changes) |
+| section | `position`, `created_at` | number |
+| section | `deleted_at` | number or null |
 | label | `name`, `color` | string |
 | label | `position`, `created_at` | number |
 | label | `deleted_at` | number or null |
@@ -82,6 +87,16 @@ A `reminder` belongs to one task (`task_id`) and fires at `fire_at`, always a re
 The array is a single LWW register: every write replaces the whole value, and when two devices write different arrays for the same task offline, every replica ends with the array that carries the greater `(ts, device)`. Concretely, if device A adds `errand` and device B adds `call` to the same task while both are offline, only one of the two labels survives on every device. To keep the common case safe the client reads the task's current array in the same transaction as the write, so sequential edits on one device never lose a label, and remote ops are applied live so the window is only the offline period. Deleting a label removes its id from every carrying task with one op per task; a concurrent array write elsewhere can resurrect the id, which is why deleted ids are hidden rather than trusted to be absent. Merging a label rewrites each carrying task's array once (source id → target id, de-duplicated) and tombstones the source.
 
 The path to per-element semantics is recorded in `openspec/changes/labels/design.md`: an add-wins set encoded as additional per-element fields would be additive to this schema.
+
+### Sections
+
+A `section` is a named, ordered container inside one project (OpenSpec change `board-view`): a heading in the list view and a column on the board. The board itself has no synced state; it is a rendering of sections and tasks. View mode (list or board) and collapsed headings are per-device preferences in the client's local `meta` table and never become ops.
+
+- **Scope.** A section lives in the sharing scope of its project, like a task: a new section's `project_id` in the batch decides its scope, sharing a project relabels its sections into the project scope, and a `project_id` op that would move a section to another scope is refused with `scope_change`. Editors, admins and the owner may write sections; viewers are refused with `forbidden`. Clients never change a section's project (the REST API refuses it).
+- **Task reference.** `task.section_id` names a section of the task's project. A reference to a deleted section, a section of another project, or one the device has not received yet is shown as "No section" and is never repaired by a write: a repair would depend on arrival order and could overwrite a newer move. Only user actions write: changing a task's `project_id` writes `section_id: null` in the same batch, and deleting a section writes its tombstone plus `section_id: null` for each of its open tasks, one op each, in one batch.
+- **Moves.** Moving a task to a column writes `section_id` and `position` (after the target column's last open task) in one batch with one timestamp, so concurrent moves resolve to the newer one for both fields together. Within-column ordering rules are left to `manual-ordering`.
+- **Unknown entities.** Clients skip ops for entities they do not know (an installed, not yet refreshed PWA receiving `section` ops), so future entities never break an older shell; a resync re-delivers them.
+- **Purge.** Sections are not Trash items; purging a project purges its sections (live or deleted) with it.
 
 ### Saved views
 
@@ -205,7 +220,7 @@ Deleting a project writes only the project's tombstone (plus moving its direct s
 
 ## Purge
 
-Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's) are purged too.
+Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task and section that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's) are purged too.
 
 Three rules keep replicas convergent:
 
