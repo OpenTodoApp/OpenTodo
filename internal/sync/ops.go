@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"unicode/utf8"
+
+	"github.com/pixari/opentodo/internal/recurrence"
 )
 
 // Op is one field assignment.
@@ -44,6 +46,10 @@ const (
 	kStringList
 	// kPositiveInt is null or a positive integer no larger than MaxPositiveInt.
 	kPositiveInt
+	// kRecurrence is null or a rule accepted by internal/recurrence (at most
+	// recurrence.MaxLen characters). Clients store the canonical form; any
+	// parseable spelling is accepted so the op log is never rewritten.
+	kRecurrence
 )
 
 // MaxPositiveInt bounds kPositiveInt fields; for estimate_minutes it is one week.
@@ -75,6 +81,10 @@ var Schema = map[string]map[string]kind{
 		"deleted_at":   kNullableNumber,
 		// Duration estimate in minutes (OpenSpec change nlp-quick-add); additive.
 		"estimate_minutes": kPositiveInt,
+		// Recurrence rule and the series an occurrence record belongs to
+		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
+		"recurrence": kRecurrence,
+		"series_id":  kNullableString,
 	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {
@@ -186,6 +196,17 @@ func checkKind(k kind, raw json.RawMessage) error {
 		var n int64
 		if err := json.Unmarshal(raw, &n); err != nil || n < 1 || n > MaxPositiveInt {
 			return fmt.Errorf("must be null or an integer from 1 to %d", MaxPositiveInt)
+		}
+	case kRecurrence:
+		if isNull {
+			return nil
+		}
+		var s string
+		if err := json.Unmarshal(raw, &s); err != nil {
+			return errors.New("must be null or a recurrence rule string")
+		}
+		if _, err := recurrence.Parse(s); err != nil {
+			return err
 		}
 	}
 	return nil
