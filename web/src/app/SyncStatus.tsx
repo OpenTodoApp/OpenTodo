@@ -5,6 +5,7 @@ export function SyncStatus() {
   const map = {
     idle: { dot: 'bg-emerald-500', text: s.pending > 0 ? `${s.pending} pending` : 'Synced' },
     syncing: { dot: 'bg-sky-500 animate-pulse', text: 'Syncing…' },
+    reseeding: { dot: 'bg-sky-500 animate-pulse', text: 'Re-syncing after restore…' },
     offline: { dot: 'bg-slate-400', text: s.pending > 0 ? `Offline · ${s.pending} pending` : 'Offline' },
     error: { dot: 'bg-red-500', text: 'Sync error' },
     unauthenticated: { dot: 'bg-amber-500', text: 'Signed out' },

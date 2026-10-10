@@ -13,10 +13,10 @@ vi.mock('./api', () => ({
   },
 }))
 
-import { getMeta } from './db'
+import { db, getMeta, setMeta } from './db'
 import { useDatabase } from './db'
-import { resetDeviceId } from './ops'
-import { startSync, stopSync } from './sync'
+import { applyOps, resetDeviceId } from './ops'
+import { startSync, stopSync, syncNow } from './sync'
 
 /** Minimal stand-in for the browser's EventSource with manual event injection. */
 class FakeEventSource {
@@ -234,5 +234,121 @@ describe('polling fallback', () => {
     clearInterval(failer)
     expect(syncCalls.mock.calls.length).toBe(afterDrop + 1)
     expect(FakeEventSource.instances.length).toBeGreaterThan(1)
+  })
+})
+
+describe('restore re-seed (log generation)', () => {
+  type SentOp = { id: string; entity: string; entityId: string; field: string; value: unknown; ts: number; device: string }
+  const sent = () => syncCalls.mock.calls.map((c) => (c as unknown as [string, number, SentOp[]]))
+
+  /** Local state written by two devices, as if synced long ago. */
+  async function seedLocal() {
+    await applyOps([
+      { id: 'a1', entity: 'project', entityId: 'p1', field: 'name', value: 'Home', ts: 100, device: 'devA' },
+      { id: 'a2', entity: 'task', entityId: 't1', field: 'title', value: 'Buy milk', ts: 200, device: 'devA' },
+      { id: 'a3', entity: 'task', entityId: 't1', field: 'project_id', value: 'p1', ts: 201, device: 'devA' },
+      { id: 'b1', entity: 'task', entityId: 't1', field: 'title', value: 'Buy oat milk', ts: 300, device: 'devB' },
+      { id: 'b2', entity: 'task', entityId: 't2', field: 'title', value: 'Created after the backup', ts: 400, device: 'devB' },
+      { id: 'b3', entity: 'label', entityId: 'l1', field: 'name', value: 'errand', ts: 410, device: 'devB' },
+    ])
+    await setMeta('generation', 'gen-before')
+    await setMeta('cursor', 42)
+  }
+
+  /** The restored server: new generation, cursor 2 after the re-seed pull. */
+  function restoredServer() {
+    syncCalls.mockImplementation((async (...args: unknown[]) => {
+      const cursor = args[1] as number
+      return { applied: (args[2] as unknown[]).length, ops: [], cursor: cursor === 0 ? 2 : cursor, hasMore: false, serverTime: Date.now(), generation: 'gen-after' }
+    }) as never)
+  }
+
+  it('reseedsAfterGenerationChange', async () => {
+    await seedLocal()
+    // An edit made offline is still waiting in the outbox; it must survive.
+    await db.outbox.add({ id: 'pending-1', entity: 'task', entityId: 't2', field: 'priority', value: 1, ts: 500, device: 'me' })
+    restoredServer()
+    await syncNow()
+    const calls = sent()
+    // First exchange: old cursor, discovers the new generation.
+    expect(calls[0][1]).toBe(42)
+    expect(calls[0][2].map((o) => o.id)).toContain('pending-1')
+    // Then everything is re-sent from cursor 0.
+    const reseed = calls.slice(1)
+    expect(reseed.length).toBeGreaterThan(0)
+    expect(reseed[0][1]).toBe(0)
+    const ops = reseed.flatMap((c) => c[2])
+    const fields = ops.map((o) => `${o.entity}:${o.entityId}:${o.field}`).sort()
+    expect(fields).toEqual(['label:l1:name', 'project:p1:name', 'task:t1:project_id', 'task:t1:title', 'task:t2:title'])
+    expect(await getMeta('generation', '')).toBe('gen-after')
+    expect(await getMeta('cursor', -1)).toBe(2)
+    expect(await db.outbox.count()).toBe(0)
+    // Steady state: the next exchange does not re-seed again.
+    syncCalls.mockClear()
+    await syncNow()
+    expect(sent()).toHaveLength(1)
+    expect(sent()[0][2]).toHaveLength(0)
+  })
+
+  it('reseedKeepsOriginalClocks', async () => {
+    await seedLocal()
+    restoredServer()
+    await syncNow()
+    const ops = sent().slice(1).flatMap((c) => c[2])
+    const title = ops.find((o) => o.entityId === 't1' && o.field === 'title')!
+    expect(title).toMatchObject({ value: 'Buy oat milk', ts: 300, device: 'devB' })
+    const project = ops.find((o) => o.entityId === 't1' && o.field === 'project_id')!
+    expect(project).toMatchObject({ value: 'p1', ts: 201, device: 'devA' })
+    // Fresh op ids, so the server does not drop them as duplicates of pre-restore ops.
+    expect(ops.every((o) => !['a1', 'a2', 'a3', 'b1', 'b2', 'b3'].includes(o.id))).toBe(true)
+  })
+
+  it('reseedDoesNotDuplicateEntities', async () => {
+    await seedLocal()
+    restoredServer()
+    await syncNow()
+    const ops = sent().slice(1).flatMap((c) => c[2])
+    expect(await db.tasks.count()).toBe(2)
+    expect(await db.projects.count()).toBe(1)
+    expect(await db.labels.count()).toBe(1)
+    // Replaying the re-seed on another device yields the same entities and values.
+    const local = await db.tasks.toArray()
+    useDatabase(`sync-other-${Date.now()}-${n++}`)
+    await applyOps(ops as never)
+    const other = await db.tasks.toArray()
+    expect(other.map((t) => t.id).sort()).toEqual(local.map((t) => t.id).sort())
+    expect(other.find((t) => t.id === 't1')?.title).toBe('Buy oat milk')
+    expect(await db.projects.count()).toBe(1)
+  })
+
+  it('two devices re-seeding concurrently converge on the greatest timestamp', async () => {
+    // Device A edited t1.title at ts 300 after the backup; device B holds ts 250.
+    const a = [{ id: 'x1', entity: 'task', entityId: 't1', field: 'title', value: 'A wins', ts: 300, device: 'devA' }]
+    const b = [{ id: 'y1', entity: 'task', entityId: 't1', field: 'title', value: 'B loses', ts: 250, device: 'devB' }]
+    const reseeded: SentOp[] = []
+    for (const local of [a, b]) {
+      useDatabase(`sync-dev-${Date.now()}-${n++}`)
+      resetDeviceId()
+      await applyOps(local as never)
+      await setMeta('generation', 'gen-before')
+      syncCalls.mockClear()
+      restoredServer()
+      await syncNow()
+      reseeded.push(...sent().slice(1).flatMap((c) => c[2]))
+    }
+    // The server (and every device) applies the union by last-writer-wins.
+    for (const order of [reseeded, [...reseeded].reverse()]) {
+      useDatabase(`sync-merge-${Date.now()}-${n++}`)
+      await applyOps(order as never)
+      expect((await db.tasks.get('t1'))?.title).toBe('A wins')
+    }
+  })
+
+  it('adopts the first generation it sees without re-seeding', async () => {
+    await applyOps([{ id: 'a1', entity: 'task', entityId: 't1', field: 'title', value: 'x', ts: 1, device: 'd' }])
+    restoredServer()
+    await syncNow()
+    expect(sent()).toHaveLength(1)
+    expect(await getMeta('generation', '')).toBe('gen-after')
   })
 })

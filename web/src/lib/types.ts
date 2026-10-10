@@ -106,7 +106,8 @@ export interface InvitationPreview {
   expiresAt: number
 }
 
-export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'unauthenticated'
+/** 'reseeding': the server was restored from a backup and this device is re-sending its local state. */
+export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' | 'unauthenticated'
 
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
 export const TASK_FIELDS = [

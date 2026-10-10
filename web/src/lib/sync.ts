@@ -4,10 +4,10 @@
 // tells us to run the exchange now).
 import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
-import { db, getMeta, setMeta } from './db'
+import { db, entityTables, getMeta, setMeta } from './db'
 import { hlcObserveServerTime } from './hlc'
 import { applyOps, getDeviceId, onLocalMutation } from './ops'
-import type { SyncState } from './types'
+import type { Clock, Entity, Op, SyncState } from './types'
 
 const BATCH = 500
 /** Poll interval while the live channel is disconnected (the historical default). */
@@ -103,6 +103,15 @@ async function runOnce(): Promise<void> {
         await db.outbox.bulkDelete(batch.map((o) => o.local as number))
       }
       await applyOps(res.ops)
+      if (await generationChanged(res.generation)) {
+        // The server was restored from a backup: its log went back in time, so our
+        // cursor means nothing there and it may lack edits we hold. Re-send every
+        // local field with its original clock, then pull everything from zero.
+        publish({ state: 'reseeding' })
+        await reseedAfterRestore(res.generation as string)
+        publish({ pending: await db.outbox.count() })
+        continue
+      }
       await setMeta('cursor', res.cursor)
       const left = await db.outbox.count()
       publish({ pending: left })
@@ -121,6 +130,65 @@ async function runOnce(): Promise<void> {
     }
     publish({ state: 'error', error: err instanceof Error ? err.message : String(err) })
   }
+}
+
+// ---- log generation (server restored from a backup) ----
+
+/** Ops per bulkAdd while re-seeding; the exchange itself still sends BATCH per request. */
+const RESEED_CHUNK = 1000
+
+/**
+ * Compare the server's log generation with the stored one. The first value a
+ * device sees is adopted as is (nothing to compare with); a server that sends
+ * none (older build) never triggers a re-seed.
+ */
+async function generationChanged(generation: string | undefined): Promise<boolean> {
+  if (!generation) return false
+  const stored = await getMeta<string | null>('generation', null)
+  if (stored === null) {
+    await setMeta('generation', generation)
+    return false
+  }
+  return stored !== generation
+}
+
+/**
+ * Re-emit every locally known field as a new op carrying the field's stored
+ * clock `(ts, device)`, reset the cursor to 0 and adopt the new generation, in
+ * one transaction. The outbox keeps any edits still waiting to upload. Because
+ * the clocks are the original ones, the server converges to exactly what this
+ * device has, and two devices re-seeding at once converge by the normal rule.
+ * Entity ids are unchanged, so nothing is duplicated.
+ */
+export async function reseedAfterRestore(generation: string): Promise<number> {
+  let emitted = 0
+  await db.transaction('rw', [...entityTables(), db.outbox, db.meta], async () => {
+    let chunk: Op[] = []
+    const flush = async () => {
+      if (chunk.length === 0) return
+      await db.outbox.bulkAdd(chunk)
+      emitted += chunk.length
+      chunk = []
+    }
+    const tables: [Entity, typeof db.projects | typeof db.tasks | typeof db.labels][] = [
+      ['project', db.projects], ['task', db.tasks], ['label', db.labels],
+    ]
+    for (const [entity, table] of tables) {
+      const rows = (await (table as unknown as { toArray(): Promise<Record<string, unknown>[]> }).toArray())
+      for (const row of rows) {
+        const clock = (row._clock ?? {}) as Clock
+        for (const [field, c] of Object.entries(clock)) {
+          if (!(field in row)) continue
+          chunk.push({ id: crypto.randomUUID(), entity, entityId: row.id as string, field, value: row[field], ts: c.ts, device: c.device })
+          if (chunk.length >= RESEED_CHUNK) await flush()
+        }
+      }
+    }
+    await flush()
+    await db.meta.put({ key: 'cursor', value: 0 })
+    await db.meta.put({ key: 'generation', value: generation })
+  })
+  return emitted
 }
 
 // ---- periodic fallback ----
