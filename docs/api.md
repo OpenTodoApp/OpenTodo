@@ -289,7 +289,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
 | `section_id` | string or null | section of the task's project; see [Sections](#sections). `400 invalid_input` for an unknown or deleted section or one of another project. Changing `project_id` without naming a section clears it |
-| `position` | number | sort order inside a list |
+| `position` | number | sort order inside a list: ascending, ties by id; clients move a task by writing the midpoint between its new neighbours (see [docs/sync.md](sync.md#manual-order)) |
 | `completed_at`, `deleted_at` | unix ms or null | |
 | `created_at` | unix ms | set by the server on create if missing |
 
