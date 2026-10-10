@@ -134,14 +134,63 @@ export async function mutate(entity: Entity, entityId: string, patch: Record<str
   await mutateMany([{ entity, entityId, patch }])
 }
 
-export async function createProject(input: { name: string; color?: string }): Promise<string> {
+/** Every non-deleted project; the tree helpers take the whole set so cycles are handled. */
+async function liveProjects(): Promise<Project[]> {
+  return db.projects.filter((p) => !p.deleted_at).toArray()
+}
+
+/** A position after every live sibling under `parentId` (excluding `id` itself). */
+function lastAmongProjectSiblings(all: Project[], id: string, parentId: string | null): number {
+  let position = Date.now()
+  for (const p of all) {
+    if (p.id !== id && p.parent_id === parentId && p.position >= position) position = p.position + 1
+  }
+  return position
+}
+
+/** A new project goes last at the top level, or last under `parent_id` when given. */
+export async function createProject(input: { name: string; color?: string; parent_id?: string | null }): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
+  const all = await liveProjects()
+  const parent = input.parent_id ? all.find((p) => p.id === input.parent_id) : undefined
+  const parentId = parent && !parent.archived ? parent.id : null
   await mutate('project', id, {
-    name: input.name.trim(), color: input.color ?? pickColor(), position: now, archived: false,
-    parent_id: null, created_at: now, deleted_at: null,
+    name: input.name.trim(), color: input.color ?? pickColor(), position: lastAmongProjectSiblings(all, id, parentId),
+    archived: false, parent_id: parentId, created_at: now, deleted_at: null,
   })
   return id
+}
+
+/**
+ * Re-parent a project (null = top level). Refuses the project itself, any of its
+ * descendants and an archived or deleted parent; the REST API enforces the cycle
+ * rule too. The project is placed last among its new siblings. Two ops, so a
+ * concurrent move on another device resolves field by field (design D2).
+ */
+export async function moveProject(id: string, parentId: string | null): Promise<void> {
+  const project = await db.projects.get(id)
+  if (!project || project.deleted_at) throw new Error('project not found')
+  if (parentId === project.parent_id) return
+  const all = await liveProjects()
+  if (parentId !== null) {
+    if (parentId === id) throw new Error('a project cannot be its own parent')
+    const parent = all.find((p) => p.id === parentId)
+    if (!parent || parent.archived) throw new Error('parent project not found')
+    if (isDescendant(parentId, id, all)) throw new Error('parent cannot be a descendant of the project')
+  }
+  await mutate('project', id, { parent_id: parentId, position: lastAmongProjectSiblings(all, id, parentId) })
+}
+
+/** Archiving cascades to every descendant, one op each (design D3); unarchive does not cascade. */
+export async function archiveProject(id: string): Promise<void> {
+  const all = await liveProjects()
+  const changes: Change[] = [{ entity: 'project', entityId: id, patch: { archived: true } }]
+  for (const d of descendants(id, all)) {
+    const p = all.find((x) => x.id === d)
+    if (p && !p.archived) changes.push({ entity: 'project', entityId: d, patch: { archived: true } })
+  }
+  await mutateMany(changes)
 }
 
 export async function createTask(input: {
@@ -249,13 +298,24 @@ export async function updateProject(id: string, patch: Partial<Omit<Project, 'id
   await mutate('project', id, patch)
 }
 
-/** Deleting a project moves its open tasks to the Inbox so nothing is lost silently. */
+/**
+ * Deleting a project moves its open tasks to the Inbox and its direct sub-projects
+ * to its own parent (design D4), so neither tasks nor projects are lost. One batch.
+ */
 export async function deleteProject(id: string): Promise<void> {
+  const project = await db.projects.get(id)
   const tasks = await db.tasks.where('project_id').equals(id).toArray()
+  const changes: Change[] = []
   for (const t of tasks) {
-    if (!t.deleted_at) await mutate('task', t.id, { project_id: null })
+    if (!t.deleted_at) changes.push({ entity: 'task', entityId: t.id, patch: { project_id: null } })
   }
-  await mutate('project', id, { deleted_at: Date.now() })
+  const parentId = project?.parent_id ?? null
+  for (const p of await liveProjects()) {
+    // A sub-project never inherits itself as parent (only possible inside an unresolved cycle).
+    if (p.parent_id === id && p.id !== id) changes.push({ entity: 'project', entityId: p.id, patch: { parent_id: parentId === p.id ? null : parentId } })
+  }
+  changes.push({ entity: 'project', entityId: id, patch: { deleted_at: Date.now() } })
+  await mutateMany(changes)
 }
 
 const PALETTE = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899']
