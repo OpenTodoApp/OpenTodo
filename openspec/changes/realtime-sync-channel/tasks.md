@@ -19,10 +19,10 @@
 ## 3. Deployment and docs
 
 - [x] 3.1 Confirm the service worker configuration excludes `/api/v1/sync/events` from every caching strategy (navigation fallback and runtime caching); verify `npm run build` output precache manifest contains no `/api/` entry and the stream works in the installed PWA
-- [ ] 3.2 Add proxy notes to `docs/self-hosting/docker.md` and `docs/self-hosting/coolify.md` (buffering, idle timeouts, HTTP/2 recommendation, troubleshooting "live updates disconnected"); verify the compose deployment keeps a stream open for 10 minutes idle and delivers a change within 2 s afterwards
+- [x] 3.2 Add proxy notes to `docs/self-hosting/docker.md` and `docs/self-hosting/coolify.md` (buffering, idle timeouts, HTTP/2 recommendation, troubleshooting "live updates disconnected"); verify the compose deployment keeps a stream open for 10 minutes idle and delivers a change within 2 s afterwards
 - [x] 3.3 Update `README.md` feature list and `CHANGELOG.md` Unreleased; verify links resolve
 
 ## 4. Integration
 
 - [x] 4.1 Two-browser end-to-end run against the production binary: sign in on A and B, edit on B, A updates within 2 s with no poll; stop the server, A shows polling state, restart, A reconnects and syncs; create a task via REST with a token, both browsers update; verify the run finishes with "E2E OK" and no console errors
-- [ ] 4.2 Run `make check`; verify it passes including `openspec validate --all --strict`
+- [x] 4.2 Run `make check`; verify it passes including `openspec validate --all --strict`
