@@ -39,9 +39,13 @@ If you prefer not to use compose:
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `OPENTODO_BASE_URL` | set by Coolify | Public URL. Enables `Secure` cookies and strict origin checks |
-| `OPENTODO_ALLOW_SIGNUP` | `false` | Allow others to create accounts after the owner |
+| `OPENTODO_ALLOW_SIGNUP` | `false` | Allow anyone to create an account after the owner. Prefer invitations (below) |
 | `OPENTODO_SESSION_DAYS` | `90` | Session lifetime |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug` logs every API request |
+
+## Adding people
+
+Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → Members**, create an invitation (optionally bound to an email, expiring in 1 hour to 30 days) and send the link. It creates one account and then stops working; pending links can be revoked. Links use `OPENTODO_BASE_URL`, which the compose file sets from Coolify's domain. See [Adding people](../../README.md#adding-people).
 
 ## Backups
 

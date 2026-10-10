@@ -96,7 +96,7 @@ export function MembersPanel() {
 
   function onRowKey(e: KeyboardEvent<HTMLLIElement>, inv: Invitation) {
     if (e.target !== e.currentTarget) return
-    if (e.key === 'Enter' && links[inv.id]) {
+    if (e.key === 'Enter' && links[inv.id] && inv.status === 'pending') {
       e.preventDefault()
       void copy(inv.id)
     }
@@ -168,7 +168,7 @@ export function MembersPanel() {
               {inv.status === 'pending' ? `expires ${new Date(inv.expiresAt).toLocaleString()}` : `created ${new Date(inv.createdAt).toLocaleDateString()}`}
               {inv.createdByName ? ` · by ${inv.createdByName}` : ''}
             </span>
-            {links[inv.id] && (
+            {links[inv.id] && inv.status === 'pending' && (
               <button type="button" className="btn-ghost text-xs" onClick={() => void copy(inv.id)}>{copied === inv.id ? 'Copied' : 'Copy link'}</button>
             )}
             {inv.status === 'pending' && (

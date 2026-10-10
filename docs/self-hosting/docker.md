@@ -11,6 +11,8 @@ docker compose up -d
 
 Open <http://localhost:8080>. The first visitor creates the owner account.
 
+To add more people, keep sign-up closed and create single-use invitation links in **Settings → Members** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL.
+
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`.
 - To build locally instead of pulling: replace `image: ghcr.io/pixari/opentodo:latest` with `build: .`.
@@ -27,7 +29,7 @@ docker run -d --name opentodo \
 
 ## Behind a reverse proxy
 
-OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure` and the origin check matches. The server also honours `X-Forwarded-Host` and `X-Forwarded-For` for the origin check and rate limiting.
+OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure`, the origin check matches and invitation links point at the public address. The server also honours `X-Forwarded-Host` and `X-Forwarded-For` for the origin check and rate limiting.
 
 Caddy example:
 

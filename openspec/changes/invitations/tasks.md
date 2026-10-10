@@ -16,15 +16,15 @@
 ## 3. Web app: owner settings
 
 - [x] 3.1 `web/src/lib/api.ts`: client functions for list, create, revoke and preview with typed responses; verify `npm test` passes new `api.invitations.test.ts` using a mocked fetch
-- [ ] 3.2 `MembersPanel` in Settings, rendered for `role === "owner"` only: list with status badges, create form (email, expiry), one-time link display with copy, revoke with confirm, offline read-only state; verify in the browser that a member sees no panel, the link appears once, and disabling the network greys out the actions; `npm run build` passes
-- [ ] 3.3 Keyboard reachability of the panel (focusable rows, Enter copies, Delete revokes, documented in the `?` help); verify by completing create → copy → revoke without a mouse
+- [x] 3.2 `MembersPanel` in Settings, rendered for `role === "owner"` only: list with status badges, create form (email, expiry), one-time link display with copy, revoke with confirm, offline read-only state; verify in the browser that a member sees no panel, the link appears once, and disabling the network greys out the actions; `npm run build` passes
+- [x] 3.3 Keyboard reachability of the panel (focusable rows, Enter copies, Delete revokes, documented in the `?` help); verify by completing create → copy → revoke without a mouse
 
 ## 4. Web app: acceptance flow
 
-- [ ] 4.1 Route `/invite/:token` with preview fetch, locked email when bound, registration form posting `invitation`, and handling of `invitation_invalid`, `invitation_email_mismatch`, `email_taken`, `rate_limited`; verify in the browser against a running server that a bound link pre-fills and locks the email and a revoked link shows the invalid screen; `npm run build` passes
-- [ ] 4.2 Signed-in visitor sees a sign-out-first prompt; offline visitor sees a retry message; verify both states manually and with a component test in `npm test`
+- [x] 4.1 Route `/invite/:token` with preview fetch, locked email when bound, registration form posting `invitation`, and handling of `invitation_invalid`, `invitation_email_mismatch`, `email_taken`, `rate_limited`; verify in the browser against a running server that a bound link pre-fills and locks the email and a revoked link shows the invalid screen; `npm run build` passes
+- [x] 4.2 Signed-in visitor sees a sign-out-first prompt; offline visitor sees a retry message; verify both states manually and with a component test in `npm test`
 
 ## 5. Docs and release
 
-- [ ] 5.1 Update `README.md`, `docs/self-hosting/docker.md` and `docs/self-hosting/coolify.md` to recommend invitations over `OPENTODO_ALLOW_SIGNUP`, and add a CHANGELOG entry under Unreleased; verify links resolve and `make check` passes
-- [ ] 5.2 End-to-end run: owner creates a bound invitation → second browser profile accepts while sign-up is closed → second use is refused → owner sees `accepted` with the account; verify the run completes without console errors
+- [x] 5.1 Update `README.md`, `docs/self-hosting/docker.md` and `docs/self-hosting/coolify.md` to recommend invitations over `OPENTODO_ALLOW_SIGNUP`, and add a CHANGELOG entry under Unreleased; verify links resolve and `make check` passes
+- [x] 5.2 End-to-end run: owner creates a bound invitation → second browser profile accepts while sign-up is closed → second use is refused → owner sees `accepted` with the account; verify the run completes without console errors
