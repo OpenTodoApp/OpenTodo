@@ -2,17 +2,17 @@
 
 ## 1. Server: WebAuthn verification package
 
-- [ ] 1.1 Add `github.com/fxamacker/cbor/v2` and `internal/webauthn` with clientData parsing, authenticator-data parsing, COSE key decoding (ES256, RS256, Ed25519) and signature verification; verify `TestVerifyRegistrationFromRecordedCeremony` and `TestVerifyAssertionFromRecordedCeremony` using fixtures captured from two browsers, with `go test ./...`
-- [ ] 1.2 Challenge store with 5-minute TTL, single consumption and user binding; verify `TestChallengeExpiresAndIsSingleUse`
-- [ ] 1.3 Record the binary size before and after the dependency in `design.md` and `CHANGELOG.md`; verify with `ls -l bin/opentodo` from `make build`
+- [x] 1.1 Add `github.com/fxamacker/cbor/v2` and `internal/webauthn` with clientData parsing, authenticator-data parsing, COSE key decoding (ES256, RS256, Ed25519) and signature verification; verify `TestVerifyRegistrationFromRecordedCeremony` and `TestVerifyAssertionFromRecordedCeremony` using fixtures captured from two browsers, with `go test ./...`
+- [x] 1.2 Challenge store with 5-minute TTL, single consumption and user binding; verify `TestChallengeExpiresAndIsSingleUse`
+- [x] 1.3 Record the binary size before and after the dependency in `design.md` and `CHANGELOG.md`; verify with `ls -l bin/opentodo` from `make build`
 
 ## 2. Server: storage, service and routes
 
-- [ ] 2.1 Migration `internal/store/migrations/000N_passkeys.sql`; verify `go test ./internal/store/...` reaches the new `user_version`
-- [ ] 2.2 `internal/auth`: `BeginPasskeyRegistration`, `FinishPasskeyRegistration`, `ListPasskeys`, `RenamePasskey`, `DeletePasskey`, `BeginPasskeyLogin`, `FinishPasskeyLogin` with counter check and suspicious flag; verify `TestPasskeyRegisterAndLogin`, `TestPasskeyCounterRegressionFlags`, `TestDeletedPasskeyCannotLogin`
-- [ ] 2.3 `internal/config`: `PasskeysAvailable()` and `RPID()` derived from `BaseURL`; verify `TestPasskeyAvailabilityByBaseURL` covering https, http LAN, localhost and unset
-- [ ] 2.4 Router: five authenticated routes under `/api/v1/passkeys`, two unauthenticated routes under `/api/v1/auth/passkey` behind the login limiter, `passkeysAvailable` in `auth/status`, `passkeys_unavailable` guard; verify `TestPasskeyRoutesAuth` (401 anonymous, 404 foreign id, 409 unavailable) and `TestPasskeyLoginRateLimit`
-- [ ] 2.5 Document routes, payload encodings and error codes in `docs/api.md`; update `SECURITY.md`; verify the examples match handler tests
+- [x] 2.1 Migration `internal/store/migrations/000N_passkeys.sql`; verify `go test ./internal/store/...` reaches the new `user_version`
+- [x] 2.2 `internal/auth`: `BeginPasskeyRegistration`, `FinishPasskeyRegistration`, `ListPasskeys`, `RenamePasskey`, `DeletePasskey`, `BeginPasskeyLogin`, `FinishPasskeyLogin` with counter check and suspicious flag; verify `TestPasskeyRegisterAndLogin`, `TestPasskeyCounterRegressionFlags`, `TestDeletedPasskeyCannotLogin`
+- [x] 2.3 `internal/config`: `PasskeysAvailable()` and `RPID()` derived from `BaseURL`; verify `TestPasskeyAvailabilityByBaseURL` covering https, http LAN, localhost and unset
+- [x] 2.4 Router: five authenticated routes under `/api/v1/passkeys`, two unauthenticated routes under `/api/v1/auth/passkey` behind the login limiter, `passkeysAvailable` in `auth/status`, `passkeys_unavailable` guard; verify `TestPasskeyRoutesAuth` (401 anonymous, 404 foreign id, 409 unavailable) and `TestPasskeyLoginRateLimit`
+- [x] 2.5 Document routes, payload encodings and error codes in `docs/api.md`; update `SECURITY.md`; verify the examples match handler tests
 
 ## 3. Web app: client library
 

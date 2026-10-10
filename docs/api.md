@@ -35,14 +35,21 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
-| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version}` |
+| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable}` |
 | POST | `/api/v1/auth/register` | none | `{email, name?, password}` → 201 `{user}` + cookie. First account becomes owner |
 | POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie |
+| POST | `/api/v1/auth/passkey/options` | none | → `{publicKey}` sign-in options, see [Passkeys](#passkeys) |
+| POST | `/api/v1/auth/passkey` | none | `{credential}` → `{user}` + cookie |
 | POST | `/api/v1/auth/logout` | cookie | 204 |
 | GET | `/api/v1/me` | yes | `{user}` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,createdAt,lastUsedAt}]}` |
 | POST | `/api/v1/tokens` | yes | `{name}` → 201 `{token, secret}` (secret shown once) |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
+| POST | `/api/v1/passkeys/register/options` | yes | → `{publicKey}` creation options |
+| POST | `/api/v1/passkeys/register` | yes | `{name, credential}` → 201 `{passkey}` |
+| GET | `/api/v1/passkeys` | yes | `{passkeys:[{id,name,createdAt,lastUsedAt,suspiciousAt,backedUp}]}` |
+| PATCH | `/api/v1/passkeys/{id}` | yes | `{name}` → `{passkey}` |
+| DELETE | `/api/v1/passkeys/{id}` | yes | 204 |
 | GET | `/api/v1/tasks` | yes | `{tasks:[…]}`; `?include_deleted=true` to include tombstones |
 | POST | `/api/v1/tasks` | yes | create → 201 task |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
@@ -51,6 +58,40 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects |
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md` |
 | GET | `/api/v1/export` | yes | full JSON export, including deleted items |
+
+### Passkeys
+
+Passkeys (WebAuthn) are an additional way to sign in; the password keeps working. They are only offered when `OPENTODO_BASE_URL` is `https://…` (or `http://localhost` / `127.0.0.1` for development). The relying-party id is the host of that URL and the expected origin is its `scheme://host[:port]`. `auth/status` reports `passkeysAvailable`. When it is `false`, every passkey route answers `409 passkeys_unavailable`.
+
+Both ceremonies take two steps. The `options` route returns `{"publicKey": …}`, the JSON form of `PublicKeyCredentialCreationOptions` / `PublicKeyCredentialRequestOptions`, with a single-use challenge valid for five minutes. The browser runs `navigator.credentials.create()` or `get()` with those options, and the client posts the result back. **All binary fields are base64url strings** (padding optional), in the same shape that `PublicKeyCredential.toJSON()` produces:
+
+```json
+{
+  "name": "Work laptop",
+  "credential": {
+    "id": "q2Xx…", "rawId": "q2Xx…", "type": "public-key",
+    "response": {
+      "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIi…",
+      "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVj…",
+      "transports": ["internal", "hybrid"]
+    }
+  }
+}
+```
+
+For sign-in, `response` carries `clientDataJSON`, `authenticatorData` and `signature`, and the body has no `name`. Sign-in uses discoverable credentials only (`allowCredentials` is empty), so the server finds the account from `rawId`. Registration asks for `residentKey: "required"`, `userVerification: "preferred"` and `attestation: "none"`. ES256, EdDSA (Ed25519) and RS256 keys are accepted.
+
+| Code | Status | When |
+| --- | --- | --- |
+| `passkeys_unavailable` | 409 | the base URL is unset or not https/localhost |
+| `passkey_challenge_invalid` | 400 | the challenge is expired, already used, issued to another account, or was a sign-in challenge used for registration (or the reverse) |
+| `invalid_input` | 400 | origin, relying-party id, type or signature format does not match; credential already registered; empty name on rename |
+| `bad_request` | 400 | a field is missing or is not base64url |
+| `invalid_credentials` | 401 | sign-in with an unknown or deleted passkey, a bad signature, or a signature counter that went backwards (the passkey is then marked `suspiciousAt`) |
+| `not_found` | 404 | rename or delete of a passkey id that is not yours |
+| `rate_limited` | 429 | more than 10 requests per minute per address across `auth/login`, `auth/register` and both `auth/passkey` routes |
+
+The anonymous `auth/passkey` routes apply the same `Origin` check as `auth/login`. A successful passkey sign-in sets the same `opentodo_session` cookie as a password sign-in. Bearer tokens can list, rename and delete passkeys, but a CLI cannot run a ceremony.
 
 ### Task fields
 
@@ -122,4 +163,4 @@ curl -sS "$OT/api/v1/export" -H "Authorization: Bearer $TOKEN" -o opentodo-expor
 - Every write through this API is recorded in the operation log with server time, so connected devices see it on their next sync (within 30 s, or immediately when they next edit or regain focus).
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
-- Rate limits apply to `auth/login` and `auth/register` (10 per minute per IP).
+- Rate limits apply to `auth/login`, `auth/register`, `auth/passkey/options` and `auth/passkey` (10 per minute per IP, one shared window).

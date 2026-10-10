@@ -15,12 +15,13 @@ Please do not open public issues for security problems. Email **raffaele.pizzari
 - Passwords are hashed with argon2id (OWASP parameters). Sessions are random 256-bit secrets stored hashed, delivered as `HttpOnly`, `SameSite=Lax` cookies (`Secure` when `OPENTODO_BASE_URL` is https).
 - State-changing requests authenticated by cookie are rejected when the `Origin` header does not match the server's origin.
 - API tokens are random 256-bit secrets stored hashed and shown exactly once.
-- Login and registration are rate limited per client IP.
+- Passkeys (WebAuthn) are an optional extra credential next to the password, available only when `OPENTODO_BASE_URL` is https (or a localhost development origin). The relying-party id is that URL's host. The server stores only the credential id, the public key (ES256, Ed25519 or RS256), the signature counter and a name; it never sees a private key. Each ceremony checks a single-use, 5-minute, account-bound challenge held in memory, the exact origin, the relying-party id hash, the user-presence flag and the signature. Attestation is requested as `none` and is not verified, so authenticator make and model are not enforced. A signature counter that does not increase refuses the sign-in and flags the passkey as suspicious in Settings; counters that stay at zero (synced passkeys) are exempt. Changing the server's domain invalidates existing passkeys; the password still works.
+- Login, registration and passkey sign-in are rate limited per client IP.
 - Responses carry a strict Content-Security-Policy, `X-Frame-Options: DENY` and `X-Content-Type-Options: nosniff`.
 - The container runs as a non-root user on a distroless base with no shell.
 - No telemetry or third-party requests.
 
-Planned hardening is tracked in `ROADMAP.md`: passkeys (WebAuthn), OIDC, MFA, optional end-to-end encryption, audit log.
+Planned hardening is tracked in `ROADMAP.md`: OIDC, MFA, optional end-to-end encryption, audit log.
 
 ## Supported versions
 
