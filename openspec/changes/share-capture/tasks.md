@@ -16,7 +16,7 @@
 ## 3. Browser extension
 
 - [ ] 3.1 `extensions/browser/manifest.json` (MV3, permissions `activeTab`, `contextMenus`, `scripting`, `storage`, Firefox settings), `background.js` (action, context menu "Add to OpenTodo", command), `options.html/js` (server URL validation); verify loading unpacked in Chromium and Firefox opens the capture screen with title, selection and URL
-- [ ] 3.2 First-run behaviour opens options when no server URL is set, then continues; verify manually and with a small unit test of the URL builder run under `node --test`
+- [x] 3.2 First-run behaviour opens options when no server URL is set, then continues; verify manually and with a small unit test of the URL builder run under `node --test`
 - [ ] 3.3 CI job zips `extensions/browser/` as a release asset and checks the manifest declares no host permissions; verify the workflow produces `opentodo-browser-extension.zip`
 
 ## 4. Docs and release
