@@ -10,7 +10,7 @@
 ## 2. Op schema and data layer
 
 - [x] 2.1 Add `task.recurrence` (validation kind that runs the parser) and `task.series_id` to `internal/sync/ops.go`; verify `TestValidateRecurrenceField` (valid, invalid, too long, null) (`go test ./...`)
-- [ ] 2.2 Mirror the fields in `web/src/lib/types.ts`, `TASK_FIELDS` and defaults in `web/src/lib/ops.ts`; verify `ops.test.ts` still passes and a task with `recurrence` round-trips (`npm test`)
+- [x] 2.2 Mirror the fields in `web/src/lib/types.ts`, `TASK_FIELDS` and defaults in `web/src/lib/ops.ts`; verify `ops.test.ts` still passes and a task with `recurrence` round-trips (`npm test`)
 - [ ] 2.3 Name-based id helper in `internal/ids` and `web/src/lib/ids.ts`; verify `TestNameIDDeterministic` and `ids.test.ts` produce the same UUID string for the same input on both sides (`go test ./...`, `npm test`)
 - [ ] 2.4 Client `completeTask`, `skipOccurrence`, `detachOccurrence` emitting the occurrence record and the next due in one batch, honouring `until` and `for N`; verify `recurring.test.ts`: two simulated devices completing the same occurrence converge to one record and one next due; skip adds no record; `for 2 times` ends the series (`npm test`)
 - [ ] 2.5 Server-side equivalent for REST `PATCH` completion of a recurring task; verify `TestRestCompleteRecurringRollsForward` (`go test ./...`)

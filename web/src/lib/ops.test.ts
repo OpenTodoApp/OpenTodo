@@ -109,6 +109,22 @@ describe('mutate', () => {
     expect(remote?.estimate_minutes).toBe(45)
     expect(remote?.priority).toBe(4)
   })
+
+  it('round-trips recurrence and series_id; a plain task defaults both to null', async () => {
+    const db = useDatabase(`recurrence-${Date.now()}`)
+    const plain = await createTask({ title: 'once' })
+    expect(await db.tasks.get(plain)).toMatchObject({ recurrence: null, series_id: null })
+    // A plain task writes no recurrence op at all (older servers never see the field).
+    expect((await db.outbox.toArray()).some((o) => o.entityId === plain && o.field === 'recurrence')).toBe(false)
+    const id = await createTask({ title: 'Water plants', due: { date: '2026-10-12' }, recurrence: 'Every  3 Days' })
+    expect(await db.tasks.get(id)).toMatchObject({ recurrence: 'every 3 days', series_id: null })
+    const queued = (await db.outbox.toArray()).filter((o) => o.entityId === id)
+    const other = useDatabase(`recurrence-remote-${Date.now()}`)
+    await applyOps(queued.map((o) => ({ ...o, device: 'remote' })))
+    expect(await other.tasks.get(id)).toMatchObject({ recurrence: 'every 3 days', series_id: null, due: { date: '2026-10-12' } })
+    await applyOps([{ id: 'sid', entity: 'task', entityId: 'occ', field: 'series_id', value: id, ts: 1, device: 'remote' }])
+    expect(await other.tasks.get('occ')).toMatchObject({ series_id: id, recurrence: null })
+  })
 })
 
 describe('subtasks', () => {

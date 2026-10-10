@@ -1,7 +1,9 @@
 // Every local mutation becomes field-level ops that are applied to IndexedDB
 // immediately (optimistic, offline-safe) and queued for the server.
 import { db, entityTables, getMeta, setMeta } from './db'
+import { todayISO } from './dates'
 import { hlcNow, hlcSeed, wins } from './hlc'
+import { firstOccurrence, parseRule } from './recurrence'
 import { descendants, isDescendant } from './tree'
 import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Task } from './types'
 
@@ -38,7 +40,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 }
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
-  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null,
+  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -196,13 +198,24 @@ export async function archiveProject(id: string): Promise<void> {
 export async function createTask(input: {
   title: string; description?: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
   estimate_minutes?: number | null
+  /** A recurrence rule (any spelling the grammar accepts; stored canonical). Throws when invalid. */
+  recurrence?: string | null
 }): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
+  let due = input.due ?? null
+  const extra: Record<string, unknown> = {}
+  if (input.recurrence) {
+    // Only recurring tasks carry the field, so plain tasks keep their op footprint.
+    const parsed = parseRule(input.recurrence)
+    if (!parsed.ok) throw new Error(`invalid recurrence: ${parsed.error}`)
+    extra.recurrence = parsed.canonical
+    if (!due) due = { date: firstOccurrence(parsed.rule, todayISO()) }
+  }
   await mutate('task', id, {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
-    priority: input.priority ?? 4, due: input.due ?? null, labels: input.labels ?? [], position: now, created_at: now,
-    completed_at: null, deleted_at: null, estimate_minutes: input.estimate_minutes ?? null,
+    priority: input.priority ?? 4, due, labels: input.labels ?? [], position: now, created_at: now,
+    completed_at: null, deleted_at: null, estimate_minutes: input.estimate_minutes ?? null, ...extra,
   })
   return id
 }
