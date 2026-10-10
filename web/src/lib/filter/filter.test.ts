@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import type { Label, Project, Task } from '../types'
+import { compile, mentionsState, runFilter, type FilterContext } from './evaluate'
 import { FilterSyntaxError, parse, printQuery, resolveDate, tokenize, type Node } from './parse'
 
 /** Canonical, fully parenthesised form of a query. */
@@ -237,3 +239,292 @@ describe('date expressions', () => {
     expect(resolveDate({ type: 'weekday', day: 1 }, '2026-12-29')).toBe('2027-01-04')
   })
 })
+
+// ---- evaluation fixtures (today is Saturday 2026-10-10) ----
+
+const TODAY = '2026-10-10'
+/** Local-time Unix ms for a calendar date at noon. */
+const at = (iso: string, hour = 12) => {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d, hour).getTime()
+}
+
+function label(id: string, name: string, extra: Partial<Label> = {}): Label {
+  return { id, name, color: '#000', position: 0, created_at: 0, deleted_at: null, _clock: {}, ...extra }
+}
+function project(id: string, name: string, parent_id: string | null = null, extra: Partial<Project> = {}): Project {
+  return { id, name, color: '#000', position: 0, archived: false, parent_id, created_at: 0, deleted_at: null, _clock: {}, ...extra }
+}
+function task(id: string, extra: Partial<Task> = {}): Task {
+  return {
+    id, title: id, description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
+    position: 0, created_at: at('2026-09-01'), completed_at: null, deleted_at: null, _clock: {}, ...extra,
+  }
+}
+
+const LABELS: Label[] = [
+  label('l-errand', 'errand'),
+  label('l-call', 'Call'),
+  label('l-work', 'work'),
+  label('l-follow', 'Follow Up'),
+  label('l-errand2', 'Errand'), // duplicate name from a concurrent create on another device
+  label('l-old', 'old', { deleted_at: 1 }),
+]
+const PROJECTS: Project[] = [
+  project('p-work', 'Work'),
+  project('p-client', 'Client A', 'p-work'),
+  project('p-deep', 'Deep', 'p-client'),
+  project('p-home', 'Home'),
+  project('p-gone', 'Gone', null, { deleted_at: 1 }),
+]
+const TASKS: Task[] = [
+  task('milk', { title: 'Buy oat milk', labels: ['l-errand'], priority: 1, due: { date: '2026-10-09' } }),
+  task('call-mom', { title: 'Call mom', labels: ['l-call'], priority: 1, project_id: 'p-home', due: { date: '2026-10-10', time: '18:00' } }),
+  task('report', { title: 'Write report', description: 'Quarterly OAT MILK numbers', labels: ['l-work'], priority: 1, project_id: 'p-work', due: { date: '2026-10-11' } }),
+  task('client-mail', { title: 'Email client', labels: ['l-follow', 'l-work'], priority: 2, project_id: 'p-client', due: { date: '2026-10-16' } }),
+  task('deep-task', { title: 'Deep thing', project_id: 'p-deep', priority: 3, created_at: at('2026-10-08') }),
+  task('inbox-p1', { title: 'Inbox urgent', priority: 1, created_at: at('2026-10-04') }),
+  task('hardware', { title: 'Hardware store', labels: ['l-errand2'], priority: 4, created_at: at('2026-10-03', 23) }),
+  task('sub', { title: 'Sub step', parent_id: 'report', project_id: 'p-work', priority: 4 }),
+  task('done-p1', { title: 'Done urgent', priority: 1, completed_at: at('2026-10-09'), project_id: 'p-work' }),
+  task('deleted', { title: 'Deleted milk', priority: 1, deleted_at: at('2026-10-09'), labels: ['l-errand'] }),
+  task('gone-label', { title: 'Old label only', labels: ['l-old'] }),
+  task('future', { title: 'Far away', due: { date: '2026-12-01' }, created_at: at('2026-10-10', 8) }),
+]
+
+const CTX: FilterContext = { today: TODAY, labels: LABELS, projects: PROJECTS }
+
+function ids(q: string, tasks: Task[] = TASKS, ctx: FilterContext = CTX): string[] {
+  const r = runFilter(q, tasks, ctx)
+  if (!r.ok) throw new Error(r.error)
+  return r.tasks.map((t) => t.id).sort()
+}
+function warningsOf(q: string, ctx: FilterContext = CTX): string[] {
+  const r = runFilter(q, TASKS, ctx)
+  if (!r.ok) throw new Error(r.error)
+  return r.warnings
+}
+const sorted = (...xs: string[]) => xs.sort()
+
+describe('evaluate: labels and projects', () => {
+  it('@name matches open tasks carrying a label of that name, ignoring case, any duplicate', () => {
+    expect(ids('@errand')).toEqual(sorted('milk', 'hardware'))
+    expect(ids('@ERRAND')).toEqual(sorted('milk', 'hardware'))
+    expect(ids('@call')).toEqual(['call-mom'])
+  })
+
+  it('quoted names match names with spaces, ignoring case', () => {
+    expect(ids('@"follow up"')).toEqual(['client-mail'])
+    expect(ids('#"client a" & @"FOLLOW UP"')).toEqual(['client-mail'])
+  })
+
+  it('#name matches only that project, ##name includes every descendant', () => {
+    expect(ids('#Work')).toEqual(sorted('report', 'sub'))
+    expect(ids('##Work')).toEqual(sorted('report', 'sub', 'client-mail', 'deep-task'))
+    expect(ids('##"Client A"')).toEqual(sorted('client-mail', 'deep-task'))
+    expect(ids('##Deep')).toEqual(['deep-task'])
+  })
+
+  it('no project and no labels', () => {
+    expect(ids('no project')).toEqual(sorted('milk', 'inbox-p1', 'hardware', 'gone-label', 'future'))
+    expect(ids('no project & p1')).toEqual(sorted('milk', 'inbox-p1'))
+    expect(ids('no labels')).toEqual(sorted('deep-task', 'inbox-p1', 'sub', 'future'))
+  })
+
+  it('a deleted label or project is an unknown name', () => {
+    expect(ids('@old')).toEqual([])
+    expect(warningsOf('@old')).toEqual(['No label named "old"'])
+    expect(warningsOf('#Gone')).toEqual(['No project named "Gone"'])
+  })
+
+  it('picks up renames on the next evaluation', () => {
+    const renamed = { ...CTX, labels: LABELS.map((l) => (l.id === 'l-call' ? { ...l, name: 'phone' } : l)) }
+    expect(ids('@phone', TASKS, renamed)).toEqual(['call-mom'])
+    expect(warningsOf('@call', renamed)).toEqual(['No label named "call"'])
+  })
+
+  it('grouping and negation from the spec', () => {
+    expect(ids('(@errand | @call) & !#Work')).toEqual(sorted('milk', 'hardware', 'call-mom'))
+    expect(ids('@errand | @call & p1')).toEqual(sorted('milk', 'hardware', 'call-mom'))
+    expect(ids('(@errand | @call) & p1')).toEqual(sorted('milk', 'call-mom'))
+  })
+})
+
+describe('evaluate: priority, state, subtask, search', () => {
+  it('pN matches the priority, open tasks only by default', () => {
+    expect(ids('p1')).toEqual(sorted('milk', 'call-mom', 'report', 'inbox-p1'))
+    expect(ids('p2')).toEqual(['client-mail'])
+    expect(ids('p3')).toEqual(['deep-task'])
+  })
+
+  it('completed alone means only completed; completed | open means both; open is explicit open', () => {
+    expect(ids('p1 & completed')).toEqual(['done-p1'])
+    expect(ids('completed')).toEqual(['done-p1'])
+    expect(ids('p1 & (completed | open)')).toEqual(sorted('milk', 'call-mom', 'report', 'inbox-p1', 'done-p1'))
+    expect(ids('p1 & open')).toEqual(ids('p1'))
+    expect(ids('#Work & !open')).toEqual(['done-p1'])
+    expect(ids('#Work & !completed')).toEqual(sorted('report', 'sub'))
+  })
+
+  it('mentionsState looks through every connective', () => {
+    expect(mentionsState(parse('p1 & !(p2 | completed)')!)).toBe(true)
+    expect(mentionsState(parse('p1 & !(p2 | overdue)')!)).toBe(false)
+  })
+
+  it('deleted tasks never match, not even with completed or a negation', () => {
+    expect(ids('search: milk | completed | open')).not.toContain('deleted')
+    expect(ids('!p4 | completed | open')).not.toContain('deleted')
+  })
+
+  it('subtask matches tasks with a parent', () => {
+    expect(ids('subtask')).toEqual(['sub'])
+    expect(ids('#Work & !subtask')).toEqual(['report'])
+  })
+
+  it('search: matches title or description as a case-insensitive substring', () => {
+    expect(ids('search: "oat milk"')).toEqual(sorted('milk', 'report'))
+    expect(ids('search: MOM')).toEqual(['call-mom'])
+    expect(ids('search:quarterly')).toEqual(['report'])
+    expect(ids('search: "nothing like this"')).toEqual([])
+  })
+})
+
+describe('evaluate: dates', () => {
+  it('due <= tomorrow includes overdue tasks and excludes undated ones', () => {
+    expect(ids('due <= tomorrow')).toEqual(sorted('milk', 'call-mom', 'report'))
+  })
+
+  it('every comparison operator and the before / after words', () => {
+    expect(ids('due < today')).toEqual(['milk'])
+    expect(ids('due before today')).toEqual(['milk'])
+    expect(ids('due = today')).toEqual(['call-mom'])
+    expect(ids('due >= tomorrow')).toEqual(sorted('report', 'client-mail', 'future'))
+    expect(ids('due > tomorrow')).toEqual(sorted('client-mail', 'future'))
+    expect(ids('due after tomorrow')).toEqual(sorted('client-mail', 'future'))
+    expect(ids('due before 2026-12-01')).toEqual(sorted('milk', 'call-mom', 'report', 'client-mail'))
+    expect(ids('due = yesterday')).toEqual(['milk'])
+    expect(ids('due <= 6 days')).toEqual(sorted('milk', 'call-mom', 'report', 'client-mail'))
+  })
+
+  it('weekday expression: due = friday on Saturday 2026-10-10 is 2026-10-16', () => {
+    expect(ids('due = friday')).toEqual(['client-mail'])
+    expect(ids('due = saturday')).toEqual(['call-mom'])
+  })
+
+  it('a task without a due date never matches a due comparison', () => {
+    for (const op of ['<', '<=', '=', '>=', '>']) expect(ids(`due ${op} 2000-01-01 | due ${op} 2100-01-01`)).not.toContain('inbox-p1')
+    // Only an explicit negation lets undated tasks in.
+    expect(ids('!(due <= today) & no project')).toEqual(sorted('inbox-p1', 'hardware', 'gone-label', 'future'))
+  })
+
+  it('created compares the local calendar date of created_at', () => {
+    // 7 days ago is 2026-10-03; "> 7 days ago" means created 10-04 or later.
+    expect(ids('created > 7 days ago & no date')).toEqual(sorted('deep-task', 'inbox-p1'))
+    expect(ids('created >= 7 days ago & no date')).toEqual(sorted('deep-task', 'inbox-p1', 'hardware'))
+    expect(ids('created = 2026-10-03')).toEqual(['hardware'])
+    expect(ids('created = today')).toEqual(['future'])
+    expect(ids('created < 2026-10-03 & #Work')).toEqual(sorted('report', 'sub'))
+    expect(ids('created <= 2026-10-03 & no project')).toEqual(sorted('milk', 'hardware', 'gone-label'))
+  })
+
+  it('keywords overdue, today, tomorrow, no date, no time', () => {
+    expect(ids('overdue')).toEqual(['milk'])
+    expect(ids('today')).toEqual(['call-mom'])
+    expect(ids('tomorrow')).toEqual(['report'])
+    expect(ids('no date')).toEqual(sorted('deep-task', 'inbox-p1', 'hardware', 'sub', 'gone-label'))
+    expect(ids('no time')).toEqual(sorted('milk', 'report', 'client-mail', 'future'))
+    expect(ids('today & !no time')).toEqual(['call-mom'])
+  })
+
+  it('today moves with the injected date', () => {
+    expect(ids('today', TASKS, { ...CTX, today: '2026-10-11' })).toEqual(['report'])
+    expect(ids('overdue', TASKS, { ...CTX, today: '2026-10-11' })).toEqual(sorted('milk', 'call-mom'))
+  })
+})
+
+describe('evaluate: warnings and graceful degradation', () => {
+  it('unknown label warns and rest still matches', () => {
+    const r = runFilter('@errands | p1', TASKS, CTX)
+    expect(r).toMatchObject({ ok: true, warnings: ['No label named "errands"'] })
+    expect(ids('@errands | p1')).toEqual(ids('p1'))
+  })
+
+  it('warns once per name, in query order, keeping the typed spelling', () => {
+    expect(warningsOf('#Nope & @x | @x | #nope2')).toEqual(['No project named "Nope"', 'No label named "x"', 'No project named "nope2"'])
+  })
+
+  it('an unknown name evaluates to no match, so its negation matches everything else', () => {
+    expect(ids('!@nothing & p1')).toEqual(ids('p1'))
+  })
+
+  it('no labels at all: label terms warn and match nothing', () => {
+    const ctx = { ...CTX, labels: [] }
+    expect(ids('@errand', TASKS, ctx)).toEqual([])
+    expect(warningsOf('@errand', ctx)).toEqual(['No label named "errand"'])
+  })
+
+  it('without any hierarchy ## behaves like #', () => {
+    const flat = { ...CTX, projects: PROJECTS.map((p) => ({ ...p, parent_id: null })) }
+    expect(ids('##Work', TASKS, flat)).toEqual(ids('#Work', TASKS, flat))
+  })
+
+  it('a parent cycle among projects does not hang ##', () => {
+    const cyc = { ...CTX, projects: [project('a', 'A', 'b'), project('b', 'B', 'a')] }
+    const tasks = [task('ta', { project_id: 'a' }), task('tb', { project_id: 'b' })]
+    expect(ids('##A', tasks, cyc)).toEqual(['ta', 'tb'])
+  })
+
+  it('empty query: no results, no warnings; syntax errors are returned with a position', () => {
+    expect(runFilter('  ', TASKS, CTX)).toEqual({ ok: true, empty: true, tasks: [], warnings: [] })
+    expect(runFilter('@errand &', TASKS, CTX)).toEqual({ ok: false, error: 'Expected a term after "&" at position 9', position: 9, offset: 8 })
+  })
+
+  it('compile is reusable across task lists', () => {
+    const f = compile(parse('p1 & no project')!, CTX)
+    expect(TASKS.filter(f.test).map((t) => t.id).sort()).toEqual(sorted('milk', 'inbox-p1'))
+    expect(f.test(task('x', { priority: 1 }))).toBe(true)
+  })
+})
+
+describe('evaluate: performance', () => {
+  it('evaluates a 20-term query over 5,000 generated tasks in under 50 ms', () => {
+    const labels = Array.from({ length: 30 }, (_, i) => label(`gl${i}`, `label${i}`))
+    const projects = Array.from({ length: 40 }, (_, i) => project(`gp${i}`, `Project ${i}`, i >= 10 ? `gp${i % 10}` : null))
+    const tasks = Array.from({ length: 5000 }, (_, i) => task(`g${i}`, {
+      title: `Generated task number ${i} about ${i % 7 === 0 ? 'oat milk' : 'something'}`,
+      description: i % 3 === 0 ? 'Some longer notes that the search term has to scan through' : '',
+      project_id: i % 5 === 0 ? null : `gp${i % 40}`,
+      parent_id: i % 9 === 0 && i > 0 ? `g${i - 1}` : null,
+      priority: ((i % 4) + 1) as Task['priority'],
+      due: i % 6 === 0 ? null : { date: resolveDate({ type: 'relative', days: (i % 40) - 20 }, TODAY), ...(i % 4 === 0 ? { time: '09:00' } : {}) },
+      labels: i % 4 === 0 ? [] : [`gl${i % 30}`, `gl${(i * 7) % 30}`],
+      created_at: at(resolveDate({ type: 'relative', days: -(i % 60) }, TODAY)),
+      completed_at: i % 10 === 0 ? at(TODAY) : null,
+    }))
+    const query = [
+      '(@label1 | @label2 | @"label3")',
+      '(##"Project 1" | #"Project 2" | no project)',
+      '!p4',
+      '(due <= 14 days | no date | overdue)',
+      '!(due = friday & p3)',
+      '(created > 30 days ago | today | tomorrow)',
+      '!subtask',
+      '(search: milk | search: "longer notes" | no labels)',
+      '!overdue',
+    ].join(' & ')
+    expect(countTerms(parse(query)!)).toBe(20)
+    const ctx = { today: TODAY, labels, projects }
+    runFilter(query, tasks, ctx) // warm-up (JIT)
+    const start = performance.now()
+    const r = runFilter(query, tasks, ctx)
+    const ms = performance.now() - start
+    expect(r.ok && r.tasks.length).toBeGreaterThan(0)
+    expect(ms).toBeLessThan(50)
+  })
+})
+
+function countTerms(n: Node): number {
+  if (n.kind === 'and' || n.kind === 'or') return n.items.reduce((s, x) => s + countTerms(x), 0)
+  if (n.kind === 'not') return countTerms(n.item)
+  return 1
+}

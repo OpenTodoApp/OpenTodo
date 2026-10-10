@@ -9,10 +9,10 @@
 
 ## 2. Evaluator
 
-- [ ] 2.1 Compile AST to predicate with context (today, label and project maps, descendant sets); verify `filter.test.ts` for label, `#`/`##`, `no project`, `no labels`, priority, `completed`/`open` defaults, `subtask`, `search:` (`npm test`)
-- [ ] 2.2 Date comparisons on floating dates with "no due never matches"; verify `filter.test.ts` `due <= tomorrow` includes overdue and excludes undated (`npm test`)
-- [ ] 2.3 Unknown names produce warnings and empty matches; graceful behavior when labels or hierarchy are absent; verify `filter.test.ts` "unknown label warns and rest still matches" (`npm test`)
-- [ ] 2.4 Performance check: evaluate a 20-term query over 5,000 generated tasks under 50 ms in `filter.test.ts` (`npm test`)
+- [x] 2.1 Compile AST to predicate with context (today, label and project maps, descendant sets); verify `filter.test.ts` for label, `#`/`##`, `no project`, `no labels`, priority, `completed`/`open` defaults, `subtask`, `search:` (`npm test`)
+- [x] 2.2 Date comparisons on floating dates with "no due never matches"; verify `filter.test.ts` `due <= tomorrow` includes overdue and excludes undated (`npm test`)
+- [x] 2.3 Unknown names produce warnings and empty matches; graceful behavior when labels or hierarchy are absent; verify `filter.test.ts` "unknown label warns and rest still matches" (`npm test`)
+- [x] 2.4 Performance check: evaluate a 20-term query over 5,000 generated tasks under 50 ms in `filter.test.ts` (`npm test`)
 
 ## 3. Filter view (web/src/app)
 
