@@ -20,6 +20,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
   <a href="docs/api.md">API</a> ·
   <a href="docs/cli.md">CLI</a> ·
   <a href="docs/filters.md">Filters</a> ·
+  <a href="docs/capture.md">Capture</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -54,6 +55,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Area | What works |
 | --- | --- |
 | Capture | Quick-add from any view, keyboard shortcut `q`; new tasks in Today get today's date, in a project get that project |
+| Share capture | Send pages to OpenTodo from the phone or desktop share sheet (installed app), a bookmarklet in Settings → Capture, or the browser extension in `extension/` (Chromium and Firefox): a capture screen prefilled with title, selected text and link, Enter to save into the Inbox or a project. Works offline, holds no token, see [docs/capture.md](docs/capture.md) |
 | Organise | Projects with colours, Inbox, Today, Upcoming (grouped by day), Completed |
 | Labels | Cross-project labels with colours: `L` on a task opens a type-ahead picker that creates on Enter, chips on every row, a Labels group in the sidebar with live counts, one view per label grouped by project, rename / recolour / reorder / delete / merge duplicates |
 | Filters | One-line queries such as `@work & due <= tomorrow & p1`: labels, projects (`##` includes sub-projects), priority, due and created dates, keywords like `overdue` or `no date`, text search, combined with `&`, `\|`, `!` and parentheses. Evaluated on the device, so results are live and work offline; `g` `f` opens the view, ↑ / ↓ recall recent queries. See [docs/filters.md](docs/filters.md) |
