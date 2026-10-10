@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
+import { describeRejected } from '../lib/sharing'
+import { dismissRejected, useSyncStatus } from '../lib/sync'
 import { navigate, useRoute } from './router'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
@@ -16,6 +18,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const route = useRoute()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  // Changes the server refused after a role change (project-sharing).
+  const { rejected } = useSyncStatus()
 
   // Start view (per device, OpenSpec `custom-views`): applied once per launch, and only
   // when the app opens at its root, so deep links and reloads keep their page.
@@ -104,6 +108,12 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => setNotice(null)}>Dismiss</button>
           </div>
         )}
+        {rejected && (
+          <div role="alert" className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100 md:px-6">
+            <p className="flex-1">{describeRejected(rejected)}. The server's values are shown again.</p>
+            <button className="btn-ghost px-2 py-0.5 text-xs" onClick={dismissRejected}>Dismiss</button>
+          </div>
+        )}
         <div className="min-h-0 flex-1 overflow-y-auto">
           {route.view === 'settings' ? (
             <SettingsView user={user} onLogout={onLogout} />
@@ -119,7 +129,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <SavedViewRoute id={route.id} />
           ) : (
             // App renders the invite and capture screens itself; a stray /invite or /share route inside the shell falls back to the Inbox.
-            <TaskListView route={route.view === 'invite' || route.view === 'share' ? { view: 'inbox' } : route} />
+            <TaskListView userId={user.id} route={route.view === 'invite' || route.view === 'share' ? { view: 'inbox' } : route} />
           )}
         </div>
       </main>
@@ -147,6 +157,7 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['Tab / Shift+Tab', 'Indent under previous sibling / outdent'],
     ['← / →', 'Collapse / expand subtasks of the selected task, or sub-projects of the focused sidebar project'],
     ['m', 'Move the current project under another project or to the top level'],
+    ['Shift+S', 'Share the current project: add members by email, change roles, remove, leave, transfer'],
     ['1 – 4', 'Set priority of selected task'],
     ['L', 'Labels of selected task (type to find, Enter adds or creates)'],
     ['Delete', 'Delete selected task (and its subtasks)'],

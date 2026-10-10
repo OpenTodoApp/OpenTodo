@@ -21,6 +21,8 @@ const INDENT_REM = 0.75
 
 export function Sidebar({ route, user }: { route: Route; user: User }) {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at && !p.archived).toArray(), [], [])
+  // Shared projects carry a badge (project-sharing); read from the cached memberships.
+  const sharedIds = useLiveQuery(async () => new Set((await db.memberships.toArray()).map((m) => m.projectId)), [], new Set<string>())
   // Per-device collapse state lives in the local meta table (never synced); reading it
   // through a live query keeps every Sidebar instance in step.
   const collapsedIds = useLiveQuery(() => getMeta<string[]>(COLLAPSED_PROJECTS_KEY, []), [], [] as string[])
@@ -180,6 +182,13 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
                 >
                   <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />
                   <span className="flex-1 truncate">{p.name}</span>
+                  {sharedIds.has(n.id) && (
+                    <span className="text-slate-400" title="Shared project" aria-label="Shared">
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
+                        <path d="M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1 16c0-2.8 2.7-5 6-5s6 2.2 6 5v1H1v-1Zm13 1v-1c0-1.5-.5-2.8-1.4-3.8.5-.1.9-.2 1.4-.2 2.8 0 5 1.8 5 4v1h-5Z" />
+                      </svg>
+                    </span>
+                  )}
                   {count ? <span className="text-xs text-slate-400" title={isCollapsed && has ? 'Open tasks including sub-projects' : 'Open tasks'}>{count}</span> : null}
                 </button>
               </li>
