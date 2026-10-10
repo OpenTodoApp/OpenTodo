@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/webauthn"
 )
 
 // User is the public view of an account.
@@ -44,6 +45,10 @@ type Service struct {
 	db          *sql.DB
 	sessionTTL  time.Duration
 	allowSignup bool
+	// rp and challenges are set by ConfigurePasskeys (see passkeys.go); nil
+	// means passkeys are unavailable on this server.
+	rp         *webauthn.RelyingParty
+	challenges *webauthn.Challenges
 }
 
 // NewService wires a Service.

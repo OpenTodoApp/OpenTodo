@@ -79,6 +79,35 @@ func (c Config) Origin() string {
 	return c.BaseURL.Scheme + "://" + c.BaseURL.Host
 }
 
+// RPID returns the WebAuthn relying-party identifier: the host of the public
+// base URL without port, or "" when no base URL is configured.
+func (c Config) RPID() string {
+	if c.BaseURL == nil {
+		return ""
+	}
+	return strings.ToLower(c.BaseURL.Hostname())
+}
+
+// PasskeysAvailable reports whether passkey ceremonies can be offered. Browsers
+// only allow them on secure origins, so this needs an https base URL, or a
+// localhost development origin which browsers treat as secure.
+func (c Config) PasskeysAvailable() bool {
+	if c.BaseURL == nil {
+		return false
+	}
+	if c.BaseURL.Scheme == "https" {
+		return c.BaseURL.Hostname() != ""
+	}
+	if c.BaseURL.Scheme != "http" {
+		return false
+	}
+	switch strings.ToLower(c.BaseURL.Hostname()) {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	}
+	return false
+}
+
 func getenv(key, def string) string {
 	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
 		return v
