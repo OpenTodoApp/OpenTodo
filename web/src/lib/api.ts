@@ -1,4 +1,5 @@
 import type { ApiToken, McpStatus, TokenScope } from './assistants'
+import type { KeyRecord } from './crypto'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
   AppPassword, CaldavSetting, EmailInbox,
@@ -178,7 +179,15 @@ export const api = {
   setMcpSettings: (enabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { enabled }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
   // CalDAV (OpenSpec change `caldav`): the owner toggle and per-user app passwords.
-  caldavSetting: () => request<CaldavSetting>('GET', '/api/v1/settings/caldav'),
+  // End-to-end encryption (OpenSpec `e2ee`): only wrapped key material ever goes here.
+  encryptionKeys: () => request<{ keys: KeyRecord }>('GET', '/api/v1/encryption/keys'),
+  putEncryptionKeys: (record: KeyRecord) => request<{ keys: KeyRecord }>('PUT', '/api/v1/encryption/keys', {
+    version: record.version, kdf: record.kdf, salt: record.salt, iterations: record.iterations,
+    wrappedByPassphrase: record.wrappedByPassphrase, wrappedByRecovery: record.wrappedByRecovery,
+  }),
+  deleteEncryptionKeys: () => request<void>('DELETE', '/api/v1/encryption/keys'),
+  purgeEncryptionHistory: () => request<{ purged: number; notice: string }>('POST', '/api/v1/encryption/purge-history'),
+  caldavSetting: () =>request<CaldavSetting>('GET', '/api/v1/settings/caldav'),
   setCaldavEnabled: (enabled: boolean) => request<CaldavSetting>('PUT', '/api/v1/settings/caldav', { enabled }),
   listAppPasswords: () => request<{ appPasswords: AppPassword[] }>('GET', '/api/v1/app-passwords'),
   createAppPassword: (name: string) => request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', { name }),

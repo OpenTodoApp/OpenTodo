@@ -96,9 +96,20 @@ function random(n: number): Bytes {
   return crypto.getRandomValues(new Uint8Array(n))
 }
 
-/** True for a string that carries a ciphertext envelope (any format version). */
+/** True for a string that starts like a ciphertext envelope (the server's loose check). */
 export function isCiphertext(v: unknown): v is string {
   return typeof v === 'string' && v.startsWith(PREFIX)
+}
+
+const ENVELOPE = /^enc:v[0-9]+:[A-Za-z0-9_-]{38,}$/
+
+/**
+ * True for a well-formed envelope: "enc:vN:" and at least nonce + tag of
+ * base64url. Stricter than isCiphertext so a title someone typed as "enc: …"
+ * is still treated (and encrypted) as text.
+ */
+export function isEnvelope(v: unknown): v is string {
+  return typeof v === 'string' && ENVELOPE.test(v)
 }
 
 // ---- keys ----

@@ -92,6 +92,8 @@ export interface Task {
    */
   ical_extra: string | null
   _clock: Clock
+  /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
+  _e2ee?: RowEncryption
 }
 
 /**
@@ -319,6 +321,28 @@ export interface AuthStatus {
   mfa?: MfaStatus
   /** Single sign-on (OpenSpec `oidc-login`); absent on servers without it. */
   oidc?: OidcStatus
+  /** End-to-end encryption of the signed-in account (OpenSpec `e2ee`); absent on older servers. */
+  encryption?: EncryptionStatus
+  /** Oldest web client that understands ciphertext values (OpenSpec `e2ee`, design D9). */
+  minClientVersion?: number
+}
+
+/** The profile's view of end-to-end encryption (OpenSpec `e2ee`). */
+export interface EncryptionStatus {
+  enabled: boolean
+  keyVersion: number
+}
+
+/**
+ * Local-only encryption bookkeeping on a synced row (OpenSpec `e2ee`); never
+ * sent. `wire[field]` is the form the server holds for the field's current
+ * value as far as this device knows: 'p' plaintext, 'c' ciphertext, 'x'
+ * ciphertext this device cannot decrypt (the envelope is kept in `raw[field]`
+ * and the field shows a placeholder).
+ */
+export interface RowEncryption {
+  wire?: Record<string, 'p' | 'c' | 'x'>
+  raw?: Record<string, string>
 }
 
 /** Whether a provider is configured, as the sign-in screen needs it. */
@@ -469,6 +493,8 @@ export interface EmailInbox {
 
 export interface CaldavSetting {
   enabled: boolean
+  /** The signed-in account encrypts its content (OpenSpec `e2ee`): CalDAV refuses it. */
+  encryption?: boolean
   /** The address calendar apps are configured with (…/dav/). */
   url: string
   /** False when the address is plain http: app passwords would travel unencrypted. */
@@ -507,7 +533,7 @@ export interface WebhookInput {
 }
 
 /** 'reseeding': the server was restored from a backup and this device is re-sending its local state. */
-export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' | 'unauthenticated' | 'restricted'
+export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' | 'unauthenticated' | 'restricted' | 'locked'
 
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
 export const TASK_FIELDS = [

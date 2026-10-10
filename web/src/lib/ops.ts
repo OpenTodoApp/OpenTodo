@@ -11,6 +11,9 @@ import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
 import { ENTITIES, type Clock, type Comment, type Entity, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Section, type Task, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
+import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
+import { encryptionSnapshot, isContentField } from './e2ee'
+import type { RowEncryption } from './types'
 
 let devicePromise: Promise<string> | null = null
 
@@ -97,7 +100,7 @@ const SERVER_REWRITTEN = new Set(['comment.mentions'])
  * Task, project and comment ops are also recorded for the activity log with their
  * author (`op.actor`, else `opts.actor` for local edits) and old value.
  */
-export async function applyOps(ops: Op[], opts: { actor?: string } = {}): Promise<void> {
+export async function applyOps(ops: Op[], opts: { actor?: string; wire?: Map<string, { kind: 'p' | 'c' | 'x'; raw?: string }> } = {}): Promise<void> {
   if (ops.length === 0) return
   const grouped = new Map<string, Op[]>()
   for (const op of ops) {
@@ -129,6 +132,19 @@ export async function applyOps(ops: Op[], opts: { actor?: string } = {}): Promis
         row[op.field] = op.value
         clock[op.field] = { ts: op.ts, device: op.device }
         changed = true
+        // End-to-end encryption bookkeeping (OpenSpec e2ee), local only: the form
+        // the server holds for a remote value, and the envelope of a value this
+        // device cannot decrypt. A local edit replaces an undecryptable value.
+        const info = opts.wire?.get(op.id)
+        const enc = row._e2ee as RowEncryption | undefined
+        if (info || enc?.raw?.[op.field]) {
+          const wire = { ...enc?.wire }
+          const raw = { ...enc?.raw }
+          if (info) wire[op.field] = info.kind
+          if (info?.raw) raw[op.field] = info.raw
+          else delete raw[op.field]
+          row._e2ee = { wire, raw }
+        }
       }
       rows.set(`${entity}:${entityId}`, row)
       if (changed) {
@@ -181,6 +197,7 @@ export function mutationTables() {
  * `db.transaction('rw', mutationTables(), …)` after awaiting getDeviceId() once.
  */
 export async function mutateMany(changes: Change[]): Promise<void> {
+  checkEncryptedSize(changes)
   const device = await getDeviceId()
   changes = [...changes, ...(await reminderFollowUps(changes))]
   const ts = hlcNow()
@@ -228,6 +245,25 @@ async function reminderFollowUps(changes: Change[]): Promise<Change[]> {
     }
   }
   return out
+}
+
+/** A content value too long to fit the server's value limit once encrypted (OpenSpec e2ee, design D3). */
+export class PlaintextTooLongError extends Error {
+  constructor(public entity: Entity, public entityId: string, public field: string) {
+    super(`This ${field === 'title' || field === 'name' ? field : 'text'} is too long to encrypt (at most ${MAX_PLAINTEXT_BYTES.toLocaleString('en')} bytes). Shorten it and try again.`)
+  }
+}
+
+/** Refuse, before any op exists, content an encrypted account could not upload. */
+function checkEncryptedSize(changes: Change[]): void {
+  if (!encryptionSnapshot().enabled) return
+  for (const { entity, entityId, patch } of changes) {
+    for (const [field, value] of Object.entries(patch)) {
+      if (typeof value === 'string' && value.length > MAX_PLAINTEXT_BYTES / 4 && isContentField(entity, field) && byteLength(value) > MAX_PLAINTEXT_BYTES) {
+        throw new PlaintextTooLongError(entity, entityId, field)
+      }
+    }
+  }
 }
 
 /** Record field changes for one entity: apply locally and enqueue for the server. */
