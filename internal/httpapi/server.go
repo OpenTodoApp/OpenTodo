@@ -154,6 +154,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerNotificationRoutes(mux)
 	// Trash and history (OpenSpec `trash-and-history`): literal patterns win over {collection}.
 	s.registerTrashRoutes(mux)
+	// Comments and activity (OpenSpec `comments-and-activity`): literal patterns win over {collection}.
+	s.registerCommentRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
@@ -1199,6 +1201,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		}
 		out[plural] = list
 	}
+	// Comments are exported too (comments-and-activity), deleted ones included like
+	// every other tombstone; they have no REST collection of their own.
+	comments, err := s.sync.List(r.Context(), uid, "comment", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["comments"] = comments
 	w.Header().Set("Content-Disposition", `attachment; filename="opentodo-export.json"`)
 	writeJSON(w, http.StatusOK, out)
 	s.audit.Record(r.Context(), audit.ExportRequested(uid, "json"))
