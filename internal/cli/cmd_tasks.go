@@ -427,9 +427,6 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if set["priority"] {
 		body["priority"] = f.priority
 	}
-	if len(f.labels) > 0 {
-		body["labels"] = []string(f.labels)
-	}
 	if set["note"] {
 		body["description"] = f.note
 	}
@@ -447,6 +444,13 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 		body["project_id"] = p.ID
+	}
+	if len(f.labels) > 0 {
+		ids, err := c.resolveLabels(ctx, f.labels)
+		if err != nil {
+			return err
+		}
+		body["labels"] = ids
 	}
 	var raw json.RawMessage
 	if err := c.postJSON(ctx, "/tasks", body, &raw); err != nil {
@@ -485,9 +489,6 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	}
 	if set["priority"] {
 		patch["priority"] = f.priority
-	}
-	if set["label"] {
-		patch["labels"] = []string(f.labels)
 	}
 	if set["note"] {
 		patch["description"] = f.note
@@ -528,6 +529,13 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	t, err := resolveTask(all, pos[0])
 	if err != nil {
 		return err
+	}
+	if set["label"] {
+		ids, err := c.resolveLabels(ctx, f.labels)
+		if err != nil {
+			return err
+		}
+		patch["labels"] = ids
 	}
 	switch {
 	case clearDue:

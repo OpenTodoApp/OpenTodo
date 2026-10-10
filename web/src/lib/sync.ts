@@ -1,5 +1,7 @@
 // Background sync loop: push the outbox, pull what other devices wrote, repeat
-// until both sides are quiet. Runs on mutation, reconnect, tab focus and a timer.
+// until both sides are quiet. Runs on mutation, reconnect, tab focus, a timer and
+// on live wake-ups from the server's event stream (which carries no data; it only
+// tells us to run the exchange now).
 import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import { db, getMeta, setMeta } from './db'
@@ -8,22 +10,38 @@ import { applyOps, getDeviceId, onLocalMutation } from './ops'
 import type { SyncState } from './types'
 
 const BATCH = 500
+/** Poll interval while the live channel is disconnected (the historical default). */
 const INTERVAL_MS = 30_000
+/** Poll interval while the live channel is connected: a safety net, not the delivery path. */
+const LIVE_INTERVAL_MS = 300_000
+const RECONNECT_BASE_MS = 1_000
+const RECONNECT_CAP_MS = 30_000
+/** No `open` within this window counts as a failed attempt (e.g. a buffering proxy). */
+const OPEN_TIMEOUT_MS = 10_000
+const EVENTS_PATH = '/api/v1/sync/events'
 
 interface Snapshot {
   state: SyncState
   pending: number
   lastSyncedAt: number | null
   error: string | null
+  /** True while the live update stream is connected; polling is the fallback otherwise. */
+  live: boolean
 }
 
-let snapshot: Snapshot = { state: 'idle', pending: 0, lastSyncedAt: null, error: null }
+let snapshot: Snapshot = { state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false }
 const listeners = new Set<() => void>()
 let running = false
 let again = false
 let debounce: ReturnType<typeof setTimeout> | null = null
 let timer: ReturnType<typeof setInterval> | null = null
 let started = false
+
+// Live channel state.
+let source: EventSource | null = null
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let openTimer: ReturnType<typeof setTimeout> | null = null
+let attempts = 0
 
 function publish(patch: Partial<Snapshot>) {
   snapshot = { ...snapshot, ...patch }
@@ -62,10 +80,14 @@ export async function syncNow(): Promise<void> {
   }
 }
 
+function isOffline(): boolean {
+  return typeof navigator !== 'undefined' && navigator.onLine === false
+}
+
 async function runOnce(): Promise<void> {
   const pending = await db.outbox.count()
   publish({ pending })
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+  if (isOffline()) {
     publish({ state: 'offline' })
     return
   }
@@ -101,10 +123,119 @@ async function runOnce(): Promise<void> {
   }
 }
 
+// ---- periodic fallback ----
+
+function armTimer(): void {
+  if (timer) clearInterval(timer)
+  timer = setInterval(() => void syncNow(), snapshot.live ? LIVE_INTERVAL_MS : INTERVAL_MS)
+}
+
+function setLive(live: boolean): void {
+  if (snapshot.live === live) return
+  publish({ live })
+  if (started) armTimer()
+}
+
+// ---- live channel ----
+
+/** Jittered exponential backoff: min(cap, base · 2^n) ± 20 %. */
+function backoffMs(n: number): number {
+  const base = Math.min(RECONNECT_CAP_MS, RECONNECT_BASE_MS * 2 ** n)
+  return Math.round(base * (0.8 + Math.random() * 0.4))
+}
+
+function clearLiveTimers(): void {
+  if (reconnectTimer) clearTimeout(reconnectTimer)
+  reconnectTimer = null
+  if (openTimer) clearTimeout(openTimer)
+  openTimer = null
+}
+
+function closeSource(): void {
+  if (openTimer) clearTimeout(openTimer)
+  openTimer = null
+  if (source) {
+    const es = source
+    source = null
+    es.onopen = null
+    es.onerror = null
+    es.close()
+  }
+  setLive(false)
+}
+
+function scheduleReconnect(): void {
+  if (!started || reconnectTimer) return
+  const delay = backoffMs(attempts)
+  attempts = Math.min(attempts + 1, 10)
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null
+    connectLive()
+  }, delay)
+}
+
+/** One failed attempt: drop the source and try again later with backoff. */
+function failLive(es: EventSource): void {
+  if (source !== es) return
+  closeSource()
+  scheduleReconnect()
+}
+
+function connectLive(): void {
+  if (!started || source || typeof EventSource === 'undefined') return
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
+  // Pointless while offline; the `online` handler calls us again.
+  if (isOffline()) return
+  void getDeviceId().then(
+    (device) => {
+      if (!started || source || isOffline()) return
+      const es = new EventSource(`${EVENTS_PATH}?device=${encodeURIComponent(device)}`)
+      source = es
+      openTimer = setTimeout(() => failLive(es), OPEN_TIMEOUT_MS)
+      es.onopen = () => {
+        if (source !== es) return
+        if (openTimer) clearTimeout(openTimer)
+        openTimer = null
+        attempts = 0
+        setLive(true)
+        // Cover anything recorded while we were disconnected.
+        requestSync(0)
+      }
+      es.onerror = () => failLive(es)
+      es.addEventListener('ops', (ev) => {
+        if (source !== es) return
+        void onWakeUp((ev as MessageEvent<string>).data)
+      })
+    },
+    () => scheduleReconnect(),
+  )
+}
+
+/** A wake-up names the server's latest cursor; skip the exchange if we already have it. */
+async function onWakeUp(data: string): Promise<void> {
+  let cursor = Number.NaN
+  try {
+    cursor = Number((JSON.parse(data) as { cursor?: unknown }).cursor)
+  } catch {
+    // Malformed payload: fall through and sync anyway, it is only a hint.
+  }
+  if (Number.isFinite(cursor)) {
+    const stored = await getMeta<number>('cursor', 0)
+    if (cursor <= stored) return
+  }
+  requestSync(0)
+}
+
+// ---- lifecycle ----
+
 /** Wire up triggers once the user is authenticated. Idempotent. */
 export function startSync(): void {
   if (started) {
     requestSync(0)
+    connectLive()
     return
   }
   started = true
@@ -115,18 +246,36 @@ export function startSync(): void {
     requestSync()
   })
   if (typeof window !== 'undefined') {
-    window.addEventListener('online', () => requestSync(0))
+    window.addEventListener('online', () => {
+      requestSync(0)
+      attempts = 0
+      connectLive()
+    })
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') requestSync(0)
+      if (document.visibilityState === 'visible') {
+        requestSync(0)
+        // Mobile browsers drop the stream silently in the background; reconnect now
+        // instead of waiting out the backoff.
+        if (!source) {
+          attempts = 0
+          connectLive()
+        }
+      }
     })
   }
-  timer = setInterval(() => void syncNow(), INTERVAL_MS)
+  armTimer()
   requestSync(0)
+  connectLive()
 }
 
 export function stopSync(): void {
   if (timer) clearInterval(timer)
   timer = null
+  if (debounce) clearTimeout(debounce)
+  debounce = null
   started = false
-  publish({ state: 'idle', pending: 0, lastSyncedAt: null, error: null })
+  clearLiveTimers()
+  closeSource()
+  attempts = 0
+  publish({ state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false })
 }

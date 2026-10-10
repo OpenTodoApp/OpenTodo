@@ -39,13 +39,17 @@ If you prefer not to use compose:
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `OPENTODO_BASE_URL` | set by Coolify | Public URL. Enables `Secure` cookies, strict origin checks and, when https, passkeys |
-| `OPENTODO_ALLOW_SIGNUP` | `false` | Allow others to create accounts after the owner |
+| `OPENTODO_ALLOW_SIGNUP` | `false` | Allow anyone to create an account after the owner. Prefer invitations (below) |
 | `OPENTODO_SESSION_DAYS` | `90` | Session lifetime |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug` logs every API request |
 
 ## Passkeys
 
 Users can add passkeys in **Settings → Security** once the domain is https, which Coolify provisions when the domain starts with `https://`. Passkeys are tied to the domain's host. If you later change the domain assigned to the service, existing passkeys stop working: users sign in with their password and register new ones. Passwords are never disabled by passkeys. Details in [Running with Docker](docker.md#passkeys-need-an-https-base-url).
+
+## Adding people
+
+Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → Members**, create an invitation (optionally bound to an email, expiring in 1 hour to 30 days) and send the link. It creates one account and then stops working; pending links can be revoked. Links use `OPENTODO_BASE_URL`, which the compose file sets from Coolify's domain. See [Adding people](../../README.md#adding-people).
 
 ## Backups
 
@@ -55,9 +59,14 @@ Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files
 
 Redeploy the resource. Coolify pulls the new image (or rebuilds), the new version applies database migrations on startup, and your data stays in the volume.
 
+## Live updates
+
+Devices learn about each other's changes through a long-lived request, `GET /api/v1/sync/events` (server-sent events). Coolify's Traefik proxy streams it as is: no labels or settings are needed. The server heartbeats every 25 s, below Traefik's idle timeouts, and sets no-buffering headers. Use an `https://` domain so Traefik serves HTTP/2 and the streams of several tabs share one connection.
+
 ## Troubleshooting
 
 - **"No Available Server" on the domain**: make sure the domain is assigned to the `opentodo` service with port `8080` (the compose file does this through `SERVICE_FQDN_OPENTODO_8080`).
+- **Status pill shows "Polling" instead of "Live"**: something between the browser and the container is buffering or cutting the event stream. Open `https://todo.example.com/api/v1/sync/events?device=test` while signed in: you should see `: connected` at once and `: ping` every 25 s. With stock Coolify this works out of the box; check any extra proxy, CDN or corporate firewall in front of it (see the proxy notes in [docker.md](docker.md)). The app keeps working with 30 s polling in the meantime.
 - **Sign-in works on desktop but not on the phone**: the domain must be https. Coolify handles this when the domain starts with `https://`.
 - **No "Sign in with a passkey" button / 409 `passkeys_unavailable`**: `OPENTODO_BASE_URL` is missing or not `https://`. Set it to the URL users open.
 - **Cookie rejected / 403 `bad_origin`**: `OPENTODO_BASE_URL` must match the URL users open, including the scheme.

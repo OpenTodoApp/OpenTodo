@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -20,9 +21,14 @@ import (
 )
 
 type env struct {
-	t      *testing.T
-	srv    *httptest.Server
-	client *http.Client
+	t       *testing.T
+	srv     *httptest.Server
+	client  *http.Client
+	db      *sql.DB
+	handler http.Handler
+	sync    *opsync.Service
+	// ip, when set, is sent as X-Forwarded-For so clients get separate rate-limit windows.
+	ip string
 }
 
 func newEnv(t *testing.T, allowSignup bool) *env {
@@ -34,11 +40,14 @@ func newEnv(t *testing.T, allowSignup bool) *env {
 	t.Cleanup(func() { db.Close() })
 	cfg := config.Config{SessionTTL: time.Hour, AllowSignup: allowSignup}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), opsync.NewService(db), nil, log, "test")
+	syncSvc := opsync.NewService(db)
+	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), syncSvc, nil, log, "test")
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
+	// Open event streams would otherwise hold srv.Close; mirror main.go's shutdown hook.
+	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
-	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}}
+	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}
 }
 
 func (e *env) do(method, path string, body any, headers ...string) (*http.Response, map[string]any) {
@@ -50,6 +59,9 @@ func (e *env) do(method, path string, body any, headers ...string) (*http.Respon
 	}
 	req, _ := http.NewRequest(method, e.srv.URL+path, rd)
 	req.Header.Set("Content-Type", "application/json")
+	if e.ip != "" {
+		req.Header.Set("X-Forwarded-For", e.ip)
+	}
 	for i := 0; i+1 < len(headers); i += 2 {
 		req.Header.Set(headers[i], headers[i+1])
 	}
@@ -121,7 +133,14 @@ func TestFirstRunSetupThenSignupClosed(t *testing.T) {
 
 func newClientFor(e *env) *env {
 	jar, _ := cookiejar.New(nil)
-	return &env{t: e.t, srv: e.srv, client: &http.Client{Jar: jar}}
+	return &env{t: e.t, srv: e.srv, client: &http.Client{Jar: jar}, db: e.db}
+}
+
+// newClientAt is newClientFor with its own client address for rate limiting.
+func newClientAt(e *env, ip string) *env {
+	c := newClientFor(e)
+	c.ip = ip
+	return c
 }
 
 func TestUnauthenticatedIsRejected(t *testing.T) {
@@ -218,6 +237,144 @@ func TestRestWriteThroughAndSyncRoundTrip(t *testing.T) {
 	e.mustStatus(resp, 200, out)
 	if len(out["tasks"].([]any)) != 1 || len(out["projects"].([]any)) != 1 {
 		t.Fatalf("export = %v", out)
+	}
+}
+
+func TestLabelsRequireAuth(t *testing.T) {
+	e := newEnv(t, false)
+	resp, out := e.do("GET", "/api/v1/labels", nil)
+	e.mustStatus(resp, 401, out)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "errand"})
+	e.mustStatus(resp, 401, out)
+	if out["error"].(map[string]any)["code"] != "unauthorized" {
+		t.Fatalf("error = %v", out)
+	}
+}
+
+func TestLabelsCrud(t *testing.T) {
+	e := newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "errand"})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	if out["name"] != "errand" || out["color"] == nil || out["color"] == "" || out["position"] == nil || out["created_at"] == nil {
+		t.Fatalf("created label = %v", out)
+	}
+
+	// Empty names and unknown fields are refused.
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "  "})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "x", "archived": true})
+	e.mustStatus(resp, 400, out)
+	if out["error"].(map[string]any)["code"] != "invalid_input" {
+		t.Fatalf("error = %v", out)
+	}
+	// Uniqueness is advisory: a duplicate name is accepted (devices may hold duplicates).
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "Errand", "color": "#3b82f6"})
+	e.mustStatus(resp, 201, out)
+	dupID := out["id"].(string)
+
+	resp, out = e.do("GET", "/api/v1/labels/"+id, nil)
+	e.mustStatus(resp, 200, out)
+
+	resp, out = e.do("PATCH", "/api/v1/labels/"+id, map[string]any{"name": "errands", "color": "#ec4899"})
+	e.mustStatus(resp, 200, out)
+	if out["name"] != "errands" || out["color"] != "#ec4899" {
+		t.Fatalf("patched label = %v", out)
+	}
+	resp, out = e.do("PATCH", "/api/v1/labels/"+id, map[string]any{"name": ""})
+	e.mustStatus(resp, 400, out)
+
+	resp, out = e.do("GET", "/api/v1/labels", nil)
+	e.mustStatus(resp, 200, out)
+	if n := len(out["labels"].([]any)); n != 2 {
+		t.Fatalf("labels = %d", n)
+	}
+
+	resp, out = e.do("DELETE", "/api/v1/labels/"+dupID, nil)
+	e.mustStatus(resp, 204, out)
+	resp, out = e.do("GET", "/api/v1/labels/"+dupID, nil)
+	e.mustStatus(resp, 404, out)
+	resp, out = e.do("GET", "/api/v1/labels", nil)
+	if n := len(out["labels"].([]any)); n != 1 {
+		t.Fatalf("labels after delete = %d", n)
+	}
+	resp, out = e.do("GET", "/api/v1/labels?include_deleted=true", nil)
+	if n := len(out["labels"].([]any)); n != 2 {
+		t.Fatalf("labels including deleted = %d", n)
+	}
+}
+
+func TestTaskLabelsMustExist(t *testing.T) {
+	e := newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "errand"})
+	e.mustStatus(resp, 201, out)
+	labelID := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "gone"})
+	e.mustStatus(resp, 201, out)
+	goneID := out["id"].(string)
+	resp, out = e.do("DELETE", "/api/v1/labels/"+goneID, nil)
+	e.mustStatus(resp, 204, out)
+
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "x", "labels": []string{"nope"}})
+	e.mustStatus(resp, 400, out)
+	if out["error"].(map[string]any)["code"] != "invalid_input" {
+		t.Fatalf("error = %v", out)
+	}
+	resp, out = e.do("GET", "/api/v1/tasks", nil)
+	if n := len(out["tasks"].([]any)); n != 0 {
+		t.Fatalf("rejected create left %d tasks", n)
+	}
+
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "x", "labels": []string{labelID}})
+	e.mustStatus(resp, 201, out)
+	taskID := out["id"].(string)
+
+	for _, bad := range []any{[]string{"nope"}, []string{goneID}, []string{labelID, "nope"}} {
+		resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"labels": bad, "title": "changed"})
+		e.mustStatus(resp, 400, out)
+	}
+	// Wrong types still fail schema validation with the same code.
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"labels": "errand"})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("GET", "/api/v1/tasks/"+taskID, nil)
+	e.mustStatus(resp, 200, out)
+	if out["title"] != "x" || len(out["labels"].([]any)) != 1 {
+		t.Fatalf("task changed by rejected patch: %v", out)
+	}
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"labels": []string{}})
+	e.mustStatus(resp, 200, out)
+}
+
+func TestExportIncludesLabels(t *testing.T) {
+	e := newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "errand"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "old"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("DELETE", "/api/v1/labels/"+out["id"].(string), nil)
+	e.mustStatus(resp, 204, out)
+
+	resp, out = e.do("GET", "/api/v1/export", nil)
+	e.mustStatus(resp, 200, out)
+	labels, ok := out["labels"].([]any)
+	if !ok || len(labels) != 2 || out["version"] != float64(1) {
+		t.Fatalf("export = %v", out)
+	}
+	deleted := 0
+	for _, l := range labels {
+		if l.(map[string]any)["deleted_at"] != nil {
+			deleted++
+		}
+	}
+	if deleted != 1 {
+		t.Fatalf("export should keep the deleted label, got %d deleted", deleted)
 	}
 }
 
@@ -335,6 +492,96 @@ func TestTaskParentMustShareProject(t *testing.T) {
 	e.mustStatus(resp, 200, out)
 	if out["parent_id"] != nil {
 		t.Fatalf("cleared parent = %v", out["parent_id"])
+	}
+}
+
+// projectTreeEnv registers an owner and builds "Work" > "Client A" > "Q4 launch" plus a top-level "Home".
+func projectTreeEnv(t *testing.T) (e *env, work, clientA, q4, home string) {
+	t.Helper()
+	e = newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+	create := func(name string, parent any) string {
+		t.Helper()
+		resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": name, "color": "#10b981", "parent_id": parent})
+		e.mustStatus(resp, 201, out)
+		if out["parent_id"] != parent {
+			t.Fatalf("created %s parent_id = %v, want %v", name, out["parent_id"], parent)
+		}
+		return out["id"].(string)
+	}
+	work = create("Work", nil)
+	clientA = create("Client A", work)
+	q4 = create("Q4 launch", clientA)
+	home = create("Home", nil)
+	return e, work, clientA, q4, home
+}
+
+func TestProjectPatchRejectsCycle(t *testing.T) {
+	e, work, clientA, q4, home := projectTreeEnv(t)
+	for _, bad := range []string{work, clientA, q4} {
+		resp, out := e.do("PATCH", "/api/v1/projects/"+work, map[string]any{"parent_id": bad})
+		e.mustStatus(resp, 400, out)
+		if out["error"].(map[string]any)["code"] != "invalid_input" {
+			t.Fatalf("error = %v", out)
+		}
+	}
+	resp, out := e.do("GET", "/api/v1/projects/"+work, nil)
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != nil {
+		t.Fatalf("parent changed: %v", out["parent_id"])
+	}
+	// Unknown parents are refused on patch and create; a legal move is accepted.
+	resp, out = e.do("PATCH", "/api/v1/projects/"+q4, map[string]any{"parent_id": "nope"})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Stray", "parent_id": "nope"})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("PATCH", "/api/v1/projects/"+q4, map[string]any{"parent_id": home})
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != home {
+		t.Fatalf("legal move: %v", out)
+	}
+	// Clearing the parent is always allowed; a deleted parent is refused.
+	resp, out = e.do("PATCH", "/api/v1/projects/"+q4, map[string]any{"parent_id": nil})
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != nil {
+		t.Fatalf("cleared parent = %v", out["parent_id"])
+	}
+	resp, out = e.do("DELETE", "/api/v1/projects/"+home, nil)
+	e.mustStatus(resp, 204, out)
+	resp, out = e.do("PATCH", "/api/v1/projects/"+q4, map[string]any{"parent_id": home})
+	e.mustStatus(resp, 400, out)
+}
+
+// Back-to-back REST writes to one field must each take effect, even within a
+// millisecond: they share device "server", so equal timestamps would tie.
+func TestRapidPatchesAllApply(t *testing.T) {
+	e, _, clientA, _, home := projectTreeEnv(t)
+	for i := 0; i < 50; i++ {
+		want := any(home)
+		if i%2 == 1 {
+			want = nil
+		}
+		resp, out := e.do("PATCH", "/api/v1/projects/"+clientA, map[string]any{"parent_id": want})
+		e.mustStatus(resp, 200, out)
+		if out["parent_id"] != want {
+			t.Fatalf("patch %d: parent_id = %v, want %v", i, out["parent_id"], want)
+		}
+	}
+}
+
+func TestProjectPatchParentRequiresAuth(t *testing.T) {
+	e, work, clientA, _, _ := projectTreeEnv(t)
+	bare := &env{t: t, srv: e.srv, client: &http.Client{}}
+	resp, out := bare.do("PATCH", "/api/v1/projects/"+clientA, map[string]any{"parent_id": nil})
+	bare.mustStatus(resp, 401, out)
+	if out["error"].(map[string]any)["code"] != "unauthorized" {
+		t.Fatalf("error = %v", out)
+	}
+	resp, out = e.do("GET", "/api/v1/projects/"+clientA, nil)
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != work {
+		t.Fatalf("parent changed without auth: %v", out["parent_id"])
 	}
 }
 

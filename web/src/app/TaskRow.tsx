@@ -1,6 +1,7 @@
 import { describeDue } from '../lib/dates'
 import type { Progress } from '../lib/subtasks'
-import type { Project, Task } from '../lib/types'
+import type { Label, Project, Task } from '../lib/types'
+import { LabelChip } from './LabelPicker'
 
 const PRIORITY_RING: Record<number, string> = {
   1: 'border-red-500 bg-red-50 dark:bg-red-950/40',
@@ -19,9 +20,11 @@ const DUE_TONE = {
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
 export const MAX_INDENT = 3
 
-export function TaskRow({ task, project, selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, onToggle, onOpen, onToggleCollapse }: {
+export function TaskRow({ task, project, labels = [], selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, onToggle, onOpen, onToggleCollapse }: {
   task: Task
   project?: Project
+  /** Already resolved: unknown and deleted label ids are not in this list. */
+  labels?: Label[]
   selected: boolean
   showProject: boolean
   depth?: number
@@ -80,6 +83,9 @@ export function TaskRow({ task, project, selected, showProject, depth = 0, progr
           {breadcrumb && <span className="truncate text-slate-400" title="Parent task">↳ {breadcrumb}</span>}
           {due && <span className={DUE_TONE[due.tone]}>{due.label}</span>}
           {task.description && <span className="text-slate-400">≡</span>}
+          {labels.length > 0 && (
+            <span className="flex flex-wrap gap-1">{labels.map((l) => <LabelChip key={l.id} label={l} />)}</span>
+          )}
           {showProject && project && (
             <span className="flex items-center gap-1 text-slate-500">
               <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: project.color }} />

@@ -93,7 +93,7 @@ ot edit 8c2a --due none --project none --note ""     # clear values
 | `--due <when>` | `YYYY-MM-DD`, `today`, `tomorrow` or an English weekday name (next occurrence; `monday` on a Monday means next week); `none` (edit) clears the date |
 | `--time HH:MM` | Due time, 24-hour; with `ot add` and no `--due` the date is today |
 | `--priority 1..4` | 1 is highest, 4 is the default |
-| `--label <l>` | Repeatable; with `ot edit` the given labels replace the list |
+| `--label <l>` | Repeatable; a label name (case-insensitive) or id. Unknown names create the label. With `ot edit` the given labels replace the list |
 | `--note <text>` | Description; `--note ""` clears it |
 | `--title <text>` | New title (`ot edit` only) |
 

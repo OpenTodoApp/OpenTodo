@@ -797,3 +797,32 @@ func TestJSONOutputIsPureAPIShape(t *testing.T) {
 		t.Fatal("colour without a TTY")
 	}
 }
+
+// task.labels holds label ids (OpenSpec `labels`): --label resolves names to ids,
+// reuses an existing label ignoring case, and creates a missing one.
+func TestLabelFlagResolvesNamesToIDs(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	errand := h.apiJSON("POST", "/api/v1/labels", map[string]any{"name": "errand"})["id"].(string)
+
+	id := strings.TrimSpace(h.mustRun("add", "Post parcel", "--label", "Errand", "--label", "phone", "--label", errand))
+	srv := h.task(id)
+	ids, _ := srv["labels"].([]any)
+	if len(ids) != 2 || ids[0] != errand {
+		t.Fatalf("labels = %v, want [%s <phone id>]", srv["labels"], errand)
+	}
+	labels := h.apiJSON("GET", "/api/v1/labels", nil)["labels"].([]any)
+	if len(labels) != 2 {
+		t.Fatalf("expected errand + newly created phone, got %v", labels)
+	}
+	phone := ids[1].(string)
+
+	// edit replaces the list and reuses the label created above.
+	h.mustRun("edit", id, "--label", "PHONE")
+	if got := h.task(id)["labels"].([]any); len(got) != 1 || got[0] != phone {
+		t.Fatalf("edited labels = %v, want [%s]", got, phone)
+	}
+	if n := len(h.apiJSON("GET", "/api/v1/labels", nil)["labels"].([]any)); n != 2 {
+		t.Fatalf("edit created a duplicate label: %d labels", n)
+	}
+}

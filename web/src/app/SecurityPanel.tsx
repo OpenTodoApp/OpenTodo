@@ -1,5 +1,6 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
+import { useOnline } from '../lib/online'
 import { createPasskey, isCancellation, passkeysSupported } from '../lib/passkeys'
 import type { Passkey } from '../lib/types'
 
@@ -18,21 +19,6 @@ export function relativeTime(ts: number | null, now = Date.now()): string {
   const h = Math.round(m / 60)
   if (h < 24) return `${h} h ago`
   return new Date(ts).toLocaleDateString()
-}
-
-function useOnline(): boolean {
-  const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine !== false)
-  useEffect(() => {
-    const on = () => setOnline(true)
-    const off = () => setOnline(false)
-    window.addEventListener('online', on)
-    window.addEventListener('offline', off)
-    return () => {
-      window.removeEventListener('online', on)
-      window.removeEventListener('offline', off)
-    }
-  }, [])
-  return online
 }
 
 function readCachedAvailability(): boolean {

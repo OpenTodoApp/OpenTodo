@@ -26,7 +26,7 @@ func newService(t *testing.T) (*auth.Service, *auth.User) {
 	t.Cleanup(func() { db.Close() })
 	s := auth.NewService(db, time.Hour, true)
 	s.ConfigurePasskeys(rpID, origin)
-	u, err := s.Register(context.Background(), "owner@example.com", "Owner", "correct horse battery")
+	u, err := s.Register(context.Background(), "owner@example.com", "Owner", "correct horse battery", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func TestPasskeyRegisterAndLogin(t *testing.T) {
 func TestPasskeyChallengeBinding(t *testing.T) {
 	s, u := newService(t)
 	ctx := context.Background()
-	other, err := s.Register(ctx, "other@example.com", "", "another long password")
+	other, err := s.Register(ctx, "other@example.com", "", "another long password", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func TestPasskeysUnavailableWithoutRelyingParty(t *testing.T) {
 	}
 	defer db.Close()
 	s := auth.NewService(db, time.Hour, false)
-	u, _ := s.Register(context.Background(), "o@example.com", "", "correct horse battery")
+	u, _ := s.Register(context.Background(), "o@example.com", "", "correct horse battery", "")
 	if s.PasskeysAvailable() {
 		t.Fatal("available without configuration")
 	}

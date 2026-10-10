@@ -11,6 +11,8 @@ docker compose up -d
 
 Open <http://localhost:8080>. The first visitor creates the owner account.
 
+To add more people, keep sign-up closed and create single-use invitation links in **Settings → Members** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL.
+
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`.
 - To build locally instead of pulling: replace `image: ghcr.io/pixari/opentodo:latest` with `build: .`.
@@ -27,7 +29,7 @@ docker run -d --name opentodo \
 
 ## Behind a reverse proxy
 
-OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure` and the origin check matches. The server also honours `X-Forwarded-Host` and `X-Forwarded-For` for the origin check and rate limiting.
+OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure`, the origin check matches and invitation links point at the public address. The server also honours `X-Forwarded-Host` and `X-Forwarded-For` for the origin check and rate limiting.
 
 ### Passkeys need an https base URL
 
@@ -42,6 +44,26 @@ todo.example.com {
     reverse_proxy opentodo:8080
 }
 ```
+
+### Live updates through the proxy
+
+Each open tab keeps one long-lived request open, `GET /api/v1/sync/events`, a server-sent event stream the server uses to tell devices "new changes, sync now". It needs nothing special from Caddy, Traefik (Coolify) or nginx with default settings, because the server already:
+
+- sends `Cache-Control: no-cache` and `X-Accel-Buffering: no` (nginx honours the latter and stops buffering that response),
+- flushes after every write and sends a `: ping` heartbeat every 25 s, below the usual 30–60 s idle timeouts,
+- caps streams at 16 per account and closes them cleanly on shutdown.
+
+Things to keep in mind:
+
+- **Buffering.** If a proxy buffers whole responses (older nginx configs with `proxy_buffering on` and no respect for `X-Accel-Buffering`, or some CDN "optimisation" layers), the stream never opens. For nginx add `proxy_buffering off;` to the `location` that proxies OpenTodo, or at least `proxy_http_version 1.1;` and leave `X-Accel-Buffering` enabled.
+- **Idle timeouts.** Any read/response timeout on the proxy shorter than 25 s will cut the stream (the client reconnects, but it is wasteful). The defaults of Caddy, Traefik and nginx (`proxy_read_timeout 60s`) are fine.
+- **HTTP/2 is recommended.** Browsers allow only six HTTP/1.1 connections per origin, and every open tab holds one for the stream. Terminate TLS at the proxy with HTTP/2 (the default for Caddy and Traefik with https) and the streams are multiplexed over one connection. On plain HTTP/1.1 keep the number of open tabs small.
+
+Troubleshooting "live updates disconnected" (the status pill says **Polling** instead of **Live**):
+
+1. Open `https://todo.example.com/api/v1/sync/events?device=test` in a signed-in browser tab. You should see `: connected` immediately and `: ping` every 25 s. If the page keeps loading with nothing shown, the proxy is buffering.
+2. If it works but drops after a fixed time, a timeout somewhere in the chain is shorter than the heartbeat; raise it above 25 s.
+3. Nothing is lost either way: while the stream is down the app polls every 30 s exactly as before.
 
 ## Bind mounts
 

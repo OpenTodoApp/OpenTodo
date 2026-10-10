@@ -39,11 +39,14 @@ func newEnvWithBase(t *testing.T, base string, allowSignup bool) *env {
 		cfg.BaseURL, _ = url.Parse(base)
 	}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), opsync.NewService(db), nil, log, "test")
+	syncSvc := opsync.NewService(db)
+	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), syncSvc, nil, log, "test")
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
+	// Same shutdown hook as newEnv: open event streams would otherwise hold srv.Close.
+	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
-	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}}
+	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}
 }
 
 // credentialJSON mirrors PublicKeyCredential.toJSON().
@@ -92,12 +95,6 @@ func (e *env) loginWithPasskey(a *testauth.Authenticator) (*http.Response, map[s
 			"userHandle":        "",
 		}),
 	})
-}
-
-func errCode(out map[string]any) string {
-	e, _ := out["error"].(map[string]any)
-	c, _ := e["code"].(string)
-	return c
 }
 
 func TestPasskeyRegisterLoginRevoke(t *testing.T) {

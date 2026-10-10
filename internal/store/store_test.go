@@ -1,11 +1,68 @@
 package store
 
 import (
+	"context"
 	"io/fs"
 	"strconv"
 	"strings"
 	"testing"
 )
+
+// embeddedMigrations returns the embedded migration files by version and the
+// highest version. It fails on duplicate version numbers: the runner skips any
+// version at or below the database's user_version, so a duplicate would never
+// run. Gaps are allowed (branches land in merge order).
+func embeddedMigrations(t *testing.T) (map[int]string, int) {
+	t.Helper()
+	entries, err := fs.ReadDir(migrations, "migrations")
+	if err != nil {
+		t.Fatal(err)
+	}
+	byVersion := map[int]string{}
+	latest := 0
+	for _, e := range entries {
+		v, err := strconv.Atoi(strings.SplitN(e.Name(), "_", 2)[0])
+		if err != nil {
+			t.Fatalf("migration %s: %v", e.Name(), err)
+		}
+		if prev, dup := byVersion[v]; dup {
+			t.Fatalf("migrations %s and %s share version %d", prev, e.Name(), v)
+		}
+		byVersion[v] = e.Name()
+		if v > latest {
+			latest = v
+		}
+	}
+	return byVersion, latest
+}
+
+func TestOpenMigratesEmptyDataDir(t *testing.T) {
+	db, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	_, latest := embeddedMigrations(t)
+	var version int
+	if err := db.QueryRowContext(context.Background(), "PRAGMA user_version").Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if version != latest {
+		t.Fatalf("user_version = %d, want %d", version, latest)
+	}
+	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations"} {
+		var name string
+		err := db.QueryRowContext(context.Background(), "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", table).Scan(&name)
+		if err != nil {
+			t.Fatalf("table %s missing after migration: %v", table, err)
+		}
+	}
+	// Migrating again is a no-op.
+	if err := Migrate(context.Background(), db); err != nil {
+		t.Fatalf("second migrate: %v", err)
+	}
+}
 
 func TestMigrateReachesLatestVersion(t *testing.T) {
 	db, err := Open(t.TempDir())
@@ -14,29 +71,11 @@ func TestMigrateReachesLatestVersion(t *testing.T) {
 	}
 	defer db.Close()
 
-	entries, err := fs.ReadDir(migrations, "migrations")
-	if err != nil {
-		t.Fatal(err)
-	}
-	latest := 0
-	seen := map[int]string{}
+	byVersion, latest := embeddedMigrations(t)
 	passkeys := false
-	for _, e := range entries {
-		v, err := strconv.Atoi(strings.SplitN(e.Name(), "_", 2)[0])
-		if err != nil {
-			t.Fatalf("migration %s: %v", e.Name(), err)
-		}
-		// Version numbers must be unique: the runner skips any version at or
-		// below the database's user_version, so a duplicate would never run.
-		if prev, dup := seen[v]; dup {
-			t.Fatalf("migrations %s and %s share version %d", prev, e.Name(), v)
-		}
-		seen[v] = e.Name()
-		if strings.HasSuffix(e.Name(), "_passkeys.sql") {
+	for _, name := range byVersion {
+		if strings.HasSuffix(name, "_passkeys.sql") {
 			passkeys = true
-		}
-		if v > latest {
-			latest = v
 		}
 	}
 	if !passkeys {
@@ -56,10 +95,4 @@ func TestMigrateReachesLatestVersion(t *testing.T) {
 			t.Fatalf("table %s missing after migration: %v", table, err)
 		}
 	}
-	// Re-opening is a no-op.
-	db2, err := Open(t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
-	db2.Close()
 }
