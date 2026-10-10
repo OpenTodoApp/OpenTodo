@@ -24,6 +24,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	// Embedded IANA zone data: the distroless image has no /usr/share/zoneinfo,
+	// and zoned due values (absolute-datetimes) are validated by zone name.
+	_ "time/tzdata"
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"

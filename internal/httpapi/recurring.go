@@ -18,6 +18,9 @@ import (
 type due struct {
 	Date string  `json:"date"`
 	Time *string `json:"time,omitempty"`
+	// TZ makes the due zoned (OpenSpec change absolute-datetimes): the wall time
+	// in that IANA zone. Kept as the series rolls forward.
+	TZ *string `json:"tz,omitempty"`
 }
 
 func occurrenceID(seriesID, date string) string { return ids.NameID("occurrence", seriesID+":"+date) }
@@ -129,7 +132,7 @@ func (s *Server) recurringCompletion(ctx context.Context, uid, id string, body m
 	}
 	nd := due{Date: next}
 	if cur != nil {
-		nd.Time = cur.Time
+		nd.Time, nd.TZ = cur.Time, cur.TZ
 	}
 	delete(body, "completed_at")
 	body["due"] = mustJSON(nd)

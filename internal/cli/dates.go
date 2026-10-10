@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/pixari/opentodo/internal/zoned"
 )
 
 // localDate formats t's calendar date in its own location as YYYY-MM-DD.
@@ -73,10 +75,68 @@ func describeDue(d *due, today string) (string, bool) {
 	if d.Time != nil && *d.Time != "" {
 		s += " " + *d.Time
 	}
+	if d.hint != "" {
+		s += " (" + d.hint + ")"
+	}
 	if d.Date < today {
 		return s + " overdue", true
 	}
 	return s, false
+}
+
+// inZone is d as seen from loc: a zoned due converted to loc's wall date and
+// time (with the original as a hint when the zones differ), a floating one as is.
+func (d *due) inZone(loc *time.Location) *due {
+	if d == nil || d.TZ == nil || d.Time == nil {
+		return d
+	}
+	zl, err := zoned.Load(*d.TZ)
+	if err != nil {
+		return d
+	}
+	at, err := zoned.Instant(d.Date, *d.Time, zl)
+	if err != nil {
+		return d
+	}
+	date, clock := zoned.Local(at, loc)
+	out := &due{Date: date, Time: &clock, TZ: d.TZ}
+	if ld, lc := zoned.Local(at, zl); ld != date || lc != clock {
+		out.hint = *d.Time + " " + zoneCity(*d.TZ)
+		if d.Date != date {
+			out.hint = d.Date + " " + out.hint
+		}
+	}
+	return out
+}
+
+// rezone turns an edited view of a zoned due (wall time in loc) back into the
+// same instant in the task's zone. Without a time the zone is dropped.
+func (d due) rezone(loc *time.Location) due {
+	d.hint = ""
+	if d.TZ == nil {
+		return d
+	}
+	if d.Time == nil {
+		return due{Date: d.Date}
+	}
+	zl, err := zoned.Load(*d.TZ)
+	if err != nil {
+		return due{Date: d.Date, Time: d.Time}
+	}
+	at, err := zoned.Instant(d.Date, *d.Time, loc)
+	if err != nil {
+		return d
+	}
+	date, clock := zoned.Local(at, zl)
+	return due{Date: date, Time: &clock, TZ: d.TZ}
+}
+
+// zoneCity is the last segment of a zone name with underscores as spaces.
+func zoneCity(tz string) string {
+	if i := strings.LastIndexByte(tz, '/'); i >= 0 {
+		tz = tz[i+1:]
+	}
+	return strings.ReplaceAll(tz, "_", " ")
 }
 
 func formatMillis(ms float64) string {

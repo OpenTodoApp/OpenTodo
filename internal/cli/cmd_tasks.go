@@ -117,6 +117,9 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		return err
 	}
 	today := localDate(a.Now())
+	for i := range all {
+		all[i].Due = all[i].Due.inZone(a.Now().Location())
+	}
 	tasks := filterTasks(all, projects, view, selected, today)
 	if o.limit > 0 && len(tasks) > o.limit {
 		tasks = tasks[:o.limit]
@@ -543,7 +546,8 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	case set["due"] || set["time"]:
 		d := due{}
 		if t.Due != nil {
-			d = *t.Due
+			// A zoned due is edited as shown here and converted back to its zone.
+			d = *t.Due.inZone(a.Now().Location())
 		}
 		if newDate != "" {
 			d.Date = newDate
@@ -558,7 +562,7 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		if d.Date == "" {
 			return usageErr("task %s has no due date; pass --due together with --time", shortID(t.ID))
 		}
-		patch["due"] = d
+		patch["due"] = d.rezone(a.Now().Location())
 	}
 	var raw json.RawMessage
 	if err := c.patchJSON(ctx, "/tasks/"+t.ID, patch, &raw); err != nil {

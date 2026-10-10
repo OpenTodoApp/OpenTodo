@@ -14,6 +14,7 @@ import (
 	"github.com/pixari/opentodo/internal/push"
 	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/zoned"
 )
 
 // Reminders and web push (OpenSpec change `reminders`): the /api/v1/push routes,
@@ -142,19 +143,24 @@ func (s *Server) tzLocation(ctx context.Context, uid string) *time.Location {
 
 // ---- relative reminders follow REST due changes ----
 
-// dueInstantMs is the Unix ms of a floating due in loc (09:00 when date-only).
+// dueInstantMs is the Unix ms a due denotes: a zoned due is its wall time in its
+// own zone (absolute-datetimes); a floating one is read in loc, 09:00 when
+// date-only.
 func dueInstantMs(d *due, loc *time.Location) (int64, bool) {
-	day, err := time.ParseInLocation("2006-01-02", d.Date, loc)
+	clock := "09:00"
+	if d.Time != nil {
+		clock = *d.Time
+	}
+	if d.TZ != nil && d.Time != nil {
+		if zl, err := zoned.Load(*d.TZ); err == nil {
+			loc = zl
+		}
+	}
+	at, err := zoned.Instant(d.Date, clock, loc)
 	if err != nil {
 		return 0, false
 	}
-	hh, mm := 9, 0
-	if d.Time != nil {
-		if _, err := fmt.Sscanf(*d.Time, "%d:%d", &hh, &mm); err != nil {
-			return 0, false
-		}
-	}
-	return time.Date(day.Year(), day.Month(), day.Day(), hh, mm, 0, 0, loc).UnixMilli(), true
+	return at.UnixMilli(), true
 }
 
 func relativeFireAt(d *due, offset json.RawMessage, loc *time.Location) json.RawMessage {
