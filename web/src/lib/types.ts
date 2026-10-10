@@ -114,3 +114,47 @@ export const TASK_FIELDS = [
   'position', 'created_at', 'completed_at', 'deleted_at',
 ] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const
+
+/** Event names of the server audit log (closed catalogue, see docs/api.md#audit-log). */
+export const AUDIT_EVENT_NAMES = [
+  'login.succeeded', 'login.failed', 'logout',
+  'mfa.enrolled', 'mfa.disabled', 'mfa.reset', 'mfa.challenge_failed',
+  'passkey.registered', 'passkey.deleted',
+  'token.created', 'token.revoked',
+  'invitation.created', 'invitation.accepted', 'invitation.revoked',
+  'role.changed', 'settings.changed',
+  'identity.linked', 'identity.unlinked',
+  'export.requested', 'audit.exported',
+  'backup.created', 'backup.restored',
+] as const
+export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
+
+/** One server audit event. Server-side only: fetched live, never stored in IndexedDB. */
+export interface AuditEvent {
+  id: number
+  ts: number
+  name: AuditEventName
+  outcome: 'success' | 'failure'
+  actorId: string | null
+  actorEmail: string | null
+  targetId: string | null
+  targetEmail: string | null
+  ip: string | null
+  userAgent: string
+  details: Record<string, string>
+}
+
+/** Filters of GET /api/v1/audit and /api/v1/audit/export. Times are Unix ms. */
+export interface AuditFilters {
+  name?: AuditEventName
+  actor?: string
+  target?: string
+  outcome?: 'success' | 'failure'
+  from?: number
+  to?: number
+}
+
+export interface AuditSettings {
+  retentionDays: number
+  logIp: boolean
+}
