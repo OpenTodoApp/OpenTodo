@@ -54,7 +54,7 @@ func TestOpenMigratesEmptyDataDir(t *testing.T) {
 }
 
 // TestMigrationsIdempotent covers an existing database created before the
-// data-import migration: opening it applies 0005 and keeps its data, and the import
+// data-import migration: opening it applies that migration and keeps its data, and the import
 // tables' statements are safe to run again (they use IF NOT EXISTS) so a database
 // that recorded a later version on another branch cannot fail on them.
 func TestMigrationsIdempotent(t *testing.T) {
@@ -64,10 +64,12 @@ func TestMigrationsIdempotent(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
+	// Migration numbers are assigned at merge time, so find ours by name.
+	name, version := dataImportMigration(t)
 	// Simulate a database from before the import tables existed.
 	for _, q := range []string{
 		"INSERT INTO users(id,email,password_hash,created_at) VALUES('u1','a@example.com','x',1)",
-		"DROP TABLE import_items", "DROP TABLE import_jobs", "PRAGMA user_version = 2",
+		"DROP TABLE import_items", "DROP TABLE import_jobs", "PRAGMA user_version = " + strconv.Itoa(version-1),
 	} {
 		if _, err := db.ExecContext(ctx, q); err != nil {
 			t.Fatal(err)
@@ -87,12 +89,12 @@ func TestMigrationsIdempotent(t *testing.T) {
 		t.Fatalf("existing data lost: %d %v", n, err)
 	}
 	// Re-running the import migration over existing tables is a no-op.
-	body, err := migrations.ReadFile("migrations/0005_data_import.sql")
+	body, err := migrations.ReadFile("migrations/" + name)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.ExecContext(ctx, string(body)); err != nil {
-		t.Fatalf("re-running 0005: %v", err)
+		t.Fatalf("re-running %s: %v", name, err)
 	}
 	if err := Migrate(ctx, db); err != nil {
 		t.Fatalf("second migrate: %v", err)
@@ -100,4 +102,24 @@ func TestMigrationsIdempotent(t *testing.T) {
 	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM import_jobs").Scan(&n); err != nil || n != 1 {
 		t.Fatalf("import job lost: %d %v", n, err)
 	}
+}
+
+// dataImportMigration returns the embedded data-import migration's file name and version.
+func dataImportMigration(t *testing.T) (string, int) {
+	t.Helper()
+	entries, err := fs.ReadDir(migrations, "migrations")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), "_data_import.sql") {
+			v, err := strconv.Atoi(strings.SplitN(e.Name(), "_", 2)[0])
+			if err != nil {
+				t.Fatal(err)
+			}
+			return e.Name(), v
+		}
+	}
+	t.Fatal("no *_data_import.sql migration embedded")
+	return "", 0
 }
