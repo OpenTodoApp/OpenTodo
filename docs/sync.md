@@ -37,6 +37,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `position`, `created_at` | number |
 | task | `completed_at`, `deleted_at` | number or null |
 | task | `estimate_minutes` | integer 1–10080 (minutes) or null |
+| task | `recurrence` | recurrence rule string (at most 200 characters, must parse under [the grammar](recurrence.md)) or null |
+| task | `series_id` | string (task id) or null |
 | label | `name`, `color` | string |
 | label | `position`, `created_at` | number |
 | label | `deleted_at` | number or null |
@@ -44,6 +46,10 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 Adding fields is backwards compatible. Renaming or removing is not; it needs an OpenSpec change with a migration plan.
 
 A client that receives an op for an entity it does not know (an older build talking to a newer server) ignores it without failing the batch; the cursor still advances.
+
+### Recurring tasks
+
+`task.recurrence` holds a rule such as `every last weekday`; the server rejects an op whose value does not parse (any spelling the grammar accepts is valid, clients store the canonical form). Completing a recurring task is not a single `completed_at` op: the client writes, in one batch, a new *occurrence record* (a task with the series' fields, `completed_at` set, `recurrence: null` and `series_id` pointing at the series) and a `due` op on the series moving it to the next occurrence. The record's id is not random: it is `NameID("occurrence", seriesId + ":" + occurrenceDate)` (SHA-256, formatted as a version 8 UUID; `internal/ids` and `web/src/lib/ids.ts`), and the next due date is a pure function of the rule and dates every device shares. Two devices that complete the same occurrence offline therefore write the same entity and the same `due` value, and LWW only chooses between identical values; Completed shows one entry. "This occurrence only" uses `seriesId + ":detach:" + date` so a copy never collides with a completion. See [recurrence.md](recurrence.md).
 
 ### Task labels
 
