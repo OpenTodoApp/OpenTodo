@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pixari/opentodo/internal/e2ee"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/zoned"
 )
@@ -100,7 +101,15 @@ func (snap *snapshot) projectName(pid string) string {
 
 // ---- entity field helpers ----
 
+// str reads a string field. An end-to-end encrypted value (OpenSpec `e2ee`)
+// reads as e2ee.Placeholder: the server holds no key, and an assistant must
+// never be handed "enc:v1:…" as if it were a title.
 func str(e opsync.Entity, field string) string {
+	return e2ee.Display(rawStr(e, field))
+}
+
+// rawStr reads a string field as stored (ciphertext included).
+func rawStr(e opsync.Entity, field string) string {
 	var v string
 	if raw, ok := e[field]; ok {
 		_ = json.Unmarshal(raw, &v)
@@ -130,6 +139,14 @@ func boolean(e opsync.Entity, field string) bool {
 		_ = json.Unmarshal(raw, &v)
 	}
 	return v
+}
+
+// plainOrEmpty is a string field for matching: "" when it is ciphertext.
+func plainOrEmpty(e opsync.Entity, field string) string {
+	if v := rawStr(e, field); !e2ee.IsCiphertext(v) {
+		return v
+	}
+	return ""
 }
 
 func isOpen(t opsync.Entity) bool { return num(t, "completed_at") == 0 }
@@ -233,6 +250,9 @@ type taskOut struct {
 	Completed       bool     `json:"completed"`
 	CompletedAt     *string  `json:"completed_at,omitempty"`
 	CreatedAt       *string  `json:"created_at,omitempty"`
+	// Encrypted is true when the title or description is end-to-end encrypted
+	// (OpenSpec `e2ee`) and therefore shown as a placeholder.
+	Encrypted bool `json:"encrypted,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
@@ -245,6 +265,7 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		Recurrence: strPtr(t, "recurrence"), Completed: !isOpen(t),
 		CompletedAt: isoTime(num(t, "completed_at")), CreatedAt: isoTime(num(t, "created_at")),
 	}
+	out.Encrypted = e2ee.IsCiphertext(rawStr(t, "title")) || e2ee.IsCiphertext(rawStr(t, "description"))
 	out.Project = snap.projectName(str(t, "project_id"))
 	if withDescription {
 		d := str(t, "description")

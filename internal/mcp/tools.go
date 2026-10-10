@@ -509,7 +509,9 @@ func (s *Server) searchTasks(ctx context.Context, userID string, a args) (any, e
 		if !snap.visible(t, false) || (!includeCompleted && !isOpen(t)) {
 			continue
 		}
-		if !strings.Contains(strings.ToLower(str(t, "title")), needle) && !strings.Contains(strings.ToLower(str(t, "description")), needle) {
+		// Encrypted content (OpenSpec `e2ee`) cannot be searched server-side; the
+		// placeholder text must not match either.
+		if !strings.Contains(strings.ToLower(plainOrEmpty(t, "title")), needle) && !strings.Contains(strings.ToLower(plainOrEmpty(t, "description")), needle) {
 			continue
 		}
 		items = append(items, keyed[taskOut]{key: taskKey(t, loc), id: str(t, "id"), v: snap.render(t, loc, today, true)})
