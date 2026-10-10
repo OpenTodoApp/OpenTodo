@@ -35,12 +35,14 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
     const today = todayISO()
     let inbox = 0
     let due = 0
+    let assigned = 0
     for (const t of openTasks) {
       if (t.project_id === null) inbox++
       if (t.due && t.due.date <= today) due++
+      if (t.assignee_id === user.id) assigned++
     }
-    return { inbox, today: due, byProject: openCountsByProject(openTasks, tree, collapsed) }
-  }, [openTasks, tree, collapsed])
+    return { inbox, today: due, assigned, byProject: openCountsByProject(openTasks, tree, collapsed) }
+  }, [openTasks, tree, collapsed, user.id])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.
   // Only on a real route change, not on mount or on project edits, so a reload (or a
@@ -125,6 +127,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         {item({ view: 'inbox' }, 'Inbox', '📥', counts.inbox)}
         {item({ view: 'today' }, 'Today', '📅', counts.today)}
         {item({ view: 'upcoming' }, 'Upcoming', '🗓️')}
+        {item({ view: 'assigned' }, 'Assigned to me', '👤', counts.assigned)}
         {item({ view: 'day' }, 'Day', '🕘')}
         {item({ view: 'week' }, 'Week', '📆')}
         {item({ view: 'completed' }, 'Completed', '✅')}

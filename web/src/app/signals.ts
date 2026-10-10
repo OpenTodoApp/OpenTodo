@@ -56,3 +56,28 @@ export function placeInDay(task: Pick<Task, 'id' | 'due'>, today: string): void 
   const date = task.due?.date
   navigate({ view: 'day', date: date && date !== today ? date : undefined })
 }
+
+/**
+ * A notification asks the list view to open a task (task-assignment): `later`
+ * before navigating to another route (taken by the list on the route change),
+ * `now` when the list already shows the target route.
+ */
+let pendingOpen: string | null = null
+const openListeners = new Set<Listener>()
+export const openTask = {
+  later(id: string) {
+    pendingOpen = id
+  },
+  now(id: string) {
+    openListeners.forEach((fn) => fn(id))
+  },
+  take(): string | null {
+    const got = pendingOpen
+    pendingOpen = null
+    return got
+  },
+  subscribe(fn: Listener): () => void {
+    openListeners.add(fn)
+    return () => openListeners.delete(fn)
+  },
+}

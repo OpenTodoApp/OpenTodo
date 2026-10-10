@@ -9,6 +9,7 @@ export type Route =
   | { view: 'day'; date?: string }
   | { view: 'week'; date?: string }
   | { view: 'completed' }
+  | { view: 'assigned' }
   | { view: 'project'; id: string }
   | { view: 'label'; id: string }
   | { view: 'labels' }
@@ -32,6 +33,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'upcoming' }
     case 'completed':
       return { view: 'completed' }
+    case 'assigned':
+      return { view: 'assigned' }
     case 'day':
     case 'week':
       // An optional anchor date; anything that is not YYYY-MM-DD means "today".

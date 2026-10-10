@@ -6,17 +6,18 @@ import { resolveLabels } from '../lib/labels'
 import { createSubtask, createTask, deleteTask, detachOccurrence, setTaskCompleted, setTaskParent, skipOccurrence, updateTask } from '../lib/ops'
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
 import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
-import { roleOf } from '../lib/sharing'
+import { memberName, roleOf } from '../lib/sharing'
 import { flattenTree, type Tree } from '../lib/tree'
 import type { Label, Priority, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
+import { AssigneePicker } from './AssigneePicker'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { TaskDetail } from './TaskDetail'
 import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { SubProjects } from './SubProjects'
-import { estimateFocus, isGPending, placeInDay } from './signals'
+import { estimateFocus, isGPending, openTask, placeInDay } from './signals'
 
 type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
@@ -106,8 +107,10 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
         return all.filter((t) => !t.completed_at && t.project_id === route.id)
       case 'label':
         return all.filter((t) => !t.completed_at && t.labels.includes(route.id)).sort(byPosition)
+      case 'assigned':
+        return all.filter((t) => !t.completed_at && !!userId && t.assignee_id === userId).sort(byDueThenPriority)
     }
-  }, [allTasks, projects, route, today])
+  }, [allTasks, projects, route, today, userId])
 
   const tasks = useMemo(() => {
     if (!duration || !filterKey) return viewTasks
@@ -165,7 +168,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       }
       return [...byDate.entries()].map(([date, list]) => ({ key: date, heading: formatDateHeading(date, today), rows: list.map(flatRow) }))
     }
-    if (route.view === 'label') {
+    if (route.view === 'label' || route.view === 'assigned') {
       // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
       const byProject = new Map<string, Task[]>()
       for (const t of tasks) byProject.set(t.project_id ?? '', [...(byProject.get(t.project_id ?? '') ?? []), t])
@@ -186,6 +189,8 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
   const [prompt, setPrompt] = useState<Task | null>(null)
   /** Task whose label picker (`L`) is open. */
   const [pickerFor, setPickerFor] = useState<string | null>(null)
+  /** Task whose assignee picker (Shift+A) is open (task-assignment). */
+  const [assignFor, setAssignFor] = useState<string | null>(null)
   const quickAddRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -194,7 +199,19 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
     setAddingUnder(null)
     setPrompt(null)
     setPickerFor(null)
+    setAssignFor(null)
+    // A notification asked for this task after navigating here.
+    const requested = openTask.take()
+    if (requested) {
+      setSelectedId(requested)
+      setOpenId(requested)
+    }
   }, [route])
+
+  useEffect(() => openTask.subscribe((id) => {
+    setSelectedId(id)
+    setOpenId(id)
+  }), [])
 
   useEffect(() => {
     if (openId && !rows.some((r) => r.task.id === openId)) {
@@ -221,8 +238,10 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       ...rest,
       // Labels are multi-valued: a label view's label is kept alongside typed @labels.
       labels: [...new Set([...(route.view === 'label' ? [route.id] : []), ...(typed ?? [])])],
+      // In Assigned to me a new task is yours (Inbox unless a #project was typed).
+      ...(route.view === 'assigned' && userId ? { assignee_id: userId } : {}),
     })
-  }, [route, today])
+  }, [route, today, userId])
 
   /** Complete or reopen; after completing the last open subtask, offer the parent (design D5). */
   const toggleComplete = useCallback(async (id: string, completed: boolean) => {
@@ -268,6 +287,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       if (e.key === 'Escape') {
         if (typing) (target as HTMLElement).blur()
         else if (pickerFor) setPickerFor(null)
+        else if (assignFor) setAssignFor(null)
         else if (prompt) setPrompt(null)
         else if (addingUnder) setAddingUnder(null)
         else if (openId) setOpenId(null)
@@ -278,7 +298,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       const idx = rows.findIndex((r) => r.task.id === selectedId)
       const row = idx >= 0 ? rows[idx] : undefined
       // A viewer may navigate and open tasks of a shared project, never change them.
-      if (row && isReadOnly(row.task) && ['a', 'Tab', 'c', 'L', '1', '2', '3', '4', 'Delete', 'Backspace'].includes(e.key)) return
+      if (row && isReadOnly(row.task) && ['a', 'A', 'Tab', 'c', 'L', '1', '2', '3', '4', 'Delete', 'Backspace'].includes(e.key)) return
       if (e.key === 'q' && projectReadOnly) return
       switch (e.key) {
         case 'q':
@@ -358,6 +378,12 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
             setPickerFor(row.task.id)
           }
           break
+        case 'A':
+          if (row && userId) {
+            e.preventDefault()
+            setAssignFor(row.task.id)
+          }
+          break
         case 's':
           // Placement mode in the Day view (OpenSpec `time-blocking`).
           if (row && !row.task.completed_at) {
@@ -390,7 +416,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent, isReadOnly, projectReadOnly])
+  }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, assignFor, userId, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent, isReadOnly, projectReadOnly])
 
   useEffect(() => {
     if (!selectedId) return
@@ -398,7 +424,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
   }, [selectedId])
 
   const title = {
-    inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', completed: 'Completed', project: currentProject?.name ?? 'Project', label: currentLabel?.name ?? 'Label',
+    inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', completed: 'Completed', assigned: 'Assigned to me', project: currentProject?.name ?? 'Project', label: currentLabel?.name ?? 'Label',
   }[route.view]
 
   if (route.view === 'project' && projects.length > 0 && !currentProject) {
@@ -462,6 +488,9 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
                       task={r.task}
                       project={r.task.project_id ? projectMap.get(r.task.project_id) : undefined}
                       labels={resolveLabels(r.task.labels, labelMap)}
+                      assignee={r.task.assignee_id && r.task.project_id && memberMap.has(r.task.project_id)
+                        ? (r.task.assignee_id === userId ? 'You' : memberName(r.task.assignee_id, memberMap) ?? 'Former member') : null}
+                      assignedToMe={!!userId && r.task.assignee_id === userId}
                       showProject={route.view !== 'project' && route.view !== 'label'}
                       selected={r.task.id === selectedId}
                       depth={r.depth}
@@ -495,6 +524,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
           // Remount per task so the picker and drafts never show the previous task's data.
           key={openId}
           taskId={openId}
+          userId={userId}
           readOnly={isReadOnly(taskMap.get(openId))}
           projects={projects}
           labelMap={labelMap}
@@ -509,6 +539,14 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
             <span>All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
             <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <span className="kbd ml-1 border-emerald-300 bg-emerald-500 text-white">Enter</span></button>
             <button className="btn-ghost text-xs" onClick={() => setPrompt(null)}>Keep open <span className="kbd ml-1">Esc</span></button>
+          </div>
+        </div>
+      )}
+      {assignFor && userId && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/30 p-4 pt-24" onClick={() => setAssignFor(null)}>
+          <div className="w-full max-w-sm rounded-xl bg-white p-3 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Assign task">
+            <AssigneePicker taskId={assignFor} userId={userId} onClose={() => setAssignFor(null)} />
+            <p className="mt-2 px-1 text-[11px] text-slate-400">Type to filter · Enter assigns · Esc closes</p>
           </div>
         </div>
       )}
@@ -604,6 +642,8 @@ function placeholderFor(route: ListRoute, project?: Project, label?: Label): str
       return `Add a task to ${project?.name ?? 'this project'}…`
     case 'label':
       return `Add a task labelled ${label?.name ?? 'this'}…`
+    case 'assigned':
+      return 'Add a task assigned to you…'
     default:
       return 'Add a task to your Inbox…'
   }
@@ -617,6 +657,7 @@ function EmptyState({ view }: { view: ListRoute['view'] }) {
     completed: 'Nothing completed yet. Completed tasks show up here for a while.',
     project: 'This project has no open tasks.',
     label: 'No open task carries this label. Select a task and press L to add it.',
+    assigned: 'Nothing is assigned to you. Select a task and press Shift+A to assign it.',
   }[view]
   return <p className="px-2 py-8 text-center text-sm text-slate-400">{text}</p>
 }

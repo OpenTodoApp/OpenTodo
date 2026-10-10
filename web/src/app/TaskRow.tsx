@@ -3,6 +3,7 @@ import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import type { Label, Project, Task } from '../lib/types'
 import { LabelChip } from './LabelPicker'
+import { AssigneeChip } from './AssigneePicker'
 
 const PRIORITY_RING: Record<number, string> = {
   1: 'border-red-500 bg-red-50 dark:bg-red-950/40',
@@ -21,11 +22,14 @@ const DUE_TONE = {
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
 export const MAX_INDENT = 3
 
-export function TaskRow({ task, project, labels = [], selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse }: {
+export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse }: {
   task: Task
   project?: Project
   /** Already resolved: unknown and deleted label ids are not in this list. */
   labels?: Label[]
+  /** Display name of the assignee, given only for tasks in shared projects (task-assignment). */
+  assignee?: string | null
+  assignedToMe?: boolean
   selected: boolean
   showProject: boolean
   depth?: number
@@ -96,6 +100,7 @@ export function TaskRow({ task, project, labels = [], selected, showProject, dep
               {formatMinutes(task.estimate_minutes)}
             </span>
           ) : null}
+          {assignee && <AssigneeChip name={assignee} me={assignedToMe} />}
           {task.description && <span className="text-slate-400">≡</span>}
           {labels.length > 0 && (
             <span className="flex flex-wrap gap-1">{labels.map((l) => <LabelChip key={l.id} label={l} />)}</span>

@@ -15,6 +15,8 @@ import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { SyncStatus } from './SyncStatus'
 import { isGPending, setGPending } from './signals'
+import { NotificationBell } from './NotificationBell'
+import { setCurrentUserId } from '../lib/sharing'
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -45,6 +47,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     setSidebarOpen(false)
   }, [route])
 
+  // Assignment rules (task-assignment) need the account id offline too.
+  useEffect(() => {
+    void setCurrentUserId(user.id)
+  }, [user.id])
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey) return
@@ -64,6 +71,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         if (e.key === 't') navigate({ view: 'today' })
         if (e.key === 'u') navigate({ view: 'upcoming' })
         if (e.key === 'c') navigate({ view: 'completed' })
+        if (e.key === 'a') navigate({ view: 'assigned' })
         if (e.key === 'l') navigate({ view: 'labels' })
         if (e.key === 'v') navigate({ view: 'views' })
         if (e.key === 'd') navigate({ view: 'day' })
@@ -101,6 +109,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         <header className="flex items-center gap-2 border-b border-slate-200 px-3 py-2 dark:border-slate-800 md:px-6">
           <button className="btn-ghost md:hidden" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>☰</button>
           <div className="flex-1" />
+          <NotificationBell />
           <SyncStatus />
           <button className="btn-ghost text-xs" onClick={() => setShowHelp(true)} title="Keyboard shortcuts">
             <span className="kbd">?</span>
@@ -158,6 +167,7 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['Enter', 'Open selected task; accept "complete parent too?"'],
     ['c', 'Complete / reopen selected task (and its subtasks)'],
     ['a', 'Add a subtask to the selected task'],
+    ['Shift+A', 'Assign the selected task (type to find a member, Enter assigns)'],
     ['Tab / Shift+Tab', 'Indent under previous sibling / outdent'],
     ['← / →', 'Collapse / expand subtasks of the selected task, or sub-projects of the focused sidebar project'],
     ['m', 'Move the current project under another project or to the top level'],
@@ -170,6 +180,7 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['Shift+O', 'Recurring task: this occurrence only (standalone copy, series moves on)'],
     ['Delete', 'Delete selected task (and its subtasks)'],
     ['g then i / t / u / c / l / f / v / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings'],
+    ['g then a', 'Go to Assigned to me'],
     ['g then Shift+I', 'Go to Settings → Import data'],
     ['g then d / w', 'Go to the Day / Week calendar'],
     ['j / k (calendar)', 'Select the next / previous task (lane, then blocks)'],

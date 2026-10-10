@@ -10,6 +10,8 @@ import type { Label, Priority, Project, Task } from '../lib/types'
 import { EstimateField } from './EstimateField'
 import { LabelChip, LabelPicker } from './LabelPicker'
 import { RecurrenceField } from './RecurrenceField'
+import { AssigneePicker } from './AssigneePicker'
+import { markTaskNotificationsRead } from '../lib/notifications'
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 1, label: 'P1', cls: 'text-red-600 border-red-500' },
@@ -18,8 +20,10 @@ const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 4, label: 'P4', cls: 'text-slate-500 border-slate-400' },
 ]
 
-export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onToggleComplete, readOnly = false }: {
+export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen, onToggleComplete, readOnly = false }: {
   taskId: string
+  /** Signed-in account; enables the assignee picker (task-assignment). */
+  userId?: string
   /** Viewer of the task's shared project: every control is disabled. */
   readOnly?: boolean
   projects: Project[]
@@ -60,6 +64,10 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
   }, [task?.id, task?.title, task?.description]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => setParentError(null), [taskId])
+  // Opening a task reads its notifications (task-assignment); works offline.
+  useEffect(() => {
+    void markTaskNotificationsRead(taskId)
+  }, [taskId])
 
   if (!task) return null
 
@@ -162,6 +170,12 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
           </select>
           {parentError && <p className="mt-1 text-xs text-red-600">{parentError}</p>}
         </Field>
+
+        {userId && (
+          <Field label="Assignee">
+            <AssigneePicker taskId={task.id} userId={userId} inline />
+          </Field>
+        )}
 
         <Field label="Priority">
           <div className="flex gap-2">
