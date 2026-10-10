@@ -1,3 +1,4 @@
+import type { ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
   AccountRole, ActivityPage, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
@@ -167,8 +168,13 @@ export const api = {
   // In-app notifications (task-assignment): server-side account data, cached locally.
   listNotifications: () => request<{ notifications: AppNotification[]; unread: number }>('GET', '/api/v1/notifications'),
   readNotification: (id: string) => request<void>('POST', `/api/v1/notifications/${encodeURIComponent(id)}/read`),
-  listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
-  createToken: (name: string) => request<{ token: { id: string; name: string }; secret: string }>('POST', '/api/v1/tokens', { name }),
+  listTokens: () => request<{ tokens: ApiToken[] }>('GET', '/api/v1/tokens'),
+  /** scope `read` tokens are refused on every write route (mcp-server). */
+  createToken: (name: string, scope?: TokenScope) =>
+    request<{ token: ApiToken; secret: string }>('POST', '/api/v1/tokens', scope ? { name, scope } : { name }),
+  // AI assistants (mcp-server): status for everyone, the toggle for the owner.
+  getMcpSettings: () => request<McpStatus>('GET', '/api/v1/settings/mcp'),
+  setMcpSettings: (enabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { enabled }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
   // Passkeys (OpenSpec change `passkeys`). Binary fields are base64url strings.
   passkeyLoginOptions: () => request<{ publicKey: RequestOptionsJSON }>('POST', '/api/v1/auth/passkey/options', {}),
