@@ -3,7 +3,10 @@ LDFLAGS := -s -w -X main.version=$(VERSION)
 
 CLI_PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 
-.PHONY: all web server cli cli-release cli-smoke build run dev test test-go test-web check lint clean docker openspec-validate
+EXT_ZIP := dist/opentodo-browser-extension.zip
+EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png
+
+.PHONY: all web server cli cli-release cli-smoke extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate
 
 all: build
 
@@ -32,6 +35,13 @@ cli-release:
 cli-smoke: server cli
 	./scripts/cli-smoke.sh
 
+## Test the browser extension and zip it into dist/ (not part of the container image).
+extension: test-extension
+	@node -e 'const m = require("./extension/manifest.json"); if (m.host_permissions || m.optional_host_permissions || m.content_scripts) { console.error("extension/manifest.json must not declare host permissions or content scripts"); process.exit(1) }'
+	@mkdir -p dist && rm -f $(EXT_ZIP)
+	cd extension && zip -q -X ../$(EXT_ZIP) $(EXT_FILES)
+	@echo "  $(EXT_ZIP) ($$(wc -c < $(EXT_ZIP)) bytes)"
+
 build: web server
 
 ## Run the production binary locally on :8080 with ./data.
@@ -46,13 +56,16 @@ dev:
 	  (cd web && npm run dev) & \
 	  wait
 
-test: test-go test-web
+test: test-go test-web test-extension
 
 test-go:
 	go test ./...
 
 test-web:
 	cd web && npm test
+
+test-extension:
+	node --test extension/share-url.test.js
 
 lint:
 	go vet ./...
