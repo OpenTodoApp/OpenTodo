@@ -9,6 +9,223 @@ Nothing runs until the owner turns it on. Every setting is optional and managed
 from **Settings → Backups** (owner only); operators who prefer environment
 variables can preset them (see [Environment presets](#environment-presets)).
 
+- [Quick start](#quick-start)
+- [Destinations](#destinations)
+- [Schedule and retention](#schedule-and-retention)
+- [Encryption and secrets](#encryption-and-secrets)
+- [Restore](#restore)
+- [Environment presets](#environment-presets)
+- [What a backup contains](#what-a-backup-contains) and the [encryption format](#encryption-format-otbk1)
+
+## Quick start
+
+1. Sign in as the owner and open **Settings → Backups**.
+2. Pick a destination. **Folder on the server** writes to `<data>/backups`
+   (`/data/backups` in the container), which is inside the same volume: good
+   against mistakes, not against losing the disk. For that, use S3 or WebDAV.
+3. Choose a schedule (for example daily at 03:00, server time) and how many
+   backups to keep (default 7).
+4. Optionally set a passphrase to encrypt the archives.
+5. **Save**, then **Test destination** and **Back up now**. The status shows the
+   run in progress, then its outcome and size.
+
+The same is available over the API ([docs/api.md](api.md#backups)).
+
+## Destinations
+
+The server contacts a destination only for a test or a backup run, and only the
+destination the owner configured.
+
+### Folder on the server
+
+An absolute path, or empty for `<data>/backups`. Archives are written to a
+temporary file in that folder and renamed into place, so an interrupted run
+never leaves a half-written archive under a final name. Mount a second disk or
+a network share there to get the copy off the data volume:
+
+```yaml
+services:
+  opentodo:
+    volumes:
+      - opentodo-data:/data
+      - /mnt/usb/opentodo-backups:/backups   # set the folder to /backups in Settings
+```
+
+The container runs as uid 65532; the folder must be writable by that user.
+
+### S3-compatible storage
+
+Works with AWS S3, Backblaze B2, Cloudflare R2, Wasabi, Scaleway, MinIO, Garage
+and other S3-compatible services. Requests are signed with AWS Signature
+Version 4; only `PutObject`, `ListObjectsV2` and `DeleteObject` are used.
+
+| Setting | Example |
+| --- | --- |
+| Endpoint | `https://s3.eu-central-1.amazonaws.com`, `https://<account>.r2.cloudflarestorage.com`, `http://minio:9000` |
+| Region | `eu-central-1` (default `us-east-1`; R2 uses `auto`) |
+| Bucket | `my-opentodo-backups` |
+| Prefix | `opentodo` (archives become `opentodo/opentodo-….tar.gz`) |
+| Access key / secret key | a key limited to this bucket |
+| Path-style | on for MinIO, Garage and most self-hosted stores; off for AWS (virtual-hosted `bucket.endpoint`) |
+
+Give the key the least privilege it needs: `s3:PutObject`, `s3:ListBucket` and
+`s3:DeleteObject` on the bucket (delete is used by retention and by the
+destination test). Bucket versioning or object lock on the provider side adds
+protection against a compromised server deleting its own backups.
+
+### WebDAV
+
+Nextcloud, ownCloud, Synology, a NAS, or any WebDAV server. Enter the URL of the
+collection (folder) that should hold the archives, for example
+`https://cloud.example.com/remote.php/dav/files/me/opentodo/`, plus a username
+and password (on Nextcloud, create an app password). The collection is created
+on the first run if it does not exist (its parent must). Plain `http://` URLs
+are refused unless **Allow plain http** is ticked, because the password would
+travel unencrypted.
+
+## Schedule and retention
+
+- **Frequency:** off (default), hourly (at the chosen minute), daily or weekly
+  (at the chosen time and weekday), in the server's time zone (`TZ` of the
+  process; the container defaults to UTC).
+- **Missed runs:** if the server was stopped when a backup was due, one backup
+  runs shortly after it starts again, then the schedule continues at the
+  configured time. A failed run is recorded and the next attempt happens at the
+  next scheduled time.
+- **Manual runs** ("Back up now") do not move the schedule. Only one backup runs
+  at a time; a second request gets a 409 `conflict`.
+- **Retention** is applied at the destination after each successful run: the
+  newest *keep last* archives (at least 1, default 7) are kept, and archives
+  older than *delete older than* days are removed (0 = no age limit). The
+  archive just written and the newest archive are never deleted. Only files
+  whose names match `opentodo-YYYYMMDD-HHMMSS-xxxxxxxx.tar[.gz][.enc]` are ever
+  considered, so other files under the same folder or prefix are safe.
+- **History:** each run (time, outcome, size, duration, error) is recorded and
+  shown in Settings for 90 days.
+
+A run takes a snapshot of the database into `<data>/tmp`, packages it there,
+uploads it and deletes the temporary files, whether the run succeeded or not.
+Uploads stream from disk; memory use stays at a few megabytes regardless of the
+database size (plus about 19 MiB for a moment while the encryption key is
+derived).
+
+## Encryption and secrets
+
+With a passphrase set, every archive is encrypted with AES-256-GCM under a key
+derived from the passphrase with argon2id (format below). The manifest inside
+records that the archive is encrypted and the file name ends in `.enc`.
+
+- Changing the passphrase affects future backups only. Older archives still
+  need the passphrase they were made with.
+- **A forgotten passphrase cannot be recovered.** Store it in a password manager.
+  If in doubt, keep an unencrypted local copy as well.
+- The passphrase and the destination credentials are stored only in
+  `<data>/secrets/backup.json` (mode 0600, directory 0700). They are never
+  returned by the API (Settings shows only whether each one is set), never
+  logged, and never included in an archive. Everything else (destination,
+  schedule, retention) is stored in the database and is therefore part of the
+  backup.
+
+## Restore
+
+Restoring replaces the whole database (every account, token, project, task and
+the operation log) with the one in an archive. It runs with the server
+**stopped**, from the same binary:
+
+```sh
+opentodo restore [--data-dir DIR] [--passphrase-file FILE] <archive>
+```
+
+What it does, in order, before touching anything:
+
+1. refuses to run while a server holds the data directory (an exclusive lock on
+   `<data>/opentodo.lock`, plus a check that SQLite is idle);
+2. decrypts the archive if needed (without `--passphrase-file` an encrypted
+   archive is rejected, naming the missing passphrase);
+3. checks the manifest, then the database's SHA-256 and size against it, and
+   authenticates every encrypted chunk (a modified or truncated archive is an
+   integrity error);
+4. refuses an archive made by a newer schema version than the binary knows,
+   naming both versions (upgrade the binary first);
+5. runs SQLite's integrity check on the extracted database.
+
+Only then it saves the current database as
+`opentodo.db.pre-restore-<YYYYMMDD-HHMMSS>` next to it, swaps in the restored
+one and gives it a new [log generation](sync.md#log-generation). Migrations
+run on the next start, so an archive from an older version is upgraded
+automatically.
+
+### With Docker Compose
+
+```sh
+docker compose stop opentodo
+
+# The archive must be readable inside the container. For the default local
+# destination it already is (/data/backups/...). For S3 or WebDAV, download it
+# first and copy it into the volume, or mount it:
+docker compose run --rm --no-deps \
+  -v "$PWD/opentodo-20261010-030000-4f1c0a9e.tar.gz.enc:/restore/archive:ro" \
+  -v "$PWD/passphrase.txt:/restore/passphrase:ro" \
+  opentodo restore --passphrase-file /restore/passphrase /restore/archive
+
+docker compose start opentodo
+```
+
+For an unencrypted archive leave out the passphrase mount and flag. The files
+you mount must be readable by uid 65532. On Coolify the image has no shell for
+the web terminal: stop the resource, run the restore on the host with
+`docker run --rm -v <data volume>:/data -v <archive>:/restore/archive:ro
+ghcr.io/pixari/opentodo restore /restore/archive`, then start the resource
+again.
+
+### With the binary
+
+```sh
+systemctl stop opentodo        # or however you run it
+OPENTODO_DATA_DIR=/var/lib/opentodo opentodo restore \
+  --passphrase-file ~/opentodo-passphrase.txt \
+  /var/lib/opentodo/backups/opentodo-20261010-030000-4f1c0a9e.tar.gz.enc
+systemctl start opentodo
+```
+
+### After a restore: devices
+
+The server went back in time, but your devices did not. Each device notices the
+new log generation on its next sync, shows **Re-syncing after restore…** and
+re-sends every field it holds with the field's original timestamp. Edits made
+after the backup therefore come back, and when two devices disagree the newer
+edit wins, exactly as in normal sync. No task is duplicated. Devices that are
+offline do this when they reconnect. See [docs/sync.md](sync.md#log-generation).
+
+If something went wrong, stop the server, move `opentodo.db.pre-restore-…` back
+to `opentodo.db` and start it again.
+
+## Environment presets
+
+All optional. They seed the backup settings **once**, on a start where no backup
+settings exist yet; after that, changes in Settings win and the variables are
+ignored. An invalid value stops the server at startup with a message naming the
+variable.
+
+| Variable | Values |
+| --- | --- |
+| `OPENTODO_BACKUP_DESTINATION` | `local`, `s3`, `webdav` |
+| `OPENTODO_BACKUP_LOCAL_DIR` | absolute path |
+| `OPENTODO_BACKUP_S3_ENDPOINT`, `_S3_REGION`, `_S3_BUCKET`, `_S3_PREFIX`, `_S3_ACCESS_KEY`, `_S3_SECRET_KEY` | S3 settings |
+| `OPENTODO_BACKUP_S3_PATH_STYLE` | `true` / `false` |
+| `OPENTODO_BACKUP_WEBDAV_URL`, `_WEBDAV_USERNAME`, `_WEBDAV_PASSWORD` | WebDAV settings |
+| `OPENTODO_BACKUP_WEBDAV_ALLOW_HTTP` | `true` / `false` |
+| `OPENTODO_BACKUP_SCHEDULE` | `off`, `hourly`, `daily`, `weekly` |
+| `OPENTODO_BACKUP_TIME` | `HH:MM` |
+| `OPENTODO_BACKUP_WEEKDAY` | `0`–`6` (0 = Sunday) or a day name |
+| `OPENTODO_BACKUP_KEEP` | at least 1 |
+| `OPENTODO_BACKUP_MAX_AGE_DAYS` | 0 or more |
+| `OPENTODO_BACKUP_COMPRESS` | `true` / `false` |
+| `OPENTODO_BACKUP_PASSPHRASE` or `OPENTODO_BACKUP_PASSPHRASE_FILE` | passphrase, or a file containing it (Docker secrets) |
+
+Secrets given this way are copied into `<data>/secrets/backup.json` on that
+first start; remove them from the environment afterwards if you prefer.
+
 ## What a backup contains
 
 A backup is one archive file:

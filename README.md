@@ -64,6 +64,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs. Live push: a change on one device shows up on the others within a second or two, with polling as the fallback |
 | Accounts | First-run owner setup, email + password sign-in, sessions, optional open sign-up |
 | API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
+| Backups | Scheduled, consistent backups of the whole server to a folder, S3-compatible storage or WebDAV, with retention, optional encryption (AES-256-GCM, argon2id) and `opentodo restore`; devices re-sync their newer edits after a restore. Owner only, in **Settings → Backups**. See [docs/backups.md](docs/backups.md) |
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
@@ -123,6 +124,7 @@ All settings are environment variables with safe defaults. See [`.env.example`](
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner exists. Prefer [invitations](#adding-people) |
 | `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `OPENTODO_BACKUP_*` | unset | Optional presets for scheduled backups, applied once; Settings wins afterwards. See [docs/backups.md](docs/backups.md#environment-presets) |
 
 ## Adding people
 

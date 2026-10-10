@@ -49,7 +49,7 @@ Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → Members**, 
 
 ## Backups
 
-Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files while running). Use Coolify's volume backup, or copy the directory while the container is stopped. The in-app **Settings → Download export** gives a portable JSON copy at any time.
+Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files while running). Turn on scheduled backups in **Settings → Backups**: consistent snapshots to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption, restorable with `opentodo restore` (see [docs/backups.md](../backups.md#restore)). Coolify's volume backup, or copying the directory while the container is stopped, works too. The in-app **Settings → Download export** gives a portable JSON copy at any time.
 
 ## Updating
 

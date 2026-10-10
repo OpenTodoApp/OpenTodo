@@ -57,6 +57,12 @@ Additive: tables `settings`, `backup_runs` (migration `0002_backups.sql` or the 
 ### D9. Dependencies and footprint
 No new Go module. `archive/tar`, `compress/gzip`, `crypto/aes`, `crypto/cipher`, `crypto/hmac`, `crypto/sha256`, `net/http` from the standard library; argon2id from `golang.org/x/crypto` already present. Expected binary growth under 400 KB; image unchanged otherwise. Runtime memory: scheduler goroutine idle; during a run roughly 2–4 MB of buffers plus the argon2id derivation (19 MiB, transient). Client: one owner-only settings screen, under 6 KB gzipped.
 
+### Implementation notes (as built)
+- **Migration** is `0006_backups.sql` (number assigned at merge). The shared table is created as `CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL DEFAULT 0)`, the same shape the `webhooks` change uses, so whichever lands first creates it. The migration also inserts the initial random `generation`. `backup_runs` gained a `kind` column (`manual|scheduled`) so manual runs do not shift the schedule.
+- **Restore lock:** SQLite in WAL mode does not give an exclusive lock that an idle server would block, so the server now holds an advisory `flock` on `<data>/opentodo.lock` for its lifetime (`store.Lock`); `opentodo restore` takes the same lock, and additionally requires a truncating WAL checkpoint to succeed. This also stops two servers from sharing one data directory.
+- **S3 payload:** the archive is built in `<data>/tmp` first and hashed, so `PutObject` carries a real `x-amz-content-sha256` and an exact `Content-Length` (no `UNSIGNED-PAYLOAD`, no chunked signing); memory stays constant.
+- **Measured footprint:** server binary +0.6 MB stripped (11.51 → 12.12 MB, mostly `encoding/xml`, `archive/tar`, `compress/gzip` and AES-GCM), above the 400 KB estimate; client bundle +4.4 KB gzipped (128.3 → 132.7 KB). No new module.
+
 ## Risks / Trade-offs
 
 - [`VACUUM INTO` blocks writers on a large database] → personal data volumes finish in well under a second; the run happens at a scheduled quiet time; the API `busy_timeout` of 5 s absorbs it.

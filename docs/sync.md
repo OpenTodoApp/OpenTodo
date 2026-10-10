@@ -80,7 +80,8 @@ Response:
 {
   "applied": 3, "duplicates": 0,
   "ops": [ …ops with seq > 140 not authored by this device… ],
-  "cursor": 158, "hasMore": false, "serverTime": 1760060001000
+  "cursor": 158, "hasMore": false, "serverTime": 1760060001000,
+  "generation": "4f1c0a9e2b7d4c55a1e0f3b2c8d9e7f6"
 }
 ```
 
@@ -89,6 +90,8 @@ Client loop (`web/src/lib/sync.ts`):
 1. Read up to 500 ops from the outbox and the stored cursor.
 2. Send; on success delete those outbox rows, apply the returned ops with the winner rule, store the new cursor.
 3. Repeat while `hasMore` or the outbox is not empty.
+
+Before storing the cursor the client compares `generation` with the one it stored; see [Log generation](#log-generation).
 
 Triggers: 250 ms after a local edit, on `online`, when the tab becomes visible, on a live wake-up (below), on every (re)connection of the live channel, periodically (every 30 s, relaxed to 5 min while live updates are connected), and manually from the status pill.
 
@@ -122,6 +125,17 @@ data: {"cursor":158}
 - **Fallback.** Periodic polling continues: every 30 s while the channel is disconnected, every 5 min while it is connected. A client that never opens the stream keeps working exactly as before.
 
 Implementation: `internal/sync.Notifier` is an in-memory, per-user subscriber set with a one-slot channel per stream (a slow reader coalesces wake-ups into the newest cursor and never blocks `Apply`); the sync handler and the REST write-through call `Notify` after a committed `Apply`. One process is the deployment contract, so there is no cross-process fan-out.
+
+## Log generation
+
+The cursor scheme assumes the server's log only grows. A [restore from a backup](backups.md#restore) breaks that: the server goes back to the moment of the backup, its `seq` numbers restart below what devices have seen, and it no longer knows edits made after the backup, although the devices still hold them. The **log generation** makes this visible.
+
+- The server keeps a random 128-bit `generation` in its `settings` table. It is created once with the database and replaced with a new random value by every `opentodo restore`. Every `POST /api/v1/sync` response carries it (an additive field: clients that ignore it keep working, they just do not re-seed).
+- The client stores the value in its `meta` table. The first value a device sees is adopted. A different value on any later exchange means the server was restored.
+- On a mismatch the client, in one IndexedDB transaction, re-emits **every field of every local row** (projects, tasks, labels, tombstones included) as a new op `{id: <new uuid>, entity, entityId, field, value, ts: <stored ts>, device: <stored device>}` taken from the row's per-field clock, adds them to the outbox (in chunks of 1,000), sets `cursor = 0` and stores the new generation. Ops already waiting in the outbox stay. The normal loop then uploads the outbox in batches and pulls the whole log from zero. The status pill shows **Re-syncing after restore…** meanwhile.
+- **Convergence.** The re-emitted ops carry the clocks the device already stored, not the current time, so the server ends up with exactly the state the device had, and the winner rule decides between devices as usual: an edit made after the backup (newer `ts`) beats the restored value, an older local value loses to a newer one from another device, and two devices re-seeding concurrently converge on the value with the greatest `(ts, device)` everywhere. Fresh op ids keep the server from discarding them as duplicates; unchanged entity ids mean nothing is duplicated. A stale device cannot overwrite newer data, which is why the timestamps are not bumped to now.
+- **Offline devices** re-seed on their next successful exchange, however long after the restore.
+- **Cost.** A re-seed sends one op per stored field: about 11 per task, so 5,000 tasks are roughly 55,000 ops, a few seconds on a Raspberry Pi, once per device per restore. The server clamps far-future timestamps as always; re-emitted timestamps were already clamped when first stored.
 
 ## Deletes
 

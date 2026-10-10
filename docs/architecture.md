@@ -25,14 +25,16 @@ OpenTodo is a local-first application with a thin sync server.
 | Package | Responsibility |
 | --- | --- |
 | `config` | `OPENTODO_*` environment variables with defaults and validation |
-| `store` | Opens SQLite (WAL, single connection) and applies embedded migrations by `PRAGMA user_version` |
+| `store` | Opens SQLite (WAL, single connection) and applies embedded migrations by `PRAGMA user_version`; `Lock` holds `<data>/opentodo.lock` for the process lifetime |
+| `settings` | Owner-level key/value settings (`settings` table, JSON values) and 0600 secret files under `<data>/secrets/` |
+| `backup` | Snapshots (`VACUUM INTO`), tar/gzip archives, `OTBK1` encryption, local / S3 (SigV4) / WebDAV destinations, scheduler, retention, `Restore`; see [backups.md](backups.md) |
 | `auth` | Users, argon2id passwords, sessions, API tokens |
 | `sync` | Op schema and validation, `Apply` (idempotent, LWW), `Pull` (cursor), `List`/`Get` (materialized entities), `Notifier` (per-user live wake-ups) |
-| `httpapi` | Router, middleware (auth, origin check, security headers, logging), handlers for auth, sync, collections, export, health |
+| `httpapi` | Router, middleware (auth, origin check, security headers, logging), handlers for auth, sync, collections, export, backups (owner only), health |
 | `web` | Embeds the Vite build and serves it with SPA fallback and cache headers |
 | `ids` | UUID v4 and random secrets without external dependencies |
 
-Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log per user, `seq` autoincrement), `fields` (current winner per field).
+Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log per user, `seq` autoincrement), `fields` (current winner per field), `settings` (owner-level key/value, including the log `generation`), `backup_runs`.
 
 ### Request flow for a REST write
 

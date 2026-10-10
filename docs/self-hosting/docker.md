@@ -70,7 +70,15 @@ docker run -v "$PWD/data:/data" ...
 
 ## Backup and restore
 
-Stop the container (or accept a WAL-consistent snapshot) and copy `/data`. To restore, place the files back and start the container. A JSON export is also available from **Settings** in the app or `GET /api/v1/export` with an API token.
+Turn on scheduled backups in **Settings → Backups** (owner only): consistent snapshots of the database, taken while the server runs, written to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption. Restore with the binary in the image while the container is stopped:
+
+```bash
+docker compose stop opentodo
+docker compose run --rm --no-deps opentodo restore /data/backups/opentodo-20261010-030000-4f1c0a9e.tar.gz
+docker compose start opentodo
+```
+
+Destinations, encryption, the archive format and the full restore procedure (including encrypted and downloaded archives) are in [docs/backups.md](../backups.md). Copying the `/data` volume while the container is stopped still works as a manual backup. A per-user JSON export is available from **Settings** in the app or `GET /api/v1/export` with an API token.
 
 ## Health
 
