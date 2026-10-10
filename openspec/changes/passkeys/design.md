@@ -50,7 +50,7 @@ If stored counter > 0 and incoming counter <= stored, refuse with `invalid_crede
 ### D9. Dependencies and footprint summary
 Go: `fxamacker/cbor/v2` (+~0.4 MB binary, no runtime memory change). Web: none. Container image stays well under 50 MB.
 
-Measured during apply (`make server`, linux/amd64, `-s -w -trimpath`, same embedded web dist): 11,444,386 bytes before, 11,751,586 bytes after the passkeys change (cbor v2.9.4 plus `internal/webauthn` and the handlers): **+307,200 bytes (+0.29 MiB, +2.7 %)**. cbor brings one transitive module, `github.com/x448/float16` (pure Go, ~300 lines), which the estimate above did not mention.
+Measured during apply (`make server`, linux/amd64, `-s -w -trimpath`, same embedded web dist): 11,444,386 bytes before, 11,751,586 bytes after the passkeys change (cbor v2.9.4 plus `internal/webauthn` and the handlers): **+307,200 bytes (+0.29 MiB, +2.7 %)**. cbor brings one transitive module, `github.com/x448/float16` (pure Go, ~300 lines), which the estimate above did not mention. Web bundle (`npm run build`, main chunk, against the branch point): 367.37 kB → 377.03 kB raw, 114.47 kB → 117.14 kB gzipped (**+2.7 kB gzipped**), with no new npm dependency.
 
 ## Risks / Trade-offs
 

@@ -92,6 +92,7 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['1 – 4', 'Set priority of selected task'],
     ['Delete', 'Delete selected task (and its subtasks)'],
     ['g then i / t / u / c / s', 'Go to Inbox / Today / Upcoming / Completed / Settings'],
+    ['g then s, Tab', 'Settings → Security: add, rename (Enter saves, Esc cancels) or delete passkeys'],
     ['Esc', 'Close panel, clear selection'],
     ['?', 'Toggle this help'],
   ]
