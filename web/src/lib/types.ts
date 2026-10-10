@@ -68,6 +68,18 @@ export interface AuthStatus {
   authenticated: boolean
   user: User | null
   version: string
+  /** Server has an https (or localhost) base URL, so passkey ceremonies work. */
+  passkeysAvailable?: boolean
+}
+
+/** A registered passkey as listed by GET /api/v1/passkeys. Server-only account data, never synced. */
+export interface Passkey {
+  id: string
+  name: string
+  createdAt: number
+  lastUsedAt: number | null
+  suspiciousAt: number | null
+  backedUp: boolean
 }
 
 export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'unauthenticated'

@@ -1,4 +1,5 @@
-import type { AuthStatus, Op, User } from './types'
+import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
+import type { AuthStatus, Op, Passkey, User } from './types'
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) {
@@ -35,4 +36,13 @@ export const api = {
   listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
   createToken: (name: string) => request<{ token: { id: string; name: string }; secret: string }>('POST', '/api/v1/tokens', { name }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
+  // Passkeys (OpenSpec change `passkeys`). Binary fields are base64url strings.
+  passkeyLoginOptions: () => request<{ publicKey: RequestOptionsJSON }>('POST', '/api/v1/auth/passkey/options', {}),
+  passkeyLogin: (credential: AssertionJSON) => request<{ user: User }>('POST', '/api/v1/auth/passkey', { credential }),
+  passkeyRegisterOptions: () => request<{ publicKey: CreationOptionsJSON }>('POST', '/api/v1/passkeys/register/options', {}),
+  passkeyRegister: (name: string, credential: RegistrationJSON) =>
+    request<{ passkey: Passkey }>('POST', '/api/v1/passkeys/register', { name, credential }),
+  listPasskeys: () => request<{ passkeys: Passkey[] }>('GET', '/api/v1/passkeys'),
+  renamePasskey: (id: string, name: string) => request<{ passkey: Passkey }>('PATCH', `/api/v1/passkeys/${encodeURIComponent(id)}`, { name }),
+  deletePasskey: (id: string) => request<void>('DELETE', `/api/v1/passkeys/${encodeURIComponent(id)}`),
 }

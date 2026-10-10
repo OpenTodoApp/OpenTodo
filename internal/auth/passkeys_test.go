@@ -75,7 +75,7 @@ func TestPasskeyRegisterAndLogin(t *testing.T) {
 
 	phone := testauth.New(t, webauthn.AlgES256)
 	p1 := register(t, s, u, phone, "  Phone ")
-	if p1.Name != "Phone" || p1.LastUsedAt != nil || p1.SuspiciousAt != nil {
+	if p1.Name != "Phone" || p1.LastUsedAt == nil || *p1.LastUsedAt != p1.CreatedAt || p1.SuspiciousAt != nil {
 		t.Fatalf("passkey = %+v", p1)
 	}
 	laptop := testauth.New(t, webauthn.AlgEdDSA)

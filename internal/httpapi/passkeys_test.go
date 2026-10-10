@@ -113,7 +113,7 @@ func TestPasskeyRegisterLoginRevoke(t *testing.T) {
 	resp, out = e.registerPasskey(phone, "Phone")
 	e.mustStatus(resp, 201, out)
 	p1 := out["passkey"].(map[string]any)
-	if p1["name"] != "Phone" || p1["createdAt"] == nil || p1["lastUsedAt"] != nil {
+	if p1["name"] != "Phone" || p1["createdAt"] == nil || p1["lastUsedAt"] != p1["createdAt"] {
 		t.Fatalf("passkey = %v", p1)
 	}
 	laptop := testauth.New(t, webauthn.AlgEdDSA)

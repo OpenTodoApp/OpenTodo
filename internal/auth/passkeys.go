@@ -138,10 +138,13 @@ func (s *Service) FinishPasskeyRegistration(ctx context.Context, userID, name st
 	if name == "" {
 		name = "Passkey"
 	}
-	p := &Passkey{ID: ids.New(), Name: truncate(name, 100), CreatedAt: time.Now().UnixMilli(), BackedUp: cred.BackedUp}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO passkeys(id,user_id,name,credential_id,public_key,alg,sign_count,transports,backup_eligible,backed_up,created_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
-		p.ID, userID, p.Name, cred.ID, cred.PublicKey, cred.Alg, cred.SignCount, strings.Join(cred.Transports, ","), boolInt(cred.BackupEligible), boolInt(cred.BackedUp), p.CreatedAt)
+	now := time.Now().UnixMilli()
+	// Registering proves possession, so it counts as the first use; Settings
+	// shows the new passkey as used "just now".
+	p := &Passkey{ID: ids.New(), Name: truncate(name, 100), CreatedAt: now, LastUsedAt: &now, BackedUp: cred.BackedUp}
+	_, err = s.db.ExecContext(ctx, `INSERT INTO passkeys(id,user_id,name,credential_id,public_key,alg,sign_count,transports,backup_eligible,backed_up,created_at,last_used_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
+		p.ID, userID, p.Name, cred.ID, cred.PublicKey, cred.Alg, cred.SignCount, strings.Join(cred.Transports, ","), boolInt(cred.BackupEligible), boolInt(cred.BackedUp), p.CreatedAt, now)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			return nil, errors.Join(ErrInvalidInput, errors.New("this passkey is already registered"))
