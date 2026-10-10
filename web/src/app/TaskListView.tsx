@@ -25,7 +25,9 @@ export function TaskListView({ route }: { route: ListRoute }) {
   const currentProject = route.view === 'project' ? projectMap.get(route.id) : undefined
 
   const tasks = useLiveQuery(async () => {
-    const all = await db.tasks.filter((t) => !t.deleted_at).toArray()
+    // Tasks of archived or deleted projects stay out of the cross-project views.
+    const hidden = new Set((await db.projects.filter((p) => !!p.deleted_at || p.archived).toArray()).map((p) => p.id))
+    const all = (await db.tasks.filter((t) => !t.deleted_at).toArray()).filter((t) => !t.project_id || !hidden.has(t.project_id) || (route.view === 'project' && t.project_id === route.id))
     switch (route.view) {
       case 'inbox':
         return all.filter((t) => !t.completed_at && t.project_id === null).sort(byPosition)
