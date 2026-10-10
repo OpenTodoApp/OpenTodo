@@ -278,24 +278,27 @@ func (s *Service) AddMember(ctx context.Context, actorID, projectID, targetID, r
 	})
 }
 
-// share creates the project's scope and moves the project and its tasks from the
+// share creates the project's scope and moves the project, its tasks and sections from the
 // owner's personal scope into it (design D2). Only scope labels change: seq, op_id
 // and op content stay as they are, so the owner's devices keep their cursor.
 func (s *Service) share(ctx context.Context, tx *sql.Tx, ownerID, projectID string) error {
 	personal, scope := PersonalScope(ownerID), ProjectScope(projectID)
-	rows, err := tx.QueryContext(ctx, `SELECT entity_id, value FROM scope_fields WHERE scope_id = ? AND entity = 'task' AND field = 'project_id'`, personal)
+	// Tasks and sections (board-view) of the project move with it.
+	rows, err := tx.QueryContext(ctx, `SELECT entity, entity_id, value FROM scope_fields WHERE scope_id = ? AND entity IN ('task','section') AND field = 'project_id'`, personal)
 	if err != nil {
 		return err
 	}
-	var taskIDs []string
+	type child struct{ entity, id string }
+	var children []child
 	for rows.Next() {
-		var id, value string
-		if err := rows.Scan(&id, &value); err != nil {
+		var c child
+		var value string
+		if err := rows.Scan(&c.entity, &c.id, &value); err != nil {
 			rows.Close()
 			return err
 		}
 		if idValue([]byte(value)) == projectID {
-			taskIDs = append(taskIDs, id)
+			children = append(children, c)
 		}
 	}
 	rows.Close()
@@ -313,8 +316,8 @@ func (s *Service) share(ctx context.Context, tx *sql.Tx, ownerID, projectID stri
 	if err := relabel("project", projectID); err != nil {
 		return err
 	}
-	for _, id := range taskIDs {
-		if err := relabel("task", id); err != nil {
+	for _, c := range children {
+		if err := relabel(c.entity, c.id); err != nil {
 			return err
 		}
 	}

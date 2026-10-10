@@ -99,6 +99,21 @@ var Schema = map[string]map[string]kind{
 		// Account id of the assignee or null (OpenSpec change task-assignment);
 		// additive. Apply checks it against the task scope's membership at receipt.
 		"assignee_id": kNullableString,
+		// Section of the task's project or null (OpenSpec change board-view);
+		// additive. A reference to a deleted, foreign or unknown section is a
+		// display rule on clients ("No section"), never rejected on the sync path.
+		"section_id": kNullableString,
+	},
+	// section: a named, ordered container inside one project (OpenSpec change
+	// board-view). It lives in the sharing scope of its project like a task does;
+	// project_id never changes after creation (Apply refuses a scope change, the
+	// REST API refuses any change).
+	"section": {
+		"name":       kString,
+		"project_id": kID,
+		"position":   kNumber,
+		"created_at": kNumber,
+		"deleted_at": kNullableNumber,
 	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {
@@ -144,7 +159,7 @@ var Schema = map[string]map[string]kind{
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
