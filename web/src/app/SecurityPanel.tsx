@@ -1,7 +1,7 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { useOnline } from '../lib/online'
-import { createPasskey, isCancellation, passkeysSupported } from '../lib/passkeys'
+import { createPasskey, isCancellation, passkeysSupported, rpIdMatches } from '../lib/passkeys'
 import type { Passkey } from '../lib/types'
 
 // Settings → Security (OpenSpec change `passkeys`). The server list is
@@ -33,6 +33,7 @@ function readCachedAvailability(): boolean {
 export function SecurityPanel() {
   const [available, setAvailable] = useState<boolean>(readCachedAvailability)
   const [passkeys, setPasskeys] = useState<Passkey[] | null>(null)
+  const [domain, setDomain] = useState<string | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const online = useOnline()
@@ -42,6 +43,7 @@ export function SecurityPanel() {
       const status = await api.authStatus()
       const ok = status.passkeysAvailable === true
       setAvailable(ok)
+      setDomain(status.passkeyDomain || undefined)
       try {
         localStorage.setItem(AVAILABLE_KEY, String(ok))
       } catch {
@@ -80,6 +82,8 @@ export function SecurityPanel() {
       supported={passkeysSupported()}
       online={online}
       passkeys={passkeys}
+      domain={domain}
+      pageHost={typeof location === 'undefined' ? undefined : location.hostname}
       busy={busy}
       error={error}
       onAdd={(name) => run(async () => {
@@ -98,6 +102,9 @@ export interface SecurityPanelViewProps {
   supported: boolean
   online: boolean
   passkeys: Passkey[] | null
+  /** Host the server binds passkeys to, and the host this page is open at. */
+  domain?: string
+  pageHost?: string
   busy: boolean
   error: string | null
   onAdd: (name: string) => Promise<void> | void
@@ -142,6 +149,14 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
         Passkeys let you sign in with your device's fingerprint, face or PIN instead of your password. Your password keeps working.
         Register a passkey on a second device so losing one is never a problem.
       </p>
+      {p.domain && <p className="text-xs text-slate-400" data-passkey-domain>Passkeys are tied to <span className="font-mono">{p.domain}</span>.</p>}
+      {p.domain && p.pageHost && !rpIdMatches(p.domain, p.pageHost) && (
+        <p role="alert" className="rounded-md bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          This page is open at <span className="font-mono">{p.pageHost}</span>, so passkeys will not work here. Open the app at{' '}
+          <a className="underline" href={`https://${p.domain}`}>https://{p.domain}</a>, or set <span className="font-mono">OPENTODO_BASE_URL</span> to{' '}
+          <span className="font-mono">https://{p.pageHost}</span> and redeploy.
+        </p>
+      )}
       {!p.online && (
         <p role="status" className="rounded-md bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
           You are offline. Managing passkeys needs a connection to your server.

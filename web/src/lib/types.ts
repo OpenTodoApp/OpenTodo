@@ -324,6 +324,8 @@ export interface AuthStatus {
   version: string
   /** Server has an https (or localhost) base URL, so passkey ceremonies work. */
   passkeysAvailable?: boolean
+  /** Host passkeys are bound to (the base URL's host); absent on older servers. */
+  passkeyDomain?: string
   /** Second-factor state of the signed-in account (absent when anonymous). */
   mfa?: MfaStatus
   /** Single sign-on (OpenSpec `oidc-login`); absent on servers without it. */

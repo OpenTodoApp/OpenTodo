@@ -73,3 +73,15 @@ describe('relativeTime', () => {
     expect(relativeTime(now - 3 * 3_600_000, now)).toBe('3 h ago')
   })
 })
+
+describe('passkey domain hint', () => {
+  it('shows the domain and warns when the page is open at another host', () => {
+    const ok = render({ domain: 'todo.example.com', pageHost: 'todo.example.com' })
+    expect(ok).toContain('data-passkey-domain')
+    expect(ok).not.toContain('role="alert"')
+    const bad = render({ domain: 'todo.example.com', pageHost: 'abc.sslip.io' })
+    expect(bad).toContain('role="alert"')
+    expect(bad).toContain('abc.sslip.io')
+    expect(bad).toContain('https://todo.example.com')
+  })
+})

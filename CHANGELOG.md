@@ -75,7 +75,7 @@ The first feature-complete version: every item on the [roadmap](ROADMAP.md) is i
 
 ### Fixed
 
-- Opening the app at a different host than `OPENTODO_BASE_URL` made passkeys fail with the browser's "origin is not authorized for the provided RP ID"; the app now explains which two hosts differ and what to change. In `docker-compose.yml` an `OPENTODO_BASE_URL` you set yourself now wins over Coolify's generated `SERVICE_URL_OPENTODO`.
+- Opening the app at a different host than `OPENTODO_BASE_URL` made passkeys fail with the browser's "origin is not authorized for the provided RP ID"; the app now explains which two hosts differ and what to change, and Settings → Security shows the host passkeys are tied to (also `passkeyDomain` in `GET /api/v1/auth/status`). In `docker-compose.yml` an `OPENTODO_BASE_URL` you set yourself now wins over Coolify's generated `SERVICE_URL_OPENTODO`.
 - Dropdown menus (view, section, project and label menus) could open mostly off screen on phones when the header wrapped; they now shift back inside the screen when opened.
 - The keyboard-shortcut help could not be scrolled or closed on phones (the panel grew past the screen on iOS Safari). It is now a full-screen sheet on small screens with a pinned close button, the overlay scrolls instead of the panel, and every other dialog overlay scrolls when its content is taller than the screen.
 - Clients skip ops for entities they do not know instead of failing the whole batch, so an installed PWA that has not refreshed yet keeps syncing when the server gains a new entity.

@@ -430,7 +430,10 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		"user":              u,
 		"version":           s.version,
 		"passkeysAvailable": s.cfg.PasskeysAvailable(),
-		"oidc":              s.oidcStatus(r.Context()),
+		// The host passkeys are bound to (OPENTODO_BASE_URL's), so a page opened at
+		// another host can say so; public information, empty without a base URL.
+		"passkeyDomain": s.cfg.RPID(),
+		"oidc":          s.oidcStatus(r.Context()),
 	}
 	if u != nil {
 		st, err := s.auth.MFAStatusFor(r.Context(), u, sess != nil)
