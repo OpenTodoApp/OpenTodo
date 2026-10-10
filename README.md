@@ -45,7 +45,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 - **No subscription, no lock-in.** Free software under the AGPL. Nobody can paywall your task list or shut it down with the company.
 - **Local-first.** Every device keeps a full copy of your data and works entirely offline. The server syncs, backs up and shares; it is never in the way of an edit.
 - **Your data, one folder.** Everything lives in one `/data` volume around a single SQLite file. Export to JSON at any time, import it (or a CSV, or another app's export) on any instance, and schedule encrypted backups to disk, S3 or WebDAV.
-- **Tiny footprint.** One container, one static binary of about 16 MB with the web app inside, around 20 MB of memory when idle. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no mandatory configuration.
+- **Tiny footprint.** One container, one static binary of about 17 MB with the web app inside, around 20 MB of memory when idle. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no mandatory configuration.
 - **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts or fonts. The server only contacts what you configure (see [Privacy](#privacy)).
 - **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today, `?` for the full list, and optional Vim keybindings.
 - **Built in the open with specs.** Every feature starts as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change under [`openspec/`](openspec/), so behaviour is documented before it is built.

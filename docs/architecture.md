@@ -140,7 +140,7 @@ The UI never talks to the server for task data. Views subscribe to IndexedDB wit
 
 ## Build and packaging
 
-`web/` builds into `internal/web/dist`, which `go:embed` compiles into the binary (`internal/web/dist/.gitkeep` keeps the embed compiling on a fresh clone). The Dockerfile runs both builds on the build platform, cross-compiles a static binary (`CGO_ENABLED=0`, `-trimpath -s -w`) and copies it into `gcr.io/distroless/static-debian12:nonroot`. CI publishes `linux/amd64` and `linux/arm64` images to GHCR and attaches the `ot` binaries and the browser extension zip to releases. The server binary is about 16 MB.
+`web/` builds into `internal/web/dist`, which `go:embed` compiles into the binary (`internal/web/dist/.gitkeep` keeps the embed compiling on a fresh clone). The Dockerfile runs both builds on the build platform, cross-compiles a static binary (`CGO_ENABLED=0`, `-trimpath -s -w`) and copies it into `gcr.io/distroless/static-debian12:nonroot`. CI publishes `linux/amd64` and `linux/arm64` images to GHCR and attaches the `ot` binaries and the browser extension zip to releases. The server binary is about 17 MB.
 
 ## Specs
 
