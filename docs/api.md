@@ -281,7 +281,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | `project_id` | string or null | null = Inbox |
 | `parent_id` | string or null | parent task for subtasks, any depth; see [Subtasks](#subtasks) |
 | `priority` | 1–4 | 1 highest, 4 default |
-| `due` | `{date:"YYYY-MM-DD", time?:"HH:MM"}` or null | floating date |
+| `due` | `{date:"YYYY-MM-DD", time?:"HH:MM", tz?:"Area/City"}` or null | floating date by default; with `tz` (an IANA zone, only together with `time`) a zoned time, the instant at that wall time in that zone. `400 invalid_input` for `tz` without `time` or an unknown zone. See [sync.md](sync.md#zoned-due-values) |
 | `labels` | string[] | ids of existing, non-deleted labels; replaced as a whole on PATCH |
 | `estimate_minutes` | integer 1–10080 or null | duration estimate in minutes; `0`, negatives, fractions and strings are rejected. The Day and Week calendar draws a task with a due time as a block of this length |
 | `recurrence` | string or null | recurrence rule, e.g. `every 3 days after completion` (see [recurrence.md](recurrence.md)); stored in canonical form, `400 invalid_input` when it does not parse or is over 200 characters |
@@ -314,7 +314,7 @@ curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: 
 `POST` and `PATCH` store `recurrence` in canonical form (`"Every  2nd  Tuesday"` is stored as `"every 2nd tuesday"`). A `PATCH` that sets a non-null `completed_at` on an open recurring task behaves like completing it in the app:
 
 - a completed *occurrence record* is created (id derived from the series id and the occurrence date, `series_id` set, `recurrence: null`, other fields copied from the task after the rest of the PATCH is applied),
-- the task stays open and its `due` moves to the next occurrence (time kept); the response is the task with the new `due`,
+- the task stays open and its `due` moves to the next occurrence (time and `tz` kept); the response is the task with the new `due`,
 - when the end condition (`until` or `for N times`) is reached, the task is completed normally instead.
 
 "Today" for catch-up and completion-relative rules is the server's local date (the container's time zone, UTC by default). Reopening a record (`completed_at: null`) turns it into a standalone task; the series is not moved back. Skip and "this occurrence only" are client actions: a script skips by PATCHing `due`.
@@ -390,7 +390,7 @@ A reminder belongs to one task and fires at an instant (OpenSpec change `reminde
 | `task_id` | string | required on create; must name an existing, non-deleted task |
 | `kind` | `"relative"` or `"absolute"` | default `absolute` |
 | `offset_minutes` | integer or null | relative only: minutes from the task's due time, negative = before (−525600…525600) |
-| `fire_at` | unix ms or null | absolute: required. Relative: computed by the server from the task's due date when omitted (09:00 for a date-only due, in the zone offset the user's devices last reported, UTC until then); null while the task has no due date |
+| `fire_at` | unix ms or null | absolute: required. Relative: computed by the server from the task's due date when omitted (09:00 for a date-only due, in the zone offset the user's devices last reported, UTC until then; a zoned due in its own zone); null while the task has no due date |
 | `delivered_at` | unix ms or null | written by the server when it pushed the reminder |
 | `dismissed_at`, `created_at`, `deleted_at` | unix ms (or null) | |
 
@@ -849,6 +849,17 @@ Create a task due tomorrow at 9:00 in a project:
 ```bash
 curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"title":"Call the plumber","priority":2,"project_id":"<project-id>","due":{"date":"2026-10-11","time":"09:00"}}'
+```
+
+A stand-up fixed to Berlin time (devices elsewhere show it converted to their zone, with `09:00 Berlin` as a hint):
+
+```bash
+curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"title":"Stand-up","due":{"date":"2026-10-11","time":"09:00","tz":"Europe/Berlin"}}'
+# 201 {..., "due":{"date":"2026-10-11","time":"09:00","tz":"Europe/Berlin"}, ...}
+curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"due":{"date":"2026-10-11","tz":"Europe/Berlin"}}'
+# 400 {"error":{"code":"invalid_input","message":"invalid op: task.due tz requires time"}}
 ```
 
 Complete it:

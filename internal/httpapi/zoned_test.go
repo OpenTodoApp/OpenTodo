@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -58,6 +59,9 @@ func TestRestZonedDueWithoutTimeRejected(t *testing.T) {
 		e.mustStatus(resp, 400, out)
 		if errCode(out) != "invalid_input" {
 			t.Fatalf("%s: code %q", name, errCode(out))
+		}
+		if msg, _ := out["error"].(map[string]any)["message"].(string); !strings.Contains(msg, "tz") {
+			t.Fatalf("%s: message %q does not name tz", name, msg)
 		}
 		resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "x", "due": d})
 		e.mustStatus(resp, 400, out)
