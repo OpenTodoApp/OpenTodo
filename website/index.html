@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>OpenTodo · Your tasks, your server</title>
+  <meta name="description" content="OpenTodo is an open-source, local-first task manager you host yourself. Works offline, syncs every device, one 12 MB binary, no subscription.">
+  <meta name="theme-color" content="#050912">
+  <meta name="color-scheme" content="dark">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="OpenTodo · Your tasks, your server">
+  <meta property="og:description" content="Open-source, local-first task manager. Works offline, syncs every device, runs on a Raspberry Pi. No subscription.">
+  <meta property="og:image" content="assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Analytics: paste the provider snippet here (the website may use analytics; the app never does). -->
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav" id="top">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="OpenTodo home">
+        <img src="assets/favicon.svg" width="28" height="28" alt="">
+        <span>OpenTodo</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#sync">Sync</a>
+        <a href="#self-host">Self-host</a>
+        <a href="#roadmap">Roadmap</a>
+      </nav>
+      <a class="btn btn-ghost gh" href="https://github.com/pixari/opentodo" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>GitHub</span>
+        <span class="stars" data-stars hidden></span>
+      </a>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ============================== HERO ============================== -->
+    <section class="hero">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow reveal"><span class="pulse"></span> Open source · AGPL-3.0 · v0.1</p>
+          <h1 class="reveal">
+            Your tasks.<br>
+            <span class="grad">Your server.</span>
+            <svg class="hero-check" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 34l12 12 24-27"/></svg>
+          </h1>
+          <p class="lede reveal">An open-source, local-first task manager you host yourself. Everything you expect from a polished task app, without the subscription, the tracking or the lock‑in.</p>
+          <div class="cta reveal">
+            <a class="btn btn-primary" href="#self-host">Self-host in 2 minutes <span aria-hidden="true">→</span></a>
+            <a class="btn btn-ghost" href="https://github.com/pixari/opentodo" rel="noopener">Star on GitHub</a>
+          </div>
+          <p class="hint reveal">Go ahead, it works. Press <kbd>q</kbd> to add a task, <kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>c</kbd> to complete.</p>
+        </div>
+
+        <div class="hero-app reveal" id="demo">
+          <div class="window">
+            <div class="window-bar">
+              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+              <span class="window-url">todo.your-server.com</span>
+              <span class="sync-pill" data-demo-sync><i></i>Synced</span>
+            </div>
+            <div class="app">
+              <aside class="app-side">
+                <div class="app-brand"><img src="assets/favicon.svg" width="20" height="20" alt="">OpenTodo</div>
+                <ul class="app-nav">
+                  <li><span>📥</span>Inbox<em>3</em></li>
+                  <li class="on"><span>📅</span>Today<em data-demo-count>4</em></li>
+                  <li><span>🗓️</span>Upcoming</li>
+                  <li><span>✅</span>Completed</li>
+                </ul>
+                <p class="app-label">Projects</p>
+                <ul class="app-nav">
+                  <li><i class="pdot" style="--c:#f59e0b"></i>Home renovation</li>
+                  <li><i class="pdot" style="--c:#38bdf8"></i>Work</li>
+                  <li><i class="pdot" style="--c:#a78bfa"></i>Side project</li>
+                </ul>
+              </aside>
+              <div class="app-main">
+                <div class="app-head"><h3>Today</h3><span data-demo-date></span></div>
+                <form class="app-add" data-demo-form autocomplete="off">
+                  <span class="plus">+</span>
+                  <input data-demo-input type="text" placeholder="Add a task for today…" aria-label="Add a task" maxlength="80">
+                  <kbd>q</kbd>
+                </form>
+                <ul class="tasks" data-demo-list aria-live="polite"></ul>
+                <p class="app-empty" data-demo-empty hidden>All clear. Enjoy your day. 🌿</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wrap stats">
+        <div class="stat reveal"><b data-count="12">0</b><span>MB static binary</span></div>
+        <div class="stat reveal"><b data-count="1">0</b><span>SQLite file holds everything</span></div>
+        <div class="stat reveal"><b data-count="0">0</b><span>trackers inside the app</span></div>
+        <div class="stat reveal"><b data-count="100" data-suffix="%">0</b><span>usable offline</span></div>
+      </div>
+    </section>
+
+    <!-- ============================ FEATURES ============================ -->
+    <section class="section" id="features">
+      <div class="wrap">
+        <p class="kicker reveal">Why OpenTodo</p>
+        <h2 class="reveal">The comfort of a commercial app.<br><span class="muted">The freedom of software you run.</span></h2>
+
+        <div class="bento">
+          <article class="card c-wide reveal">
+            <div class="card-copy">
+              <h3>Local-first, for real</h3>
+              <p>Every device keeps a full copy of your tasks. The app opens instantly, works on a plane, and syncs the moment it sees your server again.</p>
+            </div>
+            <div class="offline-viz" aria-hidden="true">
+              <div class="ov-row"><span class="ov-chip off">✈ Offline</span><span class="ov-q">3 changes queued</span></div>
+              <div class="ov-bar"><i></i></div>
+              <div class="ov-row"><span class="ov-chip on">● Synced</span><span class="ov-q">all devices agree</span></div>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <h3>Keyboard-first</h3>
+            <p>Capture, triage and finish without touching the mouse. Try the keys below.</p>
+            <div class="keys" aria-hidden="true">
+              <kbd data-key="q">q</kbd><kbd data-key="j">j</kbd><kbd data-key="k">k</kbd><kbd data-key="c">c</kbd>
+              <kbd data-key="1">1</kbd><kbd data-key="2">2</kbd><kbd data-key="3">3</kbd><kbd data-key="4">4</kbd>
+              <kbd data-key="g">g</kbd><kbd data-key="t">t</kbd><kbd data-key="?">?</kbd>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <h3>Your data, one folder</h3>
+            <p>A single SQLite file in one volume. Back it up and you have backed up everything. JSON export any time.</p>
+            <pre class="mini-code" aria-hidden="true"><span class="m">/data</span>
+└── opentodo.db</pre>
+          </article>
+
+          <article class="card reveal">
+            <h3>Tiny footprint</h3>
+            <p>One distroless container, no database server, no Redis. Happy on a Raspberry Pi or the cheapest VPS.</p>
+            <div class="meter" aria-hidden="true"><i style="--w:12%"></i><span>&lt; 25 MB image</span></div>
+          </article>
+
+          <article class="card reveal">
+            <h3>Private by design</h3>
+            <p>The app makes no requests except to your server. No telemetry, no crash reporters, no third-party fonts.</p>
+            <div class="shield" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><path d="M24 4l16 6v12c0 10-7 18-16 22C15 40 8 32 8 22V10z"/><path class="tick" d="M16 24l6 6 11-12"/></svg>
+            </div>
+          </article>
+
+          <article class="card c-wide reveal">
+            <div class="card-copy">
+              <h3>An API that's a first-class citizen</h3>
+              <p>REST endpoints and API tokens write through the same op log as the app. Create a task with <code>curl</code> and watch it land on your phone on the next sync.</p>
+            </div>
+            <pre class="code" aria-label="Example API call"><span class="c"># add a task from a script</span>
+<span class="k">curl</span> -X POST $OPENTODO/api/v1/tasks \
+  -H <span class="s">"Authorization: Bearer $TOKEN"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"title":"Renew passport","priority":1}'</span></pre>
+          </article>
+
+          <article class="card reveal">
+            <h3>Built in the open, with specs</h3>
+            <p>Every feature starts as an OpenSpec change. Behavior is written down before it is built, so you can read exactly how it works.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== SYNC ============================== -->
+    <section class="section sync-section" id="sync">
+      <div class="wrap">
+        <p class="kicker reveal">Sync that just converges</p>
+        <h2 class="reveal">Edit anywhere. Offline.<br><span class="muted">Never pick a version again.</span></h2>
+        <p class="lede narrow reveal">Every change is a tiny operation on one field, stamped with a hybrid logical clock. Devices queue them while offline and exchange them when they reconnect. The same rule runs everywhere, so every device lands on the same state. Play with it:</p>
+
+        <div class="sync-controls reveal">
+          <button class="btn btn-primary" data-sync-conflict type="button">▶ Play a conflict</button>
+          <button class="btn btn-ghost" data-sync-reset type="button">Reset</button>
+          <p class="sync-caption" data-sync-caption aria-live="polite">Toggle Wi-Fi on a device, change something, then reconnect.</p>
+        </div>
+
+        <div class="sync-stage reveal" data-sync-stage>
+          <div class="device laptop" data-device="laptop">
+            <div class="device-head">
+              <span class="device-name">💻 Laptop</span>
+              <span class="status" data-status>Synced</span>
+              <label class="switch" title="Wi-Fi"><input type="checkbox" checked data-online><span></span><em>Wi-Fi</em></label>
+            </div>
+            <ul class="device-list" data-list></ul>
+          </div>
+
+          <div class="link l1" aria-hidden="true"></div>
+
+          <div class="server" data-server>
+            <div class="server-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><rect x="8" y="8" width="32" height="12" rx="3"/><rect x="8" y="28" width="32" height="12" rx="3"/><circle cx="15" cy="14" r="1.6"/><circle cx="15" cy="34" r="1.6"/></svg>
+            </div>
+            <b>Your server</b>
+            <span class="server-log" data-server-log>0 ops</span>
+          </div>
+
+          <div class="link l2" aria-hidden="true"></div>
+
+          <div class="device phone" data-device="phone">
+            <div class="device-head">
+              <span class="device-name">📱 Phone</span>
+              <span class="status" data-status>Synced</span>
+              <label class="switch" title="Wi-Fi"><input type="checkbox" checked data-online><span></span><em>Wi-Fi</em></label>
+            </div>
+            <ul class="device-list" data-list></ul>
+          </div>
+        </div>
+        <p class="sync-foot reveal">Tip: click a task title to rename it, click the circle to complete it.</p>
+      </div>
+    </section>
+
+    <!-- =========================== SCREENSHOTS ========================== -->
+    <section class="section shots">
+      <div class="wrap">
+        <p class="kicker reveal">Looks like it costs money</p>
+        <h2 class="reveal">Calm, fast, and at home<br><span class="muted">on every screen.</span></h2>
+        <div class="shot-stage">
+          <figure class="shot laptop-shot reveal">
+            <img src="assets/project.png" width="1280" height="800" alt="Project view with the task detail panel open">
+          </figure>
+          <figure class="shot phone-shot reveal">
+            <img src="assets/mobile-dark.png" width="780" height="1688" alt="OpenTodo inbox on a phone in dark mode">
+          </figure>
+        </div>
+        <p class="shot-note reveal">Installable as an app on iPhone, Android and desktop. Light and dark mode follow your system.</p>
+      </div>
+    </section>
+
+    <!-- ============================ COMPARE ============================= -->
+    <section class="section" id="compare">
+      <div class="wrap">
+        <p class="kicker reveal">The honest comparison</p>
+        <h2 class="reveal">Rent your to‑do list,<br><span class="muted">or own it.</span></h2>
+        <div class="compare reveal" role="table" aria-label="OpenTodo compared with a typical subscription task app">
+          <div class="row head" role="row"><span role="columnheader"></span><span role="columnheader">Typical subscription app</span><span role="columnheader" class="us">OpenTodo</span></div>
+          <div class="row" role="row"><span role="rowheader">Price</span><span role="cell">Monthly, forever</span><span role="cell" class="us">Free. A €4 VPS runs it</span></div>
+          <div class="row" role="row"><span role="rowheader">Where your data lives</span><span role="cell">Their servers</span><span role="cell" class="us">Your server, one SQLite file</span></div>
+          <div class="row" role="row"><span role="rowheader">Works offline</span><span role="cell">Depends on the plan</span><span role="cell" class="us">Fully, on every device</span></div>
+          <div class="row" role="row"><span role="rowheader">Tracking</span><span role="cell">Analytics in the app</span><span role="cell" class="us">None. Zero requests elsewhere</span></div>
+          <div class="row" role="row"><span role="rowheader">If the company disappears</span><span role="cell">So do your tasks</span><span role="cell" class="us">Nothing happens</span></div>
+          <div class="row" role="row"><span role="rowheader">Source code</span><span role="cell">Closed</span><span role="cell" class="us">AGPL-3.0, on GitHub</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================== SELF-HOST ============================ -->
+    <section class="section" id="self-host">
+      <div class="wrap selfhost">
+        <div>
+          <p class="kicker reveal">Self-host in 2 minutes</p>
+          <h2 class="reveal">One container.<br><span class="muted">Zero required config.</span></h2>
+          <p class="lede reveal">Point Coolify at the repository, or run one command. Open the URL, create the owner account, done. Updates are a redeploy; migrations run on start.</p>
+          <ul class="checks reveal">
+            <li>Automatic HTTPS with Coolify</li>
+            <li>Health check built into the binary</li>
+            <li>Sign-up closed after the owner account</li>
+            <li>Back up one volume, restore anywhere</li>
+          </ul>
+        </div>
+
+        <div class="install reveal">
+          <div class="tabs" role="tablist" aria-label="Install method">
+            <button role="tab" aria-selected="true" data-tab="coolify">Coolify</button>
+            <button role="tab" aria-selected="false" data-tab="docker">Docker</button>
+            <button role="tab" aria-selected="false" data-tab="binary">Binary</button>
+          </div>
+          <div class="term">
+            <button class="copy" type="button" data-copy aria-label="Copy commands">Copy</button>
+            <pre data-panel="coolify"><span class="c"># In Coolify: + New Resource → Public Repository</span>
+<span class="k">Repository</span>  https://github.com/pixari/opentodo
+<span class="k">Branch</span>      main
+<span class="k">Build pack</span>  Dockerfile
+<span class="k">Port</span>        8080
+<span class="k">Storage</span>     volume → /data
+<span class="c"># Add your domain, press Deploy. That's it.</span></pre>
+            <pre data-panel="docker" hidden><span class="p">$</span> git clone https://github.com/pixari/opentodo.git
+<span class="p">$</span> cd opentodo
+<span class="p">$</span> docker compose up -d
+<span class="c"># → open http://localhost:8080</span></pre>
+            <pre data-panel="binary" hidden><span class="c"># needs Go 1.26+ and Node 22+</span>
+<span class="p">$</span> make build
+<span class="p">$</span> ./bin/opentodo
+<span class="c"># serves on :8080, data in ./data</span></pre>
+          </div>
+          <div class="install-links">
+            <a href="https://github.com/pixari/opentodo/blob/main/docs/self-hosting/coolify.md" rel="noopener">Coolify guide →</a>
+            <a href="https://github.com/pixari/opentodo/blob/main/docs/self-hosting/docker.md" rel="noopener">Docker guide →</a>
+            <a href="https://github.com/pixari/opentodo/blob/main/docs/api.md" rel="noopener">API docs →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ ROADMAP ============================= -->
+    <section class="section" id="roadmap">
+      <div class="wrap">
+        <p class="kicker reveal">What's next</p>
+        <h2 class="reveal">v0.1 is the walking skeleton.<br><span class="muted">Here's where it's walking.</span></h2>
+        <ul class="chips reveal">
+          <li>Natural-language quick add</li>
+          <li>Subtasks</li>
+          <li>Labels &amp; filter queries</li>
+          <li>Recurring tasks</li>
+          <li>Reminders</li>
+          <li>Sharing &amp; comments</li>
+          <li>CalDAV</li>
+          <li>Webhooks</li>
+          <li>Import from other apps</li>
+          <li>Passkeys &amp; OIDC</li>
+          <li>End-to-end encryption</li>
+        </ul>
+        <div class="nlq reveal" aria-hidden="true">
+          <span class="nlq-plus">+</span>
+          <span class="nlq-text"><span data-typed></span><i class="caret"></i></span>
+          <span class="nlq-tag">Coming soon</span>
+        </div>
+        <p class="center reveal"><a class="link-arrow" href="https://github.com/pixari/opentodo/blob/main/ROADMAP.md" rel="noopener">Read the full roadmap →</a></p>
+      </div>
+    </section>
+
+    <!-- ============================== CTA =============================== -->
+    <section class="final">
+      <div class="final-glow" aria-hidden="true"></div>
+      <div class="wrap center">
+        <img class="final-logo reveal" src="assets/pwa-512.png" width="96" height="96" alt="">
+        <h2 class="reveal">Stop renting your to‑do list.</h2>
+        <p class="lede reveal">Deploy OpenTodo tonight. Your tasks will still be yours in ten years.</p>
+        <div class="cta center reveal">
+          <a class="btn btn-primary" href="#self-host">Get started <span aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="https://github.com/pixari/opentodo" rel="noopener">View source</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <div class="brand"><img src="assets/favicon.svg" width="22" height="22" alt=""><span>OpenTodo</span></div>
+      <p>Free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. Made by people who wanted their tasks back.</p>
+      <nav aria-label="Footer">
+        <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+        <a href="https://github.com/pixari/opentodo/blob/main/docs/architecture.md" rel="noopener">Architecture</a>
+        <a href="https://github.com/pixari/opentodo/blob/main/CONTRIBUTING.md" rel="noopener">Contribute</a>
+        <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>
