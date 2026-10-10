@@ -20,7 +20,7 @@
 ## 4. Web app
 
 - [x] 4.1 `web/src/lib/api.ts` functions for list, export URL with filters, settings and activity, with no IndexedDB writes; verify `npm test` passes `api.audit.test.ts` and `npm run build`
-- [ ] 4.2 `AuditPanel` (owner): filters, table with load more, export, retention and address-logging controls, offline notice; `ActivityPanel` (everyone) under Security; keyboard reachable; verify component tests for owner/member visibility and offline state in `npm test`, plus a browser run; `npm run build` passes
+- [x] 4.2 `AuditPanel` (owner): filters, table with load more, export, retention and address-logging controls, offline notice; `ActivityPanel` (everyone) under Security; keyboard reachable; verify component tests for owner/member visibility and offline state in `npm test`, plus a browser run; `npm run build` passes
 
 ## 5. Docs and release
 
