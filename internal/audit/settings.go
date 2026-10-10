@@ -59,8 +59,9 @@ func readSetting(ctx context.Context, q execer, key string) (string, error) {
 	return v, err
 }
 
-func writeSetting(ctx context.Context, q execer, key, value string) error {
-	_, err := q.ExecContext(ctx, "INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", key, value)
+func (r *Recorder) writeSetting(ctx context.Context, q execer, key, value string) error {
+	_, err := q.ExecContext(ctx, `INSERT INTO settings(key,value,updated_at) VALUES(?,?,?)
+		ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`, key, value, r.now().UnixMilli())
 	return err
 }
 
@@ -89,7 +90,7 @@ func (r *Recorder) UpdateSettings(ctx context.Context, actorID string, p Setting
 	next := cur
 	if p.RetentionDays != nil && *p.RetentionDays != cur.RetentionDays {
 		next.RetentionDays = *p.RetentionDays
-		if err := writeSetting(ctx, tx, KeyRetentionDays, strconv.Itoa(next.RetentionDays)); err != nil {
+		if err := r.writeSetting(ctx, tx, KeyRetentionDays, strconv.Itoa(next.RetentionDays)); err != nil {
 			return Settings{}, err
 		}
 		if err := r.RecordTx(ctx, tx, SettingsChanged(actorID, KeyRetentionDays, strconv.Itoa(cur.RetentionDays), strconv.Itoa(next.RetentionDays))); err != nil {
@@ -98,7 +99,7 @@ func (r *Recorder) UpdateSettings(ctx context.Context, actorID string, p Setting
 	}
 	if p.LogIP != nil && *p.LogIP != cur.LogIP {
 		next.LogIP = *p.LogIP
-		if err := writeSetting(ctx, tx, KeyLogIP, strconv.FormatBool(next.LogIP)); err != nil {
+		if err := r.writeSetting(ctx, tx, KeyLogIP, strconv.FormatBool(next.LogIP)); err != nil {
 			return Settings{}, err
 		}
 		if !next.LogIP {

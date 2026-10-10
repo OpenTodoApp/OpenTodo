@@ -16,8 +16,8 @@ func TestOpenMigratesEmptyDataDir(t *testing.T) {
 	if err := db.QueryRowContext(context.Background(), "PRAGMA user_version").Scan(&version); err != nil {
 		t.Fatal(err)
 	}
-	if version != 5 {
-		t.Fatalf("user_version = %d, want 5", version)
+	if want := highestEmbeddedVersion(t); version != want {
+		t.Fatalf("user_version = %d, want %d", version, want)
 	}
 	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations", "audit_events", "settings"} {
 		var name string

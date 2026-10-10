@@ -24,7 +24,4 @@ CREATE INDEX audit_events_name_ts ON audit_events(name, ts);
 -- created by whichever merges first. Absent keys mean "use the default":
 --   audit.retention_days  integer 7..3650, default 90
 --   audit.log_ip          "true" | "false", default false
-CREATE TABLE IF NOT EXISTS settings (
-  key   TEXT PRIMARY KEY,
-  value TEXT NOT NULL
-);
+CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL DEFAULT 0);
