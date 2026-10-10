@@ -53,7 +53,7 @@
 
 ## 7. Docs and release
 
-- [ ] 7.1 Update `docs/self-hosting/*.md` (managing users, recovering owner access with the CLI), `SECURITY.md` (deactivation semantics, reset links, the admin role) and `README.md`, and add a CHANGELOG entry under Unreleased. Verify that the links resolve and `make check` passes.
+- [x] 7.1 Update `docs/self-hosting/*.md` (managing users, recovering owner access with the CLI), `SECURITY.md` (deactivation semantics, reset links, the admin role) and `README.md`, and add a CHANGELOG entry under Unreleased. Verify that the links resolve and `make check` passes.
 
 ## 8. Two-factor integration (carried over from `mfa-totp`)
 

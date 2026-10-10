@@ -52,7 +52,7 @@ Users can add passkeys in **Settings → Security** once the domain is https, wh
 
 ## Adding people
 
-Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → Members**, create an invitation (optionally bound to an email, expiring in 1 hour to 30 days) and send the link. It creates one account and then stops working; pending links can be revoked. Links use `OPENTODO_BASE_URL`, which the compose file sets from Coolify's domain. See [Adding people](../../README.md#adding-people).
+Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → Members**, create an invitation (optionally bound to an email, expiring in 1 hour to 30 days) and send the link. It creates one account and then stops working; pending links can be revoked. Links use `OPENTODO_BASE_URL`, which the compose file sets from Coolify's domain. See [Adding people](../../README.md#adding-people). **Settings → Users** manages accounts afterwards: admins, deactivation, reset links, deletion and owner transfer. If the owner forgot their password, open the service's terminal in Coolify and run `/opentodo reset-owner-password` (see [Recovering owner access](docker.md#recovering-owner-access)).
 
 ## Backups
 
