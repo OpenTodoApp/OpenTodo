@@ -2,10 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { api, onEnrolmentRequired } from '../lib/api'
 import { clearLocalData } from '../lib/db'
 import { unsubscribeOnSignOut } from '../lib/push'
-import { startSync, stopSync } from '../lib/sync'
+import { startSync, stopSync, useSyncStatus } from '../lib/sync'
 import type { AuthStatus, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { InviteScreen } from './InviteScreen'
+import { ResetScreen } from './ResetScreen'
+import { ACCOUNT_CHANGED_EVENT } from './UsersPanel'
 import { ReauthHost } from './ReauthDialog'
 import { ENROLMENT_EVENT } from './SyncStatus'
 import { cacheMfa, EnrolmentGate } from './TwoFactorPanel'
@@ -24,6 +26,9 @@ type Phase =
 export function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
   const route = useRoute()
+  const sync = useSyncStatus()
+  // Shown on the sign-in screen after a password reset (OpenSpec `user-management`).
+  const [signInNotice, setSignInNotice] = useState<string | undefined>(undefined)
 
   const refresh = useCallback(async () => {
     try {
@@ -61,8 +66,22 @@ export function App() {
     }
   }, [refresh])
 
+  // Ownership moved (Settings → Users): re-read the profile so the role is current.
   useEffect(() => {
-    if (phase.kind === 'ready' && route.view !== 'invite') startSync()
+    const again = () => void refresh()
+    window.addEventListener(ACCOUNT_CHANGED_EVENT, again)
+    return () => window.removeEventListener(ACCOUNT_CHANGED_EVENT, again)
+  }, [refresh])
+
+  // The server refused this device's session (deactivated, deleted, password
+  // reset elsewhere): show the signed-out screen. Local data is left alone, as
+  // on any expired session; signing out explicitly clears it.
+  useEffect(() => {
+    if (sync.state === 'unauthenticated' && phase.kind === 'ready') void refresh()
+  }, [sync.state, phase.kind, refresh])
+
+  useEffect(() => {
+    if (phase.kind === 'ready' && route.view !== 'invite' && route.view !== 'reset') startSync()
     else stopSync()
   }, [phase.kind, route.view])
 
@@ -92,6 +111,20 @@ export function App() {
   function screen() {
     if (phase.kind === 'loading') {
       return <Centered>Loading…</Centered>
+    }
+    if (route.view === 'reset') {
+      return (
+        <ResetScreen
+          token={route.token}
+          user={phase.kind === 'ready' || phase.kind === 'restricted' ? phase.user : null}
+          onDone={() => {
+            setSignInNotice('Your password was changed. Sign in with the new one.')
+            navigate({ view: 'inbox' }, { replace: true })
+            void refresh()
+          }}
+          onLogout={() => void logout()}
+        />
+      )
     }
     if (phase.kind === 'restricted' && route.view !== 'invite') {
       return <EnrolmentGate user={phase.user} onEnrolled={() => void refresh()} onLogout={() => void logout()} />
@@ -123,7 +156,7 @@ export function App() {
     }
     if (phase.kind === 'anonymous') {
       // On /share the payload waits in memory; after sign-in the route is still /share.
-      const notice = route.view === 'share' ? 'Sign in to add the shared page to OpenTodo. It is kept on this screen until then.' : undefined
+      const notice = route.view === 'share' ? 'Sign in to add the shared page to OpenTodo. It is kept on this screen until then.' : signInNotice
       return <AuthScreen status={phase.status} notice={notice} onAuthenticated={() => void refresh()} />
     }
     if (route.view === 'share') {

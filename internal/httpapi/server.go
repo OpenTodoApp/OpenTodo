@@ -48,6 +48,11 @@ type Server struct {
 	// re-authentication, per client address (10/min each; OpenSpec `mfa-totp`).
 	mfaLimiter    *rateLimiter
 	reauthLimiter *rateLimiter
+	// adminLimiter caps mutating user-administration requests per acting
+	// account (60/hour) and passwordLimiter self-service password changes per
+	// account (10/hour) (OpenSpec `user-management` D9).
+	adminLimiter    *rateLimiter
+	passwordLimiter *rateLimiter
 	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
 	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
@@ -86,6 +91,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
 		passkeyOptions: newRateLimiter(10, time.Minute),
 		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
+		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
 		importer: importer.New(syncSvc.DB(), syncSvc, log)}
 	for _, o := range opts {
 		o(s)
@@ -99,6 +105,9 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	if cfg.PasskeysAvailable() && !authSvc.PasskeysAvailable() {
 		authSvc.ConfigurePasskeys(cfg.RPID(), cfg.Origin())
 	}
+	// Deleting an account removes its synced data in the same transaction
+	// (user-management D4; the project-sharing hook lives in the sync package).
+	authSvc.SetBeforeDelete(opsync.DeleteAccountData)
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", s.handleHealth)
@@ -130,6 +139,9 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/invitations", s.requireAuth(s.requireFresh(s.handleCreateInvitation)))
 	mux.Handle("DELETE /api/v1/invitations/{id}", s.requireAuth(s.handleRevokeInvitation))
 	mux.HandleFunc("GET /api/v1/invitations/{token}", s.handlePreviewInvitation)
+	// User administration (OpenSpec `user-management`): literal patterns, so they
+	// win over the {collection} routes below.
+	s.registerUserRoutes(mux)
 	// Audit log: owner-only reads, export and settings; personal activity for
 	// everyone. Literal patterns, so they win over the {collection} routes below.
 	mux.Handle("GET /api/v1/audit", s.requireAuth(s.handleAuditList))
@@ -440,6 +452,14 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "invalid_credentials", err.Error())
 		return
 	}
+	if errors.Is(err, auth.ErrAccountDeactivated) {
+		var d *auth.DeactivatedLogin
+		if errors.As(err, &d) {
+			s.audit.Record(r.Context(), audit.LoginFailed(d.UserID, d.Email, audit.ReasonDeactivated))
+		}
+		writeError(w, http.StatusForbidden, "account_deactivated", "this account has been deactivated; ask the server owner or an admin")
+		return
+	}
 	if err != nil {
 		s.internal(w, err)
 		return
@@ -459,6 +479,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 // session was created.
 func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *auth.User, status int, mfa bool) bool {
 	secret, exp, err := s.auth.CreateSessionMFA(r.Context(), u.ID, r.UserAgent(), mfa)
+	if errors.Is(err, auth.ErrAccountDeactivated) {
+		writeError(w, http.StatusForbidden, "account_deactivated", "this account has been deactivated; ask the server owner or an admin")
+		return false
+	}
 	if err != nil {
 		s.internal(w, err)
 		return false
@@ -536,7 +560,7 @@ func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request) {
 func (s *Server) requireInviter(w http.ResponseWriter, r *http.Request) *auth.User {
 	u := userFrom(r.Context())
 	if !s.auth.CanInvite(u) {
-		writeError(w, http.StatusForbidden, "forbidden", "only the owner can manage invitations")
+		writeError(w, http.StatusForbidden, "forbidden", "only the owner and admins can manage invitations")
 		return nil
 	}
 	return u

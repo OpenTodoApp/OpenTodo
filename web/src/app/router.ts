@@ -19,6 +19,7 @@ export type Route =
   | { view: 'settings' }
   | { view: 'import' }
   | { view: 'invite'; token: string }
+  | { view: 'reset'; token: string }
   | { view: 'share' }
   | { view: 'trash' }
 
@@ -59,6 +60,9 @@ export function parseRoute(pathname: string): Route {
     case 'invite':
       // The secret is URL-safe base64; decode defensively in case a mail client encoded it.
       return parts[1] ? { view: 'invite', token: safeDecode(parts[1]) } : { view: 'inbox' }
+    case 'reset':
+      // Password reset link from an administrator or `opentodo reset-owner-password`.
+      return parts[1] ? { view: 'reset', token: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'label':
       return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
     default:
@@ -81,7 +85,8 @@ export function routePath(r: Route): string {
     case 'view':
       return `/${r.view}/${r.id}`
     case 'invite':
-      return `/invite/${encodeURIComponent(r.token)}`
+    case 'reset':
+      return `/${r.view}/${encodeURIComponent(r.token)}`
     case 'day':
     case 'week':
       return r.date ? `/${r.view}/${r.date}` : `/${r.view}`

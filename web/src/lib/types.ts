@@ -150,12 +150,30 @@ export interface PushSubscriptionStatus {
   needsRenewal: boolean
 }
 
+/** Account role on the server (OpenSpec `user-management`). */
+export type AccountRole = 'owner' | 'admin' | 'member'
+
 export interface User {
   id: string
   email: string
   name: string
-  role: 'owner' | 'member'
+  role: AccountRole
   createdAt: number
+}
+
+/**
+ * An entry of the server's user list (owner and admins only). Fetched live and
+ * kept in component state: never written to IndexedDB or any cache.
+ */
+export interface AdminUser extends User {
+  lastLoginAt: number | null
+  status: 'active' | 'deactivated'
+}
+
+/** What a reset link reveals to its holder. */
+export interface ResetPreview {
+  email: string
+  expiresAt: number
 }
 
 export interface AuthStatus {
@@ -348,6 +366,9 @@ export const AUDIT_EVENT_NAMES = [
   'identity.linked', 'identity.unlinked',
   'export.requested', 'audit.exported',
   'backup.created', 'backup.restored',
+  'user.deactivated', 'user.reactivated', 'user.deleted',
+  'password.reset_issued', 'password.reset_completed', 'password.changed',
+  'owner.transferred',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 

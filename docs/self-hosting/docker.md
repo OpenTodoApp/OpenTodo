@@ -120,6 +120,23 @@ Users turn on two-factor authentication in **Settings → Two-factor authenticat
 
   The command works only on the data volume (shell access to the host is the proof of ownership), refuses to run while the server holds it, and is recorded as `mfa.reset` in the audit log. Members who are locked out are reset by the owner through `POST /api/v1/members/{id}/mfa/reset` ([docs/api.md](../api.md#two-factor-authentication)).
 
+## Managing users
+
+The owner sees every account in **Settings → Users** with its role, status and last sign-in ([docs/api.md](../api.md#user-administration)). From there the owner makes trusted people **admins** (they can invite, and deactivate, reset or delete members, but never act on the owner or other admins), **deactivates** an account (signed out everywhere at once, API tokens and pending invitations revoked, data kept, sign-in blocked until reactivated), creates a **password reset link** for someone who forgot their password (single use, 24 hours, nothing is emailed: copy it and send it yourself), **deletes** an account and its data after typing its email, or **transfers ownership** to another account after re-entering the password (you become an admin). Every user changes their own password in **Settings → Password**. Nothing needs configuring and no SQLite editing is ever needed.
+
+### Recovering owner access
+
+Nobody can reset the owner's password through the app. If the owner forgot it, print a reset link from the host, then open it in a browser and choose a new password:
+
+```bash
+docker compose exec opentodo /opentodo reset-owner-password
+# password reset link for the owner owner@example.com (valid until 2026-10-11T09:00:00Z):
+#
+#   https://todo.example.com/reset/otr_…
+```
+
+The command needs only the data volume: shell access to the host is the proof of ownership. It opens no port, needs no configuration and works while the server runs (or with `docker compose run --rm --no-deps opentodo reset-owner-password` while it is stopped). The link starts with `OPENTODO_BASE_URL`; pass `--base-url https://…` otherwise. It works once, any earlier owner link stops working, and using it signs the owner out everywhere. It is recorded as `password.reset_issued` in the audit log. If the owner also lost their second factor, run `mfa-reset` as described above.
+
 ## Health
 
 `GET /healthz` returns `{"status":"ok","version":"..."}`. The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.

@@ -8,7 +8,8 @@ import type { User } from '../lib/types'
 import { BackupsPanel } from './BackupsPanel'
 import { QuickAddSettingsSection } from './QuickAddSettings'
 import { CalendarSettingsSection } from './CalendarSettings'
-import { MembersPanel } from './MembersPanel'
+import { PasswordSection } from './PasswordSection'
+import { AdministrationSections } from './UsersPanel'
 import { NotificationsSettings } from './NotificationsSettings'
 import { SecuritySettings } from './ActivityPanel'
 import { SecurityPanel } from './SecurityPanel'
@@ -78,6 +79,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 
       <CalendarSettingsSection />
 
+      <PasswordSection />
       <TwoFactorPanel user={user} />
       <NotificationsSettings />
 
@@ -104,7 +106,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 
       <AutoArchiveSection />
 
-      {user.role === 'owner' && <MembersPanel />}
+      <AdministrationSections user={user} />
 
       <WebhooksPanel isOwner={user.role === 'owner'} />
       <QuickAddSettingsSection />

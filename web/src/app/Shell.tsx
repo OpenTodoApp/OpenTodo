@@ -157,8 +157,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'day' || route.view === 'week' ? (
             <CalendarView mode={route.view} date={route.date} />
           ) : (
-            // App renders the invite and capture screens itself; a stray /invite or /share route inside the shell falls back to the Inbox.
-            <TaskListView userId={user.id} route={route.view === 'invite' || route.view === 'share' ? { view: 'inbox' } : route} />
+            // App renders the invite, reset and capture screens itself; a stray /invite, /reset or /share route inside the shell falls back to the Inbox.
+            <TaskListView userId={user.id} route={route.view === 'invite' || route.view === 'reset' || route.view === 'share' ? { view: 'inbox' } : route} />
           )}
         </div>
       </main>
@@ -216,6 +216,7 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['↑ / ↓ (in the filter query)', 'Recall recent queries on this device'],
     ['Enter (on an invitation)', 'Settings → Members: copy the invite link created in this session'],
     ['Delete (on an invitation)', 'Settings → Members: revoke a pending invitation'],
+    ['d / r / Delete (on a user)', 'Settings → Users: deactivate or reactivate, create a reset link, delete (each confirms)'],
     ['g then s, Tab', 'Settings → Security: add, rename (Enter saves, Esc cancels) or delete passkeys'],
     ['Esc', 'Close panel, clear selection'],
     ['?', 'Toggle this help'],

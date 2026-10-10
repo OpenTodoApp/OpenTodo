@@ -177,6 +177,9 @@ func (s *Service) Now() time.Time { return s.clock() }
 
 // CreateSessionMFA issues a browser session. reauth_at is set to now (a sign-in
 // is a proof of identity); mfa_at too when the second factor was satisfied.
+// Every sign-in path ends here, so a deactivated account is refused with
+// ErrAccountDeactivated and the account's last sign-in time is recorded in the
+// same transaction (user-management).
 func (s *Service) CreateSessionMFA(ctx context.Context, userID, userAgent string, mfa bool) (string, time.Time, error) {
 	secret := ids.Secret(32)
 	now := s.clock()
@@ -186,6 +189,15 @@ func (s *Service) CreateSessionMFA(ctx context.Context, userID, userAgent string
 		return "", time.Time{}, err
 	}
 	defer tx.Rollback()
+	if off, err := s.isDeactivated(ctx, tx, userID); err != nil {
+		return "", time.Time{}, err
+	} else if off {
+		return "", time.Time{}, ErrAccountDeactivated
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO user_status(user_id, last_login_at) VALUES(?, ?)
+		ON CONFLICT(user_id) DO UPDATE SET last_login_at = excluded.last_login_at`, userID, now.UnixMilli()); err != nil {
+		return "", time.Time{}, err
+	}
 	h := hashToken(secret)
 	if _, err := tx.ExecContext(ctx, "INSERT INTO sessions(token_hash,user_id,created_at,expires_at,user_agent) VALUES(?,?,?,?,?)",
 		h, userID, now.UnixMilli(), exp.UnixMilli(), truncate(userAgent, 200)); err != nil {
@@ -212,7 +224,8 @@ func (s *Service) LookupSession(ctx context.Context, secret string) (*Session, e
 		(SELECT confirmed_at FROM mfa_totp WHERE user_id = u.id),
 		(SELECT value FROM settings WHERE key = ?)
 		FROM sessions s JOIN users u ON u.id = s.user_id LEFT JOIN session_auth a ON a.token_hash = s.token_hash
-		WHERE s.token_hash = ? AND s.expires_at > ?`, KeyMFARequired, h, s.clock().UnixMilli()).
+		WHERE s.token_hash = ? AND s.expires_at > ?
+		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`, KeyMFARequired, h, s.clock().UnixMilli()).
 		Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt, &mfaAt, &reauthAt, &confirmed, &policy)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound

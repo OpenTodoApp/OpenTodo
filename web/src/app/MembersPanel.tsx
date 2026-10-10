@@ -19,7 +19,7 @@ const BADGE: Record<InvitationStatus, string> = {
 }
 
 /**
- * Owner-only Settings section: create single-use invite links, see their status,
+ * Settings section for the owner and admins: create single-use invite links, see their status,
  * revoke pending ones. Invitations live on the server only, so the panel is
  * read-only while offline and shows the last fetched list.
  */

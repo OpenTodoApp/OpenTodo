@@ -54,9 +54,19 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | GET | `/api/v1/passkeys` | yes | `{passkeys:[{id,name,createdAt,lastUsedAt,suspiciousAt,backedUp}]}` |
 | PATCH | `/api/v1/passkeys/{id}` | yes | `{name}` → `{passkey}` |
 | DELETE | `/api/v1/passkeys/{id}` | yes | 204 |
-| GET | `/api/v1/invitations` | owner | `{invitations:[…]}`, see [Invitations](#invitations) |
-| POST | `/api/v1/invitations` | owner, fresh | `{email?, expiresInHours?}` → 201 `{invitation, link}` (link shown once) |
-| DELETE | `/api/v1/invitations/{id}` | owner | revoke a pending invitation → 204 |
+| GET | `/api/v1/invitations` | owner, admin | `{invitations:[…]}`, see [Invitations](#invitations) |
+| POST | `/api/v1/invitations` | owner, admin, fresh | `{email?, expiresInHours?}` → 201 `{invitation, link}` (link shown once) |
+| DELETE | `/api/v1/invitations/{id}` | owner, admin | revoke a pending invitation → 204 |
+| GET | `/api/v1/users` | owner, admin | `{users:[…]}`, see [User administration](#user-administration) |
+| PUT | `/api/v1/users/{id}/role` | owner, fresh | `{role: "admin"\|"member"}` → `{user}` |
+| POST | `/api/v1/users/{id}/deactivate` | owner, admin, fresh | → `{user}`; revokes sessions, tokens, pending invitations and reset links |
+| POST | `/api/v1/users/{id}/reactivate` | owner, admin, fresh | → `{user}` |
+| DELETE | `/api/v1/users/{id}` | owner, admin, fresh | `{confirmEmail}` → 204; deletes the account and its data |
+| POST | `/api/v1/users/{id}/password-reset` | owner, admin, fresh | `{expiresInHours?}` → 201 `{expiresAt, link}` (link shown once) |
+| POST | `/api/v1/users/{id}/transfer-ownership` | owner, fresh | `{password}` → `{user}` |
+| POST | `/api/v1/me/password` | yes, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
+| GET | `/api/v1/password-resets/{token}` | none | preview `{email, expiresAt}` or 404 `reset_invalid` |
+| POST | `/api/v1/password-resets/{token}` | none | `{password}` → 204 or 404 `reset_invalid` |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid` |
 | GET | `/api/v1/mfa` | yes | `{mfa}`, see [Two-factor authentication](#two-factor-authentication) |
 | POST | `/api/v1/mfa/totp/enroll` | yes | → `{secret, uri, expiresAt}` (pending for 10 minutes; the only time the secret is returned) |
@@ -340,7 +350,7 @@ It answers 201 `{"subscription": {"id", "deviceId", "includeContent", "createdAt
 
 ### Invitations
 
-Invitations let the owner admit one person with one single-use, expiring link while sign-up stays closed. Only accounts with the `owner` role may create, list or revoke them; a member gets 403 `forbidden`. Invitations are server-side account data: they are never written to the op log and never sync to devices.
+Invitations let the owner admit one person with one single-use, expiring link while sign-up stays closed. Accounts with the `owner` or `admin` role may create, list or revoke them; a member gets 403 `forbidden`. Invitations always admit a `member`. Invitations are server-side account data: they are never written to the op log and never sync to devices.
 
 **Create** — `POST /api/v1/invitations` with an optional body:
 
@@ -379,6 +389,65 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 ```
 
 Creates a `member` account and starts a session even when `OPENTODO_ALLOW_SIGNUP` is false. The invitation is spent in the same transaction, so it can create at most one account; a second use returns 404 `invitation_invalid`. Errors: 403 `invitation_email_mismatch` when the invitation is bound to another address, 409 `email_taken`, 400 `invalid_input` for the password policy. In every error case the invitation stays pending.
+
+### User administration
+
+The owner, and admins within narrower limits, administer the accounts on the server. User administration is server-side account data: never written to the op log, never synced, and every action needs a connection. Roles:
+
+| Action | owner | admin | member |
+| --- | --- | --- | --- |
+| invite, list and revoke invitations; list users | yes | yes | no |
+| deactivate, reactivate, reset or delete a `member` | yes | yes | no |
+| the same on an `admin` | yes | no | no |
+| anything on the owner | no | no | no |
+| change role (`admin` ↔ `member`), transfer ownership | yes | no | no |
+| change own password | yes | yes | yes |
+
+Checks run in this order: acting on your own account gives 409 `self_action`; a role that does not allow the action gives 403 `forbidden` (a member gets 403 on every mutating `/users` route); a target in the wrong state gives 409 `account_deactivated` or `account_active`; an unknown id gives 404 `not_found`. Every mutating `/users` route and `/me/password` is *fresh*: a cookie session must have proved its identity in the last ten minutes (`403 reauth_required`, see [Two-factor authentication](#two-factor-authentication)); bearer tokens are never challenged.
+
+**List** — `GET /api/v1/users` → oldest first, never a credential:
+
+```json
+{"users": [
+  {"id": "…", "email": "owner@example.com", "name": "Owner", "role": "owner",
+   "createdAt": 1760000000000, "lastLoginAt": 1760090000000, "status": "active"},
+  {"id": "…", "email": "m@example.com", "name": "m", "role": "member",
+   "createdAt": 1760001000000, "lastLoginAt": null, "status": "deactivated"}
+]}
+```
+
+`lastLoginAt` is the last session start (password, passkey, second step or registration); it is `null` for accounts that have not signed in since the upgrade. `status` is `active` or `deactivated`.
+
+**Role** — `PUT /api/v1/users/{id}/role` with `{"role":"admin"}` or `{"role":"member"}` → `{user}`. `owner` or an unknown value is 400 `invalid_input`; a deactivated target is 409 `account_deactivated`. The new role applies to the target's next request without signing them out.
+
+**Deactivate / reactivate** — `POST /api/v1/users/{id}/deactivate` → `{user}`. In one transaction the account is marked deactivated, all its sessions and API tokens are deleted, and its pending invitations and unused reset links are revoked; its open `/sync/events` streams are closed at once. Its data stays on the server. A correct password for it then gets 403 `account_deactivated` at sign-in (a wrong one still gets 401 `invalid_credentials`). `POST …/reactivate` lifts the block; revoked credentials are not restored. Deactivating a deactivated account is 409 `account_deactivated`; reactivating an active one is 409 `account_active`.
+
+**Delete** — `DELETE /api/v1/users/{id}` with `{"confirmEmail":"m@example.com"}` (compared case-insensitively; missing or different is 400 `confirmation_mismatch`) → 204. In one transaction the account, its personal ops and fields, sessions, tokens, passkeys, reset links and the invitations it created are deleted. Shared projects it owned are deleted for every member (their devices purge them on the next sync); its memberships in other people's projects end, while the edits it made there stay part of those projects. Audit events about the account are kept with an email snapshot. Irreversible: backups are the recovery path.
+
+**Reset links** — `POST /api/v1/users/{id}/password-reset` with optional `{"expiresInHours": 1–72}` (default 24) → 201:
+
+```json
+{"expiresAt": 1760086400000, "link": "https://todo.example.com/reset/otr_…"}
+```
+
+The link is returned once (only its hash is stored) and uses the same origin rules as invitation links. Nothing is emailed; the administrator copies it. A new link revokes earlier unused ones. A deactivated target is 409 `account_deactivated`; a bad expiry 400 `invalid_input`. The owner is never a target: on the server, `opentodo reset-owner-password` prints an owner reset link (see [docs/self-hosting/docker.md](self-hosting/docker.md#recovering-owner-access)).
+
+`GET /api/v1/password-resets/{token}` (no authentication) → `{email, expiresAt}`. `POST /api/v1/password-resets/{token}` with `{"password":"…"}` → 204: the password is replaced, the link is spent and every session of the account is deleted in one transaction; API tokens are kept and no session is started. Used, expired, revoked and unknown tokens all give the same 404 `reset_invalid`; a password under 10 characters is 400 `invalid_input` and the link stays pending. Both routes share the per-address sign-in limit (10 per minute).
+
+**Own password** — `POST /api/v1/me/password` with `{"currentPassword":"…","newPassword":"…"}` → 204. Your other sessions are signed out, the current one stays (a bearer-token request signs out every session), API tokens are kept. A wrong current password is 403 `invalid_credentials`; a short new one 400 `invalid_input`. Limited to 10 per hour per account.
+
+**Transfer** — `POST /api/v1/users/{id}/transfer-ownership` with `{"password":"…"}` (the owner's) → `{user}` with `role: "owner"`. In one transaction the target becomes owner and the previous owner becomes admin; the database allows only one owner. A deactivated target is 409 `account_deactivated`, your own id 409 `self_action`, a wrong password 403 `invalid_credentials`, a sender who is not (or no longer) owner 403 `forbidden`.
+
+Mutating `/users` requests are limited to 60 per hour per acting account (429 `rate_limited`).
+
+```bash
+# Issue a reset link for a member (token-authenticated script: never challenged)
+curl -sS -X POST "$OT/api/v1/users/$ID/password-reset" -H "Authorization: Bearer $TOKEN"
+# 201 {"expiresAt":1760086400000,"link":"https://todo.example.com/reset/otr_…"}
+
+curl -sS -X POST "$OT/api/v1/users/$OWNER_ID/deactivate" -H "Authorization: Bearer $TOKEN"
+# 409 {"error":{"code":"self_action","message":"you cannot do this to your own account"}}
+```
 
 ### Backups
 
@@ -476,7 +545,7 @@ The server records security-relevant events in its own database (never synced to
 | Event | Outcome | Actor / target | `details` keys |
 | --- | --- | --- | --- |
 | `login.succeeded` | success | actor = user | `email`, `method` (`password`, `register`, `passkey`; later `oidc`) |
-| `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`, `unknown_passkey`, `passkey_rejected`, `passkey_counter_regression`) |
+| `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`, `unknown_passkey`, `passkey_rejected`, `passkey_counter_regression`, `deactivated`) |
 | `logout` | success | actor = user | |
 | `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name` |
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
@@ -488,7 +557,13 @@ The server records security-relevant events in its own database (never synced to
 | `mfa.enrolled`, `mfa.disabled`, `mfa.reset`, `mfa.challenge_failed` | | | `method`, `reason` (emitted once `mfa-totp` ships) |
 | `passkey.registered`, `passkey.deleted` | success | actor = user | `passkey_id`, `passkey_name` |
 | `identity.linked`, `identity.unlinked` | | | `provider` (once `oidc-login` ships) |
-| `role.changed` | | | `from`, `to` |
+| `role.changed` | success | actor = owner, target = account | `from`, `to` (account roles, or `project.<role>` for project membership) |
+| `user.deactivated`, `user.reactivated` | success | actor = owner or admin, target = account | |
+| `user.deleted` | success | actor = owner or admin, target = account | `email` (snapshot) |
+| `password.reset_issued` | success | actor = owner or admin (none from the server shell), target = account | `reset_id` |
+| `password.reset_completed` | success | actor = account | `reset_id` |
+| `password.changed` | success | actor = user | |
+| `owner.transferred` | success | actor = previous owner, target = new owner | `from` (`owner`), `to` (`admin`): the previous owner's role change |
 | `backup.created` | success or failure | actor = owner for "Back up now", none for scheduled runs | `backup_id` (the run id), `reason` (`run_failed`) on failure |
 | `backup.restored` | success | none (recorded by the server on its first start after `opentodo restore`) | `backup_id` (the archive file name) |
 
@@ -810,7 +885,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | Code | Status | Where |
 | --- | --- | --- |
 | `unauthorized` | 401 | any protected route without a valid session or token |
-| `forbidden` | 403 | invitation management, backups, audit log, audit settings, webhook policy, two-factor policy or member reset by a non-owner; a write or membership change your project role does not allow |
+| `forbidden` | 403 | invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; backups, audit log, audit settings, webhook policy, two-factor policy or member reset by a non-owner; a write or membership change your project role does not allow |
 | `reauth_required` | 403 | a sensitive route on a cookie session that has not proved its identity in the last ten minutes; see [Two-factor authentication](#two-factor-authentication) |
 | `mfa_enrolment_required` | 403 | the owner's policy requires a second factor that this account has not set up yet |
 | `mfa_required_by_policy` | 403 | turning off a second factor that the policy requires |
@@ -828,6 +903,12 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
 | `invitation_invalid` | 404 | unknown, expired, revoked or already accepted invitation |
 | `invitation_spent` | 409 | revoking an accepted invitation |
+| `self_action` | 409 | a `/users` action on your own account |
+| `account_deactivated` | 403/409 | 403 at sign-in with the correct password of a deactivated account; 409 for an administrative action on a deactivated account |
+| `account_active` | 409 | reactivating an active account |
+| `confirmation_mismatch` | 400 | deleting an account without its email in `confirmEmail` |
+| `reset_invalid` | 404 | unknown, used, expired or revoked password reset link |
+| `invalid_credentials` | 401/403 | 401 for a wrong sign-in; 403 for a wrong current password at `/me/password` or `transfer-ownership` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs |
 | `unsupported_format` | 400 | import file in no supported format |
 | `invalid_file` | 400 | import file recognised but unreadable |

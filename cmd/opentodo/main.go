@@ -4,11 +4,13 @@
 //	opentodo healthcheck  exit 0 when a local server answers /healthz (used by Docker)
 //	opentodo restore      replace the database with a backup archive (server stopped)
 //	opentodo mfa-reset    remove an account's second factor (server stopped)
+//	opentodo reset-owner-password  print a single-use reset link for the owner
 //	opentodo version      print the version
 package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"flag"
 	"fmt"
@@ -51,8 +53,10 @@ func main() {
 			os.Exit(restore(os.Args[2:]))
 		case "mfa-reset":
 			os.Exit(mfaReset(os.Args[2:], os.Stdout, os.Stderr))
+		case "reset-owner-password":
+			os.Exit(resetOwnerPassword(os.Args[2:], os.Stdout, os.Stderr))
 		case "help", "--help", "-h":
-			fmt.Print("usage: opentodo [healthcheck|restore|mfa-reset|version]\n\nConfiguration is read from OPENTODO_* environment variables; see .env.example.\nRun `opentodo restore -h` for the restore procedure (docs/backups.md).\nRun `opentodo mfa-reset -h` to rescue an account locked out of its second factor.\n")
+			fmt.Print("usage: opentodo [healthcheck|restore|mfa-reset|reset-owner-password|version]\n\nConfiguration is read from OPENTODO_* environment variables; see .env.example.\nRun `opentodo restore -h` for the restore procedure (docs/backups.md).\nRun `opentodo mfa-reset -h` to rescue an account locked out of its second factor.\nRun `opentodo reset-owner-password -h` when the owner forgot their password.\n")
 			return
 		default:
 			fmt.Fprintf(os.Stderr, "unknown command %q\n", os.Args[1])
@@ -310,6 +314,98 @@ again right after signing in. Stop the server first. See SECURITY.md.
 	}
 	fmt.Fprintf(stdout, "two-factor authentication removed for %s (%s); trusted browsers forgotten\n", u.Email, u.Role)
 	fmt.Fprintln(stdout, "start the server and sign in with the password; enrol again in Settings > Security")
+	return 0
+}
+
+// resetOwnerPassword implements `opentodo reset-owner-password [--data-dir DIR]
+// [--base-url URL]`: the owner is never a target of the HTTP reset route, so
+// an operator with shell access to the data directory prints a single-use,
+// 24-hour owner reset link here (OpenSpec `user-management`). It opens no
+// listener and needs no configuration. It works while the server runs (SQLite
+// handles the second writer) as long as the server already migrated the
+// database to this binary's schema; with the server stopped it migrates first.
+func resetOwnerPassword(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("reset-owner-password", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	dataDir := fs.String("data-dir", "", "data directory (default: $OPENTODO_DATA_DIR or ./data)")
+	baseURL := fs.String("base-url", "", "address the link should start with (default: $OPENTODO_BASE_URL, else http://localhost:<port>)")
+	fs.Usage = func() {
+		fmt.Fprint(fs.Output(), `usage: opentodo reset-owner-password [--data-dir DIR] [--base-url URL]
+
+Prints a single-use link, valid for 24 hours, that sets a new password for the
+owner account. Open it in a browser and choose a new password; all of the
+owner's sessions are signed out. Issuing a new link invalidates the previous
+one. Nothing is sent anywhere. See docs/self-hosting/docker.md.
+
+`)
+		fs.PrintDefaults()
+	}
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return 2
+	}
+	if fs.NArg() != 0 {
+		fs.Usage()
+		return 2
+	}
+	dir := *dataDir
+	if dir == "" {
+		dir = os.Getenv("OPENTODO_DATA_DIR")
+	}
+	if dir == "" {
+		dir = "./data"
+	}
+	if _, err := os.Stat(store.DBPath(dir)); err != nil {
+		fmt.Fprintf(stderr, "opentodo reset-owner-password: no database in %s: %v\n", dir, err)
+		return 1
+	}
+	var db *sql.DB
+	if unlock, err := store.Lock(dir); err == nil {
+		// Server stopped: open normally, applying pending migrations.
+		defer unlock()
+		if db, err = store.Open(dir); err != nil {
+			fmt.Fprintln(stderr, "opentodo reset-owner-password:", err)
+			return 1
+		}
+	} else {
+		// Server running: never migrate underneath it.
+		if db, err = store.OpenFile(store.DBPath(dir)); err != nil {
+			fmt.Fprintln(stderr, "opentodo reset-owner-password:", err)
+			return 1
+		}
+		var v int
+		if err := db.QueryRow("PRAGMA user_version").Scan(&v); err != nil || v != store.LatestVersion() {
+			db.Close()
+			fmt.Fprintf(stderr, "opentodo reset-owner-password: the running server uses another schema version (%d, this binary %d); run this binary's server, or stop the server first\n", v, store.LatestVersion())
+			return 1
+		}
+	}
+	defer db.Close()
+	u, pr, secret, err := auth.NewService(db, time.Hour, false).IssueOwnerPasswordReset(context.Background())
+	if errors.Is(err, auth.ErrNotFound) {
+		fmt.Fprintln(stderr, "opentodo reset-owner-password: this server has no owner yet; open it in a browser to create one")
+		return 1
+	}
+	if err != nil {
+		fmt.Fprintln(stderr, "opentodo reset-owner-password:", err)
+		return 1
+	}
+	base := strings.TrimRight(*baseURL, "/")
+	if base == "" {
+		base = strings.TrimRight(os.Getenv("OPENTODO_BASE_URL"), "/")
+	}
+	if base == "" {
+		port := "8080"
+		if _, p, err := net.SplitHostPort(os.Getenv("OPENTODO_ADDR")); err == nil && p != "" {
+			port = p
+		}
+		base = "http://localhost:" + port
+	}
+	fmt.Fprintf(stdout, "password reset link for the owner %s (valid until %s):\n\n  %s/reset/%s\n\n",
+		u.Email, time.UnixMilli(pr.ExpiresAt).UTC().Format(time.RFC3339), base, secret)
+	fmt.Fprintln(stdout, "it works once; if your server answers on another address, keep the /reset/... part and use that address")
 	return 0
 }
 
