@@ -73,6 +73,44 @@ Accents are optional (`manana`, `nachsten`, `fevrier` work too). Two-letter Germ
 
 Quick add still takes the view's context for anything the line does not set: today in Today, tomorrow in Upcoming, the current project in a project view, the current label in a label view. Anything the line does set wins, so `Plan trip next Monday #travel` typed in Today goes to *Travel* on Monday. Labels add up instead: `@call` typed in the *errand* label view gives the task both labels, so it stays in the view you added it from.
 
+## Voice
+
+Quick add can also be dictated. Voice capture is **off by default** and is switched on per device in **Settings → Voice capture**; it is not synced, so turning it on for your phone leaves your laptop as it is. Browsers without speech recognition (Firefox, for example) show the switch disabled with an explanation, and quick add has no microphone button there.
+
+With voice capture on, press the microphone button in quick add or `Shift+V` anywhere outside a text field (plain `v` already toggles list and board in a project). Words appear in the box as they are recognised; when you stop talking, press the button again or press `Esc`, the final transcript is inserted at the caret and parsed exactly like typed text, chips included. **Nothing is saved until you press Enter**, so you can correct the line by hand first.
+
+Spoken forms of the tokens are turned into their typed forms first, in the active quick-add languages (English is always on):
+
+| Said | Becomes |
+| --- | --- |
+| "renew insurance hashtag home priority two" | `renew insurance #home p2` |
+| "standup at nine thirty am" | `standup at 9:30am` |
+| "call the dentist tomorrow at nine" | `call the dentist tomorrow at 9` |
+| "label errands buy stamps" | `@errands buy stamps` |
+| "phone mum at call" (an existing label *call*) | `phone mum @call` |
+| "plan move project home office" (an existing project) | `plan move #homeoffice` |
+| "write report for thirty minutes", "one hour and fifteen minutes" | `write report +30m`, `+75m` |
+| "ping Ana in two hours" | `ping Ana in 2 hours` |
+| "um neun Uhr dreißig", "alle nove", "a las diez", "à neuf heures", "às onze" | `um 9:30`, `alle 9`, `a las 10`, `à 9 heures`, `às 11` |
+
+Trigger words per language: *hashtag* (all), *project / Projekt / projet / progetto / proyecto / projeto* (only before an existing project's name), *label / Etikett / étiquette / etichetta / etiqueta*, and *priority / Priorität / priorité / priorità / prioridad / prioridade* followed by one to four. Numbers are only converted next to a time, priority or duration cue, so "buy two apples" stays as it is.
+
+The recognition language follows your first quick-add language (with your browser's region, for example `en-GB`) and can be changed in Settings. If the browser cannot recognise that language, OpenTodo says so once and listens in the browser's default language.
+
+If the microphone is blocked, a message explains how to allow it in the browser's site settings and the button stays there to retry. When nothing is said, listening just stops. When recognition is unavailable (for example offline, in a browser that needs its vendor's service), quick add says "Voice capture is unavailable right now" and typing works as usual. Text already in the box is never cleared.
+
+### Privacy
+
+Before voice capture can be switched on, Settings shows this statement and waits for you to confirm:
+
+- Speech is recognised by your browser, not by OpenTodo.
+- Depending on the browser, your audio may be sent to the browser vendor's speech service (for example Google for Chrome, Apple for Safari) and handled under their privacy policy.
+- OpenTodo asks the browser to recognise speech on this device when it offers that choice.
+- Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.
+- The microphone is used only while you dictate; the browser asks for permission the first time.
+
+OpenTodo's code never records, stores or sends audio: the Web Speech API hands it text. On-device recognition is requested whenever the browser reports it available for the language (Chromium's `processLocally`); OpenTodo never asks the browser to download a speech model. The browser asks for microphone permission on your first dictation, not when you switch the setting on.
+
 ## Not (yet) understood
 
 Recurrence ("every Monday"), reminders ("remind me at 9"), creating a project from an unknown `#name`, and parsing on the server, REST API or `ot` CLI. Those belong to later changes; see [ROADMAP.md](../ROADMAP.md).

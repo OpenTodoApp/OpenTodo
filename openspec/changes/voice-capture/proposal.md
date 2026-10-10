@@ -6,7 +6,7 @@ Speaking a task is faster than typing it on a phone, while walking, or when hand
 
 ## What Changes
 
-- A microphone button in quick add and a keyboard shortcut (`v` outside text fields) start dictation; interim words appear in the input as they are recognised and the final transcript is inserted at the caret. The text then flows through the natural-language parser from `nlp-quick-add`, so chips appear exactly as if typed. Nothing is saved until the user presses Enter.
+- A microphone button in quick add and a keyboard shortcut (`Shift+V` outside text fields; plain `v` already toggles list/board in projects) start dictation; interim words appear in the input as they are recognised and the final transcript is inserted at the caret. The text then flows through the natural-language parser from `nlp-quick-add`, so chips appear exactly as if typed. Nothing is saved until the user presses Enter.
 - Spoken attribute words are normalised before parsing per active language: "hashtag work" → `#work`, "label call" → `@call`, "priority one" → `p1`, "three pm" → `3pm`, "thirty minutes" → `+30m`.
 - Off by default and per device. Settings shows a switch with a privacy statement: recognition is done by the browser and may send audio to the browser vendor's service; OpenTodo's server never receives audio or transcripts, only the resulting task; on-device recognition is requested when the browser offers it. The switch is unavailable, with an explanation, in browsers without speech recognition.
 - Recognition language follows the first active quick-add language and can be overridden in Settings.
@@ -28,6 +28,6 @@ No server changes, no new environment variables, no op log changes; nothing is *
 
 ## Impact
 
-- Client: new `web/src/lib/voice/` (feature detection, recognition session wrapper, per-language spoken-token normalisation tables), microphone button and listening state in `QuickAdd`, `v` shortcut, Settings section with the privacy statement. Bundle impact about 3 KB gzipped; no new dependency. CSP unchanged because the Web Speech API is not a network request made by page code.
+- Client: new `web/src/lib/voice/` (feature detection, recognition session wrapper, per-language spoken-token normalisation tables), microphone button and listening state in `QuickAdd`, `Shift+V` shortcut, Settings section with the privacy statement. Bundle impact about 3.5 KB gzipped in the main bundle plus a 4 KB chunk loaded only when voice capture is on (see design D7); no new dependency. CSP unchanged because the Web Speech API is not a network request made by page code.
 - Server: none. Container image and runtime memory unchanged.
 - Docs: `docs/quick-add.md` gains a "Voice" section including the privacy statement; README feature list; `SECURITY.md` note on where audio goes.
