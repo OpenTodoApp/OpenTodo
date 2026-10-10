@@ -28,6 +28,6 @@ No server changes, no new environment variables, no op log changes; nothing is *
 
 ## Impact
 
-- Client: new `web/src/lib/voice/` (feature detection, recognition session wrapper, per-language spoken-token normalisation tables), microphone button and listening state in `QuickAdd`, `Shift+V` shortcut, Settings section with the privacy statement. Bundle impact about 3.5 KB gzipped in the main bundle plus a 4 KB chunk loaded only when voice capture is on (see design D7); no new dependency. CSP unchanged because the Web Speech API is not a network request made by page code.
+- Client: new `web/src/lib/voice/` (feature detection, recognition session wrapper, per-language spoken-token normalisation tables), microphone button and listening state in `QuickAdd`, `Shift+V` shortcut, Settings section with the privacy statement. Bundle impact about 2.8 KB gzipped in the main bundle plus a 4 KB chunk loaded only when voice capture is on (see design D7); no new dependency. CSP unchanged because the Web Speech API is not a network request made by page code.
 - Server: none. Container image and runtime memory unchanged.
 - Docs: `docs/quick-add.md` gains a "Voice" section including the privacy statement; README feature list; `SECURITY.md` note on where audio goes.
