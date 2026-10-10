@@ -54,3 +54,7 @@
 ## 7. Docs and release
 
 - [ ] 7.1 Update `docs/self-hosting/*.md` (managing users, recovering owner access with the CLI), `SECURITY.md` (deactivation semantics, reset links, the admin role) and `README.md`, and add a CHANGELOG entry under Unreleased. Verify that the links resolve and `make check` passes.
+
+## 8. Two-factor integration (carried over from `mfa-totp`)
+
+- [ ] 8.1 Wrap the self-service password-change route as `s.requireAuth(s.requireFresh(h))`, and add an owner action in the Users panel that calls `POST /api/v1/members/{id}/mfa/reset`; verify with `TestPasswordChangeRequiresFreshSession` and the browser flow step "owner resets a member's two-factor"

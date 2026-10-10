@@ -24,3 +24,7 @@
 
 - [ ] 4.1 New `docs/self-hosting/sso.md` with setup steps, redirect URI, SSO-only break-glass and emergency env override; `SECURITY.md` note on outbound requests to the configured issuer; `README.md`; CHANGELOG entry; verify links resolve and `make check` passes
 - [ ] 4.2 End-to-end run with a real self-hosted provider: configure → test → member signs in and is provisioned → email-matched owner account links → SSO-only on → member password refused, owner still works → unlink refused for last credential; verify the run completes without console errors
+
+## 5. Two-factor integration (carried over from `mfa-totp`)
+
+- [ ] 5.1 Provider sign-in starts the session with `startSession(w, r, u, status, true)` so it satisfies two-factor, and `PUT /api/v1/settings/oidc` is wrapped as `s.requireAuth(s.requireFresh(h))`; verify with a test that an enrolled account signing in through the provider is not asked for a code and that changing SSO settings on a stale session returns `403 reauth_required`
