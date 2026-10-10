@@ -9,6 +9,7 @@
 // at most LOCAL_RETENTION events; older ones come from the server on demand.
 import Dexie from 'dexie'
 import { api } from './api'
+import { decryptActivityPage } from './e2ee'
 import { db } from './db'
 import type { ActivityChange, ActivityEntry, ActivityEvent, ActivityKind, ActivityPage, Op } from './types'
 
@@ -236,8 +237,9 @@ export function mergeOlder(shown: ActivityEvent[], page: ActivityEvent[]): Activ
 }
 
 /** One page of older events from the server. */
-export function fetchActivity(entity: 'task' | 'project', id: string, before?: string): Promise<ActivityPage> {
-  return api.activity(entity, id, before)
+export async function fetchActivity(entity: 'task' | 'project', id: string, before?: string): Promise<ActivityPage> {
+  // Ciphertext values (OpenSpec e2ee) are decrypted for display.
+  return decryptActivityPage(await api.activity(entity, id, before))
 }
 
 // ---- wording ----

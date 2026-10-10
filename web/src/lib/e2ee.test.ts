@@ -429,3 +429,19 @@ describe('migration job (task 2.4)', () => {
     expect((await db.tasks.get('t1'))!.title).toBe('Dentist')
   })
 })
+
+describe('server reads shown in the UI', () => {
+  it('history and activity values are decrypted for display; foreign envelopes show the placeholder', async () => {
+    await enableOnA()
+    const { decryptActivityPage, decryptChanges } = await import('./e2ee')
+    const title = current('task', 't1', 'title') as string
+    const changes = await decryptChanges('task', 't1', [
+      { field: 'title', from: 'Dentist', to: title },
+      { field: 'due', from: null, to: { date: '2026-10-11' } },
+      { field: 'description', from: title, to: '' },
+    ])
+    expect(changes.map((c) => [c.from, c.to])).toEqual([['Dentist', 'Dentist'], [null, { date: '2026-10-11' }], [UNDECRYPTABLE, '']])
+    const page = await decryptActivityPage({ events: [{ entity: 'task' as const, entityId: 't1', taskId: 't1', taskTitle: title, changes: [] }] })
+    expect(page.events[0].taskTitle).toBe('Dentist')
+  })
+})

@@ -12,6 +12,7 @@
 // Views read these through Dexie live queries, so every sync that writes ops
 // (including one triggered by the server's wake-up channel) refreshes them.
 import { api } from './api'
+import { decryptActivityPage } from './e2ee'
 import { LOCAL_RETENTION, newestFirst, projectActivity } from './activity'
 import { db, getMeta, setMeta } from './db'
 import { mutateMany, type Change } from './ops'
@@ -128,8 +129,9 @@ export function groupByDay(events: ActivityEvent[]): { day: string; events: Acti
 }
 
 /** One page of the cross-project feed from the server. */
-export function fetchFeed(opts: FeedFilter & { cursor?: string } = {}): Promise<ActivityPage> {
-  return api.feed(opts)
+export async function fetchFeed(opts: FeedFilter & { cursor?: string } = {}): Promise<ActivityPage> {
+  // Ciphertext values (OpenSpec e2ee) are decrypted for display.
+  return decryptActivityPage(await api.feed(opts))
 }
 
 // ---- unread ----

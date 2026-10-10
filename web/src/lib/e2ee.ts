@@ -10,7 +10,7 @@
 import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import {
-  createKeyRecord, isEnvelope, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase, unlockWithRecoveryKey,
+  createKeyRecord, decryptValue, isEnvelope, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase, unlockWithRecoveryKey,
   type KeyRecord,
 } from './crypto'
 import { db, getMeta, setMeta } from './db'
@@ -252,7 +252,25 @@ export async function lock(): Promise<void> {
  * caller starts the re-write job. Returns the recovery key to show once.
  */
 export async function enableEncryption(passphrase: string, opts: { iterations?: number } = {}): Promise<{ recoveryKey: string }> {
-  const { record, key, recoveryKey } = await createKeyRecord(passphrase, opts)
+  const prepared = await prepareEnable(passphrase, opts)
+  await commitEnable(prepared)
+  return { recoveryKey: prepared.recoveryKey }
+}
+
+/** A key record generated on this device, not yet stored on the server (the wizard shows its recovery key first). */
+export interface PreparedEnable {
+  record: KeyRecord
+  key: CryptoKey
+  recoveryKey: string
+}
+
+/** Step 1 of enabling: derive and wrap locally; nothing leaves the device. */
+export function prepareEnable(passphrase: string, opts: { iterations?: number } = {}): Promise<PreparedEnable> {
+  return createKeyRecord(passphrase, opts)
+}
+
+/** Step 2, after the user saved the recovery key and acknowledged the risk: store the record and keep the key. */
+export async function commitEnable({ record, key }: PreparedEnable): Promise<void> {
   let stored: KeyRecord
   try {
     stored = (await api.putEncryptionKeys(record)).keys
@@ -266,7 +284,6 @@ export async function enableEncryption(passphrase: string, opts: { iterations?: 
   await storeKey(key, stored)
   await setEnabled(true, stored)
   await db.meta.delete(K_DISCARD)
-  return { recoveryKey }
 }
 
 /** Change the passphrase: re-wrap only, no content op (design D1). Needs the current passphrase. */
@@ -347,4 +364,41 @@ export function notYetEncrypted(row: { _e2ee?: { wire?: Record<string, string> }
     if (w !== 'c' && w !== 'x') return true
   }
   return false
+}
+
+// ---- REST reads shown in the UI (history, activity, feed) ----
+
+/**
+ * Decrypt a value read from the server outside sync (revision history, server
+ * activity pages) for display. Plaintext passes through; an envelope that does
+ * not open with this device's key, or with no key, shows UNDECRYPTABLE.
+ */
+export async function displayValue(entity: Entity, entityId: string, field: string, value: unknown): Promise<unknown> {
+  if (!isContentField(entity, field) || !isEnvelope(value)) return value
+  const key = await currentKey()
+  if (!key) return UNDECRYPTABLE
+  try {
+    return await decryptValue(key, entity, entityId, field, value)
+  } catch {
+    return UNDECRYPTABLE
+  }
+}
+
+/** Decrypt the from/to values of history or activity changes. */
+export async function decryptChanges<T extends { field: string; from: unknown; to: unknown }>(entity: Entity, entityId: string, changes: T[]): Promise<T[]> {
+  return Promise.all(changes.map(async (c) => ({
+    ...c, from: await displayValue(entity, entityId, c.field, c.from), to: await displayValue(entity, entityId, c.field, c.to),
+  })))
+}
+
+type ActivityLike = { entity: 'task' | 'project' | 'comment'; entityId: string; taskId?: string; taskTitle?: string; changes: { field: string; from: unknown; to: unknown }[] }
+
+/** Decrypt the values and resolved task titles of a page of server activity events. */
+export async function decryptActivityPage<P extends { events: ActivityLike[] }>(page: P): Promise<P> {
+  const events = await Promise.all(page.events.map(async (e) => ({
+    ...e,
+    changes: await decryptChanges(e.entity, e.entityId, e.changes),
+    ...(e.taskTitle !== undefined && e.taskId ? { taskTitle: (await displayValue('task', e.taskId, 'title', e.taskTitle)) as string } : {}),
+  })))
+  return { ...page, events }
 }
