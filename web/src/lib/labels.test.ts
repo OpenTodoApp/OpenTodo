@@ -190,7 +190,7 @@ describe('display helpers', () => {
   it('countOpenByLabel counts open tasks once per label', () => {
     const task = (labels: string[], completed = false, deleted = false) => ({
       id: crypto.randomUUID(), title: '', description: '', project_id: null, parent_id: null, priority: 4 as const, due: null,
-      labels, position: 0, created_at: 0, completed_at: completed ? 1 : null, deleted_at: deleted ? 1 : null, estimate_minutes: null, recurrence: null, series_id: null, _clock: {},
+      labels, position: 0, created_at: 0, completed_at: completed ? 1 : null, deleted_at: deleted ? 1 : null, estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, _clock: {},
     })
     const counts = countOpenByLabel([task(['a', 'b']), task(['a', 'a']), task(['a'], true), task(['b'], false, true), task([])])
     expect(counts.get('a')).toBe(2)

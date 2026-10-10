@@ -8,6 +8,7 @@ import { db, entityTables, getMeta, setMeta } from './db'
 import { hlcObserveServerTime } from './hlc'
 import { applyOps, getDeviceId, onLocalMutation } from './ops'
 import { followSharedDueChanges } from './reminders'
+import { refreshNotifications } from './notifications'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
 import type { Clock, Entity, Op, SyncState } from './types'
 
@@ -40,6 +41,8 @@ let again = false
 let debounce: ReturnType<typeof setTimeout> | null = null
 let timer: ReturnType<typeof setInterval> | null = null
 let started = false
+/** True until notifications were fetched once in this session (task-assignment). */
+let needNotifications = true
 
 // Live channel state.
 let source: EventSource | null = null
@@ -76,7 +79,14 @@ export function dismissRejected(): void {
 function addRejected(n: RejectedNotice): void {
   const prev = snapshot.rejected
   const merge = (a: string[], b: string[]) => [...new Set([...a, ...b])]
-  publish({ rejected: prev ? { count: prev.count + n.count, projects: merge(prev.projects, n.projects), tasks: merge(prev.tasks, n.tasks) } : n })
+  publish({
+    rejected: prev
+      ? {
+        count: prev.count + n.count, projects: merge(prev.projects, n.projects), tasks: merge(prev.tasks, n.tasks),
+        assignments: (prev.assignments ?? 0) + (n.assignments ?? 0),
+      }
+      : n,
+  })
 }
 
 export function requestSync(delay = 250): void {
@@ -114,6 +124,9 @@ async function runOnce(): Promise<void> {
   publish({ state: 'syncing', error: null })
   try {
     const device = await getDeviceId()
+    // Notifications are refreshed after the first exchange of a session and after
+    // any exchange that brought changes (an assignment arrives as an op).
+    let received = needNotifications
     for (;;) {
       const cursor = await getMeta<number>('cursor', 0)
       const batch = await db.outbox.orderBy('local').limit(BATCH).toArray()
@@ -127,6 +140,7 @@ async function runOnce(): Promise<void> {
       // values, which travel in res.ops, win; drop rows that only existed here.
       const { keys, notice } = await forgetRejected(sent, res.rejected ?? [])
       await applyOps(res.ops)
+      if (res.ops.length > 0) received = true
       await dropUnconfirmed(keys)
       if (notice) addRejected(notice)
       if (res.memberships) await storeMemberships(res.memberships)
@@ -145,6 +159,10 @@ async function runOnce(): Promise<void> {
       const left = await db.outbox.count()
       publish({ pending: left })
       if (!res.hasMore && left === 0) break
+    }
+    if (received) {
+      needNotifications = false
+      await refreshNotifications()
     }
     publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
   } catch (err) {
@@ -378,6 +396,7 @@ export function stopSync(): void {
   if (debounce) clearTimeout(debounce)
   debounce = null
   started = false
+  needNotifications = true
   clearLiveTimers()
   closeSource()
   attempts = 0

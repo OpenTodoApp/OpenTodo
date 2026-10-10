@@ -8,6 +8,7 @@ import { wins } from './hlc'
 import { parentReadyToComplete } from './subtasks'
 import type { Op } from './types'
 import { viewOptions } from './views'
+import { setCurrentUserId } from './sharing'
 
 let n = 0
 beforeEach(() => {
@@ -412,5 +413,56 @@ describe('project sharing', () => {
     const shared = await sharedProject('editor')
     await expect(deleteProject(shared)).rejects.toThrow(/owner/)
     expect((await db.projects.get(shared))?.deleted_at).toBeNull()
+  })
+})
+
+describe('task assignment', () => {
+  const member = (userId: string) => ({ userId, name: userId, email: `${userId}@example.com`, role: 'editor' as const })
+
+  it('new task defaults assignee_id to null', async () => {
+    const id = await createTask({ title: 'Plain' })
+    expect((await db.tasks.get(id))?.assignee_id).toBeNull()
+    // A plain task sends no assignee op; an assigned one sends exactly one.
+    expect((await db.outbox.toArray()).some((o) => o.field === 'assignee_id')).toBe(false)
+    const assigned = await createTask({ title: 'Mine', assignee_id: 'me' })
+    expect((await db.tasks.get(assigned))?.assignee_id).toBe('me')
+    expect((await db.outbox.toArray()).filter((o) => o.field === 'assignee_id').map((o) => o.value)).toEqual(['me'])
+    // A row created from ops without the field (older peer) also reads null.
+    await applyOps([op({ entityId: 'remote', field: 'title', value: 'x', ts: 1, device: 'Z' })])
+    expect((await db.tasks.get('remote'))?.assignee_id).toBeNull()
+    // Assignment is an ordinary LWW field.
+    await applyOps([
+      op({ entityId: 'remote', field: 'assignee_id', value: 'bob', ts: 5, device: 'A' }),
+      op({ entityId: 'remote', field: 'assignee_id', value: 'dan', ts: 6, device: 'C' }),
+    ])
+    expect((await db.tasks.get('remote'))?.assignee_id).toBe('dan')
+  })
+
+  it('copy across scopes drops non-member assignee', async () => {
+    await setCurrentUserId('me')
+    const shared = await createProject({ name: 'Team' })
+    const other = await createProject({ name: 'Other team' })
+    await db.memberships.bulkPut([
+      { projectId: shared, role: 'editor', ownerId: 'alice', members: [member('alice'), member('me'), member('bob')] },
+      { projectId: other, role: 'editor', ownerId: 'alice', members: [member('alice'), member('me')] },
+    ])
+    const bobs = await createTask({ title: 'Bob does it', project_id: shared, assignee_id: 'bob' })
+    const alices = await createTask({ title: 'Alice does it', project_id: shared, assignee_id: 'alice' })
+    const mine = await createTask({ title: 'I do it', project_id: shared, assignee_id: 'me' })
+    const nobody = await createTask({ title: 'Nobody', project_id: shared })
+    await db.outbox.clear()
+    // Into the Inbox: only my own assignment survives.
+    const bobCopy = await updateTask(bobs, { project_id: null })
+    const myCopy = await updateTask(mine, { project_id: null })
+    expect((await db.tasks.get(bobCopy))?.assignee_id).toBeNull()
+    expect((await db.tasks.get(myCopy))?.assignee_id).toBe('me')
+    // Into another shared project: kept when the assignee is a member there.
+    const aliceCopy = await updateTask(alices, { project_id: other })
+    expect((await db.tasks.get(aliceCopy))?.assignee_id).toBe('alice')
+    // An unassigned copy sends no assignee op at all.
+    const nobodyCopy = await updateTask(nobody, { project_id: null })
+    const ops = await db.outbox.toArray()
+    expect(ops.some((o) => o.entityId === nobodyCopy && o.field === 'assignee_id')).toBe(false)
+    expect(ops.some((o) => o.field === 'assignee_id' && o.value === undefined)).toBe(false)
   })
 })

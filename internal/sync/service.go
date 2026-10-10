@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"sort"
 	"time"
+
+	"github.com/pixari/opentodo/internal/notify"
 )
 
 // Service persists ops and materializes current field values.
@@ -17,6 +19,8 @@ type Service struct {
 	now      func() time.Time
 	observer Observer
 	notifier *Notifier
+	// sinks receive assignment events after commit (task-assignment design D4).
+	sinks notify.Multi
 }
 
 // FieldChange is one field's transition within a batch. From is nil (JSON null)
@@ -89,6 +93,11 @@ const (
 	// ReasonScopeChange: a task's project_id would move it into another sharing
 	// scope; clients copy the task and tombstone the original instead.
 	ReasonScopeChange = "scope_change"
+	// ReasonNotAMember: a task's assignee_id names an account that may not be
+	// assigned in the task's scope (OpenSpec change task-assignment, design D2):
+	// not a current member of the shared project, or not the author for a task in
+	// a personal scope.
+	ReasonNotAMember = "not_a_member"
 )
 
 // RejectedError is returned by ApplyStrict when any op of the batch is refused.
@@ -167,46 +176,15 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			refused = append(refused, op)
 			continue
 		}
-		r, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO ops(user_id,op_id,entity,entity_id,field,value,ts,device,received_at)
-			VALUES(?,?,?,?,?,?,?,?,?)`, userID, op.ID, op.Entity, op.EntityID, op.Field, string(op.Value), op.TS, op.Device, nowMs)
+		stored, err := writeOp(ctx, tx, userID, op, scope, nowMs, tracker)
 		if err != nil {
 			return res, err
 		}
-		if n, _ := r.RowsAffected(); n == 0 {
+		if !stored {
 			res.Duplicates++ // the same op id twice in one batch
 			continue
 		}
-		seq, err := r.LastInsertId()
-		if err != nil {
-			return res, err
-		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO op_scopes(seq, scope_id) VALUES(?,?)`, seq, scope); err != nil {
-			return res, err
-		}
 		touched[scope] = true
-		// Read the current winner so the observer learns about genuine changes only.
-		var prevValue, prevDevice string
-		var prevTS int64
-		err = tx.QueryRowContext(ctx, `SELECT value, ts, device FROM scope_fields WHERE scope_id = ? AND entity = ? AND entity_id = ? AND field = ?`,
-			scope, op.Entity, op.EntityID, op.Field).Scan(&prevValue, &prevTS, &prevDevice)
-		existed := err == nil
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return res, err
-		}
-		if !existed || Wins(op.TS, op.Device, prevTS, prevDevice) {
-			var prev json.RawMessage
-			if existed {
-				prev = json.RawMessage(prevValue)
-			}
-			tracker.record(scope, op, prev)
-		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO scope_fields(scope_id,entity,entity_id,field,value,ts,device) VALUES(?,?,?,?,?,?,?)
-			ON CONFLICT(scope_id,entity,entity_id,field) DO UPDATE SET value=excluded.value, ts=excluded.ts, device=excluded.device
-			WHERE excluded.ts > scope_fields.ts OR (excluded.ts = scope_fields.ts AND excluded.device > scope_fields.device)`,
-			scope, op.Entity, op.EntityID, op.Field, string(op.Value), op.TS, op.Device)
-		if err != nil {
-			return res, err
-		}
 		res.Applied++
 	}
 	if res.Restore, err = rs.restoreOps(refused); err != nil {
@@ -221,12 +199,54 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	if err := tx.Commit(); err != nil {
 		return res, err
 	}
-	if s.observer != nil {
-		if changes := tracker.changes(); len(changes) > 0 {
-			s.observer(ctx, changes)
-		}
+	changes := tracker.changes()
+	if s.observer != nil && len(changes) > 0 {
+		s.observer(ctx, changes)
 	}
+	s.emitAssignments(ctx, userID, nowMs, changes)
 	return res, nil
+}
+
+// writeOp stores one authorized op in scope and upserts the scope's winning value
+// under last-writer-wins, recording genuine changes in tracker. It reports false
+// when the op id was already stored for this author (a duplicate within a batch).
+func writeOp(ctx context.Context, tx *sql.Tx, userID string, op Op, scope string, nowMs int64, tracker *changeTracker) (bool, error) {
+	r, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO ops(user_id,op_id,entity,entity_id,field,value,ts,device,received_at)
+		VALUES(?,?,?,?,?,?,?,?,?)`, userID, op.ID, op.Entity, op.EntityID, op.Field, string(op.Value), op.TS, op.Device, nowMs)
+	if err != nil {
+		return false, err
+	}
+	if n, _ := r.RowsAffected(); n == 0 {
+		return false, nil
+	}
+	seq, err := r.LastInsertId()
+	if err != nil {
+		return false, err
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO op_scopes(seq, scope_id) VALUES(?,?)`, seq, scope); err != nil {
+		return false, err
+	}
+	// Read the current winner so the observer learns about genuine changes only.
+	var prevValue, prevDevice string
+	var prevTS int64
+	err = tx.QueryRowContext(ctx, `SELECT value, ts, device FROM scope_fields WHERE scope_id = ? AND entity = ? AND entity_id = ? AND field = ?`,
+		scope, op.Entity, op.EntityID, op.Field).Scan(&prevValue, &prevTS, &prevDevice)
+	existed := err == nil
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return false, err
+	}
+	if !existed || Wins(op.TS, op.Device, prevTS, prevDevice) {
+		var prev json.RawMessage
+		if existed {
+			prev = json.RawMessage(prevValue)
+		}
+		tracker.record(scope, op, prev)
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO scope_fields(scope_id,entity,entity_id,field,value,ts,device) VALUES(?,?,?,?,?,?,?)
+		ON CONFLICT(scope_id,entity,entity_id,field) DO UPDATE SET value=excluded.value, ts=excluded.ts, device=excluded.device
+		WHERE excluded.ts > scope_fields.ts OR (excluded.ts = scope_fields.ts AND excluded.device > scope_fields.device)`,
+		scope, op.Entity, op.EntityID, op.Field, string(op.Value), op.TS, op.Device)
+	return err == nil, err
 }
 
 // NotifyApplied wakes the devices of everyone who can see what a batch changed,

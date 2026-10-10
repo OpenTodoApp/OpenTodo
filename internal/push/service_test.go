@@ -117,7 +117,7 @@ func (e *testEnv) apply(t *testing.T, user string, fields map[string]map[string]
 		for field, v := range f {
 			raw, _ := json.Marshal(v)
 			i++
-			ops = append(ops, opsync.Op{ID: fmt.Sprintf("%s-%s-%s-%d", key, field, user, e.clock.UnixNano()+int64(i)), Entity: entity, EntityID: id, Field: field, Value: raw, TS: e.clock.UnixMilli() + e.seq, Device: "devA"})
+			ops = append(ops, opsync.Op{ID: fmt.Sprintf("%s-%s-%s-%d-%d", key, field, user, e.seq, e.clock.UnixNano()+int64(i)), Entity: entity, EntityID: id, Field: field, Value: raw, TS: e.clock.UnixMilli() + e.seq, Device: "devA"})
 		}
 	}
 	if _, err := e.sync.Apply(context.Background(), user, ops); err != nil {

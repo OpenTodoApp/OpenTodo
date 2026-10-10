@@ -62,6 +62,12 @@ export interface Task {
   recurrence: string | null
   /** On a completed occurrence record or a detached copy: the id of its series; otherwise null. */
   series_id: string | null
+  /**
+   * Account id of the assignee or null (OpenSpec `task-assignment`). The server
+   * accepts only a current member of the task's shared project, or the author for
+   * a personal task, and refuses anything else with reason `not_a_member`.
+   */
+  assignee_id: string | null
   _clock: Clock
 }
 
@@ -479,7 +485,7 @@ export interface Membership {
   members: ProjectMember[]
 }
 
-/** A pushed op the server refused (forbidden or scope_change); it was not stored. */
+/** A pushed op the server refused (forbidden, scope_change or not_a_member); it was not stored. */
 export interface Rejection {
   id: string
   reason: string
@@ -495,4 +501,30 @@ export interface SyncResponse {
   generation?: string
   rejected?: Rejection[]
   memberships?: Membership[]
+}
+
+/** Payload of an `assigned` notification (task-assignment); names resolved by the server. */
+export interface AssignedPayload {
+  assigneeId: string
+  actorId: string
+  actorName: string
+  taskId: string
+  taskTitle: string
+  projectId?: string
+  projectName?: string
+  at: number
+}
+
+/**
+ * An in-app notification (GET /api/v1/notifications), cached in the local
+ * `notifications` table so it shows offline. Server-side account data, not an op.
+ * `readPending` marks a local "read" not yet confirmed by the server.
+ */
+export interface AppNotification {
+  id: string
+  kind: string
+  payload: AssignedPayload
+  createdAt: number
+  readAt: number | null
+  readPending?: boolean
 }

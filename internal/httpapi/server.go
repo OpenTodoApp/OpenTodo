@@ -20,6 +20,7 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/importer"
+	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/push"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/webhook"
@@ -61,6 +62,8 @@ type Server struct {
 	push *push.Service
 	// tzOffsets caches each user's last reported zone offset (minutes east of UTC).
 	tzOffsets sync.Map
+	// inbox serves in-app notifications (OpenSpec `task-assignment`).
+	inbox *notify.InApp
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -86,6 +89,10 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		importer: importer.New(syncSvc.DB(), syncSvc, log)}
 	for _, o := range opts {
 		o(s)
+	}
+	if s.inbox == nil {
+		s.inbox = notify.NewInApp(syncSvc.DB(), log)
+		syncSvc.AddSink(s.inbox)
 	}
 	// Passkeys need a relying party; it is derived from the base URL so the
 	// 409 guard in the handlers and the service always agree.
@@ -143,6 +150,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerSharingRoutes(mux)
 	// Web push (OpenSpec `reminders`): registered only while push is enabled.
 	s.registerPushRoutes(mux)
+	// Notifications (OpenSpec `task-assignment`): literal patterns win over {collection}.
+	s.registerNotificationRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
@@ -718,7 +727,7 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 
 // ---- handlers: REST collections (write-through to the op log) ----
 
-const serverDevice = "server"
+const serverDevice = opsync.ServerDevice
 
 func collection(r *http.Request) (string, bool) {
 	e, ok := opsync.Plural[r.PathValue("collection")]
@@ -1134,6 +1143,9 @@ func (s *Server) writeFieldsAt(w http.ResponseWriter, r *http.Request, entity, i
 		case errors.As(err, &rej) && rej.Reason == opsync.ReasonScopeChange:
 			writeError(w, http.StatusBadRequest, "scope_change",
 				"task.project_id: the target project is shared differently; create a copy there and delete this task instead")
+		case errors.As(err, &rej) && rej.Reason == opsync.ReasonNotAMember:
+			writeError(w, http.StatusBadRequest, "not_a_member",
+				"task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)")
 		case errors.As(err, &rej):
 			writeError(w, http.StatusForbidden, "forbidden", "your role on this project does not allow changing "+rej.Op.Entity+"."+rej.Op.Field)
 		default:

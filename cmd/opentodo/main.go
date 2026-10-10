@@ -28,6 +28,7 @@ import (
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/httpapi"
+	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/push"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
@@ -98,6 +99,15 @@ func run() error {
 		return err
 	}
 	syncSvc.SetObserver(hooks.Observe)
+	// In-app notifications (task-assignment): assignment events land in the
+	// notifications table after commit. Old read rows are swept at start-up.
+	inbox := notify.NewInApp(db, log)
+	syncSvc.AddSink(inbox)
+	if n, err := inbox.Sweep(ctx); err != nil {
+		log.Warn("notification sweep failed", "err", err)
+	} else if n > 0 {
+		log.Info("old notifications removed", "count", n)
+	}
 	// Scheduled backups (docs/backups.md): off until the owner configures them.
 	backups := backup.New(db, cfg.DataDir, backup.Options{Version: version, Log: log, Audit: authSvc.Audit()})
 	if seeded, err := backups.ApplyPreset(ctx, cfg.Backup); err != nil {
@@ -109,7 +119,7 @@ func run() error {
 	// Reminders: web push to subscribed devices (docs/reminders.md). On unless
 	// OPENTODO_PUSH=off; the VAPID key pair is created under the data directory on
 	// first use. In-app reminders work either way.
-	opts := []httpapi.Option{httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups)}
+	opts := []httpapi.Option{httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups), httpapi.WithNotifications(inbox)}
 	var pushSvc *push.Service
 	if !cfg.PushDisabled {
 		pushSvc = push.New(db, syncSvc, cfg.DataDir, push.Options{Log: log, Subject: cfg.Origin()})

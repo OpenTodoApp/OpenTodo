@@ -6,7 +6,7 @@ import { hlcNow, hlcSeed, wins } from './hlc'
 import { firstOccurrence, parseRule } from './recurrence'
 import { relativeFireAt } from './reminderTime'
 import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
-import { membershipMap, roleOf, scopeOf } from './sharing'
+import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Reminder, type Task, type View } from './types'
 
@@ -50,6 +50,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null,
+  assignee_id: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -250,6 +251,8 @@ export async function createTask(input: {
   estimate_minutes?: number | null
   /** A recurrence rule (any spelling the grammar accepts; stored canonical). Throws when invalid. */
   recurrence?: string | null
+  /** Assignee account id (task-assignment); only sent when set. */
+  assignee_id?: string | null
 }): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
@@ -262,6 +265,7 @@ export async function createTask(input: {
     extra.recurrence = parsed.canonical
     if (!due) due = { date: firstOccurrence(parsed.rule, todayISO()) }
   }
+  if (input.assignee_id) extra.assignee_id = input.assignee_id
   await mutate('task', id, {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: now, created_at: now,
@@ -307,20 +311,28 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
 }
 
 /** Fields a cross-scope copy carries over (project-sharing); ids, tree links and tombstones are new. */
-const COPY_FIELDS = ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'recurrence', 'series_id', 'completed_at', 'position', 'created_at'] as const
+const COPY_FIELDS = ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'position', 'created_at'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
  * tasks (a parent that is not copied becomes null). Returns the changes and the
  * old → new id map. The originals are untouched; callers tombstone them.
  */
-function copyTasks(tasks: Task[], projectId: string | null, overrides: Record<string, Partial<Task>> = {}): { changes: Change[]; ids: Map<string, string> } {
+function copyTasks(
+  tasks: Task[], projectId: string | null, assignable: Set<string>, overrides: Record<string, Partial<Task>> = {},
+): { changes: Change[]; ids: Map<string, string> } {
   const ids = new Map(tasks.map((t) => [t.id, crypto.randomUUID()]))
   const changes: Change[] = []
   for (const t of tasks) {
     const patch: Record<string, unknown> = {}
     for (const f of COPY_FIELDS) patch[f] = t[f]
     Object.assign(patch, overrides[t.id] ?? {})
+    // task-assignment: the copy keeps its assignee only when that person may be
+    // assigned in the destination; the server would refuse it otherwise.
+    // An unassigned copy needs no op (null is the default; rows synced before the
+    // field existed hold undefined, which must never be sent).
+    if (typeof patch.assignee_id !== 'string') delete patch.assignee_id
+    else if (!assignable.has(patch.assignee_id)) patch.assignee_id = null
     patch.project_id = projectId
     patch.parent_id = (t.parent_id && ids.get(t.parent_id)) ?? null
     patch.deleted_at = null
@@ -342,7 +354,8 @@ export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task,
   const all = await liveTasks()
   const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((t) => t.id === d)).filter((t): t is Task => !!t)]
   const { project_id: projectId = null, parent_id: _parent, ...rest } = patch
-  const { changes, ids } = copyTasks(subtree, projectId, { [id]: { ...rest, position: Date.now() } })
+  const assignable = assignableIn(projectId, await membershipMap(), await currentUserId())
+  const { changes, ids } = copyTasks(subtree, projectId, assignable, { [id]: { ...rest, position: Date.now() } })
   const now = Date.now()
   for (const t of subtree) changes.push({ entity: 'task', entityId: t.id, patch: { deleted_at: now } })
   await mutateMany(changes)
@@ -537,7 +550,7 @@ export async function deleteProject(id: string): Promise<void> {
   if (shared) {
     const now = Date.now()
     const live = tasks.filter((t) => !t.deleted_at)
-    changes.push(...copyTasks(live.filter((t) => !t.completed_at), null).changes)
+    changes.push(...copyTasks(live.filter((t) => !t.completed_at), null, assignableIn(null, memberships, await currentUserId())).changes)
     for (const t of live) changes.push({ entity: 'task', entityId: t.id, patch: { deleted_at: now } })
   }
   for (const t of shared ? [] : tasks) {

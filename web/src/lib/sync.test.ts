@@ -4,8 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // controls the cursor the server reports.
 const serverCursor = { value: 5 }
 const syncCalls = vi.fn(async () => ({ applied: 0, ops: [], cursor: serverCursor.value, hasMore: false, serverTime: Date.now() }))
+// In-app notifications (task-assignment): the server's list and read calls.
+const serverNotifications = { value: [] as Record<string, unknown>[] }
+const listNotifications = vi.fn(async () => ({ notifications: serverNotifications.value, unread: 0 }))
+const readNotification = vi.fn(async (id: string) => {
+  serverNotifications.value = serverNotifications.value.map((n) => (n.id === id ? { ...n, readAt: 99 } : n))
+})
 vi.mock('./api', () => ({
-  api: { sync: (...args: unknown[]) => syncCalls(...(args as [])) },
+  api: {
+    sync: (...args: unknown[]) => syncCalls(...(args as [])),
+    listNotifications: () => listNotifications(),
+    readNotification: (id: string) => readNotification(id),
+  },
   ApiError: class ApiError extends Error {
     constructor(public status: number, public code: string, message: string) {
       super(message)
@@ -17,6 +27,8 @@ import { db, getMeta, setMeta } from './db'
 import { useDatabase } from './db'
 import { applyOps, mutate, resetDeviceId } from './ops'
 import { ApiError } from './api'
+import { markTaskNotificationsRead, unreadCount, unreadNotifications } from './notifications'
+import { describeRejected } from './sharing'
 import { dismissRejected, startSync, stopSync, syncNow, syncSnapshot } from './sync'
 
 /** Minimal stand-in for the browser's EventSource with manual event injection. */
@@ -96,6 +108,9 @@ beforeEach(() => {
   resetDeviceId()
   FakeEventSource.instances = []
   syncCalls.mockClear()
+  listNotifications.mockClear()
+  readNotification.mockClear()
+  serverNotifications.value = []
   serverCursor.value = 5
   vi.stubGlobal('EventSource', FakeEventSource)
   vi.stubGlobal('window', new EventTarget())
@@ -458,5 +473,68 @@ describe('project sharing', () => {
     expect(notice?.tasks).toContain('Oat milk')
     dismissRejected()
     expect(syncSnapshot().rejected).toBeNull()
+  })
+})
+
+describe('notifications', () => {
+  const assigned = (id: string, taskId: string, createdAt: number) => ({
+    id, kind: 'assigned', createdAt, readAt: null,
+    payload: { assigneeId: 'bob', actorId: 'alice', actorName: 'Alice', taskId, taskTitle: 'Milk', projectId: 'p', projectName: 'Home', at: createdAt },
+  })
+
+  it('caches notifications and counts unread', async () => {
+    syncCalls.mockImplementation(async () => ({ applied: 0, ops: [], cursor: serverCursor.value, hasMore: false, serverTime: Date.now() }))
+    serverNotifications.value = [assigned('n1', 't1', 10), assigned('n2', 't2', 20)]
+    // The first exchange of a session fetches the list even without new ops.
+    await syncNow()
+    expect(listNotifications).toHaveBeenCalledTimes(1)
+    expect(await unreadCount()).toBe(2)
+    expect((await unreadNotifications()).map((n) => n.id)).toEqual(['n2', 'n1'])
+    // A quiet exchange does not fetch again; one that brings ops does.
+    await syncNow()
+    expect(listNotifications).toHaveBeenCalledTimes(1)
+    serverNotifications.value = [assigned('n3', 't3', 30), ...serverNotifications.value]
+    syncCalls.mockImplementationOnce((async () => ({
+      applied: 0, cursor: 6, hasMore: false, serverTime: Date.now(),
+      ops: [{ id: 'a1', entity: 'task', entityId: 't3', field: 'assignee_id', value: 'bob', ts: 5, device: 'alice-dev', seq: 6 }],
+    })) as never)
+    await syncNow()
+    expect(listNotifications).toHaveBeenCalledTimes(2)
+    expect(await unreadCount()).toBe(3)
+    // Opening a task marks its notifications read locally at once, then on the server.
+    vi.stubGlobal('navigator', { onLine: false })
+    readNotification.mockRejectedValueOnce(new TypeError('offline'))
+    expect(await markTaskNotificationsRead('t1')).toBe(1)
+    expect(await unreadCount()).toBe(2)
+    await settle()
+    // Still read after a refresh that happens before the server confirmed it...
+    vi.stubGlobal('navigator', { onLine: true })
+    syncCalls.mockImplementationOnce((async () => ({
+      applied: 0, cursor: 7, hasMore: false, serverTime: Date.now(),
+      ops: [{ id: 'a2', entity: 'task', entityId: 't9', field: 'title', value: 'x', ts: 6, device: 'alice-dev', seq: 7 }],
+    })) as never)
+    await syncNow()
+    expect(readNotification).toHaveBeenCalledWith('n1')
+    expect(await unreadCount()).toBe(2)
+    expect((serverNotifications.value.find((n) => n.id === 'n1') as { readAt: number | null }).readAt).toBe(99)
+    // ...and the server state wins once confirmed.
+    expect((await db.notifications.get('n1'))?.readPending).toBeFalsy()
+  })
+
+  it('a refused assignment falls back to unassigned with a membership notice', async () => {
+    await applyOps([
+      { id: 'w1', entity: 'task', entityId: 't1', field: 'project_id', value: 'p1', ts: 1, device: 'alice-dev' },
+      { id: 'w2', entity: 'project', entityId: 'p1', field: 'name', value: 'Home', ts: 1, device: 'alice-dev' },
+    ])
+    await mutate('task', 't1', { assignee_id: 'bob' })
+    syncCalls.mockImplementationOnce((async (...args: unknown[]) => ({
+      applied: 0, ops: [], cursor: 5, hasMore: false, serverTime: Date.now(),
+      rejected: (args[2] as { id: string }[]).map((o) => ({ id: o.id, reason: 'not_a_member' })),
+    })) as never)
+    await syncNow()
+    expect((await db.tasks.get('t1'))?.assignee_id).toBeNull()
+    const notice = syncSnapshot().rejected
+    expect(notice?.assignments).toBe(1)
+    expect(describeRejected(notice!)).toMatch(/no longer a member of Home/)
   })
 })
