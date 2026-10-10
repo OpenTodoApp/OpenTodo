@@ -96,6 +96,58 @@ describe('notes editor core', () => {
     expect(renderMarkdown(pmToModel(state.doc))).toBe('- [x] buy milk')
   })
 
+  describe('keyboard and input rules (headless view)', () => {
+    // A minimal stand-in for EditorView: what keymap and inputRules handlers use.
+    function fakeView(state: EditorState) {
+      const v = {
+        state, composing: false,
+        dispatch: (tr: import('prosemirror-state').Transaction) => (v.state = v.state.apply(tr)),
+        someProp: () => undefined,
+      }
+      return v
+    }
+    const press = (v: ReturnType<typeof fakeView>, key: string, mods: { ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean; metaKey?: boolean } = {}) => {
+      const ev = { key, keyCode: 0, ctrlKey: false, shiftKey: false, altKey: false, metaKey: false, ...mods } as unknown as KeyboardEvent
+      return v.state.plugins.some((pl) => pl.props.handleKeyDown?.call(pl, v as never, ev))
+    }
+    const typeText = (v: ReturnType<typeof fakeView>, text: string) => {
+      for (const ch of text) {
+        const { from, to } = v.state.selection
+        const handled = v.state.plugins.some((pl) => (pl.props.handleTextInput as ((...a: unknown[]) => boolean) | undefined)?.call(pl, v, from, to, ch, () => v.state.tr.insertText(ch, from, to)))
+        if (!handled) v.dispatch(v.state.tr.insertText(ch, from, to))
+      }
+    }
+    const md = (v: ReturnType<typeof fakeView>) => renderMarkdown(pmToModel(v.state.doc))
+
+    it('the bold shortcut bolds the selection', () => {
+      const v = fakeView(createState([p('make this bold')], hooks()))
+      v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, 11, 15)))
+      expect(press(v, 'b', { ctrlKey: true }) || press(v, 'b', { metaKey: true })).toBe(true)
+      expect(md(v)).toBe('make this **bold**')
+    })
+
+    it('"- " starts a bullet, "1. " a numbered list, "# " a heading, "[ ] " a check item', () => {
+      let v = fakeView(createState([p('')], hooks()))
+      typeText(v, '- item')
+      expect(md(v)).toBe('- item')
+      v = fakeView(createState([p('')], hooks()))
+      typeText(v, '1. first')
+      expect(md(v)).toBe('1. first')
+      v = fakeView(createState([p('')], hooks()))
+      typeText(v, '## Title')
+      expect(md(v)).toBe('## Title')
+      v = fakeView(createState([p('')], hooks()))
+      typeText(v, '- [ ] task')
+      expect(md(v)).toBe('- [ ] task')
+    })
+
+    it('inline Markdown typed becomes marks', () => {
+      const v = fakeView(createState([p('')], hooks()))
+      typeText(v, 'a **bold** and `code` and ~~gone~~ and *em*')
+      expect(md(v)).toBe('a **bold** and `code` and ~~gone~~ and _em_')
+    })
+  })
+
   it('pasted Markdown keeps its structure', () => {
     const slice = markdownSlice('# Title\n\n- **a**\n- b')
     expect(slice.content.firstChild?.type).toBe(schema.nodes.heading)

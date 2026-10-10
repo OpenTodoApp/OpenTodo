@@ -10,6 +10,7 @@ import { applyOps, createTask, foldNote, getDeviceId, mutate, resetDeviceId, upd
 import { activeBody, decodeDoc, encodeDoc, foldText, newDoc, projectDoc, toModel, updateBody, type RNode } from './richtext'
 import type { Op, Task } from './types'
 import { wins } from './hlc'
+import { publishEncryption } from './e2ee'
 
 class Server {
   log: (Op & { seq: number })[] = []
@@ -315,6 +316,22 @@ describe('rich-text notes: data layer', () => {
     await expect(editNote(a, id, () => [para(s)])).rejects.toBeInstanceOf(DocTooLargeError)
     expect(await on(a, () => db.outbox.count())).toBe(before)
     expect((await read(a, id)).notes_doc).toBe('')
+  })
+
+  it('with end-to-end encryption the document has its own cap, the projection the 48 KB text cap', async () => {
+    const a = device('a')
+    const id = await on(a, () => createTask({ title: 't' }))
+    publishEncryption({ enabled: true })
+    try {
+      // ~20 KB of text: fine for both caps.
+      await editNote(a, id, () => Array.from({ length: 400 }, (_, i) => para(`line ${i} ${'x'.repeat(40)}`)))
+      expect((await read(a, id)).notes_doc?.length).toBeGreaterThan(20_000)
+      // ~60 KB of text: the projection could not be encrypted within the value limit.
+      await expect(editNote(a, id, () => Array.from({ length: 1200 }, (_, i) => para(`line ${i} ${'y'.repeat(40)}`)))).rejects.toThrow()
+      expect((await read(a, id)).description).toContain('x'.repeat(40))
+    } finally {
+      publishEncryption({ enabled: false })
+    }
   })
 
   it('document ops stay out of the activity log', async () => {
