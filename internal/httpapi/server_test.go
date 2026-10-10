@@ -261,3 +261,94 @@ func TestLoginRateLimit(t *testing.T) {
 		t.Fatalf("expected 429 after repeated failures, got %d", last)
 	}
 }
+
+// subtaskEnv registers an owner and builds "Plan trip" > "Hotel" > "Compare prices" in one project.
+func subtaskEnv(t *testing.T) (e *env, projectID, trip, hotel, compare string) {
+	t.Helper()
+	e = newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Travel", "color": "#10b981"})
+	e.mustStatus(resp, 201, out)
+	projectID = out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Plan trip", "project_id": projectID})
+	e.mustStatus(resp, 201, out)
+	trip = out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Hotel", "project_id": projectID, "parent_id": trip})
+	e.mustStatus(resp, 201, out)
+	hotel = out["id"].(string)
+	if out["parent_id"] != trip {
+		t.Fatalf("created parent_id = %v", out["parent_id"])
+	}
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Compare prices", "project_id": projectID, "parent_id": hotel})
+	e.mustStatus(resp, 201, out)
+	compare = out["id"].(string)
+	return e, projectID, trip, hotel, compare
+}
+
+func TestTaskParentRejectsCycle(t *testing.T) {
+	e, _, trip, hotel, compare := subtaskEnv(t)
+	for _, bad := range []string{hotel, compare, trip} {
+		resp, out := e.do("PATCH", "/api/v1/tasks/"+trip, map[string]any{"parent_id": bad})
+		e.mustStatus(resp, 400, out)
+		if out["error"].(map[string]any)["code"] != "invalid_input" {
+			t.Fatalf("error = %v", out)
+		}
+	}
+	resp, out := e.do("GET", "/api/v1/tasks/"+trip, nil)
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != nil {
+		t.Fatalf("parent changed: %v", out["parent_id"])
+	}
+	// Unknown and deleted parents are refused too; a legal move is accepted.
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+compare, map[string]any{"parent_id": "nope"})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+compare, map[string]any{"parent_id": trip})
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != trip {
+		t.Fatalf("legal move: %v", out)
+	}
+	resp, out = e.do("DELETE", "/api/v1/tasks/"+hotel, nil)
+	e.mustStatus(resp, 204, out)
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+compare, map[string]any{"parent_id": hotel})
+	e.mustStatus(resp, 400, out)
+}
+
+func TestTaskParentMustShareProject(t *testing.T) {
+	e, projectID, trip, hotel, _ := subtaskEnv(t)
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Inbox item"})
+	e.mustStatus(resp, 201, out)
+	inboxTask := out["id"].(string)
+
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+inboxTask, map[string]any{"parent_id": trip})
+	e.mustStatus(resp, 400, out)
+	if out["error"].(map[string]any)["code"] != "invalid_input" {
+		t.Fatalf("error = %v", out)
+	}
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Stray", "parent_id": trip})
+	e.mustStatus(resp, 400, out)
+	// Setting the project in the same patch satisfies the rule.
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+inboxTask, map[string]any{"parent_id": trip, "project_id": projectID})
+	e.mustStatus(resp, 200, out)
+	// Clearing the parent is always allowed.
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+hotel, map[string]any{"parent_id": nil})
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != nil {
+		t.Fatalf("cleared parent = %v", out["parent_id"])
+	}
+}
+
+func TestTaskParentRequiresAuth(t *testing.T) {
+	e, _, trip, hotel, _ := subtaskEnv(t)
+	bare := &env{t: t, srv: e.srv, client: &http.Client{}}
+	resp, out := bare.do("PATCH", "/api/v1/tasks/"+hotel, map[string]any{"parent_id": nil})
+	bare.mustStatus(resp, 401, out)
+	if out["error"].(map[string]any)["code"] != "unauthorized" {
+		t.Fatalf("error = %v", out)
+	}
+	resp, out = e.do("GET", "/api/v1/tasks/"+hotel, nil)
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != trip {
+		t.Fatalf("parent changed without auth: %v", out["parent_id"])
+	}
+}

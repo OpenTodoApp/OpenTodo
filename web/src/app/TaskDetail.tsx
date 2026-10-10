@@ -1,8 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
-import { deleteTask, setTaskCompleted, updateTask } from '../lib/ops'
-import type { Priority, Project } from '../lib/types'
+import { createSubtask, deleteTask, setTaskCompleted, setTaskParent, updateTask } from '../lib/ops'
+import { progressOf } from '../lib/subtasks'
+import { descendants } from '../lib/tree'
+import type { Priority, Project, Task } from '../lib/types'
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 1, label: 'P1', cls: 'text-red-600 border-red-500' },
@@ -11,10 +13,33 @@ const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 4, label: 'P4', cls: 'text-slate-500 border-slate-400' },
 ]
 
-export function TaskDetail({ taskId, projects, onClose }: { taskId: string; projects: Project[]; onClose: () => void }) {
+export function TaskDetail({ taskId, projects, onClose, onOpen, onToggleComplete }: {
+  taskId: string
+  projects: Project[]
+  onClose: () => void
+  /** Open another task in the panel (a subtask or the parent). */
+  onOpen?: (id: string) => void
+  /** Complete / reopen through the list so the "complete parent too" prompt can follow. */
+  onToggleComplete?: (task: Task) => void
+}) {
   const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [parentError, setParentError] = useState<string | null>(null)
+
+  // Open, non-deleted tasks of the same project: the candidates for the parent picker.
+  const projectId = task?.project_id ?? null
+  const candidates = useLiveQuery(
+    () => db.tasks.filter((t) => !t.deleted_at && !t.completed_at && t.project_id === projectId).sortBy('position'),
+    [projectId], [] as Task[],
+  )
+  const children = useLiveQuery(
+    () => db.tasks.where('parent_id').equals(taskId).filter((t) => !t.deleted_at).sortBy('position'),
+    [taskId], [] as Task[],
+  )
+  const parent = useLiveQuery(() => (task?.parent_id ? db.tasks.get(task.parent_id) : undefined), [task?.parent_id])
+  const excluded = useMemo(() => descendants(taskId, candidates), [taskId, candidates])
+  const progress = useMemo(() => progressOf({ id: taskId }, children), [taskId, children])
 
   useEffect(() => {
     if (task) {
@@ -22,6 +47,8 @@ export function TaskDetail({ taskId, projects, onClose }: { taskId: string; proj
       setDescription(task.description)
     }
   }, [task?.id, task?.title, task?.description]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => setParentError(null), [taskId])
 
   if (!task) return null
 
@@ -33,18 +60,38 @@ export function TaskDetail({ taskId, projects, onClose }: { taskId: string; proj
   const commitDescription = () => {
     if (description !== task.description) void updateTask(task.id, { description })
   }
+  const toggle = (t: Task) => (onToggleComplete ? onToggleComplete(t) : void setTaskCompleted(t.id, !t.completed_at))
+  const changeParent = async (value: string) => {
+    setParentError(null)
+    try {
+      await setTaskParent(task.id, value || null)
+    } catch (err) {
+      setParentError(err instanceof Error ? err.message : String(err))
+    }
+  }
 
   return (
     <aside className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950 md:static md:shadow-none">
       <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-2 dark:border-slate-800">
-        <button className="btn-ghost text-xs" onClick={() => void setTaskCompleted(task.id, !task.completed_at)}>
+        <button className="btn-ghost text-xs" onClick={() => toggle(task)}>
           {task.completed_at ? '↶ Reopen' : '✓ Complete'}
         </button>
+        {progress.total > 0 && (
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-500 dark:bg-slate-800 dark:text-slate-400" title="Completed subtasks">
+            {progress.done}/{progress.total}
+          </span>
+        )}
         <div className="flex-1" />
         <button className="btn-danger text-xs" onClick={() => { void deleteTask(task.id); onClose() }}>Delete</button>
         <button className="btn-ghost" onClick={onClose} aria-label="Close">✕</button>
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        {parent && (
+          <button type="button" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(parent.id)} title="Open parent task">
+            ↳ {parent.title || 'Untitled'}
+            {parent.deleted_at ? ' (deleted)' : parent.completed_at && !task.completed_at ? ' (completed)' : ''}
+          </button>
+        )}
         <input
           className="w-full bg-transparent text-lg font-medium focus:outline-none"
           value={title}
@@ -69,6 +116,21 @@ export function TaskDetail({ taskId, projects, onClose }: { taskId: string; proj
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+          {children.length > 0 && <p className="mt-1 text-xs text-slate-400">Moving this task moves its {children.length === 1 ? 'subtask' : 'subtasks'} too.</p>}
+        </Field>
+
+        <Field label="Parent task">
+          <select className="input" aria-label="Parent task" value={task.parent_id ?? ''} onChange={(e) => void changeParent(e.target.value)}>
+            <option value="">No parent</option>
+            {/* Keep the current parent selectable even when it is completed, deleted or elsewhere. */}
+            {task.parent_id && !candidates.some((c) => c.id === task.parent_id && !excluded.has(c.id)) && (
+              <option value={task.parent_id}>{parent?.title || 'Untitled'}{parent?.completed_at ? ' (completed)' : parent?.deleted_at ? ' (deleted)' : ''}</option>
+            )}
+            {candidates.filter((c) => c.id !== task.id && !excluded.has(c.id)).map((c) => (
+              <option key={c.id} value={c.id}>{c.title || 'Untitled'}</option>
+            ))}
+          </select>
+          {parentError && <p className="mt-1 text-xs text-red-600">{parentError}</p>}
         </Field>
 
         <Field label="Priority">
@@ -90,12 +152,61 @@ export function TaskDetail({ taskId, projects, onClose }: { taskId: string; proj
           </div>
         </Field>
 
+        <Field label={progress.total > 0 ? `Subtasks · ${progress.done}/${progress.total}` : 'Subtasks'}>
+          <ul className="mb-2 space-y-0.5" aria-label="Subtasks">
+            {children.map((c) => (
+              <li key={c.id} className="flex items-center gap-2 rounded px-1 py-1 hover:bg-slate-50 dark:hover:bg-slate-900">
+                <button
+                  type="button"
+                  aria-label={c.completed_at ? `Reopen ${c.title}` : `Complete ${c.title}`}
+                  onClick={() => toggle(c)}
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 text-[10px] ${c.completed_at ? 'border-slate-400 bg-slate-400 text-white' : 'border-slate-300 hover:bg-emerald-100 dark:border-slate-600'}`}
+                >
+                  {c.completed_at ? '✓' : ''}
+                </button>
+                <button type="button" className={`min-w-0 flex-1 truncate text-left text-sm ${c.completed_at ? 'text-slate-400 line-through' : ''}`} onClick={() => onOpen?.(c.id)}>
+                  {c.title || <span className="italic text-slate-400">Untitled</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <AddSubtask parent={task} />
+        </Field>
+
         <p className="pt-4 text-xs text-slate-400">
           Created {new Date(task.created_at).toLocaleString()}
           {task.completed_at && <> · Completed {new Date(task.completed_at).toLocaleString()}</>}
         </p>
       </div>
     </aside>
+  )
+}
+
+/** "Add subtask" input: creates on Enter and stays focused for the next entry. */
+function AddSubtask({ parent }: { parent: Task }) {
+  const [value, setValue] = useState('')
+  const ref = useRef<HTMLInputElement>(null)
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    const title = value.trim()
+    if (!title) return
+    setValue('')
+    await createSubtask(parent.id, title)
+    ref.current?.focus()
+  }
+  return (
+    <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2">
+      <span className="text-emerald-600">+</span>
+      <input
+        ref={ref}
+        className="input py-1"
+        placeholder="Add subtask…"
+        aria-label="Add subtask"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLInputElement).blur() }}
+      />
+    </form>
   )
 }
 
