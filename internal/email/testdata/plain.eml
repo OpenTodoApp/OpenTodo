@@ -1,0 +1,22 @@
+Return-Path: <alice@example.org>
+Delivered-To: todo@example.com
+Received: from mx.example.org (mx.example.org [192.0.2.10])
+	by mail.example.com with ESMTPS id 4Xyz;
+	Fri, 09 Oct 2026 08:15:02 +0000
+Message-ID: <plain-1@example.org>
+Date: Fri, 9 Oct 2026 10:15:00 +0200
+From: Alice Example <alice@example.org>
+To: "My Todo" <todo+SECRET@example.com>
+Subject: Re: Call the plumber
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Hi,
+
+can you call the plumber before Friday? The number is 555-0100.
+
+
+
+Thanks
+Alice

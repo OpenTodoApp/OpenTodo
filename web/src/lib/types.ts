@@ -565,6 +565,7 @@ export const AUDIT_EVENT_NAMES = [
   'mfa.enrolled', 'mfa.disabled', 'mfa.reset', 'mfa.challenge_failed',
   'passkey.registered', 'passkey.deleted',
   'token.created', 'token.revoked', 'app_password.created', 'app_password.revoked',
+  'email_inbox.created', 'email_inbox.rotated', 'email_inbox.updated',
   'invitation.created', 'invitation.accepted', 'invitation.revoked',
   'role.changed', 'settings.changed',
   'identity.linked', 'identity.unlinked',
