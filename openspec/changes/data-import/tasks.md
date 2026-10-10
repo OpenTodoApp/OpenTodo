@@ -3,7 +3,7 @@
 ## 1. Importer core (Go)
 
 - [x] 1.1 `internal/importer`: `Row` model, `Options`, `Profile` interface, format detection order (own export, JSON profiles, CSV) and user override; verify `TestDetectFormat` covers each profile and the `unsupported_format` case (`go test ./...`)
-- [ ] 1.2 `opentodo` profile: read export v1 including tombstones and ids, map projects then tasks; verify `TestRoundTripExportImportExport` produces an equivalent export (`go test ./...`)
+- [x] 1.2 `opentodo` profile: read export v1 including tombstones and ids, map projects then tasks; verify `TestRoundTripExportImportExport` produces an equivalent export (`go test ./...`)
 - [x] 1.3 `csv` profile: streamed reader, header mapping for the documented columns, priority and date parsing, per-row errors with row numbers; verify `TestCSVMappingAndRowErrors` (`go test ./...`)
 - [x] 1.4 Foreign JSON profiles with fixtures in `internal/importer/testdata/`, mapping projects, sections, subtasks, labels, priority, due, completion, and warnings for dropped attributes; verify one `TestProfile_<name>` per profile asserting the normalised rows (`go test ./...`)
 - [x] 1.5 Normalisation: project matching by name, section→label option, parent resolution independent of row order, time-zone conversion of zoned date-times to floating values; verify `TestResolveParentsAnyOrder`, `TestZonedDueBecomesFloating` (`go test ./...`)
@@ -18,8 +18,8 @@
 
 ## 3. HTTP API
 
-- [ ] 3.1 Routes `POST /api/v1/import/preview`, `POST /api/v1/import`, `GET /api/v1/import/jobs`, `GET /api/v1/import/jobs/{id}`, `POST /api/v1/import/jobs/{id}/undo` behind `requireAuth`, multipart upload, per-route body limit from `OPENTODO_IMPORT_MAX_MB`; verify `TestImportRoutesRequireAuth`, `TestImportTooLarge413`, `TestImportInvalidOptions400`, `TestUndoForeignJob404` (`go test ./...`)
-- [ ] 3.2 `internal/config`: optional `OPENTODO_IMPORT_MAX_MB` (default 20, 1–200) with validation; verify `TestConfigImportMaxMB` and that an invalid value stops startup naming the variable (`go test ./...`)
+- [x] 3.1 Routes `POST /api/v1/import/preview`, `POST /api/v1/import`, `GET /api/v1/import/jobs`, `GET /api/v1/import/jobs/{id}`, `POST /api/v1/import/jobs/{id}/undo` behind `requireAuth`, multipart upload, per-route body limit from `OPENTODO_IMPORT_MAX_MB`; verify `TestImportRoutesRequireAuth`, `TestImportTooLarge413`, `TestImportInvalidOptions400`, `TestUndoForeignJob404` (`go test ./...`)
+- [x] 3.2 `internal/config`: optional `OPENTODO_IMPORT_MAX_MB` (default 20, 1–200) with validation; verify `TestConfigImportMaxMB` and that an invalid value stops startup naming the variable (`go test ./...`)
 - [ ] 3.3 Document routes, payloads and the CSV contract in `docs/api.md` and new `docs/import.md` (columns, profiles, limits, undo, memory note); verify examples match handler routes by running them with curl against `./bin/opentodo`
 
 ## 4. Web app

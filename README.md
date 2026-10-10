@@ -121,6 +121,7 @@ All settings are environment variables with safe defaults. See [`.env.example`](
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner exists. Prefer [invitations](#adding-people) |
 | `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `OPENTODO_IMPORT_MAX_MB` | `20` | Largest file accepted by [import](docs/import.md), 1–200 |
 
 ## Adding people
 

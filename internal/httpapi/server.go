@@ -17,6 +17,7 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/importer"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -34,6 +35,8 @@ type Server struct {
 	limiter *rateLimiter
 	// inviteLimiter caps invitation creation per account (20/hour).
 	inviteLimiter *rateLimiter
+	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
+	importer *importer.Service
 
 	clockMu sync.Mutex
 	lastTS  int64
@@ -53,7 +56,8 @@ func (s *Server) opTS() int64 {
 // New builds the router. web may be nil when only the API is wanted (tests).
 func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) http.Handler {
 	s := &Server{cfg: cfg, auth: authSvc, sync: syncSvc, web: web, log: log, version: version,
-		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour)}
+		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
+		importer: importer.New(syncSvc.DB(), syncSvc, log)}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", s.handleHealth)
@@ -76,6 +80,12 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
+	// Import (OpenSpec `data-import`): literal patterns win over the {collection} routes.
+	mux.Handle("POST /api/v1/import/preview", s.requireAuth(s.handleImportPreview))
+	mux.Handle("POST /api/v1/import", s.requireAuth(s.handleImportStart))
+	mux.Handle("GET /api/v1/import/jobs", s.requireAuth(s.handleImportJobs))
+	mux.Handle("GET /api/v1/import/jobs/{id}", s.requireAuth(s.handleImportJob))
+	mux.Handle("POST /api/v1/import/jobs/{id}/undo", s.requireAuth(s.handleImportUndo))
 	mux.Handle("GET /api/v1/{collection}", s.requireAuth(s.handleList))
 	mux.Handle("POST /api/v1/{collection}", s.requireAuth(s.handleCreate))
 	mux.Handle("GET /api/v1/{collection}/{id}", s.requireAuth(s.handleGet))

@@ -21,6 +21,11 @@ func NewService(db *sql.DB) *Service {
 	return &Service{db: db, now: time.Now, notifier: NewNotifier()}
 }
 
+// DB returns the database the op log lives in, for packages that keep their own
+// operational tables next to it (import jobs). Entity data must still be written
+// through Apply only.
+func (s *Service) DB() *sql.DB { return s.db }
+
 // Notifier returns the live-update fan-out for this service. Callers of Apply
 // use it to wake the user's other devices once a batch has been committed.
 func (s *Service) Notifier() *Notifier { return s.notifier }
