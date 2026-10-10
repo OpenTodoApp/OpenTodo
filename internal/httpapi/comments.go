@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,6 +26,8 @@ func (s *Server) registerCommentRoutes(mux *http.ServeMux) {
 	mux.Handle("DELETE /api/v1/comments/{id}", s.requireAuth(s.handleDeleteComment))
 	mux.Handle("GET /api/v1/tasks/{id}/activity", s.requireAuth(s.activityHandler("task")))
 	mux.Handle("GET /api/v1/projects/{id}/activity", s.requireAuth(s.activityHandler("project")))
+	// Cross-project feed (OpenSpec change `activity-feed`).
+	mux.Handle("GET /api/v1/activity", s.requireAuth(s.handleFeed))
 }
 
 func (s *Server) handleListComments(w http.ResponseWriter, r *http.Request) {
@@ -216,24 +219,71 @@ const (
 )
 
 // apiEvent is an activity event plus display names resolved by the server.
+// ProjectID and ProjectName are set by the feed route (activity-feed) only.
 type apiEvent struct {
 	activity.Event
-	ActorName string `json:"actorName,omitempty"`
-	TaskTitle string `json:"taskTitle,omitempty"`
+	ActorName   string `json:"actorName,omitempty"`
+	TaskTitle   string `json:"taskTitle,omitempty"`
+	ProjectID   string `json:"projectId,omitempty"`
+	ProjectName string `json:"projectName,omitempty"`
+}
+
+// activityLimit reads the optional limit parameter of the activity routes; ok
+// is false after it wrote the 400.
+func activityLimit(w http.ResponseWriter, r *http.Request) (int, bool) {
+	v := r.URL.Query().Get("limit")
+	if v == "" {
+		return ActivityPageSize, true
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 1 || n > ActivityMaxPageSize {
+		writeError(w, http.StatusBadRequest, "invalid_input", "limit must be an integer from 1 to "+strconv.Itoa(ActivityMaxPageSize))
+		return 0, false
+	}
+	return n, true
+}
+
+func toActivityOps(ops []opsync.Op) []activity.Op {
+	in := make([]activity.Op, len(ops))
+	for i, o := range ops {
+		in[i] = activity.Op{ID: o.ID, Seq: o.Seq, Actor: o.Actor, Entity: o.Entity, EntityID: o.EntityID, Field: o.Field, Value: o.Value, TS: o.TS, Device: o.Device}
+	}
+	return in
+}
+
+// labelEvents resolves actor names and task titles for one page of events.
+func (s *Server) labelEvents(ctx context.Context, uid string, page []activity.Event) []apiEvent {
+	actors := make([]string, 0, len(page))
+	for _, e := range page {
+		actors = append(actors, e.Actor)
+	}
+	names := s.sync.UserNames(ctx, actors)
+	titles := map[string]string{}
+	out := make([]apiEvent, len(page))
+	for i, e := range page {
+		out[i] = apiEvent{Event: e, ActorName: names[e.Actor]}
+		if e.TaskID == "" {
+			continue
+		}
+		title, seen := titles[e.TaskID]
+		if !seen {
+			if t, err := s.sync.Get(ctx, uid, "task", e.TaskID); err == nil && t != nil {
+				_ = json.Unmarshal(t["title"], &title)
+			}
+			titles[e.TaskID] = title
+		}
+		out[i].TaskTitle = title
+	}
+	return out
 }
 
 func (s *Server) activityHandler(entity string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		uid := userFrom(ctx).ID
-		limit := ActivityPageSize
-		if v := r.URL.Query().Get("limit"); v != "" {
-			n, err := strconv.Atoi(v)
-			if err != nil || n < 1 || n > ActivityMaxPageSize {
-				writeError(w, http.StatusBadRequest, "invalid_input", "limit must be an integer from 1 to "+strconv.Itoa(ActivityMaxPageSize))
-				return
-			}
-			limit = n
+		limit, ok := activityLimit(w, r)
+		if !ok {
+			return
 		}
 		ops, err := s.sync.ActivityOps(ctx, uid, entity, r.PathValue("id"))
 		if errors.Is(err, opsync.ErrNotFound) {
@@ -244,38 +294,14 @@ func (s *Server) activityHandler(entity string) http.HandlerFunc {
 			s.internal(w, err)
 			return
 		}
-		in := make([]activity.Op, len(ops))
-		for i, o := range ops {
-			in[i] = activity.Op{ID: o.ID, Seq: o.Seq, Actor: o.Actor, Entity: o.Entity, EntityID: o.EntityID, Field: o.Field, Value: o.Value, TS: o.TS, Device: o.Device}
-		}
-		events := activity.Derive(in, nil)
+		events := activity.Derive(toActivityOps(ops), nil)
 		activity.Newest(events)
 		page, next, err := activity.Page(events, r.URL.Query().Get("before"), limit)
 		if errors.Is(err, activity.ErrBadCursor) {
 			writeError(w, http.StatusBadRequest, "invalid_input", "before must be a cursor returned by this route")
 			return
 		}
-		actors := make([]string, 0, len(page))
-		for _, e := range page {
-			actors = append(actors, e.Actor)
-		}
-		names := s.sync.UserNames(ctx, actors)
-		titles := map[string]string{}
-		out := make([]apiEvent, len(page))
-		for i, e := range page {
-			out[i] = apiEvent{Event: e, ActorName: names[e.Actor]}
-			if e.TaskID == "" {
-				continue
-			}
-			title, seen := titles[e.TaskID]
-			if !seen {
-				if t, err := s.sync.Get(ctx, uid, "task", e.TaskID); err == nil && t != nil {
-					_ = json.Unmarshal(t["title"], &title)
-				}
-				titles[e.TaskID] = title
-			}
-			out[i].TaskTitle = title
-		}
+		out := s.labelEvents(ctx, uid, page)
 		resp := map[string]any{"events": out, "more": next != ""}
 		if next != "" {
 			resp["cursor"] = next

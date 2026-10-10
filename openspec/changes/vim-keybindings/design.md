@@ -80,7 +80,8 @@ Additive, client-only. Rollback is removing the setting; the `localStorage` key 
 | --- | --- | --- |
 | `1`–`4` | Priority at once | A digit starts a count. A lone `1`–`4` still sets the priority, after 1 s, or at once when the next key is not a motion (`2` then `c` = priority 2, then complete). `2j` is a count. |
 | `j` / `k` / arrows | Move one row | Unchanged without a count (the default handler runs). With a count the layer moves N rows (within the column on a board). |
-| `g` + key | Navigation | Unchanged; only `g g` is new (see "`g` timing"). |
+| `g` + key | Navigation | Unchanged, including `g h` (Activity feed, added by `activity-feed`); only `g g` is new (see "`g` timing"). |
+| Feed, Trash, calendar, Filter, dashboards | Their own `j`/`k`/Enter/arrow keys | Unchanged: these views register no list state, so the layer passes every key through there except `:` (and Escape in a field). |
 | `a` | Add a subtask | Unchanged. The proposal's "`i`/`a` open the panel" is narrowed to `i`, since `a` already enters Insert mode. Spec delta updated. |
 | `O` (Shift+O) | Recurring task: this occurrence only | Unchanged; the proposal's `O` (open above) is not implemented. |
 | `H` / `L` (Shift) | Project activity / labels | Unchanged; the proposal's "`H`/`L`-style panel focus" is not implemented. |

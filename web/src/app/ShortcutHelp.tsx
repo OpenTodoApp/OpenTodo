@@ -44,6 +44,7 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
     ['g then i / t / u / c / l / f / v / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings'],
     ['g then a', 'Go to Assigned to me'],
     ['g then x', 'Go to the Trash'],
+    ['g then h', 'Go to Activity: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters)'],
     ['j / k, r, Delete (in the Trash)', 'Select, restore, delete permanently (Enter confirms, Esc cancels)'],
     ['Enter (after completing the last task of a project)', 'Archive the project; any other key dismisses'],
     ['g then Shift+I', 'Go to Settings → Import data'],

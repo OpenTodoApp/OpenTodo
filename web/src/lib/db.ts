@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, Reminder, Section, Task, View } from './types'
+import type { ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -31,6 +31,8 @@ class OpenTodoDB extends Dexie {
    * never synced. Events are derived from these rows at read time (lib/activity).
    */
   activity!: Table<ActivityEntry, string>
+  /** Personal per-project preferences (activity-feed): the synced `project_prefs` entity, keyed by project id. */
+  prefs!: Table<ProjectPrefs, string>
   outbox!: Table<OutboxOp, number>
   meta!: Table<Meta, string>
 
@@ -130,6 +132,24 @@ class OpenTodoDB extends Dexie {
       comments: 'id, task_id',
       activity: 'id, [projectKey+ts], taskId, entityId',
     })
+    // v12 (activity-feed): personal per-project preferences (`project_prefs` ops),
+    // keyed by project id. Additive; every store is redeclared. (v11 is reserved
+    // by a parallel change; a database that skips a version upgrades fine.)
+    this.version(12).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+      comments: 'id, task_id',
+      activity: 'id, [projectKey+ts], taskId, entityId',
+      prefs: 'id',
+    })
   }
 }
 
@@ -146,7 +166,7 @@ export function useDatabase(name: string): OpenTodoDB {
  * folds ops into (comments-and-activity); applyOps and mutateMany lock all of them.
  */
 export function entityTables() {
-  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.comments, db.activity]
+  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.comments, db.prefs, db.activity]
 }
 
 export async function getMeta<T>(key: string, fallback: T): Promise<T> {

@@ -149,6 +149,13 @@ export const api = {
   // Activity (comments-and-activity): older events than the device keeps, newest first.
   activity: (entity: 'task' | 'project', id: string, before?: string) =>
     request<ActivityPage>('GET', `/api/v1/${entity}s/${encodeURIComponent(id)}/activity${before ? `?before=${encodeURIComponent(before)}` : ''}`),
+  // Activity feed (activity-feed): events across the caller's shared projects, newest first.
+  feed: (opts: { cursor?: string; project?: string; actor?: string; kind?: string } = {}) => {
+    const q = new URLSearchParams()
+    for (const k of ['cursor', 'project', 'actor', 'kind'] as const) if (opts[k]) q.set(k, opts[k] as string)
+    const s = q.toString()
+    return request<ActivityPage>('GET', `/api/v1/activity${s ? `?${s}` : ''}`)
+  },
   // Web push (OpenSpec change `reminders`). 404 when the operator turned push off.
   pushKey: (device?: string) =>
     request<{ publicKey: string; subscription?: PushSubscriptionStatus | null }>(

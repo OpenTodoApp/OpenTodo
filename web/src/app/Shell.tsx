@@ -12,6 +12,7 @@ import { ViewsView } from './ViewsView'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
 import { TrashView } from './TrashView'
+import { FeedView } from './FeedView'
 import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { SyncStatus } from './SyncStatus'
@@ -105,6 +106,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         }
         if (e.key === 's') navigate({ view: 'settings' })
         if (e.key === 'x') navigate({ view: 'trash' })
+        // `g f` is the Filter view, so the activity feed is `g h` (activity-feed).
+        if (e.key === 'h') navigate({ view: 'feed' })
         // `g i` is the Inbox, so Import is `g` then Shift+I.
         if (e.key === 'I') navigate({ view: 'import' })
         return
@@ -167,6 +170,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <SavedViewRoute id={route.id} />
           ) : route.view === 'trash' ? (
             <TrashView />
+          ) : route.view === 'feed' ? (
+            <FeedView />
           ) : route.view === 'day' || route.view === 'week' ? (
             <CalendarView mode={route.view} date={route.date} />
           ) : (

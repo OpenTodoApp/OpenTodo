@@ -133,6 +133,7 @@ function tableFor(entity: Entity) {
     case 'reminder': return db.reminders
     case 'section': return db.sections
     case 'comment': return db.comments
+    case 'project_prefs': return db.prefs
     default: return db.tasks
   }
 }

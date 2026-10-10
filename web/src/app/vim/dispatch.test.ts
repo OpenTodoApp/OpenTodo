@@ -235,13 +235,13 @@ describe('vim dispatcher', () => {
     expect(b.calls).toEqual(['first', 'nav today'])
   })
 
-  it('g then x, d, s stays Shell navigation', () => {
+  it('g then x, d, s, h stays Shell navigation', () => {
     const { press, defaults } = setup()
-    for (const k of ['x', 'd', 's']) {
+    for (const k of ['x', 'd', 's', 'h']) {
       press('g')
       expect(press(k).stopped).toBe(false)
     }
-    expect(defaults).toEqual(['g', 'x', 'g', 'd', 'g', 's'])
+    expect(defaults).toEqual(['g', 'x', 'g', 'd', 'g', 's', 'g', 'h'])
   })
 
   it('outside task lists only : is taken', () => {
