@@ -30,12 +30,13 @@ OpenTodo is a local-first application with a thin sync server.
 | `backup` | Snapshots (`VACUUM INTO`), tar/gzip archives, `OTBK1` encryption, local / S3 (SigV4) / WebDAV destinations, scheduler, retention, `Restore`; see [backups.md](backups.md) |
 | `auth` | Users, argon2id passwords, sessions, API tokens |
 | `sync` | Op schema and validation, `Apply` (idempotent, LWW), `Pull` (cursor), `List`/`Get` (materialized entities), `Notifier` (per-user live wake-ups); after each committed batch it reports the winning changes to an optional observer |
+| `notify` | Post-commit events for people (OpenSpec `task-assignment`): the `Sink` interface the sync service calls after a batch commits (`Service.AddSink`), and the in-app sink that stores `notifications` rows for `GET /api/v1/notifications`. Further sinks (web push, webhooks) register next to it; a service without sinks emits nothing |
 | `webhook` | Outbound webhooks: maps observed changes to events, durable queue in SQLite, one worker with retries, HMAC signing, SSRF-safe HTTP client. See [webhooks.md](webhooks.md) |
 | `httpapi` | Router, middleware (auth, origin check, security headers, logging), handlers for auth, sync, collections, export, backups (owner only), health |
 | `web` | Embeds the Vite build and serves it with SPA fallback and cache headers |
 | `ids` | UUID v4 and random secrets without external dependencies |
 
-Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log, `user_id` = author, `seq` autoincrement), `op_scopes` (the sharing scope of each op: `user:<id>` or `project:<id>`), `scope_fields` (current winner per field within a scope), `project_scopes` and `project_members` (shared projects and their roles, authorization data outside the op log), `member_backfills` (history replay progress per member device), `invitations`, `settings` (owner key/value policy), `webhooks` and `webhook_deliveries` (queue and delivery log), `backup_runs`; `settings` also holds the log `generation`.
+Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log, `user_id` = author, `seq` autoincrement), `op_scopes` (the sharing scope of each op: `user:<id>` or `project:<id>`), `scope_fields` (current winner per field within a scope), `project_scopes` and `project_members` (shared projects and their roles, authorization data outside the op log), `member_backfills` (history replay progress per member device), `invitations`, `settings` (owner key/value policy), `webhooks` and `webhook_deliveries` (queue and delivery log), `backup_runs`, `notifications` (in-app notifications, account data outside the op log); `settings` also holds the log `generation`.
 
 ### Request flow for a REST write
 

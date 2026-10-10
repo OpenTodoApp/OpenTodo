@@ -12,7 +12,7 @@ Prerequisite: `project-sharing` is archived (scopes, memberships, per-op rejecti
 
 - [x] 2.1 `internal/notify` sink interface, post-commit emission from `Apply` when `assignee != author`, in-app sink writing `notifications`; migration `0003_assignment.sql`; verify `TestAssignmentEmitsNotificationAfterCommit` via `go test ./...`
 - [x] 2.2 `GET /api/v1/notifications` and `POST /api/v1/notifications/{id}/read` behind `requireAuth`, 404 for other users' rows, start-up retention sweep; verify `TestNotificationRoutesAuthAndOwnership` via `go test ./...`
-- [ ] 2.3 Document field, rejection reason and routes in `docs/api.md`; verify examples match handler payloads and `make check` passes
+- [x] 2.3 Document field, rejection reason and routes in `docs/api.md`; verify examples match handler payloads and `make check` passes
 
 ## 3. Client data layer
 
@@ -23,10 +23,10 @@ Prerequisite: `project-sharing` is archived (scopes, memberships, per-op rejecti
 ## 4. Client UI
 
 - [ ] 4.1 Assignee picker in the detail panel from the local membership cache, `a` shortcut, assignee chip on task rows in shared projects; verify browser flow: assign offline, reconnect, second account sees the assignee; `npm run build` succeeds
-- [ ] 4.2 "Assigned to me" view grouped by project with sidebar count and `g a` shortcut, listed in `?`; verify browser flow: view lists tasks offline and completing one updates the count; `npm run build` succeeds
-- [ ] 4.3 Notification badge and list, mark read on opening the task; verify browser flow: assignee sees the unread notification after sync and it clears on open
+- [x] 4.2 "Assigned to me" view grouped by project with sidebar count and `g a` shortcut, listed in `?`; verify browser flow: view lists tasks offline and completing one updates the count; `npm run build` succeeds
+- [x] 4.3 Notification badge and list, mark read on opening the task; verify browser flow: assignee sees the unread notification after sync and it clears on open
 
 ## 5. Integration and docs
 
 - [ ] 5.1 Two-account end-to-end run: assign → notification → remove member → tasks unassigned on both devices → offline assignment to departed member rejected with notice; verify the run finishes with no console errors and `make check` passes
-- [ ] 5.2 Update `README.md`, `docs/architecture.md` (notify sink), `CHANGELOG.md` Unreleased; verify `openspec validate --all --strict` passes
+- [x] 5.2 Update `README.md`, `docs/architecture.md` (notify sink), `CHANGELOG.md` Unreleased; verify `openspec validate --all --strict` passes
