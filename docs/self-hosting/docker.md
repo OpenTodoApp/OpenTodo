@@ -31,6 +31,10 @@ docker run -d --name opentodo \
 
 OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure`, the origin check matches and invitation links point at the public address. The server also honours `X-Forwarded-Host` and `X-Forwarded-For` for the origin check and rate limiting.
 
+### Email to task
+
+[Email to task](../email.md) needs no port, proxy rule or DNS record: OpenTodo makes one outbound IMAP connection (TLS, port 993 by default) to the mailbox you configure with `OPENTODO_EMAIL_*`. If your host restricts outbound traffic, allow that one host and port. Keep the password in a Docker secret and point `OPENTODO_EMAIL_IMAP_PASSWORD_FILE` at it (example in the guide).
+
 ### Calendar apps (CalDAV) through the proxy
 
 When the owner enables [CalDAV](../caldav.md), calendar apps use `/dav/` and `/.well-known/caldav` with WebDAV methods (`PROPFIND`, `REPORT`, `MKCALENDAR`, `PROPPATCH`). Most proxies (Caddy, Traefik, nginx) forward them unchanged; make sure no rule limits methods to GET/POST or blocks `/.well-known/`, and that the `Authorization` header is passed through. App passwords travel in every request, so serve CalDAV over https only.

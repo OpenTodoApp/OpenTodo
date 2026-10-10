@@ -1,0 +1,36 @@
+Message-ID: <fwd-att-1@example.org>
+Date: Fri, 9 Oct 2026 12:00:00 +0200
+From: Alice Example <alice@example.org>
+To: todo+SECRET@example.com
+Subject: =?utf-8?B?RndkOiBUaWNrZXRzIGZvciBLw7ZsbiDwn46f?=
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="b1"
+
+--b1
+Content-Type: text/plain; charset=utf-8
+
+See below.
+--b1
+Content-Type: message/rfc822
+Content-Disposition: attachment; filename="Tickets.eml"
+
+Message-ID: <tickets@events.example>
+From: Events <tickets@events.example>
+Date: Thu, 8 Oct 2026 18:00:00 +0000
+Subject: Your tickets
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="b2"
+
+--b2
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Concert on 2026-11-02, doors 19:30. Seats 12 and 13.=20
+--b2
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="tickets.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQK
+--b2--
+--b1--

@@ -48,6 +48,7 @@ If you prefer not to use compose:
 | `OPENTODO_MCP` | unset | `true` presets the read-only AI assistants (MCP) endpoint on first start; afterwards Settings → AI assistants decides. See [mcp](../mcp.md) |
 | `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | Presets "allow private network targets" for webhooks on first start; afterwards Settings → Webhooks decides. See [webhooks](../webhooks.md#private-network-protection) |
 | `OPENTODO_CALDAV` | unset | `true` presets the CalDAV endpoint for calendar apps on first start; afterwards Settings → Calendar apps decides. See [caldav](../caldav.md) |
+| `OPENTODO_EMAIL_*` | unset | Optional [email to task](../email.md): `ADDRESS`, `IMAP_HOST`, `IMAP_USER` and `IMAP_PASSWORD` together (mark the password as a secret, or mount a file and set `IMAP_PASSWORD_FILE`). Partial settings stop the container at startup with the missing name in the log |
 
 ## Passkeys
 

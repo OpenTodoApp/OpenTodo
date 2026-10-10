@@ -47,6 +47,9 @@ type Config struct {
 	// OPENTODO_CALDAV is unset; OpenSpec `caldav`). Afterwards the value set in
 	// Settings is authoritative.
 	CalDAV *bool
+	// Email holds the optional OPENTODO_EMAIL_* settings of email capture
+	// (OpenSpec `email-to-task`, see email.go); off unless fully configured.
+	Email EmailConfig
 }
 
 // OIDCEnv mirrors oidc.Env (converted by the HTTP layer) so this package stays
@@ -180,6 +183,9 @@ func Load() (Config, error) {
 		return c, err
 	}
 	c.Backup = b
+	if c.Email, err = loadEmail(); err != nil {
+		return c, err
+	}
 	return c, nil
 }
 

@@ -1,0 +1,22 @@
+Message-ID: <html-1@news.example.net>
+Date: Fri, 9 Oct 2026 07:00:00 +0000
+From: "Weekly News" <news@news.example.net>
+To: todo+SECRET@example.com
+Subject: =?UTF-8?Q?This_week=3A_caf=C3=A9_openings_=E2=98=95?=
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html><head><title>Newsletter</title><style>p { color: red; }</style>
+<script>alert("never run")</script></head>
+<body>
+<!-- tracking comment -->
+<h1>Caf=C3=A9 openings</h1>
+<p>Three new places opened this week &amp; one closed.</p>
+<ul><li>North &ndash; espresso bar</li><li>South</li></ul>
+<p>Read more: <a href=3D"https://news.example.net/cafes?id=3D7">full article</a=
+><br>Or visit <a href=3D"https://news.example.net/">https://news.example.net/</a></p>
+<p>&lt;script&gt; stays text</p>
+<img src=3D"https://tracker.example.net/pixel.gif" alt=3D"">
+</body></html>

@@ -20,6 +20,7 @@ import { navigate } from './router'
 import { TokensSection } from './TokensSection'
 import { WebhooksPanel } from './WebhooksPanel'
 import { CaldavPanel } from './CaldavPanel'
+import { EmailInboxPanel } from './EmailInboxPanel'
 import { setStartView, type StartView } from '../lib/views'
 import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
@@ -99,6 +100,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       <SecuritySettings user={user} />
 
       <CaptureSection />
+      <EmailInboxPanel />
 
       {user.role === 'owner' && <BackupsPanel />}
 
