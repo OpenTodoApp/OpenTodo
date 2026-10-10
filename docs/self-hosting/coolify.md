@@ -51,6 +51,10 @@ Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → Members**, 
 
 Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files while running). Use Coolify's volume backup, or copy the directory while the container is stopped. The in-app **Settings → Download export** gives a portable JSON copy at any time.
 
+## Audit log
+
+**Settings → Audit log** (owner only) lists sign-ins, failed sign-ins, tokens, invitations, exports and audit setting changes, with filters and an NDJSON export. It lives in the `/data` volume with everything else and needs no configuration: retention defaults to 90 days, client addresses are off by default. If you enable address logging, the address comes from Traefik's `X-Forwarded-For` header, which Coolify sets for you; do not publish the container port directly, or clients could bypass the proxy and forge that header. Expect roughly 200 bytes per event. Details in [Running with Docker](docker.md#audit-log).
+
 ## Updating
 
 Redeploy the resource. Coolify pulls the new image (or rebuilds), the new version applies database migrations on startup, and your data stays in the volume.

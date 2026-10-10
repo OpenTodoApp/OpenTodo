@@ -61,6 +61,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Offline | Every change is applied locally first and queued; the app loads and works with no network. Installable PWA |
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs. Live push: a change on one device shows up on the others within a second or two, with polling as the fallback |
 | Accounts | First-run owner setup, email + password sign-in, sessions, optional open sign-up |
+| Audit log | Owner-visible record of sign-ins, failed sign-ins, tokens, invitations, exports and setting changes, with filters, NDJSON export and retention (90 days by default); every user sees their own recent sign-in activity. Never contains task content; client addresses only if the owner opts in |
 | API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
@@ -177,7 +178,7 @@ Validate everything with `npx @fission-ai/openspec validate --all --strict` (als
 
 ## Privacy
 
-OpenTodo makes no network requests except to your own server. There are no analytics, crash reporters, update pings or third-party fonts. The only data that leaves your device is your own task data, sent to the server you chose.
+OpenTodo makes no network requests except to your own server. There are no analytics, crash reporters, update pings or third-party fonts. The only data that leaves your device is your own task data, sent to the server you chose. The server's audit log records security events (sign-ins, tokens, invitations, exports), never task content, and stores client addresses only if the owner turns that on; see [SECURITY.md](SECURITY.md#what-is-logged).
 
 ## Contributing
 

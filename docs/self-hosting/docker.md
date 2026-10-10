@@ -72,6 +72,15 @@ docker run -v "$PWD/data:/data" ...
 
 Stop the container (or accept a WAL-consistent snapshot) and copy `/data`. To restore, place the files back and start the container. A JSON export is also available from **Settings** in the app or `GET /api/v1/export` with an API token.
 
+## Audit log
+
+The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, API tokens, invitations, exports and audit setting changes in **Settings → Audit log** (API: [docs/api.md](../api.md#audit-log)). It is stored in `opentodo.db` inside `/data`, so it is part of every backup of the volume, and it never contains task content. Nothing needs configuring:
+
+- **Retention** defaults to 90 days (7–3650, set in Settings). Expired events are pruned at startup, hourly and right after you lower the retention.
+- **Client addresses** are not recorded unless you turn on address logging in Settings. Behind a reverse proxy the address is the first `X-Forwarded-For` entry, so make sure the proxy sets that header (Caddy, Traefik and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` do) and that the container is not reachable around the proxy, or a client could send its own header. Turning address logging off erases every stored address immediately.
+- **Disk use** is roughly 200 bytes per event: a household produces a few MB per year; a public server under credential stuffing records one `rate_limited` event per address per minute rather than one per attempt.
+- **Export** the log as newline-delimited JSON from the same panel to archive it beyond the retention window.
+
 ## Health
 
 `GET /healthz` returns `{"status":"ok","version":"..."}`. The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.

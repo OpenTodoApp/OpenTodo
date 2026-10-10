@@ -24,5 +24,5 @@
 
 ## 5. Docs and release
 
-- [ ] 5.1 `docs/self-hosting/docker.md` and `coolify.md` notes on retention, address logging behind proxies and disk use; `README.md`; CHANGELOG entry; verify links resolve and `make check` passes
+- [x] 5.1 `docs/self-hosting/docker.md` and `coolify.md` notes on retention, address logging behind proxies and disk use; `README.md`; CHANGELOG entry; verify links resolve and `make check` passes
 - [ ] 5.2 End-to-end run: failed sign-in → successful sign-in → token created → export requested → owner filters and exports the log → enables addresses, signs in, disables and confirms the scrub → lowers retention and observes pruning; verify the run completes without console errors
