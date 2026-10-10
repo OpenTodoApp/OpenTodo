@@ -10,10 +10,10 @@
 
 ## 2. Client: channel lifecycle and fallback
 
-- [ ] 2.1 Add `live` to the sync status snapshot and open an `EventSource` to `/api/v1/sync/events?device=<id>` from `startSync()`, closing it in `stopSync()`; verify `npm test` passes new `sync.test.ts` cases using a fake `EventSource` (`opens after start`, `closes on stop`)
-- [ ] 2.2 On `ops` events compare the event cursor with the stored cursor and call `requestSync(0)` only when newer; verify `npm test` passes `wake-up with stale cursor does not sync` and `wake-up with newer cursor syncs`
-- [ ] 2.3 Reconnect with jittered exponential backoff (1 s base, 30 s cap), reset on `open`, sync immediately on every `open`, skip attempts while offline and retry on `online`; verify `npm test` passes `reconnects with capped backoff`, `syncs on reconnect`, `does not connect while offline`
-- [ ] 2.4 Switch the periodic interval to 5 minutes while `live` is true and back to 30 s when it drops; verify `npm test` passes `interval relaxes when live and restores on disconnect`
+- [x] 2.1 Add `live` to the sync status snapshot and open an `EventSource` to `/api/v1/sync/events?device=<id>` from `startSync()`, closing it in `stopSync()`; verify `npm test` passes new `sync.test.ts` cases using a fake `EventSource` (`opens after start`, `closes on stop`)
+- [x] 2.2 On `ops` events compare the event cursor with the stored cursor and call `requestSync(0)` only when newer; verify `npm test` passes `wake-up with stale cursor does not sync` and `wake-up with newer cursor syncs`
+- [x] 2.3 Reconnect with jittered exponential backoff (1 s base, 30 s cap), reset on `open`, sync immediately on every `open`, skip attempts while offline and retry on `online`; verify `npm test` passes `reconnects with capped backoff`, `syncs on reconnect`, `does not connect while offline`
+- [x] 2.4 Switch the periodic interval to 5 minutes while `live` is true and back to 30 s when it drops; verify `npm test` passes `interval relaxes when live and restores on disconnect`
 - [ ] 2.5 Show the live state in `SyncStatus` (connected vs. polling) without changing the existing offline/pending display; verify `npm run build` succeeds and, in the browser, the pill shows the connected state after sign-in and the polling state when the server is stopped
 
 ## 3. Deployment and docs
