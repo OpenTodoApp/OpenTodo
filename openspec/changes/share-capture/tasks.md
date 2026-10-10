@@ -22,4 +22,4 @@
 ## 4. Docs and release
 
 - [x] 4.1 `docs/capture.md` (share sheet per platform, bookmarklet, extension install, limits), README feature list, CHANGELOG under Unreleased; verify links resolve
-- [ ] 4.2 Final check: `npm test`, `npm run build`, `go test ./...` unchanged, `make check` passes
+- [x] 4.2 Final check: `npm test`, `npm run build`, `go test ./...` unchanged, `make check` passes
