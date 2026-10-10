@@ -17,6 +17,7 @@ import { beginDrag } from '../lib/dnd'
 import { moveProjectBy, moveProjectTo } from '../lib/move'
 import { canEditProject, roleOf } from '../lib/sharing'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
+import { formatUnread, unreadCounts, type UnreadCounts } from '../lib/feed'
 
 const ACTIVE = 'bg-emerald-100 font-medium text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100'
 const IDLE = 'text-slate-700 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-slate-800'
@@ -39,6 +40,10 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   const collapsed = useMemo(() => new Set(collapsedIds), [collapsedIds])
   const tree = useMemo(() => buildProjectTree(projects), [projects])
   const rows = useMemo(() => flattenTree(tree.roots, (id) => collapsed.has(id)), [tree, collapsed])
+
+  // Unread activity in shared projects (activity-feed): a live query over the local
+  // activity log and the synced seen markers, so it moves with every sync.
+  const unread = useLiveQuery(() => unreadCounts(), [], { byProject: new Map(), total: 0 } as UnreadCounts)
 
   // Trash count (trash-and-history): deleted tasks and projects known locally.
   const trashCount = useLiveQuery(async () => (await db.tasks.filter((t) => !!t.deleted_at).count()) + (await db.projects.filter((p) => !!p.deleted_at).count()), [], 0)
@@ -200,6 +205,14 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         {item({ view: 'completed' }, 'Completed', '✅')}
         {item({ view: 'filter' }, 'Filter', '🔎')}
         {item({ view: 'trash' }, 'Trash', '🗑️', trashCount)}
+        {sharedIds.size > 0 && (
+          <button onClick={() => navigate({ view: 'feed' })} title='Activity in shared projects (g h)'
+            className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'feed' ? ACTIVE : IDLE}`}>
+            <span className="w-5 text-center">📰</span>
+            <span className="flex-1 truncate">Activity</span>
+            {unread.total > 0 && <UnreadBadge n={unread.total} label="unread in shared projects" />}
+          </button>
+        )}
       </nav>
       <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Views
@@ -270,6 +283,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
                       </svg>
                     </span>
                   )}
+                  {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label="unread changes" /> : null}
                   {count ? <span className="text-xs text-slate-400" title={isCollapsed && has ? 'Open tasks including sub-projects' : 'Open tasks'}>{count}</span> : null}
                 </button>
               </li>
@@ -321,5 +335,14 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         <span className="text-slate-400">⚙</span>
       </button>
     </div>
+  )
+}
+
+/** Unread activity count (activity-feed): others' changes since the project's activity was last seen. */
+function UnreadBadge({ n, label }: { n: number; label: string }) {
+  const text = formatUnread(n)
+  return (
+    <span data-unread-count={n} title={`${text} ${label}`} aria-label={`${text} ${label}`}
+      className="rounded-full bg-emerald-600 px-1.5 text-[10px] font-semibold leading-4 text-white">{text}</span>
   )
 }

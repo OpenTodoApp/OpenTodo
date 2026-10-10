@@ -6,6 +6,7 @@ import { useSyncExternalStore } from 'react'
 import { forgetActivity } from './activity'
 import { api, ApiError } from './api'
 import { db, entityTables, getMeta, setMeta } from './db'
+import { ensureFeedBaselines } from './feed'
 import { hlcObserveServerTime } from './hlc'
 import { applyOps, getDeviceId, onLocalMutation } from './ops'
 import { followSharedDueChanges } from './reminders'
@@ -173,6 +174,9 @@ async function runOnce(): Promise<void> {
     }
     // Permanent deletions requested while offline go out once we are connected.
     await flushPendingPurges()
+    // Shared projects seen for the first time on this device start with everything
+    // so far marked as seen (activity-feed), so an upgrade is not a wall of unread.
+    await ensureFeedBaselines()
     publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
@@ -237,6 +241,7 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
       ['project', db.projects], ['task', db.tasks], ['label', db.labels], ['view', db.views], ['reminder', db.reminders],
       ['section', db.sections],
       ['comment', db.comments],
+      ['project_prefs', db.prefs],
     ]
     const me = (await db.meta.get('userId'))?.value
     for (const [entity, table] of tables) {

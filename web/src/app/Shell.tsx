@@ -12,6 +12,7 @@ import { ViewsView } from './ViewsView'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
 import { TrashView } from './TrashView'
+import { FeedView } from './FeedView'
 import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { SyncStatus } from './SyncStatus'
@@ -99,6 +100,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         }
         if (e.key === 's') navigate({ view: 'settings' })
         if (e.key === 'x') navigate({ view: 'trash' })
+        // `g f` is the Filter view, so the activity feed is `g h` (activity-feed).
+        if (e.key === 'h') navigate({ view: 'feed' })
         // `g i` is the Inbox, so Import is `g` then Shift+I.
         if (e.key === 'I') navigate({ view: 'import' })
         return
@@ -159,6 +162,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <SavedViewRoute id={route.id} />
           ) : route.view === 'trash' ? (
             <TrashView />
+          ) : route.view === 'feed' ? (
+            <FeedView />
           ) : route.view === 'day' || route.view === 'week' ? (
             <CalendarView mode={route.view} date={route.date} />
           ) : (
@@ -211,6 +216,7 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['g then i / t / u / c / l / f / v / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings'],
     ['g then a', 'Go to Assigned to me'],
     ['g then x', 'Go to the Trash'],
+    ['g then h', 'Go to Activity: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters)'],
     ['j / k, r, Delete (in the Trash)', 'Select, restore, delete permanently (Enter confirms, Esc cancels)'],
     ['Enter (after completing the last task of a project)', 'Archive the project; any other key dismisses'],
     ['g then Shift+I', 'Go to Settings → Import data'],

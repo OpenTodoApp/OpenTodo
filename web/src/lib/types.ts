@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs']
 
 export interface Op {
   id: string
@@ -188,6 +188,19 @@ export interface Comment {
   _clock: Clock
 }
 
+/**
+ * One user's personal preferences for a project (OpenSpec `activity-feed`, D1),
+ * keyed by the project id. Always stored in the author's personal scope by the
+ * server, also for shared projects, so it follows the user to their own devices
+ * and never reaches other members. Stored locally in the `prefs` table.
+ */
+export interface ProjectPrefs {
+  id: string
+  /** Activity of the project up to this event time (Unix ms) has been seen; 0 = never marked. */
+  feed_seen_at: number
+  _clock: Clock
+}
+
 export type ActivityKind =
   | 'created' | 'completed' | 'reopened' | 'deleted' | 'restored' | 'rescheduled' | 'assigned' | 'unassigned'
   | 'moved' | 'archived' | 'unarchived' | 'edited' | 'commented' | 'comment_edited' | 'comment_deleted'
@@ -218,6 +231,9 @@ export interface ActivityEvent {
   /** Server pages only: display names resolved by the server. */
   actorName?: string
   taskTitle?: string
+  /** Feed (activity-feed): the shared project the event belongs to; set by the feed route and the local feed. */
+  projectId?: string
+  projectName?: string
 }
 
 /**
