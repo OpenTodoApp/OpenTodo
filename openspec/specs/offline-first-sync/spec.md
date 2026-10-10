@@ -46,7 +46,7 @@ The server SHALL ignore an operation whose id it has already stored, and the cli
 - **THEN** the server reports them as duplicates and the state is identical to a single delivery
 
 ### Requirement: Sync exchange
-A single request SHALL push the client's pending operations and pull operations recorded after the client's cursor, excluding those authored by the requesting device. The response SHALL include the new cursor, whether more operations remain, the server time, the list of pushed operations that were refused for authorization reasons (each with its id and a reason) and the caller's current project memberships. The client SHALL keep exchanging until the outbox is empty and no more operations remain, and SHALL treat every added response field as optional so older clients keep working.
+A single request SHALL push the client's pending operations and pull operations recorded after the client's cursor, excluding those authored by the requesting device. The response SHALL include the new cursor, whether more remain, the server time, the refused operations with reasons, and the caller's project memberships. The client SHALL exchange until the outbox is empty and nothing remains, treating added response fields as optional.
 
 #### Scenario: New device catches up
 - **WHEN** a device with an empty cursor syncs
