@@ -20,7 +20,7 @@ function project(id: string, extra: Partial<Project> = {}): Project {
 function task(id: string, projectId: string | null, extra: Partial<Task> = {}): Task {
   return {
     id, title: id, description: '', project_id: projectId, parent_id: null, priority: 4, due: null, labels: [], position: 0,
-    created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, _clock: {}, ...extra,
+    created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, section_id: null, _clock: {}, ...extra,
   }
 }
 

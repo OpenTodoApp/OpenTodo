@@ -63,12 +63,6 @@ type InvitationPreview struct {
 	ExpiresAt   int64   `json:"expiresAt"`
 }
 
-// CanInvite is the single place that decides who may create, list and revoke
-// invitations. A future admin role extends this function only.
-func (s *Service) CanInvite(u *User) bool {
-	return u != nil && u.Role == "owner"
-}
-
 // CreateInvitation mints a single-use invitation. email may be empty (open
 // invitation). The plaintext secret is returned exactly once; only its hash is
 // stored. The invitation and its invitation.created audit event commit together.

@@ -180,7 +180,7 @@ func (r *resolver) resolveComment(op Op) (scope, reason string, err error) {
 			}
 			return "", ReasonForbidden, nil
 		}
-		if scope, err = r.scopeOfTask(b.task); err != nil {
+		if scope, err = r.scopeOfChild("task", b.task); err != nil {
 			return "", "", err
 		}
 	}

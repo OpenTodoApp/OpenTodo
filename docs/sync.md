@@ -11,7 +11,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 ```json
 {
   "id": "0d1f…",                 // unique per op (UUID v4)
-  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "comment"
+  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "section" | "comment"
   "entityId": "8c2a…",           // UUID of the entity
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
@@ -33,7 +33,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `title`, `description` | string |
 | task | `project_id`, `parent_id` | string or null |
 | task | `priority` | integer 1–4 (1 highest) |
-| task | `due` | `{"date":"YYYY-MM-DD","time":"HH:MM"?}` or null |
+| task | `due` | `{"date":"YYYY-MM-DD","time":"HH:MM"?,"tz":"Area/City"?}` or null; `tz` (a known IANA zone, at most 64 characters) only together with `time`, see [Zoned due values](#zoned-due-values) |
 | task | `labels` | array of strings (label ids, see below) |
 | task | `position`, `created_at` | number |
 | task | `completed_at`, `deleted_at` | number or null |
@@ -41,6 +41,11 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `recurrence` | recurrence rule string (at most 200 characters, must parse under [the grammar](recurrence.md)) or null |
 | task | `series_id` | string (task id) or null |
 | task | `assignee_id` | string (account id) or null; checked against the task's scope at receipt (see "Assignment" under [Sharing scopes](#sharing-scopes)) |
+| task | `section_id` | string (section id) or null; see [Sections](#sections) |
+| section | `name` | string |
+| section | `project_id` | string (project id, required; never changes) |
+| section | `position`, `created_at` | number |
+| section | `deleted_at` | number or null |
 | label | `name`, `color` | string |
 | label | `position`, `created_at` | number |
 | label | `deleted_at` | number or null |
@@ -70,13 +75,22 @@ Adding fields is backwards compatible. Renaming or removing is not; it needs an 
 
 A client that receives an op for an entity it does not know (an older build talking to a newer server) ignores it without failing the batch; the cursor still advances.
 
+### Zoned due values
+
+`due` is floating by default: a calendar date and optional wall-clock time that mean the same day and clock time wherever the task is viewed. A due with a `tz` key is *zoned* (OpenSpec change `absolute-datetimes`): `{"date":"2026-10-11","time":"09:00","tz":"Europe/Berlin"}` denotes the instant 09:00 in Berlin on that day. The zone lives inside the value, not in a separate field, so the whole due is one last-writer-wins register: a concurrent floating edit and zoned edit converge on one complete value, never a date from one and a zone from the other.
+
+- The server accepts `tz` only with `time` and only as a zone name it knows (Go's embedded zone database); otherwise the op is rejected like any invalid value. It stores the raw JSON, so servers that predate `tz` also store and serve it untouched, and clients that predate it read `date` and `time` and keep `tz` unless the user edits the due.
+- The value is wall time plus zone, not an epoch: it is resolved with the zone's rules in force on that date, so it follows daylight-saving changes and future rule updates. A wall time inside a spring-forward gap resolves to the first valid instant after the gap (02:30 on a 02:00→03:00 day is 03:00); one inside an autumn overlap resolves to its first occurrence. `internal/zoned` (Go) and `web/src/lib/dates.ts` implement the same rules and run the shared vectors in `web/src/lib/zoned.vectors.json`.
+- Clients show, sort and group a zoned due by its date and time converted to the viewer's zone (Today, Upcoming, saved views, filters and the calendar grid all use the converted value) and show the original wall time and zone as a hint when the viewer is in another zone. Clearing the time of a zoned due drops `tz`.
+- Recurring series keep `time` and `tz` as `date` rolls forward; relative reminders fire relative to the zoned instant.
+
 ### Recurring tasks
 
 `task.recurrence` holds a rule such as `every last weekday`; the server rejects an op whose value does not parse (any spelling the grammar accepts is valid, clients store the canonical form). Completing a recurring task is not a single `completed_at` op: the client writes, in one batch, a new *occurrence record* (a task with the series' fields, `completed_at` set, `recurrence: null` and `series_id` pointing at the series) and a `due` op on the series moving it to the next occurrence. The record's id is not random: it is `NameID("occurrence", seriesId + ":" + occurrenceDate)` (SHA-256, formatted as a version 8 UUID; `internal/ids` and `web/src/lib/ids.ts`), and the next due date is a pure function of the rule and dates every device shares. Two devices that complete the same occurrence offline therefore write the same entity and the same `due` value, and LWW only chooses between identical values; Completed shows one entry. "This occurrence only" uses `seriesId + ":detach:" + date` so a copy never collides with a completion. See [recurrence.md](recurrence.md).
 
 ### Reminders
 
-A `reminder` belongs to one task (`task_id`) and fires at `fire_at`, always a resolved instant (OpenSpec change `reminders`). An *absolute* reminder keeps the moment the user picked. A *relative* reminder also stores `offset_minutes` and its `fire_at` is the task's due time plus the offset, a date-only due counting as 09:00 in the computing device's time zone; with no due date `fire_at` is null and it does not fire. The device that changes a task's `due` (an edit, a reschedule, a recurring series completing, skipping or detaching) writes a `fire_at` op for every live relative reminder of the task **in the same batch, with the same timestamp and device** as the `due` op, so LWW always takes the due date and the firing times from the same edit. When the firing moves it also clears `delivered_at` and `dismissed_at`. REST `PATCH /api/v1/tasks/{id}` that changes `due` does the same server-side, in the owner's last reported zone offset (the `tzOffset` field of the sync request) or UTC until one was reported.
+A `reminder` belongs to one task (`task_id`) and fires at `fire_at`, always a resolved instant (OpenSpec change `reminders`). An *absolute* reminder keeps the moment the user picked. A *relative* reminder also stores `offset_minutes` and its `fire_at` is the task's due time plus the offset, a date-only due counting as 09:00 in the computing device's time zone and a zoned due counting as its own instant; with no due date `fire_at` is null and it does not fire. The device that changes a task's `due` (an edit, a reschedule, a recurring series completing, skipping or detaching) writes a `fire_at` op for every live relative reminder of the task **in the same batch, with the same timestamp and device** as the `due` op, so LWW always takes the due date and the firing times from the same edit. When the firing moves it also clears `delivered_at` and `dismissed_at`. REST `PATCH /api/v1/tasks/{id}` that changes `due` does the same server-side, in the owner's last reported zone offset (the `tzOffset` field of the sync request) or UTC until one was reported; a zoned due uses its own zone.
 
 - *Snooze* writes a new `fire_at` and clears `delivered_at` and `dismissed_at`; *dismiss* writes `dismissed_at`. Both are ordinary ops, so they queue offline and converge per field.
 - `delivered_at` is written by the server (device `server`) when it pushed the reminder. A delivery or dismissal **older than `fire_at`** belongs to an earlier firing and does not count, so a snooze or due change racing the server's delivery op still fires again.
@@ -116,6 +130,16 @@ The event id is the id of its first op. Devices record every task, project and c
 The array is a single LWW register: every write replaces the whole value, and when two devices write different arrays for the same task offline, every replica ends with the array that carries the greater `(ts, device)`. Concretely, if device A adds `errand` and device B adds `call` to the same task while both are offline, only one of the two labels survives on every device. To keep the common case safe the client reads the task's current array in the same transaction as the write, so sequential edits on one device never lose a label, and remote ops are applied live so the window is only the offline period. Deleting a label removes its id from every carrying task with one op per task; a concurrent array write elsewhere can resurrect the id, which is why deleted ids are hidden rather than trusted to be absent. Merging a label rewrites each carrying task's array once (source id → target id, de-duplicated) and tombstones the source.
 
 The path to per-element semantics is recorded in `openspec/changes/labels/design.md`: an add-wins set encoded as additional per-element fields would be additive to this schema.
+
+### Sections
+
+A `section` is a named, ordered container inside one project (OpenSpec change `board-view`): a heading in the list view and a column on the board. The board itself has no synced state; it is a rendering of sections and tasks. View mode (list or board) and collapsed headings are per-device preferences in the client's local `meta` table and never become ops.
+
+- **Scope.** A section lives in the sharing scope of its project, like a task: a new section's `project_id` in the batch decides its scope, sharing a project relabels its sections into the project scope, and a `project_id` op that would move a section to another scope is refused with `scope_change`. Editors, admins and the owner may write sections; viewers are refused with `forbidden`. Clients never change a section's project (the REST API refuses it).
+- **Task reference.** `task.section_id` names a section of the task's project. A reference to a deleted section, a section of another project, or one the device has not received yet is shown as "No section" and is never repaired by a write: a repair would depend on arrival order and could overwrite a newer move. Only user actions write: changing a task's `project_id` writes `section_id: null` in the same batch, and deleting a section writes its tombstone plus `section_id: null` for each of its open tasks, one op each, in one batch.
+- **Moves.** Moving a task to a column writes `section_id` and `position` (after the target column's last open task) in one batch with one timestamp, so concurrent moves resolve to the newer one for both fields together. Within-column ordering rules are left to `manual-ordering`.
+- **Unknown entities.** Clients skip ops for entities they do not know (an installed, not yet refreshed PWA receiving `section` ops), so future entities never break an older shell; a resync re-delivers them.
+- **Purge.** Sections are not Trash items; purging a project purges its sections (live or deleted) with it.
 
 ### Saved views
 
@@ -239,7 +263,7 @@ Deleting a project writes only the project's tombstone (plus moving its direct s
 
 ## Purge
 
-Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's) and their comments are purged too.
+Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task and section that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's) and their comments are purged too.
 
 Three rules keep replicas convergent:
 

@@ -61,6 +61,12 @@ type Service struct {
 	// is the time source of the second-factor code, replaceable by tests.
 	mfaChallenges *loginChallenges
 	clock         func() time.Time
+
+	// beforeDelete removes an account's synced data inside DeleteUser's
+	// transaction (users.go); nil leaves ops and fields alone.
+	beforeDelete AccountDataHook
+	// ssoOnly reports SSO-only mode (oidc.go); nil means never.
+	ssoOnly func(ctx context.Context) bool
 }
 
 // NewService wires a Service. It owns the audit recorder for the same database,
@@ -172,11 +178,24 @@ type LoginFailure struct {
 	Reason string // audit.ReasonUnknownAccount or audit.ReasonWrongPassword
 }
 
+// DeactivatedLogin is the error Authenticate returns for the correct password
+// of a deactivated account. It matches ErrAccountDeactivated with errors.Is and
+// carries the account for the audit log.
+type DeactivatedLogin struct {
+	UserID string
+	Email  string
+}
+
+func (d *DeactivatedLogin) Error() string        { return ErrAccountDeactivated.Error() }
+func (d *DeactivatedLogin) Is(target error) bool { return target == ErrAccountDeactivated }
+
 func (f *LoginFailure) Error() string        { return ErrInvalidCredentials.Error() }
 func (f *LoginFailure) Is(target error) bool { return target == ErrInvalidCredentials }
 
 // Authenticate checks credentials and returns the user. Refused credentials
-// return a *LoginFailure.
+// return a *LoginFailure. Deactivation is checked only after the password
+// matched (user-management D3), so it is revealed only to someone who knows the
+// password: then the error is a *DeactivatedLogin.
 func (s *Service) Authenticate(ctx context.Context, email, password string) (*User, error) {
 	email = normalizeEmail(email)
 	var u User
@@ -194,6 +213,11 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*Us
 	if !VerifyPassword(hash, password) {
 		return nil, &LoginFailure{UserID: u.ID, Email: u.Email, Reason: audit.ReasonWrongPassword}
 	}
+	if off, err := s.isDeactivated(ctx, s.db, u.ID); err != nil {
+		return nil, err
+	} else if off {
+		return nil, &DeactivatedLogin{UserID: u.ID, Email: u.Email}
+	}
 	return &u, nil
 }
 
@@ -207,7 +231,8 @@ func (s *Service) CreateSession(ctx context.Context, userID, userAgent string) (
 func (s *Service) UserBySession(ctx context.Context, secret string) (*User, error) {
 	var u User
 	err := s.db.QueryRowContext(ctx, `SELECT u.id,u.email,u.name,u.role,u.created_at FROM sessions s
-		JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ?`,
+		JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ?
+		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`,
 		hashToken(secret), time.Now().UnixMilli()).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
@@ -275,7 +300,8 @@ func (s *Service) UserByToken(ctx context.Context, plain string) (*User, error) 
 	var u User
 	var id string
 	err := s.db.QueryRowContext(ctx, `SELECT t.id,u.id,u.email,u.name,u.role,u.created_at FROM api_tokens t
-		JOIN users u ON u.id = t.user_id WHERE t.token_hash = ?`, hashToken(plain)).
+		JOIN users u ON u.id = t.user_id WHERE t.token_hash = ?
+		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`, hashToken(plain)).
 		Scan(&id, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound

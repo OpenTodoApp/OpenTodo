@@ -1,4 +1,4 @@
-import { describeDue } from '../lib/dates'
+import { describeDue, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import type { Label, Project, Task } from '../lib/types'
@@ -23,7 +23,7 @@ const DUE_TONE = {
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
 export const MAX_INDENT = 3
 
-export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse }: {
+export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown }: {
   task: Task
   project?: Project
   /** Already resolved: unknown and deleted label ids are not in this list. */
@@ -44,16 +44,23 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   onToggle: () => void
   onOpen: () => void
   onToggleCollapse?: () => void
+  /** Board card styling (board-view). */
+  card?: boolean
+  /** Starts a drag (board-view: move between sections). */
+  onPointerDown?: (e: React.PointerEvent<HTMLLIElement>) => void
 }) {
   const due = describeDue(task.due)
+  // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
+  const hint = zoneHint(task.due)
   const done = !!task.completed_at
   const comments = useCommentCount(task.id)
   return (
     <li
       data-task-id={task.id}
       data-depth={depth}
+      onPointerDown={onPointerDown}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group flex items-start gap-2 rounded-md px-2 py-2 ${selected ? 'bg-slate-100 ring-1 ring-emerald-500/50 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
+      className={`group flex items-start gap-2 rounded-md px-2 py-2 ${card ? `border border-slate-200 shadow-sm dark:border-slate-700 ${selected ? '' : 'bg-white dark:bg-slate-950'}` : ''} ${selected ? 'bg-slate-100 ring-1 ring-emerald-500/50 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
     >
       {onToggleCollapse && (
         // Tree views reserve a fixed slot so circles line up whether or not a row has children.
@@ -91,7 +98,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
           {breadcrumb && <span className="truncate text-slate-400" title="Parent task">↳ {breadcrumb}</span>}
-          {due && <span className={DUE_TONE[due.tone]}>{due.label}</span>}
+          {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-slate-400" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
           {task.recurrence ? (
             <span className="text-slate-500" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring>↻</span>
           ) : task.series_id ? (

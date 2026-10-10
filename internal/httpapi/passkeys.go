@@ -248,6 +248,10 @@ func (s *Server) handlePasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	// SSO-only mode: members must use the provider (oidc-login D6).
+	if s.ssoRequired(w, r, u) {
+		return
+	}
 	// A passkey with user verification is two factors (mfa-totp D5); one without
 	// it is only possession, so an enrolled account still needs its code.
 	if !verified {

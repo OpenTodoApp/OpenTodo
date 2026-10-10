@@ -18,7 +18,7 @@ beforeEach(() => {
 function task(id: string, parent_id: string | null, extra: Partial<Task> = {}): Task {
   return {
     id, title: id, description: '', project_id: 'p', parent_id, priority: 4, due: null, labels: [],
-    position: n++, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, _clock: {}, ...extra,
+    position: n++, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, section_id: null, _clock: {}, ...extra,
   }
 }
 

@@ -14,6 +14,7 @@ import {
   threadOrder, threadVisible,
 } from './comments'
 import { visibleTasks } from './trash'
+import { createSection, deleteSection, moveTaskToSection, projectSections, renameSection, reorderSection } from './sections'
 
 let n = 0
 beforeEach(() => {
@@ -562,5 +563,121 @@ describe('comments (comments-and-activity)', () => {
     const picked = new Map([['bob', 'bob'], ['alice', 'alice']])
     expect(mentionsInBody('thanks @bob!', picked)).toEqual(['bob'])
     expect(mentionsInBody('thanks @bobby', picked)).toEqual([])
+  })
+})
+
+describe('sections (board-view)', () => {
+  const sop = (entityId: string, field: string, value: unknown, ts: number, device = 'Z'): Op => ({
+    id: crypto.randomUUID(), entity: 'section', entityId, field, value, ts, device,
+  })
+
+  it('applies section ops into the sections table and defaults section_id to null', async () => {
+    await applyOps([sop('s1', 'name', 'Doing', 1), sop('s1', 'project_id', 'p1', 1), sop('s1', 'name', 'stale', 0)])
+    expect(await db.sections.get('s1')).toMatchObject({ id: 's1', name: 'Doing', project_id: 'p1', position: 0, deleted_at: null })
+    expect(await db.tasks.count()).toBe(0)
+    const id = await createTask({ title: 'Plain' })
+    expect((await db.tasks.get(id))?.section_id).toBeNull()
+    expect((await db.outbox.toArray()).some((o) => o.field === 'section_id')).toBe(false)
+    // A row from an older peer without the field also reads null.
+    await applyOps([op({ entityId: 'remote', field: 'title', value: 'x', ts: 1, device: 'Z' })])
+    expect((await db.tasks.get('remote'))?.section_id).toBeNull()
+  })
+
+  it('unknown entity is ignored', async () => {
+    const future = { id: 'f1', entity: 'checklist', entityId: 'c1', field: 'name', value: 'x', ts: 1, device: 'Z' } as unknown as Op
+    await expect(applyOps([future, op({ entityId: 'known', field: 'title', value: 'kept', ts: 1, device: 'Z' })])).resolves.toBeUndefined()
+    expect((await db.tasks.get('known'))?.title).toBe('kept')
+    expect(await db.tasks.get('c1')).toBeUndefined()
+  })
+
+  it('create, rename and reorder sections offline as ops', async () => {
+    const p = await createProject({ name: 'Work' })
+    const backlog = await createSection(p, ' Backlog ')
+    const doing = await createSection(p, 'Doing')
+    expect((await projectSections(p)).map((s) => s.name)).toEqual(['Backlog', 'Doing'])
+    await renameSection(doing, 'In progress')
+    expect((await db.sections.get(doing))?.name).toBe('In progress')
+    expect(await reorderSection(doing, -1)).toBe(true)
+    expect(await reorderSection(doing, -1)).toBe(false)
+    expect((await projectSections(p)).map((s) => s.id)).toEqual([doing, backlog])
+    const fields = (await db.outbox.toArray()).filter((o) => o.entityId === doing).map((o) => o.field)
+    expect(fields).toEqual(expect.arrayContaining(['name', 'project_id', 'position', 'created_at', 'deleted_at']))
+    await expect(createSection(p, '  ')).rejects.toThrow()
+  })
+
+  it('delete section moves tasks to no section', async () => {
+    const p = await createProject({ name: 'Work' })
+    const doing = await createSection(p, 'Doing')
+    const a = await createTask({ title: 'A', project_id: p, section_id: doing })
+    const b = await createTask({ title: 'B', project_id: p, section_id: doing })
+    const done = await createTask({ title: 'Done', project_id: p, section_id: doing })
+    await setTaskCompleted(done, true)
+    await db.outbox.clear()
+    await deleteSection(doing)
+    expect((await db.sections.get(doing))?.deleted_at).toBeTypeOf('number')
+    expect((await db.tasks.get(a))?.section_id).toBeNull()
+    expect((await db.tasks.get(b))?.section_id).toBeNull()
+    // Completed tasks keep their reference; one op per open task plus the tombstone, one timestamp.
+    expect((await db.tasks.get(done))?.section_id).toBe(doing)
+    const ops = await db.outbox.toArray()
+    expect(ops.map((o) => `${o.entity}.${o.field}`).sort()).toEqual(['section.deleted_at', 'task.section_id', 'task.section_id'])
+    expect(new Set(ops.map((o) => o.ts)).size).toBe(1)
+  })
+
+  it('move writes section and end-of-column position in one mutation', async () => {
+    const p = await createProject({ name: 'Work' })
+    const doing = await createSection(p, 'Doing')
+    const first = await createTask({ title: 'First', project_id: p, section_id: doing })
+    await updateTask(first, { position: 5_000_000_000_000 })
+    const t = await createTask({ title: 'Mover', project_id: p })
+    await db.outbox.clear()
+    await moveTaskToSection(t, doing)
+    const moved = await db.tasks.get(t)
+    expect(moved?.section_id).toBe(doing)
+    expect(moved?.position).toBe(5_000_000_000_001)
+    const ops = await db.outbox.toArray()
+    expect(ops.map((o) => o.field).sort()).toEqual(['position', 'section_id'])
+    expect(ops[0].ts).toBe(ops[1].ts)
+    // Back to "No section"; a section of another project is refused.
+    const other = await createSection(await createProject({ name: 'Other' }), 'X')
+    await expect(moveTaskToSection(t, other)).rejects.toThrow()
+    await moveTaskToSection(t, null)
+    expect((await db.tasks.get(t))?.section_id).toBeNull()
+  })
+
+  it('concurrent moves resolve to newer', async () => {
+    const p = await createProject({ name: 'Work' })
+    const doing = await createSection(p, 'Doing')
+    const t = await createTask({ title: 'Contested', project_id: p })
+    await moveTaskToSection(t, doing)
+    const local = await db.tasks.get(t)
+    // Another device moved it to "Done" later; its two ops win together.
+    const later = (local?._clock.section_id.ts ?? 0) + 10
+    await applyOps([
+      op({ entityId: t, field: 'section_id', value: 'done', ts: later, device: 'B' }),
+      op({ entityId: t, field: 'position', value: 42, ts: later, device: 'B' }),
+    ])
+    expect(await db.tasks.get(t)).toMatchObject({ section_id: 'done', position: 42 })
+    // An older move arriving afterwards changes nothing.
+    await applyOps([
+      op({ entityId: t, field: 'section_id', value: doing, ts: later - 5, device: 'C' }),
+      op({ entityId: t, field: 'position', value: 7, ts: later - 5, device: 'C' }),
+    ])
+    expect(await db.tasks.get(t)).toMatchObject({ section_id: 'done', position: 42 })
+  })
+
+  it('project change clears section', async () => {
+    const a = await createProject({ name: 'A' })
+    const b = await createProject({ name: 'B' })
+    const doing = await createSection(a, 'Doing')
+    const t = await createTask({ title: 'Ship', project_id: a, section_id: doing })
+    await db.outbox.clear()
+    await updateTask(t, { project_id: b })
+    expect(await db.tasks.get(t)).toMatchObject({ project_id: b, section_id: null })
+    expect((await db.outbox.toArray()).map((o) => o.field).sort()).toEqual(['project_id', 'section_id'])
+    // Picking a section of the new project in the same edit keeps it.
+    const later = await createSection(a, 'Later')
+    await updateTask(t, { project_id: a, section_id: later })
+    expect((await db.tasks.get(t))?.section_id).toBe(later)
   })
 })

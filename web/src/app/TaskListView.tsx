@@ -1,14 +1,18 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
-import { compareDue, formatDateHeading, todayISO } from '../lib/dates'
+import { compareDue, formatDateHeading, localDueOf, todayISO } from '../lib/dates'
 import { resolveLabels } from '../lib/labels'
 import { createSubtask, createTask, deleteTask, detachOccurrence, setTaskCompleted, setTaskParent, skipOccurrence, updateTask } from '../lib/ops'
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
 import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
-import { memberName, roleOf } from '../lib/sharing'
-import { flattenTree, type Tree } from '../lib/tree'
-import type { Label, Priority, Project, Task } from '../lib/types'
+import { canEditTasks, memberName, roleOf } from '../lib/sharing'
+import { flattenTree, type Tree, type TreeNode } from '../lib/tree'
+import type { Label, Priority, Project, Section, Task } from '../lib/types'
+import { beginDrag } from '../lib/dnd'
+import { effectiveSection, groupBySection, loadCollapsedSections, loadViewMode, moveTaskToSection, saveViewMode, setSectionCollapsed } from '../lib/sections'
+import { BoardView, sectionTarget, type BoardColumn } from './BoardView'
+import { AddSection, SectionHeader, SectionQuickAdd } from './Sections'
 import { LabelPicker } from './LabelPicker'
 import { AssigneePicker } from './AssigneePicker'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
@@ -20,8 +24,9 @@ import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
 import { estimateFocus, isGPending, openTask, placeInDay } from './signals'
 import { visibleTasks } from '../lib/trash'
+import { useViewerZone } from './useViews'
 
-type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
+type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 interface Row {
@@ -38,6 +43,11 @@ interface Group {
   key: string
   heading: string | null
   rows: Row[]
+  /** Project list grouped by section (board-view): the section (null = "No section"). */
+  section?: Section | null
+  /** Open tasks under the heading, also while it is collapsed. */
+  count?: number
+  sectionCollapsed?: boolean
 }
 
 const COLLAPSE_KEY = 'opentodo.collapsed'
@@ -61,6 +71,8 @@ function saveCollapsed(set: Set<string>) {
 
 export function TaskListView({ route, userId }: { route: ListRoute; userId?: string }) {
   const today = todayISO()
+  // Zoned dues (absolute-datetimes) are grouped in the viewer zone; re-group when it changes.
+  const zone = useViewerZone()
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const currentProject = route.view === 'project' ? projectMap.get(route.id) : undefined
@@ -100,9 +112,9 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       case 'inbox':
         return all.filter((t) => !t.completed_at && t.project_id === null)
       case 'today':
-        return all.filter((t) => !t.completed_at && t.due && t.due.date <= today).sort(byDueThenPriority)
+        return all.filter((t) => !t.completed_at && t.due && localDueOf(t.due).date <= today).sort(byDueThenPriority)
       case 'upcoming':
-        return all.filter((t) => !t.completed_at && t.due && t.due.date > today).sort(byDueThenPriority)
+        return all.filter((t) => !t.completed_at && t.due && localDueOf(t.due).date > today).sort(byDueThenPriority)
       case 'completed':
         return all.filter((t) => t.completed_at).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0)).slice(0, 100)
       case 'project':
@@ -112,7 +124,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       case 'assigned':
         return all.filter((t) => !t.completed_at && !!userId && t.assignee_id === userId).sort(byDueThenPriority)
     }
-  }, [allTasks, projects, route, today, userId])
+  }, [allTasks, projects, route, today, zone, userId])
 
   const tasks = useMemo(() => {
     if (!duration || !filterKey) return viewTasks
@@ -134,27 +146,71 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
 
   const tree = useMemo<Tree<Task> | null>(() => (treeView ? buildTaskTree(tasks) : null), [treeView, tasks])
 
+  // Sections and the board (OpenSpec `board-view`). View mode and collapsed sections
+  // are per-device preferences in the local meta table, never synced.
+  const projectId = route.view === 'project' ? route.id : null
+  const sections = useLiveQuery(
+    () => (projectId ? db.sections.where('project_id').equals(projectId).toArray() : Promise.resolve([] as Section[])), [projectId], [] as Section[],
+  )
+  const liveSections = useMemo(() => sections.filter((s) => !s.deleted_at), [sections])
+  const viewMode = useLiveQuery(() => (projectId ? loadViewMode(projectId) : Promise.resolve('list' as const)), [projectId], 'list')
+  const collapsedSections = useLiveQuery(
+    () => (projectId ? loadCollapsedSections(projectId) : Promise.resolve([] as string[])), [projectId], [] as string[],
+  )
+  const board = !!projectId && viewMode === 'board'
+  const projectEditable = !!projectId && canEditTasks(roleOf(projectId, memberMap))
+  const sectionMap = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections])
+  /** Top-level tasks of the project bucketed by section: list headings and board columns. */
+  const sectionGroups = useMemo(() => {
+    if (!projectId || !tree) return null
+    const byId = new Map(tree.roots.map((n) => [n.id, n]))
+    return groupBySection(projectId, tree.roots.map((n) => n.item), sections).map((g) => ({
+      ...g, roots: g.tasks.map((t) => byId.get(t.id) as TreeNode<Task>),
+    }))
+  }, [projectId, tree, sections])
+  const columns = useMemo<BoardColumn[]>(
+    () => (sectionGroups ?? []).map((g) => ({ key: g.key, section: g.section, cards: g.tasks })), [sectionGroups],
+  )
+
   const groups = useMemo<Group[]>(() => {
+    const toRow = (n: TreeNode<Task>): Row => ({
+      task: n.item,
+      depth: n.depth,
+      parent: n.parent,
+      hasChildren: n.children.length > 0,
+      collapsed: collapsed.has(n.id),
+      // A top-level task that still points at a parent (completed, deleted, missing) names it.
+      breadcrumb: n.parent === null && n.item.parent_id ? breadcrumbOf(n.item, taskMap) : null,
+    })
+    if (board) {
+      // Board: cards are top-level tasks, column by column (keyboard order).
+      return columns.map((c) => ({
+        key: c.key, heading: null, rows: c.cards.map((t) => ({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })),
+      }))
+    }
+    if (sectionGroups && liveSections.length > 0) {
+      // Project list with sections: "No section" first, then each section by position.
+      const folded = new Set(collapsedSections)
+      return sectionGroups.map((g) => ({
+        key: `section:${g.key}`,
+        heading: g.section ? g.section.name : 'No section',
+        section: g.section,
+        sectionCollapsed: folded.has(g.key),
+        count: flattenTree(g.roots).length,
+        rows: folded.has(g.key) ? [] : flattenTree(g.roots, (id) => collapsed.has(id)).map(toRow),
+      }))
+    }
     if (tree) {
       // Project and Inbox: one depth-first pass over the built tree (linear in task count).
-      const rows = flattenTree(tree.roots, (id) => collapsed.has(id)).map<Row>((n) => ({
-        task: n.item,
-        depth: n.depth,
-        parent: n.parent,
-        hasChildren: n.children.length > 0,
-        collapsed: collapsed.has(n.id),
-        // A top-level task that still points at a parent (completed, deleted, missing) names it.
-        breadcrumb: n.parent === null && n.item.parent_id ? breadcrumbOf(n.item, taskMap) : null,
-      }))
-      return [{ key: 'all', heading: null, rows }]
+      return [{ key: 'all', heading: null, rows: flattenTree(tree.roots, (id) => collapsed.has(id)).map(toRow) }]
     }
     // Cross-project and date views: flat, each matching task once, with its parent named.
     const flatRow = (t: Task): Row => ({
       task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: t.parent_id ? breadcrumbOf(t, taskMap) : null,
     })
     if (route.view === 'today') {
-      const overdue = tasks.filter((t) => t.due && t.due.date < today)
-      const due = tasks.filter((t) => t.due && t.due.date === today)
+      const overdue = tasks.filter((t) => t.due && localDueOf(t.due).date < today)
+      const due = tasks.filter((t) => t.due && localDueOf(t.due).date === today)
       const g: Group[] = []
       if (overdue.length) g.push({ key: 'overdue', heading: 'Overdue', rows: overdue.map(flatRow) })
       g.push({ key: 'today', heading: overdue.length ? 'Today' : null, rows: due.map(flatRow) })
@@ -164,9 +220,10 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       const byDate = new Map<string, Task[]>()
       for (const t of tasks) {
         if (!t.due) continue
-        const list = byDate.get(t.due.date) ?? []
+        const date = localDueOf(t.due).date
+        const list = byDate.get(date) ?? []
         list.push(t)
-        byDate.set(t.due.date, list)
+        byDate.set(date, list)
       }
       return [...byDate.entries()].map(([date, list]) => ({ key: date, heading: formatDateHeading(date, today), rows: list.map(flatRow) }))
     }
@@ -180,7 +237,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       }))
     }
     return [{ key: 'all', heading: null, rows: tasks.map(flatRow) }]
-  }, [tree, tasks, route.view, today, collapsed, taskMap, projects, projectMap])
+  }, [tree, tasks, route.view, today, zone, collapsed, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections])
 
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
 
@@ -194,6 +251,34 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
   /** Task whose assignee picker (Shift+A) is open (task-assignment). */
   const [assignFor, setAssignFor] = useState<string | null>(null)
   const quickAddRef = useRef<HTMLInputElement>(null)
+  /** Section whose quick add is open ('' = "No section"), board-view. */
+  const [addingTo, setAddingTo] = useState<string | null>(null)
+
+  const toggleViewMode = useCallback(() => {
+    if (projectId) void saveViewMode(projectId, board ? 'list' : 'board')
+  }, [projectId, board])
+  const toggleSection = useCallback((key: string, force?: boolean) => {
+    if (projectId) void setSectionCollapsed(projectId, key, force ?? !collapsedSections.includes(key))
+  }, [projectId, collapsedSections])
+
+  /** Move a top-level task to a section ('' = none); a no-op when it is already there. */
+  const moveToSection = useCallback((task: Task, key: string) => {
+    if ((effectiveSection(task, sectionMap) ?? '') === key) return
+    void moveTaskToSection(task.id, key || null).catch(() => undefined)
+  }, [sectionMap])
+
+  /** Pointer drag of a card or top-level row onto a column or heading (lib/dnd). */
+  const startDrag = useCallback((e: React.PointerEvent, task: Task) => {
+    if (!projectEditable) return
+    beginDrag(e, {
+      label: task.title,
+      onDrop: (target) => {
+        if (!target.startsWith('section:')) return
+        moveToSection(task, target.slice('section:'.length))
+        setSelectedId(task.id)
+      },
+    })
+  }, [projectEditable, moveToSection])
 
   useEffect(() => {
     // A pending "open this task" request (reminder toast, notification click) survives the route change.
@@ -204,6 +289,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
     setPrompt(null)
     setPickerFor(null)
     setAssignFor(null)
+    setAddingTo(null)
   }, [route])
   useEffect(() => openTask.subscribe((id) => {
     openTask.take(id)
@@ -301,6 +387,57 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       // A viewer may navigate and open tasks of a shared project, never change them.
       if (row && isReadOnly(row.task) && ['a', 'A', 'Tab', 'c', 'L', '1', '2', '3', '4', 'Delete', 'Backspace'].includes(e.key)) return
       if (e.key === 'q' && projectReadOnly) return
+      if (e.key === 'v' && projectId) {
+        // List / board toggle, remembered per project on this device (board-view).
+        e.preventDefault()
+        toggleViewMode()
+        return
+      }
+      if (board) {
+        const col = columns.findIndex((c) => c.cards.some((t) => t.id === selectedId))
+        const pos = col >= 0 ? columns[col].cards.findIndex((t) => t.id === selectedId) : -1
+        const firstCard = (from: number, dir: 1 | -1) => {
+          for (let i = from; i >= 0 && i < columns.length; i += dir) if (columns[i].cards.length) return columns[i].cards[0].id
+          return null
+        }
+        switch (e.key) {
+          case 'j':
+          case 'ArrowDown':
+          case 'k':
+          case 'ArrowUp': {
+            e.preventDefault()
+            const down = e.key === 'j' || e.key === 'ArrowDown'
+            if (col < 0) setSelectedId(firstCard(0, 1))
+            else setSelectedId(columns[col].cards[Math.max(0, Math.min(columns[col].cards.length - 1, pos + (down ? 1 : -1)))].id)
+            return
+          }
+          case 'h':
+          case 'l':
+          case 'ArrowLeft':
+          case 'ArrowRight': {
+            e.preventDefault()
+            const dir = e.key === 'h' || e.key === 'ArrowLeft' ? -1 : 1
+            if (e.shiftKey && e.key.startsWith('Arrow')) {
+              // Shift+←/→ moves the selected card to the adjacent column; it stays selected.
+              const target = columns[col + dir]
+              if (row && col >= 0 && target && projectEditable) moveToSection(row.task, target.key)
+              return
+            }
+            if (col < 0) setSelectedId(firstCard(0, 1))
+            else setSelectedId(firstCard(col + dir, dir) ?? selectedId)
+            return
+          }
+          case 'a':
+            // On the board, `a` opens the quick add of the selected card's column.
+            if (projectEditable) {
+              e.preventDefault()
+              setAddingTo(col >= 0 ? columns[col].key : '')
+            }
+            return
+          case 'Tab':
+            return
+        }
+      }
       switch (e.key) {
         case 'q':
           e.preventDefault()
@@ -417,12 +554,48 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, assignFor, userId, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent, isReadOnly, projectReadOnly])
+  }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, assignFor, userId, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent, isReadOnly, projectReadOnly,
+    projectId, board, columns, projectEditable, toggleViewMode, moveToSection])
 
   useEffect(() => {
     if (!selectedId) return
     document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [selectedId])
+
+  /** One task line (or a board card); `draggable` rows can be dropped on a section. */
+  const renderRow = (r: Row, draggable: boolean) => (
+    <Fragment key={r.task.id}>
+      <TaskRow
+        task={r.task}
+        project={r.task.project_id ? projectMap.get(r.task.project_id) : undefined}
+        labels={resolveLabels(r.task.labels, labelMap)}
+        assignee={r.task.assignee_id && r.task.project_id && memberMap.has(r.task.project_id)
+          ? (r.task.assignee_id === userId ? 'You' : memberName(r.task.assignee_id, memberMap) ?? 'Former member') : null}
+        assignedToMe={!!userId && r.task.assignee_id === userId}
+        showProject={route.view !== 'project' && route.view !== 'label'}
+        selected={r.task.id === selectedId}
+        depth={r.depth}
+        progress={progress.get(r.task.id)}
+        breadcrumb={r.breadcrumb}
+        hasChildren={r.hasChildren}
+        collapsed={r.collapsed}
+        readOnly={isReadOnly(r.task)}
+        card={board}
+        onPointerDown={draggable && projectEditable ? (e) => startDrag(e, r.task) : undefined}
+        onToggle={() => void toggleComplete(r.task.id, !r.task.completed_at)}
+        onToggleCollapse={treeView && !board ? () => toggleCollapsed(r.task.id) : undefined}
+        onOpen={() => {
+          setSelectedId(r.task.id)
+          setOpenId(r.task.id)
+        }}
+      />
+      {addingUnder === r.task.id && !board && (
+        <li>
+          <SubtaskInput parent={r.task} depth={r.depth + 1} onClose={() => setAddingUnder(null)} />
+        </li>
+      )}
+    </Fragment>
+  )
 
   const title = {
     inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', completed: 'Completed', assigned: 'Assigned to me', project: currentProject?.name ?? 'Project', label: currentLabel?.name ?? 'Label',
@@ -446,9 +619,20 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
   return (
     <div className="flex h-full">
       <div className="min-w-0 flex-1 px-4 py-5 md:px-8">
-        <div className="mx-auto max-w-3xl">
+        <div className={board ? 'mx-auto' : 'mx-auto max-w-3xl'}>
           {route.view === 'project' && currentProject ? (
-            <ProjectHeader project={currentProject} userId={userId} />
+            <>
+              <ProjectHeader project={currentProject} userId={userId} />
+              <div className="-mt-2 mb-3 flex items-center gap-1 text-xs" role="group" aria-label="Project layout">
+                {(['list', 'board'] as const).map((m) => (
+                  <button key={m} type="button" aria-pressed={viewMode === m} onClick={() => { if (viewMode !== m) toggleViewMode() }}
+                    className={`rounded-md px-2 py-0.5 ${viewMode === m ? 'bg-slate-200 font-medium dark:bg-slate-700' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                    {m === 'list' ? 'List' : 'Board'}
+                  </button>
+                ))}
+                <span className="kbd ml-1" title="Toggle list / board">v</span>
+              </div>
+            </>
           ) : (
             <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
               {currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
@@ -473,50 +657,49 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
 
           {filterKey && <DurationChips active={duration} onChange={chooseDuration} />}
 
-          {rows.length === 0 && (duration ? (
+          {rows.length === 0 && !(board || liveSections.length > 0) && (duration ? (
             <p className="px-2 py-8 text-center text-sm text-slate-400">
               No task matches this duration filter. <button className="underline" onClick={() => chooseDuration(null)}>Clear the filter</button>
             </p>
           ) : <EmptyState view={route.view} />)}
 
-          {groups.map((g) => (
+          {board && currentProject ? (
+            <BoardView
+              project={currentProject}
+              columns={columns}
+              editable={projectEditable}
+              addingTo={addingTo}
+              setAddingTo={setAddingTo}
+              projects={projects}
+              labels={labels}
+              renderCard={(t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null }, true)}
+            />
+          ) : groups.map((g, gi) => g.section !== undefined && currentProject ? (
+            // Project list grouped by section (board-view): headings are drop targets.
+            <section key={g.key} className="mb-3 rounded-md data-drop-active:ring-2 data-drop-active:ring-emerald-500" data-drop-target={sectionTarget(g.section?.id ?? '')}>
+              <SectionHeader
+                section={g.section}
+                count={g.count ?? 0}
+                layout="list"
+                editable={projectEditable}
+                first={gi <= 1}
+                last={gi === groups.length - 1}
+                collapsed={g.sectionCollapsed}
+                onToggleCollapse={() => toggleSection(g.section?.id ?? '')}
+                onAdd={() => setAddingTo(g.section?.id ?? '')}
+              />
+              {addingTo === (g.section?.id ?? '') && projectEditable && (
+                <SectionQuickAdd project={currentProject} sectionId={g.section?.id ?? null} sectionName={g.heading ?? 'No section'} projects={projects} labels={labels} onClose={() => setAddingTo(null)} />
+              )}
+              <ul>{g.rows.map((r) => renderRow(r, r.depth === 0))}</ul>
+            </section>
+          ) : (
             <section key={g.key} className="mb-4">
               {g.heading && <h2 className={`mb-1 px-2 text-xs font-semibold uppercase tracking-wide ${g.key === 'overdue' ? 'text-red-600' : 'text-slate-400'}`}>{g.heading}</h2>}
-              <ul>
-                {g.rows.map((r) => (
-                  <Fragment key={r.task.id}>
-                    <TaskRow
-                      task={r.task}
-                      project={r.task.project_id ? projectMap.get(r.task.project_id) : undefined}
-                      labels={resolveLabels(r.task.labels, labelMap)}
-                      assignee={r.task.assignee_id && r.task.project_id && memberMap.has(r.task.project_id)
-                        ? (r.task.assignee_id === userId ? 'You' : memberName(r.task.assignee_id, memberMap) ?? 'Former member') : null}
-                      assignedToMe={!!userId && r.task.assignee_id === userId}
-                      showProject={route.view !== 'project' && route.view !== 'label'}
-                      selected={r.task.id === selectedId}
-                      depth={r.depth}
-                      progress={progress.get(r.task.id)}
-                      breadcrumb={r.breadcrumb}
-                      hasChildren={r.hasChildren}
-                      collapsed={r.collapsed}
-                      readOnly={isReadOnly(r.task)}
-                      onToggle={() => void toggleComplete(r.task.id, !r.task.completed_at)}
-                      onToggleCollapse={treeView ? () => toggleCollapsed(r.task.id) : undefined}
-                      onOpen={() => {
-                        setSelectedId(r.task.id)
-                        setOpenId(r.task.id)
-                      }}
-                    />
-                    {addingUnder === r.task.id && (
-                      <li>
-                        <SubtaskInput parent={r.task} depth={r.depth + 1} onClose={() => setAddingUnder(null)} />
-                      </li>
-                    )}
-                  </Fragment>
-                ))}
-              </ul>
+              <ul>{g.rows.map((r) => renderRow(r, false))}</ul>
             </section>
           ))}
+          {route.view === 'project' && !board && projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
           {route.view === 'project' && <SubProjects projectId={route.id} />}
         </div>
       </div>

@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'comment'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'comment']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment']
 
 export interface Op {
   id: string
@@ -24,10 +24,16 @@ export interface Op {
 export type Clock = Record<string, { ts: number; device: string }>
 
 export interface Due {
-  /** Floating calendar date, YYYY-MM-DD, interpreted in the viewer's time zone. */
+  /** Calendar date, YYYY-MM-DD: floating (the viewer's day) unless `tz` is set. */
   date: string
-  /** Optional floating wall-clock time, HH:MM. */
+  /** Optional wall-clock time, HH:MM: floating unless `tz` is set. */
   time?: string
+  /**
+   * IANA time zone (absolute-datetimes): when present (only together with `time`)
+   * the due is zoned and denotes the instant `date time` in that zone. Use
+   * `localDueOf` from dates.ts to read it in the viewer's zone.
+   */
+  tz?: string
 }
 
 export interface Project {
@@ -73,6 +79,26 @@ export interface Task {
    * a personal task, and refuses anything else with reason `not_a_member`.
    */
   assignee_id: string | null
+  /**
+   * Section of the task's project or null (OpenSpec `board-view`). A reference to a
+   * deleted section, a section of another project or one not received yet is shown
+   * as "No section" and never repaired by a write (design D3).
+   */
+  section_id: string | null
+  _clock: Clock
+}
+
+/**
+ * A named, ordered container inside one project (OpenSpec `board-view`): a heading
+ * in the list view, a column on the board. `project_id` never changes after creation.
+ */
+export interface Section {
+  id: string
+  name: string
+  project_id: string
+  position: number
+  created_at: number
+  deleted_at: number | null
   _clock: Clock
 }
 
@@ -233,12 +259,30 @@ export interface PushSubscriptionStatus {
   needsRenewal: boolean
 }
 
+/** Account role on the server (OpenSpec `user-management`). */
+export type AccountRole = 'owner' | 'admin' | 'member'
+
 export interface User {
   id: string
   email: string
   name: string
-  role: 'owner' | 'member'
+  role: AccountRole
   createdAt: number
+}
+
+/**
+ * An entry of the server's user list (owner and admins only). Fetched live and
+ * kept in component state: never written to IndexedDB or any cache.
+ */
+export interface AdminUser extends User {
+  lastLoginAt: number | null
+  status: 'active' | 'deactivated'
+}
+
+/** What a reset link reveals to its holder. */
+export interface ResetPreview {
+  email: string
+  expiresAt: number
 }
 
 export interface AuthStatus {
@@ -251,6 +295,59 @@ export interface AuthStatus {
   passkeysAvailable?: boolean
   /** Second-factor state of the signed-in account (absent when anonymous). */
   mfa?: MfaStatus
+  /** Single sign-on (OpenSpec `oidc-login`); absent on servers without it. */
+  oidc?: OidcStatus
+}
+
+/** Whether a provider is configured, as the sign-in screen needs it. */
+export interface OidcStatus {
+  enabled: boolean
+  displayName: string
+  /** Members must use the provider; the owner keeps local sign-in (`?owner=1`). */
+  ssoOnly: boolean
+}
+
+/** Owner view of the provider configuration. The secret is never returned, only masked. */
+export interface OidcSettings {
+  enabled: boolean
+  issuer: string
+  clientId: string
+  /** `••••` plus the last four characters, or empty when unset. */
+  clientSecret: string
+  clientSecretSet: boolean
+  displayName: string
+  scopes: string
+  allowProvision: boolean
+  ssoOnly: boolean
+  providerLogout: boolean
+  /** Paste this into the provider's client configuration. */
+  redirectUri: string
+  /** False when the redirect URI was derived from the request (set OPENTODO_BASE_URL). */
+  baseUrlConfigured: boolean
+  /** Field name to "env" (locked by an OPENTODO_OIDC_* variable) or "settings". */
+  managedBy: Record<string, 'env' | 'settings'>
+}
+
+/** A settings change; omitted fields are kept. `clientSecret: ''` removes the secret. */
+export type OidcSettingsInput = Partial<Pick<OidcSettings,
+  'issuer' | 'clientId' | 'clientSecret' | 'displayName' | 'scopes' | 'allowProvision' | 'ssoOnly' | 'providerLogout'>>
+
+/** Result of POST /api/v1/settings/oidc/test. */
+export interface OidcTestResult {
+  ok: boolean
+  issuer: string
+  authorizationHost: string
+  tokenHost: string
+  endSessionSupported: boolean
+}
+
+/** A provider identity linked to the account. Server account data, never synced. */
+export interface LinkedIdentity {
+  id: string
+  issuer: string
+  email: string
+  createdAt: number
+  lastLoginAt: number | null
 }
 
 /** Owner policy for the second factor (OpenSpec `mfa-totp`). */
@@ -364,7 +461,9 @@ export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
+  'assignee_id', 'section_id',
 ] as const
+export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const
 
 // ---- backups (owner-only server settings; never synced) ----
@@ -431,6 +530,9 @@ export const AUDIT_EVENT_NAMES = [
   'identity.linked', 'identity.unlinked',
   'export.requested', 'audit.exported',
   'backup.created', 'backup.restored',
+  'user.deactivated', 'user.reactivated', 'user.deleted',
+  'password.reset_issued', 'password.reset_completed', 'password.changed',
+  'owner.transferred',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 
@@ -620,6 +722,8 @@ export interface PurgeCounts {
   tasks: number
   projects: number
   reminders: number
+  /** Sections of purged projects (board-view); absent from older servers. */
+  sections?: number
   /** Comments of purged tasks (comments-and-activity; absent on older servers). */
   comments?: number
 }

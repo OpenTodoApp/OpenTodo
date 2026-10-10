@@ -235,6 +235,7 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
     // Every synced entity kind (keep in step with ENTITIES / entityTables()).
     const tables: [Entity, unknown][] = [
       ['project', db.projects], ['task', db.tasks], ['label', db.labels], ['view', db.views], ['reminder', db.reminders],
+      ['section', db.sections],
       ['comment', db.comments],
     ]
     const me = (await db.meta.get('userId'))?.value

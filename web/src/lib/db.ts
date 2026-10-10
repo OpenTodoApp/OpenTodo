@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, Reminder, Task, View } from './types'
+import type { ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, Reminder, Section, Task, View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -17,6 +17,8 @@ class OpenTodoDB extends Dexie {
   labels!: Table<Label, string>
   views!: Table<View, string>
   reminders!: Table<Reminder, string>
+  /** Sections of projects (board-view). */
+  sections!: Table<Section, string>
   /** Cached project memberships (project-sharing): server data adopted on every sync, never written as ops. */
   memberships!: Table<Membership, string>
   /** Cached in-app notifications (task-assignment): server data, refreshed after sync, never ops. */
@@ -96,14 +98,31 @@ class OpenTodoDB extends Dexie {
       memberships: 'projectId',
       notifications: 'id, createdAt',
     })
-    // v8 (comments-and-activity): comments (synced entity, indexed by task) and the
-    // local activity log derived from ops, bounded per project. Additive.
-    this.version(8).stores({
+    // v9 (board-view): sections of projects, and tasks indexed by section. Additive;
+    // every store is redeclared. (v8 was reserved by a parallel change; Dexie only
+    // needs versions to increase, so a database that skips 8 upgrades fine.)
+    this.version(9).stores({
       projects: 'id, position',
-      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
       labels: 'id, position',
       views: 'id, position',
       reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+    })
+    // v10 (comments-and-activity): comments (synced entity, indexed by task) and the
+    // local activity log derived from ops, bounded per project. Additive; every
+    // store is redeclared.
+    this.version(10).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
       outbox: '++local, id',
       meta: 'key',
       memberships: 'projectId',
@@ -127,7 +146,7 @@ export function useDatabase(name: string): OpenTodoDB {
  * folds ops into (comments-and-activity); applyOps and mutateMany lock all of them.
  */
 export function entityTables() {
-  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.comments, db.activity]
+  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.comments, db.activity]
 }
 
 export async function getMeta<T>(key: string, fallback: T): Promise<T> {
@@ -141,10 +160,10 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
-  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views, db.reminders, db.outbox, db.meta, db.memberships, db.notifications, db.comments, db.activity], async () => {
+  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications], async () => {
     await Promise.all([
-      db.projects.clear(), db.tasks.clear(), db.labels.clear(), db.views.clear(), db.reminders.clear(), db.outbox.clear(), db.meta.clear(), db.memberships.clear(),
-      db.notifications.clear(), db.comments.clear(), db.activity.clear(),
+      ...entityTables().map((t) => t.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(),
+      db.notifications.clear(),
     ])
   })
 }

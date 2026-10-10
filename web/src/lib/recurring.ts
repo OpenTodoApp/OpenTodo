@@ -37,8 +37,10 @@ export function completedOccurrences(seriesId: string, tasks: Iterable<Task>, ex
   return n
 }
 
+/** The series' due on another date, keeping its time and zone (absolute-datetimes, design D7). */
 function moveDue(due: Due | null, date: string): Due {
-  return due?.time ? { date, time: due.time } : { date }
+  if (!due?.time) return { date }
+  return due.tz ? { date, time: due.time, tz: due.tz } : { date, time: due.time }
 }
 
 /** Fields an occurrence copy inherits from its series. */
@@ -47,6 +49,8 @@ function copyOf(series: Task, now: number): Record<string, unknown> {
     title: series.title, description: series.description, project_id: series.project_id, parent_id: series.parent_id,
     priority: series.priority, due: series.due ?? null, labels: [...series.labels], position: series.position,
     created_at: now, deleted_at: null, estimate_minutes: series.estimate_minutes, recurrence: null, series_id: series.id,
+    // Same project, same column (board-view); only sent when set.
+    ...(series.section_id ? { section_id: series.section_id } : {}),
   }
 }
 

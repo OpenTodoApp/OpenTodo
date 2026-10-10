@@ -1,0 +1,169 @@
+import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
+import { api, ApiError, isNetworkError } from '../lib/api'
+import { useOnline } from '../lib/online'
+import type { ResetPreview, User } from '../lib/types'
+
+export type ResetState =
+  | { kind: 'loading' }
+  | { kind: 'offline' }
+  | { kind: 'invalid' }
+  | { kind: 'rate-limited' }
+  | { kind: 'error'; message: string }
+  | { kind: 'ready'; preview: ResetPreview }
+
+interface Props {
+  token: string
+  /** The signed-in user, if any: they are offered to sign out first. */
+  user: User | null
+  /** Called after the new password was set; the app shows sign-in with a confirmation. */
+  onDone: () => void
+  onLogout: () => void
+}
+
+/**
+ * Screen behind /reset/<token> (OpenSpec `user-management`): shows the
+ * account's email and a new-password form. Nothing is cached; offline it waits
+ * and retries when the network returns, and the change is never queued.
+ */
+export function ResetScreen({ token, user, onDone, onLogout }: Props) {
+  const online = useOnline()
+  const [state, setState] = useState<ResetState>({ kind: 'loading' })
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    setState({ kind: 'loading' })
+    try {
+      setState({ kind: 'ready', preview: await api.previewPasswordReset(token) })
+    } catch (err) {
+      setState(stateFor(err))
+    }
+  }, [token])
+
+  useEffect(() => {
+    if (user) return
+    if (online) void load()
+    else setState({ kind: 'offline' })
+  }, [user, online, load])
+
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (password.length < 10) {
+      setError('The new password needs at least 10 characters.')
+      return
+    }
+    setBusy(true)
+    try {
+      await api.resetPassword(token, password)
+      onDone()
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'invalid_input') setError(err.message)
+      else setState(stateFor(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <ResetView
+      state={user ? { kind: 'loading' } : state}
+      user={user}
+      onRetry={() => void load()}
+      onLogout={onLogout}
+      form={state.kind === 'ready' && !user ? (
+        <form onSubmit={(e) => void submit(e)} className="space-y-3" id="reset-form">
+          <p className="text-sm text-slate-600 dark:text-slate-300">Choose a new password for <strong>{state.preview.email}</strong>. You will be signed out everywhere and can then sign in with it.</p>
+          <input type="text" name="username" autoComplete="username" value={state.preview.email} hidden readOnly />
+          <label className="block text-sm">
+            <span className="mb-1 block text-slate-600 dark:text-slate-300">New password</span>
+            <input className="input" type="password" autoComplete="new-password" autoFocus minLength={10} value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </label>
+          {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+          <button className="btn-primary w-full" disabled={busy || !online}>{busy ? 'Saving…' : 'Set new password'}</button>
+        </form>
+      ) : null}
+    />
+  )
+}
+
+function stateFor(err: unknown): ResetState {
+  if (isNetworkError(err)) return { kind: 'offline' }
+  const e = err as ApiError
+  if (e.code === 'reset_invalid') return { kind: 'invalid' }
+  if (e.code === 'rate_limited') return { kind: 'rate-limited' }
+  return { kind: 'error', message: e.message }
+}
+
+/** Pure rendering of every reset-screen state, for tests. */
+export function ResetView({ state, user, form, onRetry, onLogout }: {
+  state: ResetState
+  user: User | null
+  form: ReactNode
+  onRetry: () => void
+  onLogout: () => void
+}) {
+  if (user) {
+    return (
+      <Card title="You are already signed in">
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          This device is signed in as <strong>{user.name || user.email}</strong>. Sign out first to use this password reset link.
+        </p>
+        <div className="flex gap-2">
+          <button className="btn-primary" onClick={onLogout}>Sign out and continue</button>
+          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/">Back to my tasks</a>
+        </div>
+      </Card>
+    )
+  }
+  switch (state.kind) {
+    case 'loading':
+      return <Card title="Checking your reset link…"><p className="text-sm text-slate-500">One moment.</p></Card>
+    case 'offline':
+      return (
+        <Card title="You seem to be offline">
+          <p className="text-sm text-slate-600 dark:text-slate-300">Setting a new password needs a connection to the server. The page will retry when the network returns.</p>
+          <button className="btn-primary" onClick={onRetry}>Retry now</button>
+        </Card>
+      )
+    case 'invalid':
+      return (
+        <Card title="This reset link is no longer valid">
+          <p className="text-sm text-slate-600 dark:text-slate-300">It may have expired, been replaced by a newer link, or already been used. Ask the server owner or an admin for a new one.</p>
+          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/">Go to sign-in</a>
+        </Card>
+      )
+    case 'rate-limited':
+      return (
+        <Card title="Too many attempts">
+          <p className="text-sm text-slate-600 dark:text-slate-300">Wait a minute, then try again.</p>
+          <button className="btn-primary" onClick={onRetry}>Retry</button>
+        </Card>
+      )
+    case 'error':
+      return (
+        <Card title="Something went wrong">
+          <p className="text-sm text-red-600 dark:text-red-400">{state.message}</p>
+          <button className="btn-primary" onClick={onRetry}>Retry</button>
+        </Card>
+      )
+    case 'ready':
+      return <Card title="Set a new password">{form}</Card>
+  }
+}
+
+function Card({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="flex min-h-full items-center justify-center bg-slate-50 p-6 dark:bg-slate-950">
+      <div className="w-full max-w-sm space-y-3 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center gap-3">
+          <img src="/favicon.svg" alt="" className="h-9 w-9" />
+          <h1 className="text-lg font-semibold">OpenTodo</h1>
+        </div>
+        <h2 className="font-medium">{title}</h2>
+        {children}
+      </div>
+    </div>
+  )
+}

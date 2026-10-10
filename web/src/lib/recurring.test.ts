@@ -69,6 +69,13 @@ describe('completeTask on a recurring task', () => {
     expect(record?.completed_at).toBeGreaterThan(0)
   })
 
+  it('a zoned series keeps its zone as it rolls (absolute-datetimes)', async () => {
+    const id = await createTask({ title: 'Stand-up', due: { date: '2026-10-12', time: '09:00', tz: 'Europe/Berlin' }, recurrence: 'every day' })
+    const recordId = await completeTask(id, { today: '2026-10-12' })
+    expect((await db.tasks.get(id))?.due).toEqual({ date: '2026-10-13', time: '09:00', tz: 'Europe/Berlin' })
+    expect((await db.tasks.get(recordId!))?.due).toEqual({ date: '2026-10-12', time: '09:00', tz: 'Europe/Berlin' })
+  })
+
   it('setTaskCompleted (list, keyboard, detail panel) uses the same flow', async () => {
     const id = await createTask({ title: 'Bins', due: { date: '2020-01-01' }, recurrence: 'every week' })
     await setTaskCompleted(id, true)

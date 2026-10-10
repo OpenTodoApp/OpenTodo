@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { db } from '../lib/db'
+import { localDueOf } from '../lib/dates'
 import { addReminder, deleteReminder, dismissReminder, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'
 import { DEFAULT_REMINDER_TIME, isDelivered, isDismissed, offsetLabel, RELATIVE_PRESETS } from '../lib/reminderTime'
 import type { Reminder, Task } from '../lib/types'
@@ -24,7 +25,8 @@ function formatWhen(ms: number): string {
 
 /** A sensible default moment for a new absolute reminder: the due time, else tomorrow 09:00. */
 function defaultMoment(task: Task): string {
-  if (task.due) return `${task.due.date}T${task.due.time ?? DEFAULT_REMINDER_TIME}`
+  const due = localDueOf(task.due)
+  if (due) return `${due.date}T${due.time ?? DEFAULT_REMINDER_TIME}`
   const d = new Date()
   d.setDate(d.getDate() + 1)
   return toLocalInput(new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 0).getTime())

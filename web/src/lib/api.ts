@@ -1,6 +1,6 @@
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  ActivityPage, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, SyncResponse, TrustedDevice, User,
+  AccountRole, ActivityPage, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -118,7 +118,15 @@ export const api = {
   getMfaPolicy: () => request<{ required: MfaPolicy }>('GET', '/api/v1/settings/mfa'),
   setMfaPolicy: (required: MfaPolicy) => request<{ required: MfaPolicy }>('PUT', '/api/v1/settings/mfa', { required }),
   resetMemberMfa: (userId: string) => request<void>('POST', `/api/v1/members/${encodeURIComponent(userId)}/mfa/reset`, {}),
-  logout: () => request<void>('POST', '/api/v1/auth/logout'),
+  /** Ends the session. `redirect` is the provider's end-session URL when the owner enabled provider sign-out. */
+  logout: () => request<{ redirect?: string } | undefined>('POST', '/api/v1/auth/logout'),
+  // Single sign-on (OpenSpec `oidc-login`): the sign-in itself is a browser navigation to oidcStartUrl.
+  getOidcSettings: () => request<OidcSettings>('GET', '/api/v1/settings/oidc'),
+  saveOidcSettings: (input: OidcSettingsInput) => request<OidcSettings>('PUT', '/api/v1/settings/oidc', input),
+  /** Runs discovery against `issuer`, or the saved issuer when omitted. */
+  testOidc: (issuer?: string) => request<OidcTestResult>('POST', '/api/v1/settings/oidc/test', issuer ? { issuer } : {}),
+  listIdentities: () => request<{ identities: LinkedIdentity[]; provider: OidcStatus }>('GET', '/api/v1/me/identities'),
+  unlinkIdentity: (id: string) => request<void>('DELETE', `/api/v1/me/identities/${encodeURIComponent(id)}`),
   /** `tzOffset` (minutes east of UTC) lets REST writes recompute relative reminders in this zone. */
   sync: (device: string, cursor: number, ops: Op[], tzOffset?: number) =>
     request<SyncResponse>('POST', '/api/v1/sync', tzOffset === undefined ? { device, cursor, ops } : { device, cursor, ops, tzOffset }),
@@ -166,12 +174,37 @@ export const api = {
   renamePasskey: (id: string, name: string) => request<{ passkey: Passkey }>('PATCH', `/api/v1/passkeys/${encodeURIComponent(id)}`, { name }),
   deletePasskey: (id: string) => request<void>('DELETE', `/api/v1/passkeys/${encodeURIComponent(id)}`),
 
-  // Invitations (owner only, except the public preview). The link is returned once at creation.
+  // Invitations (owner and admins, except the public preview). The link is returned once at creation.
   listInvitations: () => request<{ invitations: Invitation[] }>('GET', '/api/v1/invitations'),
   createInvitation: (input: { email?: string; expiresInHours?: number } = {}) =>
     request<{ invitation: Invitation; link: string }>('POST', '/api/v1/invitations', input),
   revokeInvitation: (id: string) => request<void>('DELETE', `/api/v1/invitations/${id}`),
   previewInvitation: (token: string) => request<InvitationPreview>('GET', `/api/v1/invitations/${encodeURIComponent(token)}`),
+
+  // User administration (OpenSpec `user-management`): owner and admins. Every
+  // mutating route is a sensitive one (reauth_required is answered by the
+  // ReauthDialog). Results stay in component state, never in IndexedDB.
+  listUsers: () => request<{ users: AdminUser[] }>('GET', '/api/v1/users'),
+  setUserRole: (id: string, role: Exclude<AccountRole, 'owner'>) =>
+    request<{ user: AdminUser }>('PUT', `/api/v1/users/${encodeURIComponent(id)}/role`, { role }),
+  deactivateUser: (id: string) => request<{ user: AdminUser }>('POST', `/api/v1/users/${encodeURIComponent(id)}/deactivate`, {}),
+  reactivateUser: (id: string) => request<{ user: AdminUser }>('POST', `/api/v1/users/${encodeURIComponent(id)}/reactivate`, {}),
+  /** Permanent. `confirmEmail` must be the account's email. */
+  deleteUser: (id: string, confirmEmail: string) =>
+    request<void>('DELETE', `/api/v1/users/${encodeURIComponent(id)}`, { confirmEmail }),
+  /** The link is returned once; nothing is emailed. */
+  issuePasswordReset: (id: string, expiresInHours?: number) =>
+    request<{ expiresAt: number; link: string }>('POST', `/api/v1/users/${encodeURIComponent(id)}/password-reset`,
+      expiresInHours === undefined ? {} : { expiresInHours }),
+  transferOwnership: (id: string, password: string) =>
+    request<{ user: AdminUser }>('POST', `/api/v1/users/${encodeURIComponent(id)}/transfer-ownership`, { password }),
+  /** Every signed-in user: signs out the other sessions, keeps this one. */
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<void>('POST', '/api/v1/me/password', { currentPassword, newPassword }),
+  // Reset links: public, no session needed.
+  previewPasswordReset: (token: string) => request<ResetPreview>('GET', `/api/v1/password-resets/${encodeURIComponent(token)}`),
+  resetPassword: (token: string, password: string) =>
+    request<void>('POST', `/api/v1/password-resets/${encodeURIComponent(token)}`, { password }),
 
   // Backups (owner only). Secrets are write-only: responses carry presence flags.
   backupStatus: () => request<BackupStatus>('GET', '/api/v1/backups'),
@@ -238,6 +271,12 @@ export function auditExportUrl(filters: AuditFilters = {}): string {
   const qs = auditQuery(filters).toString()
   return `/api/v1/audit/export${qs ? `?${qs}` : ''}`
 }
+
+/**
+ * Where the browser goes to sign in with the provider. With a session the same
+ * route links the provider to the signed-in account instead.
+ */
+export const OIDC_START_URL = '/api/v1/auth/oidc/start'
 
 /** True for failures that mean "no server reachable" rather than a server answer. */
 export function isNetworkError(err: unknown): boolean {

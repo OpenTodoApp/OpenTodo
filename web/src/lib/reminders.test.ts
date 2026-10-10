@@ -120,6 +120,11 @@ describe('reminder helpers', () => {
     expect(offsetLabel(-1440)).toBe('1 day before')
     expect(offsetLabel(120)).toBe('2 hours after')
   })
+
+  it('zoned due fires relative to its instant, whatever the device zone (absolute-datetimes)', () => {
+    expect(relativeFireAt({ date: '2026-10-11', time: '09:00', tz: 'Europe/Berlin' }, -10)).toBe(Date.UTC(2026, 9, 11, 6, 50))
+    expect(relativeFireAt({ date: '2026-03-29', time: '02:30', tz: 'Europe/Berlin' }, 0)).toBe(Date.UTC(2026, 2, 29, 1, 0))
+  })
 })
 
 describe('relative reminders follow the due time', () => {

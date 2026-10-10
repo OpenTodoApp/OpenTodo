@@ -34,7 +34,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | --- | --- | --- |
 | ✅ | Projects, Inbox, Today, Upcoming, Completed | `bootstrap-core-platform` |
 | ✅ | Nested projects (`parent_id` already reserved) | `project-hierarchy` |
-| 📝 | Sections and Kanban board view | `board-view` |
+| ✅ | Sections and Kanban board view | `board-view` |
 | ✅ | Subtask trees with parent progress (`parent_id` already reserved) | `subtask-trees` |
 | ✅ | Labels UI (schema shipped) | `labels` |
 | ✅ | Filter query language (`@work & due <= tomorrow & p1`) | `filter-query-language` |
@@ -50,7 +50,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Reminders and web push notifications | `reminders` |
 | ✅ | Recurring rules incl. "every last weekday", "every 3 days after completion" | `recurring-tasks` |
 | ✅ | Duration estimates and time-blocking calendar grid | `time-blocking` |
-| 📝 | Absolute (time-zone aware) timestamps next to floating dates | `absolute-datetimes` |
+| ✅ | Absolute (time-zone aware) timestamps next to floating dates | `absolute-datetimes` |
 
 ## 5. Collaboration
 
@@ -79,10 +79,10 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Owner setup, password sign-in, sessions, closed sign-up by default, rate limiting, CSP | `bootstrap-core-platform` |
 | ✅ | Invitations for new members | `invitations` |
 | ✅ | Passkeys (WebAuthn) | `passkeys` |
-| 📝 | OIDC / OAuth2 single sign-on | `oidc-login` |
+| ✅ | OIDC / OAuth2 single sign-on | `oidc-login` |
 | ✅ | Multi-factor authentication (TOTP) | `mfa-totp` |
 | ✅ | Audit log | `audit-log` |
-| 📝 | User administration: list users, admin role, deactivate, delete, password reset, owner transfer | `user-management` |
+| ✅ | User administration: list users, admin role, deactivate, delete, password reset, owner transfer | `user-management` |
 | 📝 | Optional end-to-end encryption of task content | `e2ee` |
 
 ## Principles that do not change

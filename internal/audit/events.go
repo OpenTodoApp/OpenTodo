@@ -46,6 +46,14 @@ const (
 	AuditExportedName      Name = "audit.exported"
 	BackupCreatedName      Name = "backup.created"
 	BackupRestoredName     Name = "backup.restored"
+	// User administration (user-management).
+	UserDeactivatedName        Name = "user.deactivated"
+	UserReactivatedName        Name = "user.reactivated"
+	UserDeletedName            Name = "user.deleted"
+	PasswordResetIssuedName    Name = "password.reset_issued"
+	PasswordResetCompletedName Name = "password.reset_completed"
+	PasswordChangedName        Name = "password.changed"
+	OwnerTransferredName       Name = "owner.transferred"
 )
 
 // Names lists the whole catalogue in a stable order (used by the API docs, the
@@ -60,6 +68,9 @@ var Names = []Name{
 	IdentityLinkedName, IdentityUnlinkedName,
 	ExportRequestedName, AuditExportedName,
 	BackupCreatedName, BackupRestoredName,
+	UserDeactivatedName, UserReactivatedName, UserDeletedName,
+	PasswordResetIssuedName, PasswordResetCompletedName, PasswordChangedName,
+	OwnerTransferredName,
 }
 
 // PersonalNames are the events a user sees about themselves in
@@ -70,6 +81,7 @@ var PersonalNames = []Name{
 	PasskeyRegisteredName, PasskeyDeletedName,
 	TokenCreatedName, TokenRevokedName,
 	IdentityLinkedName, IdentityUnlinkedName,
+	PasswordResetCompletedName, PasswordChangedName,
 }
 
 // Known reports whether n is in the catalogue.
@@ -97,6 +109,8 @@ const (
 	ReasonUnknownPasskey  = "unknown_passkey"
 	ReasonPasskeyRejected = "passkey_rejected"
 	ReasonPasskeyCounter  = "passkey_counter_regression"
+	// ReasonDeactivated: the correct password of a deactivated account.
+	ReasonDeactivated = "deactivated"
 )
 
 // allowedDetailKeys is the complete set of keys an event's details may carry:
@@ -120,6 +134,7 @@ var allowedDetailKeys = map[string]bool{
 	"format":        true, // export format
 	"count":         true, // number of exported events
 	"backup_id":     true,
+	"reset_id":      true, // id of a password reset link (never its secret)
 }
 
 // Event is one security-relevant occurrence. Build it with a constructor.
@@ -289,4 +304,45 @@ func BackupCreated(actorID, backupID string) Event {
 // BackupRestored records a restore from a backup.
 func BackupRestored(actorID, backupID string) Event {
 	return ev(BackupRestoredName, Success, actorID, "", "backup_id", backupID)
+}
+
+// ---- user administration (user-management) ----
+
+// UserDeactivated records actor deactivating target.
+func UserDeactivated(actorID, targetID string) Event {
+	return ev(UserDeactivatedName, Success, actorID, targetID)
+}
+
+// UserReactivated records actor reactivating target.
+func UserReactivated(actorID, targetID string) Event {
+	return ev(UserReactivatedName, Success, actorID, targetID)
+}
+
+// UserDeleted records actor deleting target, with a snapshot of the deleted
+// account's email so the event stays readable after the account is gone.
+func UserDeleted(actorID, targetID, email string) Event {
+	return ev(UserDeletedName, Success, actorID, targetID, "email", email)
+}
+
+// PasswordResetIssued records a reset link for target; actor is empty when it
+// was issued from the server shell. The link secret is never passed in.
+func PasswordResetIssued(actorID, targetID, resetID string) Event {
+	return ev(PasswordResetIssuedName, Success, actorID, targetID, "reset_id", resetID)
+}
+
+// PasswordResetCompleted records target setting a new password through a reset
+// link. The new password is never passed in.
+func PasswordResetCompleted(targetID, resetID string) Event {
+	return ev(PasswordResetCompletedName, Success, targetID, "", "reset_id", resetID)
+}
+
+// PasswordChanged records a user changing their own password.
+func PasswordChanged(userID string) Event {
+	return ev(PasswordChangedName, Success, userID, "")
+}
+
+// OwnerTransferred records the owner handing ownership to another account; the
+// previous owner becomes an admin.
+func OwnerTransferred(fromID, toID string) Event {
+	return ev(OwnerTransferredName, Success, fromID, toID, "from", "owner", "to", "admin")
 }

@@ -2,6 +2,7 @@
 // tasks. Pure; names are resolved against the labels and projects passed in on
 // every compile, so renames are picked up and deleted names degrade to a warning
 // plus an empty match instead of an error (design D3).
+import { localDueOf } from '../dates'
 import { descendants } from '../tree'
 import type { Label, Project, Task } from '../types'
 import { parse, resolveDate, shiftISO, type Cmp, type Node } from './parse'
@@ -138,7 +139,7 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
         if (n.field === 'created') return createdPred(n.op, date)
         const op = n.op
         // A task without a due date never matches a `due` comparison.
-        return (t) => t.due !== null && compareISO(t.due.date, op, date)
+        return (t) => t.due !== null && compareISO(localDueOf(t.due).date, op, date)
       }
       case 'search': {
         const needle = n.text.toLocaleLowerCase()
@@ -146,9 +147,9 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
       }
       case 'keyword':
         switch (n.keyword) {
-          case 'overdue': return (t) => t.due !== null && t.due.date < today
-          case 'today': return (t) => t.due !== null && t.due.date === today
-          case 'tomorrow': return (t) => t.due !== null && t.due.date === tomorrow
+          case 'overdue': return (t) => t.due !== null && localDueOf(t.due).date < today
+          case 'today': return (t) => t.due !== null && localDueOf(t.due).date === today
+          case 'tomorrow': return (t) => t.due !== null && localDueOf(t.due).date === tomorrow
           case 'no date': return (t) => t.due === null
           case 'no time': return (t) => t.due !== null && !t.due.time
           case 'no project': return (t) => t.project_id === null

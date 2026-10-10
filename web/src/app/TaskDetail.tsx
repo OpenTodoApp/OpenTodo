@@ -6,7 +6,10 @@ import { createSubtask, deleteTask, setTaskCompleted, setTaskParent, updateTask 
 import { buildProjectTree } from '../lib/projects'
 import { progressOf } from '../lib/subtasks'
 import { descendants, flattenTree } from '../lib/tree'
-import type { Label, Priority, Project, Task } from '../lib/types'
+import type { Label, Priority, Project, Section, Task } from '../lib/types'
+import { byPosition } from '../lib/ordering'
+import { effectiveSection, moveTaskToSection } from '../lib/sections'
+import { DueField } from './DueField'
 import { EstimateField } from './EstimateField'
 import { LabelChip, LabelPicker } from './LabelPicker'
 import { RecurrenceField } from './RecurrenceField'
@@ -58,6 +61,12 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   // Projects in sidebar (tree) order, indented by depth; archived ones are left out.
   const projectOptions = useMemo(() => flattenTree(buildProjectTree(projects).roots), [projects])
   const progress = useMemo(() => progressOf({ id: taskId }, children), [taskId, children])
+  // Section picker (board-view): live sections of the task's own project only.
+  const sections = useLiveQuery(
+    () => (projectId ? db.sections.where('project_id').equals(projectId).filter((s) => !s.deleted_at).toArray().then((l) => l.sort(byPosition)) : Promise.resolve([] as Section[])),
+    [projectId], [] as Section[],
+  )
+  const sectionMap = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections])
 
   useEffect(() => {
     if (task) {
@@ -161,6 +170,19 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           {children.length > 0 && <p className="mt-1 text-xs text-slate-400">Moving this task moves its {children.length === 1 ? 'subtask' : 'subtasks'} too.</p>}
         </Field>
 
+        {task.project_id && sections.length > 0 && (
+          <Field label="Section">
+            {/* Subtasks are shown under their parent, so only top-level tasks pick a section. */}
+            <select className="input" aria-label="Section" value={effectiveSection(task, sectionMap) ?? ''}
+              disabled={!!parent && !parent.deleted_at}
+              onChange={(e) => void moveTaskToSection(task.id, e.target.value || null).catch(() => undefined)}>
+              <option value="">No section</option>
+              {sections.map((s) => <option key={s.id} value={s.id}>{s.name || 'Untitled section'}</option>)}
+            </select>
+            {parent && !parent.deleted_at && <p className="mt-1 text-xs text-slate-400">Subtasks are shown in their parent’s section.</p>}
+          </Field>
+        )}
+
         <Field label="Parent task">
           <select className="input" aria-label="Parent task" value={task.parent_id ?? ''} onChange={(e) => void changeParent(e.target.value)}>
             <option value="">No parent</option>
@@ -191,13 +213,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         </Field>
 
         <Field label="Due">
-          <div className="flex gap-2">
-            <input type="date" className="input" aria-label="Due date" value={task.due?.date ?? ''}
-              onChange={(e) => void updateTask(task.id, { due: e.target.value ? { date: e.target.value, ...(task.due?.time ? { time: task.due.time } : {}) } : null })} />
-            <input type="time" className="input w-32" aria-label="Due time" value={task.due?.time ?? ''} disabled={!task.due}
-              onChange={(e) => task.due && void updateTask(task.id, { due: e.target.value ? { date: task.due.date, time: e.target.value } : { date: task.due.date } })} />
-            {task.due && <button className="btn-ghost" onClick={() => void updateTask(task.id, { due: null })} aria-label="Clear due date">✕</button>}
-          </div>
+          <DueField task={task} readOnly={readOnly} />
         </Field>
 
         <Field label="Reminders">

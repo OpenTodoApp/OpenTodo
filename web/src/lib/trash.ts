@@ -209,6 +209,11 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
       }
       for (const id of taskIds) gone.set(id, 'task')
       for (const r of await db.reminders.toArray()) if (taskIds.has(r.task_id)) gone.set(r.id, 'reminder')
+      // Sections of purged projects (board-view).
+      for (const p of list) {
+        if (p.entity !== 'project') continue
+        for (const s of await db.sections.where('project_id').equals(p.entityId).primaryKeys()) gone.set(s as string, 'section')
+      }
       // Comments go with their task (comments-and-activity).
       for (const id of await db.comments.where('task_id').anyOf([...taskIds]).primaryKeys()) gone.set(id as string, 'comment')
     }
@@ -219,6 +224,7 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
     if (byEntity.reminder) await db.reminders.bulkDelete(byEntity.reminder)
     if (byEntity.label) await db.labels.bulkDelete(byEntity.label)
     if (byEntity.view) await db.views.bulkDelete(byEntity.view)
+    if (byEntity.section) await db.sections.bulkDelete(byEntity.section)
     if (byEntity.comment) await db.comments.bulkDelete(byEntity.comment)
     // Purged history is gone from the server's log; drop the local activity too.
     await forgetEntities(gone.keys())
