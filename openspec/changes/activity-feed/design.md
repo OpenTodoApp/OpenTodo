@@ -36,11 +36,21 @@ Opening the feed marks all listed shared projects seen at the newest displayed e
 
 ### Data-model impact
 - Op schema: new entity `project_prefs` with `feed_seen_at` (number). No changes to existing entities.
-- Server tables: none. Client: no new table; `project_prefs` rows live in a small local `prefs` table.
+- Server tables: none. Client: `project_prefs` rows live in a small local `prefs` table (Dexie v12, every store redeclared; v11 is reserved by a parallel change).
 - REST: one new read route.
 
+### D6. Keyboard: `g h`, not `g f`
+`g f` already opens the Filter view, so the feed is `g h` (h as in history; `Shift+H` already toggles a project's activity). The `?` overlay lists it.
+
+### D7. Implementation notes
+- Server: `project_prefs` needed no resolver code, since every entity outside project/task/section/comment already falls to the author's personal scope; a comment there and `TestProjectPrefsAreAlwaysPersonalScope` pin it. Purging a project also purges every member's `project_prefs` for it (with markers), so a stale device cannot resurrect a mark for a project that no longer exists. No SQL migration.
+- The route derives each shared project's ops on their own, exactly like `GET /api/v1/projects/{id}/activity`, so event ids, folds and kinds agree between the two routes and the local view. The cursor is the existing `(ts:id)` cursor of the activity routes (accepted as `cursor` or `before`); "unknown cursor" means malformed, as for the existing routes. The `kind` filter takes the six feed categories (`internal/activity/feed.go`, mirrored by `FEED_KINDS` in `web/src/lib/feed.ts`).
+- Initial seen time: per device and per shared project (`meta.feedBaseline`), set after the first completed sync that knows the project. This covers both the upgrade and joining a project later (whose backfilled history would otherwise be unread). A synced `feed_seen_at` always takes precedence.
+- Live refresh: the feed and counts are Dexie live queries over `activity`, `prefs`, `memberships` and `meta`; every sync that writes ops re-runs them, whichever trigger started it (server wake-up, timer, focus, reconnect). No extra subscription was needed.
+- While the feed is open, newly arriving events are marked seen too (debounced, at most one op per project per 400 ms window); entries that were unread when the feed opened keep a dot.
+
 ### Dependencies and footprint
-None added. Server image and memory unchanged; the route is a paged read. Client bundle +3 KB gzipped for the feed view and filters.
+None added. Server binary and memory unchanged; the route is a paged read (it derives every shared project's events per request, like the per-project route does for one project). Client bundle measured with `vite build`: main chunk 794.65 kB → 806.69 kB minified, **233.57 kB → 236.55 kB gzipped (+3.0 KB)**.
 
 ## Risks / Trade-offs
 
