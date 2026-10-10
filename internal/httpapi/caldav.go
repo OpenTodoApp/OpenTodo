@@ -91,7 +91,10 @@ func (s *Server) caldavSettingBody(r *http.Request, on bool) map[string]any {
 // and where it is, so the Settings screen can show setup instructions; only the
 // owner may change it.
 func (s *Server) handleGetCaldavSetting(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, s.caldavSettingBody(r, s.caldavEnabled(r.Context())))
+	body := s.caldavSettingBody(r, s.caldavEnabled(r.Context()))
+	// Tells the Settings screen why the endpoint refuses this account (OpenSpec `e2ee`).
+	body["encryption"] = s.encryptionStatus(r.Context(), userFrom(r.Context()).ID).Enabled
+	writeJSON(w, http.StatusOK, body)
 }
 
 func (s *Server) handlePutCaldavSetting(w http.ResponseWriter, r *http.Request) {
@@ -139,6 +142,11 @@ func (s *Server) handleCreateAppPassword(w http.ResponseWriter, r *http.Request)
 	}
 	if err := readJSON(r, &in); err != nil {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		return
+	}
+	// CalDAV clients need plaintext titles (OpenSpec `e2ee`): refused while the
+	// account encrypts its content, see handleDAV.
+	if s.refuseIfEncrypted(w, r, "CalDAV is not available for accounts with end-to-end encryption") {
 		return
 	}
 	p, plain, err := s.auth.CreateAppPassword(r.Context(), userFrom(r.Context()).ID, in.Name)

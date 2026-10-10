@@ -190,6 +190,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerCaldavRoutes(mux)
 	// Comments and activity (OpenSpec `comments-and-activity`): literal patterns win over {collection}.
 	s.registerCommentRoutes(mux)
+	// End-to-end encryption (OpenSpec `e2ee`): wrapped key record and history purge.
+	s.registerEncryptionRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
@@ -396,6 +398,9 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		out["mfa"] = st
+		// The web app reads its profile here (OpenSpec `e2ee`, design D5/D9).
+		out["encryption"] = s.encryptionStatus(r.Context(), u.ID)
+		out["minClientVersion"] = MinClientVersion
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -570,7 +575,9 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"user": u, "mfa": st})
+	// encryption and minClientVersion: OpenSpec `e2ee` (design D8, D9).
+	writeJSON(w, http.StatusOK, map[string]any{"user": u, "mfa": st,
+		"encryption": s.encryptionStatus(r.Context(), u.ID), "minClientVersion": MinClientVersion})
 }
 
 func (s *Server) handleListTokens(w http.ResponseWriter, r *http.Request) {
@@ -1311,6 +1318,15 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["comments"] = comments
+	// End-to-end encryption (OpenSpec `e2ee`): content fields above are ciphertext
+	// for an encrypted account; the wrapped key record makes the document
+	// restorable and decryptable elsewhere with the passphrase. null otherwise.
+	rec, err := s.keys().Get(r.Context(), uid)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["encryption"] = rec
 	w.Header().Set("Content-Disposition", `attachment; filename="opentodo-export.json"`)
 	writeJSON(w, http.StatusOK, out)
 	s.audit.Record(r.Context(), audit.ExportRequested(uid, "json"))
