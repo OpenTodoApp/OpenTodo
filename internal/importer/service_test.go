@@ -222,10 +222,10 @@ func TestCommitWritesOnlyOps(t *testing.T) {
 	}
 	// Every materialized field is the winner of an op stamped with device "import";
 	// nothing reached the fields table except through sync.Apply.
-	if n := h.count(`SELECT COUNT(*) FROM fields`); n == 0 || n != job.Totals.Ops {
+	if n := h.count(`SELECT COUNT(*) FROM scope_fields`); n == 0 || n != job.Totals.Ops {
 		t.Fatalf("fields %d, ops written %d", n, job.Totals.Ops)
 	}
-	if n := h.count(`SELECT COUNT(*) FROM fields f WHERE NOT EXISTS (SELECT 1 FROM ops o WHERE o.user_id = f.user_id AND o.entity = f.entity
+	if n := h.count(`SELECT COUNT(*) FROM scope_fields f WHERE NOT EXISTS (SELECT 1 FROM ops o JOIN op_scopes s ON s.seq = o.seq WHERE s.scope_id = f.scope_id AND o.entity = f.entity
 		AND o.entity_id = f.entity_id AND o.field = f.field AND o.value = f.value AND o.ts = f.ts AND o.device = 'import')`); n != 0 {
 		t.Fatalf("%d fields without a matching import op", n)
 	}
@@ -378,7 +378,7 @@ func TestOverwriteKeepsNewerDeviceEdit(t *testing.T) {
 	}
 	// The unchanged priority keeps its original clock.
 	var ts int64
-	_ = h.db.QueryRow(`SELECT ts FROM fields WHERE entity_id = 't1' AND field = 'priority'`).Scan(&ts)
+	_ = h.db.QueryRow(`SELECT ts FROM scope_fields WHERE entity_id = 't1' AND field = 'priority'`).Scan(&ts)
 	if ts != 2_000_000 {
 		t.Fatalf("priority clock = %d", ts)
 	}

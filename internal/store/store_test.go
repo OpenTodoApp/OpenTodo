@@ -51,7 +51,7 @@ func TestOpenMigratesEmptyDataDir(t *testing.T) {
 	if version != latest || latest != LatestVersion() {
 		t.Fatalf("user_version = %d, want %d", version, latest)
 	}
-	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations", "settings", "webhooks", "webhook_deliveries", "import_jobs", "import_items", "audit_events", "backup_runs"} {
+	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "op_scopes", "scope_fields", "project_scopes", "project_members", "member_backfills", "invitations", "settings", "webhooks", "webhook_deliveries", "import_jobs", "import_items", "audit_events", "backup_runs"} {
 		var name string
 		err := db.QueryRowContext(context.Background(), "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", table).Scan(&name)
 		if err != nil {
@@ -89,7 +89,7 @@ func TestMigrateReachesLatestVersion(t *testing.T) {
 	if version != latest {
 		t.Fatalf("user_version = %d, want %d", version, latest)
 	}
-	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "passkeys"} {
+	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "scope_fields", "passkeys"} {
 		var name string
 		if err := db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?", table).Scan(&name); err != nil {
 			t.Fatalf("table %s missing after migration: %v", table, err)

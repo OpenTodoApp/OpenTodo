@@ -5,14 +5,14 @@ Open-source, self-hosted, local-first task manager that replaces subscription ta
 
 ## Non-negotiables
 1. **Specs before behavior.** Behavior changes start as an OpenSpec change (`openspec/changes/<name>/`). Use `/opsx:propose`, `/opsx:apply`, `/opsx:archive`. Live specs are in `openspec/specs/`. Validate with `npx @fission-ai/openspec validate --all --strict`.
-2. **All data writes go through ops.** Never write task/project rows directly. Server: `internal/sync`. Client: `web/src/lib/ops.ts` → `mutate()`.
+2. **All data writes go through ops.** Membership is never an op; REST writes use `ApplyStrict` and wake devices with `NotifyApplied`. Never write task/project rows directly. Server: `internal/sync`. Client: `web/src/lib/ops.ts` → `mutate()`.
 3. **Op schema is additive.** New fields: add to `internal/sync/ops.go` `Schema`, `web/src/lib/types.ts`, and the defaults in `web/src/lib/ops.ts`. Never rename or remove a field without a design doc.
 4. **Auth required by default.** New API routes are registered with `requireAuth` unless there is a spec reason not to.
 5. **No telemetry, no third-party network calls, no new mandatory env vars.**
 6. **Keep it small.** Justify every dependency. Report bundle / binary size impact in design docs.
 
 ## Layout
-- `cmd/opentodo` entry point; `internal/config` env; `internal/store` SQLite + embedded migrations (`internal/store/migrations/NNNN_*.sql`, applied by `PRAGMA user_version`); `internal/auth` users/sessions/tokens; `internal/sync` op log + LWW + materialized reads; `internal/httpapi` router/handlers/middleware; `internal/web` embeds `internal/web/dist`; `internal/backup` snapshots, archives, destinations, scheduler, restore; `internal/settings` owner settings and secrets files.
+- `cmd/opentodo` entry point; `internal/config` env; `internal/store` SQLite + embedded migrations (`internal/store/migrations/NNNN_*.sql`, applied by `PRAGMA user_version`); `internal/auth` users/sessions/tokens; `internal/sync` op log + LWW + materialized reads, sharing scopes (`scope.go`) and membership (`members.go`); `internal/httpapi` router/handlers/middleware; `internal/web` embeds `internal/web/dist`; `internal/backup` snapshots, archives, destinations, scheduler, restore; `internal/settings` owner settings and secrets files.
 - `web/` Vite + React 19 + Tailwind 4 + Dexie. `src/lib` data layer (db, ops, sync, hlc, api, dates), `src/app` UI. Tests: `*.test.ts` with vitest + fake-indexeddb.
 - `extension/` browser capture extension (MV3, plain JS; `make extension` builds the zip).
 - `docs/` architecture, sync protocol, API, self-hosting. `ROADMAP.md` maps features to change names.

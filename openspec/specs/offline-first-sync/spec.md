@@ -46,15 +46,23 @@ The server SHALL ignore an operation whose id it has already stored, and the cli
 - **THEN** the server reports them as duplicates and the state is identical to a single delivery
 
 ### Requirement: Sync exchange
-A single request SHALL push the client's pending operations and pull operations recorded after the client's cursor, excluding those authored by the requesting device. The response SHALL include the new cursor, whether more operations remain, and the server time. The client SHALL keep exchanging until the outbox is empty and no more operations remain.
+A single request SHALL push the client's pending operations and pull operations recorded after the client's cursor, excluding those authored by the requesting device. The response SHALL include the new cursor, whether more remain, the server time, the refused operations with reasons, and the caller's project memberships. The client SHALL exchange until the outbox is empty and nothing remains, treating added response fields as optional.
 
 #### Scenario: New device catches up
 - **WHEN** a device with an empty cursor syncs
-- **THEN** it receives every operation ever recorded for the user, including those created through the REST API, and ends with the same tasks and projects as the other devices
+- **THEN** it receives every operation ever recorded for the user's own data and for every project shared with the user, including those created through the REST API, and ends with the same tasks and projects as the other devices
 
 #### Scenario: Offline edits upload on reconnect
 - **WHEN** a device made edits offline and the network returns
 - **THEN** the pending operations are uploaded without user action and other devices receive them on their next exchange
+
+#### Scenario: Newly shared project catches up behind an existing cursor
+- **WHEN** a device whose cursor is already past a project's history becomes a member of that project and syncs
+- **THEN** the exchange delivers that project's full history before newer operations, reporting that more remain until the history is complete, and the device's single cursor keeps advancing monotonically
+
+#### Scenario: Refused operations do not block the outbox
+- **WHEN** a pushed batch contains an operation the caller is not allowed to make
+- **THEN** the response is 200, the allowed operations are applied, the refused one is listed with its id and reason, and the device removes it from the outbox instead of retrying it
 
 ### Requirement: Sync triggers and status
 The client SHALL sync shortly after each local edit, when the network comes back, when the tab becomes visible, when the server signals that new operations are available, and periodically while open. It SHALL show whether it is synced, syncing, offline (with the count of pending changes), signed out, or in error, SHALL show whether live updates are connected, and SHALL let the user trigger a sync manually.
@@ -79,11 +87,19 @@ Timestamps SHALL be strictly increasing per device even if the system clock move
 - **THEN** the stored timestamp is at most five minutes ahead of server time and later edits from correctly set devices can still win
 
 ### Requirement: Per-user isolation
-Operations SHALL be stored and served per account; no user SHALL receive or affect another user's operations.
+Operations SHALL be stored and served per scope: a user's personal scope holds their Inbox, unshared projects and the tasks in them, and each shared project is its own scope. A user SHALL receive operations only from their personal scope and from the scopes of projects they are currently a member of, and SHALL be able to affect only those scopes, within their role. No user SHALL receive or affect any other scope.
 
 #### Scenario: Two accounts on one server
-- **WHEN** two users sync against the same server
+- **WHEN** two users who share nothing sync against the same server
 - **THEN** each receives only their own operations
+
+#### Scenario: Shared and personal data side by side
+- **WHEN** Alice and Bob share one project and each also has personal projects, and both sync
+- **THEN** each receives the shared project's operations plus their own, and neither receives anything from the other's personal projects
+
+#### Scenario: Former member
+- **WHEN** Bob has been removed from a shared project and syncs
+- **THEN** he receives no further operations of that project, and operations he submits for it are refused
 
 ### Requirement: Live update channel
 The server SHALL offer an authenticated, long-lived event stream per device at `GET /api/v1/sync/events` that accepts the same session cookie or bearer token as every other API route and emits a wake-up event whenever operations for the authenticated user are recorded. The stream SHALL carry no stored data of its own: if it is unavailable or offline, nothing is lost, because every change is still delivered by the sync exchange and convergence is unchanged.

@@ -4,7 +4,7 @@
 
 - [x] 1.1 `internal/auth/totp.go`: secret generation, provisioning URI, code verification with one-step tolerance, constant-time compare, last-used-step replay guard; verify `TestTOTPVectors` (published test vectors) and `TestTOTPReplayRefused` with `go test ./...`
 - [x] 1.2 Migrations for `mfa_totp`, `mfa_recovery_codes`, `trusted_devices`, `sessions.mfa_at`, `sessions.reauth_at`, and `settings` if absent; verify the store migration test reaches the new `user_version`
-  - `mfa_at` and `reauth_at` live in a one-to-one companion table, `session_auth(token_hash -> sessions ON DELETE CASCADE, mfa_at, reauth_at)`, not in columns on `sessions`. SQLite has no idempotent `ADD COLUMN`, and the migration (`0009_mfa.sql`) must stay re-runnable so it can be renumbered. Verified by `TestMigrationMFA`.
+  - `mfa_at` and `reauth_at` live in a one-to-one companion table, `session_auth(token_hash -> sessions ON DELETE CASCADE, mfa_at, reauth_at)`, not in columns on `sessions`. SQLite has no idempotent `ADD COLUMN`, and the migration (`0010_mfa.sql`) must stay re-runnable so it can be renumbered. Verified by `TestMigrationMFA`.
 - [x] 1.3 Recovery codes: generate ten, hash, consume once, regenerate; verify `TestRecoveryCodesSingleUseAndRegenerate`
 
 ## 2. Server: sign-in, step-up, policy, routes

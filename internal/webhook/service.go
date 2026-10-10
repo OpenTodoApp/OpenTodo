@@ -529,37 +529,57 @@ func (s *Service) Observe(ctx context.Context, changes []opsync.Change) {
 }
 
 func (s *Service) enqueue(ctx context.Context, changes []opsync.Change) error {
-	userID := changes[0].UserID
-	subs, err := s.subscriptions(ctx, userID)
-	if err != nil || len(subs) == 0 {
-		return err
-	}
 	type row struct{ id, webhookID, event, payload string }
 	var rows []row
 	now := s.nowMs()
+	// Everyone who can see a change's scope is told through their own webhooks
+	// (project-sharing): the author for personal data, every member of a shared
+	// project. Each payload is built from that member's view of the entity.
+	usersByScope := map[string][]string{}
+	subsByUser := map[string][]subscription{}
 	for _, c := range changes {
-		if c.UserID != userID {
-			continue // Apply batches are per user; be defensive anyway.
-		}
-		event := EventFor(c)
-		var entity opsync.Entity
-		loaded := false
-		for _, sub := range subs {
-			if !slices.Contains(sub.events, event) || !s.matchesProject(ctx, sub.projectID, c, &entity, &loaded) {
-				continue
-			}
-			if !loaded {
-				if entity, err = s.sync.Get(ctx, userID, c.Entity, c.EntityID); err != nil {
+		users, ok := usersByScope[c.ScopeID]
+		if !ok {
+			if c.ScopeID == "" {
+				users = []string{c.UserID}
+			} else {
+				var err error
+				if users, err = s.sync.ScopeUsers(ctx, c.ScopeID); err != nil {
 					return err
 				}
-				loaded = true
 			}
-			id := ids.New()
-			body, err := BuildPayload(id, sub.id, event, now, c.Origin, c.Entity, entity, c.Fields)
-			if err != nil {
-				return err
+			usersByScope[c.ScopeID] = users
+		}
+		event := EventFor(c)
+		for _, userID := range users {
+			subs, ok := subsByUser[userID]
+			if !ok {
+				var err error
+				if subs, err = s.subscriptions(ctx, userID); err != nil {
+					return err
+				}
+				subsByUser[userID] = subs
 			}
-			rows = append(rows, row{id, sub.id, event, string(body)})
+			var entity opsync.Entity
+			loaded := false
+			for _, sub := range subs {
+				if !slices.Contains(sub.events, event) || !s.matchesProject(ctx, userID, sub.projectID, c, &entity, &loaded) {
+					continue
+				}
+				if !loaded {
+					var err error
+					if entity, err = s.sync.Get(ctx, userID, c.Entity, c.EntityID); err != nil {
+						return err
+					}
+					loaded = true
+				}
+				id := ids.New()
+				body, err := BuildPayload(id, sub.id, event, now, c.Origin, c.Entity, entity, c.Fields)
+				if err != nil {
+					return err
+				}
+				rows = append(rows, row{id, sub.id, event, string(body)})
+			}
 		}
 	}
 	if len(rows) == 0 {
@@ -607,7 +627,7 @@ func (s *Service) subscriptions(ctx context.Context, userID string) ([]subscript
 // matchesProject applies a webhook's project filter. A project event matches its
 // own id; a task event matches the task's current project or, for a move, the
 // project it left. The entity is loaded lazily and cached by the caller.
-func (s *Service) matchesProject(ctx context.Context, filter string, c opsync.Change, entity *opsync.Entity, loaded *bool) bool {
+func (s *Service) matchesProject(ctx context.Context, userID, filter string, c opsync.Change, entity *opsync.Entity, loaded *bool) bool {
 	if filter == "" {
 		return true
 	}
@@ -618,7 +638,7 @@ func (s *Service) matchesProject(ctx context.Context, filter string, c opsync.Ch
 		return true
 	}
 	if !*loaded {
-		e, err := s.sync.Get(ctx, c.UserID, c.Entity, c.EntityID)
+		e, err := s.sync.Get(ctx, userID, c.Entity, c.EntityID)
 		if err != nil {
 			s.log.Error("webhooks: load entity", "err", err)
 			return false

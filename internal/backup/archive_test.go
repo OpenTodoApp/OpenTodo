@@ -81,8 +81,10 @@ func TestSnapshotIsConsistentUnderConcurrentWrites(t *testing.T) {
 		}
 		var maxSeq, orphans int64
 		snap.QueryRow(`SELECT COALESCE(MAX(seq),0) FROM ops`).Scan(&maxSeq)
-		snap.QueryRow(`SELECT COUNT(*) FROM ops o WHERE NOT EXISTS (SELECT 1 FROM fields f
-			WHERE f.user_id = o.user_id AND f.entity = o.entity AND f.entity_id = o.entity_id AND f.field = o.field)`).Scan(&orphans)
+		if err := snap.QueryRow(`SELECT COUNT(*) FROM ops o JOIN op_scopes s ON s.seq = o.seq WHERE NOT EXISTS (SELECT 1 FROM scope_fields f
+			WHERE f.scope_id = s.scope_id AND f.entity = o.entity AND f.entity_id = o.entity_id AND f.field = o.field)`).Scan(&orphans); err != nil {
+			t.Fatal(err)
+		}
 		snap.Close()
 		os.Remove(path)
 		if maxSeq < before {

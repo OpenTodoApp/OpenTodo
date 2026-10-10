@@ -89,7 +89,12 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | POST | `/api/v1/webhooks/{id}/deliveries/{did}/redeliver` | yes | queue the same body with a new id → 202 `{delivery}` |
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
 | PUT | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` → `{allowPrivate}` |
-| GET | `/api/v1/tasks` | yes | `{tasks:[…]}`; `?include_deleted=true` to include tombstones |
+| GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}]}`, see [Sharing](#sharing) |
+| POST | `/api/v1/projects/{id}/members` | owner, admin | `{email, role}` → 201 membership (shares the project on first use) |
+| PATCH | `/api/v1/projects/{id}/members/{userId}` | owner, admin | `{role}` → membership |
+| DELETE | `/api/v1/projects/{id}/members/{userId}` | member | remove a member, or leave with your own id or `me` → 204 |
+| POST | `/api/v1/projects/{id}/transfer` | owner | `{userId}` → membership; the previous owner becomes an admin |
+| GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones |
 | POST | `/api/v1/tasks` | yes | create → 201 task |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
 | PATCH | `/api/v1/tasks/{id}` | yes | partial update → task |
@@ -99,7 +104,7 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md`; the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`), including deleted items; never contains audit events |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -480,6 +485,40 @@ curl -sS -H "Authorization: Bearer $TOKEN" \
 
 **Personal activity** — `GET /api/v1/me/activity` (any signed-in user) → `{events: [...]}`: the caller's own sign-ins, failed sign-ins against their account, sign-outs and credential and token events from the last 90 days, at most 100, newest first. Events about other accounts never appear.
 
+### Sharing
+
+A project owner shares a project with other accounts on the same server by exact email (OpenSpec `project-sharing`). Roles:
+
+| Role | May |
+| --- | --- |
+| `viewer` | read the project and its tasks |
+| `editor` | also create, edit, complete and delete tasks in the project |
+| `admin` | also rename, recolour and archive the project; add, re-role and remove viewers and editors |
+| `owner` | everything, including deleting the project, transferring ownership and managing admins; exactly one per project |
+
+Every route requires a session or token. A caller who is not a member gets `404 not_found`, the same as for a project that does not exist; the member's email is looked up only after the caller's role was checked, so the routes cannot be used to probe for accounts. Labels and saved views stay personal.
+
+```sh
+# Share with an existing account as editor
+curl -X POST -H "Authorization: Bearer $T" -H 'Content-Type: application/json' \
+  -d '{"email":"bob@example.com","role":"editor"}' $BASE/api/v1/projects/$P/members
+# 201 {"projectId":"…","role":"owner","ownerId":"…","members":[{"userId":"…","name":"Alice","email":"alice@example.com","role":"owner"},
+#      {"userId":"…","name":"Bob","email":"bob@example.com","role":"editor"}]}
+
+curl -X POST … -d '{"email":"nobody@example.com","role":"editor"}' $BASE/api/v1/projects/$P/members
+# 404 {"error":{"code":"user_not_found","message":"no account with this email exists on this server"}}
+
+curl -X DELETE -H "Authorization: Bearer $T" $BASE/api/v1/projects/$P/members/me    # as the owner
+# 409 {"error":{"code":"owner_must_transfer","message":"the owner cannot leave the project; transfer ownership to another member first"}}
+
+curl -X POST … -d '{"userId":"<bob>"}' $BASE/api/v1/projects/$P/transfer
+# 200 membership; Bob is the owner, the previous owner an admin
+```
+
+Collections, single reads and the export include the shared projects and their tasks; a shared project carries the read-only keys `role` (yours) and `owner_id`. They are ignored when sent back in a write. REST writes are checked with the same role table as sync: a refused write answers `403 forbidden` and stores nothing. A task cannot change sharing scope: `PATCH` of `project_id` to a project shared differently (or to the Inbox from a shared project) answers `400 scope_change`; create a copy in the destination and delete the original instead, which is what the web app does.
+
+Membership changes are recorded in the audit log as `role.changed` with `from`/`to` values such as `none` → `project.editor`.
+
 ### Import
 
 Import tasks and projects from the app's own export, CSV, or JSON exports of other task managers. Formats, the CSV columns, mapping rules and limits are documented in [import.md](import.md). Every imported field is written to the operation log with server time and the device id `import`, so devices receive imports like any other write.
@@ -685,13 +724,17 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | Code | Status | Where |
 | --- | --- | --- |
 | `unauthorized` | 401 | any protected route without a valid session or token |
-| `forbidden` | 403 | invitation management, backups, audit log, audit settings, webhook policy, two-factor policy or member reset by a non-owner |
+| `forbidden` | 403 | invitation management, backups, audit log, audit settings, webhook policy, two-factor policy or member reset by a non-owner; a write or membership change your project role does not allow |
 | `reauth_required` | 403 | a sensitive route on a cookie session that has not proved its identity in the last ten minutes; see [Two-factor authentication](#two-factor-authentication) |
 | `mfa_enrolment_required` | 403 | the owner's policy requires a second factor that this account has not set up yet |
 | `mfa_required_by_policy` | 403 | turning off a second factor that the policy requires |
 | `mfa_code_invalid` | 400/401 | wrong, reused or expired one-time or recovery code |
 | `mfa_challenge_invalid` | 401 | expired or exhausted sign-in challenge: enter the password again |
 | `mfa_already_enrolled` / `mfa_not_enrolled` | 409 | enrolling twice, or disabling/regenerating without a second factor |
+| `user_not_found` | 404 | adding a project member by an email that has no account |
+| `owner_must_transfer` | 409 | the project owner leaving the project |
+| `already_member` | 409 | adding an account that is already a member of the project |
+| `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
 | `bad_origin` | 403 | cookie-authenticated write from another origin |
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
