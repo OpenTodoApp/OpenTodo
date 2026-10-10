@@ -75,6 +75,10 @@ type Server struct {
 	// anonymous start and callback routes per client address (20/min).
 	oidc        *oidc.Service
 	oidcLimiter *rateLimiter
+	// caldav caches the CalDAV toggle and davLimiter counts failed Basic
+	// authentications per client address (10/min; OpenSpec `caldav`).
+	caldav     caldavState
+	davLimiter *rateLimiter
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -98,8 +102,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		passkeyOptions: newRateLimiter(10, time.Minute),
 		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
 		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
-		oidcLimiter: newRateLimiter(20, time.Minute),
-		importer:    importer.New(syncSvc.DB(), syncSvc, log)}
+		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
+		importer: importer.New(syncSvc.DB(), syncSvc, log)}
 	for _, o := range opts {
 		o(s)
 	}
@@ -181,6 +185,9 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerNotificationRoutes(mux)
 	// Trash and history (OpenSpec `trash-and-history`): literal patterns win over {collection}.
 	s.registerTrashRoutes(mux)
+	// CalDAV (OpenSpec `caldav`): app passwords, the owner toggle and /dav/.
+	s.seedCaldav(context.Background())
+	s.registerCaldavRoutes(mux)
 	// Comments and activity (OpenSpec `comments-and-activity`): literal patterns win over {collection}.
 	s.registerCommentRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
