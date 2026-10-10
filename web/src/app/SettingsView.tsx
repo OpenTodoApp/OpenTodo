@@ -7,6 +7,7 @@ import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
 import { BackupsPanel } from './BackupsPanel'
 import { QuickAddSettingsSection } from './QuickAddSettings'
+import { VoiceSettingsSection } from './VoiceSettings'
 import { CalendarSettingsSection } from './CalendarSettings'
 import { PasswordSection } from './PasswordSection'
 import { AdministrationSections } from './UsersPanel'
@@ -113,6 +114,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 
       <WebhooksPanel isOwner={user.role === 'owner'} />
       <QuickAddSettingsSection />
+      <VoiceSettingsSection />
 
       <SecuritySettings user={user} />
 

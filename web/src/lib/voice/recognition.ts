@@ -6,6 +6,8 @@
 // engine says it is available for the language, and otherwise the engine's default
 // applies (the user accepted that when enabling voice capture).
 
+import { recognitionConstructor } from './support'
+
 /** The slice of `SpeechRecognition` we use; declared here because DOM typings vary. */
 export interface SpeechRecognitionLike {
   lang: string
@@ -47,17 +49,7 @@ export interface RecognitionSession {
   readonly local: boolean
 }
 
-type Win = { SpeechRecognition?: SpeechRecognitionCtor; webkitSpeechRecognition?: SpeechRecognitionCtor }
-
-/** The engine's constructor, standard or prefixed, or null (Firefox, old browsers, tests). */
-export function recognitionConstructor(win: unknown = globalThis): SpeechRecognitionCtor | null {
-  const w = win as Win | undefined
-  return w?.SpeechRecognition ?? w?.webkitSpeechRecognition ?? null
-}
-
-export function isSupported(win: unknown = globalThis): boolean {
-  return recognitionConstructor(win) !== null
-}
+export { isSupported, recognitionConstructor } from './support'
 
 export function errorKind(code: string): VoiceErrorKind {
   switch (code) {

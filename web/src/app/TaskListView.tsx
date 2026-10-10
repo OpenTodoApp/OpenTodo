@@ -718,7 +718,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
                   <p role="note" className="mt-1 text-xs text-slate-500">Read-only: you are a viewer of this shared project.</p>
                 </>
               ) : (
-                <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} labels={labels} placeholder={placeholderFor(route, currentProject, currentLabel)} />
+                <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} labels={labels} placeholder={placeholderFor(route, currentProject, currentLabel)} voiceShortcut />
               )}
             </div>
           )}
