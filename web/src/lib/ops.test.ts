@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useDatabase } from './db'
 import {
-  applyOps, createSubtask, createTask, deleteTask, getDeviceId, mutate, resetDeviceId, setTaskCompleted, setTaskParent, updateTask,
+  applyOps, archiveProject, createProject, createSubtask, createTask, deleteProject, deleteTask, getDeviceId, moveProject, mutate,
+  resetDeviceId, setTaskCompleted, setTaskParent, updateProject, updateTask,
 } from './ops'
 import { wins } from './hlc'
 import { parentReadyToComplete } from './subtasks'
@@ -168,6 +169,74 @@ describe('subtasks', () => {
     expect(t.deleted_at).toBe(after.deleted_at)
     expect(t.title).toBe('Hotel near the beach')
     expect(before.deleted_at).toBeNull()
+  })
+})
+
+describe('projects', () => {
+  async function forest() {
+    const db = useDatabase(`proj-${Date.now()}-${n++}`)
+    resetDeviceId()
+    const home = await createProject({ name: 'Home' })
+    const garden = await createProject({ name: 'Garden', parent_id: home })
+    const lawn = await createProject({ name: 'Lawn', parent_id: garden })
+    const beds = await createProject({ name: 'Beds', parent_id: garden })
+    const work = await createProject({ name: 'Work' })
+    return { db, home, garden, lawn, beds, work }
+  }
+
+  it('createProject nests under the given parent, last among siblings', async () => {
+    const { db, home, garden, beds, lawn } = await forest()
+    expect((await db.projects.get(garden))?.parent_id).toBe(home)
+    expect((await db.projects.get(beds))!.position).toBeGreaterThan((await db.projects.get(lawn))!.position)
+  })
+
+  it('moveProject rejects self and a descendant target and sets parent_id through mutate', async () => {
+    const { db, home, garden, lawn, work } = await forest()
+    await expect(moveProject(home, home)).rejects.toThrow(/own parent/)
+    await expect(moveProject(home, lawn)).rejects.toThrow(/descendant/)
+    await expect(moveProject(home, 'nope')).rejects.toThrow(/not found/)
+    expect((await db.projects.get(home))?.parent_id).toBeNull()
+    await moveProject(lawn, work)
+    const moved = (await db.projects.get(lawn))!
+    expect(moved.parent_id).toBe(work)
+    expect((await db.outbox.toArray()).some((o) => o.entity === 'project' && o.entityId === lawn && o.field === 'parent_id' && o.value === work)).toBe(true)
+    // A move to the top level lands after the existing roots; to a parent, after its children.
+    await moveProject(garden, null)
+    const g = (await db.projects.get(garden))!
+    expect(g.parent_id).toBeNull()
+    expect(g.position).toBeGreaterThan((await db.projects.get(work))!.position)
+    await moveProject(home, garden)
+    expect((await db.projects.get(home))!.parent_id).toBe(garden)
+    await updateProject(work, { archived: true })
+    await expect(moveProject(home, work)).rejects.toThrow(/not found/)
+  })
+
+  it('archive cascades', async () => {
+    const { db, home, garden, lawn, beds, work } = await forest()
+    await archiveProject(home)
+    for (const id of [home, garden, lawn, beds]) expect((await db.projects.get(id))?.archived).toBe(true)
+    expect((await db.projects.get(work))?.archived).toBe(false)
+    const ops = (await db.outbox.toArray()).filter((o) => o.field === 'archived' && o.value === true)
+    expect(ops).toHaveLength(4)
+    // Unarchiving the parent leaves the descendants archived.
+    await updateProject(home, { archived: false })
+    expect((await db.projects.get(garden))?.archived).toBe(true)
+  })
+
+  it('delete promotes sub-projects and moves open tasks to the Inbox', async () => {
+    const { db, home, garden, lawn, beds } = await forest()
+    const open = await createTask({ title: 'Mow', project_id: garden })
+    const done = await createTask({ title: 'Rake', project_id: garden })
+    await setTaskCompleted(done, true)
+    await deleteProject(garden)
+    expect((await db.projects.get(garden))?.deleted_at).not.toBeNull()
+    expect((await db.projects.get(lawn))?.parent_id).toBe(home)
+    expect((await db.projects.get(beds))?.parent_id).toBe(home)
+    expect((await db.tasks.get(open))?.project_id).toBeNull()
+    expect((await db.tasks.get(done))?.project_id).toBeNull()
+    // Deleting a top-level project promotes its children to the top level.
+    await deleteProject(home)
+    expect((await db.projects.get(lawn))?.parent_id).toBeNull()
   })
 })
 

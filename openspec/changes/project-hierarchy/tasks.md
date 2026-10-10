@@ -2,12 +2,12 @@
 
 ## 1. Data layer (web/src/lib)
 
-- [ ] 1.1 Add tree helpers: `buildProjectTree(projects)` returning ordered nodes with depth, `descendantIds(id)`, `isDescendant(a, b)`; verify with new `tree.test.ts` cases for three levels, orphan parents shown at top level (`npm test`)
-- [ ] 1.2 Implement deterministic cycle breaking in the tree builder (member with newest `parent_id` clock becomes top level, no op written); verify `tree.test.ts` "concurrent moves form a cycle" produces identical output for both op orders (`npm test`)
-- [ ] 1.3 Add `moveProject(id, parentId | null)` that refuses self/descendant targets and appends the project last among siblings via `position`; verify `ops.test.ts` rejects a descendant target and sets `parent_id` through `mutate` (`npm test`)
-- [ ] 1.4 Extend `archiveProject` to cascade `archived=true` to descendants (one op each) and `deleteProject` to promote direct sub-projects to the deleted project's parent; verify `ops.test.ts` cases "archive cascades" and "delete promotes sub-projects" (`npm test`)
-- [ ] 1.5 Rolled-up open counts: `openCountsByProject(tasks, tree, collapsed)`; verify `tree.test.ts` "collapsed parent shows subtree total, expanded shows own" (`npm test`)
-- [ ] 1.6 Per-device collapse state in `meta` (`collapsedProjects`), with ancestor auto-expand on navigation; verify `tree.test.ts` persistence round trip through `getMeta`/`setMeta` (`npm test`)
+- [x] 1.1 Add tree helpers: `buildProjectTree(projects)` returning ordered nodes with depth, `descendantIds(id)`, `isDescendant(a, b)`; verify with new `tree.test.ts` cases for three levels, orphan parents shown at top level (`npm test`)
+- [x] 1.2 Implement deterministic cycle breaking in the tree builder (member with newest `parent_id` clock becomes top level, no op written); verify `tree.test.ts` "concurrent moves form a cycle" produces identical output for both op orders (`npm test`)
+- [x] 1.3 Add `moveProject(id, parentId | null)` that refuses self/descendant targets and appends the project last among siblings via `position`; verify `ops.test.ts` rejects a descendant target and sets `parent_id` through `mutate` (`npm test`)
+- [x] 1.4 Extend `archiveProject` to cascade `archived=true` to descendants (one op each) and `deleteProject` to promote direct sub-projects to the deleted project's parent; verify `ops.test.ts` cases "archive cascades" and "delete promotes sub-projects" (`npm test`)
+- [x] 1.5 Rolled-up open counts: `openCountsByProject(tasks, tree, collapsed)`; verify `tree.test.ts` "collapsed parent shows subtree total, expanded shows own" (`npm test`)
+- [x] 1.6 Per-device collapse state in `meta` (`collapsedProjects`), with ancestor auto-expand on navigation; verify `tree.test.ts` persistence round trip through `getMeta`/`setMeta` (`npm test`)
 
 ## 2. Server (Go)
 

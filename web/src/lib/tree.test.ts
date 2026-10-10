@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useDatabase } from './db'
+import { getMeta, setMeta, useDatabase } from './db'
 import { applyOps, createSubtask, createTask, resetDeviceId, setTaskCompleted } from './ops'
+import {
+  buildProjectTree, descendantIds, expandAncestorsOf, getCollapsedProjects, isDescendant as isProjectDescendant,
+  openCountsByProject, setCollapsedProjects, subtreeOpenCounts, toggleCollapsedProject,
+} from './projects'
 import { breadcrumbOf, buildTaskTree, parentState, progressOf } from './subtasks'
 import { ancestors, buildTree, descendants, effectiveParents, flattenTree, isDescendant } from './tree'
-import type { Op, Task } from './types'
+import type { Op, Project, Task } from './types'
 
 let n = 0
 beforeEach(() => {
@@ -158,5 +162,121 @@ describe('display state of inconsistent parents', () => {
     expect(parentState(child, new Map([['c', child], ['p1', task('p1', null)]]))).toBe('nested')
     expect(parentState(child, new Map([['c', child], ['p1', task('p1', null, { project_id: 'q' })]]))).toBe('elsewhere')
     expect(breadcrumbOf(child, new Map([['c', child]]))).toBeNull()
+  })
+})
+
+// ---- projects (OpenSpec `project-hierarchy`) ----
+
+function project(id: string, parent_id: string | null, extra: Partial<Project> = {}): Project {
+  return { id, name: id, color: '#000', position: n++, archived: false, parent_id, created_at: 0, deleted_at: null, _clock: {}, ...extra }
+}
+
+const pop = (entityId: string, field: string, value: unknown, ts: number, device: string): Op => ({
+  id: crypto.randomUUID(), entity: 'project', entityId, field, value, ts, device,
+})
+
+describe('buildProjectTree', () => {
+  it('renders three levels in order with depth', () => {
+    const items = [project('work', null), project('home', null), project('clientA', 'work'), project('q4', 'clientA')]
+    const flat = flattenTree(buildProjectTree(items).roots)
+    expect(flat.map((x) => [x.id, x.depth])).toEqual([['work', 0], ['clientA', 1], ['q4', 2], ['home', 0]])
+  })
+
+  it('shows a project whose parent is missing, deleted or archived at the top level', () => {
+    const items = [
+      project('a', null), project('orphan', 'ghost'),
+      project('gone', null, { deleted_at: 1 }), project('childOfGone', 'gone'),
+      project('shelved', null, { archived: true }), project('childOfShelved', 'shelved'),
+    ]
+    const flat = flattenTree(buildProjectTree(items).roots)
+    expect(flat.map((x) => [x.id, x.depth, x.parent])).toEqual([
+      ['a', 0, null], ['orphan', 0, null], ['childOfGone', 0, null], ['childOfShelved', 0, null],
+    ])
+  })
+
+  it('answers descendant questions over the raw pointers', () => {
+    const items = [project('work', null), project('clientA', 'work'), project('q4', 'clientA'), project('home', null)]
+    expect([...descendantIds('work', items)].sort()).toEqual(['clientA', 'q4'])
+    expect(isProjectDescendant('q4', 'work', items)).toBe(true)
+    expect(isProjectDescendant('work', 'work', items)).toBe(true)
+    expect(isProjectDescendant('home', 'work', items)).toBe(false)
+  })
+
+  it('concurrent moves form a cycle: identical output for both op orders, newest parent clock on top', async () => {
+    const base = (id: string, pos: number) => [
+      pop(id, 'name', id, 1, 'A'), pop(id, 'color', '#000', 1, 'A'), pop(id, 'created_at', 1, 1, 'A'), pop(id, 'position', pos, 1, 'A'),
+    ]
+    const moveX = pop('X', 'parent_id', 'Y', 100, 'A')
+    const moveY = pop('Y', 'parent_id', 'X', 200, 'B')
+    const results: string[] = []
+    for (const order of [[moveX, moveY], [moveY, moveX]]) {
+      const db = useDatabase(`pcycle-${Date.now()}-${n++}`)
+      await applyOps([...base('X', 1), ...base('Y', 2)])
+      for (const o of order) await applyOps([o])
+      const items = await db.projects.toArray()
+      const flat = flattenTree(buildProjectTree(items).roots)
+      results.push(JSON.stringify(flat.map((x) => [x.id, x.depth, x.parent])))
+      // Nothing was written back: the raw pointers still describe the cycle.
+      expect(items.find((p) => p.id === 'X')?.parent_id).toBe('Y')
+      expect(items.find((p) => p.id === 'Y')?.parent_id).toBe('X')
+    }
+    expect(new Set(results).size).toBe(1)
+    expect(JSON.parse(results[0])).toEqual([['Y', 0, null], ['X', 1, 'Y']])
+  })
+})
+
+describe('openCountsByProject', () => {
+  const projects = [project('home', null), project('garden', 'home'), project('beds', 'garden'), project('kitchen', 'home')]
+  const tasks = [
+    ...[1, 2].map((i) => task(`h${i}`, null, { project_id: 'home' })),
+    ...[1, 2, 3].map((i) => task(`g${i}`, null, { project_id: 'garden' })),
+    task('b1', null, { project_id: 'beds' }),
+    task('done', null, { project_id: 'garden', completed_at: 1 }),
+    task('trash', null, { project_id: 'kitchen', deleted_at: 1 }),
+    task('inbox', null, { project_id: null }),
+  ]
+  it('collapsed parent shows the subtree total, expanded shows its own', () => {
+    const tree = buildProjectTree(projects)
+    const collapsed = openCountsByProject(tasks, tree, new Set(['home']))
+    expect(collapsed.get('home')).toBe(6)
+    const expanded = openCountsByProject(tasks, tree, new Set())
+    expect(expanded.get('home')).toBe(2)
+    expect(expanded.get('garden')).toBe(3)
+    expect(expanded.get('beds')).toBe(1)
+    expect(expanded.get('kitchen')).toBe(0)
+    // Collapsing a middle level rolls up only that level.
+    expect(openCountsByProject(tasks, tree, new Set(['garden'])).get('garden')).toBe(4)
+    expect(subtreeOpenCounts(tasks, tree).get('garden')).toBe(4)
+  })
+  it('ignores tasks of archived descendants', () => {
+    const withArchived = [...projects, project('shed', 'garden', { archived: true })]
+    const t = [...tasks, task('s1', null, { project_id: 'shed' })]
+    expect(openCountsByProject(t, buildProjectTree(withArchived), new Set(['home'])).get('home')).toBe(6)
+  })
+})
+
+describe('collapsed projects (per-device meta)', () => {
+  it('round-trips through getMeta/setMeta and toggles', async () => {
+    useDatabase(`collapsed-${Date.now()}-${n++}`)
+    expect((await getCollapsedProjects()).size).toBe(0)
+    await setCollapsedProjects(new Set(['work']))
+    expect(await getMeta<string[]>('collapsedProjects', [])).toEqual(['work'])
+    await toggleCollapsedProject('home')
+    expect([...(await getCollapsedProjects())].sort()).toEqual(['home', 'work'])
+    await toggleCollapsedProject('work')
+    expect([...(await getCollapsedProjects())]).toEqual(['home'])
+    await toggleCollapsedProject('home', true)
+    expect([...(await getCollapsedProjects())]).toEqual(['home'])
+    // Stored in the local meta table only; a direct write is what the reader sees.
+    await setMeta('collapsedProjects', ['x'])
+    expect([...(await getCollapsedProjects())]).toEqual(['x'])
+  })
+
+  it('navigating to a project expands its ancestors only', async () => {
+    useDatabase(`expand-${Date.now()}-${n++}`)
+    const items = [project('work', null), project('clientA', 'work'), project('q4', 'clientA'), project('home', null)]
+    await setCollapsedProjects(new Set(['work', 'clientA', 'home', 'q4']))
+    await expandAncestorsOf('q4', items)
+    expect([...(await getCollapsedProjects())].sort()).toEqual(['home', 'q4'])
   })
 })
