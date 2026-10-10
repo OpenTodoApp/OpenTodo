@@ -26,5 +26,5 @@
 ## 5. Docs and integration
 
 - [x] 5.1 `docs/webhooks.md`: event list, payload schema v1, signature verification snippets (shell, Python, JavaScript) using the test vector, retry policy, SSRF policy and owner toggle, receiver recipes for Home Assistant, Telegram (via a small relay or n8n), n8n; verify the snippets validate the documented vector
-- [ ] 5.2 `docs/api.md` routes, README feature list, `ROADMAP.md` status, `CHANGELOG.md` Unreleased; verify links resolve and `make check` passes
-- [ ] 5.3 Manual run against the production binary with an n8n webhook node (or any HTTP echo receiver): create, test, complete a task from the PWA, see the delivery and verify its signature; verify no 5xx in server logs
+- [x] 5.2 `docs/api.md` routes, README feature list, `ROADMAP.md` status, `CHANGELOG.md` Unreleased; verify links resolve and `make check` passes
+- [x] 5.3 Manual run against the production binary with an n8n webhook node (or any HTTP echo receiver): create, test, complete a task from the PWA, see the delivery and verify its signature; verify no 5xx in server logs

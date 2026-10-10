@@ -40,7 +40,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 - **Local-first.** The app keeps a full copy of your data on every device and works entirely offline. The server only syncs, backs up and, later, shares.
 - **Your data, one folder.** Everything lives in a single `/data` volume: one SQLite file. Back that up and you have backed up everything. Export to JSON any time from Settings.
 - **Tiny footprint.** One container, one static binary, around 12 MB. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no build step at runtime.
-- **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts. Sign-up is closed by default after the owner account is created; add people with single-use invitation links from **Settings → Members**.
+- **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts. The server only sends requests to webhook URLs you configure yourself. Sign-up is closed by default after the owner account is created; add people with single-use invitation links from **Settings → Members**.
 - **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today. Press `?` in the app for the full list.
 - **Built in the open with specs.** Every feature starts as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change under [`openspec/`](openspec/), so behavior is documented before it is built.
 
@@ -60,10 +60,11 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs |
 | Accounts | First-run owner setup, email + password sign-in, sessions, optional open sign-up |
 | API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
+| Webhooks | Signed outbound webhooks on task and project events for Home Assistant, n8n or a Telegram relay: retries with backoff, delivery log, test ping, private-network protection, see [docs/webhooks.md](docs/webhooks.md) |
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), labels and filter queries, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), labels and filter queries, recurring tasks, reminders, sharing and comments, CalDAV, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
 
 ## Quick start
 
