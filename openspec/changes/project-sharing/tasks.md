@@ -20,9 +20,9 @@
 
 ## 4. Client data layer
 
-- [ ] 4.1 `memberships` table in the local database, types for role and membership, sync loop stores `memberships` from every response and purges projects/tasks of scopes no longer listed; verify `sync.test.ts` cases "stores memberships" and "purges removed project locally" via `npm test`
-- [ ] 4.2 Rejection handling: drop outbox rows for `rejected` ids, clear the field clock and apply the server value, surface a notice with counts; verify `sync.test.ts` case "rejected op restores server value" via `npm test`
-- [ ] 4.3 Cross-scope move as copy + tombstone and owner delete of a shared project (tombstones plus Inbox copies) in `ops.ts`; verify `ops.test.ts` cases "move across scopes creates copy and tombstone" and "delete shared project copies open tasks to Inbox" via `npm test`
+- [x] 4.1 `memberships` table in the local database, types for role and membership, sync loop stores `memberships` from every response and purges projects/tasks of scopes no longer listed; verify `sync.test.ts` cases "stores memberships" and "purges removed project locally" via `npm test`
+- [x] 4.2 Rejection handling: drop outbox rows for `rejected` ids, clear the field clock and apply the server value, surface a notice with counts; verify `sync.test.ts` case "rejected op restores server value" via `npm test`
+- [x] 4.3 Cross-scope move as copy + tombstone and owner delete of a shared project (tombstones plus Inbox copies) in `ops.ts`; verify `ops.test.ts` cases "move across scopes creates copy and tombstone" and "delete shared project copies open tasks to Inbox" via `npm test`
 
 ## 5. Client UI
 

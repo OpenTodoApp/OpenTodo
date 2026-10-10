@@ -2,6 +2,7 @@
 // immediately (optimistic, offline-safe) and queued for the server.
 import { db, entityTables, getMeta, setMeta } from './db'
 import { hlcNow, hlcSeed, wins } from './hlc'
+import { membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Task, type View } from './types'
 
@@ -255,15 +256,63 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
   await mutate('task', id, { parent_id: parentId, position })
 }
 
+/** Fields a cross-scope copy carries over (project-sharing); ids, tree links and tombstones are new. */
+const COPY_FIELDS = ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'completed_at', 'position', 'created_at'] as const
+
 /**
- * Edit fields. Changing `project_id` moves the whole subtree (one op per descendant)
- * and detaches the task from a parent that stays behind, so a subtask is always in
- * its parent's project.
+ * Copy tasks into `projectId` under new ids, keeping parent links between copied
+ * tasks (a parent that is not copied becomes null). Returns the changes and the
+ * old → new id map. The originals are untouched; callers tombstone them.
  */
-export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<void> {
+function copyTasks(tasks: Task[], projectId: string | null, overrides: Record<string, Partial<Task>> = {}): { changes: Change[]; ids: Map<string, string> } {
+  const ids = new Map(tasks.map((t) => [t.id, crypto.randomUUID()]))
+  const changes: Change[] = []
+  for (const t of tasks) {
+    const patch: Record<string, unknown> = {}
+    for (const f of COPY_FIELDS) patch[f] = t[f]
+    Object.assign(patch, overrides[t.id] ?? {})
+    patch.project_id = projectId
+    patch.parent_id = (t.parent_id && ids.get(t.parent_id)) ?? null
+    patch.deleted_at = null
+    changes.push({ entity: 'task', entityId: ids.get(t.id) as string, patch })
+  }
+  return { changes, ids }
+}
+
+/**
+ * Move a task (with its subtree) into a project of another sharing scope: who can
+ * see an existing task never changes, so the server refuses that `project_id`
+ * (reason `scope_change`). The move is a copy in the destination plus a tombstone
+ * on every original, in one batch, so it works offline and converges by LWW.
+ * Returns the id of the copy.
+ */
+export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<string> {
+  const task = await db.tasks.get(id)
+  if (!task || task.deleted_at) throw new Error('task not found')
+  const all = await liveTasks()
+  const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((t) => t.id === d)).filter((t): t is Task => !!t)]
+  const { project_id: projectId = null, parent_id: _parent, ...rest } = patch
+  const { changes, ids } = copyTasks(subtree, projectId, { [id]: { ...rest, position: Date.now() } })
+  const now = Date.now()
+  for (const t of subtree) changes.push({ entity: 'task', entityId: t.id, patch: { deleted_at: now } })
+  await mutateMany(changes)
+  return ids.get(id) as string
+}
+
+/**
+ * Edit fields and return the task's id afterwards. Changing `project_id` moves the
+ * whole subtree (one op per descendant) and detaches the task from a parent that
+ * stays behind, so a subtask is always in its parent's project. A move into another
+ * sharing scope becomes copy + tombstone and returns the copy's id.
+ */
+export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<string> {
   if ('project_id' in patch) {
     const task = await db.tasks.get(id)
     if (task && patch.project_id !== task.project_id) {
+      const memberships = await membershipMap()
+      if (scopeOf(task.project_id, memberships) !== scopeOf(patch.project_id, memberships)) {
+        return moveTaskAcrossScopes(id, patch)
+      }
       const all = await liveTasks()
       const next = { ...patch }
       if (task.parent_id) {
@@ -276,10 +325,11 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
         if (t && t.project_id !== patch.project_id) changes.push({ entity: 'task', entityId: d, patch: { project_id: patch.project_id } })
       }
       await mutateMany(changes)
-      return
+      return id
     }
   }
   await mutate('task', id, patch)
+  return id
 }
 
 /** Completing a parent completes every open descendant in one batch; reopening touches only the task. */
@@ -314,12 +364,25 @@ export async function updateProject(id: string, patch: Partial<Omit<Project, 'id
 /**
  * Deleting a project moves its open tasks to the Inbox and its direct sub-projects
  * to its own parent (design D4), so neither tasks nor projects are lost. One batch.
+ *
+ * A shared project (project-sharing D8) can only be deleted by its owner: the
+ * project and every task in it are tombstoned for all members, and the owner's
+ * open tasks are copied into the owner's Inbox, since a task never leaves its scope.
  */
 export async function deleteProject(id: string): Promise<void> {
   const project = await db.projects.get(id)
   const tasks = await db.tasks.where('project_id').equals(id).toArray()
+  const memberships = await membershipMap()
+  const shared = memberships.has(id)
+  if (shared && roleOf(id, memberships) !== 'owner') throw new Error('only the owner can delete a shared project')
   const changes: Change[] = []
-  for (const t of tasks) {
+  if (shared) {
+    const now = Date.now()
+    const live = tasks.filter((t) => !t.deleted_at)
+    changes.push(...copyTasks(live.filter((t) => !t.completed_at), null).changes)
+    for (const t of live) changes.push({ entity: 'task', entityId: t.id, patch: { deleted_at: now } })
+  }
+  for (const t of shared ? [] : tasks) {
     if (!t.deleted_at) changes.push({ entity: 'task', entityId: t.id, patch: { project_id: null } })
   }
   const parentId = project?.parent_id ?? null

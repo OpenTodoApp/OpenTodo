@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { Label, Op, Project, Task, View } from './types'
+import type { Label, Membership, Op, Project, Task, View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -16,6 +16,8 @@ class OpenTodoDB extends Dexie {
   tasks!: Table<Task, string>
   labels!: Table<Label, string>
   views!: Table<View, string>
+  /** Cached project memberships (project-sharing): server data adopted on every sync, never written as ops. */
+  memberships!: Table<Membership, string>
   outbox!: Table<OutboxOp, number>
   meta!: Table<Meta, string>
 
@@ -48,6 +50,16 @@ class OpenTodoDB extends Dexie {
       outbox: '++local, id',
       meta: 'key',
     })
+    // v5 (project-sharing): cache of the caller's shared-project memberships. Additive.
+    this.version(5).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position',
+      labels: 'id, position',
+      views: 'id, position',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+    })
   }
 }
 
@@ -75,7 +87,7 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
-  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views, db.outbox, db.meta], async () => {
-    await Promise.all([db.projects.clear(), db.tasks.clear(), db.labels.clear(), db.views.clear(), db.outbox.clear(), db.meta.clear()])
+  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views, db.outbox, db.meta, db.memberships], async () => {
+    await Promise.all([db.projects.clear(), db.tasks.clear(), db.labels.clear(), db.views.clear(), db.outbox.clear(), db.meta.clear(), db.memberships.clear()])
   })
 }

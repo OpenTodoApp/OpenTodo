@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useDatabase } from './db'
+import { db, useDatabase } from './db'
 import {
   applyOps, archiveProject, createProject, createSubtask, createTask, deleteProject, deleteTask, getDeviceId, moveProject, mutate,
   resetDeviceId, setTaskCompleted, setTaskParent, updateProject, updateTask,
@@ -316,5 +316,64 @@ describe('wins', () => {
     expect(wins(5, 'A', { ts: 5, device: 'B' })).toBe(false)
     expect(wins(4, 'Z', { ts: 5, device: 'A' })).toBe(false)
     expect(wins(1, 'A')).toBe(true)
+  })
+})
+
+describe('project sharing', () => {
+  async function sharedProject(role: 'owner' | 'editor' = 'owner') {
+    const shared = await createProject({ name: 'Home' })
+    await db.memberships.put({ projectId: shared, role, ownerId: 'alice', members: [] })
+    return shared
+  }
+
+  it('move across scopes creates copy and tombstone', async () => {
+    const shared = await sharedProject('editor')
+    const parent = await createTask({ title: 'Trip', project_id: shared, priority: 2, labels: ['l1'] })
+    const child = await createSubtask(parent, 'Hotel')
+    await db.outbox.clear()
+    const copyId = await updateTask(parent, { project_id: null })
+    expect(copyId).not.toBe(parent)
+    // Originals stay in the shared project, tombstoned for every member.
+    expect((await db.tasks.get(parent))?.deleted_at).not.toBeNull()
+    expect((await db.tasks.get(parent))?.project_id).toBe(shared)
+    expect((await db.tasks.get(child))?.deleted_at).not.toBeNull()
+    // Copies with new ids land in the Inbox, keeping fields and the tree.
+    const copy = await db.tasks.get(copyId)
+    expect(copy).toMatchObject({ title: 'Trip', project_id: null, priority: 2, labels: ['l1'], deleted_at: null, parent_id: null })
+    const childCopy = (await db.tasks.where('parent_id').equals(copyId).toArray())[0]
+    expect(childCopy).toMatchObject({ title: 'Hotel', project_id: null, deleted_at: null })
+    // No op ever changes the original's project_id (the server would refuse it).
+    const ops = await db.outbox.toArray()
+    expect(ops.some((o) => o.entityId === parent && o.field === 'project_id')).toBe(false)
+    // A move inside one scope stays a plain project_id change.
+    const other = await createProject({ name: 'Personal' })
+    const same = await updateTask(copyId, { project_id: other })
+    expect(same).toBe(copyId)
+    expect((await db.tasks.get(copyId))?.project_id).toBe(other)
+  })
+
+  it('delete shared project copies open tasks to Inbox', async () => {
+    const shared = await sharedProject('owner')
+    const a = await createTask({ title: 'Open A', project_id: shared })
+    await createSubtask(a, 'Open child')
+    await createTask({ title: 'Open B', project_id: shared })
+    const done = await createTask({ title: 'Done', project_id: shared })
+    await setTaskCompleted(done, true)
+    await deleteProject(shared)
+    expect((await db.projects.get(shared))?.deleted_at).not.toBeNull()
+    const all = await db.tasks.toArray()
+    // Every task of the shared project is tombstoned in place (members see tombstones).
+    expect(all.filter((t) => t.project_id === shared).every((t) => t.deleted_at)).toBe(true)
+    // The owner's Inbox lists copies of the three open tasks, tree intact.
+    const inbox = all.filter((t) => t.project_id === null && !t.deleted_at)
+    expect(inbox.map((t) => t.title).sort()).toEqual(['Open A', 'Open B', 'Open child'])
+    const copyA = inbox.find((t) => t.title === 'Open A')
+    expect(inbox.find((t) => t.title === 'Open child')?.parent_id).toBe(copyA?.id)
+  })
+
+  it('only the owner deletes a shared project', async () => {
+    const shared = await sharedProject('editor')
+    await expect(deleteProject(shared)).rejects.toThrow(/owner/)
+    expect((await db.projects.get(shared))?.deleted_at).toBeNull()
   })
 })

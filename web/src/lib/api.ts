@@ -1,6 +1,6 @@
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, Op, Passkey, User,
+  AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, Membership, Op, Passkey, ProjectRole, SyncResponse, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -46,10 +46,17 @@ export const api = {
     request<{ user: User }>('POST', '/api/v1/auth/register', invitation ? { email, name, password, invitation } : { email, name, password }),
   login: (email: string, password: string) => request<{ user: User }>('POST', '/api/v1/auth/login', { email, password }),
   logout: () => request<void>('POST', '/api/v1/auth/logout'),
-  sync: (device: string, cursor: number, ops: Op[]) =>
-    request<{ applied: number; ops: Op[]; cursor: number; hasMore: boolean; serverTime: number; generation?: string }>(
-      'POST', '/api/v1/sync', { device, cursor, ops },
-    ),
+  sync: (device: string, cursor: number, ops: Op[]) => request<SyncResponse>('POST', '/api/v1/sync', { device, cursor, ops }),
+  // Project sharing: membership is server-side authorization data, changed only through these routes.
+  listMembers: (projectId: string) => request<Membership>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/members`),
+  addMember: (projectId: string, email: string, role: ProjectRole) =>
+    request<Membership>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/members`, { email, role }),
+  setMemberRole: (projectId: string, userId: string, role: ProjectRole) =>
+    request<Membership>('PATCH', `/api/v1/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`, { role }),
+  removeMember: (projectId: string, userId: string) =>
+    request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`),
+  transferProject: (projectId: string, userId: string) =>
+    request<Membership>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/transfer`, { userId }),
   listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
   createToken: (name: string) => request<{ token: { id: string; name: string }; secret: string }>('POST', '/api/v1/tokens', { name }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
