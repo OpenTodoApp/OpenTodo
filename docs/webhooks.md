@@ -60,8 +60,8 @@ Every delivery is a `POST` with a JSON body:
 | `webhook_id` | the webhook that matched, also in `X-OpenTodo-Webhook` |
 | `source` | `device` (a syncing app), `server` (REST API / CLI), `import` or `caldav`. Lets a receiver ignore changes it caused itself |
 | `device` | the device id when `source` is `device` |
-| `data.task` / `data.project` | the entity's current state with the same fields as the [REST API](api.md#task-fields). `ping` carries `data: {}` |
-| `changes` | the fields that changed in this batch with their previous (`from`) and new (`to`) values; `from` is `null` when the field had no value before |
+| `data.task` / `data.project` | the entity's current state with the same fields as the [REST API](api.md#task-fields), except the opaque note document `notes_doc` (the note's text is `description`). `ping` carries `data: {}` |
+| `changes` | the fields that changed in this batch with their previous (`from`) and new (`to`) values; `from` is `null` when the field had no value before. `notes_doc` is never listed, and a change that only touched it (a merged note republished with the same text) sends no event |
 
 ### Encrypted accounts
 

@@ -293,7 +293,8 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | Field | Type | Notes |
 | --- | --- | --- |
 | `title` | string | |
-| `description` | string | |
+| `description` | string | the note as **Markdown** text (headings, `**bold**`, `_italic_`, `~~strike~~`, `` `code` ``, links, `-`/`1.` lists, `- [ ]`/`- [x]` check items). Readable and writable as plain text: a write here is folded into the rich-text document by the next app that opens the note. At most 64 KB |
+| `notes_doc` | string | the note as a mergeable rich-text document: `""` or `"ydoc:v1:<base64>"` (at most 256 KB). Opaque; scripts normally ignore it and use `description`. `400 invalid_input` when it is not a valid envelope. See [sync.md](sync.md#mergeable-documents) |
 | `project_id` | string or null | null = Inbox |
 | `parent_id` | string or null | parent task for subtasks, any depth; see [Subtasks](#subtasks) |
 | `priority` | 1–4 | 1 highest, 4 default |
@@ -991,7 +992,7 @@ Response (201):
 
 ### End-to-end encryption
 
-Optional per-account encryption of task content ([e2ee.md](e2ee.md) has the threat model). The server stores only the key record the browser produced and never decrypts. For an encrypted account, the content fields of personal data — task `title`, `description`, `ical_extra`; project, label and section `name`; view `name` and `query`; comment `body` — hold ciphertext strings in every REST read, the export and `/api/v1/sync`:
+Optional per-account encryption of task content ([e2ee.md](e2ee.md) has the threat model). The server stores only the key record the browser produced and never decrypts. For an encrypted account, the content fields of personal data — task `title`, `description`, `ical_extra`, `notes_doc`; project, label and section `name`; view `name` and `query`; comment `body` — hold ciphertext strings in every REST read, the export and `/api/v1/sync`:
 
 ```
 "enc:v1:" + base64url(nonce(12) || AES-256-GCM(utf8(plaintext)) || tag(16))

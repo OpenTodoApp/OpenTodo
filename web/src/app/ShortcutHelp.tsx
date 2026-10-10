@@ -71,6 +71,10 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
     ['Tab, Enter (in the comment thread)', 'Reach Reply, Edit and Delete on a comment; Load older activity at the end'],
     ['Shift+H (in a project)', 'Show or hide the project activity; Tab reaches the person and kind filters'],
     ['z (task panel open)', 'Fix a timed due to your time zone, or release it to a floating time'],
+    ['Ctrl/⌘+B, I, Shift+X, E, K (in the notes)', 'Bold, italic, strikethrough, inline code, link'],
+    ['Ctrl/⌘+Alt+1–3 / 0 (in the notes)', 'Heading 1–3 / normal text'],
+    ['Ctrl/⌘+Shift+8 / 7 / 9 (in the notes)', 'Bullet, numbered, check list; Ctrl/⌘+Enter ticks a check item; Tab / Shift+Tab indent'],
+    ['- · 1. · # · [ ] · **x** (typed in the notes)', 'Markdown typing becomes formatting; Shift+Enter is a line break, Esc leaves the notes'],
     ['Esc', 'Close panel, clear selection'],
     ['?', 'Toggle this help'],
   ]

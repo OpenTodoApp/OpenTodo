@@ -49,7 +49,7 @@ The Nextcloud Tasks web app only shows calendars stored in Nextcloud itself. Use
 | --- | --- | --- |
 | `UID` | task id | A UID that is not a usable id (longer than 64 characters, unusual characters) is kept next to a generated id; the client always sees its own UID and resource name. |
 | `SUMMARY` | title | |
-| `DESCRIPTION` | description | |
+| `DESCRIPTION` | description | The note's Markdown text. A change from a calendar app is folded into the rich-text note by the next app that opens it. |
 | `DUE;VALUE=DATE` | due date without time | |
 | `DUE` (floating) | due date and time | `DUE:20261011T093000` shows 09:30 in every time zone. |
 | `DUE;TZID=…` | due fixed to a time zone | IANA zones and vendor paths ending in one (`/mozilla.org/…/Europe/Berlin`); a UTC time (`…Z`) becomes zone `UTC`; an unknown zone (Windows names) falls back to the floating wall time. Served with a matching `VTIMEZONE`. Seconds are dropped. |

@@ -73,3 +73,53 @@ Additive. Existing tasks have no `notes_doc`; the client treats a missing or emp
 
 - Whether to expose a `?format=markdown|plain` switch on REST reads for integrations that cannot render Markdown (not needed for this change; `description` is Markdown).
 - Where the per-note "compact history" action belongs once documents age (likely `trash-and-history`).
+
+## Size evaluation (done before implementation)
+
+The roadmap asked for "Yjs documents stored as op values; evaluate size impact first". Measured on 2026-10-10 with the build's own bundler (rolldown, minified, `gzip -9`), each candidate bundled alone with the exports the design needs:
+
+| Candidate | Raw | Gzipped |
+| --- | --- | --- |
+| `yjs` 13.6.33 (Doc, updates, state vectors, XML types) | 77.6 KB | 22.7 KB |
+| ProseMirror: model, state, view, transform, commands, keymap, inputrules, schema-list, history | 206.0 KB | 62.5 KB |
+| Yjs + ProseMirror | 284.1 KB | 85.0 KB |
+| Yjs + ProseMirror + `y-prosemirror` 1.3.7 (pulls `y-protocols`) | 308.8 KB | 93.4 KB |
+
+Baseline before the change: the initial chunk was 847.1 KB raw / 248.4 KB gzipped (not ~110 KB as the Context section assumed; the app grew since), 879.9 KB / 257.5 KB after `e2ee` landed on main.
+
+Document sizes (envelope = `"ydoc:v1:"` + base64 of the full Yjs state, measured in `web/`):
+
+| Note | Markdown | Envelope |
+| --- | --- | --- |
+| Short structured note (heading, link, 3 check items, 3 numbered items) | 254 chars | 1.3 KB |
+| The same note after 200 debounced edit sessions (≈1,000 characters typed, 400 deleted, a new Yjs client id per session) | 454 chars | 4.1 KB |
+| One session typing 2,000 characters one keystroke per save (worst case, no debounce) | 2,000 chars | 2.8 KB |
+| A 600-item check list | 29.3 KB | 97.5 KB |
+
+Decoding plus re-encoding takes ~0.7 ms for the small note and ~10 ms for the 30 KB one (Node 22, in the test runner). The envelope is 3–5× the Markdown for structured text; the 256 KB document cap corresponds to roughly 60–80 KB of Markdown, so in practice the 64 KB cap on the `description` projection binds first (the client refuses a batch whose projection would not fit, see below). Tombstones are small: deleted text is garbage-collected to a few bytes per run.
+
+**Decision: follow D4 (Yjs + ProseMirror), lazily loaded, without `y-prosemirror`.** The numbers match the design's estimate closely enough that no alternative (hand-rolled CRDT, Markdown-source editor) is warranted; a full-state register keeps the server untouched. `y-prosemirror` was dropped (−8.4 KB gzipped) because it deletes text whose marks the schema does not know, which contradicts "unknown formatting is preserved"; an in-house diff-based binding (~150 lines in `lib/richtext.ts`/`lib/richtextEditor.ts`) replaces it.
+
+Shipped footprint (`npm run build`, branch merged with main):
+
+| Chunk | Raw | Gzipped |
+| --- | --- | --- |
+| Initial `index-*.js` before → after | 879.85 KB → 883.92 KB (+4.07 KB) | 257.48 KB → 258.93 KB (+1.45 KB) |
+| `richtext-*.js` (Yjs + document code), loaded when a note document is applied, written or opened | 90.97 KB | 28.26 KB |
+| `NotesEditor-*.js` (ProseMirror + editor), loaded when a note is first opened | 221.78 KB | 68.85 KB |
+
+Both lazy chunks are precached by the service worker, so they work offline after the first visit. Server: no Go dependency, binary size unchanged within noise, no migration. Client memory: one Yjs document per open note and one transient document per applied note op (freed afterwards), a few hundred KB at most.
+
+## Implementation notes
+
+Decisions taken while implementing; each keeps the goals above.
+
+- **Envelope with a type marker (D1).** `notes_doc` is `""` or `"ydoc:v1:" + base64(Yjs update v1)`, not bare base64. The server accepts any `"<format>:v<n>:<base64 or base64url>"` envelope (`kDoc`, `MaxDocBytes` = 256 KB of envelope characters) and decodes nothing, so a future format, and the `e2ee` ciphertext `"enc:v1:…"` of the envelope, are valid without a server change. A client that cannot read a value (corrupt, other format, undecryptable) shows `description` with a notice and never overwrites it automatically.
+- **Merge regardless of the winner (D1).** A received document is merged with the local one whether its op wins or loses last-writer-wins; the device republishes when the union contains anything the *stored winner* lacks. "Grew" is decided by applying the union to a copy of the winner and watching the Yjs transaction for new structs or deletions (state vectors alone miss deletion-only edits). The republished pair is stamped after the winner (`hlcSeed`), so it always wins.
+- **Fold-back is deterministic (D2).** Folding a plain-text write creates a new root body named after that write's clock (`b:<ts>:<device>`), written by a Yjs client id derived from the name into an empty fragment, and deletes the older bodies' content; the greatest body name is the visible note. Two devices folding the same write produce byte-identical structures that merge into one copy (a naive "replace body" on two devices would duplicate the text). The fold runs when a note is opened (and before any republish), as the spec says; a description-only op arriving in the background changes nothing until then. The same fold upgrades legacy notes lazily.
+- **Pairs inside `mutateMany` (D2/D3).** Every local batch that writes `notes_doc` merges it with the stored value inside the transaction (so a remote merge that arrived while the editor held an older copy is never undone) and sets `description` to the projection; a local plain-text `description` write to a task with a document (history restore, the plain-text fallback editor) is folded in with the batch's clock. The outbox keeps one pending `notes_doc` op per task. Limits checked before any op exists: document ≤ 256 KB, projection ≤ 64 KB JSON-encoded (the ordinary value cap), and for an encrypted account the e2ee 48,000-byte plaintext cap for the projection and ~196 KB for the document (its ciphertext must fit 256 KB). The editor refuses input that would cross the tighter of these and warns from 90 %.
+- **Markdown dialect.** Italic is rendered as `_x_` (or `*x*` when it touches a letter or digit), so it never collides with `**`; a single newline is a hard line break (as in the comment renderer); characters that would read as Markdown are backslash-escaped; empty blocks are not projected. `parse(render(doc))` is a fixed point after one normalisation (fuzzed in `richtext.test.ts`). Unknown Markdown stays literal text.
+- **Readers that present values to people** leave the opaque field out: revision history (server), the activity rule (server and client, shared fixture case), local activity recording, and webhook deliveries (a change that only touched `notes_doc` is no event). REST, export, import of the app's own export and sync carry it. MCP and CalDAV only ever used `description`.
+- **Dexie.** `notes_doc` is not indexed, so no schema version bump is needed (rows without the field read `''`).
+- **Comments** keep their single-author Markdown `body` in this change; `richtext.ts` is field-agnostic (`DOC_FIELDS` maps a document field to its projection field) so a `comment.body_doc` can follow the same pattern.
+- **e2ee (merged while this change was implemented).** `notes_doc` is a content field in `internal/e2ee.ContentFields` and `CONTENT_FIELDS`; the envelope is encrypted as one opaque string at upload and decrypted before `applyOps`, so merging happens on plaintext documents.

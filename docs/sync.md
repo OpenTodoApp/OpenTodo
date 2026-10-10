@@ -43,6 +43,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `assignee_id` | string (account id) or null; checked against the task's scope at receipt (see "Assignment" under [Sharing scopes](#sharing-scopes)) |
 | task | `section_id` | string (section id) or null; see [Sections](#sections) |
 | task | `ical_extra` | string or null: opaque iCalendar lines from CalDAV clients, see [CalDAV](#caldav) |
+| task | `notes_doc` | document: `""` or an envelope `"<format>:v<n>:<base64>"` of at most 256 KB (262,144 characters); the note as a mergeable rich-text document, see [Mergeable documents](#mergeable-documents) |
 | section | `name` | string |
 | section | `project_id` | string (project id, required; never changes) |
 | section | `position`, `created_at` | number |
@@ -99,6 +100,24 @@ A `reminder` belongs to one task (`task_id`) and fires at `fire_at`, always a re
 - A reminder is shown when `fire_at` ≤ now, it is not deleted, not dismissed for the current firing, and its task exists and is neither completed nor deleted.
 - Reminders are **personal**: every reminder op is stored in its author's personal scope (`user:<id>`), also when the task is in a shared project, so only the author's devices receive it and any member, viewers included, can keep reminders on a shared task. Because another member's device cannot write them, a device that pulls a `due` change for a task in a shared project recomputes its own relative reminders for that task (new ops, not the same batch). A REST due change recomputes only the caller's reminders.
 - Push subscriptions are device state on the server (`push_subscriptions`), never ops, and are not exported.
+
+### Mergeable documents
+
+A task's note is rich text that merges instead of overwriting (OpenSpec `collaborative-rich-text`). Two fields carry it:
+
+- `notes_doc` holds the note as a **full-state document**: `""` (no document yet) or `"ydoc:v1:" + base64(Yjs update, format v1)`. It is an ordinary last-writer-wins register on the server and in every device's store; the server validates only the envelope shape (`^[a-z][a-z0-9]{0,15}:v[0-9]{1,3}:` followed by standard or URL-safe base64, padding optional, at most `MaxDocBytes` = 256 KB characters, every other kind keeps 64 KB) and never decodes it. Any envelope format passes, so an end-to-end encrypted value (`enc:v1:…`, see below) is valid too.
+- `description` stays the **Markdown projection** of the document: `#` headings, `**bold**`, `_italic_` (`*italic*` inside words), `~~strike~~`, `` `code` ``, `[text](url)`, `-` and `1.` lists, `- [ ]` / `- [x]` check items; a single newline is a line break, a blank line separates blocks. Clients write it in the **same batch** (same `ts`) as `notes_doc`, so the REST API, the export, CalDAV, MCP, webhooks, search and older clients keep reading text.
+
+Rules, all on the client (`web/src/lib/ops.ts`, `web/src/lib/richtext.ts`):
+
+1. **Merge and republish.** A device that applies a `notes_doc` op merges it with its local document whether the op wins or loses (Yjs merges are commutative, associative and idempotent). If the union holds anything the stored winner lacks (an insertion, a format change or a deletion), the device publishes the union and its projection as a new pair with a timestamp newer than the winner; otherwise it publishes nothing. Merging identical states produces no op, and two devices republishing at once both publish the union, so the exchange stops after at most one extra round per device.
+2. **Local writes stay pairs.** Every local batch that writes `notes_doc` merges it with the stored document first (a remote change that arrived while the editor held an older copy is never undone) and sets `description` to the projection. A local plain-text write to `description` of a task that has a document (history restore, plain-text fallback) is folded in (rule 3) in the same batch.
+3. **Fold-back of plain-text writes.** When `description` has a clock newer than `notes_doc` and no `notes_doc` carries that clock (REST, an older client, CalDAV, email), the text is parsed as Markdown into a new body of the document named after that clock, and the older bodies' content is deleted. The new body is written by a Yjs client id derived from its name into an empty fragment, so every device that folds the same write produces identical structures and the copies merge into one. A concurrent rich edit made before that plain-text write is overridden once (last-writer-wins for that transition). The fold runs when a device opens the note, or before any republish; an older plain-text write loses to a newer document by the ordinary winner rule, and an unpaired projection that differs from the document is re-projected.
+4. **Legacy notes.** A task without a document is upgraded lazily when its note is first opened (the same fold, keyed by the `description` clock). No bulk migration.
+
+Document layout: root XML fragments `b:<ts 15 digits>:<device>`, the greatest name is the visible body (`b:000000000000000:` for a note first written in the editor). Text blocks hold one text node whose formatting attributes are marks (`strong`, `em`, `strike`, `code`: `{}`; `link`: `{href}`); elements are `paragraph`, `heading{level}`, `bullet_list`, `ordered_list{order}`, `list_item{checked}`. Unknown elements, attributes and marks from newer clients survive every merge and are shown as plain text. A value a device cannot read (corrupt, another format) is never overwritten automatically; the note then shows `description`.
+
+The editor saves a debounced full state (400 ms after the last keystroke, and on blur, close, hide and unload). The outbox keeps one pending `notes_doc` op per task: a newer state replaces the queued one. A batch whose document would exceed 256 KB, or whose projection would exceed the 64 KB value cap, is refused on the device before any op exists. History, activity and webhook deliveries leave `notes_doc` out; the `description` change in the same change set is the readable revision.
 
 ### Comments
 
@@ -171,7 +190,7 @@ A `view` is a saved filter query with its presentation options (OpenSpec `custom
 
 ### Encrypted values
 
-For an account with [end-to-end encryption](e2ee.md), the content fields of its personal scope — task `title`, `description`, `ical_extra`; project, label and section `name`; view `name` and `query`; comment `body` — carry ciphertext: a string `"enc:v1:" + base64url(nonce(12) || AES-256-GCM ciphertext || tag(16))` whose additional authenticated data is `entity + "\0" + entityId + "\0" + field`. The protocol, the schema, the value types and limits are unchanged: the server validates the envelope as an ordinary string and never decrypts it, and last-writer-wins picks winners by `(ts, device)` exactly as for plaintext (two encryptions of the same text differ, which is irrelevant because values are never compared). Devices encrypt at upload and decrypt before applying; a value that does not authenticate for its location (wrong key, tampering, or moved to another entity or field) is kept as the winning op but shown as a placeholder. Shared project scopes are never encrypted. Plaintext content that reaches an encrypted account (REST, email, import) is re-written as ciphertext by the next unlocked device that applies it; once ciphertext wins, nothing is re-written again. `POST /api/v1/encryption/purge-history` deletes superseded ops of the content fields in the personal scope; winners stay, so convergence and cursors are unaffected.
+For an account with [end-to-end encryption](e2ee.md), the content fields of its personal scope — task `title`, `description`, `ical_extra`, `notes_doc`; project, label and section `name`; view `name` and `query`; comment `body` — carry ciphertext: a string `"enc:v1:" + base64url(nonce(12) || AES-256-GCM ciphertext || tag(16))` whose additional authenticated data is `entity + "\0" + entityId + "\0" + field`. The protocol, the schema, the value types and limits are unchanged: the server validates the envelope as an ordinary string and never decrypts it, and last-writer-wins picks winners by `(ts, device)` exactly as for plaintext (two encryptions of the same text differ, which is irrelevant because values are never compared). Devices encrypt at upload and decrypt before applying; a value that does not authenticate for its location (wrong key, tampering, or moved to another entity or field) is kept as the winning op but shown as a placeholder. Shared project scopes are never encrypted. Plaintext content that reaches an encrypted account (REST, email, import) is re-written as ciphertext by the next unlocked device that applies it; once ciphertext wins, nothing is re-written again. `POST /api/v1/encryption/purge-history` deletes superseded ops of the content fields in the personal scope; winners stay, so convergence and cursors are unaffected.
 
 ## Winner rule
 
@@ -334,5 +353,5 @@ Calendar apps (OpenSpec change `caldav`, [caldav.md](caldav.md)) write through t
 
 ## Limits
 
-- 1000 ops per request, 64 KB per value, 4 MB per request body.
+- 1000 ops per request, 64 KB per value (256 KB for a document field such as `task.notes_doc`), 4 MB per request body.
 - `labels` is replaced as a whole value (see "Task labels" above; set semantics are a future change). The same holds for `view.panels`.
