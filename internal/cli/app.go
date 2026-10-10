@@ -347,12 +347,13 @@ func (a *App) confirm(prompt string) (bool, error) {
 
 func (a *App) defaultReadPassword(prompt string) (string, error) {
 	fmt.Fprint(a.Stderr, prompt)
+	// Nothing is echoed either way (no echo on a terminal, piped input otherwise),
+	// so end the prompt line ourselves.
+	defer fmt.Fprintln(a.Stderr)
 	f, ok := a.Stdin.(*os.File)
 	if ok && isTerminal(f) {
-		restore, err := disableEcho(f)
-		if err == nil {
+		if restore, err := disableEcho(f); err == nil {
 			defer restore()
-			defer fmt.Fprintln(a.Stderr)
 		}
 	}
 	line, err := a.in.ReadString('\n')

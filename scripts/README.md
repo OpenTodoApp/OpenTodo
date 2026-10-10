@@ -1,5 +1,14 @@
 # scripts
 
+## `cli-smoke.sh`
+
+End-to-end check of the `ot` command-line client: starts `bin/opentodo` on a throwaway port and data directory, creates the owner account, then runs `ot login`, `project add`, `add`, `list --json`, `done` (by id prefix), the exit-code contract, `export` and `auth logout`. Prints `CLI OK` on success; CI runs it in the server job.
+
+```bash
+make cli-smoke                 # builds bin/opentodo and bin/ot, then runs the script
+OPENTODO_SMOKE_PORT=18081 ./scripts/cli-smoke.sh
+```
+
 ## `e2e-smoke.mjs`
 
 Drives the production binary in headless Chromium through the whole walking skeleton: owner setup, capture, projects, detail edits, keyboard shortcuts, views, sync verified through the REST API, a second device, an offline edit that uploads on reconnect, settings and tokens, mobile layout. It also refreshes the screenshots in `docs/screenshots/`.
