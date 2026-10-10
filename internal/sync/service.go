@@ -30,7 +30,8 @@ type FieldChange struct {
 // batch: only ops that won under last-writer-wins and altered the stored value
 // contribute. Origin is the device id of the last winning op ("server" for REST).
 type Change struct {
-	UserID   string
+	UserID   string // author of the batch
+	ScopeID  string // user:<id> or project:<id>; everyone who can see it may be told
 	Entity   string
 	EntityID string
 	Fields   map[string]FieldChange
@@ -64,13 +65,58 @@ func (s *Service) Notifier() *Notifier { return s.notifier }
 type ApplyResult struct {
 	Applied    int   `json:"applied"`
 	Duplicates int   `json:"duplicates"`
-	Seq        int64 `json:"seq"` // the user's latest op cursor after the batch
+	Seq        int64 `json:"seq"` // the latest op cursor over the user's scopes after the batch
+	// Rejected lists the ops refused for authorization reasons; they were not stored.
+	Rejected []Rejection `json:"rejected,omitempty"`
+	// Restore holds the current winning op of every refused field the caller can
+	// see, so the device can put the server's value back without another exchange.
+	Restore []Op `json:"-"`
+	// Audience is every user who can see a scope this batch changed: the users whose
+	// devices should be woken (see NotifyApplied).
+	Audience []string `json:"-"`
+}
+
+// Rejection is one refused op of a batch.
+type Rejection struct {
+	ID     string `json:"id"`
+	Reason string `json:"reason"`
+}
+
+// Rejection reasons.
+const (
+	// ReasonForbidden: the author's role (or lack of membership) does not allow the write.
+	ReasonForbidden = "forbidden"
+	// ReasonScopeChange: a task's project_id would move it into another sharing
+	// scope; clients copy the task and tombstone the original instead.
+	ReasonScopeChange = "scope_change"
+)
+
+// RejectedError is returned by ApplyStrict when any op of the batch is refused.
+type RejectedError struct {
+	Op     Op
+	Reason string
+}
+
+func (e *RejectedError) Error() string {
+	return fmt.Sprintf("op %s.%s refused: %s", e.Op.Entity, e.Op.Field, e.Reason)
 }
 
 // Apply validates and records a batch of ops for one user atomically.
 // Duplicate op ids are ignored, so clients can retry safely. Timestamps far in the
 // future are clamped so a misconfigured clock cannot freeze a field forever.
+// Each op is authorized against the author's memberships at receipt time; refused
+// ops are reported in Rejected and never stored, the rest of the batch is applied.
 func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResult, error) {
+	return s.apply(ctx, userID, ops, false)
+}
+
+// ApplyStrict is Apply for the REST API: one refused op refuses the whole batch
+// with a *RejectedError and nothing is stored.
+func (s *Service) ApplyStrict(ctx context.Context, userID string, ops []Op) (ApplyResult, error) {
+	return s.apply(ctx, userID, ops, true)
+}
+
+func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict bool) (ApplyResult, error) {
 	var res ApplyResult
 	if len(ops) > MaxOpsPerRequest {
 		return res, fmt.Errorf("%w: at most %d ops per request", ErrInvalidOp, MaxOpsPerRequest)
@@ -86,10 +132,40 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 		return res, err
 	}
 	defer tx.Rollback()
+	acc, err := loadAccess(ctx, tx, userID)
+	if err != nil {
+		return res, err
+	}
+	rs := newResolver(ctx, tx, acc, ops)
 	tracker := newChangeTracker(userID)
+	touched := map[string]bool{}
+	var refused []Op
 	for _, op := range ops {
 		if op.TS > nowMs+MaxFutureSkewMs {
 			op.TS = nowMs + MaxFutureSkewMs
+		}
+		// A retried op that was stored earlier stays a duplicate even if the
+		// author's role changed since: it is already part of the log.
+		var one int
+		err := tx.QueryRowContext(ctx, `SELECT 1 FROM ops WHERE user_id = ? AND op_id = ?`, userID, op.ID).Scan(&one)
+		if err == nil {
+			res.Duplicates++
+			continue
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return res, err
+		}
+		scope, reason, err := rs.resolve(op)
+		if err != nil {
+			return res, err
+		}
+		if reason != "" {
+			if strict {
+				return ApplyResult{}, &RejectedError{Op: op, Reason: reason}
+			}
+			res.Rejected = append(res.Rejected, Rejection{ID: op.ID, Reason: reason})
+			refused = append(refused, op)
+			continue
 		}
 		r, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO ops(user_id,op_id,entity,entity_id,field,value,ts,device,received_at)
 			VALUES(?,?,?,?,?,?,?,?,?)`, userID, op.ID, op.Entity, op.EntityID, op.Field, string(op.Value), op.TS, op.Device, nowMs)
@@ -97,14 +173,22 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 			return res, err
 		}
 		if n, _ := r.RowsAffected(); n == 0 {
-			res.Duplicates++
+			res.Duplicates++ // the same op id twice in one batch
 			continue
 		}
+		seq, err := r.LastInsertId()
+		if err != nil {
+			return res, err
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT INTO op_scopes(seq, scope_id) VALUES(?,?)`, seq, scope); err != nil {
+			return res, err
+		}
+		touched[scope] = true
 		// Read the current winner so the observer learns about genuine changes only.
 		var prevValue, prevDevice string
 		var prevTS int64
-		err = tx.QueryRowContext(ctx, `SELECT value, ts, device FROM fields WHERE user_id = ? AND entity = ? AND entity_id = ? AND field = ?`,
-			userID, op.Entity, op.EntityID, op.Field).Scan(&prevValue, &prevTS, &prevDevice)
+		err = tx.QueryRowContext(ctx, `SELECT value, ts, device FROM scope_fields WHERE scope_id = ? AND entity = ? AND entity_id = ? AND field = ?`,
+			scope, op.Entity, op.EntityID, op.Field).Scan(&prevValue, &prevTS, &prevDevice)
 		existed := err == nil
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return res, err
@@ -114,18 +198,24 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 			if existed {
 				prev = json.RawMessage(prevValue)
 			}
-			tracker.record(op, prev)
+			tracker.record(scope, op, prev)
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO fields(user_id,entity,entity_id,field,value,ts,device) VALUES(?,?,?,?,?,?,?)
-			ON CONFLICT(user_id,entity,entity_id,field) DO UPDATE SET value=excluded.value, ts=excluded.ts, device=excluded.device
-			WHERE excluded.ts > fields.ts OR (excluded.ts = fields.ts AND excluded.device > fields.device)`,
-			userID, op.Entity, op.EntityID, op.Field, string(op.Value), op.TS, op.Device)
+		_, err = tx.ExecContext(ctx, `INSERT INTO scope_fields(scope_id,entity,entity_id,field,value,ts,device) VALUES(?,?,?,?,?,?,?)
+			ON CONFLICT(scope_id,entity,entity_id,field) DO UPDATE SET value=excluded.value, ts=excluded.ts, device=excluded.device
+			WHERE excluded.ts > scope_fields.ts OR (excluded.ts = scope_fields.ts AND excluded.device > scope_fields.device)`,
+			scope, op.Entity, op.EntityID, op.Field, string(op.Value), op.TS, op.Device)
 		if err != nil {
 			return res, err
 		}
 		res.Applied++
 	}
-	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(MAX(seq),0) FROM ops WHERE user_id = ?`, userID).Scan(&res.Seq); err != nil {
+	if res.Restore, err = rs.restoreOps(refused); err != nil {
+		return res, err
+	}
+	if res.Seq, err = maxSeq(ctx, tx, acc.scopes()); err != nil {
+		return res, err
+	}
+	if res.Audience, err = audience(ctx, tx, userID, touched); err != nil {
 		return res, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -137,6 +227,59 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 		}
 	}
 	return res, nil
+}
+
+// NotifyApplied wakes the devices of everyone who can see what a batch changed,
+// except the device that sent it. Call it after a successful Apply with Applied > 0.
+func (s *Service) NotifyApplied(res ApplyResult, originDevice string) {
+	for _, uid := range res.Audience {
+		s.notifier.Notify(uid, originDevice, res.Seq)
+	}
+}
+
+// NotifyMembership wakes every device of the given users after a membership change,
+// which adds no op: the wake-up carries no cursor, so devices always sync.
+func (s *Service) NotifyMembership(users []string) {
+	for _, uid := range users {
+		s.notifier.Notify(uid, "", MembershipWake)
+	}
+}
+
+// MembershipWake is the cursor value of a wake-up that is not about new ops; the
+// event stream sends it without a cursor so every device runs the exchange.
+const MembershipWake int64 = -1
+
+func maxSeq(ctx context.Context, q querier, scopes []string) (int64, error) {
+	var seq int64
+	err := q.QueryRowContext(ctx, `SELECT COALESCE(MAX(seq),0) FROM op_scopes WHERE scope_id IN (`+placeholders(len(scopes))+`)`, anys(scopes)...).Scan(&seq)
+	return seq, err
+}
+
+// audience resolves the users who can see the touched scopes, author first.
+func audience(ctx context.Context, q querier, author string, touched map[string]bool) ([]string, error) {
+	if len(touched) == 0 {
+		return nil, nil
+	}
+	out := []string{author}
+	seen := map[string]bool{author: true}
+	scopes := make([]string, 0, len(touched))
+	for sc := range touched {
+		scopes = append(scopes, sc)
+	}
+	sort.Strings(scopes)
+	for _, sc := range scopes {
+		users, err := scopeUsers(ctx, q, sc)
+		if err != nil {
+			return nil, err
+		}
+		for _, u := range users {
+			if !seen[u] {
+				seen[u] = true
+				out = append(out, u)
+			}
+		}
+	}
+	return out, nil
 }
 
 // changeTracker coalesces the winning ops of one batch per entity, keeping the
@@ -151,11 +294,11 @@ func newChangeTracker(userID string) *changeTracker {
 	return &changeTracker{userID: userID, byKey: map[string]*Change{}}
 }
 
-func (t *changeTracker) record(op Op, prev json.RawMessage) {
-	key := op.Entity + "\x00" + op.EntityID
+func (t *changeTracker) record(scope string, op Op, prev json.RawMessage) {
+	key := scope + "\x00" + op.Entity + "\x00" + op.EntityID
 	c, ok := t.byKey[key]
 	if !ok {
-		c = &Change{UserID: t.userID, Entity: op.Entity, EntityID: op.EntityID, Fields: map[string]FieldChange{}}
+		c = &Change{UserID: t.userID, ScopeID: scope, Entity: op.Entity, EntityID: op.EntityID, Fields: map[string]FieldChange{}}
 		t.byKey[key] = c
 		t.order = append(t.order, key)
 	}
@@ -202,14 +345,36 @@ func SameJSON(a, b json.RawMessage) bool {
 	return bytes.Equal(norm(a), norm(b))
 }
 
-// Pull returns ops after cursor, newest cursor and whether more remain.
-// Ops authored by excludeDevice are skipped; the cursor still advances past them.
-func (s *Service) Pull(ctx context.Context, userID string, cursor int64, excludeDevice string, limit int) ([]Op, int64, bool, error) {
+// Pull returns ops after cursor from every scope the user can see, the newest
+// cursor and whether more remain. Ops authored by device are skipped; the cursor
+// still advances past them.
+//
+// A project the user joined after their device's cursor had passed part of its
+// history is caught up first (design D4): pages of that history are served with
+// the cursor unchanged and more = true, then the regular pull continues, so the
+// device's single cursor stays monotonic.
+func (s *Service) Pull(ctx context.Context, userID string, cursor int64, device string, limit int) ([]Op, int64, bool, error) {
 	if limit <= 0 || limit > MaxOpsPerRequest {
 		limit = MaxOpsPerRequest
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT seq,op_id,entity,entity_id,field,value,ts,device FROM ops
-		WHERE user_id = ? AND seq > ? ORDER BY seq LIMIT ?`, userID, cursor, limit+1)
+	if device != "" {
+		ops, err := s.backfillPage(ctx, userID, device, cursor, limit)
+		if err != nil {
+			return nil, cursor, false, err
+		}
+		if len(ops) > 0 {
+			return ops, cursor, true, nil
+		}
+	}
+	acc, err := loadAccess(ctx, s.db, userID)
+	if err != nil {
+		return nil, cursor, false, err
+	}
+	scopes := acc.scopes()
+	args := append(anys(scopes), cursor, limit+1)
+	rows, err := s.db.QueryContext(ctx, `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device
+		FROM op_scopes s JOIN ops o ON o.seq = s.seq
+		WHERE s.scope_id IN (`+placeholders(len(scopes))+`) AND s.seq > ? ORDER BY s.seq LIMIT ?`, args...)
 	if err != nil {
 		return nil, cursor, false, err
 	}
@@ -223,15 +388,13 @@ func (s *Service) Pull(ctx context.Context, userID string, cursor int64, exclude
 			more = true
 			break
 		}
-		var op Op
-		var value string
-		if err := rows.Scan(&op.Seq, &op.ID, &op.Entity, &op.EntityID, &op.Field, &value, &op.TS, &op.Device); err != nil {
+		op, err := scanOp(rows)
+		if err != nil {
 			return nil, cursor, false, err
 		}
-		op.Value = json.RawMessage(value)
 		next = op.Seq
 		n++
-		if op.Device == excludeDevice {
+		if op.Device == device {
 			continue
 		}
 		out = append(out, op)
@@ -239,32 +402,148 @@ func (s *Service) Pull(ctx context.Context, userID string, cursor int64, exclude
 	return out, next, more, rows.Err()
 }
 
+func scanOp(rows *sql.Rows) (Op, error) {
+	var op Op
+	var value string
+	if err := rows.Scan(&op.Seq, &op.ID, &op.Entity, &op.EntityID, &op.Field, &value, &op.TS, &op.Device); err != nil {
+		return op, err
+	}
+	op.Value = json.RawMessage(value)
+	return op, nil
+}
+
+// backfillPage serves the next page of history of a project the user joined, for
+// this device: ops of the project's scope up to the device's cursor at its first
+// sync after joining (later ops arrive through the regular pull). It returns nil
+// once every joined project has been replayed for the device. Ops this device
+// authored are included: a device that was removed purged them locally.
+func (s *Service) backfillPage(ctx context.Context, userID, device string, cursor int64, limit int) ([]Op, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	rows, err := tx.QueryContext(ctx, `SELECT m.project_id, b.upto_seq, b.done_seq FROM project_members m
+		LEFT JOIN member_backfills b ON b.project_id = m.project_id AND b.user_id = m.user_id AND b.device = ?
+		WHERE m.user_id = ? AND m.backfill = 1 AND (b.project_id IS NULL OR b.done_seq < b.upto_seq)
+		ORDER BY m.project_id`, device, userID)
+	if err != nil {
+		return nil, err
+	}
+	type pending struct {
+		project    string
+		upto, done int64
+		fresh      bool
+	}
+	var list []pending
+	for rows.Next() {
+		var p pending
+		var upto, done sql.NullInt64
+		if err := rows.Scan(&p.project, &upto, &done); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		p.fresh = !upto.Valid
+		p.upto, p.done = upto.Int64, done.Int64
+		if p.fresh {
+			p.upto = cursor
+		}
+		list = append(list, p)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	var page []Op
+	for _, p := range list {
+		if p.fresh {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO member_backfills(project_id,user_id,device,upto_seq,done_seq) VALUES(?,?,?,?,0)`,
+				p.project, userID, device, p.upto); err != nil {
+				return nil, err
+			}
+		}
+		if p.done < p.upto {
+			r, err := tx.QueryContext(ctx, `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device
+				FROM op_scopes s JOIN ops o ON o.seq = s.seq
+				WHERE s.scope_id = ? AND s.seq > ? AND s.seq <= ? ORDER BY s.seq LIMIT ?`, ProjectScope(p.project), p.done, p.upto, limit)
+			if err != nil {
+				return nil, err
+			}
+			for r.Next() {
+				op, err := scanOp(r)
+				if err != nil {
+					r.Close()
+					return nil, err
+				}
+				page = append(page, op)
+			}
+			r.Close()
+			if err := r.Err(); err != nil {
+				return nil, err
+			}
+		}
+		done := p.upto
+		if len(page) == limit {
+			done = page[len(page)-1].Seq
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE member_backfills SET done_seq = ? WHERE project_id = ? AND user_id = ? AND device = ?`,
+			done, p.project, userID, device); err != nil {
+			return nil, err
+		}
+		if len(page) > 0 {
+			break
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return page, nil
+}
+
 // Entity is a materialized record: id plus every field that has a value.
 type Entity map[string]json.RawMessage
 
-// List materializes all entities of one kind for a user, including soft-deleted ones
-// when includeDeleted is set. Results are ordered by position, then created_at.
+// List materializes all entities of one kind the user can see (personal scope
+// plus shared projects), including soft-deleted ones when includeDeleted is set.
+// Results are ordered by position, then created_at.
 func (s *Service) List(ctx context.Context, userID, entity string, includeDeleted bool) ([]Entity, error) {
 	if _, ok := Schema[entity]; !ok {
 		return nil, fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, entity)
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT entity_id,field,value FROM fields WHERE user_id = ? AND entity = ? ORDER BY entity_id`, userID, entity)
+	acc, err := loadAccess(ctx, s.db, userID)
+	if err != nil {
+		return nil, err
+	}
+	scopes := acc.scopes()
+	rows, err := s.db.QueryContext(ctx, `SELECT scope_id,entity_id,field,value FROM scope_fields WHERE scope_id IN (`+placeholders(len(scopes))+`) AND entity = ? ORDER BY entity_id`,
+		append(anys(scopes), entity)...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	byID := map[string]Entity{}
+	scopeOf := map[string]string{}
 	order := []string{}
 	for rows.Next() {
-		var id, field, value string
-		if err := rows.Scan(&id, &field, &value); err != nil {
+		var scope, id, field, value string
+		if err := rows.Scan(&scope, &id, &field, &value); err != nil {
 			return nil, err
 		}
 		e, ok := byID[id]
 		if !ok {
 			e = Entity{"id": json.RawMessage(fmt.Sprintf("%q", id))}
 			byID[id] = e
+			scopeOf[id] = scope
 			order = append(order, id)
+		} else if scopeOf[id] != scope {
+			// The same id in two visible scopes (only possible with forged ids):
+			// keep the preferred scope's record, never a mix of both.
+			if acc.rank(scope) >= acc.rank(scopeOf[id]) {
+				continue
+			}
+			e = Entity{"id": e["id"]}
+			byID[id] = e
+			scopeOf[id] = scope
 		}
 		e[field] = json.RawMessage(value)
 	}
@@ -289,28 +568,46 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 	return out, nil
 }
 
-// Get materializes one entity or returns nil when it does not exist.
+// Get materializes one entity the user can see or returns nil when it does not exist.
 func (s *Service) Get(ctx context.Context, userID, entity, id string) (Entity, error) {
 	if _, ok := Schema[entity]; !ok {
 		return nil, fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, entity)
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT field,value FROM fields WHERE user_id = ? AND entity = ? AND entity_id = ?`, userID, entity, id)
+	acc, err := loadAccess(ctx, s.db, userID)
+	if err != nil {
+		return nil, err
+	}
+	scopes := acc.scopes()
+	rows, err := s.db.QueryContext(ctx, `SELECT scope_id,field,value FROM scope_fields WHERE scope_id IN (`+placeholders(len(scopes))+`) AND entity = ? AND entity_id = ?`,
+		append(anys(scopes), entity, id)...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var e Entity
+	byScope := map[string]Entity{}
 	for rows.Next() {
-		var field, value string
-		if err := rows.Scan(&field, &value); err != nil {
+		var scope, field, value string
+		if err := rows.Scan(&scope, &field, &value); err != nil {
 			return nil, err
 		}
+		e := byScope[scope]
 		if e == nil {
 			e = Entity{"id": json.RawMessage(fmt.Sprintf("%q", id))}
+			byScope[scope] = e
 		}
 		e[field] = json.RawMessage(value)
 	}
-	return e, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	var best Entity
+	bestRank := 0
+	for scope, e := range byScope {
+		if r := acc.rank(scope); best == nil || r < bestRank {
+			best, bestRank = e, r
+		}
+	}
+	return best, nil
 }
 
 // Generation returns the op-log generation. It changes only when the database is

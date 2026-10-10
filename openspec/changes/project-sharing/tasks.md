@@ -2,14 +2,14 @@
 
 ## 1. Storage and scopes
 
-- [ ] 1.1 Add `internal/store/migrations/0002_sharing.sql`: `scope_id` on `ops` with backfill and indexes, rebuilt `fields` keyed by scope, `project_scopes` and `project_members` tables; verify `TestMigrateSharingBackfillsPersonalScopes` (existing rows end with `user:<id>`) via `go test ./...`
-- [ ] 1.2 Scope resolution in `internal/sync`: personal vs project scope for `project` and `task` ops, batch-local `project_id` lookup, `scope_change` refusal; verify `TestScopeResolutionForNewAndExistingTasks`, `TestProjectIdAcrossScopesIsRejected` via `go test ./...`
-- [ ] 1.3 First-share relabel transaction (project + its tasks move to `project:<id>`); verify `TestShareRelabelsExistingOpsAndFields` checks `seq` and `op_id` are unchanged via `go test ./...`
+- [x] 1.1 Add `internal/store/migrations/0002_sharing.sql`: `scope_id` on `ops` with backfill and indexes, rebuilt `fields` keyed by scope, `project_scopes` and `project_members` tables; verify `TestMigrateSharingBackfillsPersonalScopes` (existing rows end with `user:<id>`) via `go test ./...`
+- [x] 1.2 Scope resolution in `internal/sync`: personal vs project scope for `project` and `task` ops, batch-local `project_id` lookup, `scope_change` refusal; verify `TestScopeResolutionForNewAndExistingTasks`, `TestProjectIdAcrossScopesIsRejected` via `go test ./...`
+- [x] 1.3 First-share relabel transaction (project + its tasks move to `project:<id>`); verify `TestShareRelabelsExistingOpsAndFields` checks `seq` and `op_id` are unchanged via `go test ./...`
 
 ## 2. Authorization in the sync engine
 
-- [ ] 2.1 Role table (viewer/editor/admin/owner × entity/field) and per-op evaluation at receipt time in `Apply`, returning `rejected: [{id, reason}]` without failing the batch; verify `TestViewerWritesAreRejectedPerOp`, `TestEditorCannotEditProjectFields`, `TestRejectionIsIdempotentOnRetry` via `go test ./...`
-- [ ] 2.2 Include the current winning op for each refused field in the same response; verify `TestRejectedFieldsComeBackWithServerValue` via `go test ./...`
+- [x] 2.1 Role table (viewer/editor/admin/owner × entity/field) and per-op evaluation at receipt time in `Apply`, returning `rejected: [{id, reason}]` without failing the batch; verify `TestViewerWritesAreRejectedPerOp`, `TestEditorCannotEditProjectFields`, `TestRejectionIsIdempotentOnRetry` via `go test ./...`
+- [x] 2.2 Include the current winning op for each refused field in the same response; verify `TestRejectedFieldsComeBackWithServerValue` via `go test ./...`
 - [ ] 2.3 `Pull` over the caller's scopes, backfill replay for new memberships with monotonic cursor and `hasMore`, `memberships` in every response; verify `TestPullIsScopedToMemberships`, `TestNewMemberReplaysHistoryBehindCursor`, `TestRemovedMemberReceivesNothing` via `go test ./...`
 
 ## 3. Membership REST routes
