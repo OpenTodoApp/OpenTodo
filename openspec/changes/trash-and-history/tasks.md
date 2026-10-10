@@ -13,11 +13,11 @@
 
 ## 2. Client data layer
 
-- [ ] 2.1 `deleteProject` writes only the tombstone; live queries hide tasks whose project is deleted (and their counts); verify `ops.test.ts` "delete project hides tasks without task ops" (`npm test`)
-- [ ] 2.2 `restoreTask` (Inbox fallback when the project is deleted), `restoreProject`; verify `trash.test.ts` restore cases and "concurrent delete and restore resolves to newer" (`npm test`)
-- [ ] 2.3 Sync loop handles `purged`: deletes local rows and drops matching outbox ops; verify `sync.test.ts` "purged ids are removed locally" (`npm test`)
-- [ ] 2.4 Auto-archive helper: candidates with tasks and no open task for 30 days, Inbox excluded, per-device opt-out in `meta`; verify `archive.test.ts` candidate selection and opt-out (`npm test`)
-- [ ] 2.5 History API client and value-restore helper writing a normal op; verify `history.test.ts` restore writes a new op with the current clock (`npm test`)
+- [x] 2.1 `deleteProject` writes only the tombstone; live queries hide tasks whose project is deleted (and their counts); verify `ops.test.ts` "delete project hides tasks without task ops" (`npm test`)
+- [x] 2.2 `restoreTask` (Inbox fallback when the project is deleted), `restoreProject`; verify `trash.test.ts` restore cases and "concurrent delete and restore resolves to newer" (`npm test`)
+- [x] 2.3 Sync loop handles `purged`: deletes local rows and drops matching outbox ops; verify `sync.test.ts` "purged ids are removed locally" (`npm test`)
+- [x] 2.4 Auto-archive helper: candidates with tasks and no open task for 30 days, Inbox excluded, per-device opt-out in `meta`; verify `archive.test.ts` candidate selection and opt-out (`npm test`)
+- [x] 2.5 History API client and value-restore helper writing a normal op; verify `history.test.ts` restore writes a new op with the current clock (`npm test`)
 
 ## 3. UI
 

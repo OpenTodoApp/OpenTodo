@@ -20,6 +20,7 @@ import { useListKeys } from './useListKeys'
 import { useToday } from './useViews'
 import { TaskDetail } from './TaskDetail'
 import { TaskRow } from './TaskRow'
+import { visibleTasks } from '../lib/trash'
 
 const DEBOUNCE_MS = 150
 
@@ -50,7 +51,7 @@ export function FilterView() {
 
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
-  const allTasks = useLiveQuery(() => db.tasks.filter((t) => !t.deleted_at).toArray(), [], [] as Task[])
+  const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])

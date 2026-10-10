@@ -460,3 +460,26 @@ describe('project sharing', () => {
     expect(syncSnapshot().rejected).toBeNull()
   })
 })
+
+describe('trash-and-history', () => {
+  it('purged ids are removed locally', async () => {
+    await applyOps([
+      { id: 'p1', entity: 'task', entityId: 'gone', field: 'title', value: 'Purged', ts: 1, device: 'A' },
+      { id: 'p2', entity: 'task', entityId: 'gone', field: 'deleted_at', value: 5, ts: 2, device: 'A' },
+      { id: 'p3', entity: 'task', entityId: 'kept', field: 'title', value: 'Kept', ts: 1, device: 'A' },
+    ])
+    // A stale offline edit for the purged task is still queued.
+    await mutate('task', 'gone', { title: 'Offline edit' })
+    let first = true
+    syncCalls.mockImplementation((async () => {
+      const purged = first ? [{ entity: 'task', entityId: 'gone' }] : []
+      first = false
+      return { applied: 0, duplicates: 1, ops: [], cursor: serverCursor.value, hasMore: false, serverTime: Date.now(), purged, trashRetentionDays: 7 }
+    }) as never)
+    await syncNow()
+    expect(await db.tasks.get('gone')).toBeUndefined()
+    expect(await db.tasks.get('kept')).toBeDefined()
+    expect(await db.outbox.count()).toBe(0)
+    expect(await getMeta('trashRetentionDays', 30)).toBe(7)
+  })
+})

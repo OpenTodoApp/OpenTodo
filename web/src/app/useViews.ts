@@ -7,6 +7,7 @@ import { db } from '../lib/db'
 import { todayISO } from '../lib/dates'
 import type { Label, Project, Task, View } from '../lib/types'
 import { activeViews, getStartView, type StartView, type ViewContext } from '../lib/views'
+import { visibleTasks } from '../lib/trash'
 
 /** The local calendar date, re-read every minute so "today" rolls over while a view is open. */
 export function useToday(): string {
@@ -41,7 +42,7 @@ export function useViewData(): ViewData {
   const views = useViews()
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
-  const tasks = useLiveQuery(() => db.tasks.filter((t) => !t.deleted_at).toArray(), [], [] as Task[])
+  const tasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
   const ctx = useMemo(() => ({ today, labels, projects, tasks }), [today, labels, projects, tasks])
   return { views, projects, labels, tasks, ctx }
 }

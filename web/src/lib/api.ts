@@ -1,6 +1,6 @@
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PushSubscriptionStatus, SyncResponse, TrustedDevice, User,
+  AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -132,6 +132,12 @@ export const api = {
     request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`),
   transferProject: (projectId: string, userId: string) =>
     request<Membership>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/transfer`, { userId }),
+  // Trash and history (OpenSpec change `trash-and-history`): history is read live, never cached.
+  history: (entity: 'task' | 'project', id: string, before?: number) =>
+    request<HistoryPage>('GET', `/api/v1/${entity}s/${encodeURIComponent(id)}/history${before ? `?before=${before}` : ''}`),
+  purge: (entity: 'task' | 'project', id: string) =>
+    request<{ purged: PurgeCounts }>('DELETE', `/api/v1/${entity}s/${encodeURIComponent(id)}/purge`),
+  emptyTrash: () => request<{ purged: PurgeCounts }>('POST', '/api/v1/trash/purge'),
   // Web push (OpenSpec change `reminders`). 404 when the operator turned push off.
   pushKey: (device?: string) =>
     request<{ publicKey: string; subscription?: PushSubscriptionStatus | null }>(

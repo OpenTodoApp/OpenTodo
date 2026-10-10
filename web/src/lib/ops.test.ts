@@ -8,6 +8,7 @@ import { wins } from './hlc'
 import { parentReadyToComplete } from './subtasks'
 import type { Op } from './types'
 import { viewOptions } from './views'
+import { visibleTasks } from './trash'
 
 let n = 0
 beforeEach(() => {
@@ -319,7 +320,7 @@ describe('projects', () => {
     expect((await db.projects.get(garden))?.archived).toBe(true)
   })
 
-  it('delete promotes sub-projects and moves open tasks to the Inbox', async () => {
+  it('delete promotes sub-projects and keeps tasks with the trashed project', async () => {
     const { db, home, garden, lawn, beds } = await forest()
     const open = await createTask({ title: 'Mow', project_id: garden })
     const done = await createTask({ title: 'Rake', project_id: garden })
@@ -328,11 +329,27 @@ describe('projects', () => {
     expect((await db.projects.get(garden))?.deleted_at).not.toBeNull()
     expect((await db.projects.get(lawn))?.parent_id).toBe(home)
     expect((await db.projects.get(beds))?.parent_id).toBe(home)
-    expect((await db.tasks.get(open))?.project_id).toBeNull()
-    expect((await db.tasks.get(done))?.project_id).toBeNull()
+    expect((await db.tasks.get(open))?.project_id).toBe(garden)
+    expect((await db.tasks.get(done))?.project_id).toBe(garden)
     // Deleting a top-level project promotes its children to the top level.
     await deleteProject(home)
     expect((await db.projects.get(lawn))?.parent_id).toBeNull()
+  })
+
+  it('delete project hides tasks without task ops', async () => {
+    const { db, garden } = await forest()
+    const open = await createTask({ title: 'Mow', project_id: garden })
+    const inbox = await createTask({ title: 'Call' })
+    await db.outbox.clear()
+    await deleteProject(garden)
+    const ops = await db.outbox.toArray()
+    expect(ops.filter((o) => o.entity === 'task')).toHaveLength(0)
+    const visible = (await visibleTasks()).map((t) => t.id)
+    expect(visible).toContain(inbox)
+    expect(visible).not.toContain(open)
+    // Not in the Inbox either, and not counted.
+    expect((await db.tasks.get(open))?.deleted_at).toBeNull()
+    expect((await visibleTasks()).filter((t) => t.project_id === null).map((t) => t.id)).toEqual([inbox])
   })
 })
 

@@ -17,6 +17,7 @@ import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { SubProjects } from './SubProjects'
 import { estimateFocus, isGPending, openTask, placeInDay } from './signals'
+import { visibleTasks } from '../lib/trash'
 
 type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
@@ -73,7 +74,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
 
   // Every live task once; views, breadcrumbs and progress badges derive from this set,
   // so a remote op that lands in IndexedDB updates all of them without a reload.
-  const allTasks = useLiveQuery(() => db.tasks.filter((t) => !t.deleted_at).toArray(), [], [] as Task[])
+  const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
 

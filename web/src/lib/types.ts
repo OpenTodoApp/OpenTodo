@@ -495,4 +495,40 @@ export interface SyncResponse {
   generation?: string
   rejected?: Rejection[]
   memberships?: Membership[]
+  /** Entities purged on the server since the cursor (trash-and-history); delete them locally. */
+  purged?: { entity: Entity; entityId: string }[]
+  /** Days an item stays in the Trash before the server purges it; 0 = never (additive). */
+  trashRetentionDays?: number
+}
+
+/** One field write in a history change set (trash-and-history). */
+export interface HistoryChange {
+  opId: string
+  field: string
+  from: unknown
+  to: unknown
+  /** The write arrived after a newer one and never became the stored value. */
+  lost?: boolean
+}
+
+/** Writes made at one timestamp by one device ("server" = REST API). */
+export interface ChangeSet {
+  ts: number
+  device: string
+  userId: string
+  changes: HistoryChange[]
+}
+
+export interface HistoryPage {
+  entity: 'task' | 'project'
+  id: string
+  changeSets: ChangeSet[]
+  more: boolean
+  before?: number
+}
+
+export interface PurgeCounts {
+  tasks: number
+  projects: number
+  reminders: number
 }
