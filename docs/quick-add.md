@@ -111,9 +111,9 @@ Before voice capture can be switched on, Settings shows this statement and waits
 
 OpenTodo's code never records, stores or sends audio: the Web Speech API hands it text. On-device recognition is requested whenever the browser reports it available for the language (Chromium's `processLocally`); OpenTodo never asks the browser to download a speech model. The browser asks for microphone permission on your first dictation, not when you switch the setting on.
 
-## Not (yet) understood
+## Not understood
 
-Recurrence ("every Monday"), reminders ("remind me at 9"), creating a project from an unknown `#name`, and parsing on the server, REST API or `ot` CLI. Those belong to later changes; see [ROADMAP.md](../ROADMAP.md).
+Recurrence ("every Monday") and reminders ("remind me at 9") are set in the task's detail panel (see [recurrence.md](recurrence.md) and [reminders.md](reminders.md)), not in the quick-add line. Quick add does not create a project from an unknown `#name`, and the line is parsed only in the web app, not by the server, the REST API or the `ot` CLI. Some of this is listed under [future ideas](../ROADMAP.md#future-ideas).
 
 ## Data
 

@@ -36,6 +36,8 @@ If you prefer not to use compose:
 
 ## Environment variables
 
+None is required. Variables you add in Coolify's **Environment Variables** tab reach the container through the compose file. The most useful ones are below; the complete list is in the [README](../../README.md#configuration).
+
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `OPENTODO_BASE_URL` | set by Coolify | Public URL. Enables `Secure` cookies, strict origin checks and, when https, passkeys |
@@ -49,6 +51,8 @@ If you prefer not to use compose:
 | `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | Presets "allow private network targets" for webhooks on first start; afterwards Settings → Webhooks decides. See [webhooks](../webhooks.md#private-network-protection) |
 | `OPENTODO_CALDAV` | unset | `true` presets the CalDAV endpoint for calendar apps on first start; afterwards Settings → Calendar apps decides. See [caldav](../caldav.md) |
 | `OPENTODO_EMAIL_*` | unset | Optional [email to task](../email.md): `ADDRESS`, `IMAP_HOST`, `IMAP_USER` and `IMAP_PASSWORD` together (mark the password as a secret, or mount a file and set `IMAP_PASSWORD_FILE`). Partial settings stop the container at startup with the missing name in the log |
+| `OPENTODO_OIDC_*` | unset | Optional [single sign-on](sso.md) settings (`ISSUER`, `CLIENT_ID`, `CLIENT_SECRET`, `DISPLAY_NAME`, `SSO_ONLY`) that override and lock the fields in Settings → Single sign-on |
+| `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](../backups.md#environment-presets), applied once; Settings → Backups wins afterwards |
 
 ## Passkeys
 
@@ -64,7 +68,7 @@ Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files
 
 ## Audit log
 
-**Settings → Audit log** (owner only) lists sign-ins, failed sign-ins, tokens, invitations, exports and audit setting changes, with filters and an NDJSON export. It lives in the `/data` volume with everything else and needs no configuration: retention defaults to 90 days, client addresses are off by default. If you enable address logging, the address comes from Traefik's `X-Forwarded-For` header, which Coolify sets for you; do not publish the container port directly, or clients could bypass the proxy and forge that header. Expect roughly 200 bytes per event. Details in [Running with Docker](docker.md#audit-log).
+**Settings → Audit log** (owner only) lists sign-ins, failed sign-ins, credentials, invitations, user administration, exports, backups and setting changes, with filters and an NDJSON export. It lives in the `/data` volume with everything else and needs no configuration: retention defaults to 90 days, client addresses are off by default. If you enable address logging, the address comes from Traefik's `X-Forwarded-For` header, which Coolify sets for you; do not publish the container port directly, or clients could bypass the proxy and forge that header. Expect roughly 200 bytes per event. Details in [Running with Docker](docker.md#audit-log).
 
 ## Updating
 

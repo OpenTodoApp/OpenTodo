@@ -5,6 +5,10 @@
 #                 Coolify reads SERVICE_URL_OPENTODO / SERVICE_FQDN_OPENTODO below,
 #                 assigns the domain and provisions HTTPS. No variables are required.
 #
+# Every OPENTODO_* variable below is optional and passed through from .env (or
+# Coolify's environment tab); empty means "use the default". The full table is
+# in README.md#configuration.
+#
 # To build from source instead of pulling the published image, replace the
 # `image:` line with `build: .`.
 
@@ -20,8 +24,18 @@ services:
       - OPENTODO_SESSION_DAYS=${OPENTODO_SESSION_DAYS:-90}
       - OPENTODO_LOG_LEVEL=${OPENTODO_LOG_LEVEL:-info}
       - OPENTODO_IMPORT_MAX_MB=${OPENTODO_IMPORT_MAX_MB:-20}
+      - OPENTODO_TRASH_RETENTION_DAYS=${OPENTODO_TRASH_RETENTION_DAYS:-}
+      - OPENTODO_PUSH=${OPENTODO_PUSH:-}
+      # First-start presets; the owner's Settings win afterwards.
       - OPENTODO_WEBHOOKS_ALLOW_PRIVATE=${OPENTODO_WEBHOOKS_ALLOW_PRIVATE:-}
       - OPENTODO_MCP=${OPENTODO_MCP:-}
+      - OPENTODO_CALDAV=${OPENTODO_CALDAV:-}
+      # Optional single sign-on overrides (docs/self-hosting/sso.md); each one set locks that field in Settings.
+      - OPENTODO_OIDC_ISSUER=${OPENTODO_OIDC_ISSUER:-}
+      - OPENTODO_OIDC_CLIENT_ID=${OPENTODO_OIDC_CLIENT_ID:-}
+      - OPENTODO_OIDC_CLIENT_SECRET=${OPENTODO_OIDC_CLIENT_SECRET:-}
+      - OPENTODO_OIDC_DISPLAY_NAME=${OPENTODO_OIDC_DISPLAY_NAME:-}
+      - OPENTODO_OIDC_SSO_ONLY=${OPENTODO_OIDC_SSO_ONLY:-}
       # Optional backup presets, applied once; Settings → Backups wins afterwards (docs/backups.md).
       - OPENTODO_BACKUP_DESTINATION=${OPENTODO_BACKUP_DESTINATION:-}
       - OPENTODO_BACKUP_LOCAL_DIR=${OPENTODO_BACKUP_LOCAL_DIR:-}
