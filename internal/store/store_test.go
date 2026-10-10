@@ -51,7 +51,7 @@ func TestOpenMigratesEmptyDataDir(t *testing.T) {
 	if version != latest {
 		t.Fatalf("user_version = %d, want %d", version, latest)
 	}
-	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations"} {
+	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations", "settings", "webhooks", "webhook_deliveries"} {
 		var name string
 		err := db.QueryRowContext(context.Background(), "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", table).Scan(&name)
 		if err != nil {

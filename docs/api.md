@@ -54,6 +54,16 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | POST | `/api/v1/invitations` | owner | `{email?, expiresInHours?}` → 201 `{invitation, link}` (link shown once) |
 | DELETE | `/api/v1/invitations/{id}` | owner | revoke a pending invitation → 204 |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid` |
+| GET | `/api/v1/webhooks` | yes | `{webhooks:[…], events:[…]}`, see [Webhooks](#webhooks) |
+| POST | `/api/v1/webhooks` | yes | `{url, events, projectId?, enabled?}` → 201 `{webhook}` (includes `secret`, shown once) |
+| GET | `/api/v1/webhooks/{id}` | yes | `{webhook}` (never the secret) |
+| PATCH | `/api/v1/webhooks/{id}` | yes | partial `{url?, events?, projectId?, enabled?}` → `{webhook}` |
+| DELETE | `/api/v1/webhooks/{id}` | yes | delete with its delivery log → 204 |
+| POST | `/api/v1/webhooks/{id}/test` | yes | send a `ping` now → `{ok, delivery}` |
+| GET | `/api/v1/webhooks/{id}/deliveries` | yes | `{deliveries:[…]}`, newest 100 |
+| POST | `/api/v1/webhooks/{id}/deliveries/{did}/redeliver` | yes | queue the same body with a new id → 202 `{delivery}` |
+| GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
+| PUT | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` → `{allowPrivate}` |
 | GET | `/api/v1/tasks` | yes | `{tasks:[…]}`; `?include_deleted=true` to include tombstones |
 | POST | `/api/v1/tasks` | yes | create → 201 task |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
@@ -208,6 +218,61 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 
 Creates a `member` account and starts a session even when `OPENTODO_ALLOW_SIGNUP` is false. The invitation is spent in the same transaction, so it can create at most one account; a second use returns 404 `invitation_invalid`. Errors: 403 `invitation_email_mismatch` when the invitation is bound to another address, 409 `email_taken`, 400 `invalid_input` for the password policy. In every error case the invitation stays pending.
 
+### Webhooks
+
+Outbound webhooks notify a URL you choose when your tasks and projects change. Event list, payload format, signature verification, retries and receiver recipes are in [docs/webhooks.md](webhooks.md); this section covers the management routes. Every route requires authentication and only ever sees the caller's own webhooks: another account's webhook id answers 404 `not_found`. Webhooks are server configuration: they never go through the op log, never sync and are not in the export.
+
+**Create** — `POST /api/v1/webhooks`:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `url` | string | `http://` or `https://`, at most 2,048 characters |
+| `events` | string[] | non-empty subset of `task.created`, `task.updated`, `task.completed`, `task.reopened`, `task.deleted`, `project.created`, `project.updated`, `project.archived`, `project.deleted` |
+| `projectId` | string or null | only events for this project (tasks in it, or the project itself) |
+| `enabled` | boolean | default `true` |
+
+```bash
+curl -sS "$OT/api/v1/webhooks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"url":"https://n8n.example.com/webhook/opentodo","events":["task.completed","task.created"]}'
+```
+
+Response (201):
+
+```json
+{
+  "webhook": {
+    "id": "…", "url": "https://n8n.example.com/webhook/opentodo", "events": ["task.created", "task.completed"],
+    "projectId": null, "enabled": true, "disabledReason": null, "consecutiveFailures": 0,
+    "createdAt": 1760000000000, "updatedAt": 1760000000000,
+    "secret": "whsec_…"
+  }
+}
+```
+
+`secret` appears only in this response; store it in the receiver to verify signatures. Errors: 400 `invalid_input` naming the field (`url: url scheme must be http or https`, `events: unknown event "task.exploded"`, `events: choose at least one event`), 400 `private_target` when the host resolves only to loopback, private, link-local or other internal addresses and the owner has not allowed private targets, 409 `limit_reached` beyond 20 webhooks per account.
+
+**Update** — `PATCH /api/v1/webhooks/{id}` with any of the fields above (`projectId: null` removes the filter). Changing `url` re-runs the private-target check. Setting `enabled: true` on a webhook the server disabled clears `disabledReason` and the failure counter.
+
+**Read and delete** — `GET /api/v1/webhooks`, `GET /api/v1/webhooks/{id}`, `DELETE /api/v1/webhooks/{id}` (204, also deletes its delivery log and queue). `disabledReason` is `null`, or `too_many_failures` after 20 consecutive failed deliveries.
+
+**Test** — `POST /api/v1/webhooks/{id}/test` sends a `ping` immediately (one attempt) and answers 200 `{ok, delivery}` whether or not the receiver accepted it; `ok` is true for a `2xx` answer.
+
+**Delivery log** — `GET /api/v1/webhooks/{id}/deliveries` → `{deliveries: [...]}`, newest first, at most 100, entries older than 30 days pruned:
+
+```json
+{
+  "id": "…", "webhookId": "…", "event": "task.completed", "status": "retry", "attempts": 1,
+  "nextAttemptAt": 1760000030000, "statusCode": 503, "error": "HTTP 503", "responseExcerpt": "Service Unavailable",
+  "durationMs": 41, "createdAt": 1760000000000, "deliveredAt": null
+}
+```
+
+`status` is `pending`, `retry`, `delivered` or `failed`; `error` is `HTTP <code>`, `timeout`, `connection failed: …` or `private_target`; `responseExcerpt` holds the first kilobyte of the response body.
+
+**Redeliver** — `POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver` queues the same body under a new delivery id → 202 `{delivery}`. A delivery id that does not belong to that webhook answers 404 `not_found`.
+
+**Owner policy** — `GET`/`PUT /api/v1/settings/webhooks` with `{"allowPrivate": true|false}` allows targets on private networks (Home Assistant or n8n on the LAN) for every account. Owner only: members get 403 `forbidden`. The optional `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` environment variable presets it on the first start.
+
 ## Examples
 
 Create a task due tomorrow at 9:00 in a project:
@@ -280,7 +345,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | Code | Status | Where |
 | --- | --- | --- |
 | `unauthorized` | 401 | any protected route without a valid session or token |
-| `forbidden` | 403 | invitation management by a non-owner |
+| `forbidden` | 403 | invitation management or webhook policy by a non-owner |
 | `bad_origin` | 403 | cookie-authenticated write from another origin |
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
@@ -290,4 +355,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | `passkeys_unavailable` | 409 | any passkey route when `OPENTODO_BASE_URL` is not https or localhost |
 | `invalid_input` | 400 | validation failure naming the field |
 | `passkey_challenge_invalid` | 400 | passkey ceremony with an expired, reused or foreign challenge; see [Passkeys](#passkeys) |
+| `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
+| `limit_reached` | 409 | more than 20 webhooks on one account |
+| `not_found` | 404 | unknown id, including another account's webhook or delivery |
 | `rate_limited` | 429 | too many attempts in the window |

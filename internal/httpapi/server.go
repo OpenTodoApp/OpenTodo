@@ -18,6 +18,7 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/ids"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/webhook"
 )
 
 const sessionCookie = "opentodo_session"
@@ -37,6 +38,8 @@ type Server struct {
 	passkeyOptions *rateLimiter
 	// inviteLimiter caps invitation creation per account (20/hour).
 	inviteLimiter *rateLimiter
+	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
+	hooks *webhook.Service
 
 	clockMu sync.Mutex
 	lastTS  int64
@@ -54,10 +57,13 @@ func (s *Server) opTS() int64 {
 }
 
 // New builds the router. web may be nil when only the API is wanted (tests).
-func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) http.Handler {
+func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string, opts ...Option) http.Handler {
 	s := &Server{cfg: cfg, auth: authSvc, sync: syncSvc, web: web, log: log, version: version,
 		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
 		passkeyOptions: newRateLimiter(10, time.Minute)}
+	for _, o := range opts {
+		o(s)
+	}
 	// Passkeys need a relying party; it is derived from the base URL so the
 	// 409 guard in the handlers and the service always agree.
 	if cfg.PasskeysAvailable() && !authSvc.PasskeysAvailable() {
@@ -91,6 +97,9 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/invitations", s.requireAuth(s.handleCreateInvitation))
 	mux.Handle("DELETE /api/v1/invitations/{id}", s.requireAuth(s.handleRevokeInvitation))
 	mux.HandleFunc("GET /api/v1/invitations/{token}", s.handlePreviewInvitation)
+	// Webhooks (OpenSpec `webhooks`): /api/v1/webhooks* and /api/v1/settings/webhooks,
+	// all behind requireAuth; literal patterns win over the {collection} routes below.
+	s.registerWebhookRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
