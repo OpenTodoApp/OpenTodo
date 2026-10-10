@@ -51,6 +51,10 @@ describe('AssistantsView', () => {
     expect(html).toMatch(/type="checkbox"[^>]*disabled=""|disabled=""[^>]*type="checkbox"/)
     expect(button(html, 'Create read-only token')?.attrs).toContain('disabled')
     expect(render({ connected: false, status: null })).toContain('Nothing fetched yet.')
+    // A request in flight keeps the controls focusable (keyboard focus is not lost).
+    const busy = button(render({ busy: true }), 'Create read-only token')
+    expect(busy?.attrs).not.toContain('disabled')
+    expect(busy?.attrs).toContain('aria-busy="true"')
   })
 
   it('shows a created token once with copy actions and puts it in the snippet', () => {

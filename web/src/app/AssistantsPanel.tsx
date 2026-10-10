@@ -25,7 +25,9 @@ export interface AssistantsViewProps {
 
 /** Pure rendering of Settings → AI assistants; state lives in AssistantsPanel. */
 export function AssistantsView(p: AssistantsViewProps) {
-  const disabled = !p.connected || p.busy
+  // Offline disables the controls; a request in flight only ignores input, so
+  // keyboard focus stays on the control instead of falling back to the page.
+  const disabled = !p.connected
   const endpoint = p.status?.endpoint ?? ''
   const snippet = endpoint ? connectionSnippet(endpoint, p.secret) : ''
   const copyLabel = (t: CopyTarget, label: string) => (p.copied === t ? 'Copied' : label)
@@ -49,7 +51,7 @@ export function AssistantsView(p: AssistantsViewProps) {
       ) : p.isOwner ? (
         <label className="flex items-start gap-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
           <input type="checkbox" className="mt-0.5" checked={p.status.enabled} disabled={disabled}
-            onChange={(e) => p.onToggle(e.target.checked)} />
+            aria-busy={p.busy} onChange={(e) => { if (!p.busy) p.onToggle(e.target.checked) }} />
           <span>
             <span className="font-medium">Allow AI assistants (MCP endpoint)</span>
             <span className="block text-slate-500">
@@ -75,7 +77,8 @@ export function AssistantsView(p: AssistantsViewProps) {
             <button type="button" className="btn-ghost text-xs" onClick={() => p.onCopy('endpoint', endpoint)}>{copyLabel('endpoint', 'Copy URL')}</button>
           </div>
           <div>
-            <button type="button" className="btn-primary" disabled={disabled} onClick={p.onCreateToken}>Create read-only token</button>
+            <button type="button" className="btn-primary" disabled={disabled}
+              aria-busy={p.busy} onClick={() => { if (!p.busy) p.onCreateToken() }}>Create read-only token</button>
           </div>
         </div>
       )}
