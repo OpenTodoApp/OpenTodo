@@ -8,10 +8,10 @@
 
 ## 2. Server: HTTP API
 
-- [ ] 2.1 Register `GET/POST /api/v1/invitations` and `DELETE /api/v1/invitations/{id}` behind `requireAuth` plus the owner check (403 `forbidden`); verify `TestInvitationRoutesRequireOwner` covering anonymous 401, member 403 and owner 201/200/204
-- [ ] 2.2 Register unauthenticated `GET /api/v1/invitations/{token}` preview under the per-IP limiter and extend `handleRegister` to read `invitation`; verify `TestInvitationPreviewAndAccept` and `TestInvitationPreviewRateLimited`
-- [ ] 2.3 Per-user creation limiter (20/hour) and `invalid_input` on bad `expiresInHours`/`email`; verify `TestInvitationCreationRateLimit` and `TestInvitationInvalidInput`
-- [ ] 2.4 Update `docs/api.md` with the four routes, the `invitation` field on register and the new error codes; verify the documented payloads match the handler tests
+- [x] 2.1 Register `GET/POST /api/v1/invitations` and `DELETE /api/v1/invitations/{id}` behind `requireAuth` plus the owner check (403 `forbidden`); verify `TestInvitationRoutesRequireOwner` covering anonymous 401, member 403 and owner 201/200/204
+- [x] 2.2 Register unauthenticated `GET /api/v1/invitations/{token}` preview under the per-IP limiter and extend `handleRegister` to read `invitation`; verify `TestInvitationPreviewAndAccept` and `TestInvitationPreviewRateLimited`
+- [x] 2.3 Per-user creation limiter (20/hour) and `invalid_input` on bad `expiresInHours`/`email`; verify `TestInvitationCreationRateLimit` and `TestInvitationInvalidInput`
+- [x] 2.4 Update `docs/api.md` with the four routes, the `invitation` field on register and the new error codes; verify the documented payloads match the handler tests
 
 ## 3. Web app: owner settings
 

@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -23,6 +24,9 @@ type env struct {
 	t      *testing.T
 	srv    *httptest.Server
 	client *http.Client
+	db     *sql.DB
+	// ip, when set, is sent as X-Forwarded-For so clients get separate rate-limit windows.
+	ip string
 }
 
 func newEnv(t *testing.T, allowSignup bool) *env {
@@ -38,7 +42,7 @@ func newEnv(t *testing.T, allowSignup bool) *env {
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	jar, _ := cookiejar.New(nil)
-	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}}
+	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db}
 }
 
 func (e *env) do(method, path string, body any, headers ...string) (*http.Response, map[string]any) {
@@ -50,6 +54,9 @@ func (e *env) do(method, path string, body any, headers ...string) (*http.Respon
 	}
 	req, _ := http.NewRequest(method, e.srv.URL+path, rd)
 	req.Header.Set("Content-Type", "application/json")
+	if e.ip != "" {
+		req.Header.Set("X-Forwarded-For", e.ip)
+	}
 	for i := 0; i+1 < len(headers); i += 2 {
 		req.Header.Set(headers[i], headers[i+1])
 	}
@@ -121,7 +128,14 @@ func TestFirstRunSetupThenSignupClosed(t *testing.T) {
 
 func newClientFor(e *env) *env {
 	jar, _ := cookiejar.New(nil)
-	return &env{t: e.t, srv: e.srv, client: &http.Client{Jar: jar}}
+	return &env{t: e.t, srv: e.srv, client: &http.Client{Jar: jar}, db: e.db}
+}
+
+// newClientAt is newClientFor with its own client address for rate limiting.
+func newClientAt(e *env, ip string) *env {
+	c := newClientFor(e)
+	c.ip = ip
+	return c
 }
 
 func TestUnauthenticatedIsRejected(t *testing.T) {
