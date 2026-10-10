@@ -29,7 +29,7 @@ With Vim keybindings enabled the client SHALL be in exactly one of three modes: 
 - **THEN** focus leaves the field or command line, the indicator shows Normal, and any text already typed into a task field is kept
 
 ### Requirement: Normal-mode motions and counts
-In Normal mode the client SHALL support a numeric count prefix for `j`, `k`, `J`, `K`, `gg` to select the first task, `G` to select the last, `dd` to delete the selected task, `x` to complete or reopen it, `o` to open quick add positioned after the selection, and `i` or `a` to open the selected task's detail panel in Insert mode. Actions on tasks SHALL be applied locally first and recorded as operations exactly like their mouse equivalents, so they work offline and converge like any other edit.
+In Normal mode the client SHALL support a count prefix for `j`, `k`, `J` and `K` (`J`/`K` move the selected task in manual order), `gg`/`G` to select the first/last task, `dd` to delete it, `x` to complete or reopen it, `o` to open quick add after the selection and `i` to open its detail panel in Insert mode. Task actions SHALL be applied locally first and recorded as operations, so they work offline and converge.
 
 #### Scenario: Count prefix
 - **WHEN** a task is selected and the user types `3j`
@@ -42,6 +42,18 @@ In Normal mode the client SHALL support a numeric count prefix for `j`, `k`, `J`
 #### Scenario: Incomplete sequence times out
 - **WHEN** the user presses `d` once and nothing within one second
 - **THEN** no task is deleted and the pending key is discarded
+
+#### Scenario: Count before G or gg
+- **WHEN** the user types `4G` or `4gg`
+- **THEN** the fourth task of the list is selected
+
+#### Scenario: Move the selected task with J
+- **WHEN** a task is selected in a project list or the Inbox and the user types `2J`
+- **THEN** the task moves down two places, recorded as position operations like Alt+Down
+
+#### Scenario: a keeps its default meaning
+- **WHEN** a task is selected and the user presses `a`
+- **THEN** the inline subtask field opens as without Vim keybindings, which is Insert mode
 
 ### Requirement: Command line
 In Normal mode `:` SHALL open a one-line command input with completion over `inbox`, `today`, `upcoming`, `completed`, `settings`, `project <name>` (prefix match), `new <title>`, `q` (close panel or clear selection), `sync` and `help`. Enter runs the command, Escape cancels, and an unknown command SHALL show a message without side effects. Commands that write data SHALL use the same local-first path as the equivalent interface action, so they work offline and converge like any edit.

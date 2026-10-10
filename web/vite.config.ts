@@ -55,6 +55,9 @@ export default defineConfig({
     outDir: '../internal/web/dist',
     emptyOutDir: false,
     sourcemap: false,
+    // The only dynamic import is the optional Vim layer, whose dependencies are all in
+    // the main chunk: nothing to preload, so skip Vite's preload helper (vim-keybindings).
+    modulePreload: false,
   },
   server: {
     port: 5173,
