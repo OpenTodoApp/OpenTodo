@@ -26,9 +26,17 @@ class OpenTodoDB extends Dexie {
       outbox: '++local, id',
       meta: 'key',
     })
-    // v2: labels (change `labels`). Additive; existing stores are untouched.
+    // v2 (subtask-trees): index tasks by parent so subtree lookups stay cheap.
     this.version(2).stores({
+      tasks: 'id, project_id, parent_id, completed_at, position',
+    })
+    // v3 (labels): add the labels table. Additive; every store is redeclared for clarity.
+    this.version(3).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position',
       labels: 'id, position',
+      outbox: '++local, id',
+      meta: 'key',
     })
   }
 }
@@ -41,7 +49,7 @@ export function useDatabase(name: string): OpenTodoDB {
   return db
 }
 
-/** Every table that holds synced entities; applyOps and mutate lock all of them. */
+/** Every table that holds synced entities; applyOps and mutateMany lock all of them. */
 export function entityTables() {
   return [db.projects, db.tasks, db.labels]
 }

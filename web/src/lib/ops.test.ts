@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useDatabase } from './db'
-import { applyOps, createTask, getDeviceId, mutate, resetDeviceId, updateTask } from './ops'
+import {
+  applyOps, createSubtask, createTask, deleteTask, getDeviceId, mutate, resetDeviceId, setTaskCompleted, setTaskParent, updateTask,
+} from './ops'
 import { wins } from './hlc'
+import { parentReadyToComplete } from './subtasks'
 import type { Op } from './types'
 
 let n = 0
@@ -86,6 +89,107 @@ describe('mutate', () => {
     expect((await db.tasks.get(id))?.priority).toBe(1)
     await mutate('task', id, { deleted_at: 5 })
     expect((await db.tasks.get(id))?.deleted_at).toBe(5)
+  })
+})
+
+describe('subtasks', () => {
+  async function tree() {
+    const db = useDatabase(`sub-${Date.now()}-${n++}`)
+    resetDeviceId()
+    const trip = await createTask({ title: 'Plan trip', project_id: 'travel' })
+    const flights = await createSubtask(trip, 'Flights')
+    const hotel = await createSubtask(trip, 'Hotel')
+    const compare = await createSubtask(hotel, 'Compare prices')
+    return { db, trip, flights, hotel, compare }
+  }
+
+  it('subtask inherits project', async () => {
+    const { db, trip, hotel } = await tree()
+    const t = (await db.tasks.get(hotel))!
+    expect(t.project_id).toBe('travel')
+    expect(t.parent_id).toBe(trip)
+    expect(t.priority).toBe(4)
+    expect(t.due).toBeNull()
+    expect(t.completed_at).toBeNull()
+  })
+
+  it('setTaskParent rejects self, a descendant and a different-project parent', async () => {
+    const { db, trip, flights, hotel, compare } = await tree()
+    const other = await createTask({ title: 'Elsewhere', project_id: 'home' })
+    await expect(setTaskParent(trip, trip)).rejects.toThrow()
+    await expect(setTaskParent(trip, compare)).rejects.toThrow(/descendant/)
+    await expect(setTaskParent(hotel, other)).rejects.toThrow(/same project/)
+    expect((await db.tasks.get(trip))?.parent_id).toBeNull()
+    expect((await db.tasks.get(hotel))?.parent_id).toBe(trip)
+    // A legal move places the task last among its new siblings.
+    await setTaskParent(hotel, flights)
+    const moved = (await db.tasks.get(hotel))!
+    expect(moved.parent_id).toBe(flights)
+    await setTaskParent(compare, trip)
+    const c = (await db.tasks.get(compare))!
+    expect(c.parent_id).toBe(trip)
+    expect(c.position).toBeGreaterThan((await db.tasks.get(flights))!.position)
+    await setTaskParent(compare, null)
+    expect((await db.tasks.get(compare))?.parent_id).toBeNull()
+  })
+
+  it('moving a parent to another project moves the subtree; moving a child detaches it', async () => {
+    const { db, trip, flights, hotel, compare } = await tree()
+    await updateTask(trip, { project_id: 'later' })
+    for (const id of [trip, flights, hotel, compare]) expect((await db.tasks.get(id))?.project_id).toBe('later')
+    expect((await db.tasks.get(compare))?.parent_id).toBe(hotel)
+    await updateTask(compare, { project_id: null })
+    const c = (await db.tasks.get(compare))!
+    expect(c.project_id).toBeNull()
+    expect(c.parent_id).toBeNull()
+  })
+
+  it('complete cascades', async () => {
+    const { db, trip, flights, hotel, compare } = await tree()
+    await setTaskCompleted(flights, true)
+    await setTaskCompleted(trip, true)
+    for (const id of [trip, flights, hotel, compare]) expect((await db.tasks.get(id))?.completed_at).not.toBeNull()
+    const ops = (await db.outbox.toArray()).filter((o) => o.field === 'completed_at' && o.value !== null)
+    expect(ops).toHaveLength(4) // one per task: flights alone, then trip + hotel + compare
+  })
+
+  it('reopen does not cascade', async () => {
+    const { db, trip, flights, hotel, compare } = await tree()
+    await setTaskCompleted(trip, true)
+    await setTaskCompleted(trip, false)
+    expect((await db.tasks.get(trip))?.completed_at).toBeNull()
+    for (const id of [flights, hotel, compare]) expect((await db.tasks.get(id))?.completed_at).not.toBeNull()
+  })
+
+  it('offers to complete the parent only when its last open subtask is completed', async () => {
+    const { trip, flights, hotel, compare } = await tree()
+    await setTaskCompleted(flights, true)
+    expect(await parentReadyToComplete(flights)).toBeNull()
+    await setTaskCompleted(compare, true)
+    expect((await parentReadyToComplete(compare))?.id).toBe(hotel)
+    await setTaskCompleted(hotel, true)
+    expect((await parentReadyToComplete(hotel))?.id).toBe(trip)
+  })
+
+  it('delete cascades', async () => {
+    const { db, trip, flights, hotel, compare } = await tree()
+    const keep = await createTask({ title: 'Unrelated', project_id: 'travel' })
+    await deleteTask(trip)
+    for (const id of [trip, flights, hotel, compare]) expect((await db.tasks.get(id))?.deleted_at).not.toBeNull()
+    expect((await db.tasks.get(keep))?.deleted_at).toBeNull()
+  })
+
+  it('concurrent delete and edit keeps tombstone', async () => {
+    const { db, trip, hotel } = await tree()
+    // Device B renamed Hotel at the same moment device A deleted the subtree.
+    const before = (await db.tasks.get(hotel))!
+    await deleteTask(trip)
+    const after = (await db.tasks.get(hotel))!
+    await applyOps([op({ entityId: hotel, field: 'title', value: 'Hotel near the beach', ts: after._clock.deleted_at.ts, device: 'B' })])
+    const t = (await db.tasks.get(hotel))!
+    expect(t.deleted_at).toBe(after.deleted_at)
+    expect(t.title).toBe('Hotel near the beach')
+    expect(before.deleted_at).toBeNull()
   })
 })
 

@@ -449,6 +449,12 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", msg)
 		return
 	}
+	if entity == "task" {
+		if err := s.validateTaskParent(r.Context(), userFrom(r.Context()).ID, id, body, nil); err != nil {
+			s.parentError(w, err)
+			return
+		}
+	}
 	s.writeFields(w, r, entity, id, body, http.StatusCreated)
 }
 
@@ -488,6 +494,80 @@ func (s *Server) checkReferences(ctx context.Context, uid, entity string, body m
 	return "", nil
 }
 
+// errInvalidParent marks a parent_id rejected by validateTaskParent.
+var errInvalidParent = errors.New("invalid parent")
+
+func (s *Server) parentError(w http.ResponseWriter, err error) {
+	if errors.Is(err, errInvalidParent) {
+		writeError(w, http.StatusBadRequest, "invalid_input", strings.TrimPrefix(err.Error(), errInvalidParent.Error()+": "))
+		return
+	}
+	s.internal(w, err)
+}
+
+// validateTaskParent enforces the subtask tree rules on REST writes (OpenSpec
+// `subtasks`): a parent must exist and not be deleted, share the task's project,
+// and must not be the task itself or one of its descendants. REST requests are
+// handled sequentially against current state, so rejecting is safe here; sync
+// ops are never rejected for tree reasons, clients break cycles by display.
+func (s *Server) validateTaskParent(ctx context.Context, uid, id string, body map[string]json.RawMessage, existing opsync.Entity) error {
+	raw, has := body["parent_id"]
+	if !has || string(raw) == "null" {
+		return nil
+	}
+	var parentID string
+	if err := json.Unmarshal(raw, &parentID); err != nil || parentID == "" {
+		return fmt.Errorf("%w: task.parent_id must be null or a task id", errInvalidParent)
+	}
+	if parentID == id {
+		return fmt.Errorf("%w: task.parent_id: a task cannot be its own parent", errInvalidParent)
+	}
+	parent, err := s.sync.Get(ctx, uid, "task", parentID)
+	if err != nil {
+		return err
+	}
+	if parent == nil || parent.Deleted() {
+		return fmt.Errorf("%w: task.parent_id: parent task not found", errInvalidParent)
+	}
+	project := idOf(body["project_id"])
+	if _, has := body["project_id"]; !has && existing != nil {
+		project = idOf(existing["project_id"])
+	}
+	if idOf(parent["project_id"]) != project {
+		return fmt.Errorf("%w: task.parent_id: parent must be in the same project", errInvalidParent)
+	}
+	// Walk up from the parent; reaching the task would close a cycle. The visited
+	// set guards against a cycle that already exists in synced data.
+	seen := map[string]bool{parentID: true}
+	for cur := parent; cur != nil; {
+		next := idOf(cur["parent_id"])
+		if next == "" {
+			break
+		}
+		if next == id {
+			return fmt.Errorf("%w: task.parent_id: parent is a descendant of the task", errInvalidParent)
+		}
+		if seen[next] {
+			break
+		}
+		seen[next] = true
+		if cur, err = s.sync.Get(ctx, uid, "task", next); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// idOf decodes a nullable id field; missing and null both read as "".
+func idOf(raw json.RawMessage) string {
+	var s string
+	if len(raw) == 0 || string(raw) == "null" {
+		return ""
+	}
+	_ = json.Unmarshal(raw, &s)
+	return s
+}
+
 func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	entity, ok := collection(r)
 	if !ok {
@@ -519,6 +599,12 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	} else if msg != "" {
 		writeError(w, http.StatusBadRequest, "invalid_input", msg)
 		return
+	}
+	if entity == "task" {
+		if err := s.validateTaskParent(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing); err != nil {
+			s.parentError(w, err)
+			return
+		}
 	}
 	s.writeFields(w, r, entity, r.PathValue("id"), body, http.StatusOK)
 }

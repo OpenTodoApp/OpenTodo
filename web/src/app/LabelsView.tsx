@@ -9,7 +9,8 @@ import { navigate, type Route } from './router'
 export function useLabelData() {
   const labels = useLiveQuery(() => db.labels.toArray().then(activeLabels), [], [] as Label[])
   const counts = useLiveQuery(async () => {
-    const hidden = new Set((await db.projects.filter((p) => !!p.deleted_at || p.archived).toArray()).map((p) => p.id))
+    // Same rule as TaskListView: only tasks of archived (non-deleted) projects are hidden.
+    const hidden = new Set((await db.projects.filter((p) => !p.deleted_at && p.archived).toArray()).map((p) => p.id))
     const open = await db.tasks.filter((t) => !t.deleted_at && !t.completed_at && (!t.project_id || !hidden.has(t.project_id))).toArray()
     return countOpenByLabel(open)
   }, [], new Map<string, number>())
