@@ -39,7 +39,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Labels UI (schema shipped) | `labels` |
 | ✅ | Filter query language (`@work & due <= tomorrow & p1`) | `filter-query-language` |
 | ✅ | Saved filters pinned to the sidebar, custom dashboards | `custom-views` |
-| 📝 | Trash with restore, auto-archive of completed projects, revision history from the op log | `trash-and-history` |
+| ✅ | Trash with restore, auto-archive of completed projects, revision history from the op log | `trash-and-history` |
 | 📝 | Drag-and-drop ordering (`position` already shipped) | `manual-ordering` |
 
 ## 4. Time management

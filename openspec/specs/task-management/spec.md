@@ -77,11 +77,15 @@ A task SHALL be completable and reopenable from the list, the detail panel and t
 - **THEN** Completed shows that occurrence once and the series is due on the same next occurrence on both devices
 
 ### Requirement: Soft delete
-Deleting a task SHALL set a deletion time rather than removing data. Deleted tasks SHALL be hidden from all views and list endpoints, SHALL remain in the export, and SHALL stay deleted on every device after sync.
+Deleting a task SHALL set a deletion time rather than removing data. Deleted tasks SHALL be hidden from all views except the Trash and from list endpoints, SHALL remain in the export, SHALL stay deleted on every device after sync, and SHALL be restorable from the Trash until purged.
 
 #### Scenario: Delete syncs as a tombstone
 - **WHEN** a task is deleted on one device while another device edits its title offline
 - **THEN** after both devices sync, the task is deleted on both and the title edit does not resurrect it
+
+#### Scenario: Deleted task is only visible in the Trash
+- **WHEN** a task is deleted
+- **THEN** it is absent from Inbox, Today, Upcoming, Completed, project and filter views and present in the Trash
 
 ### Requirement: Duration estimate
 A task SHALL have an optional duration estimate `estimate_minutes`, a positive integer number of minutes or null (default). It SHALL be stored, validated, exported and synced as a field under the same last-writer-wins rule as every other task field, SHALL be settable offline, and SHALL be shown on the task row when present.
