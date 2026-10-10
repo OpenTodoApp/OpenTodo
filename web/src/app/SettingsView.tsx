@@ -19,6 +19,7 @@ import { navigate } from './router'
 import { WebhooksPanel } from './WebhooksPanel'
 import { setStartView, type StartView } from '../lib/views'
 import { useStartView, useViews } from './useViews'
+import { setVimEnabled, useVimEnabled } from './vim/prefs'
 
 interface TokenRow { id: string; name: string; createdAt: number; lastUsedAt: number | null }
 
@@ -106,6 +107,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
         </select>
       </section>
 
+      <KeyboardSection />
+
       <AutoArchiveSection />
 
       <AdministrationSections user={user} />
@@ -169,6 +172,23 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
  * the DOM because React refuses `javascript:` URLs; clicking it here does nothing
  * (the app's CSP would block it anyway), it is meant to be dragged to the bar.
  */
+/** Vim keybindings switch (vim-keybindings): per device, off by default, applies at once. */
+function KeyboardSection() {
+  const vim = useVimEnabled()
+  return (
+    <section className="space-y-2">
+      <h2 className="font-semibold">Keyboard</h2>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={vim} onChange={(e) => setVimEnabled(e.target.checked)} data-vim-switch />
+        Vim keybindings (this device)
+      </label>
+      <p className="text-sm text-slate-500">
+        Adds Normal, Insert and Command modes on top of the usual shortcuts: counts (<span className="kbd">3j</span>), <span className="kbd">gg</span> / <span className="kbd">G</span>, <span className="kbd">dd</span>, <span className="kbd">x</span>, <span className="kbd">o</span>, <span className="kbd">i</span> and a <span className="kbd">:</span> command line. Escape in a field returns to Normal mode. Press <span className="kbd">?</span> for every shortcut. Stored on this device only.
+      </p>
+    </section>
+  )
+}
+
 /** Per-device opt-out of automatic archiving (trash-and-history); stored in local meta. */
 function AutoArchiveSection() {
   const on = useLiveQuery(getAutoArchive, [], true)

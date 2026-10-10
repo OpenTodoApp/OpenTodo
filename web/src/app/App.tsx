@@ -14,6 +14,7 @@ import { cacheMfa, EnrolmentGate } from './TwoFactorPanel'
 import { navigate, useRoute } from './router'
 import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
+import { clearVimPref } from './vim/prefs'
 
 type Phase =
   | { kind: 'loading' }
@@ -95,6 +96,7 @@ export function App() {
       stopSync()
       await clearLocalData()
       localStorage.removeItem('opentodo.user')
+      clearVimPref()
       cacheMfa(null)
       // Provider sign-out (OpenSpec `oidc-login`): the local session and data are
       // gone; the provider's end-session page sends the browser back to sign-in.
