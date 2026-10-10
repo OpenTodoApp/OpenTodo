@@ -12,6 +12,7 @@ export type Route =
   | { view: 'labels' }
   | { view: 'filter' }
   | { view: 'settings' }
+  | { view: 'import' }
   | { view: 'invite'; token: string }
   | { view: 'share' }
 
@@ -28,7 +29,7 @@ export function parseRoute(pathname: string): Route {
     case 'completed':
       return { view: 'completed' }
     case 'settings':
-      return { view: 'settings' }
+      return parts[1] === 'import' ? { view: 'import' } : { view: 'settings' }
     case 'labels':
       return { view: 'labels' }
     case 'filter':
@@ -64,6 +65,8 @@ export function routePath(r: Route): string {
       return `/invite/${encodeURIComponent(r.token)}`
     case 'inbox':
       return '/'
+    case 'import':
+      return '/settings/import'
     default:
       return `/${r.view}`
   }

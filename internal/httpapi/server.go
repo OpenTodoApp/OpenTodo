@@ -14,10 +14,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/importer"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/webhook"
 )
 
 const sessionCookie = "opentodo_session"
@@ -26,14 +29,22 @@ const sessionCookie = "opentodo_session"
 type Server struct {
 	cfg     config.Config
 	auth    *auth.Service
+	audit   *audit.Recorder
 	sync    *opsync.Service
 	web     http.Handler
 	log     *slog.Logger
 	version string
 	// limiter guards the unauthenticated auth routes per client IP (10/min).
 	limiter *rateLimiter
+	// passkeyOptions limits anonymous passkey challenge requests separately, so
+	// the sign-in screen's autofill request does not use up password attempts.
+	passkeyOptions *rateLimiter
 	// inviteLimiter caps invitation creation per account (20/hour).
 	inviteLimiter *rateLimiter
+	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
+	importer *importer.Service
+	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
+	hooks *webhook.Service
 
 	clockMu sync.Mutex
 	lastTS  int64
@@ -51,9 +62,19 @@ func (s *Server) opTS() int64 {
 }
 
 // New builds the router. web may be nil when only the API is wanted (tests).
-func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) http.Handler {
-	s := &Server{cfg: cfg, auth: authSvc, sync: syncSvc, web: web, log: log, version: version,
-		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour)}
+func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string, opts ...Option) http.Handler {
+	s := &Server{cfg: cfg, auth: authSvc, audit: authSvc.Audit(), sync: syncSvc, web: web, log: log, version: version,
+		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
+		passkeyOptions: newRateLimiter(10, time.Minute),
+		importer:       importer.New(syncSvc.DB(), syncSvc, log)}
+	for _, o := range opts {
+		o(s)
+	}
+	// Passkeys need a relying party; it is derived from the base URL so the
+	// 409 guard in the handlers and the service always agree.
+	if cfg.PasskeysAvailable() && !authSvc.PasskeysAvailable() {
+		authSvc.ConfigurePasskeys(cfg.RPID(), cfg.Origin())
+	}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", s.handleHealth)
@@ -61,11 +82,20 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.HandleFunc("POST /api/v1/auth/register", s.handleRegister)
 	mux.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
 	mux.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
+	// Passwordless sign-in: anonymous by design. Finishing shares the login
+	// limiter; fetching a challenge has its own per-address limiter.
+	mux.HandleFunc("POST /api/v1/auth/passkey/options", s.handlePasskeyLoginOptions)
+	mux.HandleFunc("POST /api/v1/auth/passkey", s.handlePasskeyLogin)
 
 	mux.Handle("GET /api/v1/me", s.requireAuth(s.handleMe))
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
 	mux.Handle("POST /api/v1/tokens", s.requireAuth(s.handleCreateToken))
 	mux.Handle("DELETE /api/v1/tokens/{id}", s.requireAuth(s.handleDeleteToken))
+	mux.Handle("POST /api/v1/passkeys/register/options", s.requireAuth(s.handlePasskeyRegisterOptions))
+	mux.Handle("POST /api/v1/passkeys/register", s.requireAuth(s.handlePasskeyRegister))
+	mux.Handle("GET /api/v1/passkeys", s.requireAuth(s.handleListPasskeys))
+	mux.Handle("PATCH /api/v1/passkeys/{id}", s.requireAuth(s.handleRenamePasskey))
+	mux.Handle("DELETE /api/v1/passkeys/{id}", s.requireAuth(s.handleDeletePasskey))
 	// Invitations: owner-only management plus the one public preview route the
 	// spec defines (the invitee has no account yet). Both must be registered before
 	// the generic {collection} routes so the mux prefers these literal patterns.
@@ -73,9 +103,25 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/invitations", s.requireAuth(s.handleCreateInvitation))
 	mux.Handle("DELETE /api/v1/invitations/{id}", s.requireAuth(s.handleRevokeInvitation))
 	mux.HandleFunc("GET /api/v1/invitations/{token}", s.handlePreviewInvitation)
+	// Audit log: owner-only reads, export and settings; personal activity for
+	// everyone. Literal patterns, so they win over the {collection} routes below.
+	mux.Handle("GET /api/v1/audit", s.requireAuth(s.handleAuditList))
+	mux.Handle("GET /api/v1/audit/export", s.requireAuth(s.handleAuditExport))
+	mux.Handle("GET /api/v1/settings/audit", s.requireAuth(s.handleGetAuditSettings))
+	mux.Handle("PUT /api/v1/settings/audit", s.requireAuth(s.handlePutAuditSettings))
+	mux.Handle("GET /api/v1/me/activity", s.requireAuth(s.handleMyActivity))
+	// Webhooks (OpenSpec `webhooks`): /api/v1/webhooks* and /api/v1/settings/webhooks,
+	// all behind requireAuth; literal patterns win over the {collection} routes below.
+	s.registerWebhookRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
+	// Import (OpenSpec `data-import`): literal patterns win over the {collection} routes.
+	mux.Handle("POST /api/v1/import/preview", s.requireAuth(s.handleImportPreview))
+	mux.Handle("POST /api/v1/import", s.requireAuth(s.handleImportStart))
+	mux.Handle("GET /api/v1/import/jobs", s.requireAuth(s.handleImportJobs))
+	mux.Handle("GET /api/v1/import/jobs/{id}", s.requireAuth(s.handleImportJob))
+	mux.Handle("POST /api/v1/import/jobs/{id}/undo", s.requireAuth(s.handleImportUndo))
 	mux.Handle("GET /api/v1/{collection}", s.requireAuth(s.handleList))
 	mux.Handle("POST /api/v1/{collection}", s.requireAuth(s.handleCreate))
 	mux.Handle("GET /api/v1/{collection}/{id}", s.requireAuth(s.handleGet))
@@ -87,7 +133,15 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	if web != nil {
 		mux.Handle("/", web)
 	}
-	return s.securityHeaders(s.logRequests(mux))
+	return s.securityHeaders(s.logRequests(auditContext(mux)))
+}
+
+// auditContext hands the client address and user agent to the audit recorder.
+// The address is stored only when the owner enabled address logging.
+func auditContext(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r.WithContext(audit.WithRequest(r.Context(), clientIP(r), r.UserAgent())))
+	})
 }
 
 // ---- middleware ----
@@ -220,11 +274,12 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"setupRequired": count == 0,
-		"signupAllowed": allowed,
-		"authenticated": u != nil,
-		"user":          u,
-		"version":       s.version,
+		"setupRequired":     count == 0,
+		"signupAllowed":     allowed,
+		"authenticated":     u != nil,
+		"user":              u,
+		"version":           s.version,
+		"passkeysAvailable": s.cfg.PasskeysAvailable(),
 	})
 }
 
@@ -272,11 +327,18 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	s.startSession(w, r, u, http.StatusCreated)
+	if s.startSession(w, r, u, http.StatusCreated) {
+		s.audit.Record(r.Context(), audit.LoginSucceeded(u.ID, u.Email, "register"))
+	}
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
-	if !s.limiter.allow(clientIP(r)) {
+	if allowed, first := s.limiter.hit(clientIP(r)); !allowed {
+		// One event per window and address once limiting kicks in, instead of one
+		// per refused attempt, so credential stuffing cannot flood the log.
+		if first {
+			s.audit.Record(r.Context(), audit.LoginFailed("", "", audit.ReasonRateLimited))
+		}
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}
@@ -291,6 +353,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	u, err := s.auth.Authenticate(r.Context(), c.Email, c.Password)
 	if errors.Is(err, auth.ErrInvalidCredentials) {
+		var f *auth.LoginFailure
+		if errors.As(err, &f) {
+			s.audit.Record(r.Context(), audit.LoginFailed(f.UserID, f.Email, f.Reason))
+		}
 		writeError(w, http.StatusUnauthorized, "invalid_credentials", err.Error())
 		return
 	}
@@ -298,25 +364,33 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	s.startSession(w, r, u, http.StatusOK)
+	if s.startSession(w, r, u, http.StatusOK) {
+		s.audit.Record(r.Context(), audit.LoginSucceeded(u.ID, u.Email, "password"))
+	}
 }
 
-func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *auth.User, status int) {
+// startSession issues the session cookie and answers with the user. It reports
+// whether the session was created.
+func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *auth.User, status int) bool {
 	secret, exp, err := s.auth.CreateSession(r.Context(), u.ID, r.UserAgent())
 	if err != nil {
 		s.internal(w, err)
-		return
+		return false
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name: sessionCookie, Value: secret, Path: "/", Expires: exp,
 		HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode,
 	})
 	writeJSON(w, status, map[string]any{"user": u})
+	return true
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	if c, err := r.Cookie(sessionCookie); err == nil {
-		_ = s.auth.DeleteSession(r.Context(), c.Value)
+		u, lookupErr := s.auth.UserBySession(r.Context(), c.Value)
+		if err := s.auth.DeleteSession(r.Context(), c.Value); err == nil && lookupErr == nil {
+			s.audit.Record(r.Context(), audit.Logout(u.ID))
+		}
 	}
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode})
 	w.WriteHeader(http.StatusNoContent)
@@ -430,10 +504,11 @@ func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleRevokeInvitation(w http.ResponseWriter, r *http.Request) {
-	if s.requireInviter(w, r) == nil {
+	u := s.requireInviter(w, r)
+	if u == nil {
 		return
 	}
-	err := s.auth.RevokeInvitation(r.Context(), r.PathValue("id"))
+	err := s.auth.RevokeInvitation(r.Context(), u.ID, r.PathValue("id"))
 	switch {
 	case errors.Is(err, auth.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not_found", "invitation not found")
@@ -894,6 +969,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Disposition", `attachment; filename="opentodo-export.json"`)
 	writeJSON(w, http.StatusOK, out)
+	s.audit.Record(r.Context(), audit.ExportRequested(uid, "json"))
 }
 
 // ---- helpers ----
@@ -952,6 +1028,13 @@ func newRateLimiter(limit int, w time.Duration) *rateLimiter {
 }
 
 func (l *rateLimiter) allow(key string) bool {
+	ok, _ := l.hit(key)
+	return ok
+}
+
+// hit counts one attempt for key. firstRefusal is true for exactly one refused
+// attempt per window: the first one over the limit.
+func (l *rateLimiter) hit(key string) (allowed, firstRefusal bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := time.Now()
@@ -965,8 +1048,8 @@ func (l *rateLimiter) allow(key string) bool {
 	w, ok := l.hits[key]
 	if !ok || now.Sub(w.start) > l.window {
 		l.hits[key] = &window{start: now, count: 1}
-		return true
+		return true, false
 	}
 	w.count++
-	return w.count <= l.limit
+	return w.count <= l.limit, w.count == l.limit+1
 }

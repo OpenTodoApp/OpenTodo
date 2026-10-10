@@ -38,7 +38,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 }
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
-  position: 0, created_at: 0, completed_at: null, deleted_at: null,
+  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -195,13 +195,14 @@ export async function archiveProject(id: string): Promise<void> {
 
 export async function createTask(input: {
   title: string; description?: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
+  estimate_minutes?: number | null
 }): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
   await mutate('task', id, {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due: input.due ?? null, labels: input.labels ?? [], position: now, created_at: now,
-    completed_at: null, deleted_at: null,
+    completed_at: null, deleted_at: null, estimate_minutes: input.estimate_minutes ?? null,
   })
   return id
 }

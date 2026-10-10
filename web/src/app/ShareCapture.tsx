@@ -8,7 +8,8 @@ import { createTask } from '../lib/ops'
 import { buildProjectTree } from '../lib/projects'
 import { isEmptyShare, parseShare, proposedDescription, proposedTitle, type SharePayload } from '../lib/share'
 import { flattenTree } from '../lib/tree'
-import { QuickAdd } from './QuickAdd'
+import type { Label } from '../lib/types'
+import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { navigate, type Route } from './router'
 
 // The payload lives in memory only, read once from the address bar before the auth
@@ -50,7 +51,9 @@ export function ShareCapture() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const titleRef = useRef<HTMLInputElement>(null)
-  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at && !p.archived).toArray(), [], [])
+  // Same inputs as the task views' quick add, so `#project`, `@label`, dates and `p1` in the title parse alike.
+  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
+  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
   const options = useMemo(() => flattenTree(buildProjectTree(projects).roots), [projects])
 
   useEffect(() => {
@@ -65,14 +68,16 @@ export function ShareCapture() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  async function save(title: string) {
+  async function save(input: QuickAddInput) {
     if (saving) return
     setSaving(true)
     setError(null)
     try {
-      // One mutate: title, description and project land as one op set, locally first.
-      await createTask({ title, description: description.trim(), project_id: projectId || null })
-      leave(projectId ? { view: 'project', id: projectId } : { view: 'inbox' })
+      // A `#project` typed in the title wins over the picker, as in the task views.
+      const project = input.project_id ?? (projectId || null)
+      // One mutate: title, parsed attributes, description and project land as one op set, locally first.
+      await createTask({ ...input, description: description.trim(), project_id: project })
+      leave(project ? { view: 'project', id: project } : { view: 'inbox' })
     } catch (err) {
       setSaving(false)
       setError(err instanceof Error ? err.message : String(err))
@@ -97,6 +102,8 @@ export function ShareCapture() {
             label="Task title"
             initialValue={proposedTitle(payload)}
             hideHint
+            projects={projects}
+            labels={labels}
             onAdd={save}
           />
         </div>

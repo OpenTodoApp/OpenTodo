@@ -74,13 +74,13 @@ func TestInvitationLifecycle(t *testing.T) {
 		t.Fatalf("preview = %+v, %v", p, err)
 	}
 
-	if err := s.RevokeInvitation(ctx, inv.ID); err != nil {
+	if err := s.RevokeInvitation(ctx, owner.ID, inv.ID); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.RevokeInvitation(ctx, inv.ID); err != nil {
+	if err := s.RevokeInvitation(ctx, owner.ID, inv.ID); err != nil {
 		t.Fatalf("second revoke should be a no-op, got %v", err)
 	}
-	if err := s.RevokeInvitation(ctx, "nope"); !errors.Is(err, ErrNotFound) {
+	if err := s.RevokeInvitation(ctx, owner.ID, "nope"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("unknown id: %v", err)
 	}
 	if _, err := s.PreviewInvitation(ctx, secret); !errors.Is(err, ErrInvitationInvalid) {
@@ -150,7 +150,7 @@ func TestRegisterWithInvitationWhileSignupClosed(t *testing.T) {
 	if list[0].ID != inv.ID || list[0].Status != InvitationAccepted || list[0].AcceptedBy == nil || list[0].AcceptedBy.ID != u.ID {
 		t.Fatalf("after accept = %+v", list[0])
 	}
-	if err := s.RevokeInvitation(ctx, inv.ID); !errors.Is(err, ErrInvitationSpent) {
+	if err := s.RevokeInvitation(ctx, owner.ID, inv.ID); !errors.Is(err, ErrInvitationSpent) {
 		t.Fatalf("revoke accepted: %v", err)
 	}
 	// Second use in sequence is refused.

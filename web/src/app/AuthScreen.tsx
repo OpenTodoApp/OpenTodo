@@ -1,5 +1,6 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError } from '../lib/api'
+import { conditionalMediationAvailable, getPasskey, isCancellation, passkeysSupported } from '../lib/passkeys'
 import type { AuthStatus, InvitationPreview } from '../lib/types'
 
 /** When set, the screen is the acceptance form of an invitation (OpenSpec `invitations`). */
@@ -16,9 +17,58 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const emailLocked = !!invite?.preview.email
+  // Passkeys are offered only on plain sign-in (not setup, not invitation
+  // acceptance), when the server and browser support them.
+  const passkeys = mode === 'login' && !invite && !status.setupRequired && status.passkeysAvailable === true && passkeysSupported()
+  const conditional = useRef<AbortController | null>(null)
+
+  const finishPasskey = useCallback(async (opts: { conditional: boolean; signal: AbortSignal }) => {
+    const { publicKey } = await api.passkeyLoginOptions()
+    const credential = await getPasskey(publicKey, opts)
+    await api.passkeyLogin(credential)
+    onAuthenticated()
+  }, [onAuthenticated])
+
+  // Conditional mediation: the browser lists discoverable passkeys in the email
+  // field's autofill. The request stays pending until the user picks one, and
+  // is aborted when they use the password form or the passkey button instead.
+  const startConditional = useCallback(async () => {
+    conditional.current?.abort()
+    if (!(await conditionalMediationAvailable())) return
+    const ac = new AbortController()
+    conditional.current = ac
+    try {
+      await finishPasskey({ conditional: true, signal: ac.signal })
+    } catch (err) {
+      if (ac.signal.aborted || isCancellation(err)) return
+      setError(err instanceof ApiError ? passkeyMessage(err) : null)
+    }
+  }, [finishPasskey])
+
+  useEffect(() => {
+    if (!passkeys) return
+    void startConditional()
+    return () => conditional.current?.abort()
+  }, [passkeys, startConditional])
+
+  async function signInWithPasskey() {
+    conditional.current?.abort()
+    setBusy(true)
+    setError(null)
+    try {
+      await finishPasskey({ conditional: false, signal: new AbortController().signal })
+    } catch (err) {
+      // Cancelled prompt or no passkey on this device: back to the password form, no error.
+      if (!isCancellation(err)) setError(err instanceof ApiError ? passkeyMessage(err) : null)
+      void startConditional()
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
+    conditional.current?.abort()
     setBusy(true)
     setError(null)
     try {
@@ -70,7 +120,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
             <span className="mb-1 block text-slate-600 dark:text-slate-300">Email {emailLocked && <span className="text-slate-400">(set by the invitation)</span>}</span>
             <input
               className={`input ${emailLocked ? 'bg-slate-100 text-slate-500 dark:bg-slate-800' : ''}`}
-              type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email"
+              type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete={passkeys ? 'username webauthn' : 'email'}
               readOnly={emailLocked} aria-readonly={emailLocked} autoFocus={!emailLocked}
             />
           </label>
@@ -84,6 +134,18 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
             {busy ? 'Please wait…' : mode === 'register' ? (status.setupRequired ? 'Create owner account' : invite ? 'Accept invitation' : 'Create account') : 'Sign in'}
           </button>
         </form>
+
+        {passkeys && (
+          <>
+            <div className="my-4 flex items-center gap-3 text-xs text-slate-400" aria-hidden="true">
+              <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />or<span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+            </div>
+            <button type="button" className="btn-ghost w-full border border-slate-300 dark:border-slate-700" disabled={busy}
+              onClick={() => void signInWithPasskey()}>
+              Sign in with a passkey
+            </button>
+          </>
+        )}
 
         {!status.setupRequired && status.signupAllowed && !invite && (
           <button className="btn-ghost mt-3 w-full" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
@@ -99,6 +161,12 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
       </div>
     </div>
   )
+}
+
+function passkeyMessage(err: ApiError): string {
+  if (err.code === 'invalid_credentials') return 'That passkey is not registered on this server. Sign in with your password.'
+  if (err.code === 'passkey_challenge_invalid') return 'That took too long. Please try again.'
+  return describeAuthError(err)
 }
 
 /** Turns an API failure into a sentence a person can act on. */

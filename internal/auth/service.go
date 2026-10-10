@@ -11,7 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/webauthn"
 )
 
 // User is the public view of an account.
@@ -44,12 +46,30 @@ type Service struct {
 	db          *sql.DB
 	sessionTTL  time.Duration
 	allowSignup bool
+	audit       *audit.Recorder
+
+	// afterTokenInsert, when set by tests, runs inside CreateToken's transaction
+	// right after the token row is written; an error aborts the transaction.
+	afterTokenInsert func() error
+
+	// rp and challenges are set by ConfigurePasskeys (see passkeys.go); nil
+	// means passkeys are unavailable on this server.
+	rp         *webauthn.RelyingParty
+	challenges *webauthn.Challenges
 }
 
-// NewService wires a Service.
+// NewService wires a Service. It owns the audit recorder for the same database,
+// so every state change it makes is recorded in the same transaction.
 func NewService(db *sql.DB, sessionTTL time.Duration, allowSignup bool) *Service {
-	return &Service{db: db, sessionTTL: sessionTTL, allowSignup: allowSignup}
+	return &Service{db: db, sessionTTL: sessionTTL, allowSignup: allowSignup, audit: audit.New(db, nil)}
 }
+
+// Audit returns the recorder used by the service, for the HTTP layer's
+// observations (sign-in, sign-out, export), the audit routes and the pruner.
+func (s *Service) Audit() *audit.Recorder { return s.audit }
+
+// IsOwner reports whether u holds the owner role (audit log access, settings).
+func (s *Service) IsOwner(u *User) bool { return u != nil && u.Role == "owner" }
 
 // UserCount returns how many accounts exist.
 func (s *Service) UserCount(ctx context.Context) (int, error) {
@@ -96,17 +116,18 @@ func (s *Service) Register(ctx context.Context, email, name, password, invitatio
 	now := time.Now().UnixMilli()
 	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: "member", CreatedAt: now}
 	invitation = strings.TrimSpace(invitation)
+	var invitationID string
 	switch {
 	case n == 0:
 		u.Role = "owner"
 	case invitation != "":
 		// Validate before inserting so a bad link is reported ahead of email_taken,
 		// and the invitation stays pending whenever the account is not created.
-		role, err := s.checkInvitation(ctx, tx, invitation, email, now)
+		role, id, err := s.checkInvitation(ctx, tx, invitation, email, now)
 		if err != nil {
 			return nil, err
 		}
-		u.Role = role
+		u.Role, invitationID = role, id
 	case !s.allowSignup:
 		return nil, ErrSignupClosed
 	}
@@ -124,11 +145,28 @@ func (s *Service) Register(ctx context.Context, email, name, password, invitatio
 		if err := s.markInvitationAccepted(ctx, tx, invitation, u.ID, now); err != nil {
 			return nil, err
 		}
+		if err := s.audit.RecordTx(ctx, tx, audit.InvitationAccepted(u.ID, u.Email, invitationID)); err != nil {
+			return nil, err
+		}
 	}
 	return u, tx.Commit()
 }
 
-// Authenticate checks credentials and returns the user.
+// LoginFailure is the error Authenticate returns for refused credentials. It
+// matches ErrInvalidCredentials with errors.Is, so the HTTP response never
+// reveals which case applied, while the audit log can record the account and
+// reason. The submitted password is never part of it.
+type LoginFailure struct {
+	UserID string // empty when no account has the email
+	Email  string // the account's email; empty when no account has the email
+	Reason string // audit.ReasonUnknownAccount or audit.ReasonWrongPassword
+}
+
+func (f *LoginFailure) Error() string        { return ErrInvalidCredentials.Error() }
+func (f *LoginFailure) Is(target error) bool { return target == ErrInvalidCredentials }
+
+// Authenticate checks credentials and returns the user. Refused credentials
+// return a *LoginFailure.
 func (s *Service) Authenticate(ctx context.Context, email, password string) (*User, error) {
 	email = normalizeEmail(email)
 	var u User
@@ -138,13 +176,13 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*Us
 	if errors.Is(err, sql.ErrNoRows) {
 		// Burn comparable time so timing does not reveal whether the account exists.
 		VerifyPassword("$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", password)
-		return nil, ErrInvalidCredentials
+		return nil, &LoginFailure{Reason: audit.ReasonUnknownAccount}
 	}
 	if err != nil {
 		return nil, err
 	}
 	if !VerifyPassword(hash, password) {
-		return nil, ErrInvalidCredentials
+		return nil, &LoginFailure{UserID: u.ID, Email: u.Email, Reason: audit.ReasonWrongPassword}
 	}
 	return &u, nil
 }
@@ -177,7 +215,8 @@ func (s *Service) DeleteSession(ctx context.Context, secret string) error {
 	return err
 }
 
-// CreateToken issues an API token. The plaintext is returned exactly once.
+// CreateToken issues an API token. The plaintext is returned exactly once. The
+// token row and its token.created audit event are written in one transaction.
 func (s *Service) CreateToken(ctx context.Context, userID, name string) (*Token, string, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
@@ -185,9 +224,27 @@ func (s *Service) CreateToken(ctx context.Context, userID, name string) (*Token,
 	}
 	plain := "ot_" + ids.Secret(32)
 	t := &Token{ID: ids.New(), Name: truncate(name, 100), CreatedAt: time.Now().UnixMilli()}
-	_, err := s.db.ExecContext(ctx, "INSERT INTO api_tokens(id,user_id,name,token_hash,created_at) VALUES(?,?,?,?,?)",
-		t.ID, userID, t.Name, hashToken(plain), t.CreatedAt)
-	return t, plain, err
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, "INSERT INTO api_tokens(id,user_id,name,token_hash,created_at) VALUES(?,?,?,?,?)",
+		t.ID, userID, t.Name, hashToken(plain), t.CreatedAt); err != nil {
+		return nil, "", err
+	}
+	if s.afterTokenInsert != nil {
+		if err := s.afterTokenInsert(); err != nil {
+			return nil, "", err
+		}
+	}
+	if err := s.audit.RecordTx(ctx, tx, audit.TokenCreated(userID, t.ID, t.Name)); err != nil {
+		return nil, "", err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, "", err
+	}
+	return t, plain, nil
 }
 
 // UserByToken resolves an API token to its user, or ErrNotFound.
@@ -225,16 +282,29 @@ func (s *Service) ListTokens(ctx context.Context, userID string) ([]Token, error
 	return out, rows.Err()
 }
 
-// DeleteToken revokes a token owned by the user.
+// DeleteToken revokes a token owned by the user, recording token.revoked in the
+// same transaction.
 func (s *Service) DeleteToken(ctx context.Context, userID, tokenID string) error {
-	res, err := s.db.ExecContext(ctx, "DELETE FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
+	defer tx.Rollback()
+	var name string
+	err = tx.QueryRowContext(ctx, "SELECT name FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID).Scan(&name)
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
-	return nil
+	if err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID); err != nil {
+		return err
+	}
+	if err := s.audit.RecordTx(ctx, tx, audit.TokenRevoked(userID, tokenID, name)); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func hashToken(secret string) string {

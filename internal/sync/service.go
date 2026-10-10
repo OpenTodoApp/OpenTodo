@@ -1,9 +1,11 @@
 package sync
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -13,13 +15,46 @@ import (
 type Service struct {
 	db       *sql.DB
 	now      func() time.Time
+	observer Observer
 	notifier *Notifier
 }
+
+// FieldChange is one field's transition within a batch. From is nil (JSON null)
+// when the field had no stored value before the batch.
+type FieldChange struct {
+	From json.RawMessage `json:"from"`
+	To   json.RawMessage `json:"to"`
+}
+
+// Change describes everything that genuinely changed on one entity in one Apply
+// batch: only ops that won under last-writer-wins and altered the stored value
+// contribute. Origin is the device id of the last winning op ("server" for REST).
+type Change struct {
+	UserID   string
+	Entity   string
+	EntityID string
+	Fields   map[string]FieldChange
+	Origin   string
+}
+
+// Observer receives the winning changes of a batch after its transaction has
+// committed. It runs synchronously on the caller's goroutine, so it must be quick
+// (the webhook queue only inserts rows). It never sees losing or duplicate ops.
+type Observer func(ctx context.Context, changes []Change)
+
+// SetObserver installs the post-commit observer (nil removes it). Call it during
+// wiring, before the service handles requests.
+func (s *Service) SetObserver(o Observer) { s.observer = o }
 
 // NewService wires a Service.
 func NewService(db *sql.DB) *Service {
 	return &Service{db: db, now: time.Now, notifier: NewNotifier()}
 }
+
+// DB returns the database the op log lives in, for packages that keep their own
+// operational tables next to it (import jobs). Entity data must still be written
+// through Apply only.
+func (s *Service) DB() *sql.DB { return s.db }
 
 // Notifier returns the live-update fan-out for this service. Callers of Apply
 // use it to wake the user's other devices once a batch has been committed.
@@ -51,6 +86,7 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 		return res, err
 	}
 	defer tx.Rollback()
+	tracker := newChangeTracker(userID)
 	for _, op := range ops {
 		if op.TS > nowMs+MaxFutureSkewMs {
 			op.TS = nowMs + MaxFutureSkewMs
@@ -64,6 +100,22 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 			res.Duplicates++
 			continue
 		}
+		// Read the current winner so the observer learns about genuine changes only.
+		var prevValue, prevDevice string
+		var prevTS int64
+		err = tx.QueryRowContext(ctx, `SELECT value, ts, device FROM fields WHERE user_id = ? AND entity = ? AND entity_id = ? AND field = ?`,
+			userID, op.Entity, op.EntityID, op.Field).Scan(&prevValue, &prevTS, &prevDevice)
+		existed := err == nil
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return res, err
+		}
+		if !existed || Wins(op.TS, op.Device, prevTS, prevDevice) {
+			var prev json.RawMessage
+			if existed {
+				prev = json.RawMessage(prevValue)
+			}
+			tracker.record(op, prev)
+		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO fields(user_id,entity,entity_id,field,value,ts,device) VALUES(?,?,?,?,?,?,?)
 			ON CONFLICT(user_id,entity,entity_id,field) DO UPDATE SET value=excluded.value, ts=excluded.ts, device=excluded.device
 			WHERE excluded.ts > fields.ts OR (excluded.ts = fields.ts AND excluded.device > fields.device)`,
@@ -76,7 +128,78 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(MAX(seq),0) FROM ops WHERE user_id = ?`, userID).Scan(&res.Seq); err != nil {
 		return res, err
 	}
-	return res, tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return res, err
+	}
+	if s.observer != nil {
+		if changes := tracker.changes(); len(changes) > 0 {
+			s.observer(ctx, changes)
+		}
+	}
+	return res, nil
+}
+
+// changeTracker coalesces the winning ops of one batch per entity, keeping the
+// value before the batch as From and the final winner as To.
+type changeTracker struct {
+	userID string
+	order  []string
+	byKey  map[string]*Change
+}
+
+func newChangeTracker(userID string) *changeTracker {
+	return &changeTracker{userID: userID, byKey: map[string]*Change{}}
+}
+
+func (t *changeTracker) record(op Op, prev json.RawMessage) {
+	key := op.Entity + "\x00" + op.EntityID
+	c, ok := t.byKey[key]
+	if !ok {
+		c = &Change{UserID: t.userID, Entity: op.Entity, EntityID: op.EntityID, Fields: map[string]FieldChange{}}
+		t.byKey[key] = c
+		t.order = append(t.order, key)
+	}
+	c.Origin = op.Device
+	fc, seen := c.Fields[op.Field]
+	if !seen {
+		fc.From = prev
+	}
+	fc.To = append(json.RawMessage(nil), op.Value...)
+	c.Fields[op.Field] = fc
+}
+
+// changes drops fields whose value ended where it started (a re-seeded op with a
+// newer timestamp but the same value) and entities left with no changed field.
+func (t *changeTracker) changes() []Change {
+	out := make([]Change, 0, len(t.order))
+	for _, key := range t.order {
+		c := t.byKey[key]
+		for f, fc := range c.Fields {
+			if SameJSON(fc.From, fc.To) {
+				delete(c.Fields, f)
+			}
+		}
+		if len(c.Fields) > 0 {
+			out = append(out, *c)
+		}
+	}
+	return out
+}
+
+// SameJSON reports whether two JSON values are equal ignoring insignificant
+// whitespace. A missing value (nil) equals JSON null.
+func SameJSON(a, b json.RawMessage) bool {
+	norm := func(v json.RawMessage) []byte {
+		if len(v) == 0 {
+			return []byte("null")
+		}
+		var buf bytes.Buffer
+		if err := json.Compact(&buf, v); err != nil {
+			return v
+		}
+		return buf.Bytes()
+	}
+	return bytes.Equal(norm(a), norm(b))
 }
 
 // Pull returns ops after cursor, newest cursor and whether more remain.
