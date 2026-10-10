@@ -102,7 +102,8 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   }
 
   const item = (r: Route, label: string, icon: string, count?: number) => {
-    const active = JSON.stringify(r) === JSON.stringify(route)
+    // Day and Week stay highlighted whatever date they show.
+    const active = r.view === 'day' || r.view === 'week' ? route.view === r.view : JSON.stringify(r) === JSON.stringify(route)
     return (
       <button key={label} onClick={() => navigate(r)} className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${active ? ACTIVE : IDLE}`}>
         <span className="w-5 text-center">{icon}</span>
@@ -122,6 +123,8 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         {item({ view: 'inbox' }, 'Inbox', '📥', counts.inbox)}
         {item({ view: 'today' }, 'Today', '📅', counts.today)}
         {item({ view: 'upcoming' }, 'Upcoming', '🗓️')}
+        {item({ view: 'day' }, 'Day', '🕘')}
+        {item({ view: 'week' }, 'Week', '📆')}
         {item({ view: 'completed' }, 'Completed', '✅')}
         {item({ view: 'filter' }, 'Filter', '🔎')}
       </nav>

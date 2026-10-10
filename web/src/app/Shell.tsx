@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
 import { navigate, useRoute } from './router'
+import { CalendarView } from './CalendarView'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { SavedViewRoute } from './SavedViewView'
@@ -120,9 +121,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <ViewsView />
           ) : route.view === 'view' ? (
             <SavedViewRoute id={route.id} />
+          ) : route.view === 'day' || route.view === 'week' ? (
+            <CalendarView mode={route.view} date={route.date} />
           ) : (
             // App renders the invite and capture screens itself; a stray /invite or /share route inside the shell falls back to the Inbox.
-            <TaskListView route={route.view === 'invite' || route.view === 'share' ? { view: 'inbox' } : route.view === 'day' || route.view === 'week' ? { view: 'today' } : route} />
+            <TaskListView route={route.view === 'invite' || route.view === 'share' ? { view: 'inbox' } : route} />
           )}
         </div>
       </main>
@@ -150,9 +153,19 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['m', 'Move the current project under another project or to the top level'],
     ['1 – 4', 'Set priority of selected task'],
     ['L', 'Labels of selected task (type to find, Enter adds or creates)'],
+    ['e', 'Edit the estimate of the selected task (type 20, 45m, 1h30; Enter)'],
+    ['s', 'Schedule the selected task: Day view in placement mode'],
     ['Delete', 'Delete selected task (and its subtasks)'],
     ['g then i / t / u / c / l / f / v / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings'],
     ['g then Shift+I', 'Go to Settings → Import data'],
+    ['g then d / w', 'Go to the Day / Week calendar'],
+    ['j / k (calendar)', 'Select the next / previous task (lane, then blocks)'],
+    ['↑ / ↓ (calendar)', 'Move the selected task 15 minutes (a lane task gets a time)'],
+    ['← / → (calendar)', 'Move the selected task one day'],
+    ['Shift+↑ / Shift+↓ (calendar)', 'Shorten / lengthen the estimate by 15 minutes'],
+    ['u / p (calendar)', 'Unschedule (keep the date) / placement mode for the selected task'],
+    ['Enter / Esc (placing)', 'Place the task at the ghost / cancel without changes'],
+    ['[ / ] / t (calendar)', 'Previous / next day or week, back to today'],
     ['Enter / Esc (in Filter)', 'Jump from the query to the first result / back to the query'],
     ['s (in Filter results)', 'Save the query as a view, pinned to the sidebar'],
     ['/ (in a saved view)', 'Edit the query; Enter saves it, Esc discards'],
@@ -172,7 +185,7 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
   ]
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
+      <div className="max-h-full w-full max-w-md overflow-y-auto rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
         <h2 className="mb-3 text-base font-semibold">Keyboard shortcuts</h2>
         <table className="w-full text-sm">
           <tbody>

@@ -15,7 +15,7 @@ import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { SubProjects } from './SubProjects'
-import { estimateFocus, isGPending } from './signals'
+import { estimateFocus, isGPending, placeInDay } from './signals'
 
 type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
@@ -324,6 +324,13 @@ export function TaskListView({ route }: { route: ListRoute }) {
           if (row) {
             e.preventDefault()
             setPickerFor(row.task.id)
+          }
+          break
+        case 's':
+          // Placement mode in the Day view (OpenSpec `time-blocking`).
+          if (row && !row.task.completed_at) {
+            e.preventDefault()
+            placeInDay(row.task, todayISO())
           }
           break
         case 'e':

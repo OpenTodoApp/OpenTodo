@@ -4,6 +4,7 @@ import { bookmarklet } from '../lib/share'
 import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
 import { QuickAddSettingsSection } from './QuickAddSettings'
+import { CalendarSettingsSection } from './CalendarSettings'
 import { MembersPanel } from './MembersPanel'
 import { SecuritySettings } from './ActivityPanel'
 import { SecurityPanel } from './SecurityPanel'
@@ -69,6 +70,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
           Sync: {sync.state}{sync.pending ? `, ${sync.pending} change(s) waiting to upload` : ''}.
         </p>
       </section>
+
+      <CalendarSettingsSection />
 
       <SecurityPanel />
       <section className="space-y-2">
