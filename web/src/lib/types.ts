@@ -1,7 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task'
+export type Entity = 'project' | 'task' | 'label'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label']
 
 export interface Op {
   id: string
@@ -46,10 +47,21 @@ export interface Task {
   parent_id: string | null
   priority: Priority
   due: Due | null
+  /** Ids of labels (see Label). Unknown or deleted ids are kept but never displayed. */
   labels: string[]
   position: number
   created_at: number
   completed_at: number | null
+  deleted_at: number | null
+  _clock: Clock
+}
+
+export interface Label {
+  id: string
+  name: string
+  color: string
+  position: number
+  created_at: number
   deleted_at: number | null
   _clock: Clock
 }
@@ -145,3 +157,4 @@ export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at',
 ] as const
+export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const

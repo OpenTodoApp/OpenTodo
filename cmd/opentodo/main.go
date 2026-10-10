@@ -81,10 +81,15 @@ func run() error {
 		Addr:              cfg.Addr,
 		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
-		ReadTimeout:       60 * time.Second,
-		WriteTimeout:      60 * time.Second,
-		IdleTimeout:       120 * time.Second,
+		// The live-update stream (GET /api/v1/sync/events) lifts these two deadlines
+		// for its own connection via http.ResponseController; every other route keeps them.
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
+	// Close open live-update streams first so Shutdown is not held up by them and
+	// clients reconnect to the new process.
+	srv.RegisterOnShutdown(syncSvc.Notifier().CloseAll)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

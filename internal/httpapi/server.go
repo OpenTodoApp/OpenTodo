@@ -37,6 +37,20 @@ type Server struct {
 	inviteLimiter *rateLimiter
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
 	hooks *webhook.Service
+
+	clockMu sync.Mutex
+	lastTS  int64
+}
+
+// opTS stamps REST-originated ops. They all carry device "server", so two writes
+// to one field within the same millisecond would tie under the winner rule and the
+// second would be silently dropped; like the client HLC, issue strictly increasing
+// timestamps instead.
+func (s *Server) opTS() int64 {
+	s.clockMu.Lock()
+	defer s.clockMu.Unlock()
+	s.lastTS = max(time.Now().UnixMilli(), s.lastTS+1)
+	return s.lastTS
 }
 
 // New builds the router. web may be nil when only the API is wanted (tests).
@@ -69,6 +83,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// all behind requireAuth; literal patterns win over the {collection} routes below.
 	s.registerWebhookRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
+	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
 	mux.Handle("GET /api/v1/{collection}", s.requireAuth(s.handleList))
 	mux.Handle("POST /api/v1/{collection}", s.requireAuth(s.handleCreate))
@@ -175,6 +190,10 @@ func (w *statusWriter) WriteHeader(code int) {
 	w.status = code
 	w.ResponseWriter.WriteHeader(code)
 }
+
+// Unwrap lets http.ResponseController reach Flush and the deadline setters of
+// the underlying writer (needed by the event stream).
+func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 func (s *Server) logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -504,6 +523,10 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	if res.Applied > 0 {
+		// Wake the user's other devices; this one learns the cursor from the response.
+		s.sync.Notifier().Notify(uid, in.Device, res.Seq)
+	}
 	ops, cursor, more, err := s.sync.Pull(r.Context(), uid, in.Cursor, in.Device, opsync.MaxOpsPerRequest)
 	if err != nil {
 		s.internal(w, err)
@@ -581,21 +604,82 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			body["priority"] = json.RawMessage("4")
 		}
 	}
+	if entity == "label" {
+		if _, has := body["name"]; !has {
+			body["name"] = json.RawMessage(`""`)
+		}
+		if _, has := body["color"]; !has {
+			body["color"] = json.RawMessage(fmt.Sprintf("%q", labelPalette[int(now)%len(labelPalette)]))
+		}
+	}
 	if _, has := body["position"]; !has {
 		body["position"] = json.RawMessage(fmt.Sprint(now))
 	}
 	delete(body, "id")
-	if entity == "task" {
-		if err := s.validateTaskParent(r.Context(), userFrom(r.Context()).ID, id, body, nil); err != nil {
-			s.parentError(w, err)
-			return
-		}
+	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
+		s.internal(w, err)
+		return
+	} else if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return
+	}
+	if err := s.validateParent(r.Context(), entity, id, body, nil); err != nil {
+		s.parentError(w, err)
+		return
 	}
 	s.writeFields(w, r, entity, id, body, http.StatusCreated)
 }
 
-// errInvalidParent marks a parent_id rejected by validateTaskParent.
+// labelPalette gives API-created labels a colour when the caller sets none.
+var labelPalette = []string{"#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899"}
+
+// checkReferences enforces the REST-only rules that the sync path cannot: a label
+// needs a non-empty name, and a task may only reference existing, non-deleted labels.
+// It returns a user-facing message when the body is rejected. Type errors are left
+// to the schema validation in Apply so the two never disagree.
+func (s *Server) checkReferences(ctx context.Context, uid, entity string, body map[string]json.RawMessage) (string, error) {
+	if entity == "label" {
+		if raw, has := body["name"]; has {
+			var name string
+			if err := json.Unmarshal(raw, &name); err == nil && strings.TrimSpace(name) == "" {
+				return "label.name must not be empty", nil
+			}
+		}
+	}
+	if entity == "task" {
+		if raw, has := body["labels"]; has {
+			var ids []string
+			if err := json.Unmarshal(raw, &ids); err != nil {
+				return "", nil
+			}
+			for _, id := range ids {
+				l, err := s.sync.Get(ctx, uid, "label", id)
+				if err != nil {
+					return "", err
+				}
+				if l == nil || l.Deleted() {
+					return fmt.Sprintf("task.labels references unknown or deleted label %q", id), nil
+				}
+			}
+		}
+	}
+	return "", nil
+}
+
+// errInvalidParent marks a parent_id rejected by validateTaskParent or validateProjectParent.
 var errInvalidParent = errors.New("invalid parent")
+
+// validateParent dispatches the tree rules of the entity being written.
+func (s *Server) validateParent(ctx context.Context, entity, id string, body map[string]json.RawMessage, existing opsync.Entity) error {
+	uid := userFrom(ctx).ID
+	switch entity {
+	case "task":
+		return s.validateTaskParent(ctx, uid, id, body, existing)
+	case "project":
+		return s.validateProjectParent(ctx, uid, id, body)
+	}
+	return nil
+}
 
 func (s *Server) parentError(w http.ResponseWriter, err error) {
 	if errors.Is(err, errInvalidParent) {
@@ -636,26 +720,73 @@ func (s *Server) validateTaskParent(ctx context.Context, uid, id string, body ma
 	if idOf(parent["project_id"]) != project {
 		return fmt.Errorf("%w: task.parent_id: parent must be in the same project", errInvalidParent)
 	}
-	// Walk up from the parent; reaching the task would close a cycle. The visited
-	// set guards against a cycle that already exists in synced data.
-	seen := map[string]bool{parentID: true}
-	for cur := parent; cur != nil; {
-		next := idOf(cur["parent_id"])
-		if next == "" {
-			break
-		}
-		if next == id {
-			return fmt.Errorf("%w: task.parent_id: parent is a descendant of the task", errInvalidParent)
-		}
-		if seen[next] {
-			break
-		}
-		seen[next] = true
-		if cur, err = s.sync.Get(ctx, uid, "task", next); err != nil {
-			return err
-		}
+	cycle, err := s.chainReaches(ctx, uid, "task", parentID, parent, id)
+	if err != nil {
+		return err
+	}
+	if cycle {
+		return fmt.Errorf("%w: task.parent_id: parent is a descendant of the task", errInvalidParent)
 	}
 	return nil
+}
+
+// validateProjectParent enforces the project tree rules on REST writes (OpenSpec
+// `project-hierarchy`): a parent must exist and not be deleted, and must not be
+// the project itself or one of its descendants. Same reasoning as for tasks: REST
+// is sequential against current state, sync ops are never rejected for tree reasons.
+func (s *Server) validateProjectParent(ctx context.Context, uid, id string, body map[string]json.RawMessage) error {
+	raw, has := body["parent_id"]
+	if !has || string(raw) == "null" {
+		return nil
+	}
+	var parentID string
+	if err := json.Unmarshal(raw, &parentID); err != nil || parentID == "" {
+		return fmt.Errorf("%w: project.parent_id must be null or a project id", errInvalidParent)
+	}
+	if parentID == id {
+		return fmt.Errorf("%w: project.parent_id: a project cannot be its own parent", errInvalidParent)
+	}
+	parent, err := s.sync.Get(ctx, uid, "project", parentID)
+	if err != nil {
+		return err
+	}
+	if parent == nil || parent.Deleted() {
+		return fmt.Errorf("%w: project.parent_id: parent project not found", errInvalidParent)
+	}
+	cycle, err := s.chainReaches(ctx, uid, "project", parentID, parent, id)
+	if err != nil {
+		return err
+	}
+	if cycle {
+		return fmt.Errorf("%w: project.parent_id: parent is a descendant of the project", errInvalidParent)
+	}
+	return nil
+}
+
+// chainReaches walks parent pointers upwards from `start` in the materialized
+// fields and reports whether `target` is on the chain, which would close a cycle.
+// The visited set guards against a cycle that already exists in synced data, so
+// the walk is bounded by the number of entities.
+func (s *Server) chainReaches(ctx context.Context, uid, entity, startID string, start opsync.Entity, target string) (bool, error) {
+	seen := map[string]bool{startID: true}
+	for cur := start; cur != nil; {
+		next := idOf(cur["parent_id"])
+		if next == "" {
+			return false, nil
+		}
+		if next == target {
+			return true, nil
+		}
+		if seen[next] {
+			return false, nil
+		}
+		seen[next] = true
+		var err error
+		if cur, err = s.sync.Get(ctx, uid, entity, next); err != nil {
+			return false, err
+		}
+	}
+	return false, nil
 }
 
 // idOf decodes a nullable id field; missing and null both read as "".
@@ -693,11 +824,16 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
 		return
 	}
-	if entity == "task" {
-		if err := s.validateTaskParent(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing); err != nil {
-			s.parentError(w, err)
-			return
-		}
+	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
+		s.internal(w, err)
+		return
+	} else if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return
+	}
+	if err := s.validateParent(r.Context(), entity, r.PathValue("id"), body, existing); err != nil {
+		s.parentError(w, err)
+		return
 	}
 	s.writeFields(w, r, entity, r.PathValue("id"), body, http.StatusOK)
 }
@@ -723,19 +859,24 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 // writeFields turns a REST body into ops stamped with server time and applies them.
 func (s *Server) writeFields(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int) {
-	now := time.Now().UnixMilli()
+	now := s.opTS()
 	ops := make([]opsync.Op, 0, len(body))
 	for field, value := range body {
 		ops = append(ops, opsync.Op{ID: ids.New(), Entity: entity, EntityID: id, Field: field, Value: value, TS: now, Device: serverDevice})
 	}
 	uid := userFrom(r.Context()).ID
-	if _, err := s.sync.Apply(r.Context(), uid, ops); err != nil {
+	res, err := s.sync.Apply(r.Context(), uid, ops)
+	if err != nil {
 		if errors.Is(err, opsync.ErrInvalidOp) {
 			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 			return
 		}
 		s.internal(w, err)
 		return
+	}
+	if res.Applied > 0 {
+		// REST writes come from no browser device, so every connected device is woken.
+		s.sync.Notifier().Notify(uid, serverDevice, res.Seq)
 	}
 	if status == http.StatusNoContent {
 		w.WriteHeader(status)

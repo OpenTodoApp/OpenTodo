@@ -19,6 +19,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
   <a href="docs/self-hosting/docker.md">Docker</a> ·
   <a href="docs/api.md">API</a> ·
   <a href="docs/cli.md">CLI</a> ·
+  <a href="docs/filters.md">Filters</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -54,17 +55,20 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | --- | --- |
 | Capture | Quick-add from any view, keyboard shortcut `q`; new tasks in Today get today's date, in a project get that project |
 | Organise | Projects with colours, Inbox, Today, Upcoming (grouped by day), Completed |
+| Labels | Cross-project labels with colours: `L` on a task opens a type-ahead picker that creates on Enter, chips on every row, a Labels group in the sidebar with live counts, one view per label grouped by project, rename / recolour / reorder / delete / merge duplicates |
+| Filters | One-line queries such as `@work & due <= tomorrow & p1`: labels, projects (`##` includes sub-projects), priority, due and created dates, keywords like `overdue` or `no date`, text search, combined with `&`, `\|`, `!` and parentheses. Evaluated on the device, so results are live and work offline; `g` `f` opens the view, ↑ / ↓ recall recent queries. See [docs/filters.md](docs/filters.md) |
+| Sub-projects | Nest projects to any depth; collapsible sidebar tree (Left / Right, remembered per device) with rolled-up counts; "Move to" from the project menu or `m`; a project view lists its sub-projects; archiving cascades, deleting moves sub-projects up a level; concurrent moves on two devices never leave a project nested inside itself |
 | Tasks | Title, notes, project, priority P1–P4, floating due date with optional time, complete / reopen, delete |
 | Subtasks | Nest tasks to any depth; parents show `done/total` progress; completing or deleting a parent cascades; `a` adds a subtask, Tab / Shift+Tab indent and outdent, Left / Right collapse and expand; concurrent moves on two devices never leave a task nested inside itself |
 | Offline | Every change is applied locally first and queued; the app loads and works with no network. Installable PWA |
-| Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs |
+| Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs. Live push: a change on one device shows up on the others within a second or two, with polling as the fallback |
 | Accounts | First-run owner setup, email + password sign-in, sessions, optional open sign-up |
 | API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
 | Webhooks | Signed outbound webhooks on task and project events for Home Assistant, n8n or a Telegram relay: retries with backoff, delivery log, test ping, private-network protection, see [docs/webhooks.md](docs/webhooks.md) |
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), labels and filter queries, recurring tasks, reminders, sharing and comments, CalDAV, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), saved and pinned filter views, recurring tasks, reminders, sharing and comments, CalDAV, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
 
 ## Quick start
 
@@ -138,7 +142,8 @@ Sign-up stays closed after the owner account exists. To add a partner or a colle
 
 - Every change is a small operation that sets one field of one entity, stamped with a hybrid logical clock and the device id.
 - Clients apply ops locally first, then push the outbox and pull what other devices wrote. The same per-field last-writer-wins rule runs on every replica, so all devices converge on the same state no matter the order ops arrive in.
-- The REST API writes through the same log, so a script that creates a task via `curl` shows up on your phone on the next sync.
+- Connected devices keep a lightweight server-sent event stream open; when the server records new ops it pokes the user's other devices (no data on the wire, only "sync now"), so changes propagate live. If the stream is unavailable the app polls as before.
+- The REST API writes through the same log, so a script that creates a task via `curl` shows up on your phone right away.
 - Deletes are tombstones, which keeps sync correct and makes an undo / trash feature possible later.
 
 More in [docs/architecture.md](docs/architecture.md) and [docs/sync.md](docs/sync.md).

@@ -12,13 +12,18 @@ func TestApplyReportsWinningChangesOnly(t *testing.T) {
 	s.SetObserver(func(_ context.Context, c []Change) { got = append(got, c) })
 
 	// A new task: every field is a change from "absent" (nil) to its value.
-	if _, err := s.Apply(ctx, "u", []Op{
+	res, err := s.Apply(ctx, "u", []Op{
 		op("1", "task", "t1", "title", `"draft"`, 100, "A"),
 		op("2", "task", "t1", "created_at", `100`, 100, "A"),
 		op("3", "task", "t1", "title", `"final"`, 150, "A"), // coalesced: from absent, to "final"
 		op("4", "task", "t1", "completed_at", `null`, 100, "A"),
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatal(err)
+	}
+	// The realtime cursor is still reported alongside the observer.
+	if res.Seq != 4 || res.Applied != 4 {
+		t.Fatalf("result = %+v", res)
 	}
 	if len(got) != 1 || len(got[0]) != 1 {
 		t.Fatalf("changes = %+v", got)

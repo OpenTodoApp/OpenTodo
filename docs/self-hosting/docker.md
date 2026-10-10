@@ -39,6 +39,26 @@ todo.example.com {
 }
 ```
 
+### Live updates through the proxy
+
+Each open tab keeps one long-lived request open, `GET /api/v1/sync/events`, a server-sent event stream the server uses to tell devices "new changes, sync now". It needs nothing special from Caddy, Traefik (Coolify) or nginx with default settings, because the server already:
+
+- sends `Cache-Control: no-cache` and `X-Accel-Buffering: no` (nginx honours the latter and stops buffering that response),
+- flushes after every write and sends a `: ping` heartbeat every 25 s, below the usual 30–60 s idle timeouts,
+- caps streams at 16 per account and closes them cleanly on shutdown.
+
+Things to keep in mind:
+
+- **Buffering.** If a proxy buffers whole responses (older nginx configs with `proxy_buffering on` and no respect for `X-Accel-Buffering`, or some CDN "optimisation" layers), the stream never opens. For nginx add `proxy_buffering off;` to the `location` that proxies OpenTodo, or at least `proxy_http_version 1.1;` and leave `X-Accel-Buffering` enabled.
+- **Idle timeouts.** Any read/response timeout on the proxy shorter than 25 s will cut the stream (the client reconnects, but it is wasteful). The defaults of Caddy, Traefik and nginx (`proxy_read_timeout 60s`) are fine.
+- **HTTP/2 is recommended.** Browsers allow only six HTTP/1.1 connections per origin, and every open tab holds one for the stream. Terminate TLS at the proxy with HTTP/2 (the default for Caddy and Traefik with https) and the streams are multiplexed over one connection. On plain HTTP/1.1 keep the number of open tabs small.
+
+Troubleshooting "live updates disconnected" (the status pill says **Polling** instead of **Live**):
+
+1. Open `https://todo.example.com/api/v1/sync/events?device=test` in a signed-in browser tab. You should see `: connected` immediately and `: ping` every 25 s. If the page keeps loading with nothing shown, the proxy is buffering.
+2. If it works but drops after a fixed time, a timeout somewhere in the chain is shorter than the heartbeat; raise it above 25 s.
+3. Nothing is lost either way: while the stream is down the app polls every 30 s exactly as before.
+
 ## Bind mounts
 
 The container runs as uid 65532 (distroless `nonroot`). A bind-mounted data directory must be writable by that user:

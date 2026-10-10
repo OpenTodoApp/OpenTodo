@@ -63,8 +63,10 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | PATCH | `/api/v1/tasks/{id}` | yes | partial update → task |
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete → 204 |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels |
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md` |
-| GET | `/api/v1/export` | yes | full JSON export, including deleted items |
+| GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`), including deleted items |
 
 ### Task fields
 
@@ -76,7 +78,7 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | `parent_id` | string or null | parent task for subtasks, any depth; see [Subtasks](#subtasks) |
 | `priority` | 1–4 | 1 highest, 4 default |
 | `due` | `{date:"YYYY-MM-DD", time?:"HH:MM"}` or null | floating date |
-| `labels` | string[] | |
+| `labels` | string[] | ids of existing, non-deleted labels; replaced as a whole on PATCH |
 | `position` | number | sort order inside a list |
 | `completed_at`, `deleted_at` | unix ms or null | |
 | `created_at` | unix ms | set by the server on create if missing |
@@ -101,7 +103,37 @@ curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: 
 
 ### Project fields
 
-`name` (string), `color` (string, CSS colour), `position` (number), `archived` (boolean), `parent_id` (string or null), `created_at`, `deleted_at`.
+`name` (string), `color` (string, CSS colour), `position` (number, sort order among siblings), `archived` (boolean), `parent_id` (string or null, see [Sub-projects](#sub-projects)), `created_at`, `deleted_at`.
+
+### Sub-projects
+
+A project becomes a sub-project by setting `parent_id` to another project's id, to any depth. On `POST /projects` and `PATCH /projects/{id}` the server checks the value and answers `400 invalid_input` when:
+
+- the parent does not exist or is deleted (`parent project not found`),
+- the parent is the project itself or one of its descendants, which would form a cycle (`parent is a descendant of the project`).
+
+`parent_id: null` moves a project to the top level and is always accepted. Nothing changes on a rejected request. The sync endpoint never rejects an operation for tree reasons; see `docs/sync.md` for how clients converge when two devices move projects into each other concurrently.
+
+The REST API writes exactly the fields you send. The cascades the web app performs (archiving a project archives its descendants, deleting one moves its direct sub-projects to its own parent and its open tasks to the Inbox) are ordinary per-project operations issued by the client; a script that wants the same result sends one request per project. A sub-project whose parent is archived, deleted or missing is shown at the top level by every client, so nothing becomes unreachable.
+
+```bash
+# Create a sub-project, then move it to the top level
+curl -sS "$OT/api/v1/projects" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Q4 launch","parent_id":"<parent-project-id>"}'
+curl -sS -X PATCH "$OT/api/v1/projects/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"parent_id":null}'
+```
+
+### Label fields
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `name` | string | required on create, must not be blank; uniqueness is advisory (the app refuses duplicates per device, the API accepts them so merges stay possible) |
+| `color` | string | CSS colour; picked from the palette when omitted on create |
+| `position` | number | sidebar order; defaults to the creation time |
+| `created_at`, `deleted_at` | unix ms (or null) | |
+
+Tasks reference labels by id, so renaming a label is one PATCH and never rewrites tasks. Deleting a label through the API only sets its tombstone; tasks that still carry the id keep it (the app hides ids of deleted labels), and the app's own delete additionally removes the id from every carrying task.
 
 ### Invitations
 
@@ -222,15 +254,47 @@ List open tasks in the Inbox with `jq`:
 curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" | jq '.tasks[] | select(.project_id == null and .completed_at == null) | .title'
 ```
 
+Create a label, then tag a task with it:
+
+```bash
+LABEL=$(curl -sS "$OT/api/v1/labels" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"errand"}' | jq -r .id)
+curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"labels\":[\"$LABEL\"]}"
+```
+
+A `labels` value containing an id that is not an existing, non-deleted label is rejected with 400 `invalid_input` and the task is unchanged.
+
+Rename a label (one request, no task is touched):
+
+```bash
+curl -sS -X PATCH "$OT/api/v1/labels/$LABEL" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"errands"}'
+```
+
 Export everything:
 
 ```bash
 curl -sS "$OT/api/v1/export" -H "Authorization: Bearer $TOKEN" -o opentodo-export.json
 ```
 
+The export resolves label ids: `tasks[].labels` holds ids and the top-level `labels` array (including deleted labels) carries their names and colours.
+
+Follow live updates (the response is a `text/event-stream` that stays open; `-N` disables curl's buffering):
+
+```bash
+curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $TOKEN"
+# : connected
+# event: ops
+# data: {"cursor":158}
+# : ping
+```
+
+`device` is required (400 `bad_request` without it) and names the subscriber; operations pushed by that same device id through `POST /sync` do not wake it. Each `ops` event carries only the user's latest cursor; fetch the changes with a sync exchange or the REST reads.
+
 ## Behaviour notes
 
-- Every write through this API is recorded in the operation log with server time, so connected devices see it on their next sync (within 30 s, or immediately when they next edit or regain focus).
+- Every write through this API is recorded in the operation log with server time. Connected devices are woken over the event stream and sync within a second or two; devices without a live stream pick the change up on their next poll (within 30 s), or immediately when they next edit or regain focus.
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
 - Rate limits apply to `auth/login`, `auth/register` and the invitation preview (10 per minute per IP), and to invitation creation (20 per hour per account).

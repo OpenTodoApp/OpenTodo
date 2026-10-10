@@ -56,9 +56,14 @@ Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files
 
 Redeploy the resource. Coolify pulls the new image (or rebuilds), the new version applies database migrations on startup, and your data stays in the volume.
 
+## Live updates
+
+Devices learn about each other's changes through a long-lived request, `GET /api/v1/sync/events` (server-sent events). Coolify's Traefik proxy streams it as is: no labels or settings are needed. The server heartbeats every 25 s, below Traefik's idle timeouts, and sets no-buffering headers. Use an `https://` domain so Traefik serves HTTP/2 and the streams of several tabs share one connection.
+
 ## Troubleshooting
 
 - **"No Available Server" on the domain**: make sure the domain is assigned to the `opentodo` service with port `8080` (the compose file does this through `SERVICE_FQDN_OPENTODO_8080`).
+- **Status pill shows "Polling" instead of "Live"**: something between the browser and the container is buffering or cutting the event stream. Open `https://todo.example.com/api/v1/sync/events?device=test` while signed in: you should see `: connected` at once and `: ping` every 25 s. With stock Coolify this works out of the box; check any extra proxy, CDN or corporate firewall in front of it (see the proxy notes in [docker.md](docker.md)). The app keeps working with 30 s polling in the meantime.
 - **Sign-in works on desktop but not on the phone**: the domain must be https. Coolify handles this when the domain starts with `https://`.
 - **Cookie rejected / 403 `bad_origin`**: `OPENTODO_BASE_URL` must match the URL users open, including the scheme.
 - **Permission denied writing `/data`**: when using a bind mount instead of a named volume, the directory must be writable by uid 65532 (`chown 65532:65532 ./data`).

@@ -136,6 +136,45 @@ func TestValidateRejectsBadOps(t *testing.T) {
 	}
 }
 
+func TestValidateAcceptsLabelOps(t *testing.T) {
+	good := []Op{
+		op("1", "label", "l1", "name", `"errand"`, 1, "A"),
+		op("2", "label", "l1", "color", `"#ef4444"`, 1, "A"),
+		op("3", "label", "l1", "position", `1700000000000`, 1, "A"),
+		op("4", "label", "l1", "created_at", `1700000000000`, 1, "A"),
+		op("5", "label", "l1", "deleted_at", `null`, 1, "A"),
+		op("6", "label", "l1", "deleted_at", `1700000000001`, 1, "A"),
+	}
+	for i, g := range good {
+		if err := Validate(g); err != nil {
+			t.Errorf("case %d should pass: %v", i, err)
+		}
+	}
+	bad := []Op{
+		op("1", "label", "l1", "name", `42`, 1, "A"),
+		op("1", "label", "l1", "archived", `true`, 1, "A"),
+		op("1", "label", "l1", "deleted_at", `"soon"`, 1, "A"),
+	}
+	for i, b := range bad {
+		if err := Validate(b); err == nil {
+			t.Errorf("case %d should fail", i)
+		}
+	}
+	if Plural["labels"] != "label" {
+		t.Fatalf("Plural[labels] = %q", Plural["labels"])
+	}
+	// Label ops round-trip through Apply and List like any other entity.
+	ctx := context.Background()
+	s := newTestService(t)
+	if _, err := s.Apply(ctx, "u", good[:4]); err != nil {
+		t.Fatal(err)
+	}
+	list, err := s.List(ctx, "u", "label", false)
+	if err != nil || len(list) != 1 || string(list[0]["name"]) != `"errand"` {
+		t.Fatalf("list = %v, %v", list, err)
+	}
+}
+
 func TestFutureTimestampsAreClamped(t *testing.T) {
 	ctx := context.Background()
 	s := newTestService(t)

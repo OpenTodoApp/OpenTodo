@@ -16,6 +16,7 @@ type Service struct {
 	db       *sql.DB
 	now      func() time.Time
 	observer Observer
+	notifier *Notifier
 }
 
 // FieldChange is one field's transition within a batch. From is nil (JSON null)
@@ -47,13 +48,18 @@ func (s *Service) SetObserver(o Observer) { s.observer = o }
 
 // NewService wires a Service.
 func NewService(db *sql.DB) *Service {
-	return &Service{db: db, now: time.Now}
+	return &Service{db: db, now: time.Now, notifier: NewNotifier()}
 }
+
+// Notifier returns the live-update fan-out for this service. Callers of Apply
+// use it to wake the user's other devices once a batch has been committed.
+func (s *Service) Notifier() *Notifier { return s.notifier }
 
 // ApplyResult summarizes an Apply call.
 type ApplyResult struct {
-	Applied    int `json:"applied"`
-	Duplicates int `json:"duplicates"`
+	Applied    int   `json:"applied"`
+	Duplicates int   `json:"duplicates"`
+	Seq        int64 `json:"seq"` // the user's latest op cursor after the batch
 }
 
 // Apply validates and records a batch of ops for one user atomically.
@@ -113,6 +119,9 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 			return res, err
 		}
 		res.Applied++
+	}
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(MAX(seq),0) FROM ops WHERE user_id = ?`, userID).Scan(&res.Seq); err != nil {
+		return res, err
 	}
 	if err := tx.Commit(); err != nil {
 		return res, err

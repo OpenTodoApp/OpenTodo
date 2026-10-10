@@ -44,12 +44,21 @@ func TestMigrationWebhooks(t *testing.T) {
 	defer db.Close()
 	db.SetMaxOpenConns(1)
 
-	// Apply every migration before 0004 by hand, as an older binary would have.
+	// Apply every migration before 0003_webhooks.sql by hand, as an older binary would have.
 	entries, _ := fs.ReadDir(migrations, "migrations")
+	webhooksVersion := 0
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), "_webhooks.sql") {
+			webhooksVersion, _ = strconv.Atoi(strings.SplitN(e.Name(), "_", 2)[0])
+		}
+	}
+	if webhooksVersion != 3 {
+		t.Fatalf("webhooks migration version = %d, want 3 (0003_webhooks.sql)", webhooksVersion)
+	}
 	prev := 0
 	for _, e := range entries {
 		v, _ := strconv.Atoi(strings.SplitN(e.Name(), "_", 2)[0])
-		if v >= 4 {
+		if v >= webhooksVersion {
 			continue
 		}
 		body, _ := migrations.ReadFile("migrations/" + e.Name())
@@ -73,7 +82,7 @@ func TestMigrationWebhooks(t *testing.T) {
 	}
 	var version int
 	_ = db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version)
-	if version < 4 {
+	if version < webhooksVersion {
 		t.Fatalf("user_version = %d", version)
 	}
 	var v string

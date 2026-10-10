@@ -325,6 +325,71 @@ func (c *client) projects(ctx context.Context) ([]project, error) {
 	return list, nil
 }
 
+type label struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func (c *client) labels(ctx context.Context) ([]label, error) {
+	var out struct {
+		Labels []label `json:"labels"`
+	}
+	if err := c.getJSON(ctx, "/labels", &out); err != nil {
+		return nil, err
+	}
+	return out.Labels, nil
+}
+
+// resolveLabels turns `--label` values into label ids, because task.labels holds ids
+// (OpenSpec `labels`). A value matches a label id exactly or a label name ignoring
+// case; a name that matches nothing creates the label, like the web picker does.
+// The result is de-duplicated and keeps the order given.
+func (c *client) resolveLabels(ctx context.Context, refs []string) ([]string, error) {
+	out := []string{}
+	if len(refs) == 0 {
+		return out, nil
+	}
+	existing, err := c.labels(ctx)
+	if err != nil {
+		return nil, err
+	}
+	seen := map[string]bool{}
+	for _, ref := range refs {
+		ref = strings.TrimSpace(ref)
+		if ref == "" {
+			continue
+		}
+		id := ""
+		for _, l := range existing {
+			if l.ID == ref {
+				id = l.ID
+				break
+			}
+		}
+		if id == "" {
+			for _, l := range existing {
+				if strings.EqualFold(strings.TrimSpace(l.Name), ref) {
+					id = l.ID
+					break
+				}
+			}
+		}
+		if id == "" {
+			var created label
+			if err := c.postJSON(ctx, "/labels", map[string]any{"name": ref}, &created); err != nil {
+				return nil, err
+			}
+			existing = append(existing, created)
+			id = created.ID
+		}
+		if !seen[id] {
+			seen[id] = true
+			out = append(out, id)
+		}
+	}
+	return out, nil
+}
+
 func (c *client) tokens(ctx context.Context) ([]token, error) {
 	var out struct {
 		Tokens []json.RawMessage `json:"tokens"`

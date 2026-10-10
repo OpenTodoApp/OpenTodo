@@ -1,9 +1,9 @@
 // Every local mutation becomes field-level ops that are applied to IndexedDB
 // immediately (optimistic, offline-safe) and queued for the server.
-import { db, getMeta, setMeta } from './db'
+import { db, entityTables, getMeta, setMeta } from './db'
 import { hlcNow, hlcSeed, wins } from './hlc'
 import { descendants, isDescendant } from './tree'
-import type { Clock, Entity, Op, Project, Task } from './types'
+import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Task } from './types'
 
 let devicePromise: Promise<string> | null = null
 
@@ -30,7 +30,7 @@ export function resetDeviceId(): void {
 }
 
 function tableFor(entity: Entity) {
-  return entity === 'project' ? db.projects : db.tasks
+  return entity === 'project' ? db.projects : entity === 'label' ? db.labels : db.tasks
 }
 
 const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
@@ -40,27 +40,33 @@ const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null,
 }
+const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
+  name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
+}
+const DEFAULTS: Record<Entity, Record<string, unknown>> = { project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS }
 
 /**
  * Apply ops to the local store using per-field last-writer-wins. Safe to call with
  * ops in any order and any number of times: the result depends only on the set of ops.
+ * Ops for entities this build does not know (a newer server) are skipped, not fatal.
  */
 export async function applyOps(ops: Op[]): Promise<void> {
   if (ops.length === 0) return
   const grouped = new Map<string, Op[]>()
   for (const op of ops) {
+    if (!ENTITIES.includes(op.entity)) continue
     const key = `${op.entity}:${op.entityId}`
     const list = grouped.get(key)
     if (list) list.push(op)
     else grouped.set(key, [op])
   }
-  await db.transaction('rw', [db.projects, db.tasks], async () => {
+  if (grouped.size === 0) return
+  await db.transaction('rw', entityTables(), async () => {
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
       const table = tableFor(entity)
-      const existing = (await table.get(entityId)) as (Project | Task) | undefined
-      const defaults = entity === 'project' ? PROJECT_DEFAULTS : TASK_DEFAULTS
-      const row: Record<string, unknown> = existing ? { ...existing } : { ...defaults, id: entityId, _clock: {} }
+      const existing = (await table.get(entityId)) as (Project | Task | Label) | undefined
+      const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing
       for (const op of list) {
@@ -93,10 +99,17 @@ export interface Change {
   patch: Record<string, unknown>
 }
 
+/** Tables a read-modify-write helper must lock to wrap mutate()/mutateMany() in one transaction. */
+export function mutationTables() {
+  return [...entityTables(), db.outbox, db.meta]
+}
+
 /**
- * Record field changes for several entities as one batch: applied locally in a
- * single transaction (one render, no intermediate state) and enqueued together.
- * Each field is still its own op, so sync semantics are unchanged.
+ * Record field changes for several entities as one batch: applied locally, enqueued
+ * and the clock persisted in a single transaction (one render, no intermediate state).
+ * Each field is still its own op, so sync semantics are unchanged. Callers that must
+ * read the current row first (e.g. the task label array) wrap the read and this call in
+ * `db.transaction('rw', mutationTables(), …)` after awaiting getDeviceId() once.
  */
 export async function mutateMany(changes: Change[]): Promise<void> {
   const device = await getDeviceId()
@@ -108,8 +121,8 @@ export async function mutateMany(changes: Change[]): Promise<void> {
     }
   }
   if (ops.length === 0) return
-  await applyOps(ops)
-  await db.transaction('rw', [db.outbox, db.meta], async () => {
+  await db.transaction('rw', mutationTables(), async () => {
+    await applyOps(ops)
     await db.outbox.bulkAdd(ops)
     await db.meta.put({ key: 'hlc', value: ts })
   })
@@ -121,24 +134,73 @@ export async function mutate(entity: Entity, entityId: string, patch: Record<str
   await mutateMany([{ entity, entityId, patch }])
 }
 
-export async function createProject(input: { name: string; color?: string }): Promise<string> {
+/** Every non-deleted project; the tree helpers take the whole set so cycles are handled. */
+async function liveProjects(): Promise<Project[]> {
+  return db.projects.filter((p) => !p.deleted_at).toArray()
+}
+
+/** A position after every live sibling under `parentId` (excluding `id` itself). */
+function lastAmongProjectSiblings(all: Project[], id: string, parentId: string | null): number {
+  let position = Date.now()
+  for (const p of all) {
+    if (p.id !== id && p.parent_id === parentId && p.position >= position) position = p.position + 1
+  }
+  return position
+}
+
+/** A new project goes last at the top level, or last under `parent_id` when given. */
+export async function createProject(input: { name: string; color?: string; parent_id?: string | null }): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
+  const all = await liveProjects()
+  const parent = input.parent_id ? all.find((p) => p.id === input.parent_id) : undefined
+  const parentId = parent && !parent.archived ? parent.id : null
   await mutate('project', id, {
-    name: input.name.trim(), color: input.color ?? pickColor(), position: now, archived: false,
-    parent_id: null, created_at: now, deleted_at: null,
+    name: input.name.trim(), color: input.color ?? pickColor(), position: lastAmongProjectSiblings(all, id, parentId),
+    archived: false, parent_id: parentId, created_at: now, deleted_at: null,
   })
   return id
 }
 
+/**
+ * Re-parent a project (null = top level). Refuses the project itself, any of its
+ * descendants and an archived or deleted parent; the REST API enforces the cycle
+ * rule too. The project is placed last among its new siblings. Two ops, so a
+ * concurrent move on another device resolves field by field (design D2).
+ */
+export async function moveProject(id: string, parentId: string | null): Promise<void> {
+  const project = await db.projects.get(id)
+  if (!project || project.deleted_at) throw new Error('project not found')
+  if (parentId === project.parent_id) return
+  const all = await liveProjects()
+  if (parentId !== null) {
+    if (parentId === id) throw new Error('a project cannot be its own parent')
+    const parent = all.find((p) => p.id === parentId)
+    if (!parent || parent.archived) throw new Error('parent project not found')
+    if (isDescendant(parentId, id, all)) throw new Error('parent cannot be a descendant of the project')
+  }
+  await mutate('project', id, { parent_id: parentId, position: lastAmongProjectSiblings(all, id, parentId) })
+}
+
+/** Archiving cascades to every descendant, one op each (design D3); unarchive does not cascade. */
+export async function archiveProject(id: string): Promise<void> {
+  const all = await liveProjects()
+  const changes: Change[] = [{ entity: 'project', entityId: id, patch: { archived: true } }]
+  for (const d of descendants(id, all)) {
+    const p = all.find((x) => x.id === d)
+    if (p && !p.archived) changes.push({ entity: 'project', entityId: d, patch: { archived: true } })
+  }
+  await mutateMany(changes)
+}
+
 export async function createTask(input: {
-  title: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']
+  title: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
 }): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
   await mutate('task', id, {
     title: input.title.trim(), description: '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
-    priority: input.priority ?? 4, due: input.due ?? null, labels: [], position: now, created_at: now,
+    priority: input.priority ?? 4, due: input.due ?? null, labels: input.labels ?? [], position: now, created_at: now,
     completed_at: null, deleted_at: null,
   })
   return id
@@ -236,13 +298,24 @@ export async function updateProject(id: string, patch: Partial<Omit<Project, 'id
   await mutate('project', id, patch)
 }
 
-/** Deleting a project moves its open tasks to the Inbox so nothing is lost silently. */
+/**
+ * Deleting a project moves its open tasks to the Inbox and its direct sub-projects
+ * to its own parent (design D4), so neither tasks nor projects are lost. One batch.
+ */
 export async function deleteProject(id: string): Promise<void> {
+  const project = await db.projects.get(id)
   const tasks = await db.tasks.where('project_id').equals(id).toArray()
+  const changes: Change[] = []
   for (const t of tasks) {
-    if (!t.deleted_at) await mutate('task', t.id, { project_id: null })
+    if (!t.deleted_at) changes.push({ entity: 'task', entityId: t.id, patch: { project_id: null } })
   }
-  await mutate('project', id, { deleted_at: Date.now() })
+  const parentId = project?.parent_id ?? null
+  for (const p of await liveProjects()) {
+    // A sub-project never inherits itself as parent (only possible inside an unresolved cycle).
+    if (p.parent_id === id && p.id !== id) changes.push({ entity: 'project', entityId: p.id, patch: { parent_id: parentId === p.id ? null : parentId } })
+  }
+  changes.push({ entity: 'project', entityId: id, patch: { deleted_at: Date.now() } })
+  await mutateMany(changes)
 }
 
 const PALETTE = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899']
