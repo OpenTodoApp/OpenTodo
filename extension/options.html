@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenTodo Capture settings</title>
+  <style>
+    :root { color-scheme: light dark; --fg: #0f172a; --muted: #64748b; --bg: #f8fafc; --card: #fff; --line: #cbd5e1; --accent: #059669; --err: #dc2626; }
+    @media (prefers-color-scheme: dark) { :root { --fg: #e2e8f0; --muted: #94a3b8; --bg: #020617; --card: #0f172a; --line: #334155; --err: #f87171; } }
+    body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+    main { max-width: 32rem; margin: 3rem auto; padding: 1.5rem; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+    h1 { font-size: 1.1rem; margin: 0 0 .5rem; }
+    p { color: var(--muted); margin: .5rem 0; }
+    label { display: block; margin-top: 1rem; font-weight: 500; }
+    input { box-sizing: border-box; width: 100%; margin-top: .25rem; padding: .5rem .75rem; font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 6px; }
+    input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    button { margin-top: 1rem; padding: .45rem .9rem; font: inherit; font-weight: 500; color: #fff; background: var(--accent); border: 0; border-radius: 6px; cursor: pointer; }
+    #pending, #status { padding: .5rem .75rem; border-radius: 6px; border: 1px solid var(--line); }
+    #status.error { color: var(--err); border-color: var(--err); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>OpenTodo Capture</h1>
+    <p>Enter the address of your OpenTodo server. The extension opens that server's capture screen for the current page. It stores only this address, holds no password or token and never contacts the server itself.</p>
+    <p id="pending" hidden></p>
+    <form id="form" novalidate>
+      <label for="server">Server URL</label>
+      <input id="server" name="server" type="url" placeholder="https://todo.example.com" autocomplete="url" required autofocus>
+      <button type="submit">Save</button>
+    </form>
+    <p id="status" role="status" hidden></p>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>
