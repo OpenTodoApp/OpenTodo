@@ -63,6 +63,10 @@ Every delivery is a `POST` with a JSON body:
 | `data.task` / `data.project` | the entity's current state with the same fields as the [REST API](api.md#task-fields). `ping` carries `data: {}` |
 | `changes` | the fields that changed in this batch with their previous (`from`) and new (`to`) values; `from` is `null` when the field had no value before |
 
+### Encrypted accounts
+
+For an account with [end-to-end encryption](e2ee.md), content fields in payloads (`title`, `description`, `name`) carry the stored ciphertext (`"enc:v1:…"`); the server cannot decrypt them. Dates, priority and completion stay plaintext.
+
 ## Headers and signature
 
 | Header | Example |

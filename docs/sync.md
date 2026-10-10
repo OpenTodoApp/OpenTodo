@@ -169,6 +169,10 @@ A `view` is a saved filter query with its presentation options (OpenSpec `custom
 - `panels` holds the ordered view ids shown by a dashboard (empty for lists). Like `task.labels` it is a single LWW register: two devices editing the panel list offline end with the newer list. A panel whose view is missing or deleted is shown as a placeholder; clients refuse to add a dashboard as a panel.
 - The start view (the view a device opens on launch) is **not** synced: it lives in the device's `meta` table under `startView`, like the collapsed projects.
 
+### Encrypted values
+
+For an account with [end-to-end encryption](e2ee.md), the content fields of its personal scope — task `title`, `description`, `ical_extra`; project, label and section `name`; view `name` and `query`; comment `body` — carry ciphertext: a string `"enc:v1:" + base64url(nonce(12) || AES-256-GCM ciphertext || tag(16))` whose additional authenticated data is `entity + "\0" + entityId + "\0" + field`. The protocol, the schema, the value types and limits are unchanged: the server validates the envelope as an ordinary string and never decrypts it, and last-writer-wins picks winners by `(ts, device)` exactly as for plaintext (two encryptions of the same text differ, which is irrelevant because values are never compared). Devices encrypt at upload and decrypt before applying; a value that does not authenticate for its location (wrong key, tampering, or moved to another entity or field) is kept as the winning op but shown as a placeholder. Shared project scopes are never encrypted. Plaintext content that reaches an encrypted account (REST, email, import) is re-written as ciphertext by the next unlocked device that applies it; once ciphertext wins, nothing is re-written again. `POST /api/v1/encryption/purge-history` deletes superseded ops of the content fields in the personal scope; winners stay, so convergence and cursors are unaffected.
+
 ## Winner rule
 
 For a given `(entity, entityId, field)`, an incoming op replaces the stored value when

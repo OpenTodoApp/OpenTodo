@@ -90,6 +90,10 @@ Add the variables in the resource's **Environment Variables** tab. For the passw
 - `unknown_secret`: the address was rotated, mistyped, or belongs to no account. `disabled` / `not_allowed` / `rate_limited` are the user's switch, allowlist and hourly cap.
 - When the mail server is down, the app keeps working; one warning is logged per interval and polling resumes on its own.
 
+## End-to-end encryption
+
+For an account with [end-to-end encryption](e2ee.md) the server creates the task in plaintext like any REST write (it has no key, and the message crossed mail servers in the clear anyway). The next unlocked device that syncs re-writes title and description as ciphertext and marks the task "not yet encrypted" until then; **Purge plaintext history** in Settings removes the plaintext operations afterwards.
+
 ## Limits and what is not included
 
 Not in this version: a built-in SMTP receiver for operators who own an MX record (planned as `email-smtp-receiver`), storing attachments, replying to or sending mail, per-project addresses, parsing dates and projects from the subject, and OAuth mailbox sign-in. This implementation was tested against an in-process IMAP server and realistic RFC 5322 messages, not yet against each provider listed above.

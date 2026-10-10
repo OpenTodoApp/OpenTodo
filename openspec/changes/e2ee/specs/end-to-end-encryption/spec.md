@@ -21,15 +21,23 @@ A signed-in user SHALL be able to enable encryption from Settings. The device SH
 - **THEN** the response is a 401 `unauthorized` error for the anonymous request and a 409 `encryption_conflict` error for the second device, whose client then prompts for the existing passphrase instead
 
 ### Requirement: Encrypted and plaintext fields
-For an encrypted account the device SHALL encrypt task `title`, `description` and each entry of `labels`, and project `name`, before they become operations. `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, project `color` and `archived` SHALL remain plaintext so that scheduling, ordering and structure work on every device and on the server. The split SHALL be documented to users as the boundary of what is hidden.
+For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project, label and section names; saved view names and queries; comment bodies) before it leaves the device. Scheduling, ordering and structure fields SHALL remain plaintext, and shared project scopes SHALL NOT be encrypted. The split SHALL be documented to users as the boundary of what is hidden.
+
+#### Scenario: Plaintext fields
+- **WHEN** an encrypted account changes `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, a task's `labels` id list, or a project's `color` or `archived`
+- **THEN** the operations carry plaintext values
 
 #### Scenario: Title is ciphertext, due date is not
 - **WHEN** an encrypted account creates a task "Dentist" due tomorrow
 - **THEN** the operations sent to the server carry a ciphertext string for `title` and the plaintext `{date}` object for `due`
 
-#### Scenario: Labels encrypted individually
-- **WHEN** a task has labels `home` and `errand`
-- **THEN** the `labels` operation carries a list of two ciphertext strings, so the server sees the count but not the names
+#### Scenario: Label names encrypted, label assignments plaintext
+- **WHEN** an encrypted account has labels `home` and `errand` and a task carries both
+- **THEN** each label's `name` operation carries a ciphertext string and the task's `labels` operation carries the two label ids, so the server sees the count and the assignment but not the names
+
+#### Scenario: Shared project stays plaintext
+- **WHEN** an encrypted account edits a task in a project shared with other accounts
+- **THEN** the operation carries the plaintext title, readable by every member
 
 ### Requirement: Transport through the unchanged operation log
 Ciphertext SHALL be a string value beginning with a version prefix, carrying the nonce, the authenticated ciphertext and a binding to the entity, id and field it belongs to. The server SHALL validate, store and serve such operations exactly as any other string value; the operation schema, limits and sync endpoint SHALL NOT change. A value whose binding does not match where it is found SHALL be shown as undecryptable, never as another field's content.

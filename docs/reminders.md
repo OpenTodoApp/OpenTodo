@@ -21,6 +21,10 @@ Reminders are personal. On a task in a shared project your reminders are yours a
 
 Snoozing sets a new firing time (in 10 minutes, in an hour, or tomorrow at 09:00) and the reminder fires again, also by push. Dismissing silences the current firing. Both are ordinary synced edits: when one device dismisses and another later snoozes the same reminder, the later edit wins on every device.
 
+## End-to-end encryption
+
+For an account with [end-to-end encryption](e2ee.md) the server never puts a title in a push, even for devices that opted in to titles: it cannot read it, and ciphertext would be useless. The notification uses the content-free text; in-app reminder toasts still show the decrypted title from the device.
+
 ## For operators
 
 Nothing to configure. The VAPID key pair is generated on first use at `<data>/push_vapid.pem` and travels with backup archives. `OPENTODO_PUSH=off` turns push off entirely (routes answer 404, no outbound requests); in-app reminders keep working. Push requires the app to be served over https (`OPENTODO_BASE_URL`), as browsers only allow push subscriptions on secure origins. See [self-hosting](self-hosting/docker.md#reminders-and-web-push) and [API](api.md#reminders-and-push).

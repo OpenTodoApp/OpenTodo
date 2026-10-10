@@ -329,7 +329,8 @@ func TestUserExportExcludesAudit(t *testing.T) {
 	e.mustStatus(resp, 200, out)
 	for k := range out {
 		switch k {
-		case "format", "version", "exportedAt", "projects", "tasks", "labels", "views", "reminders", "sections", "comments":
+		// encryption: the wrapped key record or null (OpenSpec e2ee).
+		case "format", "version", "exportedAt", "projects", "tasks", "labels", "views", "reminders", "sections", "comments", "encryption":
 		default:
 			t.Fatalf("user export has unexpected key %q", k)
 		}

@@ -83,7 +83,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Multi-factor authentication (TOTP) | `mfa-totp` |
 | ✅ | Audit log | `audit-log` |
 | ✅ | User administration: list users, admin role, deactivate, delete, password reset, owner transfer | `user-management` |
-| 📝 | Optional end-to-end encryption of task content | `e2ee` |
+| ✅ | Optional end-to-end encryption of task content | `e2ee` |
 
 ## Principles that do not change
 

@@ -35,7 +35,9 @@ Please do not open public issues for security problems. Email **raffaele.pizzari
 - No telemetry or third-party requests. The only outbound requests are the ones the owner configures: webhooks, backup destinations, web push to the push service a device chose, and the single sign-on issuer.
 - Voice capture (off by default, per device) uses the browser's own speech recognition. OpenTodo's code never records, stores or transmits audio and the server never receives audio or transcripts, only the task saved with Enter. Some browsers send the audio to their vendor's speech service; Settings states this before the feature can be switched on, and on-device recognition is requested when the browser offers it. See [docs/quick-add.md](docs/quick-add.md#privacy).
 
-Planned hardening is tracked in `ROADMAP.md`: optional end-to-end encryption.
+- Optional end-to-end encryption (per account, off by default): task titles, descriptions, project, label, section and saved-view names, view queries and comments in personal data are encrypted in the browser with the Web Crypto API (AES-256-GCM bound to entity, id and field; the account key wrapped with AES-KW under a PBKDF2-SHA-256 passphrase key, 600,000 iterations, and under a random 256-bit recovery key). The server stores only the wrapped key record and never receives the passphrase, the recovery key, the account key or the plaintext of those fields; there is no server-side reset. Dates, priorities, structure, counts and timing stay visible to the server, shared projects are not encrypted, and a malicious server can still serve tampered JavaScript. Changing the key record and turning encryption off are step-up routes. Full threat model and limitations: [docs/e2ee.md](docs/e2ee.md).
+
+Planned hardening is tracked in `ROADMAP.md`.
 
 ## What is logged
 
