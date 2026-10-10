@@ -21,12 +21,12 @@
 
 ## 3. UI
 
-- [ ] 3.1 `TrashView.tsx` (`g x`, sidebar entry with count, newest first, remaining-days column, restore and permanent delete with confirmation, empty Trash, pending state when offline); verify browser flow matching "Deleted task appears in the Trash", "Project returns with its tasks" and "Purge one task"
-- [ ] 3.2 History panel in `TaskDetail.tsx` and `ProjectHeader.tsx` with timeline grouped by change set, device labels, losing values marked, "restore this value", offline notice; verify browser flow matching "Timeline of changes" and "Restore an old title"
-- [ ] 3.3 Archive prompt on last completion (Enter archives, other keys dismiss), automatic archive notice with undo, Settings toggle; verify browser flow matching the three auto-archive scenarios (use a test clock for the 30-day case)
-- [ ] 3.4 Update `?` help; `npm run build` passes with bundle growth under 8 KB gzipped; verify by comparing `dist` sizes
+- [x] 3.1 `TrashView.tsx` (`g x`, sidebar entry with count, newest first, remaining-days column, restore and permanent delete with confirmation, empty Trash, pending state when offline); verify browser flow matching "Deleted task appears in the Trash", "Project returns with its tasks" and "Purge one task"
+- [x] 3.2 History panel in `TaskDetail.tsx` and `ProjectHeader.tsx` with timeline grouped by change set, device labels, losing values marked, "restore this value", offline notice; verify browser flow matching "Timeline of changes" and "Restore an old title"
+- [x] 3.3 Archive prompt on last completion (Enter archives, other keys dismiss), automatic archive notice with undo, Settings toggle; verify browser flow matching the three auto-archive scenarios (use a test clock for the 30-day case)
+- [x] 3.4 Update `?` help; `npm run build` passes with bundle growth under 8 KB gzipped; verify by comparing `dist` sizes
 
 ## 4. Integration and docs
 
 - [ ] 4.1 Two-device browser run: delete a project with tasks on A, restore on B, delete a task on A and purge it, edit the same task offline on B before syncing; verify the task is gone on both devices and absent from export and history
-- [ ] 4.2 README feature list and CHANGELOG under Unreleased; verify `make check` passes
+- [x] 4.2 README feature list and CHANGELOG under Unreleased; verify `make check` passes
