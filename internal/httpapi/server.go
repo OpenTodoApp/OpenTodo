@@ -18,6 +18,7 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/importer"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/webhook"
 )
@@ -35,8 +36,13 @@ type Server struct {
 	version string
 	// limiter guards the unauthenticated auth routes per client IP (10/min).
 	limiter *rateLimiter
+	// passkeyOptions limits anonymous passkey challenge requests separately, so
+	// the sign-in screen's autofill request does not use up password attempts.
+	passkeyOptions *rateLimiter
 	// inviteLimiter caps invitation creation per account (20/hour).
 	inviteLimiter *rateLimiter
+	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
+	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
 	hooks *webhook.Service
 
@@ -58,9 +64,16 @@ func (s *Server) opTS() int64 {
 // New builds the router. web may be nil when only the API is wanted (tests).
 func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string, opts ...Option) http.Handler {
 	s := &Server{cfg: cfg, auth: authSvc, audit: authSvc.Audit(), sync: syncSvc, web: web, log: log, version: version,
-		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour)}
+		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
+		passkeyOptions: newRateLimiter(10, time.Minute),
+		importer:       importer.New(syncSvc.DB(), syncSvc, log)}
 	for _, o := range opts {
 		o(s)
+	}
+	// Passkeys need a relying party; it is derived from the base URL so the
+	// 409 guard in the handlers and the service always agree.
+	if cfg.PasskeysAvailable() && !authSvc.PasskeysAvailable() {
+		authSvc.ConfigurePasskeys(cfg.RPID(), cfg.Origin())
 	}
 	mux := http.NewServeMux()
 
@@ -69,11 +82,20 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.HandleFunc("POST /api/v1/auth/register", s.handleRegister)
 	mux.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
 	mux.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
+	// Passwordless sign-in: anonymous by design. Finishing shares the login
+	// limiter; fetching a challenge has its own per-address limiter.
+	mux.HandleFunc("POST /api/v1/auth/passkey/options", s.handlePasskeyLoginOptions)
+	mux.HandleFunc("POST /api/v1/auth/passkey", s.handlePasskeyLogin)
 
 	mux.Handle("GET /api/v1/me", s.requireAuth(s.handleMe))
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
 	mux.Handle("POST /api/v1/tokens", s.requireAuth(s.handleCreateToken))
 	mux.Handle("DELETE /api/v1/tokens/{id}", s.requireAuth(s.handleDeleteToken))
+	mux.Handle("POST /api/v1/passkeys/register/options", s.requireAuth(s.handlePasskeyRegisterOptions))
+	mux.Handle("POST /api/v1/passkeys/register", s.requireAuth(s.handlePasskeyRegister))
+	mux.Handle("GET /api/v1/passkeys", s.requireAuth(s.handleListPasskeys))
+	mux.Handle("PATCH /api/v1/passkeys/{id}", s.requireAuth(s.handleRenamePasskey))
+	mux.Handle("DELETE /api/v1/passkeys/{id}", s.requireAuth(s.handleDeletePasskey))
 	// Invitations: owner-only management plus the one public preview route the
 	// spec defines (the invitee has no account yet). Both must be registered before
 	// the generic {collection} routes so the mux prefers these literal patterns.
@@ -94,6 +116,12 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
+	// Import (OpenSpec `data-import`): literal patterns win over the {collection} routes.
+	mux.Handle("POST /api/v1/import/preview", s.requireAuth(s.handleImportPreview))
+	mux.Handle("POST /api/v1/import", s.requireAuth(s.handleImportStart))
+	mux.Handle("GET /api/v1/import/jobs", s.requireAuth(s.handleImportJobs))
+	mux.Handle("GET /api/v1/import/jobs/{id}", s.requireAuth(s.handleImportJob))
+	mux.Handle("POST /api/v1/import/jobs/{id}/undo", s.requireAuth(s.handleImportUndo))
 	mux.Handle("GET /api/v1/{collection}", s.requireAuth(s.handleList))
 	mux.Handle("POST /api/v1/{collection}", s.requireAuth(s.handleCreate))
 	mux.Handle("GET /api/v1/{collection}/{id}", s.requireAuth(s.handleGet))
@@ -246,11 +274,12 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"setupRequired": count == 0,
-		"signupAllowed": allowed,
-		"authenticated": u != nil,
-		"user":          u,
-		"version":       s.version,
+		"setupRequired":     count == 0,
+		"signupAllowed":     allowed,
+		"authenticated":     u != nil,
+		"user":              u,
+		"version":           s.version,
+		"passkeysAvailable": s.cfg.PasskeysAvailable(),
 	})
 }
 

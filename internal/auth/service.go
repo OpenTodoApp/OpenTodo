@@ -13,6 +13,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/webauthn"
 )
 
 // User is the public view of an account.
@@ -50,6 +51,11 @@ type Service struct {
 	// afterTokenInsert, when set by tests, runs inside CreateToken's transaction
 	// right after the token row is written; an error aborts the transaction.
 	afterTokenInsert func() error
+
+	// rp and challenges are set by ConfigurePasskeys (see passkeys.go); nil
+	// means passkeys are unavailable on this server.
+	rp         *webauthn.RelyingParty
+	challenges *webauthn.Challenges
 }
 
 // NewService wires a Service. It owns the audit recorder for the same database,

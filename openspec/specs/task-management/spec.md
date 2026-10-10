@@ -17,7 +17,7 @@ A task SHALL have a title, a description, an optional project, a priority from 1
 - **THEN** the write is rejected as invalid and no field changes
 
 ### Requirement: Quick capture
-The client SHALL offer a single-line quick-add input in every task view that creates a task on Enter and stays focused for the next entry. The new task SHALL inherit the context of the view: the current project in a project view, today's date in Today, tomorrow's date in Upcoming.
+The client SHALL offer a single-line quick-add input in every task view that creates a task on Enter and stays focused for the next entry. The line SHALL be parsed for attributes as defined by the natural-language-capture capability. The new task SHALL inherit the view's context (project, Today's date, Upcoming's tomorrow) for every attribute the line does not set.
 
 #### Scenario: Capture in a project
 - **WHEN** the user types a title in a project view and presses Enter
@@ -26,6 +26,14 @@ The client SHALL offer a single-line quick-add input in every task view that cre
 #### Scenario: Capture in Today
 - **WHEN** the user adds a task from the Today view
 - **THEN** the task is due today
+
+#### Scenario: Explicit token overrides the view
+- **WHEN** the user is in the Today view and enters `Plan trip next Monday #travel`
+- **THEN** the task is due next Monday and filed in "Travel", not today in the Inbox
+
+#### Scenario: Input stays ready
+- **WHEN** a parsed task is created
+- **THEN** the input is cleared, all chips are gone and focus remains in the input
 
 ### Requirement: Edit task fields
 The user SHALL be able to change a task's title, description, project, priority, due date and due time from a detail panel. Each change SHALL be applied locally at once and recorded as an operation for sync.
@@ -62,3 +70,18 @@ Deleting a task SHALL set a deletion time rather than removing data. Deleted tas
 #### Scenario: Delete syncs as a tombstone
 - **WHEN** a task is deleted on one device while another device edits its title offline
 - **THEN** after both devices sync, the task is deleted on both and the title edit does not resurrect it
+
+### Requirement: Duration estimate
+A task SHALL have an optional duration estimate `estimate_minutes`, a positive integer number of minutes or null (default). It SHALL be stored, validated, exported and synced as a field under the same last-writer-wins rule as every other task field, SHALL be settable offline, and SHALL be shown on the task row when present.
+
+#### Scenario: Estimate from quick add
+- **WHEN** a task is created from the line `Write report +45m`
+- **THEN** the task has `estimate_minutes` 45 and the row shows `45m`
+
+#### Scenario: Invalid estimate rejected
+- **WHEN** a client submits `estimate_minutes` of 0, a negative number, a non-integer or a string
+- **THEN** the write is rejected as invalid and no field changes
+
+#### Scenario: Older client ignores the field
+- **WHEN** a device running a client without estimate support receives an operation for `estimate_minutes`
+- **THEN** the operation is stored and forwarded unchanged and the device otherwise behaves normally

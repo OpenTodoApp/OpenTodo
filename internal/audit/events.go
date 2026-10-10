@@ -93,6 +93,10 @@ const (
 	ReasonUnknownAccount = "unknown_account"
 	ReasonWrongPassword  = "wrong_password"
 	ReasonRateLimited    = "rate_limited"
+	// Passkey sign-in failures.
+	ReasonUnknownPasskey  = "unknown_passkey"
+	ReasonPasskeyRejected = "passkey_rejected"
+	ReasonPasskeyCounter  = "passkey_counter_regression"
 )
 
 // allowedDetailKeys is the complete set of keys an event's details may carry:

@@ -31,6 +31,12 @@ docker run -d --name opentodo \
 
 OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure`, the origin check matches and invitation links point at the public address. The server also honours `X-Forwarded-Host` and `X-Forwarded-For` for the origin check and rate limiting.
 
+### Passkeys need an https base URL
+
+Passkeys (Settings → Security) are only offered when `OPENTODO_BASE_URL` is an `https://` URL; browsers refuse WebAuthn on plain-http origins. With no base URL or an `http://` LAN address, the server keeps working with passwords and simply hides passkeys (`auth/status` reports `passkeysAvailable: false`). For local development `http://localhost:8080` also works, because browsers treat localhost as secure.
+
+Passkeys are bound to the **host** of that URL (the relying-party id, for example `todo.example.com`). If you move the server to a new domain, existing passkeys stop matching: users sign in with their password and register new passkeys from Settings. Paths and ports do not matter, only the host. See [SECURITY.md](../../SECURITY.md) for the credential model.
+
 Caddy example:
 
 ```

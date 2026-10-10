@@ -20,19 +20,28 @@ type Config struct {
 	AllowSignup bool
 	SessionTTL  time.Duration
 	LogLevel    slog.Level
+	// ImportMaxMB caps the size of an uploaded import file (OPENTODO_IMPORT_MAX_MB).
+	ImportMaxMB int
 	// WebhooksAllowPrivate presets the owner's "allow private network targets"
 	// webhook policy on first start only (nil when OPENTODO_WEBHOOKS_ALLOW_PRIVATE
 	// is unset). Afterwards the value set in Settings is authoritative.
 	WebhooksAllowPrivate *bool
 }
 
+// Import file size bounds for OPENTODO_IMPORT_MAX_MB.
+const (
+	DefaultImportMaxMB = 20
+	MaxImportMaxMB     = 200
+)
+
 // Load reads OPENTODO_* variables from the environment.
 func Load() (Config, error) {
 	c := Config{
-		Addr:       getenv("OPENTODO_ADDR", ":8080"),
-		DataDir:    getenv("OPENTODO_DATA_DIR", "./data"),
-		SessionTTL: 90 * 24 * time.Hour,
-		LogLevel:   slog.LevelInfo,
+		Addr:        getenv("OPENTODO_ADDR", ":8080"),
+		DataDir:     getenv("OPENTODO_DATA_DIR", "./data"),
+		SessionTTL:  90 * 24 * time.Hour,
+		LogLevel:    slog.LevelInfo,
+		ImportMaxMB: DefaultImportMaxMB,
 	}
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_BASE_URL")); v != "" {
 		u, err := url.Parse(v)
@@ -54,6 +63,13 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_SESSION_DAYS must be a positive integer, got %q", v)
 		}
 		c.SessionTTL = time.Duration(d) * 24 * time.Hour
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_IMPORT_MAX_MB")); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 || n > MaxImportMaxMB {
+			return c, fmt.Errorf("OPENTODO_IMPORT_MAX_MB must be an integer from 1 to %d, got %q", MaxImportMaxMB, v)
+		}
+		c.ImportMaxMB = n
 	}
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_WEBHOOKS_ALLOW_PRIVATE")); v != "" {
 		b, err := strconv.ParseBool(v)
@@ -77,6 +93,16 @@ func Load() (Config, error) {
 	return c, nil
 }
 
+// ImportMaxBytes is the import file size limit in bytes; a zero value (a Config
+// built by hand, as in tests) means the default.
+func (c Config) ImportMaxBytes() int64 {
+	mb := c.ImportMaxMB
+	if mb <= 0 {
+		mb = DefaultImportMaxMB
+	}
+	return int64(mb) << 20
+}
+
 // SecureCookies reports whether session cookies must carry the Secure flag.
 func (c Config) SecureCookies() bool {
 	return c.BaseURL != nil && c.BaseURL.Scheme == "https"
@@ -88,6 +114,35 @@ func (c Config) Origin() string {
 		return ""
 	}
 	return c.BaseURL.Scheme + "://" + c.BaseURL.Host
+}
+
+// RPID returns the WebAuthn relying-party identifier: the host of the public
+// base URL without port, or "" when no base URL is configured.
+func (c Config) RPID() string {
+	if c.BaseURL == nil {
+		return ""
+	}
+	return strings.ToLower(c.BaseURL.Hostname())
+}
+
+// PasskeysAvailable reports whether passkey ceremonies can be offered. Browsers
+// only allow them on secure origins, so this needs an https base URL, or a
+// localhost development origin which browsers treat as secure.
+func (c Config) PasskeysAvailable() bool {
+	if c.BaseURL == nil {
+		return false
+	}
+	if c.BaseURL.Scheme == "https" {
+		return c.BaseURL.Hostname() != ""
+	}
+	if c.BaseURL.Scheme != "http" {
+		return false
+	}
+	switch strings.ToLower(c.BaseURL.Hostname()) {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	}
+	return false
 }
 
 func getenv(key, def string) string {

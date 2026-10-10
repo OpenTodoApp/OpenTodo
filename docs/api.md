@@ -35,14 +35,21 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
-| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version}` |
+| GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable}` |
 | POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?}` → 201 `{user}` + cookie. First account becomes owner; afterwards an `invitation` secret admits one member while sign-up is closed |
 | POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie |
+| POST | `/api/v1/auth/passkey/options` | none | → `{publicKey}` sign-in options, see [Passkeys](#passkeys) |
+| POST | `/api/v1/auth/passkey` | none | `{credential}` → `{user}` + cookie |
 | POST | `/api/v1/auth/logout` | cookie | 204 |
 | GET | `/api/v1/me` | yes | `{user}` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,createdAt,lastUsedAt}]}` |
 | POST | `/api/v1/tokens` | yes | `{name}` → 201 `{token, secret}` (secret shown once) |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
+| POST | `/api/v1/passkeys/register/options` | yes | → `{publicKey}` creation options |
+| POST | `/api/v1/passkeys/register` | yes | `{name, credential}` → 201 `{passkey}` |
+| GET | `/api/v1/passkeys` | yes | `{passkeys:[{id,name,createdAt,lastUsedAt,suspiciousAt,backedUp}]}` |
+| PATCH | `/api/v1/passkeys/{id}` | yes | `{name}` → `{passkey}` |
+| DELETE | `/api/v1/passkeys/{id}` | yes | 204 |
 | GET | `/api/v1/invitations` | owner | `{invitations:[…]}`, see [Invitations](#invitations) |
 | POST | `/api/v1/invitations` | owner | `{email?, expiresInHours?}` → 201 `{invitation, link}` (link shown once) |
 | DELETE | `/api/v1/invitations/{id}` | owner | revoke a pending invitation → 204 |
@@ -72,6 +79,46 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
 | GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`), including deleted items; never contains audit events |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`), including deleted items |
+| POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
+| POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
+| GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
+| GET | `/api/v1/import/jobs/{id}` | yes | `{job}` with status, counts and row errors |
+| POST | `/api/v1/import/jobs/{id}/undo` | yes | tombstone everything the job created → `{job}` (status `undone`); idempotent |
+
+### Passkeys
+
+Passkeys (WebAuthn) are an additional way to sign in; the password keeps working. They are only offered when `OPENTODO_BASE_URL` is `https://…` (or `http://localhost` / `127.0.0.1` for development). The relying-party id is the host of that URL and the expected origin is its `scheme://host[:port]`. `auth/status` reports `passkeysAvailable`. When it is `false`, every passkey route answers `409 passkeys_unavailable`.
+
+Both ceremonies take two steps. The `options` route returns `{"publicKey": …}`, the JSON form of `PublicKeyCredentialCreationOptions` / `PublicKeyCredentialRequestOptions`, with a single-use challenge valid for five minutes. The browser runs `navigator.credentials.create()` or `get()` with those options, and the client posts the result back. **All binary fields are base64url strings** (padding optional), in the same shape that `PublicKeyCredential.toJSON()` produces:
+
+```json
+{
+  "name": "Work laptop",
+  "credential": {
+    "id": "q2Xx…", "rawId": "q2Xx…", "type": "public-key",
+    "response": {
+      "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIi…",
+      "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVj…",
+      "transports": ["internal", "hybrid"]
+    }
+  }
+}
+```
+
+For sign-in, `response` carries `clientDataJSON`, `authenticatorData` and `signature`, and the body has no `name`. Sign-in uses discoverable credentials only (`allowCredentials` is empty), so the server finds the account from `rawId`. Registration asks for `residentKey: "required"`, `userVerification: "preferred"` and `attestation: "none"`. ES256, EdDSA (Ed25519) and RS256 keys are accepted.
+
+| Code | Status | When |
+| --- | --- | --- |
+| `passkeys_unavailable` | 409 | the base URL is unset or not https/localhost |
+| `passkey_challenge_invalid` | 400 | the challenge is expired, already used, issued to another account, or was a sign-in challenge used for registration (or the reverse) |
+| `invalid_input` | 400 | origin, relying-party id, type or signature format does not match; credential already registered; empty name on rename |
+| `bad_request` | 400 | a field is missing or is not base64url |
+| `invalid_credentials` | 401 | sign-in with an unknown or deleted passkey, a bad signature, or a signature counter that went backwards (the passkey is then marked `suspiciousAt`) |
+| `not_found` | 404 | rename or delete of a passkey id that is not yours |
+| `rate_limited` | 429 | more than 10 requests per minute per address to `auth/login`, `auth/register`, `auth/passkey` and the invitation preview combined (one shared window), or more than 10 per minute to `auth/passkey/options` (its own window, so the sign-in screen's autofill request never uses up password attempts) |
+
+The anonymous `auth/passkey` routes apply the same `Origin` check as `auth/login`. A successful passkey sign-in sets the same `opentodo_session` cookie as a password sign-in. Bearer tokens can list, rename and delete passkeys, but a CLI cannot run a ceremony.
 
 ### Task fields
 
@@ -84,6 +131,7 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | `priority` | 1–4 | 1 highest, 4 default |
 | `due` | `{date:"YYYY-MM-DD", time?:"HH:MM"}` or null | floating date |
 | `labels` | string[] | ids of existing, non-deleted labels; replaced as a whole on PATCH |
+| `estimate_minutes` | integer 1–10080 or null | duration estimate in minutes; `0`, negatives, fractions and strings are rejected |
 | `position` | number | sort order inside a list |
 | `completed_at`, `deleted_at` | unix ms or null | |
 | `created_at` | unix ms | set by the server on create if missing |
@@ -202,8 +250,8 @@ The server records security-relevant events in its own database (never synced to
 
 | Event | Outcome | Actor / target | `details` keys |
 | --- | --- | --- | --- |
-| `login.succeeded` | success | actor = user | `email`, `method` (`password`, `register`; later `passkey`, `oidc`) |
-| `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`) |
+| `login.succeeded` | success | actor = user | `email`, `method` (`password`, `register`, `passkey`; later `oidc`) |
+| `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`, `unknown_passkey`, `passkey_rejected`, `passkey_counter_regression`) |
 | `logout` | success | actor = user | |
 | `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name` |
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
@@ -213,7 +261,7 @@ The server records security-relevant events in its own database (never synced to
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
 | `mfa.enrolled`, `mfa.disabled`, `mfa.reset`, `mfa.challenge_failed` | | | `method`, `reason` (emitted once `mfa-totp` ships) |
-| `passkey.registered`, `passkey.deleted` | | | `passkey_id`, `passkey_name` (once `passkeys` ships) |
+| `passkey.registered`, `passkey.deleted` | success | actor = user | `passkey_id`, `passkey_name` |
 | `identity.linked`, `identity.unlinked` | | | `provider` (once `oidc-login` ships) |
 | `role.changed` | | | `from`, `to` |
 | `backup.created`, `backup.restored` | | | `backup_id`, `reason` on failure (once `backups` ships) |
@@ -244,6 +292,54 @@ curl -sS -H "Authorization: Bearer $TOKEN" \
 **Settings** — `GET /api/v1/settings/audit` (owner) → `{"retentionDays": 90, "logIp": false}`. `PUT` the same object, both fields optional: `retentionDays` is an integer 7–3650 (otherwise 400 `invalid_input`), `logIp` turns client address logging on or off. Turning it off erases every stored address in the same transaction. Each changed value is recorded as `settings.changed`; lowering retention prunes expired events immediately, and the server also prunes at startup and hourly.
 
 **Personal activity** — `GET /api/v1/me/activity` (any signed-in user) → `{events: [...]}`: the caller's own sign-ins, failed sign-ins against their account, sign-outs and credential and token events from the last 90 days, at most 100, newest first. Events about other accounts never appear.
+
+### Import
+
+Import tasks and projects from the app's own export, CSV, or JSON exports of other task managers. Formats, the CSV columns, mapping rules and limits are documented in [import.md](import.md). Every imported field is written to the operation log with server time and the device id `import`, so devices receive imports like any other write.
+
+Uploads are `multipart/form-data` with a `file` part. Options go either in one `options` part holding JSON or in individual fields of the same names: `format`, `targetProject`, `timeZone`, `sections` (`label`|`ignore`), `duplicates` (`skip`|`import`), `errors` (`skip_rows`|`abort`), `existing` (`skip`|`overwrite`). The file may be at most `OPENTODO_IMPORT_MAX_MB` (default 20 MB) and 50,000 rows; these routes do not use the 4 MB JSON body limit.
+
+**Preview** — `POST /api/v1/import/preview` writes nothing and returns:
+
+```json
+{
+  "format": "csv",
+  "columns": { "recognised": ["title", "project", "priority"], "ignored": ["color"] },
+  "options": { "timeZone": "Europe/Rome", "sections": "label", "duplicates": "skip", "errors": "skip_rows", "existing": "skip" },
+  "totals": { "rows": 100, "create": 97, "update": 0, "skip": 0, "error": 3, "possibleDuplicates": 0,
+              "warnings": 1, "newProjects": 1, "newLabels": 2, "entities": 100, "written": 0, "ops": 0 },
+  "rows": [
+    { "row": 2, "sourceId": "…", "kind": "task", "title": "Write report", "project": "Work", "outcome": "create" },
+    { "row": 35, "kind": "task", "title": "Task 34", "outcome": "error", "reason": "invalid priority \"urgent!\" (expected 1-4 or p1-p4)" },
+    { "row": 40, "kind": "task", "title": "Call mom", "outcome": "skip", "reason": "possible_duplicate" },
+    { "row": 41, "kind": "task", "title": "Standup", "outcome": "create", "warnings": ["recurrence dropped (not supported)"] }
+  ],
+  "truncated": false
+}
+```
+
+`outcome` is `create`, `update`, `skip` (reason `exists`, `unchanged`, `deleted`, `already_imported` or `possible_duplicate`) or `error` (with `reason`). `row` is the line in a CSV file or the position in a JSON array; `version` is set for an own export. At most 5,000 rows are listed, those needing attention first (`truncated: true`); `totals` always counts every row.
+
+**Start** — `POST /api/v1/import` takes the same upload, re-checks it and returns 202:
+
+```json
+{ "job": { "id": "…", "format": "csv", "status": "running", "options": { … }, "totals": { … },
+           "errors": [{ "row": 35, "reason": "invalid priority \"urgent!\" (expected 1-4 or p1-p4)" }],
+           "createdAt": 1760000000000, "finishedAt": null, "undoneAt": null } }
+```
+
+**Status** — `GET /api/v1/import/jobs/{id}` returns `{job}`; `status` is `running`, `done`, `failed` (with `message`, e.g. the first bad row under `abort`, or a restart) or `undone`. `totals.written` and `totals.ops` grow while the job runs. `GET /api/v1/import/jobs` lists `{jobs}` with at most 20 errors each.
+
+**Undo** — `POST /api/v1/import/jobs/{id}/undo` soft-deletes every project, task and label the job created and returns the job with status `undone`. Calling it again is a no-op.
+
+Errors: 400 `invalid_input` (unknown option value, unknown time zone, a `targetProject` that is not yours; no job is created), 400 `unsupported_format` (names the supported formats), 400 `invalid_file` (recognised but unreadable), 400 `bad_request` (not multipart or no `file` part), 413 `too_large` (file or row limit), 409 `conflict` (another import or undo of yours is running), 404 `not_found` (unknown job or another account's job).
+
+```bash
+curl -sS "$OT/api/v1/import/preview" -H "Authorization: Bearer $TOKEN" -F file=@tasks.csv -F timeZone=Europe/Rome
+JOB=$(curl -sS "$OT/api/v1/import" -H "Authorization: Bearer $TOKEN" -F file=@tasks.csv -F timeZone=Europe/Rome | jq -r .job.id)
+curl -sS "$OT/api/v1/import/jobs/$JOB" -H "Authorization: Bearer $TOKEN" | jq .job.status
+curl -sS -X POST "$OT/api/v1/import/jobs/$JOB/undo" -H "Authorization: Bearer $TOKEN"
+```
 
 ### Webhooks
 
@@ -365,7 +461,8 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Every write through this API is recorded in the operation log with server time. Connected devices are woken over the event stream and sync within a second or two; devices without a live stream pick the change up on their next poll (within 30 s), or immediately when they next edit or regain focus.
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
-- Rate limits apply to `auth/login`, `auth/register` and the invitation preview (10 per minute per IP), and to invitation creation (20 per hour per account).
+- Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB).
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey` and the invitation preview share one window of 10 per minute; `auth/passkey/options` has its own window of 10 per minute; invitation creation is limited to 20 per hour per account.
 
 ### Error codes
 
@@ -378,8 +475,14 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
 | `invitation_invalid` | 404 | unknown, expired, revoked or already accepted invitation |
 | `invitation_spent` | 409 | revoking an accepted invitation |
+| `conflict` | 409 | starting or undoing an import while another import of yours runs |
+| `unsupported_format` | 400 | import file in no supported format |
+| `invalid_file` | 400 | import file recognised but unreadable |
+| `too_large` | 413 | import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
 | `email_taken` | 409 | registration with an existing email |
+| `passkeys_unavailable` | 409 | any passkey route when `OPENTODO_BASE_URL` is not https or localhost |
 | `invalid_input` | 400 | validation failure naming the field |
+| `passkey_challenge_invalid` | 400 | passkey ceremony with an expired, reused or foreign challenge; see [Passkeys](#passkeys) |
 | `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
 | `limit_reached` | 409 | more than 20 webhooks on one account |
 | `not_found` | 404 | unknown id, including another account's webhook or delivery |

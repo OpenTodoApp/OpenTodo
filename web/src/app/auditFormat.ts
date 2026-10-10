@@ -29,6 +29,9 @@ const REASONS: Record<string, string> = {
   wrong_password: 'wrong password',
   unknown_account: 'unknown account',
   rate_limited: 'too many attempts',
+  unknown_passkey: 'unknown passkey',
+  passkey_rejected: 'passkey rejected',
+  passkey_counter_regression: 'possible cloned passkey',
 }
 
 const SETTINGS: Record<string, string> = {

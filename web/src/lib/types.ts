@@ -53,6 +53,8 @@ export interface Task {
   created_at: number
   completed_at: number | null
   deleted_at: number | null
+  /** Duration estimate in minutes (positive integer, at most 10080) or null. */
+  estimate_minutes: number | null
   _clock: Clock
 }
 
@@ -80,6 +82,18 @@ export interface AuthStatus {
   authenticated: boolean
   user: User | null
   version: string
+  /** Server has an https (or localhost) base URL, so passkey ceremonies work. */
+  passkeysAvailable?: boolean
+}
+
+/** A registered passkey as listed by GET /api/v1/passkeys. Server-only account data, never synced. */
+export interface Passkey {
+  id: string
+  name: string
+  createdAt: number
+  lastUsedAt: number | null
+  suspiciousAt: number | null
+  backedUp: boolean
 }
 
 export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked'
@@ -155,7 +169,7 @@ export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'unauthentica
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
-  'position', 'created_at', 'completed_at', 'deleted_at',
+  'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes',
 ] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const
 
@@ -201,4 +215,74 @@ export interface AuditFilters {
 export interface AuditSettings {
   retentionDays: number
   logIp: boolean
+}
+
+// ---- Import (server-side jobs, never synced; see docs/import.md) ----
+
+export type ImportFormat = 'opentodo' | 'json-items' | 'json-lists' | 'json-generic' | 'csv'
+export const IMPORT_FORMATS: readonly ImportFormat[] = ['opentodo', 'json-items', 'json-lists', 'json-generic', 'csv']
+
+export interface ImportOptions {
+  format?: ImportFormat
+  /** Project id for rows without a project; omitted = Inbox. */
+  targetProject?: string
+  /** IANA time zone used to turn zoned date-times into floating ones. */
+  timeZone?: string
+  sections?: 'label' | 'ignore'
+  duplicates?: 'skip' | 'import'
+  errors?: 'skip_rows' | 'abort'
+  existing?: 'skip' | 'overwrite'
+}
+
+export interface ImportTotals {
+  rows: number
+  create: number
+  update: number
+  skip: number
+  error: number
+  possibleDuplicates: number
+  warnings: number
+  newProjects: number
+  newLabels: number
+  entities: number
+  written: number
+  ops: number
+}
+
+export type ImportOutcome = 'create' | 'update' | 'skip' | 'error'
+
+export interface ImportRow {
+  row?: number
+  sourceId?: string
+  kind: 'project' | 'task' | 'label'
+  title: string
+  project?: string
+  outcome: ImportOutcome
+  reason?: string
+  warnings?: string[]
+}
+
+export interface ImportPreview {
+  format: ImportFormat
+  version?: number
+  columns?: { recognised: string[]; ignored: string[] }
+  options: ImportOptions
+  totals: ImportTotals
+  rows: ImportRow[]
+  truncated: boolean
+}
+
+export type ImportStatus = 'running' | 'done' | 'failed' | 'undone'
+
+export interface ImportJob {
+  id: string
+  format: ImportFormat
+  status: ImportStatus
+  options: ImportOptions
+  totals: ImportTotals
+  errors: { row?: number; sourceId?: string; reason: string }[]
+  message?: string
+  createdAt: number
+  finishedAt: number | null
+  undoneAt: number | null
 }

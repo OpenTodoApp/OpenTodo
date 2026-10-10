@@ -19,6 +19,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
   <a href="docs/self-hosting/docker.md">Docker</a> ·
   <a href="docs/api.md">API</a> ·
   <a href="docs/cli.md">CLI</a> ·
+  <a href="docs/quick-add.md">Quick add syntax</a> ·
   <a href="docs/filters.md">Filters</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
@@ -39,7 +40,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 
 - **No subscription, no lock-in.** Free software under the AGPL. Nobody can paywall your task list or shut it down with the company.
 - **Local-first.** The app keeps a full copy of your data on every device and works entirely offline. The server only syncs, backs up and, later, shares.
-- **Your data, one folder.** Everything lives in a single `/data` volume: one SQLite file. Back that up and you have backed up everything. Export to JSON any time from Settings.
+- **Your data, one folder.** Everything lives in a single `/data` volume: one SQLite file. Back that up and you have backed up everything. Export to JSON any time from Settings, and import it (or a CSV, or another app's export) on any instance.
 - **Tiny footprint.** One container, one static binary, around 12 MB. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no build step at runtime.
 - **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts. The server only sends requests to webhook URLs you configure yourself. Sign-up is closed by default after the owner account is created; add people with single-use invitation links from **Settings → Members**.
 - **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today. Press `?` in the app for the full list.
@@ -53,7 +54,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 
 | Area | What works |
 | --- | --- |
-| Capture | Quick-add from any view, keyboard shortcut `q`; new tasks in Today get today's date, in a project get that project |
+| Capture | Quick-add from any view, keyboard shortcut `q`; new tasks in Today get today's date, in a project get that project. Natural language in six languages, offline: `Call Sarah next Wed 3pm #work @call p1 +30m` sets the date, time, project, label, priority and estimate, with dismissible preview chips; see [docs/quick-add.md](docs/quick-add.md) |
 | Organise | Projects with colours, Inbox, Today, Upcoming (grouped by day), Completed |
 | Labels | Cross-project labels with colours: `L` on a task opens a type-ahead picker that creates on Enter, chips on every row, a Labels group in the sidebar with live counts, one view per label grouped by project, rename / recolour / reorder / delete / merge duplicates |
 | Filters | One-line queries such as `@work & due <= tomorrow & p1`: labels, projects (`##` includes sub-projects), priority, due and created dates, keywords like `overdue` or `no date`, text search, combined with `&`, `\|`, `!` and parentheses. Evaluated on the device, so results are live and work offline; `g` `f` opens the view, ↑ / ↓ recall recent queries. See [docs/filters.md](docs/filters.md) |
@@ -64,12 +65,14 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs. Live push: a change on one device shows up on the others within a second or two, with polling as the fallback |
 | Accounts | First-run owner setup, email + password sign-in, sessions, optional open sign-up |
 | Audit log | Owner-visible record of sign-ins, failed sign-ins, tokens, invitations, exports and setting changes, with filters, NDJSON export and retention (90 days by default); every user sees their own recent sign-in activity. Never contains task content; client addresses only if the owner opts in |
+| Passkeys | Sign in without a password using your device's fingerprint, face or PIN (WebAuthn), including browser autofill; several named passkeys per account, managed in Settings → Security; needs an https `OPENTODO_BASE_URL`. The password keeps working as a fallback |
 | API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
 | Webhooks | Signed outbound webhooks on task and project events for Home Assistant, n8n or a Telegram relay: retries with backoff, delivery log, test ping, private-network protection, see [docs/webhooks.md](docs/webhooks.md) |
+| Import | **Settings → Import data** (`g` `Shift+I`): the app's own JSON export (exact round trip between instances), CSV with documented columns, and JSON exports of other task managers; a preview before anything is written, duplicate detection, per-row errors, undo of a whole import. See [docs/import.md](docs/import.md) |
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), saved and pinned filter views, recurring tasks, reminders, sharing and comments, CalDAV, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): saved and pinned filter views, recurring tasks, reminders, sharing and comments, CalDAV, import from other task apps, OIDC, optional end-to-end encryption.
 
 ## Quick start
 
@@ -121,10 +124,11 @@ All settings are environment variables with safe defaults. See [`.env.example`](
 | --- | --- | --- |
 | `OPENTODO_ADDR` | `:8080` | Listen address |
 | `OPENTODO_DATA_DIR` | `/data` (image) / `./data` (binary) | Where the SQLite database lives |
-| `OPENTODO_BASE_URL` | inferred | Public URL; enables the `Secure` cookie flag and strict origin checks behind a proxy |
+| `OPENTODO_BASE_URL` | inferred | Public URL; enables the `Secure` cookie flag and strict origin checks behind a proxy; passkeys are offered only when it is https |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner exists. Prefer [invitations](#adding-people) |
 | `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `OPENTODO_IMPORT_MAX_MB` | `20` | Largest file accepted by [import](docs/import.md), 1–200 |
 
 ## Adding people
 

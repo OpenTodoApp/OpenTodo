@@ -1,5 +1,6 @@
+import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  AuditEvent, AuditFilters, AuditSettings, AuthStatus, Invitation, InvitationPreview, Op, User,
+  AuditEvent, AuditFilters, AuditSettings, AuthStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, Op, Passkey, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -16,6 +17,19 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     body: body === undefined ? undefined : JSON.stringify(body),
     credentials: 'same-origin',
   })
+  return parse<T>(res)
+}
+
+/** Multipart upload for the import routes: the file plus the options as one JSON part. */
+async function upload<T>(path: string, file: Blob, filename: string, options: ImportOptions): Promise<T> {
+  const form = new FormData()
+  form.append('options', JSON.stringify(options))
+  form.append('file', file, filename)
+  const res = await fetch(path, { method: 'POST', body: form, credentials: 'same-origin' })
+  return parse<T>(res)
+}
+
+async function parse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
@@ -39,6 +53,15 @@ export const api = {
   listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
   createToken: (name: string) => request<{ token: { id: string; name: string }; secret: string }>('POST', '/api/v1/tokens', { name }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
+  // Passkeys (OpenSpec change `passkeys`). Binary fields are base64url strings.
+  passkeyLoginOptions: () => request<{ publicKey: RequestOptionsJSON }>('POST', '/api/v1/auth/passkey/options', {}),
+  passkeyLogin: (credential: AssertionJSON) => request<{ user: User }>('POST', '/api/v1/auth/passkey', { credential }),
+  passkeyRegisterOptions: () => request<{ publicKey: CreationOptionsJSON }>('POST', '/api/v1/passkeys/register/options', {}),
+  passkeyRegister: (name: string, credential: RegistrationJSON) =>
+    request<{ passkey: Passkey }>('POST', '/api/v1/passkeys/register', { name, credential }),
+  listPasskeys: () => request<{ passkeys: Passkey[] }>('GET', '/api/v1/passkeys'),
+  renamePasskey: (id: string, name: string) => request<{ passkey: Passkey }>('PATCH', `/api/v1/passkeys/${encodeURIComponent(id)}`, { name }),
+  deletePasskey: (id: string) => request<void>('DELETE', `/api/v1/passkeys/${encodeURIComponent(id)}`),
 
   // Invitations (owner only, except the public preview). The link is returned once at creation.
   listInvitations: () => request<{ invitations: Invitation[] }>('GET', '/api/v1/invitations'),
@@ -59,6 +82,15 @@ export const api = {
   getAuditSettings: () => request<AuditSettings>('GET', '/api/v1/settings/audit'),
   updateAuditSettings: (patch: Partial<AuditSettings>) => request<AuditSettings>('PUT', '/api/v1/settings/audit', patch),
   myActivity: () => request<{ events: AuditEvent[] }>('GET', '/api/v1/me/activity'),
+
+  // Import runs on the server (docs/import.md): preview is a dry run, start returns a running job.
+  previewImport: (file: Blob, filename: string, options: ImportOptions) =>
+    upload<ImportPreview>('/api/v1/import/preview', file, filename, options),
+  startImport: (file: Blob, filename: string, options: ImportOptions) =>
+    upload<{ job: ImportJob }>('/api/v1/import', file, filename, options),
+  listImportJobs: () => request<{ jobs: ImportJob[] }>('GET', '/api/v1/import/jobs'),
+  getImportJob: (id: string) => request<{ job: ImportJob }>('GET', `/api/v1/import/jobs/${encodeURIComponent(id)}`),
+  undoImport: (id: string) => request<{ job: ImportJob }>('POST', `/api/v1/import/jobs/${encodeURIComponent(id)}/undo`),
 
   // Webhooks (per user). The secret is returned once, in the create response.
   listWebhooks: () => request<{ webhooks: Webhook[]; events: WebhookEvent[] }>('GET', '/api/v1/webhooks'),

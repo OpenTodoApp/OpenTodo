@@ -73,12 +73,12 @@ export function ActivityView({ status, events, error }: { status: LogStatus; eve
   )
 }
 
-/** Settings → Security: personal activity for everyone, the audit log for the owner. */
+/** Recent activity for everyone and the audit log for the owner (below Settings → Security). */
 export function SecuritySettings({ user }: { user: User }) {
   return (
     <>
-      <section className="space-y-2" aria-labelledby="security-heading">
-        <h2 id="security-heading" className="font-semibold">Security</h2>
+      {/* Sits right after the passkeys SecurityPanel, which owns the "Security" heading. */}
+      <section className="space-y-2" aria-label="Recent activity">
         <ActivityPanel />
       </section>
       {user.role === 'owner' && <AuditPanel />}
