@@ -3,6 +3,7 @@
 // the "place this task in the Day view" request (`s` on a row). Module state, no
 // React context: the requests survive a route change and are consumed once.
 
+import { localDate } from '../lib/dates'
 import type { Task } from '../lib/types'
 import { navigate, routePath } from './router'
 
@@ -57,7 +58,7 @@ export const placement = channel()
 /** `s` on a list row: open the Day view (on the task's date, else today) in placement mode for it. */
 export function placeInDay(task: Pick<Task, 'id' | 'due'>, today: string): void {
   placement.request(task.id)
-  const date = task.due?.date
+  const date = localDate(task.due)
   navigate({ view: 'day', date: date && date !== today ? date : undefined })
 }
 

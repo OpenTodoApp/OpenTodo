@@ -32,7 +32,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `title`, `description` | string |
 | task | `project_id`, `parent_id` | string or null |
 | task | `priority` | integer 1–4 (1 highest) |
-| task | `due` | `{"date":"YYYY-MM-DD","time":"HH:MM"?}` or null |
+| task | `due` | `{"date":"YYYY-MM-DD","time":"HH:MM"?,"tz":"Area/City"?}` or null; `tz` (a known IANA zone, at most 64 characters) only together with `time`, see [Zoned due values](#zoned-due-values) |
 | task | `labels` | array of strings (label ids, see below) |
 | task | `position`, `created_at` | number |
 | task | `completed_at`, `deleted_at` | number or null |
@@ -66,13 +66,22 @@ Adding fields is backwards compatible. Renaming or removing is not; it needs an 
 
 A client that receives an op for an entity it does not know (an older build talking to a newer server) ignores it without failing the batch; the cursor still advances.
 
+### Zoned due values
+
+`due` is floating by default: a calendar date and optional wall-clock time that mean the same day and clock time wherever the task is viewed. A due with a `tz` key is *zoned* (OpenSpec change `absolute-datetimes`): `{"date":"2026-10-11","time":"09:00","tz":"Europe/Berlin"}` denotes the instant 09:00 in Berlin on that day. The zone lives inside the value, not in a separate field, so the whole due is one last-writer-wins register: a concurrent floating edit and zoned edit converge on one complete value, never a date from one and a zone from the other.
+
+- The server accepts `tz` only with `time` and only as a zone name it knows (Go's embedded zone database); otherwise the op is rejected like any invalid value. It stores the raw JSON, so servers that predate `tz` also store and serve it untouched, and clients that predate it read `date` and `time` and keep `tz` unless the user edits the due.
+- The value is wall time plus zone, not an epoch: it is resolved with the zone's rules in force on that date, so it follows daylight-saving changes and future rule updates. A wall time inside a spring-forward gap resolves to the first valid instant after the gap (02:30 on a 02:00→03:00 day is 03:00); one inside an autumn overlap resolves to its first occurrence. `internal/zoned` (Go) and `web/src/lib/dates.ts` implement the same rules and run the shared vectors in `web/src/lib/zoned.vectors.json`.
+- Clients show, sort and group a zoned due by its date and time converted to the viewer's zone (Today, Upcoming, saved views, filters and the calendar grid all use the converted value) and show the original wall time and zone as a hint when the viewer is in another zone. Clearing the time of a zoned due drops `tz`.
+- Recurring series keep `time` and `tz` as `date` rolls forward; relative reminders fire relative to the zoned instant.
+
 ### Recurring tasks
 
 `task.recurrence` holds a rule such as `every last weekday`; the server rejects an op whose value does not parse (any spelling the grammar accepts is valid, clients store the canonical form). Completing a recurring task is not a single `completed_at` op: the client writes, in one batch, a new *occurrence record* (a task with the series' fields, `completed_at` set, `recurrence: null` and `series_id` pointing at the series) and a `due` op on the series moving it to the next occurrence. The record's id is not random: it is `NameID("occurrence", seriesId + ":" + occurrenceDate)` (SHA-256, formatted as a version 8 UUID; `internal/ids` and `web/src/lib/ids.ts`), and the next due date is a pure function of the rule and dates every device shares. Two devices that complete the same occurrence offline therefore write the same entity and the same `due` value, and LWW only chooses between identical values; Completed shows one entry. "This occurrence only" uses `seriesId + ":detach:" + date` so a copy never collides with a completion. See [recurrence.md](recurrence.md).
 
 ### Reminders
 
-A `reminder` belongs to one task (`task_id`) and fires at `fire_at`, always a resolved instant (OpenSpec change `reminders`). An *absolute* reminder keeps the moment the user picked. A *relative* reminder also stores `offset_minutes` and its `fire_at` is the task's due time plus the offset, a date-only due counting as 09:00 in the computing device's time zone; with no due date `fire_at` is null and it does not fire. The device that changes a task's `due` (an edit, a reschedule, a recurring series completing, skipping or detaching) writes a `fire_at` op for every live relative reminder of the task **in the same batch, with the same timestamp and device** as the `due` op, so LWW always takes the due date and the firing times from the same edit. When the firing moves it also clears `delivered_at` and `dismissed_at`. REST `PATCH /api/v1/tasks/{id}` that changes `due` does the same server-side, in the owner's last reported zone offset (the `tzOffset` field of the sync request) or UTC until one was reported.
+A `reminder` belongs to one task (`task_id`) and fires at `fire_at`, always a resolved instant (OpenSpec change `reminders`). An *absolute* reminder keeps the moment the user picked. A *relative* reminder also stores `offset_minutes` and its `fire_at` is the task's due time plus the offset, a date-only due counting as 09:00 in the computing device's time zone and a zoned due counting as its own instant; with no due date `fire_at` is null and it does not fire. The device that changes a task's `due` (an edit, a reschedule, a recurring series completing, skipping or detaching) writes a `fire_at` op for every live relative reminder of the task **in the same batch, with the same timestamp and device** as the `due` op, so LWW always takes the due date and the firing times from the same edit. When the firing moves it also clears `delivered_at` and `dismissed_at`. REST `PATCH /api/v1/tasks/{id}` that changes `due` does the same server-side, in the owner's last reported zone offset (the `tzOffset` field of the sync request) or UTC until one was reported; a zoned due uses its own zone.
 
 - *Snooze* writes a new `fire_at` and clears `delivered_at` and `dismissed_at`; *dismiss* writes `dismissed_at`. Both are ordinary ops, so they queue offline and converge per field.
 - `delivered_at` is written by the server (device `server`) when it pushed the reminder. A delivery or dismissal **older than `fire_at`** belongs to an earlier firing and does not count, so a snooze or due change racing the server's delivery op still fires again.

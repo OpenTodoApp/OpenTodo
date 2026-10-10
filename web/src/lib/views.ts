@@ -2,7 +2,7 @@
 // and sort options, pinned to the sidebar, composed into dashboards. Every write is
 // an op through mutate(); evaluation reuses the filter compiler from lib/filter, so a
 // saved view behaves exactly like the same query typed into the Filter view.
-import { addDaysISO, compareDue, formatDateHeading } from './dates'
+import { addDaysISO, compareDue, formatDateHeading, localDate } from './dates'
 import { db, getMeta, setMeta } from './db'
 import { compile, parse, type FilterContext, type Node } from './filter'
 import { activeLabels } from './labels'
@@ -297,13 +297,15 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext):
       const tomorrow = addDaysISO(today, 1)
       const dates = new Set<string>()
       for (const t of tasks) {
-        if (!t.due) put('none', t)
-        else if (t.due.date < today) put('overdue', t)
-        else if (t.due.date === today) put('today', t)
-        else if (t.due.date === tomorrow) put('tomorrow', t)
+        // A zoned due groups under its date in the viewer's zone (absolute-datetimes).
+        const date = localDate(t.due)
+        if (!date) put('none', t)
+        else if (date < today) put('overdue', t)
+        else if (date === today) put('today', t)
+        else if (date === tomorrow) put('tomorrow', t)
         else {
-          put(t.due.date, t)
-          dates.add(t.due.date)
+          put(date, t)
+          dates.add(date)
         }
       }
       return emit([

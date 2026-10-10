@@ -19,10 +19,16 @@ export interface Op {
 export type Clock = Record<string, { ts: number; device: string }>
 
 export interface Due {
-  /** Floating calendar date, YYYY-MM-DD, interpreted in the viewer's time zone. */
+  /** Calendar date, YYYY-MM-DD: floating (the viewer's day) unless `tz` is set. */
   date: string
-  /** Optional floating wall-clock time, HH:MM. */
+  /** Optional wall-clock time, HH:MM: floating unless `tz` is set. */
   time?: string
+  /**
+   * IANA time zone (absolute-datetimes): when present (only together with `time`)
+   * the due is zoned and denotes the instant `date time` in that zone. Use
+   * `localDueOf` from dates.ts to read it in the viewer's zone.
+   */
+  tz?: string
 }
 
 export interface Project {

@@ -241,6 +241,11 @@ func decodeInto(raw []byte, dst any) error {
 type due struct {
 	Date string  `json:"date"`
 	Time *string `json:"time,omitempty"`
+	// TZ makes the due zoned (absolute-datetimes): the wall time in that IANA zone.
+	TZ *string `json:"tz,omitempty"`
+	// hint is the original wall time and zone of a zoned due shown in another
+	// zone (display only, set by inZone).
+	hint string
 }
 
 type task struct {

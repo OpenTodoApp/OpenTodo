@@ -1,4 +1,4 @@
-import { describeDue } from '../lib/dates'
+import { describeDue, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import type { Label, Project, Task } from '../lib/types'
@@ -49,6 +49,8 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   onPointerDown?: (e: React.PointerEvent<HTMLLIElement>) => void
 }) {
   const due = describeDue(task.due)
+  // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
+  const hint = zoneHint(task.due)
   const done = !!task.completed_at
   return (
     <li
@@ -94,7 +96,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
           {breadcrumb && <span className="truncate text-slate-400" title="Parent task">↳ {breadcrumb}</span>}
-          {due && <span className={DUE_TONE[due.tone]}>{due.label}</span>}
+          {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-slate-400" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
           {task.recurrence ? (
             <span className="text-slate-500" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring>↻</span>
           ) : task.series_id ? (

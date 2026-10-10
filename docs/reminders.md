@@ -2,7 +2,7 @@
 
 A task can carry any number of reminders (OpenSpec change `reminders`). Open a task, then use the **Reminders** section of the detail panel.
 
-- **Relative** reminders fire a number of minutes before or after the task's due time ("30 minutes before"). A task with a date but no time counts as due at 09:00. When the due date or time changes, on any device or through the API, the reminder moves with it; recurring tasks carry their relative reminders to the next occurrence. Without a due date a relative reminder is kept but does not fire.
+- **Relative** reminders fire a number of minutes before or after the task's due time ("30 minutes before"). A task with a date but no time counts as due at 09:00. A task whose time is fixed to a time zone fires relative to that exact instant, wherever your devices are. When the due date or time changes, on any device or through the API, the reminder moves with it; recurring tasks carry their relative reminders to the next occurrence. Without a due date a relative reminder is kept but does not fire.
 - **Absolute** reminders fire at a moment you pick and never move with the due date. They work on undated tasks and are shown in each device's local time.
 
 ## Shared projects

@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/pixari/opentodo/internal/zoned"
 )
 
 // Op is one field assignment.
@@ -241,9 +242,20 @@ func checkKind(k kind, raw json.RawMessage) error {
 		var d struct {
 			Date string  `json:"date"`
 			Time *string `json:"time"`
+			TZ   *string `json:"tz"`
 		}
 		if err := json.Unmarshal(raw, &d); err != nil || !isDate(d.Date) || (d.Time != nil && !isClock(*d.Time)) {
-			return errors.New(`must be null or {"date":"YYYY-MM-DD","time":"HH:MM"?}`)
+			return errors.New(`must be null or {"date":"YYYY-MM-DD","time":"HH:MM"?,"tz":"Area/City"?}`)
+		}
+		// A zoned due (OpenSpec change absolute-datetimes) names a known IANA
+		// zone and always has a time.
+		if d.TZ != nil {
+			if d.Time == nil {
+				return errors.New("tz requires time")
+			}
+			if !zoned.Valid(*d.TZ) {
+				return fmt.Errorf("tz must be a known IANA time zone of at most %d characters", zoned.MaxZoneLen)
+			}
 		}
 	case kStringList:
 		var l []string

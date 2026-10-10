@@ -70,7 +70,7 @@ ot list --completed            # most recently completed first
 ot list --all --limit 20       # open and completed
 ```
 
-Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title. Dates are evaluated in your local time zone. Tasks of archived projects stay out of the cross-project views, as in the web app.
+Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title. Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
 
 ```
 ID        P   DUE                 PROJECT  TITLE

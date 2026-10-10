@@ -37,8 +37,10 @@ export function completedOccurrences(seriesId: string, tasks: Iterable<Task>, ex
   return n
 }
 
+/** The series' due on another date, keeping its time and zone (absolute-datetimes, design D7). */
 function moveDue(due: Due | null, date: string): Due {
-  return due?.time ? { date, time: due.time } : { date }
+  if (!due?.time) return { date }
+  return due.tz ? { date, time: due.time, tz: due.tz } : { date, time: due.time }
 }
 
 /** Fields an occurrence copy inherits from its series. */
