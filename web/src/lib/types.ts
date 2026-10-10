@@ -94,6 +94,50 @@ export interface InvitationPreview {
   expiresAt: number
 }
 
+/** Events an outbound webhook can subscribe to (OpenSpec `webhooks`). */
+export type WebhookEvent =
+  | 'task.created' | 'task.updated' | 'task.completed' | 'task.reopened' | 'task.deleted'
+  | 'project.created' | 'project.updated' | 'project.archived' | 'project.deleted'
+
+/** A user's webhook (server-side configuration, never synced). `secret` is present only in the create response. */
+export interface Webhook {
+  id: string
+  url: string
+  events: WebhookEvent[]
+  projectId: string | null
+  enabled: boolean
+  disabledReason: string | null
+  consecutiveFailures: number
+  createdAt: number
+  updatedAt: number
+  secret?: string
+}
+
+export type WebhookDeliveryStatus = 'pending' | 'retry' | 'delivered' | 'failed'
+
+/** One entry of a webhook's delivery log. */
+export interface WebhookDelivery {
+  id: string
+  webhookId: string
+  event: WebhookEvent | 'ping'
+  status: WebhookDeliveryStatus
+  attempts: number
+  nextAttemptAt: number | null
+  statusCode: number | null
+  error: string | null
+  responseExcerpt: string | null
+  durationMs: number | null
+  createdAt: number
+  deliveredAt: number | null
+}
+
+export interface WebhookInput {
+  url?: string
+  events?: WebhookEvent[]
+  projectId?: string | null
+  enabled?: boolean
+}
+
 export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'unauthenticated'
 
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
