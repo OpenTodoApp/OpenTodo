@@ -2,7 +2,7 @@
 
 ## 1. Server: recorder and storage
 
-- [ ] 1.1 Migration for `audit_events` with indexes; `settings` keys `audit.retention_days` and `audit.log_ip` (create the `settings` table if no earlier change did); verify the store migration test reaches the new `user_version`
+- [x] 1.1 Migration for `audit_events` with indexes; `settings` keys `audit.retention_days` and `audit.log_ip` (create the `settings` table if no earlier change did); verify the store migration test reaches the new `user_version`
 - [ ] 1.2 `internal/audit`: event catalogue, typed constructors with allow-listed detail keys, `Record` and `RecordTx`, address policy and user-agent truncation; verify `TestConstructorsNeverCarryEntityFields` (deny-list scan), `TestRecordRespectsAddressPolicy` with `go test ./...`
 - [ ] 1.3 Pruner at startup and hourly in batches; address scrubbing when logging is disabled; verify `TestPruneByRetention` and `TestDisablingAddressLoggingScrubs`
 
