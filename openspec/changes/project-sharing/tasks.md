@@ -16,7 +16,7 @@
 
 - [x] 3.1 Handlers for list/add/change-role/remove/leave/transfer behind `requireAuth`, 404 for non-members, `user_not_found`, `owner_must_transfer`, `forbidden` envelopes; verify `TestMembershipRoutesAuthAndErrors`, `TestOwnerTransferDemotesPreviousOwner` via `go test ./...`
 - [x] 3.2 Collection, get, patch, delete and export include shared scopes with role enforcement and `role`/`owner_id` on shared projects; verify `TestRestReadsUnionScopes`, `TestExportIncludesSharedProjects`, `TestRestPatchByViewerIsForbidden` via `go test ./...`
-- [ ] 3.3 Document routes, error codes, scopes, rejections and catch-up in `docs/api.md` and `docs/sync.md`; verify the documented payloads match `TestMembershipRoutesAuthAndErrors` fixtures and `make check` passes
+- [x] 3.3 Document routes, error codes, scopes, rejections and catch-up in `docs/api.md` and `docs/sync.md`; verify the documented payloads match `TestMembershipRoutesAuthAndErrors` fixtures and `make check` passes
 
 ## 4. Client data layer
 
@@ -27,10 +27,10 @@
 ## 5. Client UI
 
 - [ ] 5.1 Shared badge in the sidebar, member list and roles in the project header, read-only rendering for viewers from cached membership (works offline); verify in the browser flow that a viewer offline sees disabled quick add and a read-only notice, and `npm run build` succeeds
-- [ ] 5.2 Share dialog (email + role), role change, remove, leave, transfer, all keyboard reachable with a shortcut listed in `?`; verify browser flow: share with a second account, second account receives the project within one sync, and `npm run build` succeeds
+- [x] 5.2 Share dialog (email + role), role change, remove, leave, transfer, all keyboard reachable with a shortcut listed in `?`; verify browser flow: share with a second account, second account receives the project within one sync, and `npm run build` succeeds
 - [ ] 5.3 Rejected-changes notice naming the project and affected tasks; verify browser flow: downgrade an editor to viewer while offline, reconnect, notice appears and values revert
 
 ## 6. Integration and docs
 
 - [ ] 6.1 Two-account end-to-end run: share → member catches up → concurrent offline edits converge → downgrade while offline → removal purges locally → owner transfer → delete with Inbox copies; verify the run finishes with no console errors and `make check` passes
-- [ ] 6.2 Update `README.md` feature list, `docs/architecture.md` (scopes), `CHANGELOG.md` Unreleased; verify links resolve and `openspec validate --all --strict` passes
+- [x] 6.2 Update `README.md` feature list, `docs/architecture.md` (scopes), `CHANGELOG.md` Unreleased; verify links resolve and `openspec validate --all --strict` passes
