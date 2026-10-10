@@ -67,16 +67,20 @@ export function App() {
   }, [phase.kind, route.view])
 
   const logout = useCallback(async () => {
+    let redirect: string | undefined
     try {
       // Remove this device's push subscription first (the server also drops it with the session).
       await unsubscribeOnSignOut()
-      await api.logout()
+      redirect = (await api.logout())?.redirect
     } finally {
       stopSync()
       await clearLocalData()
       localStorage.removeItem('opentodo.user')
       cacheMfa(null)
-      await refresh()
+      // Provider sign-out (OpenSpec `oidc-login`): the local session and data are
+      // gone; the provider's end-session page sends the browser back to sign-in.
+      if (redirect && /^https:\/\//.test(redirect)) window.location.assign(redirect)
+      else await refresh()
     }
   }, [refresh])
 
