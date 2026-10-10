@@ -18,6 +18,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
   <a href="docs/self-hosting/coolify.md">Deploy on Coolify</a> ·
   <a href="docs/self-hosting/docker.md">Docker</a> ·
   <a href="docs/api.md">API</a> ·
+  <a href="docs/cli.md">CLI</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -58,7 +59,8 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Offline | Every change is applied locally first and queued; the app loads and works with no network. Installable PWA |
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs |
 | Accounts | First-run owner setup, email + password sign-in, sessions, optional open sign-up |
-| API | Authenticated REST API and API tokens for scripts and future CLI / integrations; full JSON export |
+| API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
+| CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
 **Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), labels and filter queries, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
@@ -90,6 +92,20 @@ Open <http://localhost:8080> and create the owner account. Data is kept in the `
 make build                    # needs Go 1.26+ and Node 22+
 ./bin/opentodo                # serves on :8080, data in ./data
 ```
+
+### Command line
+
+`ot` talks to any OpenTodo server over the REST API with a token it creates for you at login. It is a separate static binary (release assets for Linux, macOS and Windows, or `go install github.com/pixari/opentodo/cmd/ot@latest`) and is not part of the container image.
+
+```bash
+ot login https://todo.example.com
+ot add "Call the plumber" --project Home --due tomorrow --time 09:00 --priority 2
+ot today
+ot done 8c2a                  # full id or unique prefix
+ot list --json | jq '.[].title'
+```
+
+Stable `--json` output and exit codes make it usable from cron and scripts. Full reference: [docs/cli.md](docs/cli.md).
 
 ## Configuration
 
@@ -132,8 +148,9 @@ make check      # vet, typecheck, Go + web tests, OpenSpec validation (what CI r
 Repository layout:
 
 ```
-cmd/opentodo/        entry point (serve, healthcheck, version)
-internal/            Go packages: config, store (SQLite + migrations), auth, sync (op log), httpapi, web (embed)
+cmd/opentodo/        server entry point (serve, healthcheck, version)
+cmd/ot/              command-line client entry point (logic in internal/cli)
+internal/            Go packages: config, store (SQLite + migrations), auth, sync (op log), httpapi, web (embed), cli
 web/                 React 19 + Vite + Tailwind PWA; builds into internal/web/dist
 openspec/            specs (live behavior contracts) and changes (proposals in flight / archived)
 docs/                architecture, sync protocol, API, self-hosting guides
