@@ -116,6 +116,8 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['m', 'Move the current project under another project or to the top level'],
     ['1 – 4', 'Set priority of selected task'],
     ['L', 'Labels of selected task (type to find, Enter adds or creates)'],
+    ['Shift+S', 'Skip the current occurrence of a recurring task'],
+    ['Shift+O', 'Recurring task: this occurrence only (standalone copy, series moves on)'],
     ['Delete', 'Delete selected task (and its subtasks)'],
     ['g then i / t / u / c / l / f / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Settings'],
     ['g then Shift+I', 'Go to Settings → Import data'],

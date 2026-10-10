@@ -83,6 +83,11 @@ export function TaskRow({ task, project, labels = [], selected, showProject, dep
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
           {breadcrumb && <span className="truncate text-slate-400" title="Parent task">↳ {breadcrumb}</span>}
           {due && <span className={DUE_TONE[due.tone]}>{due.label}</span>}
+          {task.recurrence ? (
+            <span className="text-slate-500" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring>↻</span>
+          ) : task.series_id ? (
+            <span className="text-slate-300 dark:text-slate-600" title="Occurrence of a recurring task" aria-label="Occurrence of a recurring task">↻</span>
+          ) : null}
           {task.estimate_minutes ? (
             <span className="rounded bg-slate-100 px-1.5 font-mono text-[11px] text-slate-500 dark:bg-slate-800 dark:text-slate-400" title="Estimate" data-estimate>
               {formatMinutes(task.estimate_minutes)}
