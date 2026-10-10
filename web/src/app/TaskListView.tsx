@@ -6,7 +6,7 @@ import { createSubtask, createTask, deleteTask, setTaskCompleted, setTaskParent,
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
 import { flattenTree, type Tree } from '../lib/tree'
 import type { Priority, Project, Task } from '../lib/types'
-import { QuickAdd } from './QuickAdd'
+import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { TaskDetail } from './TaskDetail'
 import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
@@ -167,11 +167,12 @@ export function TaskListView({ route }: { route: ListRoute }) {
     }
   }, [taskMap, prompt])
 
-  const onAdd = useCallback(async (title: string) => {
+  // The view supplies defaults; attributes typed in the quick-add line override them.
+  const onAdd = useCallback(async (input: QuickAddInput) => {
     await createTask({
-      title,
       project_id: route.view === 'project' ? route.id : null,
       due: route.view === 'today' ? { date: today } : route.view === 'upcoming' ? { date: addDays(today, 1) } : null,
+      ...input,
     })
   }, [route, today])
 
@@ -328,7 +329,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
 
           {route.view !== 'completed' && (
             <div className="mb-3 border-b border-slate-200 pb-2 dark:border-slate-800">
-              <QuickAdd ref={quickAddRef} onAdd={onAdd} placeholder={placeholderFor(route, currentProject)} />
+              <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} placeholder={placeholderFor(route, currentProject)} />
             </div>
           )}
 
