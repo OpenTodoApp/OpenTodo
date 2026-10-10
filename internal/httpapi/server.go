@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/ids"
@@ -26,6 +27,7 @@ const sessionCookie = "opentodo_session"
 type Server struct {
 	cfg     config.Config
 	auth    *auth.Service
+	audit   *audit.Recorder
 	sync    *opsync.Service
 	web     http.Handler
 	log     *slog.Logger
@@ -52,7 +54,7 @@ func (s *Server) opTS() int64 {
 
 // New builds the router. web may be nil when only the API is wanted (tests).
 func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) http.Handler {
-	s := &Server{cfg: cfg, auth: authSvc, sync: syncSvc, web: web, log: log, version: version,
+	s := &Server{cfg: cfg, auth: authSvc, audit: authSvc.Audit(), sync: syncSvc, web: web, log: log, version: version,
 		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour)}
 	mux := http.NewServeMux()
 
@@ -87,7 +89,15 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	if web != nil {
 		mux.Handle("/", web)
 	}
-	return s.securityHeaders(s.logRequests(mux))
+	return s.securityHeaders(s.logRequests(auditContext(mux)))
+}
+
+// auditContext hands the client address and user agent to the audit recorder.
+// The address is stored only when the owner enabled address logging.
+func auditContext(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r.WithContext(audit.WithRequest(r.Context(), clientIP(r), r.UserAgent())))
+	})
 }
 
 // ---- middleware ----
@@ -272,11 +282,18 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	s.startSession(w, r, u, http.StatusCreated)
+	if s.startSession(w, r, u, http.StatusCreated) {
+		s.audit.Record(r.Context(), audit.LoginSucceeded(u.ID, u.Email, "register"))
+	}
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
-	if !s.limiter.allow(clientIP(r)) {
+	if allowed, first := s.limiter.hit(clientIP(r)); !allowed {
+		// One event per window and address once limiting kicks in, instead of one
+		// per refused attempt, so credential stuffing cannot flood the log.
+		if first {
+			s.audit.Record(r.Context(), audit.LoginFailed("", "", audit.ReasonRateLimited))
+		}
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}
@@ -291,6 +308,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	u, err := s.auth.Authenticate(r.Context(), c.Email, c.Password)
 	if errors.Is(err, auth.ErrInvalidCredentials) {
+		var f *auth.LoginFailure
+		if errors.As(err, &f) {
+			s.audit.Record(r.Context(), audit.LoginFailed(f.UserID, f.Email, f.Reason))
+		}
 		writeError(w, http.StatusUnauthorized, "invalid_credentials", err.Error())
 		return
 	}
@@ -298,25 +319,33 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	s.startSession(w, r, u, http.StatusOK)
+	if s.startSession(w, r, u, http.StatusOK) {
+		s.audit.Record(r.Context(), audit.LoginSucceeded(u.ID, u.Email, "password"))
+	}
 }
 
-func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *auth.User, status int) {
+// startSession issues the session cookie and answers with the user. It reports
+// whether the session was created.
+func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *auth.User, status int) bool {
 	secret, exp, err := s.auth.CreateSession(r.Context(), u.ID, r.UserAgent())
 	if err != nil {
 		s.internal(w, err)
-		return
+		return false
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name: sessionCookie, Value: secret, Path: "/", Expires: exp,
 		HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode,
 	})
 	writeJSON(w, status, map[string]any{"user": u})
+	return true
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	if c, err := r.Cookie(sessionCookie); err == nil {
-		_ = s.auth.DeleteSession(r.Context(), c.Value)
+		u, lookupErr := s.auth.UserBySession(r.Context(), c.Value)
+		if err := s.auth.DeleteSession(r.Context(), c.Value); err == nil && lookupErr == nil {
+			s.audit.Record(r.Context(), audit.Logout(u.ID))
+		}
 	}
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode})
 	w.WriteHeader(http.StatusNoContent)
@@ -894,6 +923,7 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Disposition", `attachment; filename="opentodo-export.json"`)
 	writeJSON(w, http.StatusOK, out)
+	s.audit.Record(r.Context(), audit.ExportRequested(uid, "json"))
 }
 
 // ---- helpers ----
@@ -952,6 +982,13 @@ func newRateLimiter(limit int, w time.Duration) *rateLimiter {
 }
 
 func (l *rateLimiter) allow(key string) bool {
+	ok, _ := l.hit(key)
+	return ok
+}
+
+// hit counts one attempt for key. firstRefusal is true for exactly one refused
+// attempt per window: the first one over the limit.
+func (l *rateLimiter) hit(key string) (allowed, firstRefusal bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := time.Now()
@@ -965,8 +1002,8 @@ func (l *rateLimiter) allow(key string) bool {
 	w, ok := l.hits[key]
 	if !ok || now.Sub(w.start) > l.window {
 		l.hits[key] = &window{start: now, count: 1}
-		return true
+		return true, false
 	}
 	w.count++
-	return w.count <= l.limit
+	return w.count <= l.limit, w.count == l.limit+1
 }

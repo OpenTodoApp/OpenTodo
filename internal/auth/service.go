@@ -142,7 +142,21 @@ func (s *Service) Register(ctx context.Context, email, name, password, invitatio
 	return u, tx.Commit()
 }
 
-// Authenticate checks credentials and returns the user.
+// LoginFailure is the error Authenticate returns for refused credentials. It
+// matches ErrInvalidCredentials with errors.Is, so the HTTP response never
+// reveals which case applied, while the audit log can record the account and
+// reason. The submitted password is never part of it.
+type LoginFailure struct {
+	UserID string // empty when no account has the email
+	Email  string // the account's email; empty when no account has the email
+	Reason string // audit.ReasonUnknownAccount or audit.ReasonWrongPassword
+}
+
+func (f *LoginFailure) Error() string        { return ErrInvalidCredentials.Error() }
+func (f *LoginFailure) Is(target error) bool { return target == ErrInvalidCredentials }
+
+// Authenticate checks credentials and returns the user. Refused credentials
+// return a *LoginFailure.
 func (s *Service) Authenticate(ctx context.Context, email, password string) (*User, error) {
 	email = normalizeEmail(email)
 	var u User
@@ -152,13 +166,13 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*Us
 	if errors.Is(err, sql.ErrNoRows) {
 		// Burn comparable time so timing does not reveal whether the account exists.
 		VerifyPassword("$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", password)
-		return nil, ErrInvalidCredentials
+		return nil, &LoginFailure{Reason: audit.ReasonUnknownAccount}
 	}
 	if err != nil {
 		return nil, err
 	}
 	if !VerifyPassword(hash, password) {
-		return nil, ErrInvalidCredentials
+		return nil, &LoginFailure{UserID: u.ID, Email: u.Email, Reason: audit.ReasonWrongPassword}
 	}
 	return &u, nil
 }
@@ -191,7 +205,8 @@ func (s *Service) DeleteSession(ctx context.Context, secret string) error {
 	return err
 }
 
-// CreateToken issues an API token. The plaintext is returned exactly once.
+// CreateToken issues an API token. The plaintext is returned exactly once. The
+// token row and its token.created audit event are written in one transaction.
 func (s *Service) CreateToken(ctx context.Context, userID, name string) (*Token, string, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
@@ -199,9 +214,27 @@ func (s *Service) CreateToken(ctx context.Context, userID, name string) (*Token,
 	}
 	plain := "ot_" + ids.Secret(32)
 	t := &Token{ID: ids.New(), Name: truncate(name, 100), CreatedAt: time.Now().UnixMilli()}
-	_, err := s.db.ExecContext(ctx, "INSERT INTO api_tokens(id,user_id,name,token_hash,created_at) VALUES(?,?,?,?,?)",
-		t.ID, userID, t.Name, hashToken(plain), t.CreatedAt)
-	return t, plain, err
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, "INSERT INTO api_tokens(id,user_id,name,token_hash,created_at) VALUES(?,?,?,?,?)",
+		t.ID, userID, t.Name, hashToken(plain), t.CreatedAt); err != nil {
+		return nil, "", err
+	}
+	if s.afterTokenInsert != nil {
+		if err := s.afterTokenInsert(); err != nil {
+			return nil, "", err
+		}
+	}
+	if err := s.audit.RecordTx(ctx, tx, audit.TokenCreated(userID, t.ID, t.Name)); err != nil {
+		return nil, "", err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, "", err
+	}
+	return t, plain, nil
 }
 
 // UserByToken resolves an API token to its user, or ErrNotFound.
@@ -239,16 +272,29 @@ func (s *Service) ListTokens(ctx context.Context, userID string) ([]Token, error
 	return out, rows.Err()
 }
 
-// DeleteToken revokes a token owned by the user.
+// DeleteToken revokes a token owned by the user, recording token.revoked in the
+// same transaction.
 func (s *Service) DeleteToken(ctx context.Context, userID, tokenID string) error {
-	res, err := s.db.ExecContext(ctx, "DELETE FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
+	defer tx.Rollback()
+	var name string
+	err = tx.QueryRowContext(ctx, "SELECT name FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID).Scan(&name)
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
-	return nil
+	if err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID); err != nil {
+		return err
+	}
+	if err := s.audit.RecordTx(ctx, tx, audit.TokenRevoked(userID, tokenID, name)); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func hashToken(secret string) string {
