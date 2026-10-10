@@ -35,11 +35,11 @@ OpenTodo is a local-first application with a thin sync server.
 | `web` | Embeds the Vite build and serves it with SPA fallback and cache headers |
 | `ids` | UUID v4 and random secrets without external dependencies |
 
-Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log per user, `seq` autoincrement), `fields` (current winner per field), `invitations`, `settings` (owner key/value policy), `webhooks` and `webhook_deliveries` (queue and delivery log), `backup_runs`; `settings` also holds the log `generation`.
+Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log, `user_id` = author, `seq` autoincrement), `op_scopes` (the sharing scope of each op: `user:<id>` or `project:<id>`), `scope_fields` (current winner per field within a scope), `project_scopes` and `project_members` (shared projects and their roles, authorization data outside the op log), `member_backfills` (history replay progress per member device), `invitations`, `settings` (owner key/value policy), `webhooks` and `webhook_deliveries` (queue and delivery log), `backup_runs`; `settings` also holds the log `generation`.
 
 ### Request flow for a REST write
 
-`POST /api/v1/tasks` → auth middleware resolves the user → body fields become ops with `ts = now`, `device = "server"` → `sync.Apply` (after commit, the observer queues webhook deliveries for genuine changes) → `sync.Notifier.Notify` wakes the user's open event streams → entity re-read from `fields` → JSON response. The ops land in the log, so devices receive them on their next sync, which the wake-up triggers right away.
+`POST /api/v1/tasks` → auth middleware resolves the user → body fields become ops with `ts = now`, `device = "server"` → `sync.ApplyStrict` resolves each op's scope and checks the caller's role (after commit, the observer queues webhook deliveries for genuine changes, for every member who can see the scope) → `sync.NotifyApplied` wakes the open event streams of everyone who can see the change → entity re-read from `scope_fields` → JSON response. The ops land in the log, so devices receive them on their next sync, which the wake-up triggers right away.
 
 ### Live updates
 

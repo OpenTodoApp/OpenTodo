@@ -97,9 +97,14 @@ Response:
   "applied": 3, "duplicates": 0,
   "ops": [ …ops with seq > 140 not authored by this device… ],
   "cursor": 158, "hasMore": false, "serverTime": 1760060001000,
-  "generation": "4f1c0a9e2b7d4c55a1e0f3b2c8d9e7f6"
+  "generation": "4f1c0a9e2b7d4c55a1e0f3b2c8d9e7f6",
+  "rejected": [ { "id": "op-17", "reason": "forbidden" } ],
+  "memberships": [ { "projectId": "…", "role": "editor", "ownerId": "…",
+                     "members": [ { "userId": "…", "name": "Alice", "email": "…", "role": "owner" } ] } ]
 }
 ```
+
+`rejected` and `memberships` are additive (see [Sharing scopes](#sharing-scopes)); older clients ignore them.
 
 Client loop (`web/src/lib/sync.ts`):
 
@@ -111,7 +116,19 @@ Before storing the cursor the client compares `generation` with the one it store
 
 Triggers: 250 ms after a local edit, on `online`, when the tab becomes visible, on a live wake-up (below), on every (re)connection of the live channel, periodically (every 30 s, relaxed to 5 min while live updates are connected), and manually from the status pill.
 
-Server (`internal/sync.Apply`): validate the whole batch, then in one transaction `INSERT OR IGNORE` each op into `ops` (duplicate ids are counted, not re-applied) and upsert `fields` under the winner rule. `Pull` returns ops after the cursor in `seq` order, skipping the caller's own device but still advancing the cursor past them.
+Server (`internal/sync.Apply`): validate the whole batch, then in one transaction resolve each op's scope, refuse the ones the author may not write (reported in `rejected`), `INSERT OR IGNORE` the others into `ops` (duplicate ids are counted, not re-applied) with their scope in `op_scopes`, and upsert `scope_fields` under the winner rule. `Pull` returns ops after the cursor from every scope the caller can see in `seq` order, skipping the caller's own device but still advancing the cursor past them.
+
+## Sharing scopes
+
+Every op and every materialized field belongs to one scope (OpenSpec `project-sharing`): `user:<userId>` holds a user's Inbox, unshared projects, labels and saved views; `project:<projectId>` holds a shared project and its tasks. `ops.user_id` is the op's author. Because `seq` is one global sequence, a device keeps a single cursor across all the scopes it can see, and the request format is unchanged.
+
+- **Which scope an op belongs to.** A project op goes to the project's scope once it is shared, otherwise to the author's personal scope. A task op goes to the scope the task already lives in; a new task goes to the scope of the `project_id` sent in the same batch (no project = Inbox = personal). Labels and views are always personal.
+- **A task never changes scope.** A `project_id` that would move a task into another scope is refused with reason `scope_change`. Clients move across scopes by copying the task (new id) into the destination and tombstoning the original; deleting a shared project tombstones the project and its tasks and the owner's device copies the open tasks into the owner's Inbox.
+- **First share.** Sharing a project relabels the project and its tasks from the owner's personal scope to the project scope in one transaction. Only the scope label changes; `seq`, op ids and content stay, so the owner's devices keep their cursor.
+- **Authorization at receipt.** Each op is checked against the author's membership when the server receives it, never against `op.ts`: viewer → nothing; editor → tasks; admin → tasks and project fields except `deleted_at`; owner → everything; non-members → nothing. A refused op is not stored and is listed in `rejected` with its id and reason (`forbidden` or `scope_change`) in a 200 response; the rest of the batch is applied. The response's `ops` also carry the current winning op of every refused field the caller can see, so the device drops its local change and shows the server's value without another round trip. Resending an already refused op gives the same answer.
+- **Catch-up for a new member.** A device whose cursor is past part of a project's history when its user joins receives that history first: pages of the project's ops up to the device's cursor at its first exchange after joining, with `cursor` unchanged and `hasMore: true`, then the regular pull. Progress is kept per device (`member_backfills`), so each of the member's devices replays the history once. A replay page lost in transit is not resent; re-syncing from cursor 0 recovers it.
+- **Membership** lives outside the op log (`project_members`) and changes only through the REST routes, so offline devices cannot race on it. Every exchange returns the caller's `memberships`; a device purges a project (and its tasks) that it knew as shared and that is no longer listed. A membership change wakes the affected devices with an event that carries no cursor (`data: {}`), so they always run the exchange.
+- **Older clients** keep syncing their personal data unchanged. They drop refused ops from the outbox like any acknowledged op but only show the server's value once a newer value arrives.
 
 ## Live updates
 
