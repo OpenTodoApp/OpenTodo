@@ -144,6 +144,7 @@ The anonymous `auth/passkey` routes apply the same `Origin` check as `auth/login
 | `estimate_minutes` | integer 1–10080 or null | duration estimate in minutes; `0`, negatives, fractions and strings are rejected. The Day and Week calendar draws a task with a due time as a block of this length |
 | `recurrence` | string or null | recurrence rule, e.g. `every 3 days after completion` (see [recurrence.md](recurrence.md)); stored in canonical form, `400 invalid_input` when it does not parse or is over 200 characters |
 | `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
+| `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
 | `position` | number | sort order inside a list |
 | `completed_at`, `deleted_at` | unix ms or null | |
 | `created_at` | unix ms | set by the server on create if missing |
@@ -453,6 +454,38 @@ Collections, single reads and the export include the shared projects and their t
 
 Membership changes are recorded in the audit log as `role.changed` with `from`/`to` values such as `none` → `project.editor`.
 
+### Assignment and notifications
+
+A task's `assignee_id` (OpenSpec `task-assignment`) is an ordinary task field: set it with `POST /api/v1/tasks` or `PATCH /api/v1/tasks/{id}`, clear it with `null`. In a shared project the assignee must be a current member; for a task in your Inbox or an unshared project it must be you. Viewers cannot assign (`403 forbidden`, like any write). A refused assignment answers `400 not_a_member` and stores nothing; the sync endpoint refuses the same operation individually with `rejected: [{"id":"…","reason":"not_a_member"}]`.
+
+When a member leaves or is removed, the server clears `assignee_id` on every task of that project assigned to them with operations of its own (device `server`), so every member's devices see the tasks unassigned after their next sync.
+
+Assigning a task to someone other than yourself creates an in-app notification for the assignee. Notifications are server-side account data: they are not part of the op log or the export. Read notifications older than 90 days are removed when the server starts. Both routes require a session or token (`401 unauthorized`).
+
+| Method & path | Purpose |
+| --- | --- |
+| `GET /api/v1/notifications` | your notifications, newest first (at most 200), and the unread count |
+| `POST /api/v1/notifications/{id}/read` | mark one of yours read (idempotent); `204`, or `404 not_found` for an unknown id or another account's notification |
+
+```sh
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"assignee_id":"<bob>"}' $BASE/api/v1/tasks/$TASK
+# 200 task with "assignee_id":"<bob>"
+
+curl -X PATCH … -d '{"assignee_id":"<carol, not a member>"}' $BASE/api/v1/tasks/$TASK
+# 400 {"error":{"code":"not_a_member","message":"task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)"}}
+
+curl -H "Authorization: Bearer $BOB" $BASE/api/v1/notifications
+# 200 {"notifications":[{"id":"…","kind":"assigned","payload":{"assigneeId":"<bob>","actorId":"<alice>",
+#        "actorName":"Alice","taskId":"<task>","taskTitle":"Milk","projectId":"<p>","projectName":"Home",
+#        "at":1760000000000},"createdAt":1760000000000,"readAt":null}],
+#      "unread":1}
+
+curl -X POST -H "Authorization: Bearer $BOB" $BASE/api/v1/notifications/$N/read
+# 204
+```
+
+`projectId` and `projectName` are omitted for a task in the Inbox.
+
 ### Import
 
 Import tasks and projects from the app's own export, CSV, or JSON exports of other task managers. Formats, the CSV columns, mapping rules and limits are documented in [import.md](import.md). Every imported field is written to the operation log with server time and the device id `import`, so devices receive imports like any other write.
@@ -663,6 +696,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | `owner_must_transfer` | 409 | the project owner leaving the project |
 | `already_member` | 409 | adding an account that is already a member of the project |
 | `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
+| `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
 | `bad_origin` | 403 | cookie-authenticated write from another origin |
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
