@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
+import { setStartView, type StartView } from '../lib/views'
 import { MembersPanel } from './MembersPanel'
+import { useStartView, useViews } from './useViews'
 
 interface TokenRow { id: string; name: string; createdAt: number; lastUsedAt: number | null }
 
@@ -12,6 +14,9 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
   const [secret, setSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const sync = useSyncStatus()
+  const views = useViews()
+  const startView = useStartView()
+  const startIsKnown = !startView.startsWith('view:') || views.some((v) => `view:${v.id}` === startView)
 
   async function load() {
     try {
@@ -52,6 +57,26 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
         <p className="text-xs text-slate-400">
           Sync: {sync.state}{sync.pending ? `, ${sync.pending} change(s) waiting to upload` : ''}.
         </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-semibold">Start view</h2>
+        <p className="text-sm text-slate-500">The view this device opens on launch. Each device keeps its own choice; it is not synced.</p>
+        <select className="input max-w-xs" aria-label="Start view on this device" value={startIsKnown ? startView : 'inbox'}
+          onChange={(e) => void setStartView(e.target.value as StartView)}>
+          <optgroup label="Built-in">
+            <option value="inbox">Inbox</option>
+            <option value="today">Today</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="completed">Completed</option>
+            <option value="filter">Filter</option>
+          </optgroup>
+          {views.length > 0 && (
+            <optgroup label="Saved views">
+              {views.map((v) => <option key={v.id} value={`view:${v.id}`}>{v.name}</option>)}
+            </optgroup>
+          )}
+        </select>
       </section>
 
       {user.role === 'owner' && <MembersPanel />}

@@ -10,9 +10,12 @@ import { resolveLabels } from '../lib/labels'
 import { deleteTask, setTaskCompleted, updateTask } from '../lib/ops'
 import { buildProjectTree } from '../lib/projects'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
+import { createView } from '../lib/views'
 import { ancestors, flattenTree } from '../lib/tree'
 import type { Label, Priority, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
+import { NamePrompt } from './NamePrompt'
+import { navigate } from './router'
 import { TaskDetail } from './TaskDetail'
 import { TaskRow } from './TaskRow'
 
@@ -103,6 +106,9 @@ export function FilterView() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  // A view can be saved from any query that parses and is not empty.
+  const canSave = query.trim() !== '' && tryParse(query).ok
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
@@ -162,6 +168,7 @@ export function FilterView() {
       const target = e.target as HTMLElement | null
       const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
       if (typing) return
+      if (saving) return
       if (e.key === 'Escape') {
         if (pickerFor) setPickerFor(null)
         else if (openId) setOpenId(null)
@@ -193,6 +200,12 @@ export function FilterView() {
         case 'c':
           if (row) void setTaskCompleted(row.id, !row.completed_at)
           break
+        case 's':
+          if (canSave) {
+            e.preventDefault()
+            setSaving(true)
+          }
+          break
         case 'L':
           if (row) {
             e.preventDefault()
@@ -217,7 +230,7 @@ export function FilterView() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [rows, selectedId, openId, pickerFor])
+  }, [rows, selectedId, openId, pickerFor, saving, canSave])
 
   useEffect(() => {
     if (selectedId) document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
@@ -233,6 +246,11 @@ export function FilterView() {
           <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
             Filter
             {result && <span className="text-sm font-normal text-slate-400">{rows.length}</span>}
+            <span className="flex-1" />
+            <button className="btn-ghost border border-slate-300 text-xs font-normal dark:border-slate-700" disabled={!canSave}
+              onClick={() => setSaving(true)} title="Save this query as a view (s in the results)">
+              Save view
+            </button>
           </h1>
           <div className="mb-3 border-b border-slate-200 pb-2 dark:border-slate-800">
             <input
@@ -303,6 +321,16 @@ export function FilterView() {
           onOpen={(id) => { setSelectedId(id); setOpenId(id) }}
           onToggleComplete={(t) => void setTaskCompleted(t.id, !t.completed_at)}
         />
+      )}
+      {saving && (
+        <NamePrompt title="Save view" label="View name" hint="The view is pinned to the sidebar under Views."
+          onCancel={() => setSaving(false)}
+          onSubmit={async (name) => {
+            const id = await createView({ name, query })
+            remember(query)
+            setSaving(false)
+            navigate({ view: 'view', id })
+          }} />
       )}
       {pickerFor && (
         <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/30 p-4 pt-24" onClick={() => setPickerFor(null)}>
