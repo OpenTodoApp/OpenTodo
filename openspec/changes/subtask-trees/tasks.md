@@ -11,8 +11,8 @@
 
 ## 2. Server (Go)
 
-- [ ] 2.1 Validate `parent_id` on task create and patch (exists, not deleted, same project, no cycle) returning `invalid_input`; verify `TestTaskParentRejectsCycle`, `TestTaskParentMustShareProject`, `TestTaskParentRequiresAuth` (`go test ./...`)
-- [ ] 2.2 Document in `docs/api.md` and add cascade and cycle-breaking notes to `docs/sync.md`; verify error codes match handler tests
+- [x] 2.1 Validate `parent_id` on task create and patch (exists, not deleted, same project, no cycle) returning `invalid_input`; verify `TestTaskParentRejectsCycle`, `TestTaskParentMustShareProject`, `TestTaskParentRequiresAuth` (`go test ./...`)
+- [x] 2.2 Document in `docs/api.md` and add cascade and cycle-breaking notes to `docs/sync.md`; verify error codes match handler tests
 
 ## 3. UI (web/src/app)
 

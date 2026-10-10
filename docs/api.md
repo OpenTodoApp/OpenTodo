@@ -47,12 +47,31 @@ export TOKEN=ot_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 | `title` | string | |
 | `description` | string | |
 | `project_id` | string or null | null = Inbox |
+| `parent_id` | string or null | parent task for subtasks, any depth; see [Subtasks](#subtasks) |
 | `priority` | 1–4 | 1 highest, 4 default |
 | `due` | `{date:"YYYY-MM-DD", time?:"HH:MM"}` or null | floating date |
 | `labels` | string[] | |
 | `position` | number | sort order inside a list |
 | `completed_at`, `deleted_at` | unix ms or null | |
 | `created_at` | unix ms | set by the server on create if missing |
+
+### Subtasks
+
+A task becomes a subtask by setting `parent_id` to another task's id, to any depth. On `POST /tasks` and `PATCH /tasks/{id}` the server checks the value and answers `400 invalid_input` when:
+
+- the parent does not exist or is deleted (`parent task not found`),
+- the parent is in a different project than the task — the task's `project_id` after the write, so you can set both in one request (`parent must be in the same project`),
+- the parent is the task itself or one of its descendants, which would form a cycle (`parent is a descendant of the task`).
+
+`parent_id: null` detaches a task and is always accepted. Nothing changes on a rejected request. The sync endpoint never rejects an operation for tree reasons; see `docs/sync.md` for how clients converge.
+
+The REST API writes exactly the fields you send. The cascades the web app performs (completing a parent completes its open descendants, deleting a parent tombstones the subtree, moving a parent moves the subtree) are ordinary per-task operations issued by the client; a script that wants the same result sends one request per task. A subtask whose parent is completed, deleted or missing is shown at the top level of its project by every client, so nothing becomes unreachable.
+
+```bash
+# Add a subtask under an existing task in the same project
+curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"title":"Book hotel","project_id":"<project-id>","parent_id":"<parent-task-id>"}'
+```
 
 ### Project fields
 
