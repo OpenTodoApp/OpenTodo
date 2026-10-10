@@ -7,6 +7,7 @@ import { buildProjectTree } from '../lib/projects'
 import { progressOf } from '../lib/subtasks'
 import { descendants, flattenTree } from '../lib/tree'
 import type { Label, Priority, Project, Task } from '../lib/types'
+import { DueField } from './DueField'
 import { EstimateField } from './EstimateField'
 import { LabelChip, LabelPicker } from './LabelPicker'
 import { RecurrenceField } from './RecurrenceField'
@@ -189,13 +190,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         </Field>
 
         <Field label="Due">
-          <div className="flex gap-2">
-            <input type="date" className="input" aria-label="Due date" value={task.due?.date ?? ''}
-              onChange={(e) => void updateTask(task.id, { due: e.target.value ? { date: e.target.value, ...(task.due?.time ? { time: task.due.time } : {}) } : null })} />
-            <input type="time" className="input w-32" aria-label="Due time" value={task.due?.time ?? ''} disabled={!task.due}
-              onChange={(e) => task.due && void updateTask(task.id, { due: e.target.value ? { date: task.due.date, time: e.target.value } : { date: task.due.date } })} />
-            {task.due && <button className="btn-ghost" onClick={() => void updateTask(task.id, { due: null })} aria-label="Clear due date">✕</button>}
-          </div>
+          <DueField task={task} readOnly={readOnly} />
         </Field>
 
         <Field label="Reminders">

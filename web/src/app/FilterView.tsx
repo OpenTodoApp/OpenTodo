@@ -17,7 +17,7 @@ import { LabelPicker } from './LabelPicker'
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
 import { useListKeys } from './useListKeys'
-import { useToday } from './useViews'
+import { useToday, useViewerZone } from './useViews'
 import { TaskDetail } from './TaskDetail'
 import { TaskRow } from './TaskRow'
 import { visibleTasks } from '../lib/trash'
@@ -42,6 +42,7 @@ interface Group {
 
 export function FilterView() {
   const today = useToday()
+  const zone = useViewerZone()
   const [query, setQuery] = useState('')
   const [debounced, setDebounced] = useState('')
   useEffect(() => {
@@ -69,7 +70,7 @@ export function FilterView() {
     const { test, warnings } = compile(good.ast, { today, labels, projects })
     const tasks = allTasks.filter((t) => !(t.project_id && archived.has(t.project_id)) && test(t))
     return { tasks, warnings }
-  }, [good, allTasks, labels, projects, today])
+  }, [good, allTasks, labels, projects, today, zone])
 
   const groups = useMemo<Group[]>(() => {
     if (!result) return []

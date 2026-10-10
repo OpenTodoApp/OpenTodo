@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
-import { compareDue, formatDateHeading, todayISO } from '../lib/dates'
+import { compareDue, formatDateHeading, localDueOf, todayISO } from '../lib/dates'
 import { resolveLabels } from '../lib/labels'
 import { createSubtask, createTask, deleteTask, detachOccurrence, setTaskCompleted, setTaskParent, skipOccurrence, updateTask } from '../lib/ops'
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
@@ -20,6 +20,7 @@ import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
 import { estimateFocus, isGPending, openTask, placeInDay } from './signals'
 import { visibleTasks } from '../lib/trash'
+import { useViewerZone } from './useViews'
 
 type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
@@ -61,6 +62,8 @@ function saveCollapsed(set: Set<string>) {
 
 export function TaskListView({ route, userId }: { route: ListRoute; userId?: string }) {
   const today = todayISO()
+  // Zoned dues (absolute-datetimes) are grouped in the viewer zone; re-group when it changes.
+  const zone = useViewerZone()
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const currentProject = route.view === 'project' ? projectMap.get(route.id) : undefined
@@ -100,9 +103,9 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       case 'inbox':
         return all.filter((t) => !t.completed_at && t.project_id === null)
       case 'today':
-        return all.filter((t) => !t.completed_at && t.due && t.due.date <= today).sort(byDueThenPriority)
+        return all.filter((t) => !t.completed_at && t.due && localDueOf(t.due).date <= today).sort(byDueThenPriority)
       case 'upcoming':
-        return all.filter((t) => !t.completed_at && t.due && t.due.date > today).sort(byDueThenPriority)
+        return all.filter((t) => !t.completed_at && t.due && localDueOf(t.due).date > today).sort(byDueThenPriority)
       case 'completed':
         return all.filter((t) => t.completed_at).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0)).slice(0, 100)
       case 'project':
@@ -112,7 +115,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       case 'assigned':
         return all.filter((t) => !t.completed_at && !!userId && t.assignee_id === userId).sort(byDueThenPriority)
     }
-  }, [allTasks, projects, route, today, userId])
+  }, [allTasks, projects, route, today, zone, userId])
 
   const tasks = useMemo(() => {
     if (!duration || !filterKey) return viewTasks
@@ -153,8 +156,8 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: t.parent_id ? breadcrumbOf(t, taskMap) : null,
     })
     if (route.view === 'today') {
-      const overdue = tasks.filter((t) => t.due && t.due.date < today)
-      const due = tasks.filter((t) => t.due && t.due.date === today)
+      const overdue = tasks.filter((t) => t.due && localDueOf(t.due).date < today)
+      const due = tasks.filter((t) => t.due && localDueOf(t.due).date === today)
       const g: Group[] = []
       if (overdue.length) g.push({ key: 'overdue', heading: 'Overdue', rows: overdue.map(flatRow) })
       g.push({ key: 'today', heading: overdue.length ? 'Today' : null, rows: due.map(flatRow) })
@@ -164,9 +167,10 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       const byDate = new Map<string, Task[]>()
       for (const t of tasks) {
         if (!t.due) continue
-        const list = byDate.get(t.due.date) ?? []
+        const date = localDueOf(t.due).date
+        const list = byDate.get(date) ?? []
         list.push(t)
-        byDate.set(t.due.date, list)
+        byDate.set(date, list)
       }
       return [...byDate.entries()].map(([date, list]) => ({ key: date, heading: formatDateHeading(date, today), rows: list.map(flatRow) }))
     }
@@ -180,7 +184,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       }))
     }
     return [{ key: 'all', heading: null, rows: tasks.map(flatRow) }]
-  }, [tree, tasks, route.view, today, collapsed, taskMap, projects, projectMap])
+  }, [tree, tasks, route.view, today, zone, collapsed, taskMap, projects, projectMap])
 
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
 
