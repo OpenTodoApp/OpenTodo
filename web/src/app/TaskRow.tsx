@@ -1,5 +1,5 @@
 import { describeDue } from '../lib/dates'
-import { formatMinutes } from '../lib/nlp'
+import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import type { Label, Project, Task } from '../lib/types'
 import { LabelChip } from './LabelPicker'
