@@ -8,7 +8,7 @@
 ## 2. Storage, queue and delivery
 
 - [x] 2.1 Migration adding `webhooks`, `webhook_deliveries` and `settings` if absent; verify `TestMigrationWebhooks` on a database at the previous version (`go test ./...`)
-- [ ] 2.2 Signer: `whsec_` secret generation, `X-OpenTodo-*` headers, `v1=` HMAC-SHA256 over `timestamp.body`; verify `TestSignatureMatchesReferenceVector` with a documented vector reused in `docs/webhooks.md` (`go test ./...`)
+- [x] 2.2 Signer: `whsec_` secret generation, `X-OpenTodo-*` headers, `v1=` HMAC-SHA256 over `timestamp.body`; verify `TestSignatureMatchesReferenceVector` with a documented vector reused in `docs/webhooks.md` (`go test ./...`)
 - [ ] 2.3 SSRF-safe client: scheme check, resolve-then-filter dialer (loopback, link-local, metadata, RFC 1918, CGNAT, ULA, multicast, unspecified, IPv4-mapped), no redirects, 10 s timeout, 1 KB response excerpt, owner override; verify `TestDenyListTable`, `TestDialerPinsCheckedAddress`, `TestRedirectsNotFollowed`, `TestOwnerOverrideAllowsPrivate` (`go test ./...`)
 - [ ] 2.4 Queue worker: enqueue after `Apply`, poll with wake-up, bounded concurrency 4, backoff schedule with jitter, 6 attempts, consecutive-failure counter and auto-disable at 20, pruning (30 days, newest 100 per webhook); verify `TestRetrySchedule`, `TestDeliveriesSurviveRestart`, `TestAutoDisableAfter20Failures`, `TestPruneKeepsNewest100` (`go test ./...`)
 - [ ] 2.5 Subscription matching (events set, project filter, enabled) and per-user scoping; verify `TestProjectFilterSkipsOtherProjects`, `TestDisabledWebhookGetsNoDeliveries` (`go test ./...`)
