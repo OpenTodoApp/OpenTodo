@@ -74,7 +74,7 @@ export function ShareDialog({ project, userId, cached, onClose }: {
 
   const members = membership?.members ?? []
   return (
-    <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/40 p-4 pt-20" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/40 p-4 pt-20" onClick={onClose}>
       <div role="dialog" aria-label={`Share ${project.name}`} className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
         <h2 className="mb-3 text-base font-semibold">Share “{project.name}”</h2>
         {roles.length > 0 && (

@@ -266,7 +266,7 @@ export function UsersView(p: UsersViewProps) {
 
 function Dialog({ title, children, onCancel }: { title: string; children: ReactNode; onCancel: () => void }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={onCancel}
+    <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto overscroll-contain bg-black/40 p-4" onClick={onCancel}
       onKeyDown={(e) => { if (e.key === 'Escape') onCancel() }}>
       <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-md space-y-3 rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-base font-semibold">{title}</h2>

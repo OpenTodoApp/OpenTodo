@@ -76,7 +76,7 @@ export function VoiceSettingsSection() {
         </label>
       )}
       {confirming && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/30 p-4 pt-24" onClick={() => setConfirming(false)}>
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={() => setConfirming(false)}>
           <div role="dialog" aria-modal="true" aria-labelledby="voice-confirm-title" onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
             <h2 id="voice-confirm-title" className="mb-2 text-base font-semibold">Turn on voice capture?</h2>

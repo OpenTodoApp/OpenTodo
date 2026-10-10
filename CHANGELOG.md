@@ -75,6 +75,7 @@ The first feature-complete version: every item on the [roadmap](ROADMAP.md) is i
 
 ### Fixed
 
+- The keyboard-shortcut help could not be scrolled or closed on phones (the panel grew past the screen on iOS Safari). It is now a full-screen sheet on small screens with a pinned close button, the overlay scrolls instead of the panel, and every other dialog overlay scrolls when its content is taller than the screen.
 - Clients skip ops for entities they do not know instead of failing the whole batch, so an installed PWA that has not refreshed yet keeps syncing when the server gains a new entity.
 - A reference to a deleted, foreign or not-yet-received section or label is displayed as "No section" or hidden without writing a repair op, so arrival order can never overwrite a newer edit.
 

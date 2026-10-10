@@ -18,4 +18,16 @@ describe('ShortcutHelp', () => {
     // The default list is unchanged.
     expect(off).toContain('Toggle this help')
   })
+
+  it('scrolls the overlay and keeps a close button at the top on small screens', () => {
+    const html = renderToStaticMarkup(<ShortcutHelp onClose={() => undefined} />)
+    // The overlay itself scrolls (a percentage max-height on the panel failed on iOS Safari).
+    expect(html).toContain('overflow-y-auto overscroll-contain')
+    expect(html).not.toContain('max-h-full')
+    // A close button sits in the pinned header, before any shortcut row.
+    const closeAt = html.indexOf('aria-label="Close"')
+    expect(closeAt).toBeGreaterThan(-1)
+    expect(closeAt).toBeLessThan(html.indexOf('Quick add a task'))
+    expect(html).toContain('sticky top-0')
+  })
 })

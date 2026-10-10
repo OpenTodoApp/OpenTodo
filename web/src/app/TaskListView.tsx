@@ -843,7 +843,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
         </div>
       )}
       {assignFor && userId && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/30 p-4 pt-24" onClick={() => setAssignFor(null)}>
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={() => setAssignFor(null)}>
           <div className="w-full max-w-sm rounded-xl bg-white p-3 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Assign task">
             <AssigneePicker taskId={assignFor} userId={userId} onClose={() => setAssignFor(null)} />
             <p className="mt-2 px-1 text-[11px] text-slate-400">Type to filter · Enter assigns · Esc closes</p>
@@ -851,7 +851,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
         </div>
       )}
       {pickerFor && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/30 p-4 pt-24" onClick={() => setPickerFor(null)}>
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={() => setPickerFor(null)}>
           <div className="w-full max-w-sm rounded-xl bg-white p-3 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Labels for task">
             <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
             <p className="mt-2 px-1 text-[11px] text-slate-400">Enter toggles or creates · Esc closes</p>

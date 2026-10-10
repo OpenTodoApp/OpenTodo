@@ -13,7 +13,14 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    // The page behind must not scroll while the overlay is open (phones scroll the
+    // overlay itself instead).
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
   }, [onClose])
   const rows: [string, string][] = [
     ['q', 'Quick add a task'],
@@ -85,53 +92,68 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
     ['Backspace ×2 (end of line)', 'Highlight, then dismiss the last chip'],
   ]
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="max-h-full w-full max-w-md overflow-y-auto rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
-        <h2 className="mb-3 text-base font-semibold">Keyboard shortcuts</h2>
-        <table className="w-full text-sm">
-          <tbody>
-            {rows.map(([k, d]) => (
-              <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
-                <td className="py-1.5 pr-4"><span className="kbd">{k}</span></td>
-                <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {extraSections.map((sec) => (
-          <section key={sec.title} data-help-section={sec.title}>
-            <h3 className="mb-1 mt-4 text-sm font-semibold">{sec.title}</h3>
-            {sec.note && <p className="mb-2 text-xs text-slate-500">{sec.note}</p>}
-            <table className="w-full text-sm">
-              <tbody>
-                {sec.rows.map(([k, d]) => (
-                  <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
-                    <td className="py-1.5 pr-4"><span className="kbd">{k}</span></td>
-                    <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        ))}
-        {extraSections.length === 0 && (
-          <p className="mt-3 text-xs text-slate-500" data-vim-hint>Prefer modal editing? Vim keybindings can be enabled in Settings → Keyboard.</p>
-        )}
-        <h3 className="mb-2 mt-4 text-sm font-semibold">Quick add syntax</h3>
-        <table className="w-full text-sm">
-          <tbody>
-            {quickAdd.map(([k, d]) => (
-              <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
-                <td className="py-1.5 pr-4"><code className="text-xs">{k}</code></td>
-                <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <a className="mt-2 block text-xs text-slate-500 underline" href="https://github.com/pixari/opentodo/blob/main/docs/quick-add.md" target="_blank" rel="noreferrer">
-          Full syntax reference (docs/quick-add.md)
-        </a>
-        <button className="btn-ghost mt-4 w-full" onClick={onClose}>Close</button>
+    // The overlay scrolls, not the panel: a percentage max-height on a centred flex
+    // child is unreliable on iOS Safari, where the panel grew past the screen with
+    // no way to scroll or reach Close. On phones the help is a full-screen sheet; from
+    // `sm` up `my-auto` centres it. The header with its close button stays pinned.
+    <div
+      className="fixed inset-0 z-40 flex justify-center overflow-y-auto overscroll-contain bg-black/40 sm:p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shortcut-help-title"
+    >
+      <div className="h-fit min-h-full w-full bg-white shadow-xl dark:bg-slate-900 sm:my-auto sm:min-h-0 sm:max-w-md sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b sm:-top-4 border-slate-100 bg-white px-5 py-3 dark:border-slate-800 dark:bg-slate-900 sm:rounded-t-xl">
+          <h2 id="shortcut-help-title" className="text-base font-semibold">Keyboard shortcuts</h2>
+          <button className="btn-ghost px-2 py-1 text-lg leading-none" onClick={onClose} aria-label="Close">×</button>
+        </div>
+        <div className="px-5 pb-5 pt-2">
+          <table className="w-full text-sm">
+            <tbody>
+              {rows.map(([k, d]) => (
+                <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
+                  <td className="py-1.5 pr-4"><span className="kbd">{k}</span></td>
+                  <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {extraSections.map((sec) => (
+            <section key={sec.title} data-help-section={sec.title}>
+              <h3 className="mb-1 mt-4 text-sm font-semibold">{sec.title}</h3>
+              {sec.note && <p className="mb-2 text-xs text-slate-500">{sec.note}</p>}
+              <table className="w-full text-sm">
+                <tbody>
+                  {sec.rows.map(([k, d]) => (
+                    <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
+                      <td className="py-1.5 pr-4"><span className="kbd">{k}</span></td>
+                      <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          ))}
+          {extraSections.length === 0 && (
+            <p className="mt-3 text-xs text-slate-500" data-vim-hint>Prefer modal editing? Vim keybindings can be enabled in Settings → Keyboard.</p>
+          )}
+          <h3 className="mb-2 mt-4 text-sm font-semibold">Quick add syntax</h3>
+          <table className="w-full text-sm">
+            <tbody>
+              {quickAdd.map(([k, d]) => (
+                <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
+                  <td className="py-1.5 pr-4"><code className="text-xs">{k}</code></td>
+                  <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <a className="mt-2 block text-xs text-slate-500 underline" href="https://github.com/pixari/opentodo/blob/main/docs/quick-add.md" target="_blank" rel="noreferrer">
+            Full syntax reference (docs/quick-add.md)
+          </a>
+          <button className="btn-ghost mt-4 w-full" onClick={onClose}>Close</button>
+        </div>
       </div>
     </div>
   )

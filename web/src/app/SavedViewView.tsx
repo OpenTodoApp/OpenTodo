@@ -200,7 +200,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
           onOpen={(id) => setOpenId(id)} onToggleComplete={(t) => void setTaskCompleted(t.id, !t.completed_at)} />
       )}
       {pickerFor && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/30 p-4 pt-24" onClick={() => setPickerFor(null)}>
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={() => setPickerFor(null)}>
           <div className="w-full max-w-sm rounded-xl bg-white p-3 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Labels for task">
             <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
           </div>

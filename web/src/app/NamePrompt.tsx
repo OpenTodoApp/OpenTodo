@@ -22,7 +22,7 @@ export function NamePrompt({ title, label, initial = '', confirm = 'Save', hint,
     }
   }
   return (
-    <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/30 p-4 pt-24" onClick={onCancel}>
+    <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={onCancel}>
       <form role="dialog" aria-label={title} onSubmit={(e) => void submit(e)} onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
         <h2 className="mb-2 text-base font-semibold">{title}</h2>

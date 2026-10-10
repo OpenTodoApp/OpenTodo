@@ -25,7 +25,7 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
     p.onSubmit()
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-4 pt-24" onClick={p.onCancel}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={p.onCancel}>
       <div
         role="dialog" aria-modal="true" aria-labelledby="reauth-title" data-testid="reauth-dialog"
         className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-lg dark:border-slate-800 dark:bg-slate-900"
