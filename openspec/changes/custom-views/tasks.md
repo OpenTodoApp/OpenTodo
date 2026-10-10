@@ -8,7 +8,7 @@
 
 ## 2. Server API
 
-- [ ] 2.1 Go filter parser (`internal/filter`) accepting the grammar from `docs/filters.md`; verify `TestFilterParserAcceptsDocsExamples` and rejection cases (`go test ./...`)
+- [x] 2.1 Go filter parser (`internal/filter`) accepting the grammar from `docs/filters.md`; verify `TestFilterParserAcceptsDocsExamples` and rejection cases (`go test ./...`)
 - [ ] 2.2 `views` collection handlers with validation (name, query parses, enumerations, panel ids exist and are list views, immutable kind); verify `TestViewsCrud`, `TestViewsRejectInvalidOption`, `TestViewsRequireAuth` (`go test ./...`)
 - [ ] 2.3 Export includes `views`; verify `TestExportIncludesViews` (`go test ./...`)
 - [ ] 2.4 Document in `docs/api.md`; verify examples match handlers
