@@ -459,10 +459,11 @@ func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleRevokeInvitation(w http.ResponseWriter, r *http.Request) {
-	if s.requireInviter(w, r) == nil {
+	u := s.requireInviter(w, r)
+	if u == nil {
 		return
 	}
-	err := s.auth.RevokeInvitation(r.Context(), r.PathValue("id"))
+	err := s.auth.RevokeInvitation(r.Context(), u.ID, r.PathValue("id"))
 	switch {
 	case errors.Is(err, auth.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not_found", "invitation not found")

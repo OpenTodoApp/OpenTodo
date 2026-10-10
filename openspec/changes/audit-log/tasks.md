@@ -9,7 +9,7 @@
 ## 2. Server: instrumentation
 
 - [x] 2.1 Record `login.succeeded`, `login.failed` (reason, collapsed to one event per rate-limit window once limited), `logout`, `token.created` and `token.revoked` (in transaction), `export.requested`, `settings.changed`; verify `TestAuthEventsRecorded` and `TestTokenCreationAtomicWithEvent` (injected failure after the token insert leaves neither row)
-- [ ] 2.2 Provide constructors for events emitted by `invitations`, `passkeys`, `oidc-login`, `mfa-totp` and `backups`, and wire whichever of those capabilities already exist at merge time; verify each wired path with one test per event name in the owning package
+- [x] 2.2 Provide constructors for events emitted by `invitations`, `passkeys`, `oidc-login`, `mfa-totp` and `backups`, and wire whichever of those capabilities already exist at merge time; verify each wired path with one test per event name in the owning package
 
 ## 3. Server: routes
 

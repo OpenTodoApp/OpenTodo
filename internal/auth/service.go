@@ -110,17 +110,18 @@ func (s *Service) Register(ctx context.Context, email, name, password, invitatio
 	now := time.Now().UnixMilli()
 	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: "member", CreatedAt: now}
 	invitation = strings.TrimSpace(invitation)
+	var invitationID string
 	switch {
 	case n == 0:
 		u.Role = "owner"
 	case invitation != "":
 		// Validate before inserting so a bad link is reported ahead of email_taken,
 		// and the invitation stays pending whenever the account is not created.
-		role, err := s.checkInvitation(ctx, tx, invitation, email, now)
+		role, id, err := s.checkInvitation(ctx, tx, invitation, email, now)
 		if err != nil {
 			return nil, err
 		}
-		u.Role = role
+		u.Role, invitationID = role, id
 	case !s.allowSignup:
 		return nil, ErrSignupClosed
 	}
@@ -136,6 +137,9 @@ func (s *Service) Register(ctx context.Context, email, name, password, invitatio
 		// Spent in the same transaction: either both the account and the acceptance
 		// commit, or neither does.
 		if err := s.markInvitationAccepted(ctx, tx, invitation, u.ID, now); err != nil {
+			return nil, err
+		}
+		if err := s.audit.RecordTx(ctx, tx, audit.InvitationAccepted(u.ID, u.Email, invitationID)); err != nil {
 			return nil, err
 		}
 	}

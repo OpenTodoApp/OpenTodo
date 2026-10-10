@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
 )
@@ -97,5 +98,78 @@ func TestAuthenticateReportsFailureReason(t *testing.T) {
 	_, err = s.Authenticate(ctx, "nobody@example.com", "whatever whatever")
 	if !errors.As(err, &f) || f.UserID != "" || f.Email != "" || f.Reason != audit.ReasonUnknownAccount {
 		t.Fatalf("unknown account: %v %+v", err, f)
+	}
+}
+
+func TestInvitationCreatedRecorded(t *testing.T) {
+	ctx := context.Background()
+	s, _ := newService(t, false)
+	owner := mustOwner(t, s)
+	inv, secret, err := s.CreateInvitation(ctx, owner, "Friend@Example.com", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	list, _, _ := s.Audit().List(ctx, audit.Filter{Name: audit.InvitationCreatedName})
+	if len(list) != 1 || *list[0].ActorID != owner.ID || list[0].Details["invitation_id"] != inv.ID ||
+		list[0].Details["invited_email"] != "friend@example.com" {
+		t.Fatalf("invitation.created = %+v", list)
+	}
+	for _, v := range list[0].Details {
+		if v == secret {
+			t.Fatal("invitation secret stored in the audit log")
+		}
+	}
+	// Invalid input creates nothing and records nothing.
+	if _, _, err := s.CreateInvitation(ctx, owner, "", time.Minute); err == nil {
+		t.Fatal("expected invalid expiry")
+	}
+	if list, _, _ := s.Audit().List(ctx, audit.Filter{Name: audit.InvitationCreatedName}); len(list) != 1 {
+		t.Fatalf("refused invitation recorded: %d", len(list))
+	}
+}
+
+func TestInvitationRevokedRecorded(t *testing.T) {
+	ctx := context.Background()
+	s, _ := newService(t, false)
+	owner := mustOwner(t, s)
+	inv, _, err := s.CreateInvitation(ctx, owner, "", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.RevokeInvitation(ctx, owner.ID, inv.ID); err != nil {
+		t.Fatal(err)
+	}
+	// Second revoke is a no-op and records nothing.
+	if err := s.RevokeInvitation(ctx, owner.ID, inv.ID); err != nil {
+		t.Fatal(err)
+	}
+	list, _, _ := s.Audit().List(ctx, audit.Filter{Name: audit.InvitationRevokedName})
+	if len(list) != 1 || *list[0].ActorID != owner.ID || list[0].Details["invitation_id"] != inv.ID {
+		t.Fatalf("invitation.revoked = %+v", list)
+	}
+}
+
+func TestInvitationAcceptedRecorded(t *testing.T) {
+	ctx := context.Background()
+	s, _ := newService(t, false)
+	owner := mustOwner(t, s)
+	inv, secret, err := s.CreateInvitation(ctx, owner, "", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A refused acceptance (email taken) leaves the invitation pending and records nothing.
+	if _, err := s.Register(ctx, "owner@example.com", "", "correct horse battery", secret); !errors.Is(err, ErrEmailTaken) {
+		t.Fatalf("email taken: %v", err)
+	}
+	if list, _, _ := s.Audit().List(ctx, audit.Filter{Name: audit.InvitationAcceptedName}); len(list) != 0 {
+		t.Fatalf("refused acceptance recorded: %+v", list)
+	}
+	u, err := s.Register(ctx, "member@example.com", "M", "correct horse battery", secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	list, _, _ := s.Audit().List(ctx, audit.Filter{Name: audit.InvitationAcceptedName})
+	if len(list) != 1 || *list[0].ActorID != u.ID || list[0].Details["invitation_id"] != inv.ID || list[0].Details["email"] != "member@example.com" {
+		t.Fatalf("invitation.accepted = %+v", list)
 	}
 }
