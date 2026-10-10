@@ -223,6 +223,13 @@ func (s *Service) Provider(issuer string) *Provider {
 	return s.provider
 }
 
+// Reset drops the cached discovery document and key set (after a settings change).
+func (s *Service) Reset() {
+	s.mu.Lock()
+	s.provider = nil
+	s.mu.Unlock()
+}
+
 // Test runs discovery against issuer (the configured one when empty).
 func (s *Service) Test(ctx context.Context, issuer string) (*Metadata, error) {
 	if issuer == "" {
