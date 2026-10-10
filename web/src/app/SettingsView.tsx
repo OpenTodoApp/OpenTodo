@@ -17,6 +17,7 @@ import { LinkedAccountsPanel, SsoPanel } from './SsoPanel'
 import { TwoFactorPanel } from './TwoFactorPanel'
 import { navigate } from './router'
 import { WebhooksPanel } from './WebhooksPanel'
+import { CaldavPanel } from './CaldavPanel'
 import { setStartView, type StartView } from '../lib/views'
 import { useStartView, useViews } from './useViews'
 
@@ -110,6 +111,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 
       <AdministrationSections user={user} />
       {user.role === 'owner' && <SsoPanel />}
+
+      <CaldavPanel isOwner={user.role === 'owner'} email={user.email} />
 
       <WebhooksPanel isOwner={user.role === 'owner'} />
       <QuickAddSettingsSection />

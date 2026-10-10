@@ -17,7 +17,7 @@ export function fetchHistory(entity: 'task' | 'project', id: string, before?: nu
  * when someone else made the change (shared projects).
  */
 export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId'>, myDevice: string, myUserId?: string, memberships: Membership[] = []): string {
-  const base = set.device === myDevice ? 'this device' : set.device === 'server' ? 'API' : `another device (${set.device.slice(0, 4)})`
+  const base = set.device === myDevice ? 'this device' : set.device === 'server' ? 'API' : set.device.startsWith('caldav:') ? 'a calendar app (CalDAV)' : `another device (${set.device.slice(0, 4)})`
   if (!myUserId || set.userId === myUserId) return base
   for (const m of memberships) {
     const who = m.members.find((x) => x.userId === set.userId)

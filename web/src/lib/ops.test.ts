@@ -172,6 +172,29 @@ describe('mutate', () => {
     await applyOps([{ id: 'sid', entity: 'task', entityId: 'occ', field: 'series_id', value: id, ts: 1, device: 'remote' }])
     expect(await other.tasks.get('occ')).toMatchObject({ series_id: id, recurrence: null })
   })
+
+  it('defaults ical_extra to null and never writes it for app-created tasks (caldav)', async () => {
+    const id = await createTask({ title: 'plain' })
+    expect((await db.tasks.get(id))?.ical_extra).toBeNull()
+    expect((await db.outbox.toArray()).some((o) => o.field === 'ical_extra')).toBe(false)
+    // A task first seen through a single remote op still gets the default.
+    await applyOps([op({ entityId: 'remote', field: 'title', value: 'from CalDAV', ts: 5, device: 'caldav:p1' })])
+    expect((await db.tasks.get('remote'))?.ical_extra).toBeNull()
+  })
+
+  it('keepsIcalExtraOnTitleEdit: the opaque calendar remainder survives local edits', async () => {
+    const extra = 'BEGIN:VALARM\r\nACTION:DISPLAY\r\nTRIGGER:-PT15M\r\nEND:VALARM'
+    await applyOps([
+      op({ field: 'title', value: 'Water plants', ts: 10, device: 'caldav:p1' }),
+      op({ field: 'ical_extra', value: extra, ts: 10, device: 'caldav:p1' }),
+    ])
+    await updateTask('t1', { title: 'Water the plants' })
+    await setTaskCompleted('t1', true)
+    const row = await db.tasks.get('t1')
+    expect(row).toMatchObject({ title: 'Water the plants', ical_extra: extra })
+    expect(row?.completed_at).not.toBeNull()
+    expect((await db.outbox.toArray()).some((o) => o.field === 'ical_extra')).toBe(false)
+  })
 })
 
 describe('subtasks', () => {
