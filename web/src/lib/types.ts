@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder']
 
 export interface Op {
   id: string
@@ -103,6 +103,29 @@ export interface View {
   position: number
   color: string
   panels: string[]
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+}
+
+export type ReminderKind = 'relative' | 'absolute'
+
+/**
+ * A reminder on a task (OpenSpec change `reminders`). `fire_at` is always the
+ * resolved instant (Unix ms): for a relative reminder it is the task's due time
+ * (09:00 local for a date-only due) plus `offset_minutes`, recomputed by the device
+ * that changes the due date; null while the task has no due date. `delivered_at`
+ * is written by the server when a push went out; a delivery older than `fire_at`
+ * belongs to an earlier firing (a snooze or a moved due date).
+ */
+export interface Reminder {
+  id: string
+  task_id: string
+  kind: ReminderKind
+  offset_minutes: number | null
+  fire_at: number | null
+  delivered_at: number | null
+  dismissed_at: number | null
   created_at: number
   deleted_at: number | null
   _clock: Clock
@@ -380,6 +403,10 @@ export interface ImportJob {
   finishedAt: number | null
   undoneAt: number | null
 }
+
+export const REMINDER_FIELDS = [
+  'task_id', 'kind', 'offset_minutes', 'fire_at', 'delivered_at', 'dismissed_at', 'created_at', 'deleted_at',
+] as const
 
 export const VIEW_FIELDS = [
   'name', 'query', 'kind', 'group_by', 'sort_by', 'sort_dir', 'pinned', 'position', 'color', 'panels',

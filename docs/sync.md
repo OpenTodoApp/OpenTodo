@@ -11,7 +11,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 ```json
 {
   "id": "0d1f…",                 // unique per op (UUID v4)
-  "entity": "task",              // "task" | "project" | "label" | "view"
+  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder"
   "entityId": "8c2a…",           // UUID of the entity
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
@@ -48,6 +48,13 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | view | `panels` | array of strings (view ids) |
 | view | `position`, `created_at` | number |
 | view | `deleted_at` | number or null |
+| reminder | `task_id` | string (task id, required) |
+| reminder | `kind` | `"relative"` or `"absolute"` |
+| reminder | `offset_minutes` | integer −525600…525600 (minutes from the due time, negative = before) or null |
+| reminder | `fire_at` | positive number (Unix ms, the resolved firing instant) or null |
+| reminder | `delivered_at`, `dismissed_at` | number or null |
+| reminder | `created_at` | number |
+| reminder | `deleted_at` | number or null |
 
 Adding fields is backwards compatible. Renaming or removing is not; it needs an OpenSpec change with a migration plan.
 
@@ -56,6 +63,15 @@ A client that receives an op for an entity it does not know (an older build talk
 ### Recurring tasks
 
 `task.recurrence` holds a rule such as `every last weekday`; the server rejects an op whose value does not parse (any spelling the grammar accepts is valid, clients store the canonical form). Completing a recurring task is not a single `completed_at` op: the client writes, in one batch, a new *occurrence record* (a task with the series' fields, `completed_at` set, `recurrence: null` and `series_id` pointing at the series) and a `due` op on the series moving it to the next occurrence. The record's id is not random: it is `NameID("occurrence", seriesId + ":" + occurrenceDate)` (SHA-256, formatted as a version 8 UUID; `internal/ids` and `web/src/lib/ids.ts`), and the next due date is a pure function of the rule and dates every device shares. Two devices that complete the same occurrence offline therefore write the same entity and the same `due` value, and LWW only chooses between identical values; Completed shows one entry. "This occurrence only" uses `seriesId + ":detach:" + date` so a copy never collides with a completion. See [recurrence.md](recurrence.md).
+
+### Reminders
+
+A `reminder` belongs to one task (`task_id`) and fires at `fire_at`, always a resolved instant (OpenSpec change `reminders`). An *absolute* reminder keeps the moment the user picked. A *relative* reminder also stores `offset_minutes` and its `fire_at` is the task's due time plus the offset, a date-only due counting as 09:00 in the computing device's time zone; with no due date `fire_at` is null and it does not fire. The device that changes a task's `due` (an edit, a reschedule, a recurring series completing, skipping or detaching) writes a `fire_at` op for every live relative reminder of the task **in the same batch, with the same timestamp and device** as the `due` op, so LWW always takes the due date and the firing times from the same edit. When the firing moves it also clears `delivered_at` and `dismissed_at`. REST `PATCH /api/v1/tasks/{id}` that changes `due` does the same server-side, in the owner's last reported zone offset (the `tzOffset` field of the sync request) or UTC until one was reported.
+
+- *Snooze* writes a new `fire_at` and clears `delivered_at` and `dismissed_at`; *dismiss* writes `dismissed_at`. Both are ordinary ops, so they queue offline and converge per field.
+- `delivered_at` is written by the server (device `server`) when it pushed the reminder. A delivery or dismissal **older than `fire_at`** belongs to an earlier firing and does not count, so a snooze or due change racing the server's delivery op still fires again.
+- A reminder is shown when `fire_at` ≤ now, it is not deleted, not dismissed for the current firing, and its task exists and is neither completed nor deleted.
+- Push subscriptions are device state on the server (`push_subscriptions`), never ops, and are not exported.
 
 ### Task labels
 
