@@ -57,7 +57,7 @@ A single request SHALL push the client's pending operations and pull operations 
 - **THEN** the pending operations are uploaded without user action and other devices receive them on their next exchange
 
 ### Requirement: Sync triggers and status
-The client SHALL sync shortly after each local edit, when the network comes back, when the tab becomes visible, when the server signals that new operations are available, and periodically while open. It SHALL show whether it is synced, syncing, offline (with the count of pending changes), signed out, or in error, SHALL show whether live updates are connected, and SHALL let the user trigger a sync manually. Offline, the indicator reflects pending changes exactly as before; convergence rules are unchanged.
+The client SHALL sync shortly after each local edit, when the network comes back, when the tab becomes visible, when the server signals that new operations are available, and periodically while open. It SHALL show whether it is synced, syncing, offline (with the count of pending changes), signed out, or in error, SHALL show whether live updates are connected, and SHALL let the user trigger a sync manually.
 
 #### Scenario: Status while offline
 - **WHEN** the device is offline with unsent edits
