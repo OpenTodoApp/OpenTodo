@@ -21,10 +21,10 @@
 
 ## 4. Web app
 
-- [ ] 4.1 Settings → Webhooks: list with status and disabled reason, create dialog with event checkboxes, project filter and secret shown once with copy, edit, enable/disable, test with result, delivery log with redeliver, `http://` warning; owner policy toggle; offline state with cached list and disabled actions; verify `webhooksSettings.test.tsx` (`npm test`, `npm run build`) and keyboard reachability in the browser flow
+- [x] 4.1 Settings → Webhooks: list with status and disabled reason, create dialog with event checkboxes, project filter and secret shown once with copy, edit, enable/disable, test with result, delivery log with redeliver, `http://` warning; owner policy toggle; offline state with cached list and disabled actions; verify `webhooksSettings.test.tsx` (`npm test`, `npm run build`) and keyboard reachability in the browser flow
 
 ## 5. Docs and integration
 
-- [ ] 5.1 `docs/webhooks.md`: event list, payload schema v1, signature verification snippets (shell, Python, JavaScript) using the test vector, retry policy, SSRF policy and owner toggle, receiver recipes for Home Assistant, Telegram (via a small relay or n8n), n8n; verify the snippets validate the documented vector
+- [x] 5.1 `docs/webhooks.md`: event list, payload schema v1, signature verification snippets (shell, Python, JavaScript) using the test vector, retry policy, SSRF policy and owner toggle, receiver recipes for Home Assistant, Telegram (via a small relay or n8n), n8n; verify the snippets validate the documented vector
 - [ ] 5.2 `docs/api.md` routes, README feature list, `ROADMAP.md` status, `CHANGELOG.md` Unreleased; verify links resolve and `make check` passes
 - [ ] 5.3 Manual run against the production binary with an n8n webhook node (or any HTTP echo receiver): create, test, complete a task from the PWA, see the delivery and verify its signature; verify no 5xx in server logs
