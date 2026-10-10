@@ -26,4 +26,4 @@
 ## 4. Integration
 
 - [x] 4.1 Two-device browser run: move a project offline on A, move the other direction on B, reconnect both; verify both sidebars are identical, no project is nested inside itself, all tasks reachable
-- [ ] 4.2 Update README feature list and CHANGELOG under Unreleased; verify `make check` passes
+- [x] 4.2 Update README feature list and CHANGELOG under Unreleased; verify `make check` passes
