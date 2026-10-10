@@ -225,7 +225,7 @@ func (s *Server) handlePasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", msg)
 		return
 	}
-	u, err := s.auth.FinishPasskeyLogin(r.Context(), credID, webauthn.AssertionResponse{
+	u, verified, err := s.auth.FinishPasskeyLoginVerified(r.Context(), credID, webauthn.AssertionResponse{
 		ClientDataJSON:    fields["clientDataJSON"],
 		AuthenticatorData: fields["authenticatorData"],
 		Signature:         fields["signature"],
@@ -248,7 +248,14 @@ func (s *Server) handlePasskeyLogin(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	if s.startSession(w, r, u, http.StatusOK) {
+	// A passkey with user verification is two factors (mfa-totp D5); one without
+	// it is only possession, so an enrolled account still needs its code.
+	if !verified {
+		if done := s.secondStep(w, r, u, "passkey"); done {
+			return
+		}
+	}
+	if s.startSession(w, r, u, http.StatusOK, verified) {
 		s.audit.Record(r.Context(), audit.LoginSucceeded(u.ID, u.Email, "passkey"))
 	}
 }

@@ -115,6 +115,7 @@ func (s *Session) FreshWithin(d time.Duration, now time.Time) bool {
 
 type loginChallenge struct {
 	userID   string
+	first    string // first factor: password or passkey
 	expires  time.Time
 	attempts int
 }
@@ -126,7 +127,7 @@ type loginChallenges struct {
 
 func newLoginChallenges() *loginChallenges { return &loginChallenges{m: map[string]*loginChallenge{}} }
 
-func (c *loginChallenges) issue(userID string, now time.Time) string {
+func (c *loginChallenges) issue(userID, first string, now time.Time) string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for k, v := range c.m {
@@ -135,19 +136,19 @@ func (c *loginChallenges) issue(userID string, now time.Time) string {
 		}
 	}
 	id := ids.Secret(32)
-	c.m[id] = &loginChallenge{userID: userID, expires: now.Add(LoginChallengeTTL)}
+	c.m[id] = &loginChallenge{userID: userID, first: first, expires: now.Add(LoginChallengeTTL)}
 	return id
 }
 
-func (c *loginChallenges) user(id string, now time.Time) (string, bool) {
+func (c *loginChallenges) user(id string, now time.Time) (string, string, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	ch, ok := c.m[id]
 	if !ok || now.After(ch.expires) {
 		delete(c.m, id)
-		return "", false
+		return "", "", false
 	}
-	return ch.userID, true
+	return ch.userID, ch.first, true
 }
 
 // fail counts a wrong code; the challenge is burnt after the last attempt.
@@ -169,6 +170,10 @@ func (c *loginChallenges) consume(id string) {
 }
 
 // ---- sessions with freshness ----
+
+// Now is the service's time source (time.Now outside tests); the HTTP layer
+// uses it for freshness checks so both sides agree.
+func (s *Service) Now() time.Time { return s.clock() }
 
 // CreateSessionMFA issues a browser session. reauth_at is set to now (a sign-in
 // is a proof of identity); mfa_at too when the second factor was satisfied.
@@ -642,17 +647,18 @@ func (s *Service) VerifySecondFactor(ctx context.Context, userID, code string, r
 	return MFAMethodTOTP, nil
 }
 
-// StartMFAChallenge issues the second-step challenge after a correct password.
-func (s *Service) StartMFAChallenge(userID string) string {
-	return s.mfaChallenges.issue(userID, s.clock())
+// StartMFAChallenge issues the second-step challenge after a verified first
+// factor (first is "password" or "passkey", used in the audit method).
+func (s *Service) StartMFAChallenge(userID, first string) string {
+	return s.mfaChallenges.issue(userID, first, s.clock())
 }
 
 // CompleteMFAChallenge finishes the second sign-in step. An unknown, expired or
 // exhausted challenge returns ErrMFAChallengeInvalid; a wrong code counts an
 // attempt and returns an *MFAFailure. On success the challenge is consumed and
-// the user and method are returned.
+// the user and the combined method (e.g. password+totp) are returned.
 func (s *Service) CompleteMFAChallenge(ctx context.Context, challenge, code string, recovery bool) (*User, string, error) {
-	userID, ok := s.mfaChallenges.user(challenge, s.clock())
+	userID, first, ok := s.mfaChallenges.user(challenge, s.clock())
 	if !ok {
 		return nil, "", ErrMFAChallengeInvalid
 	}
@@ -669,7 +675,7 @@ func (s *Service) CompleteMFAChallenge(ctx context.Context, challenge, code stri
 	if err != nil {
 		return nil, "", err
 	}
-	return u, method, nil
+	return u, first + "+" + method, nil
 }
 
 // CheckPassword verifies the password of an existing account (re-authentication).

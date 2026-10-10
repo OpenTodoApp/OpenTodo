@@ -155,7 +155,7 @@ func TestEnrolmentRules(t *testing.T) {
 func TestLoginChallengeAttempts(t *testing.T) {
 	ctx := context.Background()
 	s, u, clk, secret, _ := enrolled(t)
-	ch := s.StartMFAChallenge(u.ID)
+	ch := s.StartMFAChallenge(u.ID, "password")
 	for i := 0; i < LoginChallengeAttempts; i++ {
 		if _, _, err := s.CompleteMFAChallenge(ctx, ch, "000000", false); !errors.Is(err, ErrMFACodeInvalid) {
 			t.Fatalf("attempt %d: %v", i+1, err)
@@ -166,15 +166,15 @@ func TestLoginChallengeAttempts(t *testing.T) {
 		t.Fatalf("exhausted challenge: %v", err)
 	}
 	// Expiry.
-	ch = s.StartMFAChallenge(u.ID)
+	ch = s.StartMFAChallenge(u.ID, "password")
 	clk.advance(LoginChallengeTTL + time.Second)
 	if _, _, err := s.CompleteMFAChallenge(ctx, ch, totpCode(secret, totpStep(clk.t)), false); !errors.Is(err, ErrMFAChallengeInvalid) {
 		t.Fatalf("expired challenge: %v", err)
 	}
 	// Success consumes the challenge.
-	ch = s.StartMFAChallenge(u.ID)
+	ch = s.StartMFAChallenge(u.ID, "password")
 	got, method, err := s.CompleteMFAChallenge(ctx, ch, totpCode(secret, totpStep(clk.t)), false)
-	if err != nil || got.ID != u.ID || method != MFAMethodTOTP {
+	if err != nil || got.ID != u.ID || method != "password+totp" {
 		t.Fatalf("complete: %v %q %v", got, method, err)
 	}
 	if _, _, err := s.CompleteMFAChallenge(ctx, ch, "000000", false); !errors.Is(err, ErrMFAChallengeInvalid) {

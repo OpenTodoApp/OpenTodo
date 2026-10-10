@@ -42,6 +42,10 @@ type Server struct {
 	passkeyOptions *rateLimiter
 	// inviteLimiter caps invitation creation per account (20/hour).
 	inviteLimiter *rateLimiter
+	// mfaLimiter guards the second sign-in step and reauthLimiter
+	// re-authentication, per client address (10/min each; OpenSpec `mfa-totp`).
+	mfaLimiter    *rateLimiter
+	reauthLimiter *rateLimiter
 	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
 	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
@@ -73,7 +77,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s := &Server{cfg: cfg, auth: authSvc, audit: authSvc.Audit(), sync: syncSvc, web: web, log: log, version: version,
 		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
 		passkeyOptions: newRateLimiter(10, time.Minute),
-		importer:       importer.New(syncSvc.DB(), syncSvc, log)}
+		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
+		importer: importer.New(syncSvc.DB(), syncSvc, log)}
 	for _, o := range opts {
 		o(s)
 	}
@@ -93,10 +98,13 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// limiter; fetching a challenge has its own per-address limiter.
 	mux.HandleFunc("POST /api/v1/auth/passkey/options", s.handlePasskeyLoginOptions)
 	mux.HandleFunc("POST /api/v1/auth/passkey", s.handlePasskeyLogin)
+	// Second factor (OpenSpec `mfa-totp`): the second sign-in step is anonymous
+	// (it carries the challenge), everything else requires a session or token.
+	s.registerMFARoutes(mux)
 
 	mux.Handle("GET /api/v1/me", s.requireAuth(s.handleMe))
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
-	mux.Handle("POST /api/v1/tokens", s.requireAuth(s.handleCreateToken))
+	mux.Handle("POST /api/v1/tokens", s.requireAuth(s.requireFresh(s.handleCreateToken)))
 	mux.Handle("DELETE /api/v1/tokens/{id}", s.requireAuth(s.handleDeleteToken))
 	mux.Handle("POST /api/v1/passkeys/register/options", s.requireAuth(s.handlePasskeyRegisterOptions))
 	mux.Handle("POST /api/v1/passkeys/register", s.requireAuth(s.handlePasskeyRegister))
@@ -107,7 +115,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// spec defines (the invitee has no account yet). Both must be registered before
 	// the generic {collection} routes so the mux prefers these literal patterns.
 	mux.Handle("GET /api/v1/invitations", s.requireAuth(s.handleListInvitations))
-	mux.Handle("POST /api/v1/invitations", s.requireAuth(s.handleCreateInvitation))
+	mux.Handle("POST /api/v1/invitations", s.requireAuth(s.requireFresh(s.handleCreateInvitation)))
 	mux.Handle("DELETE /api/v1/invitations/{id}", s.requireAuth(s.handleRevokeInvitation))
 	mux.HandleFunc("GET /api/v1/invitations/{token}", s.handlePreviewInvitation)
 	// Audit log: owner-only reads, export and settings; personal activity for
@@ -161,16 +169,26 @@ func auditContext(next http.Handler) http.Handler {
 
 type ctxKey int
 
-const userKey ctxKey = 1
+const (
+	userKey ctxKey = 1
+	// sessionKey holds the *auth.Session of cookie-authenticated requests; it is
+	// absent for bearer tokens, which step-up and policy never touch.
+	sessionKey ctxKey = 2
+)
 
 func userFrom(ctx context.Context) *auth.User {
 	u, _ := ctx.Value(userKey).(*auth.User)
 	return u
 }
 
+func sessionFrom(ctx context.Context) *auth.Session {
+	sess, _ := ctx.Value(sessionKey).(*auth.Session)
+	return sess
+}
+
 func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, viaCookie, err := s.authenticate(r)
+		u, sess, viaCookie, err := s.authenticateSession(r)
 		if err != nil {
 			s.log.Error("auth lookup failed", "err", err)
 			writeError(w, http.StatusInternalServerError, "internal", "internal error")
@@ -184,27 +202,47 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 			writeError(w, http.StatusForbidden, "bad_origin", "cross-site request rejected")
 			return
 		}
-		next(w, r.WithContext(context.WithValue(r.Context(), userKey, u)))
+		// Owner policy (mfa-totp D7): a session whose account must have a second
+		// factor but has none may only enrol. Bearer tokens are never restricted.
+		if sess != nil && sess.Restricted() && !allowedWhileRestricted(r) {
+			writeError(w, http.StatusForbidden, "mfa_enrolment_required", "set up two-factor authentication to continue: the server owner requires it for this account")
+			return
+		}
+		ctx := context.WithValue(r.Context(), userKey, u)
+		if sess != nil {
+			ctx = context.WithValue(ctx, sessionKey, sess)
+		}
+		next(w, r.WithContext(ctx))
 	})
 }
 
 func (s *Server) authenticate(r *http.Request) (*auth.User, bool, error) {
+	u, _, viaCookie, err := s.authenticateSession(r)
+	return u, viaCookie, err
+}
+
+// authenticateSession resolves the bearer token or session cookie. The session
+// is nil for bearer tokens.
+func (s *Server) authenticateSession(r *http.Request) (*auth.User, *auth.Session, bool, error) {
 	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
 		u, err := s.auth.UserByToken(r.Context(), strings.TrimSpace(strings.TrimPrefix(h, "Bearer ")))
 		if errors.Is(err, auth.ErrNotFound) {
-			return nil, false, nil
+			return nil, nil, false, nil
 		}
-		return u, false, err
+		return u, nil, false, err
 	}
 	c, err := r.Cookie(sessionCookie)
 	if err != nil {
-		return nil, false, nil
+		return nil, nil, false, nil
 	}
-	u, err := s.auth.UserBySession(r.Context(), c.Value)
+	sess, err := s.auth.LookupSession(r.Context(), c.Value)
 	if errors.Is(err, auth.ErrNotFound) {
-		return nil, true, nil
+		return nil, nil, true, nil
 	}
-	return u, true, err
+	if err != nil {
+		return nil, nil, true, err
+	}
+	return sess.User, sess, true, nil
 }
 
 // originAllowed defends cookie-authenticated writes against cross-site requests.
@@ -281,19 +319,28 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	count, _ := s.auth.UserCount(r.Context())
-	u, _, err := s.authenticate(r)
+	u, sess, _, err := s.authenticateSession(r)
 	if err != nil {
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
+	out := map[string]any{
 		"setupRequired":     count == 0,
 		"signupAllowed":     allowed,
 		"authenticated":     u != nil,
 		"user":              u,
 		"version":           s.version,
 		"passkeysAvailable": s.cfg.PasskeysAvailable(),
-	})
+	}
+	if u != nil {
+		st, err := s.auth.MFAStatusFor(r.Context(), u, sess != nil)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		out["mfa"] = st
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 type credentials struct {
@@ -340,7 +387,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	if s.startSession(w, r, u, http.StatusCreated) {
+	if s.startSession(w, r, u, http.StatusCreated, false) {
 		s.audit.Record(r.Context(), audit.LoginSucceeded(u.ID, u.Email, "register"))
 	}
 }
@@ -377,15 +424,21 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	if s.startSession(w, r, u, http.StatusOK) {
+	// An enrolled account needs its second factor, unless this browser was
+	// remembered (mfa-totp D3, D6).
+	if done := s.secondStep(w, r, u, "password"); done {
+		return
+	}
+	if s.startSession(w, r, u, http.StatusOK, false) {
 		s.audit.Record(r.Context(), audit.LoginSucceeded(u.ID, u.Email, "password"))
 	}
 }
 
-// startSession issues the session cookie and answers with the user. It reports
-// whether the session was created.
-func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *auth.User, status int) bool {
-	secret, exp, err := s.auth.CreateSession(r.Context(), u.ID, r.UserAgent())
+// startSession issues the session cookie and answers with the user. mfa marks
+// the second factor as satisfied for the session. It reports whether the
+// session was created.
+func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *auth.User, status int, mfa bool) bool {
+	secret, exp, err := s.auth.CreateSessionMFA(r.Context(), u.ID, r.UserAgent(), mfa)
 	if err != nil {
 		s.internal(w, err)
 		return false
@@ -410,7 +463,13 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"user": userFrom(r.Context())})
+	u := userFrom(r.Context())
+	st, err := s.auth.MFAStatusFor(r.Context(), u, sessionFrom(r.Context()) != nil)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"user": u, "mfa": st})
 }
 
 func (s *Server) handleListTokens(w http.ResponseWriter, r *http.Request) {

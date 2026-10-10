@@ -4,14 +4,17 @@
 
 - [x] 1.1 `internal/auth/totp.go`: secret generation, provisioning URI, code verification with one-step tolerance, constant-time compare, last-used-step replay guard; verify `TestTOTPVectors` (published test vectors) and `TestTOTPReplayRefused` with `go test ./...`
 - [x] 1.2 Migrations for `mfa_totp`, `mfa_recovery_codes`, `trusted_devices`, `sessions.mfa_at`, `sessions.reauth_at`, and `settings` if absent; verify the store migration test reaches the new `user_version`
+  - `mfa_at` and `reauth_at` live in a one-to-one companion table, `session_auth(token_hash -> sessions ON DELETE CASCADE, mfa_at, reauth_at)`, not in columns on `sessions`. SQLite has no idempotent `ADD COLUMN`, and the migration (`0009_mfa.sql`) must stay re-runnable so it can be renumbered. Verified by `TestMigrationMFA`.
 - [x] 1.3 Recovery codes: generate ten, hash, consume once, regenerate; verify `TestRecoveryCodesSingleUseAndRegenerate`
 
 ## 2. Server: sign-in, step-up, policy, routes
 
 - [ ] 2.1 Login returns `mfaRequired` with a 5-minute, 5-attempt challenge for enrolled accounts; `POST /api/v1/auth/mfa` with code or recovery code; trusted-device cookie; passkey with user verification and provider sign-in set `mfa_at`; verify `TestTwoStepLogin`, `TestChallengeExhausted`, `TestTrustedDeviceSkipsSecondStep`, `TestPasskeyUVSatisfiesMFA`
+  - Done except provider sign-in: `oidc-login` is not on main, so there is no provider sign-in to mark. When it merges, its callback should start the session with `startSession(w, r, u, status, true)` (`internal/httpapi/server.go`). All four tests pass.
 - [ ] 2.2 `POST /api/v1/auth/reauth`, `requireFresh` middleware on token creation, password change, MFA disable, recovery regeneration, SSO/MFA/invitation settings; bearer tokens exempt; verify `TestReauthRequiredOnStaleSession`, `TestBearerTokenNeverChallenged`, `TestReauthRateLimited`
-- [ ] 2.3 Policy `GET/PUT /api/v1/settings/mfa` (owner only) and the enrolment-restricted session check with its allowlist; verify `TestPolicyRestrictsUnenrolledSessions`, `TestPolicyRequiresOwner`
-- [ ] 2.4 Enrolment routes (`enroll`, `confirm`, `DELETE totp`, `recovery-codes/regenerate`, trusted devices list/delete), owner `POST /api/v1/members/{id}/mfa/reset`, `opentodo mfa-reset <email>` subcommand; verify `TestEnrolConfirmDisable`, `TestDisableRefusedByPolicy`, `TestOwnerResetClearsEverything`, and the subcommand against a temp data dir
+  - Done except two routes that do not exist on main: there is no password-change route and no `PUT /api/v1/settings/oidc` (`oidc-login` not merged). Whoever adds them wraps them as `s.requireAuth(s.requireFresh(h))`. Fresh-gated today: `POST /api/v1/tokens`, `POST /api/v1/invitations`, `PUT /api/v1/settings/mfa`, `DELETE /api/v1/mfa/totp`, `POST /api/v1/mfa/recovery-codes/regenerate`, `POST /api/v1/members/{id}/mfa/reset`. All three tests pass.
+- [x] 2.3 Policy `GET/PUT /api/v1/settings/mfa` (owner only) and the enrolment-restricted session check with its allowlist; verify `TestPolicyRestrictsUnenrolledSessions`, `TestPolicyRequiresOwner`
+- [x] 2.4 Enrolment routes (`enroll`, `confirm`, `DELETE totp`, `recovery-codes/regenerate`, trusted devices list/delete), owner `POST /api/v1/members/{id}/mfa/reset`, `opentodo mfa-reset <email>` subcommand; verify `TestEnrolConfirmDisable`, `TestDisableRefusedByPolicy`, `TestOwnerResetClearsEverything`, and the subcommand against a temp data dir
 - [ ] 2.5 `docs/api.md` with every route, the two-step login shape and error codes; `SECURITY.md`; verify documented payloads match handler tests
 
 ## 3. Web app

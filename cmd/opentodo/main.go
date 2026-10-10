@@ -3,6 +3,7 @@
 //	opentodo              start the server (configured via OPENTODO_* env vars)
 //	opentodo healthcheck  exit 0 when a local server answers /healthz (used by Docker)
 //	opentodo restore      replace the database with a backup archive (server stopped)
+//	opentodo mfa-reset    remove an account's second factor (server stopped)
 //	opentodo version      print the version
 package main
 
@@ -11,6 +12,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -45,8 +47,10 @@ func main() {
 			os.Exit(healthcheck())
 		case "restore":
 			os.Exit(restore(os.Args[2:]))
+		case "mfa-reset":
+			os.Exit(mfaReset(os.Args[2:], os.Stdout, os.Stderr))
 		case "help", "--help", "-h":
-			fmt.Print("usage: opentodo [healthcheck|restore|version]\n\nConfiguration is read from OPENTODO_* environment variables; see .env.example.\nRun `opentodo restore -h` for the restore procedure (docs/backups.md).\n")
+			fmt.Print("usage: opentodo [healthcheck|restore|mfa-reset|version]\n\nConfiguration is read from OPENTODO_* environment variables; see .env.example.\nRun `opentodo restore -h` for the restore procedure (docs/backups.md).\nRun `opentodo mfa-reset -h` to rescue an account locked out of its second factor.\n")
 			return
 		default:
 			fmt.Fprintf(os.Stderr, "unknown command %q\n", os.Args[1])
@@ -211,6 +215,73 @@ See docs/backups.md.
 	}
 	fmt.Printf("  new log generation %s: devices re-send their local changes on their next sync\n", res.Generation)
 	fmt.Println("start the server to apply pending migrations")
+	return 0
+}
+
+// mfaReset implements `opentodo mfa-reset [--data-dir DIR] <email>`: the last
+// resort for an owner who lost both their authenticator and their recovery
+// codes (OpenSpec `mfa-totp`). It works on the data directory directly, so it
+// needs shell access to the host and refuses to run while the server holds the
+// directory. The reset is recorded in the audit log as mfa.reset.
+func mfaReset(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("mfa-reset", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	dataDir := fs.String("data-dir", "", "data directory (default: $OPENTODO_DATA_DIR or ./data)")
+	fs.Usage = func() {
+		fmt.Fprint(fs.Output(), `usage: opentodo mfa-reset [--data-dir DIR] <email>
+
+Removes the two-factor secret, recovery codes and remembered browsers of the
+account with this email, so it can sign in with its password alone. If the
+owner policy requires two-factor authentication for the account, it must enrol
+again right after signing in. Stop the server first. See SECURITY.md.
+
+`)
+		fs.PrintDefaults()
+	}
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
+		return 2
+	}
+	if fs.NArg() != 1 {
+		fs.Usage()
+		return 2
+	}
+	dir := *dataDir
+	if dir == "" {
+		dir = os.Getenv("OPENTODO_DATA_DIR")
+	}
+	if dir == "" {
+		dir = "./data"
+	}
+	if _, err := os.Stat(store.DBPath(dir)); err != nil {
+		fmt.Fprintf(stderr, "opentodo mfa-reset: no database in %s: %v\n", dir, err)
+		return 1
+	}
+	unlock, err := store.Lock(dir)
+	if err != nil {
+		fmt.Fprintf(stderr, "opentodo mfa-reset: %s: %v (stop the server first)\n", dir, err)
+		return 1
+	}
+	defer unlock()
+	db, err := store.Open(dir)
+	if err != nil {
+		fmt.Fprintln(stderr, "opentodo mfa-reset:", err)
+		return 1
+	}
+	defer db.Close()
+	u, err := auth.NewService(db, time.Hour, false).ResetMFAByEmail(context.Background(), fs.Arg(0))
+	if errors.Is(err, auth.ErrNotFound) {
+		fmt.Fprintf(stderr, "opentodo mfa-reset: no account with email %q\n", fs.Arg(0))
+		return 1
+	}
+	if err != nil {
+		fmt.Fprintln(stderr, "opentodo mfa-reset:", err)
+		return 1
+	}
+	fmt.Fprintf(stdout, "two-factor authentication removed for %s (%s); trusted browsers forgotten\n", u.Email, u.Role)
+	fmt.Fprintln(stdout, "start the server and sign in with the password; enrol again in Settings > Security")
 	return 0
 }
 
