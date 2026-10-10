@@ -26,4 +26,4 @@
 ## 4. Integration and docs
 
 - [x] 4.1 Two-device browser run: build a three-level tree on A; on B offline re-parent and complete; on A offline delete a subtree; reconnect both; verify identical trees, no task nested in itself, deleted subtree absent from views and present in export
-- [ ] 4.2 README feature list and CHANGELOG under Unreleased; verify `make check` passes
+- [x] 4.2 README feature list and CHANGELOG under Unreleased; verify `make check` passes
