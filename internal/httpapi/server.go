@@ -20,6 +20,7 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/importer"
+	"github.com/pixari/opentodo/internal/notify"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/webhook"
 )
@@ -52,6 +53,8 @@ type Server struct {
 
 	// backups is nil when the server runs without the backup service (tests).
 	backups *backup.Service
+	// inbox serves in-app notifications (OpenSpec `task-assignment`).
+	inbox *notify.InApp
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -76,6 +79,10 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		importer:       importer.New(syncSvc.DB(), syncSvc, log)}
 	for _, o := range opts {
 		o(s)
+	}
+	if s.inbox == nil {
+		s.inbox = notify.NewInApp(syncSvc.DB(), log)
+		syncSvc.AddSink(s.inbox)
 	}
 	// Passkeys need a relying party; it is derived from the base URL so the
 	// 409 guard in the handlers and the service always agree.
@@ -128,6 +135,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/backups/test", s.requireAuth(s.handleBackupTest))
 	// Project sharing (OpenSpec `project-sharing`): literal patterns win over {collection}.
 	s.registerSharingRoutes(mux)
+	// Notifications (OpenSpec `task-assignment`): literal patterns win over {collection}.
+	s.registerNotificationRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
