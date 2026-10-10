@@ -51,6 +51,8 @@ export interface Task {
   created_at: number
   completed_at: number | null
   deleted_at: number | null
+  /** Duration estimate in minutes (positive integer, at most 10080) or null. */
+  estimate_minutes: number | null
   _clock: Clock
 }
 
@@ -75,5 +77,5 @@ export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'unauthentica
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
-  'position', 'created_at', 'completed_at', 'deleted_at',
+  'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes',
 ] as const

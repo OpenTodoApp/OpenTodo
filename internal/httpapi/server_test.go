@@ -174,6 +174,28 @@ func TestRestWriteThroughAndSyncRoundTrip(t *testing.T) {
 		t.Fatalf("patched priority = %v", out["priority"])
 	}
 
+	// estimate_minutes (additive field) is accepted by PATCH, read back, and validated.
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"estimate_minutes": 45})
+	e.mustStatus(resp, 200, out)
+	if out["estimate_minutes"] != float64(45) {
+		t.Fatalf("patched estimate_minutes = %v", out["estimate_minutes"])
+	}
+	resp, out = e.do("GET", "/api/v1/tasks/"+taskID, nil)
+	e.mustStatus(resp, 200, out)
+	if out["estimate_minutes"] != float64(45) {
+		t.Fatalf("estimate_minutes after read = %v", out["estimate_minutes"])
+	}
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"estimate_minutes": 0})
+	e.mustStatus(resp, 400, out)
+	// POST validates it too (a string is rejected and no task is created).
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Write report", "estimate_minutes": "30"})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"estimate_minutes": nil})
+	e.mustStatus(resp, 200, out)
+	if out["estimate_minutes"] != nil {
+		t.Fatalf("cleared estimate_minutes = %v", out["estimate_minutes"])
+	}
+
 	resp, out = e.do("GET", "/api/v1/tasks", nil)
 	e.mustStatus(resp, 200, out)
 	if n := len(out["tasks"].([]any)); n != 1 {

@@ -2,10 +2,10 @@
 
 ## 1. Data model: `estimate_minutes`
 
-- [ ] 1.1 Add `estimate_minutes` (nullable positive integer kind) to `Schema` in `internal/sync/ops.go` with validation; verify `TestValidateRejectsBadOps` gains cases for 0, -5, 1.5, "30" and `go test ./...` passes
-- [ ] 1.2 Add the field to `Task`/`TASK_FIELDS` in `web/src/lib/types.ts` and `TASK_DEFAULTS` in `web/src/lib/ops.ts`; verify `ops.test.ts` round-trips an op for the field and `npm test` passes
-- [ ] 1.3 Confirm REST create/patch accept the field and export includes it; verify a new case in `TestRestWriteThroughAndSyncRoundTrip` patches `estimate_minutes` and reads it back (`go test ./...`)
-- [ ] 1.4 Update `docs/api.md` and `docs/sync.md` field tables; verify the tables list `estimate_minutes` with its type
+- [x] 1.1 Add `estimate_minutes` (nullable positive integer kind) to `Schema` in `internal/sync/ops.go` with validation; verify `TestValidateRejectsBadOps` gains cases for 0, -5, 1.5, "30" and `go test ./...` passes
+- [x] 1.2 Add the field to `Task`/`TASK_FIELDS` in `web/src/lib/types.ts` and `TASK_DEFAULTS` in `web/src/lib/ops.ts`; verify `ops.test.ts` round-trips an op for the field and `npm test` passes
+- [x] 1.3 Confirm REST create/patch accept the field and export includes it; verify a new case in `TestRestWriteThroughAndSyncRoundTrip` patches `estimate_minutes` and reads it back (`go test ./...`)
+- [x] 1.4 Update `docs/api.md` and `docs/sync.md` field tables; verify the tables list `estimate_minutes` with its type
 
 ## 2. Parser module (client)
 

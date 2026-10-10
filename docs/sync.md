@@ -36,6 +36,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `labels` | array of strings |
 | task | `position`, `created_at` | number |
 | task | `completed_at`, `deleted_at` | number or null |
+| task | `estimate_minutes` | integer 1–10080 (minutes) or null |
 
 Adding fields is backwards compatible. Renaming or removing is not; it needs an OpenSpec change with a migration plan.
 

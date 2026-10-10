@@ -117,6 +117,11 @@ func TestValidateRejectsBadOps(t *testing.T) {
 		op("", "task", "t1", "title", `"x"`, 1, "A"),
 		op("1", "task", "t1", "title", `"x"`, 0, "A"),
 		op("1", "task", "t1", "labels", `null`, 1, "A"),
+		op("1", "task", "t1", "estimate_minutes", `0`, 1, "A"),
+		op("1", "task", "t1", "estimate_minutes", `-5`, 1, "A"),
+		op("1", "task", "t1", "estimate_minutes", `1.5`, 1, "A"),
+		op("1", "task", "t1", "estimate_minutes", `"30"`, 1, "A"),
+		op("1", "task", "t1", "estimate_minutes", `10081`, 1, "A"),
 	}
 	for i, b := range bad {
 		if err := Validate(b); err == nil {
@@ -128,6 +133,9 @@ func TestValidateRejectsBadOps(t *testing.T) {
 		op("1", "task", "t1", "due", `null`, 1, "A"),
 		op("1", "task", "t1", "labels", `["a","b"]`, 1, "A"),
 		op("1", "project", "p1", "archived", `true`, 1, "A"),
+		op("1", "task", "t1", "estimate_minutes", `45`, 1, "A"),
+		op("1", "task", "t1", "estimate_minutes", `10080`, 1, "A"),
+		op("1", "task", "t1", "estimate_minutes", `null`, 1, "A"),
 	}
 	for i, g := range good {
 		if err := Validate(g); err != nil {
