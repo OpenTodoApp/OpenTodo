@@ -6,8 +6,10 @@ import {
   fromBase64Url,
   getPasskey,
   isCancellation,
+  PasskeyDomainError,
   passkeysSupported,
   requestOptionsFromJSON,
+  rpIdMatches,
   toBase64Url,
 } from './passkeys'
 
@@ -134,5 +136,31 @@ describe('ceremony wrappers', () => {
   it('turns a null credential into a cancellation', async () => {
     installCredentialApi({})
     await expect(getPasskey({ challenge: 'AA', rpId: 'localhost' })).rejects.toSatisfy(isCancellation)
+  })
+})
+
+describe('passkey domain', () => {
+  it('matches the same host or a subdomain only', () => {
+    expect(rpIdMatches('todo.example.com', 'todo.example.com')).toBe(true)
+    expect(rpIdMatches('example.com', 'todo.example.com')).toBe(true)
+    expect(rpIdMatches('Todo.Example.com', 'todo.example.com.')).toBe(true)
+    expect(rpIdMatches('todo.example.com', 'abc123.sslip.io')).toBe(false)
+    expect(rpIdMatches('example.com', 'badexample.com')).toBe(false)
+    expect(rpIdMatches('', 'todo.example.com')).toBe(false)
+  })
+
+  it('explains a mismatch instead of calling the browser', async () => {
+    const { create, get } = installCredentialApi()
+    vi.stubGlobal('location', { hostname: 'abc123.sslip.io' })
+    const err = await getPasskey({ challenge: 'AA', rpId: 'todo.example.com' }).catch((e) => e)
+    expect(err).toBeInstanceOf(PasskeyDomainError)
+    expect(err.message).toContain('set up for todo.example.com')
+    expect(err.message).toContain('open at abc123.sslip.io')
+    expect(err.message).toContain('OPENTODO_BASE_URL')
+    expect(isCancellation(err)).toBe(false)
+    await expect(createPasskey({ challenge: 'AA', rp: { id: 'todo.example.com', name: 'OpenTodo' }, user: { id: 'AA', name: 'a', displayName: 'a' }, pubKeyCredParams: [] }))
+      .rejects.toBeInstanceOf(PasskeyDomainError)
+    expect(get).not.toHaveBeenCalled()
+    expect(create).not.toHaveBeenCalled()
   })
 })

@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError, OIDC_START_URL } from '../lib/api'
-import { conditionalMediationAvailable, getPasskey, isCancellation, passkeysSupported } from '../lib/passkeys'
+import { conditionalMediationAvailable, getPasskey, isCancellation, PasskeyDomainError, passkeysSupported } from '../lib/passkeys'
 import type { AuthStatus, InvitationPreview, LoginResult } from '../lib/types'
 import { oidcErrorMessage, ssoLayout, takeQueryParam } from './sso'
 
@@ -61,7 +61,8 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
     try {
       await finishPasskey({ conditional: true, signal: ac.signal })
     } catch (err) {
-      if (ac.signal.aborted || isCancellation(err)) return
+      // Autofill stays quiet on a domain mismatch; the passkey button explains it.
+      if (ac.signal.aborted || isCancellation(err) || err instanceof PasskeyDomainError) return
       setError(err instanceof ApiError ? passkeyMessage(err) : null)
     }
   }, [finishPasskey])
@@ -80,7 +81,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
       await finishPasskey({ conditional: false, signal: new AbortController().signal })
     } catch (err) {
       // Cancelled prompt or no passkey on this device: back to the password form, no error.
-      if (!isCancellation(err)) setError(err instanceof ApiError ? passkeyMessage(err) : null)
+      if (!isCancellation(err)) setError(err instanceof ApiError ? passkeyMessage(err) : err instanceof PasskeyDomainError ? err.message : null)
       void startConditional()
     } finally {
       setBusy(false)

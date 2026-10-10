@@ -88,6 +88,32 @@ export function isCancellation(err: unknown): boolean {
   return name === 'NotAllowedError' || name === 'AbortError'
 }
 
+/**
+ * The page is open at a host the server's passkey domain (relying-party id) does
+ * not cover, for example a second domain or an auto-generated URL while
+ * OPENTODO_BASE_URL names another host. Browsers refuse the ceremony with "The
+ * origin of the document is not authorized for the provided RP ID"; this says
+ * what to change instead.
+ */
+export class PasskeyDomainError extends Error {
+  constructor(readonly rpId: string, readonly host: string) {
+    super(`Passkeys on this server are set up for ${rpId}, but this page is open at ${host}. Open the app at https://${rpId}, or ask the server owner to set OPENTODO_BASE_URL to https://${host}.`)
+    this.name = 'PasskeyDomainError'
+  }
+}
+
+/** True when a page on `host` may use passkeys of relying party `rpId` (same host or a subdomain). */
+export function rpIdMatches(rpId: string, host: string): boolean {
+  const r = rpId.toLowerCase().replace(/\.$/, '')
+  const h = host.toLowerCase().replace(/\.$/, '')
+  return r !== '' && (h === r || h.endsWith('.' + r))
+}
+
+function assertDomain(rpId: string | undefined): void {
+  if (!rpId || typeof location === 'undefined') return
+  if (!rpIdMatches(rpId, location.hostname)) throw new PasskeyDomainError(rpId, location.hostname)
+}
+
 export function creationOptionsFromJSON(o: CreationOptionsJSON): PublicKeyCredentialCreationOptions {
   return {
     challenge: fromBase64Url(o.challenge),
@@ -113,6 +139,7 @@ export function requestOptionsFromJSON(o: RequestOptionsJSON): PublicKeyCredenti
 
 /** Runs navigator.credentials.create() and serializes the result for the server. */
 export async function createPasskey(options: CreationOptionsJSON, signal?: AbortSignal): Promise<RegistrationJSON> {
+  assertDomain(options.rp?.id)
   const cred = (await navigator.credentials.create({ publicKey: creationOptionsFromJSON(options), signal })) as PublicKeyCredential | null
   if (!cred) throw new DOMException('No credential returned', 'NotAllowedError')
   const res = cred.response as AuthenticatorAttestationResponse
@@ -135,6 +162,7 @@ export async function createPasskey(options: CreationOptionsJSON, signal?: Abort
  * starting another ceremony.
  */
 export async function getPasskey(options: RequestOptionsJSON, opts: { signal?: AbortSignal; conditional?: boolean } = {}): Promise<AssertionJSON> {
+  assertDomain(options.rpId)
   const cred = (await navigator.credentials.get({
     publicKey: requestOptionsFromJSON(options),
     signal: opts.signal,

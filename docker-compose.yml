@@ -17,9 +17,11 @@ services:
     image: ghcr.io/pixari/opentodo:latest
     restart: unless-stopped
     environment:
-      # Coolify magic variables (ignored by plain docker compose).
+      # Coolify magic variables (ignored by plain docker compose). An OPENTODO_BASE_URL
+      # you set yourself wins over the URL Coolify generates; it must be the exact
+      # address users open (passkeys and cookies are bound to its host).
       - SERVICE_FQDN_OPENTODO_8080
-      - OPENTODO_BASE_URL=${SERVICE_URL_OPENTODO:-${OPENTODO_BASE_URL:-}}
+      - OPENTODO_BASE_URL=${OPENTODO_BASE_URL:-${SERVICE_URL_OPENTODO:-}}
       - OPENTODO_ALLOW_SIGNUP=${OPENTODO_ALLOW_SIGNUP:-false}
       - OPENTODO_SESSION_DAYS=${OPENTODO_SESSION_DAYS:-90}
       - OPENTODO_LOG_LEVEL=${OPENTODO_LOG_LEVEL:-info}
