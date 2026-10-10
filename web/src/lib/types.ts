@@ -124,7 +124,35 @@ export interface AuthStatus {
   version: string
   /** Server has an https (or localhost) base URL, so passkey ceremonies work. */
   passkeysAvailable?: boolean
+  /** Second-factor state of the signed-in account (absent when anonymous). */
+  mfa?: MfaStatus
 }
+
+/** Owner policy for the second factor (OpenSpec `mfa-totp`). */
+export type MfaPolicy = 'none' | 'owner' | 'all'
+
+/** Second-factor state as reported by /me, /mfa and auth/status. Server account data, never synced. */
+export interface MfaStatus {
+  enrolled: boolean
+  recoveryCodesRemaining: number
+  policy: MfaPolicy
+  /** The owner's policy covers this account. */
+  required: boolean
+  /** The session may only enrol until a second factor is confirmed. */
+  restricted: boolean
+}
+
+/** A browser remembered for 30 days after the second step. */
+export interface TrustedDevice {
+  id: string
+  userAgent: string
+  createdAt: number
+  expiresAt: number
+  lastUsedAt: number | null
+}
+
+/** Answer of the password (or passkey) step: a session, or a second-step challenge. */
+export type LoginResult = { user: User; mfaRequired?: undefined } | { mfaRequired: true; challenge: string; expiresAt: number; user?: undefined }
 
 /** A registered passkey as listed by GET /api/v1/passkeys. Server-only account data, never synced. */
 export interface Passkey {
@@ -205,7 +233,7 @@ export interface WebhookInput {
 }
 
 /** 'reseeding': the server was restored from a backup and this device is re-sending its local state. */
-export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' | 'unauthenticated'
+export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' | 'unauthenticated' | 'restricted'
 
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
 export const TASK_FIELDS = [

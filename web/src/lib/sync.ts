@@ -48,6 +48,11 @@ function publish(patch: Partial<Snapshot>) {
   for (const fn of listeners) fn()
 }
 
+/** The current status outside React (tests, one-off checks). */
+export function getSyncStatus(): Snapshot {
+  return snapshot
+}
+
 export function useSyncStatus(): Snapshot {
   return useSyncExternalStore(
     (fn) => {
@@ -121,6 +126,12 @@ async function runOnce(): Promise<void> {
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
       publish({ state: 'unauthenticated' })
+      return
+    }
+    if (err instanceof ApiError && err.code === 'mfa_enrolment_required') {
+      // The owner now requires a second factor for this account. Nothing was
+      // accepted, so the outbox stays queued and uploads after enrolment.
+      publish({ state: 'restricted', error: 'Set up two-factor authentication to keep syncing.' })
       return
     }
     if (err instanceof TypeError) {

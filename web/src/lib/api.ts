@@ -1,6 +1,6 @@
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, Op, Passkey, User,
+  AuditEvent, AuditFilters, AuditSettings, AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, MfaPolicy, MfaStatus, Op, Passkey, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -10,7 +10,59 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+// ---- global second-factor handling (OpenSpec `mfa-totp`) ----
+//
+// A sensitive route answers 403 `reauth_required` when the session has not
+// proved its identity in the last ten minutes. The UI registers a handler that
+// asks for the password or a code (ReauthDialog); after it succeeds the
+// original request is repeated once. A 403 `mfa_enrolment_required` means the
+// owner's policy requires a second factor this account lacks: listeners (the
+// app shell) route to the enrolment wizard.
+
+/** Resolves true once the user re-authenticated, false when they cancelled. */
+export type ReauthHandler = () => Promise<boolean>
+let reauthHandler: ReauthHandler | null = null
+let reauthInFlight: Promise<boolean> | null = null
+const enrolmentListeners = new Set<() => void>()
+
+/** Registers the re-authentication prompt; returns an unregister function. */
+export function setReauthHandler(h: ReauthHandler): () => void {
+  reauthHandler = h
+  return () => {
+    if (reauthHandler === h) reauthHandler = null
+  }
+}
+
+/** Subscribes to "this session must enrol a second factor"; returns an unsubscribe function. */
+export function onEnrolmentRequired(fn: () => void): () => void {
+  enrolmentListeners.add(fn)
+  return () => enrolmentListeners.delete(fn)
+}
+
+function reauthenticate(): Promise<boolean> {
+  if (!reauthHandler) return Promise.resolve(false)
+  // Concurrent requests share one prompt.
+  reauthInFlight ??= reauthHandler().finally(() => {
+    reauthInFlight = null
+  })
+  return reauthInFlight
+}
+
+async function request<T>(method: string, path: string, body?: unknown, retried = false): Promise<T> {
+  try {
+    return await send<T>(method, path, body)
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 403) {
+      if (err.code === 'reauth_required' && !retried && (await reauthenticate())) {
+        return request<T>(method, path, body, true)
+      }
+      if (err.code === 'mfa_enrolment_required') enrolmentListeners.forEach((fn) => fn())
+    }
+    throw err
+  }
+}
+
+async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
     method,
     headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
@@ -44,7 +96,28 @@ export const api = {
   /** Register an account. `invitation` is the secret from an invite link; it admits one member while sign-up is closed. */
   register: (email: string, name: string, password: string, invitation?: string) =>
     request<{ user: User }>('POST', '/api/v1/auth/register', invitation ? { email, name, password, invitation } : { email, name, password }),
-  login: (email: string, password: string) => request<{ user: User }>('POST', '/api/v1/auth/login', { email, password }),
+  /** Password step. An account with a second factor answers with a challenge instead of a session. */
+  login: (email: string, password: string) => request<LoginResult>('POST', '/api/v1/auth/login', { email, password }),
+  /** Second sign-in step: a code from the app, or a recovery code. `remember` trusts this browser for 30 days. */
+  mfaLogin: (challenge: string, code: string, opts: { recovery?: boolean; remember?: boolean } = {}) =>
+    request<{ user: User }>('POST', '/api/v1/auth/mfa', {
+      challenge, ...(opts.recovery ? { recoveryCode: code } : { code }), remember: !!opts.remember,
+    }),
+  /** Proves identity again (password or code) so sensitive actions work for ten minutes. */
+  reauth: (input: { password: string } | { code: string }) =>
+    request<{ reauthAt: number; validForMs: number }>('POST', '/api/v1/auth/reauth', input, true),
+  me: () => request<{ user: User; mfa: MfaStatus }>('GET', '/api/v1/me'),
+  mfaStatus: () => request<{ mfa: MfaStatus }>('GET', '/api/v1/mfa'),
+  enrollTotp: () => request<{ secret: string; uri: string; expiresAt: number }>('POST', '/api/v1/mfa/totp/enroll', {}),
+  confirmTotp: (code: string) => request<{ recoveryCodes: string[]; mfa: MfaStatus }>('POST', '/api/v1/mfa/totp/confirm', { code }),
+  disableTotp: () => request<void>('DELETE', '/api/v1/mfa/totp'),
+  regenerateRecoveryCodes: () => request<{ recoveryCodes: string[] }>('POST', '/api/v1/mfa/recovery-codes/regenerate', {}),
+  listTrustedDevices: () => request<{ devices: TrustedDevice[] }>('GET', '/api/v1/mfa/trusted-devices'),
+  forgetTrustedDevices: () => request<void>('DELETE', '/api/v1/mfa/trusted-devices'),
+  forgetTrustedDevice: (id: string) => request<void>('DELETE', `/api/v1/mfa/trusted-devices/${encodeURIComponent(id)}`),
+  getMfaPolicy: () => request<{ required: MfaPolicy }>('GET', '/api/v1/settings/mfa'),
+  setMfaPolicy: (required: MfaPolicy) => request<{ required: MfaPolicy }>('PUT', '/api/v1/settings/mfa', { required }),
+  resetMemberMfa: (userId: string) => request<void>('POST', `/api/v1/members/${encodeURIComponent(userId)}/mfa/reset`, {}),
   logout: () => request<void>('POST', '/api/v1/auth/logout'),
   sync: (device: string, cursor: number, ops: Op[]) =>
     request<{ applied: number; ops: Op[]; cursor: number; hasMore: boolean; serverTime: number; generation?: string }>(
@@ -55,7 +128,8 @@ export const api = {
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
   // Passkeys (OpenSpec change `passkeys`). Binary fields are base64url strings.
   passkeyLoginOptions: () => request<{ publicKey: RequestOptionsJSON }>('POST', '/api/v1/auth/passkey/options', {}),
-  passkeyLogin: (credential: AssertionJSON) => request<{ user: User }>('POST', '/api/v1/auth/passkey', { credential }),
+  /** A passkey without user verification on an enrolled account also answers with a challenge. */
+  passkeyLogin: (credential: AssertionJSON) => request<LoginResult>('POST', '/api/v1/auth/passkey', { credential }),
   passkeyRegisterOptions: () => request<{ publicKey: CreationOptionsJSON }>('POST', '/api/v1/passkeys/register/options', {}),
   passkeyRegister: (name: string, credential: RegistrationJSON) =>
     request<{ passkey: Passkey }>('POST', '/api/v1/passkeys/register', { name, credential }),

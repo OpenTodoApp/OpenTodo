@@ -19,7 +19,7 @@
 
 ## 3. Web app
 
-- [ ] 3.1 Add the QR encoder dependency and record its gzipped size in `design.md`; `web/src/lib/api.ts` functions for all routes, global `reauth_required` and `mfa_enrolment_required` handling with one retry; verify `npm test` passes `api.reauth.test.ts` (mocked fetch sequence) and `npm run build`
+- [x] 3.1 Add the QR encoder dependency and record its gzipped size in `design.md`; `web/src/lib/api.ts` functions for all routes, global `reauth_required` and `mfa_enrolment_required` handling with one retry; verify `npm test` passes `api.reauth.test.ts` (mocked fetch sequence) and `npm run build`
 - [ ] 3.2 Sign-in screen: code step with recovery toggle and remember-device checkbox; verify component tests for `mfaRequired`, wrong code, and exhausted challenge in `npm test`, plus a browser run
 - [ ] 3.3 Security panel: enrolment wizard (QR, manual key, confirm), recovery codes once with copy/download, remaining count, trusted devices, owner policy select, `ReauthDialog`; offline read-only; keyboard reachable; verify component tests and a browser run; `npm run build` passes
 - [ ] 3.4 Sync status maps `mfa_enrolment_required` to an actionable message linking to the wizard; verify by enabling the policy for a signed-in unenrolled member and observing the status and that queued edits upload after enrolment

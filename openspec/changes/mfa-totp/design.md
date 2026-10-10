@@ -52,6 +52,8 @@ Policy keys in the `settings` table: `mfa.required = none | owner | all`. On eac
 ### D10. Data model impact and footprint
 Additive migrations: `mfa_totp`, `mfa_recovery_codes`, `trusted_devices`, two nullable `sessions` columns, and `settings` if not present. No change to `ops`, `fields` or the op schema; nothing is synced. Go: no new dependency, binary unchanged within noise, memory impact a small challenge map. Web: +~4 KB gzipped.
 
+**Measured at implementation.** The client pins `qrcode-generator` at exactly `2.0.4` (MIT, no dependencies, published 2025-08-07). Minified, it is 7.0 KB gzipped, more than the ~4 KB estimate: the package is a single factory that also contains GIF and table renderers, and these cannot be tree-shaken. Only `isDark` is used, and the app draws the code as SVG. The production JS bundle went from 180.27 KB to 193.62 KB gzipped (+13.4 KB in total, of which about 6.4 KB is the change's own UI and API code) and CSS from 8.79 KB to 8.86 KB. `mfa_at` and `reauth_at` are stored in a one-to-one table, `session_auth`, instead of `sessions` columns, so that the migration stays idempotent (SQLite has no `ADD COLUMN IF NOT EXISTS`). Their meaning is unchanged.
+
 ## Risks / Trade-offs
 
 - [User loses phone and recovery codes] → owner reset; the wizard forces the user to acknowledge saving the codes; Settings shows remaining count.

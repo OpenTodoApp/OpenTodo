@@ -16,7 +16,8 @@ vi.mock('./api', () => ({
 import { db, getMeta, setMeta } from './db'
 import { useDatabase } from './db'
 import { applyOps, resetDeviceId } from './ops'
-import { startSync, stopSync, syncNow } from './sync'
+import { ApiError } from './api'
+import { getSyncStatus, startSync, stopSync, syncNow } from './sync'
 
 /** Minimal stand-in for the browser's EventSource with manual event injection. */
 class FakeEventSource {
@@ -351,5 +352,26 @@ describe('restore re-seed (log generation)', () => {
     await syncNow()
     expect(sent()).toHaveLength(1)
     expect(await getMeta('generation', '')).toBe('gen-after')
+  })
+})
+
+describe('second-factor policy (mfa-totp)', () => {
+  it('maps mfa_enrolment_required to the restricted state and uploads queued edits after enrolment', async () => {
+    await db.outbox.add({ id: 'queued-1', entity: 'task', entityId: 't9', field: 'title', value: 'Written while restricted', ts: 900, device: 'me' })
+    syncCalls.mockImplementationOnce((async () => {
+      throw new ApiError(403, 'mfa_enrolment_required', 'set up two-factor authentication')
+    }) as never)
+    await syncNow()
+    expect(getSyncStatus().state).toBe('restricted')
+    expect(getSyncStatus().error).toContain('two-factor')
+    // Nothing was accepted, so the edit is still queued.
+    expect(await db.outbox.count()).toBe(1)
+
+    // After enrolment the next exchange uploads it.
+    await syncNow()
+    const sentOps = (syncCalls.mock.calls.at(-1) as unknown as [string, number, { id: string }[]])[2]
+    expect(sentOps.map((o) => o.id)).toEqual(['queued-1'])
+    expect(await db.outbox.count()).toBe(0)
+    expect(getSyncStatus().state).toBe('idle')
   })
 })
