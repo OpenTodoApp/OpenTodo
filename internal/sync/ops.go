@@ -77,10 +77,28 @@ var Schema = map[string]map[string]kind{
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
 	},
+	// view: a saved filter query with presentation options (OpenSpec `custom-views`).
+	// kind, group_by, sort_by and sort_dir are enumerations carried as plain strings so
+	// a future option value stays additive: clients map unknown values to defaults at
+	// read time and only the REST API rejects them. panels holds view ids (dashboards).
+	"view": {
+		"name":       kString,
+		"query":      kString,
+		"kind":       kString,
+		"group_by":   kString,
+		"sort_by":    kString,
+		"sort_dir":   kString,
+		"pinned":     kBool,
+		"position":   kNumber,
+		"color":      kString,
+		"panels":     kStringList,
+		"created_at": kNumber,
+		"deleted_at": kNullableNumber,
+	},
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
