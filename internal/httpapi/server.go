@@ -919,6 +919,13 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", msg)
 		return
 	}
+	if msg, err := s.checkSections(r.Context(), userFrom(r.Context()).ID, entity, body, nil); err != nil {
+		s.internal(w, err)
+		return
+	} else if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return
+	}
 	if err := s.validateParent(r.Context(), entity, id, body, nil); err != nil {
 		s.parentError(w, err)
 		return
@@ -1128,6 +1135,13 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", msg)
 		return
 	}
+	if msg, err := s.checkSections(r.Context(), userFrom(r.Context()).ID, entity, body, existing); err != nil {
+		s.internal(w, err)
+		return
+	} else if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return
+	}
 	if err := s.validateParent(r.Context(), entity, r.PathValue("id"), body, existing); err != nil {
 		s.parentError(w, err)
 		return
@@ -1189,7 +1203,16 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	body := map[string]json.RawMessage{"deleted_at": json.RawMessage(fmt.Sprint(time.Now().UnixMilli()))}
-	s.writeFields(w, r, entity, r.PathValue("id"), body, http.StatusNoContent)
+	ts := s.opTS()
+	var extra []opsync.Op
+	if entity == "section" {
+		// Its open tasks fall back to "No section" in the same batch (board-view).
+		if extra, err = s.sectionDeleteOps(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), ts); err != nil {
+			s.internal(w, err)
+			return
+		}
+	}
+	s.writeFieldsAt(w, r, entity, r.PathValue("id"), body, http.StatusNoContent, extra, ts)
 }
 
 // writeFields turns a REST body into ops stamped with server time and applies them.

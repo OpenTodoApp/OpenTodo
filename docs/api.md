@@ -120,15 +120,16 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/sections…` | yes | same shape for sections of projects, see [Sections](#sections) |
 | GET | `/api/v1/push/vapid-key` | yes | `{publicKey}`; with `?device={id}` also `subscription` (that device's status or `null`) |
 | POST | `/api/v1/push/subscriptions` | yes | `{deviceId, endpoint, keys:{p256dh, auth}, includeContent?}` → 201 `{subscription}` (200 when the device's subscription was replaced) |
 | DELETE | `/api/v1/push/subscriptions/{id}` | yes | 204, or 404 `not_found` |
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md`; the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
 | GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
-| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders}}`; 409 `not_deleted` otherwise |
-| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{tasks,projects,reminders}}` |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
+| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders,sections}}`; 409 `not_deleted` otherwise |
+| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{tasks,projects,reminders,sections}}` |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -287,6 +288,7 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | `recurrence` | string or null | recurrence rule, e.g. `every 3 days after completion` (see [recurrence.md](recurrence.md)); stored in canonical form, `400 invalid_input` when it does not parse or is over 200 characters |
 | `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
+| `section_id` | string or null | section of the task's project; see [Sections](#sections). `400 invalid_input` for an unknown or deleted section or one of another project. Changing `project_id` without naming a section clears it |
 | `position` | number | sort order inside a list |
 | `completed_at`, `deleted_at` | unix ms or null | |
 | `created_at` | unix ms | set by the server on create if missing |
@@ -348,6 +350,30 @@ curl -sS "$OT/api/v1/projects" -H "Authorization: Bearer $TOKEN" -H 'Content-Typ
   -d '{"name":"Q4 launch","parent_id":"<parent-project-id>"}'
 curl -sS -X PATCH "$OT/api/v1/projects/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"parent_id":null}'
+```
+
+### Sections
+
+A section is a named, ordered container inside one project (OpenSpec change `board-view`): a heading in the list view and a column on the board. Sections are soft-deleted like everything else, live in the sharing scope of their project (editors and up may write them, viewers read them) and appear in the export, deleted ones included.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `name` | string | required, not blank |
+| `project_id` | string | required on create: an existing, non-deleted project; cannot change afterwards (`400 invalid_input`) |
+| `position` | number | ascending order within the project; defaults to now (last) |
+| `created_at` | number | set by the server when omitted |
+| `deleted_at` | number or null | set by `DELETE` |
+
+`DELETE /api/v1/sections/{id}` tombstones the section and, in the same batch, sets `section_id` to `null` on each of its open tasks, so they move to "No section". Unknown fields are refused with `400 invalid_input`; requests without credentials get `401 unauthorized`.
+
+```sh
+# Create a section, put a task in it, then move the task back to "No section"
+curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"<project>"}' $BASE/api/v1/sections
+# 201 {"id":"…","name":"Doing","project_id":"<project>","position":1760000000000,"created_at":1760000000000}
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":"<section>"}' $BASE/api/v1/tasks/$TASK
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":null}' $BASE/api/v1/tasks/$TASK
+curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"missing"}' $BASE/api/v1/sections
+# 400 {"error":{"code":"invalid_input","message":"section.project_id references unknown or deleted project \"missing\""}}
 ```
 
 ### Label fields

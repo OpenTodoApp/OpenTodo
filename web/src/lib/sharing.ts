@@ -88,15 +88,18 @@ export function canManage(actor: ProjectRole, target: ProjectRole): boolean {
  */
 export async function storeMemberships(list: Membership[]): Promise<string[]> {
   const purged: string[] = []
-  await db.transaction('rw', [db.memberships, db.projects, db.tasks, db.outbox], async () => {
+  await db.transaction('rw', [db.memberships, db.projects, db.tasks, db.sections, db.outbox], async () => {
     const keep = new Set(list.map((m) => m.projectId))
     const previous = await db.memberships.toArray()
     for (const m of previous) {
       if (keep.has(m.projectId)) continue
       purged.push(m.projectId)
       const taskIds = (await db.tasks.where('project_id').equals(m.projectId).primaryKeys()) as string[]
-      const gone = new Set<string>([m.projectId, ...taskIds])
+      // Sections live in the project's scope too (board-view).
+      const sectionIds = (await db.sections.where('project_id').equals(m.projectId).primaryKeys()) as string[]
+      const gone = new Set<string>([m.projectId, ...taskIds, ...sectionIds])
       await db.tasks.bulkDelete(taskIds)
+      await db.sections.bulkDelete(sectionIds)
       await db.projects.delete(m.projectId)
       const queued = await db.outbox.filter((o) => gone.has(o.entityId)).primaryKeys()
       await db.outbox.bulkDelete(queued as number[])

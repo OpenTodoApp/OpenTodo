@@ -1,0 +1,158 @@
+// Sections and the board view (OpenSpec `board-view`). Every write goes through
+// mutate()/mutateMany(); a board has no state of its own, it is a rendering of
+// sections and tasks. View mode and collapsed sections are per-device preferences
+// in the local `meta` table and are never synced (design D5).
+import { db, getMeta, setMeta } from './db'
+import { mutate, mutateMany, type Change } from './ops'
+import { byPosition, positionAtEnd, positionForStep } from './ordering'
+import type { Section, Task } from './types'
+
+/** Live sections of a project, in display order. */
+export async function projectSections(projectId: string): Promise<Section[]> {
+  const list = await db.sections.where('project_id').equals(projectId).filter((s) => !s.deleted_at).toArray()
+  return list.sort(byPosition)
+}
+
+/** A new section goes last in its project. Returns its id. Works offline. */
+export async function createSection(projectId: string, name: string): Promise<string> {
+  const trimmed = name.trim()
+  if (!trimmed) throw new Error('a section needs a name')
+  const id = crypto.randomUUID()
+  const siblings = await projectSections(projectId)
+  await mutate('section', id, {
+    name: trimmed, project_id: projectId, position: positionAtEnd(siblings), created_at: Date.now(), deleted_at: null,
+  })
+  return id
+}
+
+export async function renameSection(id: string, name: string): Promise<void> {
+  const trimmed = name.trim()
+  const s = await db.sections.get(id)
+  if (!s || s.deleted_at || !trimmed || trimmed === s.name) return
+  await mutate('section', id, { name: trimmed })
+}
+
+/**
+ * Move a section one place up (-1) or down (+1) among its project's sections: one
+ * position op between the new neighbours. Returns false when it cannot move.
+ */
+export async function reorderSection(id: string, delta: -1 | 1): Promise<boolean> {
+  const s = await db.sections.get(id)
+  if (!s || s.deleted_at) return false
+  const position = positionForStep(await projectSections(s.project_id), id, delta)
+  if (position === null) return false
+  await mutate('section', id, { position })
+  return true
+}
+
+/**
+ * Delete a section: its tombstone plus `section_id = null` on each of its open
+ * tasks, one op per task, in one batch, so they fall back to "No section". Completed
+ * tasks keep the reference and are shown without a section if reopened (design D3).
+ */
+export async function deleteSection(id: string): Promise<void> {
+  const s = await db.sections.get(id)
+  if (!s || s.deleted_at) return
+  const tasks = await db.tasks.where('section_id').equals(id).filter((t) => !t.deleted_at && !t.completed_at).toArray()
+  const changes: Change[] = [{ entity: 'section', entityId: id, patch: { deleted_at: Date.now() } }]
+  for (const t of tasks) changes.push({ entity: 'task', entityId: t.id, patch: { section_id: null } })
+  await mutateMany(changes)
+}
+
+/**
+ * The section a task is displayed in, or null for "No section": a reference to a
+ * deleted section, a section of another project or one not received yet counts as
+ * none (design D3). Display only; nothing is written.
+ */
+export function effectiveSection(task: Pick<Task, 'section_id' | 'project_id'>, sections: Map<string, Section>): string | null {
+  if (!task.section_id) return null
+  const s = sections.get(task.section_id)
+  if (!s || s.deleted_at || s.project_id !== task.project_id) return null
+  return s.id
+}
+
+/**
+ * Move a task to a section (null = "No section"): sets `section_id` and a position
+ * after every open task already in the target column, in one mutate() call, so both
+ * fields share a timestamp and concurrent moves resolve to the newer one together
+ * (design D4). Works offline.
+ */
+export async function moveTaskToSection(id: string, sectionId: string | null): Promise<void> {
+  const task = await db.tasks.get(id)
+  if (!task || task.deleted_at) throw new Error('task not found')
+  if (sectionId !== null) {
+    const s = await db.sections.get(sectionId)
+    if (!s || s.deleted_at || s.project_id !== task.project_id) throw new Error('section is not in the task’s project')
+  }
+  const map = await sectionMap(task.project_id)
+  const column = task.project_id
+    ? await db.tasks.where('project_id').equals(task.project_id)
+      .filter((t) => !t.deleted_at && !t.completed_at && t.id !== id && effectiveSection(t, map) === sectionId).toArray()
+    : []
+  await mutate('task', id, { section_id: sectionId, position: positionAtEnd(column) })
+}
+
+async function sectionMap(projectId: string | null): Promise<Map<string, Section>> {
+  if (!projectId) return new Map()
+  const list = await db.sections.where('project_id').equals(projectId).toArray()
+  return new Map(list.map((s) => [s.id, s]))
+}
+
+/** One heading / column: a section, or null for "No section". */
+export interface SectionGroup<T extends Pick<Task, 'id' | 'position' | 'created_at' | 'section_id' | 'project_id'>> {
+  section: Section | null
+  /** Stable key: the section id, or '' for "No section". */
+  key: string
+  tasks: T[]
+}
+
+/**
+ * Bucket a project's open tasks by section: "No section" first (always present),
+ * then the project's live sections by position, each with its tasks by position.
+ * Dangling references land under "No section" (design D3). `sections` may contain
+ * sections of other projects and deleted ones; they are ignored.
+ */
+export function groupBySection<T extends Pick<Task, 'id' | 'position' | 'created_at' | 'section_id' | 'project_id'>>(
+  projectId: string, tasks: T[], sections: Section[],
+): SectionGroup<T>[] {
+  const map = new Map(sections.map((s) => [s.id, s]))
+  const live = sections.filter((s) => s.project_id === projectId && !s.deleted_at).sort(byPosition)
+  const groups: SectionGroup<T>[] = [{ section: null, key: '', tasks: [] }, ...live.map((s) => ({ section: s, key: s.id, tasks: [] as T[] }))]
+  const index = new Map(groups.map((g, i) => [g.key, i]))
+  for (const t of tasks) groups[index.get(effectiveSection(t, map) ?? '') ?? 0].tasks.push(t)
+  for (const g of groups) g.tasks.sort(byPosition)
+  return groups
+}
+
+// ---- per-device preferences (never synced) ----
+
+export type ProjectViewMode = 'list' | 'board'
+
+const modeKey = (projectId: string) => `view-mode:${projectId}`
+const collapsedKey = (projectId: string) => `collapsed-sections:${projectId}`
+
+export async function loadViewMode(projectId: string): Promise<ProjectViewMode> {
+  return (await getMeta<string>(modeKey(projectId), 'list')) === 'board' ? 'board' : 'list'
+}
+
+export async function saveViewMode(projectId: string, mode: ProjectViewMode): Promise<void> {
+  await setMeta(modeKey(projectId), mode)
+}
+
+/** Section ids ('' = "No section") collapsed in this project's list view on this device. */
+export async function loadCollapsedSections(projectId: string): Promise<string[]> {
+  const v = await getMeta<unknown>(collapsedKey(projectId), [])
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+}
+
+export async function setSectionCollapsed(projectId: string, key: string, collapsed: boolean): Promise<string[]> {
+  const set = new Set(await loadCollapsedSections(projectId))
+  if (collapsed) set.add(key)
+  else set.delete(key)
+  const list = [...set]
+  await setMeta(collapsedKey(projectId), list)
+  return list
+}
+
+/** Meta keys the UI subscribes to with useLiveQuery. */
+export const prefKeys = { mode: modeKey, collapsed: collapsedKey }

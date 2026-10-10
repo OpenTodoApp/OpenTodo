@@ -173,6 +173,8 @@ type PurgeResult struct {
 	Tasks     int `json:"tasks"`
 	Projects  int `json:"projects"`
 	Reminders int `json:"reminders"`
+	// Sections of purged projects (board-view).
+	Sections int `json:"sections"`
 	// Audience is every user who could see a purged entity: their devices must sync.
 	Audience []string `json:"-"`
 }
@@ -395,6 +397,8 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 			res.Projects++
 		case "reminder":
 			res.Reminders++
+		case "section":
+			res.Sections++
 		}
 	}
 	if len(touched) > 0 {
@@ -419,7 +423,7 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 }
 
 // expandPurge adds the cascades of design D5 and drops duplicates: every task
-// referencing a purged project (same scope), every deleted descendant of a purged
+// referencing a purged project and its sections (same scope), every deleted descendant of a purged
 // task (same scope) and every reminder of a purged task (any scope; reminders are
 // personal to each member).
 func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purgeTarget, error) {
@@ -450,6 +454,14 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 			if c := (purgeTarget{t.scope, "task", id}); add(c) {
 				tasks = append(tasks, c)
 			}
+		}
+		// The project's sections, live or deleted, go with it (board-view).
+		sections, err := childIDsWhere(ctx, tx, t.scope, "section", "project_id", t.id, false)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range sections {
+			add(purgeTarget{t.scope, "section", id})
 		}
 	}
 	// Deleted descendants, breadth first; the seen set stops cycles.
@@ -494,11 +506,17 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 // taskIDsWhere lists the tasks of a scope whose reference field (project_id or
 // parent_id) equals id, optionally only tombstoned ones.
 func taskIDsWhere(ctx context.Context, q querier, scope, field, id string, deletedOnly bool) ([]string, error) {
-	query := `SELECT f.entity_id FROM scope_fields f WHERE f.scope_id = ? AND f.entity = 'task' AND f.field = ? AND f.value = ?`
+	return childIDsWhere(ctx, q, scope, "task", field, id, deletedOnly)
+}
+
+// childIDsWhere is taskIDsWhere for any entity (sections of a project).
+func childIDsWhere(ctx context.Context, q querier, scope, entity, field, id string, deletedOnly bool) ([]string, error) {
+	query := `SELECT f.entity_id FROM scope_fields f WHERE f.scope_id = ? AND f.entity = ? AND f.field = ? AND f.value = ?`
+	args := []any{scope, entity, field, fmt.Sprintf("%q", id)}
 	if deletedOnly {
-		query += ` AND EXISTS (SELECT 1 FROM scope_fields d WHERE d.scope_id = f.scope_id AND d.entity = 'task' AND d.entity_id = f.entity_id AND d.field = 'deleted_at' AND d.value != 'null')`
+		query += ` AND EXISTS (SELECT 1 FROM scope_fields d WHERE d.scope_id = f.scope_id AND d.entity = f.entity AND d.entity_id = f.entity_id AND d.field = 'deleted_at' AND d.value != 'null')`
 	}
-	rows, err := q.QueryContext(ctx, query+` ORDER BY f.entity_id`, scope, field, fmt.Sprintf("%q", id))
+	rows, err := q.QueryContext(ctx, query+` ORDER BY f.entity_id`, args...)
 	if err != nil {
 		return nil, err
 	}

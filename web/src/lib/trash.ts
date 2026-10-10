@@ -208,6 +208,11 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
       }
       for (const id of taskIds) gone.set(id, 'task')
       for (const r of await db.reminders.toArray()) if (taskIds.has(r.task_id)) gone.set(r.id, 'reminder')
+      // Sections of purged projects (board-view).
+      for (const p of list) {
+        if (p.entity !== 'project') continue
+        for (const s of await db.sections.where('project_id').equals(p.entityId).primaryKeys()) gone.set(s as string, 'section')
+      }
     }
     const byEntity: Record<string, string[]> = {}
     for (const [id, entity] of gone) (byEntity[entity] ??= []).push(id)
@@ -216,6 +221,7 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
     if (byEntity.reminder) await db.reminders.bulkDelete(byEntity.reminder)
     if (byEntity.label) await db.labels.bulkDelete(byEntity.label)
     if (byEntity.view) await db.views.bulkDelete(byEntity.view)
+    if (byEntity.section) await db.sections.bulkDelete(byEntity.section)
     const queued = await db.outbox.filter((o) => gone.get(o.entityId) === o.entity).primaryKeys()
     await db.outbox.bulkDelete(queued as number[])
     const pending = ((await db.meta.get(PENDING_PURGES_KEY))?.value as PurgeRequest[] | undefined) ?? []

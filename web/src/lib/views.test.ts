@@ -19,7 +19,7 @@ const TODAY = '2026-10-10'
 function task(p: Partial<Task> & Pick<Task, 'id'>): Task {
   return {
     title: p.id, description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0,
-    estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, created_at: 0, completed_at: null, deleted_at: null, _clock: {}, ...p,
+    estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, section_id: null, created_at: 0, completed_at: null, deleted_at: null, _clock: {}, ...p,
   }
 }
 function project(p: Partial<Project> & Pick<Project, 'id' | 'name'>): Project {

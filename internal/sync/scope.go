@@ -115,15 +115,17 @@ func (a *access) roleIn(scope string) string {
 
 // CanWrite is the role table of design D3: viewers write nothing, editors write
 // tasks, admins also write project fields except deleted_at, owners everything.
-// Labels and saved views are personal and never reach a project scope.
+// Sections (board-view) organize tasks, so whoever may edit tasks may create,
+// rename, reorder and delete them. Labels and saved views are personal and
+// never reach a project scope.
 func CanWrite(role, entity, field string) bool {
 	switch role {
 	case RoleOwner:
 		return true
 	case RoleAdmin:
-		return entity == "task" || (entity == "project" && field != "deleted_at")
+		return entity == "task" || entity == "section" || (entity == "project" && field != "deleted_at")
 	case RoleEditor:
-		return entity == "task"
+		return entity == "task" || entity == "section"
 	}
 	return false
 }
@@ -135,28 +137,35 @@ type resolver struct {
 	tx     querier
 	acc    *access
 	shared map[string]bool
-	// taskScope caches the scope of each task seen in this batch; "" marks a task
-	// that lives in a project scope the author cannot see.
-	taskScope map[string]string
-	// batchProject is the winning project_id op per task id in the batch, used to
-	// place tasks that do not exist yet.
+	// childScope caches the scope of each task or section (key: entity NUL id)
+	// seen in this batch; "" marks one that lives in a project scope the author
+	// cannot see.
+	childScope map[string]string
+	// batchProject is the winning project_id op per task or section (key: entity
+	// NUL id) in the batch, used to place entities that do not exist yet.
 	batchProject map[string]Op
 	// assignable caches "scope NUL user" -> whether user may be a task's assignee there.
 	assignable map[string]bool
 }
 
 func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolver {
-	r := &resolver{ctx: ctx, tx: tx, acc: acc, shared: map[string]bool{}, taskScope: map[string]string{}, batchProject: map[string]Op{}, assignable: map[string]bool{}}
+	r := &resolver{ctx: ctx, tx: tx, acc: acc, shared: map[string]bool{}, childScope: map[string]string{}, batchProject: map[string]Op{}, assignable: map[string]bool{}}
 	for _, op := range ops {
-		if op.Entity != "task" || op.Field != "project_id" {
+		if !projectChild[op.Entity] || op.Field != "project_id" {
 			continue
 		}
-		if prev, ok := r.batchProject[op.EntityID]; !ok || Wins(op.TS, op.Device, prev.TS, prev.Device) {
-			r.batchProject[op.EntityID] = op
+		key := op.Entity + "\x00" + op.EntityID
+		if prev, ok := r.batchProject[key]; !ok || Wins(op.TS, op.Device, prev.TS, prev.Device) {
+			r.batchProject[key] = op
 		}
 	}
 	return r
 }
+
+// projectChild lists the entities whose sharing scope follows their project_id:
+// tasks (project-sharing D2) and sections (board-view: a section of a shared
+// project lives in that project's scope).
+var projectChild = map[string]bool{"task": true, "section": true}
 
 func (r *resolver) projectShared(pid string) (bool, error) {
 	if v, ok := r.shared[pid]; ok {
@@ -189,8 +198,13 @@ func (r *resolver) scopeOfProject(raw json.RawMessage) (string, error) {
 // every project scope. ok is false when the task is unknown; scope is "" when it
 // only exists in a project scope the author is not a member of.
 func (r *resolver) existingTaskScope(id string) (scope string, ok bool, err error) {
+	return r.existingChildScope("task", id)
+}
+
+// existingChildScope is existingTaskScope for any project child (task, section).
+func (r *resolver) existingChildScope(entity, id string) (scope string, ok bool, err error) {
 	rows, err := r.tx.QueryContext(r.ctx, `SELECT DISTINCT scope_id FROM scope_fields
-		WHERE entity = 'task' AND entity_id = ? AND (scope_id = ? OR scope_id LIKE 'project:%')`, id, r.acc.personal)
+		WHERE entity = ? AND entity_id = ? AND (scope_id = ? OR scope_id LIKE 'project:%')`, entity, id, r.acc.personal)
 	if err != nil {
 		return "", false, err
 	}
@@ -217,21 +231,23 @@ func (r *resolver) existingTaskScope(id string) (scope string, ok bool, err erro
 	return best, true, nil
 }
 
-func (r *resolver) scopeOfTask(id string) (string, error) {
-	if sc, ok := r.taskScope[id]; ok {
+// scopeOfChild returns the scope of a task or section: where it is stored, or
+// for a new one, where its project_id in this batch puts it.
+func (r *resolver) scopeOfChild(entity, id string) (string, error) {
+	key := entity + "\x00" + id
+	if sc, ok := r.childScope[key]; ok {
 		return sc, nil
 	}
-	sc, found, err := r.existingTaskScope(id)
+	sc, found, err := r.existingChildScope(entity, id)
 	if err != nil {
 		return "", err
 	}
 	if !found {
-		// A new task lives where its project_id in this batch puts it.
-		if sc, err = r.scopeOfProject(r.batchProject[id].Value); err != nil {
+		if sc, err = r.scopeOfProject(r.batchProject[key].Value); err != nil {
 			return "", err
 		}
 	}
-	r.taskScope[id] = sc
+	r.childScope[key] = sc
 	return sc, nil
 }
 
@@ -247,8 +263,8 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 		if shared {
 			scope = ProjectScope(op.EntityID)
 		}
-	case "task":
-		if scope, err = r.scopeOfTask(op.EntityID); err != nil {
+	case "task", "section":
+		if scope, err = r.scopeOfChild(op.Entity, op.EntityID); err != nil {
 			return "", "", err
 		}
 		if scope == "" {
@@ -262,7 +278,7 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 	if !CanWrite(r.acc.roleIn(scope), op.Entity, op.Field) {
 		return "", ReasonForbidden, nil
 	}
-	if op.Entity == "task" && op.Field == "project_id" {
+	if projectChild[op.Entity] && op.Field == "project_id" {
 		target, err := r.scopeOfProject(op.Value)
 		if err != nil {
 			return "", "", err
@@ -321,8 +337,8 @@ func (r *resolver) restoreOps(refused []Op) ([]Op, error) {
 		seen[key] = true
 		var scope string
 		switch op.Entity {
-		case "task":
-			sc, found, err := r.existingTaskScope(op.EntityID)
+		case "task", "section":
+			sc, found, err := r.existingChildScope(op.Entity, op.EntityID)
 			if err != nil {
 				return nil, err
 			}
