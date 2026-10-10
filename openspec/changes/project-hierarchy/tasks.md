@@ -16,14 +16,14 @@
 
 ## 3. Sidebar and views (web/src/app)
 
-- [ ] 3.1 Render the project tree in `Sidebar.tsx` with indentation capped after level 3, collapse chevrons, Left/Right keyboard toggling on focused rows; verify browser flow: three-level tree renders, Left hides children, state survives reload on the same device
-- [ ] 3.2 "Move to" picker in `ProjectHeader.tsx` (excludes self, descendants, archived, deleted; offers "Top level"), reachable via keyboard; verify browser flow: moved project appears last under the new parent; descendants are absent from the picker
-- [ ] 3.3 Create-project form accepts an optional parent and defaults to the current project; verify browser flow: project created inside "Work" appears nested and "Work" is expanded
-- [ ] 3.4 "Sub-projects" section at the bottom of the project view with rolled-up counts; quick add keeps adding to the parent only; verify browser flow matching the "Sub-project list" scenario
-- [ ] 3.5 Update `?` shortcut help with Left/Right and the Move action; verify the help dialog lists them (browser flow)
-- [ ] 3.6 `npm run build` passes and the gzipped bundle grows by less than 4 KB; verify by comparing `dist` sizes before and after
+- [x] 3.1 Render the project tree in `Sidebar.tsx` with indentation capped after level 3, collapse chevrons, Left/Right keyboard toggling on focused rows; verify browser flow: three-level tree renders, Left hides children, state survives reload on the same device
+- [x] 3.2 "Move to" picker in `ProjectHeader.tsx` (excludes self, descendants, archived, deleted; offers "Top level"), reachable via keyboard; verify browser flow: moved project appears last under the new parent; descendants are absent from the picker
+- [x] 3.3 Create-project form accepts an optional parent and defaults to the current project; verify browser flow: project created inside "Work" appears nested and "Work" is expanded
+- [x] 3.4 "Sub-projects" section at the bottom of the project view with rolled-up counts; quick add keeps adding to the parent only; verify browser flow matching the "Sub-project list" scenario
+- [x] 3.5 Update `?` shortcut help with Left/Right and the Move action; verify the help dialog lists them (browser flow)
+- [x] 3.6 `npm run build` passes and the gzipped bundle grows by less than 4 KB; verify by comparing `dist` sizes before and after
 
 ## 4. Integration
 
-- [ ] 4.1 Two-device browser run: move a project offline on A, move the other direction on B, reconnect both; verify both sidebars are identical, no project is nested inside itself, all tasks reachable
+- [x] 4.1 Two-device browser run: move a project offline on A, move the other direction on B, reconnect both; verify both sidebars are identical, no project is nested inside itself, all tasks reachable
 - [ ] 4.2 Update README feature list and CHANGELOG under Unreleased; verify `make check` passes

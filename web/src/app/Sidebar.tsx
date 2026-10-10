@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { db, getMeta } from '../lib/db'
 import { todayISO } from '../lib/dates'
 import { createProject } from '../lib/ops'
@@ -37,9 +37,16 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   }, [openTasks, tree, collapsed])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.
+  // Only on a real route change, not on mount or on project edits, so a reload (or a
+  // remote op) never undoes what the user collapsed on this device.
+  const lastRoute = useRef<string | null>(null)
   useEffect(() => {
-    if (route.view === 'project') void expandAncestorsOf(route.id, projects)
-  }, [route, projects])
+    const key = route.view === 'project' ? route.id : null
+    const prev = lastRoute.current
+    lastRoute.current = key ?? ''
+    if (key === null || prev === null || prev === key) return
+    void db.projects.toArray().then((all) => expandAncestorsOf(key, all))
+  }, [route])
 
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
