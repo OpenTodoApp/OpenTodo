@@ -2,7 +2,7 @@
 
 ## 1. Server: storage and authorization
 
-- [ ] 1.1 Add the migration `internal/store/migrations/NNNN_user_management.sql`, using the next free number at merge time (provisionally `0003`). It adds `users.deactivated_at`, `users.last_login_at`, the `password_resets` table with an index on `user_id`, and the partial unique index `users_one_owner`. Verify that `go test ./internal/store/...` opens an empty data directory and an existing directory, both reach the new `user_version`, and inserting a second `owner` row fails.
+- [x] 1.1 Add the migration `internal/store/migrations/NNNN_user_management.sql`, using the next free number at merge time (provisionally `0003`). It adds `users.deactivated_at`, `users.last_login_at`, the `password_resets` table with an index on `user_id`, and the partial unique index `users_one_owner`. Verify that `go test ./internal/store/...` opens an empty data directory and an existing directory, both reach the new `user_version`, and inserting a second `owner` row fails.
 - [ ] 1.2 Add `auth.Authorize(actor, action, target)` with the D1 matrix, the errors `ErrForbidden`, `ErrSelfAction`, `ErrAccountDeactivated` and `ErrAccountActive`, and make `CanInvite` delegate to it so admins may invite. Verify with the table-driven `TestAuthorizeMatrix`, covering every role, action and target combination, under `go test ./...`.
 - [ ] 1.3 Change `Authenticate` to return `ErrAccountDeactivated` only after a correct password and to set `last_login_at` on success. Make `UserBySession` and `UserByToken` exclude deactivated accounts. Verify with `TestLoginDeactivatedCorrectPassword`, `TestLoginDeactivatedWrongPasswordIsUniform` and `TestLastLoginRecorded` under `go test ./...`.
 
