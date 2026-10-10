@@ -18,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/httpapi"
@@ -85,6 +86,9 @@ func run() error {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	// Prune audit events past the owner's retention at startup and hourly.
+	go authSvc.Audit().RunPruner(ctx, audit.PruneInterval)
 
 	errCh := make(chan error, 1)
 	go func() {

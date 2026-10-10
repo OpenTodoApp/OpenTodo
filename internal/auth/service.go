@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
 )
 
@@ -44,12 +45,25 @@ type Service struct {
 	db          *sql.DB
 	sessionTTL  time.Duration
 	allowSignup bool
+	audit       *audit.Recorder
+
+	// afterTokenInsert, when set by tests, runs inside CreateToken's transaction
+	// right after the token row is written; an error aborts the transaction.
+	afterTokenInsert func() error
 }
 
-// NewService wires a Service.
+// NewService wires a Service. It owns the audit recorder for the same database,
+// so every state change it makes is recorded in the same transaction.
 func NewService(db *sql.DB, sessionTTL time.Duration, allowSignup bool) *Service {
-	return &Service{db: db, sessionTTL: sessionTTL, allowSignup: allowSignup}
+	return &Service{db: db, sessionTTL: sessionTTL, allowSignup: allowSignup, audit: audit.New(db, nil)}
 }
+
+// Audit returns the recorder used by the service, for the HTTP layer's
+// observations (sign-in, sign-out, export), the audit routes and the pruner.
+func (s *Service) Audit() *audit.Recorder { return s.audit }
+
+// IsOwner reports whether u holds the owner role (audit log access, settings).
+func (s *Service) IsOwner(u *User) bool { return u != nil && u.Role == "owner" }
 
 // UserCount returns how many accounts exist.
 func (s *Service) UserCount(ctx context.Context) (int, error) {
