@@ -1,3 +1,4 @@
+import { liveQuery } from 'dexie'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { LOCAL_RETENTION, mergeOlder } from './activity'
 import { db, useDatabase } from './db'
@@ -63,6 +64,24 @@ describe('unread', () => {
     // Alice's own later change is not unread; Bob's is.
     await applyOps([...created('p1', 'alice', 7000), ...created('p1', 'bob', 8000)])
     expect((await unreadCounts()).byProject.get('p1')).toBe(1)
+  })
+
+  it('live query follows syncs and marks', async () => {
+    await setup()
+    await applyOps([...created('p1', 'bob', 2000), ...created('p2', 'bob', 3000)])
+    const totals: number[] = []
+    const sub = liveQuery(() => unreadCounts()).subscribe((v) => totals.push(v.total))
+    const settle = () => new Promise((r) => setTimeout(r, 150))
+    await settle()
+    // A sync delivering another member's change in the second project.
+    await applyOps(created('p2', 'carol', 4000))
+    await settle()
+    // Opening the feed.
+    markEventsSeen(await feedEvents())
+    await flushSeen()
+    await settle()
+    sub.unsubscribe()
+    expect(totals).toEqual([2, 3, 0])
   })
 
   it('capped at retention bound', async () => {

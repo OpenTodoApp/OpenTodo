@@ -46,6 +46,19 @@ describe('project_prefs seen marker', () => {
     expect(await db.outbox.count()).toBe(2)
   })
 
+  it('repeated marks do not postpone the write', async () => {
+    // A view re-rendering every 100 ms keeps calling markSeen; the first mark's timer still fires.
+    for (let i = 1; i <= 8; i++) {
+      markSeen('p', 1000 + i)
+      await new Promise((r) => setTimeout(r, 100))
+    }
+    await flushSeen()
+    const values = (await db.outbox.toArray()).map((o) => o.value as number)
+    expect(values.length).toBeGreaterThanOrEqual(2)
+    expect(values[0]).toBeLessThan(1008)
+    expect((await db.prefs.get('p'))?.feed_seen_at).toBe(1008)
+  })
+
   it('goes with a purged project', async () => {
     markSeen('p', 5000)
     await flushSeen()

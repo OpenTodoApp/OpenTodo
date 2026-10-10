@@ -84,8 +84,7 @@ async function syncedSeen(ids: string[]): Promise<Map<string, number>> {
  */
 export async function seenTimes(ids?: string[]): Promise<Map<string, number>> {
   const list = ids ?? (await sharedProjectIds())
-  const synced = await syncedSeen(list)
-  const base = await getMeta<Record<string, number>>(FEED_BASELINE_KEY, {})
+  const [synced, base] = await Promise.all([syncedSeen(list), getMeta<Record<string, number>>(FEED_BASELINE_KEY, {})])
   return new Map(list.map((id) => [id, synced.get(id) ?? base[id] ?? Number.POSITIVE_INFINITY]))
 }
 
@@ -94,11 +93,10 @@ export async function seenTimes(ids?: string[]): Promise<Map<string, number>> {
 /** Locally retained events of every shared project, newest first, each tagged with its project. */
 export async function feedEvents(ids?: string[]): Promise<ActivityEvent[]> {
   const list = ids ?? (await sharedProjectIds())
-  const all: ActivityEvent[] = []
-  for (const id of list) {
-    for (const ev of await projectActivity(id)) all.push({ ...ev, projectId: id })
-  }
-  return newestFirst(all)
+  // Reads start together: Dexie live queries stop tracking reads made after a
+  // long chain of sequential awaits, so a loop of awaits would miss later projects.
+  const perProject = await Promise.all(list.map((id) => projectActivity(id)))
+  return newestFirst(perProject.flatMap((evs, i) => evs.map((ev) => ({ ...ev, projectId: list[i] }))))
 }
 
 export interface FeedFilter {
@@ -161,9 +159,10 @@ export function countUnread(events: ActivityEvent[], seen: Map<string, number>, 
 
 /** Live-query helper: the unread counts from local storage. */
 export async function unreadCounts(): Promise<UnreadCounts> {
-  const ids = await sharedProjectIds()
-  const me = ((await db.meta.get('userId'))?.value as string | undefined) ?? null
-  return countUnread(await feedEvents(ids), await seenTimes(ids), me)
+  const [ids, meRow] = await Promise.all([sharedProjectIds(), db.meta.get('userId')])
+  // In parallel, for the same reason as in feedEvents (live-query tracking).
+  const [events, seen] = await Promise.all([feedEvents(ids), seenTimes(ids)])
+  return countUnread(events, seen, (meRow?.value as string | undefined) ?? null)
 }
 
 export function formatUnread(n: number): string {
@@ -186,8 +185,9 @@ let flushing: Promise<void> = Promise.resolve()
 export function markSeen(projectId: string, time: number): void {
   if (!Number.isFinite(time) || time <= 0) return
   pendingMarks.set(projectId, Math.max(pendingMarks.get(projectId) ?? 0, time))
-  if (markTimer) clearTimeout(markTimer)
-  markTimer = setTimeout(() => void flushSeen(), MARK_DEBOUNCE_MS)
+  // The first mark arms the timer and later ones join it: a view that re-renders
+  // often must not keep pushing the write out.
+  if (!markTimer) markTimer = setTimeout(() => void flushSeen(), MARK_DEBOUNCE_MS)
 }
 
 /** Write pending marks now (also used by tests). Only values above the stored one become ops. */
