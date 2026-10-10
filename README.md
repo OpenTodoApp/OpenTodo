@@ -19,6 +19,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
   <a href="docs/self-hosting/docker.md">Docker</a> ·
   <a href="docs/api.md">API</a> ·
   <a href="docs/cli.md">CLI</a> ·
+  <a href="docs/quick-add.md">Quick add syntax</a> ·
   <a href="docs/filters.md">Filters</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
@@ -53,7 +54,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 
 | Area | What works |
 | --- | --- |
-| Capture | Quick-add from any view, keyboard shortcut `q`; new tasks in Today get today's date, in a project get that project |
+| Capture | Quick-add from any view, keyboard shortcut `q`; new tasks in Today get today's date, in a project get that project. Natural language in six languages, offline: `Call Sarah next Wed 3pm #work @call p1 +30m` sets the date, time, project, label, priority and estimate, with dismissible preview chips; see [docs/quick-add.md](docs/quick-add.md) |
 | Organise | Projects with colours, Inbox, Today, Upcoming (grouped by day), Completed |
 | Labels | Cross-project labels with colours: `L` on a task opens a type-ahead picker that creates on Enter, chips on every row, a Labels group in the sidebar with live counts, one view per label grouped by project, rename / recolour / reorder / delete / merge duplicates |
 | Filters | One-line queries such as `@work & due <= tomorrow & p1`: labels, projects (`##` includes sub-projects), priority, due and created dates, keywords like `overdue` or `no date`, text search, combined with `&`, `\|`, `!` and parentheses. Evaluated on the device, so results are live and work offline; `g` `f` opens the view, ↑ / ↓ recall recent queries. See [docs/filters.md](docs/filters.md) |
@@ -69,7 +70,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), saved and pinned filter views, recurring tasks, reminders, sharing and comments, CalDAV, import from other task apps, OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): saved and pinned filter views, recurring tasks, reminders, sharing and comments, CalDAV, import from other task apps, OIDC, optional end-to-end encryption.
 
 ## Quick start
 

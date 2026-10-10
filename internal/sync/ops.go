@@ -42,7 +42,12 @@ const (
 	kPriority
 	kDue
 	kStringList
+	// kPositiveInt is null or a positive integer no larger than MaxPositiveInt.
+	kPositiveInt
 )
+
+// MaxPositiveInt bounds kPositiveInt fields; for estimate_minutes it is one week.
+const MaxPositiveInt = 10080
 
 // Schema lists every entity and field a client may write. Adding a field is an
 // additive, backwards-compatible change; renaming or removing one is breaking.
@@ -68,6 +73,8 @@ var Schema = map[string]map[string]kind{
 		"created_at":   kNumber,
 		"completed_at": kNullableNumber,
 		"deleted_at":   kNullableNumber,
+		// Duration estimate in minutes (OpenSpec change nlp-quick-add); additive.
+		"estimate_minutes": kPositiveInt,
 	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {
@@ -170,6 +177,15 @@ func checkKind(k kind, raw json.RawMessage) error {
 		var l []string
 		if err := json.Unmarshal(raw, &l); err != nil || l == nil {
 			return errors.New("must be an array of strings")
+		}
+	case kPositiveInt:
+		if isNull {
+			return nil
+		}
+		// Unmarshalling into an integer rejects fractions, exponents and strings.
+		var n int64
+		if err := json.Unmarshal(raw, &n); err != nil || n < 1 || n > MaxPositiveInt {
+			return fmt.Errorf("must be null or an integer from 1 to %d", MaxPositiveInt)
 		}
 	}
 	return nil

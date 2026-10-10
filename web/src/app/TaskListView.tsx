@@ -8,7 +8,7 @@ import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from 
 import { flattenTree, type Tree } from '../lib/tree'
 import type { Label, Priority, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
-import { QuickAdd } from './QuickAdd'
+import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { TaskDetail } from './TaskDetail'
 import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
@@ -187,12 +187,14 @@ export function TaskListView({ route }: { route: ListRoute }) {
     }
   }, [taskMap, prompt])
 
-  const onAdd = useCallback(async (title: string) => {
+  // The view supplies defaults; attributes typed in the quick-add line override them.
+  const onAdd = useCallback(async ({ labels: typed, ...rest }: QuickAddInput) => {
     await createTask({
-      title,
       project_id: route.view === 'project' ? route.id : null,
       due: route.view === 'today' ? { date: today } : route.view === 'upcoming' ? { date: addDays(today, 1) } : null,
-      labels: route.view === 'label' ? [route.id] : [],
+      ...rest,
+      // Labels are multi-valued: a label view's label is kept alongside typed @labels.
+      labels: [...new Set([...(route.view === 'label' ? [route.id] : []), ...(typed ?? [])])],
     })
   }, [route, today])
 
@@ -365,7 +367,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
 
           {route.view !== 'completed' && (
             <div className="mb-3 border-b border-slate-200 pb-2 dark:border-slate-800">
-              <QuickAdd ref={quickAddRef} onAdd={onAdd} placeholder={placeholderFor(route, currentProject, currentLabel)} />
+              <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} labels={labels} placeholder={placeholderFor(route, currentProject, currentLabel)} />
             </div>
           )}
 

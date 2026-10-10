@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
+import { QuickAddSettingsSection } from './QuickAddSettings'
 import { MembersPanel } from './MembersPanel'
 import { SecurityPanel } from './SecurityPanel'
 import { WebhooksPanel } from './WebhooksPanel'
@@ -61,6 +62,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       {user.role === 'owner' && <MembersPanel />}
 
       <WebhooksPanel isOwner={user.role === 'owner'} />
+      <QuickAddSettingsSection />
 
       <section className="space-y-2">
         <h2 className="font-semibold">API tokens</h2>

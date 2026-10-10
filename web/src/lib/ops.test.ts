@@ -91,6 +91,24 @@ describe('mutate', () => {
     await mutate('task', id, { deleted_at: 5 })
     expect((await db.tasks.get(id))?.deleted_at).toBe(5)
   })
+
+  it('round-trips estimate_minutes and labels through createTask, the outbox and applyOps', async () => {
+    const db = useDatabase(`estimate-${Date.now()}`)
+    const plain = await createTask({ title: 'no estimate' })
+    expect((await db.tasks.get(plain))?.estimate_minutes).toBeNull()
+    const id = await createTask({ title: 'Write report', estimate_minutes: 45, labels: ['call'] })
+    const row = await db.tasks.get(id)
+    expect(row?.estimate_minutes).toBe(45)
+    expect(row?.labels).toEqual(['call'])
+    const queued = (await db.outbox.toArray()).find((o) => o.entityId === id && o.field === 'estimate_minutes')
+    expect(queued?.value).toBe(45)
+    // The same op arriving from another device applies to a fresh row with the default elsewhere.
+    const other = useDatabase(`estimate-remote-${Date.now()}`)
+    await applyOps([{ ...queued!, device: 'remote' }])
+    const remote = await other.tasks.get(id)
+    expect(remote?.estimate_minutes).toBe(45)
+    expect(remote?.priority).toBe(4)
+  })
 })
 
 describe('subtasks', () => {
