@@ -18,7 +18,7 @@
 
 ## 3. Calendar grid
 
-- [ ] 3.1 Pure `layoutDay` for overlapping blocks (lanes, widths, overlap flag, +N cap); verify `layout.test.ts` with disjoint, nested and chained overlaps (`npm test`)
+- [x] 3.1 Pure `layoutDay` for overlapping blocks (lanes, widths, overlap flag, +N cap); verify `layout.test.ts` with disjoint, nested and chained overlaps (`npm test`)
 - [ ] 3.2 Day and Week views (`g d`, `g w`), 15-minute grid, unscheduled lane, dashed unestimated blocks, current-time line, capacity header; verify browser flow offline: week renders timed tasks as blocks, date-only tasks in lanes, over-capacity day marked
 - [ ] 3.3 Pointer drag from lane, list and block to slot; drop on lane clears time; resize handle sets estimate; verify browser flow: drop at 14:30 updates the detail panel's due time, resize by two rows sets 60 minutes
 - [ ] 3.4 Keyboard parity: arrows, `Shift+Up/Down`, Enter, `s` placement mode from lists, Escape cancels; update `?` help; verify browser flow with no pointer: schedule a Today task to 09:30 and extend it to 45 minutes
