@@ -11,6 +11,7 @@ import { EstimateField } from './EstimateField'
 import { LabelChip, LabelPicker } from './LabelPicker'
 import { RecurrenceField } from './RecurrenceField'
 import { RemindersField } from './RemindersField'
+import { HistoryPanel } from './HistoryPanel'
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 1, label: 'P1', cls: 'text-red-600 border-red-500' },
@@ -227,6 +228,9 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
           {task.completed_at && <> · Completed {new Date(task.completed_at).toLocaleString()}</>}
         </p>
       </fieldset>
+      <div className="border-t border-slate-200 px-4 pb-4 dark:border-slate-800">
+        <HistoryPanel entity="task" id={task.id} readOnly={readOnly} onRestored={(id) => id !== task.id && onOpen?.(id)} />
+      </div>
     </aside>
   )
 }

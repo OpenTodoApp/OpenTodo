@@ -19,6 +19,7 @@ export type Route =
   | { view: 'import' }
   | { view: 'invite'; token: string }
   | { view: 'share' }
+  | { view: 'trash' }
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.split('/').filter(Boolean)
@@ -44,6 +45,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'filter' }
     case 'share':
       return { view: 'share' }
+    case 'trash':
+      return { view: 'trash' }
     case 'views':
       return { view: 'views' }
     case 'view':

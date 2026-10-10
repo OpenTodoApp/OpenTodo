@@ -15,11 +15,12 @@ import { TaskDetail } from './TaskDetail'
 import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
+import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
 import { estimateFocus, isGPending, openTask, placeInDay } from './signals'
 import { visibleTasks } from '../lib/trash'
 
-type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
+type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 interface Row {
@@ -239,7 +240,10 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       setPrompt((p) => (p?.id === id ? null : p))
       return
     }
-    setPrompt(await parentReadyToComplete(id))
+    const parent = await parentReadyToComplete(id)
+    setPrompt(parent)
+    // The last open task of a project: offer one-key archiving (trash-and-history).
+    if (!parent) await offerArchiveAfterCompletion(id)
   }, [])
 
   const acceptPrompt = useCallback(() => {
