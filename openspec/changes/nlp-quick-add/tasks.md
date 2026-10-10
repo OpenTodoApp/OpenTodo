@@ -26,5 +26,5 @@
 
 ## 4. Docs and release
 
-- [ ] 4.1 Write `docs/quick-add.md` (syntax reference, resolution rules, languages, escaping) and link it from README and the `?` shortcut help; verify links resolve
-- [ ] 4.2 CHANGELOG entry under Unreleased noting the additive field and "update the server before clients"; verify `make check` passes including `openspec validate --all --strict`
+- [x] 4.1 Write `docs/quick-add.md` (syntax reference, resolution rules, languages, escaping) and link it from README and the `?` shortcut help; verify links resolve
+- [x] 4.2 CHANGELOG entry under Unreleased noting the additive field and "update the server before clients"; verify `make check` passes including `openspec validate --all --strict`

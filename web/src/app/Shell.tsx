@@ -95,6 +95,12 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['Esc', 'Close panel, clear selection'],
     ['?', 'Toggle this help'],
   ]
+  const quickAdd: [string, string][] = [
+    ['tomorrow · next Wed · 3 Feb · at 3pm', 'Due date and time (6 languages)'],
+    ['#project @label p1 +30m', 'Project, label, priority, estimate'],
+    ['"quoted text"', 'Keep text literally'],
+    ['Backspace ×2 (end of line)', 'Highlight, then dismiss the last chip'],
+  ]
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
@@ -109,6 +115,20 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
             ))}
           </tbody>
         </table>
+        <h3 className="mb-2 mt-4 text-sm font-semibold">Quick add syntax</h3>
+        <table className="w-full text-sm">
+          <tbody>
+            {quickAdd.map(([k, d]) => (
+              <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
+                <td className="py-1.5 pr-4"><code className="text-xs">{k}</code></td>
+                <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <a className="mt-2 block text-xs text-slate-500 underline" href="https://github.com/pixari/opentodo/blob/main/docs/quick-add.md" target="_blank" rel="noreferrer">
+          Full syntax reference (docs/quick-add.md)
+        </a>
         <button className="btn-ghost mt-4 w-full" onClick={onClose}>Close</button>
       </div>
     </div>
