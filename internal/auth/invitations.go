@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
 )
 
@@ -69,7 +70,8 @@ func (s *Service) CanInvite(u *User) bool {
 }
 
 // CreateInvitation mints a single-use invitation. email may be empty (open
-// invitation). The plaintext secret is returned exactly once; only its hash is stored.
+// invitation). The plaintext secret is returned exactly once; only its hash is
+// stored. The invitation and its invitation.created audit event commit together.
 func (s *Service) CreateInvitation(ctx context.Context, creator *User, email string, ttl time.Duration) (*Invitation, string, error) {
 	if ttl == 0 {
 		ttl = DefaultInvitationTTL
@@ -91,9 +93,24 @@ func (s *Service) CreateInvitation(ctx context.Context, creator *User, email str
 		CreatedBy: creator.ID, CreatedByName: creator.Name,
 		CreatedAt: now.UnixMilli(), ExpiresAt: now.Add(ttl).UnixMilli(),
 	}
-	_, err := s.db.ExecContext(ctx, `INSERT INTO invitations(id,token_hash,created_by,email,role,created_at,expires_at)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	defer tx.Rollback()
+	_, err = tx.ExecContext(ctx, `INSERT INTO invitations(id,token_hash,created_by,email,role,created_at,expires_at)
 		VALUES(?,?,?,?,?,?,?)`, inv.ID, hashToken(secret), inv.CreatedBy, inv.Email, inv.Role, inv.CreatedAt, inv.ExpiresAt)
 	if err != nil {
+		return nil, "", err
+	}
+	boundEmail := ""
+	if bound != nil {
+		boundEmail = *bound
+	}
+	if err := s.audit.RecordTx(ctx, tx, audit.InvitationCreated(creator.ID, inv.ID, boundEmail)); err != nil {
+		return nil, "", err
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, "", err
 	}
 	return inv, secret, nil
@@ -129,12 +146,18 @@ func (s *Service) ListInvitations(ctx context.Context) ([]Invitation, error) {
 	return out, rows.Err()
 }
 
-// RevokeInvitation marks an invitation revoked. Accepted invitations cannot be
-// revoked (ErrInvitationSpent); unknown ids return ErrNotFound. Revoking an
-// already revoked or expired invitation is a no-op.
-func (s *Service) RevokeInvitation(ctx context.Context, id string) error {
+// RevokeInvitation marks an invitation revoked on behalf of actorID. Accepted
+// invitations cannot be revoked (ErrInvitationSpent); unknown ids return
+// ErrNotFound. Revoking an already revoked invitation is a no-op and records
+// nothing; otherwise invitation.revoked is recorded in the same transaction.
+func (s *Service) RevokeInvitation(ctx context.Context, actorID, id string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 	var acceptedAt, revokedAt *int64
-	err := s.db.QueryRowContext(ctx, "SELECT accepted_at, revoked_at FROM invitations WHERE id = ?", id).Scan(&acceptedAt, &revokedAt)
+	err = tx.QueryRowContext(ctx, "SELECT accepted_at, revoked_at FROM invitations WHERE id = ?", id).Scan(&acceptedAt, &revokedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -147,9 +170,14 @@ func (s *Service) RevokeInvitation(ctx context.Context, id string) error {
 	if revokedAt != nil {
 		return nil
 	}
-	_, err = s.db.ExecContext(ctx, "UPDATE invitations SET revoked_at = ? WHERE id = ? AND accepted_at IS NULL AND revoked_at IS NULL",
-		time.Now().UnixMilli(), id)
-	return err
+	if _, err := tx.ExecContext(ctx, "UPDATE invitations SET revoked_at = ? WHERE id = ? AND accepted_at IS NULL AND revoked_at IS NULL",
+		time.Now().UnixMilli(), id); err != nil {
+		return err
+	}
+	if err := s.audit.RecordTx(ctx, tx, audit.InvitationRevoked(actorID, id)); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // PreviewInvitation resolves a secret to the information an invitee may see.
@@ -172,27 +200,27 @@ func (s *Service) PreviewInvitation(ctx context.Context, secret string) (*Invita
 }
 
 // checkInvitation validates a secret inside the registration transaction and
-// returns the role it grants. It runs before the account row is inserted so that
+// returns the role it grants and the invitation id. It runs before the account row is inserted so that
 // a bad link or an email mismatch never creates an account.
-func (s *Service) checkInvitation(ctx context.Context, tx *sql.Tx, secret, email string, now int64) (string, error) {
+func (s *Service) checkInvitation(ctx context.Context, tx *sql.Tx, secret, email string, now int64) (string, string, error) {
 	var bound *string
-	var role string
-	err := tx.QueryRowContext(ctx, `SELECT email, role FROM invitations
+	var role, id string
+	err := tx.QueryRowContext(ctx, `SELECT id, email, role FROM invitations
 		WHERE token_hash = ? AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at > ?`,
-		hashToken(secret), now).Scan(&bound, &role)
+		hashToken(secret), now).Scan(&id, &bound, &role)
 	if errors.Is(err, sql.ErrNoRows) {
-		return "", ErrInvitationInvalid
+		return "", "", ErrInvitationInvalid
 	}
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if bound != nil && !strings.EqualFold(*bound, email) {
-		return "", ErrInvitationEmailMismatch
+		return "", "", ErrInvitationEmailMismatch
 	}
 	if role == "" {
 		role = "member"
 	}
-	return role, nil
+	return role, id, nil
 }
 
 // markInvitationAccepted spends the invitation in the same transaction that

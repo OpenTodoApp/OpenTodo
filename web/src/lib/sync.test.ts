@@ -250,6 +250,7 @@ describe('restore re-seed (log generation)', () => {
       { id: 'b1', entity: 'task', entityId: 't1', field: 'title', value: 'Buy oat milk', ts: 300, device: 'devB' },
       { id: 'b2', entity: 'task', entityId: 't2', field: 'title', value: 'Created after the backup', ts: 400, device: 'devB' },
       { id: 'b3', entity: 'label', entityId: 'l1', field: 'name', value: 'errand', ts: 410, device: 'devB' },
+      { id: 'b4', entity: 'view', entityId: 'v1', field: 'name', value: 'Work', ts: 420, device: 'devB' },
     ])
     await setMeta('generation', 'gen-before')
     await setMeta('cursor', 42)
@@ -279,7 +280,7 @@ describe('restore re-seed (log generation)', () => {
     expect(reseed[0][1]).toBe(0)
     const ops = reseed.flatMap((c) => c[2])
     const fields = ops.map((o) => `${o.entity}:${o.entityId}:${o.field}`).sort()
-    expect(fields).toEqual(['label:l1:name', 'project:p1:name', 'task:t1:project_id', 'task:t1:title', 'task:t2:title'])
+    expect(fields).toEqual(['label:l1:name', 'project:p1:name', 'task:t1:project_id', 'task:t1:title', 'task:t2:title', 'view:v1:name'])
     expect(await getMeta('generation', '')).toBe('gen-after')
     expect(await getMeta('cursor', -1)).toBe(2)
     expect(await db.outbox.count()).toBe(0)

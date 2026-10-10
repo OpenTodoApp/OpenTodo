@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "description": "Development only, not part of the extension zip: marks the sources as ES modules so `node --test` can import them. No dependencies.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test share-url.test.js"
+  }
+}

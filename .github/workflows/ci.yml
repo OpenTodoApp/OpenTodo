@@ -104,6 +104,30 @@ jobs:
           gh release view "${{ github.ref_name }}" >/dev/null 2>&1 || gh release create "${{ github.ref_name }}" --generate-notes --verify-tag
           gh release upload "${{ github.ref_name }}" dist/ot-* --clobber
 
+  extension:
+    name: Browser extension (test, package)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      # Runs the unit tests, refuses a manifest with host permissions and zips extension/.
+      - run: make extension
+      - uses: actions/upload-artifact@v7
+        with:
+          name: opentodo-browser-extension
+          path: dist/opentodo-browser-extension.zip
+      - name: Attach to the GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${{ github.ref_name }}" >/dev/null 2>&1 || gh release create "${{ github.ref_name }}" --generate-notes --verify-tag || gh release view "${{ github.ref_name }}" >/dev/null
+          gh release upload "${{ github.ref_name }}" dist/opentodo-browser-extension.zip --clobber
+
   openspec:
     name: OpenSpec (validate specs and changes)
     runs-on: ubuntu-latest

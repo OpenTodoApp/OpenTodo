@@ -135,7 +135,7 @@ func (s *Server) handleBackupRun(w http.ResponseWriter, r *http.Request) {
 	if s.requireBackupOwner(w, r) == nil {
 		return
 	}
-	err := s.backups.StartRun(r.Context(), backup.KindManual)
+	err := s.backups.StartRun(r.Context(), backup.KindManual, userFrom(r.Context()).ID)
 	if errors.Is(err, backup.ErrRunning) {
 		writeError(w, http.StatusConflict, "conflict", err.Error())
 		return

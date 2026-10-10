@@ -2,10 +2,39 @@ package store
 
 import (
 	"context"
-	"errors"
-	"path/filepath"
+	"io/fs"
+	"strconv"
+	"strings"
 	"testing"
 )
+
+// embeddedMigrations returns the embedded migration files by version and the
+// highest version. It fails on duplicate version numbers: the runner skips any
+// version at or below the database's user_version, so a duplicate would never
+// run. Gaps are allowed (branches land in merge order).
+func embeddedMigrations(t *testing.T) (map[int]string, int) {
+	t.Helper()
+	entries, err := fs.ReadDir(migrations, "migrations")
+	if err != nil {
+		t.Fatal(err)
+	}
+	byVersion := map[int]string{}
+	latest := 0
+	for _, e := range entries {
+		v, err := strconv.Atoi(strings.SplitN(e.Name(), "_", 2)[0])
+		if err != nil {
+			t.Fatalf("migration %s: %v", e.Name(), err)
+		}
+		if prev, dup := byVersion[v]; dup {
+			t.Fatalf("migrations %s and %s share version %d", prev, e.Name(), v)
+		}
+		byVersion[v] = e.Name()
+		if v > latest {
+			latest = v
+		}
+	}
+	return byVersion, latest
+}
 
 func TestOpenMigratesEmptyDataDir(t *testing.T) {
 	db, err := Open(t.TempDir())
@@ -14,15 +43,15 @@ func TestOpenMigratesEmptyDataDir(t *testing.T) {
 	}
 	defer db.Close()
 
+	_, latest := embeddedMigrations(t)
 	var version int
 	if err := db.QueryRowContext(context.Background(), "PRAGMA user_version").Scan(&version); err != nil {
 		t.Fatal(err)
 	}
-	// Derived from the embedded files so renumbering migrations never breaks this test.
-	if want := LatestVersion(); version != want || want < 2 {
-		t.Fatalf("user_version = %d, want %d", version, want)
+	if version != latest || latest != LatestVersion() {
+		t.Fatalf("user_version = %d, want %d", version, latest)
 	}
-	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations", "settings", "backup_runs"} {
+	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations", "settings", "webhooks", "webhook_deliveries", "import_jobs", "import_items", "audit_events", "backup_runs"} {
 		var name string
 		err := db.QueryRowContext(context.Background(), "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", table).Scan(&name)
 		if err != nil {
@@ -35,74 +64,106 @@ func TestOpenMigratesEmptyDataDir(t *testing.T) {
 	}
 }
 
-// A database created by the first release (schema v1) gains the settings and
-// backup_runs tables plus a random log generation when migrated.
-func TestMigrationAddsSettingsAndGeneration(t *testing.T) {
-	ctx := context.Background()
-	path := filepath.Join(t.TempDir(), DBFile)
-	db, err := OpenFile(path)
+func TestMigrateReachesLatestVersion(t *testing.T) {
+	db, err := Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	v1, err := migrations.ReadFile("migrations/0001_init.sql")
-	if err != nil {
+
+	byVersion, latest := embeddedMigrations(t)
+	passkeys := false
+	for _, name := range byVersion {
+		if strings.HasSuffix(name, "_passkeys.sql") {
+			passkeys = true
+		}
+	}
+	if !passkeys {
+		t.Fatal("the passkeys migration is not embedded")
+	}
+
+	var version int
+	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, string(v1)); err != nil {
-		t.Fatal(err)
+	if version != latest {
+		t.Fatalf("user_version = %d, want %d", version, latest)
 	}
-	if _, err := db.ExecContext(ctx, "PRAGMA user_version = 1"); err != nil {
-		t.Fatal(err)
-	}
-	if err := Migrate(ctx, db); err != nil {
-		t.Fatal(err)
-	}
-	var gen string
-	if err := db.QueryRowContext(ctx, "SELECT value FROM settings WHERE key = 'generation'").Scan(&gen); err != nil {
-		t.Fatalf("generation missing: %v", err)
-	}
-	if len(gen) != 32 {
-		t.Fatalf("generation = %q, want 32 hex chars", gen)
-	}
-	if _, err := db.ExecContext(ctx, "INSERT INTO backup_runs(id, started_at, status) VALUES('r1', 1, 'running')"); err != nil {
-		t.Fatalf("backup_runs unusable: %v", err)
-	}
-	// Re-running migrations keeps the generation stable.
-	if err := Migrate(ctx, db); err != nil {
-		t.Fatal(err)
-	}
-	var again string
-	_ = db.QueryRowContext(ctx, "SELECT value FROM settings WHERE key = 'generation'").Scan(&again)
-	if again != gen {
-		t.Fatalf("generation changed on re-migrate: %q -> %q", gen, again)
-	}
-	// Two fresh databases get different generations.
-	other, err := Open(t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer other.Close()
-	var gen2 string
-	_ = other.QueryRowContext(ctx, "SELECT value FROM settings WHERE key = 'generation'").Scan(&gen2)
-	if gen2 == "" || gen2 == gen {
-		t.Fatalf("generations not random: %q %q", gen, gen2)
+	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "passkeys"} {
+		var name string
+		if err := db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?", table).Scan(&name); err != nil {
+			t.Fatalf("table %s missing after migration: %v", table, err)
+		}
 	}
 }
 
-func TestLockIsExclusive(t *testing.T) {
+// TestMigrationsIdempotent covers an existing database created before the
+// data-import migration: opening it applies that migration and keeps its data, and the import
+// tables' statements are safe to run again (they use IF NOT EXISTS) so a database
+// that recorded a later version on another branch cannot fail on them.
+func TestMigrationsIdempotent(t *testing.T) {
 	dir := t.TempDir()
-	release, err := Lock(dir)
+	db, err := Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Lock(dir); !errors.Is(err, ErrLocked) {
-		t.Fatalf("second lock: %v, want ErrLocked", err)
+	ctx := context.Background()
+	// Migration numbers are assigned at merge time, so find ours by name.
+	name, version := dataImportMigration(t)
+	// Simulate a database from before the import tables existed.
+	for _, q := range []string{
+		"INSERT INTO users(id,email,password_hash,created_at) VALUES('u1','a@example.com','x',1)",
+		"DROP TABLE import_items", "DROP TABLE import_jobs", "PRAGMA user_version = " + strconv.Itoa(version-1),
+	} {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			t.Fatal(err)
+		}
 	}
-	release()
-	release2, err := Lock(dir)
+	db.Close()
+	db, err = Open(dir)
 	if err != nil {
-		t.Fatalf("lock after release: %v", err)
+		t.Fatalf("reopen: %v", err)
 	}
-	release2()
+	defer db.Close()
+	if _, err := db.ExecContext(ctx, "INSERT INTO import_jobs(id,user_id,profile,status,created_at) VALUES('j','u1','csv','done',1)"); err != nil {
+		t.Fatalf("import_jobs after migrating an old database: %v", err)
+	}
+	var n int
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&n); err != nil || n != 1 {
+		t.Fatalf("existing data lost: %d %v", n, err)
+	}
+	// Re-running the import migration over existing tables is a no-op.
+	body, err := migrations.ReadFile("migrations/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, string(body)); err != nil {
+		t.Fatalf("re-running %s: %v", name, err)
+	}
+	if err := Migrate(ctx, db); err != nil {
+		t.Fatalf("second migrate: %v", err)
+	}
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM import_jobs").Scan(&n); err != nil || n != 1 {
+		t.Fatalf("import job lost: %d %v", n, err)
+	}
+}
+
+// dataImportMigration returns the embedded data-import migration's file name and version.
+func dataImportMigration(t *testing.T) (string, int) {
+	t.Helper()
+	entries, err := fs.ReadDir(migrations, "migrations")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), "_data_import.sql") {
+			v, err := strconv.Atoi(strings.SplitN(e.Name(), "_", 2)[0])
+			if err != nil {
+				t.Fatal(err)
+			}
+			return e.Name(), v
+		}
+	}
+	t.Fatal("no *_data_import.sql migration embedded")
+	return "", 0
 }

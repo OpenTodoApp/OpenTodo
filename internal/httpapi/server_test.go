@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	gosync "sync"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/webhook"
 )
 
 type env struct {
@@ -29,6 +31,9 @@ type env struct {
 	sync    *opsync.Service
 	// ip, when set, is sent as X-Forwarded-For so clients get separate rate-limit windows.
 	ip string
+	// hooks and clock drive the webhook worker deterministically.
+	hooks *webhook.Service
+	clock *testClock
 }
 
 func newEnv(t *testing.T, allowSignup bool) *env {
@@ -41,13 +46,34 @@ func newEnv(t *testing.T, allowSignup bool) *env {
 	cfg := config.Config{SessionTTL: time.Hour, AllowSignup: allowSignup}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	syncSvc := opsync.NewService(db)
-	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), syncSvc, nil, log, "test")
+	clock := &testClock{t: time.UnixMilli(1_760_000_000_000)}
+	hooks := webhook.New(db, syncSvc, webhook.Options{Version: "test", Log: log, Now: clock.Now, Rand: func() float64 { return 0.5 }})
+	syncSvc.SetObserver(hooks.Observe)
+	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), syncSvc, nil, log, "test", WithWebhooks(hooks))
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	// Open event streams would otherwise hold srv.Close; mirror main.go's shutdown hook.
 	t.Cleanup(syncSvc.Notifier().CloseAll)
 	jar, _ := cookiejar.New(nil)
-	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc}
+	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, handler: h, sync: syncSvc, hooks: hooks, clock: clock}
+}
+
+// testClock is the injectable clock handed to the webhook worker.
+type testClock struct {
+	mu gosync.Mutex
+	t  time.Time
+}
+
+func (c *testClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.t
+}
+
+func (c *testClock) Advance(d time.Duration) {
+	c.mu.Lock()
+	c.t = c.t.Add(d)
+	c.mu.Unlock()
 }
 
 func (e *env) do(method, path string, body any, headers ...string) (*http.Response, map[string]any) {
@@ -191,6 +217,28 @@ func TestRestWriteThroughAndSyncRoundTrip(t *testing.T) {
 	e.mustStatus(resp, 200, out)
 	if out["priority"] != float64(1) {
 		t.Fatalf("patched priority = %v", out["priority"])
+	}
+
+	// estimate_minutes (additive field) is accepted by PATCH, read back, and validated.
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"estimate_minutes": 45})
+	e.mustStatus(resp, 200, out)
+	if out["estimate_minutes"] != float64(45) {
+		t.Fatalf("patched estimate_minutes = %v", out["estimate_minutes"])
+	}
+	resp, out = e.do("GET", "/api/v1/tasks/"+taskID, nil)
+	e.mustStatus(resp, 200, out)
+	if out["estimate_minutes"] != float64(45) {
+		t.Fatalf("estimate_minutes after read = %v", out["estimate_minutes"])
+	}
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"estimate_minutes": 0})
+	e.mustStatus(resp, 400, out)
+	// POST validates it too (a string is rejected and no task is created).
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Write report", "estimate_minutes": "30"})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"estimate_minutes": nil})
+	e.mustStatus(resp, 200, out)
+	if out["estimate_minutes"] != nil {
+		t.Fatalf("cleared estimate_minutes = %v", out["estimate_minutes"])
 	}
 
 	resp, out = e.do("GET", "/api/v1/tasks", nil)

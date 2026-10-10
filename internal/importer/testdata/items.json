@@ -1,0 +1,54 @@
+{
+  "projects": [
+    { "id": "100", "name": "Inbox", "inbox_project": true },
+    { "id": "200", "name": "Work", "color": "blue" },
+    { "id": "201", "name": "Client A", "parent_id": "200" }
+  ],
+  "sections": [
+    { "id": "s1", "name": "Backlog", "project_id": "201" }
+  ],
+  "labels": [
+    { "id": "l1", "name": "call" }
+  ],
+  "items": [
+    {
+      "id": "1",
+      "content": "Kickoff deck",
+      "description": "Ten slides",
+      "project_id": "201",
+      "section_id": "s1",
+      "priority": 4,
+      "due": { "date": "2026-10-15", "is_recurring": false, "string": "Oct 15" },
+      "labels": ["call"],
+      "checked": false,
+      "added_at": "2026-09-30T12:00:00.000000Z"
+    },
+    {
+      "id": "2",
+      "content": "Draft agenda",
+      "project_id": "201",
+      "parent_id": "1",
+      "priority": 1,
+      "due": { "date": "2026-10-14T16:00:00", "is_recurring": true, "string": "every tue 4pm" },
+      "labels": [],
+      "checked": true,
+      "completed_at": "2026-10-05T09:00:00Z"
+    },
+    {
+      "id": "3",
+      "content": "Water plants",
+      "project_id": "100",
+      "priority": 2,
+      "labels": []
+    },
+    {
+      "id": "4",
+      "content": "Old item",
+      "project_id": "200",
+      "is_deleted": true
+    }
+  ],
+  "notes": [
+    { "id": "n1", "item_id": "1", "content": "See the brief" }
+  ]
+}

@@ -12,7 +12,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Conflict-free multi-device sync | `bootstrap-core-platform` | Field-level last-writer-wins op log, convergent by construction. See `docs/sync.md` |
 | ✅ | Single container under 50 MB, runs on a Raspberry Pi | `bootstrap-core-platform` | Static Go binary + SQLite, distroless, ~12 MB binary |
 | ✅ | Keyboard navigation (q, j/k, c, 1–4, g+key, ?) | `bootstrap-core-platform` | |
-| 📝 | Live push of changes between devices (no 30 s polling) | `realtime-sync-channel` | Server-sent events or WebSocket wake-up; protocol stays op-based |
+| ✅ | Live push of changes between devices (no 30 s polling) | `realtime-sync-channel` | Server-sent events or WebSocket wake-up; protocol stays op-based |
 | 📝 | Rich text with collaborative editing for notes and comments | `collaborative-rich-text` | Yjs documents stored as op values; evaluate size impact first |
 | 📝 | Vim-style modal navigation option | `vim-keybindings` | |
 
@@ -21,11 +21,11 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | Status | Capability | Change name |
 | --- | --- | --- |
 | ✅ | Quick add with view-aware defaults | `bootstrap-core-platform` |
-| 📝 | Natural-language quick add, multi-language ("Meeting with Sarah next Wed at 3pm #work @call +30m") | `nlp-quick-add` |
+| ✅ | Natural-language quick add, multi-language ("Meeting with Sarah next Wed at 3pm #work @call +30m") | `nlp-quick-add` |
 | ✅ | REST API + API tokens for scripts | `bootstrap-core-platform` |
-| 📝 | Command-line client | `cli-client` |
+| ✅ | Command-line client | `cli-client` |
 | 📝 | Email-to-task (forward to an inbox address) | `email-to-task` |
-| 📝 | Browser extension and mobile share-sheet target | `share-capture` |
+| ✅ | Browser extension and mobile share-sheet target | `share-capture` |
 | 📝 | Voice capture via the Web Speech API | `voice-capture` |
 
 ## 3. Organisation, views and GTD
@@ -33,12 +33,12 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | Status | Capability | Change name |
 | --- | --- | --- |
 | ✅ | Projects, Inbox, Today, Upcoming, Completed | `bootstrap-core-platform` |
-| 📝 | Nested projects (`parent_id` already reserved) | `project-hierarchy` |
+| ✅ | Nested projects (`parent_id` already reserved) | `project-hierarchy` |
 | 📝 | Sections and Kanban board view | `board-view` |
-| 📝 | Subtask trees with parent progress (`parent_id` already reserved) | `subtask-trees` |
-| 📝 | Labels UI (schema shipped) | `labels` |
-| 📝 | Filter query language (`@work & due <= tomorrow & p1`) | `filter-query-language` |
-| 📝 | Saved filters pinned to the sidebar, custom dashboards | `custom-views` |
+| ✅ | Subtask trees with parent progress (`parent_id` already reserved) | `subtask-trees` |
+| ✅ | Labels UI (schema shipped) | `labels` |
+| ✅ | Filter query language (`@work & due <= tomorrow & p1`) | `filter-query-language` |
+| ✅ | Saved filters pinned to the sidebar, custom dashboards | `custom-views` |
 | 📝 | Trash with restore, auto-archive of completed projects, revision history from the op log | `trash-and-history` |
 | 📝 | Drag-and-drop ordering (`position` already shipped) | `manual-ordering` |
 
@@ -66,10 +66,10 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | Status | Capability | Change name |
 | --- | --- | --- |
 | ✅ | JSON export | `bootstrap-core-platform` |
-| 📝 | JSON / CSV import, including export files from popular commercial task apps | `data-import` |
+| ✅ | JSON / CSV import, including export files from popular commercial task apps | `data-import` |
 | ✅ | Scheduled backups to local disk, S3 or WebDAV | `backups` |
 | 📝 | CalDAV two-way sync (Apple Reminders, Thunderbird, Nextcloud) | `caldav` |
-| 📝 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
+| ✅ | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
 | 📝 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 
 ## 7. Security and access
@@ -77,11 +77,11 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | Status | Capability | Change name |
 | --- | --- | --- |
 | ✅ | Owner setup, password sign-in, sessions, closed sign-up by default, rate limiting, CSP | `bootstrap-core-platform` |
-| 📝 | Invitations for new members | `invitations` |
-| 📝 | Passkeys (WebAuthn) | `passkeys` |
+| ✅ | Invitations for new members | `invitations` |
+| ✅ | Passkeys (WebAuthn) | `passkeys` |
 | 📝 | OIDC / OAuth2 single sign-on | `oidc-login` |
 | 📝 | Multi-factor authentication (TOTP) | `mfa-totp` |
-| 📝 | Audit log | `audit-log` |
+| ✅ | Audit log | `audit-log` |
 | 📝 | User administration: list users, admin role, deactivate, delete, password reset, owner transfer | `user-management` |
 | 📝 | Optional end-to-end encryption of task content | `e2ee` |
 

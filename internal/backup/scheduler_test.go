@@ -197,7 +197,7 @@ func TestConcurrentRunConflicts(t *testing.T) {
 	e := newTestEnv(t)
 	ctx := context.Background()
 	e.svc.runMu.Lock() // a run in progress
-	if err := e.svc.StartRun(ctx, KindManual); !errors.Is(err, ErrRunning) {
+	if err := e.svc.StartRun(ctx, KindManual, ""); !errors.Is(err, ErrRunning) {
 		t.Fatalf("StartRun during a run: %v", err)
 	}
 	if _, err := e.svc.RunNow(ctx, KindScheduled); !errors.Is(err, ErrRunning) {
@@ -207,7 +207,7 @@ func TestConcurrentRunConflicts(t *testing.T) {
 	if hist, _ := e.svc.History(ctx, 10); len(hist) != 0 {
 		t.Fatalf("a second run started: %+v", hist)
 	}
-	if err := e.svc.StartRun(ctx, KindManual); err != nil {
+	if err := e.svc.StartRun(ctx, KindManual, ""); err != nil {
 		t.Fatal(err)
 	}
 	// While the background run holds the lock, another request conflicts or the

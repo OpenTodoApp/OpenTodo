@@ -21,6 +21,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
@@ -28,6 +29,7 @@ import (
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/web"
+	"github.com/pixari/opentodo/internal/webhook"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -84,14 +86,22 @@ func run() error {
 
 	authSvc := auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
 	syncSvc := opsync.NewService(db)
-	backups := backup.New(db, cfg.DataDir, backup.Options{Version: version, Log: log})
+	// Outbound webhooks: events come from the winning changes of each committed
+	// sync batch; the worker sends queued deliveries until shutdown.
+	hooks := webhook.New(db, syncSvc, webhook.Options{Version: version, Log: log})
+	if err := hooks.SeedAllowPrivate(context.Background(), cfg.WebhooksAllowPrivate); err != nil {
+		return err
+	}
+	syncSvc.SetObserver(hooks.Observe)
+	// Scheduled backups (docs/backups.md): off until the owner configures them.
+	backups := backup.New(db, cfg.DataDir, backup.Options{Version: version, Log: log, Audit: authSvc.Audit()})
 	if seeded, err := backups.ApplyPreset(ctx, cfg.Backup); err != nil {
 		return err
 	} else if seeded {
 		log.Info("backup settings seeded from OPENTODO_BACKUP_* variables")
 	}
 	backups.Start(ctx)
-	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version, httpapi.WithBackups(backups))
+	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version, httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups))
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
@@ -107,6 +117,15 @@ func run() error {
 	// clients reconnect to the new process.
 	srv.RegisterOnShutdown(syncSvc.Notifier().CloseAll)
 
+	// Prune audit events past the owner's retention at startup and hourly.
+	go authSvc.Audit().RunPruner(ctx, audit.PruneInterval)
+
+	workerDone := make(chan struct{})
+	go func() {
+		defer close(workerDone)
+		hooks.Run(ctx)
+	}()
+
 	errCh := make(chan error, 1)
 	go func() {
 		log.Info("opentodo listening", "addr", cfg.Addr, "data_dir", cfg.DataDir, "version", version, "signup_open", cfg.AllowSignup)
@@ -117,13 +136,23 @@ func run() error {
 
 	select {
 	case err := <-errCh:
+		stop()
+		<-workerDone
 		return err
 	case <-ctx.Done():
 	}
 	log.Info("shutting down")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	return srv.Shutdown(shutdownCtx)
+	err = srv.Shutdown(shutdownCtx)
+	// Let the delivery pass in progress finish (each send is capped at 10 s) so its
+	// outcome is recorded; anything still queued is sent after the next start.
+	select {
+	case <-workerDone:
+	case <-time.After(15 * time.Second):
+		log.Warn("webhook worker did not stop in time")
+	}
+	return err
 }
 
 // restore implements `opentodo restore [--data-dir DIR] [--passphrase-file FILE] <archive>`.

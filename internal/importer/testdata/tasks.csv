@@ -1,0 +1,7 @@
+id,Title,Description,Project,Section,Parent,Priority,Due Date,Due Time,Labels,Completed At,Created At,Recurrence,Color
+1,Write report,First draft,Work,Q4,,p1,2026-10-20,14:30,"focus, deep",,2026-10-01,,blue
+2,Collect numbers,,Work,Q4,1,2,2026-10-18,,,2026-10-05T10:00:00Z,,,
+3,Water plants,,,,,,,,home,,,every week,
+4,Bad priority,,Work,,,7,,,,,,,
+5,Time without date,,,,,,,09:00,,,,,
+6,,Missing title,,,,,,,,,,,

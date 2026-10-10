@@ -23,6 +23,15 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/',
         scope: '/',
+        // OpenSpec share-capture: the installed app is offered in the system share
+        // sheet. GET keeps it offline-capable: /share is an SPA route served by the
+        // precached shell, so no service-worker fetch handler is needed (files are
+        // out of scope, which is the only reason to use POST).
+        share_target: {
+          action: '/share',
+          method: 'GET',
+          params: { title: 'title', text: 'text', url: 'url' },
+        },
         icons: [
           { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' },
@@ -52,6 +61,6 @@ export default defineConfig({
   test: {
     environment: 'node',
     setupFiles: ['./src/test-setup.ts'],
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 })

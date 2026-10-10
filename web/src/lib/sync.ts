@@ -170,8 +170,9 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
       emitted += chunk.length
       chunk = []
     }
-    const tables: [Entity, typeof db.projects | typeof db.tasks | typeof db.labels][] = [
-      ['project', db.projects], ['task', db.tasks], ['label', db.labels],
+    // Every synced entity kind (keep in step with ENTITIES / entityTables()).
+    const tables: [Entity, unknown][] = [
+      ['project', db.projects], ['task', db.tasks], ['label', db.labels], ['view', db.views],
     ]
     for (const [entity, table] of tables) {
       const rows = (await (table as unknown as { toArray(): Promise<Record<string, unknown>[]> }).toArray())

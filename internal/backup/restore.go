@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -12,6 +13,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/store"
 )
@@ -139,7 +141,7 @@ func Restore(o RestoreOptions) (RestoreResult, error) {
 	}
 
 	// 3. Check the database itself and give it a new generation.
-	gen, err := prepareRestored(tmp.Name(), m.SchemaVersion)
+	gen, err := prepareRestored(tmp.Name(), m.SchemaVersion, filepath.Base(o.Archive))
 	if err != nil {
 		return res, err
 	}
@@ -209,7 +211,7 @@ func vacuumInto(src, dst string) error {
 }
 
 // prepareRestored verifies the extracted database and stamps a new generation.
-func prepareRestored(path string, schema int) (string, error) {
+func prepareRestored(path string, schema int, archiveName string) (string, error) {
 	db, err := store.OpenFile(path)
 	if err != nil {
 		return "", err
@@ -235,8 +237,32 @@ func prepareRestored(path string, schema int) (string, error) {
 		settings.GenerationKey, gen, time.Now().UnixMilli()); err != nil {
 		return "", err
 	}
+	// The restore runs without the server, so the audit event is recorded by the
+	// server on its next start (Service.recordPendingRestore).
+	if _, err := db.Exec(`INSERT INTO settings(key, value, updated_at) VALUES(?, ?, ?)
+		ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+		pendingRestoreKey, archiveName, time.Now().UnixMilli()); err != nil {
+		return "", err
+	}
 	// Runs that were in progress when the snapshot was taken did not finish in
 	// this timeline.
 	_, _ = db.Exec(`UPDATE backup_runs SET status = 'failed', finished_at = started_at, error = 'outcome unknown: this database was restored from the backup taken during this run' WHERE status = 'running'`)
 	return gen, nil
+}
+
+// pendingRestoreKey marks a restore that the server has not audited yet.
+const pendingRestoreKey = "backup_restored_pending"
+
+// recordPendingRestore writes the backup.restored audit event for a restore
+// performed by `opentodo restore` while the server was stopped.
+func (s *Service) recordPendingRestore(ctx context.Context) {
+	name, err := s.settings.GetString(ctx, pendingRestoreKey)
+	if err != nil || name == "" {
+		return
+	}
+	s.audit.Record(ctx, audit.BackupRestored("", name))
+	if err := s.settings.Delete(ctx, pendingRestoreKey); err != nil {
+		s.log.Error("backup: clear restore marker", "err", err)
+	}
+	s.log.Info("database was restored from a backup", "archive", name)
 }

@@ -1,0 +1,292 @@
+// Package audit records security-relevant events (OpenSpec change `audit-log`).
+//
+// The event catalogue is closed and lives in this file. Events are built only
+// through the typed constructors below: Event's detail payload is unexported, so
+// code outside this package cannot attach arbitrary keys, and every key a
+// constructor may set is in allowedDetailKeys. Task and project content can
+// therefore never reach the log by accident; TestConstructorsNeverCarryEntityFields
+// checks the allow-list against the op schema and a list of secret field names.
+//
+// Changes that add new ways to gain or change access (passkeys, oidc-login,
+// mfa-totp, backups, roles) call the constructors for their events and record
+// them with Recorder.RecordTx inside the transaction of the state change, or with
+// Recorder.Record for pure observations.
+package audit
+
+import (
+	"maps"
+	"strconv"
+)
+
+// Name is an event name from the closed catalogue.
+type Name string
+
+// The event catalogue (design D1). Names not yet emitted by any capability simply
+// never appear in the log.
+const (
+	LoginSucceededName     Name = "login.succeeded"
+	LoginFailedName        Name = "login.failed"
+	LogoutName             Name = "logout"
+	MFAEnrolledName        Name = "mfa.enrolled"
+	MFADisabledName        Name = "mfa.disabled"
+	MFAResetName           Name = "mfa.reset"
+	MFAChallengeFailedName Name = "mfa.challenge_failed"
+	PasskeyRegisteredName  Name = "passkey.registered"
+	PasskeyDeletedName     Name = "passkey.deleted"
+	TokenCreatedName       Name = "token.created"
+	TokenRevokedName       Name = "token.revoked"
+	InvitationCreatedName  Name = "invitation.created"
+	InvitationAcceptedName Name = "invitation.accepted"
+	InvitationRevokedName  Name = "invitation.revoked"
+	RoleChangedName        Name = "role.changed"
+	SettingsChangedName    Name = "settings.changed"
+	IdentityLinkedName     Name = "identity.linked"
+	IdentityUnlinkedName   Name = "identity.unlinked"
+	ExportRequestedName    Name = "export.requested"
+	AuditExportedName      Name = "audit.exported"
+	BackupCreatedName      Name = "backup.created"
+	BackupRestoredName     Name = "backup.restored"
+)
+
+// Names lists the whole catalogue in a stable order (used by the API docs, the
+// client filter and validation of the `name` filter).
+var Names = []Name{
+	LoginSucceededName, LoginFailedName, LogoutName,
+	MFAEnrolledName, MFADisabledName, MFAResetName, MFAChallengeFailedName,
+	PasskeyRegisteredName, PasskeyDeletedName,
+	TokenCreatedName, TokenRevokedName,
+	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
+	RoleChangedName, SettingsChangedName,
+	IdentityLinkedName, IdentityUnlinkedName,
+	ExportRequestedName, AuditExportedName,
+	BackupCreatedName, BackupRestoredName,
+}
+
+// PersonalNames are the events a user sees about themselves in
+// GET /api/v1/me/activity: sign-ins, sign-outs, credentials and tokens.
+var PersonalNames = []Name{
+	LoginSucceededName, LoginFailedName, LogoutName,
+	MFAEnrolledName, MFADisabledName, MFAResetName, MFAChallengeFailedName,
+	PasskeyRegisteredName, PasskeyDeletedName,
+	TokenCreatedName, TokenRevokedName,
+	IdentityLinkedName, IdentityUnlinkedName,
+}
+
+// Known reports whether n is in the catalogue.
+func Known(n Name) bool {
+	for _, k := range Names {
+		if k == n {
+			return true
+		}
+	}
+	return false
+}
+
+// Outcome of an event.
+const (
+	Success = "success"
+	Failure = "failure"
+)
+
+// Login failure reasons.
+const (
+	ReasonUnknownAccount = "unknown_account"
+	ReasonWrongPassword  = "wrong_password"
+	ReasonRateLimited    = "rate_limited"
+	// Passkey sign-in failures.
+	ReasonUnknownPasskey  = "unknown_passkey"
+	ReasonPasskeyRejected = "passkey_rejected"
+	ReasonPasskeyCounter  = "passkey_counter_regression"
+)
+
+// allowedDetailKeys is the complete set of keys an event's details may carry:
+// identifiers, names of credentials and settings, and short reason codes. Never
+// add a key that could hold a field of a synced entity, a password, a token
+// secret, a one-time code or a recovery code.
+var allowedDetailKeys = map[string]bool{
+	"method":        true, // sign-in method: password, register, passkey, oidc
+	"email":         true, // snapshot of the account's email (readable after deletion)
+	"reason":        true, // short failure reason code
+	"token_id":      true,
+	"token_name":    true,
+	"invitation_id": true,
+	"invited_email": true, // email an invitation is bound to, if any
+	"passkey_id":    true,
+	"passkey_name":  true,
+	"setting":       true, // settings key, e.g. audit.retention_days
+	"from":          true, // previous value of a setting or role
+	"to":            true, // new value of a setting or role
+	"provider":      true, // identity provider name
+	"format":        true, // export format
+	"count":         true, // number of exported events
+	"backup_id":     true,
+}
+
+// Event is one security-relevant occurrence. Build it with a constructor.
+type Event struct {
+	Name     Name
+	Outcome  string
+	ActorID  string // account that acted; empty when unknown (failed sign-in)
+	TargetID string // account acted upon, when different from the actor
+	details  map[string]string
+}
+
+// Details returns a copy of the event's allow-listed detail payload.
+func (e Event) Details() map[string]string { return maps.Clone(e.details) }
+
+// Failed returns a copy of e with outcome failure and the given reason code, for
+// capabilities whose state change can fail (e.g. a backup restore).
+func (e Event) Failed(reason string) Event {
+	e.Outcome = Failure
+	e.details = maps.Clone(e.details)
+	if e.details == nil {
+		e.details = map[string]string{}
+	}
+	e.details["reason"] = reason
+	return e
+}
+
+func ev(name Name, outcome, actor, target string, kv ...string) Event {
+	e := Event{Name: name, Outcome: outcome, ActorID: actor, TargetID: target}
+	if target == actor {
+		e.TargetID = ""
+	}
+	for i := 0; i+1 < len(kv); i += 2 {
+		if kv[i+1] == "" {
+			continue
+		}
+		if e.details == nil {
+			e.details = map[string]string{}
+		}
+		e.details[kv[i]] = kv[i+1]
+	}
+	return e
+}
+
+// ---- access ----
+
+// LoginSucceeded records a sign-in. method is password, register, passkey or oidc.
+func LoginSucceeded(userID, email, method string) Event {
+	return ev(LoginSucceededName, Success, userID, "", "email", email, "method", method)
+}
+
+// LoginFailed records a refused sign-in. targetID and email are empty when the
+// account does not exist; the submitted password is never passed in.
+func LoginFailed(targetID, email, reason string) Event {
+	return ev(LoginFailedName, Failure, "", targetID, "email", email, "reason", reason)
+}
+
+// Logout records a sign-out.
+func Logout(userID string) Event { return ev(LogoutName, Success, userID, "") }
+
+// ---- second factor (mfa-totp) ----
+
+// MFAEnrolled records a user enabling a second factor (method, e.g. totp).
+func MFAEnrolled(userID, method string) Event {
+	return ev(MFAEnrolledName, Success, userID, "", "method", method)
+}
+
+// MFADisabled records a second factor being turned off by actor for target.
+func MFADisabled(actorID, targetID, method string) Event {
+	return ev(MFADisabledName, Success, actorID, targetID, "method", method)
+}
+
+// MFAReset records the owner resetting another account's second factor.
+func MFAReset(actorID, targetID string) Event {
+	return ev(MFAResetName, Success, actorID, targetID)
+}
+
+// MFAChallengeFailed records a wrong second-factor code. The code itself is never
+// passed in; reason is a short code such as wrong_code or expired.
+func MFAChallengeFailed(targetID, reason string) Event {
+	return ev(MFAChallengeFailedName, Failure, "", targetID, "reason", reason)
+}
+
+// ---- passkeys ----
+
+// PasskeyRegistered records a new passkey.
+func PasskeyRegistered(userID, passkeyID, name string) Event {
+	return ev(PasskeyRegisteredName, Success, userID, "", "passkey_id", passkeyID, "passkey_name", name)
+}
+
+// PasskeyDeleted records the removal of a passkey by actor from target's account.
+func PasskeyDeleted(actorID, targetID, passkeyID, name string) Event {
+	return ev(PasskeyDeletedName, Success, actorID, targetID, "passkey_id", passkeyID, "passkey_name", name)
+}
+
+// ---- API tokens ----
+
+// TokenCreated records a new API token (never its secret).
+func TokenCreated(userID, tokenID, name string) Event {
+	return ev(TokenCreatedName, Success, userID, "", "token_id", tokenID, "token_name", name)
+}
+
+// TokenRevoked records a revoked API token.
+func TokenRevoked(userID, tokenID, name string) Event {
+	return ev(TokenRevokedName, Success, userID, "", "token_id", tokenID, "token_name", name)
+}
+
+// ---- invitations ----
+
+// InvitationCreated records an invitation; boundEmail is empty for an open link.
+func InvitationCreated(ownerID, invitationID, boundEmail string) Event {
+	return ev(InvitationCreatedName, Success, ownerID, "", "invitation_id", invitationID, "invited_email", boundEmail)
+}
+
+// InvitationAccepted records the account created from an invitation.
+func InvitationAccepted(userID, email, invitationID string) Event {
+	return ev(InvitationAcceptedName, Success, userID, "", "email", email, "invitation_id", invitationID)
+}
+
+// InvitationRevoked records a revoked invitation.
+func InvitationRevoked(ownerID, invitationID string) Event {
+	return ev(InvitationRevokedName, Success, ownerID, "", "invitation_id", invitationID)
+}
+
+// ---- roles and settings ----
+
+// RoleChanged records actor changing target's role.
+func RoleChanged(actorID, targetID, from, to string) Event {
+	return ev(RoleChangedName, Success, actorID, targetID, "from", from, "to", to)
+}
+
+// SettingsChanged records a server setting change. Values must be setting values
+// (numbers, booleans, provider names), never secrets: callers changing a secret
+// setting pass "(changed)" instead of the value.
+func SettingsChanged(actorID, setting, from, to string) Event {
+	return ev(SettingsChangedName, Success, actorID, "", "setting", setting, "from", from, "to", to)
+}
+
+// ---- single sign-on (oidc-login) ----
+
+// IdentityLinked records an external identity linked to an account.
+func IdentityLinked(userID, provider string) Event {
+	return ev(IdentityLinkedName, Success, userID, "", "provider", provider)
+}
+
+// IdentityUnlinked records an external identity removed from an account.
+func IdentityUnlinked(userID, provider string) Event {
+	return ev(IdentityUnlinkedName, Success, userID, "", "provider", provider)
+}
+
+// ---- exports and backups ----
+
+// ExportRequested records a user data export (format, e.g. json).
+func ExportRequested(userID, format string) Event {
+	return ev(ExportRequestedName, Success, userID, "", "format", format)
+}
+
+// AuditExported records an export of the audit log itself.
+func AuditExported(userID string, count int) Event {
+	return ev(AuditExportedName, Success, userID, "", "format", "ndjson", "count", strconv.Itoa(count))
+}
+
+// BackupCreated records a backup of the data directory.
+func BackupCreated(actorID, backupID string) Event {
+	return ev(BackupCreatedName, Success, actorID, "", "backup_id", backupID)
+}
+
+// BackupRestored records a restore from a backup.
+func BackupRestored(actorID, backupID string) Event {
+	return ev(BackupRestoredName, Success, actorID, "", "backup_id", backupID)
+}

@@ -10,6 +10,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/settings"
 )
@@ -19,7 +20,8 @@ var ErrRunning = errors.New("a backup is already running")
 
 // StartRun begins a backup in the background and returns at once. The run lock
 // is taken before returning, so a second caller gets ErrRunning immediately.
-func (s *Service) StartRun(ctx context.Context, kind string) error {
+// actorID is the account that asked for it (recorded in the audit log).
+func (s *Service) StartRun(ctx context.Context, kind, actorID string) error {
 	if !s.runMu.TryLock() {
 		return ErrRunning
 	}
@@ -28,7 +30,7 @@ func (s *Service) StartRun(ctx context.Context, kind string) error {
 	s.setRunning(&Run{Kind: kind, StartedAt: s.now().UnixMilli(), Status: StatusRunning})
 	go func() {
 		defer s.runMu.Unlock()
-		s.execute(context.WithoutCancel(ctx), kind)
+		s.execute(context.WithoutCancel(ctx), kind, actorID)
 	}()
 	return nil
 }
@@ -39,7 +41,7 @@ func (s *Service) RunNow(ctx context.Context, kind string) (Run, error) {
 		return Run{}, ErrRunning
 	}
 	defer s.runMu.Unlock()
-	return s.execute(ctx, kind), nil
+	return s.execute(ctx, kind, ""), nil
 }
 
 // Running returns the run in progress, if any.
@@ -60,7 +62,7 @@ func (s *Service) setRunning(r *Run) {
 }
 
 // execute runs one backup with the run lock held and records the outcome.
-func (s *Service) execute(ctx context.Context, kind string) Run {
+func (s *Service) execute(ctx context.Context, kind, actorID string) Run {
 	start := s.now()
 	r := Run{ID: ids.New(), Kind: kind, StartedAt: start.UnixMilli(), Status: StatusRunning}
 	set, err := s.LoadSettings(ctx)
@@ -105,6 +107,11 @@ func (s *Service) execute(ctx context.Context, kind string) Run {
 	if ferr := s.finishRun(context.WithoutCancel(ctx), &r); ferr != nil {
 		s.log.Error("backup: record run", "err", ferr)
 	}
+	ev := audit.BackupCreated(actorID, r.ID)
+	if r.Status == StatusFailed {
+		ev = ev.Failed("run_failed")
+	}
+	s.audit.Record(context.WithoutCancel(ctx), ev)
 	return r
 }
 

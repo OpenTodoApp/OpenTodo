@@ -11,8 +11,12 @@ export type Route =
   | { view: 'label'; id: string }
   | { view: 'labels' }
   | { view: 'filter' }
+  | { view: 'views' }
+  | { view: 'view'; id: string }
   | { view: 'settings' }
+  | { view: 'import' }
   | { view: 'invite'; token: string }
+  | { view: 'share' }
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.split('/').filter(Boolean)
@@ -27,11 +31,17 @@ export function parseRoute(pathname: string): Route {
     case 'completed':
       return { view: 'completed' }
     case 'settings':
-      return { view: 'settings' }
+      return parts[1] === 'import' ? { view: 'import' } : { view: 'settings' }
     case 'labels':
       return { view: 'labels' }
     case 'filter':
       return { view: 'filter' }
+    case 'share':
+      return { view: 'share' }
+    case 'views':
+      return { view: 'views' }
+    case 'view':
+      return parts[1] ? { view: 'view', id: parts[1] } : { view: 'views' }
     case 'project':
       return parts[1] ? { view: 'project', id: parts[1] } : { view: 'inbox' }
     case 'invite':
@@ -56,11 +66,14 @@ export function routePath(r: Route): string {
   switch (r.view) {
     case 'project':
     case 'label':
+    case 'view':
       return `/${r.view}/${r.id}`
     case 'invite':
       return `/invite/${encodeURIComponent(r.token)}`
     case 'inbox':
       return '/'
+    case 'import':
+      return '/settings/import'
     default:
       return `/${r.view}`
   }
@@ -76,10 +89,12 @@ if (typeof window !== 'undefined') {
   })
 }
 
-export function navigate(r: Route): void {
+/** Go to a route; `replace` swaps the current history entry (the start view on launch, leaving the capture screen). */
+export function navigate(r: Route, opts: { replace?: boolean } = {}): void {
   const path = routePath(r)
   if (path === current) return
-  history.pushState(null, '', path)
+  if (opts.replace) history.replaceState(null, '', path)
+  else history.pushState(null, '', path)
   current = path
   listeners.forEach((fn) => fn())
 }

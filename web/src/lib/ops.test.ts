@@ -7,6 +7,7 @@ import {
 import { wins } from './hlc'
 import { parentReadyToComplete } from './subtasks'
 import type { Op } from './types'
+import { viewOptions } from './views'
 
 let n = 0
 beforeEach(() => {
@@ -58,6 +59,24 @@ describe('applyOps', () => {
     expect(await db.tasks.count()).toBe(0)
   })
 
+  it('applies view ops into the views table with defaults and maps unknown option values at read time', async () => {
+    const db = useDatabase(`view-${Date.now()}`)
+    const v = (field: string, value: unknown, ts = 1): Op => ({ id: crypto.randomUUID(), entity: 'view', entityId: 'v1', field, value, ts, device: 'A' })
+    await applyOps([v('name', 'Work tomorrow'), v('query', '@work & due <= tomorrow & p1'), v('pinned', true), v('group_by', 'colour'), v('sort_by', 'title', 2), v('sort_dir', 'sideways')])
+    const row = await db.views.get('v1')
+    expect(row).toMatchObject({
+      id: 'v1', name: 'Work tomorrow', query: '@work & due <= tomorrow & p1', kind: 'list', pinned: true,
+      panels: [], position: 0, deleted_at: null,
+    })
+    // Unknown values are stored as received (never rewritten) and read as defaults.
+    expect(row?.group_by).toBe('colour')
+    expect(row?.sort_dir).toBe('sideways')
+    expect(viewOptions(row!)).toEqual({ kind: 'list', groupBy: 'project', sortBy: 'title', sortDir: 'asc' })
+    expect(viewOptions({ kind: 'grid', group_by: 'label', sort_by: 'mood', sort_dir: 'desc' })).toEqual({ kind: 'list', groupBy: 'label', sortBy: 'due', sortDir: 'desc' })
+    expect(await db.tasks.count()).toBe(0)
+    expect(await db.outbox.count()).toBe(0)
+  })
+
   it('skips ops for entities this build does not know instead of failing the batch', async () => {
     const db = useDatabase(`unknown-${Date.now()}`)
     await applyOps([
@@ -90,6 +109,24 @@ describe('mutate', () => {
     expect((await db.tasks.get(id))?.priority).toBe(1)
     await mutate('task', id, { deleted_at: 5 })
     expect((await db.tasks.get(id))?.deleted_at).toBe(5)
+  })
+
+  it('round-trips estimate_minutes and labels through createTask, the outbox and applyOps', async () => {
+    const db = useDatabase(`estimate-${Date.now()}`)
+    const plain = await createTask({ title: 'no estimate' })
+    expect((await db.tasks.get(plain))?.estimate_minutes).toBeNull()
+    const id = await createTask({ title: 'Write report', estimate_minutes: 45, labels: ['call'] })
+    const row = await db.tasks.get(id)
+    expect(row?.estimate_minutes).toBe(45)
+    expect(row?.labels).toEqual(['call'])
+    const queued = (await db.outbox.toArray()).find((o) => o.entityId === id && o.field === 'estimate_minutes')
+    expect(queued?.value).toBe(45)
+    // The same op arriving from another device applies to a fresh row with the default elsewhere.
+    const other = useDatabase(`estimate-remote-${Date.now()}`)
+    await applyOps([{ ...queued!, device: 'remote' }])
+    const remote = await other.tasks.get(id)
+    expect(remote?.estimate_minutes).toBe(45)
+    expect(remote?.priority).toBe(4)
   })
 })
 

@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/settings"
 )
 
@@ -23,6 +24,8 @@ type Service struct {
 	log      *slog.Logger
 	settings *settings.Store
 	secrets  *settings.SecretsFile
+	// audit records backup.created / backup.restored; nil disables it.
+	audit *audit.Recorder
 
 	// now is the injectable clock; tests replace it.
 	now func() time.Time
@@ -46,6 +49,7 @@ type Options struct {
 	Now     func() time.Time
 	Loc     *time.Location
 	Client  *http.Client
+	Audit   *audit.Recorder
 }
 
 // New wires a Service for the database in dataDir.
@@ -53,7 +57,7 @@ func New(db *sql.DB, dataDir string, o Options) *Service {
 	s := &Service{
 		db: db, dataDir: dataDir, version: o.Version, log: o.Log,
 		settings: settings.New(db), secrets: settings.NewSecretsFile(dataDir, "backup"),
-		now: o.Now, loc: o.Loc, client: o.Client, startupDelay: 10 * time.Second,
+		now: o.Now, loc: o.Loc, client: o.Client, audit: o.Audit, startupDelay: 10 * time.Second,
 		wakeCh: make(chan struct{}, 1),
 	}
 	if s.version == "" {

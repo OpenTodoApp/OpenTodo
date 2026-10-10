@@ -1,9 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, ApiError } from '../lib/api'
+import { bookmarklet } from '../lib/share'
 import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
 import { BackupsPanel } from './BackupsPanel'
+import { QuickAddSettingsSection } from './QuickAddSettings'
 import { MembersPanel } from './MembersPanel'
+import { SecuritySettings } from './ActivityPanel'
+import { SecurityPanel } from './SecurityPanel'
+import { navigate } from './router'
+import { WebhooksPanel } from './WebhooksPanel'
+import { setStartView, type StartView } from '../lib/views'
+import { useStartView, useViews } from './useViews'
 
 interface TokenRow { id: string; name: string; createdAt: number; lastUsedAt: number | null }
 
@@ -13,6 +21,9 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
   const [secret, setSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const sync = useSyncStatus()
+  const views = useViews()
+  const startView = useStartView()
+  const startIsKnown = !startView.startsWith('view:') || views.some((v) => `view:${v.id}` === startView)
 
   async function load() {
     try {
@@ -47,15 +58,48 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       <section className="space-y-2">
         <h2 className="font-semibold">Your data</h2>
         <p className="text-sm text-slate-500">
-          Everything you see is stored on this device and on your server. Export it any time as JSON.
+          Everything you see is stored on this device and on your server. Export it any time as JSON, or import an export,
+          a CSV file or another task manager's JSON export (<span className="kbd">g</span> <span className="kbd">Shift+I</span>).
         </p>
-        <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/api/v1/export" download="opentodo-export.json">Download export (JSON)</a>
+        <div className="flex flex-wrap gap-2">
+          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/api/v1/export" download="opentodo-export.json">Download export (JSON)</a>
+          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/settings/import"
+            onClick={(e) => { e.preventDefault(); navigate({ view: 'import' }) }}>Import data…</a>
+        </div>
         <p className="text-xs text-slate-400">
           Sync: {sync.state}{sync.pending ? `, ${sync.pending} change(s) waiting to upload` : ''}.
         </p>
       </section>
 
+      <SecurityPanel />
+      <section className="space-y-2">
+        <h2 className="font-semibold">Start view</h2>
+        <p className="text-sm text-slate-500">The view this device opens on launch. Each device keeps its own choice; it is not synced.</p>
+        <select className="input max-w-xs" aria-label="Start view on this device" value={startIsKnown ? startView : 'inbox'}
+          onChange={(e) => void setStartView(e.target.value as StartView)}>
+          <optgroup label="Built-in">
+            <option value="inbox">Inbox</option>
+            <option value="today">Today</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="completed">Completed</option>
+            <option value="filter">Filter</option>
+          </optgroup>
+          {views.length > 0 && (
+            <optgroup label="Saved views">
+              {views.map((v) => <option key={v.id} value={`view:${v.id}`}>{v.name}</option>)}
+            </optgroup>
+          )}
+        </select>
+      </section>
+
       {user.role === 'owner' && <MembersPanel />}
+
+      <WebhooksPanel isOwner={user.role === 'owner'} />
+      <QuickAddSettingsSection />
+
+      <SecuritySettings user={user} />
+
+      <CaptureSection />
 
       {user.role === 'owner' && <BackupsPanel />}
 
@@ -100,5 +144,58 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
         <a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">Source code</a>
       </section>
     </div>
+  )
+}
+
+/**
+ * Bookmarklet for this server (OpenSpec `share-capture`). The href is set through
+ * the DOM because React refuses `javascript:` URLs; clicking it here does nothing
+ * (the app's CSP would block it anyway), it is meant to be dragged to the bar.
+ */
+function CaptureSection() {
+  const code = bookmarklet(location.origin)
+  const linkRef = useRef<HTMLAnchorElement>(null)
+  const [copied, setCopied] = useState<'yes' | 'failed' | null>(null)
+  useEffect(() => {
+    linkRef.current?.setAttribute('href', code)
+  }, [code])
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopied('yes')
+    } catch {
+      setCopied('failed')
+    }
+  }
+
+  return (
+    <section className="space-y-2">
+      <h2 className="font-semibold">Capture</h2>
+      <p className="text-sm text-slate-500">
+        Drag this button to your bookmarks bar. On any page, click it to add the page, its title and the selected text to OpenTodo in a small window.
+        It holds no password or token; it uses your sign-in on this server. On a phone, install the app and use the share menu instead.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <a
+          ref={linkRef}
+          draggable
+          className="btn-primary cursor-grab"
+          title="Drag to your bookmarks bar"
+          onClick={(e) => e.preventDefault()}
+        >
+          Add to OpenTodo
+        </a>
+        <button className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={() => void copy()}>Copy bookmarklet</button>
+        {copied === 'yes' && <span className="text-xs text-emerald-700 dark:text-emerald-400">Copied. Create a bookmark and paste it as the address.</span>}
+      </div>
+      {copied === 'failed' && (
+        <label className="block text-xs text-slate-500">
+          Copy this code and paste it as a bookmark's address:
+          <textarea className="input mt-1 font-mono text-xs" readOnly rows={3} value={code} onFocus={(e) => e.currentTarget.select()} />
+        </label>
+      )}
+      <p className="text-xs text-slate-400">A browser extension for Chromium and Firefox is in the repository under <code>extension/</code>; see docs/capture.md.</p>
+    </section>
   )
 }

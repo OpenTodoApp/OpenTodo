@@ -29,17 +29,18 @@ type Store struct {
 func New(db *sql.DB) *Store { return &Store{db: db, now: time.Now} }
 
 // Get loads key into dst. It reports false (and leaves dst untouched) when the
-// key does not exist.
+// key does not exist or holds NULL (the value column is nullable on installs
+// where the webhooks migration created the table).
 func (s *Store) Get(ctx context.Context, key string, dst any) (bool, error) {
-	var raw string
+	var raw sql.NullString
 	err := s.db.QueryRowContext(ctx, `SELECT value FROM settings WHERE key = ?`, key).Scan(&raw)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && !raw.Valid) {
 		return false, nil
 	}
 	if err != nil {
 		return false, fmt.Errorf("read setting %s: %w", key, err)
 	}
-	if err := json.Unmarshal([]byte(raw), dst); err != nil {
+	if err := json.Unmarshal([]byte(raw.String), dst); err != nil {
 		return false, fmt.Errorf("decode setting %s: %w", key, err)
 	}
 	return true, nil
@@ -60,14 +61,20 @@ func (s *Store) Set(ctx context.Context, key string, v any) error {
 	return nil
 }
 
-// GetString returns a plain (non-JSON) string value, or "" when absent.
+// GetString returns a plain (non-JSON) string value, or "" when absent or NULL.
 func (s *Store) GetString(ctx context.Context, key string) (string, error) {
-	var v string
+	var v sql.NullString
 	err := s.db.QueryRowContext(ctx, `SELECT value FROM settings WHERE key = ?`, key).Scan(&v)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
-	return v, err
+	return v.String, err
+}
+
+// Delete removes key (no error when absent).
+func (s *Store) Delete(ctx context.Context, key string) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM settings WHERE key = ?`, key)
+	return err
 }
 
 // GenerationKey holds the op-log generation (see docs/sync.md).
