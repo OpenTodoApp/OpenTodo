@@ -36,7 +36,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `labels` | array of strings (label ids, see below) |
 | task | `position`, `created_at` | number |
 | task | `completed_at`, `deleted_at` | number or null |
-| task | `estimate_minutes` | integer 1–10080 (minutes) or null |
+| task | `estimate_minutes` | integer 1–10080 (minutes) or null; with `due.time` it forms a calendar block (time-blocking) |
 | label | `name`, `color` | string |
 | label | `position`, `created_at` | number |
 | label | `deleted_at` | number or null |

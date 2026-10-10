@@ -7,6 +7,7 @@ import { buildProjectTree } from '../lib/projects'
 import { progressOf } from '../lib/subtasks'
 import { descendants, flattenTree } from '../lib/tree'
 import type { Label, Priority, Project, Task } from '../lib/types'
+import { EstimateField } from './EstimateField'
 import { LabelChip, LabelPicker } from './LabelPicker'
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
@@ -160,6 +161,10 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
               onChange={(e) => task.due && void updateTask(task.id, { due: e.target.value ? { date: task.due.date, time: e.target.value } : { date: task.due.date } })} />
             {task.due && <button className="btn-ghost" onClick={() => void updateTask(task.id, { due: null })} aria-label="Clear due date">✕</button>}
           </div>
+        </Field>
+
+        <Field label="Estimate">
+          <EstimateField task={task} />
         </Field>
 
         <Field label="Labels">

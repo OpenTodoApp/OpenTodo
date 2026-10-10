@@ -14,6 +14,8 @@ import { TaskDetail } from './TaskDetail'
 import { TaskRow } from './TaskRow'
 import { ViewMenu } from './ViewsView'
 import { useListKeys } from './useListKeys'
+import { placeInDay } from './signals'
+import { todayISO } from '../lib/dates'
 import { useViewData, type ViewData } from './useViews'
 
 const GROUP_LABEL: Record<GroupBy, string> = { project: 'Project', due: 'Due date', priority: 'Priority', label: 'Label', none: 'None' }
@@ -89,7 +91,12 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   useListKeys({
     rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor,
     onIdleEscape: () => setSelected(null),
-    extra: (e) => {
+    extra: (e, row) => {
+      if (e.key === 's' && row && !row.completed_at) {
+        e.preventDefault()
+        placeInDay(row, todayISO())
+        return true
+      }
       if (e.key !== '/') return false
       e.preventDefault()
       inputRef.current?.focus()

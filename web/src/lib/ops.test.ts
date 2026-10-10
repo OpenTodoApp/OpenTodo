@@ -128,6 +128,27 @@ describe('mutate', () => {
     expect(remote?.estimate_minutes).toBe(45)
     expect(remote?.priority).toBe(4)
   })
+
+  it('keeps estimate and due independent under LWW (time-blocking: A estimates, B moves the block)', async () => {
+    const a = op({ field: 'estimate_minutes', value: 45, ts: 300, device: 'A' })
+    const b = op({ field: 'due', value: { date: '2026-10-13', time: '14:30' }, ts: 200, device: 'B' })
+    const b2 = op({ field: 'due', value: { date: '2026-10-13', time: '11:00' }, ts: 100, device: 'A' })
+    const results: unknown[] = []
+    for (const order of [[a, b, b2], [b2, b, a], [b, a, b2]]) {
+      const db = useDatabase(`lww-est-${Date.now()}-${n++}`)
+      await applyOps(order)
+      const row = await db.tasks.get('t1')
+      results.push({ est: row?.estimate_minutes, due: row?.due })
+    }
+    expect(results).toEqual(Array(3).fill({ est: 45, due: { date: '2026-10-13', time: '14:30' } }))
+  })
+
+  it('clears an estimate with null', async () => {
+    const db = useDatabase(`est-clear-${Date.now()}`)
+    const id = await createTask({ title: 'x', estimate_minutes: 30 })
+    await updateTask(id, { estimate_minutes: null })
+    expect((await db.tasks.get(id))?.estimate_minutes).toBeNull()
+  })
 })
 
 describe('subtasks', () => {

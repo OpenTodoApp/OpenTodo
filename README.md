@@ -37,6 +37,10 @@ An open-source, local-first task manager you can host yourself. Everything you e
   <img src="docs/screenshots/mobile-dark.png" width="180" alt="Mobile dark mode">
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/day.png" width="800" alt="Day view: timed tasks as blocks sized by their estimate, overlapping blocks side by side, the unscheduled lane and the planned total against the day length">
+</p>
+
 ## Why OpenTodo
 
 - **No subscription, no lock-in.** Free software under the AGPL. Nobody can paywall your task list or shut it down with the company.
@@ -63,6 +67,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Saved views | Save a filter with `s` as a named view that syncs: pinned to the sidebar with live counts, grouping (project, due date, priority, label) and sort options, editable query, `g` `v` overview, a start view per device, and dashboards of up to six views side by side. REST `/api/v1/views`. See [docs/filters.md](docs/filters.md#saving-views) |
 | Sub-projects | Nest projects to any depth; collapsible sidebar tree (Left / Right, remembered per device) with rolled-up counts; "Move to" from the project menu or `m`; a project view lists its sub-projects; archiving cascades, deleting moves sub-projects up a level; concurrent moves on two devices never leave a project nested inside itself |
 | Tasks | Title, notes, project, priority P1–P4, floating due date with optional time, complete / reopen, delete |
+| Time blocking | Duration estimates (`e` on a task: `20`, `45m`, `1h30`, or presets) shown on every row, and **Day** / **Week** calendars (`g` `d`, `g` `w`) with a 15-minute grid: a task with a due time is a block as long as its estimate, date-only tasks wait in the day's unscheduled lane, overlapping blocks sit side by side, each day shows planned hours against your day length. Drag from the lane, the task list beside the grid or the grid itself; drag a block's lower edge to change the estimate; or do all of it from the keyboard (`s` on a list task opens placement mode, arrows move, Shift+arrows resize). Duration filter chips (Quick wins, Under 30 min, Over 1 h, Unestimated) in Inbox, Today, Upcoming and projects. Works offline; moves converge like any other edit |
 | Subtasks | Nest tasks to any depth; parents show `done/total` progress; completing or deleting a parent cascades; `a` adds a subtask, Tab / Shift+Tab indent and outdent, Left / Right collapse and expand; concurrent moves on two devices never leave a task nested inside itself |
 | Offline | Every change is applied locally first and queued; the app loads and works with no network. Installable PWA |
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs. Live push: a change on one device shows up on the others within a second or two, with polling as the fallback |

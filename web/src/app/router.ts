@@ -6,6 +6,8 @@ export type Route =
   | { view: 'inbox' }
   | { view: 'today' }
   | { view: 'upcoming' }
+  | { view: 'day'; date?: string }
+  | { view: 'week'; date?: string }
   | { view: 'completed' }
   | { view: 'project'; id: string }
   | { view: 'label'; id: string }
@@ -30,6 +32,10 @@ export function parseRoute(pathname: string): Route {
       return { view: 'upcoming' }
     case 'completed':
       return { view: 'completed' }
+    case 'day':
+    case 'week':
+      // An optional anchor date; anything that is not YYYY-MM-DD means "today".
+      return parts[1] && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? { view: parts[0], date: parts[1] } : { view: parts[0] }
     case 'settings':
       return parts[1] === 'import' ? { view: 'import' } : { view: 'settings' }
     case 'labels':
@@ -70,6 +76,9 @@ export function routePath(r: Route): string {
       return `/${r.view}/${r.id}`
     case 'invite':
       return `/invite/${encodeURIComponent(r.token)}`
+    case 'day':
+    case 'week':
+      return r.date ? `/${r.view}/${r.date}` : `/${r.view}`
     case 'inbox':
       return '/'
     case 'import':
