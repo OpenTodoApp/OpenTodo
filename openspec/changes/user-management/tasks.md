@@ -32,10 +32,10 @@
 
 ## 5. Web app
 
-- [ ] 5.1 In `web/src/lib/api.ts`, add typed client functions for every route. In `web/src/lib/roles.ts`, mirror the D1 matrix. Verify with `api.users.test.ts` (mocked fetch) and `roles.test.ts` (same cases as `TestAuthorizeMatrix`) under `npm test`.
-- [ ] 5.2 Add `UsersPanel` in Settings for the owner and admins: the list with status and last sign-in, actions per row from `roles.ts`, a delete dialog that requires the email, a reset link shown once with copy, a transfer dialog with a password prompt, a role toggle for the owner, and an offline disabled state with nothing stored in Dexie. Verify with the component test `UsersPanel.test.ts` (fake-indexeddb shows no user data in the database) under `npm test`, and check that `npm run build` passes.
-- [ ] 5.3 Extend `MembersPanel` so it is visible to admins. Verify with a component test in which an admin sees the panel and a member does not, under `npm test`.
-- [ ] 5.4 Add a `PasswordSection` in Settings for every user, and the `/reset/:token` route with preview, form, invalid-link state, sign-out-first prompt for a signed-in visitor, and offline retry. Verify with `ResetScreen.test.ts` under `npm test`, and check that `npm run build` passes.
+- [x] 5.1 In `web/src/lib/api.ts`, add typed client functions for every route. In `web/src/lib/roles.ts`, mirror the D1 matrix. Verify with `api.users.test.ts` (mocked fetch) and `roles.test.ts` (same cases as `TestAuthorizeMatrix`) under `npm test`.
+- [x] 5.2 Add `UsersPanel` in Settings for the owner and admins: the list with status and last sign-in, actions per row from `roles.ts`, a delete dialog that requires the email, a reset link shown once with copy, a transfer dialog with a password prompt, a role toggle for the owner, and an offline disabled state with nothing stored in Dexie. Verify with the component test `UsersPanel.test.ts` (fake-indexeddb shows no user data in the database) under `npm test`, and check that `npm run build` passes.
+- [x] 5.3 Extend `MembersPanel` so it is visible to admins. Verify with a component test in which an admin sees the panel and a member does not, under `npm test`.
+- [x] 5.4 Add a `PasswordSection` in Settings for every user, and the `/reset/:token` route with preview, form, invalid-link state, sign-out-first prompt for a signed-in visitor, and offline retry. Verify with `ResetScreen.test.ts` under `npm test`, and check that `npm run build` passes.
 - [ ] 5.5 Add keyboard access: focusable rows, `d`, `r` and `Delete` with confirmation, documented in `?` help. Verify by doing deactivate → reactivate → reset → delete in the browser without a mouse.
 - [ ] 5.6 Browser flow against `./bin/opentodo`. Verify that it completes without console errors:
   1. The owner invites B and C, and both accept.
@@ -49,7 +49,7 @@
 
 ## 6. Audit integration
 
-- [ ] 6.1 If `audit-log` is merged, add the D10 constructors to `internal/audit` and call `RecordTx` in every transaction from section 2, and `Record` for `login.failed` with reason `deactivated`. Otherwise leave a no-op `recorder` interface at each emission point and wire it when `audit-log` lands. Verify with `TestAdminActionsAudited`, where each action yields exactly one event, a rolled-back action yields none, and no event contains a secret or password, under `go test ./...`.
+- [x] 6.1 If `audit-log` is merged, add the D10 constructors to `internal/audit` and call `RecordTx` in every transaction from section 2, and `Record` for `login.failed` with reason `deactivated`. Otherwise leave a no-op `recorder` interface at each emission point and wire it when `audit-log` lands. Verify with `TestAdminActionsAudited`, where each action yields exactly one event, a rolled-back action yields none, and no event contains a secret or password, under `go test ./...`.
 
 ## 7. Docs and release
 

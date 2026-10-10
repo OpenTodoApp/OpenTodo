@@ -23,12 +23,20 @@ export const AUDIT_LABELS: Record<AuditEventName, string> = {
   'audit.exported': 'Audit log exported',
   'backup.created': 'Backup created',
   'backup.restored': 'Backup restored',
+  'user.deactivated': 'Account deactivated',
+  'user.reactivated': 'Account reactivated',
+  'user.deleted': 'Account deleted',
+  'password.reset_issued': 'Password reset link issued',
+  'password.reset_completed': 'Password reset through a link',
+  'password.changed': 'Password changed',
+  'owner.transferred': 'Ownership transferred',
 }
 
 const REASONS: Record<string, string> = {
   wrong_password: 'wrong password',
   unknown_account: 'unknown account',
   rate_limited: 'too many attempts',
+  deactivated: 'account deactivated',
   unknown_passkey: 'unknown passkey',
   passkey_rejected: 'passkey rejected',
   passkey_counter_regression: 'possible cloned passkey',

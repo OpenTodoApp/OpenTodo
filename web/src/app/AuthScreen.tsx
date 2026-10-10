@@ -306,6 +306,8 @@ export function describeAuthError(err: unknown): string {
       return 'Too many attempts. Wait a minute and try again.'
     case 'signup_closed':
       return 'Sign-up is closed on this server. Ask the owner for an invitation link.'
+    case 'account_deactivated':
+      return 'This account has been deactivated. Ask the server owner or an admin to reactivate it.'
     default:
       return err.message
   }
