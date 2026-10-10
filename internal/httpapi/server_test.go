@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	gosync "sync"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/webhook"
 )
 
 type env struct {
@@ -27,6 +29,9 @@ type env struct {
 	db     *sql.DB
 	// ip, when set, is sent as X-Forwarded-For so clients get separate rate-limit windows.
 	ip string
+	// hooks and clock drive the webhook worker deterministically.
+	hooks *webhook.Service
+	clock *testClock
 }
 
 func newEnv(t *testing.T, allowSignup bool) *env {
@@ -38,11 +43,33 @@ func newEnv(t *testing.T, allowSignup bool) *env {
 	t.Cleanup(func() { db.Close() })
 	cfg := config.Config{SessionTTL: time.Hour, AllowSignup: allowSignup}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), opsync.NewService(db), nil, log, "test")
+	syncSvc := opsync.NewService(db)
+	clock := &testClock{t: time.UnixMilli(1_760_000_000_000)}
+	hooks := webhook.New(db, syncSvc, webhook.Options{Version: "test", Log: log, Now: clock.Now, Rand: func() float64 { return 0.5 }})
+	syncSvc.SetObserver(hooks.Observe)
+	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), syncSvc, nil, log, "test", WithWebhooks(hooks))
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	jar, _ := cookiejar.New(nil)
-	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db}
+	return &env{t: t, srv: srv, client: &http.Client{Jar: jar}, db: db, hooks: hooks, clock: clock}
+}
+
+// testClock is the injectable clock handed to the webhook worker.
+type testClock struct {
+	mu gosync.Mutex
+	t  time.Time
+}
+
+func (c *testClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.t
+}
+
+func (c *testClock) Advance(d time.Duration) {
+	c.mu.Lock()
+	c.t = c.t.Add(d)
+	c.mu.Unlock()
 }
 
 func (e *env) do(method, path string, body any, headers ...string) (*http.Response, map[string]any) {

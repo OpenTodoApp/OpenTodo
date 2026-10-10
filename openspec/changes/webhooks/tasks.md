@@ -15,9 +15,9 @@
 
 ## 3. HTTP API
 
-- [ ] 3.1 Routes `GET/POST /api/v1/webhooks`, `GET/PATCH/DELETE /api/v1/webhooks/{id}`, `POST /api/v1/webhooks/{id}/test`, `GET /api/v1/webhooks/{id}/deliveries`, `POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver` behind `requireAuth`, secret only in the 201 body, limits (20 per user, URL 2 KB), validation errors incl. `private_target`; verify `TestWebhookRoutesRequireAuth`, `TestWebhookValidation400`, `TestPrivateTargetRefused400`, `TestForeignWebhook404`, `TestRedeliverUnknown404`, `TestSecretNotInReads` (`go test ./...`)
-- [ ] 3.2 Owner-only `GET/PUT /api/v1/settings/webhooks` with `allow_private`, `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` preset in `internal/config`; verify `TestWebhookPolicyForbidsMembers`, `TestWebhookPolicyPresetSeedsOnce` (`go test ./...`)
-- [ ] 3.3 End-to-end in Go: create webhook against an in-process receiver, complete a task via `/api/v1/sync` from a fake device, assert one signed `task.completed` delivery with correct `changes`, then a 503→200 retry path; verify `TestWebhookEndToEnd` (`go test ./...`)
+- [x] 3.1 Routes `GET/POST /api/v1/webhooks`, `GET/PATCH/DELETE /api/v1/webhooks/{id}`, `POST /api/v1/webhooks/{id}/test`, `GET /api/v1/webhooks/{id}/deliveries`, `POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver` behind `requireAuth`, secret only in the 201 body, limits (20 per user, URL 2 KB), validation errors incl. `private_target`; verify `TestWebhookRoutesRequireAuth`, `TestWebhookValidation400`, `TestPrivateTargetRefused400`, `TestForeignWebhook404`, `TestRedeliverUnknown404`, `TestSecretNotInReads` (`go test ./...`)
+- [x] 3.2 Owner-only `GET/PUT /api/v1/settings/webhooks` with `allow_private`, `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` preset in `internal/config`; verify `TestWebhookPolicyForbidsMembers`, `TestWebhookPolicyPresetSeedsOnce` (`go test ./...`)
+- [x] 3.3 End-to-end in Go: create webhook against an in-process receiver, complete a task via `/api/v1/sync` from a fake device, assert one signed `task.completed` delivery with correct `changes`, then a 503→200 retry path; verify `TestWebhookEndToEnd` (`go test ./...`)
 
 ## 4. Web app
 

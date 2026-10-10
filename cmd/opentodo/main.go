@@ -24,6 +24,7 @@ import (
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/web"
+	"github.com/pixari/opentodo/internal/webhook"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -67,7 +68,14 @@ func run() error {
 
 	authSvc := auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
 	syncSvc := opsync.NewService(db)
-	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version)
+	// Outbound webhooks: events come from the winning changes of each committed
+	// sync batch; the worker sends queued deliveries until shutdown.
+	hooks := webhook.New(db, syncSvc, webhook.Options{Version: version, Log: log})
+	if err := hooks.SeedAllowPrivate(context.Background(), cfg.WebhooksAllowPrivate); err != nil {
+		return err
+	}
+	syncSvc.SetObserver(hooks.Observe)
+	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version, httpapi.WithWebhooks(hooks))
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
@@ -81,6 +89,12 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	workerDone := make(chan struct{})
+	go func() {
+		defer close(workerDone)
+		hooks.Run(ctx)
+	}()
+
 	errCh := make(chan error, 1)
 	go func() {
 		log.Info("opentodo listening", "addr", cfg.Addr, "data_dir", cfg.DataDir, "version", version, "signup_open", cfg.AllowSignup)
@@ -91,13 +105,23 @@ func run() error {
 
 	select {
 	case err := <-errCh:
+		stop()
+		<-workerDone
 		return err
 	case <-ctx.Done():
 	}
 	log.Info("shutting down")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	return srv.Shutdown(shutdownCtx)
+	err = srv.Shutdown(shutdownCtx)
+	// Let the delivery pass in progress finish (each send is capped at 10 s) so its
+	// outcome is recorded; anything still queued is sent after the next start.
+	select {
+	case <-workerDone:
+	case <-time.After(15 * time.Second):
+		log.Warn("webhook worker did not stop in time")
+	}
+	return err
 }
 
 func healthcheck() int {
