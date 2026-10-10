@@ -69,7 +69,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | JSON / CSV import, including export files from popular commercial task apps | `data-import` |
 | 📝 | Scheduled backups to local disk, S3 or WebDAV | `backups` |
 | 📝 | CalDAV two-way sync (Apple Reminders, Thunderbird, Nextcloud) | `caldav` |
-| 📝 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
+| ✅ | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
 | 📝 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 
 ## 7. Security and access
@@ -82,6 +82,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | 📝 | OIDC / OAuth2 single sign-on | `oidc-login` |
 | 📝 | Multi-factor authentication (TOTP) | `mfa-totp` |
 | 📝 | Audit log | `audit-log` |
+| 📝 | User administration: list users, admin role, deactivate, delete, password reset, owner transfer | `user-management` |
 | 📝 | Optional end-to-end encryption of task content | `e2ee` |
 
 ## Principles that do not change

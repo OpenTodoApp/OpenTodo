@@ -10,6 +10,7 @@ export type Route =
   | { view: 'project'; id: string }
   | { view: 'label'; id: string }
   | { view: 'labels' }
+  | { view: 'filter' }
   | { view: 'settings' }
   | { view: 'import' }
   | { view: 'invite'; token: string }
@@ -30,6 +31,8 @@ export function parseRoute(pathname: string): Route {
       return parts[1] === 'import' ? { view: 'import' } : { view: 'settings' }
     case 'labels':
       return { view: 'labels' }
+    case 'filter':
+      return { view: 'filter' }
     case 'project':
       return parts[1] ? { view: 'project', id: parts[1] } : { view: 'inbox' }
     case 'invite':

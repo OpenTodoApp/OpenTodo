@@ -22,6 +22,10 @@ type Config struct {
 	LogLevel    slog.Level
 	// ImportMaxMB caps the size of an uploaded import file (OPENTODO_IMPORT_MAX_MB).
 	ImportMaxMB int
+	// WebhooksAllowPrivate presets the owner's "allow private network targets"
+	// webhook policy on first start only (nil when OPENTODO_WEBHOOKS_ALLOW_PRIVATE
+	// is unset). Afterwards the value set in Settings is authoritative.
+	WebhooksAllowPrivate *bool
 }
 
 // Import file size bounds for OPENTODO_IMPORT_MAX_MB.
@@ -66,6 +70,13 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_IMPORT_MAX_MB must be an integer from 1 to %d, got %q", MaxImportMaxMB, v)
 		}
 		c.ImportMaxMB = n
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_WEBHOOKS_ALLOW_PRIVATE")); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return c, fmt.Errorf("OPENTODO_WEBHOOKS_ALLOW_PRIVATE must be true or false, got %q", v)
+		}
+		c.WebhooksAllowPrivate = &b
 	}
 	switch strings.ToLower(getenv("OPENTODO_LOG_LEVEL", "info")) {
 	case "debug":

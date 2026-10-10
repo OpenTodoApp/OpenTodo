@@ -8,24 +8,6 @@ import (
 	"testing"
 )
 
-// latestVersion is the highest migration number embedded in the binary.
-func latestVersion(t *testing.T) int {
-	t.Helper()
-	entries, err := fs.ReadDir(migrations, "migrations")
-	if err != nil {
-		t.Fatal(err)
-	}
-	latest := 0
-	for _, e := range entries {
-		v, err := strconv.Atoi(strings.SplitN(e.Name(), "_", 2)[0])
-		if err != nil {
-			t.Fatalf("migration %s: bad prefix", e.Name())
-		}
-		latest = max(latest, v)
-	}
-	return latest
-}
-
 func TestOpenMigratesEmptyDataDir(t *testing.T) {
 	db, err := Open(t.TempDir())
 	if err != nil {
@@ -40,7 +22,7 @@ func TestOpenMigratesEmptyDataDir(t *testing.T) {
 	if want := latestVersion(t); version != want {
 		t.Fatalf("user_version = %d, want %d", version, want)
 	}
-	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations", "import_jobs", "import_items"} {
+	for _, table := range []string{"users", "sessions", "api_tokens", "ops", "fields", "invitations", "settings", "webhooks", "webhook_deliveries", "import_jobs", "import_items"} {
 		var name string
 		err := db.QueryRowContext(context.Background(), "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", table).Scan(&name)
 		if err != nil {

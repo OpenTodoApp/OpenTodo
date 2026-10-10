@@ -43,6 +43,7 @@ If you prefer not to use compose:
 | `OPENTODO_SESSION_DAYS` | `90` | Session lifetime |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug` logs every API request |
 | `OPENTODO_IMPORT_MAX_MB` | `20` | Largest import file (1–200 MB); see [import](../import.md) |
+| `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | Presets "allow private network targets" for webhooks on first start; afterwards Settings → Webhooks decides. See [webhooks](../webhooks.md#private-network-protection) |
 
 ## Adding people
 

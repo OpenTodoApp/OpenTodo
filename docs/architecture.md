@@ -27,16 +27,17 @@ OpenTodo is a local-first application with a thin sync server.
 | `config` | `OPENTODO_*` environment variables with defaults and validation |
 | `store` | Opens SQLite (WAL, single connection) and applies embedded migrations by `PRAGMA user_version` |
 | `auth` | Users, argon2id passwords, sessions, API tokens |
-| `sync` | Op schema and validation, `Apply` (idempotent, LWW), `Pull` (cursor), `List`/`Get` (materialized entities), `Notifier` (per-user live wake-ups) |
+| `sync` | Op schema and validation, `Apply` (idempotent, LWW), `Pull` (cursor), `List`/`Get` (materialized entities), `Notifier` (per-user live wake-ups); after each committed batch it reports the winning changes to an optional observer |
+| `webhook` | Outbound webhooks: maps observed changes to events, durable queue in SQLite, one worker with retries, HMAC signing, SSRF-safe HTTP client. See [webhooks.md](webhooks.md) |
 | `httpapi` | Router, middleware (auth, origin check, security headers, logging), handlers for auth, sync, collections, export, health |
 | `web` | Embeds the Vite build and serves it with SPA fallback and cache headers |
 | `ids` | UUID v4 and random secrets without external dependencies |
 
-Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log per user, `seq` autoincrement), `fields` (current winner per field).
+Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log per user, `seq` autoincrement), `fields` (current winner per field), `invitations`, `settings` (owner key/value policy), `webhooks` and `webhook_deliveries` (queue and delivery log).
 
 ### Request flow for a REST write
 
-`POST /api/v1/tasks` → auth middleware resolves the user → body fields become ops with `ts = now`, `device = "server"` → `sync.Apply` → `sync.Notifier.Notify` wakes the user's open event streams → entity re-read from `fields` → JSON response. The ops land in the log, so devices receive them on their next sync, which the wake-up triggers right away.
+`POST /api/v1/tasks` → auth middleware resolves the user → body fields become ops with `ts = now`, `device = "server"` → `sync.Apply` (after commit, the observer queues webhook deliveries for genuine changes) → `sync.Notifier.Notify` wakes the user's open event streams → entity re-read from `fields` → JSON response. The ops land in the log, so devices receive them on their next sync, which the wake-up triggers right away.
 
 ### Live updates
 
