@@ -36,6 +36,11 @@ type Server struct {
 // New builds the router. web may be nil when only the API is wanted (tests).
 func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) http.Handler {
 	s := &Server{cfg: cfg, auth: authSvc, sync: syncSvc, web: web, log: log, version: version, limiter: newRateLimiter(10, time.Minute)}
+	// Passkeys need a relying party; it is derived from the base URL so the
+	// 409 guard in the handlers and the service always agree.
+	if cfg.PasskeysAvailable() && !authSvc.PasskeysAvailable() {
+		authSvc.ConfigurePasskeys(cfg.RPID(), cfg.Origin())
+	}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", s.handleHealth)
@@ -43,11 +48,19 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.HandleFunc("POST /api/v1/auth/register", s.handleRegister)
 	mux.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
 	mux.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
+	// Passwordless sign-in: anonymous by design, gated by the login limiter.
+	mux.HandleFunc("POST /api/v1/auth/passkey/options", s.handlePasskeyLoginOptions)
+	mux.HandleFunc("POST /api/v1/auth/passkey", s.handlePasskeyLogin)
 
 	mux.Handle("GET /api/v1/me", s.requireAuth(s.handleMe))
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
 	mux.Handle("POST /api/v1/tokens", s.requireAuth(s.handleCreateToken))
 	mux.Handle("DELETE /api/v1/tokens/{id}", s.requireAuth(s.handleDeleteToken))
+	mux.Handle("POST /api/v1/passkeys/register/options", s.requireAuth(s.handlePasskeyRegisterOptions))
+	mux.Handle("POST /api/v1/passkeys/register", s.requireAuth(s.handlePasskeyRegister))
+	mux.Handle("GET /api/v1/passkeys", s.requireAuth(s.handleListPasskeys))
+	mux.Handle("PATCH /api/v1/passkeys/{id}", s.requireAuth(s.handleRenamePasskey))
+	mux.Handle("DELETE /api/v1/passkeys/{id}", s.requireAuth(s.handleDeletePasskey))
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
 	mux.Handle("GET /api/v1/{collection}", s.requireAuth(s.handleList))
@@ -190,11 +203,12 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"setupRequired": count == 0,
-		"signupAllowed": allowed,
-		"authenticated": u != nil,
-		"user":          u,
-		"version":       s.version,
+		"setupRequired":     count == 0,
+		"signupAllowed":     allowed,
+		"authenticated":     u != nil,
+		"user":              u,
+		"version":           s.version,
+		"passkeysAvailable": s.cfg.PasskeysAvailable(),
 	})
 }
 
