@@ -11,6 +11,7 @@ import { TaskDetail } from './TaskDetail'
 import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
+import { SubProjects } from './SubProjects'
 
 type ListRoute = Exclude<Route, { view: 'settings' }>
 
@@ -367,6 +368,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
               </ul>
             </section>
           ))}
+          {route.view === 'project' && <SubProjects projectId={route.id} />}
         </div>
       </div>
       {openId && (

@@ -2,8 +2,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { createSubtask, deleteTask, setTaskCompleted, setTaskParent, updateTask } from '../lib/ops'
+import { buildProjectTree } from '../lib/projects'
 import { progressOf } from '../lib/subtasks'
-import { descendants } from '../lib/tree'
+import { descendants, flattenTree } from '../lib/tree'
 import type { Priority, Project, Task } from '../lib/types'
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
@@ -39,6 +40,8 @@ export function TaskDetail({ taskId, projects, onClose, onOpen, onToggleComplete
   )
   const parent = useLiveQuery(() => (task?.parent_id ? db.tasks.get(task.parent_id) : undefined), [task?.parent_id])
   const excluded = useMemo(() => descendants(taskId, candidates), [taskId, candidates])
+  // Projects in sidebar (tree) order, indented by depth; archived ones are left out.
+  const projectOptions = useMemo(() => flattenTree(buildProjectTree(projects).roots), [projects])
   const progress = useMemo(() => progressOf({ id: taskId }, children), [taskId, children])
 
   useEffect(() => {
@@ -112,8 +115,12 @@ export function TaskDetail({ taskId, projects, onClose, onOpen, onToggleComplete
         <Field label="Project">
           <select className="input" aria-label="Project" value={task.project_id ?? ''} onChange={(e) => void updateTask(task.id, { project_id: e.target.value || null })}>
             <option value="">Inbox</option>
-            {projects.filter((p) => !p.archived || p.id === task.project_id).map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
+            {projectOptions.map((n) => (
+              <option key={n.id} value={n.id}>{'  '.repeat(n.depth)}{n.item.name}</option>
+            ))}
+            {/* Keep the current project selectable when it is archived. */}
+            {projects.filter((p) => p.archived && p.id === task.project_id).map((p) => (
+              <option key={p.id} value={p.id}>{p.name} (archived)</option>
             ))}
           </select>
           {children.length > 0 && <p className="mt-1 text-xs text-slate-400">Moving this task moves its {children.length === 1 ? 'subtask' : 'subtasks'} too.</p>}
