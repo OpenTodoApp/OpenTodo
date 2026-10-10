@@ -16,9 +16,9 @@ Prerequisite: `project-sharing` is archived (scopes, memberships, per-op rejecti
 
 ## 3. Client data layer
 
-- [ ] 3.1 Add `assignee_id` to `types.ts`, op defaults in `ops.ts`, and the local task index; verify `ops.test.ts` case "new task defaults assignee_id to null" via `npm test`
-- [ ] 3.2 Cross-scope copy clears the assignee when not a member of the destination; verify `ops.test.ts` case "copy across scopes drops non-member assignee" via `npm test`
-- [ ] 3.3 Notification cache table and fetch on sync, unread count store; verify `sync.test.ts` case "caches notifications and counts unread" via `npm test`
+- [x] 3.1 Add `assignee_id` to `types.ts`, op defaults in `ops.ts`, and the local task index; verify `ops.test.ts` case "new task defaults assignee_id to null" via `npm test`
+- [x] 3.2 Cross-scope copy clears the assignee when not a member of the destination; verify `ops.test.ts` case "copy across scopes drops non-member assignee" via `npm test`
+- [x] 3.3 Notification cache table and fetch on sync, unread count store; verify `sync.test.ts` case "caches notifications and counts unread" via `npm test`
 
 ## 4. Client UI
 

@@ -2,8 +2,8 @@
 // server-owned authorization data: every sync response carries the caller's list,
 // which replaces the local cache, so all devices converge on the server's member
 // list and roles. Everything here reads the cache, so roles render the same offline.
-import { db } from './db'
-import type { Clock, Entity, Membership, Op, ProjectRole, Rejection, Task } from './types'
+import { db, getMeta, setMeta } from './db'
+import type { Clock, Entity, Membership, Op, ProjectMember, ProjectRole, Rejection, Task } from './types'
 
 /** The local scope label of a project: its own scope when shared, else the user's personal scope. */
 export function scopeOf(projectId: string | null | undefined, memberships: Map<string, Membership>): string {
@@ -18,6 +18,47 @@ export async function membershipMap(): Promise<Map<string, Membership>> {
 /** The user's role on a project; a project that is not shared is the user's own. */
 export function roleOf(projectId: string | null | undefined, memberships: Map<string, Membership>): ProjectRole {
   return (projectId && memberships.get(projectId)?.role) || 'owner'
+}
+
+// ---- task assignment (OpenSpec `task-assignment`) ----
+
+/** Remember the signed-in account id locally, so assignment rules work offline. */
+export async function setCurrentUserId(id: string): Promise<void> {
+  if ((await getMeta<string | null>('userId', null)) !== id) await setMeta('userId', id)
+}
+
+/** The signed-in account id, or null before the first sign-in on this device. */
+export function currentUserId(): Promise<string | null> {
+  return getMeta<string | null>('userId', null)
+}
+
+/**
+ * Who may be assigned a task in `projectId`: the members of a shared project, or
+ * only the user themselves for the Inbox and unshared projects. Mirrors the
+ * server's receipt-time check (reason `not_a_member`).
+ */
+export function assignableIn(projectId: string | null | undefined, memberships: Map<string, Membership>, me: string | null): Set<string> {
+  const m = projectId ? memberships.get(projectId) : undefined
+  if (m) return new Set(m.members.map((x) => x.userId))
+  return new Set(me ? [me] : [])
+}
+
+/** The people the assignee picker offers for a task in `projectId` (the local membership cache). */
+export function assigneeOptions(
+  projectId: string | null | undefined, memberships: Map<string, Membership>, me: { id: string; name: string; email: string },
+): Pick<ProjectMember, 'userId' | 'name' | 'email'>[] {
+  const m = projectId ? memberships.get(projectId) : undefined
+  if (m) return m.members.map(({ userId, name, email }) => ({ userId, name, email }))
+  return [{ userId: me.id, name: me.name, email: me.email }]
+}
+
+/** A member's display name from the cache, falling back to the email, or null when unknown. */
+export function memberName(userId: string, memberships: Map<string, Membership>): string | null {
+  for (const m of memberships.values()) {
+    const x = m.members.find((mm) => mm.userId === userId)
+    if (x) return x.name || x.email
+  }
+  return null
 }
 
 export const canEditTasks = (role: ProjectRole): boolean => role !== 'viewer'
@@ -71,6 +112,8 @@ export interface RejectedNotice {
   count: number
   projects: string[]
   tasks: string[]
+  /** How many of the refused changes were assignments to a non-member (task-assignment). */
+  assignments?: number
 }
 
 type Row = Record<string, unknown> & { id: string; _clock?: Clock }
@@ -97,11 +140,13 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
   const projects = new Set<string>()
   const tasks = new Set<string>()
   let count = 0
+  let assignments = 0
   await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views], async () => {
     for (const r of rejected) {
       const op = byId.get(r.id)
       if (!op) continue
       count++
+      if (r.reason === 'not_a_member') assignments++
       const table = tableFor(op.entity) as unknown as { get(id: string): Promise<Row | undefined>; put(v: Row): Promise<unknown> }
       const row = await table.get(op.entityId)
       if (!row) continue
@@ -119,11 +164,16 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
       const clock = { ...(row._clock ?? {}) }
       if (op.field in clock) {
         delete clock[op.field]
-        await table.put({ ...row, _clock: clock })
+        // An assignee the server never stored has no server value to restore:
+        // fall back to "unassigned", which is what every other device shows.
+        const reset = op.entity === 'task' && op.field === 'assignee_id' ? { assignee_id: null } : {}
+        await table.put({ ...row, ...reset, _clock: clock })
       }
     }
   })
-  return { keys: [...keys], notice: count ? { count, projects: [...projects], tasks: [...tasks] } : null }
+  const notice: RejectedNotice | null = count ? { count, projects: [...projects], tasks: [...tasks] } : null
+  if (notice && assignments) notice.assignments = assignments
+  return { keys: [...keys], notice }
 }
 
 /**
@@ -148,7 +198,10 @@ export async function dropUnconfirmed(keys: string[]): Promise<void> {
 /** One line for the user, e.g. "2 changes were not accepted (your role in Home changed): Milk, Bread". */
 export function describeRejected(n: RejectedNotice): string {
   const what = n.count === 1 ? '1 change was not accepted' : `${n.count} changes were not accepted`
-  const where = n.projects.length ? ` (your role in ${n.projects.join(', ')} changed)` : ''
+  const place = n.projects.join(', ')
+  const where = !n.projects.length ? ''
+    : n.assignments === n.count ? ` (the assignee is no longer a member of ${place})`
+      : ` (your role in ${place} changed)`
   const tasks = n.tasks.length ? `: ${n.tasks.slice(0, 5).join(', ')}${n.tasks.length > 5 ? '…' : ''}` : ''
   return `${what}${where}${tasks}`
 }
