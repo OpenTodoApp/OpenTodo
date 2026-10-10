@@ -48,6 +48,13 @@ func allConstructors() []Event {
 		AuditExported("o", 12),
 		BackupCreated("o", "b1"),
 		BackupRestored("o", "b1").Failed("checksum_mismatch"),
+		UserDeactivated("o", "u"),
+		UserReactivated("o", "u"),
+		UserDeleted("o", "u", "u@example.com"),
+		PasswordResetIssued("o", "u", "r1"),
+		PasswordResetCompleted("u", "r1"),
+		PasswordChanged("u"),
+		OwnerTransferred("o", "u"),
 	}
 }
 

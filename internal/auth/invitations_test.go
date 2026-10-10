@@ -38,8 +38,8 @@ func TestInvitationLifecycle(t *testing.T) {
 	ctx := context.Background()
 	s, db := newService(t, false)
 	owner := mustOwner(t, s)
-	if !s.CanInvite(owner) || s.CanInvite(&User{Role: "member"}) || s.CanInvite(nil) {
-		t.Fatal("CanInvite must admit owners only")
+	if !s.CanInvite(owner) || !s.CanInvite(&User{Role: "admin"}) || s.CanInvite(&User{Role: "member"}) || s.CanInvite(nil) {
+		t.Fatal("CanInvite must admit owners and admins only")
 	}
 
 	inv, secret, err := s.CreateInvitation(ctx, owner, "", 0)

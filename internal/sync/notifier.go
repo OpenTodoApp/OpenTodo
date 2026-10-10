@@ -103,6 +103,18 @@ func (n *Notifier) CloseAll() {
 	}
 }
 
+// CloseUser closes every subscription of one user, so their open live-update
+// streams end at once (deactivation and deletion, OpenSpec `user-management`).
+// Reconnecting fails because the account's sessions and tokens are gone.
+func (n *Notifier) CloseUser(userID string) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	for _, sub := range n.subs[userID] {
+		sub.close()
+	}
+	delete(n.subs, userID)
+}
+
 // Count reports how many subscriptions a user currently holds.
 func (n *Notifier) Count(userID string) int {
 	n.mu.Lock()
