@@ -23,7 +23,7 @@
 ## 4. HTTP API and settings screen
 
 - [x] 4.1 Owner-only routes `GET/PUT /api/v1/backups/settings`, `GET /api/v1/backups`, `POST /api/v1/backups/run`, `POST /api/v1/backups/test` behind `requireAuth` plus an owner check, secrets never echoed, validation errors; verify `TestBackupRoutesRequireAuth`, `TestBackupRoutesForbidMembers`, `TestBackupSettingsValidation400`, `TestBackupRunConflict409`, `TestSettingsResponseHasNoSecrets` (`go test ./...`)
-- [ ] 4.2 `docs/api.md` section for the routes; verify curl examples against `./bin/opentodo`
+- [x] 4.2 `docs/api.md` section for the routes; verify curl examples against `./bin/opentodo`
 - [ ] 4.3 Web: Settings → Backups (owner only): destination form per type, schedule, retention, passphrase with the irrecoverability warning, test and run actions, status and history, offline state with cached status and disabled actions; verify `backupsScreen.test.tsx` (render per destination type, offline state) with `npm test` and `npm run build`; verify in the browser flow that a manual run shows progress and outcome without reload and all controls are keyboard reachable
 
 ## 5. Restore and device convergence

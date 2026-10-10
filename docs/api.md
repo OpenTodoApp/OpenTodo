@@ -47,6 +47,11 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | POST | `/api/v1/invitations` | owner | `{email?, expiresInHours?}` → 201 `{invitation, link}` (link shown once) |
 | DELETE | `/api/v1/invitations/{id}` | owner | revoke a pending invitation → 204 |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid` |
+| GET | `/api/v1/backups` | owner | backup status, see [Backups](#backups) |
+| GET | `/api/v1/backups/settings` | owner | `{settings, secrets}` (secret presence flags only) |
+| PUT | `/api/v1/backups/settings` | owner | `{settings, secrets?}` → `{settings, secrets}` |
+| POST | `/api/v1/backups/run` | owner | start a backup now → 202, or 409 `conflict` while one runs |
+| POST | `/api/v1/backups/test` | owner | write and delete a probe object at the saved destination → 200 `{ok:true}` or 502 `destination_error` |
 | GET | `/api/v1/tasks` | yes | `{tasks:[…]}`; `?include_deleted=true` to include tombstones |
 | POST | `/api/v1/tasks` | yes | create → 201 task |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
@@ -54,7 +59,7 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete → 204 |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels |
-| POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md` |
+| POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md`; the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
 | GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`), including deleted items |
 
@@ -167,6 +172,81 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 
 Creates a `member` account and starts a session even when `OPENTODO_ALLOW_SIGNUP` is false. The invitation is spent in the same transaction, so it can create at most one account; a second use returns 404 `invitation_invalid`. Errors: 403 `invitation_email_mismatch` when the invitation is bound to another address, 409 `email_taken`, 400 `invalid_input` for the password policy. In every error case the invitation stays pending.
 
+### Backups
+
+Scheduled backups of the whole server (see [backups.md](backups.md)). Every route needs authentication (401 `unauthorized`) and the `owner` role (403 `forbidden` for members). Backup settings, runs and secrets are server-level data: they never sync to devices and are not part of the export.
+
+**Settings** — `GET /api/v1/backups/settings`:
+
+```json
+{
+  "settings": {
+    "destination": "s3",
+    "local": { "dir": "" },
+    "s3": { "endpoint": "https://s3.eu-central-1.amazonaws.com", "region": "eu-central-1", "bucket": "my-backups",
+            "prefix": "opentodo", "accessKey": "AKIA…", "pathStyle": false },
+    "webdav": { "url": "", "username": "", "allowHttp": false },
+    "schedule": { "frequency": "daily", "time": "03:00", "weekday": 0 },
+    "retention": { "keepLast": 7, "maxAgeDays": 0 },
+    "compress": true,
+    "scheduleSince": 1760000000000
+  },
+  "secrets": { "hasS3SecretKey": true, "hasWebdavPassword": false, "hasPassphrase": true }
+}
+```
+
+| Field | Notes |
+| --- | --- |
+| `destination` | `local`, `s3` or `webdav` (default `local`) |
+| `local.dir` | absolute path; empty means `<data>/backups` |
+| `s3.*` | `endpoint` (http(s) URL), `bucket` and `accessKey` are required for `s3`; `region` defaults to `us-east-1`; `pathStyle` for MinIO, Garage and most self-hosted stores |
+| `webdav.*` | `url` is required for `webdav`; plain `http://` is refused unless `allowHttp` is true (the password would travel unencrypted) |
+| `schedule.frequency` | `off` (default), `hourly`, `daily`, `weekly`, in the server's time zone |
+| `schedule.time` | `HH:MM`; `hourly` uses the minutes only |
+| `schedule.weekday` | 0 (Sunday) … 6 (Saturday), for `weekly` |
+| `retention.keepLast` | at least 1 (default 7) |
+| `retention.maxAgeDays` | 0 = no age limit |
+| `compress` | gzip the archive (default true) |
+| `scheduleSince` | read-only: when the current schedule was set |
+
+**Update** — `PUT /api/v1/backups/settings` replaces the settings. Secrets go in an optional `secrets` object: a key that is absent keeps the stored value, an empty string removes it, any other value replaces it.
+
+```bash
+curl -sS -X PUT "$OT/api/v1/backups/settings" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{
+  "settings": {"destination":"local","local":{"dir":""},"schedule":{"frequency":"daily","time":"03:00","weekday":0},
+               "retention":{"keepLast":7,"maxAgeDays":0},"compress":true},
+  "secrets": {"passphrase":"a long passphrase you will not forget"}
+}'
+```
+
+Secrets are stored in `<data>/secrets/backup.json` (mode 0600) and are never returned: responses carry only the `has…` flags. Invalid input is a 400 `invalid_input` whose `error.field` names the setting (for example `s3.bucket` or `retention.keepLast`); the previous settings stay active.
+
+**Status** — `GET /api/v1/backups`:
+
+```json
+{
+  "enabled": true, "destination": "local", "encrypted": true,
+  "schedule": { "frequency": "daily", "time": "03:00", "weekday": 0 },
+  "running": null,
+  "nextRunAt": 1760151600000,
+  "lastRun": { "id": "…", "kind": "scheduled", "status": "succeeded", "startedAt": 1760065200000, "finishedAt": 1760065200412,
+               "durationMs": 412, "bytes": 182344, "destination": "local: /data/backups",
+               "archiveName": "opentodo-20261010-030000-4f1c0a9e.tar.gz.enc", "error": "" },
+  "history": [ { "…": "the last 20 runs, newest first" } ]
+}
+```
+
+`running` is the run in progress (or `null`); `status` is `running`, `succeeded` or `failed`; a failed run carries the destination's error in `error`. `nextRunAt` is `null` while the schedule is off. Runs are kept for 90 days.
+
+**Run now** — `POST /api/v1/backups/run` → 202 `{"status":"started"}`; poll the status for the outcome. A request while a backup runs is a 409 `conflict` and starts nothing.
+
+```bash
+curl -sS -X POST "$OT/api/v1/backups/run" -H "Authorization: Bearer $TOKEN"
+curl -sS "$OT/api/v1/backups" -H "Authorization: Bearer $TOKEN" | jq '.lastRun'
+```
+
+**Test destination** — `POST /api/v1/backups/test` writes a small `opentodo-probe-<ms>.txt` object to the saved destination and deletes it again → 200 `{"ok":true}`. A destination failure is a 502 `destination_error` whose message is the destination's own (for example `s3 put opentodo/opentodo-probe-…: 403 Forbidden AccessDenied: …`). The server contacts a remote destination only for a test or a run.
+
 ## Examples
 
 Create a task due tomorrow at 9:00 in a project:
@@ -239,12 +319,14 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | Code | Status | Where |
 | --- | --- | --- |
 | `unauthorized` | 401 | any protected route without a valid session or token |
-| `forbidden` | 403 | invitation management by a non-owner |
+| `forbidden` | 403 | invitation or backup management by a non-owner |
 | `bad_origin` | 403 | cookie-authenticated write from another origin |
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
 | `invitation_invalid` | 404 | unknown, expired, revoked or already accepted invitation |
 | `invitation_spent` | 409 | revoking an accepted invitation |
 | `email_taken` | 409 | registration with an existing email |
+| `conflict` | 409 | `POST /backups/run` while a backup is running |
+| `destination_error` | 502 | `POST /backups/test` when the destination refuses or cannot be reached |
 | `invalid_input` | 400 | validation failure naming the field |
 | `rate_limited` | 429 | too many attempts in the window |
