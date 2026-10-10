@@ -8,7 +8,11 @@ export type Route =
   | { view: 'upcoming' }
   | { view: 'completed' }
   | { view: 'project'; id: string }
+  | { view: 'label'; id: string }
+  | { view: 'labels' }
+  | { view: 'filter' }
   | { view: 'settings' }
+  | { view: 'invite'; token: string }
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.split('/').filter(Boolean)
@@ -24,15 +28,42 @@ export function parseRoute(pathname: string): Route {
       return { view: 'completed' }
     case 'settings':
       return { view: 'settings' }
+    case 'labels':
+      return { view: 'labels' }
+    case 'filter':
+      return { view: 'filter' }
     case 'project':
       return parts[1] ? { view: 'project', id: parts[1] } : { view: 'inbox' }
+    case 'invite':
+      // The secret is URL-safe base64; decode defensively in case a mail client encoded it.
+      return parts[1] ? { view: 'invite', token: safeDecode(parts[1]) } : { view: 'inbox' }
+    case 'label':
+      return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
     default:
       return { view: 'inbox' }
   }
 }
 
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s)
+  } catch {
+    return s
+  }
+}
+
 export function routePath(r: Route): string {
-  return r.view === 'project' ? `/project/${r.id}` : r.view === 'inbox' ? '/' : `/${r.view}`
+  switch (r.view) {
+    case 'project':
+    case 'label':
+      return `/${r.view}/${r.id}`
+    case 'invite':
+      return `/invite/${encodeURIComponent(r.token)}`
+    case 'inbox':
+      return '/'
+    default:
+      return `/${r.view}`
+  }
 }
 
 const listeners = new Set<() => void>()

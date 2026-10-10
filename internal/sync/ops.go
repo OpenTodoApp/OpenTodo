@@ -76,10 +76,18 @@ var Schema = map[string]map[string]kind{
 		// Duration estimate in minutes (OpenSpec change nlp-quick-add); additive.
 		"estimate_minutes": kPositiveInt,
 	},
+	// task.labels holds label ids (a convention on the string array, not a format change).
+	"label": {
+		"name":       kString,
+		"color":      kString,
+		"position":   kNumber,
+		"created_at": kNumber,
+		"deleted_at": kNullableNumber,
+	},
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")

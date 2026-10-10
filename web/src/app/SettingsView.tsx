@@ -3,6 +3,7 @@ import { api, ApiError } from '../lib/api'
 import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
 import { QuickAddSettingsSection } from './QuickAddSettings'
+import { MembersPanel } from './MembersPanel'
 
 interface TokenRow { id: string; name: string; createdAt: number; lastUsedAt: number | null }
 
@@ -53,6 +54,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
           Sync: {sync.state}{sync.pending ? `, ${sync.pending} change(s) waiting to upload` : ''}.
         </p>
       </section>
+
+      {user.role === 'owner' && <MembersPanel />}
 
       <QuickAddSettingsSection />
 

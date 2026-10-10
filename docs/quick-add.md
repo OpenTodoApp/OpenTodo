@@ -6,7 +6,7 @@ Type one line in the quick-add box (press `q` in any task view) and OpenTodo pic
 Meeting with Sarah next Wed at 3pm #work @call p1 +30m
 ```
 
-creates **Meeting with Sarah**, due next Wednesday at 15:00, in project *Work*, labelled `call`, priority 1, estimated at 30 minutes.
+creates **Meeting with Sarah**, due next Wednesday at 15:00, in project *Work*, with the label *call*, priority 1, estimated at 30 minutes.
 
 Everything runs in your browser. The parser needs no network, sends nothing anywhere, and gives the same result on every device for the same line, date, languages and projects. The created task stores the resolved date, so other devices never parse the line again.
 
@@ -26,8 +26,8 @@ A dismissed chip stays dismissed while you keep typing; it comes back only if yo
 
 | Token | Meaning | Examples |
 | --- | --- | --- |
-| `#name` | Project. Case-insensitive; spaces, `-` and `_` in project names are ignored. An exact name wins, otherwise a unique prefix. Archived and deleted projects are skipped. If nothing or more than one project matches, the token stays in the title. | `#work`, `#trav` (Travel), `#sideproject` (Side Project) |
-| `@name` | Label, saved exactly as typed. Use as many as you like. | `@call`, `@waiting-for` |
+| `#name` | Project, including sub-projects at any depth. Case-insensitive; spaces, `-` and `_` in project names are ignored. An exact name wins, otherwise a unique prefix. If several projects have exactly that name (say *Docs* under both *Work* and *Home*), the shallowest one in the tree wins (a fixed tie-break by id decides between equals, so every device picks the same one); the chip shows the path (`#Work › Docs`) so you can see which. Archived and deleted projects are skipped. If nothing matches, or a prefix fits more than one project, the token stays in the title. | `#work`, `#trav` (Travel), `#sideproject` (Side Project), `#q4` (Work › Docs › Q4 launch) |
+| `@name` | Label, matched to an existing label ignoring case. A name with no label yet creates one when you press Enter, with the next free colour, exactly like creating it from the label picker; its chip says *new* until then. Use as many as you like. | `@call`, `@waiting-for` |
 | `p1`–`p4` | Priority, 1 highest, 4 default. | `p1`, `P3` |
 | `+duration` | Estimate in minutes, from 1 minute to 7 days (10080 minutes). Shown on the task row. | `+30`, `+30m`, `+45min`, `+2h`, `+1h30`, `+1.5h` |
 
@@ -71,7 +71,7 @@ Accents are optional (`manana`, `nachsten`, `fevrier` work too). Two-letter Germ
 
 ## Views and defaults
 
-Quick add still takes the view's context for anything the line does not set: today in Today, tomorrow in Upcoming, the current project in a project view. Anything the line does set wins, so `Plan trip next Monday #travel` typed in Today goes to *Travel* on Monday.
+Quick add still takes the view's context for anything the line does not set: today in Today, tomorrow in Upcoming, the current project in a project view, the current label in a label view. Anything the line does set wins, so `Plan trip next Monday #travel` typed in Today goes to *Travel* on Monday. Labels add up instead: `@call` typed in the *errand* label view gives the task both labels, so it stays in the view you added it from.
 
 ## Not (yet) understood
 
@@ -79,4 +79,4 @@ Recurrence ("every Monday"), reminders ("remind me at 9"), creating a project fr
 
 ## Data
 
-Estimates are stored in the additive task field `estimate_minutes` (integer 1–10080 or null; see [api.md](api.md) and [sync.md](sync.md)). Labels from `@name` go into the task's `labels` list as typed.
+Estimates are stored in the additive task field `estimate_minutes` (integer 1–10080 or null; see [api.md](api.md) and [sync.md](sync.md)). `@name` tokens are stored as label ids in the task's `labels` list, never as names; a new label is written as its own operation before the task, so both sync together and work offline.

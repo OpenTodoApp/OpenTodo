@@ -8,16 +8,75 @@ export interface QuickAddInput {
   title: string
   due?: Due
   project_id?: string
+  /** Label ids (never names). */
   labels?: string[]
   priority?: Priority
   estimate_minutes?: number
 }
 
-export function toTaskInput(r: ParseResult): QuickAddInput {
+/** The slice of a label the resolver needs. */
+export interface LabelRef {
+  id: string
+  name: string
+  color?: string
+  position?: number
+  created_at?: number
+  deleted_at?: number | null
+}
+
+/** Same key as `labelKey` in lib/labels.ts: names are unique ignoring case and surrounding space. */
+export function labelNameKey(name: string): string {
+  return name.trim().toLocaleLowerCase()
+}
+
+/**
+ * The existing, non-deleted label a typed `@name` refers to, ignoring case. If sync
+ * produced two labels with the same name, the first in sidebar order (position,
+ * created_at, id) wins, so every device resolves the same id.
+ */
+export function findLabel(name: string, labels: readonly LabelRef[]): LabelRef | undefined {
+  const key = labelNameKey(name)
+  if (!key) return undefined
+  let best: LabelRef | undefined
+  for (const l of labels) {
+    if (l.deleted_at || labelNameKey(l.name) !== key) continue
+    if (!best || compareLabels(l, best) < 0) best = l
+  }
+  return best
+}
+
+function compareLabels(a: LabelRef, b: LabelRef): number {
+  return (a.position ?? 0) - (b.position ?? 0) || (a.created_at ?? 0) - (b.created_at ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+}
+
+/**
+ * Turn a parse into `createTask` input. Each typed `@name` becomes the id of the
+ * existing label with that name (ignoring case); a name with no label is created
+ * once through `createLabel` (the picker's helper, so it syncs and gets a palette
+ * colour). Ids keep the order typed, without duplicates.
+ */
+export async function toTaskInput(
+  r: ParseResult,
+  deps: { labels: readonly LabelRef[]; createLabel: (name: string) => Promise<string> },
+): Promise<QuickAddInput> {
   const out: QuickAddInput = { title: r.title }
   if (r.due) out.due = r.due
   if (r.projectId) out.project_id = r.projectId
-  if (r.labels.length) out.labels = r.labels
+  if (r.labels.length) {
+    const ids: string[] = []
+    const created = new Map<string, string>()
+    for (const name of r.labels) {
+      const key = labelNameKey(name)
+      if (!key) continue
+      let id = findLabel(name, deps.labels)?.id ?? created.get(key)
+      if (!id) {
+        id = await deps.createLabel(name.trim())
+        created.set(key, id)
+      }
+      if (!ids.includes(id)) ids.push(id)
+    }
+    if (ids.length) out.labels = ids
+  }
   if (r.priority) out.priority = r.priority
   if (r.estimateMinutes) out.estimate_minutes = r.estimateMinutes
   return out

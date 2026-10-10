@@ -1,8 +1,9 @@
 import { type FormEvent, forwardRef, useEffect, useMemo, useState } from 'react'
 import { describeDue, todayISO } from '../lib/dates'
+import { createLabel, LabelExistsError } from '../lib/labels'
 import {
-  chipAtCaret, type Chip, dismissChip, formatMinutes, loadQuickAddSettings, onQuickAddSettingsChange, parse, type ProjectRef,
-  type QuickAddInput, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span, toTaskInput,
+  chipAtCaret, type Chip, dismissChip, findLabel, formatMinutes, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, parse,
+  type ProjectRef, type QuickAddInput, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span, toTaskInput,
 } from '../lib/nlp'
 import type { Due } from '../lib/types'
 
@@ -32,14 +33,36 @@ function dueInWords(due: Due): string {
   return words.startsWith('Today') || words.startsWith('Tomorrow') ? `${words} · ${full}` : words
 }
 
-function chipText(chip: Chip, projects: readonly ProjectRef[]): string {
+/** The picker's helper; a label created meanwhile (another tab, a sync) is reused. */
+async function createLabelByName(name: string): Promise<string> {
+  try {
+    return await createLabel({ name })
+  } catch (err) {
+    if (err instanceof LabelExistsError) return err.existing.id
+    throw err
+  }
+}
+
+/** Project name with its parent path for nested projects: "Work › Docs". */
+function projectPath(id: string, projects: readonly ProjectRef[]): string {
+  const byId = new Map(projects.map((p) => [p.id, p]))
+  const names: string[] = []
+  const seen = new Set<string>()
+  for (let p = byId.get(id); p && !seen.has(p.id) && names.length < 4; p = p.parent_id ? byId.get(p.parent_id) : undefined) {
+    seen.add(p.id)
+    names.unshift(p.name)
+  }
+  return names.join(' › ') || '?'
+}
+
+function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly LabelRef[]): string {
   switch (chip.kind) {
     case 'due':
       return dueInWords(chip.value as Due)
     case 'project':
-      return `#${projects.find((p) => p.id === chip.value)?.name ?? '?'}`
+      return `#${projectPath(chip.value as string, projects)}`
     case 'label':
-      return `@${String(chip.value)}`
+      return `@${findLabel(String(chip.value), labels)?.name ?? String(chip.value)}`
     case 'priority':
       return `P${String(chip.value)}`
     case 'estimate':
@@ -58,8 +81,10 @@ const KIND_NAME: Record<Chip['kind'], string> = { due: 'Due', project: 'Project'
 export const QuickAdd = forwardRef<HTMLInputElement, {
   placeholder: string
   projects?: readonly ProjectRef[]
+  /** Every label (deleted ones are ignored) for resolving and colouring `@name` chips. */
+  labels?: readonly LabelRef[]
   onAdd: (input: QuickAddInput) => Promise<void> | void
-}>(function QuickAdd({ placeholder, projects = [], onAdd }, ref) {
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd }, ref) {
   const [value, setValue] = useState('')
   const [dismissed, setDismissed] = useState<Span[]>([])
   const [highlight, setHighlight] = useState<number | null>(null)
@@ -96,16 +121,14 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     e.preventDefault()
     const line = value.trim()
     if (!line) return
-    let input: QuickAddInput
-    if (parsed) {
-      if (!parsed.title) return // only attributes typed so far; wait for a title
-      input = toTaskInput(parsed)
-    } else {
-      input = { title: line }
-    }
+    if (parsed && !parsed.title) return // only attributes typed so far; wait for a title
+    const snapshot = parsed
+    // Clear first so the next entry can be typed while labels are being created.
     setValue('')
     setDismissed([])
     setHighlight(null)
+    // Unknown @names become labels first (one op each), then the task references their ids.
+    const input: QuickAddInput = snapshot ? await toTaskInput(snapshot, { labels, createLabel: createLabelByName }) : { title: line }
     await onAdd(input)
   }
 
@@ -152,8 +175,9 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
         {chips.length > 0 && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-6 text-xs">
             {chips.map((c, i) => {
-              const text = chipText(c, projects)
+              const text = chipText(c, projects, labels)
               const source = c.spans.map((s) => s.text).join(' … ')
+              const label = c.kind === 'label' ? findLabel(String(c.value), labels) : undefined
               return (
                 <span
                   key={c.key}
@@ -162,7 +186,9 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                   className={`inline-flex items-center gap-1 rounded-full border py-0.5 pl-2 pr-1 ${CHIP_TONE[c.kind]} ${highlight === i ? 'ring-2 ring-emerald-500' : ''}`}
                 >
                   <span className="sr-only">{KIND_NAME[c.kind]}: </span>
+                  {label?.color && <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: label.color }} aria-hidden="true" />}
                   {text}
+                  {c.kind === 'label' && !label && <span className="opacity-60" data-new-label>new</span>}
                   <button
                     type="button"
                     className="rounded-full px-1 leading-none opacity-60 hover:bg-black/10 hover:opacity-100 dark:hover:bg-white/10"

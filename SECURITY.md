@@ -15,7 +15,8 @@ Please do not open public issues for security problems. Email **raffaele.pizzari
 - Passwords are hashed with argon2id (OWASP parameters). Sessions are random 256-bit secrets stored hashed, delivered as `HttpOnly`, `SameSite=Lax` cookies (`Secure` when `OPENTODO_BASE_URL` is https).
 - State-changing requests authenticated by cookie are rejected when the `Origin` header does not match the server's origin.
 - API tokens are random 256-bit secrets stored hashed and shown exactly once.
-- Login and registration are rate limited per client IP.
+- Login, registration and the invitation preview are rate limited per client IP; invitation creation is limited to 20 per hour per account.
+- Invitation links carry a 256-bit secret stored only as a SHA-256 hash, work once, expire (1 hour to 30 days) and can be revoked; every invalid state answers the same 404.
 - Responses carry a strict Content-Security-Policy, `X-Frame-Options: DENY` and `X-Content-Type-Options: nosniff`.
 - The container runs as a non-root user on a distroless base with no shell.
 - No telemetry or third-party requests.

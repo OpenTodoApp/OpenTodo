@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { parse, rebaseDismissed, type ParseContext } from './parse'
-import { chipAtCaret, dismissChip, toTaskInput } from './quickadd'
+import { chipAtCaret, dismissChip, findLabel, labelNameKey, toTaskInput } from './quickadd'
 import {
   DEFAULT_QUICK_ADD_SETTINGS, formatMinutes, loadQuickAddSettings, resolveDayMonthOrder, resolveLanguages, saveQuickAddSettings,
 } from './settings'
@@ -8,11 +8,55 @@ import {
 const ctx: ParseContext = { today: '2026-10-09', now: '10:00', languages: ['en'], projects: [{ id: 'w', name: 'Work' }] }
 
 describe('toTaskInput', () => {
-  it('carries only explicit attributes so view defaults fill the rest', () => {
-    expect(toTaskInput(parse('Buy milk', ctx))).toEqual({ title: 'Buy milk' })
-    expect(toTaskInput(parse('Write report tomorrow #work @desk p2 +45m', ctx))).toEqual({
-      title: 'Write report', due: { date: '2026-10-10' }, project_id: 'w', labels: ['desk'], priority: 2, estimate_minutes: 45,
+  const labels = [
+    { id: 'l-call', name: 'Call', color: '#ef4444', position: 1 },
+    { id: 'l-old', name: 'errand', deleted_at: 5 },
+    { id: 'l-desk2', name: 'desk', position: 9 },
+    { id: 'l-desk1', name: 'Desk', position: 2 },
+  ]
+  function deps(existing = labels) {
+    const created: string[] = []
+    return {
+      created,
+      deps: { labels: existing, createLabel: async (name: string) => { created.push(name); return `new-${name}` } },
+    }
+  }
+
+  it('carries only explicit attributes so view defaults fill the rest', async () => {
+    const d = deps()
+    expect(await toTaskInput(parse('Buy milk', ctx), d.deps)).toEqual({ title: 'Buy milk' })
+    expect(await toTaskInput(parse('Write report tomorrow #work @call p2 +45m', ctx), d.deps)).toEqual({
+      title: 'Write report', due: { date: '2026-10-10' }, project_id: 'w', labels: ['l-call'], priority: 2, estimate_minutes: 45,
     })
+    expect(d.created).toEqual([])
+  })
+
+  it('resolves @names to existing label ids ignoring case', async () => {
+    const d = deps()
+    expect((await toTaskInput(parse('Ring @CALL @call', ctx), d.deps)).labels).toEqual(['l-call'])
+    // Duplicate names from sync: first in sidebar order wins, on every device.
+    expect((await toTaskInput(parse('Tidy @DESK', ctx), d.deps)).labels).toEqual(['l-desk1'])
+    expect(d.created).toEqual([])
+  })
+
+  it('creates a missing label once, ignoring deleted ones, and keeps typed order', async () => {
+    const d = deps()
+    const input = await toTaskInput(parse('Shop @errand @call @Errand', ctx), d.deps)
+    expect(d.created).toEqual(['errand'])
+    expect(input.labels).toEqual(['new-errand', 'l-call'])
+  })
+
+  it('stores only ids, never names', async () => {
+    const d = deps([])
+    const input = await toTaskInput(parse('Plan @Waiting-For', ctx), d.deps)
+    expect(input.labels).toEqual(['new-Waiting-For'])
+  })
+
+  it('findLabel and labelNameKey follow the label store rules', () => {
+    expect(labelNameKey('  Call ')).toBe('call')
+    expect(findLabel('call', labels)?.id).toBe('l-call')
+    expect(findLabel('errand', labels)).toBeUndefined()
+    expect(findLabel('', labels)).toBeUndefined()
   })
 })
 

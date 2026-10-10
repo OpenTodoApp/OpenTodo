@@ -1,4 +1,4 @@
-import type { AuthStatus, Op, User } from './types'
+import type { AuthStatus, Invitation, InvitationPreview, Op, User } from './types'
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) {
@@ -24,8 +24,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 export const api = {
   authStatus: () => request<AuthStatus>('GET', '/api/v1/auth/status'),
-  register: (email: string, name: string, password: string) =>
-    request<{ user: User }>('POST', '/api/v1/auth/register', { email, name, password }),
+  /** Register an account. `invitation` is the secret from an invite link; it admits one member while sign-up is closed. */
+  register: (email: string, name: string, password: string, invitation?: string) =>
+    request<{ user: User }>('POST', '/api/v1/auth/register', invitation ? { email, name, password, invitation } : { email, name, password }),
   login: (email: string, password: string) => request<{ user: User }>('POST', '/api/v1/auth/login', { email, password }),
   logout: () => request<void>('POST', '/api/v1/auth/logout'),
   sync: (device: string, cursor: number, ops: Op[]) =>
@@ -35,4 +36,16 @@ export const api = {
   listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
   createToken: (name: string) => request<{ token: { id: string; name: string }; secret: string }>('POST', '/api/v1/tokens', { name }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
+
+  // Invitations (owner only, except the public preview). The link is returned once at creation.
+  listInvitations: () => request<{ invitations: Invitation[] }>('GET', '/api/v1/invitations'),
+  createInvitation: (input: { email?: string; expiresInHours?: number } = {}) =>
+    request<{ invitation: Invitation; link: string }>('POST', '/api/v1/invitations', input),
+  revokeInvitation: (id: string) => request<void>('DELETE', `/api/v1/invitations/${id}`),
+  previewInvitation: (token: string) => request<InvitationPreview>('GET', `/api/v1/invitations/${encodeURIComponent(token)}`),
+}
+
+/** True for failures that mean "no server reachable" rather than a server answer. */
+export function isNetworkError(err: unknown): boolean {
+  return !(err instanceof ApiError)
 }

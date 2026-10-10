@@ -1,7 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task'
+export type Entity = 'project' | 'task' | 'label'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label']
 
 export interface Op {
   id: string
@@ -46,6 +47,7 @@ export interface Task {
   parent_id: string | null
   priority: Priority
   due: Due | null
+  /** Ids of labels (see Label). Unknown or deleted ids are kept but never displayed. */
   labels: string[]
   position: number
   created_at: number
@@ -53,6 +55,16 @@ export interface Task {
   deleted_at: number | null
   /** Duration estimate in minutes (positive integer, at most 10080) or null. */
   estimate_minutes: number | null
+  _clock: Clock
+}
+
+export interface Label {
+  id: string
+  name: string
+  color: string
+  position: number
+  created_at: number
+  deleted_at: number | null
   _clock: Clock
 }
 
@@ -72,6 +84,30 @@ export interface AuthStatus {
   version: string
 }
 
+export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked'
+
+/** Owner's view of an invitation (server-side account data, never synced). Never carries the secret. */
+export interface Invitation {
+  id: string
+  status: InvitationStatus
+  email: string | null
+  role: 'member'
+  createdBy: string
+  createdByName: string
+  createdAt: number
+  expiresAt: number
+  acceptedAt: number | null
+  acceptedBy: { id: string; email: string; name: string } | null
+  revokedAt: number | null
+}
+
+/** What an anonymous invitee may learn about an invitation before accepting. */
+export interface InvitationPreview {
+  inviterName: string
+  email: string | null
+  expiresAt: number
+}
+
 export type SyncState = 'idle' | 'syncing' | 'offline' | 'error' | 'unauthenticated'
 
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
@@ -79,3 +115,4 @@ export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes',
 ] as const
+export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const

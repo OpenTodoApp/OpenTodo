@@ -4,12 +4,15 @@ import { clearLocalData } from '../lib/db'
 import { startSync, stopSync } from '../lib/sync'
 import type { AuthStatus, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
+import { InviteScreen } from './InviteScreen'
+import { navigate, useRoute } from './router'
 import { Shell } from './Shell'
 
 type Phase = { kind: 'loading' } | { kind: 'offline-unknown' } | { kind: 'anonymous'; status: AuthStatus } | { kind: 'ready'; user: User }
 
 export function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
+  const route = useRoute()
 
   const refresh = useCallback(async () => {
     try {
@@ -34,9 +37,9 @@ export function App() {
   }, [refresh])
 
   useEffect(() => {
-    if (phase.kind === 'ready') startSync()
+    if (phase.kind === 'ready' && route.view !== 'invite') startSync()
     else stopSync()
-  }, [phase.kind])
+  }, [phase.kind, route.view])
 
   const logout = useCallback(async () => {
     try {
@@ -51,6 +54,22 @@ export function App() {
 
   if (phase.kind === 'loading') {
     return <Centered>Loading…</Centered>
+  }
+  if (route.view === 'invite') {
+    // The invite link works for anonymous visitors, offline visitors (it waits for
+    // the network) and signed-in users (who are asked to sign out first).
+    return (
+      <InviteScreen
+        token={route.token}
+        user={phase.kind === 'ready' ? phase.user : null}
+        status={phase.kind === 'anonymous' ? phase.status : null}
+        onAccepted={() => {
+          navigate({ view: 'inbox' })
+          void refresh()
+        }}
+        onLogout={() => void logout()}
+      />
+    )
   }
   if (phase.kind === 'offline-unknown') {
     return (

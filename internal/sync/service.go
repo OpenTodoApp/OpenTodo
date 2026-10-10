@@ -11,19 +11,25 @@ import (
 
 // Service persists ops and materializes current field values.
 type Service struct {
-	db  *sql.DB
-	now func() time.Time
+	db       *sql.DB
+	now      func() time.Time
+	notifier *Notifier
 }
 
 // NewService wires a Service.
 func NewService(db *sql.DB) *Service {
-	return &Service{db: db, now: time.Now}
+	return &Service{db: db, now: time.Now, notifier: NewNotifier()}
 }
+
+// Notifier returns the live-update fan-out for this service. Callers of Apply
+// use it to wake the user's other devices once a batch has been committed.
+func (s *Service) Notifier() *Notifier { return s.notifier }
 
 // ApplyResult summarizes an Apply call.
 type ApplyResult struct {
-	Applied    int `json:"applied"`
-	Duplicates int `json:"duplicates"`
+	Applied    int   `json:"applied"`
+	Duplicates int   `json:"duplicates"`
+	Seq        int64 `json:"seq"` // the user's latest op cursor after the batch
 }
 
 // Apply validates and records a batch of ops for one user atomically.
@@ -66,6 +72,9 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 			return res, err
 		}
 		res.Applied++
+	}
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(MAX(seq),0) FROM ops WHERE user_id = ?`, userID).Scan(&res.Seq); err != nil {
+		return res, err
 	}
 	return res, tx.Commit()
 }

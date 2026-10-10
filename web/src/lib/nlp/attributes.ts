@@ -8,6 +8,8 @@ export interface ProjectRef {
   name: string
   archived?: boolean
   deleted_at?: number | null
+  /** Parent project for nested projects; used only to break ties between equal names. */
+  parent_id?: string | null
 }
 
 /** Upper bound for an estimate: one week, mirrors `MaxPositiveInt` on the server. */
@@ -19,9 +21,31 @@ function foldName(s: string): string {
 }
 
 /**
- * Resolve a `#name` token: exact (folded) match first, then a unique prefix. Returns
- * null when nothing or more than one project matches, so the token stays in the title.
- * The project list may arrive in any order; the result is the same.
+ * Depth of a project in the visible tree: 0 at the top level. A parent that is
+ * missing, archived or deleted ends the walk (the sidebar shows such a child at the
+ * top level), and a parent cycle is cut, so this always terminates.
+ */
+function depthOf(p: ProjectRef, byId: Map<string, ProjectRef>): number {
+  let depth = 0
+  const seen = new Set([p.id])
+  let cur = p
+  while (cur.parent_id) {
+    const parent = byId.get(cur.parent_id)
+    if (!parent || seen.has(parent.id)) break
+    seen.add(parent.id)
+    depth++
+    cur = parent
+  }
+  return depth
+}
+
+/**
+ * Resolve a `#name` token against every live project, nested ones included: exact
+ * (folded) match first, then a unique prefix. Several projects with exactly the same
+ * name resolve to the shallowest one in the tree (then the smallest id), so
+ * `#docs` means a top-level "Docs" over "Work › Docs". An ambiguous prefix, or no
+ * match, returns null and the token stays in the title. The project list may arrive
+ * in any order; the result is the same.
  */
 export function matchProject(token: string, projects: readonly ProjectRef[]): ProjectRef | null {
   if (!token.startsWith('#') || token.length < 2) return null
@@ -30,7 +54,12 @@ export function matchProject(token: string, projects: readonly ProjectRef[]): Pr
   const live = projects.filter((p) => !p.archived && !p.deleted_at)
   const exact = live.filter((p) => foldName(p.name) === want)
   if (exact.length === 1) return exact[0]
-  if (exact.length > 1) return [...exact].sort((a, b) => (a.id < b.id ? -1 : 1))[0]
+  if (exact.length > 1) {
+    const byId = new Map(live.map((p) => [p.id, p]))
+    const ranked = exact.map((p) => ({ p, depth: depthOf(p, byId) }))
+    ranked.sort((a, b) => a.depth - b.depth || (a.p.id < b.p.id ? -1 : a.p.id > b.p.id ? 1 : 0))
+    return ranked[0].p
+  }
   const prefix = live.filter((p) => foldName(p.name).startsWith(want))
   return prefix.length === 1 ? prefix[0] : null
 }

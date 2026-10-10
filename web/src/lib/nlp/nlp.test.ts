@@ -87,6 +87,37 @@ describe('attribute tokens', () => {
     expect(matchProject('#garden', PROJECTS)).toBeNull()
   })
 
+  it('matches nested projects anywhere in the tree', () => {
+    const tree: ProjectRef[] = [
+      { id: 'work', name: 'Work' },
+      { id: 'w-docs', name: 'Docs', parent_id: 'work' },
+      { id: 'w-q4', name: 'Q4 launch', parent_id: 'w-docs' },
+      { id: 'home', name: 'Home' },
+      { id: 'h-docs', name: 'Docs', parent_id: 'home' },
+      { id: 'h-deep', name: 'Paperwork', parent_id: 'h-docs' },
+      { id: 'top-paper', name: 'Paperwork' },
+    ]
+    expect(matchProject('#q4launch', tree)?.id).toBe('w-q4')
+    expect(matchProject('#q4', tree)?.id).toBe('w-q4')
+    // Same exact name at the same depth: smallest id; at different depths: the shallowest.
+    expect(matchProject('#docs', tree)?.id).toBe('h-docs')
+    expect(matchProject('#paperwork', tree)?.id).toBe('top-paper')
+    expect(matchProject('#paperwork', [...tree].reverse())?.id).toBe('top-paper')
+    // An ambiguous prefix is still not guessed.
+    expect(matchProject('#doc', tree)).toBeNull()
+  })
+
+  it('treats a child of an archived parent as top level and survives parent cycles', () => {
+    const ps: ProjectRef[] = [
+      { id: 'arch', name: 'Old', archived: true },
+      { id: 'a', name: 'Notes', parent_id: 'arch' },
+      { id: 'x', name: 'Loop', parent_id: 'y' },
+      { id: 'y', name: 'Notes', parent_id: 'x' },
+    ]
+    expect(matchProject('#notes', ps)?.id).toBe('a')
+    expect(matchProject('#loop', ps)?.id).toBe('x')
+  })
+
   it('matches multi-word project names written without spaces', () => {
     const ps = [{ id: 'x', name: 'Side Project' }]
     expect(matchProject('#sideproject', ps)?.id).toBe('x')

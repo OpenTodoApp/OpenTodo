@@ -10,5 +10,5 @@ export {
   saveQuickAddSettings,
 } from './settings'
 export type { QuickAddSettings } from './settings'
-export { chipAtCaret, dismissChip, toTaskInput } from './quickadd'
-export type { QuickAddInput } from './quickadd'
+export { chipAtCaret, dismissChip, findLabel, labelNameKey, toTaskInput } from './quickadd'
+export type { LabelRef, QuickAddInput } from './quickadd'

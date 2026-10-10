@@ -11,6 +11,7 @@ OpenTodo is a local-first application with a thin sync server.
 │  sync engine: push outbox / pull since cursor ◄───────┘        │
 └──────────────────────────────┬────────────────────────────────┘
                                │  POST /api/v1/sync  (JSON, same origin)
+                               │  GET  /api/v1/sync/events  (SSE wake-ups, cursor only)
 ┌──────────────────────────────▼────────────────────────────────┐
 │  Go server (single static binary)                              │
 │  httpapi ── auth (sessions, tokens) ── sync (ops, fields)      │
@@ -26,7 +27,7 @@ OpenTodo is a local-first application with a thin sync server.
 | `config` | `OPENTODO_*` environment variables with defaults and validation |
 | `store` | Opens SQLite (WAL, single connection) and applies embedded migrations by `PRAGMA user_version` |
 | `auth` | Users, argon2id passwords, sessions, API tokens |
-| `sync` | Op schema and validation, `Apply` (idempotent, LWW), `Pull` (cursor), `List`/`Get` (materialized entities) |
+| `sync` | Op schema and validation, `Apply` (idempotent, LWW), `Pull` (cursor), `List`/`Get` (materialized entities), `Notifier` (per-user live wake-ups) |
 | `httpapi` | Router, middleware (auth, origin check, security headers, logging), handlers for auth, sync, collections, export, health |
 | `web` | Embeds the Vite build and serves it with SPA fallback and cache headers |
 | `ids` | UUID v4 and random secrets without external dependencies |
@@ -35,7 +36,11 @@ Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log per user, `seq
 
 ### Request flow for a REST write
 
-`POST /api/v1/tasks` → auth middleware resolves the user → body fields become ops with `ts = now`, `device = "server"` → `sync.Apply` → entity re-read from `fields` → JSON response. The ops land in the log, so devices receive them on their next sync.
+`POST /api/v1/tasks` → auth middleware resolves the user → body fields become ops with `ts = now`, `device = "server"` → `sync.Apply` → `sync.Notifier.Notify` wakes the user's open event streams → entity re-read from `fields` → JSON response. The ops land in the log, so devices receive them on their next sync, which the wake-up triggers right away.
+
+### Live updates
+
+`GET /api/v1/sync/events` is a server-sent event stream per device (`httpapi/events.go`). It carries only the latest op cursor, never data; the client reacts by running the ordinary sync exchange. `sync.Notifier` is the in-memory per-user fan-out; see `docs/sync.md`.
 
 ## Client (`web/`)
 
@@ -45,7 +50,7 @@ Tables: `users`, `sessions`, `api_tokens`, `ops` (append-only log per user, `seq
 | `lib/types.ts` | Entity types; field names mirror `internal/sync/ops.go` |
 | `lib/hlc.ts` | Hybrid logical clock and the shared `wins()` rule |
 | `lib/ops.ts` | `applyOps` (per-field LWW into IndexedDB), `mutate` (local apply + outbox + notify), entity helpers |
-| `lib/sync.ts` | Background push/pull loop, triggers, status store (`useSyncStatus`) |
+| `lib/sync.ts` | Background push/pull loop, triggers, live-update channel (`EventSource` with backoff), status store (`useSyncStatus`) |
 | `lib/api.ts` | Fetch wrappers and `ApiError` |
 | `app/` | Router, auth screens, shell, views, detail panel, settings |
 

@@ -30,6 +30,10 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Precache only the built assets. There is deliberately no runtimeCaching:
+        // nothing under /api/ (in particular the live event stream
+        // /api/v1/sync/events) may ever be served from or stored in a cache, and the
+        // SPA navigation fallback must not swallow API or health URLs either.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallbackDenylist: [/^\/api\//, /^\/healthz/],
         cleanupOutdatedCaches: true,
