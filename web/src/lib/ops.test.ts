@@ -6,9 +6,13 @@ import {
 } from './ops'
 import { wins } from './hlc'
 import { parentReadyToComplete } from './subtasks'
-import type { Op } from './types'
+import type { Comment, Op } from './types'
 import { viewOptions } from './views'
-import { setCurrentUserId } from './sharing'
+import { membershipMap, scopeOf, setCurrentUserId } from './sharing'
+import {
+  canDeleteComment, canEditComment, commentCounts, createComment, deleteComment, editComment, mentionAt, mentionCandidates, mentionsInBody, mentionToken,
+  threadOrder, threadVisible,
+} from './comments'
 import { visibleTasks } from './trash'
 
 let n = 0
@@ -481,5 +485,82 @@ describe('task assignment', () => {
     const ops = await db.outbox.toArray()
     expect(ops.some((o) => o.entityId === nobodyCopy && o.field === 'assignee_id')).toBe(false)
     expect(ops.some((o) => o.field === 'assignee_id' && o.value === undefined)).toBe(false)
+  })
+})
+
+describe('comments (comments-and-activity)', () => {
+  const member = (userId: string, role: 'owner' | 'editor' | 'viewer' = 'editor') => ({ userId, name: userId, email: `${userId}@example.com`, role })
+  const comment = (id: string, created: number, parent: string | null = null, deleted: number | null = null): Comment => ({
+    id, task_id: 't', parent_id: parent, body: id, author_id: 'me', mentions: [], created_at: created, edited_at: null, deleted_at: deleted, _clock: {},
+  })
+
+  it('creates comment ops in task scope', async () => {
+    await setCurrentUserId('me')
+    const shared = await createProject({ name: 'Team' })
+    await db.memberships.put({ projectId: shared, role: 'viewer', ownerId: 'alice', members: [member('alice', 'owner'), member('me', 'viewer')] })
+    const task = await createTask({ title: 'Plan', project_id: shared })
+    await db.outbox.clear()
+    const id = await createComment({ taskId: task, body: '  Looks **good** @alice ', mentions: ['alice', 'alice'] })
+    const row = await db.comments.get(id)
+    expect(row).toMatchObject({ task_id: task, author_id: 'me', body: 'Looks **good** @alice', parent_id: null, mentions: ['alice'], edited_at: null, deleted_at: null })
+    // One op per field, the placing fields first; the task's scope decides where they live.
+    const ops = await db.outbox.toArray()
+    expect(ops.every((o) => o.entity === 'comment' && o.entityId === id)).toBe(true)
+    expect(ops.slice(0, 2).map((o) => o.field)).toEqual(['task_id', 'author_id'])
+    expect(scopeOf((await db.tasks.get(task))?.project_id, await membershipMap())).toBe(`project:${shared}`)
+    expect(await commentCounts()).toEqual(new Map([[task, 1]]))
+    // Edit and delete are author-side ops; deleted comments stop counting.
+    await editComment(id, 'Better')
+    expect((await db.comments.get(id))?.edited_at).toBeGreaterThan(0)
+    await deleteComment(id)
+    expect((await commentCounts()).get(task)).toBeUndefined()
+    await expect(createComment({ taskId: task, body: '   ' })).rejects.toThrow()
+  })
+
+  it('thread order with deleted parent', () => {
+    const list = [
+      comment('r2', 40, 'a'), comment('b', 20), comment('a', 10, null, 99), comment('r1', 30, 'a'), comment('rr', 50, 'r1'),
+      comment('orphan', 15, 'missing'), comment('x', 60, 'y'), comment('y', 70, 'x'),
+    ]
+    const threads = threadOrder(list)
+    expect(threads.map((t) => [t.root.id, t.replies.map((r) => r.id)])).toEqual([
+      ['a', ['r1', 'r2', 'rr']], ['orphan', []], ['b', []], ['x', []], ['y', []],
+    ])
+    // The deleted parent keeps its place so replies stay visible under a placeholder.
+    expect(threads[0].root.deleted_at).toBe(99)
+    expect(threadVisible(threads[0])).toBe(true)
+    expect(threadVisible({ root: comment('d', 1, null, 5), replies: [] })).toBe(false)
+  })
+
+  it('mirrors the server rules for edit and delete', () => {
+    const c = comment('c', 1)
+    expect(canEditComment(c, 'me')).toBe(true)
+    expect(canEditComment(c, 'bob')).toBe(false)
+    expect(canDeleteComment(c, 'bob', 'admin')).toBe(true)
+    expect(canDeleteComment(c, 'bob', 'editor')).toBe(false)
+    expect(canDeleteComment(c, 'bob', 'viewer')).toBe(false)
+    expect(canDeleteComment({ ...c, deleted_at: 3 }, 'me', 'owner')).toBe(false)
+  })
+
+  it('adopts the server-filtered mentions that carry the local clock', async () => {
+    await applyOps([op({ entity: 'comment', entityId: 'c1', field: 'mentions', value: ['bob', 'ghost'], ts: 100, device: 'A' })])
+    await applyOps([op({ entity: 'comment', entityId: 'c1', field: 'mentions', value: ['bob'], ts: 100, device: 'A' })])
+    expect((await db.comments.get('c1'))?.mentions).toEqual(['bob'])
+    // Other fields keep plain last-writer-wins: an equal clock changes nothing.
+    await applyOps([op({ entity: 'comment', entityId: 'c1', field: 'body', value: 'one', ts: 100, device: 'A' })])
+    await applyOps([op({ entity: 'comment', entityId: 'c1', field: 'body', value: 'two', ts: 100, device: 'A' })])
+    expect((await db.comments.get('c1'))?.body).toBe('one')
+  })
+
+  it('mention helpers', () => {
+    expect(mentionAt('hi @Bo', 6)).toEqual({ query: 'Bo', start: 3 })
+    expect(mentionAt('mail a@b', 8)).toBeNull()
+    const members = [member('bob'), member('bobby'), member('alice'), member('me')]
+    expect(mentionCandidates(members, 'bo', 'me').map((m) => m.userId)).toEqual(['bob', 'bobby'])
+    expect(mentionCandidates(members, '', 'me').map((m) => m.userId)).toEqual(['alice', 'bob', 'bobby'])
+    expect(mentionToken({ name: 'Bob Smith', email: 'b@x' })).toBe('BobSmith')
+    const picked = new Map([['bob', 'bob'], ['alice', 'alice']])
+    expect(mentionsInBody('thanks @bob!', picked)).toEqual(['bob'])
+    expect(mentionsInBody('thanks @bobby', picked)).toEqual([])
   })
 })

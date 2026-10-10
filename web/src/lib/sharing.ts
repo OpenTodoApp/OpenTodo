@@ -2,6 +2,7 @@
 // server-owned authorization data: every sync response carries the caller's list,
 // which replaces the local cache, so all devices converge on the server's member
 // list and roles. Everything here reads the cache, so roles render the same offline.
+import { forgetEntities } from './activity'
 import { db, getMeta, setMeta } from './db'
 import type { Clock, Entity, Membership, Op, ProjectMember, ProjectRole, Rejection, Task } from './types'
 
@@ -88,16 +89,20 @@ export function canManage(actor: ProjectRole, target: ProjectRole): boolean {
  */
 export async function storeMemberships(list: Membership[]): Promise<string[]> {
   const purged: string[] = []
-  await db.transaction('rw', [db.memberships, db.projects, db.tasks, db.outbox], async () => {
+  await db.transaction('rw', [db.memberships, db.projects, db.tasks, db.outbox, db.comments, db.activity], async () => {
     const keep = new Set(list.map((m) => m.projectId))
     const previous = await db.memberships.toArray()
     for (const m of previous) {
       if (keep.has(m.projectId)) continue
       purged.push(m.projectId)
       const taskIds = (await db.tasks.where('project_id').equals(m.projectId).primaryKeys()) as string[]
-      const gone = new Set<string>([m.projectId, ...taskIds])
+      // Comments live in their task's scope and leave with it (comments-and-activity).
+      const commentIds = (await db.comments.where('task_id').anyOf(taskIds).primaryKeys()) as string[]
+      const gone = new Set<string>([m.projectId, ...taskIds, ...commentIds])
       await db.tasks.bulkDelete(taskIds)
+      await db.comments.bulkDelete(commentIds)
       await db.projects.delete(m.projectId)
+      await forgetEntities([m.projectId, ...taskIds, ...commentIds])
       const queued = await db.outbox.filter((o) => gone.has(o.entityId)).primaryKeys()
       await db.outbox.bulkDelete(queued as number[])
     }
@@ -123,6 +128,8 @@ function tableFor(entity: Entity) {
     case 'project': return db.projects
     case 'label': return db.labels
     case 'view': return db.views
+    case 'reminder': return db.reminders
+    case 'comment': return db.comments
     default: return db.tasks
   }
 }
@@ -141,7 +148,7 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
   const tasks = new Set<string>()
   let count = 0
   let assignments = 0
-  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views], async () => {
+  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views, db.reminders, db.comments], async () => {
     for (const r of rejected) {
       const op = byId.get(r.id)
       if (!op) continue
@@ -183,7 +190,7 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
  */
 export async function dropUnconfirmed(keys: string[]): Promise<void> {
   if (keys.length === 0) return
-  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views], async () => {
+  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views, db.reminders, db.comments], async () => {
     for (const key of keys) {
       const i = key.indexOf(':')
       const entity = key.slice(0, i) as Entity

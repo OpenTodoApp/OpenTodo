@@ -407,7 +407,10 @@ func ThreadOrder(list []Entity) []Entity {
 		for {
 			p := cur.str("parent_id")
 			pe, ok := byID[p]
-			if p == "" || !ok || seen[p] || pe.str("task_id") != e.str("task_id") {
+			if ok && seen[p] {
+				return id // a cycle: the comment starts its own thread
+			}
+			if p == "" || !ok || pe.str("task_id") != e.str("task_id") {
 				return cur.str("id")
 			}
 			seen[p] = true

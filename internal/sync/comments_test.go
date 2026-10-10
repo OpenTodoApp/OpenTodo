@@ -356,3 +356,23 @@ func TestPullIncludesActorAndIgnoresClientValue(t *testing.T) {
 		t.Fatalf("carol activity = %v", err)
 	}
 }
+
+// TestThreadOrder uses the same comments as the client's "thread order with
+// deleted parent" test (web/src/lib/ops.test.ts) and must give the same order.
+func TestThreadOrder(t *testing.T) {
+	c := func(id string, created int, parent string) Entity {
+		e := Entity{"id": json.RawMessage(quoteID(id)), "task_id": json.RawMessage(`"t"`), "created_at": json.RawMessage(mustJSON(created)), "parent_id": json.RawMessage("null")}
+		if parent != "" {
+			e["parent_id"] = json.RawMessage(quoteID(parent))
+		}
+		return e
+	}
+	list := []Entity{c("r2", 40, "a"), c("b", 20, ""), c("a", 10, ""), c("r1", 30, "a"), c("rr", 50, "r1"), c("orphan", 15, "missing"), c("x", 60, "y"), c("y", 70, "x")}
+	var got []string
+	for _, e := range ThreadOrder(list) {
+		got = append(got, e.str("id"))
+	}
+	if want := []string{"a", "r1", "r2", "rr", "orphan", "b", "x", "y"}; !slices.Equal(got, want) {
+		t.Fatalf("order = %v, want %v", got, want)
+	}
+}

@@ -3,6 +3,7 @@
 // on live wake-ups from the server's event stream (which carries no data; it only
 // tells us to run the exchange now).
 import { useSyncExternalStore } from 'react'
+import { forgetActivity } from './activity'
 import { api, ApiError } from './api'
 import { db, entityTables, getMeta, setMeta } from './db'
 import { hlcObserveServerTime } from './hlc'
@@ -140,6 +141,8 @@ async function runOnce(): Promise<void> {
       // Refused ops (project-sharing): forget their local clocks so the server's
       // values, which travel in res.ops, win; drop rows that only existed here.
       const { keys, notice } = await forgetRejected(sent, res.rejected ?? [])
+      // A refused op never happened: drop it from the local activity log too.
+      await forgetActivity((res.rejected ?? []).map((r) => r.id))
       await applyOps(res.ops)
       if (res.ops.length > 0) received = true
       await dropUnconfirmed(keys)
@@ -232,10 +235,15 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
     // Every synced entity kind (keep in step with ENTITIES / entityTables()).
     const tables: [Entity, unknown][] = [
       ['project', db.projects], ['task', db.tasks], ['label', db.labels], ['view', db.views], ['reminder', db.reminders],
+      ['comment', db.comments],
     ]
+    const me = (await db.meta.get('userId'))?.value
     for (const [entity, table] of tables) {
       const rows = (await (table as unknown as { toArray(): Promise<Record<string, unknown>[]> }).toArray())
       for (const row of rows) {
+        // Only the author may write a comment (comments-and-activity): other
+        // members' comments come back from their own devices.
+        if (entity === 'comment' && row.author_id !== me) continue
         const clock = (row._clock ?? {}) as Clock
         for (const [field, c] of Object.entries(clock)) {
           if (!(field in row)) continue

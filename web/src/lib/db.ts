@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { AppNotification, Label, Membership, Op, Project, Reminder, Task, View } from './types'
+import type { ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, Reminder, Task, View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -21,6 +21,14 @@ class OpenTodoDB extends Dexie {
   memberships!: Table<Membership, string>
   /** Cached in-app notifications (task-assignment): server data, refreshed after sync, never ops. */
   notifications!: Table<AppNotification, string>
+  /** Comments (comments-and-activity): a synced entity like tasks. */
+  comments!: Table<Comment, string>
+  /**
+   * The ops activity is derived from (comments-and-activity D4/D5), recorded as
+   * they are applied with their author and old value; bounded per project and
+   * never synced. Events are derived from these rows at read time (lib/activity).
+   */
+  activity!: Table<ActivityEntry, string>
   outbox!: Table<OutboxOp, number>
   meta!: Table<Meta, string>
 
@@ -88,6 +96,21 @@ class OpenTodoDB extends Dexie {
       memberships: 'projectId',
       notifications: 'id, createdAt',
     })
+    // v8 (comments-and-activity): comments (synced entity, indexed by task) and the
+    // local activity log derived from ops, bounded per project. Additive.
+    this.version(8).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+      comments: 'id, task_id',
+      activity: 'id, [projectKey+ts], taskId, entityId',
+    })
   }
 }
 
@@ -99,9 +122,12 @@ export function useDatabase(name: string): OpenTodoDB {
   return db
 }
 
-/** Every table that holds synced entities; applyOps and mutateMany lock all of them. */
+/**
+ * Every table that holds synced entities, plus the activity log that applyOps
+ * folds ops into (comments-and-activity); applyOps and mutateMany lock all of them.
+ */
 export function entityTables() {
-  return [db.projects, db.tasks, db.labels, db.views, db.reminders]
+  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.comments, db.activity]
 }
 
 export async function getMeta<T>(key: string, fallback: T): Promise<T> {
@@ -115,10 +141,10 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
-  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views, db.reminders, db.outbox, db.meta, db.memberships, db.notifications], async () => {
+  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views, db.reminders, db.outbox, db.meta, db.memberships, db.notifications, db.comments, db.activity], async () => {
     await Promise.all([
       db.projects.clear(), db.tasks.clear(), db.labels.clear(), db.views.clear(), db.reminders.clear(), db.outbox.clear(), db.meta.clear(), db.memberships.clear(),
-      db.notifications.clear(),
+      db.notifications.clear(), db.comments.clear(), db.activity.clear(),
     ])
   })
 }

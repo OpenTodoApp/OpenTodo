@@ -7,6 +7,7 @@
 // learns about it from the `purged` list of the next sync. A purge is only sent
 // while online; offline it is queued in `meta` and shown as pending, and nothing
 // is deleted locally before the server confirms.
+import { forgetEntities } from './activity'
 import { api, ApiError, isNetworkError } from './api'
 import { db, entityTables, getMeta, setMeta } from './db'
 import type { Entity, Project, Task } from './types'
@@ -208,6 +209,8 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
       }
       for (const id of taskIds) gone.set(id, 'task')
       for (const r of await db.reminders.toArray()) if (taskIds.has(r.task_id)) gone.set(r.id, 'reminder')
+      // Comments go with their task (comments-and-activity).
+      for (const id of await db.comments.where('task_id').anyOf([...taskIds]).primaryKeys()) gone.set(id as string, 'comment')
     }
     const byEntity: Record<string, string[]> = {}
     for (const [id, entity] of gone) (byEntity[entity] ??= []).push(id)
@@ -216,6 +219,9 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
     if (byEntity.reminder) await db.reminders.bulkDelete(byEntity.reminder)
     if (byEntity.label) await db.labels.bulkDelete(byEntity.label)
     if (byEntity.view) await db.views.bulkDelete(byEntity.view)
+    if (byEntity.comment) await db.comments.bulkDelete(byEntity.comment)
+    // Purged history is gone from the server's log; drop the local activity too.
+    await forgetEntities(gone.keys())
     const queued = await db.outbox.filter((o) => gone.get(o.entityId) === o.entity).primaryKeys()
     await db.outbox.bulkDelete(queued as number[])
     const pending = ((await db.meta.get(PENDING_PURGES_KEY))?.value as PurgeRequest[] | undefined) ?? []
