@@ -31,7 +31,7 @@ const (
 	// RetryWindow: a reminder whose every send failed transiently is retried on
 	// the next ticks until it is this much overdue, then recorded as delivered.
 	RetryWindow = time.Hour
-	// batchLimit bounds one tick's work.
+	// batchLimit bounds the reminders pushed in one tick.
 	batchLimit = 500
 	// DefaultSubject is the VAPID contact when no base URL is configured.
 	DefaultSubject = "https://github.com/pixari/opentodo"
@@ -222,43 +222,74 @@ func topicFor(reminderID string) string {
 type dueReminder struct {
 	UserID, ID, TaskID string
 	FireAt             int64
+	Title              string
 }
 
 // dueQuery selects reminders whose firing time has passed and that are not
-// deleted, not delivered or dismissed for the current firing (a delivery or
-// dismissal older than fire_at belongs to an earlier firing), and whose task is
-// neither completed nor deleted. Values are JSON in fields.value.
+// deleted and not delivered or dismissed for the current firing (a delivery or
+// dismissal older than fire_at belongs to an earlier firing). Reminders are
+// personal (OpenSpec `reminders`, `project-sharing`): they always live in their
+// creator's personal scope "user:<id>", even on a task in a shared project, so
+// the scope names the user whose devices are notified. The task's state is
+// checked afterwards through sync.Get, which sees personal and shared scopes.
 const dueQuery = `
-SELECT f.user_id, f.entity_id, CAST(f.value AS REAL), COALESCE(json_extract(tid.value, '$'), '')
-FROM fields f
-JOIN fields tid ON tid.user_id = f.user_id AND tid.entity = 'reminder' AND tid.entity_id = f.entity_id AND tid.field = 'task_id'
-WHERE f.entity = 'reminder' AND f.field = 'fire_at' AND f.value <> 'null' AND CAST(f.value AS REAL) <= ?
-  AND NOT EXISTS (SELECT 1 FROM fields x WHERE x.user_id = f.user_id AND x.entity = 'reminder' AND x.entity_id = f.entity_id
+SELECT f.scope_id, f.entity_id, CAST(f.value AS REAL), COALESCE(json_extract(tid.value, '$'), '')
+FROM scope_fields f
+JOIN scope_fields tid ON tid.scope_id = f.scope_id AND tid.entity = 'reminder' AND tid.entity_id = f.entity_id AND tid.field = 'task_id'
+WHERE f.entity = 'reminder' AND f.field = 'fire_at' AND f.scope_id LIKE 'user:%' AND f.value <> 'null' AND CAST(f.value AS REAL) <= ?
+  AND NOT EXISTS (SELECT 1 FROM scope_fields x WHERE x.scope_id = f.scope_id AND x.entity = 'reminder' AND x.entity_id = f.entity_id
       AND x.field = 'deleted_at' AND x.value <> 'null')
-  AND NOT EXISTS (SELECT 1 FROM fields x WHERE x.user_id = f.user_id AND x.entity = 'reminder' AND x.entity_id = f.entity_id
+  AND NOT EXISTS (SELECT 1 FROM scope_fields x WHERE x.scope_id = f.scope_id AND x.entity = 'reminder' AND x.entity_id = f.entity_id
       AND x.field IN ('delivered_at', 'dismissed_at') AND x.value <> 'null' AND CAST(x.value AS REAL) >= CAST(f.value AS REAL))
-  AND NOT EXISTS (SELECT 1 FROM fields x WHERE x.user_id = f.user_id AND x.entity = 'task' AND x.entity_id = json_extract(tid.value, '$')
-      AND x.field IN ('completed_at', 'deleted_at') AND x.value <> 'null')
-ORDER BY CAST(f.value AS REAL)
-LIMIT ?`
+ORDER BY CAST(f.value AS REAL)`
 
 func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder, error) {
-	rows, err := s.db.QueryContext(ctx, dueQuery, nowMs, batchLimit)
+	rows, err := s.db.QueryContext(ctx, dueQuery, nowMs)
 	if err != nil {
 		return nil, fmt.Errorf("scan due reminders: %w", err)
 	}
-	defer rows.Close()
-	var out []dueReminder
+	var cands []dueReminder
 	for rows.Next() {
 		var d dueReminder
+		var scope string
 		var fire float64
-		if err := rows.Scan(&d.UserID, &d.ID, &fire, &d.TaskID); err != nil {
+		if err := rows.Scan(&scope, &d.ID, &fire, &d.TaskID); err != nil {
+			rows.Close()
 			return nil, err
 		}
+		d.UserID = strings.TrimPrefix(scope, "user:")
 		d.FireAt = int64(fire)
-		out = append(out, d)
+		cands = append(cands, d)
 	}
-	return out, rows.Err()
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	// Only reminders on an open task the user can still see fire.
+	var out []dueReminder
+	for _, d := range cands {
+		t, err := s.sync.Get(ctx, d.UserID, "task", d.TaskID)
+		if err != nil {
+			return nil, err
+		}
+		if t == nil || t.Deleted() || !isNull(t["completed_at"]) {
+			continue
+		}
+		d.Title = jsonString(t["title"])
+		out = append(out, d)
+		if len(out) == batchLimit {
+			break
+		}
+	}
+	return out, nil
+}
+
+func isNull(raw json.RawMessage) bool { return len(raw) == 0 || string(raw) == "null" }
+
+func jsonString(raw json.RawMessage) string {
+	var v string
+	_ = json.Unmarshal(raw, &v)
+	return v
 }
 
 // Tick pushes every due reminder once and records its delivery as an op
@@ -279,13 +310,7 @@ func (s *Service) Tick(ctx context.Context) (int, error) {
 			}
 			subsByUser[d.UserID] = subs
 		}
-		title := ""
-		for _, sub := range subs {
-			if sub.IncludeContent {
-				title = s.taskTitle(ctx, d.UserID, d.TaskID)
-				break
-			}
-		}
+		title := d.Title
 		attempted, transient := 0, 0
 		for _, sub := range subs {
 			attempted++
@@ -307,17 +332,6 @@ func (s *Service) Tick(ctx context.Context) (int, error) {
 	return recorded, nil
 }
 
-func (s *Service) taskTitle(ctx context.Context, userID, taskID string) string {
-	var raw string
-	err := s.db.QueryRowContext(ctx, `SELECT value FROM fields WHERE user_id=? AND entity='task' AND entity_id=? AND field='title'`, userID, taskID).Scan(&raw)
-	if err != nil {
-		return ""
-	}
-	var title string
-	_ = json.Unmarshal([]byte(raw), &title)
-	return title
-}
-
 func (s *Service) opTS(nowMs int64) int64 {
 	s.tsMu.Lock()
 	defer s.tsMu.Unlock()
@@ -332,8 +346,8 @@ func (s *Service) opTS(nowMs int64) int64 {
 func (s *Service) recordDelivered(ctx context.Context, userID, reminderID string, nowMs int64) error {
 	ts := nowMs
 	var prev int64
-	err := s.db.QueryRowContext(ctx, `SELECT ts FROM fields WHERE user_id=? AND entity='reminder' AND entity_id=? AND field='delivered_at'`,
-		userID, reminderID).Scan(&prev)
+	err := s.db.QueryRowContext(ctx, `SELECT ts FROM scope_fields WHERE scope_id=? AND entity='reminder' AND entity_id=? AND field='delivered_at'`,
+		opsync.PersonalScope(userID), reminderID).Scan(&prev)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
@@ -345,7 +359,7 @@ func (s *Service) recordDelivered(ctx context.Context, userID, reminderID string
 		return fmt.Errorf("record reminder delivery: %w", err)
 	}
 	if res.Applied > 0 {
-		s.sync.Notifier().Notify(userID, "server", res.Seq)
+		s.sync.NotifyApplied(res, "server")
 	}
 	return nil
 }

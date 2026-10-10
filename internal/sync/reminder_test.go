@@ -2,6 +2,7 @@ package sync
 
 import (
 	"errors"
+	"slices"
 	"testing"
 )
 
@@ -46,5 +47,46 @@ func TestValidateReminderOps(t *testing.T) {
 	}
 	if Plural["reminders"] != "reminder" {
 		t.Error(`Plural["reminders"] missing`)
+	}
+}
+
+// Reminders are personal even on a task in a shared project: the op lands in its
+// creator's personal scope, only the creator's devices receive it, and a viewer
+// (who may not write the task) can still keep reminders on it.
+func TestReminderOnSharedTaskIsPersonal(t *testing.T) {
+	f := newSharing(t)
+	f.add("alice", "bob", RoleViewer)
+	f.add("alice", "carol", RoleEditor)
+	res := f.apply("bob", "B",
+		f.op("reminder", "rb", "task_id", `"t1"`), f.op("reminder", "rb", "kind", `"absolute"`),
+		f.op("reminder", "rb", "fire_at", `1791000000000`))
+	if len(res.Rejected) != 0 || res.Applied != 3 {
+		t.Fatalf("viewer's reminder: applied %d, rejected %v", res.Applied, res.Rejected)
+	}
+	if !slices.Equal(res.Audience, []string{"bob"}) {
+		t.Fatalf("audience = %v, want only bob", res.Audience)
+	}
+	var scope string
+	if err := f.s.db.QueryRow(`SELECT DISTINCT scope_id FROM scope_fields WHERE entity='reminder' AND entity_id='rb'`).Scan(&scope); err != nil || scope != PersonalScope("bob") {
+		t.Fatalf("reminder scope = %q, %v", scope, err)
+	}
+	// Only bob's other device receives it; alice (owner) and carol (editor) do not.
+	bob, _ := f.pullAll("bob", "B2", 0)
+	if !slices.Contains(entityIDs(bob), "rb") {
+		t.Fatalf("bob's other device does not get his reminder: %v", entityIDs(bob))
+	}
+	for _, u := range []string{"alice", "carol"} {
+		ops, _ := f.pullAll(u, u+"-dev", 0)
+		if slices.Contains(entityIDs(ops), "rb") {
+			t.Fatalf("%s received bob's reminder", u)
+		}
+		if got := f.field(u, "reminder", "rb", "fire_at"); got != "<none>" {
+			t.Fatalf("%s can read bob's reminder: %s", u, got)
+		}
+	}
+	// A reminder with the same id written by another user stays separate.
+	f.apply("carol", "C", f.op("reminder", "rb", "fire_at", `5`))
+	if got := f.field("bob", "reminder", "rb", "fire_at"); got != "1791000000000" {
+		t.Fatalf("carol overwrote bob's reminder: %s", got)
 	}
 }

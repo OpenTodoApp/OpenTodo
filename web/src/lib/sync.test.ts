@@ -15,8 +15,8 @@ vi.mock('./api', () => ({
 
 import { db, getMeta, setMeta } from './db'
 import { useDatabase } from './db'
-import { applyOps, resetDeviceId } from './ops'
-import { startSync, stopSync, syncNow } from './sync'
+import { applyOps, mutate, resetDeviceId } from './ops'
+import { dismissRejected, startSync, stopSync, syncNow, syncSnapshot } from './sync'
 
 /** Minimal stand-in for the browser's EventSource with manual event injection. */
 class FakeEventSource {
@@ -351,5 +351,90 @@ describe('restore re-seed (log generation)', () => {
     await syncNow()
     expect(sent()).toHaveLength(1)
     expect(await getMeta('generation', '')).toBe('gen-after')
+  })
+})
+
+describe('project sharing', () => {
+  type SentOp = { id: string; entity: string; entityId: string; field: string; value: unknown; ts: number; device: string }
+  const membership = (projectId: string, role: string) => ({
+    projectId, role, ownerId: 'alice', members: [{ userId: 'alice', name: 'Alice', email: 'a@example.com', role: 'owner' }],
+  })
+  /** The server answers with the given extras on every exchange. */
+  function server(extra: (sent: SentOp[]) => Record<string, unknown>) {
+    syncCalls.mockImplementation((async (...args: unknown[]) => {
+      const sentOps = args[2] as SentOp[]
+      return { applied: 0, ops: [], cursor: serverCursor.value, hasMore: false, serverTime: Date.now(), ...extra(sentOps) }
+    }) as never)
+  }
+
+  it('stores memberships', async () => {
+    server(() => ({ memberships: [membership('p1', 'editor')] }))
+    await syncNow()
+    expect(await db.memberships.toArray()).toEqual([membership('p1', 'editor')])
+    // The server's list replaces the cache on every sync (role changed elsewhere).
+    server(() => ({ memberships: [membership('p1', 'viewer')] }))
+    await syncNow()
+    expect((await db.memberships.get('p1'))?.role).toBe('viewer')
+    // An older server sends no list: the cache is kept as is.
+    server(() => ({}))
+    await syncNow()
+    expect(await db.memberships.count()).toBe(1)
+  })
+
+  it('purges removed project locally', async () => {
+    await applyOps([
+      { id: 's1', entity: 'project', entityId: 'shared', field: 'name', value: 'Home', ts: 1, device: 'A' },
+      { id: 's2', entity: 'task', entityId: 'st', field: 'project_id', value: 'shared', ts: 1, device: 'A' },
+      { id: 's3', entity: 'task', entityId: 'sub', field: 'project_id', value: 'shared', ts: 1, device: 'A' },
+      { id: 'm1', entity: 'project', entityId: 'mine', field: 'name', value: 'Mine', ts: 1, device: 'B' },
+      { id: 'm2', entity: 'task', entityId: 'mt', field: 'project_id', value: 'mine', ts: 1, device: 'B' },
+      { id: 'm3', entity: 'task', entityId: 'inbox', field: 'title', value: 'Inbox task', ts: 1, device: 'B' },
+    ])
+    server(() => ({ memberships: [membership('shared', 'editor')] }))
+    await syncNow()
+    // Removed: the next response no longer lists the project.
+    server(() => ({ memberships: [] }))
+    await syncNow()
+    expect(await db.projects.get('shared')).toBeUndefined()
+    expect(await db.tasks.get('st')).toBeUndefined()
+    expect(await db.tasks.get('sub')).toBeUndefined()
+    expect(await db.memberships.count()).toBe(0)
+    // Personal data is untouched.
+    expect((await db.projects.get('mine'))?.name).toBe('Mine')
+    expect(await db.tasks.get('mt')).toBeDefined()
+    expect(await db.tasks.get('inbox')).toBeDefined()
+  })
+
+  it('rejected op restores server value', async () => {
+    await applyOps([
+      { id: 'w1', entity: 'task', entityId: 't1', field: 'title', value: 'Milk', ts: 1, device: 'alice-dev' },
+      { id: 'w2', entity: 'task', entityId: 't1', field: 'project_id', value: 'p1', ts: 1, device: 'alice-dev' },
+      { id: 'w3', entity: 'project', entityId: 'p1', field: 'name', value: 'Home', ts: 1, device: 'alice-dev' },
+    ])
+    // Offline edits: one to an existing task, one task created from scratch.
+    await mutate('task', 't1', { title: 'Oat milk' })
+    await mutate('task', 'local-only', { title: 'Viewer draft', project_id: 'p1' })
+    server((sentOps) => ({
+      rejected: sentOps.map((o) => ({ id: o.id, reason: 'forbidden' })),
+      // The server's winning op for the refused field travels in the same response.
+      ops: [{ id: 'w1', entity: 'task', entityId: 't1', field: 'title', value: 'Milk', ts: 1, device: 'alice-dev', seq: 3 }],
+      memberships: [membership('p1', 'viewer')],
+    }))
+    await syncNow()
+    expect(await db.outbox.count()).toBe(0)
+    const t1 = await db.tasks.get('t1')
+    expect(t1?.title).toBe('Milk')
+    expect(t1?._clock.title).toEqual({ ts: 1, device: 'alice-dev' })
+    // A task that only ever existed on this device is gone.
+    expect(await db.tasks.get('local-only')).toBeUndefined()
+    // One exchange, then the loop stops: nothing is retried.
+    expect(syncCalls).toHaveBeenCalledTimes(1)
+    // The user is told what was refused, naming the project and the tasks.
+    const notice = syncSnapshot().rejected
+    expect(notice?.count).toBe(3)
+    expect(notice?.projects).toEqual(['Home'])
+    expect(notice?.tasks).toContain('Oat milk')
+    dismissRejected()
+    expect(syncSnapshot().rejected).toBeNull()
   })
 })

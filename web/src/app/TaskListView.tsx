@@ -6,6 +6,7 @@ import { resolveLabels } from '../lib/labels'
 import { createSubtask, createTask, deleteTask, detachOccurrence, setTaskCompleted, setTaskParent, skipOccurrence, updateTask } from '../lib/ops'
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
 import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
+import { roleOf } from '../lib/sharing'
 import { flattenTree, type Tree } from '../lib/tree'
 import type { Label, Priority, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
@@ -55,13 +56,18 @@ function saveCollapsed(set: Set<string>) {
   }
 }
 
-export function TaskListView({ route }: { route: ListRoute }) {
+export function TaskListView({ route, userId }: { route: ListRoute; userId?: string }) {
   const today = todayISO()
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const currentProject = route.view === 'project' ? projectMap.get(route.id) : undefined
   const treeView = route.view === 'project' || route.view === 'inbox'
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
+  // Cached memberships (project-sharing): viewers get a read-only project, also offline.
+  const memberships = useLiveQuery(() => db.memberships.toArray(), [], [])
+  const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
+  const isReadOnly = useCallback((t: Task | undefined) => !!t && roleOf(t.project_id, memberMap) === 'viewer', [memberMap])
+  const projectReadOnly = route.view === 'project' && roleOf(route.id, memberMap) === 'viewer'
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const currentLabel = route.view === 'label' ? labelMap.get(route.id) : undefined
 
@@ -278,6 +284,9 @@ export function TaskListView({ route }: { route: ListRoute }) {
       if (typing || isGPending()) return
       const idx = rows.findIndex((r) => r.task.id === selectedId)
       const row = idx >= 0 ? rows[idx] : undefined
+      // A viewer may navigate and open tasks of a shared project, never change them.
+      if (row && isReadOnly(row.task) && ['a', 'Tab', 'c', 'L', '1', '2', '3', '4', 'Delete', 'Backspace'].includes(e.key)) return
+      if (e.key === 'q' && projectReadOnly) return
       switch (e.key) {
         case 'q':
           e.preventDefault()
@@ -388,7 +397,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent])
+  }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent, isReadOnly, projectReadOnly])
 
   useEffect(() => {
     if (!selectedId) return
@@ -419,7 +428,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
       <div className="min-w-0 flex-1 px-4 py-5 md:px-8">
         <div className="mx-auto max-w-3xl">
           {route.view === 'project' && currentProject ? (
-            <ProjectHeader project={currentProject} />
+            <ProjectHeader project={currentProject} userId={userId} />
           ) : (
             <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
               {currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
@@ -431,7 +440,14 @@ export function TaskListView({ route }: { route: ListRoute }) {
 
           {route.view !== 'completed' && (
             <div className="mb-3 border-b border-slate-200 pb-2 dark:border-slate-800">
-              <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} labels={labels} placeholder={placeholderFor(route, currentProject, currentLabel)} />
+              {projectReadOnly ? (
+                <>
+                  <input className="input" disabled aria-label="Quick add (read-only)" placeholder="You can view this project but not add tasks" />
+                  <p role="note" className="mt-1 text-xs text-slate-500">Read-only: you are a viewer of this shared project.</p>
+                </>
+              ) : (
+                <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} labels={labels} placeholder={placeholderFor(route, currentProject, currentLabel)} />
+              )}
             </div>
           )}
 
@@ -460,6 +476,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
                       breadcrumb={r.breadcrumb}
                       hasChildren={r.hasChildren}
                       collapsed={r.collapsed}
+                      readOnly={isReadOnly(r.task)}
                       onToggle={() => void toggleComplete(r.task.id, !r.task.completed_at)}
                       onToggleCollapse={treeView ? () => toggleCollapsed(r.task.id) : undefined}
                       onOpen={() => {
@@ -485,6 +502,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
           // Remount per task so the picker and drafts never show the previous task's data.
           key={openId}
           taskId={openId}
+          readOnly={isReadOnly(taskMap.get(openId))}
           projects={projects}
           labelMap={labelMap}
           onClose={() => setOpenId(null)}

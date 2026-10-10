@@ -44,7 +44,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 ## Why OpenTodo
 
 - **No subscription, no lock-in.** Free software under the AGPL. Nobody can paywall your task list or shut it down with the company.
-- **Local-first.** The app keeps a full copy of your data on every device and works entirely offline. The server only syncs, backs up and, later, shares.
+- **Local-first.** The app keeps a full copy of your data on every device and works entirely offline. The server only syncs, backs up and shares.
 - **Your data, one folder.** Everything lives in a single `/data` volume: one SQLite file. Back that up and you have backed up everything. Export to JSON any time from Settings, and import it (or a CSV, or another app's export) on any instance.
 - **Tiny footprint.** One container, one static binary, around 12 MB. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no build step at runtime.
 - **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts. The server only sends requests to webhook URLs you configure yourself and, for devices that enable notifications, end-to-end encrypted pushes to the push service their own browser chose (`OPENTODO_PUSH=off` turns that off). Sign-up is closed by default after the owner account is created; add people with single-use invitation links from **Settings → Members**.
@@ -62,6 +62,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Capture | Quick-add from any view, keyboard shortcut `q`; new tasks in Today get today's date, in a project get that project. Natural language in six languages, offline: `Call Sarah next Wed 3pm #work @call p1 +30m` sets the date, time, project, label, priority and estimate, with dismissible preview chips; see [docs/quick-add.md](docs/quick-add.md) |
 | Share capture | Send pages to OpenTodo from the phone or desktop share sheet (installed app), a bookmarklet in Settings → Capture, or the browser extension in `extension/` (Chromium and Firefox): a capture screen prefilled with title, selected text and link, Enter to save into the Inbox or a project. Works offline, holds no token, see [docs/capture.md](docs/capture.md) |
 | Organise | Projects with colours, Inbox, Today, Upcoming (grouped by day), Completed |
+| Sharing | Share a project with other accounts on your server as viewer, editor or admin (`Shift+S` in a project): members edit offline and converge like your own devices, viewers see it read-only, admins and the owner manage members, ownership can be transferred, and leaving or being removed takes the project off every device. Roles are enforced by the server on sync and REST. See [docs/api.md](docs/api.md#sharing) and [docs/sync.md](docs/sync.md#sharing-scopes) |
 | Labels | Cross-project labels with colours: `L` on a task opens a type-ahead picker that creates on Enter, chips on every row, a Labels group in the sidebar with live counts, one view per label grouped by project, rename / recolour / reorder / delete / merge duplicates |
 | Filters | One-line queries such as `@work & due <= tomorrow & p1`: labels, projects (`##` includes sub-projects), priority, due and created dates, keywords like `overdue` or `no date`, text search, combined with `&`, `\|`, `!` and parentheses. Evaluated on the device, so results are live and work offline; `g` `f` opens the view, ↑ / ↓ recall recent queries. See [docs/filters.md](docs/filters.md) |
 | Saved views | Save a filter with `s` as a named view that syncs: pinned to the sidebar with live counts, grouping (project, due date, priority, label) and sort options, editable query, `g` `v` overview, a start view per device, and dashboards of up to six views side by side. REST `/api/v1/views`. See [docs/filters.md](docs/filters.md#saving-views) |
@@ -83,7 +84,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): sharing and comments, CalDAV, OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): assignees and comments, CalDAV, OIDC, optional end-to-end encryption.
 
 ## Quick start
 

@@ -214,6 +214,18 @@ func (s *Service) UserBySession(ctx context.Context, secret string) (*User, erro
 // removed with it when it is revoked.
 func SessionHash(secret string) string { return hashToken(secret) }
 
+// UserByEmail looks an account up by its exact email (case-insensitive), or
+// returns ErrNotFound. Used to add project members; there is no listing route.
+func (s *Service) UserByEmail(ctx context.Context, email string) (*User, error) {
+	var u User
+	err := s.db.QueryRowContext(ctx, `SELECT id,email,name,role,created_at FROM users WHERE email = ?`,
+		strings.TrimSpace(email)).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	return &u, err
+}
+
 // DeleteSession revokes a session.
 func (s *Service) DeleteSession(ctx context.Context, secret string) error {
 	_, err := s.db.ExecContext(ctx, "DELETE FROM sessions WHERE token_hash = ?", hashToken(secret))

@@ -19,8 +19,10 @@ const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 4, label: 'P4', cls: 'text-slate-500 border-slate-400' },
 ]
 
-export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onToggleComplete }: {
+export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onToggleComplete, readOnly = false }: {
   taskId: string
+  /** Viewer of the task's shared project: every control is disabled. */
+  readOnly?: boolean
   projects: Project[]
   labelMap: Map<string, Label>
   onClose: () => void
@@ -70,6 +72,11 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
   const commitDescription = () => {
     if (description !== task.description) void updateTask(task.id, { description })
   }
+  // A move into another sharing scope creates a copy (project-sharing); follow it.
+  const moveTo = async (projectId: string | null) => {
+    const id = await updateTask(task.id, { project_id: projectId })
+    if (id !== task.id) onOpen?.(id)
+  }
   const toggle = (t: Task) => (onToggleComplete ? onToggleComplete(t) : void setTaskCompleted(t.id, !t.completed_at))
   const changeParent = async (value: string) => {
     setParentError(null)
@@ -83,7 +90,7 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
   return (
     <aside className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950 md:static md:shadow-none">
       <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-2 dark:border-slate-800">
-        <button className="btn-ghost text-xs" onClick={() => toggle(task)}>
+        <button className="btn-ghost text-xs" onClick={() => toggle(task)} disabled={readOnly}>
           {task.completed_at ? '↶ Reopen' : '✓ Complete'}
         </button>
         {progress.total > 0 && (
@@ -92,10 +99,15 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
           </span>
         )}
         <div className="flex-1" />
-        <button className="btn-danger text-xs" onClick={() => { void deleteTask(task.id); onClose() }}>Delete</button>
+        <button className="btn-danger text-xs" onClick={() => { void deleteTask(task.id); onClose() }} disabled={readOnly}>Delete</button>
         <button className="btn-ghost" onClick={onClose} aria-label="Close">✕</button>
       </div>
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      {readOnly && (
+        <p role="note" className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900">
+          Read-only: you are a viewer of this shared project.
+        </p>
+      )}
+      <fieldset disabled={readOnly} className="min-w-0 flex-1 space-y-4 overflow-y-auto p-4">
         {parent && (
           <button type="button" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(parent.id)} title="Open parent task">
             ↳ {parent.title || 'Untitled'}
@@ -125,7 +137,7 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
         />
 
         <Field label="Project">
-          <select className="input" aria-label="Project" value={task.project_id ?? ''} onChange={(e) => void updateTask(task.id, { project_id: e.target.value || null })}>
+          <select className="input" aria-label="Project" value={task.project_id ?? ''} onChange={(e) => void moveTo(e.target.value || null)}>
             <option value="">Inbox</option>
             {projectOptions.map((n) => (
               <option key={n.id} value={n.id}>{'  '.repeat(n.depth)}{n.item.name}</option>
@@ -214,7 +226,7 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
           Created {new Date(task.created_at).toLocaleString()}
           {task.completed_at && <> · Completed {new Date(task.completed_at).toLocaleString()}</>}
         </p>
-      </div>
+      </fieldset>
     </aside>
   )
 }

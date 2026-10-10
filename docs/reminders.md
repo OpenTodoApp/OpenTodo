@@ -5,11 +5,15 @@ A task can carry any number of reminders (OpenSpec change `reminders`). Open a t
 - **Relative** reminders fire a number of minutes before or after the task's due time ("30 minutes before"). A task with a date but no time counts as due at 09:00. When the due date or time changes, on any device or through the API, the reminder moves with it; recurring tasks carry their relative reminders to the next occurrence. Without a due date a relative reminder is kept but does not fire.
 - **Absolute** reminders fire at a moment you pick and never move with the due date. They work on undated tasks and are shown in each device's local time.
 
+## Shared projects
+
+Reminders are personal. On a task in a shared project your reminders are yours alone: other members never see or receive them, and you can add them with any role, viewer included. When someone else moves the task, your relative reminders follow as soon as one of your devices syncs.
+
 ## Delivery
 
 **In the app.** While the app is open, a reminder whose time has come appears as a notification in the corner with **Snooze 10 min**, **1 hour**, **Tomorrow 09:00** and **Dismiss** (focus moves to it; <kbd>Esc</kbd> dismisses). This needs no network and no permission, and is skipped for completed or deleted tasks. When the tab is in the background and the browser allows notifications, a system notification is shown instead.
 
-**Web push.** In **Settings → Notifications** each device can enable push so reminders arrive while the app is closed. Enabling asks for the browser permission and registers the device with the server; disabling or signing out removes it. The server checks for due reminders every 30 seconds and sends each one once per firing time to every enabled device of the task's owner, then records the delivery on the reminder (an op by device `server`) so all devices know it fired. System notifications offer **Snooze 10 min** and **Dismiss**; these work offline and are uploaded on the next sync. If the app is focused when a push arrives, the reminder is shown in the app only.
+**Web push.** In **Settings → Notifications** each device can enable push so reminders arrive while the app is closed. Enabling asks for the browser permission and registers the device with the server; disabling or signing out removes it. The server checks for due reminders every 30 seconds and sends each one once per firing time to every enabled device of the reminder's owner (reminders are personal), then records the delivery on the reminder (an op by device `server`) so all devices know it fired. System notifications offer **Snooze 10 min** and **Dismiss**; these work offline and are uploaded on the next sync. If the app is focused when a push arrives, the reminder is shown in the app only.
 
 **Privacy.** A push payload carries only the reminder id, the task id and the firing time, encrypted end to end (RFC 8291) so the push service cannot read it. The device shows the title from its own copy of the task. Enable **Include task titles** if a device should be able to show the title before it has synced the task; the description is never sent.
 

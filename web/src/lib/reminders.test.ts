@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { applyOps, completeTask, createTask, resetDeviceId, setRecurrence, skipOccurrence, updateTask } from './ops'
 import { dueInstant, isDelivered, isDismissed, offsetLabel, relativeFireAt, snoozeUntil } from './reminderTime'
-import { addReminder, deleteReminder, dismissReminder, snoozeReminder, updateReminder } from './reminders'
+import { addReminder, deleteReminder, dismissReminder, followSharedDueChanges, snoozeReminder, updateReminder } from './reminders'
 import type { Op } from './types'
 
 let n = 0
@@ -194,5 +194,28 @@ describe('relative reminders follow the due time', () => {
     expect((await db.reminders.get(abs))?.fire_at).toBe(local('2026-10-12', '08:00'))
     await skipOccurrence(t, { today: '2026-10-12' })
     expect((await db.reminders.get(rel))?.fire_at).toBe(local('2026-10-14', '09:15'))
+  })
+})
+
+describe('personal reminders on shared tasks', () => {
+  it("another member's due change moves my relative reminders on a shared task only", async () => {
+    await db.memberships.put({ projectId: 'shared', role: 'editor', ownerId: 'u-owner', members: [] })
+    const shared = await createTask({ title: 'shared', project_id: 'shared', due: { date: '2026-10-11', time: '10:00' } })
+    const own = await createTask({ title: 'own', project_id: 'mine', due: { date: '2026-10-11', time: '10:00' } })
+    const r1 = await addReminder(shared, { kind: 'relative', offset_minutes: -30 })
+    const r2 = await addReminder(own, { kind: 'relative', offset_minutes: -30 })
+    const ts = Date.now() + 10_000
+    const remote: Op[] = [
+      { id: 'm1', entity: 'task', entityId: shared, field: 'due', value: { date: '2026-10-12', time: '15:00' }, ts, device: 'other-member' },
+      { id: 'm2', entity: 'task', entityId: own, field: 'due', value: { date: '2026-10-12', time: '15:00' }, ts, device: 'my-other-device' },
+    ]
+    await applyOps(remote)
+    await db.outbox.clear()
+    expect(await followSharedDueChanges(remote)).toBe(1)
+    expect((await db.reminders.get(r1))?.fire_at).toBe(local('2026-10-12', '14:30'))
+    // A personal task's reminders are written by the device that moved it, in the same batch.
+    expect((await db.reminders.get(r2))?.fire_at).toBe(local('2026-10-11', '09:30'))
+    expect((await db.outbox.toArray()).every((o) => o.entity === 'reminder' && o.entityId === r1)).toBe(true)
+    expect(await followSharedDueChanges(remote)).toBe(0) // idempotent
   })
 })

@@ -3,9 +3,9 @@
 // last-writer-wins like tasks. Relative reminders are kept in step with their
 // task's due time by mutateMany (see reminderFollowUps in ops.ts).
 import { db } from './db'
-import { mutate } from './ops'
+import { mutate, mutateMany, type Change } from './ops'
 import { relativeFireAt, snoozeUntil, type SnoozeChoice } from './reminderTime'
-import type { Reminder } from './types'
+import type { Op, Reminder } from './types'
 
 export type ReminderInput =
   | { kind: 'relative'; offset_minutes: number }
@@ -87,4 +87,32 @@ export async function remindersOf(taskId: string): Promise<Reminder[]> {
 
 export function sortReminders(list: Reminder[]): Reminder[] {
   return [...list].sort((a, b) => (a.fire_at ?? Infinity) - (b.fire_at ?? Infinity) || a.created_at - b.created_at)
+}
+
+/**
+ * Reminders are personal (OpenSpec `reminders` with `project-sharing`): they live
+ * in their creator's personal scope, so when another member moves the due date of
+ * a task in a shared project, that member's device cannot rewrite our relative
+ * reminders. After pulling, this device recomputes them itself for every shared
+ * task whose due arrived in `ops`. Personal tasks are left alone: there the device
+ * that changed the due wrote the reminders in the same batch.
+ */
+export async function followSharedDueChanges(ops: Op[]): Promise<number> {
+  const taskIds = new Set(ops.filter((o) => o.entity === 'task' && o.field === 'due').map((o) => o.entityId))
+  if (taskIds.size === 0) return 0
+  const changes: Change[] = []
+  for (const id of taskIds) {
+    const task = await db.tasks.get(id)
+    if (!task || !task.project_id || task.deleted_at) continue
+    if (!(await db.memberships.get(task.project_id))) continue
+    const reminders = await db.reminders.where('task_id').equals(id).toArray()
+    for (const r of reminders) {
+      if (r.deleted_at || r.kind !== 'relative') continue
+      const fireAt = relativeFireAt(task.due, r.offset_minutes)
+      if (fireAt === r.fire_at) continue
+      changes.push({ entity: 'reminder', entityId: r.id, patch: { fire_at: fireAt, delivered_at: null, dismissed_at: null } })
+    }
+  }
+  if (changes.length) await mutateMany(changes)
+  return changes.length
 }

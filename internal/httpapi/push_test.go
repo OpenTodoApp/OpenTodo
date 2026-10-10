@@ -216,8 +216,8 @@ func TestRestDueChangeMovesRelativeReminders(t *testing.T) {
 	}
 	// The due op and the reminder op share a timestamp.
 	var dueTS, fireTS int64
-	_ = e.db.QueryRow(`SELECT ts FROM fields WHERE entity='task' AND field='due'`).Scan(&dueTS)
-	_ = e.db.QueryRow(`SELECT ts FROM fields WHERE entity='reminder' AND entity_id=? AND field='fire_at'`, rel["id"]).Scan(&fireTS)
+	_ = e.db.QueryRow(`SELECT ts FROM scope_fields WHERE entity='task' AND field='due'`).Scan(&dueTS)
+	_ = e.db.QueryRow(`SELECT ts FROM scope_fields WHERE entity='reminder' AND entity_id=? AND field='fire_at'`, rel["id"]).Scan(&fireTS)
 	if dueTS != fireTS {
 		t.Fatalf("due ts %d != fire_at ts %d", dueTS, fireTS)
 	}

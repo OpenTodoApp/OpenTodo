@@ -7,6 +7,8 @@ import { api, ApiError } from './api'
 import { db, entityTables, getMeta, setMeta } from './db'
 import { hlcObserveServerTime } from './hlc'
 import { applyOps, getDeviceId, onLocalMutation } from './ops'
+import { followSharedDueChanges } from './reminders'
+import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
 import type { Clock, Entity, Op, SyncState } from './types'
 
 const BATCH = 500
@@ -27,9 +29,11 @@ interface Snapshot {
   error: string | null
   /** True while the live update stream is connected; polling is the fallback otherwise. */
   live: boolean
+  /** Changes the server refused since the user last dismissed the notice (project-sharing). */
+  rejected: RejectedNotice | null
 }
 
-let snapshot: Snapshot = { state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false }
+let snapshot: Snapshot = { state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false, rejected: null }
 const listeners = new Set<() => void>()
 let running = false
 let again = false
@@ -57,6 +61,22 @@ export function useSyncStatus(): Snapshot {
     () => snapshot,
     () => snapshot,
   )
+}
+
+/** The current sync status outside React (tests, one-off reads). */
+export function syncSnapshot(): Snapshot {
+  return snapshot
+}
+
+/** Hide the "changes were not accepted" notice. */
+export function dismissRejected(): void {
+  publish({ rejected: null })
+}
+
+function addRejected(n: RejectedNotice): void {
+  const prev = snapshot.rejected
+  const merge = (a: string[], b: string[]) => [...new Set([...a, ...b])]
+  publish({ rejected: prev ? { count: prev.count + n.count, projects: merge(prev.projects, n.projects), tasks: merge(prev.tasks, n.tasks) } : n })
 }
 
 export function requestSync(delay = 250): void {
@@ -97,12 +117,21 @@ async function runOnce(): Promise<void> {
     for (;;) {
       const cursor = await getMeta<number>('cursor', 0)
       const batch = await db.outbox.orderBy('local').limit(BATCH).toArray()
-      const res = await api.sync(device, cursor, batch.map(({ local: _local, ...op }) => op), -new Date().getTimezoneOffset())
+      const sent = batch.map(({ local: _local, ...op }) => op)
+      const res = await api.sync(device, cursor, sent, -new Date().getTimezoneOffset())
       hlcObserveServerTime(res.serverTime)
       if (batch.length > 0) {
         await db.outbox.bulkDelete(batch.map((o) => o.local as number))
       }
+      // Refused ops (project-sharing): forget their local clocks so the server's
+      // values, which travel in res.ops, win; drop rows that only existed here.
+      const { keys, notice } = await forgetRejected(sent, res.rejected ?? [])
       await applyOps(res.ops)
+      await dropUnconfirmed(keys)
+      if (notice) addRejected(notice)
+      if (res.memberships) await storeMemberships(res.memberships)
+      // Reminders are personal: another member moving a shared task does not move ours.
+      await followSharedDueChanges(res.ops)
       if (await generationChanged(res.generation)) {
         // The server was restored from a backup: its log went back in time, so our
         // cursor means nothing there and it may lack edits we hold. Re-send every
@@ -346,5 +375,5 @@ export function stopSync(): void {
   clearLiveTimers()
   closeSource()
   attempts = 0
-  publish({ state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false })
+  publish({ state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false, rejected: null })
 }

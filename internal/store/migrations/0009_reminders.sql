@@ -26,4 +26,4 @@ CREATE INDEX IF NOT EXISTS push_subscriptions_user ON push_subscriptions(user_id
 CREATE INDEX IF NOT EXISTS push_subscriptions_session ON push_subscriptions(session_hash);
 
 -- The scheduler scans reminder.fire_at values; keep that scan off the task rows.
-CREATE INDEX IF NOT EXISTS fields_reminder_field ON fields(field, user_id, entity_id) WHERE entity = 'reminder';
+CREATE INDEX IF NOT EXISTS scope_fields_reminder ON scope_fields(field, scope_id, entity_id) WHERE entity = 'reminder';
