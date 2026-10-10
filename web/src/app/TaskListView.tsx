@@ -436,6 +436,11 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
         return
       }
       if (typing || isGPending()) return
+      if (['j', 'k', 'ArrowDown', 'ArrowUp'].includes(e.key) && (document.activeElement as HTMLElement | null)?.closest?.('nav[aria-label="Projects"]')) {
+        // Selecting tasks moves keyboard attention to the list: a sidebar project left
+        // focused by a click must not take the next Alt+Up/Down (manual-ordering).
+        (document.activeElement as HTMLElement).blur()
+      }
       const idx = rows.findIndex((r) => r.task.id === selectedId)
       const row = idx >= 0 ? rows[idx] : undefined
       // A viewer may navigate and open tasks of a shared project, never change them.
