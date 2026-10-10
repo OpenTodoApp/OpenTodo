@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/auth"
+	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/httpapi"
 	"github.com/pixari/opentodo/internal/store"
@@ -59,15 +60,33 @@ func run() error {
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	slog.SetDefault(log)
 
+	// Hold the data directory for the life of the process: a second server, or
+	// `opentodo restore`, refuses to touch it while we run.
+	unlock, err := store.Lock(cfg.DataDir)
+	if err != nil {
+		return fmt.Errorf("%s: %w", cfg.DataDir, err)
+	}
+	defer unlock()
+
 	db, err := store.Open(cfg.DataDir)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	authSvc := auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
 	syncSvc := opsync.NewService(db)
-	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version)
+	backups := backup.New(db, cfg.DataDir, backup.Options{Version: version, Log: log})
+	if seeded, err := backups.ApplyPreset(ctx, cfg.Backup); err != nil {
+		return err
+	} else if seeded {
+		log.Info("backup settings seeded from OPENTODO_BACKUP_* variables")
+	}
+	backups.Start(ctx)
+	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version, httpapi.WithBackups(backups))
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
@@ -82,9 +101,6 @@ func run() error {
 	// Close open live-update streams first so Shutdown is not held up by them and
 	// clients reconnect to the new process.
 	srv.RegisterOnShutdown(syncSvc.Notifier().CloseAll)
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	errCh := make(chan error, 1)
 	go func() {

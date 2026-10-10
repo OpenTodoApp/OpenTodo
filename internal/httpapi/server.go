@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/auth"
+	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/ids"
 	opsync "github.com/pixari/opentodo/internal/sync"
@@ -37,7 +38,16 @@ type Server struct {
 
 	clockMu sync.Mutex
 	lastTS  int64
+
+	// backups is nil when the server runs without the backup service (tests).
+	backups *backup.Service
 }
+
+// Option configures optional parts of the server.
+type Option func(*Server)
+
+// WithBackups enables the owner-only /api/v1/backups routes.
+func WithBackups(b *backup.Service) Option { return func(s *Server) { s.backups = b } }
 
 // opTS stamps REST-originated ops. They all carry device "server", so two writes
 // to one field within the same millisecond would tie under the winner rule and the
@@ -51,9 +61,12 @@ func (s *Server) opTS() int64 {
 }
 
 // New builds the router. web may be nil when only the API is wanted (tests).
-func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) http.Handler {
+func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string, opts ...Option) http.Handler {
 	s := &Server{cfg: cfg, auth: authSvc, sync: syncSvc, web: web, log: log, version: version,
 		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour)}
+	for _, o := range opts {
+		o(s)
+	}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", s.handleHealth)
@@ -73,6 +86,12 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/invitations", s.requireAuth(s.handleCreateInvitation))
 	mux.Handle("DELETE /api/v1/invitations/{id}", s.requireAuth(s.handleRevokeInvitation))
 	mux.HandleFunc("GET /api/v1/invitations/{token}", s.handlePreviewInvitation)
+	// Backups: owner only (OpenSpec `backups`); literal patterns win over {collection}.
+	mux.Handle("GET /api/v1/backups", s.requireAuth(s.handleBackupStatus))
+	mux.Handle("GET /api/v1/backups/settings", s.requireAuth(s.handleGetBackupSettings))
+	mux.Handle("PUT /api/v1/backups/settings", s.requireAuth(s.handlePutBackupSettings))
+	mux.Handle("POST /api/v1/backups/run", s.requireAuth(s.handleBackupRun))
+	mux.Handle("POST /api/v1/backups/test", s.requireAuth(s.handleBackupTest))
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
