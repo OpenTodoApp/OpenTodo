@@ -5,6 +5,7 @@ import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
+import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { SyncStatus } from './SyncStatus'
 
@@ -22,6 +23,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       const target = e.target as HTMLElement | null
       const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
       if (typing) return
+      // Pressing Shift on its own (for `g` then Shift+I) must not end the `g` sequence.
+      if (e.key === 'Shift') return
       if (e.key === 'g') {
         pendingG = true
         setTimeout(() => (pendingG = false), 800)
@@ -40,6 +43,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           navigate({ view: 'filter' })
         }
         if (e.key === 's') navigate({ view: 'settings' })
+        // `g i` is the Inbox, so Import is `g` then Shift+I.
+        if (e.key === 'I') navigate({ view: 'import' })
         return
       }
       if (e.key === '?') {
@@ -73,6 +78,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {route.view === 'settings' ? (
             <SettingsView user={user} onLogout={onLogout} />
+          ) : route.view === 'import' ? (
+            <ImportScreen />
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
           ) : route.view === 'filter' ? (
@@ -111,6 +118,7 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['L', 'Labels of selected task (type to find, Enter adds or creates)'],
     ['Delete', 'Delete selected task (and its subtasks)'],
     ['g then i / t / u / c / l / f / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Settings'],
+    ['g then Shift+I', 'Go to Settings → Import data'],
     ['Enter / Esc (in Filter)', 'Jump from the query to the first result / back to the query'],
     ['↑ / ↓ (in the filter query)', 'Recall recent queries on this device'],
     ['Enter (on an invitation)', 'Settings → Members: copy the invite link created in this session'],

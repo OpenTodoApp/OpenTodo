@@ -56,8 +56,12 @@ Preview is synchronous (bounded by the 20 MB / 50,000-row limits; CSV streamed, 
 ### D7. Data model impact
 No new op fields. New tables `import_jobs` and `import_items` (migration `0002_import.sql`), additive. Export is unchanged (jobs are operational metadata and not exported).
 
+Implementation note: the migration ships as `internal/store/migrations/0005_data_import.sql` (lower numbers were taken by sibling changes; the final number is assigned at merge time). Its statements use `IF NOT EXISTS`, and tests locate it by name rather than by number.
+
 ### D8. Dependencies and footprint
 No new Go dependency: `encoding/csv`, `encoding/json`, `mime/multipart`, `time` zones from the embedded `time/tzdata` (adds ~450 KB to the binary; needed because the distroless image has no zoneinfo). Image size effect: < 0.5 MB. Client: one settings screen, no new npm package; expected bundle growth under 8 KB gzipped.
+
+Measured (linux/amd64, `-s -w`): binary 12.44 MB → 13.13 MB (+0.69 MB, mostly the embedded time zone database), so the image grows by about 0.7 MB rather than the 0.5 MB estimated above. Client bundle +3.5 KB gzipped JS and +0.3 KB gzipped CSS. No new Go or npm dependency.
 
 ## Risks / Trade-offs
 

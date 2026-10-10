@@ -20,19 +20,28 @@ type Config struct {
 	AllowSignup bool
 	SessionTTL  time.Duration
 	LogLevel    slog.Level
+	// ImportMaxMB caps the size of an uploaded import file (OPENTODO_IMPORT_MAX_MB).
+	ImportMaxMB int
 	// WebhooksAllowPrivate presets the owner's "allow private network targets"
 	// webhook policy on first start only (nil when OPENTODO_WEBHOOKS_ALLOW_PRIVATE
 	// is unset). Afterwards the value set in Settings is authoritative.
 	WebhooksAllowPrivate *bool
 }
 
+// Import file size bounds for OPENTODO_IMPORT_MAX_MB.
+const (
+	DefaultImportMaxMB = 20
+	MaxImportMaxMB     = 200
+)
+
 // Load reads OPENTODO_* variables from the environment.
 func Load() (Config, error) {
 	c := Config{
-		Addr:       getenv("OPENTODO_ADDR", ":8080"),
-		DataDir:    getenv("OPENTODO_DATA_DIR", "./data"),
-		SessionTTL: 90 * 24 * time.Hour,
-		LogLevel:   slog.LevelInfo,
+		Addr:        getenv("OPENTODO_ADDR", ":8080"),
+		DataDir:     getenv("OPENTODO_DATA_DIR", "./data"),
+		SessionTTL:  90 * 24 * time.Hour,
+		LogLevel:    slog.LevelInfo,
+		ImportMaxMB: DefaultImportMaxMB,
 	}
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_BASE_URL")); v != "" {
 		u, err := url.Parse(v)
@@ -55,6 +64,13 @@ func Load() (Config, error) {
 		}
 		c.SessionTTL = time.Duration(d) * 24 * time.Hour
 	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_IMPORT_MAX_MB")); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 || n > MaxImportMaxMB {
+			return c, fmt.Errorf("OPENTODO_IMPORT_MAX_MB must be an integer from 1 to %d, got %q", MaxImportMaxMB, v)
+		}
+		c.ImportMaxMB = n
+	}
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_WEBHOOKS_ALLOW_PRIVATE")); v != "" {
 		b, err := strconv.ParseBool(v)
 		if err != nil {
@@ -75,6 +91,16 @@ func Load() (Config, error) {
 		return c, fmt.Errorf("OPENTODO_LOG_LEVEL must be debug, info, warn or error")
 	}
 	return c, nil
+}
+
+// ImportMaxBytes is the import file size limit in bytes; a zero value (a Config
+// built by hand, as in tests) means the default.
+func (c Config) ImportMaxBytes() int64 {
+	mb := c.ImportMaxMB
+	if mb <= 0 {
+		mb = DefaultImportMaxMB
+	}
+	return int64(mb) << 20
 }
 
 // SecureCookies reports whether session cookies must carry the Secure flag.

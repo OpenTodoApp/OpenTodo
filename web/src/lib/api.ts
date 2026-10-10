@@ -1,6 +1,7 @@
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  AuthStatus, Invitation, InvitationPreview, Op, Passkey, User, Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
+  AuthStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, Op, Passkey, User,
+  Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
 export class ApiError extends Error {
@@ -16,6 +17,19 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     body: body === undefined ? undefined : JSON.stringify(body),
     credentials: 'same-origin',
   })
+  return parse<T>(res)
+}
+
+/** Multipart upload for the import routes: the file plus the options as one JSON part. */
+async function upload<T>(path: string, file: Blob, filename: string, options: ImportOptions): Promise<T> {
+  const form = new FormData()
+  form.append('options', JSON.stringify(options))
+  form.append('file', file, filename)
+  const res = await fetch(path, { method: 'POST', body: form, credentials: 'same-origin' })
+  return parse<T>(res)
+}
+
+async function parse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
@@ -55,6 +69,15 @@ export const api = {
     request<{ invitation: Invitation; link: string }>('POST', '/api/v1/invitations', input),
   revokeInvitation: (id: string) => request<void>('DELETE', `/api/v1/invitations/${id}`),
   previewInvitation: (token: string) => request<InvitationPreview>('GET', `/api/v1/invitations/${encodeURIComponent(token)}`),
+
+  // Import runs on the server (docs/import.md): preview is a dry run, start returns a running job.
+  previewImport: (file: Blob, filename: string, options: ImportOptions) =>
+    upload<ImportPreview>('/api/v1/import/preview', file, filename, options),
+  startImport: (file: Blob, filename: string, options: ImportOptions) =>
+    upload<{ job: ImportJob }>('/api/v1/import', file, filename, options),
+  listImportJobs: () => request<{ jobs: ImportJob[] }>('GET', '/api/v1/import/jobs'),
+  getImportJob: (id: string) => request<{ job: ImportJob }>('GET', `/api/v1/import/jobs/${encodeURIComponent(id)}`),
+  undoImport: (id: string) => request<{ job: ImportJob }>('POST', `/api/v1/import/jobs/${encodeURIComponent(id)}/undo`),
 
   // Webhooks (per user). The secret is returned once, in the create response.
   listWebhooks: () => request<{ webhooks: Webhook[]; events: WebhookEvent[] }>('GET', '/api/v1/webhooks'),
