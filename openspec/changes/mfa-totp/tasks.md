@@ -2,9 +2,9 @@
 
 ## 1. Server: one-time passwords and storage
 
-- [ ] 1.1 `internal/auth/totp.go`: secret generation, provisioning URI, code verification with one-step tolerance, constant-time compare, last-used-step replay guard; verify `TestTOTPVectors` (published test vectors) and `TestTOTPReplayRefused` with `go test ./...`
-- [ ] 1.2 Migrations for `mfa_totp`, `mfa_recovery_codes`, `trusted_devices`, `sessions.mfa_at`, `sessions.reauth_at`, and `settings` if absent; verify the store migration test reaches the new `user_version`
-- [ ] 1.3 Recovery codes: generate ten, hash, consume once, regenerate; verify `TestRecoveryCodesSingleUseAndRegenerate`
+- [x] 1.1 `internal/auth/totp.go`: secret generation, provisioning URI, code verification with one-step tolerance, constant-time compare, last-used-step replay guard; verify `TestTOTPVectors` (published test vectors) and `TestTOTPReplayRefused` with `go test ./...`
+- [x] 1.2 Migrations for `mfa_totp`, `mfa_recovery_codes`, `trusted_devices`, `sessions.mfa_at`, `sessions.reauth_at`, and `settings` if absent; verify the store migration test reaches the new `user_version`
+- [x] 1.3 Recovery codes: generate ten, hash, consume once, regenerate; verify `TestRecoveryCodesSingleUseAndRegenerate`
 
 ## 2. Server: sign-in, step-up, policy, routes
 

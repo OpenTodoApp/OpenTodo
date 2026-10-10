@@ -56,13 +56,23 @@ type Service struct {
 	// means passkeys are unavailable on this server.
 	rp         *webauthn.RelyingParty
 	challenges *webauthn.Challenges
+
+	// mfaChallenges holds the second sign-in step's challenges (mfa.go); clock
+	// is the time source of the second-factor code, replaceable by tests.
+	mfaChallenges *loginChallenges
+	clock         func() time.Time
 }
 
 // NewService wires a Service. It owns the audit recorder for the same database,
 // so every state change it makes is recorded in the same transaction.
 func NewService(db *sql.DB, sessionTTL time.Duration, allowSignup bool) *Service {
-	return &Service{db: db, sessionTTL: sessionTTL, allowSignup: allowSignup, audit: audit.New(db, nil)}
+	return &Service{db: db, sessionTTL: sessionTTL, allowSignup: allowSignup, audit: audit.New(db, nil),
+		mfaChallenges: newLoginChallenges(), clock: time.Now}
 }
+
+// SetClock replaces the time source of second-factor checks and session
+// freshness (tests only).
+func (s *Service) SetClock(now func() time.Time) { s.clock = now }
 
 // Audit returns the recorder used by the service, for the HTTP layer's
 // observations (sign-in, sign-out, export), the audit routes and the pruner.
@@ -188,13 +198,9 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (*Us
 }
 
 // CreateSession issues a browser session and returns the opaque cookie value.
+// The session counts as freshly authenticated; see CreateSessionMFA.
 func (s *Service) CreateSession(ctx context.Context, userID, userAgent string) (string, time.Time, error) {
-	secret := ids.Secret(32)
-	now := time.Now()
-	exp := now.Add(s.sessionTTL)
-	_, err := s.db.ExecContext(ctx, "INSERT INTO sessions(token_hash,user_id,created_at,expires_at,user_agent) VALUES(?,?,?,?,?)",
-		hashToken(secret), userID, now.UnixMilli(), exp.UnixMilli(), truncate(userAgent, 200))
-	return secret, exp, err
+	return s.CreateSessionMFA(ctx, userID, userAgent, false)
 }
 
 // UserBySession resolves a cookie value to a user, or ErrNotFound.

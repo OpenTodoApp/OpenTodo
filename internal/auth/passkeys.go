@@ -247,12 +247,28 @@ func (s *Service) BeginPasskeyLogin(ctx context.Context) (*LoginOptions, error) 
 // credentials and counter regressions all read as ErrInvalidCredentials; the
 // error is a *LoginFailure carrying the audit reason.
 func (s *Service) FinishPasskeyLogin(ctx context.Context, credentialID []byte, resp webauthn.AssertionResponse) (*User, error) {
+	u, _, err := s.FinishPasskeyLoginVerified(ctx, credentialID, resp)
+	return u, err
+}
+
+// FinishPasskeyLoginVerified is FinishPasskeyLogin that also reports whether
+// the authenticator performed user verification (biometric or PIN). A verified
+// assertion is two factors and satisfies the second factor (mfa-totp D5).
+func (s *Service) FinishPasskeyLoginVerified(ctx context.Context, credentialID []byte, resp webauthn.AssertionResponse) (*User, bool, error) {
+	u, res, err := s.finishPasskeyLogin(ctx, credentialID, resp)
+	if err != nil {
+		return nil, false, err
+	}
+	return u, res.UserVerified, nil
+}
+
+func (s *Service) finishPasskeyLogin(ctx context.Context, credentialID []byte, resp webauthn.AssertionResponse) (*User, *webauthn.AssertionResult, error) {
 	if s.rp == nil {
-		return nil, ErrPasskeysUnavailable
+		return nil, nil, ErrPasskeysUnavailable
 	}
 	challenge, err := s.consumeChallenge(resp.ClientDataJSON, "")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var (
 		u         User
@@ -265,27 +281,27 @@ func (s *Service) FinishPasskeyLogin(ctx context.Context, credentialID []byte, r
 		FROM passkeys p JOIN users u ON u.id = p.user_id WHERE p.credential_id = ?`, credentialID).
 		Scan(&pkID, &publicKey, &alg, &count, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, &LoginFailure{Reason: audit.ReasonUnknownPasskey}
+		return nil, nil, &LoginFailure{Reason: audit.ReasonUnknownPasskey}
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	res, err := s.rp.VerifyAssertion(resp, challenge, publicKey, alg)
 	if err != nil {
-		return nil, &LoginFailure{UserID: u.ID, Email: u.Email, Reason: audit.ReasonPasskeyRejected}
+		return nil, nil, &LoginFailure{UserID: u.ID, Email: u.Email, Reason: audit.ReasonPasskeyRejected}
 	}
 	now := time.Now().UnixMilli()
 	// Counter regression means a cloned authenticator (design D7). Synced
 	// passkeys report zero and are exempt.
 	if count > 0 && int64(res.Counter) <= count {
 		_, _ = s.db.ExecContext(ctx, "UPDATE passkeys SET suspicious_at = ? WHERE id = ?", now, pkID)
-		return nil, &LoginFailure{UserID: u.ID, Email: u.Email, Reason: audit.ReasonPasskeyCounter}
+		return nil, nil, &LoginFailure{UserID: u.ID, Email: u.Email, Reason: audit.ReasonPasskeyCounter}
 	}
 	if _, err := s.db.ExecContext(ctx, "UPDATE passkeys SET sign_count = ?, last_used_at = ?, backed_up = ? WHERE id = ?",
 		int64(res.Counter), now, boolInt(res.BackedUp), pkID); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return &u, nil
+	return &u, res, nil
 }
 
 // consumeChallenge extracts the challenge from client data and burns it.
