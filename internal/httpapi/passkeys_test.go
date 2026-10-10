@@ -321,13 +321,28 @@ func TestPasskeyLoginRateLimit(t *testing.T) {
 	if last != http.StatusTooManyRequests {
 		t.Fatalf("expected 429 after repeated attempts, got %d", last)
 	}
-	// The options route shares the window.
-	resp, out := e.do("POST", "/api/v1/auth/passkey/options", map[string]any{})
+	// Passkey attempts share the window with password sign-in.
+	resp, out := e.do("POST", "/api/v1/auth/login", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
 	if resp.StatusCode != http.StatusTooManyRequests || errCode(out) != "rate_limited" {
-		t.Fatalf("options after limit = %d %v", resp.StatusCode, out)
+		t.Fatalf("password login after passkey attempts = %d %v", resp.StatusCode, out)
 	}
-	// The anonymous routes also enforce Origin.
+
+	// Challenge requests are limited too, in their own window, so the sign-in
+	// screen's autofill request never uses up password attempts.
 	fresh := newEnvWithBase(t, testBase, false)
-	resp, out = fresh.do("POST", "/api/v1/auth/passkey/options", map[string]any{}, "Origin", "https://evil.example")
-	fresh.mustStatus(resp, 403, out)
+	for i := 0; i < 10; i++ {
+		resp, out := fresh.do("POST", "/api/v1/auth/passkey/options", map[string]any{})
+		fresh.mustStatus(resp, 200, out)
+	}
+	resp, out = fresh.do("POST", "/api/v1/auth/passkey/options", map[string]any{})
+	if resp.StatusCode != http.StatusTooManyRequests || errCode(out) != "rate_limited" {
+		t.Fatalf("11th options request = %d %v", resp.StatusCode, out)
+	}
+	resp, out = fresh.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	fresh.mustStatus(resp, 201, out)
+
+	// The anonymous routes also enforce Origin.
+	other := newEnvWithBase(t, testBase, false)
+	resp, out = other.do("POST", "/api/v1/auth/passkey/options", map[string]any{}, "Origin", "https://evil.example")
+	other.mustStatus(resp, 403, out)
 }

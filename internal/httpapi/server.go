@@ -31,11 +31,15 @@ type Server struct {
 	log     *slog.Logger
 	version string
 	limiter *rateLimiter
+	// passkeyOptions limits anonymous passkey challenge requests separately, so
+	// the sign-in screen's autofill request does not use up password attempts.
+	passkeyOptions *rateLimiter
 }
 
 // New builds the router. web may be nil when only the API is wanted (tests).
 func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web http.Handler, log *slog.Logger, version string) http.Handler {
-	s := &Server{cfg: cfg, auth: authSvc, sync: syncSvc, web: web, log: log, version: version, limiter: newRateLimiter(10, time.Minute)}
+	s := &Server{cfg: cfg, auth: authSvc, sync: syncSvc, web: web, log: log, version: version, limiter: newRateLimiter(10, time.Minute),
+		passkeyOptions: newRateLimiter(10, time.Minute)}
 	// Passkeys need a relying party; it is derived from the base URL so the
 	// 409 guard in the handlers and the service always agree.
 	if cfg.PasskeysAvailable() && !authSvc.PasskeysAvailable() {
@@ -48,7 +52,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.HandleFunc("POST /api/v1/auth/register", s.handleRegister)
 	mux.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
 	mux.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
-	// Passwordless sign-in: anonymous by design, gated by the login limiter.
+	// Passwordless sign-in: anonymous by design. Finishing shares the login
+	// limiter; fetching a challenge has its own per-address limiter.
 	mux.HandleFunc("POST /api/v1/auth/passkey/options", s.handlePasskeyLoginOptions)
 	mux.HandleFunc("POST /api/v1/auth/passkey", s.handlePasskeyLogin)
 

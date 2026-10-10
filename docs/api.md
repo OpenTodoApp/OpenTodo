@@ -89,7 +89,7 @@ For sign-in, `response` carries `clientDataJSON`, `authenticatorData` and `signa
 | `bad_request` | 400 | a field is missing or is not base64url |
 | `invalid_credentials` | 401 | sign-in with an unknown or deleted passkey, a bad signature, or a signature counter that went backwards (the passkey is then marked `suspiciousAt`) |
 | `not_found` | 404 | rename or delete of a passkey id that is not yours |
-| `rate_limited` | 429 | more than 10 requests per minute per address across `auth/login`, `auth/register` and both `auth/passkey` routes |
+| `rate_limited` | 429 | more than 10 requests per minute per address to `auth/login`, `auth/register` and `auth/passkey` combined (one shared window), or more than 10 per minute to `auth/passkey/options` (its own window, so the sign-in screen's autofill request never uses up password attempts) |
 
 The anonymous `auth/passkey` routes apply the same `Origin` check as `auth/login`. A successful passkey sign-in sets the same `opentodo_session` cookie as a password sign-in. Bearer tokens can list, rename and delete passkeys, but a CLI cannot run a ceremony.
 
@@ -163,4 +163,4 @@ curl -sS "$OT/api/v1/export" -H "Authorization: Bearer $TOKEN" -o opentodo-expor
 - Every write through this API is recorded in the operation log with server time, so connected devices see it on their next sync (within 30 s, or immediately when they next edit or regain focus).
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
-- Rate limits apply to `auth/login`, `auth/register`, `auth/passkey/options` and `auth/passkey` (10 per minute per IP, one shared window).
+- Rate limits (10 per minute per IP): `auth/login`, `auth/register` and `auth/passkey` share one window; `auth/passkey/options` has its own.

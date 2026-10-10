@@ -166,10 +166,12 @@ func (s *Server) handleDeletePasskey(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// loginGate applies the same per-address limiter and Origin check as password
-// sign-in to the anonymous passkey routes.
-func (s *Server) loginGate(w http.ResponseWriter, r *http.Request) bool {
-	if !s.limiter.allow(clientIP(r)) {
+// loginGate applies a per-address limiter (10 per minute, like password
+// sign-in) and the Origin check to the anonymous passkey routes. A sign-in
+// attempt shares the password limiter; challenge requests, which the sign-in
+// screen makes on every visit for autofill, use their own window.
+func (s *Server) loginGate(w http.ResponseWriter, r *http.Request, limiter *rateLimiter) bool {
+	if !limiter.allow(clientIP(r)) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return false
 	}
@@ -181,7 +183,7 @@ func (s *Server) loginGate(w http.ResponseWriter, r *http.Request) bool {
 }
 
 func (s *Server) handlePasskeyLoginOptions(w http.ResponseWriter, r *http.Request) {
-	if !s.loginGate(w, r) {
+	if !s.loginGate(w, r, s.passkeyOptions) {
 		return
 	}
 	opts, err := s.auth.BeginPasskeyLogin(r.Context())
@@ -193,7 +195,7 @@ func (s *Server) handlePasskeyLoginOptions(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *Server) handlePasskeyLogin(w http.ResponseWriter, r *http.Request) {
-	if !s.loginGate(w, r) {
+	if !s.loginGate(w, r, s.limiter) {
 		return
 	}
 	var in struct {
