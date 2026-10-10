@@ -20,7 +20,7 @@
 
 - [x] 3.1 Routes `POST /api/v1/import/preview`, `POST /api/v1/import`, `GET /api/v1/import/jobs`, `GET /api/v1/import/jobs/{id}`, `POST /api/v1/import/jobs/{id}/undo` behind `requireAuth`, multipart upload, per-route body limit from `OPENTODO_IMPORT_MAX_MB`; verify `TestImportRoutesRequireAuth`, `TestImportTooLarge413`, `TestImportInvalidOptions400`, `TestUndoForeignJob404` (`go test ./...`)
 - [x] 3.2 `internal/config`: optional `OPENTODO_IMPORT_MAX_MB` (default 20, 1–200) with validation; verify `TestConfigImportMaxMB` and that an invalid value stops startup naming the variable (`go test ./...`)
-- [ ] 3.3 Document routes, payloads and the CSV contract in `docs/api.md` and new `docs/import.md` (columns, profiles, limits, undo, memory note); verify examples match handler routes by running them with curl against `./bin/opentodo`
+- [x] 3.3 Document routes, payloads and the CSV contract in `docs/api.md` and new `docs/import.md` (columns, profiles, limits, undo, memory note); verify examples match handler routes by running them with curl against `./bin/opentodo`
 
 ## 4. Web app
 

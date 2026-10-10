@@ -57,6 +57,11 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
 | GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`), including deleted items |
+| POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
+| POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
+| GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
+| GET | `/api/v1/import/jobs/{id}` | yes | `{job}` with status, counts and row errors |
+| POST | `/api/v1/import/jobs/{id}/undo` | yes | tombstone everything the job created → `{job}` (status `undone`); idempotent |
 
 ### Task fields
 
@@ -167,6 +172,54 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 
 Creates a `member` account and starts a session even when `OPENTODO_ALLOW_SIGNUP` is false. The invitation is spent in the same transaction, so it can create at most one account; a second use returns 404 `invitation_invalid`. Errors: 403 `invitation_email_mismatch` when the invitation is bound to another address, 409 `email_taken`, 400 `invalid_input` for the password policy. In every error case the invitation stays pending.
 
+### Import
+
+Import tasks and projects from the app's own export, CSV, or JSON exports of other task managers. Formats, the CSV columns, mapping rules and limits are documented in [import.md](import.md). Every imported field is written to the operation log with server time and the device id `import`, so devices receive imports like any other write.
+
+Uploads are `multipart/form-data` with a `file` part. Options go either in one `options` part holding JSON or in individual fields of the same names: `format`, `targetProject`, `timeZone`, `sections` (`label`|`ignore`), `duplicates` (`skip`|`import`), `errors` (`skip_rows`|`abort`), `existing` (`skip`|`overwrite`). The file may be at most `OPENTODO_IMPORT_MAX_MB` (default 20 MB) and 50,000 rows; these routes do not use the 4 MB JSON body limit.
+
+**Preview** — `POST /api/v1/import/preview` writes nothing and returns:
+
+```json
+{
+  "format": "csv",
+  "columns": { "recognised": ["title", "project", "priority"], "ignored": ["color"] },
+  "options": { "timeZone": "Europe/Rome", "sections": "label", "duplicates": "skip", "errors": "skip_rows", "existing": "skip" },
+  "totals": { "rows": 100, "create": 97, "update": 0, "skip": 0, "error": 3, "possibleDuplicates": 0,
+              "warnings": 1, "newProjects": 1, "newLabels": 2, "entities": 100, "written": 0, "ops": 0 },
+  "rows": [
+    { "row": 2, "sourceId": "…", "kind": "task", "title": "Write report", "project": "Work", "outcome": "create" },
+    { "row": 35, "kind": "task", "title": "Task 34", "outcome": "error", "reason": "invalid priority \"urgent!\" (expected 1-4 or p1-p4)" },
+    { "row": 40, "kind": "task", "title": "Call mom", "outcome": "skip", "reason": "possible_duplicate" },
+    { "row": 41, "kind": "task", "title": "Standup", "outcome": "create", "warnings": ["recurrence dropped (not supported)"] }
+  ],
+  "truncated": false
+}
+```
+
+`outcome` is `create`, `update`, `skip` (reason `exists`, `unchanged`, `deleted`, `already_imported` or `possible_duplicate`) or `error` (with `reason`). `row` is the line in a CSV file or the position in a JSON array; `version` is set for an own export. At most 5,000 rows are listed, those needing attention first (`truncated: true`); `totals` always counts every row.
+
+**Start** — `POST /api/v1/import` takes the same upload, re-checks it and returns 202:
+
+```json
+{ "job": { "id": "…", "format": "csv", "status": "running", "options": { … }, "totals": { … },
+           "errors": [{ "row": 35, "reason": "invalid priority \"urgent!\" (expected 1-4 or p1-p4)" }],
+           "createdAt": 1760000000000, "finishedAt": null, "undoneAt": null } }
+```
+
+**Status** — `GET /api/v1/import/jobs/{id}` returns `{job}`; `status` is `running`, `done`, `failed` (with `message`, e.g. the first bad row under `abort`, or a restart) or `undone`. `totals.written` and `totals.ops` grow while the job runs. `GET /api/v1/import/jobs` lists `{jobs}` with at most 20 errors each.
+
+**Undo** — `POST /api/v1/import/jobs/{id}/undo` soft-deletes every project, task and label the job created and returns the job with status `undone`. Calling it again is a no-op.
+
+Errors: 400 `invalid_input` (unknown option value, unknown time zone, a `targetProject` that is not yours; no job is created), 400 `unsupported_format` (names the supported formats), 400 `invalid_file` (recognised but unreadable), 400 `bad_request` (not multipart or no `file` part), 413 `too_large` (file or row limit), 409 `conflict` (another import or undo of yours is running), 404 `not_found` (unknown job or another account's job).
+
+```bash
+curl -sS "$OT/api/v1/import/preview" -H "Authorization: Bearer $TOKEN" -F file=@tasks.csv -F timeZone=Europe/Rome
+JOB=$(curl -sS "$OT/api/v1/import" -H "Authorization: Bearer $TOKEN" -F file=@tasks.csv -F timeZone=Europe/Rome | jq -r .job.id)
+curl -sS "$OT/api/v1/import/jobs/$JOB" -H "Authorization: Bearer $TOKEN" | jq .job.status
+curl -sS -X POST "$OT/api/v1/import/jobs/$JOB/undo" -H "Authorization: Bearer $TOKEN"
+```
+
 ## Examples
 
 Create a task due tomorrow at 9:00 in a project:
@@ -232,6 +285,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Every write through this API is recorded in the operation log with server time. Connected devices are woken over the event stream and sync within a second or two; devices without a live stream pick the change up on their next poll (within 30 s), or immediately when they next edit or regain focus.
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
+- Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB).
 - Rate limits apply to `auth/login`, `auth/register` and the invitation preview (10 per minute per IP), and to invitation creation (20 per hour per account).
 
 ### Error codes
@@ -245,6 +299,10 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
 | `invitation_invalid` | 404 | unknown, expired, revoked or already accepted invitation |
 | `invitation_spent` | 409 | revoking an accepted invitation |
+| `conflict` | 409 | starting or undoing an import while another import of yours runs |
+| `unsupported_format` | 400 | import file in no supported format |
+| `invalid_file` | 400 | import file recognised but unreadable |
+| `too_large` | 413 | import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
 | `email_taken` | 409 | registration with an existing email |
 | `invalid_input` | 400 | validation failure naming the field |
 | `rate_limited` | 429 | too many attempts in the window |
