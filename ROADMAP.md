@@ -34,7 +34,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | --- | --- | --- |
 | ✅ | Projects, Inbox, Today, Upcoming, Completed | `bootstrap-core-platform` |
 | ✅ | Nested projects (`parent_id` already reserved) | `project-hierarchy` |
-| 📝 | Sections and Kanban board view | `board-view` |
+| ✅ | Sections and Kanban board view | `board-view` |
 | ✅ | Subtask trees with parent progress (`parent_id` already reserved) | `subtask-trees` |
 | ✅ | Labels UI (schema shipped) | `labels` |
 | ✅ | Filter query language (`@work & due <= tomorrow & p1`) | `filter-query-language` |
