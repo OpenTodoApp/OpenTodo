@@ -16,14 +16,14 @@
 
 ## 3. UI (web/src/app)
 
-- [ ] 3.1 Nested rendering in `TaskListView.tsx` for project and Inbox views (indentation capped at level 3, per-device collapse, Left/Right on the selected row); verify browser flow matching the "Indented tree" scenario and collapse persistence after reload
-- [ ] 3.2 Flat rendering with parent breadcrumb in Today, Upcoming and Completed; verify browser flow matching the "Flat in Today" scenario
-- [ ] 3.3 Progress badge in `TaskRow.tsx` and detail panel; verify browser flow: completing a subtask on a second device updates "3/5" to "4/5" without reload
-- [ ] 3.4 Detail panel: subtask list, "Add subtask" input that stays focused, "Parent task" picker with exclusions; verify browser flow matching "Add from the detail panel" and "Picker excludes descendants"
-- [ ] 3.5 Keyboard: `a` adds a subtask to the selected task, Tab indents, Shift+Tab outdents, Enter accepts the "complete parent too" prompt; shortcuts do not fire while typing; verify browser flow matching the Tab, Shift+Tab and "Last subtask completed" scenarios
-- [ ] 3.6 Update `?` help; `npm run build` passes with bundle growth under 6 KB gzipped; verify by comparing `dist` sizes
+- [x] 3.1 Nested rendering in `TaskListView.tsx` for project and Inbox views (indentation capped at level 3, per-device collapse, Left/Right on the selected row); verify browser flow matching the "Indented tree" scenario and collapse persistence after reload
+- [x] 3.2 Flat rendering with parent breadcrumb in Today, Upcoming and Completed; verify browser flow matching the "Flat in Today" scenario
+- [x] 3.3 Progress badge in `TaskRow.tsx` and detail panel; verify browser flow: completing a subtask on a second device updates "3/5" to "4/5" without reload
+- [x] 3.4 Detail panel: subtask list, "Add subtask" input that stays focused, "Parent task" picker with exclusions; verify browser flow matching "Add from the detail panel" and "Picker excludes descendants"
+- [x] 3.5 Keyboard: `a` adds a subtask to the selected task, Tab indents, Shift+Tab outdents, Enter accepts the "complete parent too" prompt; shortcuts do not fire while typing; verify browser flow matching the Tab, Shift+Tab and "Last subtask completed" scenarios
+- [x] 3.6 Update `?` help; `npm run build` passes with bundle growth under 6 KB gzipped; verify by comparing `dist` sizes
 
 ## 4. Integration and docs
 
-- [ ] 4.1 Two-device browser run: build a three-level tree on A; on B offline re-parent and complete; on A offline delete a subtree; reconnect both; verify identical trees, no task nested in itself, deleted subtree absent from views and present in export
+- [x] 4.1 Two-device browser run: build a three-level tree on A; on B offline re-parent and complete; on A offline delete a subtree; reconnect both; verify identical trees, no task nested in itself, deleted subtree absent from views and present in export
 - [ ] 4.2 README feature list and CHANGELOG under Unreleased; verify `make check` passes

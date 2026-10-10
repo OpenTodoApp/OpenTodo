@@ -371,6 +371,8 @@ export function TaskListView({ route }: { route: ListRoute }) {
       </div>
       {openId && (
         <TaskDetail
+          // Remount per task so the picker and drafts never show the previous task's data.
+          key={openId}
           taskId={openId}
           projects={projects}
           onClose={() => setOpenId(null)}

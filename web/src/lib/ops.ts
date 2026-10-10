@@ -86,13 +86,27 @@ export function onLocalMutation(fn: Listener): () => void {
   return () => mutationListeners.delete(fn)
 }
 
-/** Record field changes for one entity: apply locally and enqueue for the server. */
-export async function mutate(entity: Entity, entityId: string, patch: Record<string, unknown>): Promise<void> {
+/** One entity's field changes inside a batch. */
+export interface Change {
+  entity: Entity
+  entityId: string
+  patch: Record<string, unknown>
+}
+
+/**
+ * Record field changes for several entities as one batch: applied locally in a
+ * single transaction (one render, no intermediate state) and enqueued together.
+ * Each field is still its own op, so sync semantics are unchanged.
+ */
+export async function mutateMany(changes: Change[]): Promise<void> {
   const device = await getDeviceId()
   const ts = hlcNow()
-  const ops: Op[] = Object.entries(patch).map(([field, value]) => ({
-    id: crypto.randomUUID(), entity, entityId, field, value, ts, device,
-  }))
+  const ops: Op[] = []
+  for (const { entity, entityId, patch } of changes) {
+    for (const [field, value] of Object.entries(patch)) {
+      ops.push({ id: crypto.randomUUID(), entity, entityId, field, value, ts, device })
+    }
+  }
   if (ops.length === 0) return
   await applyOps(ops)
   await db.transaction('rw', [db.outbox, db.meta], async () => {
@@ -100,6 +114,11 @@ export async function mutate(entity: Entity, entityId: string, patch: Record<str
     await db.meta.put({ key: 'hlc', value: ts })
   })
   for (const fn of mutationListeners) fn()
+}
+
+/** Record field changes for one entity: apply locally and enqueue for the server. */
+export async function mutate(entity: Entity, entityId: string, patch: Record<string, unknown>): Promise<void> {
+  await mutateMany([{ entity, entityId, patch }])
 }
 
 export async function createProject(input: { name: string; color?: string }): Promise<string> {
@@ -176,35 +195,41 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
         const parent = all.find((t) => t.id === task.parent_id)
         if (!parent || parent.project_id !== patch.project_id) next.parent_id = null
       }
-      await mutate('task', id, next)
+      const changes: Change[] = [{ entity: 'task', entityId: id, patch: next }]
       for (const d of descendants(id, all)) {
         const t = all.find((x) => x.id === d)
-        if (t && t.project_id !== patch.project_id) await mutate('task', d, { project_id: patch.project_id })
+        if (t && t.project_id !== patch.project_id) changes.push({ entity: 'task', entityId: d, patch: { project_id: patch.project_id } })
       }
+      await mutateMany(changes)
       return
     }
   }
   await mutate('task', id, patch)
 }
 
-/** Completing a parent completes every open descendant; reopening touches only the task. */
+/** Completing a parent completes every open descendant in one batch; reopening touches only the task. */
 export async function setTaskCompleted(id: string, completed: boolean): Promise<void> {
   const now = Date.now()
-  await mutate('task', id, { completed_at: completed ? now : null })
-  if (!completed) return
+  if (!completed) {
+    await mutate('task', id, { completed_at: null })
+    return
+  }
   const all = await liveTasks()
+  const changes: Change[] = [{ entity: 'task', entityId: id, patch: { completed_at: now } }]
   for (const d of descendants(id, all)) {
     const t = all.find((x) => x.id === d)
-    if (t && !t.completed_at) await mutate('task', d, { completed_at: now })
+    if (t && !t.completed_at) changes.push({ entity: 'task', entityId: d, patch: { completed_at: now } })
   }
+  await mutateMany(changes)
 }
 
-/** Deleting a task tombstones its whole subtree, one op per task. */
+/** Deleting a task tombstones its whole subtree, one op per task, in one batch. */
 export async function deleteTask(id: string): Promise<void> {
   const now = Date.now()
   const all = await liveTasks()
-  await mutate('task', id, { deleted_at: now })
-  for (const d of descendants(id, all)) await mutate('task', d, { deleted_at: now })
+  const changes: Change[] = [{ entity: 'task', entityId: id, patch: { deleted_at: now } }]
+  for (const d of descendants(id, all)) changes.push({ entity: 'task', entityId: d, patch: { deleted_at: now } })
+  await mutateMany(changes)
 }
 
 export async function updateProject(id: string, patch: Partial<Omit<Project, 'id' | '_clock'>>): Promise<void> {
