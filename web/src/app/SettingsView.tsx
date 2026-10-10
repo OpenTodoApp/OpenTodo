@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, ApiError } from '../lib/api'
+import { bookmarklet } from '../lib/share'
 import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
 import { MembersPanel } from './MembersPanel'
@@ -56,6 +57,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 
       {user.role === 'owner' && <MembersPanel />}
 
+      <CaptureSection />
+
       <section className="space-y-2">
         <h2 className="font-semibold">API tokens</h2>
         <p className="text-sm text-slate-500">
@@ -97,5 +100,58 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
         <a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">Source code</a>
       </section>
     </div>
+  )
+}
+
+/**
+ * Bookmarklet for this server (OpenSpec `share-capture`). The href is set through
+ * the DOM because React refuses `javascript:` URLs; clicking it here does nothing
+ * (the app's CSP would block it anyway), it is meant to be dragged to the bar.
+ */
+function CaptureSection() {
+  const code = bookmarklet(location.origin)
+  const linkRef = useRef<HTMLAnchorElement>(null)
+  const [copied, setCopied] = useState<'yes' | 'failed' | null>(null)
+  useEffect(() => {
+    linkRef.current?.setAttribute('href', code)
+  }, [code])
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopied('yes')
+    } catch {
+      setCopied('failed')
+    }
+  }
+
+  return (
+    <section className="space-y-2">
+      <h2 className="font-semibold">Capture</h2>
+      <p className="text-sm text-slate-500">
+        Drag this button to your bookmarks bar. On any page, click it to add the page, its title and the selected text to OpenTodo in a small window.
+        It holds no password or token; it uses your sign-in on this server. On a phone, install the app and use the share menu instead.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <a
+          ref={linkRef}
+          draggable
+          className="btn-primary cursor-grab"
+          title="Drag to your bookmarks bar"
+          onClick={(e) => e.preventDefault()}
+        >
+          Add to OpenTodo
+        </a>
+        <button className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={() => void copy()}>Copy bookmarklet</button>
+        {copied === 'yes' && <span className="text-xs text-emerald-700 dark:text-emerald-400">Copied. Create a bookmark and paste it as the address.</span>}
+      </div>
+      {copied === 'failed' && (
+        <label className="block text-xs text-slate-500">
+          Copy this code and paste it as a bookmark's address:
+          <textarea className="input mt-1 font-mono text-xs" readOnly rows={3} value={code} onFocus={(e) => e.currentTarget.select()} />
+        </label>
+      )}
+      <p className="text-xs text-slate-400">A browser extension for Chromium and Firefox is in the repository under <code>extension/</code>; see docs/capture.md.</p>
+    </section>
   )
 }

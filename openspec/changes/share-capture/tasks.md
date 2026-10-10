@@ -10,7 +10,7 @@
 
 ## 2. Bookmarklet
 
-- [ ] 2.1 Settings "Capture" section with a draggable bookmarklet link generated from `location.origin` and a copy button; verify the generated code opens a popup with url, title and selection on a test page and contains no token
+- [x] 2.1 Settings "Capture" section with a draggable bookmarklet link generated from `location.origin` and a copy button; verify the generated code opens a popup with url, title and selection on a test page and contains no token
 - [ ] 2.2 Popup lifecycle: the capture screen closes itself after save when opened as a popup; verify browser flow
 
 ## 3. Browser extension
