@@ -10,7 +10,7 @@ import { TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 
-type ListRoute = Exclude<Route, { view: 'settings' }>
+type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'invite' }>
 
 interface Group {
   key: string

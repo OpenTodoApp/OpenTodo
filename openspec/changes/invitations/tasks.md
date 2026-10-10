@@ -15,7 +15,7 @@
 
 ## 3. Web app: owner settings
 
-- [ ] 3.1 `web/src/lib/api.ts`: client functions for list, create, revoke and preview with typed responses; verify `npm test` passes new `api.invitations.test.ts` using a mocked fetch
+- [x] 3.1 `web/src/lib/api.ts`: client functions for list, create, revoke and preview with typed responses; verify `npm test` passes new `api.invitations.test.ts` using a mocked fetch
 - [ ] 3.2 `MembersPanel` in Settings, rendered for `role === "owner"` only: list with status badges, create form (email, expiry), one-time link display with copy, revoke with confirm, offline read-only state; verify in the browser that a member sees no panel, the link appears once, and disabling the network greys out the actions; `npm run build` passes
 - [ ] 3.3 Keyboard reachability of the panel (focusable rows, Enter copies, Delete revokes, documented in the `?` help); verify by completing create → copy → revoke without a mouse
 

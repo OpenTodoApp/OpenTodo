@@ -1,25 +1,32 @@
 import { type FormEvent, useState } from 'react'
 import { api, ApiError } from '../lib/api'
-import type { AuthStatus } from '../lib/types'
+import type { AuthStatus, InvitationPreview } from '../lib/types'
 
-export function AuthScreen({ status, onAuthenticated }: { status: AuthStatus; onAuthenticated: () => void }) {
-  const [mode, setMode] = useState<'login' | 'register'>(status.setupRequired ? 'register' : 'login')
-  const [email, setEmail] = useState('')
+/** When set, the screen is the acceptance form of an invitation (OpenSpec `invitations`). */
+export interface InviteContext {
+  token: string
+  preview: InvitationPreview
+}
+
+export function AuthScreen({ status, invite, onAuthenticated }: { status: AuthStatus; invite?: InviteContext; onAuthenticated: () => void }) {
+  const [mode, setMode] = useState<'login' | 'register'>(status.setupRequired || invite ? 'register' : 'login')
+  const [email, setEmail] = useState(invite?.preview.email ?? '')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const emailLocked = !!invite?.preview.email
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     setBusy(true)
     setError(null)
     try {
-      if (mode === 'register') await api.register(email, name, password)
+      if (mode === 'register') await api.register(email, name, password, invite?.token)
       else await api.login(email, password)
       onAuthenticated()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong. Is the server reachable?')
+      setError(describeAuthError(err))
     } finally {
       setBusy(false)
     }
@@ -36,9 +43,16 @@ export function AuthScreen({ status, onAuthenticated }: { status: AuthStatus; on
           </div>
         </div>
 
-        {status.setupRequired && (
+        {status.setupRequired && !invite && (
           <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
             Welcome! Create the owner account for this server. Only you can do this; sign-up closes afterwards unless you open it.
+          </p>
+        )}
+        {invite && (
+          <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+            <strong>{invite.preview.inviterName}</strong> invited you to join this server. Create your account below.
+            {invite.preview.email && <> This invitation is for <strong>{invite.preview.email}</strong>.</>}
+            <span className="mt-1 block text-xs opacity-80">The link expires {new Date(invite.preview.expiresAt).toLocaleString()} and works once.</span>
           </p>
         )}
 
@@ -46,31 +60,59 @@ export function AuthScreen({ status, onAuthenticated }: { status: AuthStatus; on
           {mode === 'register' && (
             <label className="block text-sm">
               <span className="mb-1 block text-slate-600 dark:text-slate-300">Name</span>
-              <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+              <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" autoFocus={emailLocked} />
             </label>
           )}
           <label className="block text-sm">
-            <span className="mb-1 block text-slate-600 dark:text-slate-300">Email</span>
-            <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" autoFocus />
+            <span className="mb-1 block text-slate-600 dark:text-slate-300">Email {emailLocked && <span className="text-slate-400">(set by the invitation)</span>}</span>
+            <input
+              className={`input ${emailLocked ? 'bg-slate-100 text-slate-500 dark:bg-slate-800' : ''}`}
+              type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email"
+              readOnly={emailLocked} aria-readonly={emailLocked} autoFocus={!emailLocked}
+            />
           </label>
           <label className="block text-sm">
             <span className="mb-1 block text-slate-600 dark:text-slate-300">Password {mode === 'register' && <span className="text-slate-400">(10+ characters)</span>}</span>
             <input className="input" type="password" required minLength={mode === 'register' ? 10 : 1} value={password} onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'} />
           </label>
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
           <button className="btn-primary w-full" disabled={busy}>
-            {busy ? 'Please wait…' : mode === 'register' ? (status.setupRequired ? 'Create owner account' : 'Create account') : 'Sign in'}
+            {busy ? 'Please wait…' : mode === 'register' ? (status.setupRequired ? 'Create owner account' : invite ? 'Accept invitation' : 'Create account') : 'Sign in'}
           </button>
         </form>
 
-        {!status.setupRequired && status.signupAllowed && (
+        {!status.setupRequired && status.signupAllowed && !invite && (
           <button className="btn-ghost mt-3 w-full" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
             {mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
           </button>
+        )}
+        {invite && (
+          <p className="mt-3 text-center text-xs text-slate-500">
+            Already have an account here? <a className="underline" href="/">Sign in</a> instead; invitations are for new accounts only.
+          </p>
         )}
         <p className="mt-6 text-center text-xs text-slate-400">OpenTodo {status.version} · AGPL-3.0 · no tracking, no telemetry</p>
       </div>
     </div>
   )
+}
+
+/** Turns an API failure into a sentence a person can act on. */
+export function describeAuthError(err: unknown): string {
+  if (!(err instanceof ApiError)) return 'Something went wrong. Is the server reachable?'
+  switch (err.code) {
+    case 'invitation_invalid':
+      return 'This invitation link is no longer valid. It may have expired, been revoked or already been used.'
+    case 'invitation_email_mismatch':
+      return 'This invitation was issued for a different email address.'
+    case 'email_taken':
+      return 'An account with this email already exists. Sign in instead.'
+    case 'rate_limited':
+      return 'Too many attempts. Wait a minute and try again.'
+    case 'signup_closed':
+      return 'Sign-up is closed on this server. Ask the owner for an invitation link.'
+    default:
+      return err.message
+  }
 }
