@@ -15,10 +15,10 @@
 
 ## 3. Client data layer
 
-- [ ] 3.1 `createView`, `updateView`, `deleteView`, `reorderView`, `setPinned`, `setPanels` (refuses dashboards as panels); verify `views.test.ts` CRUD and "dashboard cannot nest dashboard" (`npm test`)
-- [ ] 3.2 View runner: compile query via `filter-queries`, apply grouping (project, due, priority, label, none) and sort (due, priority, position, created, title; asc/desc; undated last); verify `views.test.ts` grouping headings order and sort cases (`npm test`)
-- [ ] 3.3 Pinned-view counts and dashboard panel results in one pass; verify `views.test.ts` counts match runner results (`npm test`)
-- [ ] 3.4 Start view preference in `meta` with fallback to Inbox when missing; verify `views.test.ts` fallback case (`npm test`)
+- [x] 3.1 `createView`, `updateView`, `deleteView`, `reorderView`, `setPinned`, `setPanels` (refuses dashboards as panels); verify `views.test.ts` CRUD and "dashboard cannot nest dashboard" (`npm test`)
+- [x] 3.2 View runner: compile query via `filter-queries`, apply grouping (project, due, priority, label, none) and sort (due, priority, position, created, title; asc/desc; undated last); verify `views.test.ts` grouping headings order and sort cases (`npm test`)
+- [x] 3.3 Pinned-view counts and dashboard panel results in one pass; verify `views.test.ts` counts match runner results (`npm test`)
+- [x] 3.4 Start view preference in `meta` with fallback to Inbox when missing; verify `views.test.ts` fallback case (`npm test`)
 
 ## 4. UI
 
