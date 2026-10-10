@@ -22,14 +22,14 @@
 
 ## 4. UI
 
-- [ ] 4.1 "Save view" in `FilterView.tsx` (button and `s` in results), name prompt, creates pinned view; verify browser flow matching "Save the current query"
-- [ ] 4.2 `SavedViewView.tsx`: editable query input, options in the header reachable by keyboard, results via the runner, parse error display; verify browser flow matching "Edit a saved query" and "Group by due date"
-- [ ] 4.3 Sidebar "Views" group with counts, reorder, unpin, rename, delete; `g v` overview listing all views; verify browser flow matching "Count and order" and "Unpin"
-- [ ] 4.4 `DashboardView.tsx`: responsive grid, up to six panels, add/remove/reorder, Tab/Shift+Tab between panels, placeholder for removed views; verify browser flow matching "Morning review dashboard" and "Panel view deleted"
-- [ ] 4.5 Start view setting in Settings and in each view's menu; applied on launch; notice on fallback; verify browser flow matching "Open on a saved view" on two devices
-- [ ] 4.6 Update `?` help; `npm run build` passes with bundle growth under 8 KB gzipped; verify by comparing `dist` sizes
+- [x] 4.1 "Save view" in `FilterView.tsx` (button and `s` in results), name prompt, creates pinned view; verify browser flow matching "Save the current query"
+- [x] 4.2 `SavedViewView.tsx`: editable query input, options in the header reachable by keyboard, results via the runner, parse error display; verify browser flow matching "Edit a saved query" and "Group by due date"
+- [x] 4.3 Sidebar "Views" group with counts, reorder, unpin, rename, delete; `g v` overview listing all views; verify browser flow matching "Count and order" and "Unpin"
+- [x] 4.4 `DashboardView.tsx`: responsive grid, up to six panels, add/remove/reorder, Tab/Shift+Tab between panels, placeholder for removed views; verify browser flow matching "Morning review dashboard" and "Panel view deleted"
+- [x] 4.5 Start view setting in Settings and in each view's menu; applied on launch; notice on fallback; verify browser flow matching "Open on a saved view" on two devices
+- [x] 4.6 Update `?` help; `npm run build` passes with bundle growth under 8 KB gzipped; verify by comparing `dist` sizes
 
 ## 5. Integration and docs
 
-- [ ] 5.1 Two-device browser run: save and pin a view on A offline, change its grouping on B offline, reconnect; verify both devices show the view with the newer options and identical counts
-- [ ] 5.2 Add a "Saving views" section to `docs/filters.md`, README feature list, CHANGELOG under Unreleased; verify `make check` passes
+- [x] 5.1 Two-device browser run: save and pin a view on A offline, change its grouping on B offline, reconnect; verify both devices show the view with the newer options and identical counts
+- [x] 5.2 Add a "Saving views" section to `docs/filters.md`, README feature list, CHANGELOG under Unreleased; verify `make check` passes

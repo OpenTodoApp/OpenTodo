@@ -120,10 +120,10 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
         )}
         {panels.length === 0 ? (
           <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700">
-            Add up to six saved views with “Add panel”. Save views from the Filter view (<span className="kbd">g</span> <span className="kbd">f</span>, then <span className="kbd">s</span>).
+            Add up to six saved views with “Add panel”.
           </p>
         ) : (
-          <div ref={gridRef} className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+          <div ref={gridRef} className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {panels.map((p, i) => (
               <Panel key={p.id} index={i} panel={p} selectedTask={selected?.panel === i ? selected.task : -1}
                 projectMap={projectMap} labelMap={labelMap}
@@ -131,9 +131,6 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
                 onOpenTask={(id) => setOpenId(id)} onRemove={() => run(() => removePanel(dashboard.id, p.id))} />
             ))}
           </div>
-        )}
-        {panels.length > 0 && (
-          <p className="mt-4 text-xs text-slate-400"><span className="kbd">Tab</span> / <span className="kbd">Shift+Tab</span> move between panels · <span className="kbd">j</span> / <span className="kbd">k</span> select a task · <span className="kbd">Enter</span> opens it (or the view) · <span className="kbd">o</span> opens the view</p>
         )}
       </div>
       {openId && (

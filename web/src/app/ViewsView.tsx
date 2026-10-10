@@ -86,15 +86,10 @@ export function ViewsView() {
       </div>
       <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Pinned to the sidebar</h2>
       <ul className="mb-5 space-y-0.5">{pinned.map(row)}</ul>
-      {pinned.length === 0 && <p className="mb-5 px-2 text-sm text-slate-400">No pinned views.</p>}
+      {pinned.length === 0 && <p className="mb-5 px-2 text-sm text-slate-400">None.</p>}
       <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Not pinned</h2>
       <ul className="space-y-0.5">{others.map(row)}</ul>
-      {others.length === 0 && <p className="px-2 text-sm text-slate-400">Every view is pinned.</p>}
-      {views.length === 0 && (
-        <p className="mt-6 rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700">
-          Run a query in the Filter view (<span className="kbd">g</span> <span className="kbd">f</span>) and press <span className="kbd">s</span> to save it as a view.
-        </p>
-      )}
+      {others.length === 0 && <p className="px-2 text-sm text-slate-400">None.</p>}
       {creating && (
         <NamePrompt title="New dashboard" label="Dashboard name" confirm="Create" hint="Add up to six saved views as panels."
           onCancel={() => setCreating(false)}

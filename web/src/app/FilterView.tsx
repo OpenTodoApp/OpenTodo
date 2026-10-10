@@ -4,18 +4,20 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
-import { compareDue, todayISO } from '../lib/dates'
+import { compareDue } from '../lib/dates'
 import { addFilterHistory, compile, getFilterHistory, parse, type Node } from '../lib/filter'
 import { resolveLabels } from '../lib/labels'
-import { deleteTask, setTaskCompleted, updateTask } from '../lib/ops'
+import { setTaskCompleted } from '../lib/ops'
 import { buildProjectTree } from '../lib/projects'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { createView } from '../lib/views'
 import { ancestors, flattenTree } from '../lib/tree'
-import type { Label, Priority, Project, Task } from '../lib/types'
+import type { Label, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
+import { useListKeys } from './useListKeys'
+import { useToday } from './useViews'
 import { TaskDetail } from './TaskDetail'
 import { TaskRow } from './TaskRow'
 
@@ -29,16 +31,6 @@ function tryParse(src: string): Parsed {
   } catch (e) {
     return { ok: false, error: (e as Error).message }
   }
-}
-
-/** The local calendar date, re-read every minute so "today" rolls over while the view is open. */
-function useToday(): string {
-  const [today, setToday] = useState(todayISO)
-  useEffect(() => {
-    const id = setInterval(() => setToday(todayISO()), 60_000)
-    return () => clearInterval(id)
-  }, [])
-  return today
 }
 
 interface Group {
@@ -162,75 +154,21 @@ export function FilterView() {
   }
 
   // ---- list keyboard navigation (only while focus is outside text fields) ----
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      const target = e.target as HTMLElement | null
-      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
-      if (typing) return
-      if (saving) return
-      if (e.key === 'Escape') {
-        if (pickerFor) setPickerFor(null)
-        else if (openId) setOpenId(null)
-        else {
-          setSelectedId(null)
-          inputRef.current?.focus()
-        }
-        return
-      }
-      const idx = rows.findIndex((t) => t.id === selectedId)
-      const row = idx >= 0 ? rows[idx] : undefined
-      switch (e.key) {
-        case 'j':
-        case 'ArrowDown':
-          e.preventDefault()
-          setSelectedId(rows[Math.min(rows.length - 1, idx + 1)]?.id ?? null)
-          break
-        case 'k':
-        case 'ArrowUp':
-          e.preventDefault()
-          setSelectedId(rows[Math.max(0, idx - 1)]?.id ?? null)
-          break
-        case 'Enter':
-          if (row) {
-            e.preventDefault()
-            setOpenId(row.id)
-          }
-          break
-        case 'c':
-          if (row) void setTaskCompleted(row.id, !row.completed_at)
-          break
-        case 's':
-          if (canSave) {
-            e.preventDefault()
-            setSaving(true)
-          }
-          break
-        case 'L':
-          if (row) {
-            e.preventDefault()
-            setPickerFor(row.id)
-          }
-          break
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-          if (row) void updateTask(row.id, { priority: Number(e.key) as Priority })
-          break
-        case 'Delete':
-        case 'Backspace':
-          if (row) {
-            e.preventDefault()
-            void deleteTask(row.id)
-            setSelectedId(rows[idx + 1]?.id ?? rows[idx - 1]?.id ?? null)
-          }
-          break
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [rows, selectedId, openId, pickerFor, saving, canSave])
+  const keyRows = useMemo(() => rows.map((t) => ({ key: t.id, task: t })), [rows])
+  useListKeys({
+    rows: keyRows, selected: selectedId, setSelected: setSelectedId, openId, setOpenId, pickerFor, setPickerFor,
+    paused: saving,
+    onIdleEscape: () => {
+      setSelectedId(null)
+      inputRef.current?.focus()
+    },
+    extra: (e) => {
+      if (e.key !== 's' || !canSave) return false
+      e.preventDefault()
+      setSaving(true)
+      return true
+    },
+  })
 
   useEffect(() => {
     if (selectedId) document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })

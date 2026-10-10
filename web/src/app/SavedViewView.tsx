@@ -4,16 +4,17 @@
 import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { parse } from '../lib/filter'
 import { resolveLabels } from '../lib/labels'
-import { deleteTask, setTaskCompleted, updateTask } from '../lib/ops'
+import { setTaskCompleted } from '../lib/ops'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
-import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type GroupBy, type Priority, type SortBy, type SortDir, type View } from '../lib/types'
+import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type GroupBy, type SortBy, type SortDir, type View } from '../lib/types'
 import { runView, setPinned, updateView, viewOptions } from '../lib/views'
 import { DashboardView } from './DashboardView'
 import { LabelPicker } from './LabelPicker'
 import { TaskDetail } from './TaskDetail'
 import { TaskRow } from './TaskRow'
 import { ViewMenu } from './ViewsView'
-import { isTyping, useViewData, type ViewData } from './useViews'
+import { useListKeys } from './useListKeys'
+import { useViewData, type ViewData } from './useViews'
 
 const GROUP_LABEL: Record<GroupBy, string> = { project: 'Project', due: 'Due date', priority: 'Priority', label: 'Label', none: 'None' }
 const SORT_LABEL: Record<SortBy, string> = { due: 'Due date', priority: 'Priority', position: 'Manual order', created: 'Created', title: 'Title' }
@@ -85,67 +86,16 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const [openId, setOpenId] = useState<string | null>(null)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e)) return
-      if (e.key === 'Escape') {
-        if (pickerFor) setPickerFor(null)
-        else if (openId) setOpenId(null)
-        else setSelected(null)
-        return
-      }
-      if (pickerFor || document.querySelector('[role="dialog"]')) return
-      const idx = rows.findIndex((r) => r.key === selected)
-      const row = idx >= 0 ? rows[idx].task : undefined
-      switch (e.key) {
-        case 'j':
-        case 'ArrowDown':
-          e.preventDefault()
-          setSelected(rows[Math.min(rows.length - 1, idx + 1)]?.key ?? null)
-          break
-        case 'k':
-        case 'ArrowUp':
-          e.preventDefault()
-          setSelected(rows[Math.max(0, idx - 1)]?.key ?? null)
-          break
-        case '/':
-          e.preventDefault()
-          inputRef.current?.focus()
-          break
-        case 'Enter':
-          if (row) {
-            e.preventDefault()
-            setOpenId(row.id)
-          }
-          break
-        case 'c':
-          if (row) void setTaskCompleted(row.id, !row.completed_at)
-          break
-        case 'L':
-          if (row) {
-            e.preventDefault()
-            setPickerFor(row.id)
-          }
-          break
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-          if (row) void updateTask(row.id, { priority: Number(e.key) as Priority })
-          break
-        case 'Delete':
-        case 'Backspace':
-          if (row) {
-            e.preventDefault()
-            void deleteTask(row.id)
-            setSelected(rows[idx + 1]?.key ?? rows[idx - 1]?.key ?? null)
-          }
-          break
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [rows, selected, openId, pickerFor])
+  useListKeys({
+    rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor,
+    onIdleEscape: () => setSelected(null),
+    extra: (e) => {
+      if (e.key !== '/') return false
+      e.preventDefault()
+      inputRef.current?.focus()
+      return true
+    },
+  })
 
   useEffect(() => {
     if (!selected) return

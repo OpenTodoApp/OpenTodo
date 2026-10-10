@@ -26,7 +26,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       if (start.kind === 'saved') navigate({ view: 'view', id: start.id }, { replace: true })
       else {
         if (start.view !== 'inbox') navigate({ view: start.view }, { replace: true })
-        if (start.removed) setNotice('Your start view was deleted, so OpenTodo opened the Inbox. Choose another start view in Settings or in a view\'s menu.')
+        if (start.removed) setNotice('Your start view was deleted, so the Inbox opened instead.')
       }
     })
     return () => {
