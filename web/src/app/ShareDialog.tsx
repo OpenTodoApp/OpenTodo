@@ -1,0 +1,134 @@
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { api, ApiError } from '../lib/api'
+import { canManage, grantableRoles } from '../lib/sharing'
+import { requestSync } from '../lib/sync'
+import type { Membership, Project, ProjectRole } from '../lib/types'
+
+const ROLE_HINT: Record<ProjectRole, string> = {
+  owner: 'Owner',
+  admin: 'Admin: edits tasks and the project, manages viewers and editors',
+  editor: 'Editor: adds, edits, completes and deletes tasks',
+  viewer: 'Viewer: reads only',
+}
+
+/**
+ * Share dialog (OpenSpec `project-sharing`): add a member by exact email with a
+ * role, change roles, remove members, leave, transfer ownership. Membership is
+ * server data, so every action is a REST call followed by a sync that refreshes
+ * the local cache on all devices. Fully keyboard operable: the email field has
+ * focus, Enter shares, Esc closes.
+ */
+export function ShareDialog({ project, userId, cached, onClose }: {
+  project: Project
+  userId: string
+  /** The locally cached membership, shown until the server answers (and offline). */
+  cached: Membership | undefined
+  onClose: () => void
+}) {
+  const [membership, setMembership] = useState<Membership | undefined>(cached)
+  const [email, setEmail] = useState('')
+  const myRole: ProjectRole = membership?.role ?? 'owner'
+  const roles = grantableRoles(myRole)
+  const [role, setRole] = useState<ProjectRole>('editor')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const emailRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    api.listMembers(project.id).then((m) => { if (!cancelled) setMembership(m) }, () => undefined)
+    return () => { cancelled = true }
+  }, [project.id])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  async function run(action: () => Promise<Membership | void>, after?: () => void) {
+    setError(null)
+    setBusy(true)
+    try {
+      const m = await action()
+      if (m) setMembership(m)
+      after?.()
+      requestSync(0)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'The server could not be reached; sharing needs a connection.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function share(e: FormEvent) {
+    e.preventDefault()
+    if (!email.trim()) return
+    void run(() => api.addMember(project.id, email.trim(), role), () => {
+      setEmail('')
+      emailRef.current?.focus()
+    })
+  }
+
+  const members = membership?.members ?? []
+  return (
+    <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/40 p-4 pt-20" onClick={onClose}>
+      <div role="dialog" aria-label={`Share ${project.name}`} className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
+        <h2 className="mb-3 text-base font-semibold">Share “{project.name}”</h2>
+        {roles.length > 0 && (
+          <form onSubmit={share} className="mb-4 flex flex-wrap gap-2">
+            <input ref={emailRef} autoFocus type="email" className="input min-w-0 flex-1" placeholder="Email of an account on this server"
+              aria-label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <select className="input w-auto" aria-label="Role" value={role} onChange={(e) => setRole(e.target.value as ProjectRole)}>
+              {roles.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <button className="btn-primary" disabled={busy || !email.trim()}>Share</button>
+          </form>
+        )}
+        {error && <p role="alert" className="mb-3 text-sm text-red-600">{error}</p>}
+        <ul aria-label="Members" className="space-y-1">
+          {members.map((m) => {
+            const self = m.userId === userId
+            const manage = !self && canManage(myRole, m.role)
+            return (
+              <li key={m.userId} className="flex items-center gap-2 rounded-md px-1 py-1 text-sm">
+                <span className="min-w-0 flex-1 truncate" title={m.email}>
+                  {m.name || m.email}{self ? ' (you)' : ''}
+                  <span className="block truncate text-xs text-slate-400">{m.email}</span>
+                </span>
+                {manage ? (
+                  <select className="input w-auto py-1 text-xs" aria-label={`Role of ${m.name || m.email}`} value={m.role} disabled={busy}
+                    onChange={(e) => void run(() => api.setMemberRole(project.id, m.userId, e.target.value as ProjectRole))}>
+                    {[...new Set([...grantableRoles(myRole), m.role])].map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                ) : (
+                  <span className="text-xs text-slate-500" title={ROLE_HINT[m.role]}>{m.role}</span>
+                )}
+                {manage && (
+                  <button className="btn-ghost px-2 py-0.5 text-xs" disabled={busy} aria-label={`Remove ${m.name || m.email}`}
+                    onClick={() => void run(async () => { await api.removeMember(project.id, m.userId); return api.listMembers(project.id) })}>Remove</button>
+                )}
+                {myRole === 'owner' && !self && (
+                  <button className="btn-ghost px-2 py-0.5 text-xs" disabled={busy} aria-label={`Make ${m.name || m.email} the owner`}
+                    onClick={() => { if (confirm(`Make ${m.name || m.email} the owner of "${project.name}"? You become an admin.`)) void run(() => api.transferProject(project.id, m.userId)) }}>
+                    Make owner
+                  </button>
+                )}
+                {self && m.role !== 'owner' && (
+                  <button className="btn-ghost px-2 py-0.5 text-xs" disabled={busy}
+                    onClick={() => { if (confirm(`Leave "${project.name}"? It disappears from your devices.`)) void run(() => api.removeMember(project.id, 'me'), onClose) }}>
+                    Leave
+                  </button>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+        <p className="mt-3 text-xs text-slate-400">Only people who already have an account on this server can be added. Labels stay personal.</p>
+        <button className="btn-ghost mt-3 w-full" onClick={onClose}>Close <span className="kbd ml-1">Esc</span></button>
+      </div>
+    </div>
+  )
+}

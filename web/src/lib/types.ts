@@ -385,3 +385,46 @@ export const VIEW_FIELDS = [
   'name', 'query', 'kind', 'group_by', 'sort_by', 'sort_dir', 'pinned', 'position', 'color', 'panels',
   'created_at', 'deleted_at',
 ] as const
+
+// ---- project sharing (OpenSpec `project-sharing`) ----
+
+/** A role on a shared project; an unshared project is implicitly the user's own ('owner'). */
+export type ProjectRole = 'owner' | 'admin' | 'editor' | 'viewer'
+export const MEMBER_ROLES: readonly Exclude<ProjectRole, 'owner'>[] = ['viewer', 'editor', 'admin']
+
+export interface ProjectMember {
+  userId: string
+  name: string
+  email: string
+  role: ProjectRole
+}
+
+/**
+ * The caller's view of one shared project, sent in every sync response and cached
+ * in the local `memberships` table so roles render the same offline. Authorization
+ * data owned by the server, never written through ops.
+ */
+export interface Membership {
+  projectId: string
+  role: ProjectRole
+  ownerId: string
+  members: ProjectMember[]
+}
+
+/** A pushed op the server refused (forbidden or scope_change); it was not stored. */
+export interface Rejection {
+  id: string
+  reason: string
+}
+
+/** POST /api/v1/sync response. Every field after `serverTime` is optional (older servers). */
+export interface SyncResponse {
+  applied: number
+  ops: Op[]
+  cursor: number
+  hasMore: boolean
+  serverTime: number
+  generation?: string
+  rejected?: Rejection[]
+  memberships?: Membership[]
+}

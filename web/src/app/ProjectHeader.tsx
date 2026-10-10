@@ -3,14 +3,21 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { archiveProject, deleteProject, moveProject, updateProject } from '../lib/ops'
 import { buildProjectTree, descendantIds } from '../lib/projects'
+import { canDeleteProject, canEditProject, canManageMembers } from '../lib/sharing'
 import { flattenTree } from '../lib/tree'
 import type { Project } from '../lib/types'
 import { navigate } from './router'
+import { ShareDialog } from './ShareDialog'
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b']
 
-export function ProjectHeader({ project }: { project: Project }) {
+export function ProjectHeader({ project, userId }: { project: Project; userId?: string }) {
   const [editing, setEditing] = useState(false)
+  const [sharing, setSharing] = useState(false)
+  // Cached membership (project-sharing): roles render the same offline.
+  const membership = useLiveQuery(() => db.memberships.get(project.id), [project.id])
+  const role = membership?.role ?? 'owner'
+  const editable = canEditProject(role)
   const [name, setName] = useState(project.name)
   const [moveError, setMoveError] = useState<string | null>(null)
   const menuRef = useRef<HTMLDetailsElement>(null)
@@ -27,19 +34,26 @@ export function ProjectHeader({ project }: { project: Project }) {
 
   useEffect(() => setMoveError(null), [project.id])
 
-  // `m` opens the menu on the Move picker, so a move is reachable without a mouse.
+  // `m` opens the menu on the Move picker, so a move is reachable without a mouse;
+  // Shift+S opens the share dialog (members, roles, leave, transfer).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key !== 'm' || e.metaKey || e.ctrlKey || e.altKey) return
+      if ((e.key !== 'm' && e.key !== 'S') || e.metaKey || e.ctrlKey || e.altKey) return
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
+      if (e.key === 'S') {
+        e.preventDefault()
+        setSharing(true)
+        return
+      }
+      if (!editable) return
       e.preventDefault()
       if (menuRef.current) menuRef.current.open = true
       moveRef.current?.focus()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [editable])
 
   async function save() {
     setEditing(false)
@@ -59,7 +73,10 @@ export function ProjectHeader({ project }: { project: Project }) {
 
   async function remove() {
     const subs = subCount ? ` Its ${subCount === 1 ? 'sub-project moves' : `${subCount} sub-projects move`} up one level.` : ''
-    if (!confirm(`Delete "${project.name}"? Its open tasks move to the Inbox.${subs}`)) return
+    const what = membership
+      ? `Delete "${project.name}" for every member? Copies of its open tasks go to your Inbox.${subs}`
+      : `Delete "${project.name}"? Its open tasks move to the Inbox.${subs}`
+    if (!confirm(what)) return
     await deleteProject(project.id)
     navigate({ view: 'inbox' })
   }
@@ -73,10 +90,28 @@ export function ProjectHeader({ project }: { project: Project }) {
         <input className="input max-w-xs text-lg font-semibold" autoFocus value={name} onChange={(e) => setName(e.target.value)}
           onBlur={() => void save()} onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { setName(project.name); setEditing(false) } }} />
       ) : (
-        <h1 className="cursor-text text-xl font-semibold" onClick={() => setEditing(true)} title="Click to rename">{project.name}</h1>
+        <h1 className={`text-xl font-semibold ${editable ? 'cursor-text' : ''}`} onClick={() => editable && setEditing(true)} title={editable ? 'Click to rename' : undefined}>{project.name}</h1>
       )}
+      {membership && (
+        <button className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300" onClick={() => setSharing(true)}
+          title={membership.members.map((m) => `${m.name || m.email} (${m.role})`).join('\n')} aria-label="Members">
+          <span className="flex -space-x-1">
+            {membership.members.slice(0, 4).map((m) => (
+              <span key={m.userId} className="flex h-5 w-5 items-center justify-center rounded-full border border-white bg-slate-200 text-[10px] font-semibold uppercase text-slate-600 dark:border-slate-900 dark:bg-slate-700 dark:text-slate-200">
+                {(m.name || m.email).slice(0, 1)}
+              </span>
+            ))}
+          </span>
+          <span>{membership.members.length} · {role}</span>
+        </button>
+      )}
+      {role === 'viewer' && <span role="note" className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800">Read-only</span>}
       <div className="flex-1" />
-      <details className="relative" ref={menuRef}>
+      <button className="btn-ghost text-xs" onClick={() => setSharing(true)} title="Share and manage members (Shift+S)">
+        {canManageMembers(role) ? 'Share' : 'Members'} <span className="kbd ml-1">S</span>
+      </button>
+      {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} onClose={() => setSharing(false)} />}
+      {editable && <details className="relative" ref={menuRef}>
         <summary className="btn-ghost cursor-pointer list-none text-xs">Project ⌄</summary>
         <div className="absolute right-0 z-10 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
           <p className="px-1 pb-1 text-xs text-slate-400">Color</p>
@@ -101,9 +136,9 @@ export function ProjectHeader({ project }: { project: Project }) {
             onClick={() => void archiveProject(project.id).then(() => navigate({ view: 'inbox' }))}>
             Archive{subCount ? ' (with sub-projects)' : ''}
           </button>
-          <button className="btn-danger w-full justify-start" onClick={() => void remove()}>Delete project</button>
+          {canDeleteProject(role) && <button className="btn-danger w-full justify-start" onClick={() => void remove()}>Delete project</button>}
         </div>
-      </details>
+      </details>}
     </div>
   )
 }

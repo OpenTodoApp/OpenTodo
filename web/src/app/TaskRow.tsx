@@ -21,7 +21,7 @@ const DUE_TONE = {
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
 export const MAX_INDENT = 3
 
-export function TaskRow({ task, project, labels = [], selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, onToggle, onOpen, onToggleCollapse }: {
+export function TaskRow({ task, project, labels = [], selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse }: {
   task: Task
   project?: Project
   /** Already resolved: unknown and deleted label ids are not in this list. */
@@ -34,6 +34,8 @@ export function TaskRow({ task, project, labels = [], selected, showProject, dep
   breadcrumb?: string | null
   hasChildren?: boolean
   collapsed?: boolean
+  /** Viewer of a shared project: the row can be opened but not completed. */
+  readOnly?: boolean
   onToggle: () => void
   onOpen: () => void
   onToggleCollapse?: () => void
@@ -67,6 +69,7 @@ export function TaskRow({ task, project, labels = [], selected, showProject, dep
         type="button"
         aria-label={done ? 'Reopen task' : 'Complete task'}
         onClick={onToggle}
+        disabled={readOnly}
         className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${PRIORITY_RING[task.priority]} ${done ? 'bg-slate-400 border-slate-400 text-white' : 'hover:bg-emerald-100'}`}
       >
         {done && <span className="text-xs leading-none">✓</span>}
