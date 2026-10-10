@@ -26,6 +26,10 @@ type Config struct {
 	// webhook policy on first start only (nil when OPENTODO_WEBHOOKS_ALLOW_PRIVATE
 	// is unset). Afterwards the value set in Settings is authoritative.
 	WebhooksAllowPrivate *bool
+	// MCP presets the owner's "AI assistants (MCP)" toggle on first start only
+	// (nil when OPENTODO_MCP is unset; OpenSpec `mcp-server`). Afterwards the
+	// value set in Settings is authoritative. The endpoint is off by default.
+	MCP *bool
 	// Backup holds the optional OPENTODO_BACKUP_* presets (see backup.go).
 	Backup BackupPreset
 	// PushDisabled turns web push off (OPENTODO_PUSH=off): the /api/v1/push routes
@@ -108,6 +112,13 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_WEBHOOKS_ALLOW_PRIVATE must be true or false, got %q", v)
 		}
 		c.WebhooksAllowPrivate = &b
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_MCP")); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return c, fmt.Errorf("OPENTODO_MCP must be true or false, got %q", v)
+		}
+		c.MCP = &b
 	}
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_TRASH_RETENTION_DAYS")); v != "" {
 		n, err := strconv.Atoi(v)

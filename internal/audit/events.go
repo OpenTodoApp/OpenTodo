@@ -123,6 +123,7 @@ var allowedDetailKeys = map[string]bool{
 	"reason":        true, // short failure reason code
 	"token_id":      true,
 	"token_name":    true,
+	"token_scope":   true, // full | read (mcp-server)
 	"invitation_id": true,
 	"invited_email": true, // email an invitation is bound to, if any
 	"passkey_id":    true,
@@ -234,6 +235,11 @@ func PasskeyDeleted(actorID, targetID, passkeyID, name string) Event {
 // TokenCreated records a new API token (never its secret).
 func TokenCreated(userID, tokenID, name string) Event {
 	return ev(TokenCreatedName, Success, userID, "", "token_id", tokenID, "token_name", name)
+}
+
+// TokenCreatedScoped records a new API token with its scope (never its secret).
+func TokenCreatedScoped(userID, tokenID, name, scope string) Event {
+	return ev(TokenCreatedName, Success, userID, "", "token_id", tokenID, "token_name", name, "token_scope", scope)
 }
 
 // TokenRevoked records a revoked API token.
