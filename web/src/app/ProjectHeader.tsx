@@ -8,6 +8,7 @@ import { flattenTree } from '../lib/tree'
 import type { Project } from '../lib/types'
 import { navigate } from './router'
 import { ShareDialog } from './ShareDialog'
+import { HistoryPanel } from './HistoryPanel'
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b']
 
@@ -75,7 +76,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
     const subs = subCount ? ` Its ${subCount === 1 ? 'sub-project moves' : `${subCount} sub-projects move`} up one level.` : ''
     const what = membership
       ? `Delete "${project.name}" for every member? Copies of its open tasks go to your Inbox.${subs}`
-      : `Delete "${project.name}"? Its open tasks move to the Inbox.${subs}`
+      : `Move "${project.name}" and its tasks to the Trash? You can restore them from the Trash.${subs}`
     if (!confirm(what)) return
     await deleteProject(project.id)
     navigate({ view: 'inbox' })
@@ -84,7 +85,8 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
   const parentKnown = targets.some((n) => n.id === project.parent_id)
 
   return (
-    <div className="mb-4 flex items-center gap-3">
+    <div className="mb-4">
+    <div className="flex items-center gap-3">
       <span className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color }} />
       {editing ? (
         <input className="input max-w-xs text-lg font-semibold" autoFocus value={name} onChange={(e) => setName(e.target.value)}
@@ -139,6 +141,8 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
           {canDeleteProject(role) && <button className="btn-danger w-full justify-start" onClick={() => void remove()}>Delete project</button>}
         </div>
       </details>}
+    </div>
+    <HistoryPanel entity="project" id={project.id} readOnly={!editable} />
     </div>
   )
 }

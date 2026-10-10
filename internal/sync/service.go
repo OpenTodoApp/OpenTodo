@@ -146,6 +146,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 		return res, err
 	}
 	rs := newResolver(ctx, tx, acc, ops)
+	pc := &purgeChecker{ctx: ctx, q: tx, acc: acc, cache: map[string]bool{}}
 	tracker := newChangeTracker(userID)
 	touched := map[string]bool{}
 	var refused []Op
@@ -163,6 +164,14 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 		}
 		if !errors.Is(err, sql.ErrNoRows) {
 			return res, err
+		}
+		// Ops for a purged entity are discarded and counted as duplicates so a
+		// device with stale offline edits cannot resurrect it (trash-and-history D5).
+		if gone, err := pc.purged(op.Entity, op.EntityID); err != nil {
+			return res, err
+		} else if gone {
+			res.Duplicates++
+			continue
 		}
 		scope, reason, err := rs.resolve(op)
 		if err != nil {
@@ -374,52 +383,89 @@ func SameJSON(a, b json.RawMessage) bool {
 // the cursor unchanged and more = true, then the regular pull continues, so the
 // device's single cursor stays monotonic.
 func (s *Service) Pull(ctx context.Context, userID string, cursor int64, device string, limit int) ([]Op, int64, bool, error) {
+	r, err := s.PullAll(ctx, userID, cursor, device, limit)
+	return r.Ops, r.Cursor, r.More, err
+}
+
+// PullResult is one page of the exchange: ops after the cursor, the entities
+// purged since the cursor (trash-and-history D5), the next cursor and whether
+// more remain.
+type PullResult struct {
+	Ops    []Op
+	Purged []PurgedEntity
+	Cursor int64
+	More   bool
+}
+
+// PullAll is Pull plus purge markers. Markers share the ops sequence, so the
+// cursor also advances past markers; ops and markers are read in one snapshot.
+func (s *Service) PullAll(ctx context.Context, userID string, cursor int64, device string, limit int) (PullResult, error) {
+	res := PullResult{Ops: []Op{}, Cursor: cursor}
 	if limit <= 0 || limit > MaxOpsPerRequest {
 		limit = MaxOpsPerRequest
 	}
 	if device != "" {
 		ops, err := s.backfillPage(ctx, userID, device, cursor, limit)
 		if err != nil {
-			return nil, cursor, false, err
+			return res, err
 		}
 		if len(ops) > 0 {
-			return ops, cursor, true, nil
+			res.Ops, res.More = ops, true
+			return res, nil
 		}
 	}
-	acc, err := loadAccess(ctx, s.db, userID)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, cursor, false, err
+		return res, err
+	}
+	defer tx.Rollback()
+	acc, err := loadAccess(ctx, tx, userID)
+	if err != nil {
+		return res, err
 	}
 	scopes := acc.scopes()
 	args := append(anys(scopes), cursor, limit+1)
-	rows, err := s.db.QueryContext(ctx, `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device
+	rows, err := tx.QueryContext(ctx, `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device
 		FROM op_scopes s JOIN ops o ON o.seq = s.seq
 		WHERE s.scope_id IN (`+placeholders(len(scopes))+`) AND s.seq > ? ORDER BY s.seq LIMIT ?`, args...)
 	if err != nil {
-		return nil, cursor, false, err
+		return res, err
 	}
-	defer rows.Close()
-	out := []Op{}
 	next := cursor
 	n := 0
-	more := false
 	for rows.Next() {
 		if n == limit {
-			more = true
+			res.More = true
 			break
 		}
 		op, err := scanOp(rows)
 		if err != nil {
-			return nil, cursor, false, err
+			rows.Close()
+			return res, err
 		}
 		next = op.Seq
 		n++
 		if op.Device == device {
 			continue
 		}
-		out = append(out, op)
+		res.Ops = append(res.Ops, op)
 	}
-	return out, next, more, rows.Err()
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return res, err
+	}
+	// With more ops pending, only markers up to the page's end; otherwise all.
+	upto := int64(0)
+	if res.More {
+		upto = next
+	}
+	purged, top, err := purgedSince(ctx, tx, scopes, cursor, upto)
+	if err != nil {
+		return res, err
+	}
+	res.Purged = purged
+	res.Cursor = max(next, top)
+	return res, nil
 }
 
 func scanOp(rows *sql.Rows) (Op, error) {

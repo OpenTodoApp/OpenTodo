@@ -12,6 +12,7 @@ import { ViewMenu, viewIcon } from './ViewsView'
 import { useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
 import { navigate, type Route } from './router'
+import { visibleTasks } from '../lib/trash'
 
 const ACTIVE = 'bg-emerald-100 font-medium text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100'
 const IDLE = 'text-slate-700 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-slate-800'
@@ -30,7 +31,9 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   const tree = useMemo(() => buildProjectTree(projects), [projects])
   const rows = useMemo(() => flattenTree(tree.roots, (id) => collapsed.has(id)), [tree, collapsed])
 
-  const openTasks = useLiveQuery(() => db.tasks.filter((t) => !t.deleted_at && !t.completed_at).toArray(), [], [])
+  // Trash count (trash-and-history): deleted tasks and projects known locally.
+  const trashCount = useLiveQuery(async () => (await db.tasks.filter((t) => !!t.deleted_at).count()) + (await db.projects.filter((p) => !!p.deleted_at).count()), [], 0)
+  const openTasks = useLiveQuery(() => visibleTasks().then((l) => l.filter((t) => !t.completed_at)), [], [])
   const counts = useMemo(() => {
     const today = todayISO()
     let inbox = 0
@@ -132,6 +135,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         {item({ view: 'week' }, 'Week', '📆')}
         {item({ view: 'completed' }, 'Completed', '✅')}
         {item({ view: 'filter' }, 'Filter', '🔎')}
+        {item({ view: 'trash' }, 'Trash', '🗑️', trashCount)}
       </nav>
       <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
         Views

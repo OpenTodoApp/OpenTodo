@@ -123,3 +123,25 @@ func TestPushSwitchIsOptional(t *testing.T) {
 		t.Fatal("invalid OPENTODO_PUSH accepted")
 	}
 }
+
+func TestConfigRejectsInvalidRetention(t *testing.T) {
+	t.Setenv("OPENTODO_TRASH_RETENTION_DAYS", "")
+	c, err := Load()
+	if err != nil || c.TrashRetentionDays != 30 {
+		t.Fatalf("default = %d, %v", c.TrashRetentionDays, err)
+	}
+	for _, ok := range []string{"0", "7", "365"} {
+		t.Setenv("OPENTODO_TRASH_RETENTION_DAYS", ok)
+		c, err := Load()
+		n, _ := strconv.Atoi(ok)
+		if err != nil || c.TrashRetentionDays != n {
+			t.Fatalf("%s: %v %d", ok, err, c.TrashRetentionDays)
+		}
+	}
+	for _, bad := range []string{"soon", "-1", "1.5", "99999"} {
+		t.Setenv("OPENTODO_TRASH_RETENTION_DAYS", bad)
+		if _, err := Load(); err == nil || !strings.Contains(err.Error(), "OPENTODO_TRASH_RETENTION_DAYS") {
+			t.Fatalf("%q: err = %v", bad, err)
+		}
+	}
+}

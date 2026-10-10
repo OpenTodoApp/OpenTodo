@@ -92,6 +92,10 @@ docker compose start opentodo
 
 Destinations, encryption, the archive format and the full restore procedure (including encrypted and downloaded archives) are in [docs/backups.md](../backups.md). Copying the `/data` volume while the container is stopped still works as a manual backup. A per-user JSON export is available from **Settings** in the app or `GET /api/v1/export` with an API token.
 
+## Trash retention
+
+Deleted tasks and projects stay in the Trash, restorable, for 30 days; then the server purges them for good (operations and values removed, a small marker kept so devices drop their copies). Set `OPENTODO_TRASH_RETENTION_DAYS` to change the period (`0` keeps the Trash until a user empties it). The job runs at startup and once a day. Purged data is gone from the live database, but older backup archives still contain it; restoring one brings back the items as they were when it was taken. See [docs/sync.md](../sync.md#purge).
+
 ## Audit log
 
 The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, API tokens, invitations, exports and audit setting changes in **Settings → Audit log** (API: [docs/api.md](../api.md#audit-log)). It is stored in `opentodo.db` inside `/data`, so it is part of every backup of the volume, and it never contains task content. Nothing needs configuring:

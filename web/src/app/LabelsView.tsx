@@ -4,14 +4,15 @@ import { db } from '../lib/db'
 import { LABEL_PALETTE, LabelExistsError, activeLabels, countOpenByLabel, createLabel, deleteLabel, duplicateLabelIds, mergeLabels, reorderLabel, updateLabel } from '../lib/labels'
 import type { Label } from '../lib/types'
 import { navigate, type Route } from './router'
+import { visibleTasks } from '../lib/trash'
 
 /** Labels in sidebar order with per-label open counts (same project filter as the views). */
 export function useLabelData() {
   const labels = useLiveQuery(() => db.labels.toArray().then(activeLabels), [], [] as Label[])
   const counts = useLiveQuery(async () => {
-    // Same rule as TaskListView: only tasks of archived (non-deleted) projects are hidden.
+    // Same rule as TaskListView: tasks of archived projects and of trashed projects are hidden.
     const hidden = new Set((await db.projects.filter((p) => !p.deleted_at && p.archived).toArray()).map((p) => p.id))
-    const open = await db.tasks.filter((t) => !t.deleted_at && !t.completed_at && (!t.project_id || !hidden.has(t.project_id))).toArray()
+    const open = (await visibleTasks()).filter((t) => !t.completed_at && (!t.project_id || !hidden.has(t.project_id)))
     return countOpenByLabel(open)
   }, [], new Map<string, number>())
   return { labels, counts, duplicates: duplicateLabelIds(labels) }

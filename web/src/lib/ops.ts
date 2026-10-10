@@ -533,8 +533,10 @@ export async function updateProject(id: string, patch: Partial<Omit<Project, 'id
 }
 
 /**
- * Deleting a project moves its open tasks to the Inbox and its direct sub-projects
- * to its own parent (design D4), so neither tasks nor projects are lost. One batch.
+ * Deleting a project writes only its tombstone and moves its direct sub-projects
+ * to its own parent (design D4 of project-hierarchy). Its tasks keep their
+ * `project_id` and are hidden while the project is in the Trash (trash-and-history
+ * D2), so restoring the project is a single op. One batch.
  *
  * A shared project (project-sharing D8) can only be deleted by its owner: the
  * project and every task in it are tombstoned for all members, and the owner's
@@ -542,27 +544,70 @@ export async function updateProject(id: string, patch: Partial<Omit<Project, 'id
  */
 export async function deleteProject(id: string): Promise<void> {
   const project = await db.projects.get(id)
-  const tasks = await db.tasks.where('project_id').equals(id).toArray()
   const memberships = await membershipMap()
   const shared = memberships.has(id)
   if (shared && roleOf(id, memberships) !== 'owner') throw new Error('only the owner can delete a shared project')
   const changes: Change[] = []
+  const now = Date.now()
   if (shared) {
-    const now = Date.now()
+    const tasks = await db.tasks.where('project_id').equals(id).toArray()
     const live = tasks.filter((t) => !t.deleted_at)
     changes.push(...copyTasks(live.filter((t) => !t.completed_at), null, assignableIn(null, memberships, await currentUserId())).changes)
     for (const t of live) changes.push({ entity: 'task', entityId: t.id, patch: { deleted_at: now } })
-  }
-  for (const t of shared ? [] : tasks) {
-    if (!t.deleted_at) changes.push({ entity: 'task', entityId: t.id, patch: { project_id: null } })
   }
   const parentId = project?.parent_id ?? null
   for (const p of await liveProjects()) {
     // A sub-project never inherits itself as parent (only possible inside an unresolved cycle).
     if (p.parent_id === id && p.id !== id) changes.push({ entity: 'project', entityId: p.id, patch: { parent_id: parentId === p.id ? null : parentId } })
   }
-  changes.push({ entity: 'project', entityId: id, patch: { deleted_at: Date.now() } })
+  changes.push({ entity: 'project', entityId: id, patch: { deleted_at: now } })
   await mutateMany(changes)
+}
+
+/**
+ * Restore a task from the Trash (trash-and-history): clears its tombstone and the
+ * tombstones of descendants deleted with it (same deletion time), in one batch.
+ * When its project is still deleted the task goes to the Inbox in the same batch;
+ * for a task of a shared project that means a copy in the Inbox, because a task
+ * never changes sharing scope. Returns the id of the visible task.
+ */
+export async function restoreTask(id: string): Promise<string> {
+  const task = await db.tasks.get(id)
+  if (!task) throw new Error('task not found')
+  if (!task.deleted_at) return id
+  const all = await db.tasks.toArray()
+  const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((t) => t.id === d)).filter((t): t is Task => !!t && t.deleted_at === task.deleted_at)]
+  const project = task.project_id ? await db.projects.get(task.project_id) : undefined
+  const projectGone = !!project?.deleted_at
+  if (projectGone) {
+    const memberships = await membershipMap()
+    if (scopeOf(task.project_id, memberships) !== 'personal') {
+      const { changes, ids } = copyTasks(subtree, null, assignableIn(null, memberships, await currentUserId()), { [id]: { position: Date.now() } })
+      await mutateMany(changes)
+      return ids.get(id) as string
+    }
+  }
+  const changes: Change[] = subtree.map((t) => ({
+    entity: 'task' as const, entityId: t.id, patch: projectGone ? { deleted_at: null, project_id: null } : { deleted_at: null },
+  }))
+  // A task whose parent stays in the Trash is restored at the top level.
+  const parent = task.parent_id ? all.find((t) => t.id === task.parent_id) : undefined
+  if (projectGone || (parent && parent.deleted_at)) changes[0].patch.parent_id = null
+  await mutateMany(changes)
+  return id
+}
+
+/**
+ * Restore a project from the Trash: one op clearing its tombstone. Its tasks kept
+ * their project reference and reappear without any task op (trash-and-history D2).
+ */
+export async function restoreProject(id: string): Promise<void> {
+  const project = await db.projects.get(id)
+  if (!project) throw new Error('project not found')
+  if (!project.deleted_at) return
+  const memberships = await membershipMap()
+  if (memberships.has(id) && roleOf(id, memberships) !== 'owner') throw new Error('only the owner can restore a shared project')
+  await mutate('project', id, { deleted_at: null })
 }
 
 const PALETTE = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899']

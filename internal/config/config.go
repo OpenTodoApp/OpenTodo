@@ -31,7 +31,17 @@ type Config struct {
 	// PushDisabled turns web push off (OPENTODO_PUSH=off): the /api/v1/push routes
 	// answer 404 and the reminder scheduler does not run. Push is on by default.
 	PushDisabled bool
+	// TrashRetentionDays is how long deleted tasks and projects stay in the Trash
+	// before the server purges them (OPENTODO_TRASH_RETENTION_DAYS, default 30,
+	// 0 disables automatic purge).
+	TrashRetentionDays int
 }
+
+// DefaultTrashRetentionDays applies when OPENTODO_TRASH_RETENTION_DAYS is unset.
+const DefaultTrashRetentionDays = 30
+
+// MaxTrashRetentionDays bounds OPENTODO_TRASH_RETENTION_DAYS (ten years).
+const MaxTrashRetentionDays = 3650
 
 // Import file size bounds for OPENTODO_IMPORT_MAX_MB.
 const (
@@ -47,6 +57,8 @@ func Load() (Config, error) {
 		SessionTTL:  90 * 24 * time.Hour,
 		LogLevel:    slog.LevelInfo,
 		ImportMaxMB: DefaultImportMaxMB,
+
+		TrashRetentionDays: DefaultTrashRetentionDays,
 	}
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_BASE_URL")); v != "" {
 		u, err := url.Parse(v)
@@ -82,6 +94,13 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_WEBHOOKS_ALLOW_PRIVATE must be true or false, got %q", v)
 		}
 		c.WebhooksAllowPrivate = &b
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_TRASH_RETENTION_DAYS")); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 || n > MaxTrashRetentionDays {
+			return c, fmt.Errorf("OPENTODO_TRASH_RETENTION_DAYS must be an integer from 0 (never purge) to %d, got %q", MaxTrashRetentionDays, v)
+		}
+		c.TrashRetentionDays = n
 	}
 	switch strings.ToLower(strings.TrimSpace(os.Getenv("OPENTODO_PUSH"))) {
 	case "", "on", "true", "1", "yes":

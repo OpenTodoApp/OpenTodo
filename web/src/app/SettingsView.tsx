@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { getAutoArchive, setAutoArchive } from '../lib/archive'
 import { api, ApiError } from '../lib/api'
 import { bookmarklet } from '../lib/share'
 import { useSyncStatus } from '../lib/sync'
@@ -100,6 +102,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
         </select>
       </section>
 
+      <AutoArchiveSection />
+
       {user.role === 'owner' && <MembersPanel />}
 
       <WebhooksPanel isOwner={user.role === 'owner'} />
@@ -160,6 +164,21 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
  * the DOM because React refuses `javascript:` URLs; clicking it here does nothing
  * (the app's CSP would block it anyway), it is meant to be dragged to the bar.
  */
+/** Per-device opt-out of automatic archiving (trash-and-history); stored in local meta. */
+function AutoArchiveSection() {
+  const on = useLiveQuery(getAutoArchive, [], true)
+  return (
+    <section className="space-y-2">
+      <h2 className="font-semibold">Projects</h2>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={on} onChange={(e) => void setAutoArchive(e.target.checked)} />
+        Archive projects automatically after 30 days without open tasks (this device)
+      </label>
+      <p className="text-sm text-slate-500">Each device keeps its own setting. Deleted items stay in the <a className="underline" href="/trash" onClick={(e) => { e.preventDefault(); navigate({ view: 'trash' }) }}>Trash</a> until restored or purged.</p>
+    </section>
+  )
+}
+
 function CaptureSection() {
   const code = bookmarklet(location.origin)
   const linkRef = useRef<HTMLAnchorElement>(null)

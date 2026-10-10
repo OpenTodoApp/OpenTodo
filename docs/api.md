@@ -108,6 +108,9 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 | DELETE | `/api/v1/push/subscriptions/{id}` | yes | 204, or 404 `not_found` |
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md`; the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
+| GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
+| DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,reminders}}`; 409 `not_deleted` otherwise |
+| POST | `/api/v1/trash/purge` | yes | empty the Trash (every deleted task and project you may delete) → `{purged:{tasks,projects,reminders}}` |
 | GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
@@ -582,6 +585,26 @@ curl -X POST -H "Authorization: Bearer $BOB" $BASE/api/v1/notifications/$N/read
 
 `projectId` and `projectName` are omitted for a task in the Inbox.
 
+### Trash and history
+
+Deleting (`DELETE /api/v1/{tasks|projects}/{id}`) is a tombstone: the item goes to the Trash and can be restored by writing `deleted_at: null` (`PATCH` accepts deleted items). Deleting a project leaves its tasks' `project_id` alone; clients hide those tasks until the project is restored or purged.
+
+History is read from the operation log. Each change set groups the field writes made at one timestamp by one device (`server` for REST writes); `from` is the previous value in timestamp order, and `lost: true` marks a write that arrived after a newer one and never became the stored value. Members of a shared project see the history of its tasks; nobody sees another account's personal items (404 `not_found`, as for unknown ids and purged items). Restoring an old value is an ordinary write, so it appears in the history too.
+
+```sh
+curl -sS "$OT/api/v1/tasks/$ID/history" -H "Authorization: Bearer $TOKEN"
+# 200 {"entity":"task","id":"…","more":false,"changeSets":[
+#   {"ts":1760090000000,"device":"3c54…","userId":"…","changes":[{"opId":"…","field":"title","from":null,"to":"Draft"}]},
+#   {"ts":1760090500000,"device":"server","userId":"…","changes":[{"opId":"…","field":"title","from":"Draft","to":"Final"}]}]}
+
+# Permanently delete a trashed task (its operations, values and reminders)
+curl -sS -X DELETE "$OT/api/v1/tasks/$ID/purge" -H "Authorization: Bearer $TOKEN"
+# 200 {"purged":{"tasks":1,"projects":0,"reminders":0}}
+# 409 {"error":{"code":"not_deleted","message":"only items in the Trash can be permanently deleted; delete it first"}}
+```
+
+Purging a project also purges every task that references it; purging a task also purges its deleted subtasks. In a shared project the role table applies: editors may purge tasks, only the owner may purge the project (403 `forbidden`); emptying the Trash skips items your role cannot delete. Purge is final and cannot be undone. The server also purges items that have been in the Trash longer than `OPENTODO_TRASH_RETENTION_DAYS` (default 30, `0` disables); see [sync](sync.md#purge).
+
 ### Import
 
 Import tasks and projects from the app's own export, CSV, or JSON exports of other task managers. Formats, the CSV columns, mapping rules and limits are documented in [import.md](import.md). Every imported field is written to the operation log with server time and the device id `import`, so devices receive imports like any other write.
@@ -797,6 +820,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | `user_not_found` | 404 | adding a project member by an email that has no account |
 | `owner_must_transfer` | 409 | the project owner leaving the project |
 | `already_member` | 409 | adding an account that is already a member of the project |
+| `not_deleted` | 409 | purging a task or project that is not in the Trash |
 | `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
 | `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
 | `bad_origin` | 403 | cookie-authenticated write from another origin |

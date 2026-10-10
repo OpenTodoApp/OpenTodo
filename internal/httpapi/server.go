@@ -152,6 +152,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerPushRoutes(mux)
 	// Notifications (OpenSpec `task-assignment`): literal patterns win over {collection}.
 	s.registerNotificationRoutes(mux)
+	// Trash and history (OpenSpec `trash-and-history`): literal patterns win over {collection}.
+	s.registerTrashRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
@@ -688,10 +690,15 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		// learns the cursor from the response.
 		s.sync.NotifyApplied(res, in.Device)
 	}
-	ops, cursor, more, err := s.sync.Pull(r.Context(), uid, in.Cursor, in.Device, opsync.MaxOpsPerRequest)
+	pull, err := s.sync.PullAll(r.Context(), uid, in.Cursor, in.Device, opsync.MaxOpsPerRequest)
 	if err != nil {
 		s.internal(w, err)
 		return
+	}
+	ops, cursor, more := pull.Ops, pull.Cursor, pull.More
+	purged := pull.Purged
+	if purged == nil {
+		purged = []opsync.PurgedEntity{}
 	}
 	// The server's value of every refused field travels with the response, so the
 	// device restores it without another round trip (project-sharing design D3).
@@ -722,6 +729,10 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		// Additive (project-sharing): refused ops and the caller's shared projects.
 		"rejected":    rejected,
 		"memberships": memberships,
+		// Additive (trash-and-history): entities purged since the cursor, which
+		// devices delete locally, and the Trash retention in days (0 = never).
+		"purged":             purged,
+		"trashRetentionDays": s.cfg.TrashRetentionDays,
 	})
 }
 

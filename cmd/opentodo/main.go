@@ -148,6 +148,10 @@ func run() error {
 		go pushSvc.Run(ctx)
 	}
 
+	// Purge items that outlived the Trash retention at startup and daily
+	// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).
+	go syncSvc.RunRetention(ctx, cfg.TrashRetentionDays, log)
+
 	workerDone := make(chan struct{})
 	go func() {
 		defer close(workerDone)

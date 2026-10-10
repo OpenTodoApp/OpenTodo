@@ -19,6 +19,7 @@ import { navigate } from './router'
 import { estimateFocus, isGPending, placement as placementSignal } from './signals'
 import { TaskDetail } from './TaskDetail'
 import { useToday } from './useViews'
+import { visibleTasks } from '../lib/trash'
 
 /** 48 px per hour, 12 px per 15-minute slot. */
 const PX_PER_MIN = 0.8
@@ -77,7 +78,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
-  const allTasks = useLiveQuery(() => db.tasks.filter((t) => !t.deleted_at).toArray(), [], [] as Task[])
+  const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
 
   const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1]), [allTasks, projects, dates])

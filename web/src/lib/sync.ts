@@ -10,6 +10,7 @@ import { applyOps, getDeviceId, onLocalMutation } from './ops'
 import { followSharedDueChanges } from './reminders'
 import { refreshNotifications } from './notifications'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
+import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
 import type { Clock, Entity, Op, SyncState } from './types'
 
 const BATCH = 500
@@ -144,6 +145,9 @@ async function runOnce(): Promise<void> {
       await dropUnconfirmed(keys)
       if (notice) addRejected(notice)
       if (res.memberships) await storeMemberships(res.memberships)
+      // Purged on the server (trash-and-history D5): drop the rows and queued ops.
+      if (res.purged?.length) await removeLocally(res.purged)
+      if (typeof res.trashRetentionDays === 'number') await setMeta(RETENTION_KEY, res.trashRetentionDays)
       // Reminders are personal: another member moving a shared task does not move ours.
       await followSharedDueChanges(res.ops)
       if (await generationChanged(res.generation)) {
@@ -164,6 +168,8 @@ async function runOnce(): Promise<void> {
       needNotifications = false
       await refreshNotifications()
     }
+    // Permanent deletions requested while offline go out once we are connected.
+    await flushPendingPurges()
     publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {

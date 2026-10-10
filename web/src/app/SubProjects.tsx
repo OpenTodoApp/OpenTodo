@@ -4,6 +4,7 @@ import { db } from '../lib/db'
 import { buildProjectTree, subtreeOpenCounts } from '../lib/projects'
 import type { Project, Task } from '../lib/types'
 import { navigate } from './router'
+import { visibleTasks } from '../lib/trash'
 
 /**
  * "Sub-projects" section at the bottom of a project view: each direct, non-archived
@@ -12,7 +13,7 @@ import { navigate } from './router'
  */
 export function SubProjects({ projectId }: { projectId: string }) {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
-  const open = useLiveQuery(() => db.tasks.filter((t) => !t.deleted_at && !t.completed_at).toArray(), [], [] as Task[])
+  const open = useLiveQuery(() => visibleTasks().then((l) => l.filter((t) => !t.completed_at)), [], [] as Task[])
   const tree = useMemo(() => buildProjectTree(projects), [projects])
   const children = tree.nodes.get(projectId)?.children ?? []
   const counts = useMemo(() => subtreeOpenCounts(open, tree), [open, tree])
