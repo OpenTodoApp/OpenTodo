@@ -1,10 +1,12 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
+import { removeLabel, resolveLabels } from '../lib/labels'
 import { createSubtask, deleteTask, setTaskCompleted, setTaskParent, updateTask } from '../lib/ops'
 import { progressOf } from '../lib/subtasks'
 import { descendants } from '../lib/tree'
-import type { Priority, Project, Task } from '../lib/types'
+import type { Label, Priority, Project, Task } from '../lib/types'
+import { LabelChip, LabelPicker } from './LabelPicker'
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 1, label: 'P1', cls: 'text-red-600 border-red-500' },
@@ -13,9 +15,10 @@ const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 4, label: 'P4', cls: 'text-slate-500 border-slate-400' },
 ]
 
-export function TaskDetail({ taskId, projects, onClose, onOpen, onToggleComplete }: {
+export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onToggleComplete }: {
   taskId: string
   projects: Project[]
+  labelMap: Map<string, Label>
   onClose: () => void
   /** Open another task in the panel (a subtask or the parent). */
   onOpen?: (id: string) => void
@@ -150,6 +153,13 @@ export function TaskDetail({ taskId, projects, onClose, onOpen, onToggleComplete
               onChange={(e) => task.due && void updateTask(task.id, { due: e.target.value ? { date: task.due.date, time: e.target.value } : { date: task.due.date } })} />
             {task.due && <button className="btn-ghost" onClick={() => void updateTask(task.id, { due: null })} aria-label="Clear due date">✕</button>}
           </div>
+        </Field>
+
+        <Field label="Labels">
+          <div className="mb-2 flex flex-wrap gap-1 empty:hidden">
+            {resolveLabels(task.labels, labelMap).map((l) => <LabelChip key={l.id} label={l} onRemove={() => void removeLabel(task.id, l.id)} />)}
+          </div>
+          <LabelPicker taskId={task.id} inline />
         </Field>
 
         <Field label={progress.total > 0 ? `Subtasks · ${progress.done}/${progress.total}` : 'Subtasks'}>

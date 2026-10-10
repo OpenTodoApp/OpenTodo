@@ -11,7 +11,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 ```json
 {
   "id": "0d1f…",                 // unique per op (UUID v4)
-  "entity": "task",              // "task" | "project"
+  "entity": "task",              // "task" | "project" | "label"
   "entityId": "8c2a…",           // UUID of the entity
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
@@ -33,11 +33,24 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `project_id`, `parent_id` | string or null |
 | task | `priority` | integer 1–4 (1 highest) |
 | task | `due` | `{"date":"YYYY-MM-DD","time":"HH:MM"?}` or null |
-| task | `labels` | array of strings |
+| task | `labels` | array of strings (label ids, see below) |
 | task | `position`, `created_at` | number |
 | task | `completed_at`, `deleted_at` | number or null |
+| label | `name`, `color` | string |
+| label | `position`, `created_at` | number |
+| label | `deleted_at` | number or null |
 
 Adding fields is backwards compatible. Renaming or removing is not; it needs an OpenSpec change with a migration plan.
+
+A client that receives an op for an entity it does not know (an older build talking to a newer server) ignores it without failing the batch; the cursor still advances.
+
+### Task labels
+
+`task.labels` is an array of **label ids**, not names. Renaming or recolouring a label is therefore one op on the label and never touches a task. Ids that point at a deleted label, or at a label this device has not received yet, are kept in the array but not displayed; the chip appears as soon as the label arrives.
+
+The array is a single LWW register: every write replaces the whole value, and when two devices write different arrays for the same task offline, every replica ends with the array that carries the greater `(ts, device)`. Concretely, if device A adds `errand` and device B adds `call` to the same task while both are offline, only one of the two labels survives on every device. To keep the common case safe the client reads the task's current array in the same transaction as the write, so sequential edits on one device never lose a label, and remote ops are applied live so the window is only the offline period. Deleting a label removes its id from every carrying task with one op per task; a concurrent array write elsewhere can resurrect the id, which is why deleted ids are hidden rather than trusted to be absent. Merging a label rewrites each carrying task's array once (source id → target id, de-duplicated) and tombstones the source.
+
+The path to per-element semantics is recorded in `openspec/changes/labels/design.md`: an add-wins set encoded as additional per-element fields would be additive to this schema.
 
 ## Winner rule
 
@@ -131,4 +144,4 @@ REST handlers translate request bodies into ops stamped with server time and `de
 ## Limits
 
 - 1000 ops per request, 64 KB per value, 4 MB per request body.
-- `labels` is replaced as a whole value (set semantics are a future change).
+- `labels` is replaced as a whole value (see "Task labels" above; set semantics are a future change).

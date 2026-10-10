@@ -4,6 +4,7 @@ import { db } from '../lib/db'
 import { todayISO } from '../lib/dates'
 import { createProject } from '../lib/ops'
 import type { User } from '../lib/types'
+import { LabelRow, NewLabelForm, useLabelData } from './LabelsView'
 import { navigate, type Route } from './router'
 
 export function Sidebar({ route, user }: { route: Route; user: User }) {
@@ -25,6 +26,9 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
 
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
+  const { labels, counts: labelCounts, duplicates } = useLabelData()
+  const [labelsOpen, setLabelsOpen] = useState(true)
+  const [addingLabel, setAddingLabel] = useState(false)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -85,6 +89,23 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
           </form>
         )}
         {projects.length === 0 && !adding && <p className="px-2 py-1 text-xs text-slate-400">No projects yet.</p>}
+
+        <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <button className="flex items-center gap-1 uppercase hover:text-slate-600 dark:hover:text-slate-200" onClick={() => setLabelsOpen((v) => !v)} aria-expanded={labelsOpen}>
+            <span className="inline-block w-3 text-[10px]">{labelsOpen ? '▾' : '▸'}</span>Labels
+          </button>
+          <span className="flex items-center gap-1">
+            <button className={`rounded px-1 text-[10px] normal-case hover:bg-slate-200 dark:hover:bg-slate-800 ${route.view === 'labels' ? 'text-emerald-700 dark:text-emerald-300' : ''}`} onClick={() => navigate({ view: 'labels' })} title="All labels (g l)">All</button>
+            <button className="rounded px-1 text-base leading-none hover:bg-slate-200 dark:hover:bg-slate-800" onClick={() => { setLabelsOpen(true); setAddingLabel(true) }} title="New label">+</button>
+          </span>
+        </div>
+        {labelsOpen && (
+          <div className="space-y-0.5">
+            {labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} />)}
+            {addingLabel && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
+            {labels.length === 0 && !addingLabel && <p className="px-2 py-1 text-xs text-slate-400">No labels yet.</p>}
+          </div>
+        )}
       </nav>
       <button onClick={() => navigate({ view: 'settings' })}
         className={`mt-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'settings' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}>

@@ -8,6 +8,8 @@ export type Route =
   | { view: 'upcoming' }
   | { view: 'completed' }
   | { view: 'project'; id: string }
+  | { view: 'label'; id: string }
+  | { view: 'labels' }
   | { view: 'settings' }
   | { view: 'invite'; token: string }
 
@@ -25,11 +27,15 @@ export function parseRoute(pathname: string): Route {
       return { view: 'completed' }
     case 'settings':
       return { view: 'settings' }
+    case 'labels':
+      return { view: 'labels' }
     case 'project':
       return parts[1] ? { view: 'project', id: parts[1] } : { view: 'inbox' }
     case 'invite':
       // The secret is URL-safe base64; decode defensively in case a mail client encoded it.
       return parts[1] ? { view: 'invite', token: safeDecode(parts[1]) } : { view: 'inbox' }
+    case 'label':
+      return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
     default:
       return { view: 'inbox' }
   }
@@ -46,7 +52,8 @@ function safeDecode(s: string): string {
 export function routePath(r: Route): string {
   switch (r.view) {
     case 'project':
-      return `/project/${r.id}`
+    case 'label':
+      return `/${r.view}/${r.id}`
     case 'invite':
       return `/invite/${encodeURIComponent(r.token)}`
     case 'inbox':

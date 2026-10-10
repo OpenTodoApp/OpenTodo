@@ -240,6 +240,144 @@ func TestRestWriteThroughAndSyncRoundTrip(t *testing.T) {
 	}
 }
 
+func TestLabelsRequireAuth(t *testing.T) {
+	e := newEnv(t, false)
+	resp, out := e.do("GET", "/api/v1/labels", nil)
+	e.mustStatus(resp, 401, out)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "errand"})
+	e.mustStatus(resp, 401, out)
+	if out["error"].(map[string]any)["code"] != "unauthorized" {
+		t.Fatalf("error = %v", out)
+	}
+}
+
+func TestLabelsCrud(t *testing.T) {
+	e := newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "errand"})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	if out["name"] != "errand" || out["color"] == nil || out["color"] == "" || out["position"] == nil || out["created_at"] == nil {
+		t.Fatalf("created label = %v", out)
+	}
+
+	// Empty names and unknown fields are refused.
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "  "})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "x", "archived": true})
+	e.mustStatus(resp, 400, out)
+	if out["error"].(map[string]any)["code"] != "invalid_input" {
+		t.Fatalf("error = %v", out)
+	}
+	// Uniqueness is advisory: a duplicate name is accepted (devices may hold duplicates).
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "Errand", "color": "#3b82f6"})
+	e.mustStatus(resp, 201, out)
+	dupID := out["id"].(string)
+
+	resp, out = e.do("GET", "/api/v1/labels/"+id, nil)
+	e.mustStatus(resp, 200, out)
+
+	resp, out = e.do("PATCH", "/api/v1/labels/"+id, map[string]any{"name": "errands", "color": "#ec4899"})
+	e.mustStatus(resp, 200, out)
+	if out["name"] != "errands" || out["color"] != "#ec4899" {
+		t.Fatalf("patched label = %v", out)
+	}
+	resp, out = e.do("PATCH", "/api/v1/labels/"+id, map[string]any{"name": ""})
+	e.mustStatus(resp, 400, out)
+
+	resp, out = e.do("GET", "/api/v1/labels", nil)
+	e.mustStatus(resp, 200, out)
+	if n := len(out["labels"].([]any)); n != 2 {
+		t.Fatalf("labels = %d", n)
+	}
+
+	resp, out = e.do("DELETE", "/api/v1/labels/"+dupID, nil)
+	e.mustStatus(resp, 204, out)
+	resp, out = e.do("GET", "/api/v1/labels/"+dupID, nil)
+	e.mustStatus(resp, 404, out)
+	resp, out = e.do("GET", "/api/v1/labels", nil)
+	if n := len(out["labels"].([]any)); n != 1 {
+		t.Fatalf("labels after delete = %d", n)
+	}
+	resp, out = e.do("GET", "/api/v1/labels?include_deleted=true", nil)
+	if n := len(out["labels"].([]any)); n != 2 {
+		t.Fatalf("labels including deleted = %d", n)
+	}
+}
+
+func TestTaskLabelsMustExist(t *testing.T) {
+	e := newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "errand"})
+	e.mustStatus(resp, 201, out)
+	labelID := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "gone"})
+	e.mustStatus(resp, 201, out)
+	goneID := out["id"].(string)
+	resp, out = e.do("DELETE", "/api/v1/labels/"+goneID, nil)
+	e.mustStatus(resp, 204, out)
+
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "x", "labels": []string{"nope"}})
+	e.mustStatus(resp, 400, out)
+	if out["error"].(map[string]any)["code"] != "invalid_input" {
+		t.Fatalf("error = %v", out)
+	}
+	resp, out = e.do("GET", "/api/v1/tasks", nil)
+	if n := len(out["tasks"].([]any)); n != 0 {
+		t.Fatalf("rejected create left %d tasks", n)
+	}
+
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "x", "labels": []string{labelID}})
+	e.mustStatus(resp, 201, out)
+	taskID := out["id"].(string)
+
+	for _, bad := range []any{[]string{"nope"}, []string{goneID}, []string{labelID, "nope"}} {
+		resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"labels": bad, "title": "changed"})
+		e.mustStatus(resp, 400, out)
+	}
+	// Wrong types still fail schema validation with the same code.
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"labels": "errand"})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("GET", "/api/v1/tasks/"+taskID, nil)
+	e.mustStatus(resp, 200, out)
+	if out["title"] != "x" || len(out["labels"].([]any)) != 1 {
+		t.Fatalf("task changed by rejected patch: %v", out)
+	}
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+taskID, map[string]any{"labels": []string{}})
+	e.mustStatus(resp, 200, out)
+}
+
+func TestExportIncludesLabels(t *testing.T) {
+	e := newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "errand"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/labels", map[string]any{"name": "old"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("DELETE", "/api/v1/labels/"+out["id"].(string), nil)
+	e.mustStatus(resp, 204, out)
+
+	resp, out = e.do("GET", "/api/v1/export", nil)
+	e.mustStatus(resp, 200, out)
+	labels, ok := out["labels"].([]any)
+	if !ok || len(labels) != 2 || out["version"] != float64(1) {
+		t.Fatalf("export = %v", out)
+	}
+	deleted := 0
+	for _, l := range labels {
+		if l.(map[string]any)["deleted_at"] != nil {
+			deleted++
+		}
+	}
+	if deleted != 1 {
+		t.Fatalf("export should keep the deleted label, got %d deleted", deleted)
+	}
+}
+
 func TestApiTokens(t *testing.T) {
 	e := newEnv(t, false)
 	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})

@@ -581,10 +581,25 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			body["priority"] = json.RawMessage("4")
 		}
 	}
+	if entity == "label" {
+		if _, has := body["name"]; !has {
+			body["name"] = json.RawMessage(`""`)
+		}
+		if _, has := body["color"]; !has {
+			body["color"] = json.RawMessage(fmt.Sprintf("%q", labelPalette[int(now)%len(labelPalette)]))
+		}
+	}
 	if _, has := body["position"]; !has {
 		body["position"] = json.RawMessage(fmt.Sprint(now))
 	}
 	delete(body, "id")
+	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
+		s.internal(w, err)
+		return
+	} else if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return
+	}
 	if entity == "task" {
 		if err := s.validateTaskParent(r.Context(), userFrom(r.Context()).ID, id, body, nil); err != nil {
 			s.parentError(w, err)
@@ -592,6 +607,42 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	s.writeFields(w, r, entity, id, body, http.StatusCreated)
+}
+
+// labelPalette gives API-created labels a colour when the caller sets none.
+var labelPalette = []string{"#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899"}
+
+// checkReferences enforces the REST-only rules that the sync path cannot: a label
+// needs a non-empty name, and a task may only reference existing, non-deleted labels.
+// It returns a user-facing message when the body is rejected. Type errors are left
+// to the schema validation in Apply so the two never disagree.
+func (s *Server) checkReferences(ctx context.Context, uid, entity string, body map[string]json.RawMessage) (string, error) {
+	if entity == "label" {
+		if raw, has := body["name"]; has {
+			var name string
+			if err := json.Unmarshal(raw, &name); err == nil && strings.TrimSpace(name) == "" {
+				return "label.name must not be empty", nil
+			}
+		}
+	}
+	if entity == "task" {
+		if raw, has := body["labels"]; has {
+			var ids []string
+			if err := json.Unmarshal(raw, &ids); err != nil {
+				return "", nil
+			}
+			for _, id := range ids {
+				l, err := s.sync.Get(ctx, uid, "label", id)
+				if err != nil {
+					return "", err
+				}
+				if l == nil || l.Deleted() {
+					return fmt.Sprintf("task.labels references unknown or deleted label %q", id), nil
+				}
+			}
+		}
+	}
+	return "", nil
 }
 
 // errInvalidParent marks a parent_id rejected by validateTaskParent.
@@ -691,6 +742,13 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 	}
 	if existing == nil {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
+		return
+	}
+	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
+		s.internal(w, err)
+		return
+	} else if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
 		return
 	}
 	if entity == "task" {

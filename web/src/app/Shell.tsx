@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { User } from '../lib/types'
 import { navigate, useRoute } from './router'
+import { LabelsView } from './LabelsView'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
 import { SettingsView } from './SettingsView'
@@ -31,6 +32,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         if (e.key === 't') navigate({ view: 'today' })
         if (e.key === 'u') navigate({ view: 'upcoming' })
         if (e.key === 'c') navigate({ view: 'completed' })
+        if (e.key === 'l') navigate({ view: 'labels' })
         if (e.key === 's') navigate({ view: 'settings' })
         return
       }
@@ -65,6 +67,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {route.view === 'settings' ? (
             <SettingsView user={user} onLogout={onLogout} />
+          ) : route.view === 'labels' ? (
+            <LabelsView route={route} />
           ) : (
             // App renders the invite screen itself; a stray /invite route inside the shell falls back to the Inbox.
             <TaskListView route={route.view === 'invite' ? { view: 'inbox' } : route} />
@@ -95,8 +99,9 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['Tab / Shift+Tab', 'Indent under previous sibling / outdent'],
     ['← / →', 'Collapse / expand subtasks of the selected task'],
     ['1 – 4', 'Set priority of selected task'],
+    ['L', 'Labels of selected task (type to find, Enter adds or creates)'],
     ['Delete', 'Delete selected task (and its subtasks)'],
-    ['g then i / t / u / c / s', 'Go to Inbox / Today / Upcoming / Completed / Settings'],
+    ['g then i / t / u / c / l / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Settings'],
     ['Enter (on an invitation)', 'Settings → Members: copy the invite link created in this session'],
     ['Delete (on an invitation)', 'Settings → Members: revoke a pending invitation'],
     ['Esc', 'Close panel, clear selection'],
