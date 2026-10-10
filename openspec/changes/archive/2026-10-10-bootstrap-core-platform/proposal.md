@@ -2,7 +2,7 @@
 
 ## Why
 
-OpenTodo wants to replace Todoist for people who refuse subscriptions and lock-in, but nothing exists yet: no server, no client, no sync, no way to deploy. Every later feature (natural-language capture, recurring tasks, sharing, CalDAV, encryption) needs a place to live. This change delivers the walking skeleton: a deployable, usable, local-first task manager with the architectural decisions that are hardest to retrofit (op-log sync, single-binary hosting, auth-by-default) made and proven end to end.
+OpenTodo wants to replace subscription task managers for people who refuse recurring fees and lock-in, but nothing exists yet: no server, no client, no sync, no way to deploy. Every later feature (natural-language capture, recurring tasks, sharing, CalDAV, encryption) needs a place to live. This change delivers the walking skeleton: a deployable, usable, local-first task manager with the architectural decisions that are hardest to retrofit (op-log sync, single-binary hosting, auth-by-default) made and proven end to end.
 
 ## What Changes
 

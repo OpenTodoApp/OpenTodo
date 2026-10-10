@@ -4,7 +4,7 @@ schema: spec-driven
 # Keep discoverable codebase facts out of here; they belong in AGENTS.md and docs/.
 context: |
   OpenTodo is an open-source, self-hosted, local-first task manager positioned as a
-  Todoist replacement. Product principles that every change must respect:
+  replacement for commercial, subscription-based task apps. Product principles that every change must respect:
   - Local-first: the client is the source of truth and works fully offline;
     the server exists to sync, back up, and share.
   - Data ownership: everything lives under one data directory, exports are

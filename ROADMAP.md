@@ -1,6 +1,6 @@
 # Roadmap
 
-OpenTodo aims to replace Todoist for people who want to own their data, then go further with what a self-hosted, local-first platform makes possible. Work is organised as [OpenSpec](https://github.com/Fission-AI/OpenSpec) changes; the suggested change names below are the handles to use with `openspec new change <name>` or `/opsx:propose`.
+OpenTodo aims to replace commercial task managers for people who want to own their data, then go further with what a self-hosted, local-first platform makes possible. Work is organised as [OpenSpec](https://github.com/Fission-AI/OpenSpec) changes; the suggested change names below are the handles to use with `openspec new change <name>` or `/opsx:propose`.
 
 Status legend: ✅ shipped · 🔨 in progress · 🧭 planned · 💭 exploring
 
@@ -66,7 +66,7 @@ Status legend: ✅ shipped · 🔨 in progress · 🧭 planned · 💭 exploring
 | Status | Capability | Change name |
 | --- | --- | --- |
 | ✅ | JSON export | `bootstrap-core-platform` |
-| 🧭 | JSON / CSV import, including Todoist export files | `data-import` |
+| 🧭 | JSON / CSV import, including export files from popular commercial task apps | `data-import` |
 | 🧭 | Scheduled backups to local disk, S3 or WebDAV | `backups` |
 | 🧭 | CalDAV two-way sync (Apple Reminders, Thunderbird, Nextcloud) | `caldav` |
 | 🧭 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |

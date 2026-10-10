@@ -5,7 +5,7 @@
 <h1 align="center">OpenTodo</h1>
 
 <p align="center"><strong>Your tasks, your server.</strong><br>
-An open-source, local-first task manager you can host yourself. Built to replace Todoist without the subscription or the lock-in.</p>
+An open-source, local-first task manager you can host yourself. Everything you expect from a commercial task app, without the subscription or the lock-in.</p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg"></a>
@@ -60,7 +60,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | API | Authenticated REST API and API tokens for scripts and future CLI / integrations; full JSON export |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), subtasks, labels and filter queries, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, Todoist import, passkeys and OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), subtasks, labels and filter queries, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
 
 ## Quick start
 

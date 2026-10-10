@@ -1,7 +1,7 @@
 # Working on OpenTodo (guide for AI coding agents and humans)
 
 ## What this is
-Open-source, self-hosted, local-first task manager (Todoist replacement). Go server + SQLite, React PWA embedded in the binary, field-level op-log sync. AGPL-3.0.
+Open-source, self-hosted, local-first task manager that replaces subscription task apps. Go server + SQLite, React PWA embedded in the binary, field-level op-log sync. AGPL-3.0.
 
 ## Non-negotiables
 1. **Specs before behavior.** Behavior changes start as an OpenSpec change (`openspec/changes/<name>/`). Use `/opsx:propose`, `/opsx:apply`, `/opsx:archive`. Live specs are in `openspec/specs/`. Validate with `npx @fission-ai/openspec validate --all --strict`.
@@ -25,5 +25,5 @@ Open-source, self-hosted, local-first task manager (Todoist replacement). Go ser
 - Go: stdlib `net/http` mux with method patterns, JSON error envelope `{error:{code,message}}`, `slog` logging, errors wrapped with context.
 - TS: strict, function components, Tailwind classes, data access only via `src/lib`. Custom CSS classes live in `@layer components` so utilities can override them.
 - Dates: `due` is a floating `{date: "YYYY-MM-DD", time?: "HH:MM"}`; timestamps are Unix milliseconds.
-- Priority: 1 = highest … 4 = default/lowest (Todoist convention).
+- Priority: 1 = highest … 4 = default/lowest.
 - Deletion is a tombstone (`deleted_at`); lists filter it out, export includes it.
