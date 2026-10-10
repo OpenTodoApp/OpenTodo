@@ -17,12 +17,12 @@
 
 ## 3. Quick add UI
 
-- [ ] 3.1 `QuickAdd.tsx`: run the parser on every change, render chips (`role="status"`, `aria-live="polite"`) with dismiss buttons, title preview; verify in the browser that typing `Buy milk tomorrow p2` shows two chips and the preview `Buy milk`
-- [ ] 3.2 Backspace-at-end highlight-then-dismiss, chip dismissal persistence per span, quoted text protection; verify browser flow for `Review may report` dismissal and `"may"` quoting, plus unit tests for span bookkeeping (`npm test`)
-- [ ] 3.3 Submit path: merge parsed attributes over view defaults and call `createTask` with `due`, `project_id`, `labels`, `priority`, `estimate_minutes`; clear input and chips, keep focus; verify in Today view `Plan trip next Monday #travel` lands in Travel next Monday and the input stays focused
-- [ ] 3.4 `TaskRow.tsx`: show `estimate_minutes` as a muted `45m` chip; verify in the browser after creating `Write report +45m`
-- [ ] 3.5 Settings: parsing on/off switch, active languages, day/month order (per device, local storage); verify that with parsing off `Buy milk tomorrow p2` creates a task with that literal title and priority 4
-- [ ] 3.6 Offline check: create `Water plants tomorrow #home` with the network off, reconnect; verify the task reaches a second device with the parsed date and project (browser flow), and `npm run build` passes
+- [x] 3.1 `QuickAdd.tsx`: run the parser on every change, render chips (`role="status"`, `aria-live="polite"`) with dismiss buttons, title preview; verify in the browser that typing `Buy milk tomorrow p2` shows two chips and the preview `Buy milk`
+- [x] 3.2 Backspace-at-end highlight-then-dismiss, chip dismissal persistence per span, quoted text protection; verify browser flow for `Review may report` dismissal and `"may"` quoting, plus unit tests for span bookkeeping (`npm test`)
+- [x] 3.3 Submit path: merge parsed attributes over view defaults and call `createTask` with `due`, `project_id`, `labels`, `priority`, `estimate_minutes`; clear input and chips, keep focus; verify in Today view `Plan trip next Monday #travel` lands in Travel next Monday and the input stays focused
+- [x] 3.4 `TaskRow.tsx`: show `estimate_minutes` as a muted `45m` chip; verify in the browser after creating `Write report +45m`
+- [x] 3.5 Settings: parsing on/off switch, active languages, day/month order (per device, local storage); verify that with parsing off `Buy milk tomorrow p2` creates a task with that literal title and priority 4
+- [x] 3.6 Offline check: create `Water plants tomorrow #home` with the network off, reconnect; verify the task reaches a second device with the parsed date and project (browser flow), and `npm run build` passes
 
 ## 4. Docs and release
 
