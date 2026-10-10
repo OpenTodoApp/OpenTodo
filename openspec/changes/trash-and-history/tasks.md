@@ -2,7 +2,7 @@
 
 ## 1. Server: history and purge
 
-- [ ] 1.1 Migration `0002_purges.sql` (`user_id`, `entity`, `entity_id`, `seq`, `purged_at`); verify `store.Open` on an old database applies it (`TestMigrationsApplyPurges`, `go test ./...`)
+- [x] 1.1 Migration `0002_purges.sql` (`user_id`, `entity`, `entity_id`, `seq`, `purged_at`); verify `store.Open` on an old database applies it (`TestMigrationsApplyPurges`, `go test ./...`)
 - [ ] 1.2 `sync.History(user, entity, id, before, limit)` grouping ops by `(ts, device)` and marking losers; verify `TestHistoryIncludesLosingOps` (`go test ./...`)
 - [ ] 1.3 `sync.Purge(user, entity, ids)` deleting ops and fields, inserting markers from the shared sequence, cascading project → tasks; verify `TestPurgeRemovesOpsAndCascades` (`go test ./...`)
 - [ ] 1.4 `Apply` discards ops for purged ids (counted as duplicates); `Pull` returns `purged` after the cursor; verify `TestApplyDiscardsPurgedEntity`, `TestPullReportsPurged` (`go test ./...`)
