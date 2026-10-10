@@ -55,8 +55,10 @@ export default defineConfig({
     outDir: '../internal/web/dist',
     emptyOutDir: false,
     sourcemap: false,
-    // The only dynamic import is the optional Vim layer, whose dependencies are all in
-    // the main chunk: nothing to preload, so skip Vite's preload helper (vim-keybindings).
+    // Dynamic imports: the optional Vim layer (vim-keybindings), the note document
+    // code lib/richtext (Yjs) and the notes editor (ProseMirror), both
+    // collaborative-rich-text. All are precached by the service worker, so the
+    // preload helper would only add bytes to the main chunk; skip it.
     modulePreload: false,
   },
   server: {

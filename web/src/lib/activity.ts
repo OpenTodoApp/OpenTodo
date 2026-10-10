@@ -18,6 +18,13 @@ export const WINDOW_MS = 5000
 export const LOCAL_RETENTION = 500
 
 const COUNTED = new Set(['task', 'project', 'comment'])
+/**
+ * Opaque document fields (collaborative-rich-text): never recorded or shown. Their
+ * readable projection (`description`) is written in the same batch and counts.
+ * Same list as `Opaque` in internal/activity.
+ */
+export const OPAQUE = new Set(['task.notes_doc'])
+const counts = (op: { entity: string; field: string }) => COUNTED.has(op.entity) && !OPAQUE.has(`${op.entity}.${op.field}`)
 
 /** An op as the rule needs it; `from` is an optional known old value (local rows). */
 export type ActivityOp = Pick<Op, 'id' | 'entity' | 'entityId' | 'field' | 'value' | 'ts' | 'device'> & {
@@ -46,7 +53,7 @@ export function deriveActivity(ops: ActivityOp[], prior?: Map<string, unknown>):
   const list: ActivityOp[] = []
   const commentTask = new Map<string, string>()
   for (const op of ops) {
-    if (!COUNTED.has(op.entity)) continue
+    if (!counts(op)) continue
     list.push(op)
     if (op.entity === 'comment' && op.field === 'task_id' && typeof op.value === 'string') commentTask.set(op.entityId, op.value)
   }
@@ -145,7 +152,7 @@ export interface RecordInput {
 export async function recordActivity(inputs: RecordInput[]): Promise<void> {
   const rows: ActivityEntry[] = []
   for (const { op, actor, from, taskId, projectKey } of inputs) {
-    if (!COUNTED.has(op.entity)) continue
+    if (!counts(op)) continue
     const row: ActivityEntry = {
       id: op.id, actor, entity: op.entity as ActivityEntry['entity'], entityId: op.entityId, field: op.field, value: op.value,
       ts: op.ts, device: op.device, from, projectKey,

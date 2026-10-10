@@ -35,4 +35,43 @@ body {
   @apply rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-slate-500
     dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400;
 }
+/* Rich-text notes (collaborative-rich-text). ProseMirror's required base rules
+   are inlined instead of importing its stylesheet. */
+.notes-editor {
+  @apply relative min-h-28 w-full space-y-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+    focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30
+    dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  white-space: break-spaces;
+  font-variant-ligatures: none;
+}
+.notes-editor[contenteditable="false"] {
+  @apply bg-slate-50 dark:bg-slate-900/60;
+}
+.notes-editor.is-empty::before {
+  @apply pointer-events-none absolute text-slate-400;
+  content: attr(data-placeholder);
+}
+.notes-editor h1 { @apply text-lg font-semibold; }
+.notes-editor h2 { @apply text-base font-semibold; }
+.notes-editor h3, .notes-editor h4, .notes-editor h5, .notes-editor h6 { @apply font-semibold; }
+.notes-editor ul { @apply list-disc space-y-1 pl-5; }
+.notes-editor ol { @apply list-decimal space-y-1 pl-5; }
+.notes-editor li > * + * { @apply mt-1; }
+.notes-editor ul:has(> li.task-item) { @apply pl-0; }
+.notes-editor li.task-item { @apply relative list-none pl-6; }
+.notes-editor li.task-item::before {
+  @apply absolute top-0.5 left-0.5 flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded border border-slate-400 text-[10px] leading-none text-white dark:border-slate-500;
+  content: "";
+}
+.notes-editor li.task-item[data-checked="true"]::before {
+  @apply border-emerald-600 bg-emerald-600;
+  content: "✓";
+}
+.notes-editor li.task-item[data-checked="true"] > p { @apply text-slate-400 line-through; }
+.notes-editor code { @apply rounded bg-slate-100 px-1 font-mono text-[0.85em] dark:bg-slate-800; }
+.notes-editor a { @apply text-emerald-700 underline dark:text-emerald-300; }
+.notes-editor .ProseMirror-gapcursor { @apply hidden; }
+.notes-editor .ProseMirror-hideselection *::selection { background: transparent; }
 }
