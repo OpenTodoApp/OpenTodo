@@ -2,16 +2,16 @@
 
 ## 1. Schema (server and client)
 
-- [ ] 1.1 Add `label` entity (`name`, `color`, `position`, `created_at`, `deleted_at`) to `internal/sync/ops.go` `Schema` and `Plural`; verify `TestValidateAcceptsLabelOps` (`go test ./...`)
+- [x] 1.1 Add `label` entity (`name`, `color`, `position`, `created_at`, `deleted_at`) to `internal/sync/ops.go` `Schema` and `Plural`; verify `TestValidateAcceptsLabelOps` (`go test ./...`)
 - [ ] 1.2 Mirror in `web/src/lib/types.ts` (`Label`, `LABEL_FIELDS`), defaults in `ops.ts`, `labels` table in `db.ts` (database version bump); add the unknown-entity guard in `applyOps` if not already present; verify `ops.test.ts` applies label ops (`npm test`)
-- [ ] 1.3 Update `docs/sync.md` schema table and the whole-array caveat section; verify the table lists every field in `Schema`
+- [x] 1.3 Update `docs/sync.md` schema table and the whole-array caveat section; verify the table lists every field in `Schema`
 
 ## 2. Server API
 
-- [ ] 2.1 `labels` collection handlers (list, get, create, patch, delete); verify `TestLabelsCrud`, `TestLabelsRequireAuth` (`go test ./...`)
-- [ ] 2.2 Validate task `labels` ids on create/patch against existing non-deleted labels; verify `TestTaskLabelsMustExist` (`go test ./...`)
-- [ ] 2.3 Export includes `labels`; verify `TestExportIncludesLabels` (`go test ./...`)
-- [ ] 2.4 Document in `docs/api.md`; verify examples match handlers
+- [x] 2.1 `labels` collection handlers (list, get, create, patch, delete); verify `TestLabelsCrud`, `TestLabelsRequireAuth` (`go test ./...`)
+- [x] 2.2 Validate task `labels` ids on create/patch against existing non-deleted labels; verify `TestTaskLabelsMustExist` (`go test ./...`)
+- [x] 2.3 Export includes `labels`; verify `TestExportIncludesLabels` (`go test ./...`)
+- [x] 2.4 Document in `docs/api.md`; verify examples match handlers
 
 ## 3. Client data layer
 
