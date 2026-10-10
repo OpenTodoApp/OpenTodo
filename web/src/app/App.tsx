@@ -6,6 +6,7 @@ import type { AuthStatus, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { InviteScreen } from './InviteScreen'
 import { navigate, useRoute } from './router'
+import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
 
 type Phase = { kind: 'loading' } | { kind: 'offline-unknown' } | { kind: 'anonymous'; status: AuthStatus } | { kind: 'ready'; user: User }
@@ -81,7 +82,12 @@ export function App() {
     )
   }
   if (phase.kind === 'anonymous') {
-    return <AuthScreen status={phase.status} onAuthenticated={() => void refresh()} />
+    // On /share the payload waits in memory; after sign-in the route is still /share.
+    const notice = route.view === 'share' ? 'Sign in to add the shared page to OpenTodo. It is kept on this screen until then.' : undefined
+    return <AuthScreen status={phase.status} notice={notice} onAuthenticated={() => void refresh()} />
+  }
+  if (route.view === 'share') {
+    return <ShareCapture />
   }
   return <Shell user={phase.user} onLogout={() => void logout()} />
 }

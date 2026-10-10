@@ -13,6 +13,7 @@ export type Route =
   | { view: 'filter' }
   | { view: 'settings' }
   | { view: 'invite'; token: string }
+  | { view: 'share' }
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.split('/').filter(Boolean)
@@ -32,6 +33,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'labels' }
     case 'filter':
       return { view: 'filter' }
+    case 'share':
+      return { view: 'share' }
     case 'project':
       return parts[1] ? { view: 'project', id: parts[1] } : { view: 'inbox' }
     case 'invite':
@@ -76,10 +79,12 @@ if (typeof window !== 'undefined') {
   })
 }
 
-export function navigate(r: Route): void {
+/** Go to a route; `replace` swaps the current history entry (e.g. leaving the capture screen). */
+export function navigate(r: Route, opts?: { replace?: boolean }): void {
   const path = routePath(r)
   if (path === current) return
-  history.pushState(null, '', path)
+  if (opts?.replace) history.replaceState(null, '', path)
+  else history.pushState(null, '', path)
   current = path
   listeners.forEach((fn) => fn())
 }

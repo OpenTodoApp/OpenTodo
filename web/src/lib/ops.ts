@@ -194,12 +194,12 @@ export async function archiveProject(id: string): Promise<void> {
 }
 
 export async function createTask(input: {
-  title: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
+  title: string; description?: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
 }): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
   await mutate('task', id, {
-    title: input.title.trim(), description: '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
+    title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due: input.due ?? null, labels: input.labels ?? [], position: now, created_at: now,
     completed_at: null, deleted_at: null,
   })

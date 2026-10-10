@@ -1,8 +1,22 @@
 import { type FormEvent, forwardRef, useState } from 'react'
 
-export const QuickAdd = forwardRef<HTMLInputElement, { placeholder: string; onAdd: (title: string) => Promise<void> | void }>(
-  function QuickAdd({ placeholder, onAdd }, ref) {
-    const [value, setValue] = useState('')
+interface QuickAddProps {
+  placeholder: string
+  onAdd: (title: string) => Promise<void> | void
+  /** Prefilled title (the capture screen proposes the shared page's title). */
+  initialValue?: string
+  /** Form id, so a button elsewhere can submit it with `form=`. */
+  formId?: string
+  /** Hide the `q` shortcut hint (it does not apply outside the task views). */
+  hideHint?: boolean
+  autoFocus?: boolean
+  /** Accessible name of the input; "Add a task" by default. */
+  label?: string
+}
+
+export const QuickAdd = forwardRef<HTMLInputElement, QuickAddProps>(
+  function QuickAdd({ placeholder, onAdd, initialValue, formId, hideHint, autoFocus, label }, ref) {
+    const [value, setValue] = useState(initialValue ?? '')
     async function submit(e: FormEvent) {
       e.preventDefault()
       const title = value.trim()
@@ -11,7 +25,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, { placeholder: string; onAd
       await onAdd(title)
     }
     return (
-      <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2">
+      <form id={formId} onSubmit={(e) => void submit(e)} className="flex items-center gap-2">
         <span className="text-xl leading-none text-emerald-600">+</span>
         <input
           ref={ref}
@@ -22,9 +36,10 @@ export const QuickAdd = forwardRef<HTMLInputElement, { placeholder: string; onAd
           onKeyDown={(e) => {
             if (e.key === 'Escape') (e.target as HTMLInputElement).blur()
           }}
-          aria-label="Add a task"
+          aria-label={label ?? 'Add a task'}
+          autoFocus={autoFocus}
         />
-        <span className="kbd hidden sm:inline">q</span>
+        {!hideHint && <span className="kbd hidden sm:inline">q</span>}
       </form>
     )
   },

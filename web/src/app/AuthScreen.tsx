@@ -8,7 +8,7 @@ export interface InviteContext {
   preview: InvitationPreview
 }
 
-export function AuthScreen({ status, invite, onAuthenticated }: { status: AuthStatus; invite?: InviteContext; onAuthenticated: () => void }) {
+export function AuthScreen({ status, invite, notice, onAuthenticated }: { status: AuthStatus; invite?: InviteContext; notice?: string; onAuthenticated: () => void }) {
   const [mode, setMode] = useState<'login' | 'register'>(status.setupRequired || invite ? 'register' : 'login')
   const [email, setEmail] = useState(invite?.preview.email ?? '')
   const [name, setName] = useState('')
@@ -43,6 +43,9 @@ export function AuthScreen({ status, invite, onAuthenticated }: { status: AuthSt
           </div>
         </div>
 
+        {notice && (
+          <p className="mb-4 rounded-md bg-slate-100 p-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">{notice}</p>
+        )}
         {status.setupRequired && !invite && (
           <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
             Welcome! Create the owner account for this server. Only you can do this; sign-up closes afterwards unless you open it.

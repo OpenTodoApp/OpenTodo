@@ -78,8 +78,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'filter' ? (
             <FilterView />
           ) : (
-            // App renders the invite screen itself; a stray /invite route inside the shell falls back to the Inbox.
-            <TaskListView route={route.view === 'invite' ? { view: 'inbox' } : route} />
+            // App renders the invite and capture screens itself; a stray /invite or /share route inside the shell falls back to the Inbox.
+            <TaskListView route={route.view === 'invite' || route.view === 'share' ? { view: 'inbox' } : route} />
           )}
         </div>
       </main>
