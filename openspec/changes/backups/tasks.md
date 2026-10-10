@@ -18,7 +18,7 @@
 - [x] 3.2 S3-compatible destination with SigV4 (`PutObject`, `ListObjectsV2`, `DeleteObject`, path-style option) against an in-process fake; verify `TestS3SignatureVectors` (AWS published test vectors) and `TestS3PutListDelete` (`go test ./...`)
 - [x] 3.3 WebDAV destination (`MKCOL`, `PUT`, `PROPFIND`, `DELETE`, Basic auth) against an in-process fake; verify `TestWebDAVPutListDelete` and `TestWebDAVUnreachableRecordsFailure` (`go test ./...`)
 - [x] 3.4 Destination test probe (write + delete a small object); verify `TestProbeReportsDestinationError` (`go test ./...`)
-- [ ] 3.5 Scheduler (hourly/daily/weekly in server zone, missed-run-at-startup), run mutex, `backup_runs` recording and pruning, retention keep-last-N and older-than-D never deleting the newest; verify `TestNextRunComputation`, `TestMissedRunExecutesAtStartup`, `TestRetentionKeepsNewest`, `TestConcurrentRunConflicts` (`go test ./...`)
+- [x] 3.5 Scheduler (hourly/daily/weekly in server zone, missed-run-at-startup), run mutex, `backup_runs` recording and pruning, retention keep-last-N and older-than-D never deleting the newest; verify `TestNextRunComputation`, `TestMissedRunExecutesAtStartup`, `TestRetentionKeepsNewest`, `TestConcurrentRunConflicts` (`go test ./...`)
 
 ## 4. HTTP API and settings screen
 
