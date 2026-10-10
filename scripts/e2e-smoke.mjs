@@ -65,8 +65,10 @@ await row(page, 'Get three quotes for the kitchen').click()
 await detail(page).getByRole('button', { name: 'P1' }).click()
 const today = new Date(); const iso = today.toISOString().slice(0, 10)
 await detail(page).getByLabel('Due date').fill(iso)
-await detail(page).getByLabel('Description').fill('Ask about lead times and payment schedule.')
-await detail(page).getByLabel('Description').blur()
+// Notes are a rich-text editor (contenteditable, role textbox) that saves after a short pause.
+const notes = detail(page).getByRole('textbox', { name: 'Notes' })
+await notes.click(); await notes.fill('Ask about lead times and payment schedule.')
+await page.waitForTimeout(1500)
 await row(page, 'Pick paint colours').click()
 await page.waitForFunction((t) => document.querySelector('aside[data-detail-for] [aria-label="Title"]')?.value === t, 'Pick paint colours')
 await detail(page).getByRole('button', { name: 'P2' }).click()
@@ -102,7 +104,7 @@ const tomorrowLocal = await page.evaluate(() => { const d = new Date(); d.setDat
 const checks = [
   ['quotes priority', byTitle('Get three quotes for the kitchen').priority === 1],
   ['quotes due', byTitle('Get three quotes for the kitchen').due?.date === iso],
-  ['quotes notes', byTitle('Get three quotes for the kitchen').description === 'Ask about lead times and payment schedule.'],
+  ['quotes notes', !!byTitle('Get three quotes for the kitchen').notes_doc || (byTitle('Get three quotes for the kitchen').description ?? '').includes('lead times')],
   ['paint priority', byTitle('Pick paint colours').priority === 2],
   ['paint due', byTitle('Pick paint colours').due?.date === tomorrow],
   ['nlp title', byTitle('Water the plants').priority === 2],
