@@ -1,8 +1,8 @@
 // Every local mutation becomes field-level ops that are applied to IndexedDB
 // immediately (optimistic, offline-safe) and queued for the server.
-import { db, getMeta, setMeta } from './db'
+import { db, entityTables, getMeta, setMeta } from './db'
 import { hlcNow, hlcSeed, wins } from './hlc'
-import type { Clock, Entity, Op, Project, Task } from './types'
+import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Task } from './types'
 
 let devicePromise: Promise<string> | null = null
 
@@ -29,7 +29,7 @@ export function resetDeviceId(): void {
 }
 
 function tableFor(entity: Entity) {
-  return entity === 'project' ? db.projects : db.tasks
+  return entity === 'project' ? db.projects : entity === 'label' ? db.labels : db.tasks
 }
 
 const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
@@ -39,27 +39,33 @@ const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null,
 }
+const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
+  name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
+}
+const DEFAULTS: Record<Entity, Record<string, unknown>> = { project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS }
 
 /**
  * Apply ops to the local store using per-field last-writer-wins. Safe to call with
  * ops in any order and any number of times: the result depends only on the set of ops.
+ * Ops for entities this build does not know (a newer server) are skipped, not fatal.
  */
 export async function applyOps(ops: Op[]): Promise<void> {
   if (ops.length === 0) return
   const grouped = new Map<string, Op[]>()
   for (const op of ops) {
+    if (!ENTITIES.includes(op.entity)) continue
     const key = `${op.entity}:${op.entityId}`
     const list = grouped.get(key)
     if (list) list.push(op)
     else grouped.set(key, [op])
   }
-  await db.transaction('rw', [db.projects, db.tasks], async () => {
+  if (grouped.size === 0) return
+  await db.transaction('rw', entityTables(), async () => {
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
       const table = tableFor(entity)
-      const existing = (await table.get(entityId)) as (Project | Task) | undefined
-      const defaults = entity === 'project' ? PROJECT_DEFAULTS : TASK_DEFAULTS
-      const row: Record<string, unknown> = existing ? { ...existing } : { ...defaults, id: entityId, _clock: {} }
+      const existing = (await table.get(entityId)) as (Project | Task | Label) | undefined
+      const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing
       for (const op of list) {
@@ -85,7 +91,17 @@ export function onLocalMutation(fn: Listener): () => void {
   return () => mutationListeners.delete(fn)
 }
 
-/** Record field changes for one entity: apply locally and enqueue for the server. */
+/** Tables a read-modify-write helper must lock to wrap mutate() in one transaction. */
+export function mutationTables() {
+  return [...entityTables(), db.outbox, db.meta]
+}
+
+/**
+ * Record field changes for one entity: apply locally and enqueue for the server, in one
+ * transaction. Callers that must read the current row first (e.g. the task label array)
+ * wrap the read and this call in `db.transaction('rw', mutationTables(), …)` after
+ * awaiting getDeviceId() once, so the read cannot go stale before the write.
+ */
 export async function mutate(entity: Entity, entityId: string, patch: Record<string, unknown>): Promise<void> {
   const device = await getDeviceId()
   const ts = hlcNow()
@@ -93,8 +109,8 @@ export async function mutate(entity: Entity, entityId: string, patch: Record<str
     id: crypto.randomUUID(), entity, entityId, field, value, ts, device,
   }))
   if (ops.length === 0) return
-  await applyOps(ops)
-  await db.transaction('rw', [db.outbox, db.meta], async () => {
+  await db.transaction('rw', mutationTables(), async () => {
+    await applyOps(ops)
     await db.outbox.bulkAdd(ops)
     await db.meta.put({ key: 'hlc', value: ts })
   })

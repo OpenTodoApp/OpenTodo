@@ -42,6 +42,28 @@ describe('applyOps', () => {
     expect(await db.tasks.count()).toBe(1)
   })
 
+  it('applies label ops into the labels table with defaults', async () => {
+    const db = useDatabase(`label-${Date.now()}`)
+    await applyOps([
+      { id: 'l1', entity: 'label', entityId: 'lab', field: 'name', value: 'errand', ts: 1, device: 'A' },
+      { id: 'l2', entity: 'label', entityId: 'lab', field: 'color', value: '#ef4444', ts: 1, device: 'A' },
+      { id: 'l3', entity: 'label', entityId: 'lab', field: 'name', value: 'stale', ts: 0, device: 'A' },
+    ])
+    const l = await db.labels.get('lab')
+    expect(l).toMatchObject({ id: 'lab', name: 'errand', color: '#ef4444', position: 0, deleted_at: null })
+    expect(await db.tasks.count()).toBe(0)
+  })
+
+  it('skips ops for entities this build does not know instead of failing the batch', async () => {
+    const db = useDatabase(`unknown-${Date.now()}`)
+    await applyOps([
+      { id: 'u1', entity: 'widget' as Op['entity'], entityId: 'w', field: 'name', value: 'x', ts: 1, device: 'A' },
+      op({ field: 'title', value: 'kept', ts: 1, device: 'A' }),
+    ])
+    expect((await db.tasks.get('t1'))?.title).toBe('kept')
+    expect(await db.labels.count()).toBe(0)
+  })
+
   it('keeps a newer local edit when an older remote op arrives late', async () => {
     const db = useDatabase(`late-${Date.now()}`)
     const id = await createTask({ title: 'local title' })

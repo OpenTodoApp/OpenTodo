@@ -3,7 +3,7 @@
 ## 1. Schema (server and client)
 
 - [x] 1.1 Add `label` entity (`name`, `color`, `position`, `created_at`, `deleted_at`) to `internal/sync/ops.go` `Schema` and `Plural`; verify `TestValidateAcceptsLabelOps` (`go test ./...`)
-- [ ] 1.2 Mirror in `web/src/lib/types.ts` (`Label`, `LABEL_FIELDS`), defaults in `ops.ts`, `labels` table in `db.ts` (database version bump); add the unknown-entity guard in `applyOps` if not already present; verify `ops.test.ts` applies label ops (`npm test`)
+- [x] 1.2 Mirror in `web/src/lib/types.ts` (`Label`, `LABEL_FIELDS`), defaults in `ops.ts`, `labels` table in `db.ts` (database version bump); add the unknown-entity guard in `applyOps` if not already present; verify `ops.test.ts` applies label ops (`npm test`)
 - [x] 1.3 Update `docs/sync.md` schema table and the whole-array caveat section; verify the table lists every field in `Schema`
 
 ## 2. Server API
@@ -15,10 +15,10 @@
 
 ## 3. Client data layer
 
-- [ ] 3.1 `createLabel` (case-insensitive uniqueness check), `updateLabel`, `reorderLabel`; verify `labels.test.ts` "duplicate name refused" (`npm test`)
-- [ ] 3.2 `addLabel(taskId, labelId)` / `removeLabel` reading the current array in the same transaction before writing; verify `labels.test.ts` "sequential adds keep both" and "concurrent adds resolve to newer array" (`npm test`)
-- [ ] 3.3 `deleteLabel` (tombstone + remove id from carrying tasks) and `mergeLabels(source, target)` (rewrite arrays, de-duplicate, tombstone source); verify `labels.test.ts` "delete removes from tasks", "merge yields union without duplicates" (`npm test`)
-- [ ] 3.4 Display helpers: resolve ids to labels hiding unknown and deleted ids; duplicate detection; per-label open counts; verify `labels.test.ts` cases for hidden ids and counts (`npm test`)
+- [x] 3.1 `createLabel` (case-insensitive uniqueness check), `updateLabel`, `reorderLabel`; verify `labels.test.ts` "duplicate name refused" (`npm test`)
+- [x] 3.2 `addLabel(taskId, labelId)` / `removeLabel` reading the current array in the same transaction before writing; verify `labels.test.ts` "sequential adds keep both" and "concurrent adds resolve to newer array" (`npm test`)
+- [x] 3.3 `deleteLabel` (tombstone + remove id from carrying tasks) and `mergeLabels(source, target)` (rewrite arrays, de-duplicate, tombstone source); verify `labels.test.ts` "delete removes from tasks", "merge yields union without duplicates" (`npm test`)
+- [x] 3.4 Display helpers: resolve ids to labels hiding unknown and deleted ids; duplicate detection; per-label open counts; verify `labels.test.ts` cases for hidden ids and counts (`npm test`)
 
 ## 4. UI
 
