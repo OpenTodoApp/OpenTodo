@@ -91,7 +91,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
           {breadcrumb && <span className="truncate text-slate-400" title="Parent task">↳ {breadcrumb}</span>}
-          {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <span className="ml-1 text-slate-400" title={`Fixed to ${task.due!.tz}`}>({hint})</span>}</span>}
+          {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-slate-400" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
           {task.recurrence ? (
             <span className="text-slate-500" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring>↻</span>
           ) : task.series_id ? (
