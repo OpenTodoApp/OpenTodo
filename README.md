@@ -90,6 +90,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | API | Authenticated REST API and API tokens for scripts and integrations; full JSON export |
 | Backups | Scheduled, consistent backups of the whole server to a folder, S3-compatible storage or WebDAV, with retention, optional encryption (AES-256-GCM, argon2id) and `opentodo restore`; devices re-sync their newer edits after a restore. Owner only, in **Settings → Backups**. See [docs/backups.md](docs/backups.md) |
 | Calendar apps | Two-way CalDAV sync with Apple Reminders, Thunderbird and Android tasks apps via DAVx⁵: projects are lists, the Inbox is a list, edits from either side converge field by field through the op log. Off until the owner enables it; per-device app passwords; alarms and other client properties survive round trips. See [docs/caldav.md](docs/caldav.md) |
+| Email to task | Forward any email to your secret address (`todo+…@example.com`) and it becomes an Inbox task: subject as title, text as description, attachment names listed. Optional: the operator points OpenTodo at one IMAP mailbox with plus addressing; no mail server, port or DNS change. Rotate, switch off or limit senders in Settings. See [docs/email.md](docs/email.md) |
 | Webhooks | Signed outbound webhooks on task and project events for Home Assistant, n8n or a Telegram relay: retries with backoff, delivery log, test ping, private-network protection, see [docs/webhooks.md](docs/webhooks.md) |
 | Import | **Settings → Import data** (`g` `Shift+I`): the app's own JSON export (exact round trip between instances), CSV with documented columns, and JSON exports of other task managers; a preview before anything is written, duplicate detection, per-row errors, undo of a whole import. See [docs/import.md](docs/import.md) |
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
@@ -161,6 +162,7 @@ All settings are environment variables with safe defaults. See [`.env.example`](
 | `OPENTODO_IMPORT_MAX_MB` | `20` | Largest file accepted by [import](docs/import.md), 1–200 |
 | `OPENTODO_PUSH` | `on` | `off` disables web push for [reminders](docs/reminders.md): no requests to push services; reminders still show in the app |
 | `OPENTODO_CALDAV` | unset | `true` presets the CalDAV endpoint for [calendar apps](docs/caldav.md) on first start; afterwards Settings → Calendar apps decides. Off by default |
+| `OPENTODO_EMAIL_*` | unset | Optional [email to task](docs/email.md): `ADDRESS`, `IMAP_HOST`, `IMAP_USER` and `IMAP_PASSWORD` (or `IMAP_PASSWORD_FILE`) together turn it on; `IMAP_MAILBOX`, `POLL_SECONDS`, `PROCESSED` tune it. Off when unset |
 | `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days a deleted task or project stays in the Trash before the server purges it; `0` never purges automatically |
 | `OPENTODO_OIDC_*` | unset | Optional single sign-on settings (`ISSUER`, `CLIENT_ID`, `CLIENT_SECRET`, `DISPLAY_NAME`, `SSO_ONLY`) that override and lock the fields in Settings → Single sign-on. See [docs/self-hosting/sso.md](docs/self-hosting/sso.md) |
 

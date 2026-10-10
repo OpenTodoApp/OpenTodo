@@ -28,6 +28,6 @@ New environment variables are all optional; the feature is disabled when they ar
 
 ## Impact
 
-- Server: new package `internal/email` (poller, parser, address matching, task creation via `sync.Apply`), new tables `email_inboxes` and `email_receipts` via migration, new routes under `/api/v1/email-inbox`, new `OPENTODO_EMAIL_*` configuration. One new dependency, a pure-Go IMAP client, adding roughly 1.5 MB to the binary and about 3 MB of resident memory while a poll is running (zero when disabled); the compressed image stays well under the 50 MB limit.
+- Server: new package `internal/email` (poller, parser, address matching, task creation via `sync.Apply`), new tables `email_inboxes` and `email_receipts` via migration, new routes under `/api/v1/email-inbox`, new `OPENTODO_EMAIL_*` configuration. Planned as one new dependency (a pure-Go IMAP client); implemented without any: a minimal stdlib IMAP client adds 224 KB to the binary and holds at most one capped message in memory while a poll runs (zero when disabled). See design D3.
 - Client: Settings section "Email to task" (address, copy, rotate, enable, allowlist). Bundle impact under 2 KB.
-- Docs: `docs/self-hosting/email.md` (mailbox setup with sub-addressing on common providers), `docs/api.md` routes, `.env.example`, `docker-compose.yml` comments, README feature list.
+- Docs: `docs/email.md` (mailbox setup with sub-addressing on common providers), `docs/api.md` routes, `.env.example`, `docker-compose.yml` comments, README feature list.
