@@ -49,6 +49,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/tokens", s.requireAuth(s.handleCreateToken))
 	mux.Handle("DELETE /api/v1/tokens/{id}", s.requireAuth(s.handleDeleteToken))
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
+	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
 	mux.Handle("GET /api/v1/{collection}", s.requireAuth(s.handleList))
 	mux.Handle("POST /api/v1/{collection}", s.requireAuth(s.handleCreate))
@@ -155,6 +156,10 @@ func (w *statusWriter) WriteHeader(code int) {
 	w.status = code
 	w.ResponseWriter.WriteHeader(code)
 }
+
+// Unwrap lets http.ResponseController reach Flush and the deadline setters of
+// the underlying writer (needed by the event stream).
+func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 func (s *Server) logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -353,6 +358,10 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	if res.Applied > 0 {
+		// Wake the user's other devices; this one learns the cursor from the response.
+		s.sync.Notifier().Notify(uid, in.Device, res.Seq)
+	}
 	ops, cursor, more, err := s.sync.Pull(r.Context(), uid, in.Cursor, in.Device, opsync.MaxOpsPerRequest)
 	if err != nil {
 		s.internal(w, err)
@@ -492,13 +501,18 @@ func (s *Server) writeFields(w http.ResponseWriter, r *http.Request, entity, id 
 		ops = append(ops, opsync.Op{ID: ids.New(), Entity: entity, EntityID: id, Field: field, Value: value, TS: now, Device: serverDevice})
 	}
 	uid := userFrom(r.Context()).ID
-	if _, err := s.sync.Apply(r.Context(), uid, ops); err != nil {
+	res, err := s.sync.Apply(r.Context(), uid, ops)
+	if err != nil {
 		if errors.Is(err, opsync.ErrInvalidOp) {
 			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 			return
 		}
 		s.internal(w, err)
 		return
+	}
+	if res.Applied > 0 {
+		// REST writes come from no browser device, so every connected device is woken.
+		s.sync.Notifier().Notify(uid, serverDevice, res.Seq)
 	}
 	if status == http.StatusNoContent {
 		w.WriteHeader(status)
