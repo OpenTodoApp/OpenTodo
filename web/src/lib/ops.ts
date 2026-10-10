@@ -127,12 +127,12 @@ export async function createProject(input: { name: string; color?: string }): Pr
   return id
 }
 
-export async function createTask(input: { title: string; project_id?: string | null; due?: Task['due']; priority?: Task['priority'] }): Promise<string> {
+export async function createTask(input: { title: string; project_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[] }): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
   await mutate('task', id, {
     title: input.title.trim(), description: '', project_id: input.project_id ?? null, parent_id: null,
-    priority: input.priority ?? 4, due: input.due ?? null, labels: [], position: now, created_at: now,
+    priority: input.priority ?? 4, due: input.due ?? null, labels: input.labels ?? [], position: now, created_at: now,
     completed_at: null, deleted_at: null,
   })
   return id

@@ -8,6 +8,8 @@ export type Route =
   | { view: 'upcoming' }
   | { view: 'completed' }
   | { view: 'project'; id: string }
+  | { view: 'label'; id: string }
+  | { view: 'labels' }
   | { view: 'settings' }
 
 export function parseRoute(pathname: string): Route {
@@ -24,15 +26,20 @@ export function parseRoute(pathname: string): Route {
       return { view: 'completed' }
     case 'settings':
       return { view: 'settings' }
+    case 'labels':
+      return { view: 'labels' }
     case 'project':
       return parts[1] ? { view: 'project', id: parts[1] } : { view: 'inbox' }
+    case 'label':
+      return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
     default:
       return { view: 'inbox' }
   }
 }
 
 export function routePath(r: Route): string {
-  return r.view === 'project' ? `/project/${r.id}` : r.view === 'inbox' ? '/' : `/${r.view}`
+  if (r.view === 'project' || r.view === 'label') return `/${r.view}/${r.id}`
+  return r.view === 'inbox' ? '/' : `/${r.view}`
 }
 
 const listeners = new Set<() => void>()

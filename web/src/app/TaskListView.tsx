@@ -2,15 +2,17 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { compareDue, formatDateHeading, todayISO } from '../lib/dates'
+import { resolveLabels } from '../lib/labels'
 import { createTask, deleteTask, setTaskCompleted, updateTask } from '../lib/ops'
-import type { Priority, Project, Task } from '../lib/types'
+import type { Label, Priority, Project, Task } from '../lib/types'
+import { LabelPicker } from './LabelPicker'
 import { QuickAdd } from './QuickAdd'
 import { TaskDetail } from './TaskDetail'
 import { TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 
-type ListRoute = Exclude<Route, { view: 'settings' }>
+type ListRoute = Exclude<Route, { view: 'settings' } | { view: 'labels' }>
 
 interface Group {
   key: string
@@ -23,6 +25,10 @@ export function TaskListView({ route }: { route: ListRoute }) {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const currentProject = route.view === 'project' ? projectMap.get(route.id) : undefined
+  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
+  const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
+  const currentLabel = route.view === 'label' ? labelMap.get(route.id) : undefined
+  const routeId = route.view === 'project' || route.view === 'label' ? route.id : ''
 
   const tasks = useLiveQuery(async () => {
     // Tasks of archived or deleted projects stay out of the cross-project views.
@@ -39,8 +45,10 @@ export function TaskListView({ route }: { route: ListRoute }) {
         return all.filter((t) => t.completed_at).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0)).slice(0, 100)
       case 'project':
         return all.filter((t) => !t.completed_at && t.project_id === route.id).sort(byPosition)
+      case 'label':
+        return all.filter((t) => !t.completed_at && t.labels.includes(route.id)).sort(byPosition)
     }
-  }, [route.view, route.view === 'project' ? route.id : '', today], [] as Task[])
+  }, [route.view, routeId, today], [] as Task[])
 
   const groups = useMemo<Group[]>(() => {
     // The live query can still hold the previous view's rows for one render, so never
@@ -63,18 +71,27 @@ export function TaskListView({ route }: { route: ListRoute }) {
       }
       return [...byDate.entries()].map(([date, list]) => ({ key: date, heading: formatDateHeading(date, today), tasks: list }))
     }
+    if (route.view === 'label') {
+      // Grouped by project: Inbox first, then projects in sidebar order.
+      const byProject = new Map<string, Task[]>()
+      for (const t of tasks) byProject.set(t.project_id ?? '', [...(byProject.get(t.project_id ?? '') ?? []), t])
+      const order = ['', ...projects.slice().sort((a, b) => a.position - b.position).map((p) => p.id)]
+      return order.filter((id) => byProject.has(id)).map((id) => ({ key: id || 'inbox', heading: id ? projectMap.get(id)?.name ?? 'Project' : 'Inbox', tasks: byProject.get(id)! }))
+    }
     return [{ key: 'all', heading: null, tasks }]
-  }, [tasks, route.view, today])
+  }, [tasks, route.view, today, projects, projectMap])
 
   const flat = useMemo(() => groups.flatMap((g) => g.tasks), [groups])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [pickerFor, setPickerFor] = useState<string | null>(null)
   const quickAddRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setSelectedId(null)
     setOpenId(null)
+    setPickerFor(null)
   }, [route])
 
   useEffect(() => {
@@ -91,6 +108,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
       title,
       project_id: route.view === 'project' ? route.id : null,
       due: route.view === 'today' ? { date: today } : route.view === 'upcoming' ? { date: addDays(today, 1) } : null,
+      labels: route.view === 'label' ? [route.id] : [],
     })
   }, [route, today])
 
@@ -101,6 +119,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
       const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
       if (e.key === 'Escape') {
         if (typing) (target as HTMLElement).blur()
+        else if (pickerFor) setPickerFor(null)
         else if (openId) setOpenId(null)
         else setSelectedId(null)
         return
@@ -131,6 +150,12 @@ export function TaskListView({ route }: { route: ListRoute }) {
             void setTaskCompleted(selectedId, !t?.completed_at)
           }
           break
+        case 'L':
+          if (selectedId) {
+            e.preventDefault()
+            setPickerFor(selectedId)
+          }
+          break
         case '1':
         case '2':
         case '3':
@@ -149,7 +174,7 @@ export function TaskListView({ route }: { route: ListRoute }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [flat, selectedId, openId])
+  }, [flat, selectedId, openId, pickerFor])
 
   useEffect(() => {
     if (!selectedId) return
@@ -157,13 +182,20 @@ export function TaskListView({ route }: { route: ListRoute }) {
   }, [selectedId])
 
   const title = {
-    inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', completed: 'Completed', project: currentProject?.name ?? 'Project',
+    inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', completed: 'Completed', project: currentProject?.name ?? 'Project', label: currentLabel?.name ?? 'Label',
   }[route.view]
 
   if (route.view === 'project' && projects.length > 0 && !currentProject) {
     return (
       <div className="p-6 text-sm text-slate-500">
         This project no longer exists. <button className="underline" onClick={() => navigate({ view: 'inbox' })}>Go to Inbox</button>
+      </div>
+    )
+  }
+  if (route.view === 'label' && labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) {
+    return (
+      <div className="p-6 text-sm text-slate-500">
+        This label no longer exists. <button className="underline" onClick={() => navigate({ view: 'labels' })}>All labels</button>
       </div>
     )
   }
@@ -175,15 +207,17 @@ export function TaskListView({ route }: { route: ListRoute }) {
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} />
           ) : (
-            <h1 className="mb-4 text-xl font-semibold">
+            <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
+              {currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
               {title}
               {route.view === 'today' && <span className="ml-2 text-sm font-normal text-slate-400">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>}
+              {route.view === 'label' && <span className="text-sm font-normal text-slate-400">{flat.length}</span>}
             </h1>
           )}
 
           {route.view !== 'completed' && (
             <div className="mb-3 border-b border-slate-200 pb-2 dark:border-slate-800">
-              <QuickAdd ref={quickAddRef} onAdd={onAdd} placeholder={placeholderFor(route, currentProject)} />
+              <QuickAdd ref={quickAddRef} onAdd={onAdd} placeholder={placeholderFor(route, currentProject, currentLabel)} />
             </div>
           )}
 
@@ -198,7 +232,8 @@ export function TaskListView({ route }: { route: ListRoute }) {
                     key={t.id}
                     task={t}
                     project={t.project_id ? projectMap.get(t.project_id) : undefined}
-                    showProject={route.view !== 'project'}
+                    labels={resolveLabels(t.labels, labelMap)}
+                    showProject={route.view !== 'project' && route.view !== 'label'}
                     selected={t.id === selectedId}
                     onToggle={() => void setTaskCompleted(t.id, !t.completed_at)}
                     onOpen={() => {
@@ -212,12 +247,20 @@ export function TaskListView({ route }: { route: ListRoute }) {
           ))}
         </div>
       </div>
-      {openId && <TaskDetail taskId={openId} projects={projects} onClose={() => setOpenId(null)} />}
+      {openId && <TaskDetail taskId={openId} projects={projects} labelMap={labelMap} onClose={() => setOpenId(null)} />}
+      {pickerFor && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/30 p-4 pt-24" onClick={() => setPickerFor(null)}>
+          <div className="w-full max-w-sm rounded-xl bg-white p-3 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Labels for task">
+            <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
+            <p className="mt-2 px-1 text-[11px] text-slate-400">Enter toggles or creates · Esc closes</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function placeholderFor(route: ListRoute, project?: Project): string {
+function placeholderFor(route: ListRoute, project?: Project, label?: Label): string {
   switch (route.view) {
     case 'today':
       return 'Add a task for today…'
@@ -225,6 +268,8 @@ function placeholderFor(route: ListRoute, project?: Project): string {
       return 'Add a task for tomorrow…'
     case 'project':
       return `Add a task to ${project?.name ?? 'this project'}…`
+    case 'label':
+      return `Add a task labelled ${label?.name ?? 'this'}…`
     default:
       return 'Add a task to your Inbox…'
   }
@@ -237,6 +282,7 @@ function EmptyState({ view }: { view: ListRoute['view'] }) {
     upcoming: 'No scheduled tasks. Add a due date to a task and it will show up here.',
     completed: 'Nothing completed yet. Completed tasks show up here for a while.',
     project: 'This project has no open tasks.',
+    label: 'No open task carries this label. Select a task and press L to add it.',
   }[view]
   return <p className="px-2 py-8 text-center text-sm text-slate-400">{text}</p>
 }

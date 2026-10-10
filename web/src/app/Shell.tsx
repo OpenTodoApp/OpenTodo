@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { User } from '../lib/types'
 import { navigate, useRoute } from './router'
+import { LabelsView } from './LabelsView'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
 import { SettingsView } from './SettingsView'
@@ -31,6 +32,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         if (e.key === 't') navigate({ view: 'today' })
         if (e.key === 'u') navigate({ view: 'upcoming' })
         if (e.key === 'c') navigate({ view: 'completed' })
+        if (e.key === 'l') navigate({ view: 'labels' })
         if (e.key === 's') navigate({ view: 'settings' })
         return
       }
@@ -63,7 +65,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           </button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {route.view === 'settings' ? <SettingsView user={user} onLogout={onLogout} /> : <TaskListView route={route} />}
+          {route.view === 'settings' ? <SettingsView user={user} onLogout={onLogout} /> : route.view === 'labels' ? <LabelsView route={route} /> : <TaskListView route={route} />}
         </div>
       </main>
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} />}
@@ -87,8 +89,9 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['Enter', 'Open selected task'],
     ['c', 'Complete / reopen selected task'],
     ['1 – 4', 'Set priority of selected task'],
+    ['L', 'Labels of selected task (type to find, Enter adds or creates)'],
     ['Delete', 'Delete selected task'],
-    ['g then i / t / u / c / s', 'Go to Inbox / Today / Upcoming / Completed / Settings'],
+    ['g then i / t / u / c / l / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Settings'],
     ['Esc', 'Close panel, clear selection'],
     ['?', 'Toggle this help'],
   ]

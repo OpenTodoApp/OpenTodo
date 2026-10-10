@@ -1,8 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
 import { db } from '../lib/db'
+import { removeLabel, resolveLabels } from '../lib/labels'
 import { deleteTask, setTaskCompleted, updateTask } from '../lib/ops'
-import type { Priority, Project } from '../lib/types'
+import type { Label, Priority, Project } from '../lib/types'
+import { LabelChip, LabelPicker } from './LabelPicker'
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 1, label: 'P1', cls: 'text-red-600 border-red-500' },
@@ -11,7 +13,7 @@ const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 4, label: 'P4', cls: 'text-slate-500 border-slate-400' },
 ]
 
-export function TaskDetail({ taskId, projects, onClose }: { taskId: string; projects: Project[]; onClose: () => void }) {
+export function TaskDetail({ taskId, projects, labelMap, onClose }: { taskId: string; projects: Project[]; labelMap: Map<string, Label>; onClose: () => void }) {
   const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -88,6 +90,13 @@ export function TaskDetail({ taskId, projects, onClose }: { taskId: string; proj
               onChange={(e) => task.due && void updateTask(task.id, { due: e.target.value ? { date: task.due.date, time: e.target.value } : { date: task.due.date } })} />
             {task.due && <button className="btn-ghost" onClick={() => void updateTask(task.id, { due: null })} aria-label="Clear due date">✕</button>}
           </div>
+        </Field>
+
+        <Field label="Labels">
+          <div className="mb-2 flex flex-wrap gap-1 empty:hidden">
+            {resolveLabels(task.labels, labelMap).map((l) => <LabelChip key={l.id} label={l} onRemove={() => void removeLabel(task.id, l.id)} />)}
+          </div>
+          <LabelPicker taskId={task.id} inline />
         </Field>
 
         <p className="pt-4 text-xs text-slate-400">
