@@ -3,7 +3,7 @@
 ## 1. Event derivation
 
 - [x] 1.1 `internal/sync`: expose per-batch winning changes `[]Change{UserID, Entity, EntityID, Fields{from,to}, Origin}` from `Apply` through an observer, emitted only after commit; verify `TestApplyReportsWinningChangesOnly` (stale ops produce no change) and existing convergence tests still pass (`go test ./...`)
-- [ ] 1.2 `internal/webhook/events.go`: map a change to one event by precedence (created, deleted, completed, reopened, archived, updated), build the versioned payload with `data`, `changes` and `source`; verify `TestEventPrecedence`, `TestPayloadChangesFromTo` (`go test ./...`)
+- [x] 1.2 `internal/webhook/events.go`: map a change to one event by precedence (created, deleted, completed, reopened, archived, updated), build the versioned payload with `data`, `changes` and `source`; verify `TestEventPrecedence`, `TestPayloadChangesFromTo` (`go test ./...`)
 
 ## 2. Storage, queue and delivery
 
