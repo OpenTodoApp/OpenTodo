@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -337,6 +338,33 @@ func TestUserExportExcludesAudit(t *testing.T) {
 	for _, needle := range []string{"login.succeeded", "token.created", "audit"} {
 		if strings.Contains(string(raw), needle) {
 			t.Fatalf("user export contains %q", needle)
+		}
+	}
+}
+
+// TestAuditDocumentedShape keeps docs/api.md#audit-log honest: an event has
+// exactly the documented keys, and every event name in the catalogue is listed.
+func TestAuditDocumentedShape(t *testing.T) {
+	e := ownerEnv(t)
+	resp, out := e.do("GET", "/api/v1/audit", nil)
+	e.mustStatus(resp, 200, out)
+	ev := eventsOf(t, out)[0]
+	want := []string{"id", "ts", "name", "outcome", "actorId", "actorEmail", "targetId", "targetEmail", "ip", "userAgent", "details"}
+	if len(ev) != len(want) {
+		t.Fatalf("event keys = %v, want %v", ev, want)
+	}
+	for _, k := range want {
+		if _, ok := ev[k]; !ok {
+			t.Fatalf("event lacks documented key %q: %v", k, ev)
+		}
+	}
+	doc, err := os.ReadFile("../../docs/api.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range audit.Names {
+		if !strings.Contains(string(doc), "`"+string(n)+"`") {
+			t.Errorf("docs/api.md does not list event %s", n)
 		}
 	}
 }

@@ -47,6 +47,11 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | POST | `/api/v1/invitations` | owner | `{email?, expiresInHours?}` → 201 `{invitation, link}` (link shown once) |
 | DELETE | `/api/v1/invitations/{id}` | owner | revoke a pending invitation → 204 |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid` |
+| GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
+| GET | `/api/v1/audit/export` | owner | the filtered log as `application/x-ndjson` download; records `audit.exported` |
+| GET | `/api/v1/settings/audit` | owner | `{retentionDays, logIp}` |
+| PUT | `/api/v1/settings/audit` | owner | `{retentionDays?: 7–3650, logIp?}` → settings; disabling `logIp` erases stored addresses |
+| GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/tasks` | yes | `{tasks:[…]}`; `?include_deleted=true` to include tombstones |
 | POST | `/api/v1/tasks` | yes | create → 201 task |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
@@ -56,7 +61,7 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels |
 | POST | `/api/v1/sync` | yes | device sync, see `docs/sync.md` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see `docs/sync.md` |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`), including deleted items |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`), including deleted items; never contains audit events |
 
 ### Task fields
 
@@ -167,6 +172,69 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 
 Creates a `member` account and starts a session even when `OPENTODO_ALLOW_SIGNUP` is false. The invitation is spent in the same transaction, so it can create at most one account; a second use returns 404 `invitation_invalid`. Errors: 403 `invitation_email_mismatch` when the invitation is bound to another address, 409 `email_taken`, 400 `invalid_input` for the password policy. In every error case the invitation stays pending.
 
+### Audit log
+
+The server records security-relevant events in its own database (never synced to devices, never part of `/api/v1/export`). The owner reads, filters and exports the log; every user reads their own access events. There is no route to modify or delete an event: `PATCH`/`DELETE /api/v1/audit/{id}` answer 404 `not_found`. Events are removed only by retention pruning (and addresses only by disabling address logging).
+
+**Event shape** (list, export and activity):
+
+```json
+{
+  "id": 412, "ts": 1760000000000, "name": "token.created", "outcome": "success",
+  "actorId": "<user id>", "actorEmail": "owner@example.com",
+  "targetId": null, "targetEmail": null,
+  "ip": null, "userAgent": "Mozilla/5.0 …",
+  "details": { "token_id": "…", "token_name": "laptop script" }
+}
+```
+
+`actorId` is the account that acted (null for a failed sign-in); `targetId` is the account acted upon when different. `actorEmail` / `targetEmail` come from the live account, or from the email snapshot in `details.email` when the account no longer exists. `ip` is null unless the owner enabled address logging. `userAgent` is truncated to 200 bytes. `details` only ever carries the keys below: never task or project content, passwords, token or invitation secrets, one-time or recovery codes.
+
+| Event | Outcome | Actor / target | `details` keys |
+| --- | --- | --- | --- |
+| `login.succeeded` | success | actor = user | `email`, `method` (`password`, `register`; later `passkey`, `oidc`) |
+| `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`) |
+| `logout` | success | actor = user | |
+| `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name` |
+| `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
+| `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
+| `invitation.revoked` | success | actor = owner | `invitation_id` |
+| `settings.changed` | success | actor = owner | `setting`, `from`, `to` |
+| `export.requested` | success | actor = user | `format` (`json`) |
+| `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
+| `mfa.enrolled`, `mfa.disabled`, `mfa.reset`, `mfa.challenge_failed` | | | `method`, `reason` (emitted once `mfa-totp` ships) |
+| `passkey.registered`, `passkey.deleted` | | | `passkey_id`, `passkey_name` (once `passkeys` ships) |
+| `identity.linked`, `identity.unlinked` | | | `provider` (once `oidc-login` ships) |
+| `role.changed` | | | `from`, `to` |
+| `backup.created`, `backup.restored` | | | `backup_id`, `reason` on failure (once `backups` ships) |
+
+While sign-in is rate limited for an address, one `login.failed` event with reason `rate_limited` is recorded per window instead of one per refused attempt. Task and project edits are never audit events.
+
+**List** — `GET /api/v1/audit` (owner) → `{events: [...], cursor}`, newest first. `cursor` is the id to pass as `?cursor=` for the next page, or `null` when there are no more. Query parameters, all optional:
+
+| Parameter | Meaning |
+| --- | --- |
+| `name` | one event name from the table above |
+| `actor`, `target` | an account id, or an email (matched case-insensitively) |
+| `outcome` | `success` or `failure` |
+| `from`, `to` | inclusive time bounds, Unix milliseconds or RFC 3339 |
+| `cursor` | the `cursor` of the previous page |
+| `limit` | page size 1–200, default 50 |
+
+A malformed value is a 400 `invalid_input` whose message starts with the parameter name (`limit: must be between 1 and 200`).
+
+```bash
+# Failed sign-ins of the last 24 hours
+curl -sS -H "Authorization: Bearer $TOKEN" \
+  "$OT/api/v1/audit?name=login.failed&from=$(( ($(date +%s) - 86400) * 1000 ))"
+```
+
+**Export** — `GET /api/v1/audit/export` (owner) with the same filters except `cursor` and `limit` → every matching event as newline-delimited JSON (`application/x-ndjson`, `Content-Disposition: attachment; filename="opentodo-audit-YYYYMMDD.ndjson"`), one event object per line, newest first. The export records an `audit.exported` event.
+
+**Settings** — `GET /api/v1/settings/audit` (owner) → `{"retentionDays": 90, "logIp": false}`. `PUT` the same object, both fields optional: `retentionDays` is an integer 7–3650 (otherwise 400 `invalid_input`), `logIp` turns client address logging on or off. Turning it off erases every stored address in the same transaction. Each changed value is recorded as `settings.changed`; lowering retention prunes expired events immediately, and the server also prunes at startup and hourly.
+
+**Personal activity** — `GET /api/v1/me/activity` (any signed-in user) → `{events: [...]}`: the caller's own sign-ins, failed sign-ins against their account, sign-outs and credential and token events from the last 90 days, at most 100, newest first. Events about other accounts never appear.
+
 ## Examples
 
 Create a task due tomorrow at 9:00 in a project:
@@ -239,7 +307,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 | Code | Status | Where |
 | --- | --- | --- |
 | `unauthorized` | 401 | any protected route without a valid session or token |
-| `forbidden` | 403 | invitation management by a non-owner |
+| `forbidden` | 403 | invitation management, audit log or audit settings by a non-owner |
 | `bad_origin` | 403 | cookie-authenticated write from another origin |
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
