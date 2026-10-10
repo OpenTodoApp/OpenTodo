@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -179,5 +180,38 @@ func TestDayNumbersRoundTrip(t *testing.T) {
 	}
 	if formatDate(0) != "1970-01-01" || isoWeekday(0) != 4 {
 		t.Fatal("epoch must be Thursday 1970-01-01")
+	}
+}
+
+// TestDocumentedExamplesAreVectors keeps docs/recurrence.md honest: every rule
+// quoted there must be exercised by the shared vectors.
+func TestDocumentedExamplesAreVectors(t *testing.T) {
+	v := loadVectors(t)
+	known := map[string]bool{}
+	for _, c := range v.Parse {
+		known[c.Input] = true
+		known[c.Canonical] = true
+	}
+	for _, c := range v.Next {
+		known[c.Rule] = true
+	}
+	for _, c := range v.First {
+		known[c.Rule] = true
+	}
+	for _, c := range v.Preview {
+		known[c.Rule] = true
+	}
+	doc, err := os.ReadFile("../../docs/recurrence.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	examples := regexp.MustCompile("`([Ee]very [^`]*)`").FindAllStringSubmatch(string(doc), -1)
+	if len(examples) < 20 {
+		t.Fatalf("found only %d examples in docs/recurrence.md", len(examples))
+	}
+	for _, m := range examples {
+		if !known[m[1]] {
+			t.Errorf("docs/recurrence.md example %q is not in the shared vectors", m[1])
+		}
 	}
 }

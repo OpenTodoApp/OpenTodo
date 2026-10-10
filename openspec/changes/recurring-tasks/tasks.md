@@ -4,8 +4,8 @@
 
 - [x] 1.1 Write `web/src/lib/recurrence.vectors.json` covering every pattern, `after completion`, `until`, `for N`, month-end clamping, leap day, last weekday, ordinal weekdays, catch-up; verify the file parses and each vector names rule, due, today, completedOn and expected
 - [x] 1.2 Go parser and calculator in `internal/recurrence` (parse to canonical form, `Next`, `NextAfterCompletion`); verify `TestRecurrenceVectors` runs all vectors and `TestParseRejectsInvalid` (`go test ./...`)
-- [ ] 1.3 TypeScript parser and calculator in `web/src/lib/recurrence.ts`; verify `recurrence.test.ts` runs the same vectors and canonicalises `Every  2nd  Tuesday` (`npm test`)
-- [ ] 1.4 Document the grammar in `docs/recurrence.md`; verify every documented example appears in the vectors
+- [x] 1.3 TypeScript parser and calculator in `web/src/lib/recurrence.ts`; verify `recurrence.test.ts` runs the same vectors and canonicalises `Every  2nd  Tuesday` (`npm test`)
+- [x] 1.4 Document the grammar in `docs/recurrence.md`; verify every documented example appears in the vectors
 
 ## 2. Op schema and data layer
 
