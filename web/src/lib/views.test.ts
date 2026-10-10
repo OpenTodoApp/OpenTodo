@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { refreshViewerZone } from './dates'
 import { getMeta, useDatabase } from './db'
 import { applyOps, getDeviceId, resetDeviceId } from './ops'
 import type { Label, Op, Project, Task, View } from './types'
@@ -106,7 +107,9 @@ describe('createView / updateView / deleteView', () => {
     await updateView(id, { group_by: 'due' })
     const local = await db.views.get(id)
     // Another device changed the sort meanwhile (older timestamp, different field): both survive.
-    await applyOps([{ id: 'r1', entity: 'view', entityId: id, field: 'sort_by', value: 'priority', ts: local!._clock.group_by.ts - 1, device: 'B' } as Op])
+    // Its device id sorts after any local UUID, so a tie with the creation's timestamp (both
+    // local writes in consecutive milliseconds) still resolves in its favour.
+    await applyOps([{ id: 'r1', entity: 'view', entityId: id, field: 'sort_by', value: 'priority', ts: local!._clock.group_by.ts - 1, device: '~B' } as Op])
     expect(await db.views.get(id)).toMatchObject({ group_by: 'due', sort_by: 'priority' })
   })
 })
@@ -208,6 +211,27 @@ describe('runView', () => {
     expect(ids([...ts].sort(compareTasks('title', 'desc')))).toEqual(['c', 'a', 'b'])
     expect(ids([...ts].sort(compareTasks('created', 'asc')))).toEqual(['b', 'c', 'a'])
     expect(ids([...ts].sort(compareTasks('position', 'desc')))).toEqual(['b', 'a', 'c'])
+  })
+
+  it('groups, sorts and filters zoned dues by their date in the viewer zone (absolute-datetimes)', () => {
+    const real = Intl.DateTimeFormat.prototype.resolvedOptions
+    const spy = vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockImplementation(function (this: Intl.DateTimeFormat) {
+      return { ...real.call(this), timeZone: 'Europe/Berlin' }
+    })
+    try {
+      refreshViewerZone()
+      // 02:00 Tokyo on the 11th is 19:00 in Berlin on the 10th (today).
+      const tokyo = task({ id: 'tokyo', due: { date: '2026-10-11', time: '02:00', tz: 'Asia/Tokyo' } })
+      const early = task({ id: 'early', due: { date: '2026-10-10', time: '20:00' } })
+      const groups = groupTasks([tokyo, early], 'due', CTX)
+      expect(groups.map((g) => g.key)).toEqual(['today'])
+      expect(ids([early, tokyo].sort(compareTasks('due', 'asc')))).toEqual(['tokyo', 'early'])
+      const r = runView(view({ id: 'v', query: 'today' }), { ...CTX, tasks: [tokyo] })
+      expect(r.ok && r.tasks.length).toBe(1)
+    } finally {
+      spy.mockRestore()
+      refreshViewerZone()
+    }
   })
 
   it('reads unknown option values as defaults', () => {

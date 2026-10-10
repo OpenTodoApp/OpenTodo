@@ -175,6 +175,8 @@ type PurgeResult struct {
 	Reminders int `json:"reminders"`
 	// Sections of purged projects (board-view).
 	Sections int `json:"sections"`
+	// Comments of purged tasks (comments-and-activity); additive.
+	Comments int `json:"comments"`
 	// Audience is every user who could see a purged entity: their devices must sync.
 	Audience []string `json:"-"`
 }
@@ -399,6 +401,8 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 			res.Reminders++
 		case "section":
 			res.Sections++
+		case "comment":
+			res.Comments++
 		}
 	}
 	if len(touched) > 0 {
@@ -499,8 +503,35 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		for _, r := range rs {
 			add(r)
 		}
+		// Comments live in their task's scope and go with it (comments-and-activity).
+		cids, err := commentIDsOf(ctx, tx, t.scope, t.id)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range cids {
+			add(purgeTarget{t.scope, "comment", id})
+		}
 	}
 	return out, nil
+}
+
+// commentIDsOf lists the comments of a task inside a scope.
+func commentIDsOf(ctx context.Context, q querier, scope, taskID string) ([]string, error) {
+	rows, err := q.QueryContext(ctx, `SELECT entity_id FROM scope_fields WHERE scope_id = ? AND entity = 'comment' AND field = 'task_id' AND value = ? ORDER BY entity_id`,
+		scope, quoteID(taskID))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var s string
+		if err := rows.Scan(&s); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
 }
 
 // taskIDsWhere lists the tasks of a scope whose reference field (project_id or

@@ -19,6 +19,7 @@ import { ReminderToasts } from './ReminderToasts'
 import { ArchivePrompt } from './ArchivePrompt'
 import { isGPending, openTaskInList, setGPending } from './signals'
 import { db } from '../lib/db'
+import { watchViewerZone } from '../lib/dates'
 import { NotificationBell } from './NotificationBell'
 import { setCurrentUserId } from '../lib/sharing'
 
@@ -28,6 +29,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [notice, setNotice] = useState<string | null>(null)
   // Changes the server refused after a role change (project-sharing).
   const { rejected } = useSyncStatus()
+
+  // A travelling device: re-read the time zone whenever the app becomes visible
+  // (absolute-datetimes), so zoned dues re-render in the new zone.
+  useEffect(() => watchViewerZone(), [])
 
   // Start view (per device, OpenSpec `custom-views`): applied once per launch, and only
   // when the app opens at its root, so deep links and reloads keep their page.
@@ -226,6 +231,11 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['Delete (on an invitation)', 'Settings → Members: revoke a pending invitation'],
     ['d / r / Delete (on a user)', 'Settings → Users: deactivate or reactivate, create a reset link, delete (each confirms)'],
     ['g then s, Tab', 'Settings → Security: add, rename (Enter saves, Esc cancels) or delete passkeys'],
+    ['Shift+C', 'Comment on the open task: focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)'],
+    ['Ctrl+Enter / ⌘+Enter (in a comment)', 'Post the comment, reply or edit; Esc cancels or leaves the field'],
+    ['Tab, Enter (in the comment thread)', 'Reach Reply, Edit and Delete on a comment; Load older activity at the end'],
+    ['Shift+H (in a project)', 'Show or hide the project activity; Tab reaches the person and kind filters'],
+    ['z (task panel open)', 'Fix a timed due to your time zone, or release it to a floating time'],
     ['Esc', 'Close panel, clear selection'],
     ['?', 'Toggle this help'],
   ]

@@ -1,6 +1,6 @@
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
-  AccountRole, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
+  AccountRole, ActivityPage, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -146,6 +146,9 @@ export const api = {
   purge: (entity: 'task' | 'project', id: string) =>
     request<{ purged: PurgeCounts }>('DELETE', `/api/v1/${entity}s/${encodeURIComponent(id)}/purge`),
   emptyTrash: () => request<{ purged: PurgeCounts }>('POST', '/api/v1/trash/purge'),
+  // Activity (comments-and-activity): older events than the device keeps, newest first.
+  activity: (entity: 'task' | 'project', id: string, before?: string) =>
+    request<ActivityPage>('GET', `/api/v1/${entity}s/${encodeURIComponent(id)}/activity${before ? `?before=${encodeURIComponent(before)}` : ''}`),
   // Web push (OpenSpec change `reminders`). 404 when the operator turned push off.
   pushKey: (device?: string) =>
     request<{ publicKey: string; subscription?: PushSubscriptionStatus | null }>(

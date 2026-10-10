@@ -21,6 +21,8 @@ type Service struct {
 	notifier *Notifier
 	// sinks receive assignment events after commit (task-assignment design D4).
 	sinks notify.Multi
+	// commentLimiter caps comment creation per account (comments-and-activity).
+	commentLimiter *fixedWindow
 }
 
 // FieldChange is one field's transition within a batch. From is nil (JSON null)
@@ -53,7 +55,9 @@ func (s *Service) SetObserver(o Observer) { s.observer = o }
 
 // NewService wires a Service.
 func NewService(db *sql.DB) *Service {
-	return &Service{db: db, now: time.Now, notifier: NewNotifier()}
+	s := &Service{db: db, now: time.Now, notifier: NewNotifier()}
+	s.SetCommentRateLimit(CommentRateLimit, CommentRateWindow)
+	return s
 }
 
 // DB returns the database the op log lives in, for packages that keep their own
@@ -146,10 +150,11 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 		return res, err
 	}
 	rs := newResolver(ctx, tx, acc, ops)
+	rs.allowComment = func() bool { return s.commentLimiter.allow(userID) }
 	pc := &purgeChecker{ctx: ctx, q: tx, acc: acc, cache: map[string]bool{}}
 	tracker := newChangeTracker(userID)
 	touched := map[string]bool{}
-	var refused []Op
+	var refused, rewritten []Op
 	for _, op := range ops {
 		if op.TS > nowMs+MaxFutureSkewMs {
 			op.TS = nowMs + MaxFutureSkewMs
@@ -177,6 +182,10 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 		if err != nil {
 			return res, err
 		}
+		if reason == reasonDiscard {
+			res.Duplicates++
+			continue
+		}
 		if reason != "" {
 			if strict {
 				return ApplyResult{}, &RejectedError{Op: op, Reason: reason}
@@ -184,6 +193,15 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			res.Rejected = append(res.Rejected, Rejection{ID: op.ID, Reason: reason})
 			refused = append(refused, op)
 			continue
+		}
+		// Mentions keep current members only (comments-and-activity D2): the op
+		// is stored with the filtered value and handed back to the author's
+		// device, whose copy carries the same clock (see applyOps on the client).
+		filtered := false
+		if op.Entity == "comment" && op.Field == "mentions" {
+			if op.Value, filtered, err = rs.filterMentions(scope, op.Value); err != nil {
+				return res, err
+			}
 		}
 		stored, err := writeOp(ctx, tx, userID, op, scope, nowMs, tracker)
 		if err != nil {
@@ -193,12 +211,17 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			res.Duplicates++ // the same op id twice in one batch
 			continue
 		}
+		if filtered {
+			op.Actor = userID
+			rewritten = append(rewritten, op)
+		}
 		touched[scope] = true
 		res.Applied++
 	}
 	if res.Restore, err = rs.restoreOps(refused); err != nil {
 		return res, err
 	}
+	res.Restore = append(res.Restore, rewritten...)
 	if res.Seq, err = maxSeq(ctx, tx, acc.scopes()); err != nil {
 		return res, err
 	}
@@ -213,6 +236,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 		s.observer(ctx, changes)
 	}
 	s.emitAssignments(ctx, userID, nowMs, changes)
+	s.emitMentions(ctx, userID, nowMs, changes)
 	return res, nil
 }
 
@@ -425,7 +449,7 @@ func (s *Service) PullAll(ctx context.Context, userID string, cursor int64, devi
 	}
 	scopes := acc.scopes()
 	args := append(anys(scopes), cursor, limit+1)
-	rows, err := tx.QueryContext(ctx, `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device
+	rows, err := tx.QueryContext(ctx, `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device,o.user_id
 		FROM op_scopes s JOIN ops o ON o.seq = s.seq
 		WHERE s.scope_id IN (`+placeholders(len(scopes))+`) AND s.seq > ? ORDER BY s.seq LIMIT ?`, args...)
 	if err != nil {
@@ -471,7 +495,7 @@ func (s *Service) PullAll(ctx context.Context, userID string, cursor int64, devi
 func scanOp(rows *sql.Rows) (Op, error) {
 	var op Op
 	var value string
-	if err := rows.Scan(&op.Seq, &op.ID, &op.Entity, &op.EntityID, &op.Field, &value, &op.TS, &op.Device); err != nil {
+	if err := rows.Scan(&op.Seq, &op.ID, &op.Entity, &op.EntityID, &op.Field, &value, &op.TS, &op.Device, &op.Actor); err != nil {
 		return op, err
 	}
 	op.Value = json.RawMessage(value)
@@ -529,7 +553,7 @@ func (s *Service) backfillPage(ctx context.Context, userID, device string, curso
 			}
 		}
 		if p.done < p.upto {
-			r, err := tx.QueryContext(ctx, `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device
+			r, err := tx.QueryContext(ctx, `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device,o.user_id
 				FROM op_scopes s JOIN ops o ON o.seq = s.seq
 				WHERE s.scope_id = ? AND s.seq > ? AND s.seq <= ? ORDER BY s.seq LIMIT ?`, ProjectScope(p.project), p.done, p.upto, limit)
 			if err != nil {

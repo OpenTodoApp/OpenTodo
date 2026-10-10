@@ -8,7 +8,7 @@ import {
   blockFor, calendarTasks, clamp, DAY_MINUTES, dayLoad, DEFAULT_GRID_PREFS, formatLoad, formatTime, GRID_PREFS_META_KEY, LAST_SLOT,
   normalizeGridPrefs, nudgeDue, placementStart, SLOT_MINUTES, stepEstimate, weekDates, type Block, type GridPrefs,
 } from '../lib/calendar'
-import { addDaysISO, formatShort } from '../lib/dates'
+import { addDaysISO, dueFromView, formatShort, localDueOf, viewedTask } from '../lib/dates'
 import { db, getMeta } from '../lib/db'
 import { formatMinutes } from '../lib/duration'
 import { layoutDay, type DayLayout } from '../lib/layout'
@@ -19,7 +19,7 @@ import { useCalendarDrag, type DropTarget } from './calendarDrag'
 import { navigate } from './router'
 import { estimateFocus, isGPending, placement as placementSignal } from './signals'
 import { TaskDetail } from './TaskDetail'
-import { useToday } from './useViews'
+import { useToday, useViewerZone } from './useViews'
 import { visibleTasks } from '../lib/trash'
 
 /** 48 px per hour, 12 px per 15-minute slot. */
@@ -79,7 +79,12 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
-  const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  const rawTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  // The grid shows every due in the viewer's zone (absolute-datetimes): zoned dues
+  // are converted here and edits are converted back with dueFromView.
+  const zone = useViewerZone()
+  const allTasks = useMemo(() => rawTasks.map((t) => viewedTask(t, zone)), [rawTasks, zone])
+  const rawMap = useMemo(() => new Map(rawTasks.map((t) => [t.id, t])), [rawTasks])
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
 
   const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1]), [allTasks, projects, dates])
@@ -123,7 +128,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       const id = placementSignal.take()
       if (!id) return
       void Promise.all([db.tasks.get(id), getMeta<unknown>(GRID_PREFS_META_KEY, null)]).then(([t, raw]) => {
-        if (t && !t.deleted_at && !t.completed_at) startRef.current(t, date ?? today, normalizeGridPrefs(raw))
+        if (t && !t.deleted_at && !t.completed_at) startRef.current(viewedTask(t), date ?? today, normalizeGridPrefs(raw))
       })
     }
     take()
@@ -138,16 +143,17 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const commit = useCallback((taskId: string, target: DropTarget) => {
     const t = taskMap.get(taskId)
     if (!t) return
+    const stored = rawMap.get(taskId)?.due
     if (target.type === 'slot') {
       const time = formatTime(target.start)
-      if (t.due?.date !== target.date || t.due?.time !== time) void updateTask(taskId, { due: { date: target.date, time } })
+      if (t.due?.date !== target.date || t.due?.time !== time) void updateTask(taskId, { due: dueFromView(stored, { date: target.date, time }) })
     } else if (target.type === 'lane') {
-      if (t.due?.date !== target.date || t.due?.time) void updateTask(taskId, { due: { date: target.date } })
+      if (t.due?.date !== target.date || t.due?.time) void updateTask(taskId, { due: dueFromView(stored, { date: target.date }) })
     } else if (target.estimate !== t.estimate_minutes) {
       void updateTask(taskId, { estimate_minutes: target.estimate })
     }
     setSelectedId(taskId)
-  }, [taskMap])
+  }, [taskMap, rawMap])
 
   const { drag, start: startDrag } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: commit })
 
@@ -156,11 +162,12 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const queue = useRef<Promise<void>>(Promise.resolve())
   const edit = useCallback((id: string, fn: (t: Task) => Partial<Omit<Task, 'id' | '_clock'>> | null, after?: (t: Task, patch: Partial<Task>) => void) => {
     queue.current = queue.current.then(async () => {
-      const t = await db.tasks.get(id)
-      if (!t || t.deleted_at) return
+      const raw = await db.tasks.get(id)
+      if (!raw || raw.deleted_at) return
+      const t = viewedTask(raw)
       const patch = fn(t)
       if (!patch) return
-      await updateTask(id, patch)
+      await updateTask(id, 'due' in patch ? { ...patch, due: dueFromView(raw.due, patch.due ?? null) } : patch)
       after?.(t, patch)
     }).catch(() => undefined)
   }, [])
@@ -687,7 +694,7 @@ function PlanTray({ source, onSource, tasks, projects, today, onPointerDown, onP
     const open = tasks.filter((t) => !t.completed_at && !t.deleted_at && !(t.project_id && archived.has(t.project_id)))
     let out: Task[]
     if (source === 'nodate') out = open.filter((t) => !t.due)
-    else if (source === 'overdue') out = open.filter((t) => t.due && t.due.date < today)
+    else if (source === 'overdue') out = open.filter((t) => t.due && localDueOf(t.due).date < today)
     else if (source.startsWith('project:')) out = open.filter((t) => t.project_id === source.slice(8))
     else out = open.filter((t) => t.project_id === null)
     return out.sort(compareDueThenPriority).slice(0, 200)

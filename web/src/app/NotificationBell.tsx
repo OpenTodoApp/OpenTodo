@@ -7,7 +7,8 @@ import { navigate, routePath, type Route } from './router'
 import { openTask } from './signals'
 
 /**
- * Notification badge and list (OpenSpec `task-assignment`), read from the local
+ * Notification badge and list (OpenSpec `task-assignment`; mentions from
+ * `comments-and-activity`), read from the local
  * cache so it shows offline. Choosing a notification opens its task, which marks
  * every notification about that task read.
  */
@@ -60,7 +61,13 @@ export function NotificationBell() {
                   className={`flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800 ${n.readAt === null ? '' : 'text-slate-400'}`}>
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt === null ? 'bg-emerald-500' : 'bg-transparent'}`} />
                   <span className="min-w-0 flex-1">
-                    <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> assigned you <strong>{n.payload.taskTitle || 'a task'}</strong></span>
+                    {n.kind === 'mentioned' ? (
+                      <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> mentioned you on <strong>{n.payload.taskTitle || 'a task'}</strong>
+                        {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-xs text-slate-500">“{n.payload.excerpt}”</span>}
+                      </span>
+                    ) : (
+                      <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> assigned you <strong>{n.payload.taskTitle || 'a task'}</strong></span>
+                    )}
                     <span className="block text-xs text-slate-400">
                       {n.payload.projectName ? `${n.payload.projectName} · ` : ''}{new Date(n.createdAt).toLocaleString()}
                     </span>

@@ -9,7 +9,8 @@ import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Reminder, type Section, type Task, type View } from './types'
+import { ENTITIES, type Clock, type Comment, type Entity, type Label, type Op, type Project, type Reminder, type Section, type Task, type View } from './types'
+import { recordActivity, type RecordInput } from './activity'
 
 let devicePromise: Promise<string> | null = null
 
@@ -42,6 +43,7 @@ function tableFor(entity: Entity) {
     case 'view': return db.views
     case 'reminder': return db.reminders
     case 'section': return db.sections
+    case 'comment': return db.comments
     default: return db.tasks
   }
 }
@@ -69,16 +71,30 @@ const REMINDER_DEFAULTS: Omit<Reminder, 'id' | '_clock'> = {
 const SECTION_DEFAULTS: Omit<Section, 'id' | '_clock'> = {
   name: '', project_id: '', position: 0, created_at: 0, deleted_at: null,
 }
+const COMMENT_DEFAULTS: Omit<Comment, 'id' | '_clock'> = {
+  task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null,
+}
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
+  comment: COMMENT_DEFAULTS,
 }
+
+/**
+ * Fields the server may store with a different value than the device sent, keeping
+ * the op's clock (comments-and-activity D2: mentions are filtered to members). When
+ * the server's copy arrives with the clock the row already has, its value is adopted.
+ */
+const SERVER_REWRITTEN = new Set(['comment.mentions'])
 
 /**
  * Apply ops to the local store using per-field last-writer-wins. Safe to call with
  * ops in any order and any number of times: the result depends only on the set of ops.
  * Ops for entities this build does not know (a newer server) are skipped, not fatal.
+ *
+ * Task, project and comment ops are also recorded for the activity log with their
+ * author (`op.actor`, else `opts.actor` for local edits) and old value.
  */
-export async function applyOps(ops: Op[]): Promise<void> {
+export async function applyOps(ops: Op[], opts: { actor?: string } = {}): Promise<void> {
   if (ops.length === 0) return
   const grouped = new Map<string, Op[]>()
   for (const op of ops) {
@@ -90,24 +106,46 @@ export async function applyOps(ops: Op[]): Promise<void> {
   }
   if (grouped.size === 0) return
   await db.transaction('rw', entityTables(), async () => {
+    const recorded: RecordInput[] = []
+    const rows = new Map<string, Record<string, unknown>>()
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
       const table = tableFor(entity)
-      const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder | Section) | undefined
+      const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder | Section | Comment) | undefined
       const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing
       for (const op of list) {
-        if (!wins(op.ts, op.device, clock[op.field])) continue
+        const c = clock[op.field]
+        const won = wins(op.ts, op.device, c)
+        // A losing op still happened: its old value is unknown here, the activity
+        // rule takes it from the op before it in timestamp order.
+        recorded.push({ op, actor: op.actor ?? opts.actor ?? '', from: won ? row[op.field] ?? null : undefined, projectKey: '' })
+        const rewritten = !won && c && c.ts === op.ts && c.device === op.device && SERVER_REWRITTEN.has(`${entity}.${op.field}`)
+        if (!won && !rewritten) continue
         row[op.field] = op.value
         clock[op.field] = { ts: op.ts, device: op.device }
         changed = true
       }
+      rows.set(`${entity}:${entityId}`, row)
       if (changed) {
         row._clock = clock
         await (table as unknown as { put(v: unknown): Promise<unknown> }).put(row)
       }
     }
+    // Place each recorded op in its task and project once every row is written.
+    for (const r of recorded) {
+      if (r.op.entity === 'task') r.taskId = r.op.entityId
+      else if (r.op.entity === 'comment') r.taskId = (rows.get(`comment:${r.op.entityId}`) as Comment | undefined)?.task_id || undefined
+    }
+    const missing = [...new Set(recorded.map((r) => r.taskId).filter((id): id is string => !!id && !rows.has(`task:${id}`)))]
+    const loaded = missing.length ? await db.tasks.bulkGet(missing) : []
+    for (const t of loaded) if (t) rows.set(`task:${t.id}`, t as unknown as Record<string, unknown>)
+    for (const r of recorded) {
+      if (r.op.entity === 'project') r.projectKey = r.op.entityId
+      else r.projectKey = ((r.taskId && (rows.get(`task:${r.taskId}`) as Task | undefined)?.project_id) || 'inbox')
+    }
+    await recordActivity(recorded)
   })
 }
 
@@ -151,7 +189,9 @@ export async function mutateMany(changes: Change[]): Promise<void> {
   }
   if (ops.length === 0) return
   await db.transaction('rw', mutationTables(), async () => {
-    await applyOps(ops)
+    // The author of local edits, read inside the transaction (activity log).
+    const actor = ((await db.meta.get('userId'))?.value as string | undefined) ?? ''
+    await applyOps(ops, { actor })
     await db.outbox.bulkAdd(ops)
     await db.meta.put({ key: 'hlc', value: ts })
   })

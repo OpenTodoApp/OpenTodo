@@ -146,11 +146,25 @@ type resolver struct {
 	batchProject map[string]Op
 	// assignable caches "scope NUL user" -> whether user may be a task's assignee there.
 	assignable map[string]bool
+	// Comments (comments-and-activity): the batch's task ids, the task_id and
+	// author_id a new comment is created with in this batch, and what is known
+	// about each comment id (see comments.go).
+	batchTasks   map[string]bool
+	batchComment map[string]*batchComment
+	comments     map[string]*commentState
+	// allowComment counts one comment creation against the author's rate limit;
+	// nil means unlimited.
+	allowComment func() bool
 }
 
 func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolver {
-	r := &resolver{ctx: ctx, tx: tx, acc: acc, shared: map[string]bool{}, childScope: map[string]string{}, batchProject: map[string]Op{}, assignable: map[string]bool{}}
+	r := &resolver{ctx: ctx, tx: tx, acc: acc, shared: map[string]bool{}, childScope: map[string]string{}, batchProject: map[string]Op{}, assignable: map[string]bool{},
+		batchTasks: map[string]bool{}, batchComment: map[string]*batchComment{}, comments: map[string]*commentState{}}
 	for _, op := range ops {
+		r.noteComment(op)
+		if op.Entity == "task" {
+			r.batchTasks[op.EntityID] = true
+		}
 		if !projectChild[op.Entity] || op.Field != "project_id" {
 			continue
 		}
@@ -270,6 +284,10 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 		if scope == "" {
 			return "", ReasonForbidden, nil
 		}
+	case "comment":
+		// Comments follow their task's scope and have their own authorship rules
+		// (viewers may comment), so the role table below does not apply.
+		return r.resolveComment(op)
 	default:
 		// Labels, saved views and reminders are personal: a reminder on a task in a
 		// shared project still belongs to its creator only (OpenSpec `reminders`).
@@ -358,15 +376,22 @@ func (r *resolver) restoreOps(refused []Op) ([]Op, error) {
 			if !r.acc.canSee(scope) {
 				continue
 			}
+		case "comment":
+			// Only a comment that exists can have a server value to restore.
+			st := r.comments[op.EntityID]
+			if st == nil || !st.found || st.scope == "" {
+				continue
+			}
+			scope = st.scope
 		default:
 			continue
 		}
 		var win Op
 		var value string
-		err := r.tx.QueryRowContext(r.ctx, `SELECT o.seq, o.op_id, o.value, o.ts, o.device FROM ops o JOIN op_scopes s ON s.seq = o.seq
+		err := r.tx.QueryRowContext(r.ctx, `SELECT o.seq, o.op_id, o.value, o.ts, o.device, o.user_id FROM ops o JOIN op_scopes s ON s.seq = o.seq
 			JOIN scope_fields f ON f.scope_id = s.scope_id AND f.entity = o.entity AND f.entity_id = o.entity_id AND f.field = o.field AND f.ts = o.ts AND f.device = o.device
 			WHERE o.entity_id = ? AND o.entity = ? AND o.field = ? AND s.scope_id = ? ORDER BY o.seq DESC LIMIT 1`,
-			op.EntityID, op.Entity, op.Field, scope).Scan(&win.Seq, &win.ID, &value, &win.TS, &win.Device)
+			op.EntityID, op.Entity, op.Field, scope).Scan(&win.Seq, &win.ID, &value, &win.TS, &win.Device, &win.Actor)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}

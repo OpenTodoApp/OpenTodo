@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { db, getMeta } from '../lib/db'
-import { todayISO } from '../lib/dates'
+import { localDueOf, todayISO } from '../lib/dates'
 import { createProject } from '../lib/ops'
 import { COLLAPSED_PROJECTS_KEY, buildProjectTree, expandAncestorsOf, openCountsByProject, toggleCollapsedProject, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
@@ -9,7 +9,7 @@ import type { User } from '../lib/types'
 import { evaluateViews, isDashboard } from '../lib/views'
 import { LabelRow, NewLabelForm, useLabelData } from './LabelsView'
 import { ViewMenu, viewIcon } from './ViewsView'
-import { useViews } from './useViews'
+import { useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
 import { navigate, type Route } from './router'
 import { visibleTasks } from '../lib/trash'
@@ -43,6 +43,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   // Trash count (trash-and-history): deleted tasks and projects known locally.
   const trashCount = useLiveQuery(async () => (await db.tasks.filter((t) => !!t.deleted_at).count()) + (await db.projects.filter((p) => !!p.deleted_at).count()), [], 0)
   const openTasks = useLiveQuery(() => visibleTasks().then((l) => l.filter((t) => !t.completed_at)), [], [])
+  const zone = useViewerZone()
   const counts = useMemo(() => {
     const today = todayISO()
     let inbox = 0
@@ -50,11 +51,11 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
     let assigned = 0
     for (const t of openTasks) {
       if (t.project_id === null) inbox++
-      if (t.due && t.due.date <= today) due++
+      if (t.due && localDueOf(t.due).date <= today) due++
       if (t.assignee_id === user.id) assigned++
     }
     return { inbox, today: due, assigned, byProject: openCountsByProject(openTasks, tree, collapsed) }
-  }, [openTasks, tree, collapsed, user.id])
+  }, [openTasks, tree, collapsed, user.id, zone])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.
   // Only on a real route change, not on mount or on project edits, so a reload (or a

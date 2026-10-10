@@ -9,6 +9,7 @@ import type { Project } from '../lib/types'
 import { navigate } from './router'
 import { ShareDialog } from './ShareDialog'
 import { HistoryPanel } from './HistoryPanel'
+import { ProjectActivity } from './ProjectActivity'
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b']
 
@@ -143,6 +144,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
       </details>}
     </div>
     <HistoryPanel entity="project" id={project.id} readOnly={!editable} />
+    <ProjectActivity project={project} />
     </div>
   )
 }

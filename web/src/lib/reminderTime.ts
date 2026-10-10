@@ -1,13 +1,24 @@
 // Pure reminder time arithmetic (OpenSpec change `reminders`), shared by the data
 // layer, the in-app watcher and the UI. No imports from the data layer so ops.ts
-// can use it without a cycle.
+// can use it without a cycle (dates.ts is pure).
+import { isZoned, zonedInstant } from './dates'
 import type { Due, Reminder, Task } from './types'
 
 /** Due time assumed for a task that has a date but no time (local wall clock). */
 export const DEFAULT_REMINDER_TIME = '09:00'
 
-/** The instant a floating due date/time denotes in this device's time zone. */
+/**
+ * The instant a due denotes: a zoned due (absolute-datetimes) is its wall time in
+ * its own zone; a floating date/time is read in this device's time zone.
+ */
 export function dueInstant(due: Due): number {
+  if (isZoned(due)) {
+    try {
+      return zonedInstant(due.date, due.time, due.tz)
+    } catch {
+      // Unknown zone in this browser: fall back to the floating reading.
+    }
+  }
   const [y, m, d] = due.date.split('-').map(Number)
   const [hh, mm] = (due.time ?? DEFAULT_REMINDER_TIME).split(':').map(Number)
   return new Date(y, m - 1, d, hh, mm, 0, 0).getTime()

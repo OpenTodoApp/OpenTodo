@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/pixari/opentodo/internal/recurrence"
+	"github.com/pixari/opentodo/internal/zoned"
 )
 
 // Op is one field assignment.
@@ -23,6 +24,11 @@ type Op struct {
 	TS       int64           `json:"ts"`
 	Device   string          `json:"device"`
 	Seq      int64           `json:"seq,omitempty"`
+	// Actor is the account id of the op's author, stamped by the server from the
+	// authenticated submitter on every served op (OpenSpec change
+	// `comments-and-activity`, design D3). A value sent by a client is ignored:
+	// Apply always records the session's account.
+	Actor string `json:"actor,omitempty"`
 }
 
 // Limits protect the server from abusive or buggy clients.
@@ -156,6 +162,21 @@ var Schema = map[string]map[string]kind{
 		"created_at":     kNumber,
 		"deleted_at":     kNullableNumber,
 	},
+	// comment: a threaded markdown comment on a task (OpenSpec change
+	// `comments-and-activity`, design D1). It lives in its task's scope; Apply
+	// checks authorship per op (author_id equals the submitter, only the author
+	// edits, the author, admins and the owner delete; viewers may comment) and
+	// keeps only mentions of current members. See docs/sync.md.
+	"comment": {
+		"task_id":    kID,
+		"parent_id":  kNullableString,
+		"body":       kString,
+		"author_id":  kID,
+		"mentions":   kStringList,
+		"created_at": kNumber,
+		"edited_at":  kNullableNumber,
+		"deleted_at": kNullableNumber,
+	},
 }
 
 // Plural maps REST collection names to entity names.
@@ -241,9 +262,20 @@ func checkKind(k kind, raw json.RawMessage) error {
 		var d struct {
 			Date string  `json:"date"`
 			Time *string `json:"time"`
+			TZ   *string `json:"tz"`
 		}
 		if err := json.Unmarshal(raw, &d); err != nil || !isDate(d.Date) || (d.Time != nil && !isClock(*d.Time)) {
-			return errors.New(`must be null or {"date":"YYYY-MM-DD","time":"HH:MM"?}`)
+			return errors.New(`must be null or {"date":"YYYY-MM-DD","time":"HH:MM"?,"tz":"Area/City"?}`)
+		}
+		// A zoned due (OpenSpec change absolute-datetimes) names a known IANA
+		// zone and always has a time.
+		if d.TZ != nil {
+			if d.Time == nil {
+				return errors.New("tz requires time")
+			}
+			if !zoned.Valid(*d.TZ) {
+				return fmt.Errorf("tz must be a known IANA time zone of at most %d characters", zoned.MaxZoneLen)
+			}
 		}
 	case kStringList:
 		var l []string

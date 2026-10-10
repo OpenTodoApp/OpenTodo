@@ -9,6 +9,7 @@ import { descendants, flattenTree } from '../lib/tree'
 import type { Label, Priority, Project, Section, Task } from '../lib/types'
 import { byPosition } from '../lib/ordering'
 import { effectiveSection, moveTaskToSection } from '../lib/sections'
+import { DueField } from './DueField'
 import { EstimateField } from './EstimateField'
 import { LabelChip, LabelPicker } from './LabelPicker'
 import { RecurrenceField } from './RecurrenceField'
@@ -16,6 +17,7 @@ import { RemindersField } from './RemindersField'
 import { AssigneePicker } from './AssigneePicker'
 import { markTaskNotificationsRead } from '../lib/notifications'
 import { HistoryPanel } from './HistoryPanel'
+import { TaskConversation } from './TaskConversation'
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 1, label: 'P1', cls: 'text-red-600 border-red-500' },
@@ -124,7 +126,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           Read-only: you are a viewer of this shared project.
         </p>
       )}
-      <fieldset disabled={readOnly} className="min-w-0 flex-1 space-y-4 overflow-y-auto p-4">
+      <div className="min-w-0 flex-1 overflow-y-auto">
+      <fieldset disabled={readOnly} className="min-w-0 space-y-4 p-4">
         {parent && (
           <button type="button" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(parent.id)} title="Open parent task">
             ↳ {parent.title || 'Untitled'}
@@ -210,13 +213,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         </Field>
 
         <Field label="Due">
-          <div className="flex gap-2">
-            <input type="date" className="input" aria-label="Due date" value={task.due?.date ?? ''}
-              onChange={(e) => void updateTask(task.id, { due: e.target.value ? { date: e.target.value, ...(task.due?.time ? { time: task.due.time } : {}) } : null })} />
-            <input type="time" className="input w-32" aria-label="Due time" value={task.due?.time ?? ''} disabled={!task.due}
-              onChange={(e) => task.due && void updateTask(task.id, { due: e.target.value ? { date: task.due.date, time: e.target.value } : { date: task.due.date } })} />
-            {task.due && <button className="btn-ghost" onClick={() => void updateTask(task.id, { due: null })} aria-label="Clear due date">✕</button>}
-          </div>
+          <DueField task={task} readOnly={readOnly} />
         </Field>
 
         <Field label="Reminders">
@@ -263,6 +260,10 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           {task.completed_at && <> · Completed {new Date(task.completed_at).toLocaleString()}</>}
         </p>
       </fieldset>
+      <div className="border-t border-slate-200 px-4 pb-4 dark:border-slate-800">
+        <TaskConversation task={task} userId={userId} />
+      </div>
+      </div>
       <div className="border-t border-slate-200 px-4 pb-4 dark:border-slate-800">
         <HistoryPanel entity="task" id={task.id} readOnly={readOnly} onRestored={(id) => id !== task.id && onOpen?.(id)} />
       </div>

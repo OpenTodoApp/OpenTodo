@@ -320,6 +320,19 @@ func (s *Service) share(ctx context.Context, tx *sql.Tx, ownerID, projectID stri
 		if err := relabel(c.entity, c.id); err != nil {
 			return err
 		}
+		if c.entity != "task" {
+			continue
+		}
+		// Comments live in their task's scope (comments-and-activity D1).
+		cids, err := commentIDsOf(ctx, tx, personal, c.id)
+		if err != nil {
+			return err
+		}
+		for _, cid := range cids {
+			if err := relabel("comment", cid); err != nil {
+				return err
+			}
+		}
 	}
 	now := s.now().UnixMilli()
 	if _, err := tx.ExecContext(ctx, `INSERT INTO project_scopes(project_id, owner_id, created_at) VALUES(?,?,?)`, projectID, ownerID, now); err != nil {

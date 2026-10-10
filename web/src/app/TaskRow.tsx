@@ -1,9 +1,10 @@
-import { describeDue } from '../lib/dates'
+import { describeDue, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import type { Label, Project, Task } from '../lib/types'
 import { LabelChip } from './LabelPicker'
 import { AssigneeChip } from './AssigneePicker'
+import { useCommentCount } from './useCommentCounts'
 
 const PRIORITY_RING: Record<number, string> = {
   1: 'border-red-500 bg-red-50 dark:bg-red-950/40',
@@ -53,7 +54,10 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   dropIndicator?: 'before' | 'after' | 'inside' | null
 }) {
   const due = describeDue(task.due)
+  // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
+  const hint = zoneHint(task.due)
   const done = !!task.completed_at
+  const comments = useCommentCount(task.id)
   return (
     <li
       data-task-id={task.id}
@@ -105,7 +109,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
           {breadcrumb && <span className="truncate text-slate-400" title="Parent task">↳ {breadcrumb}</span>}
-          {due && <span className={DUE_TONE[due.tone]}>{due.label}</span>}
+          {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-slate-400" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
           {task.recurrence ? (
             <span className="text-slate-500" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring>↻</span>
           ) : task.series_id ? (
@@ -118,6 +122,11 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           ) : null}
           {assignee && <AssigneeChip name={assignee} me={assignedToMe} />}
           {task.description && <span className="text-slate-400">≡</span>}
+          {comments > 0 && (
+            <span className="text-slate-400" title={`${comments} comment${comments === 1 ? '' : 's'}`} aria-label={`${comments} comment${comments === 1 ? '' : 's'}`} data-comments>
+              💬 {comments}
+            </span>
+          )}
           {labels.length > 0 && (
             <span className="flex flex-wrap gap-1">{labels.map((l) => <LabelChip key={l.id} label={l} />)}</span>
           )}

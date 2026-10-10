@@ -2,20 +2,30 @@
 // non-deleted view, task, project and label as live queries, plus the evaluation
 // context for lib/views. Local edits and synced ops re-render without a reload.
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { db } from '../lib/db'
-import { todayISO } from '../lib/dates'
+import { onViewerZoneChange, todayISO, viewerZone } from '../lib/dates'
 import type { Label, Project, Task, View } from '../lib/types'
 import { activeViews, getStartView, type StartView, type ViewContext } from '../lib/views'
 import { visibleTasks } from '../lib/trash'
 
-/** The local calendar date, re-read every minute so "today" rolls over while a view is open. */
+/**
+ * The viewer's IANA zone (absolute-datetimes); components that show zoned dues
+ * re-render when a travelling device's zone changes (see watchViewerZone).
+ */
+export function useViewerZone(): string {
+  return useSyncExternalStore(onViewerZoneChange, viewerZone)
+}
+
+/** The local calendar date, re-read every minute (and on a zone change) so "today" rolls over while a view is open. */
 export function useToday(): string {
+  const zone = useViewerZone()
   const [today, setToday] = useState(todayISO)
   useEffect(() => {
+    setToday(todayISO())
     const id = setInterval(() => setToday(todayISO()), 60_000)
     return () => clearInterval(id)
-  }, [])
+  }, [zone])
   return today
 }
 
@@ -43,7 +53,9 @@ export function useViewData(): ViewData {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
   const tasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
-  const ctx = useMemo(() => ({ today, labels, projects, tasks }), [today, labels, projects, tasks])
+  const zone = useViewerZone()
+  // A new context on a zone change re-groups zoned dues (absolute-datetimes).
+  const ctx = useMemo(() => ({ today, labels, projects, tasks }), [today, labels, projects, tasks, zone])
   return { views, projects, labels, tasks, ctx }
 }
 

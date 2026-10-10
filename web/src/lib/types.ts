@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment']
 
 export interface Op {
   id: string
@@ -13,16 +13,27 @@ export interface Op {
   ts: number
   device: string
   seq?: number
+  /**
+   * Account id of the author, stamped by the server on served ops
+   * (comments-and-activity). Never sent: the server ignores it on input.
+   */
+  actor?: string
 }
 
 /** Per-field last-writer-wins clock stored next to each row. */
 export type Clock = Record<string, { ts: number; device: string }>
 
 export interface Due {
-  /** Floating calendar date, YYYY-MM-DD, interpreted in the viewer's time zone. */
+  /** Calendar date, YYYY-MM-DD: floating (the viewer's day) unless `tz` is set. */
   date: string
-  /** Optional floating wall-clock time, HH:MM. */
+  /** Optional wall-clock time, HH:MM: floating unless `tz` is set. */
   time?: string
+  /**
+   * IANA time zone (absolute-datetimes): when present (only together with `time`)
+   * the due is zoned and denotes the instant `date time` in that zone. Use
+   * `localDueOf` from dates.ts to read it in the viewer's zone.
+   */
+  tz?: string
 }
 
 export interface Project {
@@ -155,6 +166,84 @@ export interface Reminder {
   created_at: number
   deleted_at: number | null
   _clock: Clock
+}
+
+/**
+ * A threaded markdown comment on a task (OpenSpec `comments-and-activity`). It
+ * syncs in its task's scope. The server sets the rules: `author_id` is the
+ * submitting account, only the author edits (`body`, `mentions`, `edited_at`),
+ * the author, project admins and the owner may set `deleted_at`, and `mentions`
+ * keeps current members only (always empty on a personal task).
+ */
+export interface Comment {
+  id: string
+  task_id: string
+  parent_id: string | null
+  body: string
+  author_id: string
+  mentions: string[]
+  created_at: number
+  edited_at: number | null
+  deleted_at: number | null
+  _clock: Clock
+}
+
+export type ActivityKind =
+  | 'created' | 'completed' | 'reopened' | 'deleted' | 'restored' | 'rescheduled' | 'assigned' | 'unassigned'
+  | 'moved' | 'archived' | 'unarchived' | 'edited' | 'commented' | 'comment_edited' | 'comment_deleted'
+
+/** One field transition inside an activity event. */
+export interface ActivityChange {
+  field: string
+  from: unknown
+  to: unknown
+}
+
+/**
+ * An activity event derived from ops (comments-and-activity, design D4); the
+ * same rule runs on the server (internal/activity). `id` is the id of the
+ * group's first op, so a page fetched from the server and a locally derived
+ * event for the same group share it.
+ */
+export interface ActivityEvent {
+  id: string
+  kind: ActivityKind
+  actor: string
+  entity: 'task' | 'project' | 'comment'
+  entityId: string
+  taskId?: string
+  ts: number
+  opIds: string[]
+  changes: ActivityChange[]
+  /** Server pages only: display names resolved by the server. */
+  actorName?: string
+  taskTitle?: string
+}
+
+/**
+ * One op as recorded in the local `activity` table: who wrote it and the field's
+ * value before this device applied it. `projectKey` is the project the op
+ * belongs to ('inbox' for the Inbox), used for per-project views and retention;
+ * `taskId` is the task (or the commented task) for per-task views.
+ */
+export interface ActivityEntry {
+  id: string
+  actor: string
+  entity: 'task' | 'project' | 'comment'
+  entityId: string
+  field: string
+  value: unknown
+  ts: number
+  device: string
+  from?: unknown
+  projectKey: string
+  taskId?: string
+}
+
+export interface ActivityPage {
+  events: ActivityEvent[]
+  more: boolean
+  cursor?: string
 }
 
 /** A device's push subscription as the server reports it (never the endpoint or keys). */
@@ -635,6 +724,24 @@ export interface PurgeCounts {
   reminders: number
   /** Sections of purged projects (board-view); absent from older servers. */
   sections?: number
+  /** Comments of purged tasks (comments-and-activity; absent on older servers). */
+  comments?: number
+}
+
+export const COMMENT_FIELDS = ['task_id', 'parent_id', 'body', 'author_id', 'mentions', 'created_at', 'edited_at', 'deleted_at'] as const
+
+/** Payload of a `mentioned` notification (comments-and-activity); names resolved by the server. */
+export interface MentionedPayload {
+  recipientId: string
+  actorId: string
+  actorName: string
+  commentId: string
+  taskId: string
+  taskTitle: string
+  projectId?: string
+  projectName?: string
+  excerpt: string
+  at: number
 }
 
 /** Payload of an `assigned` notification (task-assignment); names resolved by the server. */
@@ -657,7 +764,8 @@ export interface AssignedPayload {
 export interface AppNotification {
   id: string
   kind: string
-  payload: AssignedPayload
+  /** AssignedPayload for kind `assigned`, MentionedPayload for kind `mentioned`. */
+  payload: AssignedPayload | MentionedPayload
   createdAt: number
   readAt: number | null
   readPending?: boolean

@@ -53,3 +53,43 @@ type Nop struct{}
 
 // Assigned implements Sink.
 func (Nop) Assigned(context.Context, Assigned) {}
+
+// KindMentioned: the recipient was @mentioned in a comment by someone else
+// (OpenSpec change `comments-and-activity`).
+const KindMentioned = "mentioned"
+
+// Mentioned is emitted once per account newly listed in a comment's mentions,
+// after the batch that added it committed. Only current members of the task's
+// shared project are ever mentioned (the sync engine filters the list at
+// receipt). Excerpt is the start of the comment body on one line.
+type Mentioned struct {
+	RecipientID string `json:"recipientId"`
+	ActorID     string `json:"actorId"`
+	ActorName   string `json:"actorName"`
+	CommentID   string `json:"commentId"`
+	TaskID      string `json:"taskId"`
+	TaskTitle   string `json:"taskTitle"`
+	ProjectID   string `json:"projectId,omitempty"`
+	ProjectName string `json:"projectName,omitempty"`
+	Excerpt     string `json:"excerpt"`
+	At          int64  `json:"at"` // Unix ms, server time of the batch
+}
+
+// MentionSink is implemented by sinks that also handle mentions. It is separate
+// from Sink so existing Sink implementations keep compiling: Multi hands a
+// mention only to the sinks that implement it.
+type MentionSink interface {
+	Mentioned(ctx context.Context, e Mentioned)
+}
+
+// Mentioned fans a mention out to every sink that implements MentionSink.
+func (m Multi) Mentioned(ctx context.Context, e Mentioned) {
+	for _, s := range m {
+		if ms, ok := s.(MentionSink); ok {
+			ms.Mentioned(ctx, e)
+		}
+	}
+}
+
+// Mentioned implements MentionSink.
+func (Nop) Mentioned(context.Context, Mentioned) {}
