@@ -24,5 +24,5 @@
 
 ## 4. Docs
 
-- [ ] 4.1 Write `docs/filters.md` with the grammar, precedence, quoting, date expressions, keywords and ten worked examples; verify every example parses in `filter.test.ts` ("docs examples" case loads the file)
-- [ ] 4.2 README feature list and CHANGELOG under Unreleased; verify `make check` passes
+- [x] 4.1 Write `docs/filters.md` with the grammar, precedence, quoting, date expressions, keywords and ten worked examples; verify every example parses in `filter.test.ts` ("docs examples" case loads the file)
+- [x] 4.2 README feature list and CHANGELOG under Unreleased; verify `make check` passes

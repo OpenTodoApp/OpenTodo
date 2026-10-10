@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import filtersDoc from '../../../../docs/filters.md?raw'
 import type { Label, Project, Task } from '../types'
 import { compile, mentionsState, runFilter, type FilterContext } from './evaluate'
 import { FilterSyntaxError, parse, printQuery, resolveDate, tokenize, type Node } from './parse'
@@ -520,6 +521,36 @@ describe('evaluate: performance', () => {
     const ms = performance.now() - start
     expect(r.ok && r.tasks.length).toBeGreaterThan(0)
     expect(ms).toBeLessThan(50)
+  })
+})
+
+describe('docs examples', () => {
+  const blocks = [...filtersDoc.matchAll(/```filter\n([\s\S]*?)```/g)].map((m) => m[1].trim())
+
+  it('docs/filters.md has at least ten worked examples and every one parses and evaluates', () => {
+    expect(blocks.length).toBeGreaterThanOrEqual(10)
+    for (const q of blocks) {
+      const r = runFilter(q, TASKS, CTX)
+      expect(r.ok, `${q}: ${r.ok ? '' : r.error}`).toBe(true)
+    }
+  })
+
+  it('the documented grammar examples in prose parse too', () => {
+    for (const q of ['@work & due <= tomorrow & p1', '@errand | @call & p1', '(@errand | @call) & p1', 'due<=tomorrow', '#"Client A"', '@"follow up"', 'p1 & completed', 'completed | open', 'due = today', 'due <= today']) {
+      expect(() => parse(q), q).not.toThrow()
+    }
+  })
+
+  it('every row of the error table produces exactly the documented message', () => {
+    const section = filtersDoc.slice(filtersDoc.indexOf('## Errors'), filtersDoc.indexOf('## The Filter view'))
+    const rows = [...section.matchAll(/^\| `(.+?)` \| `(.+?)` \|$/gm)].map((m) => [m[1], m[2]].map((s) => s.replace(/\\\|/g, '|')))
+    expect(rows.length).toBeGreaterThanOrEqual(5)
+    for (const [q, msg] of rows) expect(errorOf(q).message, q).toBe(msg)
+  })
+
+  it('the date table matches the evaluator for Saturday 2026-10-10', () => {
+    const d = (q: string) => resolveDate((parse(`due = ${q}`) as Extract<Node, { kind: 'date' }>).date, TODAY)
+    expect([d('friday'), d('saturday'), d('3 days'), d('7 days ago')]).toEqual(['2026-10-16', '2026-10-10', '2026-10-13', '2026-10-03'])
   })
 })
 

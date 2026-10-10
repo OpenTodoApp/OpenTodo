@@ -19,6 +19,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
   <a href="docs/self-hosting/docker.md">Docker</a> ·
   <a href="docs/api.md">API</a> ·
   <a href="docs/cli.md">CLI</a> ·
+  <a href="docs/filters.md">Filters</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -55,6 +56,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Capture | Quick-add from any view, keyboard shortcut `q`; new tasks in Today get today's date, in a project get that project |
 | Organise | Projects with colours, Inbox, Today, Upcoming (grouped by day), Completed |
 | Labels | Cross-project labels with colours: `L` on a task opens a type-ahead picker that creates on Enter, chips on every row, a Labels group in the sidebar with live counts, one view per label grouped by project, rename / recolour / reorder / delete / merge duplicates |
+| Filters | One-line queries such as `@work & due <= tomorrow & p1`: labels, projects (`##` includes sub-projects), priority, due and created dates, keywords like `overdue` or `no date`, text search, combined with `&`, `\|`, `!` and parentheses. Evaluated on the device, so results are live and work offline; `g` `f` opens the view, ↑ / ↓ recall recent queries. See [docs/filters.md](docs/filters.md) |
 | Sub-projects | Nest projects to any depth; collapsible sidebar tree (Left / Right, remembered per device) with rolled-up counts; "Move to" from the project menu or `m`; a project view lists its sub-projects; archiving cascades, deleting moves sub-projects up a level; concurrent moves on two devices never leave a project nested inside itself |
 | Tasks | Title, notes, project, priority P1–P4, floating due date with optional time, complete / reopen, delete |
 | Subtasks | Nest tasks to any depth; parents show `done/total` progress; completing or deleting a parent cascades; `a` adds a subtask, Tab / Shift+Tab indent and outdent, Left / Right collapse and expand; concurrent moves on two devices never leave a task nested inside itself |
@@ -65,7 +67,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), filter queries, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): natural-language quick add ("Call Sarah next Wed 3pm #work p1"), saved and pinned filter views, recurring tasks, reminders, sharing and comments, CalDAV, webhooks, import from other task apps, passkeys and OIDC, optional end-to-end encryption.
 
 ## Quick start
 
