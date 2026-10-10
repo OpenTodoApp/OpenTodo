@@ -24,6 +24,8 @@ import { useToday } from './useViews'
 const PX_PER_MIN = 0.8
 const GRID_HEIGHT = DAY_MINUTES * PX_PER_MIN
 const TRAY_KEY = 'opentodo.calendar.tray'
+/** Pointer-down this close to a block's lower edge starts a resize. */
+const RESIZE_ZONE_PX = 7
 
 interface Placement {
   taskId: string
@@ -568,10 +570,15 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
             role="button"
             tabIndex={-1}
             aria-label={`${t.title || 'Untitled'}, ${formatTime(block.start)}${block.estimated ? ` for ${formatMinutes(t.estimate_minutes!)}` : ', no estimate'}${b.overlap ? ', overlaps another task' : ''}`}
-            onPointerDown={(e) => onDragStart(e, { taskId: b.id, kind: 'move', grabOffset: e.clientY - (e.currentTarget as HTMLElement).getBoundingClientRect().top })}
+            onPointerDown={(e) => {
+              // The lowest few pixels (handle and border) resize; the rest moves the block.
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+              if (e.clientY >= rect.bottom - Math.min(RESIZE_ZONE_PX, rect.height / 3)) onDragStart(e, { taskId: b.id, kind: 'resize', blockStart: block.start, blockDate: day.date })
+              else onDragStart(e, { taskId: b.id, kind: 'move', grabOffset: e.clientY - rect.top })
+            }}
             onClick={() => onSelect(b.id)}
             onDoubleClick={() => onOpen(b.id)}
-            className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-md border px-1.5 py-0.5 text-xs shadow-sm ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-emerald-500' : ''} ${draggingId === b.id ? 'opacity-40' : ''} bg-white dark:bg-slate-900`}
+            className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-md border px-1.5 shadow-sm ${height < 20 ? 'py-0 text-[10px] leading-[10px]' : 'py-0.5 text-xs'} ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-emerald-500' : ''} ${draggingId === b.id ? 'opacity-40' : ''} bg-white dark:bg-slate-900`}
             style={{
               top, height,
               left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,
@@ -593,8 +600,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
             <div
               data-resize-handle
               aria-hidden
-              onPointerDown={(e) => onDragStart(e, { taskId: b.id, kind: 'resize', blockStart: block.start, blockDate: day.date })}
-              className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize touch-none hover:bg-emerald-500/30"
+              className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize touch-none hover:bg-emerald-500/30"
             />
           </div>
         )
