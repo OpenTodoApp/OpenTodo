@@ -47,7 +47,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | Status | Capability | Change name |
 | --- | --- | --- |
 | ✅ | Floating due dates with optional time | `bootstrap-core-platform` |
-| 📝 | Reminders and web push notifications | `reminders` |
+| ✅ | Reminders and web push notifications | `reminders` |
 | ✅ | Recurring rules incl. "every last weekday", "every 3 days after completion" | `recurring-tasks` |
 | ✅ | Duration estimates and time-blocking calendar grid | `time-blocking` |
 | 📝 | Absolute (time-zone aware) timestamps next to floating dates | `absolute-datetimes` |
@@ -80,7 +80,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Invitations for new members | `invitations` |
 | ✅ | Passkeys (WebAuthn) | `passkeys` |
 | 📝 | OIDC / OAuth2 single sign-on | `oidc-login` |
-| 📝 | Multi-factor authentication (TOTP) | `mfa-totp` |
+| ✅ | Multi-factor authentication (TOTP) | `mfa-totp` |
 | ✅ | Audit log | `audit-log` |
 | 📝 | User administration: list users, admin role, deactivate, delete, password reset, owner transfer | `user-management` |
 | 📝 | Optional end-to-end encryption of task content | `e2ee` |

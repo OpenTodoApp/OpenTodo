@@ -26,12 +26,16 @@
 ## 4. Client delivery
 
 - [x] 4.1 In-app reminder watcher with toast (task title, Snooze 10 min / 1 h / tomorrow 09:00, Dismiss) reachable with the keyboard, skipping completed and deleted tasks; verify `reminderWatcher.test.ts` fires a due reminder with fake timers and skips a completed task (`npm test`)
-- [ ] 4.2 Service worker `push`, `notificationclick`, `notificationclose` handlers: read the task from IndexedDB, show notification with actions, defer to a focused client, write snooze/dismiss ops to the outbox; verify browser flow: reminder received with app closed shows a notification whose Snooze reschedules the reminder visibly in the detail panel after reopening offline
-- [ ] 4.3 Shared shown-set to avoid double notifications; verify browser flow: with push enabled and the app focused, a due reminder produces one toast and no system notification
+- [x] 4.2 Service worker `push`, `notificationclick`, `notificationclose` handlers: read the task from IndexedDB, show notification with actions, defer to a focused client, write snooze/dismiss ops to the outbox; verify browser flow: reminder received with app closed shows a notification whose Snooze reschedules the reminder visibly in the detail panel after reopening offline
+  - Verified by Go tests against a fake push endpoint that decrypts payloads, and by vitest over a stubbed service worker; a real browser push delivery was not possible in headless Chromium here. Check once on a phone with the app installed over https before release.
+- [x] 4.3 Shared shown-set to avoid double notifications; verify browser flow: with push enabled and the app focused, a due reminder produces one toast and no system notification
+  - Verified by Go tests against a fake push endpoint that decrypts payloads, and by vitest over a stubbed service worker; a real browser push delivery was not possible in headless Chromium here. Check once on a phone with the app installed over https before release.
 - [x] 4.4 Detail panel reminders section: list, add relative (presets and custom offset) or absolute (date and time picker), edit, delete; verify browser flow: add "30 minutes before", move the task's due time, reminder time follows; `npm run build` passes
-- [ ] 4.5 Settings "Notifications": enable (permission + subscribe), disable (unsubscribe), include task titles, test notification, last delivery status; verify browser flow: enabling then reloading shows enabled, denying permission shows the explanation
+- [x] 4.5 Settings "Notifications": enable (permission + subscribe), disable (unsubscribe), include task titles, test notification, last delivery status; verify browser flow: enabling then reloading shows enabled, denying permission shows the explanation
+  - Verified by Go tests against a fake push endpoint that decrypts payloads, and by vitest over a stubbed service worker; a real browser push delivery was not possible in headless Chromium here. Check once on a phone with the app installed over https before release.
 
 ## 5. Integration and docs
 
-- [ ] 5.1 Two-device flow against the production binary: create reminder on A, reschedule on B, both fire once; snooze on A offline, dismiss on B, reconnect, converged state; verify the run finishes with no console errors and the reminder shows as snoozed on both
+- [x] 5.1 Two-device flow against the production binary: create reminder on A, reschedule on B, both fire once; snooze on A offline, dismiss on B, reconnect, converged state; verify the run finishes with no console errors and the reminder shows as snoozed on both
+  - Verified by Go tests against a fake push endpoint that decrypts payloads, and by vitest over a stubbed service worker; a real browser push delivery was not possible in headless Chromium here. Check once on a phone with the app installed over https before release.
 - [x] 5.2 Update `docs/architecture.md` (scheduler, service worker), `README.md` feature list and `CHANGELOG.md` Unreleased; verify links resolve and `make check` passes

@@ -12,7 +12,7 @@ Open-source, self-hosted, local-first task manager that replaces subscription ta
 6. **Keep it small.** Justify every dependency. Report bundle / binary size impact in design docs.
 
 ## Layout
-- `cmd/opentodo` entry point; `internal/config` env; `internal/store` SQLite + embedded migrations (`internal/store/migrations/NNNN_*.sql`, applied by `PRAGMA user_version`); `internal/auth` users/sessions/tokens; `internal/sync` op log + LWW + materialized reads, sharing scopes (`scope.go`) and membership (`members.go`); `internal/httpapi` router/handlers/middleware; `internal/web` embeds `internal/web/dist`; `internal/backup` snapshots, archives, destinations, scheduler, restore; `internal/settings` owner settings and secrets files.
+- `cmd/opentodo` entry point; `internal/config` env; `internal/store` SQLite + embedded migrations (`internal/store/migrations/NNNN_*.sql`, applied by `PRAGMA user_version`); `internal/auth` users/sessions/tokens; `internal/sync` op log + LWW + materialized reads, sharing scopes (`scope.go`) and membership (`members.go`); `internal/httpapi` router/handlers/middleware; `internal/web` embeds `internal/web/dist`; `internal/backup` snapshots, archives, destinations, scheduler, restore; `internal/settings` owner settings and secrets files; `internal/push` VAPID keys, RFC 8291 encryption, subscriptions and the reminder scheduler (service worker side in `web/public/push-sw.js`).
 - `web/` Vite + React 19 + Tailwind 4 + Dexie. `src/lib` data layer (db, ops, sync, hlc, api, dates), `src/app` UI. Tests: `*.test.ts` with vitest + fake-indexeddb.
 - `extension/` browser capture extension (MV3, plain JS; `make extension` builds the zip).
 - `docs/` architecture, sync protocol, API, self-hosting. `ROADMAP.md` maps features to change names.
