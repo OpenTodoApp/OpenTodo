@@ -57,7 +57,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | Status | Capability | Change name |
 | --- | --- | --- |
 | ✅ | Share projects with roles (viewer, editor, admin) | `project-sharing` |
-| 📝 | Assignees | `task-assignment` |
+| ✅ | Assignees and in-app notifications | `task-assignment` |
 | 📝 | Threaded markdown comments and activity log | `comments-and-activity` |
 | 📝 | Live activity feed in shared lists | `activity-feed` |
 

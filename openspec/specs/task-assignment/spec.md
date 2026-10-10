@@ -1,0 +1,80 @@
+# task-assignment Specification
+
+## Purpose
+Lets members of a shared project assign each task to one member, gives every user a view of what is assigned to them, and keeps assignments consistent when membership changes.
+
+## Requirements
+
+### Requirement: Assignee field
+A task SHALL have an optional assignee, stored as the id of an account. In a shared project the assignee MUST be a current member; in the Inbox or an unshared project it MUST be the owner or empty. The field SHALL be written and synced as an ordinary operation, so assigning works offline and concurrent assignments converge to the one with the greater timestamp.
+
+#### Scenario: Assign to a member
+- **WHEN** an editor assigns a task in a shared project to Bob, a member
+- **THEN** every member's devices show Bob as the assignee after sync
+
+#### Scenario: Assign to a non-member
+- **WHEN** a device submits an assignment to an account that is not a member of the task's project
+- **THEN** the operation is rejected with reason `not_a_member`, the task keeps its previous assignee everywhere, and the submitting device restores that value
+
+#### Scenario: Concurrent assignments
+- **WHEN** Alice assigns a task to Bob offline and Carol assigns the same task to Dan offline, and both sync
+- **THEN** every device shows the assignee written with the greater timestamp
+
+### Requirement: Assignment permissions
+Editors, admins and the owner SHALL be able to assign and unassign tasks in a shared project; viewers SHALL NOT. Any member who can assign SHALL be able to assign to any member, including themselves. The check SHALL run on the server at receipt time, per operation, and refusals SHALL leave the server state unchanged on every device.
+
+#### Scenario: Viewer assigns
+- **WHEN** a viewer's device submits an assignment operation
+- **THEN** it is rejected with reason `forbidden` and the assignee is unchanged for every member
+
+#### Scenario: Self-assignment with the keyboard
+- **WHEN** an editor presses the assign shortcut on a selected task and chooses themselves
+- **THEN** the task is assigned to them immediately, with no network round trip
+
+### Requirement: Unassign on departure
+When a member leaves or is removed from a project, every task in that project assigned to them SHALL be unassigned by operations written by the server, so devices that were offline during the departure converge on the unassigned state without client logic. Assignments to that person submitted afterwards SHALL be rejected.
+
+#### Scenario: Removed member had tasks
+- **WHEN** Bob, assignee of four tasks in a shared project, is removed
+- **THEN** after their next sync all members' devices show those four tasks unassigned, and the unassignments appear as server-authored changes
+
+#### Scenario: Offline assignment to a departed member
+- **WHEN** Alice assigns a task to Bob offline, Bob leaves before Alice reconnects, and Alice syncs
+- **THEN** the assignment is rejected with reason `not_a_member` and Alice's device shows the task unassigned
+
+### Requirement: Assigned to me view
+The client SHALL offer an "Assigned to me" view listing the user's open assigned tasks across all projects, grouped by project, reachable from the sidebar and a `g`-prefixed keyboard shortcut, with a live count in the sidebar. The view SHALL be rendered from local storage so it works offline and updates as soon as synced assignments arrive.
+
+#### Scenario: Open the view offline
+- **WHEN** the user opens the app without a network and navigates to Assigned to me
+- **THEN** every open task assigned to them that was present at the last sync is listed under its project
+
+#### Scenario: Completing from the view
+- **WHEN** the user completes a task from Assigned to me
+- **THEN** the task leaves the view and the sidebar count decreases without a reload
+
+### Requirement: Assignee on task rows and detail
+Task rows in shared projects SHALL show the assignee compactly, and the detail panel SHALL offer an assignee picker limited to the project's current members from the local membership cache, so it works offline. Clearing the picker SHALL unassign.
+
+#### Scenario: Picker lists members only
+- **WHEN** the user opens the assignee picker on a task in a shared project
+- **THEN** it lists exactly the project's members with their names and an "Unassigned" option, filterable by typing
+
+#### Scenario: Personal task
+- **WHEN** the user opens the detail panel of a task in an unshared project
+- **THEN** the picker offers only themselves and "Unassigned"
+
+### Requirement: Assignment notification hook
+Assigning a task to someone other than the author SHALL emit an assignment event on the server when the operation is applied. This change SHALL deliver it as an in-app notification to the assignee, listed and markable as read through `GET /api/v1/notifications` and `POST /api/v1/notifications/{id}/read`, both requiring authentication. Notifications SHALL be stored server-side and cached on the client, so they are visible offline once fetched; no external service is contacted.
+
+#### Scenario: Assignee is notified
+- **WHEN** Alice assigns a task to Bob and Bob's device syncs
+- **THEN** Bob sees an unread notification naming Alice, the task and the project, and it is marked read when he opens the task
+
+#### Scenario: Anonymous request
+- **WHEN** a request without credentials reaches the notifications routes
+- **THEN** the response is a 401 `unauthorized` error
+
+#### Scenario: Marking someone else's notification
+- **WHEN** a user tries to mark read a notification that belongs to another account
+- **THEN** the response is a 404 `not_found` error and nothing changes
