@@ -33,6 +33,7 @@ Please do not open public issues for security problems. Email **raffaele.pizzari
 - The container runs as a non-root user on a distroless base with no shell.
 - Security-relevant events are recorded in an owner-visible audit log; see [What is logged](#what-is-logged).
 - No telemetry or third-party requests. The only outbound requests are the ones the owner configures: webhooks, backup destinations, web push to the push service a device chose, and the single sign-on issuer.
+- Voice capture (off by default, per device) uses the browser's own speech recognition. OpenTodo's code never records, stores or transmits audio and the server never receives audio or transcripts, only the task saved with Enter. Some browsers send the audio to their vendor's speech service; Settings states this before the feature can be switched on, and on-device recognition is requested when the browser offers it. See [docs/quick-add.md](docs/quick-add.md#privacy).
 
 Planned hardening is tracked in `ROADMAP.md`: optional end-to-end encryption.
 

@@ -1,10 +1,9 @@
-# Spec Delta
+# voice-capture Specification
 
 ## Purpose
-
 Defines voice dictation into quick add: how it is enabled, what the user is told about where audio goes, how speech becomes parsed quick-add text, which languages are used, and how errors and keyboard access are handled.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Opt-in per device
 Voice capture SHALL be off by default. Settings SHALL offer a switch stored only on the current device, never synced. When the browser offers no speech recognition the switch SHALL be disabled with an explanation. While off, no microphone control SHALL be shown and no microphone permission SHALL be requested.
@@ -29,10 +28,10 @@ Before voice capture can be switched on, the client SHALL show a statement that 
 - **THEN** the only requests to the server are the usual sync requests carrying the task's operations
 
 ### Requirement: Dictation into quick add
-With voice capture on, a microphone button in quick add and the `v` key outside text fields SHALL start listening; the button, Escape or silence SHALL stop it. Interim results SHALL appear in the input and the final transcript SHALL be inserted at the caret. The text SHALL then be handled exactly like typed text, including parsing, and the task SHALL be created only on Enter, as one local operation set that syncs and converges like any quick-add task.
+With voice capture on, a microphone button in quick add and `Shift+V` outside text fields SHALL start listening; the button, Escape or silence SHALL stop it. Interim results SHALL appear in the input and the final transcript SHALL be inserted at the caret. The text SHALL then be handled exactly like typed text, including parsing, and the task SHALL be created only on Enter, as one local operation set that syncs and converges like any quick-add task.
 
 #### Scenario: Dictate a scheduled task
-- **WHEN** the user presses `v`, says "call the dentist tomorrow at nine", and presses Enter
+- **WHEN** the user presses `Shift+V`, says "call the dentist tomorrow at nine", and presses Enter
 - **THEN** quick add showed the words as they were recognised, chips for tomorrow at `09:00` appeared, and the created task is titled `call the dentist` with that due date and time
 
 #### Scenario: Review before saving
@@ -77,12 +76,12 @@ Denied microphone permission SHALL show a non-blocking message explaining how to
 - **THEN** starting dictation shows the unavailable message and the input keeps its current text
 
 ### Requirement: Keyboard access and status announcements
-Starting and stopping dictation SHALL be possible without a mouse, the listening state SHALL be visible on the button and announced to assistive technology, and the `v` shortcut SHALL be listed in the shortcut help and SHALL not fire while typing in a field.
+Starting and stopping dictation SHALL be possible without a mouse, the listening state SHALL be visible on the button and announced to assistive technology, and the `Shift+V` shortcut SHALL be listed in the shortcut help and SHALL not fire while typing in a field. Plain `v` keeps its existing meaning (list/board toggle in a project).
 
 #### Scenario: Keyboard start and stop
-- **WHEN** focus is not in a text field and the user presses `v`, then Escape
+- **WHEN** focus is not in a text field and the user presses `Shift+V`, then Escape
 - **THEN** listening starts, is announced as "Listening", then stops and is announced as "Stopped"
 
 #### Scenario: Typing v is not intercepted
-- **WHEN** the user types the letter `v` into the quick-add field
+- **WHEN** the user types the letters `v` and `V` into the quick-add field
 - **THEN** dictation does not start

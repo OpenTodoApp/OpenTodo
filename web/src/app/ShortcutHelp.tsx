@@ -17,6 +17,7 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
   }, [onClose])
   const rows: [string, string][] = [
     ['q', 'Quick add a task'],
+    ['Shift+V', 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves'],
     ['j / k', 'Move selection down / up'],
     ['Enter', 'Open selected task; accept "complete parent too?"'],
     ['c', 'Complete / reopen selected task (and its subtasks)'],
