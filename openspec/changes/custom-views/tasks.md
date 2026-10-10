@@ -3,8 +3,8 @@
 ## 1. Schema (server and client)
 
 - [x] 1.1 Add `view` entity (`name`, `query`, `kind`, `group_by`, `sort_by`, `sort_dir`, `pinned`, `position`, `color`, `panels`, `created_at`, `deleted_at`) to `internal/sync/ops.go` `Schema` and `Plural`; verify `TestValidateAcceptsViewOps` (`go test ./...`)
-- [ ] 1.2 Mirror in `web/src/lib/types.ts` (`View`, `VIEW_FIELDS`), defaults in `ops.ts`, `views` table in `db.ts` (database version bump); verify `ops.test.ts` applies view ops and maps unknown option values to defaults at read time (`npm test`)
-- [ ] 1.3 Update `docs/sync.md` schema table; verify it lists every field in `Schema`
+- [x] 1.2 Mirror in `web/src/lib/types.ts` (`View`, `VIEW_FIELDS`), defaults in `ops.ts`, `views` table in `db.ts` (database version bump); verify `ops.test.ts` applies view ops and maps unknown option values to defaults at read time (`npm test`)
+- [x] 1.3 Update `docs/sync.md` schema table; verify it lists every field in `Schema`
 
 ## 2. Server API
 

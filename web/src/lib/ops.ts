@@ -3,7 +3,7 @@
 import { db, entityTables, getMeta, setMeta } from './db'
 import { hlcNow, hlcSeed, wins } from './hlc'
 import { descendants, isDescendant } from './tree'
-import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Task } from './types'
+import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Task, type View } from './types'
 
 let devicePromise: Promise<string> | null = null
 
@@ -30,7 +30,12 @@ export function resetDeviceId(): void {
 }
 
 function tableFor(entity: Entity) {
-  return entity === 'project' ? db.projects : entity === 'label' ? db.labels : db.tasks
+  switch (entity) {
+    case 'project': return db.projects
+    case 'label': return db.labels
+    case 'view': return db.views
+    default: return db.tasks
+  }
 }
 
 const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
@@ -43,7 +48,14 @@ const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
 }
-const DEFAULTS: Record<Entity, Record<string, unknown>> = { project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS }
+/** Defaults for a view row created from partial ops; also the read-time fallback for unknown option values. */
+export const VIEW_DEFAULTS: Omit<View, 'id' | '_clock'> = {
+  name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false,
+  position: 0, color: '#64748b', panels: [], created_at: 0, deleted_at: null,
+}
+const DEFAULTS: Record<Entity, Record<string, unknown>> = {
+  project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS,
+}
 
 /**
  * Apply ops to the local store using per-field last-writer-wins. Safe to call with
@@ -65,7 +77,7 @@ export async function applyOps(ops: Op[]): Promise<void> {
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
       const table = tableFor(entity)
-      const existing = (await table.get(entityId)) as (Project | Task | Label) | undefined
+      const existing = (await table.get(entityId)) as (Project | Task | Label | View) | undefined
       const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing
