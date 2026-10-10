@@ -316,31 +316,31 @@ export function FilterView() {
   )
 }
 
-const HINT: [string, string][] = [
-  ['@errand  #Work  ##Work', 'label, project, project with sub-projects'],
-  ['p1 … p4', 'priority'],
-  ['due <= tomorrow  created > 7 days ago', '< <= = >= > before after: today, tomorrow, yesterday, monday…, 2026-12-01, 3 days, 3 days ago'],
-  ['overdue  today  tomorrow  no date  no time', 'due date keywords'],
-  ['no project  no labels  subtask', 'Inbox, unlabelled, has a parent'],
-  ['completed  open', 'open tasks only unless one of these appears'],
-  ['search: "oat milk"', 'title or notes contain the text'],
-  ['&  |  !  ( )', 'and, or, not, grouping; quote names with spaces: @"follow up"'],
+const HINT: [string[], string][] = [
+  [['@errand', '#Work', '##Work'], 'label, project, project with its sub-projects'],
+  [['p1', 'p4'], 'priority'],
+  [['due <= tomorrow', 'created > 7 days ago'], '< <= = >= > before after · today, tomorrow, yesterday, monday…, 2026-12-01, 3 days, 3 days ago'],
+  [['overdue', 'today', 'tomorrow', 'no date', 'no time'], 'due date keywords'],
+  [['no project', 'no labels', 'subtask'], 'Inbox, unlabelled, has a parent task'],
+  [['completed', 'open'], 'open tasks only unless one of these appears'],
+  [['search: "oat milk"'], 'title or notes contain the text'],
+  [['&', '|', '!', '( )'], 'and, or, not, grouping · quote names with spaces: @"follow up"'],
 ]
 
 function UsageHint() {
   return (
     <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700">
       <p className="mb-2">Type a query to list matching tasks. Enter jumps to the results, Esc comes back, ↑ / ↓ recall recent queries.</p>
-      <table className="w-full text-xs">
-        <tbody>
-          {HINT.map(([k, d]) => (
-            <tr key={k} className="border-t border-slate-100 align-top dark:border-slate-800">
-              <td className="py-1 pr-3 font-mono text-slate-700 dark:text-slate-300">{k}</td>
-              <td className="py-1">{d}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <dl className="text-xs">
+        {HINT.map(([terms, d]) => (
+          <div key={terms[0]} className="flex flex-col gap-1 border-t border-slate-100 py-1.5 sm:flex-row sm:gap-3 dark:border-slate-800">
+            <dt className="flex flex-wrap gap-1 sm:w-64 sm:shrink-0">
+              {terms.map((t) => <code key={t} className="kbd text-slate-700 dark:text-slate-300">{t}</code>)}
+            </dt>
+            <dd>{d}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   )
 }

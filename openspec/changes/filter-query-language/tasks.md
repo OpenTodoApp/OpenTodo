@@ -16,11 +16,11 @@
 
 ## 3. Filter view (web/src/app)
 
-- [ ] 3.1 `FilterView.tsx`: input with usage hint, debounced evaluation, error/warning line, results grouped by project using the standard rows, Enter to first result, Escape back to input; verify browser flow matching "Open and run a query" and "Syntax error" (previous results remain)
-- [ ] 3.2 Per-device history of the last 20 distinct queries in `meta`, Up/Down recall; verify browser flow: recalled after reload, absent on a second device
-- [ ] 3.3 Sidebar entry and `g f` shortcut, `?` help updated; verify browser flow: `g f` opens the view, shortcuts suppressed while typing in the query input
-- [ ] 3.4 Live results: completing a listed task on another device removes it after sync; verify two-device browser flow
-- [ ] 3.5 `npm run build` passes with bundle growth under 8 KB gzipped; verify by comparing `dist` sizes
+- [x] 3.1 `FilterView.tsx`: input with usage hint, debounced evaluation, error/warning line, results grouped by project using the standard rows, Enter to first result, Escape back to input; verify browser flow matching "Open and run a query" and "Syntax error" (previous results remain)
+- [x] 3.2 Per-device history of the last 20 distinct queries in `meta`, Up/Down recall; verify browser flow: recalled after reload, absent on a second device
+- [x] 3.3 Sidebar entry and `g f` shortcut, `?` help updated; verify browser flow: `g f` opens the view, shortcuts suppressed while typing in the query input
+- [x] 3.4 Live results: completing a listed task on another device removes it after sync; verify two-device browser flow
+- [x] 3.5 `npm run build` passes with bundle growth under 8 KB gzipped; verify by comparing `dist` sizes
 
 ## 4. Docs
 

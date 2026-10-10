@@ -34,7 +34,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         if (e.key === 'u') navigate({ view: 'upcoming' })
         if (e.key === 'c') navigate({ view: 'completed' })
         if (e.key === 'l') navigate({ view: 'labels' })
-        if (e.key === 'f') navigate({ view: 'filter' })
+        if (e.key === 'f') {
+          // The Filter view focuses its input on mount; keep this "f" out of it.
+          e.preventDefault()
+          navigate({ view: 'filter' })
+        }
         if (e.key === 's') navigate({ view: 'settings' })
         return
       }
