@@ -12,7 +12,7 @@ Open-source, self-hosted, local-first task manager that replaces subscription ta
 6. **Keep it small.** Justify every dependency. Report bundle / binary size impact in design docs.
 
 ## Layout
-- `cmd/opentodo` entry point; `internal/config` env; `internal/store` SQLite + embedded migrations (`internal/store/migrations/NNNN_*.sql`, applied by `PRAGMA user_version`); `internal/auth` users/sessions/tokens; `internal/sync` op log + LWW + materialized reads; `internal/httpapi` router/handlers/middleware; `internal/web` embeds `internal/web/dist`.
+- `cmd/opentodo` entry point; `internal/config` env; `internal/store` SQLite + embedded migrations (`internal/store/migrations/NNNN_*.sql`, applied by `PRAGMA user_version`); `internal/auth` users/sessions/tokens; `internal/sync` op log + LWW + materialized reads; `internal/httpapi` router/handlers/middleware; `internal/web` embeds `internal/web/dist`; `internal/backup` snapshots, archives, destinations, scheduler, restore; `internal/settings` owner settings and secrets files.
 - `web/` Vite + React 19 + Tailwind 4 + Dexie. `src/lib` data layer (db, ops, sync, hlc, api, dates), `src/app` UI. Tests: `*.test.ts` with vitest + fake-indexeddb.
 - `extension/` browser capture extension (MV3, plain JS; `make extension` builds the zip).
 - `docs/` architecture, sync protocol, API, self-hosting. `ROADMAP.md` maps features to change names.
