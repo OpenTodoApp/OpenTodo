@@ -137,6 +137,8 @@ The anonymous `auth/passkey` routes apply the same `Origin` check as `auth/login
 | `due` | `{date:"YYYY-MM-DD", time?:"HH:MM"}` or null | floating date |
 | `labels` | string[] | ids of existing, non-deleted labels; replaced as a whole on PATCH |
 | `estimate_minutes` | integer 1–10080 or null | duration estimate in minutes; `0`, negatives, fractions and strings are rejected. The Day and Week calendar draws a task with a due time as a block of this length |
+| `recurrence` | string or null | recurrence rule, e.g. `every 3 days after completion` (see [recurrence.md](recurrence.md)); stored in canonical form, `400 invalid_input` when it does not parse or is over 200 characters |
+| `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
 | `position` | number | sort order inside a list |
 | `completed_at`, `deleted_at` | unix ms or null | |
 | `created_at` | unix ms | set by the server on create if missing |
@@ -157,6 +159,24 @@ The REST API writes exactly the fields you send. The cascades the web app perfor
 # Add a subtask under an existing task in the same project
 curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"title":"Book hotel","project_id":"<project-id>","parent_id":"<parent-task-id>"}'
+```
+
+### Recurring tasks
+
+`POST` and `PATCH` store `recurrence` in canonical form (`"Every  2nd  Tuesday"` is stored as `"every 2nd tuesday"`). A `PATCH` that sets a non-null `completed_at` on an open recurring task behaves like completing it in the app:
+
+- a completed *occurrence record* is created (id derived from the series id and the occurrence date, `series_id` set, `recurrence: null`, other fields copied from the task after the rest of the PATCH is applied),
+- the task stays open and its `due` moves to the next occurrence (time kept); the response is the task with the new `due`,
+- when the end condition (`until` or `for N times`) is reached, the task is completed normally instead.
+
+"Today" for catch-up and completion-relative rules is the server's local date (the container's time zone, UTC by default). Reopening a record (`completed_at: null`) turns it into a standalone task; the series is not moved back. Skip and "this occurrence only" are client actions: a script skips by PATCHing `due`.
+
+```bash
+# Make a task repeat, then complete the current occurrence
+curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"recurrence":"every weekday","due":{"date":"2026-10-12"}}'
+curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"completed_at":1760264400000}'
 ```
 
 ### Project fields

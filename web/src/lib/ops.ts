@@ -1,7 +1,10 @@
 // Every local mutation becomes field-level ops that are applied to IndexedDB
 // immediately (optimistic, offline-safe) and queued for the server.
 import { db, entityTables, getMeta, setMeta } from './db'
+import { todayISO } from './dates'
 import { hlcNow, hlcSeed, wins } from './hlc'
+import { firstOccurrence, parseRule } from './recurrence'
+import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { descendants, isDescendant } from './tree'
 import { ENTITIES, type Clock, type Entity, type Label, type Op, type Project, type Task, type View } from './types'
 
@@ -43,7 +46,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 }
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
-  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null,
+  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -208,13 +211,24 @@ export async function archiveProject(id: string): Promise<void> {
 export async function createTask(input: {
   title: string; description?: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
   estimate_minutes?: number | null
+  /** A recurrence rule (any spelling the grammar accepts; stored canonical). Throws when invalid. */
+  recurrence?: string | null
 }): Promise<string> {
   const id = crypto.randomUUID()
   const now = Date.now()
+  let due = input.due ?? null
+  const extra: Record<string, unknown> = {}
+  if (input.recurrence) {
+    // Only recurring tasks carry the field, so plain tasks keep their op footprint.
+    const parsed = parseRule(input.recurrence)
+    if (!parsed.ok) throw new Error(`invalid recurrence: ${parsed.error}`)
+    extra.recurrence = parsed.canonical
+    if (!due) due = { date: firstOccurrence(parsed.rule, todayISO()) }
+  }
   await mutate('task', id, {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
-    priority: input.priority ?? 4, due: input.due ?? null, labels: input.labels ?? [], position: now, created_at: now,
-    completed_at: null, deleted_at: null, estimate_minutes: input.estimate_minutes ?? null,
+    priority: input.priority ?? 4, due, labels: input.labels ?? [], position: now, created_at: now,
+    completed_at: null, deleted_at: null, estimate_minutes: input.estimate_minutes ?? null, ...extra,
   })
   return id
 }
@@ -261,6 +275,11 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * its parent's project.
  */
 export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<void> {
+  if (patch.due === null && !('recurrence' in patch)) {
+    // A recurrence rule needs a due date; clearing the date ends the repetition.
+    const task = await db.tasks.get(id)
+    if (task?.recurrence) patch = { ...patch, recurrence: null }
+  }
   if ('project_id' in patch) {
     const task = await db.tasks.get(id)
     if (task && patch.project_id !== task.project_id) {
@@ -282,13 +301,21 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
   await mutate('task', id, patch)
 }
 
-/** Completing a parent completes every open descendant in one batch; reopening touches only the task. */
+/**
+ * Completing a parent completes every open descendant in one batch; reopening touches
+ * only the task. A task with a recurrence rule rolls forward instead (completeTask).
+ */
 export async function setTaskCompleted(id: string, completed: boolean): Promise<void> {
-  const now = Date.now()
   if (!completed) {
+    // Reopening an occurrence record leaves series_id, so it becomes a standalone
+    // open task; reopening an ended series keeps its rule (design D6).
     await mutate('task', id, { completed_at: null })
     return
   }
+  await completeTask(id)
+}
+
+async function completePlain(id: string, now: number): Promise<void> {
   const all = await liveTasks()
   const changes: Change[] = [{ entity: 'task', entityId: id, patch: { completed_at: now } }]
   for (const d of descendants(id, all)) {
@@ -296,6 +323,101 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
     if (t && !t.completed_at) changes.push({ entity: 'task', entityId: d, patch: { completed_at: now } })
   }
   await mutateMany(changes)
+}
+
+/**
+ * Complete a task. For a recurring series this records the occurrence (an entity
+ * whose id is derived from the series id and occurrence date) and moves the series
+ * to its next occurrence in one batch; once the end condition is reached it
+ * completes like a plain task. `today` is the device's local date (tests pass it).
+ * Returns the id of the occurrence record when the series rolled, otherwise null.
+ */
+export async function completeTask(id: string, opts: { now?: number; today?: string } = {}): Promise<string | null> {
+  const now = opts.now ?? Date.now()
+  const today = opts.today ?? todayISO()
+  await getDeviceId()
+  let recordId: string | null = null
+  let plain = false
+  await db.transaction('rw', mutationTables(), async () => {
+    const series = await db.tasks.get(id)
+    const rule = seriesRule(series)
+    if (!series || !rule) {
+      plain = true
+      return
+    }
+    const plan = planCompletion(series, rule, await db.tasks.toArray(), now, today)
+    if (plan.kind === 'end') {
+      plain = true
+      return
+    }
+    recordId = plan.recordId
+    await mutateMany(plan.changes)
+  })
+  if (plain) await completePlain(id, now)
+  return recordId
+}
+
+/**
+ * Skip the current occurrence of a series: an ordinary due-date change, no record.
+ * Returns false (and writes nothing) when the task is not an open series or the
+ * current occurrence is the last one before `until`.
+ */
+export async function skipOccurrence(id: string, opts: { today?: string } = {}): Promise<boolean> {
+  const today = opts.today ?? todayISO()
+  await getDeviceId()
+  let ok = false
+  await db.transaction('rw', mutationTables(), async () => {
+    const series = await db.tasks.get(id)
+    const rule = seriesRule(series)
+    const changes = series && rule ? planSkip(series, rule, today) : null
+    if (!changes) return
+    await mutateMany(changes)
+    ok = true
+  })
+  return ok
+}
+
+/**
+ * "This occurrence only": create a standalone copy of the current occurrence (no
+ * rule, series_id set, id derived from series and date) and move the series on.
+ * Returns the copy's id, or null when there is no next occurrence.
+ */
+export async function detachOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<string | null> {
+  const now = opts.now ?? Date.now()
+  const today = opts.today ?? todayISO()
+  await getDeviceId()
+  let copyId: string | null = null
+  await db.transaction('rw', mutationTables(), async () => {
+    const series = await db.tasks.get(id)
+    const rule = seriesRule(series)
+    const plan = series && rule ? planDetach(series, rule, now, today) : null
+    if (!plan) return
+    await mutateMany(plan.changes)
+    copyId = plan.copyId
+  })
+  return copyId
+}
+
+/**
+ * Set or clear a task's recurrence rule. The rule is stored in canonical form; a
+ * task that gets a rule without a due date is given its first occurrence from today.
+ */
+export async function setRecurrence(
+  id: string, input: string | null, opts: { today?: string } = {},
+): Promise<{ ok: true; rule: string | null } | { ok: false; error: string }> {
+  const task = await db.tasks.get(id)
+  if (!task) return { ok: false, error: 'task not found' }
+  if (input === null || input.trim() === '') {
+    if (task.recurrence !== null) await mutate('task', id, { recurrence: null })
+    return { ok: true, rule: null }
+  }
+  const parsed = parseRule(input)
+  if (!parsed.ok) return { ok: false, error: parsed.error }
+  const patch: Record<string, unknown> = {}
+  if (parsed.canonical !== task.recurrence) patch.recurrence = parsed.canonical
+  if (!task.due) patch.due = { date: firstOccurrence(parsed.rule, opts.today ?? todayISO()) }
+  if (Object.keys(patch).length) await mutate('task', id, patch)
+  return { ok: true, rule: parsed.canonical }
 }
 
 /** Deleting a task tombstones its whole subtree, one op per task, in one batch. */

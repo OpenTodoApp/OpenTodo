@@ -55,6 +55,13 @@ export interface Task {
   deleted_at: number | null
   /** Duration estimate in minutes (positive integer, at most 10080) or null. */
   estimate_minutes: number | null
+  /**
+   * Recurrence rule in canonical form (docs/recurrence.md) or null. A task with a
+   * rule is a series: completing it records an occurrence and moves `due` forward.
+   */
+  recurrence: string | null
+  /** On a completed occurrence record or a detached copy: the id of its series; otherwise null. */
+  series_id: string | null
   _clock: Clock
 }
 
@@ -203,7 +210,7 @@ export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' |
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
-  'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes',
+  'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
 ] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const
 

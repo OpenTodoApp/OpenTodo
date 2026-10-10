@@ -9,6 +9,7 @@ import { descendants, flattenTree } from '../lib/tree'
 import type { Label, Priority, Project, Task } from '../lib/types'
 import { EstimateField } from './EstimateField'
 import { LabelChip, LabelPicker } from './LabelPicker'
+import { RecurrenceField } from './RecurrenceField'
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
   { p: 1, label: 'P1', cls: 'text-red-600 border-red-500' },
@@ -43,6 +44,7 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
     [taskId], [] as Task[],
   )
   const parent = useLiveQuery(() => (task?.parent_id ? db.tasks.get(task.parent_id) : undefined), [task?.parent_id])
+  const series = useLiveQuery(() => (task?.series_id ? db.tasks.get(task.series_id) : undefined), [task?.series_id])
   const excluded = useMemo(() => descendants(taskId, candidates), [taskId, candidates])
   // Projects in sidebar (tree) order, indented by depth; archived ones are left out.
   const projectOptions = useMemo(() => flattenTree(buildProjectTree(projects).roots), [projects])
@@ -97,6 +99,11 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
           <button type="button" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(parent.id)} title="Open parent task">
             ↳ {parent.title || 'Untitled'}
             {parent.deleted_at ? ' (deleted)' : parent.completed_at && !task.completed_at ? ' (completed)' : ''}
+          </button>
+        )}
+        {series && (
+          <button type="button" className="block text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(series.id)} title="Open the recurring task">
+            ↻ {task.completed_at ? 'Completed occurrence' : 'Single occurrence'} of {series.title || 'Untitled'}{series.deleted_at ? ' (deleted)' : ''}
           </button>
         )}
         <input
@@ -165,6 +172,9 @@ export function TaskDetail({ taskId, projects, labelMap, onClose, onOpen, onTogg
 
         <Field label="Estimate">
           <EstimateField task={task} />
+        </Field>
+        <Field label="Repeat">
+          <RecurrenceField task={task} onOpen={onOpen} />
         </Field>
 
         <Field label="Labels">

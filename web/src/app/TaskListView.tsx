@@ -3,7 +3,7 @@ import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useS
 import { db } from '../lib/db'
 import { compareDue, formatDateHeading, todayISO } from '../lib/dates'
 import { resolveLabels } from '../lib/labels'
-import { createSubtask, createTask, deleteTask, setTaskCompleted, setTaskParent, updateTask } from '../lib/ops'
+import { createSubtask, createTask, deleteTask, detachOccurrence, setTaskCompleted, setTaskParent, skipOccurrence, updateTask } from '../lib/ops'
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
 import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
 import { flattenTree, type Tree } from '../lib/tree'
@@ -320,6 +320,29 @@ export function TaskListView({ route }: { route: ListRoute }) {
         case 'c':
           if (row) void toggleComplete(row.task.id, !row.task.completed_at)
           break
+        case 'S': {
+          // Skip the current occurrence of the selected (or open) recurring task.
+          const id = row?.task.id ?? openId
+          if (id) {
+            e.preventDefault()
+            void skipOccurrence(id)
+          }
+          break
+        }
+        case 'O': {
+          // "This occurrence only": detach a standalone copy and open it.
+          const id = row?.task.id ?? openId
+          if (id) {
+            e.preventDefault()
+            void detachOccurrence(id).then((copy) => {
+              if (copy) {
+                setSelectedId(copy)
+                setOpenId(copy)
+              }
+            })
+          }
+          break
+        }
         case 'L':
           if (row) {
             e.preventDefault()

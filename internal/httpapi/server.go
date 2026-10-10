@@ -711,6 +711,9 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if entity == "task" {
+		canonicalizeRecurrence(body)
+	}
 	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
 		s.internal(w, err)
 		return
@@ -936,7 +939,20 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	s.writeFields(w, r, entity, r.PathValue("id"), body, http.StatusOK)
+	var extra []opsync.Op
+	if entity == "task" {
+		canonicalizeRecurrence(body)
+		// Completing a recurring task records the occurrence and moves the series.
+		recordID, record, ok, err := s.recurringCompletion(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing, localToday(time.Now()))
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		if ok {
+			extra = fieldOps("task", recordID, record, s.opTS())
+		}
+	}
+	s.writeFieldsWith(w, r, entity, r.PathValue("id"), body, http.StatusOK, extra)
 }
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
@@ -960,11 +976,22 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 // writeFields turns a REST body into ops stamped with server time and applies them.
 func (s *Server) writeFields(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int) {
-	now := s.opTS()
+	s.writeFieldsWith(w, r, entity, id, body, status, nil)
+}
+
+// fieldOps turns the fields of one entity into server-stamped ops.
+func fieldOps(entity, id string, body map[string]json.RawMessage, ts int64) []opsync.Op {
 	ops := make([]opsync.Op, 0, len(body))
 	for field, value := range body {
-		ops = append(ops, opsync.Op{ID: ids.New(), Entity: entity, EntityID: id, Field: field, Value: value, TS: now, Device: serverDevice})
+		ops = append(ops, opsync.Op{ID: ids.New(), Entity: entity, EntityID: id, Field: field, Value: value, TS: ts, Device: serverDevice})
 	}
+	return ops
+}
+
+// writeFieldsWith is writeFields plus extra ops (other entities) applied in the
+// same batch; the response still describes entity/id.
+func (s *Server) writeFieldsWith(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int, extra []opsync.Op) {
+	ops := append(fieldOps(entity, id, body, s.opTS()), extra...)
 	uid := userFrom(r.Context()).ID
 	res, err := s.sync.Apply(r.Context(), uid, ops)
 	if err != nil {

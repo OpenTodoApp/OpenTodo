@@ -155,6 +155,8 @@ function ShortcutHelp({ onClose }: { onClose: () => void }) {
     ['L', 'Labels of selected task (type to find, Enter adds or creates)'],
     ['e', 'Edit the estimate of the selected task (type 20, 45m, 1h30; Enter)'],
     ['s', 'Schedule the selected task: Day view in placement mode'],
+    ['Shift+S', 'Skip the current occurrence of a recurring task'],
+    ['Shift+O', 'Recurring task: this occurrence only (standalone copy, series moves on)'],
     ['Delete', 'Delete selected task (and its subtasks)'],
     ['g then i / t / u / c / l / f / v / s', 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings'],
     ['g then Shift+I', 'Go to Settings → Import data'],

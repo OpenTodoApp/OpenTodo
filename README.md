@@ -68,6 +68,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | Sub-projects | Nest projects to any depth; collapsible sidebar tree (Left / Right, remembered per device) with rolled-up counts; "Move to" from the project menu or `m`; a project view lists its sub-projects; archiving cascades, deleting moves sub-projects up a level; concurrent moves on two devices never leave a project nested inside itself |
 | Tasks | Title, notes, project, priority P1–P4, floating due date with optional time, complete / reopen, delete |
 | Time blocking | Duration estimates (`e` on a task: `20`, `45m`, `1h30`, or presets) shown on every row, and **Day** / **Week** calendars (`g` `d`, `g` `w`) with a 15-minute grid: a task with a due time is a block as long as its estimate, date-only tasks wait in the day's unscheduled lane, overlapping blocks sit side by side, each day shows planned hours against your day length. Drag from the lane, the task list beside the grid or the grid itself; drag a block's lower edge to change the estimate; or do all of it from the keyboard (`s` on a list task opens placement mode, arrows move, Shift+arrows resize). Duration filter chips (Quick wins, Under 30 min, Over 1 h, Unestimated) in Inbox, Today, Upcoming and projects. Works offline; moves converge like any other edit |
+| Recurring tasks | Rules you type and read: `every weekday`, `every last weekday`, `every 2nd tuesday`, `every 3 days after completion`, optionally `until 2026-12-31` or `for 10 times`. Completing records the occurrence in Completed and moves the task to its next date (overdue tasks catch up instead of piling up); skip (`Shift+S`) or detach one occurrence (`Shift+O`); a live preview of the next three dates. Two devices completing the same occurrence offline end with one entry. See [docs/recurrence.md](docs/recurrence.md) |
 | Subtasks | Nest tasks to any depth; parents show `done/total` progress; completing or deleting a parent cascades; `a` adds a subtask, Tab / Shift+Tab indent and outdent, Left / Right collapse and expand; concurrent moves on two devices never leave a task nested inside itself |
 | Offline | Every change is applied locally first and queued; the app loads and works with no network. Installable PWA |
 | Sync | Field-level, conflict-free sync across all your devices; concurrent edits converge without "pick a version" dialogs. Live push: a change on one device shows up on the others within a second or two, with polling as the fallback |
@@ -81,7 +82,7 @@ OpenTodo belongs to the growing family of open-source, self-hostable replacement
 | CLI | `ot`: a stdlib-only command-line client (`ot add "Call the plumber" --due tomorrow`, `ot today`, `--json` for scripts), see [docs/cli.md](docs/cli.md) |
 | Hosting | Single distroless container, health check, Coolify-ready compose file, zero mandatory configuration |
 
-**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): recurring tasks, reminders, sharing and comments, CalDAV, OIDC, optional end-to-end encryption.
+**Next** (see [ROADMAP.md](ROADMAP.md) for the full plan): reminders, sharing and comments, CalDAV, OIDC, optional end-to-end encryption.
 
 ## Quick start
 
