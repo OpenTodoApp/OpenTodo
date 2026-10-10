@@ -1,4 +1,6 @@
-import type { AuthStatus, Invitation, InvitationPreview, Op, User } from './types'
+import type {
+  AuthStatus, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, Invitation, InvitationPreview, Op, User,
+} from './types'
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) {
@@ -30,7 +32,7 @@ export const api = {
   login: (email: string, password: string) => request<{ user: User }>('POST', '/api/v1/auth/login', { email, password }),
   logout: () => request<void>('POST', '/api/v1/auth/logout'),
   sync: (device: string, cursor: number, ops: Op[]) =>
-    request<{ applied: number; ops: Op[]; cursor: number; hasMore: boolean; serverTime: number }>(
+    request<{ applied: number; ops: Op[]; cursor: number; hasMore: boolean; serverTime: number; generation?: string }>(
       'POST', '/api/v1/sync', { device, cursor, ops },
     ),
   listTokens: () => request<{ tokens: { id: string; name: string; createdAt: number; lastUsedAt: number | null }[] }>('GET', '/api/v1/tokens'),
@@ -43,6 +45,14 @@ export const api = {
     request<{ invitation: Invitation; link: string }>('POST', '/api/v1/invitations', input),
   revokeInvitation: (id: string) => request<void>('DELETE', `/api/v1/invitations/${id}`),
   previewInvitation: (token: string) => request<InvitationPreview>('GET', `/api/v1/invitations/${encodeURIComponent(token)}`),
+
+  // Backups (owner only). Secrets are write-only: responses carry presence flags.
+  backupStatus: () => request<BackupStatus>('GET', '/api/v1/backups'),
+  backupSettings: () => request<{ settings: BackupSettings; secrets: BackupSecretFlags }>('GET', '/api/v1/backups/settings'),
+  saveBackupSettings: (settings: BackupSettings, secrets: BackupSecretUpdate) =>
+    request<{ settings: BackupSettings; secrets: BackupSecretFlags }>('PUT', '/api/v1/backups/settings', { settings, secrets }),
+  runBackup: () => request<{ status: string }>('POST', '/api/v1/backups/run'),
+  testBackupDestination: () => request<{ ok: boolean }>('POST', '/api/v1/backups/test'),
 }
 
 /** True for failures that mean "no server reachable" rather than a server answer. */

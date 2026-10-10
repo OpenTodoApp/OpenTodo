@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
+import { BackupsPanel } from './BackupsPanel'
 import { MembersPanel } from './MembersPanel'
 
 interface TokenRow { id: string; name: string; createdAt: number; lastUsedAt: number | null }
@@ -55,6 +56,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       </section>
 
       {user.role === 'owner' && <MembersPanel />}
+
+      {user.role === 'owner' && <BackupsPanel />}
 
       <section className="space-y-2">
         <h2 className="font-semibold">API tokens</h2>

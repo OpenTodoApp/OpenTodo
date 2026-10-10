@@ -114,3 +114,57 @@ export const TASK_FIELDS = [
   'position', 'created_at', 'completed_at', 'deleted_at',
 ] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const
+
+// ---- backups (owner-only server settings; never synced) ----
+
+export type BackupDestination = 'local' | 's3' | 'webdav'
+export type BackupFrequency = 'off' | 'hourly' | 'daily' | 'weekly'
+
+export interface BackupSettings {
+  destination: BackupDestination
+  local: { dir: string }
+  s3: { endpoint: string; region: string; bucket: string; prefix: string; accessKey: string; pathStyle: boolean }
+  webdav: { url: string; username: string; allowHttp: boolean }
+  schedule: { frequency: BackupFrequency; time: string; weekday: number }
+  retention: { keepLast: number; maxAgeDays: number }
+  compress: boolean
+  scheduleSince?: number
+}
+
+/** Which secrets the server holds. Values are never sent to the client. */
+export interface BackupSecretFlags {
+  hasS3SecretKey: boolean
+  hasWebdavPassword: boolean
+  hasPassphrase: boolean
+}
+
+/** Secret changes: absent keeps, '' clears, a value replaces. */
+export interface BackupSecretUpdate {
+  s3SecretKey?: string
+  webdavPassword?: string
+  passphrase?: string
+}
+
+export interface BackupRun {
+  id: string
+  kind: 'manual' | 'scheduled'
+  startedAt: number
+  finishedAt: number | null
+  status: 'running' | 'succeeded' | 'failed'
+  bytes: number
+  destination: string
+  archiveName: string
+  error: string
+  durationMs: number | null
+}
+
+export interface BackupStatus {
+  enabled: boolean
+  destination: BackupDestination
+  schedule: BackupSettings['schedule']
+  encrypted: boolean
+  running: BackupRun | null
+  nextRunAt: number | null
+  lastRun: BackupRun | null
+  history: BackupRun[]
+}
