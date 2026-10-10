@@ -7,6 +7,7 @@ import { createView, deleteView, evaluateViews, isDashboard, reorderView, setPin
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
 import { useStartView, useViewData } from './useViews'
+import { keepInViewport } from './popover'
 
 export const viewIcon = (v: View) => (isDashboard(v) ? '▦' : '≡')
 
@@ -26,7 +27,7 @@ export function ViewMenu({ view, align = 'right', className = '' }: { view: View
   }
   return (
     <>
-      <details className={`relative ${className}`}>
+      <details className={`relative ${className}`} onToggle={keepInViewport}>
         <summary className="cursor-pointer list-none rounded px-1.5 py-0.5 text-slate-400 hover:bg-slate-300/60 dark:hover:bg-slate-700" aria-label={`Menu for view ${view.name}`}>⋯</summary>
         <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-20 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-1 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900`}>
           <button className="btn-ghost w-full justify-start" onClick={act(() => setRenaming(true))}>Rename</button>

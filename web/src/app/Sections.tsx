@@ -6,6 +6,7 @@ import { createTask } from '../lib/ops'
 import { createSection, deleteSection, renameSection, reorderSection } from '../lib/sections'
 import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
+import { keepInViewport } from './popover'
 
 export function SectionHeader({ section, count, layout, editable, first, last, collapsed, onToggleCollapse, onAdd }: {
   /** null: the "No section" heading. */
@@ -65,7 +66,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
         <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" onClick={onAdd} aria-label={`Add a task to ${title}`} title="Add a task here">+</button>
       )}
       {editable && section && (
-        <details className="relative" ref={menuRef}>
+        <details className="relative" ref={menuRef} onToggle={keepInViewport}>
           <summary className="btn-ghost cursor-pointer list-none px-1.5 py-0.5 text-xs" aria-label={`Section menu for ${title}`}>⋯</summary>
           <div className="absolute right-0 z-20 mt-1 w-48 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
             <button type="button" className="btn-ghost w-full justify-start" onClick={() => { close(); setName(section.name); setRenaming(true) }}>Rename</button>

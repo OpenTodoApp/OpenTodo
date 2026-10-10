@@ -10,6 +10,7 @@ import { navigate } from './router'
 import { ShareDialog } from './ShareDialog'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
+import { keepInViewport } from './popover'
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b']
 
@@ -114,7 +115,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
         {canManageMembers(role) ? 'Share' : 'Members'} <span className="kbd ml-1">S</span>
       </button>
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} onClose={() => setSharing(false)} />}
-      {editable && <details className="relative" ref={menuRef}>
+      {editable && <details className="relative" ref={menuRef} onToggle={keepInViewport}>
         <summary className="btn-ghost cursor-pointer list-none text-xs">Project ⌄</summary>
         <div className="absolute right-0 z-10 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
           <p className="px-1 pb-1 text-xs text-slate-400">Color</p>

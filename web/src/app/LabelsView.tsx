@@ -5,6 +5,7 @@ import { LABEL_PALETTE, LabelExistsError, activeLabels, countOpenByLabel, create
 import type { Label } from '../lib/types'
 import { navigate, type Route } from './router'
 import { visibleTasks } from '../lib/trash'
+import { keepInViewport } from './popover'
 
 /** Labels in sidebar order with per-label open counts (same project filter as the views). */
 export function useLabelData() {
@@ -105,7 +106,7 @@ function LabelMenu({ label, labels, count, onRename }: { label: Label; labels: L
     navigate({ view: 'label', id: target.id })
   }
   return (
-    <details className="relative">
+    <details className="relative" onToggle={keepInViewport}>
       <summary className="cursor-pointer list-none rounded px-1.5 py-0.5 text-slate-400 opacity-0 hover:bg-slate-300/60 focus:opacity-100 group-hover:opacity-100 dark:hover:bg-slate-700 [details[open]_&]:opacity-100" aria-label={`Menu for label ${label.name}`}>⋯</summary>
       <div className="absolute right-0 z-20 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-2 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
         <p className="px-1 pb-1 text-xs text-slate-400">Color</p>
