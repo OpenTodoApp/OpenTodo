@@ -13,7 +13,7 @@ Status legend: ✅ shipped · 🔨 in progress · 📝 specified (proposal, delt
 | ✅ | Single container under 50 MB, runs on a Raspberry Pi | `bootstrap-core-platform` | Static Go binary + SQLite, distroless, ~12 MB binary |
 | ✅ | Keyboard navigation (q, j/k, c, 1–4, g+key, ?) | `bootstrap-core-platform` | |
 | ✅ | Live push of changes between devices (no 30 s polling) | `realtime-sync-channel` | Server-sent events or WebSocket wake-up; protocol stays op-based |
-| 📝 | Rich text with collaborative editing for notes and comments | `collaborative-rich-text` | Yjs documents stored as op values; evaluate size impact first |
+| ✅ | Rich text with collaborative editing for task notes | `collaborative-rich-text` | Yjs document in `task.notes_doc`, editor lazy-loaded; comments keep Markdown |
 | ✅ | Vim-style modal navigation option | `vim-keybindings` | |
 
 ## 2. Capture and input
