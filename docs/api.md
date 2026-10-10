@@ -87,7 +87,26 @@ curl -sS "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: 
 
 ### Project fields
 
-`name` (string), `color` (string, CSS colour), `position` (number), `archived` (boolean), `parent_id` (string or null), `created_at`, `deleted_at`.
+`name` (string), `color` (string, CSS colour), `position` (number, sort order among siblings), `archived` (boolean), `parent_id` (string or null, see [Sub-projects](#sub-projects)), `created_at`, `deleted_at`.
+
+### Sub-projects
+
+A project becomes a sub-project by setting `parent_id` to another project's id, to any depth. On `POST /projects` and `PATCH /projects/{id}` the server checks the value and answers `400 invalid_input` when:
+
+- the parent does not exist or is deleted (`parent project not found`),
+- the parent is the project itself or one of its descendants, which would form a cycle (`parent is a descendant of the project`).
+
+`parent_id: null` moves a project to the top level and is always accepted. Nothing changes on a rejected request. The sync endpoint never rejects an operation for tree reasons; see `docs/sync.md` for how clients converge when two devices move projects into each other concurrently.
+
+The REST API writes exactly the fields you send. The cascades the web app performs (archiving a project archives its descendants, deleting one moves its direct sub-projects to its own parent and its open tasks to the Inbox) are ordinary per-project operations issued by the client; a script that wants the same result sends one request per project. A sub-project whose parent is archived, deleted or missing is shown at the top level by every client, so nothing becomes unreachable.
+
+```bash
+# Create a sub-project, then move it to the top level
+curl -sS "$OT/api/v1/projects" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Q4 launch","parent_id":"<parent-project-id>"}'
+curl -sS -X PATCH "$OT/api/v1/projects/<id>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"parent_id":null}'
+```
 
 ## Examples
 

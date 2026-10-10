@@ -338,6 +338,79 @@ func TestTaskParentMustShareProject(t *testing.T) {
 	}
 }
 
+// projectTreeEnv registers an owner and builds "Work" > "Client A" > "Q4 launch" plus a top-level "Home".
+func projectTreeEnv(t *testing.T) (e *env, work, clientA, q4, home string) {
+	t.Helper()
+	e = newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+	create := func(name string, parent any) string {
+		t.Helper()
+		resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": name, "color": "#10b981", "parent_id": parent})
+		e.mustStatus(resp, 201, out)
+		if out["parent_id"] != parent {
+			t.Fatalf("created %s parent_id = %v, want %v", name, out["parent_id"], parent)
+		}
+		return out["id"].(string)
+	}
+	work = create("Work", nil)
+	clientA = create("Client A", work)
+	q4 = create("Q4 launch", clientA)
+	home = create("Home", nil)
+	return e, work, clientA, q4, home
+}
+
+func TestProjectPatchRejectsCycle(t *testing.T) {
+	e, work, clientA, q4, home := projectTreeEnv(t)
+	for _, bad := range []string{work, clientA, q4} {
+		resp, out := e.do("PATCH", "/api/v1/projects/"+work, map[string]any{"parent_id": bad})
+		e.mustStatus(resp, 400, out)
+		if out["error"].(map[string]any)["code"] != "invalid_input" {
+			t.Fatalf("error = %v", out)
+		}
+	}
+	resp, out := e.do("GET", "/api/v1/projects/"+work, nil)
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != nil {
+		t.Fatalf("parent changed: %v", out["parent_id"])
+	}
+	// Unknown parents are refused on patch and create; a legal move is accepted.
+	resp, out = e.do("PATCH", "/api/v1/projects/"+q4, map[string]any{"parent_id": "nope"})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Stray", "parent_id": "nope"})
+	e.mustStatus(resp, 400, out)
+	resp, out = e.do("PATCH", "/api/v1/projects/"+q4, map[string]any{"parent_id": home})
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != home {
+		t.Fatalf("legal move: %v", out)
+	}
+	// Clearing the parent is always allowed; a deleted parent is refused.
+	resp, out = e.do("PATCH", "/api/v1/projects/"+q4, map[string]any{"parent_id": nil})
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != nil {
+		t.Fatalf("cleared parent = %v", out["parent_id"])
+	}
+	resp, out = e.do("DELETE", "/api/v1/projects/"+home, nil)
+	e.mustStatus(resp, 204, out)
+	resp, out = e.do("PATCH", "/api/v1/projects/"+q4, map[string]any{"parent_id": home})
+	e.mustStatus(resp, 400, out)
+}
+
+func TestProjectPatchParentRequiresAuth(t *testing.T) {
+	e, work, clientA, _, _ := projectTreeEnv(t)
+	bare := &env{t: t, srv: e.srv, client: &http.Client{}}
+	resp, out := bare.do("PATCH", "/api/v1/projects/"+clientA, map[string]any{"parent_id": nil})
+	bare.mustStatus(resp, 401, out)
+	if out["error"].(map[string]any)["code"] != "unauthorized" {
+		t.Fatalf("error = %v", out)
+	}
+	resp, out = e.do("GET", "/api/v1/projects/"+clientA, nil)
+	e.mustStatus(resp, 200, out)
+	if out["parent_id"] != work {
+		t.Fatalf("parent changed without auth: %v", out["parent_id"])
+	}
+}
+
 func TestTaskParentRequiresAuth(t *testing.T) {
 	e, _, trip, hotel, _ := subtaskEnv(t)
 	bare := &env{t: t, srv: e.srv, client: &http.Client{}}

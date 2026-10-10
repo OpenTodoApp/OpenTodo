@@ -11,8 +11,8 @@
 
 ## 2. Server (Go)
 
-- [ ] 2.1 Cycle check on `PATCH /api/v1/projects/{id}` when `parent_id` is present (walk parent chain in materialized fields, reject self or descendant with `invalid_input`); verify `TestProjectPatchRejectsCycle` and `TestProjectPatchParentRequiresAuth` (`go test ./...`)
-- [ ] 2.2 Document the validation in `docs/api.md` and the cycle-breaking rule in `docs/sync.md`; verify the documented error code matches the handler test
+- [x] 2.1 Cycle check on `PATCH /api/v1/projects/{id}` when `parent_id` is present (walk parent chain in materialized fields, reject self or descendant with `invalid_input`); verify `TestProjectPatchRejectsCycle` and `TestProjectPatchParentRequiresAuth` (`go test ./...`)
+- [x] 2.2 Document the validation in `docs/api.md` and the cycle-breaking rule in `docs/sync.md`; verify the documented error code matches the handler test
 
 ## 3. Sidebar and views (web/src/app)
 
