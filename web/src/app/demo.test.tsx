@@ -1,16 +1,17 @@
-// Demo instance UI (OpenSpec `demo-mode`), rendered to static markup like the
-// other component tests: sign-in panel, banner, Settings and sharing gating.
+// Demo instance UI (OpenSpec `demo-mode`, `demo-sandboxes`), rendered to static
+// markup like the other component tests: sign-in panel, banner, expiry screen,
+// Settings and sharing gating, plus the sandbox helpers of lib/demo.
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError } from '../lib/api'
-import { DEMO_BANNER, getDemo, isDemoRestricted, setDemo } from '../lib/demo'
+import { api, ApiError } from '../lib/api'
+import { DEMO_BANNER, DEMO_LIMIT_NOTICE, expireSandboxIfGone, getDemo, isDemoRestricted, sandboxErrorMessage, setDemo, startSandbox } from '../lib/demo'
 import type { AuthStatus, DemoInfo, Project, User } from '../lib/types'
-import { DemoBanner } from './App'
+import { DemoBanner, DemoExpiredScreen } from './App'
 import { AuthScreen } from './AuthScreen'
 import { SettingsView } from './SettingsView'
 import { ShareDialog } from './ShareDialog'
 
-const info: DemoInfo = { email: 'demo@example.com', password: 'opentodo-demo', resetsAt: 1 }
+const info: DemoInfo = { token: 'tok-1', sandboxHours: { idle: 2, max: 24 }, resetsAt: 1 }
 const base: AuthStatus = { setupRequired: false, signupAllowed: false, authenticated: false, user: null, version: 'test' }
 const user: User = { id: 'u1', email: 'demo@example.com', name: 'Alex Demo', role: 'member', createdAt: 1 }
 
@@ -20,15 +21,20 @@ beforeEach(() => {
 afterEach(() => {
   setDemo(null)
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('sign-in screen', () => {
-  it('shows the demo credentials and a one-click sign-in on a demo instance', () => {
+  it('offers a private sandbox and shows no credentials on a demo instance', () => {
     const html = renderToStaticMarkup(<AuthScreen status={{ ...base, demo: info }} onAuthenticated={() => {}} />)
     expect(html).toContain('data-testid="demo-panel"')
-    expect(html).toContain('demo@example.com')
-    expect(html).toContain('opentodo-demo')
     expect(html).toContain('Try the demo')
+    expect(html).toContain('private sandbox')
+    expect(html).toContain('2 hours of inactivity')
+    // No shared account, no password, no sign-in form.
+    expect(html).not.toContain('demo@example.com')
+    expect(html).not.toContain('opentodo-demo')
+    expect(html).not.toContain('type="password"')
   })
 
   it('shows nothing of the kind on a normal server', () => {
@@ -40,13 +46,21 @@ describe('sign-in screen', () => {
 
 describe('banner and state', () => {
   it('uses the fixed banner text', () => {
-    expect(renderToStaticMarkup(<DemoBanner />)).toContain('Demo instance — data resets every night, don&#x27;t store anything private.')
-    expect(DEMO_BANNER).toBe("Demo instance — data resets every night, don't store anything private.")
+    expect(DEMO_BANNER).toBe("Demo — this sandbox is private to you and is deleted after 2 hours of inactivity. Don't store anything personal.")
+    const html = renderToStaticMarkup(<DemoBanner />)
+    expect(html).toContain('Demo — this sandbox is private to you and is deleted after 2 hours of inactivity. Don&#x27;t store anything personal.')
+    expect(html).not.toContain('demo-limit')
   })
 
-  it('records and clears the demo state', () => {
+  it('shows the write-limit notice when the sandbox used its budget', () => {
+    const html = renderToStaticMarkup(<DemoBanner notice={DEMO_LIMIT_NOTICE} />)
+    expect(html).toContain('data-testid="demo-limit"')
+    expect(html).toContain('reached its limit')
+  })
+
+  it('records and clears the demo state without keeping the single-use token', () => {
     setDemo(info)
-    expect(getDemo()).toEqual(info)
+    expect(getDemo()).toEqual({ ...info, token: '' })
     setDemo(undefined)
     expect(getDemo()).toBeNull()
   })
@@ -55,6 +69,52 @@ describe('banner and state', () => {
     expect(isDemoRestricted(new ApiError(403, 'demo_restricted', 'Import is disabled on this demo instance.'))).toBe(true)
     expect(isDemoRestricted(new ApiError(403, 'forbidden', 'no'))).toBe(false)
     expect(isDemoRestricted(null)).toBe(false)
+  })
+})
+
+describe('sandbox creation', () => {
+  it('posts the page token and signs in', async () => {
+    const create = vi.spyOn(api, 'demoSandbox').mockResolvedValue({ user })
+    await expect(startSandbox('tok-1')).resolves.toEqual(user)
+    expect(create).toHaveBeenCalledWith('tok-1')
+  })
+
+  it('retries once with a fresh token when the page token is stale', async () => {
+    const create = vi.spyOn(api, 'demoSandbox')
+      .mockRejectedValueOnce(new ApiError(403, 'demo_token', 'expired'))
+      .mockResolvedValueOnce({ user })
+    vi.spyOn(api, 'authStatus').mockResolvedValue({ ...base, demo: { ...info, token: 'tok-2' } })
+    await expect(startSandbox('tok-1')).resolves.toEqual(user)
+    expect(create).toHaveBeenLastCalledWith('tok-2')
+  })
+
+  it('explains a busy demo, a rate limit and a stale page', () => {
+    expect(sandboxErrorMessage(new ApiError(503, 'demo_busy', 'x'))).toBe('The demo is busy, try again in a few minutes.')
+    expect(sandboxErrorMessage(new ApiError(429, 'rate_limited', 'x'))).toContain('Too many new sandboxes')
+    expect(sandboxErrorMessage(new ApiError(403, 'demo_token', 'x'))).toContain('Reload')
+    expect(sandboxErrorMessage(new TypeError('fetch failed'))).toContain('could not be reached')
+  })
+})
+
+describe('expired sandbox', () => {
+  it('clears the local data of a device whose sandbox is gone', async () => {
+    const clear = vi.fn(async () => {})
+    await expect(expireSandboxIfGone({ demo: info, authenticated: false }, true, clear)).resolves.toBe(true)
+    expect(clear).toHaveBeenCalledOnce()
+  })
+
+  it('leaves everything alone for a first visit, a live session or a normal server', async () => {
+    const clear = vi.fn(async () => {})
+    await expect(expireSandboxIfGone({ demo: info, authenticated: false }, false, clear)).resolves.toBe(false)
+    await expect(expireSandboxIfGone({ demo: info, authenticated: true }, true, clear)).resolves.toBe(false)
+    await expect(expireSandboxIfGone({ authenticated: false }, true, clear)).resolves.toBe(false)
+    expect(clear).not.toHaveBeenCalled()
+  })
+
+  it('shows the expiry screen with a way to start again', () => {
+    const html = renderToStaticMarkup(<DemoExpiredScreen onStarted={() => {}} />)
+    expect(html).toContain('Your demo sandbox has expired')
+    expect(html).toContain('Start a new sandbox')
   })
 })
 
@@ -85,8 +145,8 @@ describe('Share dialog', () => {
   const membership = {
     projectId: 'p1', role: 'owner' as const, ownerId: 'u1',
     members: [
-      { userId: 'u1', name: 'Alex Demo', email: 'demo@example.com', role: 'owner' as const },
-      { userId: 'u2', name: 'Sam Rivera', email: 'sam@example.com', role: 'editor' as const },
+      { userId: 'u1', name: 'Alex Demo', email: 'sandbox-1@demo.invalid', role: 'owner' as const },
+      { userId: 'u2', name: 'Sam Rivera', email: 'collab-1@demo.invalid', role: 'editor' as const },
     ],
   }
 

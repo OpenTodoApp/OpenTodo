@@ -62,7 +62,6 @@ func (d *demoServer) anonymous() *env {
 	return &e
 }
 
-
 // token reads a creation token from auth/status.
 func token(e *env) string {
 	e.t.Helper()

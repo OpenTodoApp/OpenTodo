@@ -391,6 +391,23 @@ describe('second-factor policy (mfa-totp)', () => {
   })
 })
 
+describe('demo write budget (demo-sandboxes)', () => {
+  it('maps demo_limit to the limited state and keeps the queue', async () => {
+    await db.outbox.add({ id: 'queued-2', entity: 'task', entityId: 't8', field: 'title', value: 'Over the budget', ts: 901, device: 'me' })
+    syncCalls.mockImplementationOnce((async () => {
+      throw new ApiError(429, 'demo_limit', 'this demo sandbox may save at most 600 changes per hour; try again later')
+    }) as never)
+    await syncNow()
+    expect(syncSnapshot().state).toBe('limited')
+    expect(syncSnapshot().error).toContain('600 changes')
+    expect(await db.outbox.count()).toBe(1)
+    // When the budget allows again the queued edit goes out.
+    await syncNow()
+    expect(await db.outbox.count()).toBe(0)
+    expect(syncSnapshot().state).toBe('idle')
+  })
+})
+
 describe('project sharing', () => {
   type SentOp = { id: string; entity: string; entityId: string; field: string; value: unknown; ts: number; device: string }
   const membership = (projectId: string, role: string) => ({

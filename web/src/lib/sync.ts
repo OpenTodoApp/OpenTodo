@@ -204,6 +204,12 @@ async function runOnce(): Promise<void> {
       publish({ state: 'unauthenticated' })
       return
     }
+    if (err instanceof ApiError && err.code === 'demo_limit') {
+      // Demo sandbox write budget (OpenSpec `demo-sandboxes`): nothing was
+      // applied, the outbox stays queued and uploads when the budget allows.
+      publish({ state: 'limited', error: err.message })
+      return
+    }
     if (err instanceof ApiError && err.code === 'mfa_enrolment_required') {
       // The owner now requires a second factor for this account. Nothing was
       // accepted, so the outbox stays queued and uploads after enrolment.

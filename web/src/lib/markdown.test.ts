@@ -2,7 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { Markdown } from '../app/Markdown'
-import { parseInline, parseMarkdown, safeHref } from './markdown'
+import { LINK_REL, parseInline, parseMarkdown, safeHref } from './markdown'
 
 const html = (source: string) => renderToStaticMarkup(createElement(Markdown, { source }))
 
@@ -18,10 +18,13 @@ describe('markdown', () => {
 
   it('link opens new tab with noopener', () => {
     const out = html('See [the docs](https://example.com/docs?a=1&b=2) or https://example.org/x.')
-    expect(out).toContain('<a href="https://example.com/docs?a=1&amp;b=2" target="_blank" rel="noopener noreferrer"')
+    expect(out).toContain('<a href="https://example.com/docs?a=1&amp;b=2" target="_blank" rel="nofollow ugc noopener noreferrer"')
     expect(out).toContain('>the docs</a>')
     // A bare URL becomes a link without its trailing punctuation.
-    expect(out).toContain('<a href="https://example.org/x" target="_blank" rel="noopener noreferrer"')
+    expect(out).toContain('<a href="https://example.org/x" target="_blank" rel="nofollow ugc noopener noreferrer"')
+    // Visitor links carry no search value (demo-sandboxes D5): every link, every instance.
+    expect(LINK_REL).toBe('nofollow ugc noopener noreferrer')
+    expect(out.match(/<a /g)?.length).toBe(out.match(/rel="nofollow ugc noopener noreferrer"/g)?.length)
   })
 
   it('refuses dangerous link targets', () => {

@@ -155,7 +155,7 @@ function DemoRestrictedSection() {
     <section className="space-y-2" aria-labelledby="demo-heading" data-testid="demo-restricted">
       <h2 id="demo-heading" className="font-semibold">Demo instance</h2>
       <p className="text-sm text-slate-500">
-        Everyone shares this account and its data resets every night. Account, security and server settings are {DEMO_RESTRICTED_NOTE.toLowerCase().replace(/\.$/, '')}: {DEMO_RESTRICTED_FEATURES.join(', ')}.
+        This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Account, security and server settings are {DEMO_RESTRICTED_NOTE.toLowerCase().replace(/\.$/, '')}: {DEMO_RESTRICTED_FEATURES.join(', ')}.
         Run your own server to use them; it takes one container.
       </p>
     </section>
