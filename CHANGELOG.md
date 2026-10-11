@@ -4,6 +4,15 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- The public demo (`OPENTODO_DEMO=true`) gives every visitor a **private sandbox** instead of one shared account: "Try the demo" creates a password-less account with its own copy of the sample data and a non-interactive collaborator, and nobody sees anybody else's changes. Sandboxes are deleted after 2 hours of inactivity, 24 hours after creation and by the nightly reset, which now also runs `VACUUM`. The published demo password is gone; the first start deletes the old shared demo accounts. `auth/status.demo` carries a creation token instead of credentials; new route `POST /api/v1/demo/sandbox`, new error codes `demo_expired`, `demo_limit`, `demo_busy` and `demo_token`; optional `OPENTODO_DEMO_MAX_SANDBOXES` and `OPENTODO_DEMO_MAX_DB_MB`. Migration `0025` adds the sandbox bookkeeping tables. ([Public demo](docs/self-hosting/demo.md))
+- Links in comments and notes render with `rel="nofollow ugc noopener noreferrer"` on every instance.
+
+### Security
+
+- Demo instances bound abuse: sandbox creation needs a single-use, signed, 10-minute token from the sign-in page and a same-origin request, at most 5 new sandboxes per address per hour (addresses are stored only as salted hashes), a live cap with idle eviction and a database size guard; each sandbox may write 600 ops per hour and 5,000 in total, and values are capped at 4 KB (32 KB for notes). Every demo response carries `X-Robots-Tag: noindex, nofollow` and the demo page declares `noindex`.
+
 ### Fixed
 
 - Zero-downtime updates work again: several server processes may now use one data directory, so Coolify's rolling update (new container started before the old one stops) no longer fails with "data directory is in use by another opentodo process" and rolls back. Background jobs (reminder push, webhooks, backups, email polling, Trash cleanup, audit pruning, demo reset) run in one process only and move to the new one when the old one stops; maintenance commands still require every server to be stopped. Upgrading from 0.1.0 needs one stop-then-deploy. ([Updating](docs/self-hosting/docker.md#updating))

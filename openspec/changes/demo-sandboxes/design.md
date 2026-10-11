@@ -46,6 +46,22 @@ Sandbox creation and the write budget work in every process (counters live in SQ
 
 Estimated +20 KB binary (sandbox lifecycle, cleanup), +1 KB gzipped web (expiry screen). No dependency. Each sandbox seed is about 400 ops (~150 KB of rows); 500 live sandboxes ≈ 75 MB before VACUUM.
 
+**Measured** (linux/amd64, `-trimpath -ldflags="-s -w"`, same embedded web build): server binary 16,724,130 → 16,797,858 bytes (+72 KB, section alignment included; `internal/sync/wipe.go` removed as unused). Initial web bundle 891.3 → 893.9 KB raw, 261.14 → 261.91 KB gzipped (+0.8 KB). No dependency. A sandbox seed is 569 ops and about 470 KB of database pages (ops, scope labels, materialized fields, indexes); 500 live sandboxes ≈ 235 MB before visitor changes, returned by the nightly VACUUM. Creating a sandbox takes about 0.1 s.
+
+## Implementation notes
+
+- **Write guard (D3, D7).** The budget and the field caps live in a `sync.WriteGuard` installed by the HTTP layer in demo mode. `CheckOp` runs before the batch transaction (size caps, wrapped in `ErrInvalidOp`); `Charge` runs inside the Apply transaction once the number of stored ops is known and updates `demo_sandboxes` counters there, so a refusal (`ErrWriteLimit` → 429 `demo_limit`) rolls the whole batch back and the counters are consistent across processes. The seed passes `sync.WithoutWriteGuard`. The caps are 4 KB for every value and 32 KB for task `description` and `notes_doc` (the JSON quotes of a string do not count); on `/sync` an oversized value refuses the batch with the sync path's usual `400 invalid_op`, on REST it is `400 invalid_input`.
+- **Expired sessions (D4).** On a demo instance only sandboxes ever hold sessions, so `requireAuth` answers `401 demo_expired` to any session cookie that no longer resolves (deleted sandbox, evicted sandbox, the old shared account), and plain `401 unauthorized` without a cookie. No tombstone table is needed. Deletion wakes the deleted accounts' live streams in that process so an open tab learns at once; elsewhere it learns on its next poll.
+- **Deletion.** One transaction per sandbox: `sync.DeleteAccountData` for both accounts (personal scopes, the owned shared project, memberships, ops, fields), purge markers of those scopes, audit events naming the accounts, the two `users` rows (sessions, notifications and the other account tables cascade) and the sandbox row. The startup catch-up reset (missed 03:00) deletes without VACUUM; the jobs leader vacuums when its loop starts.
+- **Creation token (D2).** HMAC-SHA256 over a 16-byte nonce and the expiry, keyed by a 32-byte key stored once in `settings` (`demo.token_key`, `INSERT OR IGNORE` so processes agree); spent nonces go to `demo_token_uses` until they expire. Refusals are `403 demo_token`; the route also requires an `Origin` header naming the server (`403 bad_origin`). The client retries once with a fresh token from `auth/status`.
+- **Client.** On a demo instance the sign-in screen shows only the demo panel (no password form). A device that was signed in and finds itself signed out on a demo instance clears its local data through the sign-out path and shows the expiry screen; a reload after that shows the normal demo sign-in.
+
+## Residual risks
+
+- The write budget counts ops, not bytes: a sandbox may still write up to 5,000 values of up to 32 KB. The database size guard stops new sandboxes, not writes of live ones; expiry and the nightly VACUUM bound how long such data stays. A per-sandbox byte budget would close this if it is ever abused.
+- The per-address limit trusts the first `X-Forwarded-For` entry, like the sign-in limiter; a demo must run behind a proxy that sets it. The salt is per process, so the limit restarts with the process and two processes during a rolling update count separately.
+- A nightly reset that runs while a sandbox is being seeded can leave that sandbox's later seed ops without an account (orphan rows until the data directory is recreated). The window is a fraction of a second at 03:00 UTC.
+
 ## Alternatives considered
 
 - **Hourly reset of the shared account.** Still shows one visitor's content to others for up to an hour. Rejected.
