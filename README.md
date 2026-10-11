@@ -17,6 +17,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 </p>
 
 <p align="center">
+  <a href="https://opentodo-demo.pixari.dev"><strong>Try the demo</strong></a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="docs/self-hosting/coolify.md">Coolify</a> ·
   <a href="docs/self-hosting/docker.md">Docker</a> ·
