@@ -29,6 +29,7 @@ import { estimateFocus, isGPending, openTask, placeInDay } from './signals'
 import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
+import { Dialog } from './overlay'
 
 type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' }>
 
@@ -834,29 +835,25 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
         />
       )}
       {prompt && (
-        <div role="status" className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
-          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
-            <span>All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
+        <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
+            <span className="user-text min-w-0">All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
             <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <span className="kbd ml-1 border-emerald-300 bg-emerald-500 text-white">Enter</span></button>
             <button className="btn-ghost text-xs" onClick={() => setPrompt(null)}>Keep open <span className="kbd ml-1">Esc</span></button>
           </div>
         </div>
       )}
       {assignFor && userId && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={() => setAssignFor(null)}>
-          <div className="w-full max-w-sm rounded-xl bg-white p-3 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Assign task">
-            <AssigneePicker taskId={assignFor} userId={userId} onClose={() => setAssignFor(null)} />
-            <p className="mt-2 px-1 text-[11px] text-slate-400">Type to filter · Enter assigns · Esc closes</p>
-          </div>
-        </div>
+        <Dialog title="Assign" label="Assign task" onClose={() => setAssignFor(null)}>
+          <AssigneePicker taskId={assignFor} userId={userId} onClose={() => setAssignFor(null)} />
+          <p className="mt-2 px-1 text-[11px] text-slate-400">Type to filter · Enter assigns · Esc closes</p>
+        </Dialog>
       )}
       {pickerFor && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={() => setPickerFor(null)}>
-          <div className="w-full max-w-sm rounded-xl bg-white p-3 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Labels for task">
-            <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-            <p className="mt-2 px-1 text-[11px] text-slate-400">Enter toggles or creates · Esc closes</p>
-          </div>
-        </div>
+        <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
+          <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
+          <p className="mt-2 px-1 text-[11px] text-slate-400">Enter toggles or creates · Esc closes</p>
+        </Dialog>
       )}
     </div>
   )

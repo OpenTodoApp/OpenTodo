@@ -1,0 +1,119 @@
+import { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { place } from './position'
+import { trapTab, useWide } from './stack'
+import { isolate, useOverlay } from './useOverlay'
+
+export interface PopoverProps {
+  open: boolean
+  onClose: () => void
+  /** The trigger: the panel is placed next to it from 640 px up, and focus returns to it. */
+  anchor: RefObject<HTMLElement | null>
+  /** Accessible name; also the title of the bottom sheet on phones. */
+  label: string
+  side?: 'bottom' | 'top'
+  align?: 'start' | 'end'
+  /** ARIA role of the panel; omit when the content carries its own (a listbox). */
+  role?: 'dialog' | 'menu'
+  /**
+   * Modal (default): focus moves into the panel and the page behind does not scroll.
+   * Non-modal is for combobox lists: focus stays in the field that drives them.
+   */
+  modal?: boolean
+  /** Width of the anchored panel from 640 px up (Tailwind class). */
+  width?: string
+  /** Extra classes for the content (padding). */
+  className?: string
+  children: ReactNode
+}
+
+/**
+ * Menus, pickers and small panels (OpenSpec change `mobile-layout`): below 640 px a
+ * bottom sheet across the screen with a title and a close button; from 640 px up a
+ * panel next to its trigger, flipped and shifted to stay inside the viewport.
+ */
+export function Popover(p: PopoverProps) {
+  if (!p.open) return null
+  return <PopoverPanel {...p} />
+}
+
+function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', role = 'dialog', modal = true, width = 'sm:w-56', className = '', children }: PopoverProps) {
+  const wide = useWide()
+  const panel = useRef<HTMLDivElement>(null)
+  useOverlay({ panel, onClose, modal, trigger: anchor })
+  const [pos, setPos] = useState<{ top: number; left: number; maxHeight?: number; maxWidth?: number } | null>(null)
+
+  const measure = useCallback(() => {
+    const a = anchor.current, el = panel.current
+    if (!wide || !a || !el) return
+    const r = a.getBoundingClientRect()
+    const vw = document.documentElement.clientWidth, vh = window.innerHeight
+    // Measure the natural size: drop a previous height cap first.
+    const prevMax = el.style.maxHeight
+    el.style.maxHeight = ''
+    const size = { width: el.offsetWidth, height: el.scrollHeight }
+    el.style.maxHeight = prevMax
+    const next = place(r, size, { width: vw, height: vh }, { side, align })
+    setPos((cur) => (cur && cur.top === next.top && cur.left === next.left && cur.maxHeight === next.maxHeight && cur.maxWidth === next.maxWidth ? cur : next))
+  }, [anchor, wide, side, align])
+
+  useLayoutEffect(() => {
+    if (!wide) return
+    measure()
+    const onMove = () => measure()
+    window.addEventListener('resize', onMove)
+    window.addEventListener('scroll', onMove, true)
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(onMove)
+    if (ro && panel.current) ro.observe(panel.current)
+    // Tap outside closes; the trigger toggles on its own.
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node
+      if (panel.current?.contains(t) || anchor.current?.contains(t)) return
+      onCloseRef.current()
+    }
+    document.addEventListener('pointerdown', onDown, true)
+    return () => {
+      window.removeEventListener('resize', onMove)
+      window.removeEventListener('scroll', onMove, true)
+      ro?.disconnect()
+      document.removeEventListener('pointerdown', onDown, true)
+    }
+  }, [wide, measure, anchor])
+  const onCloseRef = useRef(onClose)
+  useLayoutEffect(() => { onCloseRef.current = onClose })
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (modal && panel.current) trapTab(e, panel.current)
+    isolate.onKeyDown(e)
+  }
+  const ariaRole = role && modal ? role : undefined
+
+  if (typeof document === 'undefined') return null
+  if (!wide) {
+    return createPortal(
+      <div className="fixed inset-0 z-50" data-overlay-root {...isolate} onKeyDown={onKeyDown} style={modal ? undefined : { pointerEvents: 'none' }}>
+        {modal && <div className="absolute inset-0 bg-black/30" aria-hidden="true" onClick={onClose} data-overlay-backdrop />}
+        <div ref={panel} role={ariaRole} aria-label={label} aria-modal={ariaRole === 'dialog' ? true : undefined} tabIndex={-1} data-overlay="sheet"
+          className="pointer-events-auto absolute inset-x-0 flex max-h-[80dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-white text-sm shadow-2xl outline-none dark:border-slate-700 dark:bg-slate-900"
+          style={{ bottom: 'var(--vv-bottom, 0px)' }}>
+          <div className="relative flex shrink-0 items-center gap-2 border-b border-slate-100 pl-4 pr-1 pt-2 dark:border-slate-800">
+            <span aria-hidden="true" className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-slate-300 dark:bg-slate-600" />
+            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{label}</h2>
+            <button type="button" className="btn-ghost touch-target px-2 text-lg leading-none" aria-label="Close" data-overlay-close
+              onMouseDown={modal ? undefined : (e) => e.preventDefault()} onClick={onClose}>×</button>
+          </div>
+          <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(0.5rem,env(safe-area-inset-bottom))] ${className}`}>{children}</div>
+        </div>
+      </div>,
+      document.body,
+    )
+  }
+  return createPortal(
+    <div ref={panel} role={ariaRole} aria-label={label} tabIndex={-1} data-overlay="popover" data-overlay-root {...isolate} onKeyDown={onKeyDown}
+      className={`fixed z-50 overflow-y-auto overscroll-contain rounded-lg border border-slate-200 bg-white text-sm shadow-lg outline-none dark:border-slate-700 dark:bg-slate-900 ${width} ${className}`}
+      style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, maxHeight: pos?.maxHeight, maxWidth: pos?.maxWidth, opacity: pos ? 1 : 0 }}>
+      {children}
+    </div>,
+    document.body,
+  )
+}

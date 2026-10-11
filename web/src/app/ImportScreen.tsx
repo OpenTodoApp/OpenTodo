@@ -228,7 +228,7 @@ export function ImportView(p: ImportViewProps) {
               {p.preview.columns.ignored.length > 0 && <> · ignored: {p.preview.columns.ignored.join(', ')}</>}
             </p>
           )}
-          <div className="max-h-[50vh] overflow-auto rounded-md border border-slate-200 dark:border-slate-800">
+          <div className="max-h-[50dvh] overflow-auto rounded-md border border-slate-200 dark:border-slate-800" data-scroll-x>
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 bg-slate-50 text-xs text-slate-500 dark:bg-slate-900">
                 <tr><th className="px-2 py-1">Row</th><th className="px-2 py-1">Title</th><th className="px-2 py-1">Project</th><th className="px-2 py-1">Outcome</th><th className="px-2 py-1">Details</th></tr>

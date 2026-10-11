@@ -5,7 +5,7 @@ import { LABEL_PALETTE, LabelExistsError, activeLabels, countOpenByLabel, create
 import type { Label } from '../lib/types'
 import { navigate, type Route } from './router'
 import { visibleTasks } from '../lib/trash'
-import { keepInViewport } from './popover'
+import { Menu } from './overlay'
 
 /** Labels in sidebar order with per-label open counts (same project filter as the views). */
 export function useLabelData() {
@@ -91,45 +91,47 @@ export function LabelRow({ label, labels, count, duplicate, route }: { label: La
 
 function LabelMenu({ label, labels, count, onRename }: { label: Label; labels: Label[]; count: number; onRename: () => void }) {
   const others = labels.filter((l) => l.id !== label.id)
-  const close = (e: React.SyntheticEvent) => (e.currentTarget.closest('details') as HTMLDetailsElement | null)?.removeAttribute('open')
-  async function remove(e: React.SyntheticEvent) {
-    close(e)
+  async function remove(close: () => void) {
+    close()
     if (!confirm(`Delete label "${label.name}"? It is removed from ${count} open task${count === 1 ? '' : 's'}.`)) return
     await deleteLabel(label.id)
   }
-  async function merge(e: React.ChangeEvent<HTMLSelectElement>) {
+  async function merge(e: React.ChangeEvent<HTMLSelectElement>, close: () => void) {
     const target = others.find((l) => l.id === e.target.value)
     e.target.value = ''
-    close(e)
+    close()
     if (!target || !confirm(`Merge "${label.name}" into "${target.name}"? Tasks carrying "${label.name}" will carry "${target.name}" instead and "${label.name}" is deleted.`)) return
     await mergeLabels(label.id, target.id)
     navigate({ view: 'label', id: target.id })
   }
   return (
-    <details className="relative" onToggle={keepInViewport}>
-      <summary className="cursor-pointer list-none rounded px-1.5 py-0.5 text-slate-400 opacity-0 hover:bg-slate-300/60 focus:opacity-100 group-hover:opacity-100 dark:hover:bg-slate-700 [details[open]_&]:opacity-100" aria-label={`Menu for label ${label.name}`}>⋯</summary>
-      <div className="absolute right-0 z-20 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-2 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
-        <p className="px-1 pb-1 text-xs text-slate-400">Color</p>
-        <div className="mb-2 flex flex-wrap gap-1 px-1">
-          {LABEL_PALETTE.map((c) => (
-            <button key={c} className={`h-5 w-5 rounded-full ${c === label.color ? 'ring-2 ring-emerald-500 ring-offset-1' : ''}`} style={{ backgroundColor: c }}
-              aria-label={`Set color ${c}`} onClick={() => void updateLabel(label.id, { color: c })} />
-          ))}
-        </div>
-        <button className="btn-ghost w-full justify-start" onClick={(e) => { close(e); onRename() }}>Rename</button>
-        <div className="flex">
-          <button className="btn-ghost flex-1 justify-start" onClick={() => void reorderLabel(label.id, -1)}>Move up</button>
-          <button className="btn-ghost flex-1 justify-start" onClick={() => void reorderLabel(label.id, 1)}>Move down</button>
-        </div>
-        {others.length > 0 && (
-          <select className="input mt-1 py-1" aria-label={`Merge ${label.name} into`} defaultValue="" onChange={(e) => void merge(e)}>
-            <option value="" disabled>Merge into…</option>
-            {others.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-          </select>
-        )}
-        <button className="btn-danger mt-1 w-full justify-start" onClick={(e) => void remove(e)}>Delete label</button>
-      </div>
-    </details>
+    <Menu label={`Menu for label ${label.name}`} title={label.name} trigger="⋯" className="p-2"
+      triggerClassName="hover-reveal touch-target rounded px-1.5 py-0.5 text-slate-400 hover:bg-slate-300/60 dark:hover:bg-slate-700">
+      {(close) => (
+        <>
+          <p className="px-1 pb-1 text-xs text-slate-400">Color</p>
+          <div className="mb-2 flex flex-wrap gap-1 px-1">
+            {LABEL_PALETTE.map((c) => (
+              <button key={c} className="touch-target inline-flex items-center justify-center rounded-full" aria-label={`Set color ${c}`} aria-pressed={c === label.color} onClick={() => void updateLabel(label.id, { color: c })}>
+                <span className={`block h-5 w-5 rounded-full ${c === label.color ? 'ring-2 ring-emerald-500 ring-offset-1' : ''}`} style={{ backgroundColor: c }} />
+              </button>
+            ))}
+          </div>
+          <button className="btn-ghost w-full justify-start" onClick={() => { close(); onRename() }}>Rename</button>
+          <div className="flex">
+            <button className="btn-ghost flex-1 justify-start" onClick={() => void reorderLabel(label.id, -1)}>Move up</button>
+            <button className="btn-ghost flex-1 justify-start" onClick={() => void reorderLabel(label.id, 1)}>Move down</button>
+          </div>
+          {others.length > 0 && (
+            <select className="input mt-1 py-1" aria-label={`Merge ${label.name} into`} defaultValue="" onChange={(e) => void merge(e, close)}>
+              <option value="" disabled>Merge into…</option>
+              {others.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+            </select>
+          )}
+          <button className="btn-danger mt-1 w-full justify-start" onClick={() => void remove(close)}>Delete label</button>
+        </>
+      )}
+    </Menu>
   )
 }
 

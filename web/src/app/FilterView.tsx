@@ -21,6 +21,7 @@ import { useToday, useViewerZone } from './useViews'
 import { TaskDetail } from './TaskDetail'
 import { TaskRow } from './TaskRow'
 import { visibleTasks } from '../lib/trash'
+import { Dialog } from './overlay'
 
 const DEBOUNCE_MS = 150
 
@@ -273,12 +274,10 @@ export function FilterView() {
           }} />
       )}
       {pickerFor && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={() => setPickerFor(null)}>
-          <div className="w-full max-w-sm rounded-xl bg-white p-3 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Labels for task">
-            <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-            <p className="mt-2 px-1 text-[11px] text-slate-400">Enter toggles or creates · Esc closes</p>
-          </div>
-        </div>
+        <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
+          <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
+          <p className="mt-2 px-1 text-[11px] text-slate-400">Enter toggles or creates · Esc closes</p>
+        </Dialog>
       )}
     </div>
   )

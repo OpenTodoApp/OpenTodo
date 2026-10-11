@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Dialog } from './overlay'
 
 /** An extra block of the `?` overlay (the Vim layer supplies one while it is on). */
 export interface HelpSection {
@@ -8,20 +8,6 @@ export interface HelpSection {
 }
 
 export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => void; extraSections?: HelpSection[] }) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    // The page behind must not scroll while the overlay is open (phones scroll the
-    // overlay itself instead).
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
-    }
-  }, [onClose])
   const rows: [string, string][] = [
     ['q', 'Quick add a task'],
     ['Shift+V', 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves'],
@@ -92,28 +78,14 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
     ['Backspace ×2 (end of line)', 'Highlight, then dismiss the last chip'],
   ]
   return (
-    // The overlay scrolls, not the panel: a percentage max-height on a centred flex
-    // child is unreliable on iOS Safari, where the panel grew past the screen with
-    // no way to scroll or reach Close. On phones the help is a full-screen sheet; from
-    // `sm` up `my-auto` centres it. The header with its close button stays pinned.
-    <div
-      className="fixed inset-0 z-40 flex justify-center overflow-y-auto overscroll-contain bg-black/40 sm:p-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="shortcut-help-title"
-    >
-      <div className="h-fit min-h-full w-full bg-white shadow-xl dark:bg-slate-900 sm:my-auto sm:min-h-0 sm:max-w-md sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b sm:-top-4 border-slate-100 bg-white px-5 py-3 dark:border-slate-800 dark:bg-slate-900 sm:rounded-t-xl">
-          <h2 id="shortcut-help-title" className="text-base font-semibold">Keyboard shortcuts</h2>
-          <button className="btn-ghost px-2 py-1 text-lg leading-none" onClick={onClose} aria-label="Close">×</button>
-        </div>
-        <div className="px-5 pb-5 pt-2">
-          <table className="w-full text-sm">
+    // The shared Dialog: full screen on phones, a card from 640 px up; the overlay
+    // scrolls and the header with its close button stays pinned (iOS Safari).
+    <Dialog title="Keyboard shortcuts" onClose={onClose} size="md" className="!pt-2">
+          <table className="w-full table-fixed text-sm">
             <tbody>
               {rows.map(([k, d]) => (
                 <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="py-1.5 pr-4"><span className="kbd">{k}</span></td>
+                  <td className="w-2/5 py-1.5 pr-3 align-top"><span className="kbd inline-block break-words">{k}</span></td>
                   <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
                 </tr>
               ))}
@@ -123,11 +95,11 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
             <section key={sec.title} data-help-section={sec.title}>
               <h3 className="mb-1 mt-4 text-sm font-semibold">{sec.title}</h3>
               {sec.note && <p className="mb-2 text-xs text-slate-500">{sec.note}</p>}
-              <table className="w-full text-sm">
+              <table className="w-full table-fixed text-sm">
                 <tbody>
                   {sec.rows.map(([k, d]) => (
                     <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
-                      <td className="py-1.5 pr-4"><span className="kbd">{k}</span></td>
+                      <td className="w-2/5 py-1.5 pr-3 align-top"><span className="kbd inline-block break-words">{k}</span></td>
                       <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
                     </tr>
                   ))}
@@ -139,11 +111,11 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
             <p className="mt-3 text-xs text-slate-500" data-vim-hint>Prefer modal editing? Vim keybindings can be enabled in Settings → Keyboard.</p>
           )}
           <h3 className="mb-2 mt-4 text-sm font-semibold">Quick add syntax</h3>
-          <table className="w-full text-sm">
+          <table className="w-full table-fixed text-sm">
             <tbody>
               {quickAdd.map(([k, d]) => (
                 <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="py-1.5 pr-4"><code className="text-xs">{k}</code></td>
+                  <td className="w-2/5 py-1.5 pr-3 align-top"><code className="break-words text-xs">{k}</code></td>
                   <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
                 </tr>
               ))}
@@ -153,8 +125,6 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
             Full syntax reference (docs/quick-add.md)
           </a>
           <button className="btn-ghost mt-4 w-full" onClick={onClose}>Close</button>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   )
 }

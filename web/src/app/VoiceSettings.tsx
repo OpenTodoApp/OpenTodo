@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { BUNDLED_LANGUAGES, loadQuickAddSettings, resolveLanguages } from '../lib/nlp'
 import { loadVoiceSettings, onVoiceSettingsChange, saveVoiceSettings, type VoiceSettings } from '../lib/voice/settings'
 import { isSupported } from '../lib/voice/support'
+import { Dialog } from './overlay'
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English', de: 'Deutsch', fr: 'Français', it: 'Italiano', es: 'Español', pt: 'Português',
@@ -76,19 +77,15 @@ export function VoiceSettingsSection() {
         </label>
       )}
       {confirming && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={() => setConfirming(false)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="voice-confirm-title" onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
-            <h2 id="voice-confirm-title" className="mb-2 text-base font-semibold">Turn on voice capture?</h2>
-            <VoicePrivacyStatement />
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" className="btn-ghost text-sm" onClick={() => setConfirming(false)}>Cancel</button>
-              <button type="button" className="btn-primary text-sm" autoFocus onClick={() => { update({ ...s, enabled: true }); setConfirming(false) }}>
-                Turn on
-              </button>
-            </div>
+        <Dialog title="Turn on voice capture?" onClose={() => setConfirming(false)} size="md">
+          <VoicePrivacyStatement />
+          <div className="mt-4 flex justify-end gap-2">
+            <button type="button" className="btn-ghost text-sm" onClick={() => setConfirming(false)}>Cancel</button>
+            <button type="button" className="btn-primary text-sm" autoFocus onClick={() => { update({ ...s, enabled: true }); setConfirming(false) }}>
+              Turn on
+            </button>
           </div>
-        </div>
+        </Dialog>
       )}
     </section>
   )

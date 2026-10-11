@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
+import { Dialog } from './overlay'
 
-/** A small modal asking for a name: Enter confirms, Esc cancels. Errors from onSubmit are shown inline. */
+/** A small dialog asking for a name: Enter confirms, Esc cancels. Errors from onSubmit are shown inline. */
 export function NamePrompt({ title, label, initial = '', confirm = 'Save', hint, onSubmit, onCancel }: {
   title: string
   label: string
@@ -22,13 +23,10 @@ export function NamePrompt({ title, label, initial = '', confirm = 'Save', hint,
     }
   }
   return (
-    <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={onCancel}>
-      <form role="dialog" aria-label={title} onSubmit={(e) => void submit(e)} onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-xl bg-white p-4 shadow-xl dark:bg-slate-900">
-        <h2 className="mb-2 text-base font-semibold">{title}</h2>
+    <Dialog title={title} label={title} onClose={onCancel}>
+      <form onSubmit={(e) => void submit(e)}>
         <input className="input" autoFocus aria-label={label} placeholder={label} value={name}
-          onChange={(e) => { setName(e.target.value); setError(null) }}
-          onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }} />
+          onChange={(e) => { setName(e.target.value); setError(null) }} />
         {error && <p role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
         {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
         <div className="mt-3 flex justify-end gap-2">
@@ -36,6 +34,6 @@ export function NamePrompt({ title, label, initial = '', confirm = 'Save', hint,
           <button type="submit" className="btn-primary text-sm">{confirm}</button>
         </div>
       </form>
-    </div>
+    </Dialog>
   )
 }

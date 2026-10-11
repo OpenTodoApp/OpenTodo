@@ -64,10 +64,11 @@ export function ArchivePrompt() {
 
   if (!project && archived.length === 0) return null
   return (
-    <div className="fixed bottom-4 left-1/2 z-40 w-[min(28rem,calc(100%-2rem))] -translate-x-1/2 space-y-2">
+    <div className="fixed left-1/2 z-40 w-[min(28rem,calc(100%-2rem))] -translate-x-1/2 space-y-2"
+      style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
       {project && (
         <div role="alert" className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm shadow-lg dark:border-emerald-900 dark:bg-slate-900">
-          <span className="flex-1">Archive <strong>{project.name}</strong>? <span className="kbd">Enter</span></span>
+          <span className="user-text min-w-0 flex-1">Archive <strong>{project.name}</strong>? <span className="kbd">Enter</span></span>
           <button className="btn-primary px-2 py-0.5 text-xs" onClick={() => { setOffered(null); void archiveProject(project.id) }}>Archive</button>
           <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => setOffered(null)}>Not now</button>
         </div>

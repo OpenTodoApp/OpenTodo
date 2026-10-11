@@ -7,6 +7,7 @@ import { markShown, startReminderWatcher, type DueReminder, type Watcher } from 
 import type { SnoozeChoice } from '../lib/reminderTime'
 import { requestSync } from '../lib/sync'
 import { openTaskInList } from './signals'
+import { ToastRegion } from './overlay'
 
 /**
  * In-app reminder notifications (OpenSpec change `reminders`). Mounted once by
@@ -65,7 +66,7 @@ export function ReminderToasts() {
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[22rem] max-w-[calc(100vw-2rem)] flex-col gap-2" aria-live="assertive">
+    <ToastRegion live="assertive">
       {due.slice(0, 4).map((d, i) => (
         <div
           key={d.reminder.id}
@@ -82,7 +83,7 @@ export function ReminderToasts() {
           <div className="flex items-start gap-2">
             <span aria-hidden className="pt-0.5">⏰</span>
             <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)} title="Open task">
-              <p className="truncate text-sm font-medium">{d.task.title || 'Untitled'}</p>
+              <p className="line-clamp-2 user-text text-sm font-medium">{d.task.title || 'Untitled'}</p>
               <p className="text-xs text-slate-500">Reminder · {new Date(d.reminder.fire_at as number).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
             </button>
           </div>
@@ -96,7 +97,7 @@ export function ReminderToasts() {
         </div>
       ))}
       {due.length > 4 && <p className="pointer-events-auto text-right text-xs text-slate-500">+{due.length - 4} more reminders</p>}
-    </div>
+    </ToastRegion>
   )
 }
 

@@ -4,6 +4,7 @@ import { canManage, grantableRoles } from '../lib/sharing'
 import { requestSync } from '../lib/sync'
 import type { Membership, Project, ProjectRole } from '../lib/types'
 import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
+import { Dialog } from './overlay'
 
 const ROLE_HINT: Record<ProjectRole, string> = {
   owner: 'Owner',
@@ -43,14 +44,6 @@ export function ShareDialog({ project, userId, cached, onClose }: {
     return () => { cancelled = true }
   }, [project.id])
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   async function run(action: () => Promise<Membership | void>, after?: () => void) {
     setError(null)
     setBusy(true)
@@ -77,9 +70,7 @@ export function ShareDialog({ project, userId, cached, onClose }: {
 
   const members = membership?.members ?? []
   return (
-    <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/40 p-4 pt-20" onClick={onClose}>
-      <div role="dialog" aria-label={`Share ${project.name}`} className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
-        <h2 className="mb-3 text-base font-semibold">Share “{project.name}”</h2>
+    <Dialog title={<span className="user-text">Share “{project.name}”</span>} label={`Share ${project.name}`} onClose={onClose} size="md">
         {roles.length > 0 && (
           <form onSubmit={share} className="mb-4 flex flex-wrap gap-2">
             <input ref={emailRef} autoFocus type="email" className="input min-w-0 flex-1" placeholder="Email of an account on this server"
@@ -132,7 +123,6 @@ export function ShareDialog({ project, userId, cached, onClose }: {
         </ul>
         <p className="mt-3 text-xs text-slate-400">Only people who already have an account on this server can be added. Labels stay personal.</p>
         <button className="btn-ghost mt-3 w-full" onClick={onClose}>Close <span className="kbd ml-1">Esc</span></button>
-      </div>
-    </div>
+    </Dialog>
   )
 }

@@ -4,6 +4,7 @@ import { useOnline } from '../lib/online'
 import { hasAnyAction, isAdministrator, rowActions, type RowActions } from '../lib/roles'
 import { MembersPanel } from './MembersPanel'
 import type { AdminUser, User } from '../lib/types'
+import { Dialog as OverlayDialog } from './overlay'
 
 /** Dispatched after the viewer's own role changed (ownership transfer): the app re-reads its profile. */
 export const ACCOUNT_CHANGED_EVENT = 'opentodo:account-changed'
@@ -264,16 +265,9 @@ export function UsersView(p: UsersViewProps) {
   )
 }
 
+/** Destructive confirmations: a tap outside does not close them (Escape and Close do). */
 function Dialog({ title, children, onCancel }: { title: string; children: ReactNode; onCancel: () => void }) {
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto overscroll-contain bg-black/40 p-4" onClick={onCancel}
-      onKeyDown={(e) => { if (e.key === 'Escape') onCancel() }}>
-      <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-md space-y-3 rounded-xl bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-base font-semibold">{title}</h2>
-        {children}
-      </div>
-    </div>
-  )
+  return <OverlayDialog title={title} onClose={onCancel} size="md" dismissable={false} className="space-y-3">{children}</OverlayDialog>
 }
 
 export function DeleteDialog({ user, busy, offline, onCancel, onConfirm }: {

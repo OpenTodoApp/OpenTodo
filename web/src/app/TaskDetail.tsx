@@ -107,8 +107,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   }
 
   return (
-    <aside data-detail-for={task.id} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950 md:static md:shadow-none">
-      <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-2 dark:border-slate-800">
+    <aside data-detail-for={task.id} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-xl dark:border-slate-800 dark:bg-slate-950 md:static md:shadow-none">
+      <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] dark:border-slate-800">
         <button className="btn-ghost text-xs" onClick={() => toggle(task)} disabled={readOnly}>
           {task.completed_at ? '↶ Reopen' : '✓ Complete'}
         </button>
@@ -119,7 +119,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         )}
         <div className="flex-1" />
         <button className="btn-danger text-xs" onClick={() => { void deleteTask(task.id); onClose() }} disabled={readOnly}>Delete</button>
-        <button className="btn-ghost" onClick={onClose} aria-label="Close">✕</button>
+        <button className="btn-ghost touch-target" onClick={onClose} aria-label="Close" data-overlay-close>✕</button>
       </div>
       {readOnly && (
         <p role="note" className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900">

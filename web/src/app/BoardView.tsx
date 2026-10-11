@@ -29,7 +29,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
 }) {
   const sections = columns.filter((c) => c.section)
   return (
-    <div className="-mx-4 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board>
+    <div className="-mx-4 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board data-scroll-x>
       {columns.map((col) => {
         const idx = sections.findIndex((c) => c.key === col.key)
         const name = col.section ? col.section.name || 'Untitled section' : 'No section'
@@ -39,7 +39,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
             data-drop-target={sectionTarget(col.key)}
             data-column={col.key}
             aria-label={`${name}, ${col.cards.length} open ${col.cards.length === 1 ? 'task' : 'tasks'}`}
-            className="flex max-h-[calc(100vh-14rem)] w-[85vw] max-w-72 shrink-0 snap-start flex-col rounded-lg bg-slate-50 p-1.5 data-drop-active:ring-2 data-drop-active:ring-emerald-500 sm:w-72 dark:bg-slate-900"
+            className="flex max-h-[calc(100dvh-14rem)] w-[85vw] max-w-72 shrink-0 snap-start flex-col rounded-lg bg-slate-50 p-1.5 data-drop-active:ring-2 data-drop-active:ring-emerald-500 sm:w-72 dark:bg-slate-900"
           >
             <SectionHeader
               section={col.section}

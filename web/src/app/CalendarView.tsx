@@ -352,7 +352,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
           </button>
         </div>
 
-        <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto" data-calendar-scroller>
+        <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto" data-calendar-scroller data-scroll-x>
           <div className="min-w-full" style={{ width: mode === 'week' ? 'max(100%, 56rem)' : undefined }}>
             {/* Sticky header: day name, capacity and the unscheduled lane of each column. */}
             <div className="sticky top-0 z-20 flex border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">

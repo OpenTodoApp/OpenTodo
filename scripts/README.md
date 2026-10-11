@@ -39,6 +39,19 @@ node scripts/e2e-views.mjs [screenshot-dir]
 CHROMIUM_PATH=/path/to/chrome node scripts/e2e-views.mjs
 ```
 
+## `e2e-layout.mjs`
+
+Layout check (OpenSpec change `mobile-layout`), run by the `layout` CI job: seeds a fresh server through the API, then opens every screen (Inbox, Today, Upcoming, Assigned, Day, Week, Completed, Filter, Trash, Activity, a project in list and board layout, a saved view, a dashboard, a label, Labels, Views, Settings, Import, sign-in) and every overlay reachable from it (notifications, keyboard help, the sidebar drawer and its view menu, the task panel, the label, assignee and mention pickers, the reminder toast, the project, section, label and view menus, share, rename and new-dashboard prompts, voice consent, the delete-account confirmation) at 360, 390 and 768 px, light and dark, in Chromium and WebKit, with a touch screen. It fails when a page scrolls sideways outside a `data-scroll-x` region, an overlay or its close control is outside the viewport or covered, an overlay does not close with Escape, its close button or a tap outside, focus does not return to the trigger, scrolling inside an overlay moves the page behind (Chromium; mobile WebKit has no wheel events), or a control is smaller than 44 × 44 px or only visible on hover. Each failure names screen, overlay, viewport, theme and engine, with a screenshot in the report directory.
+
+```bash
+make layout-check              # builds, starts a throwaway server on :18080, runs the check
+# or against a running server with a FRESH data directory:
+npm i -g playwright@1.56.1 && playwright install chromium webkit   # once
+node scripts/e2e-layout.mjs [report-dir]
+```
+
+Environment: `OPENTODO_URL`, `ENGINES` (default `chromium,webkit`), `WIDTHS` (`360,390,768`), `THEMES` (`light,dark`), `ONLY` (screen names), `CONCURRENCY` (3), `SHOTS=all` (also save a screenshot of every screen and overlay), `CHROMIUM_PATH`, `WEBKIT_PATH`. When you add a screen or an overlay, add it to the `screens()` and `OVERLAYS` tables in the script.
+
 ## `screenshots.mjs`
 
 Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the screenshots used by `README.md` (`docs/screenshots/*.png`) and the website (`website/assets/shots/*.webp`). Run it against an **empty** data directory; see [`website/README.md`](../website/README.md#refresh-the-screenshots) for the full recipe.

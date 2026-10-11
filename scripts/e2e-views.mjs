@@ -137,7 +137,7 @@ await pageA.getByLabel('View name').fill('Waiting')
 await pageA.getByLabel('View name').press('Enter')
 await pageA.getByRole('heading', { name: 'Waiting' }).waitFor()
 await sidebarViews.getByLabel('Menu for view Waiting').click()
-await sidebarViews.getByRole('button', { name: 'Move up' }).click()
+await pageA.locator('[data-overlay]').getByRole('button', { name: 'Move up' }).click() // menus open in the overlay layer
 await pageA.waitForFunction(() => {
   const t = [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].map((b) => b.textContent)
   return t[0] === '≡Waiting2' && t[1] === '≡Work tomorrow3'
@@ -162,7 +162,7 @@ assert((await pageB.getByLabel('Group by').inputValue()) === 'due', 'B sees grou
 
 step('Unpin "Waiting": leaves the sidebar, still in the g v overview')
 await sidebarViews.getByLabel('Menu for view Waiting').click()
-await sidebarViews.getByRole('button', { name: 'Unpin from sidebar' }).click()
+await pageA.locator('[data-overlay]').getByRole('button', { name: 'Unpin from sidebar' }).click()
 await sidebarViews.getByText('Waiting').waitFor({ state: 'detached' })
 await pageA.locator('body').click({ position: { x: 900, y: 700 } })
 await pageA.keyboard.press('g'); await pageA.keyboard.press('v')

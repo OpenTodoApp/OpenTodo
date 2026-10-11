@@ -7,6 +7,10 @@
 html, body, #root {
   height: 100%;
 }
+/* Follow the visible viewport on phones (iOS toolbars), where supported. */
+@supports (height: 100dvh) {
+  #root { height: 100dvh; }
+}
 
 body {
   @apply bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
@@ -75,3 +79,30 @@ body {
 .notes-editor .ProseMirror-gapcursor { @apply hidden; }
 .notes-editor .ProseMirror-hideselection *::selection { background: transparent; }
 }
+
+/* Phone layout rules (OpenSpec change `mobile-layout`, design D2). */
+@layer components {
+/* User-written text wraps instead of pushing the page sideways. */
+.user-text { overflow-wrap: anywhere; }
+}
+/* Touch screens: an icon control is at least 44 x 44 px (the rule below already
+   covers plain buttons; this names the intent and covers other elements). */
+@utility touch-target {
+  @media (pointer: coarse) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+@layer utilities {
+/* Controls revealed on hover stay visible where there is no hover. */
+@media (hover: hover) {
+  .hover-reveal { opacity: 0; }
+  .group:hover .hover-reveal, .hover-reveal:focus-visible, .hover-reveal:focus-within, .hover-reveal[aria-expanded="true"] { opacity: 1; }
+}
+}
+@media (pointer: coarse) {
+  :where(button, [role="button"], summary, select, a.btn-primary, a.btn-ghost, a.btn-danger) { min-height: 44px; min-width: 44px; }
+  :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"]), textarea) { min-height: 44px; }
+  :where(label:has(> input[type="checkbox"], > input[type="radio"])) { min-height: 44px; }
+}
+

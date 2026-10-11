@@ -104,7 +104,7 @@ export function AssistantsView(p: AssistantsViewProps) {
             <li>In your assistant, add a remote MCP server (“streamable HTTP”) with the endpoint URL.</li>
             <li>Send the token as the header <code>Authorization: Bearer &lt;token&gt;</code>. Clients that take a JSON entry accept:</li>
           </ol>
-          <pre className="mt-2 overflow-x-auto rounded bg-slate-100 p-2 text-xs dark:bg-slate-800">{snippet}</pre>
+          <pre className="mt-2 overflow-x-auto rounded bg-slate-100 p-2 text-xs dark:bg-slate-800" data-scroll-x>{snippet}</pre>
           <button type="button" className="btn-ghost mt-1 text-xs" onClick={() => p.onCopy('snippet', snippet)}>{copyLabel('snippet', 'Copy configuration')}</button>
           <p className="mt-2 text-xs text-slate-400">
             Tell the assistant your time zone: due dates are evaluated in the time zone it passes (UTC otherwise). Changes made offline on a device appear once it syncs.
