@@ -1,0 +1,49 @@
+name: Bug report
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please never paste passwords, tokens, app passwords or recovery codes here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Tap …
+        3. See …
+  - type: input
+    id: version
+    attributes:
+      label: OpenTodo version
+      description: Shown by `opentodo version`, or `version` in `GET /api/v1/auth/status`.
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How do you run it?
+      options: [Docker, Docker Compose, Coolify, Binary, Other]
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: Device and browser
+      placeholder: iPhone 15, Safari 18 (installed as an app)
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or console output
+      description: Server log lines (`docker logs`) or browser console errors, with anything private removed.
+      render: text

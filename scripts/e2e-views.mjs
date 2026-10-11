@@ -4,7 +4,12 @@
 // between panels, live counts, removed-view placeholder, stacking), the per-device
 // start view with its fallback, and two devices converging on a view edited offline.
 // See scripts/README.md.
-import { chromium } from 'playwright'
+// Resolve Playwright locally (npm i / npx -p) or from a global install (npm i -g playwright).
+const { chromium } = await import('playwright').catch(async () => {
+  const { createRequire } = await import('node:module')
+  const { execSync } = await import('node:child_process')
+  return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
+})
 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const shots = process.argv[2] ?? null
@@ -76,6 +81,8 @@ await pageA.getByLabel('View name').press('Enter')
 await pageA.getByRole('heading', { name: 'Work tomorrow' }).waitFor()
 const sidebarViews = pageA.getByRole('navigation', { name: 'Views' })
 await sidebarViews.getByText('Work tomorrow').waitFor()
+// The count renders before the view has evaluated; give it a moment to settle.
+await pageA.waitForFunction(() => document.querySelector('h1 + span')?.textContent === '4', null, { timeout: 5000 }).catch(() => undefined)
 const viewCount = await pageA.locator('h1 + span').first().textContent()
 assert(viewCount === '4', 'view result count ' + viewCount)
 await pageA.waitForFunction(() => [...document.querySelectorAll('nav[aria-label="Views"] button')].some((b) => b.textContent === '≡Work tomorrow4'))
@@ -235,6 +242,7 @@ await pageB.getByLabel('Add a task').waitFor()
 step('B sets its own start view from a view menu')
 await pageB.getByRole('navigation', { name: 'Views' }).getByLabel('Menu for view Morning').click()
 await pageB.getByRole('button', { name: 'Set as start view on this device' }).click()
+await pageB.waitForTimeout(200) // the preference is written to IndexedDB asynchronously
 await pageB.goto(base)
 await pageB.waitForURL(`**/view/${dashId}`)
 await pageA.goto(base)
