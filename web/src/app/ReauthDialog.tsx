@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { api, ApiError, setReauthHandler } from '../lib/api'
+import { Dialog } from './overlay'
 
 // Step-up re-authentication (OpenSpec `mfa-totp`). Sensitive actions answer
 // `reauth_required` when the session has not proved its identity in the last
@@ -25,20 +26,8 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
     p.onSubmit()
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={p.onCancel}>
-      <div
-        role="dialog" aria-modal="true" aria-labelledby="reauth-title" data-testid="reauth-dialog"
-        className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-lg dark:border-slate-800 dark:bg-slate-900"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            e.stopPropagation()
-            p.onCancel()
-          }
-        }}
-      >
-        <h2 id="reauth-title" className="font-semibold">Confirm it's you</h2>
-        <p className="mt-1 text-sm text-slate-500">
+    <Dialog title="Confirm it's you" onClose={p.onCancel} testId="reauth-dialog">
+        <p className="text-sm text-slate-500">
           This change needs a recent sign-in. Enter your {p.mode === 'password' ? 'password' : 'current code from your authenticator app'} to continue.
         </p>
         <form className="mt-3 space-y-3" onSubmit={submit}>
@@ -58,8 +47,7 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   )
 }
 

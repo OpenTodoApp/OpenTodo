@@ -1,47 +1,47 @@
 // Views overview (`g v`) and the per-view menu shared with the sidebar and the view
 // headers (OpenSpec `custom-views`). Every action is an op through lib/views, except
 // the start view, which is a per-device preference in local meta.
-import { type SyntheticEvent, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { View } from '../lib/types'
 import { createView, deleteView, evaluateViews, isDashboard, reorderView, setPinned, setStartView, updateView } from '../lib/views'
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
 import { useStartView, useViewData } from './useViews'
-import { keepInViewport } from './popover'
+import { Menu } from './overlay'
 
 export const viewIcon = (v: View) => (isDashboard(v) ? '▦' : '≡')
 
 /** "Rename" opens a NamePrompt owned by the menu, so every caller gets the same flow. */
-export function ViewMenu({ view, align = 'right', className = '' }: { view: View; align?: 'left' | 'right'; className?: string }) {
+export function ViewMenu({ view, align = 'end', className = '' }: { view: View; align?: 'start' | 'end'; className?: string }) {
   const start = useStartView()
   const isStart = start === `view:${view.id}`
   const [renaming, setRenaming] = useState(false)
-  const close = (e: SyntheticEvent) => (e.currentTarget.closest('details') as HTMLDetailsElement | null)?.removeAttribute('open')
-  const act = (fn: () => unknown) => (e: SyntheticEvent) => {
-    close(e)
-    void fn()
-  }
   async function remove() {
     if (!confirm(`Delete view "${view.name}"? Your tasks are not affected.`)) return
     await deleteView(view.id)
   }
   return (
     <>
-      <details className={`relative ${className}`} onToggle={keepInViewport}>
-        <summary className="cursor-pointer list-none rounded px-1.5 py-0.5 text-slate-400 hover:bg-slate-300/60 dark:hover:bg-slate-700" aria-label={`Menu for view ${view.name}`}>⋯</summary>
-        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-20 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-1 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900`}>
-          <button className="btn-ghost w-full justify-start" onClick={act(() => setRenaming(true))}>Rename</button>
-          <div className="flex">
-            <button className="btn-ghost flex-1 justify-start" onClick={act(() => reorderView(view.id, -1))}>Move up</button>
-            <button className="btn-ghost flex-1 justify-start" onClick={act(() => reorderView(view.id, 1))}>Move down</button>
-          </div>
-          <button className="btn-ghost w-full justify-start" onClick={act(() => setPinned(view.id, !view.pinned))}>{view.pinned ? 'Unpin from sidebar' : 'Pin to sidebar'}</button>
-          <button className="btn-ghost w-full justify-start" disabled={isStart} onClick={act(() => setStartView(`view:${view.id}`))}>
-            {isStart ? 'Start view on this device ✓' : 'Set as start view on this device'}
-          </button>
-          <button className="btn-danger w-full justify-start" onClick={act(remove)}>Delete view</button>
-        </div>
-      </details>
+      <Menu label={`Menu for view ${view.name}`} title={view.name} trigger="⋯" align={align}
+        triggerClassName={`touch-target rounded px-1.5 py-0.5 text-slate-400 hover:bg-slate-300/60 dark:hover:bg-slate-700 ${className}`}>
+        {(close) => {
+          const act = (fn: () => unknown) => () => { close(); void fn() }
+          return (
+            <>
+              <button className="btn-ghost w-full justify-start" onClick={act(() => setRenaming(true))}>Rename</button>
+              <div className="flex">
+                <button className="btn-ghost flex-1 justify-start" onClick={act(() => reorderView(view.id, -1))}>Move up</button>
+                <button className="btn-ghost flex-1 justify-start" onClick={act(() => reorderView(view.id, 1))}>Move down</button>
+              </div>
+              <button className="btn-ghost w-full justify-start" onClick={act(() => setPinned(view.id, !view.pinned))}>{view.pinned ? 'Unpin from sidebar' : 'Pin to sidebar'}</button>
+              <button className="btn-ghost w-full justify-start" disabled={isStart} onClick={act(() => setStartView(`view:${view.id}`))}>
+                {isStart ? 'Start view on this device ✓' : 'Set as start view on this device'}
+              </button>
+              <button className="btn-danger w-full justify-start" onClick={act(remove)}>Delete view</button>
+            </>
+          )
+        }}
+      </Menu>
       {renaming && (
         <NamePrompt title="Rename view" label="View name" initial={view.name} onCancel={() => setRenaming(false)}
           onSubmit={async (name) => { await updateView(view.id, { name }); setRenaming(false) }} />

@@ -17,6 +17,7 @@ import { useListKeys } from './useListKeys'
 import { placeInDay } from './signals'
 import { todayISO } from '../lib/dates'
 import { useViewData, type ViewData } from './useViews'
+import { Dialog } from './overlay'
 
 const GROUP_LABEL: Record<GroupBy, string> = { project: 'Project', due: 'Due date', priority: 'Priority', label: 'Label', none: 'None' }
 const SORT_LABEL: Record<SortBy, string> = { due: 'Due date', priority: 'Priority', position: 'Manual order', created: 'Created', title: 'Title' }
@@ -200,11 +201,9 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
           onOpen={(id) => setOpenId(id)} onToggleComplete={(t) => void setTaskCompleted(t.id, !t.completed_at)} />
       )}
       {pickerFor && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/30 p-4 pt-24" onClick={() => setPickerFor(null)}>
-          <div className="w-full max-w-sm rounded-xl bg-white p-3 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Labels for task">
-            <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-          </div>
-        </div>
+        <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
+          <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
+        </Dialog>
       )}
     </div>
   )

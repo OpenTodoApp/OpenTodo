@@ -6,7 +6,7 @@ CLI_PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 EXT_ZIP := dist/opentodo-browser-extension.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png
 
-.PHONY: all web server cli cli-release cli-smoke extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate
+.PHONY: all web server cli cli-release cli-smoke extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check
 
 all: build
 
@@ -43,6 +43,15 @@ extension: test-extension
 	@echo "  $(EXT_ZIP) ($$(wc -c < $(EXT_ZIP)) bytes)"
 
 build: web server
+
+## Layout check (mobile-layout): every screen and overlay at 360/390/768 px in
+## Chromium and WebKit against a throwaway server on :18080. Needs Playwright
+## (npm i -g playwright@1.56.1 && playwright install chromium webkit);
+## ENGINES=chromium limits it to one engine.
+layout-check: build
+	@d=$$(mktemp -d); OPENTODO_DATA_DIR=$$d OPENTODO_ADDR=127.0.0.1:18080 ./bin/opentodo >$$d/server.log 2>&1 & pid=$$!; \
+	  for i in $$(seq 1 30); do curl -fsS 127.0.0.1:18080/healthz >/dev/null 2>&1 && break; sleep 0.3; done; \
+	  OPENTODO_URL=http://127.0.0.1:18080 node scripts/e2e-layout.mjs layout-report; s=$$?; kill $$pid; rm -rf $$d; exit $$s
 
 ## Run the production binary locally on :8080 with ./data.
 run: build

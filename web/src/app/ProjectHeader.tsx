@@ -10,7 +10,7 @@ import { navigate } from './router'
 import { ShareDialog } from './ShareDialog'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
-import { keepInViewport } from './popover'
+import { Menu } from './overlay'
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b']
 
@@ -23,7 +23,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
   const editable = canEditProject(role)
   const [name, setName] = useState(project.name)
   const [moveError, setMoveError] = useState<string | null>(null)
-  const menuRef = useRef<HTMLDetailsElement>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
   const moveRef = useRef<HTMLSelectElement>(null)
 
   // "Move to" candidates: every live, non-archived project in tree order, minus the
@@ -51,8 +51,9 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
       }
       if (!editable) return
       e.preventDefault()
-      if (menuRef.current) menuRef.current.open = true
-      moveRef.current?.focus()
+      setMenuOpen(true)
+      // The panel mounts on the next render; focus the Move picker then.
+      requestAnimationFrame(() => requestAnimationFrame(() => moveRef.current?.focus()))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -68,7 +69,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
     setMoveError(null)
     try {
       await moveProject(project.id, value || null)
-      if (menuRef.current) menuRef.current.open = false
+      setMenuOpen(false)
     } catch (err) {
       setMoveError(err instanceof Error ? err.message : String(err))
     }
@@ -88,13 +89,13 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
 
   return (
     <div className="mb-4">
-    <div className="flex items-center gap-3">
-      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color }} />
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
       {editing ? (
         <input className="input max-w-xs text-lg font-semibold" autoFocus value={name} onChange={(e) => setName(e.target.value)}
           onBlur={() => void save()} onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { setName(project.name); setEditing(false) } }} />
       ) : (
-        <h1 className={`text-xl font-semibold ${editable ? 'cursor-text' : ''}`} onClick={() => editable && setEditing(true)} title={editable ? 'Click to rename' : undefined}>{project.name}</h1>
+        <h1 className={`user-text min-w-0 text-xl font-semibold ${editable ? 'cursor-text' : ''}`} onClick={() => editable && setEditing(true)} title={editable ? 'Click to rename' : undefined}>{project.name}</h1>
       )}
       {membership && (
         <button className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300" onClick={() => setSharing(true)}
@@ -111,18 +112,18 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
       )}
       {role === 'viewer' && <span role="note" className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800">Read-only</span>}
       <div className="flex-1" />
-      <button className="btn-ghost text-xs" onClick={() => setSharing(true)} title="Share and manage members (Shift+S)">
+      <button className="btn-ghost text-xs" onClick={() => setSharing(true)} title="Share and manage members (Shift+S)" aria-haspopup="dialog">
         {canManageMembers(role) ? 'Share' : 'Members'} <span className="kbd ml-1">S</span>
       </button>
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} onClose={() => setSharing(false)} />}
-      {editable && <details className="relative" ref={menuRef} onToggle={keepInViewport}>
-        <summary className="btn-ghost cursor-pointer list-none text-xs">Project ⌄</summary>
-        <div className="absolute right-0 z-10 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+      {editable && <Menu label="Project menu" title={project.name} trigger={<>Project ⌄</>} triggerClassName="btn-ghost text-xs" className="p-2"
+        open={menuOpen} onOpenChange={setMenuOpen}>
           <p className="px-1 pb-1 text-xs text-slate-400">Color</p>
           <div className="mb-2 flex flex-wrap gap-1 px-1">
             {COLORS.map((c) => (
-              <button key={c} className={`h-5 w-5 rounded-full ${c === project.color ? 'ring-2 ring-offset-1 ring-emerald-500' : ''}`} style={{ backgroundColor: c }}
-                aria-label={`Set color ${c}`} onClick={() => void updateProject(project.id, { color: c })} />
+              <button key={c} className="touch-target inline-flex items-center justify-center rounded-full" aria-label={`Set color ${c}`} aria-pressed={c === project.color} onClick={() => void updateProject(project.id, { color: c })}>
+                <span className={`block h-5 w-5 rounded-full ${c === project.color ? 'ring-2 ring-offset-1 ring-emerald-500' : ''}`} style={{ backgroundColor: c }} />
+              </button>
             ))}
           </div>
           <label className="block px-1 pb-2">
@@ -135,14 +136,13 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
             </select>
             {moveError && <span className="mt-1 block text-xs text-red-600">{moveError}</span>}
           </label>
-          <button className="btn-ghost w-full justify-start" onClick={() => setEditing(true)}>Rename</button>
+          <button className="btn-ghost w-full justify-start" onClick={() => { setMenuOpen(false); setEditing(true) }}>Rename</button>
           <button className="btn-ghost w-full justify-start" title={subCount ? 'Archives its sub-projects too' : undefined}
             onClick={() => void archiveProject(project.id).then(() => navigate({ view: 'inbox' }))}>
             Archive{subCount ? ' (with sub-projects)' : ''}
           </button>
           {canDeleteProject(role) && <button className="btn-danger w-full justify-start" onClick={() => void remove()}>Delete project</button>}
-        </div>
-      </details>}
+      </Menu>}
     </div>
     <HistoryPanel entity="project" id={project.id} readOnly={!editable} />
     <ProjectActivity project={project} />

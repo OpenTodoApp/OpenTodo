@@ -1,12 +1,12 @@
 // Section headings, per-section quick add and "Add section" (OpenSpec `board-view`).
 // Shared by the grouped list and the board columns. Every write goes through
 // lib/sections, so all of it works offline and converges like any other edit.
-import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
+import { type FormEvent, type KeyboardEvent, useState } from 'react'
 import { createTask } from '../lib/ops'
 import { createSection, deleteSection, renameSection, reorderSection } from '../lib/sections'
 import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
-import { keepInViewport } from './popover'
+import { Menu } from './overlay'
 
 export function SectionHeader({ section, count, layout, editable, first, last, collapsed, onToggleCollapse, onAdd }: {
   /** null: the "No section" heading. */
@@ -23,9 +23,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
 }) {
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(section?.name ?? '')
-  const menuRef = useRef<HTMLDetailsElement>(null)
   const title = section ? section.name || 'Untitled section' : 'No section'
-  const close = () => { if (menuRef.current) menuRef.current.open = false }
 
   async function commit() {
     setRenaming(false)
@@ -34,7 +32,6 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   }
   async function remove() {
     if (!section) return
-    close()
     const what = count ? ` Its ${count === 1 ? 'open task moves' : `${count} open tasks move`} to “No section”.` : ''
     if (!confirm(`Delete section “${title}”?${what}`)) return
     await deleteSection(section.id)
@@ -66,15 +63,16 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
         <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" onClick={onAdd} aria-label={`Add a task to ${title}`} title="Add a task here">+</button>
       )}
       {editable && section && (
-        <details className="relative" ref={menuRef} onToggle={keepInViewport}>
-          <summary className="btn-ghost cursor-pointer list-none px-1.5 py-0.5 text-xs" aria-label={`Section menu for ${title}`}>⋯</summary>
-          <div className="absolute right-0 z-20 mt-1 w-48 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-            <button type="button" className="btn-ghost w-full justify-start" onClick={() => { close(); setName(section.name); setRenaming(true) }}>Rename</button>
-            <button type="button" className="btn-ghost w-full justify-start" disabled={first} onClick={() => { close(); void reorderSection(section.id, -1) }}>Move {before}</button>
-            <button type="button" className="btn-ghost w-full justify-start" disabled={last} onClick={() => { close(); void reorderSection(section.id, 1) }}>Move {after}</button>
-            <button type="button" className="btn-danger w-full justify-start" onClick={() => void remove()}>Delete section</button>
-          </div>
-        </details>
+        <Menu label={`Section menu for ${title}`} title={title} trigger="⋯" triggerClassName="btn-ghost touch-target px-1.5 py-0.5 text-xs" width="sm:w-48">
+          {(close) => (
+            <>
+              <button type="button" className="btn-ghost w-full justify-start" onClick={() => { close(); setName(section.name); setRenaming(true) }}>Rename</button>
+              <button type="button" className="btn-ghost w-full justify-start" disabled={first} onClick={() => { close(); void reorderSection(section.id, -1) }}>Move {before}</button>
+              <button type="button" className="btn-ghost w-full justify-start" disabled={last} onClick={() => { close(); void reorderSection(section.id, 1) }}>Move {after}</button>
+              <button type="button" className="btn-danger w-full justify-start" onClick={() => { close(); void remove() }}>Delete section</button>
+            </>
+          )}
+        </Menu>
       )}
     </div>
   )
