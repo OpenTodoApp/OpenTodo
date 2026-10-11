@@ -52,7 +52,7 @@ describe('ImportView', () => {
       columns: { recognised: ['title', 'priority'], ignored: ['color'] },
       totals: totals({ rows: 3, create: 1, skip: 1, error: 1, possibleDuplicates: 1 }),
       rows: [
-        { row: 2, kind: 'task', title: 'Write report', project: 'Work', outcome: 'create', warnings: ['recurrence dropped (not supported)'] },
+        { row: 2, kind: 'task', title: 'Write report', project: 'Work', outcome: 'create', warnings: ['recurrence "every 3 hours" not supported; imported without a rule'] },
         { row: 3, kind: 'task', title: 'Call mom', outcome: 'skip', reason: 'possible_duplicate' },
         { row: 4, kind: 'task', title: 'Bad', outcome: 'error', reason: 'invalid priority "7" (expected 1-4 or p1-p4)' },
       ],
@@ -61,9 +61,23 @@ describe('ImportView', () => {
     expect(html).toContain('3 rows: 1 to create · 1 skipped · 1 with errors · 1 possible duplicates')
     expect(html).toContain('ignored: color')
     expect(html).toContain('possible duplicate')
-    expect(html).toContain('recurrence dropped')
+    expect(html).toContain('every 3 hours&quot; not supported')
     expect(html).toContain('invalid priority &quot;7&quot;')
     expect(html).toContain('Import 1 item<')
+  })
+
+  it('shows section, recurrence and reminder counts, notes and the section option', () => {
+    const preview: ImportPreview = {
+      format: 'opentodo', options: {}, truncated: false, version: 1,
+      totals: totals({ rows: 6, create: 6, newSections: 2, recurring: 1, reminders: 3 }),
+      rows: [{ kind: 'section', title: 'Doing', outcome: 'create' }],
+      notes: ['4 comments are not imported: a comment keeps its author'],
+    }
+    const html = render({ preview, fileName: 'opentodo-export.json' })
+    expect(html).toContain('2 new sections · 1 recurring · 3 reminders')
+    expect(html).toContain('4 comments are not imported')
+    expect(html).toContain('Keep as sections')
+    expect(html).toMatch(/<option value="section" selected="">Keep as sections/)
   })
 
   it('shows the overwrite choice only for an own export', () => {

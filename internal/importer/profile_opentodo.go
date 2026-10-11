@@ -13,7 +13,7 @@ type opentodoProfile struct{}
 
 func (opentodoProfile) Name() string { return "opentodo" }
 func (opentodoProfile) Description() string {
-	return "OpenTodo JSON export (exact round trip: ids, labels, sub-projects, subtasks, tombstones)"
+	return "OpenTodo JSON export (exact round trip: ids, labels, sub-projects, sections, subtasks, recurrence, reminders, views, tombstones)"
 }
 
 func (opentodoProfile) Detect(data []byte) bool {
@@ -27,11 +27,15 @@ func (opentodoProfile) Detect(data []byte) bool {
 
 func (opentodoProfile) Read(r io.Reader, _ Options) (*Parsed, error) {
 	var doc struct {
-		Format   string                       `json:"format"`
-		Version  int                          `json:"version"`
-		Labels   []map[string]json.RawMessage `json:"labels"`
-		Projects []map[string]json.RawMessage `json:"projects"`
-		Tasks    []map[string]json.RawMessage `json:"tasks"`
+		Format    string                       `json:"format"`
+		Version   int                          `json:"version"`
+		Labels    []map[string]json.RawMessage `json:"labels"`
+		Projects  []map[string]json.RawMessage `json:"projects"`
+		Tasks     []map[string]json.RawMessage `json:"tasks"`
+		Sections  []map[string]json.RawMessage `json:"sections"`
+		Reminders []map[string]json.RawMessage `json:"reminders"`
+		Views     []map[string]json.RawMessage `json:"views"`
+		Comments  []json.RawMessage            `json:"comments"`
 	}
 	if err := json.NewDecoder(r).Decode(&doc); err != nil {
 		return nil, &FileError{fmt.Sprintf("not a readable OpenTodo export: %v", err)}
@@ -43,6 +47,13 @@ func (opentodoProfile) Read(r io.Reader, _ Options) (*Parsed, error) {
 		return nil, &FileError{fmt.Sprintf("unsupported export version %d", doc.Version)}
 	}
 	out := &Parsed{Version: doc.Version}
+	taskTitles := map[string]string{}
+	for _, e := range doc.Tasks {
+		var id, title string
+		_ = json.Unmarshal(e["id"], &id)
+		_ = json.Unmarshal(e["title"], &title)
+		taskTitles[id] = title
+	}
 	add := func(kind, titleField string, list []map[string]json.RawMessage) {
 		for i, e := range list {
 			row := Row{Line: i + 1, Kind: kind, Entity: e}
@@ -52,13 +63,26 @@ func (opentodoProfile) Read(r io.Reader, _ Options) (*Parsed, error) {
 			}
 			row.SourceID = id
 			_ = json.Unmarshal(e[titleField], &row.Title)
+			if kind == KindReminder {
+				var task string
+				_ = json.Unmarshal(e["task_id"], &task)
+				row.Title = "Reminder: " + taskTitles[task]
+			}
 			out.Rows = append(out.Rows, row)
 		}
 	}
-	// Labels and projects first so the preview reads top-down; the op log does not care.
+	// Dependency order so the preview reads top-down; the op log does not care.
 	add(KindLabel, "name", doc.Labels)
 	add(KindProject, "name", doc.Projects)
+	add(KindSection, "name", doc.Sections)
 	add(KindTask, "title", doc.Tasks)
+	add(KindReminder, "", doc.Reminders)
+	add(KindView, "name", doc.Views)
+	// Comments cannot be imported faithfully (design D3 of import-completeness):
+	// author_id must be the submitting account and creation is rate limited.
+	if n := len(doc.Comments); n > 0 {
+		out.Notes = append(out.Notes, fmt.Sprintf("%d %s not imported: a comment keeps its author, and the authors in this file are accounts of the exporting instance", n, plural(n, "comment is", "comments are")))
+	}
 	return out, nil
 }
 
@@ -73,4 +97,11 @@ func topLevel(data []byte) (map[string]json.RawMessage, bool) {
 		return nil, false
 	}
 	return top, true
+}
+
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
 }

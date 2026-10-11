@@ -14,6 +14,7 @@
       "due": "2026-11-02T09:30:00Z",
       "tags": ["outside", "weekend"],
       "created_at": "2026-10-01T08:00:00Z",
+      "reminders": [{ "minutes_before": 30 }],
       "subtasks": [
         { "id": "t2", "title": "Buy seeds", "done": true, "completedAt": "2026-10-03T10:00:00Z" }
       ]
@@ -29,6 +30,21 @@
       "attachments": [{ "url": "file.pdf" }]
     },
     { "id": "t4", "content": "Inbox thought", "labels": "idea, later" },
-    { "id": "t5", "title": "Bad priority", "priority": "p9" }
+    { "id": "t5", "title": "Bad priority", "priority": "p9" },
+    {
+      "id": "t6",
+      "title": "Gym",
+      "project": "Home",
+      "section": "Routines",
+      "due": "2026-10-19",
+      "recurrence": { "frequency": "weekly", "interval": 1, "days": ["MO", "TH"] },
+      "reminder": "2026-10-19T06:00:00Z"
+    },
+    {
+      "id": "t7",
+      "title": "Check sensor",
+      "rrule": "FREQ=HOURLY;INTERVAL=2",
+      "alarms": [{ "type": "location", "name": "Home" }]
+    }
   ]
 }

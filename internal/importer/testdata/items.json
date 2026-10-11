@@ -5,7 +5,9 @@
     { "id": "201", "name": "Client A", "parent_id": "200" }
   ],
   "sections": [
-    { "id": "s1", "name": "Backlog", "project_id": "201" }
+    { "id": "s1", "name": "Backlog", "project_id": "201" },
+    { "id": "s2", "name": "Waiting", "project_id": "201" },
+    { "id": "s3", "name": "Old", "project_id": "201", "is_deleted": true }
   ],
   "labels": [
     { "id": "l1", "name": "call" }
@@ -46,9 +48,31 @@
       "content": "Old item",
       "project_id": "200",
       "is_deleted": true
+    },
+    {
+      "id": "5",
+      "content": "Pay rent",
+      "project_id": "200",
+      "priority": 1,
+      "due": { "date": "2026-11-01", "is_recurring": true, "string": "every! month" },
+      "labels": []
+    },
+    {
+      "id": "6",
+      "content": "Team sync",
+      "project_id": "200",
+      "priority": 1,
+      "due": { "date": "2026-10-19", "is_recurring": true, "string": "every mon starting next week" },
+      "labels": []
     }
   ],
   "notes": [
     { "id": "n1", "item_id": "1", "content": "See the brief" }
+  ],
+  "reminders": [
+    { "id": "r1", "item_id": "1", "type": "relative", "minute_offset": 30 },
+    { "id": "r2", "item_id": "1", "type": "absolute", "due": { "date": "2026-10-14T15:00:00" } },
+    { "id": "r3", "item_id": "3", "type": "location", "name": "Home", "loc_lat": "52.5" },
+    { "id": "r4", "item_id": "5", "type": "relative", "minute_offset": 1440, "is_deleted": true }
   ]
 }

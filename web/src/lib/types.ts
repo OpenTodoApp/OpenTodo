@@ -665,7 +665,8 @@ export interface ImportOptions {
   targetProject?: string
   /** IANA time zone used to turn zoned date-times into floating ones. */
   timeZone?: string
-  sections?: 'label' | 'ignore'
+  /** `section` (default) creates sections in the task's project; `label` turns them into labels. */
+  sections?: 'section' | 'label' | 'ignore'
   duplicates?: 'skip' | 'import'
   errors?: 'skip_rows' | 'abort'
   existing?: 'skip' | 'overwrite'
@@ -681,6 +682,10 @@ export interface ImportTotals {
   warnings: number
   newProjects: number
   newLabels: number
+  /** Created sections, recurring tasks and live reminders (import-completeness); absent on older jobs. */
+  newSections?: number
+  recurring?: number
+  reminders?: number
   entities: number
   written: number
   ops: number
@@ -691,7 +696,7 @@ export type ImportOutcome = 'create' | 'update' | 'skip' | 'error'
 export interface ImportRow {
   row?: number
   sourceId?: string
-  kind: 'project' | 'task' | 'label'
+  kind: 'project' | 'task' | 'label' | 'section' | 'reminder' | 'view'
   title: string
   project?: string
   outcome: ImportOutcome
@@ -707,6 +712,8 @@ export interface ImportPreview {
   totals: ImportTotals
   rows: ImportRow[]
   truncated: boolean
+  /** File-level remarks, e.g. records that are not imported (absent on older servers). */
+  notes?: string[]
 }
 
 export type ImportStatus = 'running' | 'done' | 'failed' | 'undone'

@@ -174,16 +174,14 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 }
 
 func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, error) {
-	st := &State{Remembered: map[string]string{}}
-	var err error
-	if st.Projects, err = s.sync.List(ctx, uid, "project", true); err != nil {
-		return nil, err
-	}
-	if st.Labels, err = s.sync.List(ctx, uid, "label", true); err != nil {
-		return nil, err
-	}
-	if st.Tasks, err = s.sync.List(ctx, uid, "task", true); err != nil {
-		return nil, err
+	st := &State{Remembered: map[string]string{}, UserID: uid}
+	for kind, dst := range map[string]*[]opsync.Entity{KindProject: &st.Projects, KindLabel: &st.Labels, KindTask: &st.Tasks,
+		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views} {
+		list, err := s.sync.List(ctx, uid, kind, true)
+		if err != nil {
+			return nil, err
+		}
+		*dst = list
 	}
 	rows, err := s.db.QueryContext(ctx, `SELECT i.source_id, i.entity_id FROM import_items i JOIN import_jobs j ON j.id = i.job_id
 		WHERE j.user_id = ? AND j.profile = ? AND j.undone_at IS NULL AND i.source_id != '' AND i.action = 'created'`, uid, profile)
@@ -409,10 +407,12 @@ func scanJob(sc scanner) (*Job, error) {
 	return &j, nil
 }
 
-// Undo tombstones every entity the job created, through the op log, and marks the
-// job undone. Entities the job only updated are left alone. Like deleting in the
-// app, open tasks the user later added to an undone project move to the Inbox and
-// ids of undone labels are removed from the user's other tasks. Undo is idempotent.
+// Undo tombstones every entity the job created (projects, tasks, labels,
+// sections, reminders, views), through the op log, and marks the job undone.
+// Entities the job only updated are left alone. Like deleting in the app, open
+// tasks the user later added to an undone project move to the Inbox, leave an
+// undone section, and ids of undone labels are removed from the user's other
+// tasks. Undo is idempotent.
 func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 	job, err := s.Job(ctx, uid, id)
 	if err != nil {
@@ -429,7 +429,11 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	created := map[string]map[string]bool{KindProject: {}, KindTask: {}, KindLabel: {}}
+	undoKinds := []string{KindReminder, KindTask, KindSection, KindProject, KindLabel, KindView}
+	created := map[string]map[string]bool{}
+	for _, k := range undoKinds {
+		created[k] = map[string]bool{}
+	}
 	for rows.Next() {
 		var entity, eid string
 		if err := rows.Scan(&entity, &eid); err != nil {
@@ -450,7 +454,7 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 		value             json.RawMessage
 	}
 	var writes []write
-	for _, kind := range []string{KindTask, KindProject, KindLabel} {
+	for _, kind := range undoKinds {
 		list, err := s.sync.List(ctx, uid, kind, false)
 		if err != nil {
 			return nil, err
@@ -466,6 +470,9 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 			}
 			if pid := str(e, "project_id"); pid != "" && created[KindProject][pid] && isNull(e["completed_at"]) {
 				writes = append(writes, write{kind, eid, "project_id", json.RawMessage("null")})
+			}
+			if sid := str(e, "section_id"); sid != "" && created[KindSection][sid] && isNull(e["completed_at"]) {
+				writes = append(writes, write{kind, eid, "section_id", json.RawMessage("null")})
 			}
 			var labels []string
 			_ = json.Unmarshal(e["labels"], &labels)

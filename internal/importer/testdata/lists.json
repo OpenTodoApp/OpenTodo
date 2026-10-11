@@ -10,7 +10,8 @@
           "notes": "Post office closes at 6",
           "due": "2026-10-12T00:00:00.000Z",
           "status": "needsAction",
-          "starred": true
+          "starred": true,
+          "reminderDateTime": "2026-10-11T22:30:00.000Z"
         },
         {
           "id": "b",
@@ -29,6 +30,7 @@
         {
           "id": "c",
           "title": "Finish the novel",
+          "recurrence": { "pattern": { "type": "absoluteMonthly", "interval": 2 } },
           "subtasks": [ { "id": "d", "title": "Chapter 12" } ]
         }
       ]

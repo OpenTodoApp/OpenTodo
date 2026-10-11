@@ -150,11 +150,13 @@ func (o obj) timestamp(row *Row, field string, loc *time.Location, keys ...strin
 	return ts
 }
 
-// due reads a due value that is either a string or an object {date, time?, datetime?}.
-func (o obj) due(row *Row, loc *time.Location, keys ...string) {
+// due reads a due value that is either a string or an object {date, time?,
+// datetime?}. A due object marked recurring returns its rule text ("string")
+// for setRecurrence, or true when it has none.
+func (o obj) due(row *Row, loc *time.Location, keys ...string) (recurring any) {
 	v, ok := o.first(keys...)
 	if !ok {
-		return
+		return nil
 	}
 	var s, clock string
 	switch t := v.(type) {
@@ -169,36 +171,54 @@ func (o obj) due(row *Row, loc *time.Location, keys ...string) {
 			clock = d.str("time")
 		}
 		if d.boolean("is_recurring", "isRecurring", "recurring") {
-			row.warn("recurrence dropped (not supported)")
+			recurring = true
+			if text := d.str("string", "text", "rule"); text != "" {
+				recurring = text
+			}
 		}
 	default:
 		row.fail("invalid due value")
-		return
+		return nil
 	}
 	due, err := parseDue(s, loc)
 	if err != nil {
 		row.fail("%v", err)
-		return
+		return nil
 	}
 	if due != nil && clock != "" {
 		c, err := parseClock(clock)
 		if err != nil {
 			row.fail("%v", err)
-			return
+			return nil
 		}
 		due.Time = c
 	}
 	row.Due = due
+	return recurring
+}
+
+// recurrenceKeys and reminderKeys name the attributes read as recurrence and
+// reminders by the JSON profiles (docs/import.md).
+var (
+	recurrenceKeys = []string{"recurrence", "rrule", "repeat", "recurring", "recurrence_rule", "recurrenceRule", "repeatRule", "repeat_rule"}
+	reminderKeys   = []string{"reminders", "reminder", "alarms", "reminder_at", "remind_at", "reminderDateTime"}
+)
+
+// schedule reads the row's recurrence (from the object or its due) and its
+// reminders, after the due date is known.
+func (o obj) schedule(row *Row, loc *time.Location, fromDue any) {
+	if v, ok := o.first(recurrenceKeys...); ok {
+		setRecurrence(row, v)
+	} else if fromDue != nil {
+		setRecurrence(row, fromDue)
+	}
+	if v, ok := o.first(reminderKeys...); ok {
+		addReminders(row, v, loc)
+	}
 }
 
 // commonWarnings records attributes the data model cannot hold.
 func (o obj) commonWarnings(row *Row) {
-	if o.present("recurrence", "rrule", "repeat", "recurring", "recurrence_rule", "repeatRule") {
-		row.warn("recurrence dropped (not supported)")
-	}
-	if o.present("reminders", "reminder", "alarms") {
-		row.warn("reminder dropped (not supported)")
-	}
 	if o.present("attachments", "files", "attachment") {
 		row.warn("attachment dropped (not supported)")
 	}
@@ -352,7 +372,7 @@ func (genericProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 				row.ParentSourceID = parent
 			}
 			jsonPriority(&row, o, "priority")
-			o.due(&row, loc, "due", "due_date", "dueDate", "deadline")
+			o.schedule(&row, loc, o.due(&row, loc, "due", "due_date", "dueDate", "deadline"))
 			row.Labels = o.names("labels", "tags")
 			if o.boolean("completed", "done", "checked", "isCompleted", "is_completed") || isDoneStatus(o.str("status")) {
 				row.Completed = true
@@ -451,10 +471,25 @@ func (itemsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		}
 	}
 	sections := map[string]string{}
-	for _, s := range asList(top["sections"]) {
-		if o := asObj(s); o != nil {
-			sections[o.str("id")] = o.str("name")
+	for i, s := range asList(top["sections"]) {
+		o := asObj(s)
+		if o == nil {
+			continue
 		}
+		sections[o.str("id")] = o.str("name")
+		if opts.Sections != "section" || o.boolean("is_deleted") {
+			continue
+		}
+		// Listed sections become sections of their project even when empty, in
+		// file order, so the board looks like it did (import-completeness D6).
+		row := Row{Line: i + 1, Kind: KindSection, SourceID: "section:" + o.str("id"), Title: o.str("name")}
+		if pid := o.str("project_id"); pid != "" && !inbox[pid] {
+			row.ProjectSourceID = "project:" + pid
+		}
+		if row.Title == "" {
+			row.fail("section name is required")
+		}
+		out.Rows = append(out.Rows, row)
 	}
 	comments := map[string]bool{}
 	for _, n := range asList(firstVal(top, "notes", "comments")) {
@@ -462,10 +497,12 @@ func (itemsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			comments[o.str("item_id", "task_id")] = true
 		}
 	}
-	reminders := map[string]bool{}
+	reminders := map[string]any{}
 	for _, n := range asList(top["reminders"]) {
-		if o := asObj(n); o != nil {
-			reminders[o.str("item_id", "task_id")] = true
+		if o := asObj(n); o != nil && !o.boolean("is_deleted") {
+			id := o.str("item_id", "task_id")
+			list, _ := reminders[id].([]any)
+			reminders[id] = append(list, n)
 		}
 	}
 	for i, it := range asList(top["items"]) {
@@ -503,7 +540,8 @@ func (itemsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 				row.Priority = 5 - n
 			}
 		}
-		o.due(&row, loc, "due")
+		o.schedule(&row, loc, o.due(&row, loc, "due"))
+		addReminders(&row, reminders[id], loc)
 		if o.present("deadline") {
 			row.warn("deadline dropped (not supported)")
 		}
@@ -520,9 +558,6 @@ func (itemsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		row.CreatedAt = o.timestamp(&row, "added_at", loc, "added_at", "date_added", "created_at")
 		if comments[id] {
 			row.warn("comments dropped (not supported)")
-		}
-		if reminders[id] {
-			row.warn("reminder dropped (not supported)")
 		}
 		o.commonWarnings(&row)
 		out.Rows = append(out.Rows, row)
@@ -613,7 +648,7 @@ func (listsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 				if parent != "" {
 					row.ParentSourceID = parent
 				}
-				o.due(&row, loc, "due")
+				o.schedule(&row, loc, o.due(&row, loc, "due"))
 				if o.boolean("starred", "important", "flagged") {
 					row.Priority = 1
 				}

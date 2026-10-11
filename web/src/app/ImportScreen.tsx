@@ -65,7 +65,7 @@ function cacheJobs(jobs: ImportJob[]) {
 }
 
 export const DEFAULT_OPTIONS: Required<Omit<ImportOptions, 'format' | 'targetProject'>> = {
-  timeZone: 'UTC', sections: 'label', duplicates: 'skip', errors: 'skip_rows', existing: 'skip',
+  timeZone: 'UTC', sections: 'section', duplicates: 'skip', errors: 'skip_rows', existing: 'skip',
 }
 
 export interface ImportViewProps {
@@ -93,6 +93,8 @@ function Totals({ t }: { t: ImportPreview['totals'] }) {
     `${t.create} to create`, t.update ? `${t.update} to update` : '', `${t.skip} skipped`, `${t.error} with errors`,
     t.possibleDuplicates ? `${t.possibleDuplicates} possible duplicates` : '',
     t.newProjects ? `${t.newProjects} new projects` : '', t.newLabels ? `${t.newLabels} new labels` : '',
+    t.newSections ? `${t.newSections} new sections` : '', t.recurring ? `${t.recurring} recurring` : '',
+    t.reminders ? `${t.reminders} reminders` : '',
   ].filter(Boolean)
   return <p className="text-sm text-slate-600 dark:text-slate-300">{t.rows} rows: {parts.join(' · ')}</p>
 }
@@ -157,7 +159,8 @@ export function ImportView(p: ImportViewProps) {
           </label>
           <label className="text-sm">
             <span className="mb-1 block text-slate-500">Sections</span>
-            <select className="input" value={o.sections} disabled={disabled} onChange={(e) => p.onOption('sections', e.target.value as 'label' | 'ignore')}>
+            <select className="input" value={o.sections} disabled={disabled} onChange={(e) => p.onOption('sections', e.target.value as 'section' | 'label' | 'ignore')}>
+              <option value="section">Keep as sections</option>
               <option value="label">Turn into labels</option>
               <option value="ignore">Ignore</option>
             </select>
@@ -218,6 +221,7 @@ export function ImportView(p: ImportViewProps) {
             Preview · {FORMAT_LABELS[p.preview.format]}{p.preview.version ? ` v${p.preview.version}` : ''}
           </h2>
           <Totals t={p.preview.totals} />
+          {p.preview.notes?.map((n) => <p key={n} className="text-sm text-amber-700 dark:text-amber-300">{n}</p>)}
           {p.preview.columns && (
             <p className="text-xs text-slate-500">
               Columns used: {p.preview.columns.recognised.join(', ') || 'none'}
