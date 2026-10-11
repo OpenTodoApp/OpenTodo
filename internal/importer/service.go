@@ -62,6 +62,8 @@ type Service struct {
 
 	mu     sync.Mutex
 	active map[string]string // user id → running job id (or "undo")
+	// onSummary receives one Summary per finished job or undo (guarded by mu).
+	onSummary func(context.Context, Summary)
 
 	clockMu sync.Mutex
 	lastTS  int64
@@ -269,6 +271,12 @@ func (s *Service) run(uid string, job *Job, plan *Plan) {
 	defer s.wg.Done()
 	defer s.release(uid)
 	ctx := context.Background()
+	tl := newTally()
+	// One summary per job, whatever its outcome (harden-server-edges).
+	defer func() {
+		s.emit(ctx, Summary{UserID: uid, JobID: job.ID, Event: EventCompleted, Format: job.Format, Status: job.Status,
+			Message: job.Message, Totals: job.Totals, Counts: tl.counts, ProjectIDs: tl.projectIDs()})
+	}()
 	if plan.Options.Errors == "abort" && len(plan.errors) > 0 {
 		s.finish(ctx, job, StatusFailed, "aborted before writing anything: "+plan.errors[0].String())
 		return
@@ -282,7 +290,7 @@ func (s *Service) run(uid string, job *Job, plan *Plan) {
 		if s.beforeBatch != nil {
 			s.beforeBatch(job.ID)
 		}
-		if err := s.writeBatch(ctx, uid, job, batch); err != nil {
+		if err := s.writeBatch(ctx, uid, job, batch, tl); err != nil {
 			return err
 		}
 		batch, size = batch[:0], 0
@@ -307,7 +315,7 @@ func (s *Service) run(uid string, job *Job, plan *Plan) {
 	s.finish(ctx, job, StatusDone, "")
 }
 
-func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []change) error {
+func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []change, tl *tally) error {
 	ts := s.opTS()
 	var ops []opsync.Op
 	for _, c := range batch {
@@ -333,6 +341,9 @@ func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []
 			job.ID, c.sourceID, c.entity, c.id, action); err != nil {
 			return err
 		}
+	}
+	for _, c := range batch {
+		tl.add(c)
 	}
 	job.Totals.Written += len(batch)
 	job.Totals.Ops += res.Applied
@@ -450,6 +461,7 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 		value             json.RawMessage
 	}
 	var writes []write
+	tl := newTally()
 	for _, kind := range []string{KindTask, KindProject, KindLabel} {
 		list, err := s.sync.List(ctx, uid, kind, false)
 		if err != nil {
@@ -459,6 +471,13 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 			eid := str(e, "id")
 			if created[kind][eid] {
 				writes = append(writes, write{kind, eid, "deleted_at", raw(now)})
+				tl.count(kind, "deleted")
+				switch kind {
+				case KindProject:
+					tl.project(eid)
+				case KindTask:
+					tl.project(str(e, "project_id"))
+				}
 				continue
 			}
 			if kind != KindTask {
@@ -493,5 +512,11 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 	if _, err := s.db.ExecContext(ctx, `UPDATE import_jobs SET status = ?, undone_at = ? WHERE id = ? AND user_id = ?`, StatusUndone, now, id, uid); err != nil {
 		return nil, err
 	}
-	return s.Job(ctx, uid, id)
+	done, err := s.Job(ctx, uid, id)
+	if err != nil {
+		return nil, err
+	}
+	s.emit(ctx, Summary{UserID: uid, JobID: id, Event: EventUndone, Format: done.Format, Status: done.Status,
+		Totals: done.Totals, Counts: tl.counts, ProjectIDs: tl.projectIDs()})
+	return done, nil
 }

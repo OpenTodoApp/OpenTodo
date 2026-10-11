@@ -88,4 +88,25 @@ describe('reminder watcher', () => {
     await deleteTask(t)
     expect(await checkReminders(now)).toEqual([])
   })
+
+  it('skips tasks in a trashed project or under a trashed ancestor, and shows them after a restore', async () => {
+    const now = Date.now()
+    const { createProject, deleteProject, restoreProject, mutate } = await import('./ops')
+    const work = await createProject({ name: 'Work' })
+    const home = await createProject({ name: 'Home' })
+    const garden = await createProject({ name: 'Garden', parent_id: home })
+    const a = await createTask({ title: 'In Work', project_id: work })
+    const b = await createTask({ title: 'In Garden', project_id: garden })
+    await addReminder(a, { kind: 'absolute', fire_at: now - 1000 })
+    await addReminder(b, { kind: 'absolute', fire_at: now - 1000 })
+    expect((await checkReminders(now)).length).toBe(2)
+    await deleteProject(work)
+    // A live sub-project under a tombstoned parent (concurrent edits) is covered too.
+    await mutate('project', home, { deleted_at: now })
+    expect(await checkReminders(now)).toEqual([])
+    // Restored: the reminders whose time passed meanwhile show, once each.
+    await restoreProject(work)
+    await restoreProject(home)
+    expect((await checkReminders(now + 60_000)).map((d) => d.task.title).sort()).toEqual(['In Garden', 'In Work'])
+  })
 })

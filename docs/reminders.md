@@ -17,6 +17,10 @@ Reminders are personal. On a task in a shared project your reminders are yours a
 
 **Privacy.** A push payload carries only the reminder id, the task id and the firing time, encrypted end to end (RFC 8291) so the push service cannot read it. The device shows the title from its own copy of the task. Enable **Include task titles** if a device should be able to show the title before it has synced the task; the description is never sent.
 
+## Trash
+
+A reminder does not fire, in the app or by push, while its task is deleted or while the task's project, or any project above it, is in the Trash. It is not marked as delivered either, so restoring the task or the project brings it back: a reminder whose time is still ahead fires on time, and one whose time passed while it was in the Trash is delivered once, late, on the next check (the same rule as for reminders that fell due while the server was down). Dismiss or snooze it if you no longer need it. Purging the task from the Trash removes its reminders.
+
 ## Snooze and dismiss
 
 Snoozing sets a new firing time (in 10 minutes, in an hour, or tomorrow at 09:00) and the reminder fires again, also by push. Dismissing silences the current firing. Both are ordinary synced edits: when one device dismisses and another later snoozes the same reminder, the later edit wins on every device.

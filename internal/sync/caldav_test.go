@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 )
 
 // CalDAV (OpenSpec change `caldav`).
@@ -61,5 +62,52 @@ func TestCursorAndChangedSince(t *testing.T) {
 	mod, err := s.Modified(ctx, "u1", "task")
 	if err != nil || mod["t1"] != 1 || mod["t2"] != 2 {
 		t.Fatalf("modified %v %v", mod, err)
+	}
+}
+
+// Purging a task removes its CalDAV resource name in the same transaction: a
+// single purge, a project purge's cascade and the retention job
+// (harden-server-edges).
+func TestPurgeRemovesCaldavResources(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	now := time.Date(2026, 10, 10, 12, 0, 0, 0, time.UTC)
+	s.now = func() time.Time { return now }
+	old := now.Add(-31 * 24 * time.Hour).UnixMilli()
+	mustApply(t, s, "u1",
+		op("1", "task", "Single", "deleted_at", `5`, 5, "A"),
+		op("2", "project", "P", "deleted_at", `5`, 5, "A"),
+		op("3", "task", "InP", "project_id", `"P"`, 5, "A"),
+		op("4", "task", "Old", "deleted_at", jsonNum(old), old, "A"),
+		op("5", "task", "Live", "title", `"stays"`, 5, "A"),
+	)
+	for _, id := range []string{"Single", "InP", "Old", "Live"} {
+		if _, err := s.db.Exec(`INSERT INTO caldav_resources(task_id,name,uid) VALUES(?,?,?)`, id, id+"-client.ics", "uid-"+id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	has := func(id string) bool {
+		return countRows(t, s, `SELECT COUNT(*) FROM caldav_resources WHERE task_id = ?`, id) == 1
+	}
+	if _, err := s.Purge(ctx, "u1", "task", []string{"Single"}); err != nil {
+		t.Fatal(err)
+	}
+	if has("Single") || !has("InP") {
+		t.Fatal("single purge: wrong caldav rows")
+	}
+	if _, err := s.Purge(ctx, "u1", "project", []string{"P"}); err != nil {
+		t.Fatal(err)
+	}
+	if has("InP") {
+		t.Fatal("project purge left the cascaded task's caldav row")
+	}
+	if _, err := s.RetentionPass(ctx, 30); err != nil {
+		t.Fatal(err)
+	}
+	if has("Old") {
+		t.Fatal("retention left the caldav row")
+	}
+	if !has("Live") {
+		t.Fatal("live task lost its caldav row")
 	}
 }

@@ -981,7 +981,7 @@ Outbound webhooks notify a URL you choose when your tasks and projects change. E
 | Field | Type | Notes |
 | --- | --- | --- |
 | `url` | string | `http://` or `https://`, at most 2,048 characters |
-| `events` | string[] | non-empty subset of `task.created`, `task.updated`, `task.completed`, `task.reopened`, `task.deleted`, `project.created`, `project.updated`, `project.archived`, `project.deleted` |
+| `events` | string[] | non-empty subset of `task.created`, `task.updated`, `task.completed`, `task.reopened`, `task.deleted`, `project.created`, `project.updated`, `project.archived`, `project.deleted`, `import.completed`, `import.undone` |
 | `projectId` | string or null | only events for this project (tasks in it, or the project itself) |
 | `enabled` | boolean | default `true` |
 

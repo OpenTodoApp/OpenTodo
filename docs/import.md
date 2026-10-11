@@ -137,6 +137,7 @@ With `skip_rows`, bad rows are reported and everything else is imported; a bad r
 - Files may be at most `OPENTODO_IMPORT_MAX_MB` megabytes (default 20, allowed 1–200) and 50,000 rows; larger files answer `413 too_large`.
 - Ops are written in batches of at most 1,000 and progress is saved after each batch. If the server restarts mid-import, the job shows `failed` with the counts of what was written, and undo removes it.
 - **Undo** tombstones every project, task and label the job created, through the op log: they disappear from every view and from other devices after their next sync, and stay in the export with `deleted_at`. Entities the job only updated are left alone. As when deleting in the app, open tasks you later added to an undone project move to the Inbox, and undone labels are removed from your other tasks. Undo is idempotent. After an undo the same file can be imported again.
+- **Webhooks** see an import as one `import.completed` delivery per finished job and one `import.undone` per undo, not one event per task. See [Webhooks → Imports](webhooks.md#imports).
 
 Job records (status, options, counts, row errors) are operational metadata kept in the server database; they are not part of the export.
 
