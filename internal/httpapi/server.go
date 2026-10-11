@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -121,6 +120,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	for _, o := range opts {
 		o(s)
 	}
+	setTrustedProxies(cfg.TrustedProxies, cfg.TrustCloudflare)
 	if s.demo != nil {
 		// Sandbox writes are bounded: field sizes and the write budget (demo-sandboxes D3).
 		syncSvc.SetWriteGuard(s.demo.Guard())
@@ -1440,29 +1440,6 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeError(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, map[string]any{"error": map[string]string{"code": code, "message": message}})
-}
-
-// clientIP is the address every rate limiter, the demo sandbox limit and the
-// audit log use. Behind a reverse proxy it is the LAST X-Forwarded-For entry:
-// the one the nearest proxy appended (Traefik, Caddy and nginx append the
-// address they saw). Earlier entries come from the client and can be forged, so
-// trusting the first one would let anyone evade the limits. Without the header
-// it is the connection's address.
-func clientIP(r *http.Request) string {
-	vals := r.Header.Values("X-Forwarded-For")
-	for i := len(vals) - 1; i >= 0; i-- {
-		parts := strings.Split(vals[i], ",")
-		for j := len(parts) - 1; j >= 0; j-- {
-			if hop := strings.TrimSpace(parts[j]); hop != "" {
-				return hop
-			}
-		}
-	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
-	}
-	return host
 }
 
 // rateLimiter is a fixed-window per-key counter, enough to blunt password guessing.

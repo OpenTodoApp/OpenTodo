@@ -32,6 +32,12 @@ docker run -d --name opentodo \
 
 OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `OPENTODO_BASE_URL` to the public https URL so cookies are marked `Secure`, the origin check matches and invitation links point at the public address. The server also honours `X-Forwarded-Host` for the origin check and `X-Forwarded-For` for rate limiting and the audit log. It trusts only the **last** `X-Forwarded-For` hop, the address your proxy appended (Traefik, Caddy, and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` append it); earlier entries come from the client and are ignored. So run exactly one proxy in front of the container and do not publish the container port, or a client could send its own header.
 
+**A CDN in front of your proxy** (Cloudflare's orange cloud, or another proxy of yours) adds its own hop, so every visitor would look like the CDN's address and share one rate-limit bucket. Tell OpenTodo which hops to skip with the optional `OPENTODO_TRUSTED_PROXIES`: a comma-separated list of IP addresses and CIDR prefixes, and the keyword `cloudflare` for Cloudflare's published edge ranges (built in, no network request). With `cloudflare`, a request that reaches your proxy from a Cloudflare edge is attributed to its `CF-Connecting-IP` header, which also works when your proxy drops the incoming `X-Forwarded-For`. Only set it when every request really comes through those proxies.
+
+```env
+OPENTODO_TRUSTED_PROXIES=cloudflare
+```
+
 ### Email to task
 
 [Email to task](../email.md) needs no port, proxy rule or DNS record: OpenTodo makes one outbound IMAP connection (TLS, port 993 by default) to the mailbox you configure with `OPENTODO_EMAIL_*`. If your host restricts outbound traffic, allow that one host and port. Keep the password in a Docker secret and point `OPENTODO_EMAIL_IMAP_PASSWORD_FILE` at it (example in the guide).

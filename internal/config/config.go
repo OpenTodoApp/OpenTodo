@@ -5,6 +5,7 @@ package config
 import (
 	"fmt"
 	"log/slog"
+	"net/netip"
 	"net/url"
 	"os"
 	"strconv"
@@ -61,6 +62,15 @@ type Config struct {
 	// optional and read only in demo mode.
 	DemoMaxSandboxes int
 	DemoMaxDBMB      int
+	// TrustedProxies lists proxies in front of the reverse proxy whose
+	// X-Forwarded-For hops are skipped when finding the client address
+	// (OPENTODO_TRUSTED_PROXIES: IPs, CIDRs and/or the keyword "cloudflare").
+	// Optional; empty trusts only the nearest hop.
+	TrustedProxies []netip.Prefix
+	// TrustCloudflare is set when OPENTODO_TRUSTED_PROXIES names "cloudflare":
+	// a request whose nearest hop is a Cloudflare edge may then name the client
+	// with CF-Connecting-IP.
+	TrustCloudflare bool
 }
 
 // OIDCEnv mirrors oidc.Env (converted by the HTTP layer) so this package stays
@@ -195,6 +205,13 @@ func Load() (Config, error) {
 			}
 			*v.dst = n
 		}
+	}
+	if raw := strings.TrimSpace(os.Getenv("OPENTODO_TRUSTED_PROXIES")); raw != "" {
+		p, cf, err := ParseTrustedProxies(raw)
+		if err != nil {
+			return c, err
+		}
+		c.TrustedProxies, c.TrustCloudflare = p, cf
 	}
 	switch strings.ToLower(getenv("OPENTODO_LOG_LEVEL", "info")) {
 	case "debug":

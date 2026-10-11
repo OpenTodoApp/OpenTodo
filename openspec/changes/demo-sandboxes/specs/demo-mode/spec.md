@@ -95,7 +95,7 @@ A sandbox SHALL be deleted with its accounts, sessions and data after 2 hours wi
 - **THEN** it receives 401 `demo_expired`, clears its local data and shows "Your demo sandbox has expired" with a button to start a new one
 
 ### Requirement: Demo abuse limits
-The server SHALL bound demo use: a live-sandbox cap (evict the least recently active idle one, else 503 `demo_busy`), 5 new sandboxes per client address per hour (429), per sandbox 600 ops an hour, 5,000 ops and 2 MB of values in total (429 `demo_limit`), fields of 4 KB (notes 32 KB), and above a database size threshold no new sandboxes and no sandbox writes. The client address SHALL be the last forwarded hop.
+The server SHALL bound demo use: a live-sandbox cap (evict the least recently active idle one, else 503 `demo_busy`), 5 new sandboxes per client address per hour (429), per sandbox 600 ops an hour, 5,000 ops and 2 MB of values in total (429 `demo_limit`), fields of 4 KB (notes 32 KB), and above a database size threshold no new sandboxes and no sandbox writes. The client address SHALL be the last forwarded hop not listed in `OPENTODO_TRUSTED_PROXIES`.
 
 #### Scenario: Write budget
 - **WHEN** a sandbox sends its 601st op within an hour
@@ -104,6 +104,10 @@ The server SHALL bound demo use: a live-sandbox cap (evict the least recently ac
 #### Scenario: Creation flood
 - **WHEN** one address requests a sixth sandbox within an hour, even with a different forged leading `X-Forwarded-For` entry each time
 - **THEN** the request gets 429 and no account is created
+
+#### Scenario: Behind Cloudflare
+- **WHEN** `OPENTODO_TRUSTED_PROXIES=cloudflare` and visitors reach the demo through the same Cloudflare edge
+- **THEN** each visitor is counted by its own address (the hop before the edge, or `CF-Connecting-IP` from an edge), not the edge's
 
 #### Scenario: Byte budget
 - **WHEN** a sandbox's batch would take its stored values past 2 MB

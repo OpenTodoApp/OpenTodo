@@ -86,7 +86,7 @@ docker run -d --name opentodo-demo -p 8080:8080 \
   -v opentodo-demo:/data ghcr.io/pixari/opentodo:latest
 ```
 
-Or with the repository's `docker-compose.yml`: put `OPENTODO_DEMO=true` in `.env` next to it and run `docker compose up -d`. The compose file passes the variable through (`OPENTODO_DEMO=${OPENTODO_DEMO:-}`). To tune the limits, add `OPENTODO_DEMO_MAX_SANDBOXES` or `OPENTODO_DEMO_MAX_DB_MB` to the container's environment.
+Or with the repository's `docker-compose.yml`: put `OPENTODO_DEMO=true` in `.env` next to it and run `docker compose up -d`. The compose file passes the variable through (`OPENTODO_DEMO=${OPENTODO_DEMO:-}`). To tune the limits, add `OPENTODO_DEMO_MAX_SANDBOXES` or `OPENTODO_DEMO_MAX_DB_MB` to the container's environment. Behind Cloudflare (or any CDN in front of your reverse proxy) also set `OPENTODO_TRUSTED_PROXIES=cloudflare` (see [Behind a reverse proxy](docker.md#behind-a-reverse-proxy)); otherwise every visitor reaching the demo through the same Cloudflare edge shares one sandbox limit.
 
 ## Coolify
 
