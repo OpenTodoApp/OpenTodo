@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { HelpHeading } from './help/HelpLink'
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
 import { api, isNetworkError } from '../lib/api'
 import { db } from '../lib/db'
@@ -81,7 +82,7 @@ export function WebhooksView(p: WebhooksViewProps) {
   const draft = p.draft
   return (
     <section className="space-y-3" aria-labelledby="webhooks-heading">
-      <h2 id="webhooks-heading" className="font-semibold">Webhooks</h2>
+      <HelpHeading screen="settings/webhooks" id="webhooks-heading" className="font-semibold">Webhooks</HelpHeading>
       <p className="text-sm text-slate-500">
         Notify Home Assistant, n8n or any HTTP endpoint when your tasks and projects change. Each request is signed with the
         webhook's secret; see docs/webhooks.md for how to verify it.

@@ -21,7 +21,8 @@ function render(overrides: Partial<SecurityPanelViewProps>): string {
 }
 
 const disabledButtons = (html: string) => (html.match(/<button[^>]*disabled=""/g) ?? []).length
-const allButtons = (html: string) => (html.match(/<button/g) ?? []).length
+// The Help link (user-documentation) stays usable offline: help ships with the app.
+const allButtons = (html: string) => (html.match(/<button(?![^>]*data-help-screen)/g) ?? []).length
 
 describe('SecurityPanelView', () => {
   it('is hidden when passkeys are unavailable on the server', () => {

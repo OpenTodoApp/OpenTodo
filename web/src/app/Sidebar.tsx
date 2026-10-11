@@ -326,8 +326,13 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
           </div>
         )}
       </nav>
+      <button onClick={() => navigate({ view: 'help' })} title="Help and guides (g then ?)"
+        className={`mt-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'help' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}>
+        <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-xs text-slate-500 dark:border-slate-600">?</span>
+        <span className="flex-1 text-slate-700 dark:text-slate-300">Help</span>
+      </button>
       <button onClick={() => navigate({ view: 'settings' })}
-        className={`mt-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'settings' || route.view === 'import' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}>
+        className={`mt-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'settings' || route.view === 'import' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}>
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-xs font-semibold text-white">
           {(user.name || user.email).slice(0, 1).toUpperCase()}
         </span>

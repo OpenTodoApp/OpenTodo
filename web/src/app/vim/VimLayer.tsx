@@ -26,9 +26,11 @@ function focusTitle(id: string, tries = 20): void {
   } else if (tries > 0) setTimeout(() => focusTitle(id, tries - 1), 25)
 }
 
-export default function VimLayer({ userId, onHelp, onHelpSection }: {
+export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }: {
   userId?: string
   onHelp: () => void
+  /** `:help <topic>`: open the Help view on that topic (user-documentation). */
+  onHelpTopic?: (topic: string) => void
   onHelpSection: (section: HelpSection | null) => void
 }) {
   const route = useRoute()
@@ -94,6 +96,7 @@ export default function VimLayer({ userId, onHelp, onHelpSection }: {
       closePanel: () => listActions()?.closePanel(),
       sync: syncNow,
       help: onHelp,
+      helpTopic: (topic: string) => (onHelpTopic ? onHelpTopic(topic) : onHelp()),
     })
     // An unknown or incomplete command keeps the line open for correction.
     if (res.ok) openCommand(false)

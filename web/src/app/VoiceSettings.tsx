@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { BUNDLED_LANGUAGES, loadQuickAddSettings, resolveLanguages } from '../lib/nlp'
 import { loadVoiceSettings, onVoiceSettingsChange, saveVoiceSettings, type VoiceSettings } from '../lib/voice/settings'
 import { isSupported } from '../lib/voice/support'
@@ -48,7 +49,7 @@ export function VoiceSettingsSection() {
 
   return (
     <section className="space-y-3" aria-labelledby="voice-settings-heading">
-      <h2 id="voice-settings-heading" className="font-semibold">Voice capture</h2>
+      <HelpHeading screen="settings/voice" id="voice-settings-heading" className="font-semibold">Voice capture</HelpHeading>
       <label className={`flex items-start gap-2 text-sm ${supported ? '' : 'opacity-60'}`}>
         <input
           type="checkbox"

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getAutoArchive, setAutoArchive } from '../lib/archive'
 import { bookmarklet } from '../lib/share'
@@ -39,12 +40,15 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
   return (
     <div className="mx-auto max-w-2xl space-y-8 px-4 py-6 md:px-8">
       <section>
-        <h1 className="text-xl font-semibold">Settings</h1>
-        <p className="mt-1 text-sm text-slate-500">{user.name || user.email} · {user.email} · {user.role}</p>
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-xl font-semibold">Settings</h1>
+          <a className="btn-ghost touch-target text-sm" href="/help" onClick={(e) => { e.preventDefault(); navigate({ view: 'help' }) }}>Help and guides</a>
+        </div>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-slate-500">{user.name || user.email} · {user.email} · {user.role}</p>
       </section>
 
       <section className="space-y-2">
-        <h2 className="font-semibold">Your data</h2>
+        <HelpHeading screen="settings/data" className="font-semibold">Your data</HelpHeading>
         <p className="text-sm text-slate-500">
           Everything you see is stored on this device and on your server. Export it any time as JSON, or import an export,
           a CSV file or another task manager's JSON export (<span className="kbd">g</span> <span className="kbd">Shift+I</span>).
@@ -78,7 +82,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
         </>
       )}
       <section className="space-y-2">
-        <h2 className="font-semibold">Start view</h2>
+        <HelpHeading screen="settings/start-view" className="font-semibold">Start view</HelpHeading>
         <p className="text-sm text-slate-500">The view this device opens on launch. Each device keeps its own choice; it is not synced.</p>
         <select className="input max-w-xs" aria-label="Start view on this device" value={startIsKnown ? startView : 'inbox'}
           onChange={(e) => void setStartView(e.target.value as StartView)}>
@@ -130,7 +134,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       )}
 
       <section className="space-y-2">
-        <h2 className="font-semibold">Session</h2>
+        <HelpHeading screen="settings/session" className="font-semibold">Session</HelpHeading>
         <p className="text-sm text-slate-500">Signing out clears the local copy of your tasks on this device. Unsynced changes are uploaded first when online.</p>
         <button className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={onLogout}>Sign out</button>
       </section>
@@ -172,7 +176,7 @@ function KeyboardSection() {
   const vim = useVimEnabled()
   return (
     <section className="space-y-2">
-      <h2 className="font-semibold">Keyboard</h2>
+      <HelpHeading screen="settings/keyboard" className="font-semibold">Keyboard</HelpHeading>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={vim} onChange={(e) => setVimEnabled(e.target.checked)} data-vim-switch />
         Vim keybindings (this device)
@@ -189,7 +193,7 @@ function AutoArchiveSection() {
   const on = useLiveQuery(getAutoArchive, [], true)
   return (
     <section className="space-y-2">
-      <h2 className="font-semibold">Projects</h2>
+      <HelpHeading screen="settings/projects" className="font-semibold">Projects</HelpHeading>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={on} onChange={(e) => void setAutoArchive(e.target.checked)} />
         Archive projects automatically after 30 days without open tasks (this device)
@@ -218,7 +222,7 @@ function CaptureSection() {
 
   return (
     <section className="space-y-2">
-      <h2 className="font-semibold">Capture</h2>
+      <HelpHeading screen="settings/capture" className="font-semibold">Capture</HelpHeading>
       <p className="text-sm text-slate-500">
         Drag this button to your bookmarks bar. On any page, click it to add the page, its title and the selected text to OpenTodo in a small window.
         It holds no password or token; it uses your sign-in on this server. On a phone, install the app and use the share menu instead.

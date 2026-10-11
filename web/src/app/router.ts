@@ -23,9 +23,11 @@ export type Route =
   | { view: 'share' }
   | { view: 'trash' }
   | { view: 'feed' }
+  | { view: 'help'; page?: string; q?: string }
 
 export function parseRoute(pathname: string): Route {
-  const parts = pathname.split('/').filter(Boolean)
+  const [path, query = ''] = pathname.split('?')
+  const parts = path.split('/').filter(Boolean)
   switch (parts[0]) {
     case undefined:
     case 'inbox':
@@ -54,6 +56,11 @@ export function parseRoute(pathname: string): Route {
       return { view: 'trash' }
     case 'activity':
       return { view: 'feed' }
+    case 'help': {
+      // In-app Help (user-documentation): /help, /help/<guide>, /help?q=<topic>.
+      const q = new URLSearchParams(query).get('q') ?? undefined
+      return { view: 'help', ...(parts[1] ? { page: safeDecode(parts[1]) } : {}), ...(q ? { q } : {}) }
+    }
     case 'views':
       return { view: 'views' }
     case 'view':
@@ -99,6 +106,8 @@ export function routePath(r: Route): string {
       return '/settings/import'
     case 'feed':
       return '/activity'
+    case 'help':
+      return `/help${r.page ? `/${encodeURIComponent(r.page)}` : ''}${r.q ? `?q=${encodeURIComponent(r.q)}` : ''}`
     default:
       return `/${r.view}`
   }

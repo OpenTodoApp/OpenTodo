@@ -27,7 +27,8 @@ function panel(overrides: Partial<TwoFactorPanelViewProps>): string {
   return renderToStaticMarkup(createElement(TwoFactorPanelView, props))
 }
 const disabledButtons = (html: string) => (html.match(/<button[^>]*disabled=""/g) ?? []).length
-const allButtons = (html: string) => (html.match(/<button/g) ?? []).length
+// The Help link (user-documentation) stays usable offline: help ships with the app.
+const allButtons = (html: string) => (html.match(/<button(?![^>]*data-help-screen)/g) ?? []).length
 
 describe('TwoFactorPanelView', () => {
   it('offers setup when off', () => {

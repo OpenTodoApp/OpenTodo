@@ -106,3 +106,30 @@ body {
   :where(label:has(> input[type="checkbox"], > input[type="radio"])) { min-height: 44px; }
 }
 
+
+@layer components {
+/* In-app Help (user-documentation): the guide HTML generated from docs/. */
+.help-prose { @apply text-[15px] leading-relaxed text-slate-800 dark:text-slate-200; overflow-wrap: break-word; }
+.help-prose h1 { @apply mb-3 text-2xl font-semibold; }
+.help-prose h2 { @apply mt-8 mb-2 scroll-mt-16 border-t border-slate-200 pt-4 text-lg font-semibold dark:border-slate-800; }
+.help-prose h3 { @apply mt-6 mb-1.5 scroll-mt-16 text-base font-semibold; }
+.help-prose h4 { @apply mt-4 mb-1 font-semibold; }
+.help-prose h1 + p { @apply text-slate-600 dark:text-slate-300; }
+.help-prose p, .help-prose ul, .help-prose ol, .help-prose details { @apply mb-3; }
+.help-prose ul { @apply list-disc pl-5; }
+.help-prose ol { @apply list-decimal pl-5; }
+.help-prose li { @apply my-1; }
+.help-prose a { @apply text-emerald-800 underline underline-offset-2 dark:text-emerald-300; }
+.help-prose .anchor { @apply hidden; }
+.help-prose code { @apply rounded bg-slate-100 px-1 py-0.5 text-[0.85em] dark:bg-slate-800; }
+.help-prose pre { @apply mb-3 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs dark:border-slate-800 dark:bg-slate-950; }
+.help-prose pre code { @apply bg-transparent p-0; }
+.help-prose kbd { @apply rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 font-mono text-[12px] text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300; }
+.help-prose blockquote { @apply mb-3 border-l-4 border-emerald-500 pl-3 text-slate-600 dark:text-slate-300; }
+.help-prose .table-wrap { @apply mb-4 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800; }
+.help-prose table { @apply w-full border-collapse text-sm; }
+.help-prose th, .help-prose td { @apply border-t border-slate-200 px-3 py-2 text-left align-top dark:border-slate-800; }
+.help-prose thead th { @apply border-t-0 bg-slate-50 font-semibold dark:bg-slate-800/60; }
+.help-prose summary { @apply cursor-pointer font-medium; }
+.help-snippet mark, .help-prose mark { @apply rounded bg-amber-200 px-0.5 text-slate-900; }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { disablePush, enablePush, loadPushState, PushPermissionError, setIncludeContent, testNotification, type PushState } from '../lib/push'
 
 /**
@@ -36,7 +37,7 @@ export function NotificationsSettings() {
   const s = state
   return (
     <section className="space-y-2" aria-labelledby="notifications-heading">
-      <h2 id="notifications-heading" className="font-semibold">Notifications</h2>
+      <HelpHeading screen="settings/notifications" id="notifications-heading" className="font-semibold">Notifications</HelpHeading>
       <p className="text-sm text-slate-500">
         Reminders always appear inside the app while it is open. Enable notifications on this device to get them while the app is closed.
         Each device decides for itself.

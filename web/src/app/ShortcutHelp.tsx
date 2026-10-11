@@ -1,5 +1,6 @@
 import { QUICK_ADD_SYNTAX, SHORTCUTS } from '../lib/shortcuts'
 import { Dialog } from './overlay'
+import { navigate } from './router'
 
 /** An extra block of the `?` overlay (the Vim layer supplies one while it is on). */
 export interface HelpSection {
@@ -55,9 +56,12 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
               ))}
             </tbody>
           </table>
-          <a className="mt-2 block text-xs text-slate-500 underline" href="https://github.com/pixari/opentodo/blob/main/docs/quick-add.md" target="_blank" rel="noreferrer">
-            Full syntax reference (docs/quick-add.md)
-          </a>
+          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            <a className="touch-target inline-flex items-center text-slate-600 underline dark:text-slate-300" href="/help/quick-add"
+              onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help', page: 'quick-add' }) }}>Full quick add syntax</a>
+            <a className="touch-target inline-flex items-center text-slate-600 underline dark:text-slate-300" href="/help"
+              onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help' }) }}>Open Help (<span className="kbd mx-0.5">g</span> <span className="kbd mx-0.5">?</span>)</a>
+          </p>
           <button className="btn-ghost mt-4 w-full" onClick={onClose}>Close</button>
     </Dialog>
   )

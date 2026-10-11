@@ -1,0 +1,72 @@
+import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, expect, it } from 'vitest'
+import { findTopic, helpSections, loadHelp, searchHelp } from '../../lib/help'
+import { SHORTCUTS } from '../../lib/shortcuts'
+import { parseRoute, routePath } from '../router'
+import { HelpContent } from './HelpContent'
+import { HelpHeading, HelpLink } from './HelpLink'
+import { closeHelp, openHelp } from './store'
+
+describe('Help routes', () => {
+  it('parses and builds /help, /help/<guide> and /help?q=', () => {
+    expect(parseRoute('/help')).toEqual({ view: 'help' })
+    expect(parseRoute('/help/sections-and-boards')).toEqual({ view: 'help', page: 'sections-and-boards' })
+    expect(parseRoute('/help?q=board')).toEqual({ view: 'help', q: 'board' })
+    expect(routePath({ view: 'help', page: 'views' })).toBe('/help/views')
+    expect(routePath({ view: 'help', q: 'repeat weekly' })).toBe('/help?q=repeat%20weekly')
+    for (const p of ['/help', '/help/views', '/help?q=x']) expect(routePath(parseRoute(p))).toBe(p)
+  })
+})
+
+describe('Help bundle', () => {
+  it('ships the user guide of this version, without screenshots', async () => {
+    const { bundle } = await loadHelp()
+    expect(bundle.version).toMatch(/^\d+\.\d+\.\d+$/)
+    const slugs = bundle.pages.map((p) => p.slug)
+    for (const s of ['getting-started', 'install-app', 'sections-and-boards', 'keyboard', 'troubleshooting']) expect(slugs).toContain(s)
+    expect(slugs).not.toContain('api')
+    expect(bundle.pages.every((p) => !p.html.includes('<img'))).toBe(true)
+    expect(helpSections(bundle)[0].title).toBe('Get started')
+  })
+  it('finds board sections offline, from local data only', async () => {
+    const { entries } = await loadHelp()
+    const r = searchHelp(entries, 'board')
+    expect(r.length).toBeGreaterThan(0)
+    expect(r.some((x) => x.url.startsWith('sections-and-boards'))).toBe(true)
+  })
+  it('maps every contextual screen to a section and resolves :help topics', async () => {
+    const { bundle } = await loadHelp()
+    expect(bundle.screens['share-dialog']).toEqual({ page: 'sharing', anchor: 'share-a-project' })
+    for (const { page, anchor } of Object.values(bundle.screens)) {
+      const p = bundle.pages.find((x) => x.slug === page)
+      expect(p).toBeDefined()
+      if (anchor) expect(p?.html).toContain(`id="${anchor}"`)
+    }
+    expect(findTopic(bundle, 'board')?.slug).toBe('sections-and-boards')
+    expect(findTopic(bundle, 'keyboard')?.slug).toBe('keyboard')
+  })
+  it('keeps links between guides inside the app', async () => {
+    const { bundle } = await loadHelp()
+    const gs = bundle.pages.find((p) => p.slug === 'getting-started')!
+    expect(gs.html).toContain('data-doc="install-app"')
+    const html = renderToStaticMarkup(<HelpContent page={gs} onOpen={() => {}} />)
+    expect(html).toContain('class="help-prose"')
+  })
+})
+
+describe('Help entry points', () => {
+  it('lists g then ? in the shortcut table', () => {
+    expect(SHORTCUTS.some((s) => s.keys === 'g then ?')).toBe(true)
+  })
+  it('renders Help links with the screen id and an accessible name', () => {
+    const html = renderToStaticMarkup(<><HelpLink screen="share-dialog" topic="Sharing" /><HelpHeading screen="settings/password">Password</HelpHeading></>)
+    expect(html).toContain('data-help-screen="share-dialog"')
+    expect(html).toContain('aria-label="Help: Sharing"')
+    expect(html).toContain('<h2 class="font-semibold">Password</h2>')
+  })
+  it('opens and closes contextual help through the store', () => {
+    openHelp('filter')
+    closeHelp()
+    closeHelp()
+  })
+})

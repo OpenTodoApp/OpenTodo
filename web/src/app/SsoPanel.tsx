@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, OIDC_START_URL } from '../lib/api'
 import { useOnline } from '../lib/online'
 import type { LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult } from '../lib/types'
@@ -83,7 +84,7 @@ export function SsoPanel() {
   if (!settings || !form) {
     return error ? (
       <section className="space-y-2" aria-labelledby="sso-heading">
-        <h2 id="sso-heading" className="font-semibold">Single sign-on</h2>
+        <HelpHeading screen="settings/sso" id="sso-heading" className="font-semibold">Single sign-on</HelpHeading>
         <p className="text-sm text-red-600">{error}</p>
       </section>
     ) : null
@@ -157,7 +158,7 @@ export function SsoPanelView(p: SsoPanelViewProps) {
   )
   return (
     <section className="space-y-3" aria-labelledby="sso-heading" data-testid="sso-panel">
-      <h2 id="sso-heading" className="font-semibold">Single sign-on</h2>
+      <HelpHeading screen="settings/sso" id="sso-heading" className="font-semibold">Single sign-on</HelpHeading>
       <p className="text-sm text-slate-500">
         Let people sign in with an OpenID Connect provider you already run (Authentik, Keycloak, Authelia, a hosted login service).
         {s.enabled ? ` On: the sign-in screen shows "Sign in with ${name}".` : ' Off until you save an issuer and client id.'}
@@ -282,7 +283,7 @@ export function LinkedAccountsView(p: LinkedAccountsViewProps) {
   const disabled = !p.online || p.busy
   return (
     <section className="space-y-2" aria-labelledby="linked-heading" data-testid="linked-accounts">
-      <h2 id="linked-heading" className="font-semibold">Linked accounts</h2>
+      <HelpHeading screen="settings/linked-accounts" id="linked-heading" className="font-semibold">Linked accounts</HelpHeading>
       <p className="text-sm text-slate-500">
         {p.provider.enabled
           ? `Sign in with ${name} instead of a password. Linking also lets you confirm sensitive changes with ${name}.`

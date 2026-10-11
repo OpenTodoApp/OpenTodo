@@ -12,7 +12,7 @@ import { buildAll, staleFiles } from './build.mjs'
 import { headingsOf, parseFrontMatter, repoRootFrom, specNames } from './lib.mjs'
 import { END, START, loadShortcuts, shortcutsMarkdown } from './shortcuts.mjs'
 
-/** Help screen ids the app links to: data-help-screen="id" or helpScreen="id" / helpScreen('id'). */
+/** Help screen ids the app links to: <HelpLink screen="id">, <HelpHeading screen="id">, data-help-screen="id" or helpScreen('id'). */
 export function appScreenIds(repoRoot) {
   const ids = new Map()
   const walk = (dir) => {
@@ -23,6 +23,7 @@ export function appScreenIds(repoRoot) {
       if (!/\.(tsx?|jsx?)$/.test(name) || /\.test\./.test(name)) continue
       const src = readFileSync(p, 'utf8')
       for (const m of src.matchAll(/(?:data-help-screen|helpScreen)\s*[=:(]\s*\{?\s*["'`]([^"'`]+)["'`]/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
+      for (const m of src.matchAll(/<Help(?:Link|Heading)\b[^>]*?\bscreen=["']([^"']+)["']/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
     }
   }
   walk(join(repoRoot, 'web/src'))

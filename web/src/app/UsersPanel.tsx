@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { hasAnyAction, isAdministrator, rowActions, type RowActions } from '../lib/roles'
@@ -184,7 +185,7 @@ export function UsersView(p: UsersViewProps) {
 
   return (
     <section className="space-y-3" aria-labelledby="users-heading">
-      <h2 id="users-heading" className="font-semibold">Users</h2>
+      <HelpHeading screen="settings/users" id="users-heading" className="font-semibold">Users</HelpHeading>
       <p className="text-sm text-slate-500">
         Everyone with an account on this server. {isOwner
           ? 'You can manage every account and choose admins; admins manage members.'

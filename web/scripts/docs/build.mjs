@@ -90,7 +90,7 @@ export async function buildAll(repoRoot) {
     pages: user.map((p) => {
       const r = rendered.get(p.rel).app
       return { slug: p.slug, title: p.fm.title, summary: p.fm.summary, section: p.fm.section ?? 'Guides', order: p.fm.order,
-        toc: r.headings.filter((h) => h.depth === 2).map((h) => ({ id: h.id, text: h.text })), html: r.html }
+        toc: r.headings.filter((h) => h.depth === 2).map((h) => ({ id: h.id, text: h.text })), html: withoutImages(r.html) }
     }),
     screens: Object.fromEntries(Object.entries(screens).sort(([a], [b]) => a.localeCompare(b))),
     index: { pages: [], s: [] },
@@ -102,6 +102,12 @@ export async function buildAll(repoRoot) {
   files.set(OUT_HELP, JSON.stringify(help) + '\n')
 
   return { files, pages, sorted, rendered, problems }
+}
+
+// The app ships the guide's text only: screenshots stay on the website, so the
+// binary and the precache grow by the text alone (about 2.4 MB of images saved).
+export function withoutImages(html) {
+  return html.replace(/<picture>[\s\S]*?<\/picture>/g, '').replace(/<img [^>]*>/g, '').replace(/<p>\s*<\/p>\n?/g, '')
 }
 
 /** Files currently under the generated website directory, repository-relative. */

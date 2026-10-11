@@ -61,6 +61,7 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: 'Enter (after completing the last task of a project)', description: 'Archive the project; any other key dismisses', section: 'trash' },
   { keys: 'g then Shift+I', description: 'Go to Settings → Import data', section: 'go' },
   { keys: 'g then d / w', description: 'Go to the Day / Week calendar', section: 'go' },
+  { keys: 'g then ?', description: 'Open Help: the user guide, offline, with search', section: 'go' },
   { keys: 'j / k (calendar)', description: 'Select the next / previous task (lane, then blocks)', section: 'calendar' },
   { keys: '↑ / ↓ (calendar)', description: 'Move the selected task 15 minutes (a lane task gets a time)', section: 'calendar' },
   { keys: '← / → (calendar)', description: 'Move the selected task one day', section: 'calendar' },

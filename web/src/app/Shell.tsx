@@ -25,10 +25,15 @@ import { NotificationBell } from './NotificationBell'
 import { setCurrentUserId } from '../lib/sharing'
 import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
 import { useVimEnabled } from './vim/prefs'
+import { closeHelp, useHelpRequest } from './help/store'
 
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
+// In-app Help (user-documentation): the view, the panel and the guide text are
+// chunks of their own, fetched when Help first opens (and precached for offline).
+const HelpView = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpView })))
+const HelpPanel = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpPanel })))
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -110,6 +115,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         if (e.key === 'h') navigate({ view: 'feed' })
         // `g i` is the Inbox, so Import is `g` then Shift+I.
         if (e.key === 'I') navigate({ view: 'import' })
+        // `g` then `?` opens the Help view (user-documentation); `?` alone stays the shortcut list.
+        if (e.key === '?') { e.preventDefault(); navigate({ view: 'help' }) }
         return
       }
       if (e.key === '?') {
@@ -124,6 +131,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [showHelp, setShowHelp] = useState(false)
   const vim = useVimEnabled()
   const [vimHelp, setVimHelp] = useState<HelpSection | null>(null)
+  const helpRequest = useHelpRequest()
 
   return (
     <div className="flex h-full">
@@ -156,7 +164,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           </div>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {route.view === 'settings' ? (
+          {route.view === 'help' ? (
+            <Suspense fallback={<p className="px-4 py-6 text-sm text-slate-500" role="status">Loading help…</p>}><HelpView page={route.page} q={route.q} /></Suspense>
+          ) : route.view === 'settings' ? (
             <SettingsView user={user} onLogout={onLogout} />
           ) : route.view === 'import' ? (
             <ImportScreen />
@@ -181,11 +191,12 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         </div>
         {vim && (
           <Suspense fallback={null}>
-            <VimLayer userId={user.id} onHelp={() => setShowHelp(true)} onHelpSection={setVimHelp} />
+            <VimLayer userId={user.id} onHelp={() => setShowHelp(true)} onHelpTopic={(q) => navigate({ view: 'help', q })} onHelpSection={setVimHelp} />
           </Suspense>
         )}
       </main>
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} extraSections={vim && vimHelp ? [vimHelp] : []} />}
+      {helpRequest && <Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense>}
       <ReminderToasts />
       <ArchivePrompt />
     </div>

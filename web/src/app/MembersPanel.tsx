@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import type { Invitation, InvitationStatus } from '../lib/types'
@@ -110,7 +111,7 @@ export function MembersPanel() {
 
   return (
     <section className="space-y-3" aria-labelledby="members-heading">
-      <h2 id="members-heading" className="font-semibold">Members</h2>
+      <HelpHeading screen="settings/members" id="members-heading" className="font-semibold">Members</HelpHeading>
       <p className="text-sm text-slate-500">
         Invite someone with a single-use link. Sign-up stays closed for everyone else. Optionally bind the link to their email so only they can use it.
       </p>
