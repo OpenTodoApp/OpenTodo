@@ -121,6 +121,10 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	for _, o := range opts {
 		o(s)
 	}
+	if s.demo != nil {
+		// Sandbox writes are bounded: field sizes and the write budget (demo-sandboxes D3).
+		syncSvc.SetWriteGuard(s.demo.Guard())
+	}
 	if s.hooks != nil {
 		// Imports reach webhooks as one summary per job (harden-server-edges).
 		s.importer.SetSummaryObserver(s.hooks.ObserveImport)
@@ -218,6 +222,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerMCPRoutes(mux)
 	// Email to task (OpenSpec `email-to-task`): literal patterns win over {collection}.
 	s.registerEmailRoutes(mux)
+	// Demo sandboxes (OpenSpec `demo-sandboxes`): registered on a demo instance only.
+	s.registerDemoRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
@@ -279,6 +285,12 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 			return
 		}
 		if u == nil {
+			if s.demo != nil && viaCookie {
+				// On a demo instance only sandboxes hold sessions; a session cookie
+				// that no longer resolves belonged to a deleted sandbox (demo-sandboxes D4).
+				writeError(w, http.StatusUnauthorized, "demo_expired", "your demo sandbox has expired")
+				return
+			}
 			writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required")
 			return
 		}
@@ -296,6 +308,12 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 		if sess != nil && sess.Restricted() && !allowedWhileRestricted(r) {
 			writeError(w, http.StatusForbidden, "mfa_enrolment_required", "set up two-factor authentication to continue: the server owner requires it for this account")
 			return
+		}
+		if s.demo != nil {
+			// Sandbox activity keeps it alive (written at most once a minute).
+			if err := s.demo.Touch(r.Context(), u.ID); err != nil {
+				s.log.Warn("demo sandbox activity not recorded", "err", err)
+			}
 		}
 		ctx := context.WithValue(r.Context(), userKey, u)
 		if sess != nil {
@@ -443,7 +461,8 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		"oidc":          s.oidcStatus(r.Context()),
 	}
 	if s.demo != nil {
-		// Demo instance (OpenSpec `demo-mode`): the public credentials and the next reset.
+		// Demo instance (OpenSpec `demo-sandboxes`): a sandbox-creation token, the
+		// sandbox lifetimes and the next reset; no credentials.
 		out["demo"] = s.demo.Info()
 	}
 	if u != nil {
@@ -827,6 +846,9 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 	res, err := s.sync.Apply(r.Context(), uid, in.Ops)
 	if errors.Is(err, opsync.ErrInvalidOp) {
 		writeError(w, http.StatusBadRequest, "invalid_op", err.Error())
+		return
+	}
+	if writeLimited(w, err) {
 		return
 	}
 	if err != nil {
@@ -1320,6 +1342,7 @@ func (s *Server) writeFieldsAt(w http.ResponseWriter, r *http.Request, entity, i
 	if err != nil {
 		var rej *opsync.RejectedError
 		switch {
+		case writeLimited(w, err):
 		case errors.Is(err, opsync.ErrInvalidOp):
 			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 		case errors.As(err, &rej) && rej.Reason == opsync.ReasonScopeChange:

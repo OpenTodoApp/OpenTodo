@@ -171,6 +171,17 @@ func TestDemoSwitchIsOptional(t *testing.T) {
 	if _, err = Load(); err == nil {
 		t.Fatal("invalid OPENTODO_DEMO accepted")
 	}
+	// Optional sandbox tuning (demo-sandboxes D3).
+	t.Setenv("OPENTODO_DEMO", "true")
+	t.Setenv("OPENTODO_DEMO_MAX_SANDBOXES", "50")
+	t.Setenv("OPENTODO_DEMO_MAX_DB_MB", "200")
+	if c, err = Load(); err != nil || c.DemoMaxSandboxes != 50 || c.DemoMaxDBMB != 200 {
+		t.Fatalf("tuning: %v %d %d", err, c.DemoMaxSandboxes, c.DemoMaxDBMB)
+	}
+	t.Setenv("OPENTODO_DEMO_MAX_SANDBOXES", "0")
+	if _, err = Load(); err == nil {
+		t.Fatal("OPENTODO_DEMO_MAX_SANDBOXES=0 accepted")
+	}
 }
 
 func TestConfigRejectsInvalidRetention(t *testing.T) {

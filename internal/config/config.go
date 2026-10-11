@@ -51,9 +51,16 @@ type Config struct {
 	// (OpenSpec `email-to-task`, see email.go); off unless fully configured.
 	Email EmailConfig
 	// Demo turns the server into a public demo instance (OPENTODO_DEMO=true;
-	// OpenSpec `demo-mode`): seeded demo accounts, a nightly reset, sign-up and
-	// every abusable feature refused with 403 demo_restricted. Off by default.
+	// OpenSpec `demo-mode`): a private, short-lived sandbox per visitor
+	// (`demo-sandboxes`), a nightly reset, sign-up and every abusable feature
+	// refused with 403 demo_restricted. Off by default.
 	Demo bool
+	// DemoMaxSandboxes caps live demo sandboxes (OPENTODO_DEMO_MAX_SANDBOXES;
+	// 0 means the default, 500) and DemoMaxDBMB stops new sandboxes above that
+	// database size (OPENTODO_DEMO_MAX_DB_MB; 0 means the default, 1024). Both
+	// optional and read only in demo mode.
+	DemoMaxSandboxes int
+	DemoMaxDBMB      int
 }
 
 // OIDCEnv mirrors oidc.Env (converted by the HTTP layer) so this package stays
@@ -176,6 +183,18 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_DEMO must be true or false, got %q", v)
 		}
 		c.Demo = b
+	}
+	for _, v := range []struct {
+		name string
+		dst  *int
+	}{{"OPENTODO_DEMO_MAX_SANDBOXES", &c.DemoMaxSandboxes}, {"OPENTODO_DEMO_MAX_DB_MB", &c.DemoMaxDBMB}} {
+		if raw := strings.TrimSpace(os.Getenv(v.name)); raw != "" {
+			n, err := strconv.Atoi(raw)
+			if err != nil || n < 1 || n > 1000000 {
+				return c, fmt.Errorf("%s must be a positive integer, got %q", v.name, raw)
+			}
+			*v.dst = n
+		}
 	}
 	switch strings.ToLower(getenv("OPENTODO_LOG_LEVEL", "info")) {
 	case "debug":

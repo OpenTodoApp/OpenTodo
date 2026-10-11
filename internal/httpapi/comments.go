@@ -184,6 +184,7 @@ func (s *Server) writeComment(w http.ResponseWriter, r *http.Request, id string,
 	if err != nil {
 		var rej *opsync.RejectedError
 		switch {
+		case writeLimited(w, err):
 		case errors.Is(err, opsync.ErrInvalidOp):
 			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 		case errors.As(err, &rej) && rej.Reason == opsync.ReasonRateLimited:

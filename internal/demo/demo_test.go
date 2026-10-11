@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
@@ -19,7 +20,13 @@ func newDemo(t *testing.T) (*Service, *sql.DB) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	return New(auth.NewService(db, time.Hour, false), opsync.NewService(db), nil), db
+	syncSvc := opsync.NewService(db)
+	s := New(auth.NewService(db, time.Hour, false), syncSvc, nil)
+	syncSvc.SetWriteGuard(s.Guard())
+	if err := s.Start(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	return s, db
 }
 
 func count(t *testing.T, db *sql.DB, q string, args ...any) int {
@@ -47,29 +54,45 @@ func titles(t *testing.T, s *Service, uid string, deleted bool) map[string]strin
 	return out
 }
 
-func TestStartProvisionsAccountsAndSeedsThroughOps(t *testing.T) {
-	ctx := context.Background()
-	s, db := newDemo(t)
-	if err := s.Start(ctx); err != nil {
-		t.Fatal(err)
-	}
-	a, err := s.EnsureAccounts(ctx)
+// sandbox creates a sandbox from a fresh token and returns the visitor and the
+// collaborator ids.
+func sandbox(t *testing.T, s *Service, addr string) (string, string) {
+	t.Helper()
+	u, err := s.CreateSandbox(context.Background(), s.Info().Token, addr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Hidden owner plus two members; the demo user is not the owner.
-	if n := count(t, db, `SELECT COUNT(*) FROM users`); n != 3 {
-		t.Fatalf("users = %d", n)
+	var collab string
+	if err := s.sync.DB().QueryRow(`SELECT collaborator_id FROM demo_sandboxes WHERE user_id = ?`, u.ID).Scan(&collab); err != nil {
+		t.Fatal(err)
 	}
-	if a.Demo.Role != "member" || a.Member.Role != "member" {
-		t.Fatalf("roles demo=%s member=%s", a.Demo.Role, a.Member.Role)
+	return u.ID, collab
+}
+
+func TestFirstStartHasOnlyTheHiddenOwner(t *testing.T) {
+	s, db := newDemo(t)
+	if n := count(t, db, `SELECT COUNT(*) FROM users`); n != 1 {
+		t.Fatalf("users = %d", n)
 	}
 	if n := count(t, db, `SELECT COUNT(*) FROM users WHERE role = 'owner' AND email = ?`, OwnerEmail); n != 1 {
 		t.Fatal("hidden owner missing")
 	}
-	if u, err := s.auth.Authenticate(ctx, Email, Password); err != nil || u.ID != a.Demo.ID {
-		t.Fatalf("demo credentials: %v", err)
+	info := s.Info()
+	if info.Token == "" || info.SandboxHours != (SandboxHours{Idle: 2, Max: 24}) || info.ResetsAt == 0 {
+		t.Fatalf("info = %+v", info)
 	}
+	// Restart: nothing created twice.
+	if err := s.Start(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if n := count(t, db, `SELECT COUNT(*) FROM users`); n != 1 {
+		t.Fatalf("users after restart = %d", n)
+	}
+}
+
+func TestSandboxSeedThroughOps(t *testing.T) {
+	s, db := newDemo(t)
+	me, collab := sandbox(t, s, "203.0.113.1")
 	// Every materialized field is backed by an op with the same value: nothing
 	// was written around the op log.
 	if n := count(t, db, `SELECT COUNT(*) FROM scope_fields f WHERE NOT EXISTS (
@@ -77,126 +100,279 @@ func TestStartProvisionsAccountsAndSeedsThroughOps(t *testing.T) {
 		AND o.entity_id = f.entity_id AND o.field = f.field AND o.value = f.value AND o.ts = f.ts)`); n != 0 {
 		t.Fatalf("%d fields without an op", n)
 	}
-	got := titles(t, s, a.Demo.ID, false)
+	got := titles(t, s, me, false)
 	for _, want := range []string{"Get three quotes for the kitchen", "Water the plants", "Launch email sequence", "Compare payment schedules"} {
 		if got[want] == "" {
 			t.Errorf("task %q missing", want)
 		}
 	}
-	all := titles(t, s, a.Demo.ID, true)
+	all := titles(t, s, me, true)
 	if all["Old shopping list"] == "" || got["Old shopping list"] != "" {
 		t.Error("trashed task should exist only with deleted items")
 	}
-	// The second account sees the shared project's tasks, not personal ones.
-	sam := titles(t, s, a.Member.ID, false)
+	// The collaborator sees the shared project's tasks, not personal ones.
+	sam := titles(t, s, collab, false)
 	if sam["Order new taps"] == "" || sam["Renew passport"] != "" {
-		t.Errorf("member view wrong: %v", sam)
+		t.Errorf("collaborator view wrong: %v", sam)
 	}
 	for entity, min := range map[string]int{"project": 5, "label": 4, "view": 4, "section": 6, "reminder": 2, "comment": 3} {
 		if n := count(t, db, `SELECT COUNT(DISTINCT entity_id) FROM scope_fields WHERE entity = ?`, entity); n < min {
 			t.Errorf("%s: %d < %d", entity, n, min)
 		}
 	}
-	if n := count(t, db, `SELECT COUNT(*) FROM project_members WHERE user_id = ?`, a.Member.ID); n != 1 {
-		t.Errorf("member memberships = %d", n)
-	}
-	if n := count(t, db, `SELECT COUNT(*) FROM scope_fields WHERE entity = 'task' AND field = 'recurrence' AND value != 'null'`); n < 3 {
-		t.Errorf("recurring tasks = %d", n)
+	if n := count(t, db, `SELECT COUNT(*) FROM project_members WHERE user_id = ?`, collab); n != 1 {
+		t.Errorf("collaborator memberships = %d", n)
 	}
 	// Dates are relative to today.
-	due := count(t, db, `SELECT COUNT(*) FROM scope_fields WHERE entity = 'task' AND field = 'due' AND value LIKE ?`,
-		`%"`+time.Now().UTC().Format("2006-01-02")+`"%`)
-	if due == 0 {
+	if n := count(t, db, `SELECT COUNT(*) FROM scope_fields WHERE entity = 'task' AND field = 'due' AND value LIKE ?`,
+		`%"`+time.Now().UTC().Format("2006-01-02")+`"%`); n == 0 {
 		t.Error("no task due today")
 	}
+	// The seed is not charged to the visitor's write budget.
+	if n := count(t, db, `SELECT ops_total FROM demo_sandboxes WHERE user_id = ?`, me); n != 0 {
+		t.Errorf("seed charged %d ops", n)
+	}
+	// Neither account has a usable password.
+	if n := count(t, db, `SELECT COUNT(*) FROM users WHERE id IN (?, ?) AND password_hash = ''`, me, collab); n != 2 {
+		t.Errorf("password-less accounts = %d", n)
+	}
 
-	// Starting again is idempotent: no new accounts, no reseed.
-	ops := count(t, db, `SELECT COUNT(*) FROM ops`)
-	if err := s.Start(ctx); err != nil {
+	// A second visitor gets an own copy with fresh ids; edits stay apart.
+	other, _ := sandbox(t, s, "203.0.113.2")
+	theirs := titles(t, s, other, false)
+	if theirs["Water the plants"] == "" || theirs["Water the plants"] == got["Water the plants"] {
+		t.Fatal("second sandbox does not have its own copy")
+	}
+	op := opsync.Op{ID: "e1", Entity: "task", EntityID: got["Water the plants"], Field: "title", Value: json.RawMessage(`"mine only"`), TS: time.Now().UnixMilli(), Device: "d1"}
+	if _, err := s.sync.ApplyStrict(context.Background(), me, []opsync.Op{op}); err != nil {
 		t.Fatal(err)
 	}
-	if n := count(t, db, `SELECT COUNT(*) FROM users`); n != 3 {
-		t.Fatalf("users after restart = %d", n)
-	}
-	if n := count(t, db, `SELECT COUNT(*) FROM ops`); n != ops {
-		t.Fatalf("ops %d -> %d after a fresh restart", ops, n)
+	if _, ok := titles(t, s, other, true)["mine only"]; ok {
+		t.Fatal("an edit leaked into another sandbox")
 	}
 }
 
-func TestResetWipesAndReseeds(t *testing.T) {
+func TestUpgradeDeletesSharedDemoAccount(t *testing.T) {
 	ctx := context.Background()
-	s, db := newDemo(t)
-	if err := s.Start(ctx); err != nil {
-		t.Fatal(err)
-	}
-	a, _ := s.EnsureAccounts(ctx)
-	before := titles(t, s, a.Demo.ID, true)
-	// A visitor adds something private and a device remembers its cursor.
-	private := opsync.Op{ID: "v1", Entity: "task", EntityID: "visitor-task", Field: "title", Value: json.RawMessage(`"my bank PIN"`), TS: time.Now().UnixMilli(), Device: "dev1"}
-	if _, err := s.sync.ApplyStrict(ctx, a.Demo.ID, []opsync.Op{private}); err != nil {
-		t.Fatal(err)
-	}
-	pull, err := s.sync.PullAll(ctx, a.Demo.ID, 0, "dev1", opsync.MaxOpsPerRequest)
-	for pull.More && err == nil {
-		pull, err = s.sync.PullAll(ctx, a.Demo.ID, pull.Cursor, "dev1", opsync.MaxOpsPerRequest)
-	}
+	db, err := store.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
-	cursor := pull.Cursor
+	defer db.Close()
+	authSvc := auth.NewService(db, time.Hour, false)
+	syncSvc := opsync.NewService(db)
+	// The first demo version: hidden owner, the public account and a second
+	// member sharing a project, with a session, a notification and a purge marker.
+	if _, err := authSvc.CreateAccount(ctx, OwnerEmail, OwnerName, randomPassword(), "owner"); err != nil {
+		t.Fatal(err)
+	}
+	demoUser, _ := authSvc.CreateAccount(ctx, "demo@example.com", "Alex Demo", "opentodo-demo", "member")
+	sam, _ := authSvc.CreateAccount(ctx, "sam@example.com", "Sam Rivera", randomPassword(), "member")
+	now := time.Now().UnixMilli()
+	write := func(uid, entity, id, field, value string) {
+		t.Helper()
+		if _, err := syncSvc.ApplyStrict(ctx, uid, []opsync.Op{{ID: id + field, Entity: entity, EntityID: id, Field: field, Value: json.RawMessage(value), TS: now, Device: "d"}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(demoUser.ID, "project", "p1", "name", `"Home"`)
+	write(demoUser.ID, "task", "t1", "title", `"visitor graffiti"`)
+	if _, err := syncSvc.AddMember(ctx, demoUser.ID, "p1", sam.ID, opsync.RoleEditor); err != nil {
+		t.Fatal(err)
+	}
+	write(sam.ID, "task", "t2", "project_id", `"p1"`)
+	if _, _, err := authSvc.CreateSession(ctx, demoUser.ID, "browser"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO notifications(id,user_id,kind,payload,created_at) VALUES('n1',?,'assigned','{}',1)`, demoUser.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO purges(seq,user_id,scope_id,entity,entity_id,purged_at) VALUES(999999,'',?,'task','gone',1)`, opsync.PersonalScope(demoUser.ID)); err != nil {
+		t.Fatal(err)
+	}
 
+	s := New(authSvc, syncSvc, nil)
+	if err := s.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if n := count(t, db, `SELECT COUNT(*) FROM users`); n != 1 {
+		t.Fatalf("users after upgrade = %d", n)
+	}
+	for table, q := range map[string]string{
+		"sessions":       `SELECT COUNT(*) FROM sessions`,
+		"ops":            `SELECT COUNT(*) FROM ops`,
+		"scope_fields":   `SELECT COUNT(*) FROM scope_fields`,
+		"project_scopes": `SELECT COUNT(*) FROM project_scopes`,
+		"members":        `SELECT COUNT(*) FROM project_members`,
+		"notifications":  `SELECT COUNT(*) FROM notifications`,
+		"purges":         `SELECT COUNT(*) FROM purges`,
+	} {
+		if n := count(t, db, q); n != 0 {
+			t.Errorf("%s left: %d", table, n)
+		}
+	}
+	// Idempotent.
+	if err := s.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSandboxExpiry(t *testing.T) {
+	ctx := context.Background()
+	s, db := newDemo(t)
+	base := time.Now()
+	clock := base
+	s.SetClock(func() time.Time { return clock })
+	idle, idleCollab := sandbox(t, s, "198.51.100.1")
+	busy, _ := sandbox(t, s, "198.51.100.2")
+	// The busy visitor keeps working; the idle one does not.
+	for _, d := range []time.Duration{40 * time.Minute, 80 * time.Minute, 121 * time.Minute} {
+		clock = base.Add(d)
+		if err := s.Touch(ctx, busy); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n, err := s.Cleanup(ctx); err != nil || n != 1 {
+		t.Fatalf("cleanup = %d, %v", n, err)
+	}
+	for _, uid := range []string{idle, idleCollab} {
+		for table, q := range map[string]string{
+			"users":    `SELECT COUNT(*) FROM users WHERE id = ?`,
+			"sessions": `SELECT COUNT(*) FROM sessions WHERE user_id = ?`,
+			"ops":      `SELECT COUNT(*) FROM ops WHERE user_id = ?`,
+			"fields":   `SELECT COUNT(*) FROM scope_fields WHERE scope_id = 'user:' || ?`,
+			"sandbox":  `SELECT COUNT(*) FROM demo_sandboxes WHERE user_id = ?`,
+			"notes":    `SELECT COUNT(*) FROM notifications WHERE user_id = ?`,
+			"members":  `SELECT COUNT(*) FROM project_members WHERE user_id = ?`,
+			"projects": `SELECT COUNT(*) FROM project_scopes WHERE owner_id = ?`,
+		} {
+			if n := count(t, db, q, uid); n != 0 {
+				t.Errorf("%s of the expired sandbox left: %d", table, n)
+			}
+		}
+	}
+	if ok, _ := s.IsSandbox(ctx, busy); !ok {
+		t.Fatal("active sandbox was deleted")
+	}
+	// No purge markers were written for the deleted data.
+	if n := count(t, db, `SELECT COUNT(*) FROM purges`); n != 0 {
+		t.Errorf("purge markers = %d", n)
+	}
+	// Touch writes at most once a minute.
+	clock = clock.Add(10 * time.Second)
+	before := count(t, db, `SELECT last_active_at FROM demo_sandboxes WHERE user_id = ?`, busy)
+	_ = s.Touch(ctx, busy)
+	if after := count(t, db, `SELECT last_active_at FROM demo_sandboxes WHERE user_id = ?`, busy); after != before {
+		t.Fatal("last_active_at written twice within a minute")
+	}
+	// A day after creation the sandbox goes, however active.
+	clock = base.Add(MaxLifetime + time.Minute)
+	_ = s.Touch(ctx, busy)
+	if n, err := s.Cleanup(ctx); err != nil || n != 1 {
+		t.Fatalf("max lifetime cleanup = %d, %v", n, err)
+	}
+	if n := count(t, db, `SELECT COUNT(*) FROM users`); n != 1 {
+		t.Fatalf("users left = %d", n)
+	}
+}
+
+func TestNightlyResetDeletesAllSandboxes(t *testing.T) {
+	ctx := context.Background()
+	s, db := newDemo(t)
+	for i, addr := range []string{"192.0.2.1", "192.0.2.2", "192.0.2.3"} {
+		me, _ := sandbox(t, s, addr)
+		if _, _, err := s.auth.CreateSession(ctx, me, "tab"); err != nil {
+			t.Fatal(err)
+		}
+		_ = i
+	}
+	var pagesBefore int
+	_ = db.QueryRow(`PRAGMA page_count`).Scan(&pagesBefore)
 	if err := s.Reset(ctx); err != nil {
 		t.Fatal(err)
 	}
-	after := titles(t, s, a.Demo.ID, true)
-	if _, ok := after["my bank PIN"]; ok {
-		t.Fatal("visitor data survived the reset")
-	}
-	if after["Get three quotes for the kitchen"] == "" || after["Get three quotes for the kitchen"] == before["Get three quotes for the kitchen"] {
-		t.Fatal("reset did not reseed with fresh ids")
-	}
-	if len(after) != len(before) {
-		t.Fatalf("task count %d -> %d", len(before), len(after))
-	}
-	if n := count(t, db, `SELECT COUNT(*) FROM project_scopes`); n != 1 {
-		t.Fatalf("shared projects after reset = %d", n)
-	}
-	// The device's next exchange from its old cursor reports the old entities
-	// as purged and brings the new ones.
-	purged := map[string]bool{}
-	gotNew := false
-	for {
-		pull, err = s.sync.PullAll(ctx, a.Demo.ID, cursor, "dev1", opsync.MaxOpsPerRequest)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, p := range pull.Purged {
-			purged[p.EntityID] = true
-		}
-		for _, op := range pull.Ops {
-			if op.EntityID == after["Get three quotes for the kitchen"] {
-				gotNew = true
-			}
-		}
-		cursor = pull.Cursor
-		if !pull.More {
-			break
+	for table, q := range map[string]string{
+		"sandboxes":    `SELECT COUNT(*) FROM demo_sandboxes`,
+		"sessions":     `SELECT COUNT(*) FROM sessions`,
+		"ops":          `SELECT COUNT(*) FROM ops`,
+		"scope_fields": `SELECT COUNT(*) FROM scope_fields`,
+		"op_scopes":    `SELECT COUNT(*) FROM op_scopes`,
+		"members":      `SELECT COUNT(*) FROM project_members`,
+	} {
+		if n := count(t, db, q); n != 0 {
+			t.Errorf("%s left: %d", table, n)
 		}
 	}
-	if !purged["visitor-task"] || !purged[before["Renew passport"]] || !purged[before["Order new taps"]] {
-		t.Fatalf("old entities not reported purged (%d markers)", len(purged))
+	if n := count(t, db, `SELECT COUNT(*) FROM users`); n != 1 {
+		t.Errorf("users left = %d", n)
 	}
-	if !gotNew {
-		t.Fatal("new seed not pulled")
+	// VACUUM gave the space back: no free pages, fewer pages.
+	var pagesAfter, free int
+	_ = db.QueryRow(`PRAGMA page_count`).Scan(&pagesAfter)
+	_ = db.QueryRow(`PRAGMA freelist_count`).Scan(&free)
+	if free != 0 || pagesAfter >= pagesBefore {
+		t.Errorf("pages %d -> %d, free %d", pagesBefore, pagesAfter, free)
 	}
-	// A stale queued op for a wiped entity is discarded, not resurrected.
-	stale := private
-	stale.ID, stale.Value = "v2", json.RawMessage(`"edited offline"`)
-	if res, err := s.sync.Apply(ctx, a.Demo.ID, []opsync.Op{stale}); err != nil || res.Applied != 0 {
-		t.Fatalf("stale op: %+v %v", res, err)
+	at, err := s.LastReset(ctx)
+	if err != nil || Stale(at, time.Now()) {
+		t.Fatalf("last reset not recorded: %v %v", at, err)
 	}
-	if n := count(t, db, `SELECT COUNT(*) FROM notifications WHERE user_id = ?`, a.Demo.ID); n > 3 {
-		t.Fatalf("notifications accumulate across resets: %d", n)
+	// New visitors can start a sandbox right away.
+	sandbox(t, s, "192.0.2.9")
+}
+
+func TestStartResetsAfterMissedNight(t *testing.T) {
+	ctx := context.Background()
+	s, db := newDemo(t)
+	sandbox(t, s, "192.0.2.1")
+	// Restart the same day: the sandbox survives.
+	if err := s.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if n := count(t, db, `SELECT COUNT(*) FROM demo_sandboxes`); n != 1 {
+		t.Fatalf("sandboxes after restart = %d", n)
+	}
+	// The server was down at 03:00 UTC: the next start deletes every sandbox.
+	if err := s.settings.Set(ctx, resetKey, time.Now().Add(-48*time.Hour).UnixMilli()); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if n := count(t, db, `SELECT COUNT(*) FROM demo_sandboxes`); n != 0 {
+		t.Fatalf("sandboxes after a missed reset = %d", n)
+	}
+}
+
+func TestCreationTokenRules(t *testing.T) {
+	ctx := context.Background()
+	s, _ := newDemo(t)
+	tok := s.Info().Token
+	if _, err := s.CreateSandbox(ctx, tok, "a"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CreateSandbox(ctx, tok, "a"); !errors.Is(err, ErrBadToken) {
+		t.Fatalf("reused token: %v", err)
+	}
+	for _, bad := range []string{"", "x.y", tok + "x", "AAAA." + tok} {
+		if _, err := s.CreateSandbox(ctx, bad, "a"); !errors.Is(err, ErrBadToken) {
+			t.Fatalf("token %q: %v", bad, err)
+		}
+	}
+	// Expired after TokenTTL.
+	old := s.Info().Token
+	s.SetClock(func() time.Time { return time.Now().Add(TokenTTL + time.Second) })
+	if _, err := s.CreateSandbox(ctx, old, "a"); !errors.Is(err, ErrBadToken) {
+		t.Fatalf("expired token: %v", err)
+	}
+	// A token from another process with the same data directory is accepted.
+	s.SetClock(time.Now)
+	other := New(s.auth, s.sync, nil)
+	if err := other.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := other.CreateSandbox(ctx, s.Info().Token, "b"); err != nil {
+		t.Fatalf("token across processes: %v", err)
 	}
 }
 
@@ -216,7 +392,7 @@ func TestResetSchedule(t *testing.T) {
 	}
 	now := at("2026-10-11T10:00:00Z")
 	for seeded, want := range map[string]bool{
-		"2026-10-11T03:30:00Z": false, // seeded after this morning's reset
+		"2026-10-11T03:30:00Z": false, // reset after this morning's reset time
 		"2026-10-11T02:59:00Z": true,  // missed this morning's reset
 		"2026-10-09T12:00:00Z": true,  // older than a day
 	} {
@@ -225,6 +401,6 @@ func TestResetSchedule(t *testing.T) {
 		}
 	}
 	if !Stale(time.Time{}, now) {
-		t.Error("never seeded must be stale")
+		t.Error("never reset must be stale")
 	}
 }

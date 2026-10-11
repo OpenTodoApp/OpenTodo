@@ -156,15 +156,18 @@ func run() error {
 	opts = append(opts, httpapi.WithEmail(emailSvc))
 	var demoSvc *demo.Service
 	if cfg.Demo {
-		// Provision the demo accounts and seed (or reseed stale) data before serving.
+		// Provision the hidden owner, drop the shared accounts of the first demo
+		// version and catch up on a missed nightly reset before serving.
 		demoSvc = demo.New(authSvc, syncSvc, log)
+		demoSvc.SetLimits(cfg.DemoMaxSandboxes, cfg.DemoMaxDBMB)
 		if err := demoSvc.Start(ctx); err != nil {
 			return fmt.Errorf("demo mode: %w", err)
 		}
 		opts = append(opts, httpapi.WithDemo(demoSvc))
-		log.Warn("demo mode is on: demo accounts are public and their data resets nightly", "reset_hour_utc", demo.ResetHour)
+		log.Warn("demo mode is on: every visitor gets a private sandbox, deleted after inactivity and every night", "reset_hour_utc", demo.ResetHour)
 	}
-	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version, opts...)
+	// A demo page also tells search engines not to index it (demo-sandboxes D5).
+	handler := httpapi.New(cfg, authSvc, syncSvc, web.HandlerWith(web.Options{NoIndex: cfg.Demo}), log, version, opts...)
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
@@ -193,6 +196,7 @@ func run() error {
 			go pushSvc.Run(ctx)
 		}
 		if demoSvc != nil {
+			// Expired-sandbox cleanup every 5 minutes and the nightly reset.
 			go demoSvc.Run(ctx)
 			// The operator (or a test) can force a reset with SIGUSR1; there is no route.
 			go resetOnSignal(ctx, demoSvc, log)
