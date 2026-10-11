@@ -103,9 +103,11 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         aria-label={done ? 'Reopen task' : 'Complete task'}
         onClick={onToggle}
         disabled={readOnly}
-        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${PRIORITY_RING[task.priority]} ${done ? 'bg-slate-400 border-slate-400 text-white' : 'hover:bg-emerald-100'}`}
+        className="group/check touch-target inline-flex items-center justify-center mt-0.5 shrink-0 self-start rounded-full pointer-coarse:-my-2.5 pointer-coarse:-ml-3 pointer-coarse:-mr-1"
       >
-        {done && <span className="text-xs leading-none">✓</span>}
+        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${PRIORITY_RING[task.priority]} ${done ? 'bg-slate-400 border-slate-400 text-white' : 'group-hover/check:bg-emerald-100'}`}>
+          {done && <span className="text-xs leading-none">✓</span>}
+        </span>
       </button>
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
         <div className={`truncate text-sm ${done ? 'text-slate-400 line-through' : ''}`}>

@@ -127,19 +127,19 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
 
   return (
     <div className="flex h-full">
-      {sidebarOpen && <div className="fixed inset-0 z-20 bg-black/30 md:hidden" onClick={() => setSidebarOpen(false)} />}
-      <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 transform border-r border-slate-200 bg-slate-50 transition-transform dark:border-slate-800 dark:bg-slate-900 md:static md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      {sidebarOpen && <div className="fixed inset-0 z-[45] bg-black/30 md:hidden" onClick={() => setSidebarOpen(false)} />}
+      <aside data-sidebar
+        className={`fixed inset-y-0 left-0 z-[45] w-64 max-w-[85vw] pl-[env(safe-area-inset-left)] transform border-r border-slate-200 bg-slate-50 transition-transform dark:border-slate-800 dark:bg-slate-900 md:static md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <Sidebar route={route} user={user} />
       </aside>
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b border-slate-200 px-3 py-2 dark:border-slate-800 md:px-6">
-          <button className="btn-ghost md:hidden" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>☰</button>
+        <header className="flex items-center gap-2 border-b border-slate-200 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] dark:border-slate-800 md:px-6">
+          <button className="btn-ghost touch-target md:hidden" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>☰</button>
           <div className="flex-1" />
           <NotificationBell />
           <SyncStatus />
-          <button className="btn-ghost text-xs" onClick={() => setShowHelp(true)} title="Keyboard shortcuts">
+          <button className="btn-ghost touch-target text-xs" onClick={() => setShowHelp(true)} title="Keyboard shortcuts" aria-label="Keyboard shortcuts" aria-haspopup="dialog">
             <span className="kbd">?</span>
           </button>
         </header>

@@ -190,7 +190,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   }
 
   return (
-    <div className="flex h-full flex-col p-3">
+    <div className="flex h-full flex-col overflow-y-auto overscroll-contain p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="mb-4 flex items-center gap-2 px-1">
         <img src="/favicon.svg" alt="" className="h-7 w-7" />
         <span className="font-semibold">OpenTodo</span>
@@ -230,7 +230,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
                 <span className="flex-1 truncate">{v.name}</span>
                 {!isDashboard(v) && c && (c.ok ? (c.count ? <span className="text-xs text-slate-400">{c.count}</span> : null) : <span className="text-xs text-red-500" title={c.error}>!</span>)}
               </button>
-              <ViewMenu view={v} className="opacity-0 focus-within:opacity-100 group-hover:opacity-100 [&[open]]:opacity-100" />
+              <ViewMenu view={v} className="hover-reveal" />
             </div>
           )
         })}
@@ -242,7 +242,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         Projects
         <button className="rounded px-1 text-base leading-none hover:bg-slate-200 dark:hover:bg-slate-800" onClick={startAdding} title="New project">+</button>
       </div>
-      <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto" aria-label="Projects">
+      <nav className="min-h-48 flex-1 space-y-0.5 overflow-y-auto" aria-label="Projects">
         <ul role="tree">
           {rows.map((n) => {
             const p = n.item

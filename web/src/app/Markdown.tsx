@@ -8,7 +8,7 @@ import { type Block, type Inline, LINK_REL, parseMarkdown } from '../lib/markdow
  */
 export function Markdown({ source, className = '' }: { source: string; className?: string }) {
   const blocks = useMemo(() => parseMarkdown(source), [source])
-  return <div className={`markdown space-y-2 break-words ${className}`}>{blocks.map(renderBlock)}</div>
+  return <div className={`markdown user-text space-y-2 ${className}`}>{blocks.map(renderBlock)}</div>
 }
 
 function renderBlock(b: Block, i: number): ReactNode {
@@ -16,7 +16,7 @@ function renderBlock(b: Block, i: number): ReactNode {
     case 'p':
       return <p key={i}>{b.c.map(renderInline)}</p>
     case 'pre':
-      return <pre key={i} className="overflow-x-auto rounded bg-slate-100 p-2 font-mono text-xs dark:bg-slate-800"><code>{b.v}</code></pre>
+      return <pre key={i} className="overflow-x-auto rounded bg-slate-100 p-2 font-mono text-xs dark:bg-slate-800" data-scroll-x><code>{b.v}</code></pre>
     case 'quote':
       return <blockquote key={i} className="space-y-2 border-l-2 border-slate-300 pl-2 text-slate-500 dark:border-slate-600">{b.c.map(renderBlock)}</blockquote>
     case 'list': {
