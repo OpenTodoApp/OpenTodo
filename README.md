@@ -10,6 +10,8 @@ An open-source, local-first task manager you can host yourself. Everything you e
 <p align="center">
   <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg"></a>
   <a href="https://github.com/pixari/opentodo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/pixari/opentodo/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/pixari/opentodo/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/pixari/opentodo?include_prereleases&sort=semver"></a>
+  <a href="https://github.com/pixari/opentodo/pkgs/container/opentodo"><img alt="Container image" src="https://img.shields.io/badge/ghcr.io-pixari%2Fopentodo-2496ED?logo=docker&logoColor=white"></a>
   <img alt="Docker image size" src="https://img.shields.io/badge/image-%3C%2025%20MB-success">
   <img alt="Spec-driven with OpenSpec" src="https://img.shields.io/badge/specs-OpenSpec-8A2BE2">
 </p>

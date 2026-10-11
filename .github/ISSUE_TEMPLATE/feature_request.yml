@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest an idea or an improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the situation, not only the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to happen?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds you considered
+  - type: markdown
+    attributes:
+      value: |
+        Larger behaviour changes start as an OpenSpec change (`openspec/changes/<name>/`); see [CONTRIBUTING.md](https://github.com/pixari/opentodo/blob/main/CONTRIBUTING.md). Ideas already on the list are in [ROADMAP.md → Future ideas](https://github.com/pixari/opentodo/blob/main/ROADMAP.md).

@@ -45,3 +45,7 @@ Imperative mood, one logical change per commit, reference the OpenSpec change na
 ## License
 
 By contributing you agree that your contributions are licensed under the AGPL-3.0-only, like the rest of the project.
+
+## Code of conduct
+
+Taking part in this project means following the [code of conduct](CODE_OF_CONDUCT.md).
