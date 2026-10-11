@@ -277,6 +277,22 @@ func TestRoundTripExportImportExport(t *testing.T) {
 		a.mustStatus(resp, 204, out)
 	}
 	_ = done
+	// import-completeness: sections, a recurring series with an occurrence
+	// record, absolute and relative reminders, saved views, the newer task fields
+	// and a comment (which is reported, not imported).
+	doing := mk("/api/v1/sections", map[string]any{"name": "Doing", "project_id": garden})
+	mk("/api/v1/sections", map[string]any{"name": "Later", "project_id": garden})
+	water := mk("/api/v1/tasks", map[string]any{"title": "Water plants", "project_id": garden, "section_id": doing, "recurrence": "Every Monday",
+		"due": map[string]any{"date": "2027-03-01", "time": "08:00", "tz": "Europe/Rome"}, "estimate_minutes": 15,
+		"notes_doc": "ydoc:v1:AQID", "description": "rain water", "ical_extra": "X-FOO:bar"})
+	resp0, out0 := a.do("PATCH", "/api/v1/tasks/"+water, map[string]any{"completed_at": time.Now().UnixMilli()})
+	a.mustStatus(resp0, 200, out0)
+	mk("/api/v1/reminders", map[string]any{"task_id": water, "kind": "absolute", "fire_at": 1893456000000})
+	mk("/api/v1/reminders", map[string]any{"task_id": water, "kind": "relative", "offset_minutes": -30})
+	today := mk("/api/v1/views", map[string]any{"name": "Today", "query": "today"})
+	mk("/api/v1/views", map[string]any{"name": "Board", "kind": "dashboard", "panels": []string{today}})
+	resp0, out0 = a.do("POST", "/api/v1/tasks/"+water+"/comments", map[string]any{"body": "Use rain water"})
+	a.mustStatus(resp0, 201, out0)
 	exportA := exportEntities(a)
 	fileA, _ := json.Marshal(exportA)
 
@@ -288,15 +304,29 @@ func TestRoundTripExportImportExport(t *testing.T) {
 		t.Fatalf("preview = %v", out)
 	}
 	totals := out["totals"].(map[string]any)
-	if totals["create"] != float64(9) || totals["error"] != float64(0) {
+	// 9 earlier entities + 2 sections, the series and its occurrence record, 2
+	// reminders and 2 views.
+	if totals["create"] != float64(17) || totals["error"] != float64(0) || totals["newSections"] != float64(2) ||
+		totals["reminders"] != float64(2) || totals["recurring"].(float64) < 1 {
 		t.Fatalf("preview totals = %v", totals)
+	}
+	if notes, _ := out["notes"].([]any); len(notes) != 1 || !strings.HasPrefix(notes[0].(string), "1 comment is not imported") {
+		t.Fatalf("preview notes = %v", out["notes"])
 	}
 	job := b.importAndWait("opentodo-export.json", fileA, nil)
 	if job["status"] != "done" || job["format"] != "opentodo" {
 		t.Fatalf("job = %v", job)
 	}
 	exportB := exportEntities(b)
-	for _, k := range []string{"projects", "tasks", "labels"} {
+	if c, _ := exportA["comments"].([]any); len(c) != 1 {
+		t.Fatalf("source comments = %v", exportA["comments"])
+	}
+	if c, _ := exportB["comments"].([]any); len(c) != 0 {
+		t.Fatalf("comments were imported: %v", exportB["comments"])
+	}
+	delete(exportA, "comments")
+	delete(exportB, "comments")
+	for _, k := range []string{"projects", "tasks", "labels", "sections", "reminders", "views"} {
 		if !reflect.DeepEqual(exportA[k], exportB[k]) {
 			ja, _ := json.MarshalIndent(exportA[k], "", " ")
 			jb, _ := json.MarshalIndent(exportB[k], "", " ")
@@ -402,7 +432,7 @@ func TestImportGenericJSONOverHTTP(t *testing.T) {
 		t.Fatalf("format = %v", out["format"])
 	}
 	rows := out["rows"].([]any)
-	if w := rows[2].(map[string]any)["warnings"]; fmt.Sprint(w) != "[recurrence dropped (not supported)]" {
+	if w := rows[2].(map[string]any)["warnings"]; w != nil {
 		t.Fatalf("warnings = %v", rows[2])
 	}
 	job := e.importAndWait("export.json", doc, map[string]any{"timeZone": "Asia/Tokyo"})
@@ -419,5 +449,9 @@ func TestImportGenericJSONOverHTTP(t *testing.T) {
 	}
 	if fmt.Sprint(byTitle["Repeats"]["due"]) != "map[date:2026-10-12 time:17:00]" {
 		t.Fatalf("due = %v", byTitle["Repeats"]["due"])
+	}
+	// The recurrence is imported as a rule (import-completeness).
+	if byTitle["Repeats"]["recurrence"] != "every day" {
+		t.Fatalf("recurrence = %v", byTitle["Repeats"]["recurrence"])
 	}
 }

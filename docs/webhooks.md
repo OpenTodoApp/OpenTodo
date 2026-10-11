@@ -100,7 +100,7 @@ An import can write tens of thousands of tasks; one delivery per task would floo
 | `data.import.id` | the import job (`GET /api/v1/import/jobs/{id}`) |
 | `status` | `done` or `failed` for `import.completed` (`message` then says why), `undone` for `import.undone` |
 | `totals` | the job's totals as the import API reports them |
-| `counts` | entities written by this run, per kind (`task`, `project`, `label`) and action: `created` and `updated` for an import, `deleted` for an undo |
+| `counts` | entities written by this run, per kind (`task`, `project`, `label`, `section`, `reminder`, `view`) and action: `created` and `updated` for an import, `deleted` for an undo |
 | `project_ids` | the projects the run created or wrote tasks into, sorted |
 
 The importing user's webhooks receive every touched project. When an import writes into a shared project, each other member's subscribed webhooks receive the same summary with `project_ids` limited to the shared projects they belong to. A webhook with a project filter receives the summary only when its project is in `project_ids`. Summaries are queued, signed, retried and logged like every other delivery.

@@ -93,14 +93,14 @@ func TestCSVMappingAndRowErrors(t *testing.T) {
 	if p.Format != "csv" {
 		t.Fatalf("format %s", p.Format)
 	}
-	wantRec := []string{"id", "Title", "Description", "Project", "Section", "Parent", "Priority", "Due Date", "Due Time", "Labels", "Completed At", "Created At"}
+	wantRec := []string{"id", "Title", "Description", "Project", "Section", "Parent", "Priority", "Due Date", "Due Time", "Labels", "Completed At", "Created At", "Recurrence", "Reminder"}
 	if !reflect.DeepEqual(p.Recognised, wantRec) {
 		t.Fatalf("recognised %v", p.Recognised)
 	}
-	if !reflect.DeepEqual(p.Ignored, []string{"Recurrence", "Color"}) {
+	if !reflect.DeepEqual(p.Ignored, []string{"Color"}) {
 		t.Fatalf("ignored %v", p.Ignored)
 	}
-	if len(p.Rows) != 6 {
+	if len(p.Rows) != 8 {
 		t.Fatalf("rows = %d", len(p.Rows))
 	}
 	r1 := rowBySource(t, p, "id:1")
@@ -111,13 +111,24 @@ func TestCSVMappingAndRowErrors(t *testing.T) {
 	if want := time.Date(2026, 10, 1, 0, 0, 0, 0, mustLoc(t, "Europe/Rome")).UnixMilli(); r1.CreatedAt != want {
 		t.Fatalf("created_at = %d, want %d", r1.CreatedAt, want)
 	}
+	wantRem := []Reminder{{Offset: -30}, {Absolute: true, At: time.Date(2026, 10, 19, 18, 0, 0, 0, mustLoc(t, "Europe/Rome")).UnixMilli()}}
+	if !reflect.DeepEqual(r1.Reminders, wantRem) || r1.Recurrence != "" || len(r1.Warnings) != 0 {
+		t.Fatalf("row 1 schedule = %+v %q %v", r1.Reminders, r1.Recurrence, r1.Warnings)
+	}
 	r2 := rowBySource(t, p, "id:2")
 	if r2.ParentSourceID != "id:1" || r2.Priority != 2 || !r2.Completed || r2.CompletedAt != time.Date(2026, 10, 5, 10, 0, 0, 0, time.UTC).UnixMilli() {
 		t.Fatalf("row 2 = %+v", r2)
 	}
 	r3 := rowBySource(t, p, "id:3")
-	if r3.Priority != 0 || r3.Due != nil || len(r3.Warnings) != 1 || !strings.Contains(r3.Warnings[0], "recurrence") {
+	if r3.Priority != 0 || r3.Due != nil || r3.Recurrence != "every week" || len(r3.Warnings) != 0 {
 		t.Fatalf("row 3 = %+v", r3)
+	}
+	// An unsupported rule is a warning, never silently dropped.
+	if r7 := rowBySource(t, p, "id:7"); r7.Recurrence != "" || !reflect.DeepEqual(r7.Warnings, []string{`recurrence "every 3 hours" not supported; imported without a rule`}) {
+		t.Fatalf("row 7 = %+v", r7)
+	}
+	if r8 := rowBySource(t, p, "id:8"); r8.Recurrence != "every 2 weeks after completion" || !reflect.DeepEqual(r8.Reminders, []Reminder{{Offset: -15}}) || r8.SectionName != "Daily" {
+		t.Fatalf("row 8 = %+v", r8)
 	}
 	for id, want := range map[string]string{"id:4": `invalid priority "7"`, "id:5": "due_time requires due_date", "id:6": "title is required"} {
 		r := rowBySource(t, p, id)
@@ -152,7 +163,7 @@ func mustLoc(t *testing.T, name string) *time.Location {
 
 func TestProfile_json_generic(t *testing.T) {
 	p := parse(t, fixture(t, "generic.json"), Options{TimeZone: "Europe/Berlin"})
-	if p.Format != "json-generic" || len(p.Rows) != 7 {
+	if p.Format != "json-generic" || len(p.Rows) != 9 {
 		t.Fatalf("format %s rows %d", p.Format, len(p.Rows))
 	}
 	garden := rowBySource(t, p, "project:p2")
@@ -161,7 +172,8 @@ func TestProfile_json_generic(t *testing.T) {
 	}
 	t1 := rowBySource(t, p, "task:t1")
 	if t1.Title != "Plan the beds" || t1.Description != "Sketch first" || t1.ProjectSourceID != "project:p2" || t1.SectionName != "Spring" ||
-		t1.Priority != 1 || *t1.Due != (Due{Date: "2026-11-02", Time: "10:30"}) || !reflect.DeepEqual(t1.Labels, []string{"outside", "weekend"}) {
+		t1.Priority != 1 || *t1.Due != (Due{Date: "2026-11-02", Time: "10:30"}) || !reflect.DeepEqual(t1.Labels, []string{"outside", "weekend"}) ||
+		!reflect.DeepEqual(t1.Reminders, []Reminder{{Offset: -30}}) {
 		t.Fatalf("t1 = %+v", t1)
 	}
 	t2 := rowBySource(t, p, "task:t2")
@@ -170,7 +182,7 @@ func TestProfile_json_generic(t *testing.T) {
 	}
 	t3 := rowBySource(t, p, "task:t3")
 	if t3.Title != "Call the plumber" || t3.ProjectName != "Home" || t3.Priority != 2 || t3.Due.Date != "2026-10-20" || !t3.Completed ||
-		!reflect.DeepEqual(t3.Warnings, []string{"recurrence dropped (not supported)", "attachment dropped (not supported)"}) {
+		t3.Recurrence != "every week" || !reflect.DeepEqual(t3.Warnings, []string{"attachment dropped (not supported)"}) {
 		t.Fatalf("t3 = %+v", t3)
 	}
 	t4 := rowBySource(t, p, "task:t4")
@@ -180,6 +192,16 @@ func TestProfile_json_generic(t *testing.T) {
 	if t5 := rowBySource(t, p, "task:t5"); !strings.Contains(t5.Err, "invalid priority") {
 		t.Fatalf("t5 = %+v", t5)
 	}
+	t6 := rowBySource(t, p, "task:t6")
+	if t6.Recurrence != "every monday, thursday" || t6.SectionName != "Routines" ||
+		!reflect.DeepEqual(t6.Reminders, []Reminder{{Absolute: true, At: time.Date(2026, 10, 19, 6, 0, 0, 0, time.UTC).UnixMilli()}}) {
+		t.Fatalf("t6 = %+v", t6)
+	}
+	t7 := rowBySource(t, p, "task:t7")
+	if t7.Recurrence != "" || len(t7.Reminders) != 0 || !reflect.DeepEqual(t7.Warnings, []string{
+		`recurrence "FREQ=HOURLY;INTERVAL=2" not supported; imported without a rule`, "location reminder dropped (not supported)"}) {
+		t.Fatalf("t7 = %+v", t7)
+	}
 }
 
 func TestProfile_json_items(t *testing.T) {
@@ -187,8 +209,9 @@ func TestProfile_json_items(t *testing.T) {
 	if p.Format != "json-items" {
 		t.Fatalf("format %s", p.Format)
 	}
-	// The source inbox and deleted items are not rows.
-	if len(p.Rows) != 5 {
+	// The source inbox, deleted items and deleted sections are not rows; listed
+	// sections are (sections: section is the default).
+	if len(p.Rows) != 9 {
 		t.Fatalf("rows = %d: %+v", len(p.Rows), p.Rows)
 	}
 	client := rowBySource(t, p, "project:201")
@@ -199,18 +222,36 @@ func TestProfile_json_items(t *testing.T) {
 	if deck.Title != "Kickoff deck" || deck.Description != "Ten slides" || deck.ProjectSourceID != "project:201" || deck.SectionName != "Backlog" ||
 		deck.Priority != 1 || *deck.Due != (Due{Date: "2026-10-15"}) || !reflect.DeepEqual(deck.Labels, []string{"call"}) || deck.Completed ||
 		deck.CreatedAt != time.Date(2026, 9, 30, 12, 0, 0, 0, time.UTC).UnixMilli() ||
-		!reflect.DeepEqual(deck.Warnings, []string{"comments dropped (not supported)"}) {
+		!reflect.DeepEqual(deck.Warnings, []string{"comments dropped (not supported)"}) ||
+		!reflect.DeepEqual(deck.Reminders, []Reminder{{Offset: -30}, {Absolute: true, At: time.Date(2026, 10, 14, 15, 0, 0, 0, time.UTC).UnixMilli()}}) {
 		t.Fatalf("deck = %+v", deck)
 	}
 	agenda := rowBySource(t, p, "item:2")
 	if agenda.ParentSourceID != "item:1" || agenda.Priority != 4 || *agenda.Due != (Due{Date: "2026-10-14", Time: "16:00"}) || !agenda.Completed ||
 		agenda.CompletedAt != time.Date(2026, 10, 5, 9, 0, 0, 0, time.UTC).UnixMilli() ||
-		!reflect.DeepEqual(agenda.Warnings, []string{"recurrence dropped (not supported)"}) {
+		agenda.Recurrence != "every tuesday" || len(agenda.Warnings) != 0 {
 		t.Fatalf("agenda = %+v", agenda)
 	}
 	water := rowBySource(t, p, "item:3")
-	if water.ProjectSourceID != "" || water.Priority != 3 {
+	if water.ProjectSourceID != "" || water.Priority != 3 || len(water.Reminders) != 0 ||
+		!reflect.DeepEqual(water.Warnings, []string{"location reminder dropped (not supported)"}) {
 		t.Fatalf("inbox item = %+v", water)
+	}
+	if rent := rowBySource(t, p, "item:5"); rent.Recurrence != "every month after completion" || len(rent.Reminders) != 0 {
+		t.Fatalf("rent = %+v", rent)
+	}
+	if sync := rowBySource(t, p, "item:6"); sync.Recurrence != "" ||
+		!reflect.DeepEqual(sync.Warnings, []string{`recurrence "every mon starting next week" not supported; imported without a rule`}) {
+		t.Fatalf("sync = %+v", sync)
+	}
+	for id, name := range map[string]string{"section:s1": "Backlog", "section:s2": "Waiting"} {
+		if s := rowBySource(t, p, id); s.Kind != KindSection || s.Title != name || s.ProjectSourceID != "project:201" {
+			t.Fatalf("section = %+v", s)
+		}
+	}
+	// With sections as labels the listed sections are not rows.
+	if p := parse(t, fixture(t, "items.json"), Options{Sections: "label"}); len(p.Rows) != 7 {
+		t.Fatalf("rows with sections=label: %d", len(p.Rows))
 	}
 }
 
@@ -224,13 +265,17 @@ func TestProfile_json_lists(t *testing.T) {
 	}
 	a := rowBySource(t, p, "task:a")
 	// A zoned midnight in UTC is the evening before in New York.
-	if a.ProjectSourceID != "list:L1" || a.Priority != 1 || *a.Due != (Due{Date: "2026-10-11", Time: "20:00"}) || a.Description != "Post office closes at 6" {
+	if a.ProjectSourceID != "list:L1" || a.Priority != 1 || *a.Due != (Due{Date: "2026-10-11", Time: "20:00"}) || a.Description != "Post office closes at 6" ||
+		!reflect.DeepEqual(a.Reminders, []Reminder{{Absolute: true, At: time.Date(2026, 10, 11, 22, 30, 0, 0, time.UTC).UnixMilli()}}) {
 		t.Fatalf("a = %+v", a)
 	}
 	b := rowBySource(t, p, "task:b")
 	if b.ParentSourceID != "task:a" || !b.Completed || b.CompletedAt != time.Date(2026, 10, 9, 18, 20, 0, 0, time.UTC).UnixMilli() ||
 		!reflect.DeepEqual(b.Warnings, []string{"links dropped (not supported)"}) {
 		t.Fatalf("b = %+v", b)
+	}
+	if c := rowBySource(t, p, "task:c"); c.Recurrence != "every 2 months" {
+		t.Fatalf("c = %+v", c)
 	}
 	if d := rowBySource(t, p, "task:d"); d.ParentSourceID != "task:c" || d.ProjectSourceID != "list:L2" {
 		t.Fatalf("d = %+v", d)

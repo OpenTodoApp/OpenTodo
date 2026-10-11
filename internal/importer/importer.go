@@ -37,6 +37,10 @@ const (
 	KindProject = "project"
 	KindTask    = "task"
 	KindLabel   = "label"
+	// Own-export entities (and json-items sections), OpenSpec change import-completeness.
+	KindSection  = "section"
+	KindReminder = "reminder"
+	KindView     = "view"
 )
 
 // Due is a floating due date with an optional wall-clock time.
@@ -65,7 +69,11 @@ type Row struct {
 	Completed       bool
 	CompletedAt     int64 // 0 with Completed set means "now"
 	CreatedAt       int64
-	Warnings        []string
+	// Recurrence is a canonical rule (internal/recurrence) or "".
+	Recurrence string
+	// Reminders of the task, created with it.
+	Reminders []Reminder
+	Warnings  []string
 	// Err marks a row that cannot be imported; the reason is shown per row.
 	Err string
 
@@ -91,6 +99,9 @@ type Parsed struct {
 	Recognised []string // CSV columns that are mapped
 	Ignored    []string // CSV columns that are not
 	Rows       []Row
+	// Notes are file-level remarks shown in the preview (for example records
+	// of a kind that is not imported).
+	Notes []string
 }
 
 // Profile reads one file format.
@@ -182,7 +193,8 @@ type Options struct {
 	TargetProject string `json:"targetProject,omitempty"`
 	// TimeZone converts zoned date-times into floating ones (IANA name, default UTC).
 	TimeZone string `json:"timeZone,omitempty"`
-	// Sections is "label" (default: a section becomes a label) or "ignore".
+	// Sections is "section" (default: a section of the task's project), "label"
+	// (a section becomes a label) or "ignore".
 	Sections string `json:"sections,omitempty"`
 	// Duplicates is "skip" (default) or "import" for possible duplicates.
 	Duplicates string `json:"duplicates,omitempty"`
@@ -215,7 +227,7 @@ func (o *Options) Normalize() error {
 		return &OptionError{fmt.Sprintf("timeZone: unknown time zone %q", o.TimeZone)}
 	}
 	o.loc = loc
-	if err := oneOf(&o.Sections, "sections", "label", "ignore"); err != nil {
+	if err := oneOf(&o.Sections, "sections", "section", "label", "ignore"); err != nil {
 		return err
 	}
 	if err := oneOf(&o.Duplicates, "duplicates", "skip", "import"); err != nil {

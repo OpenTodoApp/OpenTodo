@@ -9,7 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pixari/opentodo/internal/recurrence"
 	opsync "github.com/pixari/opentodo/internal/sync"
+	"github.com/pixari/opentodo/internal/zoned"
 )
 
 // Row outcomes in a preview or job.
@@ -27,11 +29,19 @@ const (
 	ReasonExists            = "exists"
 	ReasonUnchanged         = "unchanged"
 	ReasonDeleted           = "deleted"
+	// ReasonNoProject: a section listed by the file whose project is the Inbox
+	// (sections always belong to a project).
+	ReasonNoProject = "no_project"
 )
 
 // State is the part of the user's current data the planner needs.
 type State struct {
 	Projects, Labels, Tasks []opsync.Entity // including tombstoned ones
+	// Sections, Reminders and Views (including tombstoned ones) let own-export
+	// rows detect existing ids and foreign rows reuse sections by name.
+	Sections, Reminders, Views []opsync.Entity
+	// UserID is the importing account (own-export assignees are kept only for it).
+	UserID string
 	// Remembered maps source ids recorded by earlier, not undone imports of the
 	// same profile to the entity ids they created.
 	Remembered map[string]string
@@ -75,9 +85,14 @@ type Totals struct {
 	Warnings           int `json:"warnings"`
 	NewProjects        int `json:"newProjects"`
 	NewLabels          int `json:"newLabels"`
-	Entities           int `json:"entities"`
-	Written            int `json:"written"`
-	Ops                int `json:"ops"`
+	// NewSections, Recurring (created or updated tasks with a rule) and
+	// Reminders (created live reminders) are additive (import-completeness).
+	NewSections int `json:"newSections"`
+	Recurring   int `json:"recurring"`
+	Reminders   int `json:"reminders"`
+	Entities    int `json:"entities"`
+	Written     int `json:"written"`
+	Ops         int `json:"ops"`
 	// Refused counts ops the sync engine refused for authorization reasons (for
 	// example a shared project whose role changed during the import); additive.
 	Refused int `json:"refused,omitempty"`
@@ -98,6 +113,8 @@ type Plan struct {
 	Totals    Totals      `json:"totals"`
 	Rows      []RowResult `json:"rows"`
 	Truncated bool        `json:"truncated"`
+	// Notes are file-level remarks, such as records that are not imported.
+	Notes []string `json:"notes"`
 
 	changes []change
 	errors  []RowError
@@ -118,6 +135,16 @@ type change struct {
 	fields   []field
 	created  bool
 	sourceID string
+}
+
+// value returns the value written to field name, or nil.
+func (c change) value(name string) json.RawMessage {
+	for _, f := range c.fields {
+		if f.name == name {
+			return f.value
+		}
+	}
+	return nil
 }
 
 var palette = []string{"#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899"}
@@ -170,23 +197,36 @@ type planner struct {
 	labelOrder   []*implicit
 	projOrder    []*implicit
 	position     int64
+
+	sectionByKey map[string]string    // project id NUL lower name → existing live section id
+	implicitSec  map[string]*implicit // sections to create, by the same key
+	secOrder     []*implicit
 }
 
 type implicit struct {
 	id, name string
 	used     bool
+	// project and sourceID are set for sections.
+	project, sourceID string
+}
+
+func sectionKey(projectID, name string) string {
+	return projectID + "\x00" + strings.ToLower(strings.TrimSpace(name))
 }
 
 // BuildPlan resolves rows against the current state. It never writes anything.
 func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID func() string) *Plan {
 	pl := &planner{opts: opts, st: st, now: now.UnixMilli(), newID: newID, position: now.UnixMilli(),
-		byKind:        map[string]map[string]opsync.Entity{KindProject: {}, KindLabel: {}, KindTask: {}},
+		byKind: map[string]map[string]opsync.Entity{KindProject: {}, KindLabel: {}, KindTask: {},
+			KindSection: {}, KindReminder: {}, KindView: {}},
 		projectByName: map[string]string{}, labelByName: map[string]string{}, fingerprints: map[string]string{},
-		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{}}
+		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
+		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}}
 	if st.Remembered == nil {
 		st.Remembered = map[string]string{}
 	}
-	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks} {
+	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks,
+		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views} {
 		for _, e := range list {
 			id := str(e, "id")
 			pl.byKind[kind][id] = e
@@ -196,6 +236,13 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		if n := strings.ToLower(strings.TrimSpace(str(e, "name"))); n != "" && !e.Deleted() {
 			if _, ok := pl.projectByName[n]; !ok {
 				pl.projectByName[n] = str(e, "id")
+			}
+		}
+	}
+	for _, e := range st.Sections {
+		if n := strings.TrimSpace(str(e, "name")); n != "" && !e.Deleted() {
+			if _, ok := pl.sectionByKey[sectionKey(str(e, "project_id"), n)]; !ok {
+				pl.sectionByKey[sectionKey(str(e, "project_id"), n)] = str(e, "id")
 			}
 		}
 	}
@@ -222,7 +269,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 	}
 
-	p := &Plan{Format: parsed.Format, Version: parsed.Version, Options: opts}
+	p := &Plan{Format: parsed.Format, Version: parsed.Version, Options: opts, Notes: nonNil(parsed.Notes)}
 	if parsed.Format == "csv" {
 		p.Columns = &Columns{Recognised: nonNil(parsed.Recognised), Ignored: nonNil(parsed.Ignored)}
 	}
@@ -262,6 +309,15 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 		if c.created && c.entity == KindLabel {
 			p.Totals.NewLabels++
+		}
+		live := isNull(c.value("deleted_at"))
+		switch {
+		case c.created && c.entity == KindSection && live:
+			p.Totals.NewSections++
+		case c.entity == KindTask && live && !isNull(c.value("recurrence")):
+			p.Totals.Recurring++
+		case c.created && c.entity == KindReminder && live:
+			p.Totals.Reminders++
 		}
 	}
 	p.Totals.Entities = len(p.changes)
@@ -322,6 +378,12 @@ func previewRows(all []RowResult) ([]RowResult, bool) {
 
 func (pl *planner) planOwn(rows []Row) []change {
 	var out []change
+	fileTasks := map[string]bool{}
+	for _, row := range rows {
+		if row.Kind == KindTask && row.SourceID != "" {
+			fileTasks[row.SourceID] = true
+		}
+	}
 	for i, row := range rows {
 		res := &pl.results[i]
 		if row.Err != "" {
@@ -339,11 +401,26 @@ func (pl *planner) planOwn(rows []Row) []change {
 			if k == "id" {
 				continue
 			}
+			if row.Kind == KindProject && (k == "role" || k == "owner_id") {
+				continue // read-only sharing annotations of the export, not data
+			}
 			if _, ok := schema[k]; !ok {
 				res.Warnings = append(res.Warnings, fmt.Sprintf("unknown field %q dropped", k))
 				continue
 			}
 			fields = append(fields, field{k, row.Entity[k]})
+		}
+		switch row.Kind {
+		case KindTask:
+			fields = pl.ownTask(fields, res)
+		case KindReminder:
+			var task string
+			_ = json.Unmarshal(row.Entity["task_id"], &task)
+			if task != "" && !fileTasks[task] && pl.byKind[KindTask][task] == nil {
+				res.Outcome, res.Reason = OutcomeError, fmt.Sprintf("task %s is neither in the file nor in your account", task)
+				continue
+			}
+			fields = pl.ownReminder(fields, res)
 		}
 		if err := validateFields(row.Kind, row.SourceID, fields); err != nil {
 			res.Outcome, res.Reason = OutcomeError, err.Error()
@@ -375,6 +452,64 @@ func (pl *planner) planOwn(rows []Row) []change {
 		}
 	}
 	return out
+}
+
+// ownTask stores the rule in canonical form and keeps an assignee only when it
+// is the importing account (anyone else is not a member here, design D2).
+func (pl *planner) ownTask(fields []field, res *RowResult) []field {
+	out := fields[:0]
+	for _, f := range fields {
+		switch f.name {
+		case "recurrence":
+			var rule string
+			if json.Unmarshal(f.value, &rule) == nil && rule != "" {
+				if c, err := recurrence.Canonicalize(rule); err == nil {
+					f.value = raw(c)
+				}
+			}
+		case "assignee_id":
+			var who string
+			if json.Unmarshal(f.value, &who) == nil && who != "" && who != pl.st.UserID {
+				res.Warnings = append(res.Warnings, "assignee dropped (only your own account can be assigned by an import)")
+				continue
+			}
+		}
+		out = append(out, f)
+	}
+	return out
+}
+
+// ownReminder keeps delivery and dismissal state; a live reminder whose firing
+// time has passed without a delivery or dismissal for that firing is imported
+// dismissed, so the server does not push a burst of stale notifications.
+func (pl *planner) ownReminder(fields []field, res *RowResult) []field {
+	num := func(name string) float64 {
+		var n float64
+		for _, f := range fields {
+			if f.name == name {
+				_ = json.Unmarshal(f.value, &n)
+			}
+		}
+		return n
+	}
+	fire := num("fire_at")
+	if num("deleted_at") != 0 || fire <= 0 || fire >= float64(pl.now) || num("delivered_at") >= fire || num("dismissed_at") >= fire {
+		return fields
+	}
+	res.Warnings = append(res.Warnings, warnPastReminder)
+	return setField(fields, "dismissed_at", raw(pl.now))
+}
+
+const warnPastReminder = "reminder time already passed; imported as dismissed"
+
+func setField(fields []field, name string, v json.RawMessage) []field {
+	for i := range fields {
+		if fields[i].name == name {
+			fields[i].value = v
+			return fields
+		}
+	}
+	return append(fields, field{name, v})
 }
 
 func jsonEqual(a, b json.RawMessage) bool {
@@ -496,6 +631,47 @@ func (pl *planner) planForeign(rows []Row) []change {
 		projChangeByID[id].fields = append(projChangeByID[id].fields, field{"parent_id", raw(parent)})
 	}
 
+	// Sections listed by the file (json-items with sections: section).
+	for i, row := range rows {
+		if row.Kind != KindSection {
+			continue
+		}
+		res := &pl.results[i]
+		if row.Err != "" {
+			res.Outcome, res.Reason = OutcomeError, row.Err
+			continue
+		}
+		projectID, projectName, _ := pl.resolveProject(row, projBySource, projByFileName, res)
+		res.Project = projectName
+		if projectID == "" {
+			res.Outcome, res.Reason = OutcomeSkip, ReasonNoProject
+			continue
+		}
+		key := sectionKey(projectID, row.Title)
+		if id, ok := pl.st.Remembered[row.SourceID]; ok && pl.alive(KindSection, id) {
+			res.Outcome, res.Reason = OutcomeSkip, ReasonAlreadyImported
+			if _, ok := pl.sectionByKey[key]; !ok {
+				pl.sectionByKey[key] = id
+			}
+			continue
+		}
+		if _, ok := pl.sectionByKey[key]; ok {
+			res.Outcome, res.Reason = OutcomeSkip, ReasonExists
+			continue
+		}
+		if _, ok := pl.implicitSec[key]; ok {
+			res.Outcome, res.Reason = OutcomeSkip, ReasonExists
+			continue
+		}
+		if err := validateFields(KindSection, "validate", []field{{"name", raw(strings.TrimSpace(row.Title))}}); err != nil {
+			res.Outcome, res.Reason = OutcomeError, err.Error()
+			continue
+		}
+		pl.sectionID(projectID, row.Title, row.SourceID)
+		pl.markProjectUsed(projectID)
+		res.Outcome = OutcomeCreate
+	}
+
 	// Tasks.
 	taskIdx := map[string]int{}
 	for i, row := range rows {
@@ -507,6 +683,7 @@ func (pl *planner) planForeign(rows []Row) []change {
 	}
 	plans := make([]taskPlan, len(rows))
 	taskChanges := make([]*change, len(rows))
+	reminderChanges := make([][]change, len(rows))
 	var resolve func(i int)
 	resolve = func(i int) {
 		tp := &plans[i]
@@ -571,10 +748,29 @@ func (pl *planner) planForeign(rows []Row) []change {
 			res.Warnings = append(res.Warnings, "possible duplicate of an existing task")
 		}
 		labelNames := append([]string{}, row.Labels...)
-		if row.SectionName != "" && pl.opts.Sections == "label" {
-			labelNames = append(labelNames, row.SectionName)
+		sectionName := ""
+		if row.SectionName != "" {
+			switch {
+			case pl.opts.Sections == "label":
+				labelNames = append(labelNames, row.SectionName)
+			case pl.opts.Sections == "section" && projectID == "":
+				labelNames = append(labelNames, row.SectionName)
+				res.Warnings = append(res.Warnings, "the Inbox has no sections; section imported as a label")
+			case pl.opts.Sections == "section":
+				sectionName = row.SectionName
+			}
 		}
 		labelNames = dedupeNames(labelNames)
+		due := row.Due
+		if row.Recurrence != "" && due == nil {
+			// Like the app: a rule on a task without a due date gives it the
+			// rule's first date from today (docs/recurrence.md).
+			if r, err := recurrence.Parse(row.Recurrence); err == nil {
+				if first, err := r.First(time.UnixMilli(pl.now).In(pl.opts.Location()).Format("2006-01-02")); err == nil {
+					due = &Due{Date: first}
+				}
+			}
+		}
 		id := pl.newID()
 		priority := row.Priority
 		if priority == 0 {
@@ -597,8 +793,11 @@ func (pl *planner) planForeign(rows []Row) []change {
 		if parentID != "" {
 			fields = append(fields, field{"parent_id", raw(parentID)})
 		}
-		if row.Due != nil {
-			fields = append(fields, field{"due", raw(row.Due)})
+		if due != nil {
+			fields = append(fields, field{"due", raw(due)})
+		}
+		if row.Recurrence != "" {
+			fields = append(fields, field{"recurrence", raw(row.Recurrence)})
 		}
 		if row.Completed {
 			at := row.CompletedAt
@@ -618,17 +817,21 @@ func (pl *planner) planForeign(rows []Row) []change {
 			labelIDs = append(labelIDs, pl.labelID(n))
 		}
 		fields = append(fields, field{"labels", raw(labelIDs)})
+		if sectionName != "" {
+			fields = append(fields, field{"section_id", raw(pl.sectionID(projectID, sectionName, ""))})
+		}
 		if projectID != "" {
 			pl.markProjectUsed(projectID)
 		}
 		res.Outcome = OutcomeCreate
 		tp.entityID = id
 		taskChanges[i] = &change{entity: KindTask, id: id, fields: fields, created: true, sourceID: row.SourceID}
+		reminderChanges[i] = pl.reminders(id, due, row.Reminders, res)
 	}
 	for i, row := range rows {
 		if row.Kind == KindTask {
 			resolve(i)
-		} else if row.Kind != KindProject {
+		} else if row.Kind != KindProject && row.Kind != KindSection {
 			pl.results[i].Outcome, pl.results[i].Reason = OutcomeError, "unsupported row kind"
 		}
 	}
@@ -660,10 +863,96 @@ func (pl *planner) planForeign(rows []Row) []change {
 			{"created_at", raw(pl.now)},
 		}})
 	}
+	for _, sec := range pl.secOrder {
+		if !sec.used {
+			continue
+		}
+		out = append(out, change{entity: KindSection, id: sec.id, created: true, sourceID: sec.sourceID, fields: []field{
+			{"name", raw(sec.name)},
+			{"project_id", raw(sec.project)},
+			{"position", raw(pl.nextPosition())},
+			{"created_at", raw(pl.now)},
+		}})
+	}
 	for _, c := range taskChanges {
 		if c != nil {
 			out = append(out, *c)
 		}
+	}
+	for _, list := range reminderChanges {
+		out = append(out, list...)
+	}
+	return out
+}
+
+// sectionID returns the id of the live section named name in the project,
+// allotting a new one (created once) when there is none.
+func (pl *planner) sectionID(projectID, name, sourceID string) string {
+	key := sectionKey(projectID, name)
+	if id, ok := pl.sectionByKey[key]; ok {
+		return id
+	}
+	sec, ok := pl.implicitSec[key]
+	if !ok {
+		sec = &implicit{id: pl.newID(), name: strings.TrimSpace(name), project: projectID, sourceID: sourceID}
+		pl.implicitSec[key] = sec
+		pl.secOrder = append(pl.secOrder, sec)
+	}
+	sec.used = true
+	return sec.id
+}
+
+// dueInstant is the instant a floating due denotes in the chosen time zone,
+// 09:00 for a date-only due (as REST due changes resolve relative reminders).
+func (pl *planner) dueInstant(d *Due) (int64, bool) {
+	clock := d.Time
+	if clock == "" {
+		clock = "09:00"
+	}
+	t, err := zoned.Instant(d.Date, clock, pl.opts.Location())
+	if err != nil {
+		return 0, false
+	}
+	return t.UnixMilli(), true
+}
+
+// reminders builds the reminder entities of a created task (design D4).
+func (pl *planner) reminders(taskID string, due *Due, list []Reminder, res *RowResult) []change {
+	var out []change
+	for _, r := range list {
+		id := pl.newID()
+		var fire int64
+		fields := []field{{"task_id", raw(taskID)}}
+		if r.Absolute {
+			fire = r.At
+			fields = append(fields, field{"kind", raw("absolute")}, field{"offset_minutes", json.RawMessage("null")})
+		} else {
+			fields = append(fields, field{"kind", raw("relative")}, field{"offset_minutes", raw(r.Offset)})
+			if due != nil {
+				if at, ok := pl.dueInstant(due); ok {
+					fire = at + int64(r.Offset)*60_000
+				}
+			} else {
+				res.Warnings = append(res.Warnings, "relative reminder on a task without a due date will not fire")
+			}
+		}
+		if fire > 0 {
+			fields = append(fields, field{"fire_at", raw(fire)})
+		} else {
+			fields = append(fields, field{"fire_at", json.RawMessage("null")})
+		}
+		fields = append(fields, field{"created_at", raw(pl.now)}, field{"delivered_at", json.RawMessage("null")})
+		if fire > 0 && fire < pl.now {
+			fields = append(fields, field{"dismissed_at", raw(pl.now)})
+			res.Warnings = append(res.Warnings, warnPastReminder)
+		} else {
+			fields = append(fields, field{"dismissed_at", json.RawMessage("null")})
+		}
+		if err := validateFields(KindReminder, id, fields); err != nil {
+			res.Warnings = append(res.Warnings, "reminder dropped: "+err.Error())
+			continue
+		}
+		out = append(out, change{entity: KindReminder, id: id, fields: fields, created: true})
 	}
 	return out
 }

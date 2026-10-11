@@ -20,7 +20,7 @@ type csvProfile struct{}
 
 func (csvProfile) Name() string { return "csv" }
 func (csvProfile) Description() string {
-	return "CSV with a header row (title, project, section, parent, priority, due_date, due_time, labels, …)"
+	return "CSV with a header row (title, project, section, parent, priority, due_date, due_time, labels, recurrence, reminder, …)"
 }
 
 // csvColumns maps accepted header names (lower case, spaces as underscores) to the
@@ -39,13 +39,13 @@ var csvColumns = map[string]string{
 	"completed_at": "completed_at",
 	"completed":    "completed", "done": "completed",
 	"created_at": "created_at", "created": "created_at",
+	"recurrence": "recurrence", "recurring": "recurrence", "repeat": "recurrence", "rrule": "recurrence", "repeats": "recurrence",
+	"reminder": "reminder", "reminders": "reminder",
 }
 
 // csvUnsupported are columns the model cannot hold; a non-empty value is dropped
 // with a per-row warning naming the column.
 var csvUnsupported = map[string]string{
-	"recurrence": "recurrence", "recurring": "recurrence", "repeat": "recurrence", "rrule": "recurrence",
-	"reminder": "reminder", "reminders": "reminder",
 	"attachment": "attachment", "attachments": "attachment",
 	"comment": "comment", "comments": "comment",
 	"assignee": "assignee", "assigned_to": "assignee", "collaborator": "assignee",
@@ -193,6 +193,18 @@ func (csvProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		}
 		if v := get("completed"); v != "" && truthy(v) {
 			row.Completed = true
+		}
+		if v := get("recurrence"); v != "" {
+			setRecurrence(&row, v)
+		}
+		if v := get("reminder"); v != "" {
+			var list []any
+			for _, part := range strings.FieldsFunc(v, func(r rune) bool { return r == ';' || r == ',' || r == '|' }) {
+				if part = strings.TrimSpace(part); part != "" {
+					list = append(list, part)
+				}
+			}
+			addReminders(&row, list, loc)
 		}
 		if v := get("created_at"); v != "" {
 			if ts, err := parseTimestamp(v, loc); err != nil {

@@ -241,8 +241,37 @@ func TestCommitWritesOnlyOps(t *testing.T) {
 	}
 	var lbl []string
 	_ = json.Unmarshal(beds["labels"], &lbl)
-	if len(lbl) != 3 || labels["Spring"] == nil || labels["outside"] == nil {
+	if len(lbl) != 2 || labels["Spring"] != nil || labels["outside"] == nil {
 		t.Fatalf("labels = %v / %v", lbl, labels)
+	}
+	// Sections are real sections of the task's project (sections: section).
+	sections := byTitle(h.list("section", false))
+	if len(sections) != 2 || str(sections["Spring"], "project_id") != str(projects["Garden"], "id") || str(beds, "section_id") != str(sections["Spring"], "id") ||
+		str(tasks["Gym"], "section_id") != str(sections["Routines"], "id") || str(sections["Routines"], "project_id") != str(projects["Home"], "id") {
+		t.Fatalf("sections = %v, beds = %v", sections, beds)
+	}
+	if str(tasks["Gym"], "recurrence") != "every monday, thursday" || str(tasks["Call the plumber"], "recurrence") != "every week" || str(tasks["Check sensor"], "recurrence") != "" {
+		t.Fatalf("recurrence not imported: %v", tasks)
+	}
+	reminders := h.list("reminder", false)
+	if len(reminders) != 2 || job.Totals.Reminders != 2 || job.Totals.Recurring != 2 || job.Totals.NewSections != 2 {
+		t.Fatalf("reminders = %v, totals = %+v", reminders, job.Totals)
+	}
+	for _, r := range reminders {
+		switch str(r, "task_id") {
+		case str(beds, "id"):
+			// 30 minutes before 10:30 Berlin on 2026-11-02.
+			if str(r, "kind") != "relative" || string(r["offset_minutes"]) != "-30" ||
+				string(r["fire_at"]) != fmt.Sprint(time.Date(2026, 11, 2, 10, 0, 0, 0, mustLoc(t, "Europe/Berlin")).UnixMilli()) {
+				t.Fatalf("relative reminder = %v", r)
+			}
+		case str(tasks["Gym"], "id"):
+			if str(r, "kind") != "absolute" || string(r["fire_at"]) != fmt.Sprint(time.Date(2026, 10, 19, 6, 0, 0, 0, time.UTC).UnixMilli()) {
+				t.Fatalf("absolute reminder = %v", r)
+			}
+		default:
+			t.Fatalf("reminder on an unexpected task: %v", r)
+		}
 	}
 	if string(beds["due"]) != `{"date":"2026-11-02","time":"10:30"}` || string(beds["priority"]) != "1" {
 		t.Fatalf("beds = %v", beds)
@@ -294,7 +323,7 @@ func TestAbortLeavesAccountUnchanged(t *testing.T) {
 	if job.Status != StatusDone || job.Totals.Error != 3 || len(job.Errors) != 3 || job.Errors[0].Row != 5 {
 		t.Fatalf("skip_rows job = %+v", job)
 	}
-	if n := len(h.list("task", false)); n != 4 {
+	if n := len(h.list("task", false)); n != 6 {
 		t.Fatalf("tasks after skip_rows = %d", n)
 	}
 }
