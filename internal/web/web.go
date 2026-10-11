@@ -2,6 +2,7 @@
 package web
 
 import (
+	"bytes"
 	"embed"
 	"io/fs"
 	"net/http"
@@ -12,21 +13,42 @@ import (
 //go:embed all:dist
 var dist embed.FS
 
+// Options adjust the served page.
+type Options struct {
+	// NoIndex adds <meta name="robots" content="noindex"> to the page (demo
+	// instances, OpenSpec `demo-sandboxes` D5). Other instances are unchanged.
+	NoIndex bool
+}
+
 // Handler serves static assets with long-lived caching for hashed files and
 // falls back to index.html for client-side routes.
-func Handler() http.Handler {
+func Handler() http.Handler { return HandlerWith(Options{}) }
+
+// noIndexMeta is inserted right after <head> when Options.NoIndex is set.
+const noIndexMeta = `<meta name="robots" content="noindex">`
+
+// HandlerWith is Handler with options.
+func HandlerWith(o Options) http.Handler {
 	sub, err := fs.Sub(dist, "dist")
 	if err != nil {
 		panic(err)
 	}
 	fileServer := http.FileServer(http.FS(sub))
 	index, _ := fs.ReadFile(sub, "index.html")
+	if o.NoIndex && index != nil {
+		index = InjectNoIndex(index)
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 		p := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
+		// With NoIndex the page is always served from memory, so the noindex copy
+		// is what /index.html returns too.
+		if o.NoIndex && p == "index.html" {
+			p = ""
+		}
 		if p != "" {
 			if f, err := sub.Open(p); err == nil {
 				stat, statErr := f.Stat()
@@ -51,4 +73,17 @@ func Handler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 		w.Write(index)
 	})
+}
+
+// InjectNoIndex returns page with the robots noindex meta tag after <head>.
+func InjectNoIndex(page []byte) []byte {
+	i := bytes.Index(page, []byte("<head>"))
+	if i < 0 {
+		return page
+	}
+	i += len("<head>")
+	out := make([]byte, 0, len(page)+len(noIndexMeta))
+	out = append(out, page[:i]...)
+	out = append(out, noIndexMeta...)
+	return append(out, page[i:]...)
 }

@@ -75,7 +75,7 @@ var tasks = []taskSpec{
 	{title: "Run club", due: "-1 18:00", estimate: 60, recur: "every monday"},
 	{key: "oldList", title: "Old shopping list", deletedAgo: 30 * time.Minute},
 
-	// Home renovation (shared with the second demo account)
+	// Home renovation (shared with the sandbox's demo collaborator)
 	{key: "quotes", title: "Get three quotes for the kitchen", priority: 1, due: "0 10:00", estimate: 60, project: "home", section: "In progress", labels: []string{"call"},
 		desc: "Ask about **lead times** and the payment schedule. Budget is around 12k."},
 	{title: "Call Northside Kitchens", project: "home", section: "In progress", parent: "quotes", position: 1, doneAgo: 24 * h},
@@ -144,12 +144,14 @@ type seeder struct {
 	ref   map[string]string // spec key -> entity id
 }
 
-func (s *Service) seed(ctx context.Context, a Accounts) error {
+// seed writes a sandbox's copy of the demo data: me is the visitor's account,
+// collab its non-interactive collaborator. Entity ids are fresh per sandbox.
+func (s *Service) seed(ctx context.Context, me, collab string) error {
 	now := s.now()
 	u := now.UTC()
 	b := &seeder{ctx: ctx, sync: s.sync, now: now, today: time.Date(u.Year(), u.Month(), u.Day(), 0, 0, 0, 0, time.UTC),
 		ts: now.Add(-10 * time.Minute).UnixMilli(), ref: map[string]string{}}
-	return b.run(a.Demo.ID, a.Member.ID)
+	return b.run(me, collab)
 }
 
 // due turns "<days>[ HH:MM]" into a floating due value (nil for "").
@@ -232,8 +234,8 @@ func (b *seeder) run(me, sam string) error {
 			return err
 		}
 	}
-	// Home renovation is shared with the second demo account; membership is
-	// authorization data, not an op.
+	// Home renovation is shared with the sandbox's own collaborator; membership
+	// is authorization data, not an op, and only the server ever adds it.
 	if _, err := b.sync.AddMember(b.ctx, me, b.ref["home"], sam, opsync.RoleEditor); err != nil {
 		return fmt.Errorf("share: %w", err)
 	}

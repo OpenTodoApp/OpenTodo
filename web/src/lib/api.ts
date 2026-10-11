@@ -96,6 +96,8 @@ async function parse<T>(res: Response): Promise<T> {
 
 export const api = {
   authStatus: () => request<AuthStatus>('GET', '/api/v1/auth/status'),
+  /** Demo instance (OpenSpec `demo-sandboxes`): create a private sandbox and sign into it. */
+  demoSandbox: (token: string) => request<{ user: User }>('POST', '/api/v1/demo/sandbox', { token }),
   /** Register an account. `invitation` is the secret from an invite link; it admits one member while sign-up is closed. */
   register: (email: string, name: string, password: string, invitation?: string) =>
     request<{ user: User }>('POST', '/api/v1/auth/register', invitation ? { email, name, password, invitation } : { email, name, password }),

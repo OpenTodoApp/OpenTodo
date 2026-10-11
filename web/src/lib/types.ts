@@ -334,14 +334,18 @@ export interface AuthStatus {
   encryption?: EncryptionStatus
   /** Oldest web client that understands ciphertext values (OpenSpec `e2ee`, design D9). */
   minClientVersion?: number
-  /** Public demo instance (OpenSpec `demo-mode`); absent on a normal server. */
+  /** Public demo instance (OpenSpec `demo-mode`, `demo-sandboxes`); absent on a normal server. */
   demo?: DemoInfo
 }
 
-/** The public credentials of a demo instance and its next nightly reset (Unix ms). */
+/**
+ * A demo instance (OpenSpec `demo-sandboxes`): a short-lived, single-use token
+ * that creates a private sandbox, the sandbox lifetimes in hours and the next
+ * nightly reset (Unix ms). No credentials.
+ */
 export interface DemoInfo {
-  email: string
-  password: string
+  token: string
+  sandboxHours: { idle: number; max: number }
   resetsAt: number
 }
 
@@ -552,7 +556,8 @@ export interface WebhookInput {
 }
 
 /** 'reseeding': the server was restored from a backup and this device is re-sending its local state. */
-export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' | 'unauthenticated' | 'restricted' | 'locked'
+// 'limited': a demo sandbox used up its write budget (429 demo_limit); the queue is kept.
+export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' | 'unauthenticated' | 'restricted' | 'locked' | 'limited'
 
 export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
 export const TASK_FIELDS = [

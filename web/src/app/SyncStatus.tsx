@@ -15,6 +15,8 @@ export function SyncStatus() {
     restricted: { dot: 'bg-amber-500', text: s.pending > 0 ? `Set up two-factor · ${s.pending} waiting` : 'Set up two-factor to sync' },
     // End-to-end encryption (OpenSpec e2ee): no key on this device, sync paused.
     locked: { dot: 'bg-amber-500', text: 'Locked' },
+    // Demo sandbox write budget used up (OpenSpec `demo-sandboxes`); changes wait.
+    limited: { dot: 'bg-amber-500', text: s.pending > 0 ? `Demo limit · ${s.pending} waiting` : 'Demo limit reached' },
   }[s.state]
   // Live state is secondary information: shown next to the existing text, and only
   // when it says something (offline and signed out already imply "not live").

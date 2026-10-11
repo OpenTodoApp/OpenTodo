@@ -317,6 +317,28 @@ func (s *Service) CreateAccount(ctx context.Context, email, name, password, role
 	return u, tx.Commit()
 }
 
+// CreatePasswordlessAccount creates a member account with no password: the
+// stored hash is empty, so password sign-in can never succeed (an empty hash
+// never verifies, as for accounts provisioned by single sign-on). It exists for
+// demo sandboxes (OpenSpec change `demo-sandboxes`, design D1): the visitor's
+// account is reachable only through the session issued when it is created, and
+// the demo collaborator gets no session at all. Never reachable from a route.
+func (s *Service) CreatePasswordlessAccount(ctx context.Context, email, name string) (*User, error) {
+	email = normalizeEmail(email)
+	if _, err := mail.ParseAddress(email); err != nil || email == "" {
+		return nil, ErrInvalidEmail
+	}
+	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: "member", CreatedAt: time.Now().UnixMilli()}
+	if _, err := s.db.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
+		u.ID, u.Email, u.Name, "", u.Role, u.CreatedAt); err != nil {
+		if strings.Contains(err.Error(), "UNIQUE") {
+			return nil, ErrEmailTaken
+		}
+		return nil, err
+	}
+	return u, nil
+}
+
 // DeleteSession revokes a session.
 func (s *Service) DeleteSession(ctx context.Context, secret string) error {
 	_, err := s.db.ExecContext(ctx, "DELETE FROM sessions WHERE token_hash = ?", hashToken(secret))

@@ -1,9 +1,10 @@
 import { Fragment, type ReactNode, useMemo } from 'react'
-import { type Block, type Inline, parseMarkdown } from '../lib/markdown'
+import { type Block, type Inline, LINK_REL, parseMarkdown } from '../lib/markdown'
 
 /**
  * Renders a comment body (lib/markdown.ts) as React elements. Nothing is ever
- * injected as HTML: text is text, and links open in a new tab without referrer.
+ * injected as HTML: text is text, and links open in a new tab without referrer
+ * and marked nofollow/ugc (LINK_REL).
  */
 export function Markdown({ source, className = '' }: { source: string; className?: string }) {
   const blocks = useMemo(() => parseMarkdown(source), [source])
@@ -35,6 +36,6 @@ function renderInline(n: Inline, i: number): ReactNode {
     case 'em': return <em key={i}>{n.c.map(renderInline)}</em>
     case 'strong': return <strong key={i}>{n.c.map(renderInline)}</strong>
     case 'link':
-      return <a key={i} href={n.href} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline dark:text-emerald-300">{n.c.map(renderInline)}</a>
+      return <a key={i} href={n.href} target="_blank" rel={LINK_REL} className="text-emerald-700 underline dark:text-emerald-300">{n.c.map(renderInline)}</a>
   }
 }

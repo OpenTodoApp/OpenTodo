@@ -198,7 +198,8 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `OPENTODO_IMPORT_MAX_MB` | `20` | Largest [import](docs/import.md) file, 1–200 |
 | `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days a deleted task or project stays in the Trash before it is purged, 0–3650; `0` never purges automatically. See [Purge](docs/sync.md#purge) |
-| `OPENTODO_DEMO` | unset (off) | `true` turns a dedicated instance into a [public demo](docs/self-hosting/demo.md): seeded demo account, nightly reset at 03:00 UTC, abusable features refused with 403 `demo_restricted` |
+| `OPENTODO_DEMO` | unset (off) | `true` turns a dedicated instance into a [public demo](docs/self-hosting/demo.md): a private, seeded sandbox per visitor, deleted after 2 h of inactivity, after 24 h and every night at 03:00 UTC; abusable features refused with 403 `demo_restricted` |
+| `OPENTODO_DEMO_MAX_SANDBOXES`, `OPENTODO_DEMO_MAX_DB_MB` | `500`, `1024` | Optional demo tuning: live sandbox cap and the database size above which no new sandbox is created |
 | `OPENTODO_PUSH` | `on` | `off` disables web push for [reminders](docs/reminders.md): no requests to push services; reminders still show in the app |
 | `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | `true`/`false` presets the owner's "allow private network targets" [webhook](docs/webhooks.md#private-network-protection) policy on first start; afterwards Settings decides |
 | `OPENTODO_MCP` | unset (off) | `true` presets the [AI assistants (MCP)](docs/mcp.md) endpoint on first start; afterwards Settings → AI assistants decides |

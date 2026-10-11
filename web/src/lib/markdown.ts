@@ -24,6 +24,13 @@ export type Block =
 const LIST = /^ {0,3}([-*+]|(\d{1,9})[.)])\s+(.*)$/
 const FENCE = /^ {0,3}(```|~~~)/
 
+/**
+ * The rel of every link written by a user (comments, notes): no referrer, no
+ * opener, and no search or link value for spam (OpenSpec `demo-sandboxes` D5;
+ * applies on every instance).
+ */
+export const LINK_REL = 'nofollow ugc noopener noreferrer'
+
 /** Only absolute http(s) and mailto links are rendered as links. */
 export function safeHref(url: string): string | null {
   const u = url.trim()

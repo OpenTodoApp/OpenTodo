@@ -25,6 +25,41 @@ type Service struct {
 	commentLimiter *fixedWindow
 	// pullBudget overrides MaxPullBytes in tests; 0 means MaxPullBytes.
 	pullBudget int
+	// guard bounds writes on a demo instance (demo-sandboxes D3); nil elsewhere.
+	guard WriteGuard
+}
+
+// WriteGuard bounds what one account may write (OpenSpec change
+// `demo-sandboxes`, design D3). CheckOp runs for every op before the batch's
+// transaction and may refuse it (wrap ErrInvalidOp for a size limit); Charge
+// runs inside the transaction once the number of ops that will be stored and
+// the total size of their values (bytes) are known, and refusing there (wrap ErrWriteLimit) rolls the whole batch back,
+// so nothing is applied.
+type WriteGuard interface {
+	CheckOp(op Op) error
+	Charge(ctx context.Context, tx *sql.Tx, userID string, n int, bytes int64) error
+}
+
+// ErrWriteLimit is wrapped by a WriteGuard that refuses a batch because the
+// account used up its write budget.
+var ErrWriteLimit = errors.New("write limit reached")
+
+// SetWriteGuard installs the write guard (nil removes it). Call it during wiring.
+func (s *Service) SetWriteGuard(g WriteGuard) { s.guard = g }
+
+type guardKey struct{}
+
+// WithoutWriteGuard marks ctx so Apply skips the write guard: server-side
+// provisioning (the demo seed) is not visitor writing.
+func WithoutWriteGuard(ctx context.Context) context.Context {
+	return context.WithValue(ctx, guardKey{}, true)
+}
+
+func (s *Service) guardFor(ctx context.Context) WriteGuard {
+	if s.guard == nil || ctx.Value(guardKey{}) != nil {
+		return nil
+	}
+	return s.guard
 }
 
 // pullBytes is the byte budget of one pull page.
@@ -144,9 +179,15 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	if len(ops) > MaxOpsPerRequest {
 		return res, fmt.Errorf("%w: at most %d ops per request", ErrInvalidOp, MaxOpsPerRequest)
 	}
+	guard := s.guardFor(ctx)
 	for i := range ops {
 		if err := Validate(ops[i]); err != nil {
 			return res, err
+		}
+		if guard != nil {
+			if err := guard.CheckOp(ops[i]); err != nil {
+				return res, err
+			}
 		}
 	}
 	nowMs := s.now().UnixMilli()
@@ -165,6 +206,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	tracker := newChangeTracker(userID)
 	touched := map[string]bool{}
 	var refused, rewritten []Op
+	var storedBytes int64 // value bytes of the stored ops, for the write guard
 	for _, op := range ops {
 		if op.TS > nowMs+MaxFutureSkewMs {
 			op.TS = nowMs + MaxFutureSkewMs
@@ -225,8 +267,14 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			op.Actor = userID
 			rewritten = append(rewritten, op)
 		}
+		storedBytes += int64(len(op.Value))
 		touched[scope] = true
 		res.Applied++
+	}
+	if guard != nil && res.Applied > 0 {
+		if err := guard.Charge(ctx, tx, userID, res.Applied, storedBytes); err != nil {
+			return ApplyResult{}, err
+		}
 	}
 	if res.Restore, err = rs.restoreOps(refused); err != nil {
 		return res, err

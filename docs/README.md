@@ -20,7 +20,7 @@ Start with the [README](../README.md) for the feature overview, quick start and 
 | --- | --- |
 | [Running with Docker](self-hosting/docker.md) | Compose, `docker run`, reverse proxies, push, bind mounts, recovery commands |
 | [Deploying on Coolify](self-hosting/coolify.md) | One-click deployment from the compose file, environment variables, troubleshooting |
-| [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: seeded demo account, nightly reset, what is switched off, Docker and Coolify |
+| [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: a private sandbox per visitor, limits, expiry and the nightly reset, what is switched off, Docker and Coolify |
 | [Single sign-on](self-hosting/sso.md) | Connecting an OpenID Connect provider, linking, SSO-only mode, break-glass |
 | [Backups](backups.md) | Scheduled backups to disk, S3 or WebDAV, encryption, restore, archive format |
 | [Email to task](email.md) | Pointing OpenTodo at an IMAP mailbox, provider notes, protection |

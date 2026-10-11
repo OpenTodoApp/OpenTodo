@@ -95,15 +95,23 @@ A sandbox SHALL be deleted with its accounts, sessions and data after 2 hours wi
 - **THEN** it receives 401 `demo_expired`, clears its local data and shows "Your demo sandbox has expired" with a button to start a new one
 
 ### Requirement: Demo abuse limits
-The server SHALL bound demo use: a cap on live sandboxes (evicting the least recently active idle one, else 503 `demo_busy`), at most 5 new sandboxes per client address per hour (429), at most 600 ops per sandbox per hour and 5,000 in total (429 `demo_limit`), field sizes of 4 KB for text and 32 KB for notes, and no new sandboxes above a database size threshold.
+The server SHALL bound demo use: a live-sandbox cap (evict the least recently active idle one, else 503 `demo_busy`), 5 new sandboxes per client address per hour (429), per sandbox 600 ops an hour, 5,000 ops and 2 MB of values in total (429 `demo_limit`), fields of 4 KB (notes 32 KB), and above a database size threshold no new sandboxes and no sandbox writes. The client address SHALL be the last forwarded hop.
 
 #### Scenario: Write budget
 - **WHEN** a sandbox sends its 601st op within an hour
 - **THEN** the batch is refused with 429 `demo_limit`, nothing is applied and the app shows a notice while keeping its queue
 
 #### Scenario: Creation flood
-- **WHEN** one address requests a sixth sandbox within an hour
+- **WHEN** one address requests a sixth sandbox within an hour, even with a different forged leading `X-Forwarded-For` entry each time
 - **THEN** the request gets 429 and no account is created
+
+#### Scenario: Byte budget
+- **WHEN** a sandbox's batch would take its stored values past 2 MB
+- **THEN** the batch is refused with 429 `demo_limit` and nothing is applied
+
+#### Scenario: Database full
+- **WHEN** the database is above its size threshold and a live sandbox writes
+- **THEN** the write is refused with 429 `demo_limit` and nothing is applied
 
 #### Scenario: Full demo
 - **WHEN** the live-sandbox cap is reached and no sandbox has been idle for 15 minutes

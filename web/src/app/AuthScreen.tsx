@@ -1,6 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError, OIDC_START_URL } from '../lib/api'
 import { conditionalMediationAvailable, getPasskey, isCancellation, PasskeyDomainError, passkeysSupported } from '../lib/passkeys'
+import { sandboxErrorMessage, startSandbox } from '../lib/demo'
 import type { AuthStatus, InvitationPreview, LoginResult } from '../lib/types'
 import { oidcErrorMessage, ssoLayout, takeQueryParam } from './sso'
 
@@ -107,16 +108,17 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
     }
   }
 
-  /** "Try the demo" (OpenSpec `demo-mode`): sign in with the public demo credentials. */
+  /** "Try the demo" (OpenSpec `demo-sandboxes`): create a private sandbox with the page's token and sign into it. */
   async function tryDemo() {
     if (!status.demo) return
     conditional.current?.abort()
     setBusy(true)
     setError(null)
     try {
-      afterFirstFactor(await api.login(status.demo.email, status.demo.password))
+      await startSandbox(status.demo.token)
+      onAuthenticated()
     } catch (err) {
-      setError(describeAuthError(err))
+      setError(sandboxErrorMessage(err))
     } finally {
       setBusy(false)
     }
@@ -160,8 +162,9 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
         {notice && (
           <p className="mb-4 rounded-md bg-slate-100 p-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">{notice}</p>
         )}
-        {status.demo && !invite && mode === 'login' && (
-          <DemoPanel email={status.demo.email} password={status.demo.password} busy={busy} onTry={() => void tryDemo()} />
+        {status.demo && !invite && (
+          // A demo instance has no accounts to sign into: every visitor gets a sandbox.
+          <DemoPanel hours={status.demo.sandboxHours} busy={busy} error={error} onTry={() => void tryDemo()} />
         )}
         {status.setupRequired && !invite && (
           <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
@@ -188,7 +191,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
           </p>
         )}
 
-        {sso.local && <form onSubmit={(e) => void submit(e)} className="space-y-3">
+        {sso.local && !status.demo && <form onSubmit={(e) => void submit(e)} className="space-y-3">
           {mode === 'register' && (
             <label className="block text-sm">
               <span className="mb-1 block text-slate-600 dark:text-slate-300">Name</span>
@@ -238,15 +241,18 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
   )
 }
 
-/** Demo instance sign-in (OpenSpec `demo-mode`): the public credentials and a one-click sign-in. */
-export function DemoPanel({ email, password, busy, onTry }: { email: string; password: string; busy: boolean; onTry: () => void }) {
+/** Demo instance sign-in (OpenSpec `demo-sandboxes`): one click creates a private sandbox; no credentials. */
+export function DemoPanel({ hours, busy, error, onTry }: { hours?: { idle: number; max: number }; busy: boolean; error: string | null; onTry: () => void }) {
+  const idle = hours?.idle ?? 2
+  const max = hours?.max ?? 24
   return (
     <div className="mb-4 rounded-md bg-sky-50 p-3 text-sm text-sky-900 dark:bg-sky-950 dark:text-sky-100" data-testid="demo-panel">
       <p className="font-medium">This is a public demo of OpenTodo.</p>
       <p className="mt-1 text-xs">
-        Sign in as <code>{email}</code> with the password <code>{password}</code>. Everyone shares this account and the data resets every night, so don't store anything private.
+        You get a private sandbox with sample data that only you can see. It is deleted after {idle} hours of inactivity, after {max} hours at most, and every night. No sign-up; don't store anything personal.
       </p>
-      <button type="button" className="btn-primary mt-3 w-full" disabled={busy} onClick={onTry}>Try the demo</button>
+      <button type="button" className="btn-primary mt-3 w-full" disabled={busy} onClick={onTry}>{busy ? 'Preparing your sandbox…' : 'Try the demo'}</button>
+      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert" data-testid="demo-error">{error}</p>}
     </div>
   )
 }

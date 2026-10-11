@@ -17,7 +17,7 @@ import { navigate, useRoute } from './router'
 import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
 import { clearVimPref } from './vim/prefs'
-import { DEMO_BANNER, setDemo, useDemo } from '../lib/demo'
+import { DEMO_BANNER, DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
 
 type Phase =
   | { kind: 'loading' }
@@ -35,6 +35,8 @@ export function App() {
   const demo = useDemo()
   // Shown on the sign-in screen after a password reset (OpenSpec `user-management`).
   const [signInNotice, setSignInNotice] = useState<string | undefined>(undefined)
+  // The demo sandbox of this browser was deleted (OpenSpec `demo-sandboxes`).
+  const [demoExpired, setDemoExpired] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
@@ -48,8 +50,11 @@ export function App() {
         await adoptProfile(status.encryption, status.minClientVersion).catch(() => undefined)
         setPhase({ kind: status.mfa?.restricted ? 'restricted' : 'ready', user: status.user })
       } else {
+        const hadSession = localStorage.getItem('opentodo.user') !== null
         localStorage.removeItem('opentodo.user')
         cacheMfa(null)
+        // A demo sandbox that is gone takes its local copy with it (the sign-out path).
+        if (await expireSandboxIfGone(status, hadSession, clearDeviceData)) setDemoExpired(true)
         setPhase({ kind: 'anonymous', status })
       }
     } catch {
@@ -103,12 +108,8 @@ export function App() {
       await unsubscribeOnSignOut()
       redirect = (await api.logout())?.redirect
     } finally {
-      stopSync()
-      await clearLocalData()
-      forgetMemoryKeys()
-      localStorage.removeItem('opentodo.user')
+      await clearDeviceData()
       clearVimPref()
-      cacheMfa(null)
       // Provider sign-out (OpenSpec `oidc-login`): the local session and data are
       // gone; the provider's end-session page sends the browser back to sign-in.
       if (redirect && /^https:\/\//.test(redirect)) window.location.assign(redirect)
@@ -171,6 +172,9 @@ export function App() {
         </Centered>
       )
     }
+    if (phase.kind === 'anonymous' && phase.status.demo && demoExpired) {
+      return <DemoExpiredScreen onStarted={() => { setDemoExpired(false); void refresh() }} />
+    }
     if (phase.kind === 'anonymous') {
       // On /share the payload waits in memory; after sign-in the route is still /share.
       const notice = route.view === 'share' ? 'Sign in to add the shared page to OpenTodo. It is kept on this screen until then.' : signInNotice
@@ -193,7 +197,7 @@ export function App() {
         {demo ? (
           // The banner takes its own row so the shell still fills the rest of the screen.
           <div className="flex h-full flex-col">
-            <DemoBanner />
+            <DemoBanner notice={sync.state === 'limited' ? DEMO_LIMIT_NOTICE : undefined} />
             <div className="min-h-0 flex-1"><Shell user={phase.user} onLogout={() => void logout()} /></div>
           </div>
         ) : (
@@ -204,12 +208,50 @@ export function App() {
   }
 }
 
-/** Shown on every screen of a demo instance (OpenSpec `demo-mode`). */
-export function DemoBanner() {
+/** Clears everything this device holds for the signed-in account (sign-out and an expired demo sandbox). */
+async function clearDeviceData() {
+  stopSync()
+  await clearLocalData()
+  forgetMemoryKeys()
+  localStorage.removeItem('opentodo.user')
+  cacheMfa(null)
+}
+
+/** Shown on every screen of a demo instance (OpenSpec `demo-mode`, `demo-sandboxes`), with the write-limit notice when it applies. */
+export function DemoBanner({ notice }: { notice?: string }) {
   return (
     <div role="status" data-testid="demo-banner" className="border-b border-sky-200 bg-sky-50 px-4 py-1.5 text-center text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-100">
       {DEMO_BANNER}
+      {notice && <span className="mt-0.5 block font-medium text-amber-800 dark:text-amber-200" data-testid="demo-limit">{notice}</span>}
     </div>
+  )
+}
+
+/** The sandbox of this browser was deleted; the local copy is already gone (OpenSpec `demo-sandboxes`). */
+export function DemoExpiredScreen({ onStarted }: { onStarted: () => void }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  async function start() {
+    setBusy(true)
+    setError(null)
+    try {
+      await startSandbox()
+      onStarted()
+    } catch (err) {
+      setError(sandboxErrorMessage(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Centered>
+      <div data-testid="demo-expired" className="max-w-sm">
+        <p className="font-medium">Your demo sandbox has expired</p>
+        <p className="mt-1 text-sm text-slate-500">Sandboxes are deleted after 2 hours of inactivity, a day after they were created, and every night. Its data is gone from the server and from this browser.</p>
+        <button className="btn-primary mt-4" disabled={busy} onClick={() => void start()}>{busy ? 'Please wait…' : 'Start a new sandbox'}</button>
+        {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+      </div>
+    </Centered>
   )
 }
 
