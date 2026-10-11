@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Offline and sync · OpenTodo docs</title>
+  <meta name="description" content="How OpenTodo keeps working without a connection, what the sync status means, and what happens when two devices change the same task.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/offline-and-sync/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/offline-and-sync/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Offline and sync · OpenTodo docs">
+  <meta property="og:description" content="How OpenTodo keeps working without a connection, what the sync status means, and what happens when two devices change the same task.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/" aria-current="page">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/" aria-current="page">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Guides</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#working-offline">Working offline</a></li><li><a href="#the-sync-status">The sync status</a></li><li><a href="#several-devices">Several devices</a></li><li><a href="#when-two-devices-change-the-same-task">When two devices change the same task</a></li><li><a href="#signing-out">Signing out</a></li><li><a href="#tips">Tips</a></li></ul></nav></details>
+<h1 id="offline-and-sync">Offline and sync</h1>
+<p>OpenTodo keeps a full copy of your tasks on each device. Everything you do happens on that copy first, so the app is fast and works the same with or without a connection. Your server keeps every device up to date and holds the backup.</p>
+<h2 id="working-offline">Working offline<a class="anchor" href="#working-offline" aria-label="Link to this section: Working offline">#</a></h2>
+<p>On a train, on a plane, or in a basement with no signal, you can keep going: add tasks, complete them, edit notes, move cards on a board, comment. Your changes wait on the device and are sent as soon as there&#39;s a connection again. You don&#39;t have to do anything.</p>
+<p>The installed app even starts without a connection. See <a href="/docs/install-app/">Installing the app</a>.</p>
+<p>A few things need the server and say so when you&#39;re offline: changing your password, setting up passkeys or two-factor authentication, inviting people, importing files, and the full history of a task.</p>
+<h2 id="the-sync-status">The sync status<a class="anchor" href="#the-sync-status" aria-label="Link to this section: The sync status">#</a></h2>
+<p>The status at the top right of the app tells you where things stand.</p>
+<p><picture><source srcset="/docs/images/sync-status-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/sync-status-light.webp" alt="The top of the Inbox with the status Offline · 12 pending next to the bell." width="1180" height="413" loading="lazy" decoding="async"></picture></p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Means</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Synced</strong></td>
+<td>Everything on this device is on the server, and the other way round</td>
+</tr>
+<tr>
+<td><strong>Syncing…</strong></td>
+<td>Sending or receiving changes right now</td>
+</tr>
+<tr>
+<td><strong>3 pending</strong></td>
+<td>Changes are waiting to be sent; they&#39;ll go in a moment</td>
+</tr>
+<tr>
+<td><strong>Offline · 3 pending</strong></td>
+<td>No connection; 3 changes will be sent when it&#39;s back</td>
+</tr>
+<tr>
+<td><strong>Sync error</strong></td>
+<td>The server answered with a problem; hover over the status for details</td>
+</tr>
+<tr>
+<td><strong>Signed out</strong></td>
+<td>Your session ended; sign in again and waiting changes are sent</td>
+</tr>
+<tr>
+<td><strong>Locked</strong></td>
+<td>Your account uses <a href="/docs/e2ee/">encryption</a> and this device needs your passphrase</td>
+</tr>
+</tbody></table></div>
+<p>The count is the number of individual changes, not tasks: adding one task with a date and a label counts as several.</p>
+<p><strong>Live</strong> next to the status means this device gets other devices&#39; changes within seconds. Without it, the app still checks regularly, just less often. Click the status at any time to sync now.</p>
+<h2 id="several-devices">Several devices<a class="anchor" href="#several-devices" aria-label="Link to this section: Several devices">#</a></h2>
+<p>Use OpenTodo on as many devices as you like. A task you add on your phone appears on your laptop within a few seconds when both are online. A device that was off catches up the next time it opens.</p>
+<h2 id="when-two-devices-change-the-same-task">When two devices change the same task<a class="anchor" href="#when-two-devices-change-the-same-task" aria-label="Link to this section: When two devices change the same task">#</a></h2>
+<p>You don&#39;t need to resolve conflicts. OpenTodo keeps track of each field of a task separately: the title, the date, the priority, and so on.</p>
+<ul>
+<li>If your phone changes the <strong>date</strong> and your laptop changes the <strong>priority</strong>, both changes are kept.</li>
+<li>If both change the <strong>same</strong> field, the change made last wins on every device.</li>
+<li><strong>Notes</strong> are merged: if you type in the same note on two devices, both sets of edits end up in it.</li>
+<li>If one device deletes a task while another edits it, the task stays deleted. You can restore it from the Trash, edits included.</li>
+</ul>
+<p>The same rules apply to people working together in a <a href="/docs/sharing/">shared project</a>.</p>
+<h2 id="signing-out">Signing out<a class="anchor" href="#signing-out" aria-label="Link to this section: Signing out">#</a></h2>
+<p>Signing out (<strong>Settings → Session → Sign out</strong>) removes your tasks from that device. If you&#39;re online, waiting changes are sent first. Your data stays on the server, and signing in again downloads it.</p>
+<h2 id="tips">Tips<a class="anchor" href="#tips" aria-label="Link to this section: Tips">#</a></h2>
+<ul>
+<li>On a shared computer, sign out when you&#39;re done.</li>
+<li>If a device has been offline for weeks, give it a minute after reconnecting to catch up before you start reorganising.</li>
+<li>Your data lives on your server, and you can download all of it at any time. See <a href="/docs/import-export/">Import and export</a>.</li>
+<li>How sync works under the hood is described in the <a href="/docs/sync/">sync protocol</a>, for the curious.</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/offline-and-sync.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/notifications/"><span>Previous</span>Notifications</a>
+      <a class="next" rel="next" href="/docs/keyboard/"><span>Next</span>Keyboard shortcuts</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#working-offline">Working offline</a></li><li><a href="#the-sync-status">The sync status</a></li><li><a href="#several-devices">Several devices</a></li><li><a href="#when-two-devices-change-the-same-task">When two devices change the same task</a></li><li><a href="#signing-out">Signing out</a></li><li><a href="#tips">Tips</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

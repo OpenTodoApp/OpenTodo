@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Views · OpenTodo docs</title>
+  <meta name="description" content="Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/views/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/views/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Views · OpenTodo docs">
+  <meta property="og:description" content="Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/" aria-current="page">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/" aria-current="page">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Guides</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#the-built-in-views">The built-in views</a></li><li><a href="#plan-your-day-with-today">Plan your day with Today</a></li><li><a href="#plan-your-week-with-upcoming">Plan your week with Upcoming</a></li><li><a href="#narrow-a-list-by-duration">Narrow a list by duration</a></li><li><a href="#save-your-own-views">Save your own views</a></li><li><a href="#build-a-dashboard">Build a dashboard</a></li><li><a href="#choose-where-the-app-opens">Choose where the app opens</a></li><li><a href="#tips">Tips</a></li></ul></nav></details>
+<h1 id="views">Views</h1>
+<p>A view is a way of looking at your tasks. OpenTodo comes with a handful, and you can save your own. Every view is built from the copy of your tasks on your device, so they all work offline and update the moment something changes.</p>
+<h2 id="the-built-in-views">The built-in views<a class="anchor" href="#the-built-in-views" aria-label="Link to this section: The built-in views">#</a></h2>
+<p>They&#39;re at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then the letter.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>View</th>
+<th>Shows</th>
+<th>Shortcut</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Inbox</strong></td>
+<td>Tasks that aren&#39;t in a project yet</td>
+<td><kbd>g</kbd> <kbd>i</kbd></td>
+</tr>
+<tr>
+<td><strong>Today</strong></td>
+<td>Tasks due today, with overdue ones first</td>
+<td><kbd>g</kbd> <kbd>t</kbd></td>
+</tr>
+<tr>
+<td><strong>Upcoming</strong></td>
+<td>Tasks due after today, grouped by day</td>
+<td><kbd>g</kbd> <kbd>u</kbd></td>
+</tr>
+<tr>
+<td><strong>Assigned to me</strong></td>
+<td>Open tasks assigned to you, across projects</td>
+<td><kbd>g</kbd> <kbd>a</kbd></td>
+</tr>
+<tr>
+<td><strong>Day</strong> and <strong>Week</strong></td>
+<td>Your timed tasks on a calendar</td>
+<td><kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd></td>
+</tr>
+<tr>
+<td><strong>Completed</strong></td>
+<td>What you finished most recently</td>
+<td><kbd>g</kbd> <kbd>c</kbd></td>
+</tr>
+<tr>
+<td><strong>Filter</strong></td>
+<td>Any search you can describe</td>
+<td><kbd>g</kbd> <kbd>f</kbd></td>
+</tr>
+<tr>
+<td><strong>Trash</strong></td>
+<td>Deleted tasks and projects</td>
+<td><kbd>g</kbd> <kbd>x</kbd></td>
+</tr>
+<tr>
+<td><strong>Activity</strong></td>
+<td>What changed in your shared projects</td>
+<td><kbd>g</kbd> <kbd>h</kbd></td>
+</tr>
+</tbody></table></div>
+<p>The numbers next to the names count open tasks.</p>
+<h2 id="plan-your-day-with-today">Plan your day with Today<a class="anchor" href="#plan-your-day-with-today" aria-label="Link to this section: Plan your day with Today">#</a></h2>
+<p>Today is where most people start. Overdue tasks sit in their own group at the top, in red, so nothing slips. Below them are today&#39;s tasks, sorted by time.</p>
+<p><picture><source srcset="/docs/images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/today-light.webp" alt="The Today view with an Overdue group above today's tasks." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<p>Anything you add here with quick add is due today, unless you type another date. To push a task to later, open it and change <strong>Due</strong>, or press <kbd>s</kbd> to place it on the Day calendar.</p>
+<h2 id="plan-your-week-with-upcoming">Plan your week with Upcoming<a class="anchor" href="#plan-your-week-with-upcoming" aria-label="Link to this section: Plan your week with Upcoming">#</a></h2>
+<p>Upcoming lists everything that has a date after today, under headings like <strong>Tomorrow</strong> and the weekday names. It&#39;s a good place for a short weekly review: scan the next few days, move what won&#39;t fit, and spot empty days.</p>
+<p><picture><source srcset="/docs/images/upcoming-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/upcoming-light.webp" alt="The Upcoming view with tasks grouped under Tomorrow and the following weekdays." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<p>When you want to see the hours, switch to <strong>Week</strong>, which shows your timed tasks as blocks on a grid. See <a href="/docs/time-blocking/">Time blocking</a>.</p>
+<h2 id="narrow-a-list-by-duration">Narrow a list by duration<a class="anchor" href="#narrow-a-list-by-duration" aria-label="Link to this section: Narrow a list by duration">#</a></h2>
+<p>Above most lists are four buttons: <strong>Quick wins</strong> (15 minutes or less), <strong>Under 30 min</strong>, <strong>Over 1 h</strong> and <strong>Unestimated</strong>. Turn one on to see only matching tasks; select it again to clear it. Your choice is remembered on that device. Estimates are set with <kbd>e</kbd> or in the task panel.</p>
+<h2 id="save-your-own-views">Save your own views<a class="anchor" href="#save-your-own-views" aria-label="Link to this section: Save your own views">#</a></h2>
+<p>When the built-in views aren&#39;t enough, describe what you want in the <strong>Filter</strong> view, then save it. For example, <code>@waiting &amp; open</code> lists everything you&#39;re waiting on, and <code>due &lt;= 7 days &amp; p1</code> shows urgent tasks for the coming week. The filter language is explained in <a href="/docs/labels-and-filters/">Labels and filters</a>.</p>
+<p>To save the current filter, press <kbd>s</kbd> in the results (or use the save button), and give it a name. Saved views are pinned to the <strong>Views</strong> group in the sidebar with a live count, and they sync to all your devices.</p>
+<p>Each saved view can group its tasks (by project, date, priority or label) and sort them (by date, priority, your own order, creation time or title). Change these from the top of the view. To change the query itself, press <kbd>/</kbd>, edit it and press <kbd>Enter</kbd>.</p>
+<p>The <strong>All</strong> link next to <strong>Views</strong> (or <kbd>g</kbd> <kbd>v</kbd>) opens the list of all your saved views. From there you can rename, reorder, unpin or delete them.</p>
+<h2 id="build-a-dashboard">Build a dashboard<a class="anchor" href="#build-a-dashboard" aria-label="Link to this section: Build a dashboard">#</a></h2>
+<p>A dashboard puts up to six saved views side by side, each showing its count and first ten tasks. It&#39;s handy for a morning review: &quot;Due this week&quot;, &quot;Deep work&quot; and &quot;Waiting on others&quot; on one screen.</p>
+<p><picture><source srcset="/docs/images/dashboard-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/dashboard-light.webp" alt="The Weekly review dashboard with three panels: Due this week, Deep work and Waiting on others." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<p>Open the views list (<kbd>g</kbd> <kbd>v</kbd>), choose <strong>+ New dashboard</strong>, name it, then add saved views as panels from the dashboard&#39;s header. On a phone the panels stack. Move between panels with <kbd>Tab</kbd>, and through a panel&#39;s tasks with <kbd>j</kbd> / <kbd>k</kbd>.</p>
+<h2 id="choose-where-the-app-opens">Choose where the app opens<a class="anchor" href="#choose-where-the-app-opens" aria-label="Link to this section: Choose where the app opens">#</a></h2>
+<p>Each device can open on a different view: your laptop on a &quot;Work&quot; view, your phone on Today. Pick it in <strong>Settings → Start view</strong>, or from a saved view&#39;s menu with <strong>Set as start view on this device</strong>. If that view is deleted later, the device opens on the Inbox and tells you why.</p>
+<h2 id="tips">Tips<a class="anchor" href="#tips" aria-label="Link to this section: Tips">#</a></h2>
+<ul>
+<li>Subtasks show up on their own in Today and Upcoming, with their parent&#39;s name next to them, so you see exactly what&#39;s due.</li>
+<li>Views that sort by date (Today, Upcoming, labels, filters) can&#39;t be reordered by hand. Projects and the Inbox can.</li>
+<li><a href="/docs/filters/">Filter queries</a> has ten ready-made examples to copy.</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/views.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/tasks-and-projects/"><span>Previous</span>Tasks and projects</a>
+      <a class="next" rel="next" href="/docs/sections-and-boards/"><span>Next</span>Sections and boards</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#the-built-in-views">The built-in views</a></li><li><a href="#plan-your-day-with-today">Plan your day with Today</a></li><li><a href="#plan-your-week-with-upcoming">Plan your week with Upcoming</a></li><li><a href="#narrow-a-list-by-duration">Narrow a list by duration</a></li><li><a href="#save-your-own-views">Save your own views</a></li><li><a href="#build-a-dashboard">Build a dashboard</a></li><li><a href="#choose-where-the-app-opens">Choose where the app opens</a></li><li><a href="#tips">Tips</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

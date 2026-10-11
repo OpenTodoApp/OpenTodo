@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sections and boards · OpenTodo docs</title>
+  <meta name="description" content="Split a project into stages with sections, and switch it to a board to move cards between columns by drag or keyboard.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/sections-and-boards/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/sections-and-boards/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Sections and boards · OpenTodo docs">
+  <meta property="og:description" content="Split a project into stages with sections, and switch it to a board to move cards between columns by drag or keyboard.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/" aria-current="page">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/" aria-current="page">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Guides</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#add-a-section">Add a section</a></li><li><a href="#add-tasks-to-a-section">Add tasks to a section</a></li><li><a href="#rename-reorder-or-delete-a-section">Rename, reorder or delete a section</a></li><li><a href="#switch-to-a-board">Switch to a board</a></li><li><a href="#move-cards-between-columns">Move cards between columns</a></li><li><a href="#get-around-the-board-with-the-keyboard">Get around the board with the keyboard</a></li><li><a href="#good-to-know">Good to know</a></li><li><a href="#ideas-for-sections">Ideas for sections</a></li></ul></nav></details>
+<h1 id="sections-and-boards">Sections and boards</h1>
+<p>Sections divide a project into parts, like &quot;Planning&quot;, &quot;In progress&quot; and &quot;Waiting&quot;, or &quot;Kitchen&quot;, &quot;Bathroom&quot; and &quot;Garden&quot;. The same project can be shown as a list with headings or as a board with one column per section.</p>
+<h2 id="add-a-section">Add a section<a class="anchor" href="#add-a-section" aria-label="Link to this section: Add a section">#</a></h2>
+<p>Open a project and select <strong>+ Add section</strong> at the bottom of the list. Type a name and press <kbd>Enter</kbd>. You can add the next one straight away.</p>
+<p><picture><source srcset="/docs/images/project-list-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/project-list-light.webp" alt="A project in list layout with the section headings Planning and In progress, each with a task count and a plus button." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<p>Each heading shows how many open tasks it holds. Tasks without a section are listed first under <strong>No section</strong>.</p>
+<h2 id="add-tasks-to-a-section">Add tasks to a section<a class="anchor" href="#add-tasks-to-a-section" aria-label="Link to this section: Add tasks to a section">#</a></h2>
+<p>Select the <strong>+</strong> on a section heading and type: the task goes straight into that section. You can also open any task and choose a <strong>Section</strong> in its panel.</p>
+<h2 id="rename-reorder-or-delete-a-section">Rename, reorder or delete a section<a class="anchor" href="#rename-reorder-or-delete-a-section" aria-label="Link to this section: Rename, reorder or delete a section">#</a></h2>
+<p>Use the <strong>⋯</strong> menu on a section heading:</p>
+<ul>
+<li><strong>Rename</strong></li>
+<li><strong>Move</strong> it up or down (left or right on the board)</li>
+<li><strong>Delete section</strong>. Its open tasks aren&#39;t deleted; they move to <strong>No section</strong>.</li>
+</ul>
+<p>Fold a section with the small arrow next to its name. Folding is remembered on that device only.</p>
+<h2 id="switch-to-a-board">Switch to a board<a class="anchor" href="#switch-to-a-board" aria-label="Link to this section: Switch to a board">#</a></h2>
+<p>At the top of the project, choose <strong>Board</strong> (or press <kbd>v</kbd>). Each section becomes a column, with <strong>No section</strong> first. Press <kbd>v</kbd> again, or choose <strong>List</strong>, to switch back.</p>
+<p><picture><source srcset="/docs/images/board-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/board-light.webp" alt="The Q4 launch project as a board with the columns No section, Backlog, This week and Review." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<p>The choice is remembered for each project on each device. Your laptop can show &quot;Q4 launch&quot; as a board while your phone shows it as a list. On a narrow screen the board scrolls sideways.</p>
+<h2 id="move-cards-between-columns">Move cards between columns<a class="anchor" href="#move-cards-between-columns" aria-label="Link to this section: Move cards between columns">#</a></h2>
+<ul>
+<li><strong>Drag</strong> a card to another column, or to a place within a column. On a touch screen, press and hold the card first.</li>
+<li><strong>Keyboard:</strong> select a card and press <kbd>Shift</kbd>+<kbd>→</kbd> or <kbd>Shift</kbd>+<kbd>←</kbd>. The card stays selected, so you can keep moving it.</li>
+<li><strong>Panel:</strong> open the task and pick another <strong>Section</strong>.</li>
+</ul>
+<p>Moving with the keyboard or the panel puts the card at the bottom of the new column.</p>
+<h2 id="get-around-the-board-with-the-keyboard">Get around the board with the keyboard<a class="anchor" href="#get-around-the-board-with-the-keyboard" aria-label="Link to this section: Get around the board with the keyboard">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>h</kbd> / <kbd>l</kbd> or <kbd>←</kbd> / <kbd>→</kbd></td>
+<td>Jump to the previous or next column</td>
+</tr>
+<tr>
+<td><kbd>j</kbd> / <kbd>k</kbd></td>
+<td>Move up and down within a column</td>
+</tr>
+<tr>
+<td><kbd>Shift</kbd>+<kbd>←</kbd> / <kbd>Shift</kbd>+<kbd>→</kbd></td>
+<td>Move the selected card to the previous or next column</td>
+</tr>
+<tr>
+<td><kbd>a</kbd></td>
+<td>Add a task to the selected card&#39;s column</td>
+</tr>
+<tr>
+<td><kbd>Enter</kbd></td>
+<td>Open the card</td>
+</tr>
+</tbody></table></div>
+<h2 id="good-to-know">Good to know<a class="anchor" href="#good-to-know" aria-label="Link to this section: Good to know">#</a></h2>
+<ul>
+<li>Moving a task to another project removes it from its section, because sections belong to one project.</li>
+<li>If someone deletes a section while you were moving a task into it on another device, the task ends up under <strong>No section</strong>. Nothing is lost.</li>
+<li>Sections are part of the export and come back when you import it.</li>
+</ul>
+<h2 id="ideas-for-sections">Ideas for sections<a class="anchor" href="#ideas-for-sections" aria-label="Link to this section: Ideas for sections">#</a></h2>
+<ul>
+<li>A simple flow: <strong>To do</strong>, <strong>Doing</strong>, <strong>Done</strong>.</li>
+<li>By place: <strong>Kitchen</strong>, <strong>Bathroom</strong>, <strong>Garden</strong> for a renovation.</li>
+<li>By week: <strong>This week</strong>, <strong>Next week</strong>, <strong>Later</strong> for a launch plan.</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/sections-and-boards.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/views/"><span>Previous</span>Views</a>
+      <a class="next" rel="next" href="/docs/labels-and-filters/"><span>Next</span>Labels and filters</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#add-a-section">Add a section</a></li><li><a href="#add-tasks-to-a-section">Add tasks to a section</a></li><li><a href="#rename-reorder-or-delete-a-section">Rename, reorder or delete a section</a></li><li><a href="#switch-to-a-board">Switch to a board</a></li><li><a href="#move-cards-between-columns">Move cards between columns</a></li><li><a href="#get-around-the-board-with-the-keyboard">Get around the board with the keyboard</a></li><li><a href="#good-to-know">Good to know</a></li><li><a href="#ideas-for-sections">Ideas for sections</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

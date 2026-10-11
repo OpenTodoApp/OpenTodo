@@ -209,7 +209,7 @@ const shots = [
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
     await scrollPanelTo(p, detail(p).getByRole('region', { name: 'Comments and activity' }), 8)
   } },
-  { name: 'notifications', server: D, async run(p) {
+  { name: 'notifications', card: true, server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
     await p.getByRole('button', { name: /^Notifications/ }).click(); const d = p.getByRole('dialog', { name: 'Notifications' }); await d.waitFor(); await settle(p, 500)
     const b = await d.boundingBox(); const vp = p.viewportSize()
@@ -229,7 +229,7 @@ const shots = [
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
     await p.keyboard.press('?'); await p.getByText('Keyboard shortcuts').first().waitFor(); await settle(p, 500)
   }, async after(p) { await p.keyboard.press('Escape') } },
-  { name: 'sync-status', server: D, async run(p, { ctx }) {
+  { name: 'sync-status', card: true, server: D, async run(p, { ctx }) {
     await go(p, demoBase, '/inbox', () => p.getByLabel('Add a task').waitFor())
     await ctx.setOffline(true); await settle(p, 800)
     const qa = p.getByLabel('Add a task'); await qa.click(); await qa.fill('Buy stamps'); await qa.press('Enter'); await settle(p, 1200)
@@ -237,13 +237,13 @@ const shots = [
     return { x: b.x, y: b.y, width: b.width, height: 330 }
   }, async after(p, { ctx }) { await ctx.setOffline(false); await settle(p, 2500) } },
   // Phone
-  { name: 'mobile-today', server: D, phone: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()) } },
+  { name: 'mobile-today', card: true, server: D, phone: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor()) } },
   { name: 'mobile-menu', server: D, phone: true, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
     await p.getByRole('button', { name: 'Open menu' }).click(); await settle(p, 600)
   } },
   // Ordinary instance: account, settings and sharing
-  { name: 'signin', server: FRESH, async run(p) {
+  { name: 'signin', card: true, server: FRESH, async run(p) {
     await p.goto(plainBase); await p.getByRole('button', { name: 'Sign in', exact: true }).first().waitFor(); await settle(p)
     return clipOf(p, p.locator('div[class*="rounded"]').filter({ has: p.locator('form') }).first(), 32)
   } },
@@ -254,7 +254,7 @@ const shots = [
     return clipOf(p, d.locator('> div').first(), 16).catch(() => clipOf(p, d, 0))
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'settings', server: P, card: true, async run(p) { await go(p, plainBase, '/settings', () => p.getByRole('heading', { name: 'Settings', level: 1 }).waitFor()) } },
-  { name: 'settings-security', server: P, async run(p) {
+  { name: 'settings-security', card: true, server: P, async run(p) {
     await go(p, plainBase, '/settings', () => p.getByRole('heading', { name: 'Settings', level: 1 }).waitFor())
     const h = p.getByRole('heading', { level: 2, name: 'Two-factor authentication' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
@@ -266,7 +266,7 @@ const shots = [
     const h = p.getByRole('heading', { level: 2, name: 'Security' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
-    return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 300 }
+    return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 270 }
   } },
   { name: 'settings-notifications', server: P, permissions: ['notifications'], async run(p) {
     await go(p, plainBase, '/settings', () => p.getByRole('heading', { name: 'Settings', level: 1 }).waitFor())
@@ -282,7 +282,7 @@ const shots = [
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 380 }
   } },
-  { name: 'import', server: P, async run(p) { await go(p, plainBase, '/settings/import', () => p.getByRole('heading', { level: 1 }).first().waitFor()) } },
+  { name: 'import', card: true, server: P, async run(p) { await go(p, plainBase, '/settings/import', () => p.getByRole('heading', { level: 1 }).first().waitFor()) } },
 ]
 
 // ------------------------------------------------------------------ run

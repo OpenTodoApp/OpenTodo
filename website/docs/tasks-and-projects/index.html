@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tasks and projects · OpenTodo docs</title>
+  <meta name="description" content="Add and edit tasks, write notes, break work into subtasks, set priorities and organise everything into projects and sub-projects.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/tasks-and-projects/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/tasks-and-projects/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Tasks and projects · OpenTodo docs">
+  <meta property="og:description" content="Add and edit tasks, write notes, break work into subtasks, set priorities and organise everything into projects and sub-projects.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/" aria-current="page">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/" aria-current="page">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Guides</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#add-a-task">Add a task</a></li><li><a href="#edit-a-task">Edit a task</a><ul><li><a href="#quick-changes-from-the-list">Quick changes from the list</a></li><li><a href="#write-notes">Write notes</a></li><li><a href="#dates-and-times">Dates and times</a></li></ul></li><li><a href="#complete-reopen-and-delete">Complete, reopen and delete</a></li><li><a href="#break-a-task-into-subtasks">Break a task into subtasks</a></li><li><a href="#organise-with-projects">Organise with projects</a><ul><li><a href="#sub-projects">Sub-projects</a></li><li><a href="#when-a-project-is-done">When a project is done</a></li></ul></li><li><a href="#put-things-in-order">Put things in order</a></li><li><a href="#tips">Tips</a></li></ul></nav></details>
+<h1 id="tasks-and-projects">Tasks and projects</h1>
+<p>A task is one thing to do. A project is a list of tasks that belong together. This guide covers both, from adding a task to arranging projects inside each other.</p>
+<h2 id="add-a-task">Add a task<a class="anchor" href="#add-a-task" aria-label="Link to this section: Add a task">#</a></h2>
+<p>Press <kbd>q</kbd> anywhere in a task list, type, and press <kbd>Enter</kbd>. The box stays focused so you can add several in a row.</p>
+<p>You can fill in details as you type:</p>
+<pre tabindex="0"><code>Order new taps friday #Home @errand p2 +20m</code></pre>
+<p>This creates &quot;Order new taps&quot;, due Friday, in the project Home, with the label errand, priority 2 and an estimate of 20 minutes. Chips under the box show what was understood before you press Enter. The <a href="/docs/quick-add/">quick add reference</a> has every word and symbol it knows.</p>
+<p>New tasks without a project land in the <strong>Inbox</strong>. Tasks added inside a project go into that project, and tasks added in <strong>Today</strong> are due today.</p>
+<h2 id="edit-a-task">Edit a task<a class="anchor" href="#edit-a-task" aria-label="Link to this section: Edit a task">#</a></h2>
+<p>Click a task, or select it with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd>, to open its panel. Every change is saved as you make it; there is no Save button.</p>
+<p><picture><source srcset="/docs/images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/task-detail-light.webp" alt="A project list with the task panel open on the right, showing the title, notes, project, section, parent task, assignee, priority and due date." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<p>In the panel you can change:</p>
+<ul>
+<li><strong>Title</strong> and <strong>Notes</strong>. Notes can have headings, bold and italic text, links, and bullet, numbered and check lists.</li>
+<li><strong>Project</strong>, <strong>Section</strong> and <strong>Parent task</strong>, to move it somewhere else.</li>
+<li><strong>Priority</strong>, from P1 (most important) to P4 (the default).</li>
+<li><strong>Due</strong>, a date with an optional time.</li>
+<li><strong>Reminders</strong>, <strong>Estimate</strong> and <strong>Repeat</strong>. See <a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a> and <a href="/docs/time-blocking/">Time blocking</a>.</li>
+<li><strong>Labels</strong>, <strong>Subtasks</strong> and, further down, <strong>Comments</strong> and <strong>History</strong>.</li>
+</ul>
+<p>Close the panel with <kbd>Esc</kbd> or the <strong>×</strong> at the top. On a phone the panel covers the list; close it to go back.</p>
+<h3 id="quick-changes-from-the-list">Quick changes from the list<a class="anchor" href="#quick-changes-from-the-list" aria-label="Link to this section: Quick changes from the list">#</a></h3>
+<p>You don&#39;t have to open a task to change it. Select it and press:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>1</kbd> to <kbd>4</kbd></td>
+<td>Set the priority</td>
+</tr>
+<tr>
+<td><kbd>c</kbd></td>
+<td>Complete or reopen</td>
+</tr>
+<tr>
+<td><kbd>L</kbd></td>
+<td>Add labels (type to search, <kbd>Enter</kbd> to add or create)</td>
+</tr>
+<tr>
+<td><kbd>e</kbd></td>
+<td>Set the estimate (<code>20</code>, <code>45m</code>, <code>1h30</code>)</td>
+</tr>
+<tr>
+<td><kbd>s</kbd></td>
+<td>Schedule it on the Day calendar</td>
+</tr>
+<tr>
+<td><kbd>Delete</kbd></td>
+<td>Move it to the Trash</td>
+</tr>
+</tbody></table></div>
+<h3 id="write-notes">Write notes<a class="anchor" href="#write-notes" aria-label="Link to this section: Write notes">#</a></h3>
+<p>The notes field formats as you type. Start a line with <code>- </code> for a bullet list, <code>1. </code> for a numbered list, <code>[ ] </code> for a checklist or <code># </code> for a heading. Select text and press <kbd>Ctrl</kbd>+<kbd>B</kbd> for bold or <kbd>Ctrl</kbd>+<kbd>K</kbd> for a link (<kbd>⌘</kbd> on a Mac). If two of your devices edit the same note at the same time, both sets of changes are kept.</p>
+<h3 id="dates-and-times">Dates and times<a class="anchor" href="#dates-and-times" aria-label="Link to this section: Dates and times">#</a></h3>
+<p>A due date is just a calendar day, and a time is the time on the clock where you are. A task due Tuesday at 09:00 shows Tuesday at 09:00 on every device, even when you travel.</p>
+<p>For things that happen at a fixed moment, like a call with someone in another country, tick <strong>Fixed to time zone</strong> under Due (or press <kbd>z</kbd> with the panel open). The task is then tied to your current time zone, and devices elsewhere show it converted to their local time, with the original time as a hint.</p>
+<h2 id="complete-reopen-and-delete">Complete, reopen and delete<a class="anchor" href="#complete-reopen-and-delete" aria-label="Link to this section: Complete, reopen and delete">#</a></h2>
+<p>Click the circle next to a task, or press <kbd>c</kbd>. Completed tasks move to <strong>Completed</strong> in the sidebar, where you can reopen them.</p>
+<p>Deleting a task (the <strong>Delete</strong> button in the panel, or <kbd>Delete</kbd> in the list) moves it to the Trash, along with its subtasks. You can restore it from there. See <a href="/docs/trash-and-history/">Trash and history</a>.</p>
+<h2 id="break-a-task-into-subtasks">Break a task into subtasks<a class="anchor" href="#break-a-task-into-subtasks" aria-label="Link to this section: Break a task into subtasks">#</a></h2>
+<p>Big tasks are easier as a few small steps. To add one:</p>
+<ul>
+<li>open the task and type in <strong>Add subtask</strong>, or</li>
+<li>select the task in the list and press <kbd>a</kbd>.</li>
+</ul>
+<p>Subtasks appear indented under their parent, and the parent shows your progress, like <strong>1/3</strong>. You can nest subtasks inside subtasks.</p>
+<p>To turn an existing task into a subtask, select it and press <kbd>Tab</kbd>: it moves under the task above it. <kbd>Shift</kbd>+<kbd>Tab</kbd> moves it back out. You can also pick a <strong>Parent task</strong> in the panel. Use <kbd>←</kbd> and <kbd>→</kbd> to fold and unfold a parent&#39;s subtasks.</p>
+<p>Completing a parent completes all its open subtasks too. When you tick off the last open subtask, OpenTodo asks whether to complete the parent as well; press <kbd>Enter</kbd> for yes.</p>
+<h2 id="organise-with-projects">Organise with projects<a class="anchor" href="#organise-with-projects" aria-label="Link to this section: Organise with projects">#</a></h2>
+<p>Projects keep related tasks together. To create one, click <strong>+</strong> next to <strong>Projects</strong> in the sidebar, type a name and choose <strong>Create</strong>. Pick a parent project in the same form to make it a sub-project.</p>
+<p><picture><source srcset="/docs/images/project-list-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/project-list-light.webp" alt="The Home renovation project with its tasks grouped under the sections Planning and In progress." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<p>The <strong>Project</strong> menu at the top right of a project lets you:</p>
+<ul>
+<li>pick a <strong>color</strong>,</li>
+<li><strong>Move to</strong> another project, or back to the top level (shortcut <kbd>m</kbd>),</li>
+<li><strong>Rename</strong> it,</li>
+<li><strong>Archive</strong> it, which hides it and its sub-projects from the sidebar while keeping every task,</li>
+<li><strong>Delete project</strong>, which moves it to the Trash.</li>
+</ul>
+<p>The number next to each project in the sidebar counts its open tasks. When a project with sub-projects is folded, the number includes them.</p>
+<p>Inside a project you can also group tasks into sections and show them as a board. That has its own guide: <a href="/docs/sections-and-boards/">Sections and boards</a>.</p>
+<h3 id="sub-projects">Sub-projects<a class="anchor" href="#sub-projects" aria-label="Link to this section: Sub-projects">#</a></h3>
+<p>Sub-projects work like folders: &quot;Work&quot; can hold &quot;Q4 launch&quot;, which can hold more. A project&#39;s page lists its sub-projects at the bottom with their task counts. Use the small arrow next to a project in the sidebar, or <kbd>←</kbd> / <kbd>→</kbd>, to fold and unfold it. Folding is remembered on each device separately.</p>
+<h3 id="when-a-project-is-done">When a project is done<a class="anchor" href="#when-a-project-is-done" aria-label="Link to this section: When a project is done">#</a></h3>
+<p>When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in <strong>Settings → Projects</strong> (each device has its own setting).</p>
+<h2 id="put-things-in-order">Put things in order<a class="anchor" href="#put-things-in-order" aria-label="Link to this section: Put things in order">#</a></h2>
+<p>In the Inbox and in projects, you decide the order. Drag a task to a new place (on a touch screen, press and hold first), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd>. <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> sends it to the top. Dropping a task on the middle of another one makes it a subtask. Projects in the sidebar can be reordered the same way.</p>
+<p>Today, Upcoming, labels and filters sort themselves by date and priority, so dragging is switched off there.</p>
+<h2 id="tips">Tips<a class="anchor" href="#tips" aria-label="Link to this section: Tips">#</a></h2>
+<ul>
+<li>Keep the Inbox as a landing spot: capture fast, then sort into projects once a day.</li>
+<li>Use priorities sparingly. If everything is P1, nothing is.</li>
+<li>A task with an estimate shows it on the row, like <code>30m</code>, which makes it easy to spot quick wins. The <strong>Quick wins</strong> button above most lists shows only tasks of 15 minutes or less.</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/tasks-and-projects.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/install-app/"><span>Previous</span>Installing the app</a>
+      <a class="next" rel="next" href="/docs/views/"><span>Next</span>Views</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#add-a-task">Add a task</a></li><li><a href="#edit-a-task">Edit a task</a><ul><li><a href="#quick-changes-from-the-list">Quick changes from the list</a></li><li><a href="#write-notes">Write notes</a></li><li><a href="#dates-and-times">Dates and times</a></li></ul></li><li><a href="#complete-reopen-and-delete">Complete, reopen and delete</a></li><li><a href="#break-a-task-into-subtasks">Break a task into subtasks</a></li><li><a href="#organise-with-projects">Organise with projects</a><ul><li><a href="#sub-projects">Sub-projects</a></li><li><a href="#when-a-project-is-done">When a project is done</a></li></ul></li><li><a href="#put-things-in-order">Put things in order</a></li><li><a href="#tips">Tips</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

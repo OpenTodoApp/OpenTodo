@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sharing and comments · OpenTodo docs</title>
+  <meta name="description" content="Share a project with people on your server, choose what they can do, assign tasks, and talk it through in comments with @mentions.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/sharing/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/sharing/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Sharing and comments · OpenTodo docs">
+  <meta property="og:description" content="Share a project with people on your server, choose what they can do, assign tasks, and talk it through in comments with @mentions.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/" aria-current="page">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/" aria-current="page">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Guides</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#share-a-project">Share a project</a></li><li><a href="#choose-a-role">Choose a role</a></li><li><a href="#invite-someone-new">Invite someone new</a></li><li><a href="#leave-or-hand-over-a-project">Leave or hand over a project</a></li><li><a href="#assign-tasks">Assign tasks</a></li><li><a href="#comment-on-a-task">Comment on a task</a></li><li><a href="#see-what-others-changed">See what others changed</a></li><li><a href="#things-to-know">Things to know</a></li></ul></nav></details>
+<h1 id="sharing-and-comments">Sharing and comments</h1>
+<p>Projects can be shared with other people who have an account on the same OpenTodo server: your partner for the house move, your team for a launch. Everyone sees the same tasks, edits sync to everyone within seconds, and each task has a comment thread.</p>
+<h2 id="share-a-project">Share a project<a class="anchor" href="#share-a-project" aria-label="Link to this section: Share a project">#</a></h2>
+<ol>
+<li>Open the project and select <strong>Share</strong> at the top (or press <kbd>Shift</kbd>+<kbd>S</kbd>).</li>
+<li>Type the person&#39;s email address.</li>
+<li>Pick a role and select <strong>Share</strong>.</li>
+</ol>
+<p><picture><source srcset="/docs/images/share-dialog-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/share-dialog-light.webp" alt="The Share dialog for Home renovation: an email field, a role menu set to editor, and the member list with the owner and one editor." width="600" height="91" loading="lazy" decoding="async"></picture></p>
+<p>The project appears on their devices the next time they sync, with all its tasks. Shared projects have a small people icon in the sidebar.</p>
+<p>You can only add people who already have an account on your server. If they don&#39;t, invite them first (see below).</p>
+<h2 id="choose-a-role">Choose a role<a class="anchor" href="#choose-a-role" aria-label="Link to this section: Choose a role">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Can</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>viewer</strong></td>
+<td>see the project and its tasks, and comment</td>
+</tr>
+<tr>
+<td><strong>editor</strong></td>
+<td>also add, edit, complete and delete tasks, and assign them</td>
+</tr>
+<tr>
+<td><strong>admin</strong></td>
+<td>also rename, recolor and archive the project, and manage members</td>
+</tr>
+<tr>
+<td><strong>owner</strong></td>
+<td>everything, including deleting the project and handing it over</td>
+</tr>
+</tbody></table></div>
+<p>Every project has exactly one owner. To change someone&#39;s role, open <strong>Share</strong> and pick a new one next to their name. <strong>Remove</strong> takes them out of the project.</p>
+<p>For viewers, the project is read-only: the add box and edit controls are switched off, with a note saying so.</p>
+<h2 id="invite-someone-new">Invite someone new<a class="anchor" href="#invite-someone-new" aria-label="Link to this section: Invite someone new">#</a></h2>
+<p>Sign-up on an OpenTodo server is closed by default, so new people join with an invitation. If you&#39;re the owner or an admin of the server, go to <strong>Settings → Members</strong>, optionally enter their email, choose how long the link stays valid, and select <strong>Create invitation</strong>. Copy the link and send it to them however you like; OpenTodo doesn&#39;t send emails. The link works once.</p>
+<p><picture><source srcset="/docs/images/members-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/members-light.webp" alt="Settings, Members section: an email field, an expiry menu set to 7 days, a Create invitation button, and a list with one pending and one accepted invitation." width="1180" height="475" loading="lazy" decoding="async"></picture></p>
+<p>If you&#39;re not an admin of the server, ask whoever runs it to invite the person. Once they&#39;ve joined, you can share projects with them yourself.</p>
+<h2 id="leave-or-hand-over-a-project">Leave or hand over a project<a class="anchor" href="#leave-or-hand-over-a-project" aria-label="Link to this section: Leave or hand over a project">#</a></h2>
+<ul>
+<li><strong>Leave</strong>: in the Share dialog, select <strong>Leave</strong> next to your own name. The project disappears from your devices; everyone else keeps it.</li>
+<li><strong>Make owner</strong>: the owner can hand the project to another member. The previous owner becomes an admin. Owners can&#39;t leave until they&#39;ve done this.</li>
+</ul>
+<p>When someone leaves or is removed, tasks assigned to them become unassigned.</p>
+<h2 id="assign-tasks">Assign tasks<a class="anchor" href="#assign-tasks" aria-label="Link to this section: Assign tasks">#</a></h2>
+<p>In a shared project, each task can be assigned to one member. Open the task and choose someone under <strong>Assignee</strong>, or select the task and press <kbd>Shift</kbd>+<kbd>A</kbd>, type a name and press <kbd>Enter</kbd>. The assignee&#39;s avatar shows on the row, and they get a notification.</p>
+<p><strong>Assigned to me</strong> in the sidebar (<kbd>g</kbd> <kbd>a</kbd>) lists every open task assigned to you, across projects.</p>
+<h2 id="comment-on-a-task">Comment on a task<a class="anchor" href="#comment-on-a-task" aria-label="Link to this section: Comment on a task">#</a></h2>
+<p>Open a task and scroll to <strong>Comments</strong>, or press <kbd>Shift</kbd>+<kbd>C</kbd> with the task open. Write your comment and post it with <strong>Comment</strong> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (<kbd>⌘</kbd>+<kbd>Enter</kbd> on a Mac).</p>
+<p><picture><source srcset="/docs/images/comments-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/comments-light.webp" alt="A task's comment thread with a comment that mentions Alex, a reply nested under it, and a newer comment." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<ul>
+<li><strong>Mention</strong> someone by typing <code>@</code> and picking their name. They get a notification.</li>
+<li><strong>Reply</strong> to a comment to keep a conversation together. Replies are nested under it.</li>
+<li><strong>Edit</strong> or <strong>Delete</strong> your own comments. Edited comments are marked as edited. Project admins and the owner can delete any comment.</li>
+<li>Comments support simple formatting: <code>**bold**</code>, <code>*italic*</code>, <code>`code`</code>, lists, quotes and links.</li>
+</ul>
+<p>Everyone who can see a task can comment on it, viewers included. Rows with comments show a speech bubble and a count. Comments work offline too and are sent when you&#39;re back online.</p>
+<p>The same thread shows the task&#39;s activity: who created it, completed it or changed its date.</p>
+<h2 id="see-what-others-changed">See what others changed<a class="anchor" href="#see-what-others-changed" aria-label="Link to this section: See what others changed">#</a></h2>
+<p><strong>Activity</strong> in the sidebar (<kbd>g</kbd> <kbd>h</kbd>) lists the latest changes in all your shared projects, newest first and grouped by day. Each shared project shows a count of unread changes next to its name, and opening the feed marks them as seen. Filter by project, person or kind of change (completed, created, commented, assigned, rescheduled).</p>
+<p><picture><source srcset="/docs/images/activity-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/activity-light.webp" alt="The Activity feed listing recent changes by Sam Rivera and you in the Home renovation project." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<p>Inside a project, <strong>Activity</strong> at the top (<kbd>Shift</kbd>+<kbd>H</kbd>) shows the changes for that project only.</p>
+<h2 id="things-to-know">Things to know<a class="anchor" href="#things-to-know" aria-label="Link to this section: Things to know">#</a></h2>
+<ul>
+<li><strong>Labels and reminders stay personal.</strong> Labels you add to a shared task are only visible to you, and so are your reminders.</li>
+<li><strong>Moving a task out of a shared project</strong> to your own project or Inbox makes a copy there and removes the original from the shared project for everyone.</li>
+<li><strong>Deleting a shared project</strong> is something only the owner can do. It disappears for every member, and its open tasks are copied into the owner&#39;s Inbox.</li>
+<li><strong>End-to-end encryption and sharing don&#39;t mix.</strong> Shared projects are never encrypted, and an account with <a href="/docs/e2ee/">encryption</a> turned on can&#39;t share new projects.</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/sharing.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/time-blocking/"><span>Previous</span>Time blocking</a>
+      <a class="next" rel="next" href="/docs/notifications/"><span>Next</span>Notifications</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#share-a-project">Share a project</a></li><li><a href="#choose-a-role">Choose a role</a></li><li><a href="#invite-someone-new">Invite someone new</a></li><li><a href="#leave-or-hand-over-a-project">Leave or hand over a project</a></li><li><a href="#assign-tasks">Assign tasks</a></li><li><a href="#comment-on-a-task">Comment on a task</a></li><li><a href="#see-what-others-changed">See what others changed</a></li><li><a href="#things-to-know">Things to know</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Keyboard shortcuts · OpenTodo docs</title>
+  <meta name="description" content="Every shortcut in OpenTodo, from quick add to the calendar, plus the optional Vim keybindings.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/keyboard/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/keyboard/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Keyboard shortcuts · OpenTodo docs">
+  <meta property="og:description" content="Every shortcut in OpenTodo, from quick add to the calendar, plus the optional Vim keybindings.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/" aria-current="page">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/" aria-current="page">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Guides</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#see-them-in-the-app">See them in the app</a></li><li><a href="#the-ones-to-learn-first">The ones to learn first</a></li><li><a href="#all-shortcuts">All shortcuts</a><ul><li><a href="#everywhere">Everywhere</a></li><li><a href="#go-to-a-view">Go to a view</a></li><li><a href="#tasks-in-a-list">Tasks in a list</a></li><li><a href="#board">Board</a></li><li><a href="#day-and-week-calendar">Day and Week calendar</a></li><li><a href="#filter-saved-views-and-dashboards">Filter, saved views and dashboards</a></li><li><a href="#trash-and-projects">Trash and projects</a></li><li><a href="#comments-and-notes">Comments and notes</a></li><li><a href="#settings">Settings</a></li><li><a href="#quick-add-syntax">Quick add syntax</a></li></ul></li><li><a href="#vim-keybindings">Vim keybindings</a></li></ul></nav></details>
+<h1 id="keyboard-shortcuts">Keyboard shortcuts</h1>
+<p>Everything in OpenTodo can be done from the keyboard. You don&#39;t need to learn it all: <kbd>q</kbd> to add, <kbd>j</kbd> / <kbd>k</kbd> to move, <kbd>c</kbd> to complete and <kbd>?</kbd> to look up the rest gets you a long way.</p>
+<p>Shortcuts don&#39;t fire while you&#39;re typing in a field. Press <kbd>Esc</kbd> to leave the field first.</p>
+<h2 id="see-them-in-the-app">See them in the app<a class="anchor" href="#see-them-in-the-app" aria-label="Link to this section: See them in the app">#</a></h2>
+<p>Press <kbd>?</kbd> at any time for the full list. It&#39;s the same list as on this page, generated from the same source, so the two always match.</p>
+<p><picture><source srcset="/docs/images/shortcuts-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/shortcuts-light.webp" alt="The Keyboard shortcuts dialog open over the Today view." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<h2 id="the-ones-to-learn-first">The ones to learn first<a class="anchor" href="#the-ones-to-learn-first" aria-label="Link to this section: The ones to learn first">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>q</kbd></td>
+<td>Add a task</td>
+</tr>
+<tr>
+<td><kbd>j</kbd> / <kbd>k</kbd></td>
+<td>Move down and up the list</td>
+</tr>
+<tr>
+<td><kbd>Enter</kbd></td>
+<td>Open the selected task</td>
+</tr>
+<tr>
+<td><kbd>c</kbd></td>
+<td>Complete it</td>
+</tr>
+<tr>
+<td><kbd>1</kbd> … <kbd>4</kbd></td>
+<td>Set its priority</td>
+</tr>
+<tr>
+<td><kbd>g</kbd> then <kbd>t</kbd></td>
+<td>Go to Today (<kbd>i</kbd> for Inbox, <kbd>u</kbd> for Upcoming)</td>
+</tr>
+<tr>
+<td><kbd>Esc</kbd></td>
+<td>Close the panel</td>
+</tr>
+</tbody></table></div>
+<p>A two-step shortcut like <kbd>g</kbd> then <kbd>t</kbd> means: press <kbd>g</kbd>, let go, then press <kbd>t</kbd>.</p>
+<p>On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Option</kbd> for <kbd>Alt</kbd>.</p>
+<h2 id="all-shortcuts">All shortcuts<a class="anchor" href="#all-shortcuts" aria-label="Link to this section: All shortcuts">#</a></h2>
+<h3 id="everywhere">Everywhere<a class="anchor" href="#everywhere" aria-label="Link to this section: Everywhere">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>q</kbd></td>
+<td>Quick add a task</td>
+</tr>
+<tr>
+<td><kbd>Shift+V</kbd></td>
+<td>Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves</td>
+</tr>
+<tr>
+<td><kbd>Esc</kbd></td>
+<td>Close panel, clear selection</td>
+</tr>
+<tr>
+<td><kbd>?</kbd></td>
+<td>Toggle this help</td>
+</tr>
+</tbody></table></div>
+<h3 id="go-to-a-view">Go to a view<a class="anchor" href="#go-to-a-view" aria-label="Link to this section: Go to a view">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>g</kbd> then <kbd>i</kbd> / <kbd>t</kbd> / <kbd>u</kbd> / <kbd>c</kbd> / <kbd>l</kbd> / <kbd>f</kbd> / <kbd>v</kbd> / <kbd>s</kbd></td>
+<td>Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings</td>
+</tr>
+<tr>
+<td><kbd>g</kbd> then <kbd>a</kbd></td>
+<td>Go to Assigned to me</td>
+</tr>
+<tr>
+<td><kbd>g</kbd> then <kbd>x</kbd></td>
+<td>Go to the Trash</td>
+</tr>
+<tr>
+<td><kbd>g</kbd> then <kbd>h</kbd></td>
+<td>Go to Activity: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters)</td>
+</tr>
+<tr>
+<td><kbd>g</kbd> then <kbd>Shift+I</kbd></td>
+<td>Go to Settings → Import data</td>
+</tr>
+<tr>
+<td><kbd>g</kbd> then <kbd>d</kbd> / <kbd>w</kbd></td>
+<td>Go to the Day / Week calendar</td>
+</tr>
+</tbody></table></div>
+<h3 id="tasks-in-a-list">Tasks in a list<a class="anchor" href="#tasks-in-a-list" aria-label="Link to this section: Tasks in a list">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>j</kbd> / <kbd>k</kbd></td>
+<td>Move selection down / up</td>
+</tr>
+<tr>
+<td><kbd>Enter</kbd></td>
+<td>Open selected task; accept &quot;complete parent too?&quot;</td>
+</tr>
+<tr>
+<td><kbd>c</kbd></td>
+<td>Complete / reopen selected task (and its subtasks)</td>
+</tr>
+<tr>
+<td><kbd>a</kbd></td>
+<td>Add a subtask to the selected task</td>
+</tr>
+<tr>
+<td><kbd>Shift+A</kbd></td>
+<td>Assign the selected task (type to find a member, Enter assigns)</td>
+</tr>
+<tr>
+<td><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd></td>
+<td>Indent under previous sibling / outdent</td>
+</tr>
+<tr>
+<td><kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd></td>
+<td>Move the selected task, or the focused sidebar project, one place within its list (it stays selected)</td>
+</tr>
+<tr>
+<td><kbd>Alt+Shift+↑</kbd> / <kbd>Alt+Shift+↓</kbd></td>
+<td>Move it to the top / bottom of its list</td>
+</tr>
+<tr>
+<td><kbd>Drag</kbd> (touch: press and hold)</td>
+<td>Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels</td>
+</tr>
+<tr>
+<td>Today, Upcoming, Assigned, Completed, labels, filters</td>
+<td>Sorted by date (or their own rule): no drag or Alt moves there</td>
+</tr>
+<tr>
+<td><kbd>←</kbd> / <kbd>→</kbd></td>
+<td>Collapse / expand subtasks of the selected task, or sub-projects of the focused sidebar project</td>
+</tr>
+<tr>
+<td><kbd>v</kbd></td>
+<td>Toggle the current project between list and board (remembered per project on this device)</td>
+</tr>
+<tr>
+<td><kbd>Shift+S</kbd></td>
+<td>Share the current project: add members by email, change roles, remove, leave, transfer</td>
+</tr>
+<tr>
+<td><kbd>1</kbd> – <kbd>4</kbd></td>
+<td>Set priority of selected task</td>
+</tr>
+<tr>
+<td><kbd>L</kbd></td>
+<td>Labels of selected task (type to find, Enter adds or creates)</td>
+</tr>
+<tr>
+<td><kbd>e</kbd></td>
+<td>Edit the estimate of the selected task (type 20, 45m, 1h30; Enter)</td>
+</tr>
+<tr>
+<td><kbd>s</kbd></td>
+<td>Schedule the selected task: Day view in placement mode</td>
+</tr>
+<tr>
+<td><kbd>Shift+S</kbd></td>
+<td>Skip the current occurrence of a recurring task</td>
+</tr>
+<tr>
+<td><kbd>Shift+O</kbd></td>
+<td>Recurring task: this occurrence only (standalone copy, series moves on)</td>
+</tr>
+<tr>
+<td><kbd>Delete</kbd></td>
+<td>Delete selected task (and its subtasks)</td>
+</tr>
+<tr>
+<td><kbd>z</kbd></td>
+<td>Task panel open: fix a timed due to your time zone, or release it to a floating time</td>
+</tr>
+</tbody></table></div>
+<h3 id="board">Board<a class="anchor" href="#board" aria-label="Link to this section: Board">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>h</kbd> / <kbd>l</kbd>, <kbd>←</kbd> / <kbd>→</kbd></td>
+<td>Select the first task of the previous / next column; j / k move within a column</td>
+</tr>
+<tr>
+<td><kbd>Shift+←</kbd> / <kbd>Shift+→</kbd></td>
+<td>Move the selected task to the previous / next column (it stays selected)</td>
+</tr>
+<tr>
+<td><kbd>a</kbd></td>
+<td>Add a task to the selected task’s column</td>
+</tr>
+</tbody></table></div>
+<h3 id="day-and-week-calendar">Day and Week calendar<a class="anchor" href="#day-and-week-calendar" aria-label="Link to this section: Day and Week calendar">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>j</kbd> / <kbd>k</kbd></td>
+<td>Select the next / previous task (lane, then blocks)</td>
+</tr>
+<tr>
+<td><kbd>↑</kbd> / <kbd>↓</kbd></td>
+<td>Move the selected task 15 minutes (a lane task gets a time)</td>
+</tr>
+<tr>
+<td><kbd>←</kbd> / <kbd>→</kbd></td>
+<td>Move the selected task one day</td>
+</tr>
+<tr>
+<td><kbd>Shift+↑</kbd> / <kbd>Shift+↓</kbd></td>
+<td>Shorten / lengthen the estimate by 15 minutes</td>
+</tr>
+<tr>
+<td><kbd>u</kbd> / <kbd>p</kbd></td>
+<td>Unschedule (keep the date) / placement mode for the selected task</td>
+</tr>
+<tr>
+<td><kbd>Enter</kbd> / <kbd>Esc</kbd></td>
+<td>Place the task at the ghost / cancel without changes</td>
+</tr>
+<tr>
+<td><kbd>[</kbd> / <kbd>]</kbd> / <kbd>t</kbd></td>
+<td>Previous / next day or week, back to today</td>
+</tr>
+</tbody></table></div>
+<h3 id="filter-saved-views-and-dashboards">Filter, saved views and dashboards<a class="anchor" href="#filter-saved-views-and-dashboards" aria-label="Link to this section: Filter, saved views and dashboards">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>Enter</kbd> / <kbd>Esc</kbd></td>
+<td>In Filter: jump from the query to the first result / back to the query</td>
+</tr>
+<tr>
+<td><kbd>s</kbd></td>
+<td>In Filter results: save the query as a view, pinned to the sidebar</td>
+</tr>
+<tr>
+<td><kbd>/</kbd></td>
+<td>In a saved view: edit the query; Enter saves it, Esc discards</td>
+</tr>
+<tr>
+<td><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd></td>
+<td>On a dashboard: move between panels; j / k inside a panel, Enter opens, o opens the view</td>
+</tr>
+<tr>
+<td><kbd>↑</kbd> / <kbd>↓</kbd></td>
+<td>In the filter query: recall recent queries on this device</td>
+</tr>
+</tbody></table></div>
+<h3 id="trash-and-projects">Trash and projects<a class="anchor" href="#trash-and-projects" aria-label="Link to this section: Trash and projects">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>m</kbd></td>
+<td>Move the current project under another project or to the top level</td>
+</tr>
+<tr>
+<td><kbd>j</kbd> / <kbd>k</kbd>, <kbd>r</kbd>, <kbd>Delete</kbd></td>
+<td>In the Trash: select, restore, delete permanently (Enter confirms, Esc cancels)</td>
+</tr>
+<tr>
+<td><kbd>Enter</kbd></td>
+<td>After completing the last task of a project: archive the project; any other key dismisses</td>
+</tr>
+</tbody></table></div>
+<h3 id="comments-and-notes">Comments and notes<a class="anchor" href="#comments-and-notes" aria-label="Link to this section: Comments and notes">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>Shift+C</kbd></td>
+<td>Comment on the open task: focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)</td>
+</tr>
+<tr>
+<td><kbd>Ctrl+Enter</kbd> / <kbd>⌘+Enter</kbd></td>
+<td>In a comment: post the comment, reply or edit; Esc cancels or leaves the field</td>
+</tr>
+<tr>
+<td><kbd>Tab</kbd>, <kbd>Enter</kbd></td>
+<td>In the comment thread: reach Reply, Edit and Delete on a comment; Load older activity at the end</td>
+</tr>
+<tr>
+<td><kbd>Shift+H</kbd></td>
+<td>In a project: show or hide the project activity; Tab reaches the person and kind filters</td>
+</tr>
+<tr>
+<td><kbd>Ctrl/⌘+B</kbd>, <kbd>I</kbd>, <kbd>Shift+X</kbd>, <kbd>E</kbd>, <kbd>K</kbd></td>
+<td>In the notes: bold, italic, strikethrough, inline code, link</td>
+</tr>
+<tr>
+<td><kbd>Ctrl/⌘+Alt+1</kbd>–<kbd>3</kbd> / <kbd>0</kbd></td>
+<td>In the notes: heading 1–3 / normal text</td>
+</tr>
+<tr>
+<td><kbd>Ctrl/⌘+Shift+8</kbd> / <kbd>7</kbd> / <kbd>9</kbd></td>
+<td>In the notes: bullet, numbered, check list; Ctrl/⌘+Enter ticks a check item; Tab / Shift+Tab indent</td>
+</tr>
+<tr>
+<td><kbd>-</kbd> · <kbd>1.</kbd> · <kbd>#</kbd> · <kbd>[ ]</kbd> · <kbd><strong>x</strong></kbd></td>
+<td>Typed in the notes: markdown typing becomes formatting; Shift+Enter is a line break, Esc leaves the notes</td>
+</tr>
+</tbody></table></div>
+<h3 id="settings">Settings<a class="anchor" href="#settings" aria-label="Link to this section: Settings">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><kbd>Enter</kbd></td>
+<td>On an invitation: Settings → Members: copy the invite link created in this session</td>
+</tr>
+<tr>
+<td><kbd>Delete</kbd></td>
+<td>On an invitation: Settings → Members: revoke a pending invitation</td>
+</tr>
+<tr>
+<td><kbd>d</kbd> / <kbd>r</kbd> / <kbd>Delete</kbd></td>
+<td>On a user: Settings → Users: deactivate or reactivate, create a reset link, delete (each confirms)</td>
+</tr>
+<tr>
+<td><kbd>g</kbd> then <kbd>s</kbd>, <kbd>Tab</kbd></td>
+<td>Settings → Security: add, rename (Enter saves, Esc cancels) or delete passkeys</td>
+</tr>
+</tbody></table></div>
+<h3 id="quick-add-syntax">Quick add syntax<a class="anchor" href="#quick-add-syntax" aria-label="Link to this section: Quick add syntax">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Type</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>&lt;code&gt;tomorrow · next Wed · 3 Feb · at 3pm&lt;/code&gt;</td>
+<td>Due date and time (6 languages)</td>
+</tr>
+<tr>
+<td>&lt;code&gt;#project @label p1 +30m&lt;/code&gt;</td>
+<td>Project, label, priority, estimate</td>
+</tr>
+<tr>
+<td>&lt;code&gt;"quoted text"&lt;/code&gt;</td>
+<td>Keep text literally</td>
+</tr>
+<tr>
+<td><kbd>Backspace ×2</kbd></td>
+<td>End of line: highlight, then dismiss the last chip</td>
+</tr>
+</tbody></table></div>
+<h2 id="vim-keybindings">Vim keybindings<a class="anchor" href="#vim-keybindings" aria-label="Link to this section: Vim keybindings">#</a></h2>
+<p>If you&#39;re used to Vim, turn on <strong>Settings → Keyboard → Vim keybindings</strong>. It&#39;s off by default and applies to that device only. With it on, a small indicator shows the mode (Normal, Insert or Command), and you get:</p>
+<ul>
+<li>counts like <kbd>3</kbd><kbd>j</kbd>, <kbd>g</kbd><kbd>g</kbd> and <kbd>G</kbd> for the first and last task,</li>
+<li><kbd>d</kbd><kbd>d</kbd> to delete, <kbd>x</kbd> to complete, <kbd>o</kbd> to add a task below and <kbd>i</kbd> to edit,</li>
+<li><kbd>J</kbd> / <kbd>K</kbd> to move the selected task,</li>
+<li>a command line on <kbd>:</kbd> with <code>:today</code>, <code>:project &lt;name&gt;</code>, <code>:new &lt;title&gt;</code>, <code>:sync</code> and <code>:help</code>.</li>
+</ul>
+<p>All the usual shortcuts keep working. With Vim keybindings on, the <kbd>?</kbd> list includes a Vim section.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/keyboard.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/offline-and-sync/"><span>Previous</span>Offline and sync</a>
+      <a class="next" rel="next" href="/docs/account-security/"><span>Next</span>Account security</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#see-them-in-the-app">See them in the app</a></li><li><a href="#the-ones-to-learn-first">The ones to learn first</a></li><li><a href="#all-shortcuts">All shortcuts</a><ul><li><a href="#everywhere">Everywhere</a></li><li><a href="#go-to-a-view">Go to a view</a></li><li><a href="#tasks-in-a-list">Tasks in a list</a></li><li><a href="#board">Board</a></li><li><a href="#day-and-week-calendar">Day and Week calendar</a></li><li><a href="#filter-saved-views-and-dashboards">Filter, saved views and dashboards</a></li><li><a href="#trash-and-projects">Trash and projects</a></li><li><a href="#comments-and-notes">Comments and notes</a></li><li><a href="#settings">Settings</a></li><li><a href="#quick-add-syntax">Quick add syntax</a></li></ul></li><li><a href="#vim-keybindings">Vim keybindings</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Trash and history · OpenTodo docs</title>
+  <meta name="description" content="Restore deleted tasks and projects from the Trash, see every change made to a task, and bring back an earlier value.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/trash-and-history/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/trash-and-history/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Trash and history · OpenTodo docs">
+  <meta property="og:description" content="Restore deleted tasks and projects from the Trash, see every change made to a task, and bring back an earlier value.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/" aria-current="page">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/" aria-current="page">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Guides</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#restore-something-from-the-trash">Restore something from the Trash</a></li><li><a href="#delete-for-good">Delete for good</a></li><li><a href="#what-deleting-does">What deleting does</a></li><li><a href="#see-what-changed-on-a-task">See what changed on a task</a></li><li><a href="#bring-back-an-earlier-value">Bring back an earlier value</a></li><li><a href="#activity-on-a-task">Activity on a task</a></li><li><a href="#archived-projects">Archived projects</a></li></ul></nav></details>
+<h1 id="trash-and-history">Trash and history</h1>
+<p>Deleting something in OpenTodo doesn&#39;t make it vanish. It goes to the Trash first, and every change to a task is kept in its history, so a slip of the finger is easy to undo.</p>
+<h2 id="restore-something-from-the-trash">Restore something from the Trash<a class="anchor" href="#restore-something-from-the-trash" aria-label="Link to this section: Restore something from the Trash">#</a></h2>
+<p>Open <strong>Trash</strong> in the sidebar (or press <kbd>g</kbd> <kbd>x</kbd>). It lists deleted tasks and projects, newest first, with when they were deleted and how many days they have left.</p>
+<p><picture><source srcset="/docs/images/trash-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/trash-light.webp" alt="The Trash with a deleted project and two deleted tasks, each with Restore and Delete permanently buttons." width="1500" height="950" loading="lazy" decoding="async"></picture></p>
+<p>Select <strong>Restore</strong> next to an item. It comes back exactly where it was:</p>
+<ul>
+<li>A restored project returns to its place in the sidebar, with all its tasks.</li>
+<li>A restored task returns to its project. If that project is still in the Trash, the task goes to your Inbox instead.</li>
+</ul>
+<p>With the keyboard: <kbd>j</kbd> / <kbd>k</kbd> to select, <kbd>r</kbd> to restore.</p>
+<h2 id="delete-for-good">Delete for good<a class="anchor" href="#delete-for-good" aria-label="Link to this section: Delete for good">#</a></h2>
+<p><strong>Delete permanently</strong> removes one item for good, and <strong>Empty Trash</strong> removes everything in it. Both ask you to confirm, and both need a connection. Once something is permanently deleted, it&#39;s gone from every device and from the server, and it can&#39;t come back.</p>
+<p>Items are also deleted for good automatically after 30 days in the Trash. Your server&#39;s owner can change that period or turn it off.</p>
+<h2 id="what-deleting-does">What deleting does<a class="anchor" href="#what-deleting-does" aria-label="Link to this section: What deleting does">#</a></h2>
+<ul>
+<li>Deleting a task also deletes its subtasks.</li>
+<li>Deleting a project hides it and its tasks everywhere. Its sub-projects move up a level, so they aren&#39;t lost.</li>
+<li>Reminders on deleted tasks stay quiet. Restore the task and they work again.</li>
+<li>Deleted items are still in your <a href="/docs/import-export/#download-everything">export</a> until they are deleted for good.</li>
+</ul>
+<h2 id="see-what-changed-on-a-task">See what changed on a task<a class="anchor" href="#see-what-changed-on-a-task" aria-label="Link to this section: See what changed on a task">#</a></h2>
+<p>Open a task and select <strong>History</strong> at the bottom of its panel. You see every change, newest first: what the field was, what it became, when, and from where (this device, another device, the API).</p>
+<p><picture><source srcset="/docs/images/history-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/history-light.webp" alt="The History list of a task, showing changes to its description, assignee, title and priority, each with a Restore this value link." width="560" height="541" loading="lazy" decoding="async"></picture></p>
+<p>Projects have a <strong>History</strong> too, at the top of the project.</p>
+<p>History is loaded from your server, so it needs a connection.</p>
+<h2 id="bring-back-an-earlier-value">Bring back an earlier value<a class="anchor" href="#bring-back-an-earlier-value" aria-label="Link to this section: Bring back an earlier value">#</a></h2>
+<p>Next to each change in the history is <strong>Restore this value</strong>. Select it to set the field back to what it was then. Restoring is a change like any other: it syncs to all devices and shows up in the history itself, so you can always undo the undo.</p>
+<h2 id="activity-on-a-task">Activity on a task<a class="anchor" href="#activity-on-a-task" aria-label="Link to this section: Activity on a task">#</a></h2>
+<p>The comment thread of a task also shows its activity: who created it, completed it, moved it or changed the date. In shared projects this includes everyone&#39;s changes. See <a href="/docs/sharing/#see-what-others-changed">Sharing and comments</a>.</p>
+<h2 id="archived-projects">Archived projects<a class="anchor" href="#archived-projects" aria-label="Link to this section: Archived projects">#</a></h2>
+<p>Archiving is different from deleting. An archived project disappears from the sidebar, but it isn&#39;t in the Trash and isn&#39;t deleted after 30 days: it and its tasks are kept as they are. Archive a project from its <strong>Project</strong> menu.</p>
+<p>When you complete the last task of a project, OpenTodo offers to archive it. Projects without open tasks for 30 days are archived automatically, with a notice that has an undo button. To switch automatic archiving off on a device, untick the option under <strong>Settings → Projects</strong>.</p>
+<p>The app has no button yet to bring back a project you archived yourself. Scripts can do it through the <a href="/docs/api/">API</a> by setting the project&#39;s <code>archived</code> field to <code>false</code>.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/trash-and-history.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/import-export/"><span>Previous</span>Import and export</a>
+      <a class="next" rel="next" href="/docs/settings/"><span>Next</span>Settings</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#restore-something-from-the-trash">Restore something from the Trash</a></li><li><a href="#delete-for-good">Delete for good</a></li><li><a href="#what-deleting-does">What deleting does</a></li><li><a href="#see-what-changed-on-a-task">See what changed on a task</a></li><li><a href="#bring-back-an-earlier-value">Bring back an earlier value</a></li><li><a href="#activity-on-a-task">Activity on a task</a></li><li><a href="#archived-projects">Archived projects</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

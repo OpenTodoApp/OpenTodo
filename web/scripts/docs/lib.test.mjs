@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createSlugger, parseFrontMatter, renderPage, resolveLink, sanitizeHtml, validateFrontMatter } from './lib.mjs'
-import { keysHtml, parseRows, sectionFor, splitContext } from './shortcuts.mjs'
+import { keysHtml, shortcutsMarkdown, splitContext, START, END } from './shortcuts.mjs'
+import { QUICK_ADD_SYNTAX, SHORTCUTS, SHORTCUT_SECTIONS } from '../../src/lib/shortcuts.ts'
 import { normalize, prepare, search, snippet, stem } from './search-core.mjs'
 
 const ctx = { rel: 'guide.md', repoRoot: '/nonexistent', audienceOf: (rel) => (rel.startsWith('self-hosting/') || rel === 'api.md' ? 'admin' : 'user') }
@@ -85,23 +86,17 @@ describe('inline HTML allow-list', () => {
   })
 })
 
-describe('shortcut extraction', () => {
-  const src = `  const rows: [string, string][] = [
-    ['q', 'Quick add a task'],
-    ['g then d / w', 'Go to the Day / Week calendar'],
-    ['Shift+← / Shift+→ (board)', 'Move the selected task to the previous / next column (it stays selected)'],
-    ['j / k, r, Delete (in the Trash)', 'Select, restore, delete permanently'],
-    ['a', 'Add a subtask to the selected task’s \\'column\\''],
-  ]
-`
-  it('reads the rows and sorts them into sections', () => {
-    const rows = parseRows(src, 'rows')
-    expect(rows).toHaveLength(5)
-    expect(rows[4][1]).toBe("Add a subtask to the selected task’s 'column'")
-    expect(rows.map(sectionFor)).toEqual(['everywhere', 'go', 'board', 'trash', 'tasks'])
+describe('keyboard guide', () => {
+  it('lists every shortcut of the data module once, under its section', () => {
+    const md = shortcutsMarkdown({ rows: SHORTCUTS, quickAdd: QUICK_ADD_SYNTAX, sections: SHORTCUT_SECTIONS })
+    expect(md.startsWith(START) && md.endsWith(END)).toBe(true)
+    const tableRows = md.split('\n').filter((l) => l.startsWith('| ') && !l.startsWith('| Keys') && !l.startsWith('| Type') && !l.startsWith('| ---'))
+    expect(tableRows).toHaveLength(SHORTCUTS.length + QUICK_ADD_SYNTAX.length)
+    for (const s of SHORTCUTS) expect(SHORTCUT_SECTIONS.map((x) => x.id)).toContain(s.section)
   })
   it('renders keys as <kbd> and splits off contexts', () => {
     expect(keysHtml('g then d / w')).toBe('<kbd>g</kbd> then <kbd>d</kbd> / <kbd>w</kbd>')
+    expect(keysHtml('Drag (touch: press and hold)')).toBe('<kbd>Drag</kbd> (touch: press and hold)')
     expect(splitContext('Shift+← (board)')).toEqual({ keys: 'Shift+←', context: '' })
     expect(splitContext('Delete (in the Trash)')).toEqual({ keys: 'Delete', context: 'in the Trash' })
   })

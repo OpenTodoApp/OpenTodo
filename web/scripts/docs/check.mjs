@@ -30,8 +30,8 @@ export function appScreenIds(repoRoot) {
 }
 
 /** Runs every check; returns a list of problems (empty when all is well). */
-export function runChecks(repoRoot) {
-  const { files, pages, rendered, problems } = buildAll(repoRoot)
+export async function runChecks(repoRoot) {
+  const { files, pages, rendered, problems } = await buildAll(repoRoot)
   const out = [...problems]
   const byRel = new Map(pages.map((p) => [p.rel, p]))
   const headings = new Map(pages.map((p) => [p.rel, rendered.get(p.rel).site.headings]))
@@ -98,9 +98,9 @@ export function runChecks(repoRoot) {
   const kbPath = join(repoRoot, 'docs/keyboard.md')
   if (existsSync(kbPath)) {
     const src = readFileSync(kbPath, 'utf8')
-    const a = src.indexOf(START.slice(0, 22))
+    const a = src.indexOf('<!-- shortcuts:start')
     const b = src.indexOf(END)
-    if (a >= 0 && b >= 0 && src.slice(a, b + END.length) !== shortcutsMarkdown(loadShortcuts(repoRoot))) {
+    if (a >= 0 && b >= 0 && src.slice(a, b + END.length) !== shortcutsMarkdown(await loadShortcuts(repoRoot))) {
       out.push('docs/keyboard.md: the shortcut tables differ from the app\'s shortcut list; run `make docs`')
     }
   }
@@ -112,7 +112,7 @@ export function runChecks(repoRoot) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const problems = runChecks(repoRootFrom(fileURLToPath(import.meta.url)))
+  const problems = await runChecks(repoRootFrom(fileURLToPath(import.meta.url)))
   if (problems.length) {
     for (const p of problems) console.error('  ' + p)
     console.error(`docs:check: ${problems.length} problem(s)`)

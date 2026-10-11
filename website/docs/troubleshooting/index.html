@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Troubleshooting and FAQ · OpenTodo docs</title>
+  <meta name="description" content="Fixes for the usual hiccups, from a task that seems to be missing to reminders that don't arrive, and answers to common questions.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/troubleshooting/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/troubleshooting/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Troubleshooting and FAQ · OpenTodo docs">
+  <meta property="og:description" content="Fixes for the usual hiccups, from a task that seems to be missing to reminders that don't arrive, and answers to common questions.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/" aria-current="page">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/" aria-current="page">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Guides</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#a-task-seems-to-be-missing">A task seems to be missing</a></li><li><a href="#changes-dont-show-up-on-my-other-device">Changes don't show up on my other device</a></li><li><a href="#i-cant-sign-in">I can't sign in</a></li><li><a href="#the-demo-says-my-sandbox-expired">The demo says my sandbox expired</a></li><li><a href="#reminders-dont-arrive">Reminders don't arrive</a></li><li><a href="#i-cant-install-the-app-or-add-a-passkey">I can't install the app or add a passkey</a></li><li><a href="#quick-add-got-it-wrong">Quick add got it wrong</a></li><li><a href="#i-cant-edit-a-shared-project">I can't edit a shared project</a></li><li><a href="#i-cant-share-a-project-with-someone">I can't share a project with someone</a></li><li><a href="#the-app-looks-out-of-date">The app looks out of date</a></li><li><a href="#something-went-wrong-on-screen">Something went wrong on screen</a></li><li><a href="#frequently-asked-questions">Frequently asked questions</a><ul><li><a href="#does-opentodo-work-without-internet">Does OpenTodo work without internet?</a></li><li><a href="#where-are-my-tasks-stored">Where are my tasks stored?</a></li><li><a href="#is-there-an-app-in-the-app-stores">Is there an app in the app stores?</a></li><li><a href="#can-i-use-opentodo-on-my-own-without-a-server">Can I use OpenTodo on my own, without a server?</a></li><li><a href="#can-i-move-my-tasks-from-another-task-app">Can I move my tasks from another task app?</a></li><li><a href="#can-several-people-use-one-server">Can several people use one server?</a></li><li><a href="#what-does-it-cost">What does it cost?</a></li></ul></li></ul></nav></details>
+<h1 id="troubleshooting-and-faq">Troubleshooting and FAQ</h1>
+<p>Most problems have a quick fix. Start with the section that matches what you see. If nothing here helps, the person who runs your server can look at its logs, or you can <a href="https://github.com/pixari/opentodo/issues" rel="noopener">open an issue</a> on GitHub.</p>
+<h2 id="a-task-seems-to-be-missing">A task seems to be missing<a class="anchor" href="#a-task-seems-to-be-missing" aria-label="Link to this section: A task seems to be missing">#</a></h2>
+<p>Check these places, in this order:</p>
+<ol>
+<li><strong>A filter above the list.</strong> If <strong>Quick wins</strong>, <strong>Under 30 min</strong>, <strong>Over 1 h</strong> or <strong>Unestimated</strong> is switched on, the list shows only matching tasks. Select it again to clear it.</li>
+<li><strong>Completed.</strong> It may have been ticked off by accident. Open <strong>Completed</strong> and reopen it.</li>
+<li><strong>Trash.</strong> It may have been deleted, or its project was. See <a href="/docs/trash-and-history/">Trash and history</a>.</li>
+<li><strong>An archived project.</strong> Tasks of archived projects don&#39;t appear in Today or Upcoming.</li>
+<li><strong>A folded parent or section.</strong> Select the small arrow to unfold it.</li>
+<li><strong>A shared project you left</strong> or were removed from. Ask its owner.</li>
+</ol>
+<p>The <strong>Filter</strong> view with <code>search: word</code> (add <code>&amp; completed</code> to include finished tasks) searches titles and notes.</p>
+<h2 id="changes-dont-show-up-on-my-other-device">Changes don&#39;t show up on my other device<a class="anchor" href="#changes-dont-show-up-on-my-other-device" aria-label="Link to this section: Changes don't show up on my other device">#</a></h2>
+<ul>
+<li>Look at the status at the top right of both devices. <strong>Offline · 3 pending</strong> means the changes are still waiting on that device; they&#39;re sent as soon as it&#39;s online.</li>
+<li>Click the status to sync right away.</li>
+<li><strong>Sync error</strong>: hover over it to see the reason. If the server is down or being updated, it clears up once the server is back.</li>
+<li><strong>Signed out</strong>: your session ended. Sign in again; waiting changes are sent afterwards.</li>
+<li><strong>Locked</strong>: your account uses <a href="/docs/e2ee/">encryption</a>. Enter your passphrase on that device.</li>
+</ul>
+<p>See <a href="/docs/offline-and-sync/">Offline and sync</a> for what each status means.</p>
+<h2 id="i-cant-sign-in">I can&#39;t sign in<a class="anchor" href="#i-cant-sign-in" aria-label="Link to this section: I can't sign in">#</a></h2>
+<ul>
+<li>Check the email address and that Caps Lock is off. Passwords are at least 10 characters.</li>
+<li>After several failed attempts, the server makes you wait a little before trying again.</li>
+<li><strong>Forgot your password?</strong> OpenTodo doesn&#39;t send reset emails. Ask the owner or an admin of your server for a reset link. If you are the owner, see <a href="/docs/self-hosting/docker/#recovering-owner-access">recovering owner access</a>.</li>
+<li><strong>Lost your two-factor phone?</strong> Use one of your recovery codes instead of the code. Without them, the server owner can reset your two-factor authentication.</li>
+</ul>
+<h2 id="the-demo-says-my-sandbox-expired">The demo says my sandbox expired<a class="anchor" href="#the-demo-says-my-sandbox-expired" aria-label="Link to this section: The demo says my sandbox expired">#</a></h2>
+<p>Demo sandboxes are deleted after two hours without activity, after 24 hours at most, and every night. Select <strong>Start a new sandbox</strong> to get a fresh one. Nothing from the old sandbox is kept.</p>
+<h2 id="reminders-dont-arrive">Reminders don&#39;t arrive<a class="anchor" href="#reminders-dont-arrive" aria-label="Link to this section: Reminders don't arrive">#</a></h2>
+<p>Inside the app, reminders pop up while it&#39;s open. To get them when the app is closed, push notifications must be turned on for each device in <strong>Settings → Notifications</strong>, and on an iPhone only the installed app can receive them. <a href="/docs/notifications/#when-notifications-dont-arrive">Notifications</a> lists the messages you might see and what to do.</p>
+<h2 id="i-cant-install-the-app-or-add-a-passkey">I can&#39;t install the app or add a passkey<a class="anchor" href="#i-cant-install-the-app-or-add-a-passkey" aria-label="Link to this section: I can't install the app or add a passkey">#</a></h2>
+<p>Both need your server to be on a secure <code>https://</code> address. If the browser offers no install option, or <strong>Settings</strong> has no Security section for passkeys, ask whoever runs your server. Instructions per device are in <a href="/docs/install-app/">Installing the app</a>.</p>
+<h2 id="quick-add-got-it-wrong">Quick add got it wrong<a class="anchor" href="#quick-add-got-it-wrong" aria-label="Link to this section: Quick add got it wrong">#</a></h2>
+<p>If a word was read as a date, project or priority by mistake, select the <strong>×</strong> on its chip before you press <kbd>Enter</kbd>, or press <kbd>Backspace</kbd> twice at the end of the line. Text in double quotes is never interpreted: <code>Read &quot;Next Friday&quot;</code>. You can also switch parsing off in <strong>Settings → Quick add</strong>. See <a href="/docs/quick-add/#preview-chips">Quick add syntax</a>.</p>
+<h2 id="i-cant-edit-a-shared-project">I can&#39;t edit a shared project<a class="anchor" href="#i-cant-edit-a-shared-project" aria-label="Link to this section: I can't edit a shared project">#</a></h2>
+<p>Your role in that project is <strong>viewer</strong>, which is read-only. Ask the owner or an admin to make you an editor. See <a href="/docs/sharing/#choose-a-role">Sharing and comments</a>.</p>
+<h2 id="i-cant-share-a-project-with-someone">I can&#39;t share a project with someone<a class="anchor" href="#i-cant-share-a-project-with-someone" aria-label="Link to this section: I can't share a project with someone">#</a></h2>
+<p>You can only add people who have an account on your server. Ask an admin of the server to <a href="/docs/sharing/#invite-someone-new">invite them</a> first. Accounts with end-to-end encryption turned on can&#39;t share new projects.</p>
+<h2 id="the-app-looks-out-of-date">The app looks out of date<a class="anchor" href="#the-app-looks-out-of-date" aria-label="Link to this section: The app looks out of date">#</a></h2>
+<p>The app updates itself when your server is updated. If something still looks old, close it completely (all tabs or the installed window) and open it again.</p>
+<h2 id="something-went-wrong-on-screen">Something went wrong on screen<a class="anchor" href="#something-went-wrong-on-screen" aria-label="Link to this section: Something went wrong on screen">#</a></h2>
+<p>If a part of the app fails to display, you see a message with a <strong>Reload</strong> button. Your tasks are stored on the device and aren&#39;t lost by reloading.</p>
+<h2 id="frequently-asked-questions">Frequently asked questions<a class="anchor" href="#frequently-asked-questions" aria-label="Link to this section: Frequently asked questions">#</a></h2>
+<h3 id="does-opentodo-work-without-internet">Does OpenTodo work without internet?<a class="anchor" href="#does-opentodo-work-without-internet" aria-label="Link to this section: Does OpenTodo work without internet?">#</a></h3>
+<p>Yes. Each device keeps a full copy of your tasks, and changes are sent when you&#39;re back online. See <a href="/docs/offline-and-sync/">Offline and sync</a>.</p>
+<h3 id="where-are-my-tasks-stored">Where are my tasks stored?<a class="anchor" href="#where-are-my-tasks-stored" aria-label="Link to this section: Where are my tasks stored?">#</a></h3>
+<p>On your devices and on the OpenTodo server you use. Nothing goes to anyone else: the app has no tracking and no analytics, and it only talks to your own server.</p>
+<h3 id="is-there-an-app-in-the-app-stores">Is there an app in the app stores?<a class="anchor" href="#is-there-an-app-in-the-app-stores" aria-label="Link to this section: Is there an app in the app stores?">#</a></h3>
+<p>No. OpenTodo is a web app that you install from your server&#39;s address, and it then behaves like any other app. See <a href="/docs/install-app/">Installing the app</a>.</p>
+<h3 id="can-i-use-opentodo-on-my-own-without-a-server">Can I use OpenTodo on my own, without a server?<a class="anchor" href="#can-i-use-opentodo-on-my-own-without-a-server" aria-label="Link to this section: Can I use OpenTodo on my own, without a server?">#</a></h3>
+<p>OpenTodo needs a server to sign in and sync, but it can be small: a single container on a Raspberry Pi or a cheap virtual server is enough. To try it first, use the <a href="https://opentodo-demo.pixari.dev" rel="noopener">demo</a>. Setting up a server is described in <a href="/docs/self-hosting/docker/">Running with Docker</a>.</p>
+<h3 id="can-i-move-my-tasks-from-another-task-app">Can I move my tasks from another task app?<a class="anchor" href="#can-i-move-my-tasks-from-another-task-app" aria-label="Link to this section: Can I move my tasks from another task app?">#</a></h3>
+<p>Usually, yes. OpenTodo imports CSV files and the JSON exports of other task apps. See <a href="/docs/import-export/">Import and export</a>.</p>
+<h3 id="can-several-people-use-one-server">Can several people use one server?<a class="anchor" href="#can-several-people-use-one-server" aria-label="Link to this section: Can several people use one server?">#</a></h3>
+<p>Yes. The owner invites people, each person has their own account and private tasks, and projects can be shared between them. See <a href="/docs/sharing/">Sharing and comments</a>.</p>
+<h3 id="what-does-it-cost">What does it cost?<a class="anchor" href="#what-does-it-cost" aria-label="Link to this section: What does it cost?">#</a></h3>
+<p>Nothing. OpenTodo is free software under the AGPL-3.0 licence. There&#39;s no subscription and no paid tier.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/troubleshooting.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/settings/"><span>Previous</span>Settings</a>
+      <a class="next" rel="next" href="/docs/quick-add/"><span>Next</span>Quick add syntax</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#a-task-seems-to-be-missing">A task seems to be missing</a></li><li><a href="#changes-dont-show-up-on-my-other-device">Changes don't show up on my other device</a></li><li><a href="#i-cant-sign-in">I can't sign in</a></li><li><a href="#the-demo-says-my-sandbox-expired">The demo says my sandbox expired</a></li><li><a href="#reminders-dont-arrive">Reminders don't arrive</a></li><li><a href="#i-cant-install-the-app-or-add-a-passkey">I can't install the app or add a passkey</a></li><li><a href="#quick-add-got-it-wrong">Quick add got it wrong</a></li><li><a href="#i-cant-edit-a-shared-project">I can't edit a shared project</a></li><li><a href="#i-cant-share-a-project-with-someone">I can't share a project with someone</a></li><li><a href="#the-app-looks-out-of-date">The app looks out of date</a></li><li><a href="#something-went-wrong-on-screen">Something went wrong on screen</a></li><li><a href="#frequently-asked-questions">Frequently asked questions</a><ul><li><a href="#does-opentodo-work-without-internet">Does OpenTodo work without internet?</a></li><li><a href="#where-are-my-tasks-stored">Where are my tasks stored?</a></li><li><a href="#is-there-an-app-in-the-app-stores">Is there an app in the app stores?</a></li><li><a href="#can-i-use-opentodo-on-my-own-without-a-server">Can I use OpenTodo on my own, without a server?</a></li><li><a href="#can-i-move-my-tasks-from-another-task-app">Can I move my tasks from another task app?</a></li><li><a href="#can-several-people-use-one-server">Can several people use one server?</a></li><li><a href="#what-does-it-cost">What does it cost?</a></li></ul></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

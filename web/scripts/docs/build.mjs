@@ -23,7 +23,7 @@ const TEXT_CAP = 1500
  * Builds everything in memory. Returns { files, pages, rendered, problems } where
  * files maps repository-relative paths to their content (string or Buffer).
  */
-export function buildAll(repoRoot) {
+export async function buildAll(repoRoot) {
   const files = new Map()
   const problems = []
   const pages = loadPages(join(repoRoot, 'docs'))
@@ -33,11 +33,12 @@ export function buildAll(repoRoot) {
   const kb = pages.find((p) => p.rel === 'keyboard.md')
   if (kb) {
     const src = readFileSync(join(repoRoot, 'docs/keyboard.md'), 'utf8')
-    const next = withShortcuts(src, shortcutsMarkdown(loadShortcuts(repoRoot)))
+    const block = shortcutsMarkdown(await loadShortcuts(repoRoot))
+    const next = withShortcuts(src, block)
     if (next === null) problems.push('docs/keyboard.md: the shortcut markers are missing')
     else {
       files.set('docs/keyboard.md', next)
-      kb.body = withShortcuts(kb.body, shortcutsMarkdown(loadShortcuts(repoRoot)))
+      kb.body = withShortcuts(kb.body, block)
     }
   }
 
@@ -154,7 +155,7 @@ export function writeAll(repoRoot, files) {
 
 if (process.argv[1] === here) {
   const repoRoot = repoRootFrom(here)
-  const { files, problems, sorted } = buildAll(repoRoot)
+  const { files, problems, sorted } = await buildAll(repoRoot)
   if (problems.length) {
     for (const p of problems) console.error('  ' + p)
     console.error(`docs: ${problems.length} problem(s); run \`npm run docs:check\` for details`)

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Recurring tasks and reminders · OpenTodo docs</title>
+  <meta name="description" content="Make a task repeat every week, month or weekday, skip an occurrence, and get reminded at the right moment.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/recurring-and-reminders/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/recurring-and-reminders/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Recurring tasks and reminders · OpenTodo docs">
+  <meta property="og:description" content="Make a task repeat every week, month or weekday, skip an occurrence, and get reminded at the right moment.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/" aria-current="page">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/" aria-current="page">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Guides</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#make-a-task-repeat">Make a task repeat</a></li><li><a href="#rules-you-can-write">Rules you can write</a></li><li><a href="#complete-skip-or-split-off-one-occurrence">Complete, skip or split off one occurrence</a></li><li><a href="#add-a-reminder">Add a reminder</a></li><li><a href="#when-a-reminder-goes-off">When a reminder goes off</a></li><li><a href="#shared-projects">Shared projects</a></li><li><a href="#tips">Tips</a></li></ul></nav></details>
+<h1 id="recurring-tasks-and-reminders">Recurring tasks and reminders</h1>
+<p>Some tasks come back: pay the rent, water the plants, the weekly one-to-one. Make them repeat once and OpenTodo moves them forward each time you complete them. Add a reminder and you&#39;ll get a nudge when it matters.</p>
+<h2 id="make-a-task-repeat">Make a task repeat<a class="anchor" href="#make-a-task-repeat" aria-label="Link to this section: Make a task repeat">#</a></h2>
+<p>Open the task and type a rule into <strong>Repeat</strong>, such as <code>every week</code>. A list of suggestions appears as you type. Under the field you&#39;ll see the next three dates, so you can check the rule does what you meant.</p>
+<p><picture><source srcset="/docs/images/repeat-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/repeat-light.webp" alt="The Repeat field with the rule every monday, the next three dates below it, and the Skip and This occurrence only buttons." width="559" height="188" loading="lazy" decoding="async"></picture></p>
+<p>Rules are set in the task panel. Quick add doesn&#39;t read them: typing <code>every monday</code> there doesn&#39;t make a task repeat. Add the task first, then open it and set <strong>Repeat</strong>.</p>
+<p>Repeating tasks show a ↻ symbol on the row. To stop repeating, select the <strong>×</strong> next to the rule.</p>
+<h2 id="rules-you-can-write">Rules you can write<a class="anchor" href="#rules-you-can-write" aria-label="Link to this section: Rules you can write">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Repeats</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>every day</code>, <code>every 3 days</code></td>
+<td>daily, or every few days</td>
+</tr>
+<tr>
+<td><code>every weekday</code></td>
+<td>Monday to Friday</td>
+</tr>
+<tr>
+<td><code>every week</code>, <code>every 2 weeks</code></td>
+<td>weekly or fortnightly</td>
+</tr>
+<tr>
+<td><code>every monday</code>, <code>every mon, wed, fri</code></td>
+<td>on those weekdays</td>
+</tr>
+<tr>
+<td><code>every month</code>, <code>every 15th</code></td>
+<td>monthly, on the same day or a fixed day</td>
+</tr>
+<tr>
+<td><code>every last day</code>, <code>every last friday</code></td>
+<td>at the end of the month</td>
+</tr>
+<tr>
+<td><code>every 2nd tuesday</code></td>
+<td>the second Tuesday of each month</td>
+</tr>
+<tr>
+<td><code>every year</code></td>
+<td>once a year on the same date</td>
+</tr>
+</tbody></table></div>
+<p>Two extras work with any of these:</p>
+<ul>
+<li><strong>After completion:</strong> <code>every 2 weeks after completion</code> counts from the day you actually finish, not from the due date. Good for things like &quot;change the water filter&quot;.</li>
+<li><strong>An end:</strong> add <code>until 2026-12-31</code> or <code>for 10 times</code> to stop the series.</li>
+</ul>
+<p>Rules are in English, whichever language you use for dates in quick add. Every detail is in the <a href="/docs/recurrence/">recurring task rules</a> reference.</p>
+<h2 id="complete-skip-or-split-off-one-occurrence">Complete, skip or split off one occurrence<a class="anchor" href="#complete-skip-or-split-off-one-occurrence" aria-label="Link to this section: Complete, skip or split off one occurrence">#</a></h2>
+<p>When you complete a repeating task, that occurrence is recorded in <strong>Completed</strong>, and the task moves to its next date. If it was overdue, it jumps to the next date from today, so missed occurrences don&#39;t pile up.</p>
+<p>The buttons under the rule handle the exceptions:</p>
+<ul>
+<li><strong>Skip</strong> (<kbd>Shift</kbd>+<kbd>S</kbd>) moves to the next date without recording a completion. Use it when this week&#39;s run is cancelled.</li>
+<li><strong>This occurrence only</strong> (<kbd>Shift</kbd>+<kbd>O</kbd>) splits the current occurrence off as a normal task you can change freely, while the series moves on. Use it when this week&#39;s meeting is on Thursday instead.</li>
+</ul>
+<p>Changing the title, notes, project, priority, labels or time of a repeating task changes the whole series.</p>
+<h2 id="add-a-reminder">Add a reminder<a class="anchor" href="#add-a-reminder" aria-label="Link to this section: Add a reminder">#</a></h2>
+<p>Open a task and select <strong>+ Add reminder</strong> under <strong>Reminders</strong>. Choose one of:</p>
+<ul>
+<li><strong>At due time</strong>, <strong>10 minutes before</strong>, <strong>30 minutes before</strong>, <strong>1 hour before</strong> or <strong>1 day before</strong>,</li>
+<li><strong>Custom offset…</strong>, for any number of minutes, hours or days before or after,</li>
+<li><strong>At a specific date and time…</strong>, for a fixed moment that doesn&#39;t depend on the due date.</li>
+</ul>
+<p><picture><source srcset="/docs/images/reminders-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/reminders-light.webp" alt="The Due and Reminders fields of a task: due today at 10:00, with one reminder 30 minutes before and one at a set time tomorrow morning." width="559" height="323" loading="lazy" decoding="async"></picture></p>
+<p>A task can have several reminders. Reminders relative to the due time move with it: change the due date and they follow, and on a repeating task they carry over to the next occurrence. If the task has a date but no time, &quot;before&quot; and &quot;after&quot; count from 09:00 that day.</p>
+<h2 id="when-a-reminder-goes-off">When a reminder goes off<a class="anchor" href="#when-a-reminder-goes-off" aria-label="Link to this section: When a reminder goes off">#</a></h2>
+<p>While OpenTodo is open, a reminder pops up in the corner of the screen with <strong>Snooze 10 min</strong>, <strong>1 hour</strong>, <strong>Tomorrow 09:00</strong> and <strong>Dismiss</strong>. This works without a connection and without any permission.</p>
+<p>To get reminders when the app is closed, turn on notifications for each device in <strong>Settings → Notifications</strong>. On an iPhone this needs the installed app. See <a href="/docs/notifications/">Notifications</a>.</p>
+<p>Snoozing or dismissing on one device applies to all of them.</p>
+<h2 id="shared-projects">Shared projects<a class="anchor" href="#shared-projects" aria-label="Link to this section: Shared projects">#</a></h2>
+<p>Reminders are personal. On a task in a shared project, your reminders are yours alone: other members don&#39;t see them and don&#39;t get them. You can add reminders even if you can only view the project.</p>
+<h2 id="tips">Tips<a class="anchor" href="#tips" aria-label="Link to this section: Tips">#</a></h2>
+<ul>
+<li>For bills, use a day-of-month rule (<code>every 1st</code>) plus a <strong>1 day before</strong> reminder.</li>
+<li>A reminder on a task without a time fires at 09:00 for &quot;at due time&quot;. Give the task a time if you need it earlier.</li>
+<li>Deleted tasks don&#39;t remind you. If you restore one, its reminders come back.</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/recurring-and-reminders.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/labels-and-filters/"><span>Previous</span>Labels and filters</a>
+      <a class="next" rel="next" href="/docs/time-blocking/"><span>Next</span>Time blocking</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#make-a-task-repeat">Make a task repeat</a></li><li><a href="#rules-you-can-write">Rules you can write</a></li><li><a href="#complete-skip-or-split-off-one-occurrence">Complete, skip or split off one occurrence</a></li><li><a href="#add-a-reminder">Add a reminder</a></li><li><a href="#when-a-reminder-goes-off">When a reminder goes off</a></li><li><a href="#shared-projects">Shared projects</a></li><li><a href="#tips">Tips</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

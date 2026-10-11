@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Notifications · OpenTodo docs</title>
+  <meta name="description" content="The bell for assignments and mentions, reminder pop-ups inside the app, and push notifications on each device when the app is closed.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/notifications/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/notifications/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Notifications · OpenTodo docs">
+  <meta property="og:description" content="The bell for assignments and mentions, reminder pop-ups inside the app, and push notifications on each device when the app is closed.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/" aria-current="page">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Get started</p>
+<ul><li><a href="/docs/getting-started/">Getting started</a></li><li><a href="/docs/install-app/">Installing the app</a></li></ul>
+<p class="side-group">Guides</p>
+<ul><li><a href="/docs/tasks-and-projects/">Tasks and projects</a></li><li><a href="/docs/views/">Views</a></li><li><a href="/docs/sections-and-boards/">Sections and boards</a></li><li><a href="/docs/labels-and-filters/">Labels and filters</a></li><li><a href="/docs/recurring-and-reminders/">Recurring tasks and reminders</a></li><li><a href="/docs/time-blocking/">Time blocking</a></li><li><a href="/docs/sharing/">Sharing and comments</a></li><li><a href="/docs/notifications/" aria-current="page">Notifications</a></li><li><a href="/docs/offline-and-sync/">Offline and sync</a></li><li><a href="/docs/keyboard/">Keyboard shortcuts</a></li><li><a href="/docs/account-security/">Account security</a></li><li><a href="/docs/import-export/">Import and export</a></li><li><a href="/docs/trash-and-history/">Trash and history</a></li><li><a href="/docs/settings/">Settings</a></li><li><a href="/docs/troubleshooting/">Troubleshooting and FAQ</a></li></ul>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Guides</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#the-bell">The bell</a></li><li><a href="#reminders-inside-the-app">Reminders inside the app</a></li><li><a href="#get-reminders-when-the-app-is-closed">Get reminders when the app is closed</a><ul><li><a href="#on-iphone-and-ipad">On iPhone and iPad</a></li><li><a href="#privacy">Privacy</a></li></ul></li><li><a href="#when-notifications-dont-arrive">When notifications don't arrive</a></li></ul></nav></details>
+<h1 id="notifications">Notifications</h1>
+<p>OpenTodo tells you about three things: a task someone assigned to you, a comment that mentions you, and reminders you set. Nothing else, and never anything from outside your server.</p>
+<h2 id="the-bell">The bell<a class="anchor" href="#the-bell" aria-label="Link to this section: The bell">#</a></h2>
+<p>The bell at the top right shows a red count when something new arrived from other people:</p>
+<ul>
+<li><strong>assigned you</strong>: someone assigned you a task in a shared project,</li>
+<li><strong>mentioned you</strong>: someone wrote <code>@your name</code> in a comment.</li>
+</ul>
+<p><picture><source srcset="/docs/images/notifications-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/notifications-light.webp" alt="The notifications list open under the bell: Sam Rivera mentioned you on a task, and Sam Rivera assigned you a task." width="946" height="298" loading="lazy" decoding="async"></picture></p>
+<p>Select an entry to open the task. Opening the task marks it as read. You don&#39;t get notified about your own actions.</p>
+<h2 id="reminders-inside-the-app">Reminders inside the app<a class="anchor" href="#reminders-inside-the-app" aria-label="Link to this section: Reminders inside the app">#</a></h2>
+<p>While OpenTodo is open, a reminder appears in the corner of the screen when it&#39;s due, with <strong>Snooze 10 min</strong>, <strong>1 hour</strong>, <strong>Tomorrow 09:00</strong> and <strong>Dismiss</strong>. It needs no permission and no connection. Press <kbd>Esc</kbd> to dismiss it.</p>
+<p>If the OpenTodo tab is in the background and your browser allows notifications for it, you get a system notification instead.</p>
+<p>How to add reminders is covered in <a href="/docs/recurring-and-reminders/#add-a-reminder">Recurring tasks and reminders</a>.</p>
+<h2 id="get-reminders-when-the-app-is-closed">Get reminders when the app is closed<a class="anchor" href="#get-reminders-when-the-app-is-closed" aria-label="Link to this section: Get reminders when the app is closed">#</a></h2>
+<p>Push notifications deliver reminders even when OpenTodo isn&#39;t open. Each device decides for itself.</p>
+<ol>
+<li>Open <strong>Settings → Notifications</strong> on the device.</li>
+<li>Tick <strong>Enable notifications on this device</strong> and allow notifications when the browser asks.</li>
+<li>Select <strong>Send test notification</strong> to check that one arrives.</li>
+</ol>
+<p><picture><source srcset="/docs/images/settings-notifications-dark.webp" media="(prefers-color-scheme: dark)"><img src="/docs/images/settings-notifications-light.webp" alt="Settings, Notifications section with the options Enable notifications on this device and Include task titles." width="1180" height="300" loading="lazy" decoding="async"></picture></p>
+<p>Repeat this on every device where you want them: your phone, your laptop, your tablet. Turning it off, or signing out, removes that device.</p>
+<p>From a push notification you can <strong>Snooze 10 min</strong> or <strong>Dismiss</strong>, and that applies on all your devices.</p>
+<h3 id="on-iphone-and-ipad">On iPhone and iPad<a class="anchor" href="#on-iphone-and-ipad" aria-label="Link to this section: On iPhone and iPad">#</a></h3>
+<p>Push needs iOS or iPadOS 16.4 or later, and only works in the installed app. Add OpenTodo to your home screen first (<a href="/docs/install-app/#iphone-and-ipad">Installing the app</a>), open it from there, then turn on notifications in its settings.</p>
+<h3 id="privacy">Privacy<a class="anchor" href="#privacy" aria-label="Link to this section: Privacy">#</a></h3>
+<p>A push message goes through your browser&#39;s push service (run by the browser maker). It contains only an id and a time, encrypted so the push service can&#39;t read it. Your device then shows the title from its own copy of the task.</p>
+<p><strong>Include task titles</strong> puts the title in the encrypted message as well, so the notification can show it even before that device has synced the task. Notes are never sent. If your account uses <a href="/docs/e2ee/">end-to-end encryption</a>, titles are never included.</p>
+<h2 id="when-notifications-dont-arrive">When notifications don&#39;t arrive<a class="anchor" href="#when-notifications-dont-arrive" aria-label="Link to this section: When notifications don't arrive">#</a></h2>
+<ul>
+<li><strong>&quot;Notifications are blocked for this site&quot;</strong>: you said no when the browser asked. Allow notifications for your OpenTodo address in the browser&#39;s site settings, then select <strong>Re-enable</strong>.</li>
+<li><strong>&quot;Push notifications are turned off on this server&quot;</strong>: the person running your server has switched push off. Reminders still show inside the app.</li>
+<li><strong>&quot;This browser does not support push notifications&quot;</strong>: try the installed app, or open OpenTodo over <code>https://</code>.</li>
+<li><strong>Nothing arrives on a phone</strong>: check that the operating system allows notifications for the app (or the browser), and that battery saving or focus modes aren&#39;t holding them back.</li>
+</ul>
+<p>More fixes in <a href="/docs/troubleshooting/">Troubleshooting</a>.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/notifications.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/sharing/"><span>Previous</span>Sharing and comments</a>
+      <a class="next" rel="next" href="/docs/offline-and-sync/"><span>Next</span>Offline and sync</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#the-bell">The bell</a></li><li><a href="#reminders-inside-the-app">Reminders inside the app</a></li><li><a href="#get-reminders-when-the-app-is-closed">Get reminders when the app is closed</a><ul><li><a href="#on-iphone-and-ipad">On iPhone and iPad</a></li><li><a href="#privacy">Privacy</a></li></ul></li><li><a href="#when-notifications-dont-arrive">When notifications don't arrive</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

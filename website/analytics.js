@@ -1,6 +1,7 @@
 // Website analytics: custom Umami events on top of the page views the Umami
 // script records. Self-hosted Umami, no cookies, nothing typed by visitors is
-// sent. The app never loads this; it applies to this marketing site only.
+// sent. The app never loads this; it applies to this website (landing page and
+// docs) only. The docs' search counts use in docs.js, never the words typed.
 (() => {
   "use strict";
 
@@ -76,6 +77,11 @@
       }
       let url;
       try { url = new URL(a.href); } catch { return; }
+      if (url.origin === location.origin) {
+        // Pages of this site count as page views; only a jump from the landing page into the docs is an event.
+        if (url.pathname.startsWith("/docs") && !location.pathname.startsWith("/docs")) send("cta-docs", { section, label: label(a), path: url.pathname.slice(0, 120) });
+        return;
+      }
       const target = targetOf(url);
       const data = { target, section, label: label(a), path: (url.hostname + url.pathname).slice(0, 120) };
       if (target === "demo") send("cta-demo", data);
