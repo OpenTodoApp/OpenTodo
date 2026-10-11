@@ -30,6 +30,10 @@ An open-source, local-first task manager you can host yourself. Everything you e
 ---
 
 <p align="center">
+  <img src="docs/screenshots/demo.gif" width="800" alt="Quick add in plain language with date, priority and project chips, a card moved across a project board, then a task added offline that syncs on reconnect">
+</p>
+
+<p align="center">
   <img src="docs/screenshots/today.png" width="800" alt="Today view with overdue and due-today tasks">
 </p>
 

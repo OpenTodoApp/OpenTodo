@@ -50,3 +50,13 @@ Prints the `CHANGELOG.md` section for a version, plus install pointers; the rele
 ```bash
 ./scripts/release-notes.sh 0.1.0
 ```
+
+## `demo-gif.mjs`
+
+Records the demo GIF at the top of `README.md` (`docs/screenshots/demo.gif`): natural-language quick add with its chips, a card moved across a project board, and a task added offline that syncs on reconnect. Needs `ffmpeg` and a **fresh** data directory:
+
+```bash
+make build
+OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
+node scripts/demo-gif.mjs [out.gif]
+```
