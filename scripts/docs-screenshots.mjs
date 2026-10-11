@@ -59,12 +59,16 @@ const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePa
 
 // ------------------------------------------------------------------ encoder
 const enc = await (await browser.newContext()).newPage()
+// width > 0 makes a card thumbnail: a full desktop screen is cropped to the main
+// column (right of the sidebar) at 16:10 so the text stays readable when small.
 async function encode(png, width = 0) {
   const b64 = await enc.evaluate(async ([src, w, q]) => {
     const img = new Image(); img.src = 'data:image/png;base64,' + src; await img.decode()
-    const scale = w ? w / img.naturalWidth : 1
-    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale)
-    const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, c.width, c.height)
+    let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight
+    if (w && sw >= 1400) { sx = Math.round(sw * 0.215); sw = Math.round(sw * 0.62); sh = Math.min(sh, Math.round(sw * 10 / 16)) }
+    const scale = w ? w / sw : 1
+    const c = document.createElement('canvas'); c.width = Math.round(sw * scale); c.height = Math.round(sh * scale)
+    const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height)
     return c.toDataURL('image/webp', q).split(',')[1]
   }, [png.toString('base64'), width, QUALITY])
   return Buffer.from(b64, 'base64')

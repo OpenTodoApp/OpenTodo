@@ -102,9 +102,10 @@
   <main id="content" class="docs-main" tabindex="-1">
     <article class="prose" data-audience="developer">
       <p class="doc-meta"><span class="crumbs">Integrations and internals <span aria-hidden="true">›</span> Integrations</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
-      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#1-enable-it-owner">1. Enable it (owner)</a></li><li><a href="#2-create-a-read-only-token">2. Create a read-only token</a></li><li><a href="#3-connect-an-assistant">3. Connect an assistant</a></li><li><a href="#tools">Tools</a></li><li><a href="#resources">Resources</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#protocol-details">Protocol details</a></li><li><a href="#limits-and-security">Limits and security</a></li></ul></nav></details>
 <h1 id="ai-assistants-mcp">AI assistants (MCP)</h1>
 <p>OpenTodo can let an AI assistant read your projects and tasks through the <a href="https://modelcontextprotocol.io" rel="noopener">Model Context Protocol</a> (MCP), so you can ask it &quot;what is on my plate today?&quot; or &quot;summarise the Garden project&quot;. The endpoint is:</p>
+<details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#1-enable-it-owner">1. Enable it (owner)</a></li><li><a href="#2-create-a-read-only-token">2. Create a read-only token</a></li><li><a href="#3-connect-an-assistant">3. Connect an assistant</a></li><li><a href="#tools">Tools</a></li><li><a href="#resources">Resources</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#protocol-details">Protocol details</a></li><li><a href="#limits-and-security">Limits and security</a></li></ul></nav></details>
+
 <ul>
 <li><strong>Off by default.</strong> The server owner turns it on; until then <code>/mcp</code> answers 404.</li>
 <li><strong>Read-only.</strong> There are no write tools. An assistant cannot create, complete, edit or delete anything.</li>

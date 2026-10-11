@@ -102,7 +102,6 @@
   <main id="content" class="docs-main" tabindex="-1">
     <article class="prose" data-audience="user">
       <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Reference</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
-      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#grammar">Grammar</a><ul><li><a href="#completion-relative-rules">Completion-relative rules</a></li><li><a href="#end-conditions">End conditions</a></li></ul></li><li><a href="#how-the-next-occurrence-is-computed">How the next occurrence is computed</a></li><li><a href="#completing-skipping-and-editing">Completing, skipping and editing</a></li><li><a href="#sync-and-convergence">Sync and convergence</a></li></ul></nav></details>
 <h1 id="recurring-task-rules">Recurring task rules</h1>
 <p>A task can repeat. The rule is a short English phrase stored in the task&#39;s
 <code>recurrence</code> field, for example <code>every weekday</code> or <code>every 3 days after completion</code>.
@@ -110,6 +109,8 @@ The same grammar is implemented by the server (<code>internal/recurrence</code>)
 web app (<code>web/src/lib/recurrence.ts</code>), and both are tested against one shared file
 of test vectors (<code>web/src/lib/recurrence.vectors.json</code>), so every device and the
 REST API compute the same dates. Every example on this page is one of those vectors.</p>
+<details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#grammar">Grammar</a><ul><li><a href="#completion-relative-rules">Completion-relative rules</a></li><li><a href="#end-conditions">End conditions</a></li></ul></li><li><a href="#how-the-next-occurrence-is-computed">How the next occurrence is computed</a></li><li><a href="#completing-skipping-and-editing">Completing, skipping and editing</a></li><li><a href="#sync-and-convergence">Sync and convergence</a></li></ul></nav></details>
+
 <h2 id="grammar">Grammar<a class="anchor" href="#grammar" aria-label="Link to this section: Grammar">#</a></h2>
 <pre tabindex="0"><code>every &lt;pattern&gt; [after completion] [until YYYY-MM-DD | for N times]</code></pre>
 <p>Rules are case-insensitive and extra whitespace is ignored. A rule is at most 200

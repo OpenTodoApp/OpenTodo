@@ -102,9 +102,10 @@
   <main id="content" class="docs-main" tabindex="-1">
     <article class="prose" data-audience="user">
       <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Reference</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
-      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#shared-projects">Shared projects</a></li><li><a href="#delivery">Delivery</a></li><li><a href="#trash">Trash</a></li><li><a href="#snooze-and-dismiss">Snooze and dismiss</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#for-operators">For operators</a></li></ul></nav></details>
 <h1 id="reminders-reference">Reminders reference</h1>
 <p>A task can carry any number of reminders (OpenSpec change <code>reminders</code>). Open a task, then use the <strong>Reminders</strong> section of the detail panel.</p>
+<details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#shared-projects">Shared projects</a></li><li><a href="#delivery">Delivery</a></li><li><a href="#trash">Trash</a></li><li><a href="#snooze-and-dismiss">Snooze and dismiss</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#for-operators">For operators</a></li></ul></nav></details>
+
 <ul>
 <li><strong>Relative</strong> reminders fire a number of minutes before or after the task&#39;s due time (&quot;30 minutes before&quot;). A task with a date but no time counts as due at 09:00. A task whose time is fixed to a time zone fires relative to that exact instant, wherever your devices are. When the due date or time changes, on any device or through the API, the reminder moves with it; recurring tasks carry their relative reminders to the next occurrence. Without a due date a relative reminder is kept but does not fire.</li>
 <li><strong>Absolute</strong> reminders fire at a moment you pick and never move with the due date. They work on undated tasks and are shown in each device&#39;s local time.</li>

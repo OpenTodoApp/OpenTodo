@@ -110,6 +110,17 @@ function toc(headings) {
   return `<ul>${tree.map(li).join('')}</ul>`
 }
 
+// The collapsible "On this page" for narrow screens goes after the title and its first paragraph.
+function withInlineToc(html, t) {
+  if (!t) return html
+  const block = `<details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)">${t}</nav></details>\n`
+  const h1 = html.indexOf('</h1>')
+  const p = html.indexOf('</p>', h1)
+  const next = html.indexOf('<h', h1 + 5)
+  const at = p > 0 && (next < 0 || p < next) ? p + 4 : h1 + 5
+  return html.slice(0, at) + '\n' + block + html.slice(at)
+}
+
 /** One docs page. */
 export function pageHtml({ page, html, headings, sorted, version }) {
   const i = sorted.indexOf(page)
@@ -135,7 +146,7 @@ ${header()}
   <main id="content" class="docs-main" tabindex="-1">
     <article class="prose" data-audience="${e(page.fm.audience)}">
       <p class="doc-meta"><span class="crumbs">${crumbs}</span><span class="version" title="Latest release these docs describe">Version ${e(version.release)}</span></p>
-${t ? `      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)">${t}</nav></details>\n` : ''}${html}
+${withInlineToc(html, t)}
       <p class="edit"><a href="${REPO_URL}/edit/main/docs/${e(page.rel)}" rel="noopener">Edit this page on GitHub</a></p>
     </article>
     <nav class="pager" aria-label="Previous and next page">
