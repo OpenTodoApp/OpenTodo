@@ -11,6 +11,7 @@ import { useOnline } from '../lib/online'
 import { currentUserId, membershipMap, memberName, roleOf } from '../lib/sharing'
 import type { ActivityEvent, Comment, Membership, ProjectMember, Task } from '../lib/types'
 import { Markdown } from './Markdown'
+import { Popover } from './overlay'
 
 /** Comment kinds are shown by the thread itself, not repeated as events in a task's timeline. */
 const COMMENT_KINDS = new Set(['commented', 'comment_edited', 'comment_deleted'])
@@ -289,17 +290,18 @@ function Composer({ id, initial = '', members, me, onSubmit, onCancel, autoFocus
         onSelect={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart)}
         onKeyDown={onKeyDown}
       />
-      {options.length > 0 && (
-        <ul id={listId} role="listbox" aria-label="Mention a member" className="absolute left-0 z-20 mt-1 w-56 rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
+      {/* Non-modal: focus stays in the textarea (combobox pattern); a sheet on phones. */}
+      <Popover open={options.length > 0} onClose={() => setClosed(true)} anchor={area} label="Mention a member" modal={false} align="start" role={undefined} className="py-1">
+        <ul id={listId} role="listbox" aria-label="Mention a member">
           {options.map((m, i) => (
             <li key={m.userId} id={`${listId}-${i}`} role="option" aria-selected={i === active}
-              className={`cursor-pointer px-3 py-1 ${i === active ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
+              className={`flex min-h-11 cursor-pointer flex-wrap items-center gap-x-1 px-3 py-1 ${i === active ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
               onMouseDown={(e) => { e.preventDefault(); pick(m) }}>
-              {m.name || m.email} <span className="text-xs text-slate-400">{m.email}</span>
+              {m.name || m.email} <span className="user-text text-xs text-slate-400">{m.email}</span>
             </li>
           ))}
         </ul>
-      )}
+      </Popover>
       <div className="mt-1 flex items-center gap-2">
         <button type="button" className="btn-primary px-3 py-1 text-xs" disabled={!body.trim() || busy} onClick={() => void submit()}>{submitLabel}</button>
         {onCancel && <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={onCancel}>Cancel</button>}

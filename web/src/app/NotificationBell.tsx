@@ -1,10 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { markTaskNotificationsRead } from '../lib/notifications'
 import type { AppNotification } from '../lib/types'
 import { navigate, routePath, type Route } from './router'
 import { openTask } from './signals'
+import { Popover } from './overlay'
 
 /**
  * Notification badge and list (OpenSpec `task-assignment`; mentions from
@@ -16,19 +17,7 @@ export function NotificationBell() {
   const list = useLiveQuery(() => db.notifications.orderBy('createdAt').reverse().limit(50).toArray(), [], [] as AppNotification[])
   const unread = list.filter((n) => n.readAt === null).length
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false) }
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    window.addEventListener('mousedown', onDown)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('mousedown', onDown)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [open])
+  const ref = useRef<HTMLButtonElement>(null)
 
   async function choose(n: AppNotification) {
     setOpen(false)
@@ -43,24 +32,23 @@ export function NotificationBell() {
   }
 
   return (
-    <div className="relative" ref={ref}>
-      <button className="btn-ghost relative text-sm" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open}
-        onClick={() => setOpen((v) => !v)} data-notifications>
+    <>
+      <button ref={ref} className="btn-ghost touch-target relative text-sm" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open}
+        aria-haspopup="dialog" onClick={() => setOpen((v) => !v)} data-notifications>
         <span aria-hidden>🔔</span>
         {unread > 0 && (
           <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] font-semibold leading-4 text-white" data-unread>{unread}</span>
         )}
       </button>
-      {open && (
-        <div role="dialog" aria-label="Notifications" className="absolute right-0 z-40 mt-1 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
+      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label="Notifications" width="sm:w-80" className="py-1">
           {list.length === 0 && <p className="px-3 py-2 text-xs text-slate-400">No notifications.</p>}
           <ul>
             {list.map((n) => (
               <li key={n.id}>
-                <button type="button" autoFocus={n === list[0]} onClick={() => void choose(n)}
+                <button type="button" data-autofocus={n === list[0] ? '' : undefined} onClick={() => void choose(n)}
                   className={`flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800 ${n.readAt === null ? '' : 'text-slate-400'}`}>
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt === null ? 'bg-emerald-500' : 'bg-transparent'}`} />
-                  <span className="min-w-0 flex-1">
+                  <span className="user-text min-w-0 flex-1">
                     {n.kind === 'mentioned' ? (
                       <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> mentioned you on <strong>{n.payload.taskTitle || 'a task'}</strong>
                         {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-xs text-slate-500">“{n.payload.excerpt}”</span>}
@@ -76,8 +64,7 @@ export function NotificationBell() {
               </li>
             ))}
           </ul>
-        </div>
-      )}
-    </div>
+      </Popover>
+    </>
   )
 }
