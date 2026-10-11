@@ -74,7 +74,7 @@ export function RemindersField({ task }: { task: Task }) {
                   <span aria-hidden>⏰</span>
                   <span className="min-w-0 flex-1">
                     <span className="font-medium" data-testid="reminder-time">{r.fire_at !== null ? formatWhen(r.fire_at) : 'Not scheduled'}</span>
-                    <span className="ml-1 text-xs text-slate-500">
+                    <span className="ml-1 text-xs text-muted">
                       {r.kind === 'relative' ? offsetLabel(r.offset_minutes) : 'at a set time'}{state ? ` · ${state}` : ''}
                     </span>
                   </span>
@@ -126,12 +126,12 @@ export function RemindersField({ task }: { task: Task }) {
         />
       )}
       {!task.due && reminders.some((r) => r.kind === 'relative') && (
-        <p className="mt-1 text-xs text-slate-400">Relative reminders fire once the task has a due date.</p>
+        <p className="mt-1 text-xs text-faint">Relative reminders fire once the task has a due date.</p>
       )}
       {task.due && !task.due.time && reminders.some((r) => r.kind === 'relative') && (
-        <p className="mt-1 text-xs text-slate-400">No due time: relative reminders count from {DEFAULT_REMINDER_TIME}.</p>
+        <p className="mt-1 text-xs text-faint">No due time: relative reminders count from {DEFAULT_REMINDER_TIME}.</p>
       )}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   )
 }
@@ -194,7 +194,7 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
       )}
       <button type="submit" className="btn-primary px-2 py-1 text-xs">Save</button>
       <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={onCancel}>Cancel</button>
-      {error && <p className="w-full text-xs text-red-600">{error}</p>}
+      {error && <p className="w-full text-xs text-red-600 dark:text-red-400">{error}</p>}
     </form>
   )
 }

@@ -82,13 +82,13 @@ export function TrashView() {
     <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
       <div className="mb-1 flex items-center gap-2">
         <h1 className="flex-1 text-xl font-semibold">Trash</h1>
-        {items.length > 0 && <button className="btn-ghost text-sm text-red-600" onClick={() => setConfirm('all')}>Empty Trash</button>}
+        {items.length > 0 && <button className="btn-ghost text-sm text-red-600 dark:text-red-400" onClick={() => setConfirm('all')}>Empty Trash</button>}
       </div>
-      <p className="mb-4 text-sm text-slate-500">
+      <p className="mb-4 text-sm text-muted">
         {retention > 0 ? `Items are deleted permanently after ${retention} days.` : 'Items stay here until you delete them permanently.'}{' '}
         <span className="hidden md:inline"><span className="kbd">r</span> restores, <span className="kbd">Delete</span> deletes permanently.</span>
       </p>
-      {error && <p role="alert" className="mb-3 text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
       {confirm && (
         <div role="alertdialog" aria-label="Confirm permanent deletion" className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
           <span className="flex-1">
@@ -99,7 +99,7 @@ export function TrashView() {
         </div>
       )}
       {items.length === 0 ? (
-        <p className="py-12 text-center text-sm text-slate-400">The Trash is empty.</p>
+        <p className="py-12 text-center text-sm text-faint">The Trash is empty.</p>
       ) : (
         <ul className="divide-y divide-slate-100 dark:divide-slate-800" aria-label="Deleted items">
           {items.map((it, i) => {
@@ -112,7 +112,7 @@ export function TrashView() {
                 <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : '○'}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{it.title}</span>
-                  <span className="block text-xs text-slate-400">
+                  <span className="block text-xs text-faint">
                     {it.entity === 'project' ? 'Project' : it.projectName} · deleted {new Date(it.deletedAt).toLocaleString()}
                     {isPending ? ' · pending permanent deletion' : days !== null ? ` · ${days} day${days === 1 ? '' : 's'} left` : ''}
                   </span>
@@ -120,7 +120,7 @@ export function TrashView() {
                 {ok && (
                   <span className="flex gap-1">
                     <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => void restore(it)}>Restore</button>
-                    <button className="btn-ghost px-2 py-0.5 text-xs text-red-600" disabled={isPending} onClick={() => setConfirm(it)}>Delete permanently</button>
+                    <button className="btn-ghost px-2 py-0.5 text-xs text-red-600 dark:text-red-400" disabled={isPending} onClick={() => setConfirm(it)}>Delete permanently</button>
                   </span>
                 )}
               </li>

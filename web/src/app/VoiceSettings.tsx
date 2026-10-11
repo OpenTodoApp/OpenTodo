@@ -61,7 +61,7 @@ export function VoiceSettingsSection() {
         />
         <span>
           Dictate tasks into quick add
-          <span id="voice-settings-note" className="block text-xs text-slate-500">
+          <span id="voice-settings-note" className="block text-xs text-muted">
             {supported
               ? <>A microphone button appears in quick add, and <span className="kbd">Shift+V</span> starts dictation. Spoken words become quick-add text (“hashtag home priority two” → <code>#home p2</code>); nothing is saved until you press Enter. Applies to this device only.</>
               : 'This browser does not provide speech recognition, so voice capture is not available here. Typing works as usual.'}

@@ -101,14 +101,14 @@ function ActivityList({ project }: { project: Project }) {
   return (
     <div className="mt-2 space-y-2 text-sm">
       <div className="flex flex-wrap gap-2">
-        <label className="flex items-center gap-1 text-xs text-slate-500">
+        <label className="flex items-center gap-1 text-xs text-muted">
           Person
           <select className="input py-0.5 text-xs" value={actor} onChange={(e) => setActor(e.target.value)} aria-label="Filter activity by person">
             <option value="">Everyone</option>
             {actors.map((a) => <option key={a} value={a}>{name(a)}</option>)}
           </select>
         </label>
-        <label className="flex items-center gap-1 text-xs text-slate-500">
+        <label className="flex items-center gap-1 text-xs text-muted">
           Kind
           <select className="input py-0.5 text-xs" value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Filter activity by kind">
             <option value="">All changes</option>
@@ -116,12 +116,12 @@ function ActivityList({ project }: { project: Project }) {
           </select>
         </label>
       </div>
-      {shown.length === 0 && <p className="text-xs text-slate-400">No activity{actor || kind ? ' matches these filters' : ' on this device yet'}.</p>}
+      {shown.length === 0 && <p className="text-xs text-faint">No activity{actor || kind ? ' matches these filters' : ' on this device yet'}.</p>}
       <ol className="space-y-1" aria-label="Activity">
         {shown.map((e) => {
           const title = e.taskId ? titles.get(e.taskId) || e.taskTitle || 'a task' : null
           return (
-            <li key={e.id} className="flex items-baseline gap-2 text-xs text-slate-500" data-event={e.kind} data-actor={e.actor}>
+            <li key={e.id} className="flex items-baseline gap-2 text-xs text-muted" data-event={e.kind} data-actor={e.actor}>
               <span className="min-w-0 flex-1">
                 <strong className="font-medium text-slate-700 dark:text-slate-200">{name(e.actor)}</strong>{' '}
                 {describeEvent(e, name, projectName)}
@@ -132,9 +132,9 @@ function ActivityList({ project }: { project: Project }) {
                     </button>
                   </>
                 )}
-                {isPending(e, pending) && <span className="ml-1 italic text-amber-600" title="Not yet synced">(pending)</span>}
+                {isPending(e, pending) && <span className="ml-1 italic text-amber-700 dark:text-amber-400" title="Not yet synced">(pending)</span>}
               </span>
-              <time className="shrink-0 text-slate-400" dateTime={new Date(e.ts).toISOString()}>{new Date(e.ts).toLocaleString()}</time>
+              <time className="shrink-0 text-faint" dateTime={new Date(e.ts).toISOString()}>{new Date(e.ts).toLocaleString()}</time>
             </li>
           )
         })}
@@ -144,7 +144,7 @@ function ActivityList({ project }: { project: Project }) {
           {state === 'loading' ? 'Loading…' : 'Load older activity'}
         </button>
       )}
-      {state === 'error' && <p className="text-xs text-red-600">Older activity could not be loaded.</p>}
+      {state === 'error' && <p className="text-xs text-red-600 dark:text-red-400">Older activity could not be loaded.</p>}
     </div>
   )
 }

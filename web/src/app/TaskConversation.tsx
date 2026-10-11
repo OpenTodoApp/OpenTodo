@@ -107,7 +107,7 @@ export function TaskConversation({ task, userId }: { task: Task; userId?: string
 
   const renderComment = (c: Comment, isReply: boolean) => {
     if (c.deleted_at) {
-      return <p className="text-xs italic text-slate-400" data-comment-deleted>Comment deleted</p>
+      return <p className="text-xs italic text-faint" data-comment-deleted>Comment deleted</p>
     }
     if (editing === c.id) {
       return (
@@ -118,17 +118,17 @@ export function TaskConversation({ task, userId }: { task: Task; userId?: string
     }
     return (
       <div>
-        <div className="flex flex-wrap items-baseline gap-x-2 text-xs text-slate-400">
+        <div className="flex flex-wrap items-baseline gap-x-2 text-xs text-faint">
           <span className="font-semibold text-slate-600 dark:text-slate-300">{name(c.author_id)}</span>
           <time dateTime={new Date(c.created_at).toISOString()}>{new Date(c.created_at).toLocaleString()}</time>
           {c.edited_at && <span title={`Edited ${new Date(c.edited_at).toLocaleString()}`}>(edited)</span>}
         </div>
         <Markdown source={c.body} className="text-sm" />
         <div className="mt-0.5 flex gap-2 text-xs">
-          {!isReply && <button type="button" className="text-slate-500 hover:underline" onClick={() => setReplyTo(c.id)}>Reply</button>}
-          {canEditComment(c, me) && <button type="button" className="text-slate-500 hover:underline" onClick={() => setEditing(c.id)}>Edit</button>}
+          {!isReply && <button type="button" className="text-muted hover:underline" onClick={() => setReplyTo(c.id)}>Reply</button>}
+          {canEditComment(c, me) && <button type="button" className="text-muted hover:underline" onClick={() => setEditing(c.id)}>Edit</button>}
           {canDeleteComment(c, me, role) && (
-            <button type="button" className="text-red-600 hover:underline" onClick={() => { if (confirm('Delete this comment?')) void run(() => deleteComment(c.id)) }}>Delete</button>
+            <button type="button" className="text-red-600 dark:text-red-400 hover:underline" onClick={() => { if (confirm('Delete this comment?')) void run(() => deleteComment(c.id)) }}>Delete</button>
           )}
         </div>
       </div>
@@ -137,14 +137,14 @@ export function TaskConversation({ task, userId }: { task: Task; userId?: string
 
   return (
     <section className="space-y-3 pt-4" aria-label="Comments and activity">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Comments <span className="kbd ml-1 normal-case">Shift+C</span></h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Comments <span className="kbd ml-1 normal-case">Shift+C</span></h3>
       {me ? (
         <Composer id="comment-composer" ref={composerRef} members={members} me={me} submitLabel="Comment"
           onSubmit={(body, mentions) => run(() => createComment({ taskId: task.id, body, mentions }))} />
       ) : (
-        <p className="text-xs text-slate-400">Sign in to comment.</p>
+        <p className="text-xs text-faint">Sign in to comment.</p>
       )}
-      {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{error}</p>}
       <ol className="space-y-3" aria-label="Timeline">
         {items.map((it) => it.kind === 'thread' ? (
           <li key={`c:${it.thread.root.id}`} className="rounded-md border border-slate-200 p-2 dark:border-slate-800" data-thread={it.thread.root.id}>
@@ -162,14 +162,14 @@ export function TaskConversation({ task, userId }: { task: Task; userId?: string
             )}
           </li>
         ) : (
-          <li key={`e:${it.event.id}`} className="flex items-baseline gap-2 text-xs text-slate-500" data-event={it.event.kind}>
+          <li key={`e:${it.event.id}`} className="flex items-baseline gap-2 text-xs text-muted" data-event={it.event.kind}>
             <span className="h-1.5 w-1.5 shrink-0 translate-y-[-1px] rounded-full bg-slate-300 dark:bg-slate-600" />
             <span className="min-w-0 flex-1">
               <strong className="font-medium text-slate-600 dark:text-slate-300">{it.event.actorName && it.event.actor !== me ? it.event.actorName : name(it.event.actor)}</strong>{' '}
               {describeEvent(it.event, name, projectName)}
-              {isPending(it.event, pending) && <span className="ml-1 italic text-amber-600" title="Not yet synced">(pending)</span>}
+              {isPending(it.event, pending) && <span className="ml-1 italic text-amber-700 dark:text-amber-400" title="Not yet synced">(pending)</span>}
             </span>
-            <time className="shrink-0 text-slate-400" dateTime={new Date(it.event.ts).toISOString()}>{new Date(it.event.ts).toLocaleString()}</time>
+            <time className="shrink-0 text-faint" dateTime={new Date(it.event.ts).toISOString()}>{new Date(it.event.ts).toLocaleString()}</time>
           </li>
         ))}
       </ol>
@@ -178,7 +178,7 @@ export function TaskConversation({ task, userId }: { task: Task; userId?: string
           {loadState === 'loading' ? 'Loading…' : 'Load older activity'}
         </button>
       )}
-      {loadState === 'error' && <p className="text-xs text-red-600">Older activity could not be loaded.</p>}
+      {loadState === 'error' && <p className="text-xs text-red-600 dark:text-red-400">Older activity could not be loaded.</p>}
     </section>
   )
 }
@@ -297,7 +297,7 @@ function Composer({ id, initial = '', members, me, onSubmit, onCancel, autoFocus
             <li key={m.userId} id={`${listId}-${i}`} role="option" aria-selected={i === active}
               className={`flex min-h-11 cursor-pointer flex-wrap items-center gap-x-1 px-3 py-1 ${i === active ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
               onMouseDown={(e) => { e.preventDefault(); pick(m) }}>
-              {m.name || m.email} <span className="user-text text-xs text-slate-400">{m.email}</span>
+              {m.name || m.email} <span className="user-text text-xs text-faint">{m.email}</span>
             </li>
           ))}
         </ul>
@@ -305,7 +305,7 @@ function Composer({ id, initial = '', members, me, onSubmit, onCancel, autoFocus
       <div className="mt-1 flex items-center gap-2">
         <button type="button" className="btn-primary px-3 py-1 text-xs" disabled={!body.trim() || busy} onClick={() => void submit()}>{submitLabel}</button>
         {onCancel && <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={onCancel}>Cancel</button>}
-        <span className="text-[11px] text-slate-400"><span className="kbd">Ctrl</span>+<span className="kbd">Enter</span></span>
+        <span className="text-[11px] text-faint"><span className="kbd">Ctrl</span>+<span className="kbd">Enter</span></span>
       </div>
     </div>
   )

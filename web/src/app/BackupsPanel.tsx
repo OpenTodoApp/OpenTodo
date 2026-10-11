@@ -56,7 +56,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
   return (
     <section className="space-y-3" aria-labelledby="backups-heading">
       <HelpHeading screen="settings/backups" id="backups-heading" className="font-semibold">Backups</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Scheduled copies of the whole server (every account, task and the sync log), written to a folder on the server, an S3-compatible bucket or a WebDAV share. Restore with <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">opentodo restore</code>; see docs/backups.md.
       </p>
 
@@ -68,7 +68,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
 
       <div className="rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800" role="status" aria-live="polite" data-testid="backups-status">
         {status === null ? (
-          <p className="text-slate-400">{offline ? 'No status fetched yet.' : 'Loading status…'}</p>
+          <p className="text-faint">{offline ? 'No status fetched yet.' : 'Loading status…'}</p>
         ) : (
           <div className="space-y-1">
             <p>
@@ -87,7 +87,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
                 <span className="font-medium">Last run:</span> {runSummary(status.lastRun)}
               </p>
             )}
-            {!status.lastRun && !running && <p className="text-slate-400">No backup has run yet.</p>}
+            {!status.lastRun && !running && <p className="text-faint">No backup has run yet.</p>}
           </div>
         )}
       </div>
@@ -192,7 +192,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
 
         <fieldset className="space-y-2" disabled={disabled}>
           <legend className="text-sm font-medium">Encryption</legend>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted">
             {flags.hasPassphrase ? 'Backups are encrypted with your passphrase. Enter a new one to change it (future backups only).' : 'Optional. With a passphrase, archives are encrypted (AES-256-GCM) before they leave the server.'}
           </p>
           <Field label={flags.hasPassphrase ? 'New passphrase' : 'Passphrase'}>
@@ -226,9 +226,9 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
             {status.history.map((r) => (
               <li key={r.id} tabIndex={0} className="flex flex-wrap gap-x-3 py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
                 <span className={r.status === 'failed' ? 'text-red-600 dark:text-red-400' : r.status === 'running' ? 'text-sky-600' : 'text-emerald-700 dark:text-emerald-400'}>{r.status}</span>
-                <span className="text-slate-500">{new Date(r.startedAt).toLocaleString()} · {r.kind}</span>
-                {r.status === 'succeeded' && <span className="text-slate-500">{formatBytes(r.bytes)}</span>}
-                {r.error && <span className="w-full break-words text-xs text-slate-500">{r.error}</span>}
+                <span className="text-muted">{new Date(r.startedAt).toLocaleString()} · {r.kind}</span>
+                {r.status === 'succeeded' && <span className="text-muted">{formatBytes(r.bytes)}</span>}
+                {r.error && <span className="w-full break-words text-xs text-muted">{r.error}</span>}
               </li>
             ))}
           </ul>
@@ -243,7 +243,7 @@ function Field({ label, hint, className, children }: { label: string; hint?: str
     <label className={`block text-sm ${className ?? ''}`}>
       <span className="mb-1 block text-slate-600 dark:text-slate-300">{label}</span>
       {children}
-      {hint && <span className="mt-0.5 block text-xs text-slate-400">{hint}</span>}
+      {hint && <span className="mt-0.5 block text-xs text-faint">{hint}</span>}
     </label>
   )
 }

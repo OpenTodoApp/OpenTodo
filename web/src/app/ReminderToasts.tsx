@@ -84,7 +84,7 @@ export function ReminderToasts() {
             <span aria-hidden className="pt-0.5">⏰</span>
             <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)} title="Open task">
               <p className="line-clamp-2 user-text text-sm font-medium">{d.task.title || 'Untitled'}</p>
-              <p className="text-xs text-slate-500">Reminder · {new Date(d.reminder.fire_at as number).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+              <p className="text-xs text-muted">Reminder · {new Date(d.reminder.fire_at as number).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
             </button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
@@ -96,7 +96,7 @@ export function ReminderToasts() {
           </div>
         </div>
       ))}
-      {due.length > 4 && <p className="pointer-events-auto text-right text-xs text-slate-500">+{due.length - 4} more reminders</p>}
+      {due.length > 4 && <p className="pointer-events-auto text-right text-xs text-muted">+{due.length - 4} more reminders</p>}
     </ToastRegion>
   )
 }

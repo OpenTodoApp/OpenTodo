@@ -41,7 +41,7 @@ export function NewLabelForm({ onDone, className = '' }: { onDone: () => void; c
         onChange={(e) => { setName(e.target.value); setError(null) }}
         onKeyDown={(e) => e.key === 'Escape' && onDone()} onBlur={() => !name && onDone()} />
       {error && (
-        <p className="mt-1 text-xs text-red-600">
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
           {error.message}{error.id && <>. <button type="button" className="underline" onMouseDown={(e) => e.preventDefault()} onClick={() => navigate({ view: 'label', id: error.id! })}>Open it</button></>}
         </p>
       )}
@@ -79,12 +79,12 @@ export function LabelRow({ label, labels, count, duplicate, route }: { label: La
             <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: label.color }} />
             <span className="flex-1 truncate">{label.name}</span>
             {duplicate && <span className="rounded bg-amber-100 px-1 text-[10px] font-semibold uppercase text-amber-800 dark:bg-amber-900/50 dark:text-amber-200" title="Another label has this name. Merge them from the menu.">dup</span>}
-            {count ? <span className="text-xs text-slate-400">{count}</span> : null}
+            {count ? <span className="text-xs text-faint">{count}</span> : null}
           </button>
         )}
         <LabelMenu label={label} labels={labels} count={count ?? 0} onRename={() => { setName(label.name); setEditing(true) }} />
       </div>
-      {error && <p className="px-2 pb-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="px-2 pb-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   )
 }
@@ -106,10 +106,10 @@ function LabelMenu({ label, labels, count, onRename }: { label: Label; labels: L
   }
   return (
     <Menu label={`Menu for label ${label.name}`} title={label.name} trigger="⋯" className="p-2"
-      triggerClassName="hover-reveal touch-target rounded px-1.5 py-0.5 text-slate-400 hover:bg-slate-300/60 dark:hover:bg-slate-700">
+      triggerClassName="hover-reveal touch-target rounded px-1.5 py-0.5 text-faint hover:bg-slate-300/60 dark:hover:bg-slate-700">
       {(close) => (
         <>
-          <p className="px-1 pb-1 text-xs text-slate-400">Color</p>
+          <p className="px-1 pb-1 text-xs text-faint">Color</p>
           <div className="mb-2 flex flex-wrap gap-1 px-1">
             {LABEL_PALETTE.map((c) => (
               <button key={c} className="touch-target inline-flex items-center justify-center rounded-full" aria-label={`Set color ${c}`} aria-pressed={c === label.color} onClick={() => void updateLabel(label.id, { color: c })}>
@@ -143,7 +143,7 @@ export function LabelsView({ route }: { route: Route }) {
     <div className="mx-auto max-w-2xl px-4 py-5 md:px-8">
       <div className="mb-4 flex items-center gap-3">
         <h1 className="text-xl font-semibold">Labels</h1>
-        <span className="text-sm text-slate-400">{labels.length}</span>
+        <span className="text-sm text-faint">{labels.length}</span>
         <div className="flex-1" />
         <button className="btn-primary text-xs" onClick={() => setAdding(true)}>+ New label</button>
       </div>
@@ -157,7 +157,7 @@ export function LabelsView({ route }: { route: Route }) {
         {labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={counts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} />)}
       </div>
       {labels.length === 0 && !adding && (
-        <p className="px-2 py-8 text-center text-sm text-slate-400">No labels yet. Press <span className="kbd">L</span> on a task or create one here.</p>
+        <p className="px-2 py-8 text-center text-sm text-faint">No labels yet. Press <span className="kbd">L</span> on a task or create one here.</p>
       )}
     </div>
   )

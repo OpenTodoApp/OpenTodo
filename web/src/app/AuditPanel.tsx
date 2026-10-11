@@ -144,7 +144,7 @@ export function AuditPanel() {
   return (
     <section className="space-y-3" aria-labelledby="audit-heading">
       <h2 id="audit-heading" className="font-semibold">Audit log</h2>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Sign-ins, tokens, invitations, exports and setting changes on this server. Task content is never recorded.
       </p>
 
@@ -209,7 +209,7 @@ export function AuditPanel() {
               {loadingMore ? 'Loading…' : 'Load more'}
             </button>
           )}
-          <p className="text-xs text-slate-400">Keyboard: focus the table and press <span className="kbd">e</span> to export with the current filters.</p>
+          <p className="text-xs text-faint">Keyboard: focus the table and press <span className="kbd">e</span> to export with the current filters.</p>
 
           {settings && (
             <div className="space-y-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
@@ -231,7 +231,7 @@ export function AuditPanel() {
                 <input type="checkbox" checked={settings.logIp} onChange={(e) => toggleAddresses(e.target.checked)} />
                 <span>Record client addresses (IP)</span>
               </label>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-faint">
                 Off by default. Turning it off erases every stored address. Behind a reverse proxy the address comes from <code>X-Forwarded-For</code>.
               </p>
               {notice && <p className="text-xs text-emerald-700 dark:text-emerald-400" role="status">{notice}</p>}
@@ -250,7 +250,7 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
     <div className="overflow-x-auto rounded-md border border-slate-200 focus-visible:outline-2 focus-visible:outline-emerald-500 dark:border-slate-800"
       tabIndex={0} onKeyDown={onKeyDown} aria-label="Audit events (press e to export)" data-scroll-x>
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs text-slate-500 dark:bg-slate-900">
+        <thead className="bg-slate-50 text-xs text-muted dark:bg-slate-900">
           <tr>
             <th className="px-2 py-1.5 font-medium">Time</th>
             <th className="px-2 py-1.5 font-medium">Event</th>
@@ -262,23 +262,23 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
         <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
           {events.map((ev) => (
             <tr key={ev.id} tabIndex={0} className="align-top focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-500" data-event={ev.name}>
-              <td className="whitespace-nowrap px-2 py-1.5 text-xs text-slate-500">{new Date(ev.ts).toLocaleString()}</td>
+              <td className="whitespace-nowrap px-2 py-1.5 text-xs text-muted">{new Date(ev.ts).toLocaleString()}</td>
               <td className="px-2 py-1.5">
                 <span className={ev.outcome === 'failure' ? 'text-red-700 dark:text-red-400' : ''}>{AUDIT_LABELS[ev.name] ?? ev.name}</span>
                 {ev.outcome === 'failure' && <span className="ml-1 rounded bg-red-100 px-1 text-xs text-red-700 dark:bg-red-900/40 dark:text-red-200">failure</span>}
               </td>
               <td className="px-2 py-1.5">{eventAccount(ev)}</td>
               <td className="px-2 py-1.5 text-slate-600 dark:text-slate-300">{eventSummary(ev)}</td>
-              <td className="px-2 py-1.5 text-xs text-slate-500" title={ev.userAgent}>
+              <td className="px-2 py-1.5 text-xs text-muted" title={ev.userAgent}>
                 {shortAgent(ev.userAgent)}{ev.ip ? ` · ${ev.ip}` : ''}
               </td>
             </tr>
           ))}
           {status === 'ready' && events.length === 0 && (
-            <tr><td colSpan={5} className="px-2 py-3 text-slate-400">No events match these filters.</td></tr>
+            <tr><td colSpan={5} className="px-2 py-3 text-faint">No events match these filters.</td></tr>
           )}
           {status === 'loading' && events.length === 0 && (
-            <tr><td colSpan={5} className="px-2 py-3 text-slate-400">Loading…</td></tr>
+            <tr><td colSpan={5} className="px-2 py-3 text-faint">Loading…</td></tr>
           )}
         </tbody>
       </table>

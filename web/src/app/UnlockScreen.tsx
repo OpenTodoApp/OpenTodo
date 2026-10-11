@@ -25,7 +25,7 @@ export function UnlockView(p: UnlockViewProps) {
     <div className="flex min-h-full items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4 rounded-lg border border-slate-200 p-6 dark:border-slate-800">
         <h1 className="text-lg font-semibold">Unlock your tasks</h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           Your account uses end-to-end encryption. Enter your encryption {p.kind === 'passphrase' ? 'passphrase' : 'recovery key'} to
           decrypt your tasks on this device. Sync stays paused until then. You only need to do this once per device.
         </p>
@@ -37,7 +37,7 @@ export function UnlockView(p: UnlockViewProps) {
             <input className={`input mt-1 ${p.kind === 'recovery' ? 'font-mono' : ''}`} name="secret" type={p.kind === 'passphrase' ? 'password' : 'text'}
               autoComplete={p.kind === 'passphrase' ? 'current-password' : 'off'} spellCheck={false} autoFocus required />
           </label>
-          {p.error && <p role="alert" className="text-sm text-red-600">{p.error}</p>}
+          {p.error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{p.error}</p>}
           <button className="btn-primary w-full" disabled={p.busy}>{p.busy ? 'Unlocking…' : 'Unlock'}</button>
         </form>
         <div className="flex flex-wrap justify-between gap-2 text-sm">
@@ -48,7 +48,7 @@ export function UnlockView(p: UnlockViewProps) {
         </div>
         {p.lost
           ? <LostKeysConfirm busy={p.busy} onConfirm={p.onConfirmLost} onCancel={() => p.onLost(false)} />
-          : <button type="button" className="text-xs text-slate-500 underline" onClick={() => p.onLost(true)}>I lost both my passphrase and my recovery key</button>}
+          : <button type="button" className="text-xs text-muted underline" onClick={() => p.onLost(true)}>I lost both my passphrase and my recovery key</button>}
       </div>
     </div>
   )

@@ -29,12 +29,12 @@ export function SyncStatus() {
       type="button"
       onClick={() => (s.state === 'restricted' ? window.dispatchEvent(new Event(ENROLMENT_EVENT)) : requestSync(0))}
       title={s.state === 'locked' ? 'This device is locked: unlock it with your encryption passphrase to sync.' : s.state === 'restricted' ? 'The server owner requires two-factor authentication for your account. Click to set it up; your changes upload afterwards.' : s.error ?? `${lastSynced} · ${liveTitle}`}
-      className="flex items-center gap-2 rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+      className="flex items-center gap-2 rounded-md px-2 py-1 text-xs text-muted hover:bg-slate-100 dark:hover:bg-slate-800"
     >
       <span className={`h-2 w-2 rounded-full ${map.dot}`} />
       {map.text}
       {showLive && (
-        <span className={`hidden sm:inline ${s.live ? 'text-slate-400 dark:text-slate-500' : 'text-slate-400/70 dark:text-slate-600'}`} aria-label={liveTitle}>
+        <span className={`hidden sm:inline ${s.live ? 'text-faint' : 'text-faint'}`} aria-label={liveTitle}>
           · {liveText}
         </span>
       )}

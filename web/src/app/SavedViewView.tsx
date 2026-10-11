@@ -36,7 +36,7 @@ export function SavedViewRoute({ id }: { id: string }) {
   const data = useViewData()
   const view = data.views.find((v) => v.id === id)
   if (!view) {
-    return <p className="px-4 py-10 text-center text-sm text-slate-400">This view does not exist (it may have been deleted on another device).</p>
+    return <p className="px-4 py-10 text-center text-sm text-faint">This view does not exist (it may have been deleted on another device).</p>
   }
   return view.kind === 'dashboard' ? <DashboardView key={id} dashboard={view} data={data} /> : <SavedViewView key={id} view={view} data={data} />
 }
@@ -121,7 +121,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
           <div className="mb-3 flex items-center gap-2">
             <span className="inline-block h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
             <h1 className="truncate text-xl font-semibold">{view.name}</h1>
-            {count !== null && <span className="text-sm text-slate-400">{count}</span>}
+            {count !== null && <span className="text-sm text-faint">{count}</span>}
             <span className="flex-1" />
             <button className="btn-ghost px-2 py-1 text-xs" onClick={() => void setPinned(view.id, !view.pinned)}>{view.pinned ? 'Unpin' : 'Pin'}</button>
             <ViewMenu view={view} />
@@ -138,12 +138,12 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
               {message ? (
                 <p role="alert" className="text-red-600 dark:text-red-400">{message}</p>
               ) : dirty ? (
-                <p className="text-slate-400">Enter saves the query for every device · Esc discards the change</p>
+                <p className="text-faint">Enter saves the query for every device · Esc discards the change</p>
               ) : result.ok && result.warnings.length > 0 ? (
                 <p className="text-amber-700 dark:text-amber-400">{result.warnings.join(' · ')}</p>
               ) : null}
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
               <label className="flex items-center gap-1.5">Group
                 <select className="input w-auto py-1 text-xs" aria-label="Group by" value={opts.groupBy}
                   onChange={(e) => void updateView(view.id, { group_by: e.target.value as GroupBy })}>
@@ -166,12 +166,12 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
             </div>
           </div>
 
-          {result.ok && rows.length === 0 && <p className="px-2 py-8 text-center text-sm text-slate-400">No task matches this view.</p>}
+          {result.ok && rows.length === 0 && <p className="px-2 py-8 text-center text-sm text-faint">No task matches this view.</p>}
 
-          <div ref={listRef} tabIndex={-1} className="outline-none" aria-label="View results">
+          <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label="View results">
             {groups.map((g) => (
               <section key={g.key} data-group={g.key} className="mb-4">
-                {g.heading && <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{g.heading}</h2>}
+                {g.heading && <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-faint">{g.heading}</h2>}
                 <ul>
                   {g.tasks.map((t) => {
                     const key = `${g.key}:${t.id}`

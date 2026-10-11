@@ -6,9 +6,11 @@
 //   - an overlay does not close with Escape, with its close button (sheets and
 //     dialogs) or with a tap outside (popovers),
 //   - a control on the touch screen is smaller than 44 × 44 px or only appears on hover,
-//   - (user-documentation) the Help view or the contextual help panel has a serious or
-//     critical axe-core issue, help does not open offline, or text typed in the share
-//     dialog is lost when the help panel opens and closes over it.
+//   - any screen or overlay has a serious or critical axe-core issue (colour contrast,
+//     names, labels, roles), in light and dark (release 0.2.0; first added for the
+//     Help view by user-documentation),
+//   - help does not open offline, or text typed in the share dialog is lost when the
+//     help panel opens and closes over it.
 // Every failure names screen, overlay, viewport, theme and engine, and saves a
 // screenshot into the report directory.
 //
@@ -37,7 +39,7 @@ const AXE = (() => {
 })()
 async function axeProblems(p, include) {
   if (!AXE) return ['axe-core is not installed (npm ci in web/)']
-  await p.addScriptTag({ content: AXE })
+  if (!(await p.evaluate(() => typeof window.axe !== 'undefined'))) await p.addScriptTag({ content: AXE })
   return p.evaluate(async (sel) => {
     // eslint-disable-next-line no-undef
     const r = await axe.run(sel ? { include: [sel] } : document, { resultTypes: ['violations'] })
@@ -147,9 +149,9 @@ function screens(ids) {
     { name: 'views', path: '/views', ready: heading('Views'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
     { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications', 'voice-consent', 'delete-user'] },
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
-    // In-app Help (user-documentation): checked with axe as well, and offline.
-    { name: 'help', path: '/help', ready: heading('Help'), axe: true, offline: '/help/keyboard' },
-    { name: 'help-guide', path: '/help/sections-and-boards', ready: heading('Sections and boards'), axe: true },
+    // In-app Help (user-documentation): also checked offline.
+    { name: 'help', path: '/help', ready: heading('Help'), offline: '/help/keyboard' },
+    { name: 'help-guide', path: '/help/sections-and-boards', ready: heading('Sections and boards') },
   ]
 }
 
@@ -283,7 +285,7 @@ const OVERLAYS = {
     await trigger.click()
     const overlay = p.locator('[data-help-panel]')
     return {
-      overlay, trigger, kind: 'dialog', axe: true,
+      overlay, trigger, kind: 'dialog',
       after: async () => {
         if (await overlay.isVisible()) await p.keyboard.press('Escape')
         if (!(await dialog.isVisible())) throw new Error('closing help also closed the share dialog')
@@ -445,8 +447,8 @@ async function runCombo(engine, width, theme, ids) {
       checked++
       for (const m of await p.evaluate(pageOverflow)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
-      // The Help view's own content; the app chrome around it is outside this change.
-      if (s.axe) for (const m of await axeProblems(p, '[data-help-view]')) await fail(p, s.name, null, m)
+      // Accessibility of the whole screen (axe-core, serious and critical issues).
+      for (const m of await axeProblems(p)) await fail(p, s.name, null, m)
       if (s.offline && engine === 'chromium') {
         // Help ships with the app: offline, another guide still opens from the precache.
         await ctx.setOffline(true)
@@ -468,10 +470,12 @@ async function runCombo(engine, width, theme, ids) {
           const res = await OVERLAYS[o](p, { width })
           if (!res) continue
           checked++
-          if (res.axe) {
-            await res.overlay.waitFor({ state: 'visible', timeout: 5000 })
-            for (const m of await axeProblems(p, '[data-help-panel]')) await fail(p, s.name, o, m)
-          }
+          // Accessibility of the overlay itself (the screen behind it was checked above).
+          await res.overlay.waitFor({ state: 'visible', timeout: 5000 })
+          await p.waitForTimeout(250)
+          await res.overlay.evaluate((el) => el.setAttribute('data-axe-target', ''))
+          for (const m of await axeProblems(p, '[data-axe-target]')) await fail(p, s.name, o, m)
+          await res.overlay.evaluate((el) => el.removeAttribute('data-axe-target')).catch(() => {})
           await checkOverlay(p, s.name, o, res, fail, shot)
           if (res.after) await res.after().catch(() => {})
         } catch (e) {

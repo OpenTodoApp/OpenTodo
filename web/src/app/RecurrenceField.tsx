@@ -79,13 +79,13 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
       <datalist id="recurrence-suggestions">
         {RULE_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
       </datalist>
-      {error && <p className="text-xs text-red-600" role="alert">Not a rule I understand: {error}. The previous rule is kept.</p>}
+      {error && <p className="text-xs text-red-600 dark:text-red-400" role="alert">Not a rule I understand: {error}. The previous rule is kept.</p>}
       {preview.length > 0 && (
-        <p className="text-xs text-slate-500" data-recurrence-preview>
+        <p className="text-xs text-muted" data-recurrence-preview>
           Next: {preview.map((d) => `${weekday(d).slice(0, 3)} ${formatShort(d)}`).join(' · ')}
         </p>
       )}
-      {parsed?.ok && preview.length === 0 && <p className="text-xs text-slate-500">No further occurrences: the next completion ends the series.</p>}
+      {parsed?.ok && preview.length === 0 && <p className="text-xs text-muted">No further occurrences: the next completion ends the series.</p>}
       {recurring && (
         <div className="flex flex-wrap gap-2 pt-1">
           <button className="btn-ghost text-xs" onClick={() => void skip()} title="Move to the next occurrence without completing (Shift+S)">
@@ -96,7 +96,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           </button>
         </div>
       )}
-      {notice && <p className="text-xs text-slate-500" role="status">{notice}</p>}
+      {notice && <p className="text-xs text-muted" role="status">{notice}</p>}
     </div>
   )
 }

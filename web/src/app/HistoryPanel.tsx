@@ -80,18 +80,18 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
       </button>
       {open && (
         <div className="mt-2 text-sm">
-          {state === 'offline' && <p className="text-xs text-slate-500">History needs a connection to the server.</p>}
-          {state === 'error' && <p className="text-xs text-red-600">History could not be loaded.</p>}
-          {state === 'empty' && <p className="text-xs text-slate-500">No history on the server yet.</p>}
-          {state === 'loading' && sets.length === 0 && <p className="text-xs text-slate-400">Loading…</p>}
+          {state === 'offline' && <p className="text-xs text-muted">History needs a connection to the server.</p>}
+          {state === 'error' && <p className="text-xs text-red-600 dark:text-red-400">History could not be loaded.</p>}
+          {state === 'empty' && <p className="text-xs text-muted">No history on the server yet.</p>}
+          {state === 'loading' && sets.length === 0 && <p className="text-xs text-faint">Loading…</p>}
           {message && <p role="status" className="mb-1 text-xs text-emerald-700 dark:text-emerald-300">{message}</p>}
           <ol className="space-y-2" aria-label="Changes">
             {sets.map((s) => (
               <li key={`${s.ts}:${s.device}`} className="border-l-2 border-slate-200 pl-2 dark:border-slate-700">
-                <div className="text-xs text-slate-400">{new Date(s.ts).toLocaleString()} · {deviceLabel(s, device)}</div>
+                <div className="text-xs text-faint">{new Date(s.ts).toLocaleString()} · {deviceLabel(s, device)}</div>
                 <ul>
                   {s.changes.map((c) => (
-                    <li key={c.opId} className={`flex flex-wrap items-baseline gap-x-1 ${c.lost ? 'text-slate-400' : ''}`}>
+                    <li key={c.opId} className={`flex flex-wrap items-baseline gap-x-1 ${c.lost ? 'text-faint' : ''}`}>
                       <span className="font-medium">{c.field}</span>
                       <span className="break-all">{formatValue(c.field, c.from)} → {formatValue(c.field, c.to)}</span>
                       {c.lost && <span className="text-xs italic" title="Arrived after a newer change and was never applied">(lost)</span>}

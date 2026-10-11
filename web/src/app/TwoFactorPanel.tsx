@@ -157,7 +157,7 @@ export function EnrolmentStepView(p: EnrolmentStepViewProps) {
       <div className="flex flex-wrap items-center gap-4">
         <QrCode text={p.enrollment.uri} />
         <div className="text-sm">
-          <p className="text-slate-500">Key for manual entry (time-based, 6 digits, 30 s):</p>
+          <p className="text-muted">Key for manual entry (time-based, 6 digits, 30 s):</p>
           <code className="mt-1 block select-all break-all font-mono text-base" data-testid="manual-key">{groupKey(p.enrollment.secret)}</code>
         </div>
       </div>
@@ -219,7 +219,7 @@ export function EnrolmentWizard({ online, onEnrolled, onCancel }: { online: bool
   if (!enrollment) {
     return (
       <div className="space-y-2 text-sm">
-        {error ? <p className="text-red-600 dark:text-red-400" role="alert">{error}</p> : <p className="text-slate-500">{online ? 'Preparing…' : 'Setting up two-factor authentication needs a connection.'}</p>}
+        {error ? <p className="text-red-600 dark:text-red-400" role="alert">{error}</p> : <p className="text-muted">{online ? 'Preparing…' : 'Setting up two-factor authentication needs a connection.'}</p>}
         <div className="flex gap-2">
           {error && <button type="button" className="btn-primary" disabled={!online} onClick={() => void start()}>Try again</button>}
           {onCancel && <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>}
@@ -269,7 +269,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
   return (
     <section className="space-y-3" aria-labelledby="mfa-heading" data-testid="mfa-panel">
       <HelpHeading screen="settings/two-factor" id="mfa-heading" className="font-semibold">Two-factor authentication</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         After your password, sign-in asks for a six-digit code from an authenticator app on your phone. Signing in with a passkey that
         checks your fingerprint, face or PIN skips the code. Your server makes and checks the codes itself and sends nothing anywhere.
       </p>
@@ -304,25 +304,25 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
         </div>
       )}
       {st?.enrolled && st.required && !p.wizard && (
-        <p className="text-xs text-slate-500">The server owner requires two-factor authentication for your account, so it cannot be turned off.</p>
+        <p className="text-xs text-muted">The server owner requires two-factor authentication for your account, so it cannot be turned off.</p>
       )}
       {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
 
       {st?.enrolled && (
         <div className="space-y-1">
           <h3 className="text-sm font-medium">Remembered browsers</h3>
-          <p className="text-xs text-slate-500">These browsers skip the code for 30 days after you chose "Remember this device".</p>
+          <p className="text-xs text-muted">These browsers skip the code for 30 days after you chose "Remember this device".</p>
           <ul className="divide-y divide-slate-200 dark:divide-slate-800">
             {p.devices?.map((d) => (
               <li key={d.id} className="flex flex-wrap items-center gap-3 py-2 text-sm">
                 <span className="min-w-0 flex-1 truncate" title={d.userAgent}>{browserName(d.userAgent)}</span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-faint">
                   used {relativeTime(d.lastUsedAt ?? d.createdAt, p.now)} · until {new Date(d.expiresAt).toLocaleDateString()}
                 </span>
                 <button className="btn-ghost text-xs" disabled={disabled} aria-label={`Forget ${browserName(d.userAgent)}`} onClick={() => p.onForgetDevice(d.id)}>Forget</button>
               </li>
             ))}
-            {p.devices && p.devices.length === 0 && <li className="py-2 text-sm text-slate-400">No remembered browsers.</li>}
+            {p.devices && p.devices.length === 0 && <li className="py-2 text-sm text-faint">No remembered browsers.</li>}
           </ul>
           {p.devices && p.devices.length > 0 && (
             <button className="btn-ghost text-xs border border-slate-300 dark:border-slate-700" disabled={disabled} onClick={p.onForgetAll}>Forget all browsers</button>
@@ -337,7 +337,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
             onChange={(e) => p.onPolicy(e.target.value as MfaPolicy)} aria-label="Two-factor policy for this server">
             {(Object.keys(POLICY_LABEL) as MfaPolicy[]).map((k) => <option key={k} value={k}>{POLICY_LABEL[k]}</option>)}
           </select>
-          <span className="block text-xs text-slate-500">
+          <span className="block text-xs text-muted">
             Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until
             they do. API tokens are never affected.
           </span>
@@ -359,7 +359,7 @@ export function EnrolmentGate({ user, onEnrolled, onLogout }: { user: User; onEn
       <div className="w-full max-w-lg space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900" data-testid="enrolment-gate">
         <div>
           <h1 className="text-lg font-semibold">Set up two-factor authentication</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted">
             The owner of this server requires a second sign-in step for {user.email}. Set it up to continue; your tasks and any changes
             waiting on this device are kept and sync as soon as you are done.
           </p>

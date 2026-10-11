@@ -35,13 +35,13 @@ export function EmailInboxView(p: EmailInboxViewProps) {
   return (
     <section className="space-y-3" aria-labelledby="email-inbox-heading">
       <HelpHeading screen="settings/email" id="email-inbox-heading" className="font-semibold">Email to task</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Forward or send any email to your personal address and it becomes a task in your Inbox: the subject is the title
         (without “Re:” or “Fwd:”), the text is the description, and attachment names are listed. New tasks reach your
         devices on their next sync.
       </p>
       {inbox === null ? (
-        <p className="text-sm text-slate-400">{p.error ? '' : 'Email to task settings are available when you are online.'}</p>
+        <p className="text-sm text-faint">{p.error ? '' : 'Email to task settings are available when you are online.'}</p>
       ) : !inbox.enabledByOperator ? (
         <p className="text-sm">The server operator has not enabled email to task. See docs/email.md to set it up.</p>
       ) : (
@@ -50,7 +50,7 @@ export function EmailInboxView(p: EmailInboxViewProps) {
             <span className="text-sm font-medium" id="email-inbox-address-label">Your address</span>
             <div className="flex flex-wrap items-center gap-2">
               <code aria-labelledby="email-inbox-address-label"
-                className={'break-all rounded bg-slate-100 px-1 text-sm dark:bg-slate-800' + (inbox.enabled ? '' : ' text-slate-400 line-through')}>
+                className={'break-all rounded bg-slate-100 px-1 text-sm dark:bg-slate-800' + (inbox.enabled ? '' : ' text-faint line-through')}>
                 {inbox.address}
               </code>
               <button className="btn-ghost border border-slate-300 text-xs dark:border-slate-700" onClick={p.onCopy}>
@@ -61,7 +61,7 @@ export function EmailInboxView(p: EmailInboxViewProps) {
               </button>
               {p.copied && <span className="text-xs text-emerald-700 dark:text-emerald-400" role="status">Copied.</span>}
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               Keep it private: anyone who knows it can add tasks (at most {inbox.hourlyLimit} per hour). If it leaks, make a
               new one; the old address stops working at once.
             </p>
@@ -74,7 +74,7 @@ export function EmailInboxView(p: EmailInboxViewProps) {
             <label className="block text-sm font-medium" htmlFor="email-inbox-allowlist">Only accept mail from (optional)</label>
             <textarea id="email-inbox-allowlist" className="input font-mono text-xs" rows={3} value={p.draft}
               placeholder="you@example.com" onChange={(e) => p.onDraftChange(e.target.value)} />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters
               mistakes and casual spam; the secret address is the real protection.
             </p>
@@ -82,7 +82,7 @@ export function EmailInboxView(p: EmailInboxViewProps) {
           </div>
         </div>
       )}
-      {p.error && <p className="text-sm text-red-600" role="alert">{p.error}</p>}
+      {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
     </section>
   )
 }

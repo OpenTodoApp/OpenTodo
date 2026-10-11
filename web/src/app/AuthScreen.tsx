@@ -184,7 +184,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
         )}
         {sso.provider && mode === 'login' && sso.local && <OrDivider />}
         {!sso.local && error && <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
-        {!sso.local && <p className="mt-3 text-center text-xs text-slate-500">This server uses single sign-on for every account.</p>}
+        {!sso.local && <p className="mt-3 text-center text-xs text-muted">This server uses single sign-on for every account.</p>}
         {sso.breakGlass && (
           <p className="mb-3 rounded-md bg-amber-50 p-2 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">
             Owner sign-in: only the server owner can sign in with a password while single sign-on is required.
@@ -199,15 +199,15 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
             </label>
           )}
           <label className="block text-sm">
-            <span className="mb-1 block text-slate-600 dark:text-slate-300">Email {emailLocked && <span className="text-slate-400">(set by the invitation)</span>}</span>
+            <span className="mb-1 block text-slate-600 dark:text-slate-300">Email {emailLocked && <span className="text-faint">(set by the invitation)</span>}</span>
             <input
-              className={`input ${emailLocked ? 'bg-slate-100 text-slate-500 dark:bg-slate-800' : ''}`}
+              className={`input ${emailLocked ? 'bg-slate-100 text-muted dark:bg-slate-800' : ''}`}
               type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete={passkeys ? 'username webauthn' : 'email'}
               readOnly={emailLocked} aria-readonly={emailLocked} autoFocus={!emailLocked}
             />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block text-slate-600 dark:text-slate-300">Password {mode === 'register' && <span className="text-slate-400">(10+ characters)</span>}</span>
+            <span className="mb-1 block text-slate-600 dark:text-slate-300">Password {mode === 'register' && <span className="text-faint">(10+ characters)</span>}</span>
             <input className="input" type="password" required minLength={mode === 'register' ? 10 : 1} value={password} onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'} />
           </label>
@@ -233,7 +233,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
           </button>
         )}
         {invite && (
-          <p className="mt-3 text-center text-xs text-slate-500">
+          <p className="mt-3 text-center text-xs text-muted">
             Already have an account here? <a className="underline" href="/">Sign in</a> instead; invitations are for new accounts only.
           </p>
         )}
@@ -269,7 +269,7 @@ export function ProviderSignIn({ name, primary }: { name: string; primary: boole
 
 function OrDivider() {
   return (
-    <div className="my-4 flex items-center gap-3 text-xs text-slate-400" aria-hidden="true">
+    <div className="my-4 flex items-center gap-3 text-xs text-faint" aria-hidden="true">
       <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />or<span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
     </div>
   )
@@ -284,11 +284,11 @@ export function AuthCard({ version, children }: { version: string; children: Rea
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
           <div>
             <h1 className="text-lg font-semibold">OpenTodo</h1>
-            <p className="text-xs text-slate-500">Your tasks, your server.</p>
+            <p className="text-xs text-muted">Your tasks, your server.</p>
           </div>
         </div>
         {children}
-        <p className="mt-6 text-center text-xs text-slate-400">OpenTodo {version} · AGPL-3.0 · no tracking, no telemetry</p>
+        <p className="mt-6 text-center text-xs text-faint">OpenTodo {version} · AGPL-3.0 · no tracking, no telemetry</p>
       </div>
     </div>
   )

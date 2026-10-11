@@ -23,7 +23,7 @@ export function ViewMenu({ view, align = 'end', className = '' }: { view: View; 
   return (
     <>
       <Menu label={`Menu for view ${view.name}`} title={view.name} trigger="⋯" align={align}
-        triggerClassName={`touch-target rounded px-1.5 py-0.5 text-slate-400 hover:bg-slate-300/60 dark:hover:bg-slate-700 ${className}`}>
+        triggerClassName={`touch-target rounded px-1.5 py-0.5 text-faint hover:bg-slate-300/60 dark:hover:bg-slate-700 ${className}`}>
         {(close) => {
           const act = (fn: () => unknown) => () => { close(); void fn() }
           return (
@@ -62,11 +62,11 @@ export function ViewsView() {
     return (
       <li key={v.id} className="group flex items-center gap-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800/60">
         <button className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left text-sm" onClick={() => navigate({ view: 'view', id: v.id })}>
-          <span className="w-5 text-center text-slate-400" aria-hidden>{viewIcon(v)}</span>
+          <span className="w-5 text-center text-faint" aria-hidden>{viewIcon(v)}</span>
           <span className="truncate font-medium">{v.name}</span>
-          <code className="hidden truncate text-xs text-slate-400 sm:inline">{isDashboard(v) ? `${v.panels.length} panel${v.panels.length === 1 ? '' : 's'}` : v.query}</code>
+          <code className="hidden truncate text-xs text-faint sm:inline">{isDashboard(v) ? `${v.panels.length} panel${v.panels.length === 1 ? '' : 's'}` : v.query}</code>
           <span className="flex-1" />
-          {s && (s.ok ? <span className="text-xs text-slate-400">{s.count}</span> : <span className="text-xs text-red-500" title={s.error}>error</span>)}
+          {s && (s.ok ? <span className="text-xs text-faint">{s.count}</span> : <span className="text-xs text-red-600 dark:text-red-400" title={s.error}>error</span>)}
         </button>
         <button className="btn-ghost px-2 py-1 text-xs" onClick={() => void setPinned(v.id, !v.pinned)} aria-label={`${v.pinned ? 'Unpin' : 'Pin'} ${v.name}`}>
           {v.pinned ? 'Unpin' : 'Pin'}
@@ -80,17 +80,17 @@ export function ViewsView() {
     <div className="mx-auto max-w-2xl px-4 py-5 md:px-8">
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-semibold">Views</h1>
-        <span className="text-sm text-slate-400">{views.length}</span>
+        <span className="text-sm text-faint">{views.length}</span>
         <div className="flex-1" />
         <button className="btn-ghost border border-slate-300 text-xs dark:border-slate-700" onClick={() => navigate({ view: 'filter' })}>+ New view from a filter</button>
         <button className="btn-primary text-xs" onClick={() => setCreating(true)}>+ New dashboard</button>
       </div>
-      <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Pinned to the sidebar</h2>
+      <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-faint">Pinned to the sidebar</h2>
       <ul className="mb-5 space-y-0.5">{pinned.map(row)}</ul>
-      {pinned.length === 0 && <p className="mb-5 px-2 text-sm text-slate-400">None.</p>}
-      <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Not pinned</h2>
+      {pinned.length === 0 && <p className="mb-5 px-2 text-sm text-faint">None.</p>}
+      <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-faint">Not pinned</h2>
       <ul className="space-y-0.5">{others.map(row)}</ul>
-      {others.length === 0 && <p className="px-2 text-sm text-slate-400">None.</p>}
+      {others.length === 0 && <p className="px-2 text-sm text-faint">None.</p>}
       {creating && (
         <NamePrompt title="New dashboard" label="Dashboard name" confirm="Create" hint="Add up to six saved views as panels."
           onCancel={() => setCreating(false)}

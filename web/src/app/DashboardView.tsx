@@ -90,9 +90,9 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
     <div className="flex h-full">
       <div className="min-w-0 flex-1 px-4 py-5 md:px-8">
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-slate-400" aria-hidden>▦</span>
+          <span className="text-faint" aria-hidden>▦</span>
           <h1 className="truncate text-xl font-semibold">{dashboard.name}</h1>
-          <span className="text-sm text-slate-400">{panels.length}/{MAX_PANELS}</span>
+          <span className="text-sm text-faint">{panels.length}/{MAX_PANELS}</span>
           <span className="flex-1" />
           <select className="input w-auto py-1 text-xs" aria-label="Add panel" value="" disabled={panels.length >= MAX_PANELS || candidates.length === 0}
             onChange={(e) => { const id = e.target.value; if (id) run(() => addPanel(dashboard.id, id)) }}>
@@ -108,18 +108,18 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
           <ol className="mb-4 space-y-1 rounded-lg border border-slate-200 p-2 text-sm dark:border-slate-800" aria-label="Arrange panels">
             {dashboard.panels.map((id, i) => (
               <li key={id} className="flex items-center gap-2">
-                <span className="w-5 text-right text-xs text-slate-400">{i + 1}</span>
+                <span className="w-5 text-right text-xs text-faint">{i + 1}</span>
                 <span className="flex-1 truncate">{nameOf(id)}</span>
                 <button className="btn-ghost px-2 py-0.5 text-xs" disabled={i === 0} aria-label={`Move ${nameOf(id)} earlier`} onClick={() => run(() => movePanel(dashboard.id, id, -1))}>↑</button>
                 <button className="btn-ghost px-2 py-0.5 text-xs" disabled={i === dashboard.panels.length - 1} aria-label={`Move ${nameOf(id)} later`} onClick={() => run(() => movePanel(dashboard.id, id, 1))}>↓</button>
                 <button className="btn-danger px-2 py-0.5 text-xs" aria-label={`Remove ${nameOf(id)} from the dashboard`} onClick={() => run(() => removePanel(dashboard.id, id))}>Remove</button>
               </li>
             ))}
-            {dashboard.panels.length === 0 && <li className="text-xs text-slate-400">No panels yet.</li>}
+            {dashboard.panels.length === 0 && <li className="text-xs text-faint">No panels yet.</li>}
           </ol>
         )}
         {panels.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700">
+          <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-muted dark:border-slate-700">
             Add up to six saved views with “Add panel”.
           </p>
         ) : (
@@ -156,8 +156,8 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, onFocus, onBl
   if (panel.kind === 'removed') {
     return (
       <section data-panel-index={index} tabIndex={0} onFocus={onFocus} onBlur={onBlur} aria-label="Removed view" className={`${ring} border-dashed`}>
-        <p className="text-sm font-medium text-slate-500">View removed</p>
-        <p className="mt-1 text-xs text-slate-400">The saved view shown here was deleted.</p>
+        <p className="text-sm font-medium text-muted">View removed</p>
+        <p className="mt-1 text-xs text-faint">The saved view shown here was deleted.</p>
         <button className="btn-ghost mt-2 border border-slate-300 text-xs dark:border-slate-700" tabIndex={-1} onClick={onRemove}>Remove panel</button>
       </section>
     )
@@ -168,14 +168,14 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, onFocus, onBl
       <div className="mb-2 flex items-center gap-2">
         <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
         <h2 className="truncate text-sm font-semibold">{view.name}</h2>
-        {summary.ok && <span className="text-sm text-slate-400" aria-label={`${summary.count} open tasks`}>{summary.count}</span>}
+        {summary.ok && <span className="text-sm text-faint" aria-label={`${summary.count} open tasks`}>{summary.count}</span>}
         <span className="flex-1" />
         <button className="btn-ghost px-2 py-0.5 text-xs" tabIndex={-1} onClick={() => navigate({ view: 'view', id: view.id })}>Open view</button>
       </div>
       {!summary.ok ? (
         <p role="alert" className="text-xs text-red-600 dark:text-red-400">{summary.error}</p>
       ) : summary.tasks.length === 0 ? (
-        <p className="px-2 py-3 text-xs text-slate-400">Nothing here.</p>
+        <p className="px-2 py-3 text-xs text-faint">Nothing here.</p>
       ) : (
         <ul>
           {summary.tasks.map((t, i) => (

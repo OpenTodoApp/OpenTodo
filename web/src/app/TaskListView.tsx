@@ -717,14 +717,14 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
 
   if (route.view === 'project' && projects.length > 0 && !currentProject) {
     return (
-      <div className="p-6 text-sm text-slate-500">
+      <div className="p-6 text-sm text-muted">
         This project no longer exists. <button className="underline" onClick={() => navigate({ view: 'inbox' })}>Go to Inbox</button>
       </div>
     )
   }
   if (route.view === 'label' && labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) {
     return (
-      <div className="p-6 text-sm text-slate-500">
+      <div className="p-6 text-sm text-muted">
         This label no longer exists. <button className="underline" onClick={() => navigate({ view: 'labels' })}>All labels</button>
       </div>
     )
@@ -740,7 +740,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
               <div className="-mt-2 mb-3 flex items-center gap-1 text-xs" role="group" aria-label="Project layout">
                 {(['list', 'board'] as const).map((m) => (
                   <button key={m} type="button" aria-pressed={viewMode === m} onClick={() => { if (viewMode !== m) toggleViewMode() }}
-                    className={`rounded-md px-2 py-0.5 ${viewMode === m ? 'bg-slate-200 font-medium dark:bg-slate-700' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                    className={`rounded-md px-2 py-0.5 ${viewMode === m ? 'bg-slate-200 font-medium dark:bg-slate-700' : 'text-muted hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                     {m === 'list' ? 'List' : 'Board'}
                   </button>
                 ))}
@@ -751,10 +751,10 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
             <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
               {currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
               {title}
-              {route.view === 'today' && <span className="ml-2 text-sm font-normal text-slate-400">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>}
-              {route.view === 'label' && <span className="text-sm font-normal text-slate-400">{rows.length}</span>}
+              {route.view === 'today' && <span className="ml-2 text-sm font-normal text-faint">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>}
+              {route.view === 'label' && <span className="text-sm font-normal text-faint">{rows.length}</span>}
               {(route.view === 'today' || route.view === 'upcoming' || route.view === 'assigned') && (
-                <span className="ml-auto text-xs font-normal text-slate-400" title="This view is sorted by date: drag and Alt+↑/↓ are off here" data-sort-note>sorted by date</span>
+                <span className="ml-auto text-xs font-normal text-faint" title="This view is sorted by date: drag and Alt+↑/↓ are off here" data-sort-note>sorted by date</span>
               )}
             </h1>
           )}
@@ -764,7 +764,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
               {projectReadOnly ? (
                 <>
                   <input className="input" disabled aria-label="Quick add (read-only)" placeholder="You can view this project but not add tasks" />
-                  <p role="note" className="mt-1 text-xs text-slate-500">Read-only: you are a viewer of this shared project.</p>
+                  <p role="note" className="mt-1 text-xs text-muted">Read-only: you are a viewer of this shared project.</p>
                 </>
               ) : (
                 <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} labels={labels} placeholder={placeholderFor(route, currentProject, currentLabel)} voiceShortcut />
@@ -775,7 +775,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
           {filterKey && <DurationChips active={duration} onChange={chooseDuration} />}
 
           {rows.length === 0 && !(board || liveSections.length > 0) && (duration ? (
-            <p className="px-2 py-8 text-center text-sm text-slate-400">
+            <p className="px-2 py-8 text-center text-sm text-faint">
               No task matches this duration filter. <button className="underline" onClick={() => chooseDuration(null)}>Clear the filter</button>
             </p>
           ) : <EmptyState view={route.view} />)}
@@ -812,7 +812,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
             </section>
           ) : (
             <section key={g.key} className="mb-4">
-              {g.heading && <h2 className={`mb-1 px-2 text-xs font-semibold uppercase tracking-wide ${g.key === 'overdue' ? 'text-red-600' : 'text-slate-400'}`}>{g.heading}</h2>}
+              {g.heading && <h2 className={`mb-1 px-2 text-xs font-semibold uppercase tracking-wide ${g.key === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-faint'}`}>{g.heading}</h2>}
               <ul>{g.rows.map((r) => renderRow(r))}</ul>
             </section>
           ))}
@@ -838,7 +838,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
         <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
             <span className="user-text min-w-0">All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
-            <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <span className="kbd ml-1 border-emerald-300 bg-emerald-500 text-white">Enter</span></button>
+            <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <span className="kbd ml-1 border-emerald-500 bg-emerald-800 text-white">Enter</span></button>
             <button className="btn-ghost text-xs" onClick={() => setPrompt(null)}>Keep open <span className="kbd ml-1">Esc</span></button>
           </div>
         </div>
@@ -846,13 +846,13 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       {assignFor && userId && (
         <Dialog title="Assign" label="Assign task" onClose={() => setAssignFor(null)}>
           <AssigneePicker taskId={assignFor} userId={userId} onClose={() => setAssignFor(null)} />
-          <p className="mt-2 px-1 text-[11px] text-slate-400">Type to filter · Enter assigns · Esc closes</p>
+          <p className="mt-2 px-1 text-[11px] text-faint">Type to filter · Enter assigns · Esc closes</p>
         </Dialog>
       )}
       {pickerFor && (
         <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-          <p className="mt-2 px-1 text-[11px] text-slate-400">Enter toggles or creates · Esc closes</p>
+          <p className="mt-2 px-1 text-[11px] text-faint">Enter toggles or creates · Esc closes</p>
         </Dialog>
       )}
     </div>
@@ -876,7 +876,7 @@ function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number;
   }
   return (
     <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
-      <span className="text-emerald-600">+</span>
+      <span className="text-emerald-700 dark:text-emerald-400">+</span>
       <input
         ref={ref}
         className="input py-1"
@@ -915,7 +915,7 @@ function DurationChips({ active, onChange }: { active: DurationFilter | null; on
           title={f.title}
           aria-pressed={active === f.kind}
           onClick={() => onChange(active === f.kind ? null : f.kind)}
-          className={`rounded-full border px-2.5 py-0.5 text-xs ${active === f.kind ? 'border-emerald-500 bg-emerald-50 font-medium text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-slate-200 text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'}`}
+          className={`rounded-full border px-2.5 py-0.5 text-xs ${active === f.kind ? 'border-emerald-500 bg-emerald-50 font-medium text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-slate-200 text-muted hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'}`}
         >
           {f.label}
         </button>
@@ -956,6 +956,6 @@ function EmptyState({ view }: { view: ListRoute['view'] }) {
     label: 'No open task carries this label. Select a task and press L to add it.',
     assigned: 'Nothing is assigned to you. Select a task and press Shift+A to assign it.',
   }[view]
-  return <p className="px-2 py-8 text-center text-sm text-slate-400">{text}</p>
+  return <p className="px-2 py-8 text-center text-sm text-faint">{text}</p>
 }
 

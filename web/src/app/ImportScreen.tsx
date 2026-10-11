@@ -27,7 +27,7 @@ const FORMAT_LABELS: Record<ImportFormat, string> = {
 const OUTCOME_STYLE: Record<ImportRow['outcome'], string> = {
   create: 'text-emerald-700 dark:text-emerald-300',
   update: 'text-sky-700 dark:text-sky-300',
-  skip: 'text-slate-500',
+  skip: 'text-muted',
   error: 'text-red-600 dark:text-red-400',
 }
 
@@ -119,7 +119,7 @@ export function ImportView(p: ImportViewProps) {
       <section>
         <button className="btn-ghost -ml-3 text-xs" onClick={() => navigate({ view: 'settings' })}>← Settings</button>
         <div className="flex items-center justify-between gap-2"><h1 className="text-xl font-semibold">Import data</h1><HelpLink screen="import" topic="Importing data" /></div>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           Bring in tasks from an OpenTodo export, a CSV file or another task manager's JSON export. You see a preview first;
           nothing is written until you confirm, and every import can be undone. Import runs on your server, so it needs a connection.
           Help explains the formats and options.
@@ -140,26 +140,26 @@ export function ImportView(p: ImportViewProps) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm">
-            <span className="mb-1 block text-slate-500">Format</span>
+            <span className="mb-1 block text-muted">Format</span>
             <select className="input" value={p.format} disabled={disabled} onChange={(e) => p.onFormat(e.target.value as ImportFormat | '')}>
               <option value="">Detect automatically{p.preview && !p.format ? ` (${FORMAT_LABELS[p.preview.format]})` : ''}</option>
               {IMPORT_FORMATS.map((f) => <option key={f} value={f}>{FORMAT_LABELS[f]}</option>)}
             </select>
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-slate-500">Tasks without a project go to</span>
+            <span className="mb-1 block text-muted">Tasks without a project go to</span>
             <select className="input" value={o.targetProject} disabled={disabled} onChange={(e) => p.onOption('targetProject', e.target.value)}>
               <option value="">Inbox</option>
               {p.projects.map((pr) => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
             </select>
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-slate-500">Time zone for date-times with a zone</span>
+            <span className="mb-1 block text-muted">Time zone for date-times with a zone</span>
             <input className="input" list="import-zones" value={o.timeZone} disabled={disabled} onChange={(e) => p.onOption('timeZone', e.target.value)} />
             <datalist id="import-zones">{p.zones.map((z) => <option key={z} value={z} />)}</datalist>
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-slate-500">Sections</span>
+            <span className="mb-1 block text-muted">Sections</span>
             <select className="input" value={o.sections} disabled={disabled} onChange={(e) => p.onOption('sections', e.target.value as 'section' | 'label' | 'ignore')}>
               <option value="section">Keep as sections</option>
               <option value="label">Turn into labels</option>
@@ -167,14 +167,14 @@ export function ImportView(p: ImportViewProps) {
             </select>
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-slate-500">Possible duplicates</span>
+            <span className="mb-1 block text-muted">Possible duplicates</span>
             <select className="input" value={o.duplicates} disabled={disabled} onChange={(e) => p.onOption('duplicates', e.target.value as 'skip' | 'import')}>
               <option value="skip">Skip them</option>
               <option value="import">Import them anyway</option>
             </select>
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-slate-500">Rows with errors</span>
+            <span className="mb-1 block text-muted">Rows with errors</span>
             <select className="input" value={o.errors} disabled={disabled} onChange={(e) => p.onOption('errors', e.target.value as 'skip_rows' | 'abort')}>
               <option value="skip_rows">Skip those rows</option>
               <option value="abort">Abort the whole import</option>
@@ -182,7 +182,7 @@ export function ImportView(p: ImportViewProps) {
           </label>
           {isOwn && (
             <label className="text-sm">
-              <span className="mb-1 block text-slate-500">Items that already exist</span>
+              <span className="mb-1 block text-muted">Items that already exist</span>
               <select className="input" value={o.existing} disabled={disabled} onChange={(e) => p.onOption('existing', e.target.value as 'skip' | 'overwrite')}>
                 <option value="skip">Keep mine (skip)</option>
                 <option value="overwrite">Overwrite changed fields</option>
@@ -198,9 +198,9 @@ export function ImportView(p: ImportViewProps) {
           <button className="btn-primary" disabled={disabled || !p.preview || actionable === 0 || p.job?.status === 'running'} onClick={p.onStart}>
             Import {actionable} item{actionable === 1 ? '' : 's'}
           </button>
-          {p.busy && <span className="text-xs text-slate-400">Working…</span>}
+          {p.busy && <span className="text-xs text-faint">Working…</span>}
         </div>
-        {p.error && <p role="alert" className="text-sm text-red-600">{p.error}</p>}
+        {p.error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{p.error}</p>}
       </section>
 
       {p.job && (
@@ -208,11 +208,11 @@ export function ImportView(p: ImportViewProps) {
           <p className="font-medium">
             {p.job.status === 'running' ? 'Importing…' : p.job.status === 'done' ? 'Import finished' : p.job.status === 'failed' ? 'Import failed' : 'Import undone'}
           </p>
-          <p className="text-slate-500">{jobSummary(p.job)}</p>
+          <p className="text-muted">{jobSummary(p.job)}</p>
           {p.job.status === 'running' && p.job.totals.entities > 0 && (
             <progress className="mt-2 w-full" max={p.job.totals.entities} value={p.job.totals.written} />
           )}
-          {p.job.message && <p className="mt-1 text-red-600">{p.job.message}</p>}
+          {p.job.message && <p className="mt-1 text-red-600 dark:text-red-400">{p.job.message}</p>}
         </section>
       )}
 
@@ -224,24 +224,24 @@ export function ImportView(p: ImportViewProps) {
           <Totals t={p.preview.totals} />
           {p.preview.notes?.map((n) => <p key={n} className="text-sm text-amber-700 dark:text-amber-300">{n}</p>)}
           {p.preview.columns && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               Columns used: {p.preview.columns.recognised.join(', ') || 'none'}
               {p.preview.columns.ignored.length > 0 && <> · ignored: {p.preview.columns.ignored.join(', ')}</>}
             </p>
           )}
           <div className="max-h-[50dvh] overflow-auto rounded-md border border-slate-200 dark:border-slate-800" data-scroll-x>
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-slate-50 text-xs text-slate-500 dark:bg-slate-900">
+              <thead className="sticky top-0 bg-slate-50 text-xs text-muted dark:bg-slate-900">
                 <tr><th className="px-2 py-1">Row</th><th className="px-2 py-1">Title</th><th className="px-2 py-1">Project</th><th className="px-2 py-1">Outcome</th><th className="px-2 py-1">Details</th></tr>
               </thead>
               <tbody>
                 {p.preview.rows.slice(0, TABLE_LIMIT).map((r, i) => (
                   <tr key={`${r.sourceId ?? ''}-${i}`} className="border-t border-slate-100 align-top dark:border-slate-800">
-                    <td className="px-2 py-1 text-xs text-slate-400">{r.row ?? r.sourceId}</td>
-                    <td className="px-2 py-1">{r.kind !== 'task' && <span className="mr-1 text-xs text-slate-400">{r.kind}</span>}{r.title || <em className="text-slate-400">untitled</em>}</td>
-                    <td className="px-2 py-1 text-slate-500">{r.project}</td>
+                    <td className="px-2 py-1 text-xs text-faint">{r.row ?? r.sourceId}</td>
+                    <td className="px-2 py-1">{r.kind !== 'task' && <span className="mr-1 text-xs text-faint">{r.kind}</span>}{r.title || <em className="text-faint">untitled</em>}</td>
+                    <td className="px-2 py-1 text-muted">{r.project}</td>
                     <td className={`px-2 py-1 font-medium ${OUTCOME_STYLE[r.outcome]}`}>{r.outcome}</td>
-                    <td className="px-2 py-1 text-xs text-slate-500">
+                    <td className="px-2 py-1 text-xs text-muted">
                       {r.reason && <div className={r.outcome === 'error' ? 'text-red-600 dark:text-red-400' : ''}>{r.reason.replace(/_/g, ' ')}</div>}
                       {r.warnings?.map((w) => <div key={w} className="text-amber-700 dark:text-amber-300">{w}</div>)}
                     </td>
@@ -251,15 +251,15 @@ export function ImportView(p: ImportViewProps) {
             </table>
           </div>
           {(p.preview.truncated || p.preview.rows.length > TABLE_LIMIT) && (
-            <p className="text-xs text-slate-400">Showing the first rows; rows with errors, skips and warnings are listed first. The totals count every row.</p>
+            <p className="text-xs text-faint">Showing the first rows; rows with errors, skips and warnings are listed first. The totals count every row.</p>
           )}
         </section>
       )}
 
       <section className="space-y-2">
         <h2 className="font-semibold">Past imports</h2>
-        {p.jobs === null && <p className="text-sm text-slate-400">{p.offline ? 'No imports loaded yet.' : 'Loading…'}</p>}
-        {p.jobs && p.jobs.length === 0 && <p className="text-sm text-slate-400">No imports yet.</p>}
+        {p.jobs === null && <p className="text-sm text-faint">{p.offline ? 'No imports loaded yet.' : 'Loading…'}</p>}
+        {p.jobs && p.jobs.length === 0 && <p className="text-sm text-faint">No imports yet.</p>}
         <ul className="divide-y divide-slate-200 dark:divide-slate-800">
           {p.jobs?.map((j) => (
             <li key={j.id} className="flex items-center gap-3 py-2 text-sm">
@@ -268,7 +268,7 @@ export function ImportView(p: ImportViewProps) {
                   <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">{j.status}</span>
                   {new Date(j.createdAt).toLocaleString()}
                 </p>
-                <p className="truncate text-xs text-slate-500">{jobSummary(j)}{j.message ? ` · ${j.message}` : ''}</p>
+                <p className="truncate text-xs text-muted">{jobSummary(j)}{j.message ? ` · ${j.message}` : ''}</p>
               </div>
               {(j.status === 'done' || j.status === 'failed') && (
                 <button className="btn-danger text-xs" disabled={disabled} onClick={() => p.onUndo(j)}>Undo</button>

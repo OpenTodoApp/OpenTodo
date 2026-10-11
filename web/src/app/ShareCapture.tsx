@@ -92,7 +92,7 @@ export function ShareCapture() {
           <h1 className="text-base font-semibold">Add to OpenTodo</h1>
         </div>
         {isEmptyShare(payload) && (
-          <p className="mb-3 text-sm text-slate-500">Nothing was shared. Type a task to add it anyway.</p>
+          <p className="mb-3 text-sm text-muted">Nothing was shared. Type a task to add it anyway.</p>
         )}
         <div className="rounded-md border border-slate-300 px-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/30 dark:border-slate-700">
           <QuickAdd
@@ -132,7 +132,7 @@ export function ShareCapture() {
         </label>
         {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
         <div className="mt-4 flex items-center justify-end gap-2">
-          <span className="mr-auto hidden text-xs text-slate-400 sm:inline">
+          <span className="mr-auto hidden text-xs text-faint sm:inline">
             <span className="kbd">Enter</span> save · <span className="kbd">Esc</span> cancel
           </span>
           <button type="button" className="btn-ghost" onClick={() => leave({ view: 'inbox' })}>Cancel</button>

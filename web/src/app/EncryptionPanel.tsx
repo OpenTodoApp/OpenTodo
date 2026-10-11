@@ -91,7 +91,7 @@ export function EncryptionView(p: EncryptionViewProps) {
   return (
     <section className="space-y-3" aria-labelledby="e2ee-heading">
       <HelpHeading screen="settings/encryption" id="e2ee-heading" className="font-semibold">End-to-end encryption</HelpHeading>
-      {p.error && <p role="alert" className="text-sm text-red-600">{p.error}</p>}
+      {p.error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{p.error}</p>}
       {p.notice && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">{p.notice}</p>}
       {progress && (
         <div role="status" className="text-sm">
@@ -102,7 +102,7 @@ export function EncryptionView(p: EncryptionViewProps) {
 
       {!state.enabled && mode.kind === 'idle' && (
         <>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             Off. With encryption on, {ENCRYPTED_FIELDS} are encrypted on your devices before they are synced, so your server, its backups
             and integrations (CalDAV, MCP, webhooks) only see ciphertext. Still visible to the server: {PLAINTEXT_FIELDS}.
             Shared projects are not encrypted, and new projects cannot be shared while encryption is on.
@@ -113,7 +113,7 @@ export function EncryptionView(p: EncryptionViewProps) {
 
       {mode.kind === 'passphrase' && (
         <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); p.onSubmitPassphrase(field(e, 'enable-new'), field(e, 'enable-confirm')) }}>
-          <p className="text-sm text-slate-500">Choose a passphrase you will enter once on each device. Long and memorable beats short and complex.</p>
+          <p className="text-sm text-muted">Choose a passphrase you will enter once on each device. Long and memorable beats short and complex.</p>
           <PassphraseFields prefix="enable" />
           <div className="flex gap-2">
             <button className="btn-primary" disabled={p.busy}>{p.busy ? 'Deriving keys…' : 'Next'}</button>
@@ -138,7 +138,7 @@ export function EncryptionView(p: EncryptionViewProps) {
 
       {state.enabled && mode.kind === 'idle' && (
         <>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             On{state.unlocked ? ' and unlocked on this device' : ', but this device is locked'} (key version {state.keyVersion}).
             Encrypted: {ENCRYPTED_FIELDS}. Visible to the server: {PLAINTEXT_FIELDS}.
             Keep your recovery key safe: without it and your passphrase, encrypted content is lost.
@@ -157,7 +157,7 @@ export function EncryptionView(p: EncryptionViewProps) {
 
       {mode.kind === 'change' && (
         <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); p.onChange(field(e, 'current'), field(e, 'change-new'), field(e, 'change-confirm')) }}>
-          <p className="text-sm text-slate-500">Your content is not re-encrypted; other devices keep working. New devices use the new passphrase.</p>
+          <p className="text-sm text-muted">Your content is not re-encrypted; other devices keep working. New devices use the new passphrase.</p>
           <label className="block text-sm">Current passphrase
             <input className="input mt-1" type="password" name="current" autoComplete="current-password" required />
           </label>
@@ -171,7 +171,7 @@ export function EncryptionView(p: EncryptionViewProps) {
 
       {mode.kind === 'reset' && (
         <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); p.onReset(field(e, 'recovery'), field(e, 'reset-new'), field(e, 'reset-confirm')) }}>
-          <p className="text-sm text-slate-500">Forgot the passphrase? Your recovery key sets a new one and is then replaced by a new recovery key.</p>
+          <p className="text-sm text-muted">Forgot the passphrase? Your recovery key sets a new one and is then replaced by a new recovery key.</p>
           <label className="block text-sm">Recovery key
             <input className="input mt-1 font-mono" name="recovery" autoComplete="off" spellCheck={false} required />
           </label>

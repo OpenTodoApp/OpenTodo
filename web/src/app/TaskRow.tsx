@@ -20,7 +20,7 @@ const DUE_TONE = {
   overdue: 'text-red-600 dark:text-red-400',
   today: 'text-emerald-700 dark:text-emerald-400',
   soon: 'text-violet-700 dark:text-violet-400',
-  later: 'text-slate-500',
+  later: 'text-muted',
 }
 
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
@@ -91,7 +91,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
               aria-label={collapsed ? 'Expand subtasks' : 'Collapse subtasks'}
               aria-expanded={!collapsed}
               onClick={onToggleCollapse}
-              className="flex h-5 w-4 items-center justify-center rounded text-xs text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700"
+              className="flex h-5 w-4 items-center justify-center rounded text-xs text-faint hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700"
             >
               {collapsed ? '▸' : '▾'}
             </button>
@@ -110,37 +110,37 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         </span>
       </button>
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <div className={`truncate text-sm ${done ? 'text-slate-400 line-through' : ''}`}>
-          {undecryptable ? <span className="italic text-slate-400" title="This title could not be decrypted with this device's key">{task.title}</span>
-            : task.title || <span className="italic text-slate-400">Untitled</span>}
+        <div className={`truncate text-sm ${done ? 'text-faint line-through' : ''}`}>
+          {undecryptable ? <span className="italic text-faint" title="This title could not be decrypted with this device's key">{task.title}</span>
+            : task.title || <span className="italic text-faint">Untitled</span>}
           {unencrypted && (
             <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[11px] text-amber-800 dark:bg-amber-900/40 dark:text-amber-200" title="The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.">
               not yet encrypted
             </span>
           )}
           {progress && progress.total > 0 && (
-            <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 align-middle font-mono text-[11px] text-slate-500 dark:bg-slate-800 dark:text-slate-400" title="Completed subtasks">
+            <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 align-middle font-mono text-[11px] text-muted dark:bg-slate-800 dark:text-slate-400" title="Completed subtasks">
               {progress.done}/{progress.total}
             </span>
           )}
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
-          {breadcrumb && <span className="truncate text-slate-400" title="Parent task">↳ {breadcrumb}</span>}
-          {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-slate-400" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
+          {breadcrumb && <span className="truncate text-faint" title="Parent task">↳ {breadcrumb}</span>}
+          {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-faint" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
           {task.recurrence ? (
-            <span className="text-slate-500" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring>↻</span>
+            <span className="text-muted" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring>↻</span>
           ) : task.series_id ? (
             <span className="text-slate-300 dark:text-slate-600" title="Occurrence of a recurring task" aria-label="Occurrence of a recurring task">↻</span>
           ) : null}
           {task.estimate_minutes ? (
-            <span className="rounded bg-slate-100 px-1.5 font-mono text-[11px] text-slate-500 dark:bg-slate-800 dark:text-slate-400" title="Estimate" data-estimate>
+            <span className="rounded bg-slate-100 px-1.5 font-mono text-[11px] text-muted dark:bg-slate-800 dark:text-slate-400" title="Estimate" data-estimate>
               {formatMinutes(task.estimate_minutes)}
             </span>
           ) : null}
           {assignee && <AssigneeChip name={assignee} me={assignedToMe} />}
-          {task.description && <span className="text-slate-400">≡</span>}
+          {task.description && <span className="text-faint">≡</span>}
           {comments > 0 && (
-            <span className="text-slate-400" title={`${comments} comment${comments === 1 ? '' : 's'}`} aria-label={`${comments} comment${comments === 1 ? '' : 's'}`} data-comments>
+            <span className="text-faint" title={`${comments} comment${comments === 1 ? '' : 's'}`} aria-label={`${comments} comment${comments === 1 ? '' : 's'}`} data-comments>
               💬 {comments}
             </span>
           )}
@@ -148,12 +148,12 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
             <span className="flex flex-wrap gap-1">{labels.map((l) => <LabelChip key={l.id} label={l} />)}</span>
           )}
           {showProject && project && (
-            <span className="flex items-center gap-1 text-slate-500">
+            <span className="flex items-center gap-1 text-muted">
               <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: project.color }} />
               {project.name}
             </span>
           )}
-          {showProject && !project && !task.project_id && <span className="text-slate-400">Inbox</span>}
+          {showProject && !project && !task.project_id && <span className="text-faint">Inbox</span>}
         </div>
       </button>
     </li>

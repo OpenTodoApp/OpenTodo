@@ -97,7 +97,7 @@ export function EstimateField({ task }: { task: Task }) {
           )}
         </div>
       </div>
-      {error && <p id={`estimate-error-${task.id}`} className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p id={`estimate-error-${task.id}`} className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   )
 }

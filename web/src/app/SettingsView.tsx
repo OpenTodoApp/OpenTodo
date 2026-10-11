@@ -45,12 +45,12 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
           <h1 className="text-xl font-semibold">Settings</h1>
           <a className="btn-ghost touch-target text-sm" href="/help" onClick={(e) => { e.preventDefault(); navigate({ view: 'help' }) }}>Help and guides</a>
         </div>
-        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-slate-500">{user.name || user.email} · {user.email} · {user.role}</p>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted">{user.name || user.email} · {user.email} · {user.role}</p>
       </section>
 
       <section className="space-y-2">
         <HelpHeading screen="settings/data" className="font-semibold">Your data</HelpHeading>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           Everything you see is stored on this device and on your server. Export it any time as JSON, or import an export,
           a CSV file or another task manager's JSON export (<span className="kbd">g</span> <span className="kbd">Shift+I</span>).
         </p>
@@ -63,8 +63,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
               onClick={(e) => { e.preventDefault(); navigate({ view: 'import' }) }}>Import data…</a>
           )}
         </div>
-        {demo && <p id="demo-import-note" className="text-xs text-slate-500">Import: {DEMO_RESTRICTED_NOTE}</p>}
-        <p className="text-xs text-slate-400">
+        {demo && <p id="demo-import-note" className="text-xs text-muted">Import: {DEMO_RESTRICTED_NOTE}</p>}
+        <p className="text-xs text-faint">
           Sync: {sync.state}{sync.pending ? `, ${sync.pending} change(s) waiting to upload` : ''}.
         </p>
       </section>
@@ -84,7 +84,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
       )}
       <section className="space-y-2">
         <HelpHeading screen="settings/start-view" className="font-semibold">Start view</HelpHeading>
-        <p className="text-sm text-slate-500">The view this device opens on launch. Each device keeps its own choice; it is not synced.</p>
+        <p className="text-sm text-muted">The view this device opens on launch. Each device keeps its own choice; it is not synced.</p>
         <select className="input max-w-xs" aria-label="Start view on this device" value={startIsKnown ? startView : 'inbox'}
           onChange={(e) => void setStartView(e.target.value as StartView)}>
           <optgroup label="Built-in">
@@ -136,11 +136,11 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 
       <section className="space-y-2">
         <HelpHeading screen="settings/session" className="font-semibold">Session</HelpHeading>
-        <p className="text-sm text-slate-500">Signing out clears the local copy of your tasks on this device. Unsynced changes are uploaded first when online.</p>
+        <p className="text-sm text-muted">Signing out clears the local copy of your tasks on this device. Unsynced changes are uploaded first when online.</p>
         <button className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={onLogout}>Sign out</button>
       </section>
 
-      <section className="text-xs text-slate-400">
+      <section className="text-xs text-faint">
         OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.
         <a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">Source code</a>
       </section>
@@ -159,7 +159,7 @@ function DemoRestrictedSection() {
   return (
     <section className="space-y-2" aria-labelledby="demo-heading" data-testid="demo-restricted">
       <h2 id="demo-heading" className="font-semibold">Demo instance</h2>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Account, security and server settings are {DEMO_RESTRICTED_NOTE.toLowerCase().replace(/\.$/, '')}: {DEMO_RESTRICTED_FEATURES.join(', ')}.
         Run your own server to use them; it takes one container.
       </p>
@@ -182,7 +182,7 @@ function KeyboardSection() {
         <input type="checkbox" checked={vim} onChange={(e) => setVimEnabled(e.target.checked)} data-vim-switch />
         Vim keybindings (this device)
       </label>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Normal, Insert and Command modes on top of the usual shortcuts: counts, <span className="kbd">gg</span>, <span className="kbd">dd</span>, <span className="kbd">:</span> commands. This device only; <span className="kbd">?</span> lists them.
       </p>
     </section>
@@ -199,7 +199,7 @@ function AutoArchiveSection() {
         <input type="checkbox" checked={on} onChange={(e) => void setAutoArchive(e.target.checked)} />
         Archive projects automatically after 30 days without open tasks (this device)
       </label>
-      <p className="text-sm text-slate-500">Each device keeps its own setting. Deleted items stay in the <a className="underline" href="/trash" onClick={(e) => { e.preventDefault(); navigate({ view: 'trash' }) }}>Trash</a> until restored or purged.</p>
+      <p className="text-sm text-muted">Each device keeps its own setting. Deleted items stay in the <a className="underline" href="/trash" onClick={(e) => { e.preventDefault(); navigate({ view: 'trash' }) }}>Trash</a> until restored or purged.</p>
       <ArchivedProjectsSection />
     </section>
   )
@@ -225,7 +225,7 @@ function CaptureSection() {
   return (
     <section className="space-y-2">
       <HelpHeading screen="settings/capture" className="font-semibold">Capture</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Drag this button to your bookmarks bar. On any page, click it to add the page, its title and the selected text to OpenTodo in a small window.
         It holds no password or token; it uses your sign-in on this server. On a phone, install the app and use the share menu instead.
       </p>
@@ -243,12 +243,12 @@ function CaptureSection() {
         {copied === 'yes' && <span className="text-xs text-emerald-700 dark:text-emerald-400">Copied. Create a bookmark and paste it as the address.</span>}
       </div>
       {copied === 'failed' && (
-        <label className="block text-xs text-slate-500">
+        <label className="block text-xs text-muted">
           Copy this code and paste it as a bookmark's address:
           <textarea className="input mt-1 font-mono text-xs" readOnly rows={3} value={code} onFocus={(e) => e.currentTarget.select()} />
         </label>
       )}
-      <p className="text-xs text-slate-400">A browser extension for Chromium and Firefox is in the repository under <code>extension/</code>; see docs/capture.md.</p>
+      <p className="text-xs text-faint">A browser extension for Chromium and Firefox is in the repository under <code>extension/</code>; see docs/capture.md.</p>
     </section>
   )
 }

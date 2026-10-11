@@ -133,26 +133,26 @@ export function FeedView() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
       <h1 className="mb-1 text-xl font-semibold">Activity</h1>
-      <p className="mb-4 text-sm text-slate-500">
+      <p className="mb-4 text-sm text-muted">
         What changed in your shared projects.{' '}
         <span className="hidden md:inline"><span className="kbd">j</span> / <span className="kbd">k</span> select, <span className="kbd">Enter</span> opens the task.</span>
       </p>
       <div className="mb-4 flex flex-wrap gap-2">
-        <label className="flex items-center gap-1 text-xs text-slate-500">
+        <label className="flex items-center gap-1 text-xs text-muted">
           Project
           <select className="input py-0.5 text-xs" value={project} onChange={(e) => setProject(e.target.value)} aria-label="Filter feed by project">
             <option value="">All shared projects</option>
             {(shared ?? []).map((id) => <option key={id} value={id}>{projectName(id)}</option>)}
           </select>
         </label>
-        <label className="flex items-center gap-1 text-xs text-slate-500">
+        <label className="flex items-center gap-1 text-xs text-muted">
           Person
           <select className="input py-0.5 text-xs" value={actor} onChange={(e) => setActor(e.target.value)} aria-label="Filter feed by person">
             <option value="">Everyone</option>
             {actors.map((a) => <option key={a} value={a}>{name(a)}</option>)}
           </select>
         </label>
-        <label className="flex items-center gap-1 text-xs text-slate-500">
+        <label className="flex items-center gap-1 text-xs text-muted">
           Kind
           <select className="input py-0.5 text-xs" value={kind} onChange={(e) => setKind(e.target.value as FeedKind | '')} aria-label="Filter feed by kind">
             <option value="">All changes</option>
@@ -161,14 +161,14 @@ export function FeedView() {
         </label>
       </div>
       {shared && shared.length === 0 ? (
-        <p className="py-12 text-center text-sm text-slate-400">Share a project to see what others change here.</p>
+        <p className="py-12 text-center text-sm text-faint">Share a project to see what others change here.</p>
       ) : shown.length === 0 && local ? (
-        <p className="py-12 text-center text-sm text-slate-400">No activity{project || actor || kind ? ' matches these filters' : ' on this device yet'}.</p>
+        <p className="py-12 text-center text-sm text-faint">No activity{project || actor || kind ? ' matches these filters' : ' on this device yet'}.</p>
       ) : null}
       <div className="space-y-4">
         {groups.map((g) => (
           <section key={g.day} aria-label={dayLabel(g.day)}>
-            <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{dayLabel(g.day)}</h2>
+            <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-faint">{dayLabel(g.day)}</h2>
             <ol className="divide-y divide-slate-100 dark:divide-slate-800" aria-label="Activity">
               {g.events.map((e) => {
                 const title = e.taskId ? titles.get(e.taskId) || e.taskTitle || 'a task' : null
@@ -187,15 +187,15 @@ export function FeedView() {
                           <button type="button" className="text-slate-800 underline decoration-dotted dark:text-slate-200" onClick={() => open(e)}>{title}</button>
                         </>
                       )}
-                      {isPending(e, pending) && <span className="ml-1 text-xs italic text-amber-600" title="Not yet synced">(pending)</span>}
-                      <span className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
+                      {isPending(e, pending) && <span className="ml-1 text-xs italic text-amber-700 dark:text-amber-400" title="Not yet synced">(pending)</span>}
+                      <span className="mt-0.5 flex items-center gap-1 text-xs text-faint">
                         <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: p?.color ?? '#94a3b8' }} aria-hidden />
                         <button type="button" className="hover:underline" onClick={() => e.projectId && navigate({ view: 'project', id: e.projectId })}>
                           {projectName(e.projectId, e.projectName)}
                         </button>
                       </span>
                     </span>
-                    <time className="shrink-0 text-xs text-slate-400" dateTime={new Date(e.ts).toISOString()}>
+                    <time className="shrink-0 text-xs text-faint" dateTime={new Date(e.ts).toISOString()}>
                       {new Date(e.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                     </time>
                   </li>
@@ -210,7 +210,7 @@ export function FeedView() {
           {state === 'loading' ? 'Loading…' : 'Load older activity'}
         </button>
       )}
-      {state === 'error' && <p className="mt-2 text-xs text-red-600">Older activity could not be loaded.</p>}
+      {state === 'error' && <p className="mt-2 text-xs text-red-600 dark:text-red-400">Older activity could not be loaded.</p>}
     </div>
   )
 }

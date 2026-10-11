@@ -20,7 +20,7 @@ export function SubProjects({ projectId }: { projectId: string }) {
   if (children.length === 0) return null
   return (
     <section className="mt-6 border-t border-slate-200 pt-3 dark:border-slate-800" aria-label="Sub-projects">
-      <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Sub-projects</h2>
+      <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-faint">Sub-projects</h2>
       <ul>
         {children.map((n) => (
           <li key={n.id}>
@@ -28,7 +28,7 @@ export function SubProjects({ projectId }: { projectId: string }) {
               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-900">
               <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: n.item.color }} />
               <span className="flex-1 truncate">{n.item.name}</span>
-              <span className="text-xs text-slate-400" title="Open tasks including sub-projects">{counts.get(n.id) ?? 0}</span>
+              <span className="text-xs text-faint" title="Open tasks including sub-projects">{counts.get(n.id) ?? 0}</span>
             </button>
           </li>
         ))}

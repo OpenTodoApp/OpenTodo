@@ -42,7 +42,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   return (
     <div className="group/section flex items-center gap-1 px-1 py-1" data-section-heading={section?.id ?? ''}>
       {onToggleCollapse && (
-        <button type="button" className="flex h-5 w-5 items-center justify-center rounded text-xs text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+        <button type="button" className="flex h-5 w-5 items-center justify-center rounded text-xs text-faint hover:bg-slate-200 dark:hover:bg-slate-700"
           aria-label={collapsed ? `Expand ${title}` : `Collapse ${title}`} aria-expanded={!collapsed} onClick={onToggleCollapse}>
           {collapsed ? '▸' : '▾'}
         </button>
@@ -55,9 +55,9 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
             if (e.key === 'Escape') { e.stopPropagation(); setName(section.name); setRenaming(false) }
           }} />
       ) : (
-        <h2 className={`truncate text-sm font-semibold ${section ? '' : 'text-slate-500'}`}>{title}</h2>
+        <h2 className={`truncate text-sm font-semibold ${section ? '' : 'text-muted'}`}>{title}</h2>
       )}
-      <span className="text-xs text-slate-400" aria-label={`${count} open ${count === 1 ? 'task' : 'tasks'}`}>{count}</span>
+      <span className="text-xs text-faint" aria-label={`${count} open ${count === 1 ? 'task' : 'tasks'}`}>{count}</span>
       <div className="flex-1" />
       {editable && onAdd && (
         <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" onClick={onAdd} aria-label={`Add a task to ${title}`} title="Add a task here">+</button>
@@ -116,7 +116,7 @@ export function AddSection({ projectId, layout }: { projectId: string; layout: '
   }
   if (!open) {
     return (
-      <button type="button" className={`btn-ghost text-xs text-slate-500 ${layout === 'board' ? 'w-72 shrink-0 justify-start self-start' : ''}`} onClick={() => setOpen(true)}>
+      <button type="button" className={`btn-ghost text-xs text-muted ${layout === 'board' ? 'w-72 shrink-0 justify-start self-start' : ''}`} onClick={() => setOpen(true)}>
         + Add section
       </button>
     )

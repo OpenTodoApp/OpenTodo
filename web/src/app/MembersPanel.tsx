@@ -112,7 +112,7 @@ export function MembersPanel() {
   return (
     <section className="space-y-3" aria-labelledby="members-heading">
       <HelpHeading screen="settings/members" id="members-heading" className="font-semibold">Members</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Invite someone with a single-use link. Sign-up stays closed for everyone else. Optionally bind the link to their email so only they can use it.
       </p>
 
@@ -124,7 +124,7 @@ export function MembersPanel() {
 
       <form onSubmit={(e) => void create(e)} className="flex flex-wrap items-end gap-2">
         <label className="block text-sm">
-          <span className="mb-1 block text-slate-600 dark:text-slate-300">Email <span className="text-slate-400">(optional)</span></span>
+          <span className="mb-1 block text-slate-600 dark:text-slate-300">Email <span className="text-faint">(optional)</span></span>
           <input className="input w-64" type="email" placeholder="friend@example.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={disabled} autoComplete="off" />
         </label>
         <label className="block text-sm">
@@ -160,12 +160,12 @@ export function MembersPanel() {
           >
             <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${BADGE[inv.status]}`}>{inv.status}</span>
             <span className="min-w-0 flex-1 truncate">
-              {inv.email ?? <span className="text-slate-400">Anyone with the link</span>}
+              {inv.email ?? <span className="text-faint">Anyone with the link</span>}
               {inv.acceptedBy && (
-                <span className="text-slate-500"> · joined as {inv.acceptedBy.name || inv.acceptedBy.email}</span>
+                <span className="text-muted"> · joined as {inv.acceptedBy.name || inv.acceptedBy.email}</span>
               )}
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-faint">
               {inv.status === 'pending' ? `expires ${new Date(inv.expiresAt).toLocaleString()}` : `created ${new Date(inv.createdAt).toLocaleDateString()}`}
               {inv.createdByName ? ` · by ${inv.createdByName}` : ''}
             </span>
@@ -177,11 +177,11 @@ export function MembersPanel() {
             )}
           </li>
         ))}
-        {invitations && invitations.length === 0 && <li className="py-2 text-sm text-slate-400">No invitations yet.</li>}
-        {invitations === null && !unreachable && online && <li className="py-2 text-sm text-slate-400">Loading…</li>}
-        {invitations === null && (unreachable || !online) && <li className="py-2 text-sm text-slate-400">Nothing fetched yet.</li>}
+        {invitations && invitations.length === 0 && <li className="py-2 text-sm text-faint">No invitations yet.</li>}
+        {invitations === null && !unreachable && online && <li className="py-2 text-sm text-faint">Loading…</li>}
+        {invitations === null && (unreachable || !online) && <li className="py-2 text-sm text-faint">Nothing fetched yet.</li>}
       </ul>
-      <p className="text-xs text-slate-400">Keyboard: focus a row, <span className="kbd">Enter</span> copies a link created in this session, <span className="kbd">Delete</span> revokes a pending invitation.</p>
+      <p className="text-xs text-faint">Keyboard: focus a row, <span className="kbd">Enter</span> copies a link created in this session, <span className="kbd">Delete</span> revokes a pending invitation.</p>
     </section>
   )
 }

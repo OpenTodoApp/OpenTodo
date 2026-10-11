@@ -184,7 +184,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
       <button key={label} onClick={() => navigate(r)} className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${active ? ACTIVE : IDLE}`}>
         <span className="w-5 text-center">{icon}</span>
         <span className="flex-1 truncate">{label}</span>
-        {count ? <span className="text-xs text-slate-400">{count}</span> : null}
+        {count ? <span className="text-xs text-faint">{count}</span> : null}
       </button>
     )
   }
@@ -214,7 +214,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
           </button>
         )}
       </nav>
-      <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
         Views
         <button className={`rounded px-1 text-[10px] normal-case hover:bg-slate-200 dark:hover:bg-slate-800 ${route.view === 'views' ? 'text-emerald-700 dark:text-emerald-300' : ''}`}
           onClick={() => navigate({ view: 'views' })} title="All views (g v)">All</button>
@@ -228,17 +228,17 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
               <button data-view-id={v.id} onClick={() => navigate({ view: 'view', id: v.id })} className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm">
                 <span className="w-5 text-center" style={{ color: v.color }} aria-hidden>{viewIcon(v)}</span>
                 <span className="flex-1 truncate">{v.name}</span>
-                {!isDashboard(v) && c && (c.ok ? (c.count ? <span className="text-xs text-slate-400">{c.count}</span> : null) : <span className="text-xs text-red-500" title={c.error}>!</span>)}
+                {!isDashboard(v) && c && (c.ok ? (c.count ? <span className="text-xs text-faint">{c.count}</span> : null) : <span className="text-xs text-red-600 dark:text-red-400" title={c.error}>!</span>)}
               </button>
               <ViewMenu view={v} className="hover-reveal" />
             </div>
           )
         })}
         {pinnedViews.length === 0 && (
-          <p className="px-2 py-1 text-xs text-slate-400">Save a filter with <span className="kbd">s</span> to pin it here.</p>
+          <p className="px-2 py-1 text-xs text-faint">Save a filter with <span className="kbd">s</span> to pin it here.</p>
         )}
       </nav>
-      <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
         Projects
         <button className="rounded px-1 text-base leading-none hover:bg-slate-200 dark:hover:bg-slate-800" onClick={startAdding} title="New project">+</button>
       </div>
@@ -263,7 +263,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
                   {has && (
                     <button type="button" tabIndex={-1} aria-label={isCollapsed ? `Expand ${p.name}` : `Collapse ${p.name}`}
                       onClick={() => void toggleCollapsedProject(n.id)}
-                      className="flex h-5 w-4 items-center justify-center rounded text-xs text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700">
+                      className="flex h-5 w-4 items-center justify-center rounded text-xs text-faint hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700">
                       {isCollapsed ? '▸' : '▾'}
                     </button>
                   )}
@@ -277,14 +277,14 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
                   <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />
                   <span className="flex-1 truncate">{p.name}</span>
                   {sharedIds.has(n.id) && (
-                    <span className="text-slate-400" title="Shared project" aria-label="Shared">
+                    <span className="text-faint" title="Shared project" aria-label="Shared">
                       <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
                         <path d="M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1 16c0-2.8 2.7-5 6-5s6 2.2 6 5v1H1v-1Zm13 1v-1c0-1.5-.5-2.8-1.4-3.8.5-.1.9-.2 1.4-.2 2.8 0 5 1.8 5 4v1h-5Z" />
                       </svg>
                     </span>
                   )}
                   {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label="unread changes" /> : null}
-                  {count ? <span className="text-xs text-slate-400" title={isCollapsed && has ? 'Open tasks including sub-projects' : 'Open tasks'}>{count}</span> : null}
+                  {count ? <span className="text-xs text-faint" title={isCollapsed && has ? 'Open tasks including sub-projects' : 'Open tasks'}>{count}</span> : null}
                 </button>
               </li>
             )
@@ -307,9 +307,9 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
             </div>
           </form>
         )}
-        {projects.length === 0 && !adding && <p className="px-2 py-1 text-xs text-slate-400">No projects yet.</p>}
+        {projects.length === 0 && !adding && <p className="px-2 py-1 text-xs text-faint">No projects yet.</p>}
 
-        <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
           <button className="flex items-center gap-1 uppercase hover:text-slate-600 dark:hover:text-slate-200" onClick={() => setLabelsOpen((v) => !v)} aria-expanded={labelsOpen}>
             <span className="inline-block w-3 text-[10px]">{labelsOpen ? '▾' : '▸'}</span>Labels
           </button>
@@ -322,22 +322,22 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
           <div className="space-y-0.5">
             {labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} />)}
             {addingLabel && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
-            {labels.length === 0 && !addingLabel && <p className="px-2 py-1 text-xs text-slate-400">No labels yet.</p>}
+            {labels.length === 0 && !addingLabel && <p className="px-2 py-1 text-xs text-faint">No labels yet.</p>}
           </div>
         )}
       </nav>
       <button onClick={() => navigate({ view: 'help' })} title="Help and guides (g then ?)"
         className={`mt-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'help' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}>
-        <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-xs text-slate-500 dark:border-slate-600">?</span>
+        <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-xs text-muted dark:border-slate-600">?</span>
         <span className="flex-1 text-slate-700 dark:text-slate-300">Help</span>
       </button>
       <button onClick={() => navigate({ view: 'settings' })}
         className={`mt-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'settings' || route.view === 'import' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}>
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-xs font-semibold text-white">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-xs font-semibold text-white">
           {(user.name || user.email).slice(0, 1).toUpperCase()}
         </span>
         <span className="flex-1 truncate text-slate-700 dark:text-slate-300">{user.name || user.email}</span>
-        <span className="text-slate-400">⚙</span>
+        <span className="text-faint">⚙</span>
       </button>
     </div>
   )
@@ -348,6 +348,6 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
   const text = formatUnread(n)
   return (
     <span data-unread-count={n} title={`${text} ${label}`} aria-label={`${text} ${label}`}
-      className="rounded-full bg-emerald-600 px-1.5 text-[10px] font-semibold leading-4 text-white">{text}</span>
+      className="rounded-full bg-emerald-700 px-1.5 text-[10px] font-semibold leading-4 text-white">{text}</span>
   )
 }

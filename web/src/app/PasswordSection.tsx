@@ -51,7 +51,7 @@ export function PasswordView(p: {
   return (
     <section className="space-y-2" aria-labelledby="password-heading">
       <HelpHeading screen="settings/password" id="password-heading" className="font-semibold">Password</HelpHeading>
-      <p className="text-sm text-slate-500">Changing your password signs out your other sessions. This one stays signed in and API tokens keep working.</p>
+      <p className="text-sm text-muted">Changing your password signs out your other sessions. This one stays signed in and API tokens keep working.</p>
       {!p.online && (
         <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200" role="status">
           You are offline. Changing your password needs a connection to the server.

@@ -71,9 +71,9 @@ jobs:
   # Opens every screen and overlay at 360/390/768 px, light and dark, in Chromium
   # and WebKit (Safari's engine) and fails on sideways scrolling, overlays or
   # close buttons off screen, overlays that do not close, and touch targets
-  # under 44 px (OpenSpec change mobile-layout). The Help view, the contextual
-  # help panel and the docs website are also checked with axe-core
-  # (user-documentation). Screenshots of failures are uploaded as the
+  # under 44 px (OpenSpec change mobile-layout). Every screen and overlay, in
+  # light and dark, and the docs website are also checked with axe-core
+  # (serious and critical issues fail). Screenshots of failures are uploaded as the
   # layout-report artifact.
   layout:
     name: Layout check (Chromium, WebKit)

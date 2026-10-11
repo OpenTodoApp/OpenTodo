@@ -85,7 +85,7 @@ export function SsoPanel() {
     return error ? (
       <section className="space-y-2" aria-labelledby="sso-heading">
         <HelpHeading screen="settings/sso" id="sso-heading" className="font-semibold">Single sign-on</HelpHeading>
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       </section>
     ) : null
   }
@@ -124,7 +124,7 @@ export interface SsoPanelViewProps {
 
 function Lock() {
   return (
-    <span className="ml-1 inline-flex items-center gap-1 text-xs text-slate-400" title="Set by an OPENTODO_OIDC_* environment variable">
+    <span className="ml-1 inline-flex items-center gap-1 text-xs text-faint" title="Set by an OPENTODO_OIDC_* environment variable">
       <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor"><path d="M5 7V5a3 3 0 1 1 6 0v2h1v7H4V7h1Zm1.5 0h3V5a1.5 1.5 0 1 0-3 0v2Z" /></svg>
       set by environment
     </span>
@@ -143,7 +143,7 @@ export function SsoPanelView(p: SsoPanelViewProps) {
       <input className="input" type={extra.type ?? 'text'} value={String(f[key])} placeholder={extra.placeholder}
         readOnly={locked(key)} aria-readonly={locked(key)} disabled={disabled}
         onChange={(e) => p.onChange({ [key]: e.target.value } as Partial<SsoForm>)} autoComplete="off" spellCheck={false} />
-      {extra.hint && <span className="mt-1 block text-xs text-slate-400">{extra.hint}</span>}
+      {extra.hint && <span className="mt-1 block text-xs text-faint">{extra.hint}</span>}
     </label>
   )
   const toggle = (key: 'allowProvision' | 'ssoOnly' | 'providerLogout', label: string, hint: string) => (
@@ -152,14 +152,14 @@ export function SsoPanelView(p: SsoPanelViewProps) {
         onChange={(e) => p.onChange({ [key]: e.target.checked } as Partial<SsoForm>)} />
       <span>
         {label}{locked(key) && <Lock />}
-        <span className="block text-xs text-slate-500">{hint}</span>
+        <span className="block text-xs text-muted">{hint}</span>
       </span>
     </label>
   )
   return (
     <section className="space-y-3" aria-labelledby="sso-heading" data-testid="sso-panel">
       <HelpHeading screen="settings/sso" id="sso-heading" className="font-semibold">Single sign-on</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Let people sign in with an OpenID Connect provider you already run (Authentik, Keycloak, Authelia, a hosted login service).
         {s.enabled ? ` On: the sign-in screen shows "Sign in with ${name}".` : ' Off until you save an issuer and client id.'}
         {' '}The server only contacts the issuer you enter. See docs/self-hosting/sso.md.
@@ -169,7 +169,7 @@ export function SsoPanelView(p: SsoPanelViewProps) {
       <label className="block text-sm">
         <span className="mb-1 block text-slate-600 dark:text-slate-300">Redirect URI (paste into your provider)</span>
         <input className="input font-mono text-xs" readOnly value={s.redirectUri} onFocus={(e) => e.currentTarget.select()} aria-describedby="sso-redirect-hint" />
-        <span id="sso-redirect-hint" className="mt-1 block text-xs text-slate-400">
+        <span id="sso-redirect-hint" className="mt-1 block text-xs text-faint">
           {s.baseUrlConfigured
             ? 'Taken from OPENTODO_BASE_URL.'
             : 'Derived from the address you are using now. Providers reject mismatches: set OPENTODO_BASE_URL so it never changes.'}
@@ -284,7 +284,7 @@ export function LinkedAccountsView(p: LinkedAccountsViewProps) {
   return (
     <section className="space-y-2" aria-labelledby="linked-heading" data-testid="linked-accounts">
       <HelpHeading screen="settings/linked-accounts" id="linked-heading" className="font-semibold">Linked accounts</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         {p.provider.enabled
           ? `Sign in with ${name} instead of a password. Linking also lets you confirm sensitive changes with ${name}.`
           : 'Single sign-on is currently off on this server; these links are kept for when it returns.'}
@@ -294,16 +294,16 @@ export function LinkedAccountsView(p: LinkedAccountsViewProps) {
         {p.identities.map((i) => (
           <li key={i.id} className="flex items-center gap-3 py-2 text-sm">
             <span className="min-w-0 flex-1 truncate">
-              {i.email || 'Identity'} <span className="text-xs text-slate-400">· {hostOf(i.issuer)}</span>
+              {i.email || 'Identity'} <span className="text-xs text-faint">· {hostOf(i.issuer)}</span>
             </span>
-            <span className="text-xs text-slate-400">used {relativeTime(i.lastLoginAt, p.now)}</span>
+            <span className="text-xs text-faint">used {relativeTime(i.lastLoginAt, p.now)}</span>
             <button type="button" className="btn-danger text-xs" disabled={disabled} onClick={() => p.onUnlink(i.id)}
               aria-label={`Unlink ${i.email || 'identity'}`}>
               Unlink
             </button>
           </li>
         ))}
-        {p.identities.length === 0 && <li className="py-2 text-sm text-slate-400">Nothing linked yet.</li>}
+        {p.identities.length === 0 && <li className="py-2 text-sm text-faint">Nothing linked yet.</li>}
       </ul>
       {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
       {p.notice && <p className="text-sm text-emerald-700 dark:text-emerald-400" role="status">{p.notice}</p>}

@@ -98,7 +98,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
         <h1 className={`user-text min-w-0 text-xl font-semibold ${editable ? 'cursor-text' : ''}`} onClick={() => editable && setEditing(true)} title={editable ? 'Click to rename' : undefined}>{project.name}</h1>
       )}
       {membership && (
-        <button className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300" onClick={() => setSharing(true)}
+        <button className="flex items-center gap-1 text-xs text-muted hover:text-slate-700 dark:hover:text-slate-300" onClick={() => setSharing(true)}
           title={membership.members.map((m) => `${m.name || m.email} (${m.role})`).join('\n')} aria-label="Members">
           <span className="flex -space-x-1">
             {membership.members.slice(0, 4).map((m) => (
@@ -110,7 +110,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
           <span>{membership.members.length} · {role}</span>
         </button>
       )}
-      {role === 'viewer' && <span role="note" className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800">Read-only</span>}
+      {role === 'viewer' && <span role="note" className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-muted dark:bg-slate-800">Read-only</span>}
       <div className="flex-1" />
       <button className="btn-ghost text-xs" onClick={() => setSharing(true)} title="Share and manage members (Shift+S)" aria-haspopup="dialog">
         {canManageMembers(role) ? 'Share' : 'Members'} <span className="kbd ml-1">S</span>
@@ -118,7 +118,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} onClose={() => setSharing(false)} />}
       {editable && <Menu label="Project menu" title={project.name} trigger={<>Project ⌄</>} triggerClassName="btn-ghost text-xs" className="p-2"
         open={menuOpen} onOpenChange={setMenuOpen}>
-          <p className="px-1 pb-1 text-xs text-slate-400">Color</p>
+          <p className="px-1 pb-1 text-xs text-faint">Color</p>
           <div className="mb-2 flex flex-wrap gap-1 px-1">
             {COLORS.map((c) => (
               <button key={c} className="touch-target inline-flex items-center justify-center rounded-full" aria-label={`Set color ${c}`} aria-pressed={c === project.color} onClick={() => void updateProject(project.id, { color: c })}>
@@ -127,14 +127,14 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
             ))}
           </div>
           <label className="block px-1 pb-2">
-            <span className="block pb-1 text-xs text-slate-400">Move to <span className="kbd ml-1">m</span></span>
+            <span className="block pb-1 text-xs text-faint">Move to <span className="kbd ml-1">m</span></span>
             <select ref={moveRef} className="input py-1 text-sm" aria-label="Move to" value={parentKnown ? project.parent_id ?? '' : ''} onChange={(e) => void move(e.target.value)}>
               <option value="">Top level</option>
               {targets.map((n) => (
                 <option key={n.id} value={n.id}>{'  '.repeat(n.depth)}{n.item.name}</option>
               ))}
             </select>
-            {moveError && <span className="mt-1 block text-xs text-red-600">{moveError}</span>}
+            {moveError && <span className="mt-1 block text-xs text-red-600 dark:text-red-400">{moveError}</span>}
           </label>
           <button className="btn-ghost w-full justify-start" onClick={() => { setMenuOpen(false); setEditing(true) }}>Rename</button>
           <button className="btn-ghost w-full justify-start" title={subCount ? 'Archives its sub-projects too' : undefined}

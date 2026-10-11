@@ -89,7 +89,7 @@ export function InviteView({ state, user, form, onRetry, onLogout }: {
   }
   switch (state.kind) {
     case 'loading':
-      return <Card title="Checking your invitation…"><p className="text-sm text-slate-500">One moment.</p></Card>
+      return <Card title="Checking your invitation…"><p className="text-sm text-muted">One moment.</p></Card>
     case 'offline':
       return (
         <Card title="You seem to be offline">

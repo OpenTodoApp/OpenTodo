@@ -18,7 +18,7 @@ function renderBlock(b: Block, i: number): ReactNode {
     case 'pre':
       return <pre key={i} className="overflow-x-auto rounded bg-slate-100 p-2 font-mono text-xs dark:bg-slate-800" data-scroll-x><code>{b.v}</code></pre>
     case 'quote':
-      return <blockquote key={i} className="space-y-2 border-l-2 border-slate-300 pl-2 text-slate-500 dark:border-slate-600">{b.c.map(renderBlock)}</blockquote>
+      return <blockquote key={i} className="space-y-2 border-l-2 border-slate-300 pl-2 text-muted dark:border-slate-600">{b.c.map(renderBlock)}</blockquote>
     case 'list': {
       const items = b.items.map((item, j) => <li key={j}>{item.map(renderBlock)}</li>)
       return b.ordered

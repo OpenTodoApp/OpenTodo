@@ -187,7 +187,7 @@ export function FilterView() {
         <div className="mx-auto max-w-3xl">
           <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
             Filter
-            {result && <span className="text-sm font-normal text-slate-400">{rows.length}</span>}
+            {result && <span className="text-sm font-normal text-faint">{rows.length}</span>}
             <span className="flex-1" />
             <HelpLink screen="filter" topic="Filter queries" />
             <button className="btn-ghost border border-slate-300 text-xs font-normal dark:border-slate-700" disabled={!canSave}
@@ -224,12 +224,12 @@ export function FilterView() {
           </div>
 
           {!good.ast && <UsageHint />}
-          {result && rows.length === 0 && <p className="px-2 py-8 text-center text-sm text-slate-400">No task matches this filter.</p>}
+          {result && rows.length === 0 && <p className="px-2 py-8 text-center text-sm text-faint">No task matches this filter.</p>}
 
-          <div ref={listRef} tabIndex={-1} className="outline-none" aria-label="Filter results">
+          <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label="Filter results">
             {groups.map((g) => (
               <section key={g.key} className="mb-4">
-                <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{g.heading}</h2>
+                <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-faint">{g.heading}</h2>
                 <ul>
                   {g.tasks.map((t) => (
                     <TaskRow
@@ -278,7 +278,7 @@ export function FilterView() {
       {pickerFor && (
         <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-          <p className="mt-2 px-1 text-[11px] text-slate-400">Enter toggles or creates · Esc closes</p>
+          <p className="mt-2 px-1 text-[11px] text-faint">Enter toggles or creates · Esc closes</p>
         </Dialog>
       )}
     </div>
@@ -298,7 +298,7 @@ const HINT: [string[], string][] = [
 
 function UsageHint() {
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700">
+    <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-muted dark:border-slate-700">
       <p className="mb-2">Type a query to list matching tasks. Enter jumps to the results, Esc comes back, ↑ / ↓ recall recent queries.</p>
       <dl className="text-xs">
         {HINT.map(([terms, d]) => (

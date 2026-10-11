@@ -132,7 +132,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
           />
           {message
             ? <span role="alert" className="text-red-600 dark:text-red-400">{message}</span>
-            : <span className="truncate text-slate-400" aria-label="Completions">{completions.slice(0, 6).join('  ')}</span>}
+            : <span className="truncate text-faint" aria-label="Completions">{completions.slice(0, 6).join('  ')}</span>}
         </form>
       )}
       <div className="flex items-center gap-2 px-3 py-0.5">
@@ -140,8 +140,8 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
           className={`rounded px-1.5 font-mono font-semibold ${mode === 'insert' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : mode === 'command' ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
           {mode.toUpperCase()}
         </span>
-        <span className="font-mono text-slate-500" data-vim-pending>{pending}</span>
-        <span className="ml-auto text-slate-400"><span className="kbd">:</span> command · <span className="kbd">?</span> help</span>
+        <span className="font-mono text-muted" data-vim-pending>{pending}</span>
+        <span className="ml-auto text-faint"><span className="kbd">:</span> command · <span className="kbd">?</span> help</span>
       </div>
     </div>
   )

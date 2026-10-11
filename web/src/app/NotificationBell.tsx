@@ -41,22 +41,22 @@ export function NotificationBell() {
         )}
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label="Notifications" width="sm:w-80" className="py-1">
-          {list.length === 0 && <p className="px-3 py-2 text-xs text-slate-400">No notifications.</p>}
+          {list.length === 0 && <p className="px-3 py-2 text-xs text-faint">No notifications.</p>}
           <ul>
             {list.map((n) => (
               <li key={n.id}>
                 <button type="button" data-autofocus={n === list[0] ? '' : undefined} onClick={() => void choose(n)}
-                  className={`flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800 ${n.readAt === null ? '' : 'text-slate-400'}`}>
+                  className={`flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800 ${n.readAt === null ? '' : 'text-faint'}`}>
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt === null ? 'bg-emerald-500' : 'bg-transparent'}`} />
                   <span className="user-text min-w-0 flex-1">
                     {n.kind === 'mentioned' ? (
                       <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> mentioned you on <strong>{n.payload.taskTitle || 'a task'}</strong>
-                        {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-xs text-slate-500">“{n.payload.excerpt}”</span>}
+                        {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-xs text-muted">“{n.payload.excerpt}”</span>}
                       </span>
                     ) : (
                       <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> assigned you <strong>{n.payload.taskTitle || 'a task'}</strong></span>
                     )}
-                    <span className="block text-xs text-slate-400">
+                    <span className="block text-xs text-faint">
                       {n.payload.projectName ? `${n.payload.projectName} · ` : ''}{new Date(n.createdAt).toLocaleString()}
                     </span>
                   </span>

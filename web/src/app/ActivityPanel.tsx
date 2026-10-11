@@ -49,7 +49,7 @@ export function ActivityView({ status, events, error }: { status: LogStatus; eve
   return (
     <div className="space-y-2">
       <HelpHeading screen="settings/sessions" level={3} id="activity-heading" className="font-medium">Recent activity</HelpHeading>
-      <p className="text-sm text-slate-500">Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server.</p>
+      <p className="text-sm text-muted">Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server.</p>
       {status === 'offline' ? (
         <NeedsConnection what="activity log" />
       ) : (
@@ -58,16 +58,16 @@ export function ActivityView({ status, events, error }: { status: LogStatus; eve
             <li key={ev.id} tabIndex={0} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
               <span className={`min-w-0 flex-1 ${ev.outcome === 'failure' ? 'text-red-700 dark:text-red-400' : ''}`}>
                 {AUDIT_LABELS[ev.name] ?? ev.name}
-                {eventSummary(ev) && <span className="text-slate-500"> · {eventSummary(ev)}</span>}
+                {eventSummary(ev) && <span className="text-muted"> · {eventSummary(ev)}</span>}
               </span>
-              <span className="text-xs text-slate-400" title={ev.userAgent}>
+              <span className="text-xs text-faint" title={ev.userAgent}>
                 {new Date(ev.ts).toLocaleString()} · {shortAgent(ev.userAgent)}{ev.ip ? ` · ${ev.ip}` : ''}
               </span>
             </li>
           ))}
-          {status === 'ready' && events.length === 0 && <li className="py-2 text-sm text-slate-400">No recent activity.</li>}
-          {status === 'loading' && events.length === 0 && <li className="py-2 text-sm text-slate-400">Loading…</li>}
-          {status === 'error' && <li className="py-2 text-sm text-red-600" role="alert">{error}</li>}
+          {status === 'ready' && events.length === 0 && <li className="py-2 text-sm text-faint">No recent activity.</li>}
+          {status === 'loading' && events.length === 0 && <li className="py-2 text-sm text-faint">Loading…</li>}
+          {status === 'error' && <li className="py-2 text-sm text-red-600 dark:text-red-400" role="alert">{error}</li>}
         </ul>
       )}
     </div>

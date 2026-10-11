@@ -83,7 +83,7 @@ export function WebhooksView(p: WebhooksViewProps) {
   return (
     <section className="space-y-3" aria-labelledby="webhooks-heading">
       <HelpHeading screen="settings/webhooks" id="webhooks-heading" className="font-semibold">Webhooks</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Notify Home Assistant, n8n or any HTTP endpoint when your tasks and projects change. Each request is signed with the
         webhook's secret; see docs/webhooks.md for how to verify it.
       </p>
@@ -105,7 +105,7 @@ export function WebhooksView(p: WebhooksViewProps) {
           />
           <span>
             <span className="font-medium">Allow private network targets</span>
-            <span className="block text-slate-500">
+            <span className="block text-muted">
               Owner setting for everyone on this server. Needed when a receiver runs on your LAN or this machine (for example Home Assistant at 192.168.x.x). Leave off on a public server.
             </span>
           </span>
@@ -164,7 +164,7 @@ export function WebhooksView(p: WebhooksViewProps) {
                     onChange={() => p.onDraftChange({ ...draft, events: toggleEvent(draft.events, event) })}
                     disabled={disabled}
                   />
-                  {label} <code className="text-xs text-slate-400">{event}</code>
+                  {label} <code className="text-xs text-faint">{event}</code>
                 </label>
               ))}
             </div>
@@ -208,7 +208,7 @@ export function WebhooksView(p: WebhooksViewProps) {
                 <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${TONE[st.tone]}`}>{st.label}</span>
                 <span className="min-w-0 flex-1 truncate font-mono text-xs" title={h.url}>{h.url}</span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted">
                 {h.events.join(', ')} · {projectName(h.projectId)}
               </p>
               <div className="flex flex-wrap gap-1">
@@ -242,18 +242,18 @@ export function WebhooksView(p: WebhooksViewProps) {
                   onKeyDown={(e) => onDialogKey(e, () => p.onOpenLog(null))}
                 >
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Last 100 deliveries</span>
+                    <span className="text-xs font-medium text-muted">Last 100 deliveries</span>
                     <button type="button" className="btn-ghost text-xs" disabled={!p.connected} onClick={p.onRefreshLog}>Refresh</button>
                   </div>
-                  {p.log.deliveries === null && <p className="text-xs text-slate-400">Loading…</p>}
-                  {p.log.deliveries?.length === 0 && <p className="text-xs text-slate-400">No deliveries yet.</p>}
+                  {p.log.deliveries === null && <p className="text-xs text-faint">Loading…</p>}
+                  {p.log.deliveries?.length === 0 && <p className="text-xs text-faint">No deliveries yet.</p>}
                   <ul className="space-y-1">
                     {p.log.deliveries?.map((d) => (
                       <li key={d.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
                         <span className={`rounded px-1 py-0.5 font-medium ${DELIVERY_TONE[d.status]}`}>{d.status}</span>
                         <code>{d.event}</code>
-                        <span className="text-slate-400">{new Date(d.createdAt).toLocaleString()}</span>
-                        <span className="text-slate-500">
+                        <span className="text-faint">{new Date(d.createdAt).toLocaleString()}</span>
+                        <span className="text-muted">
                           {d.attempts} attempt{d.attempts === 1 ? '' : 's'}{deliveryOutcome(d) ? ` · ${deliveryOutcome(d)}` : ''}
                         </span>
                         {(d.status === 'delivered' || d.status === 'failed') && (
@@ -261,8 +261,8 @@ export function WebhooksView(p: WebhooksViewProps) {
                         )}
                         {d.responseExcerpt && (
                           <details className="w-full">
-                            <summary className="cursor-pointer text-slate-400">Response</summary>
-                            <pre className="whitespace-pre-wrap break-all text-slate-500">{d.responseExcerpt}</pre>
+                            <summary className="cursor-pointer text-faint">Response</summary>
+                            <pre className="whitespace-pre-wrap break-all text-muted">{d.responseExcerpt}</pre>
                           </details>
                         )}
                       </li>
@@ -273,10 +273,10 @@ export function WebhooksView(p: WebhooksViewProps) {
             </li>
           )
         })}
-        {p.webhooks && p.webhooks.length === 0 && <li className="py-2 text-sm text-slate-400">No webhooks yet. Nothing is sent until you add one.</li>}
-        {p.webhooks === null && <li className="py-2 text-sm text-slate-400">{p.connected ? 'Loading…' : 'Nothing fetched yet.'}</li>}
+        {p.webhooks && p.webhooks.length === 0 && <li className="py-2 text-sm text-faint">No webhooks yet. Nothing is sent until you add one.</li>}
+        {p.webhooks === null && <li className="py-2 text-sm text-faint">{p.connected ? 'Loading…' : 'Nothing fetched yet.'}</li>}
       </ul>
-      <p className="text-xs text-slate-400">Keyboard: <span className="kbd">Tab</span> reaches every action, <span className="kbd">Esc</span> closes the form or the delivery log.</p>
+      <p className="text-xs text-faint">Keyboard: <span className="kbd">Tab</span> reaches every action, <span className="kbd">Esc</span> closes the form or the delivery log.</p>
     </section>
   )
 }

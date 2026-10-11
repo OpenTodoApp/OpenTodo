@@ -10,7 +10,7 @@ export function LabelChip({ label, onRemove }: { label: Label; onRemove?: () => 
       <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: label.color }} />
       {label.name}
       {onRemove && (
-        <button type="button" aria-label={`Remove label ${label.name}`} onClick={onRemove} className="ml-0.5 leading-none text-slate-400 hover:text-red-600">×</button>
+        <button type="button" aria-label={`Remove label ${label.name}`} onClick={onRemove} className="ml-0.5 leading-none text-faint hover:text-red-600">×</button>
       )}
     </span>
   )
@@ -65,26 +65,25 @@ export function LabelPicker({ taskId, onClose, inline = false }: { taskId: strin
           else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (onClose) onClose(); else (e.target as HTMLInputElement).blur() }
         }}
       />
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
       {open && (
         <ul role="listbox" aria-label="Labels" className={`max-h-56 overflow-y-auto py-1 text-sm ${inline ? 'absolute left-0 right-0 z-10 mt-1 rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900' : ''}`}>
           {options.map((l, i) => (
-            <li key={l?.id ?? '__new'} role="option" aria-selected={l ? selected.has(l.id) : false}>
-              <button type="button" tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onClick={() => void pick(l)} onMouseEnter={() => setHi(i)}
-                className={`flex w-full items-center gap-2 px-2 py-1.5 text-left ${i === hi ? 'bg-slate-100 dark:bg-slate-800' : ''}`}>
+            <li key={l?.id ?? '__new'} role="option" aria-selected={l ? selected.has(l.id) : false}
+              onMouseDown={(e) => e.preventDefault()} onClick={() => void pick(l)} onMouseEnter={() => setHi(i)}
+              className={`touch-target flex w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-left ${i === hi ? 'bg-slate-100 dark:bg-slate-800' : ''}`}>
                 {l ? (
                   <>
-                    <span className="w-4 text-center text-emerald-600">{selected.has(l.id) ? '✓' : ''}</span>
+                    <span className="w-4 text-center text-emerald-700 dark:text-emerald-400">{selected.has(l.id) ? '✓' : ''}</span>
                     <span className="h-2 w-2 rounded-full" style={{ backgroundColor: l.color }} />
                     <span className="flex-1 truncate">{l.name}</span>
                   </>
                 ) : (
-                  <><span className="w-4 text-center text-emerald-600">+</span><span>Create “{q.trim()}”</span></>
+                  <><span className="w-4 text-center text-emerald-700 dark:text-emerald-400">+</span><span>Create “{q.trim()}”</span></>
                 )}
-              </button>
             </li>
           ))}
-          {options.length === 0 && <li className="px-2 py-1.5 text-xs text-slate-400">No labels yet. Type a name and press Enter.</li>}
+          {options.length === 0 && <li className="px-2 py-1.5 text-xs text-faint">No labels yet. Type a name and press Enter.</li>}
         </ul>
       )}
     </div>

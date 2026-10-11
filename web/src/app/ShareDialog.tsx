@@ -82,8 +82,8 @@ export function ShareDialog({ project, userId, cached, onClose }: {
             <button className="btn-primary" disabled={busy || !email.trim()}>Share</button>
           </form>
         )}
-        {locked && <p className="mb-3 text-sm text-slate-500" data-testid="demo-share-note">Sharing changes: {DEMO_RESTRICTED_NOTE}</p>}
-        {error && <p role="alert" className="mb-3 text-sm text-red-600">{error}</p>}
+        {locked && <p className="mb-3 text-sm text-muted" data-testid="demo-share-note">Sharing changes: {DEMO_RESTRICTED_NOTE}</p>}
+        {error && <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
         <ul aria-label="Members" className="space-y-1">
           {members.map((m) => {
             const self = m.userId === userId
@@ -92,7 +92,7 @@ export function ShareDialog({ project, userId, cached, onClose }: {
               <li key={m.userId} className="flex items-center gap-2 rounded-md px-1 py-1 text-sm">
                 <span className="min-w-0 flex-1 truncate" title={m.email}>
                   {m.name || m.email}{self ? ' (you)' : ''}
-                  <span className="block truncate text-xs text-slate-400">{m.email}</span>
+                  <span className="block truncate text-xs text-faint">{m.email}</span>
                 </span>
                 {manage ? (
                   <select className="input w-auto py-1 text-xs" aria-label={`Role of ${m.name || m.email}`} value={m.role} disabled={busy}
@@ -100,7 +100,7 @@ export function ShareDialog({ project, userId, cached, onClose }: {
                     {[...new Set([...grantableRoles(myRole), m.role])].map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 ) : (
-                  <span className="text-xs text-slate-500" title={ROLE_HINT[m.role]}>{m.role}</span>
+                  <span className="text-xs text-muted" title={ROLE_HINT[m.role]}>{m.role}</span>
                 )}
                 {manage && (
                   <button className="btn-ghost px-2 py-0.5 text-xs" disabled={busy} aria-label={`Remove ${m.name || m.email}`}
@@ -122,7 +122,7 @@ export function ShareDialog({ project, userId, cached, onClose }: {
             )
           })}
         </ul>
-        <p className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+        <p className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-faint">
           <span>Only people who already have an account on this server can be added. Labels stay personal.</span>
           <HelpLink screen="share-dialog" topic="Sharing projects" />
         </p>

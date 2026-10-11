@@ -146,11 +146,11 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
   return (
     <section className="space-y-2" aria-labelledby="security-heading" data-testid="security-panel">
       <HelpHeading screen="settings/security" id="security-heading" className="font-semibold">Security</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Passkeys let you sign in with your device's fingerprint, face or PIN instead of your password. Your password keeps working.
         Register a passkey on a second device so losing one is never a problem.
       </p>
-      {p.domain && <p className="text-xs text-slate-400" data-passkey-domain>Passkeys are tied to <span className="font-mono">{p.domain}</span>.</p>}
+      {p.domain && <p className="text-xs text-faint" data-passkey-domain>Passkeys are tied to <span className="font-mono">{p.domain}</span>.</p>}
       {p.domain && p.pageHost && !rpIdMatches(p.domain, p.pageHost) && (
         <p role="alert" className="rounded-md bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
           This page is open at <span className="font-mono">{p.pageHost}</span>, so passkeys will not work here. Open the app at{' '}
@@ -164,7 +164,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
         </p>
       )}
       {p.online && !p.supported && (
-        <p role="status" className="text-sm text-slate-500">This browser does not support passkeys.</p>
+        <p role="status" className="text-sm text-muted">This browser does not support passkeys.</p>
       )}
 
       {adding ? (
@@ -180,7 +180,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
       ) : (
         <button className="btn-primary" disabled={disabled} onClick={() => setAdding(true)}>Add passkey</button>
       )}
-      {p.error && <p className="text-sm text-red-600" role="alert">{p.error}</p>}
+      {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
 
       <ul className="divide-y divide-slate-200 dark:divide-slate-800">
         {p.passkeys?.map((k) => (
@@ -205,7 +205,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
                     </span>
                   )}
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-faint">
                   created {new Date(k.createdAt).toLocaleDateString()} · used {relativeTime(k.lastUsedAt, p.now)}
                 </span>
                 <button className="btn-ghost text-xs" disabled={disabled} aria-label={`Rename ${k.name}`}
@@ -218,7 +218,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
             )}
           </li>
         ))}
-        {p.passkeys && p.passkeys.length === 0 && <li className="py-2 text-sm text-slate-400">No passkeys yet.</li>}
+        {p.passkeys && p.passkeys.length === 0 && <li className="py-2 text-sm text-faint">No passkeys yet.</li>}
       </ul>
     </section>
   )

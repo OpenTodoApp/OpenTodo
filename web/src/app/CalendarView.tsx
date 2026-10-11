@@ -356,7 +356,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
           <div className="min-w-full" style={{ width: mode === 'week' ? 'max(100%, 56rem)' : undefined }}>
             {/* Sticky header: day name, capacity and the unscheduled lane of each column. */}
             <div className="sticky top-0 z-20 flex border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-              <div className="w-12 shrink-0 pt-1 text-right text-[10px] text-slate-400" aria-hidden>
+              <div className="w-12 shrink-0 pt-1 text-right text-[10px] text-faint" aria-hidden>
                 <span className="pr-1">all day</span>
               </div>
               {days.map((d) => (
@@ -425,7 +425,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       )}
 
       {drag && dragTask && (
-        <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-md bg-emerald-600 px-2 py-1 text-xs text-white shadow-lg" style={{ left: drag.x + 12, top: drag.y + 12 }}>
+        <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-md bg-emerald-700 px-2 py-1 text-xs text-white shadow-lg" style={{ left: drag.x + 12, top: drag.y + 12 }}>
           {dragTask.title || 'Untitled'}
           {drag.target?.type === 'slot' && ` · ${formatTime(drag.target.start)}`}
           {drag.target?.type === 'lane' && ' · unscheduled'}
@@ -451,7 +451,7 @@ function HourGutter() {
   return (
     <div className="relative w-12 shrink-0" style={{ height: GRID_HEIGHT }} aria-hidden>
       {Array.from({ length: 24 }, (_, h) => (
-        <div key={h} className="absolute right-1 -translate-y-1/2 text-[10px] text-slate-400" style={{ top: h * 60 * PX_PER_MIN }}>
+        <div key={h} className="absolute right-1 -translate-y-1/2 text-[10px] text-faint" style={{ top: h * 60 * PX_PER_MIN }}>
           {h === 0 ? '' : `${String(h).padStart(2, '0')}:00`}
         </div>
       ))}
@@ -487,11 +487,11 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, laneTarget,
           data-capacity
           data-over={load.over || undefined}
           title={`${load.over ? 'Over capacity. ' : ''}Planned estimates against a ${formatMinutes(prefs.dayLength)} day${load.unestimated ? `; ${load.unestimated} unestimated (counted as 0)` : ''}`}
-          className={`whitespace-nowrap rounded px-1 font-mono text-[11px] ${load.over ? 'bg-red-50 font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-300' : 'text-slate-500'}`}
+          className={`whitespace-nowrap rounded px-1 font-mono text-[11px] ${load.over ? 'bg-red-50 font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-300' : 'text-muted'}`}
         >
           {formatLoad(load, prefs.dayLength)}
           {load.over && <span className="sr-only"> over capacity</span>}
-          {load.unestimated > 0 && <span className="ml-1 text-slate-400">+{load.unestimated}?</span>}
+          {load.unestimated > 0 && <span className="ml-1 text-faint">+{load.unestimated}?</span>}
         </span>
       </div>
       <div
@@ -499,7 +499,7 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, laneTarget,
         aria-label={`Unscheduled on ${day.date}`}
         className={`mt-1 min-h-8 space-y-0.5 rounded border border-dashed p-0.5 ${laneTarget ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40' : 'border-slate-200 dark:border-slate-800'}`}
       >
-        {day.lane.length === 0 && <span className="block px-1 py-1 text-[10px] text-slate-400">Unscheduled</span>}
+        {day.lane.length === 0 && <span className="block px-1 py-1 text-[10px] text-faint">Unscheduled</span>}
         {day.lane.map((t) => (
           <button
             key={t.id}
@@ -513,7 +513,7 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, laneTarget,
             style={{ borderLeft: `3px solid ${t.project_id ? projectMap.get(t.project_id)?.color ?? '#94a3b8' : '#94a3b8'}` }}
           >
             <span className="truncate">{t.title || 'Untitled'}</span>
-            {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-[10px] text-slate-500">{formatMinutes(t.estimate_minutes)}</span> : null}
+            {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-[10px] text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
           </button>
         ))}
       </div>
@@ -598,10 +598,10 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
           >
             <div className="flex items-start gap-1">
               <span className="min-w-0 flex-1 truncate font-medium">{t.title || 'Untitled'}</span>
-              {b.overlap && <span data-overlap-marker title="Overlaps another task" className="shrink-0 text-amber-600" aria-hidden>⧉</span>}
+              {b.overlap && <span data-overlap-marker title="Overlaps another task" className="shrink-0 text-amber-700 dark:text-amber-400" aria-hidden>⧉</span>}
             </div>
             {height >= 30 && (
-              <div className="truncate text-[10px] text-slate-500">
+              <div className="truncate text-[10px] text-muted">
                 {formatTime(block.start)}–{formatTime(block.end === DAY_MINUTES ? DAY_MINUTES - 1 : block.end)}
                 {block.estimated && <span className="ml-1 font-mono">{formatMinutes(t.estimate_minutes!)}</span>}
               </div>
@@ -645,7 +645,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
                         onDoubleClick={() => onOpen(id)}
                         className={`flex w-full gap-1 truncate rounded px-1 py-0.5 text-left text-xs ${selectedId === id ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                       >
-                        <span className="font-mono text-[10px] text-slate-500">{blk ? formatTime(blk.start) : ''}</span>
+                        <span className="font-mono text-[10px] text-muted">{blk ? formatTime(blk.start) : ''}</span>
                         <span className="truncate">{t?.title || 'Untitled'}</span>
                       </button>
                     </li>
@@ -708,10 +708,10 @@ function PlanTray({ source, onSource, tasks, projects, today, onPointerDown, onP
           <option value="overdue">Overdue</option>
           {live.map((p) => <option key={p.id} value={`project:${p.id}`}>{p.name}</option>)}
         </select>
-        <p className="mt-1 text-[11px] text-slate-400">Drag onto a time, or focus a task and press <span className="kbd">s</span>.</p>
+        <p className="mt-1 text-[11px] text-faint">Drag onto a time, or focus a task and press <span className="kbd">s</span>.</p>
       </div>
       <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2">
-        {list.length === 0 && <li className="px-1 py-2 text-xs text-slate-400">Nothing here.</li>}
+        {list.length === 0 && <li className="px-1 py-2 text-xs text-faint">Nothing here.</li>}
         {list.map((t) => (
           <li key={t.id}>
             <button
@@ -729,7 +729,7 @@ function PlanTray({ source, onSource, tasks, projects, today, onPointerDown, onP
               className="flex w-full cursor-grab touch-manipulation items-center gap-1 rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <span className="truncate">{t.title || 'Untitled'}</span>
-              {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-[10px] text-slate-500">{formatMinutes(t.estimate_minutes)}</span> : null}
+              {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-[10px] text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
             </button>
           </li>
         ))}

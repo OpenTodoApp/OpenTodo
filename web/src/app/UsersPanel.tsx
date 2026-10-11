@@ -186,7 +186,7 @@ export function UsersView(p: UsersViewProps) {
   return (
     <section className="space-y-3" aria-labelledby="users-heading">
       <HelpHeading screen="settings/users" id="users-heading" className="font-semibold">Users</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Everyone with an account on this server. {isOwner
           ? 'You can manage every account and choose admins; admins manage members.'
           : 'As an admin you can deactivate, reset and delete members.'}
@@ -227,9 +227,9 @@ export function UsersView(p: UsersViewProps) {
             >
               <span className="min-w-0 flex-1">
                 <span className="font-medium">{u.name || u.email}</span>
-                {u.name && <span className="text-slate-500"> · {u.email}</span>}
-                {u.id === p.viewer.id && <span className="text-slate-400"> (you)</span>}
-                <span className="block text-xs text-slate-400">
+                {u.name && <span className="text-muted"> · {u.email}</span>}
+                {u.id === p.viewer.id && <span className="text-faint"> (you)</span>}
+                <span className="block text-xs text-faint">
                   joined {new Date(u.createdAt).toLocaleDateString()} · {u.lastLoginAt ? `last sign-in ${new Date(u.lastLoginAt).toLocaleString()}` : 'no sign-in since the upgrade'}
                 </span>
               </span>
@@ -249,10 +249,10 @@ export function UsersView(p: UsersViewProps) {
             </li>
           )
         })}
-        {p.users && p.users.length === 0 && <li className="py-2 text-sm text-slate-400">No accounts.</li>}
-        {p.users === null && !p.offline && <li className="py-2 text-sm text-slate-400">Loading…</li>}
+        {p.users && p.users.length === 0 && <li className="py-2 text-sm text-faint">No accounts.</li>}
+        {p.users === null && !p.offline && <li className="py-2 text-sm text-faint">Loading…</li>}
       </ul>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-faint">
         Keyboard: focus a row, <span className="kbd">d</span> deactivates or reactivates, <span className="kbd">r</span> creates a reset link, <span className="kbd">Delete</span> deletes; each asks for confirmation.
       </p>
 

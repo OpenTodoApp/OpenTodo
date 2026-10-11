@@ -20,7 +20,7 @@ export function TokensView(p: TokensViewProps) {
   return (
     <section className="space-y-2" aria-labelledby="tokens-heading">
       <HelpHeading screen="settings/tokens" id="tokens-heading" className="font-semibold">API tokens</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Use a token from scripts or a CLI: <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">Authorization: Bearer &lt;token&gt;</code>.
         A read-only token can read everything you can but is refused on every change. See docs/api.md.
       </p>
@@ -39,7 +39,7 @@ export function TokensView(p: TokensViewProps) {
           <code className="break-all">{p.secret}</code>
         </div>
       )}
-      {p.error && <p className="text-sm text-red-600">{p.error}</p>}
+      {p.error && <p className="text-sm text-red-600 dark:text-red-400">{p.error}</p>}
       <ul className="divide-y divide-slate-200 dark:divide-slate-800">
         {p.tokens?.map((t) => (
           <li key={t.id} className="flex items-center gap-3 py-2 text-sm">
@@ -47,13 +47,13 @@ export function TokensView(p: TokensViewProps) {
             <span className={`rounded px-1.5 py-0.5 text-xs ${t.scope === 'read' ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
               {scopeLabel(t.scope)}
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-faint">
               created {new Date(t.createdAt).toLocaleDateString()}{t.lastUsedAt ? ` · used ${new Date(t.lastUsedAt).toLocaleDateString()}` : ' · never used'}
             </span>
             <button type="button" className="btn-danger text-xs" aria-label={`Revoke ${t.name}`} onClick={() => p.onRevoke(t)}>Revoke</button>
           </li>
         ))}
-        {p.tokens && p.tokens.length === 0 && <li className="py-2 text-sm text-slate-400">No tokens yet.</li>}
+        {p.tokens && p.tokens.length === 0 && <li className="py-2 text-sm text-faint">No tokens yet.</li>}
       </ul>
     </section>
   )

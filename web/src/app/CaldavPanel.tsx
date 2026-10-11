@@ -33,13 +33,13 @@ export function CaldavView(p: CaldavViewProps) {
   return (
     <section className="space-y-3" aria-labelledby="caldav-heading">
       <HelpHeading screen="settings/caldav" id="caldav-heading" className="font-semibold">Calendar apps (CalDAV)</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Sync your tasks with Apple Reminders, Thunderbird, Nextcloud Tasks or any CalDAV client through DAVx⁵. Each project is a
         list (calendar) and the Inbox is its own list. Calendar apps sign in with your email and an app password, never your
         account password.
       </p>
       {p.setting === null ? (
-        <p className="text-sm text-slate-400">CalDAV status is available when you are online.</p>
+        <p className="text-sm text-faint">CalDAV status is available when you are online.</p>
       ) : p.isOwner ? (
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={on} disabled={p.busy} onChange={(e) => p.onToggle(e.target.checked)} />
@@ -77,7 +77,7 @@ export function CaldavView(p: CaldavViewProps) {
 
       <div className="space-y-2">
         <h3 className="text-sm font-medium">App passwords</h3>
-        <p className="text-xs text-slate-500">One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.</p>
+        <p className="text-xs text-muted">One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.</p>
         <div className="flex flex-wrap gap-2">
           <input className="input max-w-xs" aria-label="App password name" placeholder="Name (e.g. iPhone)" value={p.newName}
             onChange={(e) => p.onNameChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') p.onCreate() }} />
@@ -90,22 +90,22 @@ export function CaldavView(p: CaldavViewProps) {
             <div className="mt-2"><button className="btn-ghost text-xs" onClick={p.onDismissSecret}>Done</button></div>
           </div>
         )}
-        {p.error && <p className="text-sm text-red-600">{p.error}</p>}
+        {p.error && <p className="text-sm text-red-600 dark:text-red-400">{p.error}</p>}
         <ul className="divide-y divide-slate-200 dark:divide-slate-800">
           {live.map((x) => (
             <li key={x.id} className="flex items-center gap-3 py-2 text-sm">
               <span className="flex-1">{x.name}</span>
-              <span className="text-xs text-slate-400">created {day(x.createdAt)}{x.lastUsedAt ? ` · used ${day(x.lastUsedAt)}` : ' · never used'}</span>
+              <span className="text-xs text-faint">created {day(x.createdAt)}{x.lastUsedAt ? ` · used ${day(x.lastUsedAt)}` : ' · never used'}</span>
               <button className="btn-danger text-xs" disabled={p.busy} onClick={() => p.onRevoke(x.id)}>Revoke</button>
             </li>
           ))}
           {revoked.map((x) => (
-            <li key={x.id} className="flex items-center gap-3 py-2 text-sm text-slate-400">
+            <li key={x.id} className="flex items-center gap-3 py-2 text-sm text-faint">
               <span className="flex-1 line-through">{x.name}</span>
               <span className="text-xs">revoked {day(x.revokedAt as number)}</span>
             </li>
           ))}
-          {p.passwords && p.passwords.length === 0 && <li className="py-2 text-sm text-slate-400">No app passwords yet.</li>}
+          {p.passwords && p.passwords.length === 0 && <li className="py-2 text-sm text-faint">No app passwords yet.</li>}
         </ul>
       </div>
     </section>

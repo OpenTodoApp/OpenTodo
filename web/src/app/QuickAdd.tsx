@@ -159,7 +159,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   return (
     <form id={formId} onSubmit={(e) => void submit(e)}>
       <div className="flex items-center gap-2">
-        <span className="text-xl leading-none text-emerald-600">+</span>
+        <span className="text-xl leading-none text-emerald-700 dark:text-emerald-400">+</span>
         <input
           ref={inputRef}
           className="input border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent"
@@ -197,7 +197,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
         {voice.enabled && (
           <button
             type="button"
-            className={`relative shrink-0 rounded-full p-1.5 ${voice.listening ? 'bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'}`}
+            className={`relative shrink-0 rounded-full p-1.5 ${voice.listening ? 'bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 'text-faint hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'}`}
             aria-pressed={voice.listening}
             aria-label={voice.listening ? 'Stop dictation' : 'Dictate a task'}
             title={voice.listening ? 'Stop dictation (Esc)' : voiceShortcut ? 'Dictate a task (Shift+V)' : 'Dictate a task'}
@@ -255,7 +255,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                 </span>
               )
             })}
-            <span className="text-slate-500 dark:text-slate-400" data-testid="quick-add-title">
+            <span className="text-muted" data-testid="quick-add-title">
               <span className="sr-only">Title: </span>
               {emptyTitle ? <em>Type a title</em> : <>→ {parsed?.title}</>}
             </span>

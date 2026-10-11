@@ -37,7 +37,7 @@ export function QuickAddSettingsSection() {
         <input type="checkbox" className="mt-0.5" checked={s.enabled} onChange={(e) => update({ ...s, enabled: e.target.checked })} />
         <span>
           Parse natural language in quick add
-          <span className="block text-xs text-slate-500">
+          <span className="block text-xs text-muted">
             Dates and times (“tomorrow at 3pm”), <code>#project</code>, <code>@label</code>, <code>p1</code>–<code>p4</code> and estimates
             (<code>+30m</code>). Put text in "double quotes" to keep it literal. Applies to this device only.
           </span>
@@ -66,7 +66,7 @@ export function QuickAddSettingsSection() {
             </label>
           ))}
         </div>
-        <p className="pl-6 text-xs text-slate-400">English is always on.</p>
+        <p className="pl-6 text-xs text-faint">English is always on.</p>
         <label className="flex items-center gap-2 text-sm">
           Numeric dates like 12/11
           <select

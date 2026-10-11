@@ -2,6 +2,24 @@
 
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Secondary text that switches with the colour scheme, so `text-muted` and
+     `text-faint` meet WCAG AA (4.5:1) on every surface the app uses (white, slate-50
+     and slate-100 in light; slate-950, slate-900 and slate-800 in dark). `muted` is
+     for descriptions and metadata, `faint` for the quietest labels (section names,
+     counts, timestamps). Light: 6.4:1 and 5.2:1 on white; dark: 7.9:1 and 6.6:1 on slate-950. */
+  --color-muted: var(--ot-muted);
+  --color-faint: var(--ot-faint);
+}
+
+:root {
+  --ot-muted: #526075;
+  --ot-faint: #5f6e82;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ot-muted: #94a3b8;
+    --ot-faint: #8695aa;
+  }
 }
 
 html, body, #root {
@@ -22,7 +40,7 @@ body {
 }
 @layer components {
 .btn-primary {
-  @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:opacity-50 bg-emerald-600 text-white hover:bg-emerald-500;
+  @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:opacity-50 bg-emerald-700 text-white hover:bg-emerald-800;
 }
 .btn-ghost {
   @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:opacity-50 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800;
@@ -36,7 +54,7 @@ body {
     dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
 }
 .kbd {
-  @apply rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-slate-500
+  @apply rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-muted
     dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400;
 }
 /* Rich-text notes (collaborative-rich-text). ProseMirror's required base rules
@@ -54,7 +72,7 @@ body {
   @apply bg-slate-50 dark:bg-slate-900/60;
 }
 .notes-editor.is-empty::before {
-  @apply pointer-events-none absolute text-slate-400;
+  @apply pointer-events-none absolute text-faint;
   content: attr(data-placeholder);
 }
 .notes-editor h1 { @apply text-lg font-semibold; }
@@ -73,7 +91,7 @@ body {
   @apply border-emerald-600 bg-emerald-600;
   content: "✓";
 }
-.notes-editor li.task-item[data-checked="true"] > p { @apply text-slate-400 line-through; }
+.notes-editor li.task-item[data-checked="true"] > p { @apply text-faint line-through; }
 .notes-editor code { @apply rounded bg-slate-100 px-1 font-mono text-[0.85em] dark:bg-slate-800; }
 .notes-editor a { @apply text-emerald-700 underline dark:text-emerald-300; }
 .notes-editor .ProseMirror-gapcursor { @apply hidden; }

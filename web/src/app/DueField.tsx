@@ -45,12 +45,12 @@ export function DueField({ task, readOnly = false }: { task: Task; readOnly?: bo
           onChange={(e) => view && setView(e.target.value ? { date: view.date, time: e.target.value } : { date: view.date })} />
         {task.due && <button className="btn-ghost" onClick={() => void updateTask(task.id, { due: null })} aria-label="Clear due date">✕</button>}
       </div>
-      <label className={`flex items-center gap-2 text-xs ${canFix ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400'}`}
+      <label className={`flex items-center gap-2 text-xs ${canFix ? 'text-slate-600 dark:text-slate-300' : 'text-faint'}`}
         title={canFix ? `Keep this time fixed in ${zoned ? task.due!.tz : zone} wherever it is viewed (z)` : 'Set a time to fix it to a time zone'}>
         <input type="checkbox" checked={zoned} disabled={!canFix} onChange={toggleZone} aria-keyshortcuts="z" />
         Fixed to time zone{zoned ? `: ${zoneCity(task.due!.tz!)}` : canFix ? ` (${zoneCity(zone)})` : ''}
       </label>
-      {hint && <p className="text-xs text-slate-500" data-testid="zone-hint">{hint}</p>}
+      {hint && <p className="text-xs text-muted" data-testid="zone-hint">{hint}</p>}
     </div>
   )
 }

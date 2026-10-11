@@ -167,7 +167,7 @@ export function App() {
       return (
         <Centered>
           <p className="font-medium">OpenTodo can't reach the server.</p>
-          <p className="text-sm text-slate-500">Sign in once while online; after that the app works offline.</p>
+          <p className="text-sm text-muted">Sign in once while online; after that the app works offline.</p>
           <button className="btn-primary mt-4" onClick={() => void refresh()}>Retry</button>
         </Centered>
       )
@@ -247,7 +247,7 @@ export function DemoExpiredScreen({ onStarted }: { onStarted: () => void }) {
     <Centered>
       <div data-testid="demo-expired" className="max-w-sm">
         <p className="font-medium">Your demo sandbox has expired</p>
-        <p className="mt-1 text-sm text-slate-500">Sandboxes are deleted after 2 hours of inactivity, a day after they were created, and every night. Its data is gone from the server and from this browser.</p>
+        <p className="mt-1 text-sm text-muted">Sandboxes are deleted after 2 hours of inactivity, a day after they were created, and every night. Its data is gone from the server and from this browser.</p>
         <button className="btn-primary mt-4" disabled={busy} onClick={() => void start()}>{busy ? 'Please wait…' : 'Start a new sandbox'}</button>
         {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
       </div>

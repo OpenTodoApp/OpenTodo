@@ -27,7 +27,7 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
   }
   return (
     <Dialog title="Confirm it's you" onClose={p.onCancel} testId="reauth-dialog">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           This change needs a recent sign-in. Enter your {p.mode === 'password' ? 'password' : 'current code from your authenticator app'} to continue.
         </p>
         <form className="mt-3 space-y-3" onSubmit={submit}>

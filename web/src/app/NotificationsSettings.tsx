@@ -38,16 +38,16 @@ export function NotificationsSettings() {
   return (
     <section className="space-y-2" aria-labelledby="notifications-heading">
       <HelpHeading screen="settings/notifications" id="notifications-heading" className="font-semibold">Notifications</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Reminders always appear inside the app while it is open. Enable notifications on this device to get them while the app is closed.
         Each device decides for itself.
       </p>
       {!s ? (
-        <p className="text-sm text-slate-400">Checking…</p>
+        <p className="text-sm text-faint">Checking…</p>
       ) : !s.available ? (
-        <p className="text-sm text-slate-500">Push notifications are turned off on this server. Reminders are shown in the app.</p>
+        <p className="text-sm text-muted">Push notifications are turned off on this server. Reminders are shown in the app.</p>
       ) : !s.supported ? (
-        <p className="text-sm text-slate-500">This browser does not support push notifications. Installing the app, or opening it over https, may help.</p>
+        <p className="text-sm text-muted">This browser does not support push notifications. Installing the app, or opening it over https, may help.</p>
       ) : (
         <>
           <label className="flex items-center gap-2 text-sm">
@@ -70,7 +70,7 @@ export function NotificationsSettings() {
             />
             Include task titles
           </label>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-faint">
             Without titles a push carries only ids, encrypted; this device shows the title from its own copy of the task.
             With titles the notification is complete even before this device has synced the task. Descriptions are never sent.
           </p>
@@ -92,7 +92,7 @@ export function NotificationsSettings() {
               Send test notification
             </button>
             {s.subscription && (
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-faint">
                 {s.subscription.lastOkAt ? `Last delivered ${new Date(s.subscription.lastOkAt).toLocaleString()}` : 'Nothing delivered yet'}
                 {s.subscription.failures > 0 ? ` · ${s.subscription.failures} failed (${s.subscription.lastError})` : ''}
               </span>
@@ -100,7 +100,7 @@ export function NotificationsSettings() {
           </div>
         </>
       )}
-      {message && <p className={`text-sm ${message.kind === 'error' ? 'text-red-600' : 'text-emerald-700 dark:text-emerald-400'}`} role="status">{message.text}</p>}
+      {message && <p className={`text-sm ${message.kind === 'error' ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`} role="status">{message.text}</p>}
     </section>
   )
 }

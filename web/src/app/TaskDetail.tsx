@@ -25,10 +25,10 @@ import { Markdown } from './Markdown'
 const NotesEditor = lazy(() => import('./NotesEditor'))
 
 const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
-  { p: 1, label: 'P1', cls: 'text-red-600 border-red-500' },
-  { p: 2, label: 'P2', cls: 'text-orange-600 border-orange-500' },
-  { p: 3, label: 'P3', cls: 'text-blue-600 border-blue-500' },
-  { p: 4, label: 'P4', cls: 'text-slate-500 border-slate-400' },
+  { p: 1, label: 'P1', cls: 'text-red-600 dark:text-red-400 border-red-500' },
+  { p: 2, label: 'P2', cls: 'text-orange-700 dark:text-orange-400 border-orange-500' },
+  { p: 3, label: 'P3', cls: 'text-blue-600 dark:text-blue-400 border-blue-500' },
+  { p: 4, label: 'P4', cls: 'text-muted border-slate-400' },
 ]
 
 export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen, onToggleComplete, readOnly = false }: {
@@ -113,7 +113,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           {task.completed_at ? '↶ Reopen' : '✓ Complete'}
         </button>
         {progress.total > 0 && (
-          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-500 dark:bg-slate-800 dark:text-slate-400" title="Completed subtasks">
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-muted dark:bg-slate-800 dark:text-slate-400" title="Completed subtasks">
             {progress.done}/{progress.total}
           </span>
         )}
@@ -122,20 +122,20 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         <button className="btn-ghost touch-target" onClick={onClose} aria-label="Close" data-overlay-close>✕</button>
       </div>
       {readOnly && (
-        <p role="note" className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900">
+        <p role="note" className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-muted dark:border-slate-800 dark:bg-slate-900">
           Read-only: you are a viewer of this shared project.
         </p>
       )}
       <div className="min-w-0 flex-1 overflow-y-auto">
       <fieldset disabled={readOnly} className="min-w-0 space-y-4 p-4">
         {parent && (
-          <button type="button" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(parent.id)} title="Open parent task">
+          <button type="button" className="text-xs text-faint hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(parent.id)} title="Open parent task">
             ↳ {parent.title || 'Untitled'}
             {parent.deleted_at ? ' (deleted)' : parent.completed_at && !task.completed_at ? ' (completed)' : ''}
           </button>
         )}
         {series && (
-          <button type="button" className="block text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(series.id)} title="Open the recurring task">
+          <button type="button" className="block text-xs text-faint hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(series.id)} title="Open the recurring task">
             ↻ {task.completed_at ? 'Completed occurrence' : 'Single occurrence'} of {series.title || 'Untitled'}{series.deleted_at ? ' (deleted)' : ''}
           </button>
         )}
@@ -164,7 +164,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
               <option key={p.id} value={p.id}>{p.name} (archived)</option>
             ))}
           </select>
-          {children.length > 0 && <p className="mt-1 text-xs text-slate-400">Moving this task moves its {children.length === 1 ? 'subtask' : 'subtasks'} too.</p>}
+          {children.length > 0 && <p className="mt-1 text-xs text-faint">Moving this task moves its {children.length === 1 ? 'subtask' : 'subtasks'} too.</p>}
         </Field>
 
         {task.project_id && sections.length > 0 && (
@@ -176,7 +176,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
               <option value="">No section</option>
               {sections.map((s) => <option key={s.id} value={s.id}>{s.name || 'Untitled section'}</option>)}
             </select>
-            {parent && !parent.deleted_at && <p className="mt-1 text-xs text-slate-400">Subtasks are shown in their parent’s section.</p>}
+            {parent && !parent.deleted_at && <p className="mt-1 text-xs text-faint">Subtasks are shown in their parent’s section.</p>}
           </Field>
         )}
 
@@ -191,7 +191,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
               <option key={c.id} value={c.id}>{c.title || 'Untitled'}</option>
             ))}
           </select>
-          {parentError && <p className="mt-1 text-xs text-red-600">{parentError}</p>}
+          {parentError && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{parentError}</p>}
         </Field>
 
         {userId && (
@@ -203,7 +203,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         <Field label="Priority">
           <div className="flex gap-2">
             {PRIORITIES.map(({ p, label, cls }) => (
-              <button key={p} className={`rounded-md border px-3 py-1 text-sm ${cls} ${task.priority === p ? 'bg-slate-100 font-semibold dark:bg-slate-800' : 'opacity-70 hover:opacity-100'}`}
+              <button key={p} aria-pressed={task.priority === p} className={`rounded-md border px-3 py-1 text-sm ${cls} ${task.priority === p ? 'bg-slate-100 font-semibold dark:bg-slate-800' : 'border-dashed hover:bg-slate-50 dark:hover:bg-slate-900'}`}
                 onClick={() => void updateTask(task.id, { priority: p })}>{label}</button>
             ))}
           </div>
@@ -243,8 +243,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
                 >
                   {c.completed_at ? '✓' : ''}
                 </button>
-                <button type="button" className={`min-w-0 flex-1 truncate text-left text-sm ${c.completed_at ? 'text-slate-400 line-through' : ''}`} onClick={() => onOpen?.(c.id)}>
-                  {c.title || <span className="italic text-slate-400">Untitled</span>}
+                <button type="button" className={`min-w-0 flex-1 truncate text-left text-sm ${c.completed_at ? 'text-faint line-through' : ''}`} onClick={() => onOpen?.(c.id)}>
+                  {c.title || <span className="italic text-faint">Untitled</span>}
                 </button>
               </li>
             ))}
@@ -252,7 +252,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           <AddSubtask parent={task} />
         </Field>
 
-        <p className="pt-4 text-xs text-slate-400">
+        <p className="pt-4 text-xs text-faint">
           Created {new Date(task.created_at).toLocaleString()}
           {task.completed_at && <> · Completed {new Date(task.completed_at).toLocaleString()}</>}
         </p>
@@ -282,7 +282,7 @@ function AddSubtask({ parent }: { parent: Task }) {
   }
   return (
     <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2">
-      <span className="text-emerald-600">+</span>
+      <span className="text-emerald-700 dark:text-emerald-400">+</span>
       <input
         ref={ref}
         className="input py-1"
@@ -299,7 +299,7 @@ function AddSubtask({ parent }: { parent: Task }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div role="group" aria-label={label}>
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</span>
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-faint">{label}</span>
       {children}
     </div>
   )
@@ -309,7 +309,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function NotesPreview({ text }: { text: string }) {
   return (
     <div className="notes-host" aria-busy="true">
-      <div className="notes-editor">{text ? <Markdown source={text} /> : <p className="text-slate-400">Notes…</p>}</div>
+      <div className="notes-editor">{text ? <Markdown source={text} /> : <p className="text-faint">Notes…</p>}</div>
     </div>
   )
 }

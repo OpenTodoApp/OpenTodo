@@ -13,7 +13,7 @@ export function initials(name: string): string {
 /** Compact assignee chip (task rows in shared projects). */
 export function AssigneeChip({ name, me }: { name: string; me?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-1 text-slate-500" title={`Assigned to ${name}`} data-assignee>
+    <span className="inline-flex items-center gap-1 text-muted" title={`Assigned to ${name}`} data-assignee>
       <span className="flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 text-[9px] font-semibold text-white">{initials(name)}</span>
       <span className="max-w-24 truncate">{me ? 'You' : name}</span>
     </span>
@@ -79,16 +79,15 @@ export function AssigneePicker({ taskId, userId, onClose, inline = false }: {
       {open && (
         <ul role="listbox" aria-label="Assignees" className={`max-h-56 overflow-y-auto py-1 text-sm ${inline ? 'absolute left-0 right-0 z-10 mt-1 rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900' : ''}`}>
           {options.map((o, i) => (
-            <li key={o.id ?? '__none'} role="option" aria-selected={o.id === current}>
-              <button type="button" tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onClick={() => void pick(o.id)} onMouseEnter={() => setHi(i)}
-                className={`flex w-full items-center gap-2 px-2 py-1.5 text-left ${i === hi ? 'bg-slate-100 dark:bg-slate-800' : ''}`}>
-                <span className="w-4 text-center text-emerald-600">{o.id === current ? '✓' : ''}</span>
+            <li key={o.id ?? '__none'} role="option" aria-selected={o.id === current}
+              onMouseDown={(e) => e.preventDefault()} onClick={() => void pick(o.id)} onMouseEnter={() => setHi(i)}
+              className={`touch-target flex w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-left ${i === hi ? 'bg-slate-100 dark:bg-slate-800' : ''}`}>
+                <span className="w-4 text-center text-emerald-700 dark:text-emerald-400">{o.id === current ? '✓' : ''}</span>
                 <span className="flex-1 truncate">{o.label}</span>
-                {o.sub && <span className="truncate text-xs text-slate-400">{o.sub}</span>}
-              </button>
+                {o.sub && <span className="truncate text-xs text-faint">{o.sub}</span>}
             </li>
           ))}
-          {options.length === 0 && <li className="px-2 py-1.5 text-xs text-slate-400">No member matches.</li>}
+          {options.length === 0 && <li className="px-2 py-1.5 text-xs text-faint">No member matches.</li>}
         </ul>
       )}
     </div>

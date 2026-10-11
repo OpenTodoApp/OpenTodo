@@ -35,7 +35,7 @@ export function AssistantsView(p: AssistantsViewProps) {
   return (
     <section className="space-y-3" aria-labelledby="assistants-heading">
       <HelpHeading screen="settings/assistants" id="assistants-heading" className="font-semibold">AI assistants</HelpHeading>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-muted">
         Let an AI assistant that supports the Model Context Protocol (MCP) read your projects and tasks, for questions like
         “what is on my plate today?”. Access is read-only: an assistant can never change anything. The assistant connects to
         this server with a token you create; the server itself contacts no one. See docs/mcp.md.
@@ -48,14 +48,14 @@ export function AssistantsView(p: AssistantsViewProps) {
       )}
 
       {p.status === null ? (
-        <p className="text-sm text-slate-400">{p.connected ? 'Loading…' : 'Nothing fetched yet.'}</p>
+        <p className="text-sm text-faint">{p.connected ? 'Loading…' : 'Nothing fetched yet.'}</p>
       ) : p.isOwner ? (
         <label className="flex items-start gap-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
           <input type="checkbox" className="mt-0.5" checked={p.status.enabled} disabled={disabled}
             aria-busy={p.busy} onChange={(e) => { if (!p.busy) p.onToggle(e.target.checked) }} />
           <span>
             <span className="font-medium">Allow AI assistants (MCP endpoint)</span>
-            <span className="block text-slate-500">
+            <span className="block text-muted">
               {p.status.enabled
                 ? 'On: every account on this server can connect an assistant with its own token and sees only its own data.'
                 : 'Off: the endpoint answers “not found” until you turn it on.'}
@@ -73,7 +73,7 @@ export function AssistantsView(p: AssistantsViewProps) {
       {p.status && (
         <div className="space-y-2 text-sm">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-slate-500">Endpoint</span>
+            <span className="text-muted">Endpoint</span>
             <code className="break-all rounded bg-slate-100 px-1 dark:bg-slate-800">{endpoint}</code>
             <button type="button" className="btn-ghost text-xs" onClick={() => p.onCopy('endpoint', endpoint)}>{copyLabel('endpoint', 'Copy URL')}</button>
           </div>
@@ -95,19 +95,19 @@ export function AssistantsView(p: AssistantsViewProps) {
         </div>
       )}
 
-      {p.error && <p className="text-sm text-red-600" role="alert">{p.error}</p>}
+      {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
 
       {p.status && (
         <details className="text-sm">
           <summary className="cursor-pointer text-slate-600 dark:text-slate-300">Connection instructions</summary>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-slate-500">
+          <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted">
             <li>Create a read-only token above (or in API tokens below).</li>
             <li>In your assistant, add a remote MCP server (“streamable HTTP”) with the endpoint URL.</li>
             <li>Send the token as the header <code>Authorization: Bearer &lt;token&gt;</code>. Clients that take a JSON entry accept:</li>
           </ol>
           <pre className="mt-2 overflow-x-auto rounded bg-slate-100 p-2 text-xs dark:bg-slate-800" data-scroll-x>{snippet}</pre>
           <button type="button" className="btn-ghost mt-1 text-xs" onClick={() => p.onCopy('snippet', snippet)}>{copyLabel('snippet', 'Copy configuration')}</button>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-faint">
             Tell the assistant your time zone: due dates are evaluated in the time zone it passes (UTC otherwise). Changes made offline on a device appear once it syncs.
           </p>
         </details>
