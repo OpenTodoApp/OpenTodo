@@ -26,6 +26,7 @@ coverage.out
 /web/.vite/
 /web/playwright-report/
 /web/test-results/
+/layout-report/
 
 # Agent worktrees
 /.claude/worktrees/
