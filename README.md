@@ -153,9 +153,12 @@ Details, including building from your fork: [docs/self-hosting/coolify.md](docs/
 
 ### Single binary
 
+Download `opentodo-<os>-<arch>` from the [latest release](https://github.com/pixari/opentodo/releases/latest) (Linux, macOS and Windows; check it with `SHA256SUMS`), or build it yourself:
+
 ```bash
-make build                    # needs Go 1.26+ and Node 22+
-./bin/opentodo                # serves on :8080, data in ./data
+chmod +x opentodo-linux-amd64 && ./opentodo-linux-amd64   # serves on :8080, data in ./data
+# or from source (needs Go 1.26+ and Node 22+):
+make build && ./bin/opentodo
 ```
 
 The binary is fully static (`CGO_ENABLED=0`, pure-Go SQLite) and also offers `opentodo restore`, `opentodo mfa-reset`, `opentodo reset-owner-password`, `opentodo healthcheck` and `opentodo version`.

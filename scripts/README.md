@@ -42,3 +42,11 @@ CHROMIUM_PATH=/path/to/chrome node scripts/e2e-views.mjs
 ## `screenshots.mjs`
 
 Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the screenshots used by `README.md` (`docs/screenshots/*.png`) and the website (`website/assets/shots/*.webp`). Run it against an **empty** data directory; see [`website/README.md`](../website/README.md#refresh-the-screenshots) for the full recipe.
+
+## `release-notes.sh`
+
+Prints the `CHANGELOG.md` section for a version, plus install pointers; the release job in CI uses it as the GitHub release body and fails the release when the section is missing.
+
+```bash
+./scripts/release-notes.sh 0.1.0
+```
