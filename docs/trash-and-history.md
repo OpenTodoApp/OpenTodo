@@ -62,4 +62,13 @@ Archiving is different from deleting. An archived project disappears from the si
 
 When you complete the last task of a project, OpenTodo offers to archive it. Projects without open tasks for 30 days are archived automatically, with a notice that has an undo button. To switch automatic archiving off on a device, untick the option under **Settings → Projects**.
 
-The app has no button yet to bring back a project you archived yourself. Scripts can do it through the [API](api.md) by setting the project's `archived` field to `false`.
+### Bring back an archived project
+
+Open **Settings → Projects**. Under **Archived projects** you see every archived project, with its parent project and how many open tasks it has. Select **Restore** next to one, and it's back in the sidebar with all its tasks. With the keyboard, <kbd>Tab</kbd> to the button and press <kbd>Enter</kbd>.
+
+<picture><source srcset="images/archived-projects-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/archived-projects-light.webp" alt="Settings, Projects section: the automatic archiving option and an Archived projects list with two projects, each with a Restore button."></picture>
+
+- Restoring works offline, like any change, and the project comes back on your other devices after they sync.
+- Restoring brings back that one project. If you archived a project with sub-projects, they stay in the list until you restore each of them.
+- A project you restore by hand isn't archived automatically again on that device.
+- In a shared project, only the owner or an admin can restore it, the same people who can archive it.

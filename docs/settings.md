@@ -43,7 +43,7 @@ When the Day and Week grid starts and ends, and how long your working day is. Ea
 
 - **Start view**: the view this device opens on. See [Views](views.md#choose-where-the-app-opens).
 - **Keyboard**: turn on Vim keybindings. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
-- **Projects**: archive projects automatically after 30 days without open tasks. See [Trash and history](trash-and-history.md#archived-projects).
+- **Projects**: archive projects automatically after 30 days without open tasks, and bring back archived projects with **Restore**. See [Trash and history](trash-and-history.md#archived-projects).
 - **Quick add**: turn natural-language parsing on or off, pick the languages it understands, and the order of day and month in dates like `12/11`. See [Quick add syntax](quick-add.md#languages).
 - **Voice capture**: dictate tasks into quick add. Off until you turn it on, and the app explains first what your browser does with the audio. See [Quick add syntax](quick-add.md#voice).
 - **Capture**: the **Add to OpenTodo** bookmarklet, to save the page you're reading as a task. See [Capturing pages](capture.md).

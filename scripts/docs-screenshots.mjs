@@ -146,6 +146,16 @@ async function plainSetup() {
   const home = await api('POST', '/api/v1/projects', { name: 'Home renovation', color: '#f59e0b' })
   await api('POST', `/api/v1/projects/${home.id}/members`, { email: 'bob@example.com', role: 'editor' })
   for (const title of ['Get three quotes for the kitchen', 'Pick paint colours', 'Order new taps']) await api('POST', '/api/v1/tasks', { title, project_id: home.id })
+  // Archived projects for Settings → Projects (unarchive-projects).
+  const trip = await api('POST', '/api/v1/projects', { name: 'Trip to Lisbon', color: '#0ea5e9' })
+  for (const title of ['Book flights', 'Reserve the guesthouse']) {
+    const t = await api('POST', '/api/v1/tasks', { title, project_id: trip.id })
+    await api('PATCH', `/api/v1/tasks/${t.id}`, { completed_at: Date.now() - 40 * 86_400_000 })
+  }
+  await api('PATCH', `/api/v1/projects/${trip.id}`, { archived: true })
+  const garden = await api('POST', '/api/v1/projects', { name: 'Garden', color: '#22c55e', parent_id: home.id })
+  await api('POST', '/api/v1/tasks', { title: 'Plant the spring bulbs', project_id: garden.id })
+  await api('PATCH', `/api/v1/projects/${garden.id}`, { archived: true })
   await p.reload(); await settle(p, 1500)
   const state = await c.storageState(); await c.close(); return { state, home }
 }
@@ -278,6 +288,15 @@ const shots = [
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 240 }
+  } },
+  { name: 'archived-projects', server: P, async run(p) {
+    await go(p, plainBase, '/settings', () => p.getByRole('heading', { name: 'Settings', level: 1 }).waitFor())
+    const h = p.getByRole('heading', { level: 2, name: 'Projects' }); await h.waitFor()
+    await p.getByRole('heading', { name: 'Archived projects' }).waitFor()
+    await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
+    const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
+    const list = await p.getByTestId('archived-projects').boundingBox()
+    return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: list.y + list.height - top.y + 44 }
   } },
   { name: 'members', server: P, async run(p) {
     await go(p, plainBase, '/settings', () => p.getByRole('heading', { name: 'Settings', level: 1 }).waitFor())

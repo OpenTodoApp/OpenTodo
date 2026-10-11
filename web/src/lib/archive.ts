@@ -83,10 +83,54 @@ export async function runAutoArchive(now = Date.now(), intervalMs = DAY_MS): Pro
   return list
 }
 
-/** Undo an automatic archive and never archive that project automatically again on this device. */
-export async function undoAutoArchive(id: string): Promise<void> {
+/**
+ * Restore an archived project (OpenSpec `unarchive-projects`): one op on the
+ * existing `archived` field, so it applies at once, works offline and converges.
+ * Only this project is restored; archived descendants stay archived. The project
+ * joins this device's skip list so the daily pass does not archive it again.
+ */
+export async function unarchiveProject(id: string): Promise<void> {
   const skip = new Set(await getMeta<string[]>(AUTO_ARCHIVE_SKIP_KEY, []))
   skip.add(id)
   await setMeta(AUTO_ARCHIVE_SKIP_KEY, [...skip])
   await updateProject(id, { archived: false })
+}
+
+/** Undo an automatic archive and never archive that project automatically again on this device. */
+export const undoAutoArchive = unarchiveProject
+
+/** One row of Settings → Projects → Archived projects. */
+export interface ArchivedProject {
+  project: Project
+  /** Name of the parent project, when it is a sub-project of a live one. */
+  parentName: string | null
+  /** Open (not completed, not deleted) tasks directly in the project. */
+  open: number
+  /** Whether the user's role allows restoring it (the same roles that may archive). */
+  canRestore: boolean
+}
+
+/** Archived, non-deleted projects sorted by name, with what the list shows for each. */
+export function archivedProjects(
+  projects: Iterable<Project>, tasks: Iterable<Task>, memberships: Map<string, Membership> = new Map(),
+): ArchivedProject[] {
+  const all = [...projects]
+  const byId = new Map(all.map((p) => [p.id, p]))
+  const open = new Map<string, number>()
+  for (const t of tasks) {
+    if (t.deleted_at || t.completed_at || !t.project_id) continue
+    open.set(t.project_id, (open.get(t.project_id) ?? 0) + 1)
+  }
+  return all
+    .filter((p) => p.archived && !p.deleted_at)
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+    .map((p) => {
+      const parent = p.parent_id ? byId.get(p.parent_id) : undefined
+      return {
+        project: p,
+        parentName: parent && !parent.deleted_at ? parent.name : null,
+        open: open.get(p.id) ?? 0,
+        canRestore: canEditProject(roleOf(p.id, memberships)),
+      }
+    })
 }

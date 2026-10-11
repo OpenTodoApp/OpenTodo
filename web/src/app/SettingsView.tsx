@@ -5,6 +5,7 @@ import { getAutoArchive, setAutoArchive } from '../lib/archive'
 import { bookmarklet } from '../lib/share'
 import { useSyncStatus } from '../lib/sync'
 import type { User } from '../lib/types'
+import { ArchivedProjectsSection } from './ArchivedProjects'
 import { AssistantsPanel } from './AssistantsPanel'
 import { BackupsPanel } from './BackupsPanel'
 import { QuickAddSettingsSection } from './QuickAddSettings'
@@ -188,7 +189,7 @@ function KeyboardSection() {
   )
 }
 
-/** Per-device opt-out of automatic archiving (trash-and-history); stored in local meta. */
+/** Per-device opt-out of automatic archiving (trash-and-history), stored in local meta, and the archived projects list (unarchive-projects). */
 function AutoArchiveSection() {
   const on = useLiveQuery(getAutoArchive, [], true)
   return (
@@ -199,6 +200,7 @@ function AutoArchiveSection() {
         Archive projects automatically after 30 days without open tasks (this device)
       </label>
       <p className="text-sm text-slate-500">Each device keeps its own setting. Deleted items stay in the <a className="underline" href="/trash" onClick={(e) => { e.preventDefault(); navigate({ view: 'trash' }) }}>Trash</a> until restored or purged.</p>
+      <ArchivedProjectsSection />
     </section>
   )
 }
