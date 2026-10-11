@@ -6,7 +6,7 @@ CLI_PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 EXT_ZIP := dist/opentodo-browser-extension.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png
 
-.PHONY: all web server cli cli-release cli-smoke extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check
+.PHONY: all web server cli cli-release cli-smoke extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check
 
 all: build
 
@@ -84,7 +84,29 @@ openspec-validate:
 	npx --yes @fission-ai/openspec@latest validate --all --strict
 
 ## Everything CI runs.
-check: lint test openspec-validate
+## Documentation (user-documentation): regenerate website/docs/**, the in-app help
+## bundle web/src/generated/help.json and the keyboard guide's tables from docs/.
+docs:
+	cd web && npm run docs:build
+
+## Front matter, links, anchors, images, spec coverage, help ids, generated files.
+docs-check:
+	cd web && npm run docs:check
+
+## Screenshots of the user guide (docs/images/*.webp, light and dark) from the seeded
+## demo data. Needs Playwright with Chromium (CHROMIUM_PATH to use another binary).
+DOCS_VERSION := $(shell sed -n 's/^## \[\([0-9][0-9.]*\)\].*/\1/p' CHANGELOG.md | head -1)
+docs-screenshots: web
+	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=$(DOCS_VERSION)" -o bin/opentodo-docs ./cmd/opentodo
+	OPENTODO_BIN=bin/opentodo-docs node scripts/docs-screenshots.mjs
+	$(MAKE) docs
+
+## Docs website in a browser: sideways scrolling, axe-core, search, no-JS (needs
+## Playwright with Chromium and `npm ci` in web/ for axe-core).
+docs-site-check:
+	node scripts/e2e-docs.mjs docs-report
+
+check: lint test docs-check openspec-validate
 
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t opentodo:$(VERSION) .

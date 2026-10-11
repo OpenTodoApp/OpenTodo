@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError } from '../lib/api'
 import { scopeLabel, type ApiToken, type TokenScope } from '../lib/assistants'
 
@@ -18,7 +19,7 @@ export interface TokensViewProps {
 export function TokensView(p: TokensViewProps) {
   return (
     <section className="space-y-2" aria-labelledby="tokens-heading">
-      <h2 id="tokens-heading" className="font-semibold">API tokens</h2>
+      <HelpHeading screen="settings/tokens" id="tokens-heading" className="font-semibold">API tokens</HelpHeading>
       <p className="text-sm text-slate-500">
         Use a token from scripts or a CLI: <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">Authorization: Bearer &lt;token&gt;</code>.
         A read-only token can read everything you can but is refused on every change. See docs/api.md.

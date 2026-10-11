@@ -1,3 +1,12 @@
+---
+title: Architecture
+summary: How data flows from a tap on the screen to every device: server packages, tables, client modules and the build.
+audience: developer
+section: Internals
+specs: []
+screens: []
+order: 10
+---
 # Architecture
 
 OpenTodo is a local-first application with a thin sync server. Every device holds a full copy of the user's data in IndexedDB and edits it offline; the server keeps an append-only operation log, resolves it to current values, and offers the same data to other devices, scripts and integrations.

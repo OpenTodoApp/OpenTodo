@@ -5,7 +5,10 @@
 //   - an overlay or its close control is outside the viewport or not clickable,
 //   - an overlay does not close with Escape, with its close button (sheets and
 //     dialogs) or with a tap outside (popovers),
-//   - a control on the touch screen is smaller than 44 × 44 px or only appears on hover.
+//   - a control on the touch screen is smaller than 44 × 44 px or only appears on hover,
+//   - (user-documentation) the Help view or the contextual help panel has a serious or
+//     critical axe-core issue, help does not open offline, or text typed in the share
+//     dialog is lost when the help panel opens and closes over it.
 // Every failure names screen, overlay, viewport, theme and engine, and saves a
 // screenshot into the report directory.
 //
@@ -22,7 +25,25 @@ const pw = await import('playwright').catch(async () => {
   const { execSync } = await import('node:child_process')
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { execSync } from 'node:child_process'
+import { join } from 'node:path'
+
+// axe-core (web devDependency, user-documentation task 5.1), or a global install.
+const AXE = (() => {
+  try { return readFileSync(createRequire(new URL('../web/package.json', import.meta.url)).resolve('axe-core/axe.min.js'), 'utf8') } catch { /* global */ }
+  try { return readFileSync(join(execSync('npm root -g').toString().trim(), 'axe-core/axe.min.js'), 'utf8') } catch { return null }
+})()
+async function axeProblems(p, include) {
+  if (!AXE) return ['axe-core is not installed (npm ci in web/)']
+  await p.addScriptTag({ content: AXE })
+  return p.evaluate(async (sel) => {
+    // eslint-disable-next-line no-undef
+    const r = await axe.run(sel ? { include: [sel] } : document, { resultTypes: ['violations'] })
+    return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `axe ${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')})`)
+  }, include ?? null)
+}
 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const outDir = process.argv[2] ?? 'layout-report'
@@ -117,7 +138,7 @@ function screens(ids) {
     { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'activity', path: '/activity', ready: heading(/Activity/) },
-    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'section-menu', 'share', 'mention-picker', 'assignee-picker'] },
+    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'section-menu', 'share', 'mention-picker', 'assignee-picker', 'help-panel'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), board: true },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
@@ -126,6 +147,9 @@ function screens(ids) {
     { name: 'views', path: '/views', ready: heading('Views'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
     { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications', 'voice-consent', 'delete-user'] },
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
+    // In-app Help (user-documentation): checked with axe as well, and offline.
+    { name: 'help', path: '/help', ready: heading('Help'), axe: true, offline: '/help/keyboard' },
+    { name: 'help-guide', path: '/help/sections-and-boards', ready: heading('Sections and boards'), axe: true },
   ]
 }
 
@@ -247,6 +271,28 @@ const OVERLAYS = {
     if (!(await d.isVisible())) return null
     return { overlay: d, kind: 'dialog' }
   },
+  // Contextual help over the share dialog (user-documentation 4.2): the panel opens on
+  // top, and closing it leaves the dialog with the typed email in place.
+  async 'help-panel'(p) {
+    await p.getByRole('button', { name: /^Share/ }).first().click()
+    const dialog = p.getByRole('dialog', { name: /^Share/ })
+    await dialog.waitFor()
+    const email = dialog.getByRole('textbox').first()
+    await email.fill('chen@example.com')
+    const trigger = dialog.locator('[data-help-screen="share-dialog"]')
+    await trigger.click()
+    const overlay = p.locator('[data-help-panel]')
+    return {
+      overlay, trigger, kind: 'dialog', axe: true,
+      after: async () => {
+        if (await overlay.isVisible()) await p.keyboard.press('Escape')
+        if (!(await dialog.isVisible())) throw new Error('closing help also closed the share dialog')
+        const v = await email.inputValue()
+        if (v !== 'chen@example.com') throw new Error(`the typed email was lost when help opened (now "${v}")`)
+        await p.keyboard.press('Escape')
+      },
+    }
+  },
   async 'delete-user'(p) {
     const del = p.getByRole('button', { name: 'Delete', exact: true }).first()
     if (!(await del.count())) return null
@@ -350,7 +396,8 @@ async function runCombo(engine, width, theme, ids) {
   const launcher = pw[engine]
   const exe = engine === 'chromium' ? process.env.CHROMIUM_PATH : engine === 'webkit' ? process.env.WEBKIT_PATH : undefined
   const browser = await launcher.launch(exe ? { executablePath: exe } : {})
-  const ctxOpts = { viewport: { width, height: HEIGHTS[width] ?? 900 }, colorScheme: theme, hasTouch: true, isMobile: true, deviceScaleFactor: 1, locale: 'en-GB', timezoneId: 'UTC' }
+  // bypassCSP lets the check inject axe-core into the app's strict Content-Security-Policy.
+  const ctxOpts = { viewport: { width, height: HEIGHTS[width] ?? 900 }, colorScheme: theme, hasTouch: true, isMobile: true, deviceScaleFactor: 1, locale: 'en-GB', timezoneId: 'UTC', bypassCSP: true }
   const fail = async (page, screen, overlay, msg) => {
     const name = `${engine}-${width}-${theme}-${screen}${overlay ? '-' + overlay : ''}`.replace(/[^a-z0-9-]/gi, '_')
     failures.push(`${screen}${overlay ? ' › ' + overlay : ''} [${tag}]: ${msg}`)
@@ -398,6 +445,22 @@ async function runCombo(engine, width, theme, ids) {
       checked++
       for (const m of await p.evaluate(pageOverflow)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
+      // The Help view's own content; the app chrome around it is outside this change.
+      if (s.axe) for (const m of await axeProblems(p, '[data-help-view]')) await fail(p, s.name, null, m)
+      if (s.offline && engine === 'chromium') {
+        // Help ships with the app: offline, another guide still opens from the precache.
+        await ctx.setOffline(true)
+        try {
+          await p.goto(base + s.offline)
+          await p.getByRole('heading', { level: 1 }).first().waitFor({ timeout: 10000 })
+          await p.getByLabel('Search help').fill('board')
+          await p.locator('[data-help-result]').first().waitFor({ timeout: 5000 })
+        } catch (e) {
+          await fail(p, s.name, null, `help does not work offline: ${e.message.split('\n')[0]}`)
+        } finally {
+          await ctx.setOffline(false)
+        }
+      }
       await shot(p, s.name)
       for (const o of s.overlays ?? []) {
         try {
@@ -405,6 +468,10 @@ async function runCombo(engine, width, theme, ids) {
           const res = await OVERLAYS[o](p, { width })
           if (!res) continue
           checked++
+          if (res.axe) {
+            await res.overlay.waitFor({ state: 'visible', timeout: 5000 })
+            for (const m of await axeProblems(p, '[data-help-panel]')) await fail(p, s.name, o, m)
+          }
           await checkOverlay(p, s.name, o, res, fail, shot)
           if (res.after) await res.after().catch(() => {})
         } catch (e) {

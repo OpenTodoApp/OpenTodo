@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { createPasskey, isCancellation, passkeysSupported, rpIdMatches } from '../lib/passkeys'
@@ -144,7 +145,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
 
   return (
     <section className="space-y-2" aria-labelledby="security-heading" data-testid="security-panel">
-      <h2 id="security-heading" className="font-semibold">Security</h2>
+      <HelpHeading screen="settings/security" id="security-heading" className="font-semibold">Security</HelpHeading>
       <p className="text-sm text-slate-500">
         Passkeys let you sign in with your device's fingerprint, face or PIN instead of your password. Your password keeps working.
         Register a passkey on a second device so losing one is never a problem.

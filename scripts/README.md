@@ -52,6 +52,27 @@ node scripts/e2e-layout.mjs [report-dir]
 
 Environment: `OPENTODO_URL`, `ENGINES` (default `chromium,webkit`), `WIDTHS` (`360,390,768`), `THEMES` (`light,dark`), `ONLY` (screen names), `CONCURRENCY` (3), `SHOTS=all` (also save a screenshot of every screen and overlay), `CHROMIUM_PATH`, `WEBKIT_PATH`. When you add a screen or an overlay, add it to the `screens()` and `OVERLAYS` tables in the script.
 
+The check also covers the in-app Help (OpenSpec change `user-documentation`): the Help view and a guide are run through axe-core (serious and critical issues fail), Help is opened offline from the service worker's precache (Chromium), and the contextual help panel is opened over the share dialog with an email typed into it, which must still be there after the panel closes. axe-core comes from `web/node_modules` (run `npm ci` in `web/`); the context uses `bypassCSP` so it can be injected.
+
+## `e2e-docs.mjs`
+
+Browser check of the docs website (`website/docs/`, OpenSpec change `user-documentation`), also run by the `layout` CI job: serves `website/` like its nginx does and opens a sample of pages at 360, 390 and 1280 px in light and dark. It fails on sideways scrolling, on serious or critical axe-core issues, when searching "recurring" does not list the recurring guide and the rule or quick add reference, when the result count is not announced or a result does not open with the keyboard, and when a page without JavaScript lacks its heading or working navigation (the search form must be hidden then). Third-party requests (fonts, analytics) are blocked, so the pages must work without them.
+
+```bash
+make docs-site-check           # or: node scripts/e2e-docs.mjs [report-dir]
+```
+
+Environment: `PAGES` (comma-separated paths), `WIDTHS` (`360,390,1280`), `CHROMIUM_PATH`.
+
+## `docs-screenshots.mjs`
+
+Captures the user guide's screenshots (`docs/images/<name>-{light,dark}.webp`, plus small `card-<name>-*.webp` thumbnails for the docs landing page) from the seeded demo data. It starts two throwaway servers from a binary itself: a demo instance (`OPENTODO_DEMO=true`, one sandbox, the demo banner hidden) for everyday screens and a fresh ordinary instance for sign-in, settings and sharing screens the demo switches off. Desktop shots are 1200×760 at 1.25×, phone shots 390×780 at 1.5×, WebP quality 0.72, encoded by Chromium; the whole set is about 2.3 MB. `make docs-screenshots` builds the web app and a binary that reports the latest released version, runs the script, then `make docs`.
+
+```bash
+make docs-screenshots
+OPENTODO_BIN=bin/opentodo node scripts/docs-screenshots.mjs [name,name]   # a subset
+```
+
 ## `screenshots.mjs`
 
 Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the screenshots used by `README.md` (`docs/screenshots/*.png`) and the website (`website/assets/shots/*.webp`). Run it against an **empty** data directory; see [`website/README.md`](../website/README.md#refresh-the-screenshots) for the full recipe.

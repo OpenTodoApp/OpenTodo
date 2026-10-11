@@ -1,4 +1,5 @@
 import { setMeta } from '../lib/db'
+import { HelpHeading } from './help/HelpLink'
 import { GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from '../lib/calendar'
 import { formatMinutes } from '../lib/duration'
 import { useGridPrefs } from './CalendarView'
@@ -13,7 +14,7 @@ export function CalendarSettingsSection() {
   const lengths = DAY_LENGTHS.includes(prefs.dayLength) ? DAY_LENGTHS : [...DAY_LENGTHS, prefs.dayLength].sort((a, b) => a - b)
   return (
     <section className="space-y-2">
-      <h2 className="font-semibold">Calendar</h2>
+      <HelpHeading screen="settings/calendar" className="font-semibold">Calendar</HelpHeading>
       <p className="text-sm text-slate-500">
         Working hours and day length for the Day and Week views (<span className="kbd">g</span> <span className="kbd">d</span>,{' '}
         <span className="kbd">g</span> <span className="kbd">w</span>). Each device keeps its own; they are not synced.

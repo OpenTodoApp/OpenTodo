@@ -8,7 +8,9 @@
     "build": "node -e \"require('node:fs').rmSync('../internal/web/dist/assets', { recursive: true, force: true })\" && tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "docs:build": "node scripts/docs/build.mjs",
+    "docs:check": "node scripts/docs/check.mjs"
   },
   "dependencies": {
     "dexie": "4.4.6",
@@ -32,7 +34,9 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
+    "axe-core": "4.13.0",
     "fake-indexeddb": "6.2.5",
+    "marked": "18.0.14",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vite": "8.3.4",

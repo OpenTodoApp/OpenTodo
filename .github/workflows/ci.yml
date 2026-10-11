@@ -29,6 +29,9 @@ jobs:
         working-directory: web
       - run: npm test
         working-directory: web
+      - name: Docs check (front matter, links, images, spec coverage, generated files current)
+        run: npm run docs:check
+        working-directory: web
       - run: npm run build
         working-directory: web
       - uses: actions/upload-artifact@v7
@@ -68,8 +71,10 @@ jobs:
   # Opens every screen and overlay at 360/390/768 px, light and dark, in Chromium
   # and WebKit (Safari's engine) and fails on sideways scrolling, overlays or
   # close buttons off screen, overlays that do not close, and touch targets
-  # under 44 px (OpenSpec change mobile-layout). Screenshots of failures are
-  # uploaded as the layout-report artifact.
+  # under 44 px (OpenSpec change mobile-layout). The Help view, the contextual
+  # help panel and the docs website are also checked with axe-core
+  # (user-documentation). Screenshots of failures are uploaded as the
+  # layout-report artifact.
   layout:
     name: Layout check (Chromium, WebKit)
     runs-on: ubuntu-latest
@@ -82,11 +87,16 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
       - uses: actions/download-artifact@v8
         with:
           name: web-dist
           path: internal/web/dist
       - run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/opentodo ./cmd/opentodo
+      # axe-core for the accessibility checks (web devDependency).
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
       - name: Install Playwright with Chromium and WebKit
         run: |
           npm i -g playwright@1.56.1
@@ -96,6 +106,10 @@ jobs:
           OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
           for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
           node scripts/e2e-layout.mjs layout-report
+      # The docs website (user-documentation): no sideways scrolling at 360/390/1280 px,
+      # axe-core without serious or critical issues, search, and pages without JavaScript.
+      - name: Check the docs website
+        run: node scripts/e2e-docs.mjs layout-report/docs
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

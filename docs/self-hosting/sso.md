@@ -1,3 +1,11 @@
+---
+title: Single sign-on
+summary: Connect an OpenID Connect provider, link accounts, SSO-only mode and break-glass access for the owner.
+audience: admin
+specs: [oidc-login]
+screens: []
+order: 40
+---
 # Single sign-on (OpenID Connect)
 
 OpenTodo can let people sign in with an identity provider you already run: Authentik, Keycloak, Authelia, Zitadel, Pocket ID, Kanidm, or a hosted login service. Any provider that supports OpenID Connect discovery and the authorization-code flow with PKCE works. Nothing is needed to run OpenTodo without it: the feature is off until you configure a provider.

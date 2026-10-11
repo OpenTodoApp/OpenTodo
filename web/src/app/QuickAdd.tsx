@@ -1,4 +1,5 @@
 import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { HelpLink } from './help/HelpLink'
 import { describeDue, todayISO } from '../lib/dates'
 import { createLabel, LabelExistsError } from '../lib/labels'
 import {
@@ -261,6 +262,8 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           </div>
         )}
       </div>
+      {/* Contextual help (user-documentation): shown while the line is being parsed. */}
+      {chips.length > 0 && <div className="-mt-0.5 pl-5"><HelpLink screen="quick-add" topic="Quick add" /></div>}
     </form>
   )
 })

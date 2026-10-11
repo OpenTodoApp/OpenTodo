@@ -35,7 +35,8 @@ describe('EmailInboxView', () => {
   it('says when the operator has not enabled the feature, with no controls', () => {
     const html = render({ inbox: inbox({ enabledByOperator: false, address: null }) })
     expect(html).toContain('operator has not enabled')
-    expect(html).not.toContain('<button')
+    // Only the Help link (user-documentation) remains.
+    expect(html.replace(/<button[^>]*data-help-screen[\s\S]*?<\/button>/g, '')).not.toContain('<button')
     expect(html).not.toContain('type="checkbox"')
   })
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError } from '../lib/api'
 import type { EmailInbox } from '../lib/types'
 
@@ -33,7 +34,7 @@ export function EmailInboxView(p: EmailInboxViewProps) {
   const dirty = inbox !== null && parseAllowlist(p.draft).join('\n') !== inbox.allowlist.join('\n')
   return (
     <section className="space-y-3" aria-labelledby="email-inbox-heading">
-      <h2 id="email-inbox-heading" className="font-semibold">Email to task</h2>
+      <HelpHeading screen="settings/email" id="email-inbox-heading" className="font-semibold">Email to task</HelpHeading>
       <p className="text-sm text-slate-500">
         Forward or send any email to your personal address and it becomes a task in your Inbox: the subject is the title
         (without “Re:” or “Fwd:”), the text is the description, and attachment names are listed. New tasks reach your

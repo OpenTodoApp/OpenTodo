@@ -1,3 +1,11 @@
+---
+title: Public demo instance
+summary: Run a public demo with a private sandbox per visitor: limits, expiry, the nightly reset and what is switched off.
+audience: admin
+specs: [demo-mode]
+screens: []
+order: 60
+---
 # Running a public demo instance
 
 `OPENTODO_DEMO=true` turns an OpenTodo server into a public showroom: visitors click **Try the demo** on the sign-in screen and land in a **private sandbox** full of realistic data. Nobody sees anybody else's sandbox, and every sandbox is deleted after two hours without activity, a day after it was created at the latest, and every night. Features that could be abused on a public server are switched off. Without the variable nothing changes.

@@ -1,17 +1,46 @@
+---
+layout: index
+title: OpenTodo docs
+summary: How to use OpenTodo day to day, run your own server, and connect it to other tools.
+---
 # OpenTodo documentation
 
 Start with the [README](../README.md) for the feature overview, quick start and configuration table.
 
 ## Using OpenTodo
 
+The same guides are published, with screenshots and search, at [opentodo.pixari.dev/docs](https://opentodo.pixari.dev/docs/).
+
 | Guide | What it covers |
+| --- | --- |
+| [Getting started](getting-started.md) | From the demo or your first sign-in to adding, scheduling and completing a task |
+| [Installing the app](install-app.md) | Home screen and desktop install on iPhone, Android, Windows, macOS and Linux |
+| [Tasks and projects](tasks-and-projects.md) | Editing tasks, notes, subtasks, priorities, projects and sub-projects |
+| [Views](views.md) | Inbox, Today, Upcoming, the calendar, saved views, dashboards and the start view |
+| [Sections and boards](sections-and-boards.md) | Sections in a project and the board layout |
+| [Labels and filters](labels-and-filters.md) | Labels across projects and the filter language |
+| [Recurring tasks and reminders](recurring-and-reminders.md) | Repeat rules, skipping, and reminders |
+| [Time blocking](time-blocking.md) | Estimates and the Day and Week calendar |
+| [Sharing and comments](sharing.md) | Roles, invitations, assignments, comments and the activity feed |
+| [Notifications](notifications.md) | The bell, reminder pop-ups and push notifications |
+| [Offline and sync](offline-and-sync.md) | Working offline, the sync status and several devices |
+| [Keyboard shortcuts](keyboard.md) | Every shortcut, generated from the app, and Vim keybindings |
+| [Account security](account-security.md) | Passkeys, two-factor authentication, password and sign-ins |
+| [Import and export](import-export.md) | Downloading your data and importing from files |
+| [Trash and history](trash-and-history.md) | Restoring deleted items, task history and archived projects |
+| [Settings](settings.md) | A tour of every section of Settings |
+| [Troubleshooting and FAQ](troubleshooting.md) | Fixes for common problems and frequent questions |
+
+### Reference
+
+| Page | What it covers |
 | --- | --- |
 | [Quick add syntax](quick-add.md) | Natural-language capture in six languages, preview chips, voice capture |
 | [Filter queries](filters.md) | The filter language, the Filter view, saved views and dashboards |
-| [Recurring tasks](recurrence.md) | Rule grammar, how next dates are computed, completing, skipping and detaching |
-| [Reminders and notifications](reminders.md) | Relative and absolute reminders, snooze, web push and its privacy |
+| [Recurring task rules](recurrence.md) | Rule grammar, how next dates are computed, completing, skipping and detaching |
+| [Reminders reference](reminders.md) | Relative and absolute reminders, snooze, web push and its privacy |
 | [Capturing pages](capture.md) | Share sheet, bookmarklet and browser extension |
-| [Importing data](import.md) | Own export, CSV and other apps' JSON exports; duplicates and undo |
+| [Import formats](import.md) | Own export, CSV and other apps' JSON exports; duplicates and undo |
 | [End-to-end encryption](e2ee.md) | What is encrypted, the threat model, devices, recovery and limits |
 
 ## Self-hosting and operations

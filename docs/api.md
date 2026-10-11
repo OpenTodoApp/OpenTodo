@@ -1,3 +1,12 @@
+---
+title: HTTP API
+summary: Authentication, every route, entity fields, error codes and examples for scripts and integrations.
+audience: developer
+section: Integrations
+specs: [http-api]
+screens: []
+order: 10
+---
 # HTTP API
 
 Base path: `/api/v1`. All requests and responses are JSON. Errors look like:

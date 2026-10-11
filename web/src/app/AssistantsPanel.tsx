@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, isNetworkError } from '../lib/api'
 import {
   cacheStatus, connectionSnippet, describeAssistantsError, loadCachedStatus, type McpStatus,
@@ -33,7 +34,7 @@ export function AssistantsView(p: AssistantsViewProps) {
   const copyLabel = (t: CopyTarget, label: string) => (p.copied === t ? 'Copied' : label)
   return (
     <section className="space-y-3" aria-labelledby="assistants-heading">
-      <h2 id="assistants-heading" className="font-semibold">AI assistants</h2>
+      <HelpHeading screen="settings/assistants" id="assistants-heading" className="font-semibold">AI assistants</HelpHeading>
       <p className="text-sm text-slate-500">
         Let an AI assistant that supports the Model Context Protocol (MCP) read your projects and tasks, for questions like
         “what is on my plate today?”. Access is read-only: an assistant can never change anything. The assistant connects to

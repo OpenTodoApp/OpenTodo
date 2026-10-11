@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { HelpLink } from './help/HelpLink'
 import { api, ApiError } from '../lib/api'
 import { canManage, grantableRoles } from '../lib/sharing'
 import { requestSync } from '../lib/sync'
@@ -121,7 +122,10 @@ export function ShareDialog({ project, userId, cached, onClose }: {
             )
           })}
         </ul>
-        <p className="mt-3 text-xs text-slate-400">Only people who already have an account on this server can be added. Labels stay personal.</p>
+        <p className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+          <span>Only people who already have an account on this server can be added. Labels stay personal.</span>
+          <HelpLink screen="share-dialog" topic="Sharing projects" />
+        </p>
         <button className="btn-ghost mt-3 w-full" onClick={onClose}>Close <span className="kbd ml-1">Esc</span></button>
     </Dialog>
   )

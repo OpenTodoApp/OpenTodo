@@ -1,4 +1,5 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { qrMatrix, qrPath } from '../lib/qr'
@@ -267,7 +268,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
   const st = p.status
   return (
     <section className="space-y-3" aria-labelledby="mfa-heading" data-testid="mfa-panel">
-      <h2 id="mfa-heading" className="font-semibold">Two-factor authentication</h2>
+      <HelpHeading screen="settings/two-factor" id="mfa-heading" className="font-semibold">Two-factor authentication</HelpHeading>
       <p className="text-sm text-slate-500">
         After your password, sign-in asks for a six-digit code from an authenticator app on your phone. Signing in with a passkey that
         checks your fingerprint, face or PIN skips the code. Your server makes and checks the codes itself and sends nothing anywhere.

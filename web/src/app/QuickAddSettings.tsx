@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import {
   BUNDLED_LANGUAGES, loadQuickAddSettings, type QuickAddSettings, resolveDayMonthOrder, resolveLanguages, saveQuickAddSettings,
 } from '../lib/nlp'
@@ -31,7 +32,7 @@ export function QuickAddSettingsSection() {
 
   return (
     <section className="space-y-3">
-      <h2 className="font-semibold">Quick add</h2>
+      <HelpHeading screen="settings/quick-add" className="font-semibold">Quick add</HelpHeading>
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" className="mt-0.5" checked={s.enabled} onChange={(e) => update({ ...s, enabled: e.target.checked })} />
         <span>

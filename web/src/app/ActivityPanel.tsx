@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import type { AuditEvent, User } from '../lib/types'
@@ -47,7 +48,7 @@ export function ActivityPanel() {
 export function ActivityView({ status, events, error }: { status: LogStatus; events: AuditEvent[]; error?: string | null }) {
   return (
     <div className="space-y-2">
-      <h3 id="activity-heading" className="font-medium">Recent activity</h3>
+      <HelpHeading screen="settings/sessions" level={3} id="activity-heading" className="font-medium">Recent activity</HelpHeading>
       <p className="text-sm text-slate-500">Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server.</p>
       {status === 'offline' ? (
         <NeedsConnection what="activity log" />

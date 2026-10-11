@@ -1,3 +1,12 @@
+---
+title: Sync protocol
+summary: Operations, the schema, the winner rule, the exchange, sharing scopes, live updates, purge and history.
+audience: developer
+section: Internals
+specs: [offline-first-sync, activity-log]
+screens: []
+order: 20
+---
 # Sync protocol
 
 OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state-based CRDT (a map of LWW registers), which gives three properties:

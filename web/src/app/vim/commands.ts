@@ -24,7 +24,7 @@ export const COMMANDS: CommandSpec[] = [
   { name: 'new', arg: '<title>', desc: 'Create a task with the current view’s defaults (project, date, label)' },
   { name: 'q', desc: 'Close the task panel, else clear the selection' },
   { name: 'sync', desc: 'Sync now' },
-  { name: 'help', desc: 'Show the keyboard shortcuts' },
+  { name: 'help', arg: '[topic]', desc: 'Show the keyboard shortcuts; with a topic, open Help on it (:help board)' },
 ]
 
 function split(input: string): { name: string; arg: string; spaced: boolean } {
@@ -67,6 +67,8 @@ export interface CommandContext {
   closePanel(): void
   sync(): void | Promise<void>
   help(): void
+  /** Opens the Help view on a topic; without it, `:help <topic>` falls back to help(). */
+  helpTopic?(topic: string): void
 }
 
 export type CommandResult = { ok: true } | { ok: false; message: string }
@@ -103,7 +105,8 @@ export async function runCommand(input: string, ctx: CommandContext): Promise<Co
       await ctx.sync()
       return { ok: true }
     case 'help':
-      ctx.help()
+      if (arg && ctx.helpTopic) ctx.helpTopic(arg)
+      else ctx.help()
       return { ok: true }
   }
   return { ok: false, message: `Unknown command: ${name}` }

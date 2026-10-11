@@ -31,3 +31,4 @@ coverage.out
 # Agent worktrees
 /.claude/worktrees/
 /.playwright-mcp/
+/docs-report/

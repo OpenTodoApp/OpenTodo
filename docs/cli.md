@@ -1,3 +1,12 @@
+---
+title: Command-line client
+summary: The ot command: install, sign in, add and complete tasks, JSON output and exit codes for scripts.
+audience: developer
+section: Integrations
+specs: [cli-client]
+screens: []
+order: 20
+---
 # Command-line client (`ot`)
 
 `ot` is a small, statically linked client for the OpenTodo REST API. It is built for two audiences: people who live in a terminal (`ot add "Call the plumber" --due tomorrow`, `ot today`) and scripts, cron jobs and editor integrations that want stable JSON output and exit codes instead of hand-written `curl`.

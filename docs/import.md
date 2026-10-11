@@ -1,4 +1,13 @@
-# Importing data
+---
+title: Import formats
+summary: Every import format in detail: your own export, CSV and other apps' JSON exports, mapping rules, duplicates and undo.
+audience: user
+section: Reference
+specs: [data-import]
+screens: []
+order: 60
+---
+# Import formats
 
 OpenTodo imports tasks, projects, sections, recurrence rules and reminders from files: its own JSON export (for moving between instances or recovering), CSV from a spreadsheet or a script, and the JSON exports of other task managers. Open **Settings → Import data** in the web app (or press `g` then `Shift+I`), or drive the same endpoints from a script; see [API](#api) below.
 

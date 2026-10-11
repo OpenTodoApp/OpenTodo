@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError } from '../lib/api'
 import type { AppPassword, CaldavSetting } from '../lib/types'
 
@@ -31,7 +32,7 @@ export function CaldavView(p: CaldavViewProps) {
   const revoked = (p.passwords ?? []).filter((x) => x.revokedAt)
   return (
     <section className="space-y-3" aria-labelledby="caldav-heading">
-      <h2 id="caldav-heading" className="font-semibold">Calendar apps (CalDAV)</h2>
+      <HelpHeading screen="settings/caldav" id="caldav-heading" className="font-semibold">Calendar apps (CalDAV)</HelpHeading>
       <p className="text-sm text-slate-500">
         Sync your tasks with Apple Reminders, Thunderbird, Nextcloud Tasks or any CalDAV client through DAVx⁵. Each project is a
         list (calendar) and the Inbox is its own list. Calendar apps sign in with your email and an app password, never your

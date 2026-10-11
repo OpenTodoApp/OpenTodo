@@ -1,3 +1,12 @@
+---
+title: Webhooks
+summary: Events, payload, signature checks, retries and recipes for Home Assistant, n8n and Telegram.
+audience: developer
+section: Integrations
+specs: [webhooks]
+screens: []
+order: 30
+---
 # Webhooks
 
 OpenTodo can notify other systems when your tasks and projects change: switch on a light when "Water plants" is completed, post to a chat when a task is created, start an n8n flow when a project is archived. Webhooks are configured per account in **Settings → Webhooks** or through the [API](api.md#webhooks). Nothing is sent until you create one, and requests only ever go to the URLs you configured.

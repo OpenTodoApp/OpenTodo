@@ -1,4 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { cacheBackupStatus, cachedBackupStatus, defaultBackupSettings, formatBytes, runSummary, scheduleLabel, WEEKDAYS } from '../lib/backups'
 import { useOnline } from '../lib/online'
@@ -54,7 +55,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
 
   return (
     <section className="space-y-3" aria-labelledby="backups-heading">
-      <h2 id="backups-heading" className="font-semibold">Backups</h2>
+      <HelpHeading screen="settings/backups" id="backups-heading" className="font-semibold">Backups</HelpHeading>
       <p className="text-sm text-slate-500">
         Scheduled copies of the whole server (every account, task and the sync log), written to a folder on the server, an S3-compatible bucket or a WebDAV share. Restore with <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">opentodo restore</code>; see docs/backups.md.
       </p>

@@ -1,3 +1,12 @@
+---
+title: Filter queries
+summary: The filter language in full: terms, operators, dates, saved views, dashboards and ten worked examples.
+audience: user
+section: Reference
+specs: [filter-queries, custom-views]
+screens: []
+order: 20
+---
 # Filter queries
 
 The **Filter** view (sidebar, or `g` then `f`) lists the tasks that match a one-line query such as:

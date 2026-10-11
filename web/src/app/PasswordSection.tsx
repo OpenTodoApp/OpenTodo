@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { api, ApiError } from '../lib/api'
 import { useOnline } from '../lib/online'
 
@@ -49,7 +50,7 @@ export function PasswordView(p: {
   const disabled = !p.online || p.busy
   return (
     <section className="space-y-2" aria-labelledby="password-heading">
-      <h2 id="password-heading" className="font-semibold">Password</h2>
+      <HelpHeading screen="settings/password" id="password-heading" className="font-semibold">Password</HelpHeading>
       <p className="text-sm text-slate-500">Changing your password signs out your other sessions. This one stays signed in and API tokens keep working.</p>
       {!p.online && (
         <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200" role="status">

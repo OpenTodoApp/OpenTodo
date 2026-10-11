@@ -2,6 +2,7 @@
 // local store. Parsing and evaluation are pure (lib/filter); results are a live
 // query, so local edits and synced ops update them without a reload, offline too.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { HelpLink } from './help/HelpLink'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { compareDueThenPriority } from '../lib/ordering'
@@ -188,6 +189,7 @@ export function FilterView() {
             Filter
             {result && <span className="text-sm font-normal text-slate-400">{rows.length}</span>}
             <span className="flex-1" />
+            <HelpLink screen="filter" topic="Filter queries" />
             <button className="btn-ghost border border-slate-300 text-xs font-normal dark:border-slate-700" disabled={!canSave}
               onClick={() => setSaving(true)} title="Save this query as a view (s in the results)">
               Save view

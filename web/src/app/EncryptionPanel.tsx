@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from 'react'
+import { HelpHeading } from './help/HelpLink'
 import { ApiError, isNetworkError } from '../lib/api'
 import { MIN_PASSPHRASE_LENGTH, RecoveryKeyFormatError, WrongSecretError } from '../lib/crypto'
 import {
@@ -89,7 +90,7 @@ export function EncryptionView(p: EncryptionViewProps) {
   const progress = state.migration
   return (
     <section className="space-y-3" aria-labelledby="e2ee-heading">
-      <h2 id="e2ee-heading" className="font-semibold">End-to-end encryption</h2>
+      <HelpHeading screen="settings/encryption" id="e2ee-heading" className="font-semibold">End-to-end encryption</HelpHeading>
       {p.error && <p role="alert" className="text-sm text-red-600">{p.error}</p>}
       {p.notice && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">{p.notice}</p>}
       {progress && (
