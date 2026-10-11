@@ -4,14 +4,16 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
-The first feature-complete version: every item on the [roadmap](ROADMAP.md) is implemented. Each feature was planned and built as an OpenSpec change; the archived changes under `openspec/changes/archive/` hold the full proposals, designs and task lists, and `openspec/specs/` the resulting behaviour contracts.
+## [0.1.0] - 2026-10-11
+
+The first release, and the first feature-complete version: every item on the [roadmap](ROADMAP.md) is implemented. Each feature was planned and built as an OpenSpec change; the archived changes under `openspec/changes/archive/` hold the full proposals, designs and task lists, and `openspec/specs/` the resulting behaviour contracts.
 
 ### Upgrade notes
 
 - **No mandatory configuration.** Every new environment variable is optional and every feature that talks to the outside world is off until configured. The complete list is in the [README](README.md#configuration).
 - **Database migrations** `0001` to `0024` are embedded and applied automatically at startup, in order, tracked by `PRAGMA user_version` (numbers `0016`–`0018` and `0020` are unused). Back up `/data` before upgrading an existing instance: there are no down-migrations. Rolling back to a binary older than user administration lets deactivated accounts sign in again.
 - **Update the server before clients.** The op schema only grew (new fields and entities, nothing renamed), but an older server rejects sync batches that carry fields it does not know; those ops wait in the device's outbox until the server is upgraded. Older clients keep syncing their personal data and skip ops for entities they do not know.
-- **Sizes** (measured for this release, `linux/amd64`): server binary 16,539,810 bytes (15.8 MiB) built with `-trimpath -ldflags="-s -w"`, web app embedded; `ot` CLI 6,856,866 bytes; initial web bundle 259 KB JS + 10.5 KB CSS gzipped, with the rich-text editor (97 KB), voice recognition (4 KB) and Vim layer (4 KB) loaded on demand; idle memory about 18 MB on a fresh instance. The container image adds the distroless static base (about 2 MB) to the binary.
+- **Sizes** (measured for this release, `linux/amd64`): server binary 16,715,938 bytes (15.9 MiB) built with `-trimpath -ldflags="-s -w"`, web app embedded; `ot` CLI about 6.9 MB; initial web bundle 261 KB JS + 10.7 KB CSS gzipped, with the rich-text editor (97 KB), voice recognition (4 KB) and Vim layer (4 KB) loaded on demand; idle memory about 18 MB on a fresh instance. The container image adds the distroless static base (about 2 MB) to the binary. Release assets: server and `ot` binaries for Linux, macOS and Windows (amd64 and arm64), the browser extension zip and `SHA256SUMS`; images `ghcr.io/pixari/opentodo:0.1.0` and `:0.1` for `linux/amd64` and `linux/arm64`.
 
 ### Added
 
@@ -139,3 +141,6 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0022_email.sql` | `email_inboxes`, `email_receipts` |
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
+
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/pixari/opentodo/releases/tag/v0.1.0

@@ -53,6 +53,8 @@ export default defineConfig({
   ],
   build: {
     outDir: '../internal/web/dist',
+    // Kept false so internal/web/dist/.gitkeep survives; `npm run build` removes the
+    // previous hashed assets first, so old bundles never pile up in the embed.
     emptyOutDir: false,
     sourcemap: false,
     // Dynamic imports: the optional Vim layer (vim-keybindings), the note document
