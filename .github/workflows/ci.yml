@@ -246,12 +246,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pre=""
-          case "$GITHUB_REF_NAME" in v0.*|*-*) pre="--prerelease" ;; esac
+          # Only tags like v1.2.0-rc.1 are pre-releases; a plain vX.Y.Z is a normal release.
+          case "$GITHUB_REF_NAME" in *-*) pre="--prerelease" ;; esac
           # The release may already exist when it was created in the GitHub UI (which
           # also creates the tag): then title, notes and the pre-release flag are set
           # from CHANGELOG.md here, so nothing has to be typed there.
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release edit "$GITHUB_REF_NAME" --title "OpenTodo $GITHUB_REF_NAME" --notes-file notes.md $pre
+            gh release edit "$GITHUB_REF_NAME" --title "OpenTodo $GITHUB_REF_NAME" --notes-file notes.md ${pre:---prerelease=false}
           else
             gh release create "$GITHUB_REF_NAME" --verify-tag --title "OpenTodo $GITHUB_REF_NAME" --notes-file notes.md $pre
           fi
