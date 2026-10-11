@@ -835,9 +835,9 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
         />
       )}
       {prompt && (
-        <div role="status" className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
-          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
-            <span>All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
+        <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
+            <span className="user-text min-w-0">All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
             <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <span className="kbd ml-1 border-emerald-300 bg-emerald-500 text-white">Enter</span></button>
             <button className="btn-ghost text-xs" onClick={() => setPrompt(null)}>Keep open <span className="kbd ml-1">Esc</span></button>
           </div>
