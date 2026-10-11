@@ -56,6 +56,12 @@ func HandlerWith(o Options) http.Handler {
 				if statErr == nil && !stat.IsDir() {
 					if strings.HasPrefix(p, "assets/") {
 						w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+					} else if strings.HasSuffix(p, ".js") {
+						// Service worker scripts (sw.js, registerSW.js, push-sw.js) must never
+						// be cached: a CDN in front (Cloudflare gives .js a 4 h TTL and rewrites
+						// no-cache) would keep phones on the previous release.
+						w.Header().Set("Cache-Control", "no-store")
+						w.Header().Set("CDN-Cache-Control", "no-store")
 					} else {
 						w.Header().Set("Cache-Control", "no-cache")
 					}

@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- Phones could keep running the previous release after an update when a CDN such as Cloudflare sat in front: it cached the service worker script for hours. Service worker scripts are now sent with `Cache-Control: no-store` (and `CDN-Cache-Control: no-store`).
+
 ## [0.2.0] - 2026-10-11
 
 OpenTodo 0.2.0 is about trying it, using it on a phone and running it without fuss. Every visitor to the public demo now gets a private sandbox. The phone layout has been reworked so menus, pickers and dialogs fit small screens. There is a docs website and a Help view inside the app, which works offline. Archived projects can be restored with one click. Updates roll out without a Stop → Deploy. Rate limits work correctly behind trusted proxies and Cloudflare. The app meets WCAG AA contrast in light and dark, and this release includes several security fixes.

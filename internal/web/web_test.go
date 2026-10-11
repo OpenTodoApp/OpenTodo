@@ -39,3 +39,23 @@ func TestNoIndexOnlyWhenAsked(t *testing.T) {
 		t.Error("noindex on a normal instance")
 	}
 }
+
+// TestServiceWorkerNeverCached: sw.js must reach phones on every release, even
+// behind a CDN that would otherwise cache .js files (skipped when not built).
+func TestServiceWorkerNeverCached(t *testing.T) {
+	if _, err := fs.Stat(dist, "dist/sw.js"); err != nil {
+		t.Skip("web app not built")
+	}
+	for path, want := range map[string]string{"/sw.js": "no-store", "/": "no-cache", "/manifest.webmanifest": "no-cache"} {
+		rec := httptest.NewRecorder()
+		Handler().ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		if got := rec.Header().Get("Cache-Control"); got != want {
+			t.Errorf("%s: Cache-Control %q, want %q", path, got, want)
+		}
+	}
+	rec := httptest.NewRecorder()
+	Handler().ServeHTTP(rec, httptest.NewRequest("GET", "/sw.js", nil))
+	if rec.Header().Get("CDN-Cache-Control") != "no-store" {
+		t.Error("sw.js: CDN-Cache-Control missing")
+	}
+}
