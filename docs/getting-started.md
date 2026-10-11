@@ -3,7 +3,7 @@ title: Getting started
 summary: From the demo or your first sign-in to adding, scheduling and completing your first task, in about five minutes.
 audience: user
 section: Get started
-specs: [task-management, account-access, web-app]
+specs: [task-management, account-access, web-app, documentation]
 screens: []
 order: 10
 card: quick-add
