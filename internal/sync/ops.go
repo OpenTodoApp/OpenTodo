@@ -44,6 +44,11 @@ const (
 	// length of the envelope string, i.e. 256 KB of base64 text. Every other kind
 	// keeps MaxValueBytes.
 	MaxDocBytes = 256 * 1024
+	// MaxPullBytes is the byte budget of one pull page (OpenSpec change
+	// `harden-server-edges`): the summed length of the op values it serves. A page
+	// stops before the op that would exceed it, but always carries at least one
+	// op so a device makes progress; hasMore tells it to ask again.
+	MaxPullBytes = 4 * 1024 * 1024
 )
 
 type kind int

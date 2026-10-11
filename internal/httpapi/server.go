@@ -121,6 +121,10 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	for _, o := range opts {
 		o(s)
 	}
+	if s.hooks != nil {
+		// Imports reach webhooks as one summary per job (harden-server-edges).
+		s.importer.SetSummaryObserver(s.hooks.ObserveImport)
+	}
 	if s.oidc == nil {
 		s.oidc = oidc.New(settings.New(syncSvc.DB()), cfg.DataDir, oidc.Options{Env: oidc.Env(cfg.OIDC)})
 	}

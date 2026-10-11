@@ -9,7 +9,7 @@ The first feature-complete version: every item on the [roadmap](ROADMAP.md) is i
 ### Upgrade notes
 
 - **No mandatory configuration.** Every new environment variable is optional and every feature that talks to the outside world is off until configured. The complete list is in the [README](README.md#configuration).
-- **Database migrations** `0001` to `0023` are embedded and applied automatically at startup, in order, tracked by `PRAGMA user_version` (numbers `0016`–`0018` and `0020` are unused). Back up `/data` before upgrading an existing instance: there are no down-migrations. Rolling back to a binary older than user administration lets deactivated accounts sign in again.
+- **Database migrations** `0001` to `0024` are embedded and applied automatically at startup, in order, tracked by `PRAGMA user_version` (numbers `0016`–`0018` and `0020` are unused). Back up `/data` before upgrading an existing instance: there are no down-migrations. Rolling back to a binary older than user administration lets deactivated accounts sign in again.
 - **Update the server before clients.** The op schema only grew (new fields and entities, nothing renamed), but an older server rejects sync batches that carry fields it does not know; those ops wait in the device's outbox until the server is upgraded. Older clients keep syncing their personal data and skip ops for entities they do not know.
 - **Sizes** (measured for this release, `linux/amd64`): server binary 16,539,810 bytes (15.8 MiB) built with `-trimpath -ldflags="-s -w"`, web app embedded; `ot` CLI 6,856,866 bytes; initial web bundle 259 KB JS + 10.5 KB CSS gzipped, with the rich-text editor (97 KB), voice recognition (4 KB) and Vim layer (4 KB) loaded on demand; idle memory about 18 MB on a fresh instance. The container image adds the distroless static base (about 2 MB) to the binary.
 
@@ -78,6 +78,10 @@ The first feature-complete version: every item on the [roadmap](ROADMAP.md) is i
 
 ### Fixed
 
+- Reminders on tasks in a project in the Trash (or under a sub-project whose ancestor is in the Trash) no longer fire, neither as web push nor in the app. Restoring the project brings them back: a reminder whose time passed while the project was trashed is delivered once, late, like after server downtime. [Reminders](docs/reminders.md#trash)
+- `/api/v1/sync` pull pages, including the history replay for a newly joined shared project, are capped at about 4 MB of op values (always at least one op), so a batch of large rich-text notes no longer produces one huge response; `hasMore` asks the device to continue. [Sync](docs/sync.md#paging)
+- Purging a task, a project (with its tasks) or emptying the Trash by retention now removes the task's CalDAV resource name in the same transaction; migration `0024` removes rows earlier purges left behind. [CalDAV](docs/caldav.md)
+- A large import sent one webhook delivery per task. Imports and their undo now produce one `import.completed` or `import.undone` delivery per subscribed webhook with counts and project ids; ops written by an import no longer emit `task.*`/`project.*` events, so a webhook that wants imports subscribes to the new events. Ordinary writes keep their per-event deliveries. [Webhooks](docs/webhooks.md#imports)
 - Opening the app at a different host than `OPENTODO_BASE_URL` made passkeys fail with the browser's "origin is not authorized for the provided RP ID"; the app now explains which two hosts differ and what to change, and Settings → Security shows the host passkeys are tied to (also `passkeyDomain` in `GET /api/v1/auth/status`). In `docker-compose.yml` an `OPENTODO_BASE_URL` you set yourself now wins over Coolify's generated `SERVICE_URL_OPENTODO`.
 - Dropdown menus (view, section, project and label menus) could open mostly off screen on phones when the header wrapped; they now shift back inside the screen when opened.
 - The keyboard-shortcut help could not be scrolled or closed on phones (the panel grew past the screen on iOS Safari). It is now a full-screen sheet on small screens with a pinned close button, the overlay scrolls instead of the panel, and every other dialog overlay scrolls when its content is taller than the screen.
@@ -133,3 +137,4 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0021_mcp.sql` | `api_token_scopes` |
 | `0022_email.sql` | `email_inboxes`, `email_receipts` |
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
+| `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |

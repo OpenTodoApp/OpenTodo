@@ -478,6 +478,7 @@ export interface InvitationPreview {
 export type WebhookEvent =
   | 'task.created' | 'task.updated' | 'task.completed' | 'task.reopened' | 'task.deleted'
   | 'project.created' | 'project.updated' | 'project.archived' | 'project.deleted'
+  | 'import.completed' | 'import.undone'
 
 /** A user's webhook (server-side configuration, never synced). `secret` is present only in the create response. */
 export interface Webhook {

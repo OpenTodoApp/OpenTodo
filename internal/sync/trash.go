@@ -411,6 +411,17 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 			res.Comments++
 		}
 	}
+	// CalDAV resource names of purged tasks go in the same transaction
+	// (harden-server-edges), unless the task id still lives in another scope.
+	for _, t := range all {
+		if t.entity != "task" {
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM caldav_resources WHERE task_id = ?
+			AND NOT EXISTS (SELECT 1 FROM scope_fields WHERE entity = 'task' AND entity_id = ?)`, t.id, t.id); err != nil {
+			return res, fmt.Errorf("purge caldav resource: %w", err)
+		}
+	}
 	if len(touched) > 0 {
 		author := actor
 		if author == "" {

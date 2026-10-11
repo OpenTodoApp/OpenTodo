@@ -13,6 +13,9 @@ export const WEBHOOK_EVENTS: { event: WebhookEvent; label: string }[] = [
   { event: 'project.updated', label: 'Project updated' },
   { event: 'project.archived', label: 'Project archived' },
   { event: 'project.deleted', label: 'Project deleted' },
+  // Imports are reported once per job, not once per task (harden-server-edges).
+  { event: 'import.completed', label: 'Import completed' },
+  { event: 'import.undone', label: 'Import undone' },
 ]
 
 export type WebhookTone = 'ok' | 'warn' | 'off'
