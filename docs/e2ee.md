@@ -1,3 +1,12 @@
+---
+title: End-to-end encryption
+summary: What encryption hides from the server and what it does not, the threat model, devices, recovery and limits.
+audience: user
+section: Reference
+specs: [end-to-end-encryption]
+screens: [settings/encryption]
+order: 70
+---
 # End-to-end encryption
 
 Optional, per account, off by default (OpenSpec change `e2ee`). When it is on, your devices encrypt the *content* of your tasks before it is synced, so the server, its backups and every server-side integration hold only ciphertext for it. Sync, offline use and conflict-free merging keep working because ciphertext travels through the unchanged operation log as an ordinary string value.

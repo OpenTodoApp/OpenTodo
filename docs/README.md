@@ -1,3 +1,8 @@
+---
+layout: index
+title: OpenTodo docs
+summary: How to use OpenTodo day to day, run your own server, and connect it to other tools.
+---
 # OpenTodo documentation
 
 Start with the [README](../README.md) for the feature overview, quick start and configuration table.

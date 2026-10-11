@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Single sign-on · OpenTodo docs</title>
+  <meta name="description" content="Connect an OpenID Connect provider, link accounts, SSO-only mode and break-glass access for the owner.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/self-hosting/sso/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/self-hosting/sso/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Single sign-on · OpenTodo docs">
+  <meta property="og:description" content="Connect an OpenID Connect provider, link accounts, SSO-only mode and break-glass access for the owner.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/" aria-current="page">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/" aria-current="page">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="admin">
+      <p class="doc-meta"><span class="crumbs">Self-hosting</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#1-set-the-public-url">1. Set the public URL</a></li><li><a href="#2-create-a-client-at-the-provider">2. Create a client at the provider</a></li><li><a href="#3-configure-opentodo">3. Configure OpenTodo</a><ul><li><a href="#configuration-through-the-environment">Configuration through the environment</a></li></ul></li><li><a href="#accounts-and-linking">Accounts and linking</a></li><li><a href="#sso-only">SSO only</a><ul><li><a href="#break-glass-access-for-the-owner">Break-glass access for the owner</a></li></ul></li><li><a href="#signing-out">Signing out</a></li><li><a href="#offline">Offline</a></li><li><a href="#troubleshooting">Troubleshooting</a></li><li><a href="#security-notes">Security notes</a></li></ul></nav></details>
+<h1 id="single-sign-on-openid-connect">Single sign-on (OpenID Connect)</h1>
+<p>OpenTodo can let people sign in with an identity provider you already run: Authentik, Keycloak, Authelia, Zitadel, Pocket ID, Kanidm, or a hosted login service. Any provider that supports OpenID Connect discovery and the authorization-code flow with PKCE works. Nothing is needed to run OpenTodo without it: the feature is off until you configure a provider.</p>
+<p>What it does:</p>
+<ul>
+<li>Adds <strong>Sign in with &lt;name&gt;</strong> to the sign-in screen, next to the password form.</li>
+<li>Signs in the account linked to that identity. On the first sign-in, an identity whose provider says the email is <strong>verified</strong> is linked to the account with that email (for example your own owner account).</li>
+<li>Optionally creates a <code>member</code> account for someone who has no account yet (<strong>Allow new accounts via SSO</strong>), or when open sign-up is on.</li>
+<li>Optionally requires single sign-on for everyone except the owner (<strong>SSO only</strong>).</li>
+<li>Optionally signs people out of the provider when they sign out of OpenTodo.</li>
+</ul>
+<p>Network: when, and only when, a provider is configured, the server contacts the issuer&#39;s discovery document (<code>&lt;issuer&gt;/.well-known/openid-configuration</code>) and the token and key endpoints it lists. Requests time out after 10 seconds and do not follow redirects. Nothing else is contacted.</p>
+<h2 id="1-set-the-public-url">1. Set the public URL<a class="anchor" href="#1-set-the-public-url" aria-label="Link to this section: 1. Set the public URL">#</a></h2>
+<p>Providers only accept the exact redirect URI you register. Set <code>OPENTODO_BASE_URL</code> to the URL people use, with https:</p>
+<pre tabindex="0"><code class="language-bash">OPENTODO_BASE_URL=https://todo.example.com</code></pre>
+<p>The redirect URI is then <code>https://todo.example.com/api/v1/auth/oidc/callback</code>. <strong>Settings → Single sign-on</strong> always shows the exact value; without <code>OPENTODO_BASE_URL</code> it is derived from the address in your browser and the panel warns you.</p>
+<h2 id="2-create-a-client-at-the-provider">2. Create a client at the provider<a class="anchor" href="#2-create-a-client-at-the-provider" aria-label="Link to this section: 2. Create a client at the provider">#</a></h2>
+<p>Create an OpenID Connect client (&quot;application&quot;, &quot;relying party&quot;):</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Client type</td>
+<td>Confidential (a client secret). Public clients without a secret also work, PKCE is always used</td>
+</tr>
+<tr>
+<td>Grant type</td>
+<td>Authorization code</td>
+</tr>
+<tr>
+<td>Redirect URI</td>
+<td><code>https://todo.example.com/api/v1/auth/oidc/callback</code></td>
+</tr>
+<tr>
+<td>Post-logout redirect URI</td>
+<td><code>https://todo.example.com/</code> (only for provider sign-out)</td>
+</tr>
+<tr>
+<td>Scopes</td>
+<td><code>openid email profile</code></td>
+</tr>
+<tr>
+<td>Signing algorithm</td>
+<td>RS256, PS256, ES256 or EdDSA (RS256 is the usual default)</td>
+</tr>
+<tr>
+<td>Client authentication</td>
+<td><code>client_secret_basic</code> or <code>client_secret_post</code></td>
+</tr>
+</tbody></table></div>
+<p>Make sure the provider sends <code>email</code> and <code>email_verified</code> in the identity token. Without a verified email an identity cannot be linked to an existing account or create one.</p>
+<p>Provider notes:</p>
+<ul>
+<li><strong>Authentik</strong>: Applications → Providers → OAuth2/OpenID Provider. The issuer is <code>https://auth.example.com/application/o/&lt;application-slug&gt;/</code>.</li>
+<li><strong>Keycloak</strong>: create a client with <em>Client authentication</em> on and <em>Standard flow</em> on. The issuer is <code>https://sso.example.com/realms/&lt;realm&gt;</code>. Users need <em>Email verified</em> set for linking.</li>
+<li><strong>Authelia</strong>: add a client under <code>identity_providers.oidc.clients</code> with <code>redirect_uris</code>, <code>scopes: [openid, email, profile]</code> and <code>require_pkce: true</code>. The issuer is your Authelia URL.</li>
+<li><strong>Zitadel / hosted services</strong>: use a Web application with PKCE and the code flow; the issuer is shown on the application page.</li>
+</ul>
+<h2 id="3-configure-opentodo">3. Configure OpenTodo<a class="anchor" href="#3-configure-opentodo" aria-label="Link to this section: 3. Configure OpenTodo">#</a></h2>
+<p>Open <strong>Settings → Single sign-on</strong> as the owner:</p>
+<ol>
+<li>Enter the <strong>Issuer URL</strong>, <strong>Client ID</strong>, <strong>Client secret</strong> and a <strong>Button label</strong> (for example &quot;Home SSO&quot;).</li>
+<li>Click <strong>Test connection</strong>. OpenTodo fetches the discovery document and shows the sign-in and token hosts. An issuer that is not https, unreachable, or reports a different issuer is refused and nothing changes.</li>
+<li>Click <strong>Save</strong>. The sign-in screen now offers <strong>Sign in with Home SSO</strong>.</li>
+<li>Sign in through the provider once with your own account to check it: the identity is linked to your owner account through its verified email.</li>
+</ol>
+<p>Saving needs a recent sign-in, as for other sensitive settings; if your session is older than ten minutes you are asked for your password or a code first.</p>
+<h3 id="configuration-through-the-environment">Configuration through the environment<a class="anchor" href="#configuration-through-the-environment" aria-label="Link to this section: Configuration through the environment">#</a></h3>
+<p>Infrastructure-as-code setups can set these optional variables instead. Each one overrides the value from Settings and locks that field in the panel:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>OPENTODO_OIDC_ISSUER</code></td>
+<td>Issuer URL (https)</td>
+</tr>
+<tr>
+<td><code>OPENTODO_OIDC_CLIENT_ID</code></td>
+<td>Client id</td>
+</tr>
+<tr>
+<td><code>OPENTODO_OIDC_CLIENT_SECRET</code></td>
+<td>Client secret</td>
+</tr>
+<tr>
+<td><code>OPENTODO_OIDC_DISPLAY_NAME</code></td>
+<td>Button label</td>
+</tr>
+<tr>
+<td><code>OPENTODO_OIDC_SSO_ONLY</code></td>
+<td><code>true</code> or <code>false</code>; overrides the SSO-only switch (also the emergency switch, see below)</td>
+</tr>
+</tbody></table></div>
+<p>The other switches (new accounts via SSO, provider sign-out, scopes) are set in the panel.</p>
+<h2 id="accounts-and-linking">Accounts and linking<a class="anchor" href="#accounts-and-linking" aria-label="Link to this section: Accounts and linking">#</a></h2>
+<ul>
+<li>An identity is recognised by its issuer and subject (<code>sub</code>), never by email once linked. Changing your email at the provider keeps you on the same OpenTodo account, and a changed email cannot take over another account.</li>
+<li>A first-time identity with a verified email that matches an account is linked to it. An unverified or missing email is refused (<code>oidc_email_unverified</code>) and nothing is created.</li>
+<li>When nothing matches, a <code>member</code> account is created only if <strong>Allow new accounts via SSO</strong> is on or <code>OPENTODO_ALLOW_SIGNUP=true</code>. Otherwise the person sees &quot;There is no account for this identity yet&quot; and you can invite them.</li>
+<li>Accounts created this way have no password. They can add a passkey in Settings.</li>
+<li>Everyone can link or unlink the provider in <strong>Settings → Linked accounts</strong>. Unlinking is refused when it would leave the account with no way to sign in.</li>
+<li>A provider sign-in counts as two-factor: someone with an authenticator app is not asked for a code, because the provider applies its own policy. If the owner requires two-factor for everyone (<strong>Settings → Two-factor</strong>), accounts without an authenticator are still asked to enrol one.</li>
+</ul>
+<h2 id="sso-only">SSO only<a class="anchor" href="#sso-only" aria-label="Link to this section: SSO only">#</a></h2>
+<p><strong>Require single sign-on</strong> refuses password and passkey sign-in, and password registration, for every account except the owner. Members see only the provider button. API tokens and the <code>ot</code> CLI keep working, because a token is already a delegated credential.</p>
+<p>SSO-only mode only applies while a provider is configured: clearing the issuer turns it off too, so members are never locked out by removing the provider.</p>
+<h3 id="break-glass-access-for-the-owner">Break-glass access for the owner<a class="anchor" href="#break-glass-access-for-the-owner" aria-label="Link to this section: Break-glass access for the owner">#</a></h3>
+<p>The owner always keeps their password (and passkeys):</p>
+<ul>
+<li>Open <code>https://todo.example.com/?owner=1</code> to get the password form while SSO-only is on.</li>
+<li>If the provider is down or misconfigured and you need to turn SSO-only off without signing in, set <code>OPENTODO_OIDC_SSO_ONLY=false</code> and restart the server. That environment value wins over the stored setting until you remove it.</li>
+<li>If you also lost your owner password&#39;s second factor, see <code>opentodo mfa-reset</code> in <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">SECURITY.md</a>.</li>
+</ul>
+<h2 id="signing-out">Signing out<a class="anchor" href="#signing-out" aria-label="Link to this section: Signing out">#</a></h2>
+<p>Signing out of OpenTodo always ends the OpenTodo session only. With <strong>Sign out of &lt;name&gt; too</strong> on (and a provider that publishes an <code>end_session_endpoint</code>), people who signed in through the provider are then sent to the provider&#39;s sign-out page with an <code>id_token_hint</code>, and back to OpenTodo&#39;s sign-in screen afterwards. Register <code>https://todo.example.com/</code> as a post-logout redirect URI at the provider for that.</p>
+<h2 id="offline">Offline<a class="anchor" href="#offline" aria-label="Link to this section: Offline">#</a></h2>
+<p>An installed app that signed in through the provider opens offline from its cached account, like any other session; the provider is only contacted when someone signs in.</p>
+<h2 id="troubleshooting">Troubleshooting<a class="anchor" href="#troubleshooting" aria-label="Link to this section: Troubleshooting">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>The provider says the redirect URI is invalid</td>
+<td><code>OPENTODO_BASE_URL</code> is unset or differs from the registered redirect URI; copy the value from the panel</td>
+</tr>
+<tr>
+<td>&quot;Signing in with … did not work&quot;</td>
+<td>The code exchange or token check failed. The server log (<code>level=WARN msg=&quot;oidc sign-in failed&quot;</code>) names the step: wrong client secret, audience, clock skew over 60 seconds, unsupported signing algorithm</td>
+</tr>
+<tr>
+<td>&quot;did not confirm a verified email address&quot;</td>
+<td>The provider sends no <code>email_verified: true</code>; enable email verification or the <code>email</code> scope</td>
+</tr>
+<tr>
+<td>&quot;There is no account for this identity yet&quot;</td>
+<td>Provisioning is off: invite the person, or turn on <strong>Allow new accounts via SSO</strong></td>
+</tr>
+<tr>
+<td>&quot;That sign-in took too long or was started in another tab&quot;</td>
+<td>The 10-minute sign-in window passed, or the server restarted during the sign-in; start again</td>
+</tr>
+</tbody></table></div>
+<h2 id="security-notes">Security notes<a class="anchor" href="#security-notes" aria-label="Link to this section: Security notes">#</a></h2>
+<ul>
+<li>The flow uses PKCE (S256), a single-use <code>state</code> and a <code>nonce</code>, kept in a signed, <code>HttpOnly</code>, <code>SameSite=Lax</code>, 10-minute cookie. The signing key is random per process.</li>
+<li>Identity tokens are verified with the provider&#39;s published keys (refreshed when an unknown key id appears, at most every 10 seconds). Only RS256, PS256, ES256 and EdDSA are accepted; <code>none</code> and HMAC are refused; issuer, audience, expiry, issued-at and nonce are checked with 60 seconds of leeway.</li>
+<li>The client secret is stored in <code>&lt;data&gt;/secrets/oidc.json</code> (mode 0600), not in the database, so database backups do not contain it. Backups exclude the secrets directory: after restoring onto a new host, enter the secret again (or set <code>OPENTODO_OIDC_CLIENT_SECRET</code>).</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/self-hosting/sso.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/backups/"><span>Previous</span>Backups</a>
+      <a class="next" rel="next" href="/docs/caldav/"><span>Next</span>Calendar apps (CalDAV)</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#1-set-the-public-url">1. Set the public URL</a></li><li><a href="#2-create-a-client-at-the-provider">2. Create a client at the provider</a></li><li><a href="#3-configure-opentodo">3. Configure OpenTodo</a><ul><li><a href="#configuration-through-the-environment">Configuration through the environment</a></li></ul></li><li><a href="#accounts-and-linking">Accounts and linking</a></li><li><a href="#sso-only">SSO only</a><ul><li><a href="#break-glass-access-for-the-owner">Break-glass access for the owner</a></li></ul></li><li><a href="#signing-out">Signing out</a></li><li><a href="#offline">Offline</a></li><li><a href="#troubleshooting">Troubleshooting</a></li><li><a href="#security-notes">Security notes</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

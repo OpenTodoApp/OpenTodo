@@ -1,4 +1,13 @@
-# Reminders and notifications
+---
+title: Reminders reference
+summary: How relative and absolute reminders fire, web push and its privacy, snooze, shared projects and the Trash.
+audience: user
+section: Reference
+specs: [reminders]
+screens: []
+order: 40
+---
+# Reminders reference
 
 A task can carry any number of reminders (OpenSpec change `reminders`). Open a task, then use the **Reminders** section of the detail panel.
 

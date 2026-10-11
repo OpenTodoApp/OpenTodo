@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Recurring task rules · OpenTodo docs</title>
+  <meta name="description" content="The repeat rule grammar, how the next date is worked out, and what completing, skipping and detaching do.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/recurrence/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/recurrence/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Recurring task rules · OpenTodo docs">
+  <meta property="og:description" content="The repeat rule grammar, how the next date is worked out, and what completing, skipping and detaching do.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/" aria-current="page">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/" aria-current="page">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Reference</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#grammar">Grammar</a><ul><li><a href="#completion-relative-rules">Completion-relative rules</a></li><li><a href="#end-conditions">End conditions</a></li></ul></li><li><a href="#how-the-next-occurrence-is-computed">How the next occurrence is computed</a></li><li><a href="#completing-skipping-and-editing">Completing, skipping and editing</a></li><li><a href="#sync-and-convergence">Sync and convergence</a></li></ul></nav></details>
+<h1 id="recurring-task-rules">Recurring task rules</h1>
+<p>A task can repeat. The rule is a short English phrase stored in the task&#39;s
+<code>recurrence</code> field, for example <code>every weekday</code> or <code>every 3 days after completion</code>.
+The same grammar is implemented by the server (<code>internal/recurrence</code>) and the
+web app (<code>web/src/lib/recurrence.ts</code>), and both are tested against one shared file
+of test vectors (<code>web/src/lib/recurrence.vectors.json</code>), so every device and the
+REST API compute the same dates. Every example on this page is one of those vectors.</p>
+<h2 id="grammar">Grammar<a class="anchor" href="#grammar" aria-label="Link to this section: Grammar">#</a></h2>
+<pre tabindex="0"><code>every &lt;pattern&gt; [after completion] [until YYYY-MM-DD | for N times]</code></pre>
+<p>Rules are case-insensitive and extra whitespace is ignored. A rule is at most 200
+characters. What gets stored is the canonical form: lowercase, single spaces,
+weekday names spelled out, ordinals with the correct suffix. <code>Every  2nd  Tuesday</code>
+is stored as <code>every 2nd tuesday</code>.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Examples</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>day, N days</td>
+<td><code>every day</code>, <code>every 3 days</code></td>
+<td>Daily, or every N days (1–999).</td>
+</tr>
+<tr>
+<td>week, N weeks</td>
+<td><code>every week</code>, <code>every 2 weeks</code></td>
+<td>Every 7 × N days.</td>
+</tr>
+<tr>
+<td>weekday</td>
+<td><code>every weekday</code></td>
+<td>Monday to Friday.</td>
+</tr>
+<tr>
+<td>month, N months</td>
+<td><code>every month</code>, <code>every 6 months</code></td>
+<td>Same day of month; a day the month does not have becomes its last day.</td>
+</tr>
+<tr>
+<td>year, N years</td>
+<td><code>every year</code>, <code>every 2 years</code></td>
+<td>Same date; 29 February becomes 28 February in common years.</td>
+</tr>
+<tr>
+<td>weekday names</td>
+<td><code>every monday</code>, <code>every mon, wed, fri</code>, <code>every tuesday and thursday</code></td>
+<td>Any set of weekdays, full names or three-letter abbreviations, separated by commas or &quot;and&quot;.</td>
+</tr>
+<tr>
+<td>day of month</td>
+<td><code>every 1st</code>, <code>every 15th</code>, <code>every 31st</code></td>
+<td>That day of each month; in shorter months the last day.</td>
+</tr>
+<tr>
+<td>last day</td>
+<td><code>every last day</code></td>
+<td>The last day of each month.</td>
+</tr>
+<tr>
+<td>last weekday</td>
+<td><code>every last weekday</code></td>
+<td>The last Monday–Friday of each month.</td>
+</tr>
+<tr>
+<td>ordinal weekday</td>
+<td><code>every 2nd tuesday</code>, <code>every first monday</code>, <code>every last friday</code></td>
+<td>1st/first to 4th/fourth or last of that weekday in each month.</td>
+</tr>
+</tbody></table></div>
+<p><code>every 2nd</code> is the 2nd day of each month; <code>every 2nd tuesday</code> is the second Tuesday.</p>
+<h3 id="completion-relative-rules">Completion-relative rules<a class="anchor" href="#completion-relative-rules" aria-label="Link to this section: Completion-relative rules">#</a></h3>
+<p>Add <code>after completion</code> to a day, week, month or year interval to count from the
+day the task is actually completed instead of from its due date:
+<code>every 3 days after completion</code>, <code>every week after completion</code>. Calendar patterns
+(weekdays, days of month, ordinals) cannot be completion-relative.</p>
+<h3 id="end-conditions">End conditions<a class="anchor" href="#end-conditions" aria-label="Link to this section: End conditions">#</a></h3>
+<ul>
+<li><code>until YYYY-MM-DD</code>: no occurrence after that date, e.g. <code>every day until 2026-12-31</code>.</li>
+<li><code>for N times</code>: the series has N occurrences in total, e.g. <code>every weekday for 10 times</code>.
+Skipped occurrences do not count.</li>
+</ul>
+<p>Only one end condition per rule.</p>
+<h2 id="how-the-next-occurrence-is-computed">How the next occurrence is computed<a class="anchor" href="#how-the-next-occurrence-is-computed" aria-label="Link to this section: How the next occurrence is computed">#</a></h2>
+<p>All dates are floating calendar dates (<code>YYYY-MM-DD</code>), like <code>due</code> itself; the
+computation never converts through a time zone, so daylight saving changes have
+no effect. The due time, if any, is kept.</p>
+<ul>
+<li><strong>Calendar rules</strong>: the next occurrence is the first matching date strictly
+after the current due date. If that date is already in the past (the task was
+overdue), it is instead the first matching date after today: overdue tasks catch
+up rather than piling up, and no missed occurrences are generated. Interval rules
+keep their rhythm while catching up (<code>every 3 days</code> due on the 1st, completed on
+the 10th, moves to the 13th).</li>
+<li><strong>Completion-relative rules</strong>: the next occurrence is counted from the local
+date of completion. <code>every 3 days after completion</code> due Monday and completed on
+Wednesday is next due Saturday; completed on the Sunday before, it is next due
+Wednesday.</li>
+<li><strong>Month ends</strong>: <code>every month</code> due 31 January moves to 28 (or 29) February. The
+rule has no memory of the original day, so the following month is the 28th too;
+use <code>every 31st</code> or <code>every last day</code> to stay at the end of the month.</li>
+<li>A rule set on a task without a due date gives it one: the first matching date
+from today on.</li>
+</ul>
+<h2 id="completing-skipping-and-editing">Completing, skipping and editing<a class="anchor" href="#completing-skipping-and-editing" aria-label="Link to this section: Completing, skipping and editing">#</a></h2>
+<ul>
+<li><strong>Complete</strong>: a completed copy of the current occurrence (the <em>occurrence
+record</em>) goes to Completed, and the task moves to its next occurrence. When the
+end condition is reached the task completes like any other task.</li>
+<li><strong>Skip</strong> (<code>Shift+S</code>, or <em>Skip</em> in the detail panel): moves the task to the next
+occurrence without recording a completion. Completion-relative rules skip as if
+completed today. Skipping the last occurrence is not possible; complete or delete it.</li>
+<li><strong>This occurrence only</strong> (<code>Shift+O</code>, or the button in the detail panel): makes a
+standalone copy of the current occurrence, without a rule, and moves the series
+to its next occurrence. Edit or move the copy freely.</li>
+<li>Every other edit (title, notes, project, priority, labels, due time, rule)
+applies to the series, because the series is the task.</li>
+<li><strong>Reopen</strong> an occurrence record and it becomes a standalone open task; the series
+is not moved back. Reopening a series that ended keeps its rule, so its next
+completion continues the schedule.</li>
+</ul>
+<h2 id="sync-and-convergence">Sync and convergence<a class="anchor" href="#sync-and-convergence" aria-label="Link to this section: Sync and convergence">#</a></h2>
+<p>The rule is stored in <code>task.recurrence</code> and occurrence records point back with
+<code>task.series_id</code> (see <a href="/docs/sync/">sync.md</a>). An occurrence record&#39;s id is derived
+from the series id and the occurrence date (SHA-256, formatted as a UUID), and
+the next due date is a pure function of the rule and dates every device shares.
+Two devices that complete the same occurrence offline therefore write the same
+record and the same next due date, and end with one Completed entry once they
+sync. A <code>for N times</code> count is the number of occurrence records, so it converges
+without a counter.</p>
+<p>The REST API behaves the same: <code>PATCH /api/v1/tasks/{id}</code> with a non-null
+<code>completed_at</code> on a recurring task records the occurrence and moves the task (see
+<a href="/docs/api/">api.md</a>).</p>
+<p>Clients older than this feature keep working: they store the new fields without
+showing them and complete a recurring task as a plain completion, which is
+recovered by reopening it on an updated device.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/recurrence.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/filters/"><span>Previous</span>Filter queries</a>
+      <a class="next" rel="next" href="/docs/reminders/"><span>Next</span>Reminders reference</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#grammar">Grammar</a><ul><li><a href="#completion-relative-rules">Completion-relative rules</a></li><li><a href="#end-conditions">End conditions</a></li></ul></li><li><a href="#how-the-next-occurrence-is-computed">How the next occurrence is computed</a></li><li><a href="#completing-skipping-and-editing">Completing, skipping and editing</a></li><li><a href="#sync-and-convergence">Sync and convergence</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

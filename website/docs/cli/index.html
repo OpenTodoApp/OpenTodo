@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Command-line client · OpenTodo docs</title>
+  <meta name="description" content="The ot command: install, sign in, add and complete tasks, JSON output and exit codes for scripts.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/cli/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/cli/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Command-line client · OpenTodo docs">
+  <meta property="og:description" content="The ot command: install, sign in, add and complete tasks, JSON output and exit codes for scripts.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/" aria-current="page">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/" aria-current="page">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="developer">
+      <p class="doc-meta"><span class="crumbs">Integrations and internals <span aria-hidden="true">›</span> Integrations</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#install">Install</a></li><li><a href="#sign-in">Sign in</a><ul><li><a href="#configuration-file-and-profiles">Configuration file and profiles</a></li></ul></li><li><a href="#tasks">Tasks</a><ul><li><a href="#add-and-edit">Add and edit</a></li><li><a href="#complete-reopen-delete">Complete, reopen, delete</a></li></ul></li><li><a href="#projects">Projects</a></li><li><a href="#tokens-and-export">Tokens and export</a></li><li><a href="#scripting-json-output-and-exit-codes">Scripting: JSON output and exit codes</a><ul><li><a href="#cron-example">Cron example</a></li></ul></li><li><a href="#limits">Limits</a></li></ul></nav></details>
+<h1 id="command-line-client-ot">Command-line client (<code>ot</code>)</h1>
+<p><code>ot</code> is a small, statically linked client for the OpenTodo REST API. It is built for two audiences: people who live in a terminal (<code>ot add &quot;Call the plumber&quot; --due tomorrow</code>, <code>ot today</code>) and scripts, cron jobs and editor integrations that want stable JSON output and exit codes instead of hand-written <code>curl</code>.</p>
+<p>It is an <strong>online</strong> client: it keeps no local copy of your tasks and makes no change when the server cannot be reached. Every write goes through the REST API, which records it in the operation log, so changes made with <code>ot</code> reach your phone and browser on their next sync and converge under the same per-field last-writer-wins rule as any other edit.</p>
+<h2 id="install">Install<a class="anchor" href="#install" aria-label="Link to this section: Install">#</a></h2>
+<p>Release assets are published for linux, macOS and Windows on amd64 and arm64 (<code>ot-&lt;os&gt;-&lt;arch&gt;</code>); download one, make it executable and put it on your <code>PATH</code>. Or build from source (Go 1.26+, no other dependency):</p>
+<pre tabindex="0"><code class="language-bash">go install github.com/pixari/opentodo/cmd/ot@latest   # into $(go env GOPATH)/bin
+# or, from a checkout:
+make cli                                              # -&gt; bin/ot</code></pre>
+<p>The server container image does not include <code>ot</code>; it belongs on the machine you type on.</p>
+<h2 id="sign-in">Sign in<a class="anchor" href="#sign-in" aria-label="Link to this section: Sign in">#</a></h2>
+<pre tabindex="0"><code class="language-bash">ot login https://todo.example.com
+Email: you@example.com
+Password:
+Signed in to https://todo.example.com as you@example.com (profile &quot;default&quot;).
+Token &quot;cli@laptop&quot; stored in /home/you/.config/opentodo/config.json.</code></pre>
+<p><code>ot login</code> signs in with your email and password, creates an API token named <code>cli@&lt;hostname&gt;</code>, signs the session out again and stores only the token. The password is never echoed and never stored. You will see the token in <strong>Settings → API tokens</strong> in the web app, where it can also be revoked.</p>
+<p>Other ways to get credentials in:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ot auth set-token &lt;token&gt; --server &lt;url&gt;</code></td>
+<td>Store a token you created in Settings or with <code>ot token create</code></td>
+</tr>
+<tr>
+<td><code>ot auth status</code></td>
+<td>Show the server, the account and the token name in use</td>
+</tr>
+<tr>
+<td><code>ot auth logout</code></td>
+<td>Revoke the stored token on the server and remove it locally</td>
+</tr>
+</tbody></table></div>
+<h3 id="configuration-file-and-profiles">Configuration file and profiles<a class="anchor" href="#configuration-file-and-profiles" aria-label="Link to this section: Configuration file and profiles">#</a></h3>
+<p>The config file lives in the platform&#39;s user configuration directory (<code>$XDG_CONFIG_HOME/opentodo/config.json</code> or <code>~/.config/opentodo/config.json</code> on Linux, <code>~/Library/Application Support/opentodo/config.json</code> on macOS, <code>%AppData%\opentodo\config.json</code> on Windows). It is written with owner-only permissions (<code>0600</code>, directory <code>0700</code>).</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;default&quot;: &quot;home&quot;,
+  &quot;profiles&quot;: {
+    &quot;home&quot;: { &quot;url&quot;: &quot;https://todo.example.com&quot;, &quot;token&quot;: &quot;ot_…&quot; },
+    &quot;work&quot;: { &quot;url&quot;: &quot;https://tasks.corp.example&quot;, &quot;token&quot;: &quot;ot_…&quot; }
+  }
+}</code></pre>
+<p>Pick a profile with <code>--profile work</code> or <code>OPENTODO_PROFILE=work</code>; <code>ot login --profile work &lt;url&gt;</code> creates one. Precedence, highest first:</p>
+<ol>
+<li>Flags: <code>--server &lt;url&gt;</code></li>
+<li>Environment: <code>OPENTODO_URL</code>, <code>OPENTODO_TOKEN</code> (handy for cron and CI; no config file needed)</li>
+<li>The selected profile</li>
+</ol>
+<p><code>OPENTODO_CONFIG=/path/to/config.json</code> points at another config file. No command ever prints a stored token.</p>
+<h2 id="tasks">Tasks<a class="anchor" href="#tasks" aria-label="Link to this section: Tasks">#</a></h2>
+<pre tabindex="0"><code class="language-bash">ot today                       # due today or earlier, overdue first
+ot inbox                       # tasks without a project
+ot upcoming                    # due after today
+ot list                        # every open task, soonest first
+ot list --project Home         # one project (name or id)
+ot list --completed            # most recently completed first
+ot list --all --limit 20       # open and completed</code></pre>
+<p>Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title. Dates are evaluated in your local time zone. A task fixed to a time zone (see <a href="/docs/sync/#zoned-due-values">sync.md</a>) is shown converted to your zone with the original as a hint, e.g. <code>2026-10-11 00:00 (09:00 Berlin)</code>; <code>ot edit --due/--time</code> on it takes the date and time as shown and keeps the zone, and <code>--time &quot;&quot;</code> releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.</p>
+<pre tabindex="0"><code>ID        P   DUE                 PROJECT  TITLE
+8c2a91f0  P2  2026-10-08 overdue  Home     Pay rent
+3f1d7a22  P1  2026-10-10 09:00             Call the plumber</code></pre>
+<h3 id="add-and-edit">Add and edit<a class="anchor" href="#add-and-edit" aria-label="Link to this section: Add and edit">#</a></h3>
+<pre tabindex="0"><code class="language-bash">ot add &quot;Call the plumber&quot; --project Home --due tomorrow --time 09:00 --priority 2
+ot add &quot;Read the sync design&quot; --label reading --label work --note &quot;docs/sync.md&quot;
+ot edit 8c2a --priority 1 --due friday
+ot edit 8c2a --due none --project none --note &quot;&quot;     # clear values</code></pre>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>--project &lt;name-or-id&gt;</code></td>
+<td>Project; <code>none</code> (edit) moves the task to the Inbox</td>
+</tr>
+<tr>
+<td><code>--due &lt;when&gt;</code></td>
+<td><code>YYYY-MM-DD</code>, <code>today</code>, <code>tomorrow</code> or an English weekday name (next occurrence; <code>monday</code> on a Monday means next week); <code>none</code> (edit) clears the date</td>
+</tr>
+<tr>
+<td><code>--time HH:MM</code></td>
+<td>Due time, 24-hour; with <code>ot add</code> and no <code>--due</code> the date is today</td>
+</tr>
+<tr>
+<td><code>--priority 1..4</code></td>
+<td>1 is highest, 4 is the default</td>
+</tr>
+<tr>
+<td><code>--label &lt;l&gt;</code></td>
+<td>Repeatable; a label name (case-insensitive) or id. Unknown names create the label. With <code>ot edit</code> the given labels replace the list</td>
+</tr>
+<tr>
+<td><code>--note &lt;text&gt;</code></td>
+<td>Description; <code>--note &quot;&quot;</code> clears it</td>
+</tr>
+<tr>
+<td><code>--title &lt;text&gt;</code></td>
+<td>New title (<code>ot edit</code> only)</td>
+</tr>
+</tbody></table></div>
+<p><code>ot add</code> prints the new task&#39;s id (the whole task with <code>--json</code>). Priority, time and date are validated locally before any request is sent.</p>
+<h3 id="complete-reopen-delete">Complete, reopen, delete<a class="anchor" href="#complete-reopen-delete" aria-label="Link to this section: Complete, reopen, delete">#</a></h3>
+<pre tabindex="0"><code class="language-bash">ot done 8c2a 3f1d          # one or more references
+ot reopen 8c2a
+ot rm 8c2a                 # asks on a terminal; --yes for scripts</code></pre>
+<p>A <code>&lt;ref&gt;</code> is a full task id or an id prefix that matches exactly one non-deleted task. An ambiguous prefix changes nothing, exits with code 2 and lists the candidates; with several references all are resolved before anything is changed. Scripts should use full ids from <code>--json</code>. <code>ot rm</code> is a soft delete: the task becomes a tombstone that still appears in the export.</p>
+<h2 id="projects">Projects<a class="anchor" href="#projects" aria-label="Link to this section: Projects">#</a></h2>
+<pre tabindex="0"><code class="language-bash">ot project list [--all]                 # --all includes archived projects
+ot project add &quot;Garden&quot; [--color &quot;#22c55e&quot;]
+ot project rename Garden &quot;Back garden&quot;
+ot project archive Garden [--undo]
+ot project rm Garden [--yes]</code></pre>
+<p>Projects are referenced by name (case-insensitive), full id or unique id prefix.</p>
+<h2 id="tokens-and-export">Tokens and export<a class="anchor" href="#tokens-and-export" aria-label="Link to this section: Tokens and export">#</a></h2>
+<pre tabindex="0"><code class="language-bash">ot token list
+ot token create backup-script           # prints the secret once, with a notice on stderr
+ot token revoke backup-script           # by name, id or id prefix
+ot export                               # full JSON export (including tombstones) to stdout
+ot export --out opentodo-$(date +%F).json</code></pre>
+<h2 id="scripting-json-output-and-exit-codes">Scripting: JSON output and exit codes<a class="anchor" href="#scripting-json-output-and-exit-codes" aria-label="Link to this section: Scripting: JSON output and exit codes">#</a></h2>
+<p>Every command accepts <code>--json</code>. Stdout then holds only JSON, with the same field names as the <a href="/docs/api/">REST API</a>: an array for lists, the entity for single results, and the error envelope <code>{&quot;error&quot;:{&quot;code&quot;:&quot;…&quot;,&quot;message&quot;:&quot;…&quot;}}</code> on failure. Nothing else is printed on stdout in that mode, and errors from the server are passed through unchanged.</p>
+<pre tabindex="0"><code class="language-bash">ot list --json --today | jq -r '.[] | &quot;\(.priority) \(.title)&quot;'
+ot add &quot;Nightly backup check&quot; --json | jq -r .id</code></pre>
+<p>Exit codes:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>Success</td>
+</tr>
+<tr>
+<td>1</td>
+<td>The server rejected the request (its message is printed verbatim)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Usage or local validation error (bad flag, invalid priority or date, ambiguous reference, missing configuration)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Authentication or configuration error (wrong password, revoked token, unreadable config file)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>The server could not be reached within the timeout (15 s)</td>
+</tr>
+</tbody></table></div>
+<p>When stdout is not a terminal, or <code>NO_COLOR</code> is set, colour is off and nothing is prompted (<code>ot rm</code> deletes without asking; pass <code>--yes</code> to be explicit). <code>ot login</code> reads the password from stdin when stdin is not a terminal.</p>
+<h3 id="cron-example">Cron example<a class="anchor" href="#cron-example" aria-label="Link to this section: Cron example">#</a></h3>
+<p>A nightly export kept for 30 days, using environment variables instead of a config file:</p>
+<pre tabindex="0"><code class="language-cron"># m h dom mon dow  command
+0 3 * * *  OPENTODO_URL=https://todo.example.com OPENTODO_TOKEN=ot_… /usr/local/bin/ot export --out /backups/opentodo-$(date +\%F).json &amp;&amp; find /backups -name 'opentodo-*.json' -mtime +30 -delete</code></pre>
+<p>Or add a reminder task every Monday morning:</p>
+<pre tabindex="0"><code class="language-cron">0 8 * * 1  OPENTODO_URL=… OPENTODO_TOKEN=… /usr/local/bin/ot add &quot;Weekly review&quot; --due today --time 17:00 --priority 2 &gt;/dev/null</code></pre>
+<h2 id="limits">Limits<a class="anchor" href="#limits" aria-label="Link to this section: Limits">#</a></h2>
+<ul>
+<li>Online only: no offline queue, no local cache. Offline capture is what the web app and PWA are for.</li>
+<li><code>--due</code> understands a fixed set of words; the natural-language quick-add grammar lives in the web client.</li>
+<li>Rate limits on <code>auth/login</code> apply (10 per minute per address); <code>ot auth set-token</code> avoids them entirely.</li>
+<li>No shell completion scripts yet.</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/cli.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/api/"><span>Previous</span>HTTP API</a>
+      <a class="next" rel="next" href="/docs/webhooks/"><span>Next</span>Webhooks</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#install">Install</a></li><li><a href="#sign-in">Sign in</a><ul><li><a href="#configuration-file-and-profiles">Configuration file and profiles</a></li></ul></li><li><a href="#tasks">Tasks</a><ul><li><a href="#add-and-edit">Add and edit</a></li><li><a href="#complete-reopen-delete">Complete, reopen, delete</a></li></ul></li><li><a href="#projects">Projects</a></li><li><a href="#tokens-and-export">Tokens and export</a></li><li><a href="#scripting-json-output-and-exit-codes">Scripting: JSON output and exit codes</a><ul><li><a href="#cron-example">Cron example</a></li></ul></li><li><a href="#limits">Limits</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

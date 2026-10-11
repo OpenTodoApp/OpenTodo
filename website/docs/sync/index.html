@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sync protocol · OpenTodo docs</title>
+  <meta name="description" content="Operations, the schema, the winner rule, the exchange, sharing scopes, live updates, purge and history.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/sync/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/sync/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Sync protocol · OpenTodo docs">
+  <meta property="og:description" content="Operations, the schema, the winner rule, the exchange, sharing scopes, live updates, purge and history.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/" aria-current="page">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/" aria-current="page">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="developer">
+      <p class="doc-meta"><span class="crumbs">Integrations and internals <span aria-hidden="true">›</span> Internals</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#operation">Operation</a><ul><li><a href="#schema-v1">Schema (v1)</a></li><li><a href="#zoned-due-values">Zoned due values</a></li><li><a href="#recurring-tasks">Recurring tasks</a></li><li><a href="#reminders">Reminders</a></li><li><a href="#mergeable-documents">Mergeable documents</a></li><li><a href="#comments">Comments</a></li><li><a href="#activity">Activity</a></li><li><a href="#project-preferences-and-the-activity-feed">Project preferences and the activity feed</a></li><li><a href="#task-labels">Task labels</a></li><li><a href="#sections">Sections</a></li><li><a href="#manual-order">Manual order</a></li><li><a href="#saved-views">Saved views</a></li><li><a href="#encrypted-values">Encrypted values</a></li></ul></li><li><a href="#winner-rule">Winner rule</a></li><li><a href="#clocks">Clocks</a></li><li><a href="#exchange">Exchange</a><ul><li><a href="#paging">Paging</a></li></ul></li><li><a href="#sharing-scopes">Sharing scopes</a></li><li><a href="#live-updates">Live updates</a></li><li><a href="#log-generation">Log generation</a></li><li><a href="#deletes">Deletes</a></li><li><a href="#purge">Purge</a></li><li><a href="#history">History</a></li><li><a href="#trees-subtasks">Trees: subtasks</a></li><li><a href="#trees-sub-projects">Trees: sub-projects</a></li><li><a href="#rest-writes">REST writes</a></li><li><a href="#caldav">CalDAV</a></li><li><a href="#limits">Limits</a></li></ul></nav></details>
+<h1 id="sync-protocol">Sync protocol</h1>
+<p>OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state-based CRDT (a map of LWW registers), which gives three properties:</p>
+<ul>
+<li><strong>Convergence</strong>: replicas that have seen the same ops hold the same state, in any order.</li>
+<li><strong>Idempotency</strong>: applying an op twice changes nothing.</li>
+<li><strong>Offline safety</strong>: ops can be produced without the server and merged later.</li>
+</ul>
+<h2 id="operation">Operation<a class="anchor" href="#operation" aria-label="Link to this section: Operation">#</a></h2>
+<pre tabindex="0"><code class="language-json">{
+  &quot;id&quot;: &quot;0d1f…&quot;,                 // unique per op (UUID v4)
+  &quot;entity&quot;: &quot;task&quot;,              // &quot;task&quot; | &quot;project&quot; | &quot;label&quot; | &quot;view&quot; | &quot;reminder&quot; | &quot;section&quot; | &quot;comment&quot; | &quot;project_prefs&quot;
+  &quot;entityId&quot;: &quot;8c2a…&quot;,           // UUID of the entity
+  &quot;field&quot;: &quot;title&quot;,              // must be in the schema for the entity
+  &quot;value&quot;: &quot;Buy oat milk&quot;,       // JSON, type-checked per field
+  &quot;ts&quot;: 1760060000123,           // hybrid logical clock, unix ms
+  &quot;device&quot;: &quot;3c54…&quot;,             // id of the producing device (&quot;server&quot; for REST writes)
+  &quot;actor&quot;: &quot;a1b2…&quot;               // served ops only: the author's account id (ignored on input)
+}</code></pre>
+<h3 id="schema-v1">Schema (v1)<a class="anchor" href="#schema-v1" aria-label="Link to this section: Schema (v1)">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Field</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>project</td>
+<td><code>name</code>, <code>color</code></td>
+<td>string</td>
+</tr>
+<tr>
+<td>project</td>
+<td><code>position</code>, <code>created_at</code></td>
+<td>number</td>
+</tr>
+<tr>
+<td>project</td>
+<td><code>archived</code></td>
+<td>boolean</td>
+</tr>
+<tr>
+<td>project</td>
+<td><code>parent_id</code></td>
+<td>string or null</td>
+</tr>
+<tr>
+<td>project</td>
+<td><code>deleted_at</code></td>
+<td>number or null</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>title</code>, <code>description</code></td>
+<td>string</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>project_id</code>, <code>parent_id</code></td>
+<td>string or null</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>priority</code></td>
+<td>integer 1–4 (1 highest)</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>due</code></td>
+<td><code>{&quot;date&quot;:&quot;YYYY-MM-DD&quot;,&quot;time&quot;:&quot;HH:MM&quot;?,&quot;tz&quot;:&quot;Area/City&quot;?}</code> or null; <code>tz</code> (a known IANA zone, at most 64 characters) only together with <code>time</code>, see <a href="#zoned-due-values">Zoned due values</a></td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>labels</code></td>
+<td>array of strings (label ids, see below)</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>position</code>, <code>created_at</code></td>
+<td>number</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>completed_at</code>, <code>deleted_at</code></td>
+<td>number or null</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>estimate_minutes</code></td>
+<td>integer 1–10080 (minutes) or null; with <code>due.time</code> it forms a calendar block (time-blocking)</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>recurrence</code></td>
+<td>recurrence rule string (at most 200 characters, must parse under <a href="/docs/recurrence/">the grammar</a>) or null</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>series_id</code></td>
+<td>string (task id) or null</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>assignee_id</code></td>
+<td>string (account id) or null; checked against the task&#39;s scope at receipt (see &quot;Assignment&quot; under <a href="#sharing-scopes">Sharing scopes</a>)</td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>section_id</code></td>
+<td>string (section id) or null; see <a href="#sections">Sections</a></td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>ical_extra</code></td>
+<td>string or null: opaque iCalendar lines from CalDAV clients, see <a href="#caldav">CalDAV</a></td>
+</tr>
+<tr>
+<td>task</td>
+<td><code>notes_doc</code></td>
+<td>document: <code>&quot;&quot;</code> or an envelope <code>&quot;&lt;format&gt;:v&lt;n&gt;:&lt;base64&gt;&quot;</code> of at most 256 KB (262,144 characters); the note as a mergeable rich-text document, see <a href="#mergeable-documents">Mergeable documents</a></td>
+</tr>
+<tr>
+<td>section</td>
+<td><code>name</code></td>
+<td>string</td>
+</tr>
+<tr>
+<td>section</td>
+<td><code>project_id</code></td>
+<td>string (project id, required; never changes)</td>
+</tr>
+<tr>
+<td>section</td>
+<td><code>position</code>, <code>created_at</code></td>
+<td>number</td>
+</tr>
+<tr>
+<td>section</td>
+<td><code>deleted_at</code></td>
+<td>number or null</td>
+</tr>
+<tr>
+<td>label</td>
+<td><code>name</code>, <code>color</code></td>
+<td>string</td>
+</tr>
+<tr>
+<td>label</td>
+<td><code>position</code>, <code>created_at</code></td>
+<td>number</td>
+</tr>
+<tr>
+<td>label</td>
+<td><code>deleted_at</code></td>
+<td>number or null</td>
+</tr>
+<tr>
+<td>view</td>
+<td><code>name</code>, <code>query</code>, <code>color</code></td>
+<td>string</td>
+</tr>
+<tr>
+<td>view</td>
+<td><code>kind</code>, <code>group_by</code>, <code>sort_by</code>, <code>sort_dir</code></td>
+<td>string (enumeration, see &quot;Saved views&quot;)</td>
+</tr>
+<tr>
+<td>view</td>
+<td><code>pinned</code></td>
+<td>boolean</td>
+</tr>
+<tr>
+<td>view</td>
+<td><code>panels</code></td>
+<td>array of strings (view ids)</td>
+</tr>
+<tr>
+<td>view</td>
+<td><code>position</code>, <code>created_at</code></td>
+<td>number</td>
+</tr>
+<tr>
+<td>view</td>
+<td><code>deleted_at</code></td>
+<td>number or null</td>
+</tr>
+<tr>
+<td>reminder</td>
+<td><code>task_id</code></td>
+<td>string (task id, required)</td>
+</tr>
+<tr>
+<td>reminder</td>
+<td><code>kind</code></td>
+<td><code>&quot;relative&quot;</code> or <code>&quot;absolute&quot;</code></td>
+</tr>
+<tr>
+<td>reminder</td>
+<td><code>offset_minutes</code></td>
+<td>integer −525600…525600 (minutes from the due time, negative = before) or null</td>
+</tr>
+<tr>
+<td>reminder</td>
+<td><code>fire_at</code></td>
+<td>positive number (Unix ms, the resolved firing instant) or null</td>
+</tr>
+<tr>
+<td>reminder</td>
+<td><code>delivered_at</code>, <code>dismissed_at</code></td>
+<td>number or null</td>
+</tr>
+<tr>
+<td>reminder</td>
+<td><code>created_at</code></td>
+<td>number</td>
+</tr>
+<tr>
+<td>reminder</td>
+<td><code>deleted_at</code></td>
+<td>number or null</td>
+</tr>
+<tr>
+<td>comment</td>
+<td><code>task_id</code>, <code>author_id</code></td>
+<td>string (task id, account id; required, fixed at creation)</td>
+</tr>
+<tr>
+<td>comment</td>
+<td><code>parent_id</code></td>
+<td>string (comment id) or null</td>
+</tr>
+<tr>
+<td>comment</td>
+<td><code>body</code></td>
+<td>string (markdown, at most 64 KB like every value)</td>
+</tr>
+<tr>
+<td>comment</td>
+<td><code>mentions</code></td>
+<td>array of strings (account ids; filtered to members at receipt)</td>
+</tr>
+<tr>
+<td>comment</td>
+<td><code>created_at</code></td>
+<td>number</td>
+</tr>
+<tr>
+<td>comment</td>
+<td><code>edited_at</code>, <code>deleted_at</code></td>
+<td>number or null</td>
+</tr>
+<tr>
+<td>project_prefs</td>
+<td><code>feed_seen_at</code></td>
+<td>number (Unix ms: the activity-feed &quot;seen until&quot; time; personal scope only)</td>
+</tr>
+</tbody></table></div>
+<p><code>actor</code> on served ops (OpenSpec <code>comments-and-activity</code>) is the account that wrote the op, taken from <code>ops.user_id</code>, which the server always sets from the authenticated submitter; a value sent by a client is ignored. It is additive and optional: older clients ignore it, and ops from an older server simply lack it.</p>
+<p>Adding fields is backwards compatible. Renaming or removing is not; it needs an OpenSpec change with a migration plan.</p>
+<p>A client that receives an op for an entity it does not know (an older build talking to a newer server) ignores it without failing the batch; the cursor still advances.</p>
+<h3 id="zoned-due-values">Zoned due values<a class="anchor" href="#zoned-due-values" aria-label="Link to this section: Zoned due values">#</a></h3>
+<p><code>due</code> is floating by default: a calendar date and optional wall-clock time that mean the same day and clock time wherever the task is viewed. A due with a <code>tz</code> key is <em>zoned</em> (OpenSpec change <code>absolute-datetimes</code>): <code>{&quot;date&quot;:&quot;2026-10-11&quot;,&quot;time&quot;:&quot;09:00&quot;,&quot;tz&quot;:&quot;Europe/Berlin&quot;}</code> denotes the instant 09:00 in Berlin on that day. The zone lives inside the value, not in a separate field, so the whole due is one last-writer-wins register: a concurrent floating edit and zoned edit converge on one complete value, never a date from one and a zone from the other.</p>
+<ul>
+<li>The server accepts <code>tz</code> only with <code>time</code> and only as a zone name it knows (Go&#39;s embedded zone database); otherwise the op is rejected like any invalid value. It stores the raw JSON, so servers that predate <code>tz</code> also store and serve it untouched, and clients that predate it read <code>date</code> and <code>time</code> and keep <code>tz</code> unless the user edits the due.</li>
+<li>The value is wall time plus zone, not an epoch: it is resolved with the zone&#39;s rules in force on that date, so it follows daylight-saving changes and future rule updates. A wall time inside a spring-forward gap resolves to the first valid instant after the gap (02:30 on a 02:00→03:00 day is 03:00); one inside an autumn overlap resolves to its first occurrence. <code>internal/zoned</code> (Go) and <code>web/src/lib/dates.ts</code> implement the same rules and run the shared vectors in <code>web/src/lib/zoned.vectors.json</code>.</li>
+<li>Clients show, sort and group a zoned due by its date and time converted to the viewer&#39;s zone (Today, Upcoming, saved views, filters and the calendar grid all use the converted value) and show the original wall time and zone as a hint when the viewer is in another zone. Clearing the time of a zoned due drops <code>tz</code>.</li>
+<li>Recurring series keep <code>time</code> and <code>tz</code> as <code>date</code> rolls forward; relative reminders fire relative to the zoned instant.</li>
+</ul>
+<h3 id="recurring-tasks">Recurring tasks<a class="anchor" href="#recurring-tasks" aria-label="Link to this section: Recurring tasks">#</a></h3>
+<p><code>task.recurrence</code> holds a rule such as <code>every last weekday</code>; the server rejects an op whose value does not parse (any spelling the grammar accepts is valid, clients store the canonical form). Completing a recurring task is not a single <code>completed_at</code> op: the client writes, in one batch, a new <em>occurrence record</em> (a task with the series&#39; fields, <code>completed_at</code> set, <code>recurrence: null</code> and <code>series_id</code> pointing at the series) and a <code>due</code> op on the series moving it to the next occurrence. The record&#39;s id is not random: it is <code>NameID(&quot;occurrence&quot;, seriesId + &quot;:&quot; + occurrenceDate)</code> (SHA-256, formatted as a version 8 UUID; <code>internal/ids</code> and <code>web/src/lib/ids.ts</code>), and the next due date is a pure function of the rule and dates every device shares. Two devices that complete the same occurrence offline therefore write the same entity and the same <code>due</code> value, and LWW only chooses between identical values; Completed shows one entry. &quot;This occurrence only&quot; uses <code>seriesId + &quot;:detach:&quot; + date</code> so a copy never collides with a completion. See <a href="/docs/recurrence/">recurrence.md</a>.</p>
+<h3 id="reminders">Reminders<a class="anchor" href="#reminders" aria-label="Link to this section: Reminders">#</a></h3>
+<p>A <code>reminder</code> belongs to one task (<code>task_id</code>) and fires at <code>fire_at</code>, always a resolved instant (OpenSpec change <code>reminders</code>). An <em>absolute</em> reminder keeps the moment the user picked. A <em>relative</em> reminder also stores <code>offset_minutes</code> and its <code>fire_at</code> is the task&#39;s due time plus the offset, a date-only due counting as 09:00 in the computing device&#39;s time zone and a zoned due counting as its own instant; with no due date <code>fire_at</code> is null and it does not fire. The device that changes a task&#39;s <code>due</code> (an edit, a reschedule, a recurring series completing, skipping or detaching) writes a <code>fire_at</code> op for every live relative reminder of the task <strong>in the same batch, with the same timestamp and device</strong> as the <code>due</code> op, so LWW always takes the due date and the firing times from the same edit. When the firing moves it also clears <code>delivered_at</code> and <code>dismissed_at</code>. REST <code>PATCH /api/v1/tasks/{id}</code> that changes <code>due</code> does the same server-side, in the owner&#39;s last reported zone offset (the <code>tzOffset</code> field of the sync request) or UTC until one was reported; a zoned due uses its own zone.</p>
+<ul>
+<li><em>Snooze</em> writes a new <code>fire_at</code> and clears <code>delivered_at</code> and <code>dismissed_at</code>; <em>dismiss</em> writes <code>dismissed_at</code>. Both are ordinary ops, so they queue offline and converge per field.</li>
+<li><code>delivered_at</code> is written by the server (device <code>server</code>) when it pushed the reminder. A delivery or dismissal <strong>older than <code>fire_at</code></strong> belongs to an earlier firing and does not count, so a snooze or due change racing the server&#39;s delivery op still fires again.</li>
+<li>A reminder is shown when <code>fire_at</code> ≤ now, it is not deleted, not dismissed for the current firing, and its task exists and is neither completed nor deleted.</li>
+<li>Reminders are <strong>personal</strong>: every reminder op is stored in its author&#39;s personal scope (<code>user:&lt;id&gt;</code>), also when the task is in a shared project, so only the author&#39;s devices receive it and any member, viewers included, can keep reminders on a shared task. Because another member&#39;s device cannot write them, a device that pulls a <code>due</code> change for a task in a shared project recomputes its own relative reminders for that task (new ops, not the same batch). A REST due change recomputes only the caller&#39;s reminders.</li>
+<li>Push subscriptions are device state on the server (<code>push_subscriptions</code>), never ops, and are not exported.</li>
+</ul>
+<h3 id="mergeable-documents">Mergeable documents<a class="anchor" href="#mergeable-documents" aria-label="Link to this section: Mergeable documents">#</a></h3>
+<p>A task&#39;s note is rich text that merges instead of overwriting (OpenSpec <code>collaborative-rich-text</code>). Two fields carry it:</p>
+<ul>
+<li><code>notes_doc</code> holds the note as a <strong>full-state document</strong>: <code>&quot;&quot;</code> (no document yet) or <code>&quot;ydoc:v1:&quot; + base64(Yjs update, format v1)</code>. It is an ordinary last-writer-wins register on the server and in every device&#39;s store; the server validates only the envelope shape (<code>^[a-z][a-z0-9]{0,15}:v[0-9]{1,3}:</code> followed by standard or URL-safe base64, padding optional, at most <code>MaxDocBytes</code> = 256 KB characters, every other kind keeps 64 KB) and never decodes it. Any envelope format passes, so an end-to-end encrypted value (<code>enc:v1:…</code>, see below) is valid too.</li>
+<li><code>description</code> stays the <strong>Markdown projection</strong> of the document: <code>#</code> headings, <code>**bold**</code>, <code>_italic_</code> (<code>*italic*</code> inside words), <code>~~strike~~</code>, <code>`code`</code>, <code>[text](url)</code>, <code>-</code> and <code>1.</code> lists, <code>- [ ]</code> / <code>- [x]</code> check items; a single newline is a line break, a blank line separates blocks. Clients write it in the <strong>same batch</strong> (same <code>ts</code>) as <code>notes_doc</code>, so the REST API, the export, CalDAV, MCP, webhooks, search and older clients keep reading text.</li>
+</ul>
+<p>Rules, all on the client (<code>web/src/lib/ops.ts</code>, <code>web/src/lib/richtext.ts</code>):</p>
+<ol>
+<li><strong>Merge and republish.</strong> A device that applies a <code>notes_doc</code> op merges it with its local document whether the op wins or loses (Yjs merges are commutative, associative and idempotent). If the union holds anything the stored winner lacks (an insertion, a format change or a deletion), the device publishes the union and its projection as a new pair with a timestamp newer than the winner; otherwise it publishes nothing. Merging identical states produces no op, and two devices republishing at once both publish the union, so the exchange stops after at most one extra round per device.</li>
+<li><strong>Local writes stay pairs.</strong> Every local batch that writes <code>notes_doc</code> merges it with the stored document first (a remote change that arrived while the editor held an older copy is never undone) and sets <code>description</code> to the projection. A local plain-text write to <code>description</code> of a task that has a document (history restore, plain-text fallback) is folded in (rule 3) in the same batch.</li>
+<li><strong>Fold-back of plain-text writes.</strong> When <code>description</code> has a clock newer than <code>notes_doc</code> and no <code>notes_doc</code> carries that clock (REST, an older client, CalDAV, email), the text is parsed as Markdown into a new body of the document named after that clock, and the older bodies&#39; content is deleted. The new body is written by a Yjs client id derived from its name into an empty fragment, so every device that folds the same write produces identical structures and the copies merge into one. A concurrent rich edit made before that plain-text write is overridden once (last-writer-wins for that transition). The fold runs when a device opens the note, or before any republish; an older plain-text write loses to a newer document by the ordinary winner rule, and an unpaired projection that differs from the document is re-projected.</li>
+<li><strong>Legacy notes.</strong> A task without a document is upgraded lazily when its note is first opened (the same fold, keyed by the <code>description</code> clock). No bulk migration.</li>
+</ol>
+<p>Document layout: root XML fragments <code>b:&lt;ts 15 digits&gt;:&lt;device&gt;</code>, the greatest name is the visible body (<code>b:000000000000000:</code> for a note first written in the editor). Text blocks hold one text node whose formatting attributes are marks (<code>strong</code>, <code>em</code>, <code>strike</code>, <code>code</code>: <code>{}</code>; <code>link</code>: <code>{href}</code>); elements are <code>paragraph</code>, <code>heading{level}</code>, <code>bullet_list</code>, <code>ordered_list{order}</code>, <code>list_item{checked}</code>. Unknown elements, attributes and marks from newer clients survive every merge and are shown as plain text. A value a device cannot read (corrupt, another format) is never overwritten automatically; the note then shows <code>description</code>.</p>
+<p>The editor saves a debounced full state (400 ms after the last keystroke, and on blur, close, hide and unload). The outbox keeps one pending <code>notes_doc</code> op per task: a newer state replaces the queued one. A batch whose document would exceed 256 KB, or whose projection would exceed the 64 KB value cap, is refused on the device before any op exists. History, activity and webhook deliveries leave <code>notes_doc</code> out; the <code>description</code> change in the same change set is the readable revision.</p>
+<h3 id="comments">Comments<a class="anchor" href="#comments" aria-label="Link to this section: Comments">#</a></h3>
+<p>A <code>comment</code> is a threaded markdown note on a task (OpenSpec <code>comments-and-activity</code>). It is an ordinary entity, so comments are written offline, queue in the outbox and converge per field; the body is one LWW register like <code>description</code> (two offline edits of one comment keep the newer body).</p>
+<ul>
+<li><strong>Scope.</strong> A comment lives in the scope of its task: the shared project&#39;s scope, or the author&#39;s personal scope for a task in the Inbox or an unshared project. A comment created in the same batch as its task follows that task&#39;s <code>project_id</code> like a new task does. Sharing a project later relabels its tasks&#39; comments with them; purging a task purges its comments (and leaves markers for them).</li>
+<li><strong>Authorship, checked per op at receipt.</strong> On the op that creates a comment, <code>author_id</code> must equal the submitting account; <code>task_id</code> and <code>author_id</code> can never change afterwards. <code>body</code>, <code>mentions</code>, <code>edited_at</code>, <code>parent_id</code> and <code>created_at</code> are accepted only from the author. <code>deleted_at</code> is accepted from the author, a project admin and the owner. A violation is refused with reason <code>forbidden</code> and the server&#39;s value travels back in <code>ops</code>, like any refused field. A comment on a task the author cannot read, or on a task that does not exist, is refused; ops for a comment whose task was purged are discarded as duplicates.</li>
+<li><strong>Viewers may comment.</strong> Commenting is the one write a viewer of a shared project is expected to make, so a viewer may create comments and edit or delete their own. This is the only exception to &quot;viewers write nothing&quot;.</li>
+<li><strong>Mentions.</strong> The server keeps only ids of current members of the task&#39;s shared project (none on a personal task), without duplicates, and stores the op with the filtered value. The filtered op goes back to the author&#39;s device in the same response with the original <code>(ts, device)</code>; the client adopts a server value that carries the clock its row already has for this field only (<code>comment.mentions</code>), so every device converges on the filtered list. Each account newly added to a comment&#39;s mentions gets an in-app notification (<code>kind: &quot;mentioned&quot;</code>) after commit, through the same notification sink as assignments.</li>
+<li><strong>Rate limit.</strong> Each account may create 60 comments per minute (fixed window, sync and REST together); further creations are refused with reason <code>rate_limited</code> and are not stored.</li>
+<li><strong>Delete</strong> sets <code>deleted_at</code>; clients show a &quot;comment deleted&quot; placeholder in its place in the thread and the REST API stops serving it. A delete and a concurrent edit resolve per field: the comment stays deleted, whatever body won.</li>
+<li><strong>Threads</strong> are derived from <code>parent_id</code>: a reply to a reply belongs to the same thread, a reply whose parent is unknown, on another task or part of a cycle starts its own thread. <code>sync.ThreadOrder</code> and <code>web/src/lib/comments.ts</code> implement the same order.</li>
+<li><strong>Reseeding after a restore</strong> re-sends only the device user&#39;s own comments (the server would refuse anyone else&#39;s).</li>
+</ul>
+<h3 id="activity">Activity<a class="anchor" href="#activity" aria-label="Link to this section: Activity">#</a></h3>
+<p>The activity log is derived from ops, never written (design D4). <code>internal/activity</code> (server) and <code>web/src/lib/activity.ts</code> (client) implement one rule, and both test suites run <code>internal/activity/testdata/activity_fixture.json</code>:</p>
+<ol>
+<li>Only task, project and comment ops count.</li>
+<li>Ops are ordered by <code>(ts, device)</code>, ties in <code>seq</code> order: the order the winner rule resolves them in.</li>
+<li>An op&#39;s old value is the previous value of its field in that order.</li>
+<li>Ops by one actor on one entity within 5 s of the first op of that actor&#39;s open group for the entity fold into one event.</li>
+<li>An event is classified by the fields it touched, in this order: <code>created_at</code> → created; <code>completed_at</code> → completed / reopened; <code>deleted_at</code> → deleted / restored; <code>due</code> → rescheduled; <code>assignee_id</code> → assigned / unassigned; <code>project_id</code> → moved; <code>archived</code> → archived / unarchived; anything else → edited. A comment group is commented (creation), comment_deleted or comment_edited. A group that changed nothing is dropped.</li>
+</ol>
+<p>The event id is the id of its first op. Devices record every task, project and comment op they apply (author, old value from the local row, project) in a local <code>activity</code> table and derive events from it, so per-task and per-project activity works offline and shows the device&#39;s unsent ops as pending. The table keeps at most 500 events per project, dropping the oldest; <code>GET /api/v1/{tasks|projects}/{id}/activity</code> serves the full history from the op log, and clients merge older pages by event id and op ids. A device that receives ops out of timestamp order may fold an event slightly differently from the server; the merge never shows an op twice.</p>
+<h3 id="project-preferences-and-the-activity-feed">Project preferences and the activity feed<a class="anchor" href="#project-preferences-and-the-activity-feed" aria-label="Link to this section: Project preferences and the activity feed">#</a></h3>
+<p><code>project_prefs</code> (OpenSpec <code>activity-feed</code>, design D1) holds one user&#39;s personal preferences for a project; its <code>entityId</code> is the project id. Its ops always resolve to the <strong>author&#39;s personal scope</strong>, also for a shared project, so they sync to the author&#39;s own devices and never to other members; any member, viewers included, may write their own. Today it has one field, <code>feed_seen_at</code>: the time up to which the user has seen the project&#39;s activity, taken from the newest displayed event&#39;s <code>ts</code> (an op timestamp, not the device clock). A client never writes a value smaller than the one it holds, and LWW on <code>(ts, device)</code> keeps the later mark, so two devices converge to the later time. Purging a project purges every member&#39;s <code>project_prefs</code> for it (with markers, so a stale mark cannot bring it back); sharing a project or leaving it does not touch them.</p>
+<p>Unread counts are computed locally: events of a shared project by another actor with <code>ts</code> greater than <code>feed_seen_at</code>. A device with no <code>feed_seen_at</code> for a project uses the time of its first sync after the upgrade (stored per device as <code>feedBaseline</code>), so existing history does not show up as unread. <code>GET /api/v1/activity</code> serves the cross-project feed from the op log (see <a href="/docs/api/#activity-feed">api.md</a>).</p>
+<h3 id="task-labels">Task labels<a class="anchor" href="#task-labels" aria-label="Link to this section: Task labels">#</a></h3>
+<p><code>task.labels</code> is an array of <strong>label ids</strong>, not names. Renaming or recolouring a label is therefore one op on the label and never touches a task. Ids that point at a deleted label, or at a label this device has not received yet, are kept in the array but not displayed; the chip appears as soon as the label arrives.</p>
+<p>The array is a single LWW register: every write replaces the whole value, and when two devices write different arrays for the same task offline, every replica ends with the array that carries the greater <code>(ts, device)</code>. Concretely, if device A adds <code>errand</code> and device B adds <code>call</code> to the same task while both are offline, only one of the two labels survives on every device. To keep the common case safe the client reads the task&#39;s current array in the same transaction as the write, so sequential edits on one device never lose a label, and remote ops are applied live so the window is only the offline period. Deleting a label removes its id from every carrying task with one op per task; a concurrent array write elsewhere can resurrect the id, which is why deleted ids are hidden rather than trusted to be absent. Merging a label rewrites each carrying task&#39;s array once (source id → target id, de-duplicated) and tombstones the source.</p>
+<p>The path to per-element semantics is recorded in <code>openspec/changes/archive/2026-10-10-labels/design.md</code>: an add-wins set encoded as additional per-element fields would be additive to this schema.</p>
+<h3 id="sections">Sections<a class="anchor" href="#sections" aria-label="Link to this section: Sections">#</a></h3>
+<p>A <code>section</code> is a named, ordered container inside one project (OpenSpec change <code>board-view</code>): a heading in the list view and a column on the board. The board itself has no synced state; it is a rendering of sections and tasks. View mode (list or board) and collapsed headings are per-device preferences in the client&#39;s local <code>meta</code> table and never become ops.</p>
+<ul>
+<li><strong>Scope.</strong> A section lives in the sharing scope of its project, like a task: a new section&#39;s <code>project_id</code> in the batch decides its scope, sharing a project relabels its sections into the project scope, and a <code>project_id</code> op that would move a section to another scope is refused with <code>scope_change</code>. Editors, admins and the owner may write sections; viewers are refused with <code>forbidden</code>. Clients never change a section&#39;s project (the REST API refuses it).</li>
+<li><strong>Task reference.</strong> <code>task.section_id</code> names a section of the task&#39;s project. A reference to a deleted section, a section of another project, or one the device has not received yet is shown as &quot;No section&quot; and is never repaired by a write: a repair would depend on arrival order and could overwrite a newer move. Only user actions write: changing a task&#39;s <code>project_id</code> writes <code>section_id: null</code> in the same batch, and deleting a section writes its tombstone plus <code>section_id: null</code> for each of its open tasks, one op each, in one batch.</li>
+<li><strong>Moves.</strong> Moving a task to a column writes <code>section_id</code> and <code>position</code> (after the target column&#39;s last open task) in one batch with one timestamp, so concurrent moves resolve to the newer one for both fields together. Placement inside a column follows <a href="#manual-order">Manual order</a>.</li>
+<li><strong>Unknown entities.</strong> Clients skip ops for entities they do not know (an installed, not yet refreshed PWA receiving <code>section</code> ops), so future entities never break an older shell; a resync re-delivers them.</li>
+<li><strong>Purge.</strong> Sections are not Trash items; purging a project purges its sections (live or deleted) with it.</li>
+</ul>
+<h3 id="manual-order">Manual order<a class="anchor" href="#manual-order" aria-label="Link to this section: Manual order">#</a></h3>
+<p>Tasks (per project section, per parent&#39;s subtasks, and in the Inbox), sections and sidebar projects (per parent) are ordered by hand through their existing <code>position</code> number (OpenSpec change <code>manual-ordering</code>). Nothing about the op format changes; this is the rule every client applies to that field.</p>
+<ul>
+<li><strong>Order rule.</strong> A list sorts by <code>(position, id)</code> ascending. The id tie-break makes the order total and identical on every device, also when two items end up with the same position after concurrent inserts into one gap. Subtask and sidebar trees use the same rule for siblings. Date and filter views keep their own sort and use <code>(position, id)</code> only as the last tie-breaker.</li>
+<li><strong>Insertion.</strong> A move writes the midpoint between its new neighbours, or <code>first − 1000</code> / <code>last + 1000</code> at an edge: one <code>position</code> op. New tasks get their creation time, or <code>largest position + 1000</code> when something was moved past it, so they land at the end.</li>
+<li><strong>Renumbering.</strong> When the neighbours are equal or too close for a distinct double between them (about twenty bisections of one gap), the client renumbers the smallest window of neighbours around the gap with even spacing, growing it outwards until the values fit (at worst the whole list; an open end uses spacing 1000), and places the moved item in it. Each renumbered item is an ordinary <code>position</code> op in the same batch as the move, so the batch shares one timestamp and converges like any other edit. Items the user may not write (a shared project where they are not owner or admin) are never rewritten; they bound the window.</li>
+<li><strong>Cross-container moves.</strong> Dropping a task into another section or under another parent writes <code>section_id</code> / <code>parent_id</code> and <code>position</code> in one batch with one timestamp; a project dropped into another project writes <code>parent_id</code> and <code>position</code> together. Under LWW the newer move wins both fields, so an item never ends up with one device&#39;s container and the other&#39;s position.</li>
+<li><strong>Concurrency.</strong> Same op set → same order; no item is lost or duplicated because order is derived from rows. Intent is not preserved: two devices placing different items into the same gap interleave by position then id, and a renumbering on one device concurrent with a move on another can shift where the other move appears. One more move fixes either; a sequence CRDT per list could be added later without changing the transport.</li>
+<li><strong>Roles.</strong> Viewers write no positions. A project&#39;s <code>position</code> is a project field: only its owner or an admin may move a shared project in the sidebar, while editors reorder its tasks and sections.</li>
+</ul>
+<h3 id="saved-views">Saved views<a class="anchor" href="#saved-views" aria-label="Link to this section: Saved views">#</a></h3>
+<p>A <code>view</code> is a saved filter query with its presentation options (OpenSpec <code>custom-views</code>). It is the first synced entity that holds a preference rather than task content, and it follows the same per-field LWW rules: changing the grouping on one device and the sort on another, both offline, leaves every device with both changes.</p>
+<ul>
+<li><code>query</code> is the query string exactly as typed, in the grammar of <code>docs/filters.md</code>, never a parsed form. Each client parses it when the view is shown; a query a client cannot parse (for example a term added by a newer version) shows the parse error and no results instead of wrong results.</li>
+<li><code>kind</code> is <code>list</code> or <code>dashboard</code>; <code>group_by</code> is <code>project</code>, <code>due</code>, <code>priority</code>, <code>label</code> or <code>none</code>; <code>sort_by</code> is <code>due</code>, <code>priority</code>, <code>position</code>, <code>created</code> or <code>title</code>; <code>sort_dir</code> is <code>asc</code> or <code>desc</code>. On the wire these are plain strings so a future value is additive. The op schema accepts any string; a client that meets a value it does not know shows the default (<code>list</code>, <code>project</code>, <code>due</code>, <code>asc</code>) without rewriting the field, so the newer device keeps its choice. Only the REST API rejects unknown values, because REST requests are sequential and safe to refuse.</li>
+<li><code>panels</code> holds the ordered view ids shown by a dashboard (empty for lists). Like <code>task.labels</code> it is a single LWW register: two devices editing the panel list offline end with the newer list. A panel whose view is missing or deleted is shown as a placeholder; clients refuse to add a dashboard as a panel.</li>
+<li>The start view (the view a device opens on launch) is <strong>not</strong> synced: it lives in the device&#39;s <code>meta</code> table under <code>startView</code>, like the collapsed projects.</li>
+</ul>
+<h3 id="encrypted-values">Encrypted values<a class="anchor" href="#encrypted-values" aria-label="Link to this section: Encrypted values">#</a></h3>
+<p>For an account with <a href="/docs/e2ee/">end-to-end encryption</a>, the content fields of its personal scope — task <code>title</code>, <code>description</code>, <code>ical_extra</code>, <code>notes_doc</code>; project, label and section <code>name</code>; view <code>name</code> and <code>query</code>; comment <code>body</code> — carry ciphertext: a string <code>&quot;enc:v1:&quot; + base64url(nonce(12) || AES-256-GCM ciphertext || tag(16))</code> whose additional authenticated data is <code>entity + &quot;\0&quot; + entityId + &quot;\0&quot; + field</code>. The protocol, the schema, the value types and limits are unchanged: the server validates the envelope as an ordinary string and never decrypts it, and last-writer-wins picks winners by <code>(ts, device)</code> exactly as for plaintext (two encryptions of the same text differ, which is irrelevant because values are never compared). Devices encrypt at upload and decrypt before applying; a value that does not authenticate for its location (wrong key, tampering, or moved to another entity or field) is kept as the winning op but shown as a placeholder. Shared project scopes are never encrypted. Plaintext content that reaches an encrypted account (REST, email, import) is re-written as ciphertext by the next unlocked device that applies it; once ciphertext wins, nothing is re-written again. <code>POST /api/v1/encryption/purge-history</code> deletes superseded ops of the content fields in the personal scope; winners stay, so convergence and cursors are unaffected.</p>
+<h2 id="winner-rule">Winner rule<a class="anchor" href="#winner-rule" aria-label="Link to this section: Winner rule">#</a></h2>
+<p>For a given <code>(entity, entityId, field)</code>, an incoming op replaces the stored value when</p>
+<pre tabindex="0"><code>op.ts &gt; cur.ts  OR  (op.ts == cur.ts AND op.device &gt; cur.device)</code></pre>
+<p>The same comparison runs in Go (<code>internal/sync.Wins</code>) and TypeScript (<code>web/src/lib/hlc.ts</code>).</p>
+<h2 id="clocks">Clocks<a class="anchor" href="#clocks" aria-label="Link to this section: Clocks">#</a></h2>
+<p>Each device stamps ops with <code>max(Date.now() + offset, last + 1)</code>, so its own timestamps are strictly increasing even if the system clock jumps back. After every exchange the client compares <code>serverTime</code> with its clock and adopts the offset when the skew is over two seconds. The server clamps any <code>ts</code> more than five minutes ahead of its own clock.</p>
+<h2 id="exchange">Exchange<a class="anchor" href="#exchange" aria-label="Link to this section: Exchange">#</a></h2>
+<p><code>POST /api/v1/sync</code></p>
+<pre tabindex="0"><code class="language-json">{ &quot;device&quot;: &quot;3c54…&quot;, &quot;cursor&quot;: 140, &quot;ops&quot;: [ …pending ops… ] }</code></pre>
+<p>Response:</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;applied&quot;: 3, &quot;duplicates&quot;: 0,
+  &quot;ops&quot;: [ …ops with seq &gt; 140 not authored by this device… ],
+  &quot;cursor&quot;: 158, &quot;hasMore&quot;: false, &quot;serverTime&quot;: 1760060001000,
+  &quot;generation&quot;: &quot;4f1c0a9e2b7d4c55a1e0f3b2c8d9e7f6&quot;,
+  &quot;rejected&quot;: [ { &quot;id&quot;: &quot;op-17&quot;, &quot;reason&quot;: &quot;forbidden&quot; } ],
+  &quot;memberships&quot;: [ { &quot;projectId&quot;: &quot;…&quot;, &quot;role&quot;: &quot;editor&quot;, &quot;ownerId&quot;: &quot;…&quot;,
+                     &quot;members&quot;: [ { &quot;userId&quot;: &quot;…&quot;, &quot;name&quot;: &quot;Alice&quot;, &quot;email&quot;: &quot;…&quot;, &quot;role&quot;: &quot;owner&quot; } ] } ],
+  &quot;purged&quot;: [ { &quot;entity&quot;: &quot;task&quot;, &quot;entityId&quot;: &quot;…&quot; } ],
+  &quot;trashRetentionDays&quot;: 30
+}</code></pre>
+<p><code>rejected</code> and <code>memberships</code> are additive (see <a href="#sharing-scopes">Sharing scopes</a>); so are <code>purged</code> and <code>trashRetentionDays</code> (see <a href="#purge">Purge</a>). Older clients ignore them.</p>
+<p>Client loop (<code>web/src/lib/sync.ts</code>):</p>
+<ol>
+<li>Read up to 500 ops from the outbox and the stored cursor.</li>
+<li>Send; on success delete those outbox rows, apply the returned ops with the winner rule, store the new cursor.</li>
+<li>Repeat while <code>hasMore</code> or the outbox is not empty.</li>
+</ol>
+<p>Before storing the cursor the client compares <code>generation</code> with the one it stored; see <a href="#log-generation">Log generation</a>.</p>
+<p>Triggers: 250 ms after a local edit, on <code>online</code>, when the tab becomes visible, on a live wake-up (below), on every (re)connection of the live channel, periodically (every 30 s, relaxed to 5 min while live updates are connected), and manually from the status pill.</p>
+<p>Server (<code>internal/sync.Apply</code>): validate the whole batch, then in one transaction resolve each op&#39;s scope, refuse the ones the author may not write (reported in <code>rejected</code>), <code>INSERT OR IGNORE</code> the others into <code>ops</code> (duplicate ids are counted, not re-applied) with their scope in <code>op_scopes</code>, and upsert <code>scope_fields</code> under the winner rule. <code>Pull</code> returns ops after the cursor from every scope the caller can see in <code>seq</code> order, skipping the caller&#39;s own device but still advancing the cursor past them.</p>
+<h3 id="paging">Paging<a class="anchor" href="#paging" aria-label="Link to this section: Paging">#</a></h3>
+<p>A pull page holds at most 1000 ops <strong>and</strong> at most about 4 MB of op values (<code>sync.MaxPullBytes</code>, the summed length of the <code>value</code>s it serves; ops of the caller&#39;s own device are skipped and do not count). The page ends before the op that would cross the budget, <code>cursor</code> is the <code>seq</code> of the last op served and <code>hasMore</code> is <code>true</code>; the device simply asks again. A page always carries at least one op, so a single value larger than the budget still travels (alone) and the device always makes progress. The history replay for a newly joined shared project (below) is paged by the same two limits. Purge markers on a partial page are reported up to the page&#39;s last op, as before. The rule is additive: the response format is unchanged, a page is only cut earlier, and a client that loops on <code>hasMore</code> (the web app does) needs no change. The budget is an internal constant, not a setting.</p>
+<h2 id="sharing-scopes">Sharing scopes<a class="anchor" href="#sharing-scopes" aria-label="Link to this section: Sharing scopes">#</a></h2>
+<p>Every op and every materialized field belongs to one scope (OpenSpec <code>project-sharing</code>): <code>user:&lt;userId&gt;</code> holds a user&#39;s Inbox, unshared projects, labels and saved views; <code>project:&lt;projectId&gt;</code> holds a shared project and its tasks. <code>ops.user_id</code> is the op&#39;s author. Because <code>seq</code> is one global sequence, a device keeps a single cursor across all the scopes it can see, and the request format is unchanged.</p>
+<ul>
+<li><strong>Which scope an op belongs to.</strong> A project op goes to the project&#39;s scope once it is shared, otherwise to the author&#39;s personal scope. A task op goes to the scope the task already lives in; a new task goes to the scope of the <code>project_id</code> sent in the same batch (no project = Inbox = personal). Labels and views are always personal.</li>
+<li><strong>A task never changes scope.</strong> A <code>project_id</code> that would move a task into another scope is refused with reason <code>scope_change</code>. Clients move across scopes by copying the task (new id) into the destination and tombstoning the original; deleting a shared project tombstones the project and its tasks and the owner&#39;s device copies the open tasks into the owner&#39;s Inbox.</li>
+<li><strong>First share.</strong> Sharing a project relabels the project and its tasks from the owner&#39;s personal scope to the project scope in one transaction. Only the scope label changes; <code>seq</code>, op ids and content stay, so the owner&#39;s devices keep their cursor.</li>
+<li><strong>Authorization at receipt.</strong> Each op is checked against the author&#39;s membership when the server receives it, never against <code>op.ts</code>: viewer → nothing (except comments, see <a href="#comments">Comments</a>); editor → tasks; admin → tasks and project fields except <code>deleted_at</code>; owner → everything; non-members → nothing. A refused op is not stored and is listed in <code>rejected</code> with its id and reason (<code>forbidden</code>, <code>scope_change</code> or <code>not_a_member</code>) in a 200 response; the rest of the batch is applied. The response&#39;s <code>ops</code> also carry the current winning op of every refused field the caller can see, so the device drops its local change and shows the server&#39;s value without another round trip. Resending an already refused op gives the same answer.</li>
+<li><strong>Catch-up for a new member.</strong> A device whose cursor is past part of a project&#39;s history when its user joins receives that history first: pages of the project&#39;s ops up to the device&#39;s cursor at its first exchange after joining, with <code>cursor</code> unchanged and <code>hasMore: true</code>, then the regular pull. Progress is kept per device (<code>member_backfills</code>), so each of the member&#39;s devices replays the history once. A replay page lost in transit is not resent; re-syncing from cursor 0 recovers it.</li>
+<li><strong>Membership</strong> lives outside the op log (<code>project_members</code>) and changes only through the REST routes, so offline devices cannot race on it. Every exchange returns the caller&#39;s <code>memberships</code>; a device purges a project (and its tasks) that it knew as shared and that is no longer listed. A membership change wakes the affected devices with an event that carries no cursor (<code>data: {}</code>), so they always run the exchange.</li>
+<li><strong>Assignment</strong> (OpenSpec <code>task-assignment</code>). A non-null <code>task.assignee_id</code> must name a current member of the task&#39;s shared project, or the author for a task in a personal scope; otherwise the op is refused with reason <code>not_a_member</code> (plus the server&#39;s value in <code>ops</code>, as for <code>forbidden</code>). Viewers are refused with <code>forbidden</code> like any other write. When a member leaves or is removed, the server writes <code>assignee_id: null</code> ops (device <code>server</code>, author = whoever removed them) for every task of that project assigned to them, in the same transaction as the membership change and stamped later than the value they replace, so every device converges on &quot;unassigned&quot; without client logic. An assignment to someone other than its author that wins on the server emits an internal assignment event after commit (<code>internal/notify</code>), which becomes an in-app notification (<code>GET /api/v1/notifications</code>).</li>
+<li><strong>Older clients</strong> keep syncing their personal data unchanged. They drop refused ops from the outbox like any acknowledged op but only show the server&#39;s value once a newer value arrives.</li>
+</ul>
+<h2 id="live-updates">Live updates<a class="anchor" href="#live-updates" aria-label="Link to this section: Live updates">#</a></h2>
+<p>Polling alone would leave a change made on one device invisible on another for up to 30 s. The server therefore offers a wake-up channel: an authenticated server-sent event stream per device.</p>
+<p><code>GET /api/v1/sync/events?device=3c54…</code> (same session cookie or bearer token as every other route; <code>device</code> is required, 400 <code>bad_request</code> without it)</p>
+<pre tabindex="0"><code>HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+X-Accel-Buffering: no
+
+: connected
+
+event: ops
+data: {&quot;cursor&quot;:158}
+
+: ping</code></pre>
+<ul>
+<li><strong>Payload.</strong> An <code>ops</code> event carries only the user&#39;s latest <code>seq</code>. It never contains op values, field names or entity ids, so the stream is safe to log and proxy. Data still travels exclusively through the exchange above: on an <code>ops</code> event the client compares the cursor with its stored one and runs an exchange only when it is newer. A lost event is harmless.</li>
+<li><strong>Exclusion.</strong> The server wakes every subscription of the user except the one whose <code>device</code> equals the device that pushed the ops, so a device never re-syncs because of its own push. REST writes are stamped <code>device: &quot;server&quot;</code> and wake every device.</li>
+<li><strong>Heartbeat.</strong> An idle stream writes a comment line <code>: ping</code> every 25 s, below the idle timeouts of common reverse proxies. On every heartbeat the server re-validates the session or token; a revoked one ends the stream within one interval, and the next connection attempt gets 401.</li>
+<li><strong>Limits.</strong> At most 16 concurrent streams per account; opening one more closes the oldest instead of refusing the new one, so a device reconnecting after a half-closed connection is never locked out. Open streams are closed on graceful shutdown so clients reconnect to the new process.</li>
+<li><strong>Client lifecycle</strong> (<code>web/src/lib/sync.ts</code>): <code>startSync()</code> opens an <code>EventSource</code> after sign-in, <code>stopSync()</code> closes it. On <code>open</code> the client syncs once to cover anything missed and marks <code>live: true</code> in the status snapshot; on <code>error</code> it closes the source and reconnects with jittered exponential backoff (1 s base, 30 s cap). No connection is attempted while offline; the <code>online</code> event starts one.</li>
+<li><strong>Fallback.</strong> Periodic polling continues: every 30 s while the channel is disconnected, every 5 min while it is connected. A client that never opens the stream keeps working exactly as before.</li>
+</ul>
+<p>Implementation: <code>internal/sync.Notifier</code> is an in-memory, per-user subscriber set with a one-slot channel per stream (a slow reader coalesces wake-ups into the newest cursor and never blocks <code>Apply</code>); the sync handler and the REST write-through call <code>Notify</code> after a committed <code>Apply</code>. One process is the deployment contract, so there is no cross-process fan-out.</p>
+<h2 id="log-generation">Log generation<a class="anchor" href="#log-generation" aria-label="Link to this section: Log generation">#</a></h2>
+<p>The cursor scheme assumes the server&#39;s log only grows. A <a href="/docs/backups/#restore">restore from a backup</a> breaks that: the server goes back to the moment of the backup, its <code>seq</code> numbers restart below what devices have seen, and it no longer knows edits made after the backup, although the devices still hold them. The <strong>log generation</strong> makes this visible.</p>
+<ul>
+<li>The server keeps a random 128-bit <code>generation</code> in its <code>settings</code> table. It is created once with the database and replaced with a new random value by every <code>opentodo restore</code>. Every <code>POST /api/v1/sync</code> response carries it (an additive field: clients that ignore it keep working, they just do not re-seed).</li>
+<li>The client stores the value in its <code>meta</code> table. The first value a device sees is adopted. A different value on any later exchange means the server was restored.</li>
+<li>On a mismatch the client, in one IndexedDB transaction, re-emits <strong>every field of every local row</strong> (projects, tasks, labels, saved views, tombstones included) as a new op <code>{id: &lt;new uuid&gt;, entity, entityId, field, value, ts: &lt;stored ts&gt;, device: &lt;stored device&gt;}</code> taken from the row&#39;s per-field clock, adds them to the outbox (in chunks of 1,000), sets <code>cursor = 0</code> and stores the new generation. Ops already waiting in the outbox stay. The normal loop then uploads the outbox in batches and pulls the whole log from zero. The status pill shows <strong>Re-syncing after restore…</strong> meanwhile.</li>
+<li><strong>Convergence.</strong> The re-emitted ops carry the clocks the device already stored, not the current time, so the server ends up with exactly the state the device had, and the winner rule decides between devices as usual: an edit made after the backup (newer <code>ts</code>) beats the restored value, an older local value loses to a newer one from another device, and two devices re-seeding concurrently converge on the value with the greatest <code>(ts, device)</code> everywhere. Fresh op ids keep the server from discarding them as duplicates; unchanged entity ids mean nothing is duplicated. A stale device cannot overwrite newer data, which is why the timestamps are not bumped to now.</li>
+<li><strong>Offline devices</strong> re-seed on their next successful exchange, however long after the restore.</li>
+<li><strong>Cost.</strong> A re-seed sends one op per stored field: about 11 per task, so 5,000 tasks are roughly 55,000 ops, a few seconds on a Raspberry Pi, once per device per restore. The server clamps far-future timestamps as always; re-emitted timestamps were already clamped when first stored.</li>
+</ul>
+<h2 id="deletes">Deletes<a class="anchor" href="#deletes" aria-label="Link to this section: Deletes">#</a></h2>
+<p>Deletion sets <code>deleted_at</code>. Lists filter tombstones out; export includes them. Because a tombstone is just another field under LWW, a delete made on one device wins over older edits from another and the entity never reappears. Restoring from the Trash writes <code>deleted_at: null</code>; between a delete and a restore made concurrently, the op with the greater timestamp wins.</p>
+<p>Deleting a project writes only the project&#39;s tombstone (plus moving its direct sub-projects to its parent). Its tasks keep <code>project_id</code> and clients hide every task whose project is deleted, so restoring the project is one op and brings the tasks back exactly as they were. Deleting a shared project additionally tombstones its tasks and copies the owner&#39;s open tasks into the owner&#39;s Inbox (project-sharing).</p>
+<h2 id="purge">Purge<a class="anchor" href="#purge" aria-label="Link to this section: Purge">#</a></h2>
+<p>Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (<code>DELETE /api/v1/{tasks|projects}/{id}/purge</code>, <code>POST /api/v1/trash/purge</code>, or the server&#39;s retention job) deletes the entity&#39;s rows from <code>ops</code>, <code>op_scopes</code> and <code>scope_fields</code> and inserts a marker into <code>purges</code> (<code>scope_id</code>, <code>entity</code>, <code>entity_id</code>, <code>seq</code>). Only entities whose <code>deleted_at</code> is set can be purged. Purging a project purges every task and section that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member&#39;s) and their comments are purged too, and so are every member&#39;s <code>project_prefs</code> of a purged project.</p>
+<p>Three rules keep replicas convergent:</p>
+<ol>
+<li><strong>Markers share the op sequence.</strong> A marker&#39;s <code>seq</code> is reserved from the same AUTOINCREMENT sequence as ops, so <code>Pull</code> reports markers with <code>seq &gt; cursor</code> (and, on a partial page, <code>seq &lt;=</code> the page&#39;s last op) in <code>purged</code>, and the returned cursor moves past them. Ops and markers are read in one snapshot. Clients delete the listed rows locally, together with any outbox ops for them.</li>
+<li><strong>Late ops are discarded.</strong> <code>Apply</code> drops ops for an entity that has a marker in a scope the author can see and counts them as <code>duplicates</code>; a device that edited the entity offline therefore cannot recreate a partial copy. Markers are kept indefinitely (a few dozen bytes each).</li>
+<li><strong>Purge is requested online only.</strong> The client never deletes locally before the server confirms; offline, the Trash marks the item as pending and nothing is lost if the request fails.</li>
+</ol>
+<p>Everyone who can see the purged entity&#39;s scope receives the marker and is woken over the live channel. Older clients ignore <code>purged</code>; the entity stays tombstoned (invisible) on them.</p>
+<p><strong>Retention.</strong> At startup and every 24 hours the server purges tasks and projects whose <code>deleted_at</code> is older than <code>OPENTODO_TRASH_RETENTION_DAYS</code> (default 30; <code>0</code> disables automatic purge), through the same path. The value is reported as <code>trashRetentionDays</code> so the Trash can show remaining days. A database restored from a backup is consistent with itself: markers and the log live in the same database.</p>
+<h2 id="history">History<a class="anchor" href="#history" aria-label="Link to this section: History">#</a></h2>
+<p><code>GET /api/v1/{tasks|projects}/{id}/history</code> reads the entity&#39;s ops from the scopes the caller can see, ordered by <code>(ts, device)</code> and grouped into change sets of one timestamp and device. An op that arrived after a newer write to the same field is marked <code>lost</code>. Restoring an earlier value from the history writes a new op with the current clock, so history stays append-only and the restore converges like any edit.</p>
+<h2 id="trees-subtasks">Trees: subtasks<a class="anchor" href="#trees-subtasks" aria-label="Link to this section: Trees: subtasks">#</a></h2>
+<p><code>task.parent_id</code> encodes a tree in an LWW register, so two devices can move tasks concurrently. The tree is <strong>derived</strong> from the current field values; no repair op is ever written, which keeps the result independent of arrival order.</p>
+<ul>
+<li><strong>Cascades are per-task ops.</strong> Completing a parent writes <code>completed_at</code> on every open descendant; deleting a parent writes <code>deleted_at</code> on every descendant; moving a parent to another project writes <code>project_id</code> on every descendant. Each is a normal op, so a concurrent edit on one descendant still resolves field by field (a rename of a deleted subtask survives in the export, the tombstone stays). Reopening a parent does not cascade.</li>
+<li><strong>Inconsistent parents render at the top level.</strong> A subtask whose parent is missing locally, deleted, completed (while the child is open) or in another project is shown at the top level of its project with a breadcrumb when the parent is known. When the parent&#39;s ops arrive or it is reopened, the child nests again.</li>
+<li><strong>Cycle breaking.</strong> If moves on two devices produce a cycle (<code>X</code> under <code>Y</code> and <code>Y</code> under <code>X</code>), every client breaks it identically: among the members of the cycle, the task whose <code>parent_id</code> has the newest clock under the winner rule (<code>ts</code>, then <code>device</code>, then id as a last resort) is treated as a root. The user sees it at the top level and can move it again. The REST API additionally rejects a <code>parent_id</code> that would close a cycle or cross projects (<code>400 invalid_input</code>), because REST requests are sequential against current state; sync batches are never rejected for tree reasons.</li>
+</ul>
+<p>The implementation lives in <code>web/src/lib/tree.ts</code> (generic <code>buildTree</code>, <code>descendants</code>, <code>isDescendant</code>, cycle breaking) and <code>web/src/lib/subtasks.ts</code> (progress and display state).</p>
+<h2 id="trees-sub-projects">Trees: sub-projects<a class="anchor" href="#trees-sub-projects" aria-label="Link to this section: Trees: sub-projects">#</a></h2>
+<p><code>project.parent_id</code> encodes the project tree with the same LWW register and the same derived-tree rules; <code>web/src/lib/projects.ts</code> builds it on <code>tree.ts</code>.</p>
+<ul>
+<li><strong>Moves are two ops.</strong> A move writes <code>parent_id</code> and a <code>position</code> after the new siblings. Two devices moving the same project resolve each field by the winner rule.</li>
+<li><strong>Cascades are per-project ops.</strong> Archiving writes <code>archived=true</code> on every descendant; deleting writes <code>deleted_at</code> on the project, <code>parent_id = &lt;its parent&gt;</code> on each direct sub-project and <code>project_id = null</code> on each of its open tasks. Unarchiving does not cascade. Because each project&#39;s <code>archived</code> is its own register, a sub-project moved out on one device while its parent is archived on another ends up archived at the top level when the archive op is newer, and open at the top level otherwise, identically everywhere.</li>
+<li><strong>Missing parents render at the top level.</strong> A project whose parent is not present locally, deleted or archived is shown as a top-level project until the parent appears; nothing is written.</li>
+<li><strong>Cycle breaking.</strong> Two offline devices can move <code>X</code> under <code>Y</code> and <code>Y</code> under <code>X</code>. Every client breaks the cycle identically: the member whose <code>parent_id</code> has the newest clock under the winner rule (<code>ts</code>, then <code>device</code>, then id as a last resort) is displayed at the top level, the others stay nested beneath it, and no repair op is written. The user can move it again with one action. The REST API rejects a <code>parent_id</code> that would close a cycle (<code>400 invalid_input</code>) because REST requests are sequential against current state; sync batches are never rejected for tree reasons.</li>
+<li><strong>Collapse state is local.</strong> Which projects are collapsed in the sidebar lives in the device&#39;s <code>meta</code> table and never enters the op log.</li>
+</ul>
+<h2 id="rest-writes">REST writes<a class="anchor" href="#rest-writes" aria-label="Link to this section: REST writes">#</a></h2>
+<p>REST handlers translate request bodies into ops stamped with server time and <code>device: &quot;server&quot;</code>, then call the same <code>Apply</code>. There is exactly one write path.</p>
+<h2 id="caldav">CalDAV<a class="anchor" href="#caldav" aria-label="Link to this section: CalDAV">#</a></h2>
+<p>Calendar apps (OpenSpec change <code>caldav</code>, <a href="/docs/caldav/">caldav.md</a>) write through the same path: the server turns each <code>PUT</code>, <code>DELETE</code>, <code>MKCALENDAR</code> or <code>PROPPATCH</code> into ops with server time and the device id <code>caldav:&lt;app password id&gt;</code>, one op per property whose value actually changed, applied with <code>ApplyStrict</code> and announced to every device with the usual wake-up. Calendar apps never pull ops; they read the materialized state, and their ETags, CTags and sync tokens are derived from it and from the op cursor (the same <code>seq</code> as the exchange, purge markers included).</p>
+<p><code>task.ical_extra</code> carries the VTODO lines the app does not model (alarms, <code>X-</code> properties, unsupported <code>RRULE</code>s). It is one LWW register like any string field: devices store and sync it without interpreting it and never write it themselves, so a title edit on a phone and an alarm change in Thunderbird converge with both changes; two calendar apps changing their preserved properties concurrently end with the later set.</p>
+<h2 id="limits">Limits<a class="anchor" href="#limits" aria-label="Link to this section: Limits">#</a></h2>
+<ul>
+<li>1000 ops per request, 64 KB per value (256 KB for a document field such as <code>task.notes_doc</code>), 4 MB per request body.</li>
+<li><code>labels</code> is replaced as a whole value (see &quot;Task labels&quot; above; set semantics are a future change). The same holds for <code>view.panels</code>.</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/sync.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/architecture/"><span>Previous</span>Architecture</a>
+      <span></span>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#operation">Operation</a><ul><li><a href="#schema-v1">Schema (v1)</a></li><li><a href="#zoned-due-values">Zoned due values</a></li><li><a href="#recurring-tasks">Recurring tasks</a></li><li><a href="#reminders">Reminders</a></li><li><a href="#mergeable-documents">Mergeable documents</a></li><li><a href="#comments">Comments</a></li><li><a href="#activity">Activity</a></li><li><a href="#project-preferences-and-the-activity-feed">Project preferences and the activity feed</a></li><li><a href="#task-labels">Task labels</a></li><li><a href="#sections">Sections</a></li><li><a href="#manual-order">Manual order</a></li><li><a href="#saved-views">Saved views</a></li><li><a href="#encrypted-values">Encrypted values</a></li></ul></li><li><a href="#winner-rule">Winner rule</a></li><li><a href="#clocks">Clocks</a></li><li><a href="#exchange">Exchange</a><ul><li><a href="#paging">Paging</a></li></ul></li><li><a href="#sharing-scopes">Sharing scopes</a></li><li><a href="#live-updates">Live updates</a></li><li><a href="#log-generation">Log generation</a></li><li><a href="#deletes">Deletes</a></li><li><a href="#purge">Purge</a></li><li><a href="#history">History</a></li><li><a href="#trees-subtasks">Trees: subtasks</a></li><li><a href="#trees-sub-projects">Trees: sub-projects</a></li><li><a href="#rest-writes">REST writes</a></li><li><a href="#caldav">CalDAV</a></li><li><a href="#limits">Limits</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Quick add syntax · OpenTodo docs</title>
+  <meta name="description" content="Every word quick add understands: dates, times, projects, labels, priorities, estimates, six languages and voice capture.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/quick-add/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/quick-add/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Quick add syntax · OpenTodo docs">
+  <meta property="og:description" content="Every word quick add understands: dates, times, projects, labels, priorities, estimates, six languages and voice capture.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/" aria-current="page">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/" aria-current="page">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Reference</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#preview-chips">Preview chips</a></li><li><a href="#tokens-any-language">Tokens (any language)</a></li><li><a href="#dates-and-times">Dates and times</a></li><li><a href="#languages">Languages</a></li><li><a href="#views-and-defaults">Views and defaults</a></li><li><a href="#voice">Voice</a><ul><li><a href="#privacy">Privacy</a></li></ul></li><li><a href="#not-understood">Not understood</a></li><li><a href="#data">Data</a></li></ul></nav></details>
+<h1 id="quick-add-syntax">Quick add syntax</h1>
+<p>Type one line in the quick-add box (press <code>q</code> in any task view) and OpenTodo picks out the due date and time, project, labels, priority and estimate:</p>
+<pre tabindex="0"><code>Meeting with Sarah next Wed at 3pm #work @call p1 +30m</code></pre>
+<p>creates <strong>Meeting with Sarah</strong>, due next Wednesday at 15:00, in project <em>Work</em>, with the label <em>call</em>, priority 1, estimated at 30 minutes.</p>
+<p>Everything runs in your browser. The parser needs no network, sends nothing anywhere, and gives the same result on every device for the same line, date, languages and projects. The created task stores the resolved date, so other devices never parse the line again.</p>
+<h2 id="preview-chips">Preview chips<a class="anchor" href="#preview-chips" aria-label="Link to this section: Preview chips">#</a></h2>
+<p>As you type, each thing OpenTodo recognises shows up as a chip under the input, and the title preview (<code>→ Meeting with Sarah</code>) shows what will be saved. Nothing is hidden: if there is no chip, the text stays in the title.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>To…</th>
+<th>Do this</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Keep a word literally (&quot;may&quot; is not May 1st)</td>
+<td>Click the <code>×</code> on its chip, <strong>or</strong> press Backspace at the end of the line: the first press highlights the last chip, the second dismisses it. The text itself is not changed.</td>
+</tr>
+<tr>
+<td>Never parse some text</td>
+<td>Put it in double quotes: <code>Watch &quot;Next Friday&quot; tomorrow</code> → title <em>Watch Next Friday</em>, due tomorrow. The quotes are removed from the title.</td>
+</tr>
+<tr>
+<td>Turn parsing off on this device</td>
+<td>Settings → Quick add → <em>Parse natural language in quick add</em>. Quick add then saves the line exactly as typed.</td>
+</tr>
+</tbody></table></div>
+<p>A dismissed chip stays dismissed while you keep typing; it comes back only if you edit that word. Backspace only highlights a chip when that chip&#39;s text ends the line; otherwise Backspace deletes text as usual.</p>
+<h2 id="tokens-any-language">Tokens (any language)<a class="anchor" href="#tokens-any-language" aria-label="Link to this section: Tokens (any language)">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Meaning</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>#name</code></td>
+<td>Project, including sub-projects at any depth. Case-insensitive; spaces, <code>-</code> and <code>_</code> in project names are ignored. An exact name wins, otherwise a unique prefix. If several projects have exactly that name (say <em>Docs</em> under both <em>Work</em> and <em>Home</em>), the shallowest one in the tree wins (a fixed tie-break by id decides between equals, so every device picks the same one); the chip shows the path (<code>#Work › Docs</code>) so you can see which. Archived and deleted projects are skipped. If nothing matches, or a prefix fits more than one project, the token stays in the title.</td>
+<td><code>#work</code>, <code>#trav</code> (Travel), <code>#sideproject</code> (Side Project), <code>#q4</code> (Work › Docs › Q4 launch)</td>
+</tr>
+<tr>
+<td><code>@name</code></td>
+<td>Label, matched to an existing label ignoring case. A name with no label yet creates one when you press Enter, with the next free colour, exactly like creating it from the label picker; its chip says <em>new</em> until then. Use as many as you like.</td>
+<td><code>@call</code>, <code>@waiting-for</code></td>
+</tr>
+<tr>
+<td><code>p1</code>–<code>p4</code></td>
+<td>Priority, 1 highest, 4 default.</td>
+<td><code>p1</code>, <code>P3</code></td>
+</tr>
+<tr>
+<td><code>+duration</code></td>
+<td>Estimate in minutes, from 1 minute to 7 days (10080 minutes). Shown on the task row.</td>
+<td><code>+30</code>, <code>+30m</code>, <code>+45min</code>, <code>+2h</code>, <code>+1h30</code>, <code>+1.5h</code></td>
+</tr>
+</tbody></table></div>
+<p>Without the <code>+</code>, <code>45min</code> and <code>2h</code> also work, except that <code>2h</code> is left alone when French, Spanish or Portuguese is active, because those languages write times as <code>15h</code>.</p>
+<h2 id="dates-and-times">Dates and times<a class="anchor" href="#dates-and-times" aria-label="Link to this section: Dates and times">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Phrase</th>
+<th>Resolves to</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>today</code>, <code>tonight</code>, <code>tomorrow</code>, <code>day after tomorrow</code></td>
+<td>that day</td>
+</tr>
+<tr>
+<td><code>Monday</code> … <code>Sunday</code>, <code>mon</code>, <code>wed.</code></td>
+<td>the next one <strong>after</strong> today (on a Friday, <code>fri</code> means next Friday)</td>
+</tr>
+<tr>
+<td><code>this sat</code></td>
+<td>same as the bare weekday</td>
+</tr>
+<tr>
+<td><code>next Monday</code></td>
+<td>same as the bare weekday, unless that day is still in the current Monday–Sunday week; then the one a week later. On Friday 9 Oct, <code>next Wed</code> is 14 Oct and <code>next Sat</code> is 17 Oct (not tomorrow).</td>
+</tr>
+<tr>
+<td><code>in 3 days</code>, <code>in 2 weeks</code>, <code>in a month</code></td>
+<td>today plus that much (months keep the day, clamped to the month&#39;s end)</td>
+</tr>
+<tr>
+<td><code>next week</code>, <code>next month</code></td>
+<td>Monday of next week; the 1st of next month</td>
+</tr>
+<tr>
+<td><code>3 Feb</code>, <code>Feb 3</code>, <code>3rd of February</code>, <code>December 25th 2027</code></td>
+<td>that date; without a year, the next time it comes round (today counts)</td>
+</tr>
+<tr>
+<td><code>May</code>, <code>December</code> (full name alone)</td>
+<td>the 1st of that month. Abbreviations (<code>mar</code>, <code>jan</code>) need a day number next to them.</td>
+</tr>
+<tr>
+<td><code>12/11</code>, <code>12-11</code>, <code>12/11/2027</code>, <code>2026-11-03</code></td>
+<td>numeric dates; see day/month order below</td>
+</tr>
+<tr>
+<td><code>at 3pm</code>, <code>3:30 pm</code>, <code>16:30</code>, <code>at 9</code>, <code>noon</code>, <code>midnight</code></td>
+<td>that time today, unless a date is also given. A time on its own always means today, even if it has passed. Without <code>am</code>/<code>pm</code>, hours are 24-hour (<code>at 3</code> is 03:00).</td>
+</tr>
+<tr>
+<td><code>in 3 hours</code></td>
+<td>that clock time, rolling to tomorrow past midnight</td>
+</tr>
+</tbody></table></div>
+<p>Words like <code>on</code>, <code>by</code> and <code>due</code> in front of a date are removed with it (<code>Pay bill by Friday</code> → <em>Pay bill</em>). Bare numbers are never times (<code>Buy 3 apples</code> stays as typed): write <code>at 3</code>, <code>3pm</code> or <code>15:00</code>.</p>
+<p>When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, project, priority or estimate.</p>
+<p><strong>Day/month order.</strong> <code>12/11</code> is 11 December when your first language is US English (<code>en</code>, <code>en-US</code>) and 12 November for every other language, including English outside the US. If one reading is impossible (<code>25/12</code>), the other is used. Dotted dates (<code>12.11.</code>) are always day.month and only used when the order is day/month. Change it under Settings → Quick add.</p>
+<h2 id="languages">Languages<a class="anchor" href="#languages" aria-label="Link to this section: Languages">#</a></h2>
+<p>Vocabulary is bundled for <strong>English, German, French, Italian, Spanish and Portuguese</strong>. The active languages are your browser&#39;s preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. Settings → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish <code>mar</code> alone is Tuesday; <code>mar 3</code> is March 3rd).</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th></th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>German</td>
+<td><code>heute</code>, <code>morgen</code>, <code>übermorgen</code>, <code>am Freitag</code>, <code>Mi.</code>, <code>nächsten Mittwoch um 15 Uhr</code>, <code>in 3 Tagen</code>, <code>nächste Woche</code>, <code>3. Februar</code>, <code>12.11.</code>, <code>14:30 Uhr</code></td>
+</tr>
+<tr>
+<td>French</td>
+<td><code>aujourd&#39;hui</code>, <code>demain à 15h</code>, <code>après-demain</code>, <code>mardi prochain</code>, <code>dans 2 semaines</code>, <code>semaine prochaine</code>, <code>3 février</code>, <code>15h30</code>, <code>à 9 heures</code>, <code>midi</code></td>
+</tr>
+<tr>
+<td>Italian</td>
+<td><code>oggi</code>, <code>domani alle 15</code>, <code>dopodomani</code>, <code>lunedì prossimo</code>, <code>prossimo sabato</code>, <code>tra 3 giorni</code>, <code>fra una settimana</code>, <code>il 3 febbraio</code>, <code>mezzogiorno</code></td>
+</tr>
+<tr>
+<td>Spanish</td>
+<td><code>hoy</code>, <code>mañana a las 15:00</code>, <code>pasado mañana</code>, <code>el próximo lunes</code>, <code>martes que viene</code>, <code>en 3 días</code>, <code>dentro de 2 semanas</code>, <code>3 de febrero</code></td>
+</tr>
+<tr>
+<td>Portuguese</td>
+<td><code>hoje</code>, <code>amanhã às 15h</code>, <code>depois de amanhã</code>, <code>próxima segunda</code>, <code>sábado que vem</code>, <code>daqui a 3 dias</code>, <code>em 2 semanas</code>, <code>3 de fevereiro</code></td>
+</tr>
+</tbody></table></div>
+<p>Accents are optional (<code>manana</code>, <code>nachsten</code>, <code>fevrier</code> work too). Two-letter German abbreviations need their dot (<code>Mi.</code>, <code>Do.</code>) so ordinary words like <em>do</em> and <em>so</em> are not mistaken for weekdays.</p>
+<h2 id="views-and-defaults">Views and defaults<a class="anchor" href="#views-and-defaults" aria-label="Link to this section: Views and defaults">#</a></h2>
+<p>Quick add still takes the view&#39;s context for anything the line does not set: today in Today, tomorrow in Upcoming, the current project in a project view, the current label in a label view. Anything the line does set wins, so <code>Plan trip next Monday #travel</code> typed in Today goes to <em>Travel</em> on Monday. Labels add up instead: <code>@call</code> typed in the <em>errand</em> label view gives the task both labels, so it stays in the view you added it from.</p>
+<h2 id="voice">Voice<a class="anchor" href="#voice" aria-label="Link to this section: Voice">#</a></h2>
+<p>Quick add can also be dictated. Voice capture is <strong>off by default</strong> and is switched on per device in <strong>Settings → Voice capture</strong>; it is not synced, so turning it on for your phone leaves your laptop as it is. Browsers without speech recognition (Firefox, for example) show the switch disabled with an explanation, and quick add has no microphone button there.</p>
+<p>With voice capture on, press the microphone button in quick add or <code>Shift+V</code> anywhere outside a text field (plain <code>v</code> already toggles list and board in a project). Words appear in the box as they are recognised; when you stop talking, press the button again or press <code>Esc</code>, the final transcript is inserted at the caret and parsed exactly like typed text, chips included. <strong>Nothing is saved until you press Enter</strong>, so you can correct the line by hand first.</p>
+<p>Spoken forms of the tokens are turned into their typed forms first, in the active quick-add languages (English is always on):</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Said</th>
+<th>Becomes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>&quot;renew insurance hashtag home priority two&quot;</td>
+<td><code>renew insurance #home p2</code></td>
+</tr>
+<tr>
+<td>&quot;standup at nine thirty am&quot;</td>
+<td><code>standup at 9:30am</code></td>
+</tr>
+<tr>
+<td>&quot;call the dentist tomorrow at nine&quot;</td>
+<td><code>call the dentist tomorrow at 9</code></td>
+</tr>
+<tr>
+<td>&quot;label errands buy stamps&quot;</td>
+<td><code>@errands buy stamps</code></td>
+</tr>
+<tr>
+<td>&quot;phone mum at call&quot; (an existing label <em>call</em>)</td>
+<td><code>phone mum @call</code></td>
+</tr>
+<tr>
+<td>&quot;plan move project home office&quot; (an existing project)</td>
+<td><code>plan move #homeoffice</code></td>
+</tr>
+<tr>
+<td>&quot;write report for thirty minutes&quot;, &quot;one hour and fifteen minutes&quot;</td>
+<td><code>write report +30m</code>, <code>+75m</code></td>
+</tr>
+<tr>
+<td>&quot;ping Ana in two hours&quot;</td>
+<td><code>ping Ana in 2 hours</code></td>
+</tr>
+<tr>
+<td>&quot;um neun Uhr dreißig&quot;, &quot;alle nove&quot;, &quot;a las diez&quot;, &quot;à neuf heures&quot;, &quot;às onze&quot;</td>
+<td><code>um 9:30</code>, <code>alle 9</code>, <code>a las 10</code>, <code>à 9 heures</code>, <code>às 11</code></td>
+</tr>
+</tbody></table></div>
+<p>Trigger words per language: <em>hashtag</em> (all), <em>project / Projekt / projet / progetto / proyecto / projeto</em> (only before an existing project&#39;s name), <em>label / Etikett / étiquette / etichetta / etiqueta</em>, and <em>priority / Priorität / priorité / priorità / prioridad / prioridade</em> followed by one to four. Numbers are only converted next to a time, priority or duration cue, so &quot;buy two apples&quot; stays as it is.</p>
+<p>The recognition language follows your first quick-add language (with your browser&#39;s region, for example <code>en-GB</code>) and can be changed in Settings. If the browser cannot recognise that language, OpenTodo says so once and listens in the browser&#39;s default language.</p>
+<p>If the microphone is blocked, a message explains how to allow it in the browser&#39;s site settings and the button stays there to retry. When nothing is said, listening just stops. When recognition is unavailable (for example offline, in a browser that needs its vendor&#39;s service), quick add says &quot;Voice capture is unavailable right now&quot; and typing works as usual. Text already in the box is never cleared.</p>
+<h3 id="privacy">Privacy<a class="anchor" href="#privacy" aria-label="Link to this section: Privacy">#</a></h3>
+<p>Before voice capture can be switched on, Settings shows this statement and waits for you to confirm:</p>
+<ul>
+<li>Speech is recognised by your browser, not by OpenTodo.</li>
+<li>Depending on the browser, your audio may be sent to the browser vendor&#39;s speech service (for example Google for Chrome, Apple for Safari) and handled under their privacy policy.</li>
+<li>OpenTodo asks the browser to recognise speech on this device when it offers that choice.</li>
+<li>Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.</li>
+<li>The microphone is used only while you dictate; the browser asks for permission the first time.</li>
+</ul>
+<p>OpenTodo&#39;s code never records, stores or sends audio: the Web Speech API hands it text. On-device recognition is requested whenever the browser reports it available for the language (Chromium&#39;s <code>processLocally</code>); OpenTodo never asks the browser to download a speech model. The browser asks for microphone permission on your first dictation, not when you switch the setting on.</p>
+<h2 id="not-understood">Not understood<a class="anchor" href="#not-understood" aria-label="Link to this section: Not understood">#</a></h2>
+<p>Recurrence (&quot;every Monday&quot;) and reminders (&quot;remind me at 9&quot;) are set in the task&#39;s detail panel (see <a href="/docs/recurrence/">recurrence.md</a> and <a href="/docs/reminders/">reminders.md</a>), not in the quick-add line. Quick add does not create a project from an unknown <code>#name</code>, and the line is parsed only in the web app, not by the server, the REST API or the <code>ot</code> CLI. Some of this is listed under <a href="https://github.com/pixari/opentodo/blob/main/ROADMAP.md#future-ideas" rel="noopener">future ideas</a>.</p>
+<h2 id="data">Data<a class="anchor" href="#data" aria-label="Link to this section: Data">#</a></h2>
+<p>Estimates are stored in the additive task field <code>estimate_minutes</code> (integer 1–10080 or null; see <a href="/docs/api/">api.md</a> and <a href="/docs/sync/">sync.md</a>). <code>@name</code> tokens are stored as label ids in the task&#39;s <code>labels</code> list, never as names; a new label is written as its own operation before the task, so both sync together and work offline.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/quick-add.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <span></span>
+      <a class="next" rel="next" href="/docs/filters/"><span>Next</span>Filter queries</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#preview-chips">Preview chips</a></li><li><a href="#tokens-any-language">Tokens (any language)</a></li><li><a href="#dates-and-times">Dates and times</a></li><li><a href="#languages">Languages</a></li><li><a href="#views-and-defaults">Views and defaults</a></li><li><a href="#voice">Voice</a><ul><li><a href="#privacy">Privacy</a></li></ul></li><li><a href="#not-understood">Not understood</a></li><li><a href="#data">Data</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,3 +1,11 @@
+---
+title: Running with Docker
+summary: Docker Compose and docker run, reverse proxies, push, updates, managing users and recovering owner access.
+audience: admin
+specs: [self-hosting, user-administration, audit-log, invitations]
+screens: []
+order: 10
+---
 # Running OpenTodo with Docker
 
 ## Docker Compose

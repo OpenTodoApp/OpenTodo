@@ -1,4 +1,13 @@
-# Capturing pages: share sheet, bookmarklet, extension
+---
+title: Capturing pages
+summary: Save pages and selected text from other apps: the share sheet, the bookmarklet and the browser extension.
+audience: user
+section: Reference
+specs: [share-capture]
+screens: [settings/capture]
+order: 50
+---
+# Capturing pages
 
 Many tasks start as "deal with this page later". OpenTodo can receive a page from three places, and all of them open the same **capture screen** at `/share` on your own server:
 

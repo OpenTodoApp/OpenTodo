@@ -1,3 +1,11 @@
+---
+title: Email to task
+summary: Point OpenTodo at an IMAP mailbox so people can turn emails into tasks; provider notes and protection.
+audience: admin
+specs: [email-capture]
+screens: []
+order: 50
+---
 # Email to task
 
 Forward or send an email to your personal OpenTodo address and it becomes a task in your Inbox. It works from any mail client on any device, including ones where OpenTodo is not installed.

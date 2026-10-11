@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Reminders reference · OpenTodo docs</title>
+  <meta name="description" content="How relative and absolute reminders fire, web push and its privacy, snooze, shared projects and the Trash.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/reminders/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/reminders/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Reminders reference · OpenTodo docs">
+  <meta property="og:description" content="How relative and absolute reminders fire, web push and its privacy, snooze, shared projects and the Trash.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/" aria-current="page">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/" aria-current="page">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Reference</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#shared-projects">Shared projects</a></li><li><a href="#delivery">Delivery</a></li><li><a href="#trash">Trash</a></li><li><a href="#snooze-and-dismiss">Snooze and dismiss</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#for-operators">For operators</a></li></ul></nav></details>
+<h1 id="reminders-reference">Reminders reference</h1>
+<p>A task can carry any number of reminders (OpenSpec change <code>reminders</code>). Open a task, then use the <strong>Reminders</strong> section of the detail panel.</p>
+<ul>
+<li><strong>Relative</strong> reminders fire a number of minutes before or after the task&#39;s due time (&quot;30 minutes before&quot;). A task with a date but no time counts as due at 09:00. A task whose time is fixed to a time zone fires relative to that exact instant, wherever your devices are. When the due date or time changes, on any device or through the API, the reminder moves with it; recurring tasks carry their relative reminders to the next occurrence. Without a due date a relative reminder is kept but does not fire.</li>
+<li><strong>Absolute</strong> reminders fire at a moment you pick and never move with the due date. They work on undated tasks and are shown in each device&#39;s local time.</li>
+</ul>
+<h2 id="shared-projects">Shared projects<a class="anchor" href="#shared-projects" aria-label="Link to this section: Shared projects">#</a></h2>
+<p>Reminders are personal. On a task in a shared project your reminders are yours alone: other members never see or receive them, and you can add them with any role, viewer included. When someone else moves the task, your relative reminders follow as soon as one of your devices syncs.</p>
+<h2 id="delivery">Delivery<a class="anchor" href="#delivery" aria-label="Link to this section: Delivery">#</a></h2>
+<p><strong>In the app.</strong> While the app is open, a reminder whose time has come appears as a notification in the corner with <strong>Snooze 10 min</strong>, <strong>1 hour</strong>, <strong>Tomorrow 09:00</strong> and <strong>Dismiss</strong> (focus moves to it; <kbd>Esc</kbd> dismisses). This needs no network and no permission, and is skipped for completed or deleted tasks. When the tab is in the background and the browser allows notifications, a system notification is shown instead.</p>
+<p><strong>Web push.</strong> In <strong>Settings → Notifications</strong> each device can enable push so reminders arrive while the app is closed. Enabling asks for the browser permission and registers the device with the server; disabling or signing out removes it. The server checks for due reminders every 30 seconds and sends each one once per firing time to every enabled device of the reminder&#39;s owner (reminders are personal), then records the delivery on the reminder (an op by device <code>server</code>) so all devices know it fired. System notifications offer <strong>Snooze 10 min</strong> and <strong>Dismiss</strong>; these work offline and are uploaded on the next sync. If the app is focused when a push arrives, the reminder is shown in the app only.</p>
+<p><strong>Privacy.</strong> A push payload carries only the reminder id, the task id and the firing time, encrypted end to end (RFC 8291) so the push service cannot read it. The device shows the title from its own copy of the task. Enable <strong>Include task titles</strong> if a device should be able to show the title before it has synced the task; the description is never sent.</p>
+<h2 id="trash">Trash<a class="anchor" href="#trash" aria-label="Link to this section: Trash">#</a></h2>
+<p>A reminder does not fire, in the app or by push, while its task is deleted or while the task&#39;s project, or any project above it, is in the Trash. It is not marked as delivered either, so restoring the task or the project brings it back: a reminder whose time is still ahead fires on time, and one whose time passed while it was in the Trash is delivered once, late, on the next check (the same rule as for reminders that fell due while the server was down). Dismiss or snooze it if you no longer need it. Purging the task from the Trash removes its reminders.</p>
+<h2 id="snooze-and-dismiss">Snooze and dismiss<a class="anchor" href="#snooze-and-dismiss" aria-label="Link to this section: Snooze and dismiss">#</a></h2>
+<p>Snoozing sets a new firing time (in 10 minutes, in an hour, or tomorrow at 09:00) and the reminder fires again, also by push. Dismissing silences the current firing. Both are ordinary synced edits: when one device dismisses and another later snoozes the same reminder, the later edit wins on every device.</p>
+<h2 id="end-to-end-encryption">End-to-end encryption<a class="anchor" href="#end-to-end-encryption" aria-label="Link to this section: End-to-end encryption">#</a></h2>
+<p>For an account with <a href="/docs/e2ee/">end-to-end encryption</a> the server never puts a title in a push, even for devices that opted in to titles: it cannot read it, and ciphertext would be useless. The notification uses the content-free text; in-app reminder toasts still show the decrypted title from the device.</p>
+<h2 id="for-operators">For operators<a class="anchor" href="#for-operators" aria-label="Link to this section: For operators">#</a></h2>
+<p>Nothing to configure. The VAPID key pair is generated on first use at <code>&lt;data&gt;/push_vapid.pem</code> and travels with backup archives. <code>OPENTODO_PUSH=off</code> turns push off entirely (routes answer 404, no outbound requests); in-app reminders keep working. Push requires the app to be served over https (<code>OPENTODO_BASE_URL</code>), as browsers only allow push subscriptions on secure origins. See <a href="/docs/self-hosting/docker/#reminders-and-web-push">self-hosting</a> and <a href="/docs/api/#reminders-and-push">API</a>.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/reminders.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/recurrence/"><span>Previous</span>Recurring task rules</a>
+      <a class="next" rel="next" href="/docs/capture/"><span>Next</span>Capturing pages</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#shared-projects">Shared projects</a></li><li><a href="#delivery">Delivery</a></li><li><a href="#trash">Trash</a></li><li><a href="#snooze-and-dismiss">Snooze and dismiss</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#for-operators">For operators</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

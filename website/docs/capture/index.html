@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Capturing pages · OpenTodo docs</title>
+  <meta name="description" content="Save pages and selected text from other apps: the share sheet, the bookmarklet and the browser extension.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/capture/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/capture/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Capturing pages · OpenTodo docs">
+  <meta property="og:description" content="Save pages and selected text from other apps: the share sheet, the bookmarklet and the browser extension.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/" aria-current="page">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/" aria-current="page">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Reference</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#share-sheet-installed-app">Share sheet (installed app)</a></li><li><a href="#bookmarklet">Bookmarklet</a></li><li><a href="#browser-extension">Browser extension</a></li><li><a href="#signed-out">Signed out</a></li><li><a href="#limits-and-safety">Limits and safety</a></li></ul></nav></details>
+<h1 id="capturing-pages">Capturing pages</h1>
+<p>Many tasks start as &quot;deal with this page later&quot;. OpenTodo can receive a page from three places, and all of them open the same <strong>capture screen</strong> at <code>/share</code> on your own server:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>From</th>
+<th>How</th>
+<th>Works offline</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Phone or desktop share sheet</td>
+<td>Install the app, then choose <strong>OpenTodo</strong> in the share menu</td>
+<td>Yes, once the app has been opened online</td>
+</tr>
+<tr>
+<td>Any desktop browser</td>
+<td>The bookmarklet from <strong>Settings → Capture</strong></td>
+<td>The popup opens from the app&#39;s offline cache once the app has been loaded in that browser</td>
+</tr>
+<tr>
+<td>Chromium and Firefox</td>
+<td>The browser extension in <a href="https://github.com/pixari/opentodo/tree/main/extension" rel="noopener"><code>extension/</code></a></td>
+<td>Same as the bookmarklet</td>
+</tr>
+</tbody></table></div>
+<p>The capture screen proposes:</p>
+<ul>
+<li><strong>Title</strong>: the page title, or the link&#39;s host name when there is no title. The title field is a regular <a href="/docs/quick-add/">quick-add</a> line, so typing <code>tomorrow #work p1</code> into it sets the date, project and priority.</li>
+<li><strong>Description</strong>: the selected or shared text, followed by the link.</li>
+<li><strong>Project</strong>: the Inbox by default; pick any project.</li>
+</ul>
+<p>Press <strong>Enter</strong> to save or <strong>Esc</strong> to cancel. Nothing is saved until you confirm. Saving creates an ordinary task on the device first and syncs it like any other quick-add task, so it works with no network and reaches your other devices when the network returns.</p>
+<p>When the capture screen was opened as a popup (bookmarklet, extension) or in a window opened just for the share, it closes itself after Save or Esc. Otherwise it takes you to the Inbox or to the project you picked.</p>
+<h2 id="share-sheet-installed-app">Share sheet (installed app)<a class="anchor" href="#share-sheet-installed-app" aria-label="Link to this section: Share sheet (installed app)">#</a></h2>
+<p>The web app manifest declares a <a href="https://developer.mozilla.org/docs/Web/Manifest/share_target" rel="noopener">Web Share Target</a> (<code>GET /share</code> with <code>title</code>, <code>text</code> and <code>url</code>). The browser adds OpenTodo to the share menu once the app is <strong>installed</strong>:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Install</th>
+<th>Share</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Android, Chrome / Edge / Samsung Internet</td>
+<td>Menu → <strong>Install app</strong> (or <strong>Add to Home screen</strong>)</td>
+<td>Share from any app → <strong>OpenTodo</strong></td>
+</tr>
+<tr>
+<td>Windows, ChromeOS, Chrome / Edge</td>
+<td>Install icon in the address bar</td>
+<td>Share from apps that use the system share dialog</td>
+</tr>
+<tr>
+<td>macOS, Chrome / Edge</td>
+<td>Install icon in the address bar</td>
+<td>Support for receiving shares varies by version; use the bookmarklet or extension</td>
+</tr>
+<tr>
+<td>iOS and iPadOS, any browser</td>
+<td>Share → <strong>Add to Home Screen</strong></td>
+<td>Safari does not support share targets for web apps; use the bookmarklet in Safari instead</td>
+</tr>
+<tr>
+<td>Firefox (all platforms)</td>
+<td>Firefox does not install web apps as share targets</td>
+<td>Use the extension or bookmarklet</td>
+</tr>
+</tbody></table></div>
+<p>Some apps put the link inside the shared text instead of the link field. The capture screen then takes the last <code>http(s)</code> link from the text and moves it to the end of the description.</p>
+<p>After an update that adds or changes the share target, the browser may need the app to be opened once (or reinstalled) before the share menu entry appears.</p>
+<h2 id="bookmarklet">Bookmarklet<a class="anchor" href="#bookmarklet" aria-label="Link to this section: Bookmarklet">#</a></h2>
+<p><strong>Settings → Capture</strong> shows an <strong>Add to OpenTodo</strong> button generated for your server&#39;s address. Drag it to the bookmarks bar (or use <strong>Copy bookmarklet</strong> and paste the code as the address of a new bookmark). Clicking it on any page opens a small popup with the capture screen, prefilled with the page&#39;s address, title and the text you selected.</p>
+<p>The bookmarklet contains no password or token. It only opens your server&#39;s <code>/share</code> page in a popup, where your normal sign-in applies. Its source, with your server&#39;s address in place of <code>https://todo.example.com</code>:</p>
+<pre tabindex="0"><code class="language-js">javascript:(function () {
+  var e = encodeURIComponent
+  var s = String(window.getSelection ? getSelection() : '').slice(0, 16384)
+  var u = &quot;https://todo.example.com/share&quot; + '?url=' + e(location.href) + '&amp;title=' + e(document.title) + (s ? '&amp;text=' + e(s) : '')
+  if (!window.open(u, 'opentodo-capture', 'popup,width=480,height=640'))
+    alert('Allow pop-ups for this site to capture it to OpenTodo.')
+})()</code></pre>
+<p>If nothing happens, the browser blocked the popup: allow pop-ups for the site you are on. Some sites block bookmarklets with their own security policy; the extension works there.</p>
+<h2 id="browser-extension">Browser extension<a class="anchor" href="#browser-extension" aria-label="Link to this section: Browser extension">#</a></h2>
+<p><a href="https://github.com/pixari/opentodo/tree/main/extension" rel="noopener"><code>extension/</code></a> holds a small Manifest V3 extension for Chromium-based browsers (Chrome, Edge, Brave, Vivaldi) and Firefox 121 or later. It adds:</p>
+<ul>
+<li>a toolbar button <strong>Add to OpenTodo</strong>,</li>
+<li>a context-menu entry <strong>Add to OpenTodo</strong> on pages and selections,</li>
+<li>a keyboard shortcut, <strong>Alt+Shift+O</strong> by default (change it at <code>chrome://extensions/shortcuts</code> or in Firefox&#39;s <strong>Manage Extension Shortcuts</strong>).</li>
+</ul>
+<p>Each opens your server&#39;s capture screen in a popup window with the current tab&#39;s address, title and selection.</p>
+<p><strong>Install</strong> (it is not published in the browser stores yet):</p>
+<ul>
+<li><em>Chromium</em>: download <code>opentodo-browser-extension.zip</code> from a release (or run <code>make extension</code>), unzip it, open <code>chrome://extensions</code>, turn on <strong>Developer mode</strong>, <strong>Load unpacked</strong>, pick the unzipped folder.</li>
+<li><em>Firefox</em>: open <code>about:debugging#/runtime/this-firefox</code>, <strong>Load Temporary Add-on…</strong>, pick <code>manifest.json</code> from the unzipped folder. Temporary add-ons are removed when Firefox restarts; a signed build is a release task.</li>
+</ul>
+<p><strong>First use</strong>: if no server is set, the extension opens its options page and asks for your server&#39;s address (for example <code>https://todo.example.com</code>). Once it is saved, the capture you started continues. Change it later in the extension&#39;s options.</p>
+<p><strong>Privacy</strong>: the extension stores only the server address (in the browser&#39;s extension sync storage). It holds no token or password, has no host permissions and no content scripts, and makes no network requests itself; the only traffic is the capture popup you open, which loads your own server. Permissions: <code>activeTab</code> (read the current tab&#39;s address, title and selection when you click), <code>contextMenus</code>, <code>scripting</code> (read the selection), <code>storage</code> (the server address).</p>
+<h2 id="signed-out">Signed out<a class="anchor" href="#signed-out" aria-label="Link to this section: Signed out">#</a></h2>
+<p>If the device is not signed in, the capture screen first shows the sign-in form with a note, then continues to the capture screen with the shared page intact. Until you save, the shared title, text and link stay in the page&#39;s memory only: they are removed from the address bar and are not written to storage or sent to the server (the server&#39;s request log records paths, never query strings). Reloading the sign-in page therefore loses the shared content; share it again.</p>
+<h2 id="limits-and-safety">Limits and safety<a class="anchor" href="#limits-and-safety" aria-label="Link to this section: Limits and safety">#</a></h2>
+<ul>
+<li>The title is cut to 500 characters, the text to 16 KB with a <code>[truncated]</code> note.</li>
+<li>A link is kept only if it starts with <code>http://</code> or <code>https://</code>; anything else (<code>javascript:</code>, <code>data:</code>, <code>file:</code> …) is dropped and the rest of the share is shown normally.</li>
+<li>Shared content is shown as plain text, never as HTML, and the capture screen never opens the shared link.</li>
+<li>There is no auto-save: a link to <code>/share</code> cannot create a task without you pressing Save.</li>
+<li>Files and images cannot be shared yet; the app is offered in the share menu for text and links only.</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/capture.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/reminders/"><span>Previous</span>Reminders reference</a>
+      <a class="next" rel="next" href="/docs/import/"><span>Next</span>Import formats</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#share-sheet-installed-app">Share sheet (installed app)</a></li><li><a href="#bookmarklet">Bookmarklet</a></li><li><a href="#browser-extension">Browser extension</a></li><li><a href="#signed-out">Signed out</a></li><li><a href="#limits-and-safety">Limits and safety</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

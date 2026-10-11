@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>OpenTodo docs</title>
+  <meta name="description" content="How to use OpenTodo day to day, run your own server, and connect it to other tools.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="OpenTodo docs">
+  <meta property="og:description" content="How to use OpenTodo day to day, run your own server, and connect it to other tools.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs docs-home">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<main id="content" tabindex="-1">
+  <section class="home-hero">
+    <div class="home-wrap">
+      <p class="kicker">Documentation · version 0.1.0</p>
+      <h1>OpenTodo docs</h1>
+      <p class="lede">How to use OpenTodo day to day, run your own server, and connect it to other tools.</p>
+      <form class="docs-search big" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-home">Search the docs</label>
+  <input id="q-home" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-home-results" aria-describedby="q-home-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-home-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-home-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+      <p class="home-try">New here? Start with <a href="/docs/getting-started/">Getting started</a>, or open the <a href="https://opentodo-demo.pixari.dev" rel="noopener">demo</a> in another tab and follow along.</p>
+    </div>
+  </section>
+  <section class="home-section" aria-labelledby="h-start">
+    <div class="home-wrap">
+      <h2 id="h-start">Start here</h2>
+      <ul class="cards cards-2"></ul>
+    </div>
+  </section>
+  <section class="home-section" aria-labelledby="h-guides">
+    <div class="home-wrap">
+      <h2 id="h-guides">Guides</h2>
+      <p class="section-lede">Short, task-based guides for everyday use.</p>
+      <ul class="cards"></ul>
+    </div>
+  </section>
+  <section class="home-section" aria-labelledby="h-ref">
+    <div class="home-wrap">
+      <h2 id="h-ref">Reference</h2>
+      <p class="section-lede">Every detail of quick add, filters, recurring rules and more.</p>
+      <ul class="link-list"><li><a href="/docs/quick-add/">Quick add syntax</a><span>Every word quick add understands: dates, times, projects, labels, priorities, estimates, six languages and voice capture.</span></li><li><a href="/docs/filters/">Filter queries</a><span>The filter language in full: terms, operators, dates, saved views, dashboards and ten worked examples.</span></li><li><a href="/docs/recurrence/">Recurring task rules</a><span>The repeat rule grammar, how the next date is worked out, and what completing, skipping and detaching do.</span></li><li><a href="/docs/reminders/">Reminders reference</a><span>How relative and absolute reminders fire, web push and its privacy, snooze, shared projects and the Trash.</span></li><li><a href="/docs/capture/">Capturing pages</a><span>Save pages and selected text from other apps: the share sheet, the bookmarklet and the browser extension.</span></li><li><a href="/docs/import/">Import formats</a><span>Every import format in detail: your own export, CSV and other apps' JSON exports, mapping rules, duplicates and undo.</span></li><li><a href="/docs/e2ee/">End-to-end encryption</a><span>What encryption hides from the server and what it does not, the threat model, devices, recovery and limits.</span></li></ul>
+    </div>
+  </section>
+  <section class="home-section split" aria-labelledby="h-admin">
+    <div class="home-wrap">
+      <div>
+        <h2 id="h-admin">Run your own server</h2>
+        <p class="section-lede">One container, one volume. Install, update, back up and connect your tools.</p>
+        <ul class="link-list"><li><a href="/docs/self-hosting/docker/">Running with Docker</a><span>Docker Compose and docker run, reverse proxies, push, updates, managing users and recovering owner access.</span></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a><span>One-click deployment from the compose file, environment variables, passkeys, updates and troubleshooting.</span></li><li><a href="/docs/backups/">Backups</a><span>Scheduled backups to a folder, S3 or WebDAV, encryption, retention, restore and the archive format.</span></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a><span>Connect an OpenID Connect provider, link accounts, SSO-only mode and break-glass access for the owner.</span></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a><span>Turn on CalDAV, create app passwords and connect Apple Reminders, Thunderbird or Android apps.</span></li><li><a href="/docs/email/">Email to task</a><span>Point OpenTodo at an IMAP mailbox so people can turn emails into tasks; provider notes and protection.</span></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a><span>Run a public demo with a private sandbox per visitor: limits, expiry, the nightly reset and what is switched off.</span></li></ul>
+      </div>
+      <div>
+        <h2 id="h-dev">Build on OpenTodo</h2>
+        <p class="section-lede">The API, the command-line client, webhooks and how sync works.</p>
+        <ul class="link-list"><li><a href="/docs/api/">HTTP API</a><span>Authentication, every route, entity fields, error codes and examples for scripts and integrations.</span></li><li><a href="/docs/cli/">Command-line client</a><span>The ot command: install, sign in, add and complete tasks, JSON output and exit codes for scripts.</span></li><li><a href="/docs/webhooks/">Webhooks</a><span>Events, payload, signature checks, retries and recipes for Home Assistant, n8n and Telegram.</span></li><li><a href="/docs/mcp/">AI assistants (MCP)</a><span>Give an AI assistant read-only access to your tasks over the Model Context Protocol.</span></li><li><a href="/docs/architecture/">Architecture</a><span>How data flows from a tap on the screen to every device: server packages, tables, client modules and the build.</span></li><li><a href="/docs/sync/">Sync protocol</a><span>Operations, the schema, the winner rule, the exchange, sharing scopes, live updates, purge and history.</span></li></ul>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

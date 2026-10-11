@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Email to task · OpenTodo docs</title>
+  <meta name="description" content="Point OpenTodo at an IMAP mailbox so people can turn emails into tasks; provider notes and protection.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/email/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/email/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Email to task · OpenTodo docs">
+  <meta property="og:description" content="Point OpenTodo at an IMAP mailbox so people can turn emails into tasks; provider notes and protection.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/" aria-current="page">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/" aria-current="page">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="admin">
+      <p class="doc-meta"><span class="crumbs">Self-hosting</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#how-it-works">How it works</a><ul><li><a href="#what-the-task-looks-like">What the task looks like</a></li></ul></li><li><a href="#protection">Protection</a></li><li><a href="#operator-setup">Operator setup</a><ul><li><a href="#provider-notes">Provider notes</a></li><li><a href="#docker-compose">Docker Compose</a></li><li><a href="#coolify">Coolify</a></li><li><a href="#troubleshooting">Troubleshooting</a></li></ul></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#limits-and-what-is-not-included">Limits and what is not included</a></li></ul></nav></details>
+<h1 id="email-to-task">Email to task</h1>
+<p>Forward or send an email to your personal OpenTodo address and it becomes a task in your Inbox. It works from any mail client on any device, including ones where OpenTodo is not installed.</p>
+<p>The feature is <strong>optional and off by default</strong>. The server operator turns it on by giving OpenTodo one mailbox to read; nothing listens for mail, no port is opened and no DNS change is needed.</p>
+<h2 id="how-it-works">How it works<a class="anchor" href="#how-it-works" aria-label="Link to this section: How it works">#</a></h2>
+<ol>
+<li>The operator creates (or reuses) one mailbox at any provider that supports <strong>plus addressing</strong> (<code>todo+anything@example.com</code> lands in <code>todo@example.com</code>) or a catch-all domain, and gives OpenTodo its IMAP login.</li>
+<li>Each user opens <strong>Settings → Email to task</strong> and gets a secret address such as <code>todo+k3f9w2…@example.com</code>.</li>
+<li>Mail sent to that address is delivered into the shared mailbox. OpenTodo checks the mailbox every minute over IMAP (TLS only), finds the secret in the recipient (<code>Delivered-To</code>, <code>X-Original-To</code>, <code>To</code>, then <code>Cc</code>) and creates the task in that user&#39;s account.</li>
+<li>The message is then marked read and moved to <code>OpenTodo/Processed</code> (or deleted, if the operator prefers). Messages that match no user are moved or deleted the same way, so the mailbox does not fill up.</li>
+</ol>
+<p>The task is an ordinary change in the operation log (device <code>server</code>), so every device receives it on its next sync, and offline devices converge like with any other edit.</p>
+<h3 id="what-the-task-looks-like">What the task looks like<a class="anchor" href="#what-the-task-looks-like" aria-label="Link to this section: What the task looks like">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Task field</th>
+<th>From the message</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Title</td>
+<td>The subject, with reply and forward prefixes removed (<code>Re:</code>, <code>Fwd:</code>, <code>FW:</code>, <code>AW:</code>, <code>WG:</code>, <code>SV:</code>, <code>TR:</code>, <code>RV:</code>…). Without a subject: the first line of the text, else <code>(no subject)</code></td>
+</tr>
+<tr>
+<td>Description</td>
+<td>The plain-text part. HTML-only mail is converted to text (links keep their address in parentheses; scripts, styles and images are dropped, nothing is loaded). Text beyond 16 KB is cut with a note. A message forwarded <em>as an attachment</em> is included as a &quot;Forwarded message&quot; block</td>
+</tr>
+<tr>
+<td>Attachments</td>
+<td>Not stored. Each one is listed at the end of the description with its name and size, so nothing disappears silently</td>
+</tr>
+<tr>
+<td>Project, priority, due</td>
+<td>Inbox, priority 4, no due date. Natural-language parsing of the subject (<code>tomorrow</code>, <code>#project</code>, <code>p1</code>) is not applied yet</td>
+</tr>
+</tbody></table></div>
+<p>Character sets: UTF-8, US-ASCII, ISO-8859-1, ISO-8859-15 and windows-1252 are decoded, as are encoded subjects (<code>=?UTF-8?B?…?=</code>) and file names. Text in other character sets keeps its valid UTF-8 parts.</p>
+<h2 id="protection">Protection<a class="anchor" href="#protection" aria-label="Link to this section: Protection">#</a></h2>
+<ul>
+<li><strong>The secret is the key.</strong> 128 random bits, lowercase so providers that lowercase addresses still work. Rotate it any time in Settings (<strong>New address…</strong>); the old one stops working at once.</li>
+<li><strong>Off switch</strong> per account, and an optional <strong>sender allowlist</strong> (“Only accept mail from”). The sender address can be forged, so the allowlist filters mistakes and casual spam; the secret is the real protection.</li>
+<li><strong>At most 60 tasks per account per hour</strong> from email; more messages in the same hour are discarded.</li>
+<li><strong>Messages over 10 MB</strong> are discarded without being downloaded.</li>
+<li><strong>Each message creates one task at most.</strong> The Message-ID is remembered per account for 90 days, and the task id is derived from it, so a second poll, a restart in the middle of a batch or a message delivered twice never makes a duplicate.</li>
+<li><strong>Deactivated accounts</strong> get no tasks; their mail is discarded.</li>
+<li><strong>Privacy:</strong> OpenTodo keeps no copy of the message beyond the task and the Message-ID. Subjects, bodies and sender addresses are never logged at the default log level; the per-poll log line only counts outcomes (<code>created=2 unknown_secret=1</code>). The mailbox credentials stay in the server&#39;s memory and are never returned by any API or included in exports.</li>
+<li><strong>Network:</strong> the only outbound connection is to the IMAP server you configure. Credentials are sent only after TLS is established (implicit TLS on port 993, STARTTLS on any other port; a server without STARTTLS is refused).</li>
+</ul>
+<p>Creating, rotating and changing the address are recorded in the audit log as <code>email_inbox.created</code>, <code>email_inbox.rotated</code> and <code>email_inbox.updated</code> (never the secret or the allowlist addresses).</p>
+<h2 id="operator-setup">Operator setup<a class="anchor" href="#operator-setup" aria-label="Link to this section: Operator setup">#</a></h2>
+<p>Set all four required variables, or none. Setting only some stops the server at startup with a message naming the missing one.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>OPENTODO_EMAIL_ADDRESS</code></td>
+<td>unset</td>
+<td>The public address pattern, e.g. <code>todo@example.com</code>. Users get <code>todo+&lt;secret&gt;@example.com</code>. Must not contain <code>+</code></td>
+</tr>
+<tr>
+<td><code>OPENTODO_EMAIL_IMAP_HOST</code></td>
+<td>unset</td>
+<td><code>host:port</code> of the IMAP server, e.g. <code>imap.fastmail.com:993</code>. Port 993 uses implicit TLS, any other port STARTTLS. Without a port, 993</td>
+</tr>
+<tr>
+<td><code>OPENTODO_EMAIL_IMAP_USER</code></td>
+<td>unset</td>
+<td>IMAP login</td>
+</tr>
+<tr>
+<td><code>OPENTODO_EMAIL_IMAP_PASSWORD</code></td>
+<td>unset</td>
+<td>IMAP password, ideally an app-specific password. Or use <code>OPENTODO_EMAIL_IMAP_PASSWORD_FILE</code></td>
+</tr>
+<tr>
+<td><code>OPENTODO_EMAIL_IMAP_PASSWORD_FILE</code></td>
+<td>unset</td>
+<td>File holding the password (Docker / Coolify secrets). Use instead of the variable above</td>
+</tr>
+<tr>
+<td><code>OPENTODO_EMAIL_IMAP_MAILBOX</code></td>
+<td><code>INBOX</code></td>
+<td>Folder to read</td>
+</tr>
+<tr>
+<td><code>OPENTODO_EMAIL_POLL_SECONDS</code></td>
+<td><code>60</code></td>
+<td>Seconds between checks, 15–86400</td>
+</tr>
+<tr>
+<td><code>OPENTODO_EMAIL_PROCESSED</code></td>
+<td><code>move:OpenTodo/Processed</code></td>
+<td>What happens to handled mail: <code>move:&lt;folder&gt;</code> (created if missing; <code>/</code> is translated to the server&#39;s folder separator) or <code>delete</code></td>
+</tr>
+</tbody></table></div>
+<p>Use a <strong>dedicated mailbox</strong> (or at least a dedicated folder filled by a server-side rule): OpenTodo processes every unread message in the folder it reads.</p>
+<h3 id="provider-notes">Provider notes<a class="anchor" href="#provider-notes" aria-label="Link to this section: Provider notes">#</a></h3>
+<ul>
+<li><strong>Fastmail, Proton (Bridge), mailbox.org, Posteo, iCloud+ custom domains, Gmail / Google Workspace, Outlook.com / Microsoft 365</strong>: plus addressing works out of the box. Create an app password for IMAP (Gmail and Microsoft require 2-step verification first; Microsoft 365 tenants may have basic-auth IMAP disabled, in which case use another provider: OAuth sign-in is not supported).</li>
+<li><strong>Your own domain with a catch-all</strong>: point the catch-all at the mailbox; <code>todo+secret@yourdomain</code> is delivered even if the provider ignores plus addressing. OpenTodo looks at <code>Delivered-To</code> and <code>X-Original-To</code> first, which keep the original recipient.</li>
+<li><strong>Self-hosted Dovecot / Stalwart / Maddy</strong>: enable the <code>+</code> recipient delimiter (Postfix <code>recipient_delimiter = +</code>).</li>
+<li>Some providers lowercase the local part; secrets are lowercase and matched case-insensitively, so that is harmless.</li>
+</ul>
+<h3 id="docker-compose">Docker Compose<a class="anchor" href="#docker-compose" aria-label="Link to this section: Docker Compose">#</a></h3>
+<pre tabindex="0"><code class="language-yaml">services:
+  opentodo:
+    environment:
+      - OPENTODO_EMAIL_ADDRESS=todo@example.com
+      - OPENTODO_EMAIL_IMAP_HOST=imap.example.com:993
+      - OPENTODO_EMAIL_IMAP_USER=todo@example.com
+      - OPENTODO_EMAIL_IMAP_PASSWORD_FILE=/run/secrets/opentodo_imap_password
+    secrets:
+      - opentodo_imap_password
+secrets:
+  opentodo_imap_password:
+    file: ./imap_password.txt</code></pre>
+<h3 id="coolify">Coolify<a class="anchor" href="#coolify" aria-label="Link to this section: Coolify">#</a></h3>
+<p>Add the variables in the resource&#39;s <strong>Environment Variables</strong> tab. For the password, either mark <code>OPENTODO_EMAIL_IMAP_PASSWORD</code> as a secret (Coolify hides it in the UI), or mount a file through <strong>Storages → Add file mount</strong> at <code>/run/secrets/opentodo_imap_password</code> and set <code>OPENTODO_EMAIL_IMAP_PASSWORD_FILE</code> to that path. Redeploy; the log shows <code>email capture polling interval=1m0s</code>.</p>
+<h3 id="troubleshooting">Troubleshooting<a class="anchor" href="#troubleshooting" aria-label="Link to this section: Troubleshooting">#</a></h3>
+<ul>
+<li><code>email poll failed … login failed</code>: wrong user or password, or the provider requires an app password.</li>
+<li><code>… offers no STARTTLS on this port</code>: use port 993, or enable STARTTLS on the server. OpenTodo never sends the password unencrypted.</li>
+<li><code>email poll unroutable=1</code>: the message reached the mailbox but no recipient carried a <code>+secret</code> for <code>OPENTODO_EMAIL_ADDRESS</code>. Check that the provider keeps plus addressing and that the address matches.</li>
+<li><code>unknown_secret</code>: the address was rotated, mistyped, or belongs to no account. <code>disabled</code> / <code>not_allowed</code> / <code>rate_limited</code> are the user&#39;s switch, allowlist and hourly cap.</li>
+<li>When the mail server is down, the app keeps working; one warning is logged per interval and polling resumes on its own.</li>
+</ul>
+<h2 id="end-to-end-encryption">End-to-end encryption<a class="anchor" href="#end-to-end-encryption" aria-label="Link to this section: End-to-end encryption">#</a></h2>
+<p>For an account with <a href="/docs/e2ee/">end-to-end encryption</a> the server creates the task in plaintext like any REST write (it has no key, and the message crossed mail servers in the clear anyway). The next unlocked device that syncs re-writes title and description as ciphertext and marks the task &quot;not yet encrypted&quot; until then; <strong>Purge plaintext history</strong> in Settings removes the plaintext operations afterwards.</p>
+<h2 id="limits-and-what-is-not-included">Limits and what is not included<a class="anchor" href="#limits-and-what-is-not-included" aria-label="Link to this section: Limits and what is not included">#</a></h2>
+<p>Not in this version: a built-in SMTP receiver for operators who own an MX record (a <a href="https://github.com/pixari/opentodo/blob/main/ROADMAP.md#future-ideas" rel="noopener">future idea</a>, <code>email-smtp-receiver</code>), storing attachments, replying to or sending mail, per-project addresses, parsing dates and projects from the subject, and OAuth mailbox sign-in. This implementation was tested against an in-process IMAP server and realistic RFC 5322 messages, not yet against each provider listed above.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/email.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/caldav/"><span>Previous</span>Calendar apps (CalDAV)</a>
+      <a class="next" rel="next" href="/docs/self-hosting/demo/"><span>Next</span>Public demo instance</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#how-it-works">How it works</a><ul><li><a href="#what-the-task-looks-like">What the task looks like</a></li></ul></li><li><a href="#protection">Protection</a></li><li><a href="#operator-setup">Operator setup</a><ul><li><a href="#provider-notes">Provider notes</a></li><li><a href="#docker-compose">Docker Compose</a></li><li><a href="#coolify">Coolify</a></li><li><a href="#troubleshooting">Troubleshooting</a></li></ul></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#limits-and-what-is-not-included">Limits and what is not included</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

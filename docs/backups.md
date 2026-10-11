@@ -1,3 +1,11 @@
+---
+title: Backups
+summary: Scheduled backups to a folder, S3 or WebDAV, encryption, retention, restore and the archive format.
+audience: admin
+specs: [backups]
+screens: []
+order: 30
+---
 # Backups
 
 OpenTodo can back up its data directory on a schedule to a local directory, an

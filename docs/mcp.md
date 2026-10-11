@@ -1,3 +1,12 @@
+---
+title: AI assistants (MCP)
+summary: Give an AI assistant read-only access to your tasks over the Model Context Protocol.
+audience: developer
+section: Integrations
+specs: [mcp-server]
+screens: []
+order: 40
+---
 # AI assistants (MCP)
 
 OpenTodo can let an AI assistant read your projects and tasks through the [Model Context Protocol](https://modelcontextprotocol.io) (MCP), so you can ask it "what is on my plate today?" or "summarise the Garden project". The endpoint is:

@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Public demo instance · OpenTodo docs</title>
+  <meta name="description" content="Run a public demo with a private sandbox per visitor: limits, expiry, the nightly reset and what is switched off.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/self-hosting/demo/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/self-hosting/demo/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Public demo instance · OpenTodo docs">
+  <meta property="og:description" content="Run a public demo with a private sandbox per visitor: limits, expiry, the nightly reset and what is switched off.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/" aria-current="page">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/" aria-current="page">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="admin">
+      <p class="doc-meta"><span class="crumbs">Self-hosting</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#what-a-visitor-gets">What a visitor gets</a></li><li><a href="#sandboxes">Sandboxes</a><ul><li><a href="#creating-a-sandbox">Creating a sandbox</a></li></ul></li><li><a href="#limits">Limits</a></li><li><a href="#expiry-and-the-nightly-reset">Expiry and the nightly reset</a></li><li><a href="#upgrading-from-the-shared-demo-account">Upgrading from the shared demo account</a></li><li><a href="#what-is-switched-off">What is switched off</a></li><li><a href="#nothing-worth-posting">Nothing worth posting</a></li><li><a href="#docker">Docker</a></li><li><a href="#coolify">Coolify</a></li><li><a href="#turning-it-off">Turning it off</a></li></ul></nav></details>
+<h1 id="running-a-public-demo-instance">Running a public demo instance</h1>
+<p><code>OPENTODO_DEMO=true</code> turns an OpenTodo server into a public showroom: visitors click <strong>Try the demo</strong> on the sign-in screen and land in a <strong>private sandbox</strong> full of realistic data. Nobody sees anybody else&#39;s sandbox, and every sandbox is deleted after two hours without activity, a day after it was created at the latest, and every night. Features that could be abused on a public server are switched off. Without the variable nothing changes.</p>
+<p>Use a <strong>dedicated instance with its own empty data directory</strong>. Demo mode is not meant to be turned on for a server that holds real accounts: the nightly reset deletes every sandbox, and the shared accounts of earlier versions are deleted on first start.</p>
+<h2 id="what-a-visitor-gets">What a visitor gets<a class="anchor" href="#what-a-visitor-gets" aria-label="Link to this section: What a visitor gets">#</a></h2>
+<ul>
+<li><strong>Sign-in screen</strong>: a short explanation and a <strong>Try the demo</strong> button. There are no credentials and no password form: the button creates a sandbox and signs the browser into it.</li>
+<li><strong>Banner</strong> on every screen: &quot;Demo — this sandbox is private to you and is deleted after 2 hours of inactivity. Don&#39;t store anything personal.&quot;</li>
+<li><strong>Their own copy of the sample data</strong>, dated relative to the day the sandbox was created so it always looks current: projects with sections and a sub-project (Work → Q4 launch, shown as a board), labels, recurring tasks, subtasks, comments with a reply and an @mention, a project shared with a demo collaborator (&quot;Sam Rivera&quot;) including assignments and edit history, saved views and a dashboard, reminders, a few completed tasks and a few items in the Trash.</li>
+<li>Everything else works as on any instance: quick add, editing, completing, drag and drop, filters, views, the calendar, offline use, export, Trash and history.</li>
+</ul>
+<p>A visitor who comes back in the same browser while the sandbox is alive continues where they left off (the session cookie). When the sandbox has been deleted, the open tab&#39;s next request is answered <code>401 demo_expired</code>; the app deletes its local copy and shows &quot;Your demo sandbox has expired&quot; with <strong>Start a new sandbox</strong>.</p>
+<h2 id="sandboxes">Sandboxes<a class="anchor" href="#sandboxes" aria-label="Link to this section: Sandboxes">#</a></h2>
+<p>Each sandbox is two accounts, both without a password, so nobody can sign into them with one:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Account</th>
+<th>Role</th>
+<th>Sign-in</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Visitor <code>sandbox-&lt;random&gt;@demo.invalid</code> (&quot;Alex Demo&quot;)</td>
+<td>member</td>
+<td>only the session issued when the sandbox is created</td>
+</tr>
+<tr>
+<td>Collaborator <code>collab-&lt;random&gt;@demo.invalid</code> (&quot;Sam Rivera&quot;)</td>
+<td>member</td>
+<td>none; it never has a session</td>
+</tr>
+<tr>
+<td>Hidden owner <code>owner@demo.invalid</code></td>
+<td>owner</td>
+<td>random password, discarded at creation</td>
+</tr>
+</tbody></table></div>
+<p>Isolation comes from the ordinary sharing rules: a sandbox reads and writes its personal data and the project shared with its own collaborator. Membership changes are refused on a demo instance, so a sandbox can never share anything with another sandbox, and assignments and @mentions accept only members of the project. Notifications and activity stay inside the sandbox. Nothing is visible without a session: there is no share link and no public page.</p>
+<p>The hidden owner exists so that &quot;first visit creates the owner&quot; never happens on a public URL, and so that every owner-only setting (sign-up, single sign-on, backups, CalDAV, MCP, the audit log, the two-factor policy) stays at its default. Nobody can sign in as the owner. If you need to, stop the server and use <code>opentodo reset-owner-password</code>.</p>
+<h3 id="creating-a-sandbox">Creating a sandbox<a class="anchor" href="#creating-a-sandbox" aria-label="Link to this section: Creating a sandbox">#</a></h3>
+<p>The sign-in page gets a creation token from <code>GET /api/v1/auth/status</code> (<code>demo.token</code>): signed with a key kept in the database, valid for 10 minutes, usable once. &quot;Try the demo&quot; sends it to <code>POST /api/v1/demo/sandbox</code>, which also requires a same-origin request (an <code>Origin</code> header naming this server). Crawlers and link previews only fetch pages and never create a sandbox. The new sandbox is seeded through the op log, exactly like any REST write (about 570 ops, 0.1 s).</p>
+<h2 id="limits">Limits<a class="anchor" href="#limits" aria-label="Link to this section: Limits">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Default</th>
+<th>When reached</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Live sandboxes</td>
+<td>500 (<code>OPENTODO_DEMO_MAX_SANDBOXES</code>)</td>
+<td>the least recently active sandbox idle for more than 15 minutes is deleted to make room; if there is none, <code>503 demo_busy</code> &quot;The demo is busy, try again in a few minutes&quot;</td>
+</tr>
+<tr>
+<td>New sandboxes per client address</td>
+<td>5 per hour</td>
+<td><code>429 rate_limited</code></td>
+</tr>
+<tr>
+<td>Changes per sandbox</td>
+<td>600 ops per hour, 5,000 in total</td>
+<td><code>429 demo_limit</code> on sync and REST writes, nothing of the batch is applied; the app shows a notice in the banner and keeps its changes queued</td>
+</tr>
+<tr>
+<td>Stored data per sandbox</td>
+<td>2 MB of values in total</td>
+<td><code>429 demo_limit</code>, nothing of the batch is applied</td>
+</tr>
+<tr>
+<td>Field size</td>
+<td>4 KB for every value except notes; 32 KB for task notes (<code>description</code>, <code>notes_doc</code>)</td>
+<td><code>400 invalid_input</code> (REST) or <code>400 invalid_op</code> (sync), like other size limits</td>
+</tr>
+<tr>
+<td>Database size</td>
+<td>above 1 GB of live data (<code>OPENTODO_DEMO_MAX_DB_MB</code>) no new sandboxes are created (expired ones are deleted at once) and live sandboxes cannot write</td>
+<td><code>503 demo_busy</code> for new sandboxes, <code>429 demo_limit</code> for writes</td>
+</tr>
+</tbody></table></div>
+<p>Both variables are optional. The client address is the <strong>last</strong> <code>X-Forwarded-For</code> hop, the one your reverse proxy appended (as for every rate limit, see <a href="/docs/self-hosting/docker/#behind-a-reverse-proxy">reverse proxy</a>), or the connection address without the header. Run the demo behind exactly one proxy that appends the client address (Coolify&#39;s Traefik does) and do not publish the container port, or a client could send its own header. Only a hash of the address, salted with a value that lives in the server&#39;s memory, is stored with the sandbox; it cannot be turned back into the address and cannot be linked to it after a restart. The write budget is counted in the database, so it holds across server processes during a rolling update. The other rate limits (sign-in, comments and so on) stay in force.</p>
+<h2 id="expiry-and-the-nightly-reset">Expiry and the nightly reset<a class="anchor" href="#expiry-and-the-nightly-reset" aria-label="Link to this section: Expiry and the nightly reset">#</a></h2>
+<p>A sandbox is <strong>idle</strong> when it has had no authenticated request for <strong>2 hours</strong> (activity is recorded at most once a minute); it is deleted then, and <strong>24 hours</strong> after creation regardless. A cleanup job runs every <strong>5 minutes</strong> and deletes expired sandboxes, one transaction per sandbox: the two accounts, their sessions, ops, materialized fields, shared project and membership, notifications, purge markers, audit events about them and the sandbox&#39;s bookkeeping row. No purge markers are written, because nobody is left who could see the data. Activity is derived from ops, so it goes with them.</p>
+<p>At <strong>03:00 UTC</strong> every day, and at startup when the last reset predates the most recent 03:00 UTC (for example after the server was down at that time), every sandbox is deleted the same way and the server runs <code>VACUUM</code>, so the database file shrinks back. Open tabs learn on their next request (immediately, through the live channel, when they are connected to the process that did it) and offer a new sandbox. An edit a tab made offline before the deletion is discarded with the sandbox.</p>
+<p>The cleanup job and the nightly reset run in one server process only (the one holding the jobs lock, see <a href="/docs/self-hosting/docker/#updating">rolling updates</a>); sandbox creation and the limits work in every process.</p>
+<p>To force the nightly reset, for example after changing the instance, send <code>SIGUSR1</code> to the server process that runs the background jobs: <code>kill -USR1 &lt;pid&gt;</code> (<code>docker kill --signal=USR1 &lt;container&gt;</code>). There is no HTTP route for it.</p>
+<p>Each sandbox takes about 470 KB in the database before visitor changes; 500 live sandboxes are about 235 MB, which <code>VACUUM</code> returns every night.</p>
+<h2 id="upgrading-from-the-shared-demo-account">Upgrading from the shared demo account<a class="anchor" href="#upgrading-from-the-shared-demo-account" aria-label="Link to this section: Upgrading from the shared demo account">#</a></h2>
+<p>Earlier versions gave every visitor the same account (<code>demo@example.com</code> / <code>opentodo-demo</code>) and a second member (<code>sam@example.com</code>). The first start of this version deletes both accounts with their sessions and data; the hidden owner stays. Visitors with an open tab get <code>401 demo_expired</code> and the expiry screen.</p>
+<h2 id="what-is-switched-off">What is switched off<a class="anchor" href="#what-is-switched-off" aria-label="Link to this section: What is switched off">#</a></h2>
+<p>Every request below is refused with <code>403 {&quot;error&quot;:{&quot;code&quot;:&quot;demo_restricted&quot;,&quot;message&quot;:&quot;&lt;feature&gt; is disabled on this demo instance.&quot;}}</code> before authentication, whoever sends it. The web app hides these sections in Settings (or disables the control) with a short note.</p>
+<ul>
+<li>Sign-up, invitations, user administration and owner transfer, password change and password-reset links, linked accounts, single sign-on (<code>/api/v1/auth/oidc/*</code>)</li>
+<li>API tokens, app passwords and CalDAV (<code>/dav/</code>, <code>/.well-known/caldav</code>), passkeys, two-factor enrolment, end-to-end encryption</li>
+<li>All owner settings writes (<code>/api/v1/settings/*</code>), backups, webhooks, email to task, import, the MCP endpoint (<code>/mcp</code>)</li>
+<li>Web push subscriptions, and any change to a project&#39;s members (add, remove, change role, leave, transfer)</li>
+</ul>
+<p>The server also makes <strong>no outbound requests</strong> in demo mode: web push is off (as with <code>OPENTODO_PUSH=off</code>), the webhook worker, the backup scheduler and the email poller do not run, and <code>OPENTODO_ALLOW_SIGNUP</code> is ignored. Sandbox creation is the only unauthenticated write besides sign-in.</p>
+<h2 id="nothing-worth-posting">Nothing worth posting<a class="anchor" href="#nothing-worth-posting" aria-label="Link to this section: Nothing worth posting">#</a></h2>
+<ul>
+<li>Every response of a demo instance carries <code>X-Robots-Tag: noindex, nofollow</code>, and the page declares <code>&lt;meta name=&quot;robots&quot; content=&quot;noindex&quot;&gt;</code> (added only in demo mode).</li>
+<li>Links in comments and notes render with <code>rel=&quot;nofollow ugc noopener noreferrer&quot;</code> and open in a new tab (on every instance). The renderer drops raw HTML and links other than http(s) and mailto.</li>
+<li>Visitor content is only ever visible to the sandbox that wrote it.</li>
+</ul>
+<h2 id="docker">Docker<a class="anchor" href="#docker" aria-label="Link to this section: Docker">#</a></h2>
+<pre tabindex="0"><code class="language-sh">docker run -d --name opentodo-demo -p 8080:8080 \
+  -e OPENTODO_DEMO=true \
+  -e OPENTODO_BASE_URL=https://demo.example.com \
+  -v opentodo-demo:/data ghcr.io/pixari/opentodo:latest</code></pre>
+<p>Or with the repository&#39;s <code>docker-compose.yml</code>: put <code>OPENTODO_DEMO=true</code> in <code>.env</code> next to it and run <code>docker compose up -d</code>. The compose file passes the variable through (<code>OPENTODO_DEMO=${OPENTODO_DEMO:-}</code>). To tune the limits, add <code>OPENTODO_DEMO_MAX_SANDBOXES</code> or <code>OPENTODO_DEMO_MAX_DB_MB</code> to the container&#39;s environment. Behind Cloudflare (or any CDN in front of your reverse proxy) also set <code>OPENTODO_TRUSTED_PROXIES=cloudflare</code> (see <a href="/docs/self-hosting/docker/#behind-a-reverse-proxy">Behind a reverse proxy</a>); otherwise every visitor reaching the demo through the same Cloudflare edge shares one sandbox limit.</p>
+<h2 id="coolify">Coolify<a class="anchor" href="#coolify" aria-label="Link to this section: Coolify">#</a></h2>
+<ol>
+<li>Create a separate resource from the repository exactly as in <a href="/docs/self-hosting/coolify/">Deploying on Coolify</a> (Docker Compose build pack). Do not reuse the volume of a real instance.</li>
+<li>In the resource&#39;s <strong>Environment Variables</strong> add <code>OPENTODO_DEMO</code> = <code>true</code>.</li>
+<li>Assign a domain (for example <code>https://demo.example.com</code>) and deploy.</li>
+<li>Open the domain: the sign-in screen offers <strong>Try the demo</strong>.</li>
+</ol>
+<p>The startup log says <code>demo mode is on</code>; the jobs process logs deleted sandboxes (<code>demo: expired sandboxes deleted</code>) and each reset (<code>demo reset: all sandboxes deleted</code>, with the next reset time).</p>
+<h2 id="turning-it-off">Turning it off<a class="anchor" href="#turning-it-off" aria-label="Link to this section: Turning it off">#</a></h2>
+<p>Remove the variable and restart. Live sandbox accounts stay in the database until you delete the data directory; since the hidden owner&#39;s password is unknown, the simplest way back to a normal instance is a fresh data directory.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/self-hosting/demo.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/email/"><span>Previous</span>Email to task</a>
+      <a class="next" rel="next" href="/docs/api/"><span>Next</span>HTTP API</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#what-a-visitor-gets">What a visitor gets</a></li><li><a href="#sandboxes">Sandboxes</a><ul><li><a href="#creating-a-sandbox">Creating a sandbox</a></li></ul></li><li><a href="#limits">Limits</a></li><li><a href="#expiry-and-the-nightly-reset">Expiry and the nightly reset</a></li><li><a href="#upgrading-from-the-shared-demo-account">Upgrading from the shared demo account</a></li><li><a href="#what-is-switched-off">What is switched off</a></li><li><a href="#nothing-worth-posting">Nothing worth posting</a></li><li><a href="#docker">Docker</a></li><li><a href="#coolify">Coolify</a></li><li><a href="#turning-it-off">Turning it off</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

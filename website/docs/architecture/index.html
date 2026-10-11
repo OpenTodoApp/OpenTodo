@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Architecture · OpenTodo docs</title>
+  <meta name="description" content="How data flows from a tap on the screen to every device: server packages, tables, client modules and the build.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/architecture/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/architecture/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Architecture · OpenTodo docs">
+  <meta property="og:description" content="How data flows from a tap on the screen to every device: server packages, tables, client modules and the build.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/" aria-current="page">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/" aria-current="page">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="developer">
+      <p class="doc-meta"><span class="crumbs">Integrations and internals <span aria-hidden="true">›</span> Internals</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#data-flow">Data flow</a><ul><li><a href="#every-write-is-an-op">Every write is an op</a></li><li><a href="#request-flow-for-a-rest-write">Request flow for a REST write</a></li><li><a href="#reads">Reads</a></li><li><a href="#live-updates">Live updates</a></li><li><a href="#background-work">Background work</a></li></ul></li><li><a href="#server-packages-cmdopentodo-internal">Server packages (cmd/opentodo, internal/)</a><ul><li><a href="#tables">Tables</a></li></ul></li><li><a href="#client-web">Client (web/)</a></li><li><a href="#build-and-packaging">Build and packaging</a></li><li><a href="#specs">Specs</a></li></ul></nav></details>
+<h1 id="architecture">Architecture</h1>
+<p>OpenTodo is a local-first application with a thin sync server. Every device holds a full copy of the user&#39;s data in IndexedDB and edits it offline; the server keeps an append-only operation log, resolves it to current values, and offers the same data to other devices, scripts and integrations.</p>
+<pre tabindex="0"><code>┌──────────────────────── browser / PWA ─────────────────────────┐
+│  React views  ◄── useLiveQuery ──  IndexedDB (Dexie)           │
+│       │                               ▲        │               │
+│   mutate()  ──► applyOps (LWW) ───────┘        └► outbox       │
+│                                                       │        │
+│  sync engine: push outbox / pull since cursor ◄───────┘        │
+└──────────────────────────────┬─────────────────────────────────┘
+                               │  POST /api/v1/sync  (JSON, same origin)
+                               │  GET  /api/v1/sync/events  (SSE wake-ups, cursor only)
+┌──────────────────────────────▼─────────────────────────────────┐
+│  Go server (single static binary)                              │
+│                                                                │
+│  httpapi ── REST, auth, CalDAV (/dav), MCP (/mcp), SSE         │
+│     │                                                          │
+│  sync: Apply / ApplyStrict ── op log + scope_fields (SQLite)   │
+│     │  after commit: observer, sinks, notifier                 │
+│     ├─► webhook queue + worker      ├─► notify (in-app)        │
+│     └─► Notifier (wake devices)                                │
+│                                                                │
+│  background: push scheduler · email poller · backup scheduler  │
+│              trash retention · audit pruning · webhook worker  │
+│                                                                │
+│  embedded web app (internal/web/dist)        /data (SQLite)    │
+└────────────────────────────────────────────────────────────────┘</code></pre>
+<h2 id="data-flow">Data flow<a class="anchor" href="#data-flow" aria-label="Link to this section: Data flow">#</a></h2>
+<h3 id="every-write-is-an-op">Every write is an op<a class="anchor" href="#every-write-is-an-op" aria-label="Link to this section: Every write is an op">#</a></h3>
+<p>All task, project, label, section, view, reminder, comment and project-preference data changes as <strong>field-level operations</strong> (<code>{entity, entityId, field, value, ts, device}</code>), never as direct row writes. <code>internal/sync</code> validates each op against <code>Schema</code> (<code>internal/sync/ops.go</code>), resolves its <strong>sharing scope</strong> (<code>user:&lt;id&gt;</code> for personal data, <code>project:&lt;id&gt;</code> for a shared project and everything in it), checks the author&#39;s role, stores it in <code>ops</code> / <code>op_scopes</code> and updates the winner per field in <code>scope_fields</code> by last-writer-wins (<code>ts</code>, then <code>device</code>). Replaying the same ops in any order gives the same state. The protocol is in <a href="/docs/sync/">sync.md</a>.</p>
+<p>The writers are:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Writer</th>
+<th>Path</th>
+<th>Device id</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Web app on each device</td>
+<td><code>POST /api/v1/sync</code> → <code>sync.Apply</code> (refused ops reported per op, never block the outbox)</td>
+<td>the device&#39;s id</td>
+</tr>
+<tr>
+<td>REST API, CLI</td>
+<td>handler turns body fields into ops → <code>sync.ApplyStrict</code> (all or nothing)</td>
+<td><code>server</code></td>
+</tr>
+<tr>
+<td>CalDAV clients</td>
+<td><code>/dav/</code> PUT, PROPPATCH, MKCALENDAR, DELETE → one op per changed property</td>
+<td><code>caldav:&lt;app password id&gt;</code></td>
+</tr>
+<tr>
+<td>Email to task</td>
+<td>IMAP poller → <code>ApplyStrict</code>, ids derived from account and Message-ID</td>
+<td><code>server</code></td>
+</tr>
+<tr>
+<td>Import</td>
+<td>background job, batches of 1,000 ops</td>
+<td><code>import</code></td>
+</tr>
+<tr>
+<td>Server itself</td>
+<td>reminder delivery (<code>delivered_at</code>), unassigning people who leave a project, recurring completion via REST</td>
+<td><code>server</code></td>
+</tr>
+</tbody></table></div>
+<p>Membership, accounts, tokens, settings, webhooks, audit events and backup runs are <strong>not</strong> ops: they are server-side account data in ordinary tables, changed only through authenticated REST routes.</p>
+<h3 id="request-flow-for-a-rest-write">Request flow for a REST write<a class="anchor" href="#request-flow-for-a-rest-write" aria-label="Link to this section: Request flow for a REST write">#</a></h3>
+<p><code>POST /api/v1/tasks</code> → auth middleware resolves the user (session cookie with origin check, or bearer token with its scope) → body fields become ops with <code>ts = now</code>, <code>device = &quot;server&quot;</code> → <code>sync.ApplyStrict</code> resolves each op&#39;s scope and checks the caller&#39;s role → after commit the observer queues webhook deliveries for genuine changes (for every member who can see the scope) and notification sinks record assignments and mentions → <code>sync.NotifyApplied</code> wakes the open event streams of everyone who can see the change → the entity is re-read from <code>scope_fields</code> → JSON response. Devices receive the ops on their next sync, which the wake-up triggers at once.</p>
+<h3 id="reads">Reads<a class="anchor" href="#reads" aria-label="Link to this section: Reads">#</a></h3>
+<p>REST collections, the export, MCP tools and resources, CalDAV reports and webhook payloads all read materialised entities through <code>sync.List</code> / <code>sync.Get</code> (and helpers such as <code>TaskComments</code>, <code>Memberships</code>), restricted to the scopes the caller can see. History and activity are derived on request from the op log (<code>ActivityOps</code>, <code>activity.Derive</code>); there is no separate activity table on the server.</p>
+<h3 id="live-updates">Live updates<a class="anchor" href="#live-updates" aria-label="Link to this section: Live updates">#</a></h3>
+<p><code>GET /api/v1/sync/events</code> is a server-sent event stream per device (<code>httpapi/events.go</code>). It carries only the latest op cursor, never data; the client reacts by running the ordinary sync exchange. <code>sync.Notifier</code> is the in-memory per-user fan-out (at most 16 streams per account). See <a href="/docs/sync/#live-updates">sync.md</a>.</p>
+<h3 id="background-work">Background work<a class="anchor" href="#background-work" aria-label="Link to this section: Background work">#</a></h3>
+<p>Started by <code>cmd/opentodo</code> and stopped on shutdown:</p>
+<ul>
+<li><strong>Reminder push scheduler</strong> (<code>push.Service.Run</code>, unless <code>OPENTODO_PUSH=off</code>): one pass at startup and every 30 s. A single query over <code>scope_fields</code> (reminders are always personal) selects reminders whose <code>fire_at</code> has passed, not deleted, not delivered or dismissed for the current firing, whose task is open; each is encrypted and posted to every subscription of the owner (404/410 removes the subscription), then <code>delivered_at</code> is written through <code>sync.Apply</code> as device <code>server</code>. Delivery state lives in the op log, so a restart neither loses nor repeats a push (a crash between send and write can repeat one).</li>
+<li><strong>Webhook worker</strong> (<code>webhook.Run</code>): sends queued deliveries with retries; finishes the pass in progress on shutdown.</li>
+<li><strong>Email poller</strong> (<code>email.Run</code>): polls the configured IMAP mailbox, only when <code>OPENTODO_EMAIL_*</code> is set.</li>
+<li><strong>Backup scheduler</strong> (<code>backup.Start</code>): runs scheduled backups; a missed run executes once at startup.</li>
+<li><strong>Trash retention</strong> (<code>sync.RunRetention</code>): purges items older than <code>OPENTODO_TRASH_RETENTION_DAYS</code> at startup and daily.</li>
+<li><strong>Audit pruning</strong>: at startup and hourly. Old read notifications are swept at startup.</li>
+</ul>
+<h2 id="server-packages-cmdopentodo-internal">Server packages (<code>cmd/opentodo</code>, <code>internal/</code>)<a class="anchor" href="#server-packages-cmdopentodo-internal" aria-label="Link to this section: Server packages (cmd/opentodo, internal/)">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>config</code></td>
+<td><code>OPENTODO_*</code> environment variables with defaults and validation; nothing is mandatory</td>
+</tr>
+<tr>
+<td><code>store</code></td>
+<td>Opens SQLite (pure-Go <code>modernc.org/sqlite</code>, WAL, single connection) and applies embedded migrations (<code>migrations/NNNN_*.sql</code>) by <code>PRAGMA user_version</code>; <code>Lock</code> holds <code>&lt;data&gt;/opentodo.lock</code> for the process lifetime</td>
+</tr>
+<tr>
+<td><code>settings</code></td>
+<td>Owner-level key/value settings (<code>settings</code> table, JSON values) and 0600 secret files under <code>&lt;data&gt;/secrets/</code></td>
+</tr>
+<tr>
+<td><code>sync</code></td>
+<td>Op schema and validation, <code>Apply</code> (idempotent, LWW, per-op authorisation and refusal reasons) and <code>ApplyStrict</code> (REST), <code>Pull</code> (cursor, member backfill), materialised reads, sharing scopes (<code>scope.go</code>) and membership (<code>members.go</code>), trash, history and purge, the post-commit observer and sinks, <code>Notifier</code> (per-user live wake-ups)</td>
+</tr>
+<tr>
+<td><code>auth</code></td>
+<td>Users and roles, argon2id passwords, sessions, API tokens and their scopes, CalDAV app passwords, invitations, password resets, user administration, TOTP and recovery codes, step-up, passkeys storage, provider identities (subject-first matching, verified-email linking, provisioning, the SSO-only rule)</td>
+</tr>
+<tr>
+<td><code>webauthn</code></td>
+<td>Passkey verification: clientDataJSON, authenticator data, COSE keys (ES256, Ed25519, RS256), signature checks; uses <code>fxamacker/cbor</code> for CBOR (the other third-party Go modules are SQLite and <code>golang.org/x/crypto</code> for argon2)</td>
+</tr>
+<tr>
+<td><code>oidc</code></td>
+<td>Single sign-on with one OpenID Connect provider, standard library only: discovery, PKCE, code exchange, JWKS cache, identity-token verification, the signed flow-state cookie, owner configuration and <code>OPENTODO_OIDC_*</code> overrides. <code>oidctest</code> is an in-process provider for tests. See <a href="/docs/self-hosting/sso/">self-hosting/sso.md</a></td>
+</tr>
+<tr>
+<td><code>audit</code></td>
+<td>The closed catalogue of security events with typed constructors and an allow-list for details, recording (in the same transaction as credential changes), queries, NDJSON export and retention pruning</td>
+</tr>
+<tr>
+<td><code>httpapi</code></td>
+<td>Router (stdlib <code>net/http</code> with method patterns), middleware (auth, origin check, security headers, rate limits, logging), JSON error envelope, handlers for every <code>/api/v1</code> route, the CalDAV transport (<code>caldav_*.go</code>), the MCP transport (<code>mcp.go</code>) and the event stream</td>
+</tr>
+<tr>
+<td><code>web</code></td>
+<td>Embeds the Vite build (<code>internal/web/dist</code>) and serves it with SPA fallback and cache headers</td>
+</tr>
+<tr>
+<td><code>notify</code></td>
+<td>Post-commit events for people: the <code>Sink</code> interface the sync service calls after a batch commits, and the in-app sink that stores <code>notifications</code> for assignments and mentions</td>
+</tr>
+<tr>
+<td><code>activity</code></td>
+<td>Pure derivation of attributed activity events from ops (fold by actor and entity within 5 s, classify by touched fields, page newest first); mirrored by <code>web/src/lib/activity.ts</code> and pinned by a shared fixture</td>
+</tr>
+<tr>
+<td><code>webhook</code></td>
+<td>Maps observed changes to events, durable queue in SQLite, one worker with retries, HMAC signing, SSRF-safe HTTP client. See <a href="/docs/webhooks/">webhooks.md</a></td>
+</tr>
+<tr>
+<td><code>push</code></td>
+<td>Web push for reminders with the standard library: VAPID key pair in <code>&lt;data&gt;/push_vapid.pem</code>, ES256 JWTs, RFC 8291 <code>aes128gcm</code>, per-device subscriptions and the scheduler. See <a href="/docs/reminders/">reminders.md</a></td>
+</tr>
+<tr>
+<td><code>recurrence</code></td>
+<td>Parser and next-occurrence calculator for recurrence rules; mirrored by <code>web/src/lib/recurrence.ts</code> against shared vectors. See <a href="/docs/recurrence/">recurrence.md</a></td>
+</tr>
+<tr>
+<td><code>zoned</code></td>
+<td>Resolves time-zone-fixed due values to instants (gaps and overlaps included); mirrored by <code>web/src/lib/dates.ts</code> against shared vectors</td>
+</tr>
+<tr>
+<td><code>filter</code></td>
+<td>Go port of the filter query parser, used to validate saved views; evaluation stays on the client. See <a href="/docs/filters/">filters.md</a></td>
+</tr>
+<tr>
+<td><code>importer</code></td>
+<td>Reads the own export, CSV and other apps&#39; JSON exports into rows, plans projects, labels, parents and duplicates, and writes ops in background jobs with undo. See <a href="/docs/import/">import.md</a></td>
+</tr>
+<tr>
+<td><code>backup</code></td>
+<td>Snapshots (<code>VACUUM INTO</code>), tar/gzip archives, <code>OTBK1</code> encryption, local / S3 (SigV4) / WebDAV destinations, scheduler, retention, <code>Restore</code>. See <a href="/docs/backups/">backups.md</a></td>
+</tr>
+<tr>
+<td><code>caldav</code></td>
+<td>Protocol pieces of the CalDAV endpoint: iCalendar tokenizer and serialiser for VTODO, the VTODO ↔ task mapping (unmapped lines kept in <code>ical_extra</code>), WebDAV XML parsing and multistatus rendering; HTTP handling lives in <code>httpapi</code>. See <a href="/docs/caldav/">caldav.md</a></td>
+</tr>
+<tr>
+<td><code>mcp</code></td>
+<td>Read-only Model Context Protocol server: a JSON-RPC 2.0 subset whose tools and <code>opentodo://</code> resources only call the materialised reads, and the owner toggle. See <a href="/docs/mcp/">mcp.md</a></td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td>Email to task: minimal IMAP client (TLS or STARTTLS), MIME parsing to title and description, sub-address routing, per-account inboxes, limits and the poller. See <a href="/docs/email/">email.md</a></td>
+</tr>
+<tr>
+<td><code>e2ee</code></td>
+<td>Server side of end-to-end encryption: stores the wrapped key record with optimistic versioning, recognises ciphertext so server-side features degrade explicitly, purges superseded content ops. The server runs no content cryptography. See <a href="/docs/e2ee/">e2ee.md</a></td>
+</tr>
+<tr>
+<td><code>ids</code></td>
+<td>UUID v4, name-based ids (SHA-256, version 8 UUIDs, for recurring occurrences and tasks created from email) and random secrets</td>
+</tr>
+<tr>
+<td><code>cli</code></td>
+<td>The <code>ot</code> command-line client (<code>cmd/ot</code>): profiles, REST calls, table and <code>--json</code> output. See <a href="/docs/cli/">cli.md</a></td>
+</tr>
+</tbody></table></div>
+<h3 id="tables">Tables<a class="anchor" href="#tables" aria-label="Link to this section: Tables">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Tables</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Op log and current values</td>
+<td><code>ops</code> (append-only, <code>user_id</code> = author, <code>seq</code> autoincrement), <code>op_scopes</code> (the sharing scope of each op), <code>scope_fields</code> (winner per field within a scope), <code>purges</code> (markers for permanently deleted entities)</td>
+</tr>
+<tr>
+<td>Sharing</td>
+<td><code>project_scopes</code>, <code>project_members</code> (roles, outside the op log), <code>member_backfills</code> (history replay per member device)</td>
+</tr>
+<tr>
+<td>Accounts and credentials</td>
+<td><code>users</code>, <code>user_status</code>, <code>sessions</code>, <code>session_auth</code>, <code>session_oidc</code>, <code>api_tokens</code>, <code>api_token_scopes</code>, <code>app_passwords</code>, <code>passkeys</code>, <code>identities</code>, <code>mfa_totp</code>, <code>mfa_recovery_codes</code>, <code>trusted_devices</code>, <code>invitations</code>, <code>password_resets</code></td>
+</tr>
+<tr>
+<td>Features</td>
+<td><code>notifications</code>, <code>push_subscriptions</code>, <code>webhooks</code>, <code>webhook_deliveries</code>, <code>import_jobs</code>, <code>import_items</code>, <code>caldav_resources</code>, <code>email_inboxes</code>, <code>email_receipts</code>, <code>encryption_keys</code></td>
+</tr>
+<tr>
+<td>Operations</td>
+<td><code>settings</code> (owner key/value settings, also the log <code>generation</code>), <code>audit_events</code>, <code>backup_runs</code></td>
+</tr>
+</tbody></table></div>
+<p>Files in the data directory: <code>opentodo.db</code> (plus WAL files), <code>opentodo.lock</code>, <code>push_vapid.pem</code>, <code>secrets/</code> (backup and single sign-on secrets, 0600, never archived) and <code>backups/</code> (default local backup folder).</p>
+<h2 id="client-web">Client (<code>web/</code>)<a class="anchor" href="#client-web" aria-label="Link to this section: Client (web/)">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>lib/db.ts</code></td>
+<td>Dexie database: <code>projects</code>, <code>tasks</code>, <code>labels</code>, <code>views</code>, <code>reminders</code>, <code>sections</code>, <code>comments</code>, <code>prefs</code> (synced <code>project_prefs</code>), <code>outbox</code>, <code>meta</code> (device settings), plus caches (<code>memberships</code>, <code>notifications</code>) and the local <code>activity</code> log</td>
+</tr>
+<tr>
+<td><code>lib/types.ts</code></td>
+<td>Entity types; field names mirror <code>internal/sync/ops.go</code></td>
+</tr>
+<tr>
+<td><code>lib/hlc.ts</code></td>
+<td>Hybrid logical clock and the shared <code>wins()</code> rule</td>
+</tr>
+<tr>
+<td><code>lib/ops.ts</code></td>
+<td><code>applyOps</code> (per-field LWW into IndexedDB, merge-and-republish of note documents), <code>mutate</code> (local apply + outbox + notify), entity helpers and defaults</td>
+</tr>
+<tr>
+<td><code>lib/sync.ts</code></td>
+<td>Background push/pull loop, triggers, live-update channel (<code>EventSource</code> with backoff), status store (<code>useSyncStatus</code>)</td>
+</tr>
+<tr>
+<td><code>lib/api.ts</code></td>
+<td>Fetch wrappers and <code>ApiError</code></td>
+</tr>
+<tr>
+<td><code>lib/e2ee.ts</code>, <code>lib/crypto.ts</code>, <code>lib/e2eeSync.ts</code></td>
+<td>End-to-end encryption: key record handling, AES-256-GCM field encryption, encrypt at upload and decrypt before apply</td>
+</tr>
+<tr>
+<td><code>lib/nlp/</code></td>
+<td>Natural-language quick add (tokenizer, dates, attributes, languages)</td>
+</tr>
+<tr>
+<td><code>lib/filter/</code>, <code>lib/filters.ts</code></td>
+<td>Filter query parser and evaluator, duration predicates</td>
+</tr>
+<tr>
+<td><code>lib/recurrence.ts</code>, <code>lib/recurring.ts</code></td>
+<td>Recurrence grammar and the completion, skip and detach flows</td>
+</tr>
+<tr>
+<td><code>lib/dates.ts</code></td>
+<td>Floating and zoned due values</td>
+</tr>
+<tr>
+<td><code>lib/ordering.ts</code>, <code>lib/dnd.ts</code></td>
+<td>Fractional positions and pointer drag and drop (no library)</td>
+</tr>
+<tr>
+<td><code>lib/reminders.ts</code>, <code>lib/reminderTime.ts</code>, <code>lib/reminderWatcher.ts</code>, <code>lib/push.ts</code></td>
+<td>Reminder writes and time arithmetic, the in-app watcher, the device&#39;s push subscription</td>
+</tr>
+<tr>
+<td><code>lib/comments.ts</code>, <code>lib/activity.ts</code>, <code>lib/feed.ts</code>, <code>lib/markdown.ts</code></td>
+<td>Comments and mentions; the shared activity rule, local recording and merging of older server pages; the cross-project feed and unread counts; the in-house Markdown subset (rendered by <code>app/Markdown.tsx</code> as React elements, so raw HTML never reaches the DOM)</td>
+</tr>
+<tr>
+<td><code>lib/docfields.ts</code>, <code>lib/richtext.ts</code>, <code>lib/richtextEditor.ts</code>, <code>app/NotesEditor.tsx</code></td>
+<td>Rich-text notes (<a href="/docs/sync/#mergeable-documents">sync.md</a>): the document field list and lazy loader; the Yjs document code (envelope, merge, growth check, Markdown projection); the ProseMirror schema and binding; the editor component. The last three are lazy chunks</td>
+</tr>
+<tr>
+<td><code>lib/share.ts</code></td>
+<td>Parsing of share-target and bookmarklet payloads</td>
+</tr>
+<tr>
+<td><code>public/push-sw.js</code></td>
+<td>Imported by the generated service worker: <code>push</code>, <code>notificationclick</code> (snooze and dismiss written as ops into the outbox), <code>notificationclose</code></td>
+</tr>
+<tr>
+<td><code>app/</code></td>
+<td>Router, auth screens, shell, views (lists, board, calendar, filters, dashboards, feed, trash), detail panel, settings panels, Vim layer (<code>app/vim/</code>, lazy)</td>
+</tr>
+</tbody></table></div>
+<p>The UI never talks to the server for task data. Views subscribe to IndexedDB with <code>useLiveQuery</code>; local edits and remote ops surface through the same path. Account-level screens (users, audit log, backups, webhooks, tokens) call the REST API directly and need a connection.</p>
+<h2 id="build-and-packaging">Build and packaging<a class="anchor" href="#build-and-packaging" aria-label="Link to this section: Build and packaging">#</a></h2>
+<p><code>web/</code> builds into <code>internal/web/dist</code>, which <code>go:embed</code> compiles into the binary (<code>internal/web/dist/.gitkeep</code> keeps the embed compiling on a fresh clone). The Dockerfile runs both builds on the build platform, cross-compiles a static binary (<code>CGO_ENABLED=0</code>, <code>-trimpath -s -w</code>) and copies it into <code>gcr.io/distroless/static-debian12:nonroot</code>. CI publishes <code>linux/amd64</code> and <code>linux/arm64</code> images to GHCR and attaches the <code>ot</code> binaries and the browser extension zip to releases. The server binary is about 17 MB.</p>
+<h2 id="specs">Specs<a class="anchor" href="#specs" aria-label="Link to this section: Specs">#</a></h2>
+<p>Behaviour is specified in <code>openspec/specs/&lt;capability&gt;/spec.md</code> (live) and proposed in <code>openspec/changes/</code>; shipped changes are archived under <code>openspec/changes/archive/</code>. See <a href="https://github.com/pixari/opentodo/blob/main/CONTRIBUTING.md" rel="noopener">CONTRIBUTING.md</a>.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/architecture.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/mcp/"><span>Previous</span>AI assistants (MCP)</a>
+      <a class="next" rel="next" href="/docs/sync/"><span>Next</span>Sync protocol</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#data-flow">Data flow</a><ul><li><a href="#every-write-is-an-op">Every write is an op</a></li><li><a href="#request-flow-for-a-rest-write">Request flow for a REST write</a></li><li><a href="#reads">Reads</a></li><li><a href="#live-updates">Live updates</a></li><li><a href="#background-work">Background work</a></li></ul></li><li><a href="#server-packages-cmdopentodo-internal">Server packages (cmd/opentodo, internal/)</a><ul><li><a href="#tables">Tables</a></li></ul></li><li><a href="#client-web">Client (web/)</a></li><li><a href="#build-and-packaging">Build and packaging</a></li><li><a href="#specs">Specs</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

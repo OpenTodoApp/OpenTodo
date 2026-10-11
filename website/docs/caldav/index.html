@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Calendar apps (CalDAV) · OpenTodo docs</title>
+  <meta name="description" content="Turn on CalDAV, create app passwords and connect Apple Reminders, Thunderbird or Android apps.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/caldav/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/caldav/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Calendar apps (CalDAV) · OpenTodo docs">
+  <meta property="og:description" content="Turn on CalDAV, create app passwords and connect Apple Reminders, Thunderbird or Android apps.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/" aria-current="page">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/" aria-current="page">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="admin">
+      <p class="doc-meta"><span class="crumbs">Self-hosting</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#turn-it-on">Turn it on</a></li><li><a href="#create-an-app-password">Create an app password</a></li><li><a href="#client-setup">Client setup</a><ul><li><a href="#apple-reminders-iphone-ipad-mac">Apple Reminders (iPhone, iPad, Mac)</a></li><li><a href="#thunderbird">Thunderbird</a></li><li><a href="#android-nextcloud-tasks-tasksorg-jtx-board-davx⁵">Android: Nextcloud Tasks, Tasks.org, jtx Board (DAVx⁵)</a></li><li><a href="#nextcloud">Nextcloud</a></li></ul></li><li><a href="#what-maps-to-what">What maps to what</a><ul><li><a href="#recurrence">Recurrence</a></li><li><a href="#alarms">Alarms</a></li></ul></li><li><a href="#lists-sharing-and-deletion">Lists, sharing and deletion</a></li><li><a href="#sync-and-conflicts">Sync and conflicts</a></li><li><a href="#limits">Limits</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#downgrading">Downgrading</a></li></ul></nav></details>
+<h1 id="calendar-apps-caldav">Calendar apps (CalDAV)</h1>
+<p>OpenTodo can act as a CalDAV server for tasks, so Apple Reminders, Thunderbird, Nextcloud Tasks (through DAVx⁵) and other CalDAV clients become one more synced device. Each project is a task list (a calendar collection of VTODO resources), and the Inbox is its own list. Edits made in a calendar app are ordinary operations in the op log, so they converge with every other device under the usual rules: no &quot;pick a version&quot; dialogs.</p>
+<p>Implemented by the OpenSpec change <code>caldav</code>. The endpoint lives under <code>/dav/</code> and needs no extra service, port or dependency.</p>
+<h2 id="turn-it-on">Turn it on<a class="anchor" href="#turn-it-on" aria-label="Link to this section: Turn it on">#</a></h2>
+<p>CalDAV is <strong>off by default</strong>: until the owner enables it, every path under <code>/dav/</code> and <code>/.well-known/caldav</code> answers 404 without asking for credentials.</p>
+<ol>
+<li>As the owner, open <strong>Settings → Calendar apps (CalDAV)</strong> and tick <em>Allow calendar apps to sync with this server</em>. It takes effect immediately, no restart.</li>
+<li>Deployments managed as code can set <code>OPENTODO_CALDAV=true</code> instead: it presets the toggle on the <strong>first start only</strong>; afterwards the Settings toggle decides.</li>
+</ol>
+<p>Use HTTPS. Calendar apps send the app password with every request (HTTP Basic); on plain <code>http://</code> it travels unencrypted. Settings warns when the server address is not https. Set <code>OPENTODO_BASE_URL</code> to your public https URL so Settings shows the right address.</p>
+<h2 id="create-an-app-password">Create an app password<a class="anchor" href="#create-an-app-password" aria-label="Link to this section: Create an app password">#</a></h2>
+<p>Calendar apps sign in with <strong>your account email and an app password</strong>, never your account password, an API token or a single sign-on login (all of those are refused at <code>/dav/</code>). App passwords work only for CalDAV: they cannot call the REST API or change the account.</p>
+<p>In <strong>Settings → Calendar apps</strong> enter a name (for example &quot;iPhone&quot;) and choose <em>Create app password</em>. The password (<code>otap_…</code>) is shown <strong>once</strong>; copy it into the calendar app. Create one per device so you can revoke a lost phone without touching the others. The list shows when each was created and last used. Revoking takes effect on the next request. Deactivating an account revokes its app passwords; deleting it removes them.</p>
+<p>Accounts with two-factor authentication or in SSO-only mode use app passwords like everyone else: creating one requires a recent sign-in (the same step-up check as API tokens). Failed sign-ins are limited to 10 a minute per address; after that the endpoint answers 429 for a minute.</p>
+<h2 id="client-setup">Client setup<a class="anchor" href="#client-setup" aria-label="Link to this section: Client setup">#</a></h2>
+<p>The server address is <code>https://&lt;your server&gt;/dav/</code> (Settings shows it). The user name is your account email.</p>
+<h3 id="apple-reminders-iphone-ipad-mac">Apple Reminders (iPhone, iPad, Mac)<a class="anchor" href="#apple-reminders-iphone-ipad-mac" aria-label="Link to this section: Apple Reminders (iPhone, iPad, Mac)">#</a></h3>
+<ul>
+<li>iOS / iPadOS: <strong>Settings → Apps → Calendar → Calendar Accounts → Add Account → Other → Add CalDAV Account</strong> (on older versions: Settings → Calendar → Accounts). Server: your server&#39;s host name (or the full address above), user name: your email, password: the app password. Under <em>Advanced settings</em> make sure SSL is on.</li>
+<li>macOS: <strong>System Settings → Internet Accounts → Add Account → Add Other Account → CalDAV Account</strong>, account type <em>Manual</em>, then the same values.</li>
+<li>Turn on <strong>Reminders</strong> for the account. Your projects appear as lists; new lists created in Reminders become projects.</li>
+</ul>
+<h3 id="thunderbird">Thunderbird<a class="anchor" href="#thunderbird" aria-label="Link to this section: Thunderbird">#</a></h3>
+<p><strong>New Calendar → On the Network</strong>, user name: your email, location: the server address. Thunderbird discovers the lists; tick the ones to show and enter the app password when asked. Tasks appear in the Tasks tab.</p>
+<h3 id="android-nextcloud-tasks-tasksorg-jtx-board-davx⁵">Android: Nextcloud Tasks, Tasks.org, jtx Board (DAVx⁵)<a class="anchor" href="#android-nextcloud-tasks-tasksorg-jtx-board-davx⁵" aria-label="Link to this section: Android: Nextcloud Tasks, Tasks.org, jtx Board (DAVx⁵)">#</a></h3>
+<p>In DAVx⁵ add an account with <strong>Login with URL and user name</strong>: base URL is the server address, then your email and the app password. Enable the task lists in the account&#39;s CalDAV tab and pick the tasks app DAVx⁵ should sync with.</p>
+<h3 id="nextcloud">Nextcloud<a class="anchor" href="#nextcloud" aria-label="Link to this section: Nextcloud">#</a></h3>
+<p>The Nextcloud Tasks web app only shows calendars stored in Nextcloud itself. Use DAVx⁵ on Android, or any desktop client above, to reach OpenTodo directly.</p>
+<h2 id="what-maps-to-what">What maps to what<a class="anchor" href="#what-maps-to-what" aria-label="Link to this section: What maps to what">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>VTODO property</th>
+<th>OpenTodo field</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>UID</code></td>
+<td>task id</td>
+<td>A UID that is not a usable id (longer than 64 characters, unusual characters) is kept next to a generated id; the client always sees its own UID and resource name.</td>
+</tr>
+<tr>
+<td><code>SUMMARY</code></td>
+<td>title</td>
+<td></td>
+</tr>
+<tr>
+<td><code>DESCRIPTION</code></td>
+<td>description</td>
+<td>The note&#39;s Markdown text. A change from a calendar app is folded into the rich-text note by the next app that opens it.</td>
+</tr>
+<tr>
+<td><code>DUE;VALUE=DATE</code></td>
+<td>due date without time</td>
+<td></td>
+</tr>
+<tr>
+<td><code>DUE</code> (floating)</td>
+<td>due date and time</td>
+<td><code>DUE:20261011T093000</code> shows 09:30 in every time zone.</td>
+</tr>
+<tr>
+<td><code>DUE;TZID=…</code></td>
+<td>due fixed to a time zone</td>
+<td>IANA zones and vendor paths ending in one (<code>/mozilla.org/…/Europe/Berlin</code>); a UTC time (<code>…Z</code>) becomes zone <code>UTC</code>; an unknown zone (Windows names) falls back to the floating wall time. Served with a matching <code>VTIMEZONE</code>. Seconds are dropped.</td>
+</tr>
+<tr>
+<td><code>PRIORITY</code></td>
+<td>priority</td>
+<td>Out: 1→1, 2→5, 3→9, 4→none. In: 1–3→1, 4–6→2, 7–9→3, 0 or absent→4.</td>
+</tr>
+<tr>
+<td><code>STATUS</code>, <code>COMPLETED</code>, <code>PERCENT-COMPLETE</code></td>
+<td>completed time</td>
+<td><code>COMPLETED</code> (or <code>CANCELLED</code>) sets it, <code>NEEDS-ACTION</code> reopens. <code>IN-PROCESS</code> and a partial <code>PERCENT-COMPLETE</code> are kept as client data. Completed tasks stay listed.</td>
+</tr>
+<tr>
+<td><code>CATEGORIES</code></td>
+<td>labels</td>
+<td>By name, case-insensitive; an unknown name creates a label. Labels of other members on a shared task are kept.</td>
+</tr>
+<tr>
+<td><code>RELATED-TO</code> (parent)</td>
+<td>parent task</td>
+<td>Sibling and child relations are kept as client data. A parent not uploaded yet is kept until it exists.</td>
+</tr>
+<tr>
+<td><code>RRULE</code></td>
+<td>recurrence</td>
+<td>See below.</td>
+</tr>
+<tr>
+<td><code>CREATED</code></td>
+<td>creation time</td>
+<td>Used when a task is created.</td>
+</tr>
+<tr>
+<td><code>DTSTAMP</code>, <code>LAST-MODIFIED</code></td>
+<td></td>
+<td>Derived from the newest change to the task. <code>SEQUENCE</code> is ignored.</td>
+</tr>
+<tr>
+<td>everything else</td>
+<td><code>ical_extra</code></td>
+<td>Alarms (<code>VALARM</code>), <code>X-</code> properties, <code>URL</code>, <code>GEO</code>, <code>CLASS</code>, <code>DTSTART</code>, unsupported <code>RRULE</code>s… are stored verbatim in the task&#39;s opaque <code>ical_extra</code> field and returned unchanged, so a client never loses them when another device edits the task.</td>
+</tr>
+</tbody></table></div>
+<p>Fields without a VTODO counterpart (project section, assignee, duration estimate, position, comments, OpenTodo reminders) are left untouched by CalDAV writes. A task moved to another list loses its section, as in the app.</p>
+<h3 id="recurrence">Recurrence<a class="anchor" href="#recurrence" aria-label="Link to this section: Recurrence">#</a></h3>
+<p>Rules that the <a href="/docs/recurrence/">recurrence grammar</a> can express map both ways: <code>FREQ=DAILY/WEEKLY/MONTHLY/YEARLY</code> with <code>INTERVAL</code>, weekday lists, <code>BYMONTHDAY</code> (including <code>-1</code>), <code>BYDAY=2TU</code> / <code>-1FR</code>, the last weekday of the month, <code>UNTIL</code> and <code>COUNT</code>. A recurring task is served with <code>DTSTART</code> equal to its due date. A completion-relative rule (<code>every 3 days after completion</code>) is served as its plain interval and kept as is when the client sends the same <code>RRULE</code> back.</p>
+<p>Completing a recurring task in a calendar app does what completing it in OpenTodo does: an occurrence record is added to Completed and the task moves to its next due date. Apple Reminders and DAVx⁵ apps that advance the due date themselves keep working: their edit is applied as an ordinary due-date change.</p>
+<p>An <code>RRULE</code> the grammar cannot express (hourly rules, <code>BYHOUR</code>, several ordinals…) is kept in <code>ical_extra</code>: the calendar app keeps repeating the task, OpenTodo shows it as a plain task. Per-occurrence overrides (<code>RECURRENCE-ID</code>) are not modelled and are dropped.</p>
+<h3 id="alarms">Alarms<a class="anchor" href="#alarms" aria-label="Link to this section: Alarms">#</a></h3>
+<p>Alarms set in a calendar app stay in that app&#39;s data (<code>ical_extra</code>) and fire there; they are not converted into OpenTodo reminders, and OpenTodo reminders are not served as alarms. When two calendar apps change a task&#39;s alarms concurrently, the later write wins for the whole set of preserved properties.</p>
+<h2 id="lists-sharing-and-deletion">Lists, sharing and deletion<a class="anchor" href="#lists-sharing-and-deletion" aria-label="Link to this section: Lists, sharing and deletion">#</a></h2>
+<ul>
+<li><strong>Discovery</strong>: <code>/.well-known/caldav</code> redirects to <code>/dav/</code>; the principal is <code>/dav/principals/&lt;user id&gt;/</code>, the calendar home <code>/dav/calendars/&lt;user id&gt;/</code>, the Inbox <code>…/inbox/</code> and each project <code>…/&lt;project id&gt;/</code>. Archived and deleted projects are not listed. Another account&#39;s paths answer 404.</li>
+<li><strong>Shared projects</strong> appear for every member. Viewers get a read-only list (writes answer 403); editors may add, change and delete tasks; renaming or recolouring needs admin or owner, deleting the list needs the owner.</li>
+<li><strong>Creating a list</strong> in the app (MKCALENDAR) creates a project with that name and colour. Renaming or recolouring it (PROPPATCH) renames or recolours the project.</li>
+<li><strong>Deleting a list</strong> moves the project to the Trash and its open tasks to the Inbox (for a shared project as copies, since a task never changes sharing scope). The Inbox cannot be deleted or renamed (403).</li>
+<li><strong>Deleting a task</strong> moves it to the Trash: it disappears from every device and stays in the export until it is purged. Purged tasks disappear from calendar apps on their next sync. When a calendar app created a task under its own resource name or UID, the server remembers that name (<code>caldav_resources</code>); purging the task, purging its project, emptying the Trash or the Trash retention job removes the name in the same transaction, so nothing is left behind for tasks that no longer exist.</li>
+<li><strong>Moving a task between lists</strong> changes its project. Moving into a list that is shared differently creates a copy there (keeping the calendar app&#39;s UID) and moves the original to the Trash, as the app does.</li>
+</ul>
+<h2 id="sync-and-conflicts">Sync and conflicts<a class="anchor" href="#sync-and-conflicts" aria-label="Link to this section: Sync and conflicts">#</a></h2>
+<ul>
+<li>Every change from a calendar app is applied with server time under the device id <code>caldav:&lt;app password id&gt;</code>, one operation per property that actually changed. The task history shows such changes as &quot;a calendar app (CalDAV)&quot;.</li>
+<li><strong>ETags</strong> change whenever anything the client sees changes, on any device. A write with a stale <code>If-Match</code> is refused with 412 and changes nothing; the client re-reads and retries. A write without preconditions is merged field by field like a REST <code>PATCH</code>.</li>
+<li><strong>CTag and sync token</strong> (<code>urn:opentodo:sync:&lt;n&gt;</code>) are the position of your op log, shared by all your lists; incremental <code>sync-collection</code> reports list changed tasks and the removed ones (deleted, purged or moved away). Tokens never expire; a token from a future position (after restoring an older backup) is refused so the client starts over.</li>
+<li>Supported: <code>PROPFIND</code> (Depth 0 and 1), <code>REPORT</code> <code>calendar-query</code> (VTODO, <code>time-range</code>, <code>prop-filter</code> with <code>is-not-defined</code> and <code>text-match</code>), <code>calendar-multiget</code> and <code>sync-collection</code>, <code>GET</code>, <code>HEAD</code>, <code>PUT</code>, <code>DELETE</code>, <code>MKCALENDAR</code>, <code>PROPPATCH</code>, <code>OPTIONS</code> (<code>DAV: 1, 3, calendar-access</code>). A resource is at most 1 MB and its preserved properties at most about 60 KB.</li>
+</ul>
+<h2 id="limits">Limits<a class="anchor" href="#limits" aria-label="Link to this section: Limits">#</a></h2>
+<p>Not supported: events (VEVENT), scheduling and invitations, free/busy, calendar sharing through CalDAV (use project sharing), CardDAV, attachments, per-occurrence overrides, server-side recurrence expansion, and OpenTodo acting as a client of another CalDAV server.</p>
+<p>The three target clients were exercised only with recorded-style fixtures and protocol tests in this repository (<code>internal/caldav/testdata/</code>, <code>internal/httpapi/caldav_test.go</code>); a manual run against real Apple Reminders, Thunderbird and DAVx⁵ installations is still pending.</p>
+<h2 id="end-to-end-encryption">End-to-end encryption<a class="anchor" href="#end-to-end-encryption" aria-label="Link to this section: End-to-end encryption">#</a></h2>
+<p>CalDAV is not available for accounts with <a href="/docs/e2ee/">end-to-end encryption</a>: calendar clients can neither read encrypted titles nor write them back, and serving placeholders would let a client overwrite the real titles. For such an account <code>/dav/</code> answers 403 and creating an app password answers 409 <code>encryption_enabled</code>; existing app passwords stop working until encryption is turned off.</p>
+<h2 id="downgrading">Downgrading<a class="anchor" href="#downgrading" aria-label="Link to this section: Downgrading">#</a></h2>
+<p>An older server answers 404 for <code>/dav/</code> and refuses <code>ical_extra</code> operations from newer devices. Remove the CalDAV accounts from your calendar apps before downgrading.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/caldav.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/self-hosting/sso/"><span>Previous</span>Single sign-on</a>
+      <a class="next" rel="next" href="/docs/email/"><span>Next</span>Email to task</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#turn-it-on">Turn it on</a></li><li><a href="#create-an-app-password">Create an app password</a></li><li><a href="#client-setup">Client setup</a><ul><li><a href="#apple-reminders-iphone-ipad-mac">Apple Reminders (iPhone, iPad, Mac)</a></li><li><a href="#thunderbird">Thunderbird</a></li><li><a href="#android-nextcloud-tasks-tasksorg-jtx-board-davx⁵">Android: Nextcloud Tasks, Tasks.org, jtx Board (DAVx⁵)</a></li><li><a href="#nextcloud">Nextcloud</a></li></ul></li><li><a href="#what-maps-to-what">What maps to what</a><ul><li><a href="#recurrence">Recurrence</a></li><li><a href="#alarms">Alarms</a></li></ul></li><li><a href="#lists-sharing-and-deletion">Lists, sharing and deletion</a></li><li><a href="#sync-and-conflicts">Sync and conflicts</a></li><li><a href="#limits">Limits</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#downgrading">Downgrading</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

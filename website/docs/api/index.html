@@ -1,0 +1,2665 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>HTTP API · OpenTodo docs</title>
+  <meta name="description" content="Authentication, every route, entity fields, error codes and examples for scripts and integrations.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/api/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/api/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="HTTP API · OpenTodo docs">
+  <meta property="og:description" content="Authentication, every route, entity fields, error codes and examples for scripts and integrations.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/" aria-current="page">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/" aria-current="page">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="developer">
+      <p class="doc-meta"><span class="crumbs">Integrations and internals <span aria-hidden="true">›</span> Integrations</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#authentication">Authentication</a><ul><li><a href="#how-a-non-browser-client-signs-in">How a non-browser client signs in</a></li><li><a href="#endpoints">Endpoints</a></li><li><a href="#passkeys">Passkeys</a></li><li><a href="#two-factor-authentication">Two-factor authentication</a></li><li><a href="#single-sign-on">Single sign-on</a></li><li><a href="#task-fields">Task fields</a></li><li><a href="#subtasks">Subtasks</a></li><li><a href="#recurring-tasks">Recurring tasks</a></li><li><a href="#project-fields">Project fields</a></li><li><a href="#sub-projects">Sub-projects</a></li><li><a href="#sections">Sections</a></li><li><a href="#label-fields">Label fields</a></li><li><a href="#view-fields">View fields</a></li><li><a href="#reminders-and-push">Reminders and push</a></li><li><a href="#invitations">Invitations</a></li><li><a href="#user-administration">User administration</a></li><li><a href="#backups">Backups</a></li><li><a href="#audit-log">Audit log</a></li><li><a href="#sharing">Sharing</a></li><li><a href="#assignment-and-notifications">Assignment and notifications</a></li><li><a href="#trash-and-history">Trash and history</a></li><li><a href="#comments-and-activity">Comments and activity</a></li><li><a href="#activity-feed">Activity feed</a></li><li><a href="#import">Import</a></li><li><a href="#caldav-and-app-passwords">CalDAV and app passwords</a></li><li><a href="#email-to-task">Email to task</a></li><li><a href="#webhooks">Webhooks</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li></ul></li><li><a href="#examples">Examples</a></li><li><a href="#behaviour-notes">Behaviour notes</a><ul><li><a href="#error-codes">Error codes</a></li></ul></li></ul></nav></details>
+<h1 id="http-api">HTTP API</h1>
+<p>Base path: <code>/api/v1</code>. All requests and responses are JSON. Errors look like:</p>
+<pre tabindex="0"><code class="language-json">{ &quot;error&quot;: { &quot;code&quot;: &quot;invalid_input&quot;, &quot;message&quot;: &quot;task.priority must be an integer from 1 (highest) to 4 (lowest)&quot; } }</code></pre>
+<h2 id="authentication">Authentication<a class="anchor" href="#authentication" aria-label="Link to this section: Authentication">#</a></h2>
+<p>Two options:</p>
+<ul>
+<li><strong>Session cookie</strong> (the web app). Obtained from <code>auth/register</code> or <code>auth/login</code>. State-changing requests must come from the app&#39;s own origin.</li>
+<li><strong>Bearer token</strong> (scripts, CLI, AI assistants). Create one in <strong>Settings → API tokens</strong> or via <code>POST /tokens</code>, then send <code>Authorization: Bearer ot_…</code>.</li>
+</ul>
+<p>A token has a <strong>scope</strong>: <code>full</code> (the default) or <code>read</code>. A <code>read</code> token reads everything its account can read but is refused with 403 <code>insufficient_scope</code> on every request that can change something: every method other than <code>GET</code>, <code>HEAD</code> and <code>OPTIONS</code>, and <code>/api/v1/sync</code> whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are <code>full</code>. Give read tokens to anything that only needs to look, such as an AI assistant connected to the <a href="/docs/mcp/">MCP endpoint</a>.</p>
+<pre tabindex="0"><code class="language-bash">export OT=https://todo.example.com
+export TOKEN=ot_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+<p>If you would rather not hand-write requests, the <a href="/docs/cli/"><code>ot</code> command-line client</a> wraps this API and prints the same entity shapes with <code>--json</code>.</p>
+<h3 id="how-a-non-browser-client-signs-in">How a non-browser client signs in<a class="anchor" href="#how-a-non-browser-client-signs-in" aria-label="Link to this section: How a non-browser client signs in">#</a></h3>
+<p>Bearer tokens are minted by a signed-in user, so a client that only has an email and a password goes through a short session, which is what <code>ot login</code> does:</p>
+<ol>
+<li><code>POST /api/v1/auth/login</code> with <code>{email, password}</code> → the <code>opentodo_session</code> cookie.</li>
+<li><code>POST /api/v1/tokens</code> with that cookie and <code>{&quot;name&quot;:&quot;cli@&lt;hostname&gt;&quot;}</code> → <code>{token, secret}</code>. Send <strong>no <code>Origin</code> header</strong>: cookie-authenticated writes are refused when <code>Origin</code> is present and does not match the server, and accepted without it (browsers always send one, non-browser clients normally do not).</li>
+<li><code>POST /api/v1/auth/logout</code> with the cookie, then keep only the <code>secret</code> and use it as a bearer token. Bearer requests are not subject to the Origin check.</li>
+</ol>
+<p>Login is rate limited (10 attempts per minute per address); a token created in Settings and passed to <code>ot auth set-token</code> skips the session entirely.</p>
+<p>If the account has two-factor authentication, step 1 answers <code>{&quot;mfaRequired&quot;:true,&quot;challenge&quot;:&quot;…&quot;}</code> without a cookie. Post the challenge and a code to <code>POST /api/v1/auth/mfa</code> to get the cookie, then continue with step 2 (see <a href="#two-factor-authentication">Two-factor authentication</a>). The fresh session can create the token without re-authenticating. Bearer tokens are never asked for a code.</p>
+<h3 id="endpoints">Endpoints<a class="anchor" href="#endpoints" aria-label="Link to this section: Endpoints">#</a></h3>
+<p>Auth column: <strong>none</strong> = public; <strong>yes</strong> = any session or token (a <code>read</code> token only on <code>GET</code>); <strong>owner</strong>, <strong>admin</strong> = that account role; <strong>member</strong> = a member of the project; <strong>fresh</strong> = a step-up route (see <a href="#two-factor-authentication">Two-factor authentication</a>); <strong>cookie</strong> = a browser session. Every <code>/api/v1</code> route not listed as public requires authentication.</p>
+<h4 id="health-and-authentication">Health and authentication<a class="anchor" href="#health-and-authentication" aria-label="Link to this section: Health and authentication">#</a></h4>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/healthz</code></td>
+<td>none</td>
+<td><code>{&quot;status&quot;:&quot;ok&quot;,&quot;version&quot;:&quot;…&quot;}</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/auth/status</code></td>
+<td>none</td>
+<td><code>{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, mfa?, encryption?, minClientVersion?, demo?}</code>; <code>mfa</code>, <code>encryption</code> and <code>minClientVersion</code> only when signed in; <code>demo</code> (<code>{token, sandboxHours: {idle, max}, resetsAt}</code>: a fresh single-use sandbox-creation token valid for 10 minutes, the sandbox lifetimes in hours and the next nightly reset; no credentials) only on a <a href="/docs/self-hosting/demo/">demo instance</a> (see <a href="#two-factor-authentication">Two-factor authentication</a>, <a href="#single-sign-on">Single sign-on</a>, <a href="#end-to-end-encryption">End-to-end encryption</a>)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/register</code></td>
+<td>none</td>
+<td><code>{email, name?, password, invitation?}</code> → 201 <code>{user}</code> + cookie. The first account becomes owner; afterwards an <code>invitation</code> secret admits one member while sign-up is closed</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/login</code></td>
+<td>none</td>
+<td><code>{email, password}</code> → <code>{user}</code> + cookie, or <code>{mfaRequired:true, challenge, expiresAt}</code> and no cookie when the account has a second factor</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/mfa</code></td>
+<td>none</td>
+<td><code>{challenge, code}</code> or <code>{challenge, recoveryCode}</code>, optional <code>remember</code> → <code>{user}</code> + cookie (+ <code>ot_trust</code> cookie when <code>remember</code>)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/reauth</code></td>
+<td>cookie</td>
+<td><code>{password}</code> or <code>{code}</code> → <code>{reauthAt, validForMs}</code>; unlocks <em>fresh</em> routes for 10 minutes</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/passkey/options</code></td>
+<td>none</td>
+<td>→ <code>{publicKey}</code> sign-in options, see <a href="#passkeys">Passkeys</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/passkey</code></td>
+<td>none</td>
+<td><code>{credential}</code> → <code>{user}</code> + cookie</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/logout</code></td>
+<td>cookie</td>
+<td>204, or 200 <code>{redirect}</code> (provider sign-out, see <a href="#single-sign-on">Single sign-on</a>)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/demo/sandbox</code></td>
+<td>none</td>
+<td><a href="/docs/self-hosting/demo/">demo instance</a> only (absent otherwise): <code>{token}</code> from <code>auth/status</code> → 201 <code>{user}</code> + cookie for a new private sandbox. Requires a same-origin <code>Origin</code> header; 403 <code>demo_token</code> (missing, forged, expired or used token), 403 <code>bad_origin</code>, 429 <code>rate_limited</code> (5 per address per hour), 503 <code>demo_busy</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/auth/oidc/start</code></td>
+<td>none</td>
+<td>browser navigation: 302 to the provider (links the identity instead when signed in)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/auth/oidc/callback</code></td>
+<td>none</td>
+<td>provider return: 303 to <code>/</code> + cookie, or to <code>/?error=…</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/invitations/{token}</code></td>
+<td>none</td>
+<td>preview <code>{inviterName, email, expiresAt}</code> or 404 <code>invitation_invalid</code>, see <a href="#invitations">Invitations</a></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/password-resets/{token}</code></td>
+<td>none</td>
+<td>preview <code>{email, expiresAt}</code> or 404 <code>reset_invalid</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/password-resets/{token}</code></td>
+<td>none</td>
+<td><code>{password}</code> → 204 or 404 <code>reset_invalid</code></td>
+</tr>
+</tbody></table></div>
+<h4 id="your-account-and-credentials">Your account and credentials<a class="anchor" href="#your-account-and-credentials" aria-label="Link to this section: Your account and credentials">#</a></h4>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/v1/me</code></td>
+<td>yes</td>
+<td><code>{user, mfa, encryption: {enabled, keyVersion}, minClientVersion}</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/me/password</code></td>
+<td>yes, fresh</td>
+<td><code>{currentPassword, newPassword}</code> → 204; signs out your other sessions</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/me/activity</code></td>
+<td>yes</td>
+<td><code>{events:[…]}</code>: your own access events, last 90 days, at most 100</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/me/identities</code></td>
+<td>yes</td>
+<td><code>{identities:[…], provider}</code></td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/me/identities/{id}</code></td>
+<td>yes</td>
+<td>204, or 409 <code>last_credential</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/tokens</code></td>
+<td>yes</td>
+<td><code>{tokens:[{id,name,scope,createdAt,lastUsedAt}]}</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/tokens</code></td>
+<td>yes, fresh</td>
+<td><code>{name, scope?}</code> (<code>full</code> default, or <code>read</code>) → 201 <code>{token, secret}</code> (secret shown once); another scope → 400 <code>invalid_input</code></td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/tokens/{id}</code></td>
+<td>yes</td>
+<td>204</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/passkeys/register/options</code></td>
+<td>yes</td>
+<td>→ <code>{publicKey}</code> creation options</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/passkeys/register</code></td>
+<td>yes</td>
+<td><code>{name, credential}</code> → 201 <code>{passkey}</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/passkeys</code></td>
+<td>yes</td>
+<td><code>{passkeys:[{id,name,createdAt,lastUsedAt,suspiciousAt,backedUp}]}</code></td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/passkeys/{id}</code></td>
+<td>yes</td>
+<td><code>{name}</code> → <code>{passkey}</code></td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/passkeys/{id}</code></td>
+<td>yes</td>
+<td>204</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/mfa</code></td>
+<td>yes</td>
+<td><code>{mfa}</code>, see <a href="#two-factor-authentication">Two-factor authentication</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/mfa/totp/enroll</code></td>
+<td>yes</td>
+<td>→ <code>{secret, uri, expiresAt}</code> (pending for 10 minutes; the only time the secret is returned)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/mfa/totp/confirm</code></td>
+<td>yes</td>
+<td><code>{code}</code> → <code>{recoveryCodes:[10], mfa}</code> (codes shown once)</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/mfa/totp</code></td>
+<td>yes, fresh</td>
+<td>turn the second factor off → 204</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/mfa/recovery-codes/regenerate</code></td>
+<td>yes, fresh</td>
+<td>→ <code>{recoveryCodes:[10]}</code>; every earlier code stops working</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/mfa/trusted-devices</code></td>
+<td>yes</td>
+<td><code>{devices:[{id,userAgent,createdAt,expiresAt,lastUsedAt}]}</code></td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/mfa/trusted-devices</code></td>
+<td>yes</td>
+<td>forget every remembered browser → 204</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/mfa/trusted-devices/{id}</code></td>
+<td>yes</td>
+<td>forget one → 204</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/encryption/keys</code></td>
+<td>yes</td>
+<td><code>{keys}</code>: the wrapped key record, or 404 <code>encryption_disabled</code>; see <a href="#end-to-end-encryption">End-to-end encryption</a></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/encryption/keys</code></td>
+<td>yes (fresh when replacing)</td>
+<td>create (<code>version: 1</code>) or replace (<code>version</code> = stored + 1) the key record → 201/200 <code>{keys}</code>; 409 <code>encryption_conflict</code></td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/encryption/keys</code></td>
+<td>yes, fresh</td>
+<td>204; turns encryption off for the account (404 <code>encryption_disabled</code> without a record)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/encryption/purge-history</code></td>
+<td>yes</td>
+<td>→ <code>{purged, notice}</code>; deletes superseded content operations; 409 <code>encryption_disabled</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/notifications</code></td>
+<td>yes</td>
+<td>your in-app notifications and the unread count, see <a href="#assignment-and-notifications">Assignment and notifications</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/notifications/{id}/read</code></td>
+<td>yes</td>
+<td>mark one read → 204</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/push/vapid-key</code></td>
+<td>yes</td>
+<td><code>{publicKey}</code>; with <code>?device={id}</code> also <code>subscription</code> (that device&#39;s status or <code>null</code>), see <a href="#reminders-and-push">Reminders and push</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/push/subscriptions</code></td>
+<td>yes</td>
+<td><code>{deviceId, endpoint, keys:{p256dh, auth}, includeContent?}</code> → 201 <code>{subscription}</code> (200 when the device&#39;s subscription was replaced)</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/push/subscriptions/{id}</code></td>
+<td>yes</td>
+<td>204, or 404 <code>not_found</code></td>
+</tr>
+</tbody></table></div>
+<h4 id="tasks-projects-and-other-synced-data">Tasks, projects and other synced data<a class="anchor" href="#tasks-projects-and-other-synced-data" aria-label="Link to this section: Tasks, projects and other synced data">#</a></h4>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/v1/tasks</code></td>
+<td>yes</td>
+<td><code>{tasks:[…]}</code> (yours and those of projects shared with you); <code>?include_deleted=true</code> to include tombstones</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/tasks</code></td>
+<td>yes</td>
+<td>create → 201 task, see <a href="#task-fields">Task fields</a></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/tasks/{id}</code></td>
+<td>yes</td>
+<td>task or 404</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/tasks/{id}</code></td>
+<td>yes</td>
+<td>partial update → task</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/tasks/{id}</code></td>
+<td>yes</td>
+<td>soft delete (to the Trash) → 204</td>
+</tr>
+<tr>
+<td>GET/POST/GET/PATCH/DELETE</td>
+<td><code>/api/v1/projects…</code></td>
+<td>yes</td>
+<td>same shape for projects, see <a href="#project-fields">Project fields</a></td>
+</tr>
+<tr>
+<td>GET/POST/GET/PATCH/DELETE</td>
+<td><code>/api/v1/sections…</code></td>
+<td>yes</td>
+<td>same shape for sections, see <a href="#sections">Sections</a></td>
+</tr>
+<tr>
+<td>GET/POST/GET/PATCH/DELETE</td>
+<td><code>/api/v1/labels…</code></td>
+<td>yes</td>
+<td>same shape for labels, see <a href="#label-fields">Label fields</a></td>
+</tr>
+<tr>
+<td>GET/POST/GET/PATCH/DELETE</td>
+<td><code>/api/v1/views…</code></td>
+<td>yes</td>
+<td>same shape for saved views, see <a href="#view-fields">View fields</a></td>
+</tr>
+<tr>
+<td>GET/POST/GET/PATCH/DELETE</td>
+<td><code>/api/v1/reminders…</code></td>
+<td>yes</td>
+<td>same shape for reminders, see <a href="#reminders-and-push">Reminders and push</a></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/tasks/{id}/history</code>, <code>/api/v1/projects/{id}/history</code></td>
+<td>yes</td>
+<td>change sets from the operation log, oldest first; <code>?before=&lt;ts&gt;&amp;limit=&lt;1-200&gt;</code> pages backwards; see <a href="#trash-and-history">Trash and history</a></td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/tasks/{id}/purge</code>, <code>/api/v1/projects/{id}/purge</code></td>
+<td>yes</td>
+<td>permanently delete an item that is in the Trash → <code>{purged:{tasks,projects,reminders,sections,comments}}</code>; 409 <code>not_deleted</code> otherwise</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/trash/purge</code></td>
+<td>yes</td>
+<td>empty the Trash (every deleted task and project you may delete) → <code>{purged:{…}}</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/tasks/{id}/comments</code></td>
+<td>yes</td>
+<td><code>{comments}</code>: the task&#39;s live comments in thread order; see <a href="#comments-and-activity">Comments and activity</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/tasks/{id}/comments</code></td>
+<td>yes</td>
+<td><code>{body, parent_id?, mentions?}</code> → 201 comment; 429 <code>rate_limited</code> past 60 new comments a minute</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/comments/{id}</code></td>
+<td>yes</td>
+<td><code>{body?, mentions?}</code> → 200 comment with <code>edited_at</code> set; 403 <code>forbidden</code> unless you wrote it</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/comments/{id}</code></td>
+<td>yes</td>
+<td>204; allowed for the author, project admins and the owner</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/tasks/{id}/activity</code>, <code>/api/v1/projects/{id}/activity</code></td>
+<td>yes</td>
+<td><code>{events, more, cursor?}</code> newest first, derived from the operation log; <code>?before=&lt;cursor&gt;&amp;limit=&lt;1-200&gt;</code> (default 50)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/activity</code></td>
+<td>yes</td>
+<td>the activity feed across every shared project you are a member of; <code>?cursor=&amp;limit=&amp;project=&amp;actor=&amp;kind=</code>; see <a href="#activity-feed">Activity feed</a></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/projects/{id}/members</code></td>
+<td>member</td>
+<td><code>{projectId, role, ownerId, members:[{userId,name,email,role}]}</code>, see <a href="#sharing">Sharing</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/projects/{id}/members</code></td>
+<td>owner, admin of the project</td>
+<td><code>{email, role}</code> → 201 membership (shares the project on first use)</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/projects/{id}/members/{userId}</code></td>
+<td>owner, admin of the project</td>
+<td><code>{role}</code> → membership</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/projects/{id}/members/{userId}</code></td>
+<td>member</td>
+<td>remove a member, or leave with your own id or <code>me</code> → 204</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/projects/{id}/transfer</code></td>
+<td>owner of the project</td>
+<td><code>{userId}</code> → membership; the previous owner becomes an admin</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/sync</code></td>
+<td>yes (not <code>read</code>)</td>
+<td>device sync, see <a href="/docs/sync/#exchange">sync.md</a>; the response carries the log <code>generation</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/sync/events?device={id}</code></td>
+<td>yes</td>
+<td>server-sent event stream; wakes the device when other devices or the API record operations, see <a href="/docs/sync/#live-updates">sync.md</a></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/export</code></td>
+<td>yes</td>
+<td>full JSON export (<code>projects</code>, <code>tasks</code>, <code>labels</code>, <code>views</code>, <code>reminders</code>, <code>sections</code>, <code>comments</code>, <code>encryption</code>), including deleted items and the projects shared with you (with <code>role</code> and <code>owner_id</code>); never contains audit events or push subscriptions; reminders are personal, so only your own</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/import/preview</code></td>
+<td>yes</td>
+<td>multipart <code>file</code> + options → dry run <code>{format, totals, rows, …}</code>, see <a href="#import">Import</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/import</code></td>
+<td>yes</td>
+<td>multipart <code>file</code> + options → 202 <code>{job}</code>; the import runs in the background</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/import/jobs</code></td>
+<td>yes</td>
+<td><code>{jobs:[…]}</code>, newest first (last 50)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/import/jobs/{id}</code></td>
+<td>yes</td>
+<td><code>{job}</code> with status, counts and row errors</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/import/jobs/{id}/undo</code></td>
+<td>yes</td>
+<td>tombstone everything the job created → <code>{job}</code> (status <code>undone</code>); idempotent</td>
+</tr>
+</tbody></table></div>
+<h4 id="integrations">Integrations<a class="anchor" href="#integrations" aria-label="Link to this section: Integrations">#</a></h4>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/v1/webhooks</code></td>
+<td>yes</td>
+<td><code>{webhooks:[…], events:[…]}</code>, see <a href="#webhooks">Webhooks</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/webhooks</code></td>
+<td>yes</td>
+<td><code>{url, events, projectId?, enabled?}</code> → 201 <code>{webhook}</code> (includes <code>secret</code>, shown once)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/webhooks/{id}</code></td>
+<td>yes</td>
+<td><code>{webhook}</code> (never the secret)</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/webhooks/{id}</code></td>
+<td>yes</td>
+<td>partial <code>{url?, events?, projectId?, enabled?}</code> → <code>{webhook}</code></td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/webhooks/{id}</code></td>
+<td>yes</td>
+<td>delete with its delivery log → 204</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/webhooks/{id}/test</code></td>
+<td>yes</td>
+<td>send a <code>ping</code> now → <code>{ok, delivery}</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/webhooks/{id}/deliveries</code></td>
+<td>yes</td>
+<td><code>{deliveries:[…]}</code>, newest 100</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/webhooks/{id}/deliveries/{did}/redeliver</code></td>
+<td>yes</td>
+<td>queue the same body with a new id → 202 <code>{delivery}</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/app-passwords</code></td>
+<td>yes</td>
+<td><code>{appPasswords:[…]}</code>, see <a href="#caldav-and-app-passwords">CalDAV and app passwords</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/app-passwords</code></td>
+<td>yes, fresh</td>
+<td><code>{name}</code> → 201 <code>{appPassword, secret}</code> (secret shown once)</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/app-passwords/{id}</code></td>
+<td>yes</td>
+<td>revoke → 204</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/email-inbox</code></td>
+<td>yes</td>
+<td>your email-to-task address and settings, see <a href="#email-to-task">Email to task</a></td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/v1/email-inbox</code></td>
+<td>yes</td>
+<td><code>{enabled?, allowlist?}</code> → the same shape</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/email-inbox/rotate</code></td>
+<td>yes</td>
+<td>new address; the old one stops working</td>
+</tr>
+<tr>
+<td>*</td>
+<td><code>/dav/</code>, <code>/.well-known/caldav</code></td>
+<td>HTTP Basic with an app password</td>
+<td>CalDAV (WebDAV methods), 404 while disabled; see <a href="/docs/caldav/">caldav.md</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/mcp</code></td>
+<td>bearer token only</td>
+<td>read-only Model Context Protocol endpoint, 404 while disabled; see <a href="/docs/mcp/">mcp.md</a></td>
+</tr>
+</tbody></table></div>
+<h4 id="administration-owner-and-admins">Administration (owner and admins)<a class="anchor" href="#administration-owner-and-admins" aria-label="Link to this section: Administration (owner and admins)">#</a></h4>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/v1/invitations</code></td>
+<td>owner, admin</td>
+<td><code>{invitations:[…]}</code>, see <a href="#invitations">Invitations</a></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/invitations</code></td>
+<td>owner, admin, fresh</td>
+<td><code>{email?, expiresInHours?}</code> → 201 <code>{invitation, link}</code> (link shown once)</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/invitations/{id}</code></td>
+<td>owner, admin</td>
+<td>revoke a pending invitation → 204</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/users</code></td>
+<td>owner, admin</td>
+<td><code>{users:[…]}</code>, see <a href="#user-administration">User administration</a></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/users/{id}/role</code></td>
+<td>owner, fresh</td>
+<td><code>{role: &quot;admin&quot;|&quot;member&quot;}</code> → <code>{user}</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/users/{id}/deactivate</code></td>
+<td>owner, admin, fresh</td>
+<td>→ <code>{user}</code>; revokes sessions, tokens, pending invitations and reset links</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/users/{id}/reactivate</code></td>
+<td>owner, admin, fresh</td>
+<td>→ <code>{user}</code></td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/v1/users/{id}</code></td>
+<td>owner, admin, fresh</td>
+<td><code>{confirmEmail}</code> → 204; deletes the account and its data</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/users/{id}/password-reset</code></td>
+<td>owner, admin, fresh</td>
+<td><code>{expiresInHours?}</code> → 201 <code>{expiresAt, link}</code> (link shown once)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/users/{id}/transfer-ownership</code></td>
+<td>owner, fresh</td>
+<td><code>{password}</code> → <code>{user}</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/members/{id}/mfa/reset</code></td>
+<td>owner, fresh</td>
+<td>remove a member&#39;s second factor, recovery codes and remembered browsers → 204</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/mfa</code></td>
+<td>owner</td>
+<td><code>{required: &quot;none&quot;|&quot;owner&quot;|&quot;all&quot;}</code></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/mfa</code></td>
+<td>owner, fresh</td>
+<td><code>{required}</code> → <code>{required}</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/oidc</code></td>
+<td>owner</td>
+<td>provider configuration, secret masked, see <a href="#single-sign-on">Single sign-on</a></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/oidc</code></td>
+<td>owner, fresh</td>
+<td>change the provider configuration</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/settings/oidc/test</code></td>
+<td>owner</td>
+<td><code>{issuer?}</code> → <code>{ok, issuer, authorizationHost, tokenHost, endSessionSupported}</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/mcp</code></td>
+<td>yes</td>
+<td><code>{enabled, endpoint}</code>: whether the <a href="/docs/mcp/">MCP endpoint</a> is on and its URL</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/mcp</code></td>
+<td>owner</td>
+<td><code>{enabled}</code> → <code>{enabled, endpoint}</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/caldav</code></td>
+<td>yes</td>
+<td><code>{enabled, url, secure, encryption}</code></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/caldav</code></td>
+<td>owner</td>
+<td><code>{enabled}</code> → the same shape</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/webhooks</code></td>
+<td>owner</td>
+<td><code>{allowPrivate}</code></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/webhooks</code></td>
+<td>owner</td>
+<td><code>{allowPrivate}</code> → <code>{allowPrivate}</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/audit</code></td>
+<td>owner</td>
+<td><code>{events:[…], cursor}</code> newest first; filters <code>name</code>, <code>actor</code>, <code>target</code>, <code>outcome</code>, <code>from</code>, <code>to</code>, <code>cursor</code>, <code>limit≤200</code>, see <a href="#audit-log">Audit log</a></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/audit/export</code></td>
+<td>owner</td>
+<td>the filtered log as <code>application/x-ndjson</code> download; records <code>audit.exported</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/settings/audit</code></td>
+<td>owner</td>
+<td><code>{retentionDays, logIp}</code></td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/settings/audit</code></td>
+<td>owner</td>
+<td><code>{retentionDays?: 7–3650, logIp?}</code> → settings; disabling <code>logIp</code> erases stored addresses</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/backups</code></td>
+<td>owner</td>
+<td>backup status, see <a href="#backups">Backups</a></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/backups/settings</code></td>
+<td>owner</td>
+<td><code>{settings, secrets}</code> (secret presence flags only)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/v1/backups/settings</code></td>
+<td>owner</td>
+<td><code>{settings, secrets?}</code> → <code>{settings, secrets}</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/backups/run</code></td>
+<td>owner</td>
+<td>start a backup now → 202, or 409 <code>conflict</code> while one runs</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/backups/test</code></td>
+<td>owner</td>
+<td>write and delete a probe object at the saved destination → 200 <code>{ok:true}</code> or 502 <code>destination_error</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="passkeys">Passkeys<a class="anchor" href="#passkeys" aria-label="Link to this section: Passkeys">#</a></h3>
+<p>Passkeys (WebAuthn) are an additional way to sign in; the password keeps working. They are only offered when <code>OPENTODO_BASE_URL</code> is <code>https://…</code> (or <code>http://localhost</code> / <code>127.0.0.1</code> for development). The relying-party id is the host of that URL and the expected origin is its <code>scheme://host[:port]</code>. <code>auth/status</code> reports <code>passkeysAvailable</code>. When it is <code>false</code>, every passkey route answers <code>409 passkeys_unavailable</code>.</p>
+<p>Both ceremonies take two steps. The <code>options</code> route returns <code>{&quot;publicKey&quot;: …}</code>, the JSON form of <code>PublicKeyCredentialCreationOptions</code> / <code>PublicKeyCredentialRequestOptions</code>, with a single-use challenge valid for five minutes. The browser runs <code>navigator.credentials.create()</code> or <code>get()</code> with those options, and the client posts the result back. <strong>All binary fields are base64url strings</strong> (padding optional), in the same shape that <code>PublicKeyCredential.toJSON()</code> produces:</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;name&quot;: &quot;Work laptop&quot;,
+  &quot;credential&quot;: {
+    &quot;id&quot;: &quot;q2Xx…&quot;, &quot;rawId&quot;: &quot;q2Xx…&quot;, &quot;type&quot;: &quot;public-key&quot;,
+    &quot;response&quot;: {
+      &quot;clientDataJSON&quot;: &quot;eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIi…&quot;,
+      &quot;attestationObject&quot;: &quot;o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVj…&quot;,
+      &quot;transports&quot;: [&quot;internal&quot;, &quot;hybrid&quot;]
+    }
+  }
+}</code></pre>
+<p>For sign-in, <code>response</code> carries <code>clientDataJSON</code>, <code>authenticatorData</code> and <code>signature</code>, and the body has no <code>name</code>. Sign-in uses discoverable credentials only (<code>allowCredentials</code> is empty), so the server finds the account from <code>rawId</code>. Registration asks for <code>residentKey: &quot;required&quot;</code>, <code>userVerification: &quot;preferred&quot;</code> and <code>attestation: &quot;none&quot;</code>. ES256, EdDSA (Ed25519) and RS256 keys are accepted.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Status</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>passkeys_unavailable</code></td>
+<td>409</td>
+<td>the base URL is unset or not https/localhost</td>
+</tr>
+<tr>
+<td><code>passkey_challenge_invalid</code></td>
+<td>400</td>
+<td>the challenge is expired, already used, issued to another account, or was a sign-in challenge used for registration (or the reverse)</td>
+</tr>
+<tr>
+<td><code>invalid_input</code></td>
+<td>400</td>
+<td>origin, relying-party id, type or signature format does not match; credential already registered; empty name on rename</td>
+</tr>
+<tr>
+<td><code>bad_request</code></td>
+<td>400</td>
+<td>a field is missing or is not base64url</td>
+</tr>
+<tr>
+<td><code>invalid_credentials</code></td>
+<td>401</td>
+<td>sign-in with an unknown or deleted passkey, a bad signature, or a signature counter that went backwards (the passkey is then marked <code>suspiciousAt</code>)</td>
+</tr>
+<tr>
+<td><code>not_found</code></td>
+<td>404</td>
+<td>rename or delete of a passkey id that is not yours</td>
+</tr>
+<tr>
+<td><code>rate_limited</code></td>
+<td>429</td>
+<td>more than 10 requests per minute per address to <code>auth/login</code>, <code>auth/register</code>, <code>auth/passkey</code> and the invitation preview combined (one shared window), or more than 10 per minute to <code>auth/passkey/options</code> (its own window, so the sign-in screen&#39;s autofill request never uses up password attempts)</td>
+</tr>
+</tbody></table></div>
+<p>The anonymous <code>auth/passkey</code> routes apply the same <code>Origin</code> check as <code>auth/login</code>. A successful passkey sign-in sets the same <code>opentodo_session</code> cookie as a password sign-in. Bearer tokens can list, rename and delete passkeys, but a CLI cannot run a ceremony.</p>
+<h3 id="two-factor-authentication">Two-factor authentication<a class="anchor" href="#two-factor-authentication" aria-label="Link to this section: Two-factor authentication">#</a></h3>
+<p>Accounts can add a time-based one-time password (TOTP, RFC 6238: HMAC-SHA1, 6 digits, 30-second steps) from any authenticator app. The server generates and checks the codes with its own clock and contacts nothing, so keep the host&#39;s clock synchronised (NTP). A code is accepted one step (30 s) either side of the server&#39;s time. Each code completes at most one authentication.</p>
+<p><strong>Profile.</strong> <code>GET /api/v1/me</code>, <code>GET /api/v1/mfa</code> and <code>auth/status</code> (when signed in) carry:</p>
+<pre tabindex="0"><code class="language-json">{ &quot;mfa&quot;: { &quot;enrolled&quot;: true, &quot;recoveryCodesRemaining&quot;: 9, &quot;policy&quot;: &quot;owner&quot;, &quot;required&quot;: true, &quot;restricted&quot;: false } }</code></pre>
+<p><code>required</code> means the owner&#39;s policy covers this account. <code>restricted</code> means the session may only enrol, because the account is required to have a second factor and has none yet. Bearer-token requests are never restricted.</p>
+<p><strong>Enrolment.</strong> <code>POST /mfa/totp/enroll</code> returns a fresh <code>secret</code> (base32) and its provisioning <code>uri</code> (<code>otpauth://totp/OpenTodo:&lt;email&gt;?secret=…&amp;issuer=OpenTodo&amp;algorithm=SHA1&amp;digits=6&amp;period=30</code>). The web app renders the QR code locally. Confirm within ten minutes with <code>POST /mfa/totp/confirm {&quot;code&quot;:&quot;123456&quot;}</code>. The answer contains ten recovery codes such as <code>ABCDE-FGH23</code>, shown only this once and stored as SHA-256 hashes. A recovery code can stand in for an app code at sign-in (dash and case optional) and is used up by that sign-in.</p>
+<p><strong>Two-step sign-in.</strong> For an enrolled account, a correct password answers 200 with no cookie:</p>
+<pre tabindex="0"><code class="language-bash">curl -sS -c jar -X POST &quot;$OT/api/v1/auth/login&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;email&quot;:&quot;me@example.com&quot;,&quot;password&quot;:&quot;…&quot;}'
+# {&quot;challenge&quot;:&quot;Zk3…&quot;,&quot;expiresAt&quot;:1760000300000,&quot;mfaRequired&quot;:true}
+curl -sS -c jar -X POST &quot;$OT/api/v1/auth/mfa&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;challenge&quot;:&quot;Zk3…&quot;,&quot;code&quot;:&quot;492039&quot;,&quot;remember&quot;:true}'
+# {&quot;user&quot;:{…}} + opentodo_session cookie (+ ot_trust cookie)</code></pre>
+<p>A challenge lasts five minutes and allows five wrong codes. Each wrong code gets <code>401 mfa_code_invalid</code>; after the fifth, the challenge is gone and the next attempt gets <code>401 mfa_challenge_invalid</code>, which means &quot;enter the password again&quot;. <code>remember: true</code> sets <code>ot_trust</code>, an <code>HttpOnly</code>, <code>SameSite=Lax</code> cookie (<code>Secure</code> on https) limited to <code>/api/v1/auth</code> and valid for a fixed 30 days. While that cookie is present, the password step starts the session directly for that account on that browser. A passkey sign-in whose authenticator reports user verification (biometric or PIN) counts as two factors and is never asked for a code. A passkey without user verification answers with the same challenge as a password.</p>
+<p><strong>Step-up.</strong> For cookie sessions, the routes marked <em>fresh</em> in the table require a proof of identity within the last ten minutes. A sign-in counts, and so does <code>POST /auth/reauth</code> with <code>{&quot;password&quot;:&quot;…&quot;}</code> or <code>{&quot;code&quot;:&quot;123456&quot;}</code>. Otherwise they answer <code>403 reauth_required</code> and change nothing. The web app then shows a re-authentication dialog and repeats the request once. Bearer-token requests are never challenged.</p>
+<p><strong>Owner policy.</strong> <code>PUT /settings/mfa {&quot;required&quot;:&quot;none&quot;|&quot;owner&quot;|&quot;all&quot;}</code>. When the policy covers an account that has no second factor, sign-in still works. Every route except <code>GET /me</code>, <code>/mfa/*</code>, <code>/auth/reauth</code> and <code>/auth/logout</code> then answers <code>403 mfa_enrolment_required</code> until the account enrols. That includes <code>/sync</code>, so a device keeps its changes queued and uploads them after enrolment. An account the policy covers cannot turn its second factor off (<code>403 mfa_required_by_policy</code>).</p>
+<p><strong>Recovery.</strong> The owner resets a member&#39;s second factor with <code>POST /members/{id}/mfa/reset</code>. If the owner loses both their authenticator and their recovery codes, stop the server and run <code>opentodo mfa-reset [--data-dir DIR] &lt;email&gt;</code> on the host (see <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">SECURITY.md</a>). Both are recorded as <code>mfa.reset</code>.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Status</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>mfa_code_invalid</code></td>
+<td>400</td>
+<td>confirming enrolment with a wrong code or after the ten-minute window</td>
+</tr>
+<tr>
+<td><code>mfa_code_invalid</code></td>
+<td>401</td>
+<td>wrong, reused or replayed code or recovery code at <code>auth/mfa</code> or <code>auth/reauth</code></td>
+</tr>
+<tr>
+<td><code>mfa_challenge_invalid</code></td>
+<td>401</td>
+<td>unknown, expired or exhausted sign-in challenge</td>
+</tr>
+<tr>
+<td><code>mfa_already_enrolled</code></td>
+<td>409</td>
+<td>enrol or confirm when a second factor is already active</td>
+</tr>
+<tr>
+<td><code>mfa_not_enrolled</code></td>
+<td>409</td>
+<td>disable or regenerate without a second factor</td>
+</tr>
+<tr>
+<td><code>mfa_required_by_policy</code></td>
+<td>403</td>
+<td>disabling while the owner&#39;s policy covers the account</td>
+</tr>
+<tr>
+<td><code>mfa_enrolment_required</code></td>
+<td>403</td>
+<td>any other route while the session is restricted</td>
+</tr>
+<tr>
+<td><code>reauth_required</code></td>
+<td>403</td>
+<td>a <em>fresh</em> route on a cookie session older than ten minutes since its last proof</td>
+</tr>
+<tr>
+<td><code>invalid_credentials</code></td>
+<td>401</td>
+<td>wrong password at <code>auth/reauth</code></td>
+</tr>
+<tr>
+<td><code>invalid_input</code></td>
+<td>400</td>
+<td>missing challenge or code, empty re-authentication body, unknown policy value, <code>auth/reauth</code> with a bearer token</td>
+</tr>
+<tr>
+<td><code>forbidden</code></td>
+<td>403</td>
+<td><code>settings/mfa</code> or a member reset by a non-owner</td>
+</tr>
+<tr>
+<td><code>not_found</code></td>
+<td>404</td>
+<td>unknown member id or trusted device</td>
+</tr>
+<tr>
+<td><code>rate_limited</code></td>
+<td>429</td>
+<td>more than 10 requests per minute per address to <code>auth/mfa</code>, or to <code>auth/reauth</code> (separate windows)</td>
+</tr>
+</tbody></table></div>
+<p>Wrong codes are recorded as <code>mfa.challenge_failed</code> with a reason (<code>wrong_code</code>, <code>wrong_recovery_code</code>) and never the code. Enrolment, disabling and resets are recorded as <code>mfa.enrolled</code>, <code>mfa.disabled</code> and <code>mfa.reset</code>, and policy changes as <code>settings.changed</code> (<code>setting: mfa.required</code>). A completed sign-in is <code>login.succeeded</code> with method <code>password+totp</code>, <code>password+recovery_code</code>, <code>password+trusted_device</code> or <code>passkey+totp</code>.</p>
+<h3 id="single-sign-on">Single sign-on<a class="anchor" href="#single-sign-on" aria-label="Link to this section: Single sign-on">#</a></h3>
+<p>The owner can connect one OpenID Connect provider (Authentik, Keycloak, Authelia, Zitadel, a hosted login service). It is off until configured; setup steps are in <a href="/docs/self-hosting/sso/">self-hosting/sso.md</a>. When, and only when, a provider is configured, the server contacts that issuer&#39;s discovery document and the token and key endpoints it names (10-second timeout, no redirects followed).</p>
+<p><strong>Status.</strong> <code>auth/status</code> always carries <code>{&quot;oidc&quot;:{&quot;enabled&quot;:true,&quot;displayName&quot;:&quot;Home SSO&quot;,&quot;ssoOnly&quot;:false}}</code> (<code>enabled:false</code> when no provider is configured).</p>
+<p><strong>Sign-in</strong> is a browser navigation, not an API call: <code>GET /api/v1/auth/oidc/start</code> redirects to the provider with the authorization-code flow, PKCE (S256), a single-use <code>state</code> and a <code>nonce</code>, and sets a 10-minute <code>HttpOnly</code>, <code>SameSite=Lax</code> cookie <code>ot_oidc</code> (path <code>/api/v1/auth/oidc</code>) holding the signed flow state. The provider returns to <code>GET /api/v1/auth/oidc/callback</code>, which exchanges the code, verifies the identity token (RS256, PS256, ES256 or EdDSA signature from the provider&#39;s JWKS; issuer, audience, expiry, issued-at and nonce, with 60 seconds of clock leeway) and answers <code>303</code> to <code>/</code> with the usual <code>opentodo_session</code> cookie. The session counts as having passed the second factor: the provider applies its own policy, so an account with TOTP is not asked for a code. The owner&#39;s two-factor enrolment policy still applies to the session like any other.</p>
+<p>The identity is matched by issuer and subject first; a first-time identity whose <strong>verified</strong> email equals an account&#39;s email is linked to that account; otherwise a <code>member</code> account is created only if open sign-up is on or the owner enabled <code>allowProvision</code>. Failures redirect to the sign-in screen with <code>?error=</code>:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th><code>error</code></th>
+<th>When</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>oidc_failed</code></td>
+<td>the provider refused, the code exchange failed or the identity token failed a check (details only in the server log)</td>
+</tr>
+<tr>
+<td><code>oidc_email_unverified</code></td>
+<td>a first-time identity without an email marked verified</td>
+</tr>
+<tr>
+<td><code>signup_closed</code></td>
+<td>no matching account and provisioning is not allowed</td>
+</tr>
+</tbody></table></div>
+<p><code>start</code> while signed in <strong>links</strong> the provider identity to the current account instead (Settings → Linked accounts) and returns to <code>/settings?linked=1</code>. If that identity is already linked to the same account, the flow is a fresh proof of identity for the session (the <em>fresh</em> routes work for ten minutes) and returns to <code>/settings?reauthenticated=1</code>.</p>
+<p>The callback answers <code>400 oidc_state_invalid</code> (missing, forged, expired or already used state) and <code>409 identity_taken</code> (linking an identity that belongs to another account) as JSON; a browser navigation (<code>Accept: text/html</code>) is redirected to <code>/?error=&lt;code&gt;</code> or <code>/settings?error=&lt;code&gt;</code> instead, so people never see raw JSON.</p>
+<p><strong>Owner settings.</strong> <code>GET /api/v1/settings/oidc</code>:</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;enabled&quot;: true, &quot;issuer&quot;: &quot;https://sso.example.com/application/o/opentodo&quot;, &quot;clientId&quot;: &quot;opentodo&quot;,
+  &quot;clientSecret&quot;: &quot;••••a1b2&quot;, &quot;clientSecretSet&quot;: true, &quot;displayName&quot;: &quot;Home SSO&quot;, &quot;scopes&quot;: &quot;openid email profile&quot;,
+  &quot;allowProvision&quot;: false, &quot;ssoOnly&quot;: false, &quot;providerLogout&quot;: false,
+  &quot;redirectUri&quot;: &quot;https://todo.example.com/api/v1/auth/oidc/callback&quot;, &quot;baseUrlConfigured&quot;: true,
+  &quot;managedBy&quot;: { &quot;issuer&quot;: &quot;settings&quot;, &quot;clientId&quot;: &quot;settings&quot;, &quot;clientSecret&quot;: &quot;env&quot;, &quot;displayName&quot;: &quot;settings&quot;,
+                 &quot;scopes&quot;: &quot;settings&quot;, &quot;allowProvision&quot;: &quot;settings&quot;, &quot;ssoOnly&quot;: &quot;settings&quot;, &quot;providerLogout&quot;: &quot;settings&quot; }
+}</code></pre>
+<p><code>PUT</code> takes any subset of <code>issuer</code>, <code>clientId</code>, <code>clientSecret</code>, <code>displayName</code>, <code>scopes</code>, <code>allowProvision</code>, <code>ssoOnly</code>, <code>providerLogout</code> and returns the same shape. A new issuer must be an https URL whose discovery document is reachable and names the same issuer, or the answer is <code>400 invalid_input</code> and the previous configuration stays. <code>clientSecret</code> is write-only: omit it (or send the masked value back) to keep it, send <code>&quot;&quot;</code> to remove it. A field set by an <code>OPENTODO_OIDC_*</code> variable is reported as <code>managedBy: &quot;env&quot;</code> and cannot be changed (<code>400 invalid_input</code>). An empty <code>issuer</code> turns single sign-on off (links are kept). <code>PUT</code> needs a fresh session. <code>POST /api/v1/settings/oidc/test</code> with optional <code>{&quot;issuer&quot;:&quot;…&quot;}</code> runs discovery and answers <code>{ok, issuer, authorizationHost, tokenHost, endSessionSupported}</code> or <code>400 invalid_input</code>. Changes are recorded as <code>settings.changed</code> (the secret as <code>(changed)</code>).</p>
+<p><strong>SSO-only mode</strong> (<code>ssoOnly: true</code>, effective only while a provider is configured): password and passkey sign-in, and registration through the password form, answer <code>403 sso_required</code> for every account except the owner (recorded as <code>login.failed</code> with reason <code>sso_required</code>). The owner keeps local sign-in as break-glass (the sign-in screen shows the password form at <code>/?owner=1</code>). Bearer tokens keep working.</p>
+<p><strong>Linked identities.</strong> <code>GET /api/v1/me/identities</code> → <code>{identities:[{id, issuer, email, createdAt, lastLoginAt}], provider:{enabled, displayName, ssoOnly}}</code>. <code>DELETE /api/v1/me/identities/{id}</code> → 204, or <code>409 last_credential</code> when the account would have no way left to sign in under the current mode (another identity counts while a provider is configured; a password or passkey counts unless SSO-only mode refuses it for this account). Linking and unlinking are recorded as <code>identity.linked</code> / <code>identity.unlinked</code>; a provider sign-in as <code>login.succeeded</code> with method <code>oidc</code>.</p>
+<p><strong>Sign-out.</strong> <code>POST /auth/logout</code> always deletes the local session. When <code>providerLogout</code> is on and the session started through the provider, it answers <code>200 {&quot;redirect&quot;:&quot;https://sso…/end-session?client_id=…&amp;id_token_hint=…&amp;post_logout_redirect_uri=https://todo.example.com/&quot;}</code> instead of 204, and the web app follows it after clearing local data.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Status</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>oidc_disabled</code></td>
+<td>404</td>
+<td><code>auth/oidc/start</code> or <code>callback</code> while no provider is configured</td>
+</tr>
+<tr>
+<td><code>oidc_state_invalid</code></td>
+<td>400</td>
+<td>callback with a missing, forged, expired or reused state</td>
+</tr>
+<tr>
+<td><code>identity_taken</code></td>
+<td>409</td>
+<td>linking an identity that is linked to another account</td>
+</tr>
+<tr>
+<td><code>last_credential</code></td>
+<td>409</td>
+<td>unlinking the account&#39;s last way to sign in</td>
+</tr>
+<tr>
+<td><code>sso_required</code></td>
+<td>403</td>
+<td>password or passkey sign-in, or password registration, by a non-owner in SSO-only mode</td>
+</tr>
+<tr>
+<td><code>invalid_input</code></td>
+<td>400</td>
+<td>issuer not https, discovery failed or names another issuer, client id missing, scopes without <code>openid</code>, changing an environment-managed field</td>
+</tr>
+<tr>
+<td><code>forbidden</code></td>
+<td>403</td>
+<td><code>settings/oidc</code> by a non-owner</td>
+</tr>
+<tr>
+<td><code>rate_limited</code></td>
+<td>429</td>
+<td>more than 20 requests per minute per address to <code>auth/oidc/start</code> and <code>callback</code> together</td>
+</tr>
+</tbody></table></div>
+<h3 id="task-fields">Task fields<a class="anchor" href="#task-fields" aria-label="Link to this section: Task fields">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>title</code></td>
+<td>string</td>
+<td></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>the note as <strong>Markdown</strong> text (headings, <code>**bold**</code>, <code>_italic_</code>, <code>~~strike~~</code>, <code>`code`</code>, links, <code>-</code>/<code>1.</code> lists, <code>- [ ]</code>/<code>- [x]</code> check items). Readable and writable as plain text: a write here is folded into the rich-text document by the next app that opens the note. At most 64 KB</td>
+</tr>
+<tr>
+<td><code>notes_doc</code></td>
+<td>string</td>
+<td>the note as a mergeable rich-text document: <code>&quot;&quot;</code> or <code>&quot;ydoc:v1:&lt;base64&gt;&quot;</code> (at most 256 KB). Opaque; scripts normally ignore it and use <code>description</code>. <code>400 invalid_input</code> when it is not a valid envelope. See <a href="/docs/sync/#mergeable-documents">sync.md</a></td>
+</tr>
+<tr>
+<td><code>project_id</code></td>
+<td>string or null</td>
+<td>null = Inbox</td>
+</tr>
+<tr>
+<td><code>parent_id</code></td>
+<td>string or null</td>
+<td>parent task for subtasks, any depth; see <a href="#subtasks">Subtasks</a></td>
+</tr>
+<tr>
+<td><code>priority</code></td>
+<td>1–4</td>
+<td>1 highest, 4 default</td>
+</tr>
+<tr>
+<td><code>due</code></td>
+<td><code>{date:&quot;YYYY-MM-DD&quot;, time?:&quot;HH:MM&quot;, tz?:&quot;Area/City&quot;}</code> or null</td>
+<td>floating date by default; with <code>tz</code> (an IANA zone, only together with <code>time</code>) a zoned time, the instant at that wall time in that zone. <code>400 invalid_input</code> for <code>tz</code> without <code>time</code> or an unknown zone. See <a href="/docs/sync/#zoned-due-values">sync.md</a></td>
+</tr>
+<tr>
+<td><code>labels</code></td>
+<td>string[]</td>
+<td>ids of existing, non-deleted labels; replaced as a whole on PATCH</td>
+</tr>
+<tr>
+<td><code>estimate_minutes</code></td>
+<td>integer 1–10080 or null</td>
+<td>duration estimate in minutes; <code>0</code>, negatives, fractions and strings are rejected. The Day and Week calendar draws a task with a due time as a block of this length</td>
+</tr>
+<tr>
+<td><code>recurrence</code></td>
+<td>string or null</td>
+<td>recurrence rule, e.g. <code>every 3 days after completion</code> (see <a href="/docs/recurrence/">recurrence.md</a>); stored in canonical form, <code>400 invalid_input</code> when it does not parse or is over 200 characters</td>
+</tr>
+<tr>
+<td><code>series_id</code></td>
+<td>string or null</td>
+<td>on a completed occurrence record or a detached copy: the id of its recurring series</td>
+</tr>
+<tr>
+<td><code>assignee_id</code></td>
+<td>string or null</td>
+<td>account id of the assignee; see <a href="#assignment-and-notifications">Assignment and notifications</a>. <code>400 not_a_member</code> when it is not a member of the task&#39;s shared project (or not you, for a personal task)</td>
+</tr>
+<tr>
+<td><code>section_id</code></td>
+<td>string or null</td>
+<td>section of the task&#39;s project; see <a href="#sections">Sections</a>. <code>400 invalid_input</code> for an unknown or deleted section or one of another project. Changing <code>project_id</code> without naming a section clears it</td>
+</tr>
+<tr>
+<td><code>ical_extra</code></td>
+<td>string or null</td>
+<td>opaque iCalendar lines a CalDAV client sent that the app does not model (alarms, <code>X-</code> properties…); kept so calendar apps do not lose them. See <a href="/docs/caldav/#what-maps-to-what">caldav.md</a></td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>number</td>
+<td>sort order inside a list: ascending, ties by id; clients move a task by writing the midpoint between its new neighbours (see <a href="/docs/sync/#manual-order">docs/sync.md</a>)</td>
+</tr>
+<tr>
+<td><code>completed_at</code>, <code>deleted_at</code></td>
+<td>unix ms or null</td>
+<td></td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td>unix ms</td>
+<td>set by the server on create if missing</td>
+</tr>
+</tbody></table></div>
+<h3 id="subtasks">Subtasks<a class="anchor" href="#subtasks" aria-label="Link to this section: Subtasks">#</a></h3>
+<p>A task becomes a subtask by setting <code>parent_id</code> to another task&#39;s id, to any depth. On <code>POST /tasks</code> and <code>PATCH /tasks/{id}</code> the server checks the value and answers <code>400 invalid_input</code> when:</p>
+<ul>
+<li>the parent does not exist or is deleted (<code>parent task not found</code>),</li>
+<li>the parent is in a different project than the task — the task&#39;s <code>project_id</code> after the write, so you can set both in one request (<code>parent must be in the same project</code>),</li>
+<li>the parent is the task itself or one of its descendants, which would form a cycle (<code>parent is a descendant of the task</code>).</li>
+</ul>
+<p><code>parent_id: null</code> detaches a task and is always accepted. Nothing changes on a rejected request. The sync endpoint never rejects an operation for tree reasons; see <code>docs/sync.md</code> for how clients converge.</p>
+<p>The REST API writes exactly the fields you send. The cascades the web app performs (completing a parent completes its open descendants, deleting a parent tombstones the subtree, moving a parent moves the subtree) are ordinary per-task operations issued by the client; a script that wants the same result sends one request per task. A subtask whose parent is completed, deleted or missing is shown at the top level of its project by every client, so nothing becomes unreachable.</p>
+<pre tabindex="0"><code class="language-bash"># Add a subtask under an existing task in the same project
+curl -sS &quot;$OT/api/v1/tasks&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;title&quot;:&quot;Book hotel&quot;,&quot;project_id&quot;:&quot;&lt;project-id&gt;&quot;,&quot;parent_id&quot;:&quot;&lt;parent-task-id&gt;&quot;}'</code></pre>
+<h3 id="recurring-tasks">Recurring tasks<a class="anchor" href="#recurring-tasks" aria-label="Link to this section: Recurring tasks">#</a></h3>
+<p><code>POST</code> and <code>PATCH</code> store <code>recurrence</code> in canonical form (<code>&quot;Every  2nd  Tuesday&quot;</code> is stored as <code>&quot;every 2nd tuesday&quot;</code>). A <code>PATCH</code> that sets a non-null <code>completed_at</code> on an open recurring task behaves like completing it in the app:</p>
+<ul>
+<li>a completed <em>occurrence record</em> is created (id derived from the series id and the occurrence date, <code>series_id</code> set, <code>recurrence: null</code>, other fields copied from the task after the rest of the PATCH is applied),</li>
+<li>the task stays open and its <code>due</code> moves to the next occurrence (time and <code>tz</code> kept); the response is the task with the new <code>due</code>,</li>
+<li>when the end condition (<code>until</code> or <code>for N times</code>) is reached, the task is completed normally instead.</li>
+</ul>
+<p>&quot;Today&quot; for catch-up and completion-relative rules is the server&#39;s local date (the container&#39;s time zone, UTC by default). Reopening a record (<code>completed_at: null</code>) turns it into a standalone task; the series is not moved back. Skip and &quot;this occurrence only&quot; are client actions: a script skips by PATCHing <code>due</code>.</p>
+<pre tabindex="0"><code class="language-bash"># Make a task repeat, then complete the current occurrence
+curl -sS -X PATCH &quot;$OT/api/v1/tasks/&lt;id&gt;&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;recurrence&quot;:&quot;every weekday&quot;,&quot;due&quot;:{&quot;date&quot;:&quot;2026-10-12&quot;}}'
+curl -sS -X PATCH &quot;$OT/api/v1/tasks/&lt;id&gt;&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;completed_at&quot;:1760264400000}'</code></pre>
+<h3 id="project-fields">Project fields<a class="anchor" href="#project-fields" aria-label="Link to this section: Project fields">#</a></h3>
+<p><code>name</code> (string), <code>color</code> (string, CSS colour), <code>position</code> (number, sort order among siblings), <code>archived</code> (boolean), <code>parent_id</code> (string or null, see <a href="#sub-projects">Sub-projects</a>), <code>created_at</code>, <code>deleted_at</code>.</p>
+<h3 id="sub-projects">Sub-projects<a class="anchor" href="#sub-projects" aria-label="Link to this section: Sub-projects">#</a></h3>
+<p>A project becomes a sub-project by setting <code>parent_id</code> to another project&#39;s id, to any depth. On <code>POST /projects</code> and <code>PATCH /projects/{id}</code> the server checks the value and answers <code>400 invalid_input</code> when:</p>
+<ul>
+<li>the parent does not exist or is deleted (<code>parent project not found</code>),</li>
+<li>the parent is the project itself or one of its descendants, which would form a cycle (<code>parent is a descendant of the project</code>).</li>
+</ul>
+<p><code>parent_id: null</code> moves a project to the top level and is always accepted. Nothing changes on a rejected request. The sync endpoint never rejects an operation for tree reasons; see <code>docs/sync.md</code> for how clients converge when two devices move projects into each other concurrently.</p>
+<p>The REST API writes exactly the fields you send. The cascades the web app performs (archiving a project archives its descendants, deleting one moves its direct sub-projects to its own parent and its open tasks to the Inbox) are ordinary per-project operations issued by the client; a script that wants the same result sends one request per project. A sub-project whose parent is archived, deleted or missing is shown at the top level by every client, so nothing becomes unreachable.</p>
+<pre tabindex="0"><code class="language-bash"># Create a sub-project, then move it to the top level
+curl -sS &quot;$OT/api/v1/projects&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;name&quot;:&quot;Q4 launch&quot;,&quot;parent_id&quot;:&quot;&lt;parent-project-id&gt;&quot;}'
+curl -sS -X PATCH &quot;$OT/api/v1/projects/&lt;id&gt;&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;parent_id&quot;:null}'</code></pre>
+<h3 id="sections">Sections<a class="anchor" href="#sections" aria-label="Link to this section: Sections">#</a></h3>
+<p>A section is a named, ordered container inside one project (OpenSpec change <code>board-view</code>): a heading in the list view and a column on the board. Sections are soft-deleted like everything else, live in the sharing scope of their project (editors and up may write them, viewers read them) and appear in the export, deleted ones included.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>required, not blank</td>
+</tr>
+<tr>
+<td><code>project_id</code></td>
+<td>string</td>
+<td>required on create: an existing, non-deleted project; cannot change afterwards (<code>400 invalid_input</code>)</td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>number</td>
+<td>ascending order within the project; defaults to now (last)</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td>number</td>
+<td>set by the server when omitted</td>
+</tr>
+<tr>
+<td><code>deleted_at</code></td>
+<td>number or null</td>
+<td>set by <code>DELETE</code></td>
+</tr>
+</tbody></table></div>
+<p><code>DELETE /api/v1/sections/{id}</code> tombstones the section and, in the same batch, sets <code>section_id</code> to <code>null</code> on each of its open tasks, so they move to &quot;No section&quot;. Unknown fields are refused with <code>400 invalid_input</code>; requests without credentials get <code>401 unauthorized</code>.</p>
+<pre tabindex="0"><code class="language-sh"># Create a section, put a task in it, then move the task back to &quot;No section&quot;
+curl -X POST -H &quot;Authorization: Bearer $T&quot; -d '{&quot;name&quot;:&quot;Doing&quot;,&quot;project_id&quot;:&quot;&lt;project&gt;&quot;}' $BASE/api/v1/sections
+# 201 {&quot;id&quot;:&quot;…&quot;,&quot;name&quot;:&quot;Doing&quot;,&quot;project_id&quot;:&quot;&lt;project&gt;&quot;,&quot;position&quot;:1760000000000,&quot;created_at&quot;:1760000000000}
+curl -X PATCH -H &quot;Authorization: Bearer $T&quot; -d '{&quot;section_id&quot;:&quot;&lt;section&gt;&quot;}' $BASE/api/v1/tasks/$TASK
+curl -X PATCH -H &quot;Authorization: Bearer $T&quot; -d '{&quot;section_id&quot;:null}' $BASE/api/v1/tasks/$TASK
+curl -X POST -H &quot;Authorization: Bearer $T&quot; -d '{&quot;name&quot;:&quot;Doing&quot;,&quot;project_id&quot;:&quot;missing&quot;}' $BASE/api/v1/sections
+# 400 {&quot;error&quot;:{&quot;code&quot;:&quot;invalid_input&quot;,&quot;message&quot;:&quot;section.project_id references unknown or deleted project \&quot;missing\&quot;&quot;}}</code></pre>
+<h3 id="label-fields">Label fields<a class="anchor" href="#label-fields" aria-label="Link to this section: Label fields">#</a></h3>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>required on create, must not be blank; uniqueness is advisory (the app refuses duplicates per device, the API accepts them so merges stay possible)</td>
+</tr>
+<tr>
+<td><code>color</code></td>
+<td>string</td>
+<td>CSS colour; picked from the palette when omitted on create</td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>number</td>
+<td>sidebar order; defaults to the creation time</td>
+</tr>
+<tr>
+<td><code>created_at</code>, <code>deleted_at</code></td>
+<td>unix ms (or null)</td>
+<td></td>
+</tr>
+</tbody></table></div>
+<p>Tasks reference labels by id, so renaming a label is one PATCH and never rewrites tasks. Deleting a label through the API only sets its tombstone; tasks that still carry the id keep it (the app hides ids of deleted labels), and the app&#39;s own delete additionally removes the id from every carrying task.</p>
+<h3 id="view-fields">View fields<a class="anchor" href="#view-fields" aria-label="Link to this section: View fields">#</a></h3>
+<p>A saved view is a named filter query with presentation options (OpenSpec <code>custom-views</code>). The app pins views to the sidebar and composes dashboards from them; queries are evaluated on each device, the server only checks that they parse.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>required on create, must not be blank</td>
+</tr>
+<tr>
+<td><code>query</code></td>
+<td>string</td>
+<td>required on create for list views; must parse under the grammar in <a href="/docs/filters/"><code>docs/filters.md</code></a>, otherwise 400 with the parser&#39;s message (<code>view.query: Unknown term &quot;urgent&quot; at position 6</code>); may be empty for dashboards</td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td><code>&quot;list&quot;</code> or <code>&quot;dashboard&quot;</code></td>
+<td>default <code>list</code>; cannot be changed after creation</td>
+</tr>
+<tr>
+<td><code>group_by</code></td>
+<td><code>&quot;project&quot;</code>, <code>&quot;due&quot;</code>, <code>&quot;priority&quot;</code>, <code>&quot;label&quot;</code> or <code>&quot;none&quot;</code></td>
+<td>default <code>project</code></td>
+</tr>
+<tr>
+<td><code>sort_by</code></td>
+<td><code>&quot;due&quot;</code>, <code>&quot;priority&quot;</code>, <code>&quot;position&quot;</code>, <code>&quot;created&quot;</code> or <code>&quot;title&quot;</code></td>
+<td>default <code>due</code> (undated tasks last)</td>
+</tr>
+<tr>
+<td><code>sort_dir</code></td>
+<td><code>&quot;asc&quot;</code> or <code>&quot;desc&quot;</code></td>
+<td>default <code>asc</code>; for <code>priority</code>, <code>desc</code> lists priority 1 first</td>
+</tr>
+<tr>
+<td><code>pinned</code></td>
+<td>boolean</td>
+<td>shown in the sidebar&#39;s Views group; default <code>false</code></td>
+</tr>
+<tr>
+<td><code>position</code></td>
+<td>number</td>
+<td>sidebar order; defaults to the creation time</td>
+</tr>
+<tr>
+<td><code>color</code></td>
+<td>string</td>
+<td>CSS colour; default <code>#64748b</code></td>
+</tr>
+<tr>
+<td><code>panels</code></td>
+<td>string[]</td>
+<td>dashboards only: up to 6 ids of existing, non-deleted <strong>list</strong> views, no duplicates, never the dashboard itself; replaced as a whole on PATCH</td>
+</tr>
+<tr>
+<td><code>created_at</code>, <code>deleted_at</code></td>
+<td>unix ms (or null)</td>
+<td></td>
+</tr>
+</tbody></table></div>
+<p>Values outside the listed sets are rejected with 400 <code>invalid_input</code> on <code>POST</code> and <code>PATCH</code> and nothing is written. The sync endpoint, by contrast, accepts any string for <code>kind</code>, <code>group_by</code>, <code>sort_by</code> and <code>sort_dir</code> so that a future option stays additive; clients show the default for a value they do not know (see <code>docs/sync.md</code>, &quot;Saved views&quot;). Deleting a view sets its tombstone only; dashboards that list it keep the id and the app shows a &quot;View removed&quot; placeholder in that panel. The start view each device opens on launch is a device setting and is not part of the API.</p>
+<h3 id="reminders-and-push">Reminders and push<a class="anchor" href="#reminders-and-push" aria-label="Link to this section: Reminders and push">#</a></h3>
+<p>A reminder belongs to one task and fires at an instant (OpenSpec change <code>reminders</code>; data model in <a href="/docs/sync/#reminders"><code>docs/sync.md</code></a>, behaviour in <a href="/docs/reminders/"><code>docs/reminders.md</code></a>).</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>task_id</code></td>
+<td>string</td>
+<td>required on create; must name an existing, non-deleted task</td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td><code>&quot;relative&quot;</code> or <code>&quot;absolute&quot;</code></td>
+<td>default <code>absolute</code></td>
+</tr>
+<tr>
+<td><code>offset_minutes</code></td>
+<td>integer or null</td>
+<td>relative only: minutes from the task&#39;s due time, negative = before (−525600…525600)</td>
+</tr>
+<tr>
+<td><code>fire_at</code></td>
+<td>unix ms or null</td>
+<td>absolute: required. Relative: computed by the server from the task&#39;s due date when omitted (09:00 for a date-only due, in the zone offset the user&#39;s devices last reported, UTC until then; a zoned due in its own zone); null while the task has no due date</td>
+</tr>
+<tr>
+<td><code>delivered_at</code></td>
+<td>unix ms or null</td>
+<td>written by the server when it pushed the reminder</td>
+</tr>
+<tr>
+<td><code>dismissed_at</code>, <code>created_at</code>, <code>deleted_at</code></td>
+<td>unix ms (or null)</td>
+<td></td>
+</tr>
+</tbody></table></div>
+<p><code>PATCH /api/v1/tasks/{id}</code> that changes <code>due</code> (including completing a recurring task, which moves the series) recomputes <code>fire_at</code> of the task&#39;s relative reminders in the same batch, with the same timestamp as the due op.</p>
+<p><strong>Push subscriptions</strong> are per device and outside the op log and the export. <code>POST /api/v1/push/subscriptions</code> takes the browser&#39;s <code>PushSubscription.toJSON()</code> plus the device id:</p>
+<pre tabindex="0"><code class="language-json">{&quot;deviceId&quot;: &quot;8c1f…&quot;, &quot;endpoint&quot;: &quot;https://fcm.googleapis.com/fcm/send/…&quot;,
+ &quot;keys&quot;: {&quot;p256dh&quot;: &quot;BCVx…&quot;, &quot;auth&quot;: &quot;BTBZ…&quot;}, &quot;includeContent&quot;: false}</code></pre>
+<p>It answers 201 <code>{&quot;subscription&quot;: {&quot;id&quot;, &quot;deviceId&quot;, &quot;includeContent&quot;, &quot;createdAt&quot;, &quot;lastOkAt&quot;, &quot;lastError&quot;, &quot;failures&quot;, &quot;needsRenewal&quot;}}</code>; the endpoint and keys are never returned. Posting again for the same device replaces its subscription (200). A body without an <code>https</code> endpoint URL, an uncompressed P-256 <code>p256dh</code> key or a 16-byte <code>auth</code> secret is rejected with 400 <code>invalid_input</code>. A subscription created with a browser session is deleted when that session signs out or is revoked; the push service answering 404/410 deletes it as well, and <code>needsRenewal</code> turns true after 5 consecutive failed sends. With <code>OPENTODO_PUSH=off</code> every <code>/api/v1/push/</code> route answers 404 <code>not_found</code>.</p>
+<p><code>POST /api/v1/sync</code> accepts an optional <code>tzOffset</code> (minutes east of UTC, −840…840): the device&#39;s zone, used for the REST recomputation above.</p>
+<h3 id="invitations">Invitations<a class="anchor" href="#invitations" aria-label="Link to this section: Invitations">#</a></h3>
+<p>Invitations let the owner admit one person with one single-use, expiring link while sign-up stays closed. Accounts with the <code>owner</code> or <code>admin</code> role may create, list or revoke them; a member gets 403 <code>forbidden</code>. Invitations always admit a <code>member</code>. Invitations are server-side account data: they are never written to the op log and never sync to devices.</p>
+<p><strong>Create</strong> — <code>POST /api/v1/invitations</code> with an optional body:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>email</code></td>
+<td>string</td>
+<td>Bind the invitation to one address (matched case-insensitively at acceptance)</td>
+</tr>
+<tr>
+<td><code>expiresInHours</code></td>
+<td>integer 1–720</td>
+<td>Default 168 (seven days)</td>
+</tr>
+</tbody></table></div>
+<p>Response (201):</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;invitation&quot;: {
+    &quot;id&quot;: &quot;…&quot;, &quot;status&quot;: &quot;pending&quot;, &quot;email&quot;: &quot;friend@example.com&quot;, &quot;role&quot;: &quot;member&quot;,
+    &quot;createdBy&quot;: &quot;&lt;owner id&gt;&quot;, &quot;createdByName&quot;: &quot;Owner&quot;,
+    &quot;createdAt&quot;: 1760000000000, &quot;expiresAt&quot;: 1760604800000,
+    &quot;acceptedAt&quot;: null, &quot;acceptedBy&quot;: null, &quot;revokedAt&quot;: null
+  },
+  &quot;link&quot;: &quot;https://todo.example.com/invite/oti_…&quot;
+}</code></pre>
+<p>The <code>link</code> contains the secret and is returned exactly once; the server stores only a hash. The link uses <code>OPENTODO_BASE_URL</code> when set, otherwise the request&#39;s origin (honouring <code>X-Forwarded-Host</code> / <code>X-Forwarded-Proto</code>). Bad input (<code>expiresInHours</code> outside 1–720, a malformed <code>email</code>) is a 400 <code>invalid_input</code>. Creation is limited to 20 per hour per account (429 <code>rate_limited</code>).</p>
+<p><strong>List</strong> — <code>GET /api/v1/invitations</code> → <code>{invitations: [...]}</code> with the same shape as above, newest first. <code>status</code> is one of <code>pending</code>, <code>accepted</code>, <code>expired</code>, <code>revoked</code>; an accepted entry carries <code>acceptedBy: {id, email, name}</code>. Secrets and links never appear in the list.</p>
+<p><strong>Revoke</strong> — <code>DELETE /api/v1/invitations/{id}</code> → 204. An already accepted invitation answers 409 <code>invitation_spent</code>; an unknown id 404 <code>not_found</code>. Revoking an invitation that is already revoked or expired is a no-op 204.</p>
+<p><strong>Preview</strong> — <code>GET /api/v1/invitations/{token}</code> needs no authentication and returns <code>{inviterName, email, expiresAt}</code> (<code>email</code> is <code>null</code> for an open invitation). Unknown, expired, revoked and accepted tokens all return the same 404 <code>invitation_invalid</code>. Rate limited per client IP like sign-in.</p>
+<p><strong>Accept</strong> — <code>POST /api/v1/auth/register</code> with <code>invitation</code> set to the secret:</p>
+<pre tabindex="0"><code class="language-bash">curl -sS &quot;$OT/api/v1/auth/register&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;email&quot;:&quot;friend@example.com&quot;,&quot;name&quot;:&quot;Friend&quot;,&quot;password&quot;:&quot;a long passphrase&quot;,&quot;invitation&quot;:&quot;oti_…&quot;}'</code></pre>
+<p>Creates a <code>member</code> account and starts a session even when <code>OPENTODO_ALLOW_SIGNUP</code> is false. The invitation is spent in the same transaction, so it can create at most one account; a second use returns 404 <code>invitation_invalid</code>. Errors: 403 <code>invitation_email_mismatch</code> when the invitation is bound to another address, 409 <code>email_taken</code>, 400 <code>invalid_input</code> for the password policy. In every error case the invitation stays pending.</p>
+<h3 id="user-administration">User administration<a class="anchor" href="#user-administration" aria-label="Link to this section: User administration">#</a></h3>
+<p>The owner, and admins within narrower limits, administer the accounts on the server. User administration is server-side account data: never written to the op log, never synced, and every action needs a connection. Roles:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Action</th>
+<th>owner</th>
+<th>admin</th>
+<th>member</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>invite, list and revoke invitations; list users</td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>deactivate, reactivate, reset or delete a <code>member</code></td>
+<td>yes</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr>
+<td>the same on an <code>admin</code></td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>anything on the owner</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>change role (<code>admin</code> ↔ <code>member</code>), transfer ownership</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>change own password</td>
+<td>yes</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+</tbody></table></div>
+<p>Checks run in this order: acting on your own account gives 409 <code>self_action</code>; a role that does not allow the action gives 403 <code>forbidden</code> (a member gets 403 on every mutating <code>/users</code> route); a target in the wrong state gives 409 <code>account_deactivated</code> or <code>account_active</code>; an unknown id gives 404 <code>not_found</code>. Every mutating <code>/users</code> route and <code>/me/password</code> is <em>fresh</em>: a cookie session must have proved its identity in the last ten minutes (<code>403 reauth_required</code>, see <a href="#two-factor-authentication">Two-factor authentication</a>); bearer tokens are never challenged.</p>
+<p><strong>List</strong> — <code>GET /api/v1/users</code> → oldest first, never a credential:</p>
+<pre tabindex="0"><code class="language-json">{&quot;users&quot;: [
+  {&quot;id&quot;: &quot;…&quot;, &quot;email&quot;: &quot;owner@example.com&quot;, &quot;name&quot;: &quot;Owner&quot;, &quot;role&quot;: &quot;owner&quot;,
+   &quot;createdAt&quot;: 1760000000000, &quot;lastLoginAt&quot;: 1760090000000, &quot;status&quot;: &quot;active&quot;},
+  {&quot;id&quot;: &quot;…&quot;, &quot;email&quot;: &quot;m@example.com&quot;, &quot;name&quot;: &quot;m&quot;, &quot;role&quot;: &quot;member&quot;,
+   &quot;createdAt&quot;: 1760001000000, &quot;lastLoginAt&quot;: null, &quot;status&quot;: &quot;deactivated&quot;}
+]}</code></pre>
+<p><code>lastLoginAt</code> is the last session start (password, passkey, second step or registration); it is <code>null</code> for accounts that have not signed in since the upgrade. <code>status</code> is <code>active</code> or <code>deactivated</code>.</p>
+<p><strong>Role</strong> — <code>PUT /api/v1/users/{id}/role</code> with <code>{&quot;role&quot;:&quot;admin&quot;}</code> or <code>{&quot;role&quot;:&quot;member&quot;}</code> → <code>{user}</code>. <code>owner</code> or an unknown value is 400 <code>invalid_input</code>; a deactivated target is 409 <code>account_deactivated</code>. The new role applies to the target&#39;s next request without signing them out.</p>
+<p><strong>Deactivate / reactivate</strong> — <code>POST /api/v1/users/{id}/deactivate</code> → <code>{user}</code>. In one transaction the account is marked deactivated, all its sessions and API tokens are deleted, and its pending invitations and unused reset links are revoked; its open <code>/sync/events</code> streams are closed at once. Its data stays on the server. A correct password for it then gets 403 <code>account_deactivated</code> at sign-in (a wrong one still gets 401 <code>invalid_credentials</code>). <code>POST …/reactivate</code> lifts the block; revoked credentials are not restored. Deactivating a deactivated account is 409 <code>account_deactivated</code>; reactivating an active one is 409 <code>account_active</code>.</p>
+<p><strong>Delete</strong> — <code>DELETE /api/v1/users/{id}</code> with <code>{&quot;confirmEmail&quot;:&quot;m@example.com&quot;}</code> (compared case-insensitively; missing or different is 400 <code>confirmation_mismatch</code>) → 204. In one transaction the account, its personal ops and fields, sessions, tokens, passkeys, reset links and the invitations it created are deleted. Shared projects it owned are deleted for every member (their devices purge them on the next sync); its memberships in other people&#39;s projects end, while the edits it made there stay part of those projects. Audit events about the account are kept with an email snapshot. Irreversible: backups are the recovery path.</p>
+<p><strong>Reset links</strong> — <code>POST /api/v1/users/{id}/password-reset</code> with optional <code>{&quot;expiresInHours&quot;: 1–72}</code> (default 24) → 201:</p>
+<pre tabindex="0"><code class="language-json">{&quot;expiresAt&quot;: 1760086400000, &quot;link&quot;: &quot;https://todo.example.com/reset/otr_…&quot;}</code></pre>
+<p>The link is returned once (only its hash is stored) and uses the same origin rules as invitation links. Nothing is emailed; the administrator copies it. A new link revokes earlier unused ones. A deactivated target is 409 <code>account_deactivated</code>; a bad expiry 400 <code>invalid_input</code>. The owner is never a target: on the server, <code>opentodo reset-owner-password</code> prints an owner reset link (see <a href="/docs/self-hosting/docker/#recovering-owner-access">docs/self-hosting/docker.md</a>).</p>
+<p><code>GET /api/v1/password-resets/{token}</code> (no authentication) → <code>{email, expiresAt}</code>. <code>POST /api/v1/password-resets/{token}</code> with <code>{&quot;password&quot;:&quot;…&quot;}</code> → 204: the password is replaced, the link is spent and every session of the account is deleted in one transaction; API tokens are kept and no session is started. Used, expired, revoked and unknown tokens all give the same 404 <code>reset_invalid</code>; a password under 10 characters is 400 <code>invalid_input</code> and the link stays pending. Both routes share the per-address sign-in limit (10 per minute).</p>
+<p><strong>Own password</strong> — <code>POST /api/v1/me/password</code> with <code>{&quot;currentPassword&quot;:&quot;…&quot;,&quot;newPassword&quot;:&quot;…&quot;}</code> → 204. Your other sessions are signed out, the current one stays (a bearer-token request signs out every session), API tokens are kept. A wrong current password is 403 <code>invalid_credentials</code>; a short new one 400 <code>invalid_input</code>. Limited to 10 per hour per account.</p>
+<p><strong>Transfer</strong> — <code>POST /api/v1/users/{id}/transfer-ownership</code> with <code>{&quot;password&quot;:&quot;…&quot;}</code> (the owner&#39;s) → <code>{user}</code> with <code>role: &quot;owner&quot;</code>. In one transaction the target becomes owner and the previous owner becomes admin; the database allows only one owner. A deactivated target is 409 <code>account_deactivated</code>, your own id 409 <code>self_action</code>, a wrong password 403 <code>invalid_credentials</code>, a sender who is not (or no longer) owner 403 <code>forbidden</code>.</p>
+<p>Mutating <code>/users</code> requests are limited to 60 per hour per acting account (429 <code>rate_limited</code>).</p>
+<pre tabindex="0"><code class="language-bash"># Issue a reset link for a member (token-authenticated script: never challenged)
+curl -sS -X POST &quot;$OT/api/v1/users/$ID/password-reset&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+# 201 {&quot;expiresAt&quot;:1760086400000,&quot;link&quot;:&quot;https://todo.example.com/reset/otr_…&quot;}
+
+curl -sS -X POST &quot;$OT/api/v1/users/$OWNER_ID/deactivate&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+# 409 {&quot;error&quot;:{&quot;code&quot;:&quot;self_action&quot;,&quot;message&quot;:&quot;you cannot do this to your own account&quot;}}</code></pre>
+<h3 id="backups">Backups<a class="anchor" href="#backups" aria-label="Link to this section: Backups">#</a></h3>
+<p>Scheduled backups of the whole server (see <a href="/docs/backups/">backups.md</a>). Every route needs authentication (401 <code>unauthorized</code>) and the <code>owner</code> role (403 <code>forbidden</code> for members). Backup settings, runs and secrets are server-level data: they never sync to devices and are not part of the export.</p>
+<p><strong>Settings</strong> — <code>GET /api/v1/backups/settings</code>:</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;settings&quot;: {
+    &quot;destination&quot;: &quot;s3&quot;,
+    &quot;local&quot;: { &quot;dir&quot;: &quot;&quot; },
+    &quot;s3&quot;: { &quot;endpoint&quot;: &quot;https://s3.eu-central-1.amazonaws.com&quot;, &quot;region&quot;: &quot;eu-central-1&quot;, &quot;bucket&quot;: &quot;my-backups&quot;,
+            &quot;prefix&quot;: &quot;opentodo&quot;, &quot;accessKey&quot;: &quot;AKIA…&quot;, &quot;pathStyle&quot;: false },
+    &quot;webdav&quot;: { &quot;url&quot;: &quot;&quot;, &quot;username&quot;: &quot;&quot;, &quot;allowHttp&quot;: false },
+    &quot;schedule&quot;: { &quot;frequency&quot;: &quot;daily&quot;, &quot;time&quot;: &quot;03:00&quot;, &quot;weekday&quot;: 0 },
+    &quot;retention&quot;: { &quot;keepLast&quot;: 7, &quot;maxAgeDays&quot;: 0 },
+    &quot;compress&quot;: true,
+    &quot;scheduleSince&quot;: 1760000000000
+  },
+  &quot;secrets&quot;: { &quot;hasS3SecretKey&quot;: true, &quot;hasWebdavPassword&quot;: false, &quot;hasPassphrase&quot;: true }
+}</code></pre>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>destination</code></td>
+<td><code>local</code>, <code>s3</code> or <code>webdav</code> (default <code>local</code>)</td>
+</tr>
+<tr>
+<td><code>local.dir</code></td>
+<td>absolute path; empty means <code>&lt;data&gt;/backups</code></td>
+</tr>
+<tr>
+<td><code>s3.*</code></td>
+<td><code>endpoint</code> (http(s) URL), <code>bucket</code> and <code>accessKey</code> are required for <code>s3</code>; <code>region</code> defaults to <code>us-east-1</code>; <code>pathStyle</code> for MinIO, Garage and most self-hosted stores</td>
+</tr>
+<tr>
+<td><code>webdav.*</code></td>
+<td><code>url</code> is required for <code>webdav</code>; plain <code>http://</code> is refused unless <code>allowHttp</code> is true (the password would travel unencrypted)</td>
+</tr>
+<tr>
+<td><code>schedule.frequency</code></td>
+<td><code>off</code> (default), <code>hourly</code>, <code>daily</code>, <code>weekly</code>, in the server&#39;s time zone</td>
+</tr>
+<tr>
+<td><code>schedule.time</code></td>
+<td><code>HH:MM</code>; <code>hourly</code> uses the minutes only</td>
+</tr>
+<tr>
+<td><code>schedule.weekday</code></td>
+<td>0 (Sunday) … 6 (Saturday), for <code>weekly</code></td>
+</tr>
+<tr>
+<td><code>retention.keepLast</code></td>
+<td>at least 1 (default 7)</td>
+</tr>
+<tr>
+<td><code>retention.maxAgeDays</code></td>
+<td>0 = no age limit</td>
+</tr>
+<tr>
+<td><code>compress</code></td>
+<td>gzip the archive (default true)</td>
+</tr>
+<tr>
+<td><code>scheduleSince</code></td>
+<td>read-only: when the current schedule was set</td>
+</tr>
+</tbody></table></div>
+<p><strong>Update</strong> — <code>PUT /api/v1/backups/settings</code> replaces the settings. Secrets go in an optional <code>secrets</code> object: a key that is absent keeps the stored value, an empty string removes it, any other value replaces it.</p>
+<pre tabindex="0"><code class="language-bash">curl -sS -X PUT &quot;$OT/api/v1/backups/settings&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' -d '{
+  &quot;settings&quot;: {&quot;destination&quot;:&quot;local&quot;,&quot;local&quot;:{&quot;dir&quot;:&quot;&quot;},&quot;schedule&quot;:{&quot;frequency&quot;:&quot;daily&quot;,&quot;time&quot;:&quot;03:00&quot;,&quot;weekday&quot;:0},
+               &quot;retention&quot;:{&quot;keepLast&quot;:7,&quot;maxAgeDays&quot;:0},&quot;compress&quot;:true},
+  &quot;secrets&quot;: {&quot;passphrase&quot;:&quot;a long passphrase you will not forget&quot;}
+}'</code></pre>
+<p>Secrets are stored in <code>&lt;data&gt;/secrets/backup.json</code> (mode 0600) and are never returned: responses carry only the <code>has…</code> flags. Invalid input is a 400 <code>invalid_input</code> whose <code>error.field</code> names the setting (for example <code>s3.bucket</code> or <code>retention.keepLast</code>); the previous settings stay active.</p>
+<p><strong>Status</strong> — <code>GET /api/v1/backups</code>:</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;enabled&quot;: true, &quot;destination&quot;: &quot;local&quot;, &quot;encrypted&quot;: true,
+  &quot;schedule&quot;: { &quot;frequency&quot;: &quot;daily&quot;, &quot;time&quot;: &quot;03:00&quot;, &quot;weekday&quot;: 0 },
+  &quot;running&quot;: null,
+  &quot;nextRunAt&quot;: 1760151600000,
+  &quot;lastRun&quot;: { &quot;id&quot;: &quot;…&quot;, &quot;kind&quot;: &quot;scheduled&quot;, &quot;status&quot;: &quot;succeeded&quot;, &quot;startedAt&quot;: 1760065200000, &quot;finishedAt&quot;: 1760065200412,
+               &quot;durationMs&quot;: 412, &quot;bytes&quot;: 182344, &quot;destination&quot;: &quot;local: /data/backups&quot;,
+               &quot;archiveName&quot;: &quot;opentodo-20261010-030000-4f1c0a9e.tar.gz.enc&quot;, &quot;error&quot;: &quot;&quot; },
+  &quot;history&quot;: [ { &quot;…&quot;: &quot;the last 20 runs, newest first&quot; } ]
+}</code></pre>
+<p><code>running</code> is the run in progress (or <code>null</code>); <code>status</code> is <code>running</code>, <code>succeeded</code> or <code>failed</code>; a failed run carries the destination&#39;s error in <code>error</code>. <code>nextRunAt</code> is <code>null</code> while the schedule is off. Runs are kept for 90 days.</p>
+<p><strong>Run now</strong> — <code>POST /api/v1/backups/run</code> → 202 <code>{&quot;status&quot;:&quot;started&quot;}</code>; poll the status for the outcome. A request while a backup runs is a 409 <code>conflict</code> and starts nothing.</p>
+<pre tabindex="0"><code class="language-bash">curl -sS -X POST &quot;$OT/api/v1/backups/run&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+curl -sS &quot;$OT/api/v1/backups&quot; -H &quot;Authorization: Bearer $TOKEN&quot; | jq '.lastRun'</code></pre>
+<p><strong>Test destination</strong> — <code>POST /api/v1/backups/test</code> writes a small <code>opentodo-probe-&lt;ms&gt;.txt</code> object to the saved destination and deletes it again → 200 <code>{&quot;ok&quot;:true}</code>. A destination failure is a 502 <code>destination_error</code> whose message is the destination&#39;s own (for example <code>s3 put opentodo/opentodo-probe-…: 403 Forbidden AccessDenied: …</code>). The server contacts a remote destination only for a test or a run.</p>
+<h3 id="audit-log">Audit log<a class="anchor" href="#audit-log" aria-label="Link to this section: Audit log">#</a></h3>
+<p>The server records security-relevant events in its own database (never synced to devices, never part of <code>/api/v1/export</code>). The owner reads, filters and exports the log; every user reads their own access events. There is no route to modify or delete an event: <code>PATCH</code>/<code>DELETE /api/v1/audit/{id}</code> answer 404 <code>not_found</code>. Events are removed only by retention pruning (and addresses only by disabling address logging).</p>
+<p><strong>Event shape</strong> (list, export and activity):</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;id&quot;: 412, &quot;ts&quot;: 1760000000000, &quot;name&quot;: &quot;token.created&quot;, &quot;outcome&quot;: &quot;success&quot;,
+  &quot;actorId&quot;: &quot;&lt;user id&gt;&quot;, &quot;actorEmail&quot;: &quot;owner@example.com&quot;,
+  &quot;targetId&quot;: null, &quot;targetEmail&quot;: null,
+  &quot;ip&quot;: null, &quot;userAgent&quot;: &quot;Mozilla/5.0 …&quot;,
+  &quot;details&quot;: { &quot;token_id&quot;: &quot;…&quot;, &quot;token_name&quot;: &quot;laptop script&quot; }
+}</code></pre>
+<p><code>actorId</code> is the account that acted (null for a failed sign-in); <code>targetId</code> is the account acted upon when different. <code>actorEmail</code> / <code>targetEmail</code> come from the live account, or from the email snapshot in <code>details.email</code> when the account no longer exists. <code>ip</code> is null unless the owner enabled address logging. <code>userAgent</code> is truncated to 200 bytes. <code>details</code> only ever carries the keys below: never task or project content, passwords, token or invitation secrets, one-time or recovery codes.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Outcome</th>
+<th>Actor / target</th>
+<th><code>details</code> keys</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>login.succeeded</code></td>
+<td>success</td>
+<td>actor = user</td>
+<td><code>email</code>, <code>method</code> (<code>password</code>, <code>register</code>, <code>passkey</code>, <code>oidc</code>, or a two-step method such as <code>password+totp</code>)</td>
+</tr>
+<tr>
+<td><code>login.failed</code></td>
+<td>failure</td>
+<td>target = account if it exists</td>
+<td><code>email</code> (existing accounts only), <code>reason</code> (<code>wrong_password</code>, <code>unknown_account</code>, <code>rate_limited</code>, <code>unknown_passkey</code>, <code>passkey_rejected</code>, <code>passkey_counter_regression</code>, <code>deactivated</code>)</td>
+</tr>
+<tr>
+<td><code>logout</code></td>
+<td>success</td>
+<td>actor = user</td>
+<td></td>
+</tr>
+<tr>
+<td><code>token.created</code>, <code>token.revoked</code></td>
+<td>success</td>
+<td>actor = user</td>
+<td><code>token_id</code>, <code>token_name</code>; <code>token.created</code> also <code>token_scope</code> (<code>full</code> or <code>read</code>)</td>
+</tr>
+<tr>
+<td><code>app_password.created</code>, <code>app_password.revoked</code></td>
+<td>success</td>
+<td>actor = user</td>
+<td><code>app_password_id</code>, <code>app_password_name</code></td>
+</tr>
+<tr>
+<td><code>email_inbox.created</code>, <code>email_inbox.rotated</code></td>
+<td>success</td>
+<td>actor = user</td>
+<td>(never the secret)</td>
+</tr>
+<tr>
+<td><code>email_inbox.updated</code></td>
+<td>success</td>
+<td>actor = user</td>
+<td><code>setting</code> (<code>enabled</code> or <code>allowlist</code>), <code>from</code>, <code>to</code> (true/false, or the number of allowlist entries; never the addresses)</td>
+</tr>
+<tr>
+<td><code>invitation.created</code></td>
+<td>success</td>
+<td>actor = owner</td>
+<td><code>invitation_id</code>, <code>invited_email</code> (bound email, if any)</td>
+</tr>
+<tr>
+<td><code>invitation.accepted</code></td>
+<td>success</td>
+<td>actor = new member</td>
+<td><code>invitation_id</code>, <code>email</code></td>
+</tr>
+<tr>
+<td><code>invitation.revoked</code></td>
+<td>success</td>
+<td>actor = owner</td>
+<td><code>invitation_id</code></td>
+</tr>
+<tr>
+<td><code>settings.changed</code></td>
+<td>success</td>
+<td>actor = owner (the user for <code>encryption*</code>)</td>
+<td><code>setting</code> (<code>audit.retention_days</code>, <code>audit.log_ip</code>, <code>webhooks_allow_private</code>, <code>mfa.required</code>, <code>mcp.enabled</code>, <code>caldav.enabled</code>, <code>oidc.*</code>, <code>encryption</code>, <code>encryption.keys</code>), <code>from</code>, <code>to</code></td>
+</tr>
+<tr>
+<td><code>export.requested</code></td>
+<td>success</td>
+<td>actor = user</td>
+<td><code>format</code> (<code>json</code>)</td>
+</tr>
+<tr>
+<td><code>audit.exported</code></td>
+<td>success</td>
+<td>actor = owner</td>
+<td><code>format</code> (<code>ndjson</code>), <code>count</code></td>
+</tr>
+<tr>
+<td><code>mfa.enrolled</code>, <code>mfa.disabled</code></td>
+<td>success</td>
+<td>actor = user (or the owner, target = account)</td>
+<td><code>method</code></td>
+</tr>
+<tr>
+<td><code>mfa.reset</code></td>
+<td>success</td>
+<td>actor = owner (none from the command line), target = account</td>
+<td></td>
+</tr>
+<tr>
+<td><code>mfa.challenge_failed</code></td>
+<td>failure</td>
+<td>target = account</td>
+<td><code>reason</code> (<code>wrong_code</code>, <code>wrong_recovery_code</code>; never the code)</td>
+</tr>
+<tr>
+<td><code>passkey.registered</code>, <code>passkey.deleted</code></td>
+<td>success</td>
+<td>actor = user</td>
+<td><code>passkey_id</code>, <code>passkey_name</code></td>
+</tr>
+<tr>
+<td><code>identity.linked</code>, <code>identity.unlinked</code></td>
+<td>success</td>
+<td>actor = user</td>
+<td><code>provider</code></td>
+</tr>
+<tr>
+<td><code>role.changed</code></td>
+<td>success</td>
+<td>actor = owner, target = account</td>
+<td><code>from</code>, <code>to</code> (account roles, or <code>project.&lt;role&gt;</code> for project membership)</td>
+</tr>
+<tr>
+<td><code>user.deactivated</code>, <code>user.reactivated</code></td>
+<td>success</td>
+<td>actor = owner or admin, target = account</td>
+<td></td>
+</tr>
+<tr>
+<td><code>user.deleted</code></td>
+<td>success</td>
+<td>actor = owner or admin, target = account</td>
+<td><code>email</code> (snapshot)</td>
+</tr>
+<tr>
+<td><code>password.reset_issued</code></td>
+<td>success</td>
+<td>actor = owner or admin (none from the server shell), target = account</td>
+<td><code>reset_id</code></td>
+</tr>
+<tr>
+<td><code>password.reset_completed</code></td>
+<td>success</td>
+<td>actor = account</td>
+<td><code>reset_id</code></td>
+</tr>
+<tr>
+<td><code>password.changed</code></td>
+<td>success</td>
+<td>actor = user</td>
+<td></td>
+</tr>
+<tr>
+<td><code>owner.transferred</code></td>
+<td>success</td>
+<td>actor = previous owner, target = new owner</td>
+<td><code>from</code> (<code>owner</code>), <code>to</code> (<code>admin</code>): the previous owner&#39;s role change</td>
+</tr>
+<tr>
+<td><code>backup.created</code></td>
+<td>success or failure</td>
+<td>actor = owner for &quot;Back up now&quot;, none for scheduled runs</td>
+<td><code>backup_id</code> (the run id), <code>reason</code> (<code>run_failed</code>) on failure</td>
+</tr>
+<tr>
+<td><code>backup.restored</code></td>
+<td>success</td>
+<td>none (recorded by the server on its first start after <code>opentodo restore</code>)</td>
+<td><code>backup_id</code> (the archive file name)</td>
+</tr>
+</tbody></table></div>
+<p>While sign-in is rate limited for an address, one <code>login.failed</code> event with reason <code>rate_limited</code> is recorded per window instead of one per refused attempt. Task and project edits are never audit events.</p>
+<p><strong>List</strong> — <code>GET /api/v1/audit</code> (owner) → <code>{events: [...], cursor}</code>, newest first. <code>cursor</code> is the id to pass as <code>?cursor=</code> for the next page, or <code>null</code> when there are no more. Query parameters, all optional:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name</code></td>
+<td>one event name from the table above</td>
+</tr>
+<tr>
+<td><code>actor</code>, <code>target</code></td>
+<td>an account id, or an email (matched case-insensitively)</td>
+</tr>
+<tr>
+<td><code>outcome</code></td>
+<td><code>success</code> or <code>failure</code></td>
+</tr>
+<tr>
+<td><code>from</code>, <code>to</code></td>
+<td>inclusive time bounds, Unix milliseconds or RFC 3339</td>
+</tr>
+<tr>
+<td><code>cursor</code></td>
+<td>the <code>cursor</code> of the previous page</td>
+</tr>
+<tr>
+<td><code>limit</code></td>
+<td>page size 1–200, default 50</td>
+</tr>
+</tbody></table></div>
+<p>A malformed value is a 400 <code>invalid_input</code> whose message starts with the parameter name (<code>limit: must be between 1 and 200</code>).</p>
+<pre tabindex="0"><code class="language-bash"># Failed sign-ins of the last 24 hours
+curl -sS -H &quot;Authorization: Bearer $TOKEN&quot; \
+  &quot;$OT/api/v1/audit?name=login.failed&amp;from=$(( ($(date +%s) - 86400) * 1000 ))&quot;</code></pre>
+<p><strong>Export</strong> — <code>GET /api/v1/audit/export</code> (owner) with the same filters except <code>cursor</code> and <code>limit</code> → every matching event as newline-delimited JSON (<code>application/x-ndjson</code>, <code>Content-Disposition: attachment; filename=&quot;opentodo-audit-YYYYMMDD.ndjson&quot;</code>), one event object per line, newest first. The export records an <code>audit.exported</code> event.</p>
+<p><strong>Settings</strong> — <code>GET /api/v1/settings/audit</code> (owner) → <code>{&quot;retentionDays&quot;: 90, &quot;logIp&quot;: false}</code>. <code>PUT</code> the same object, both fields optional: <code>retentionDays</code> is an integer 7–3650 (otherwise 400 <code>invalid_input</code>), <code>logIp</code> turns client address logging on or off. Turning it off erases every stored address in the same transaction. Each changed value is recorded as <code>settings.changed</code>; lowering retention prunes expired events immediately, and the server also prunes at startup and hourly.</p>
+<p><strong>Personal activity</strong> — <code>GET /api/v1/me/activity</code> (any signed-in user) → <code>{events: [...]}</code>: the caller&#39;s own sign-ins, failed sign-ins against their account, sign-outs and credential and token events from the last 90 days, at most 100, newest first. Events about other accounts never appear.</p>
+<h3 id="sharing">Sharing<a class="anchor" href="#sharing" aria-label="Link to this section: Sharing">#</a></h3>
+<p>A project owner shares a project with other accounts on the same server by exact email (OpenSpec <code>project-sharing</code>). Roles:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>May</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>viewer</code></td>
+<td>read the project and its tasks</td>
+</tr>
+<tr>
+<td><code>editor</code></td>
+<td>also create, edit, complete and delete tasks in the project</td>
+</tr>
+<tr>
+<td><code>admin</code></td>
+<td>also rename, recolour and archive the project; add, re-role and remove viewers and editors</td>
+</tr>
+<tr>
+<td><code>owner</code></td>
+<td>everything, including deleting the project, transferring ownership and managing admins; exactly one per project</td>
+</tr>
+</tbody></table></div>
+<p>Every route requires a session or token. A caller who is not a member gets <code>404 not_found</code>, the same as for a project that does not exist; the member&#39;s email is looked up only after the caller&#39;s role was checked, so the routes cannot be used to probe for accounts. Labels and saved views stay personal.</p>
+<pre tabindex="0"><code class="language-sh"># Share with an existing account as editor
+curl -X POST -H &quot;Authorization: Bearer $T&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;email&quot;:&quot;bob@example.com&quot;,&quot;role&quot;:&quot;editor&quot;}' $BASE/api/v1/projects/$P/members
+# 201 {&quot;projectId&quot;:&quot;…&quot;,&quot;role&quot;:&quot;owner&quot;,&quot;ownerId&quot;:&quot;…&quot;,&quot;members&quot;:[{&quot;userId&quot;:&quot;…&quot;,&quot;name&quot;:&quot;Alice&quot;,&quot;email&quot;:&quot;alice@example.com&quot;,&quot;role&quot;:&quot;owner&quot;},
+#      {&quot;userId&quot;:&quot;…&quot;,&quot;name&quot;:&quot;Bob&quot;,&quot;email&quot;:&quot;bob@example.com&quot;,&quot;role&quot;:&quot;editor&quot;}]}
+
+curl -X POST … -d '{&quot;email&quot;:&quot;nobody@example.com&quot;,&quot;role&quot;:&quot;editor&quot;}' $BASE/api/v1/projects/$P/members
+# 404 {&quot;error&quot;:{&quot;code&quot;:&quot;user_not_found&quot;,&quot;message&quot;:&quot;no account with this email exists on this server&quot;}}
+
+curl -X DELETE -H &quot;Authorization: Bearer $T&quot; $BASE/api/v1/projects/$P/members/me    # as the owner
+# 409 {&quot;error&quot;:{&quot;code&quot;:&quot;owner_must_transfer&quot;,&quot;message&quot;:&quot;the owner cannot leave the project; transfer ownership to another member first&quot;}}
+
+curl -X POST … -d '{&quot;userId&quot;:&quot;&lt;bob&gt;&quot;}' $BASE/api/v1/projects/$P/transfer
+# 200 membership; Bob is the owner, the previous owner an admin</code></pre>
+<p>Collections, single reads and the export include the shared projects and their tasks; a shared project carries the read-only keys <code>role</code> (yours) and <code>owner_id</code>. They are ignored when sent back in a write. REST writes are checked with the same role table as sync: a refused write answers <code>403 forbidden</code> and stores nothing. A task cannot change sharing scope: <code>PATCH</code> of <code>project_id</code> to a project shared differently (or to the Inbox from a shared project) answers <code>400 scope_change</code>; create a copy in the destination and delete the original instead, which is what the web app does.</p>
+<p>Membership changes are recorded in the audit log as <code>role.changed</code> with <code>from</code>/<code>to</code> values such as <code>none</code> → <code>project.editor</code>.</p>
+<h3 id="assignment-and-notifications">Assignment and notifications<a class="anchor" href="#assignment-and-notifications" aria-label="Link to this section: Assignment and notifications">#</a></h3>
+<p>A task&#39;s <code>assignee_id</code> (OpenSpec <code>task-assignment</code>) is an ordinary task field: set it with <code>POST /api/v1/tasks</code> or <code>PATCH /api/v1/tasks/{id}</code>, clear it with <code>null</code>. In a shared project the assignee must be a current member; for a task in your Inbox or an unshared project it must be you. Viewers cannot assign (<code>403 forbidden</code>, like any write). A refused assignment answers <code>400 not_a_member</code> and stores nothing; the sync endpoint refuses the same operation individually with <code>rejected: [{&quot;id&quot;:&quot;…&quot;,&quot;reason&quot;:&quot;not_a_member&quot;}]</code>.</p>
+<p>When a member leaves or is removed, the server clears <code>assignee_id</code> on every task of that project assigned to them with operations of its own (device <code>server</code>), so every member&#39;s devices see the tasks unassigned after their next sync.</p>
+<p>Assigning a task to someone other than yourself creates an in-app notification for the assignee. Notifications are server-side account data: they are not part of the op log or the export. Read notifications older than 90 days are removed when the server starts. Both routes require a session or token (<code>401 unauthorized</code>).</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Method &amp; path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET /api/v1/notifications</code></td>
+<td>your notifications, newest first (at most 200), and the unread count</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/notifications/{id}/read</code></td>
+<td>mark one of yours read (idempotent); <code>204</code>, or <code>404 not_found</code> for an unknown id or another account&#39;s notification</td>
+</tr>
+</tbody></table></div>
+<pre tabindex="0"><code class="language-sh">curl -X PATCH -H &quot;Authorization: Bearer $T&quot; -d '{&quot;assignee_id&quot;:&quot;&lt;bob&gt;&quot;}' $BASE/api/v1/tasks/$TASK
+# 200 task with &quot;assignee_id&quot;:&quot;&lt;bob&gt;&quot;
+
+curl -X PATCH … -d '{&quot;assignee_id&quot;:&quot;&lt;carol, not a member&gt;&quot;}' $BASE/api/v1/tasks/$TASK
+# 400 {&quot;error&quot;:{&quot;code&quot;:&quot;not_a_member&quot;,&quot;message&quot;:&quot;task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)&quot;}}
+
+curl -H &quot;Authorization: Bearer $BOB&quot; $BASE/api/v1/notifications
+# 200 {&quot;notifications&quot;:[{&quot;id&quot;:&quot;…&quot;,&quot;kind&quot;:&quot;assigned&quot;,&quot;payload&quot;:{&quot;assigneeId&quot;:&quot;&lt;bob&gt;&quot;,&quot;actorId&quot;:&quot;&lt;alice&gt;&quot;,
+#        &quot;actorName&quot;:&quot;Alice&quot;,&quot;taskId&quot;:&quot;&lt;task&gt;&quot;,&quot;taskTitle&quot;:&quot;Milk&quot;,&quot;projectId&quot;:&quot;&lt;p&gt;&quot;,&quot;projectName&quot;:&quot;Home&quot;,
+#        &quot;at&quot;:1760000000000},&quot;createdAt&quot;:1760000000000,&quot;readAt&quot;:null}],
+#      &quot;unread&quot;:1}
+
+curl -X POST -H &quot;Authorization: Bearer $BOB&quot; $BASE/api/v1/notifications/$N/read
+# 204</code></pre>
+<p><code>projectId</code> and <code>projectName</code> are omitted for a task in the Inbox.</p>
+<h3 id="trash-and-history">Trash and history<a class="anchor" href="#trash-and-history" aria-label="Link to this section: Trash and history">#</a></h3>
+<p>Deleting (<code>DELETE /api/v1/{tasks|projects}/{id}</code>) is a tombstone: the item goes to the Trash and can be restored by writing <code>deleted_at: null</code> (<code>PATCH</code> accepts deleted items). Deleting a project leaves its tasks&#39; <code>project_id</code> alone; clients hide those tasks until the project is restored or purged.</p>
+<p>History is read from the operation log. Each change set groups the field writes made at one timestamp by one device (<code>server</code> for REST writes); <code>from</code> is the previous value in timestamp order, and <code>lost: true</code> marks a write that arrived after a newer one and never became the stored value. Members of a shared project see the history of its tasks; nobody sees another account&#39;s personal items (404 <code>not_found</code>, as for unknown ids and purged items). Restoring an old value is an ordinary write, so it appears in the history too.</p>
+<pre tabindex="0"><code class="language-sh">curl -sS &quot;$OT/api/v1/tasks/$ID/history&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+# 200 {&quot;entity&quot;:&quot;task&quot;,&quot;id&quot;:&quot;…&quot;,&quot;more&quot;:false,&quot;changeSets&quot;:[
+#   {&quot;ts&quot;:1760090000000,&quot;device&quot;:&quot;3c54…&quot;,&quot;userId&quot;:&quot;…&quot;,&quot;changes&quot;:[{&quot;opId&quot;:&quot;…&quot;,&quot;field&quot;:&quot;title&quot;,&quot;from&quot;:null,&quot;to&quot;:&quot;Draft&quot;}]},
+#   {&quot;ts&quot;:1760090500000,&quot;device&quot;:&quot;server&quot;,&quot;userId&quot;:&quot;…&quot;,&quot;changes&quot;:[{&quot;opId&quot;:&quot;…&quot;,&quot;field&quot;:&quot;title&quot;,&quot;from&quot;:&quot;Draft&quot;,&quot;to&quot;:&quot;Final&quot;}]}]}
+
+# Permanently delete a trashed task (its operations, values and reminders)
+curl -sS -X DELETE &quot;$OT/api/v1/tasks/$ID/purge&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+# 200 {&quot;purged&quot;:{&quot;tasks&quot;:1,&quot;projects&quot;:0,&quot;reminders&quot;:0,&quot;sections&quot;:0,&quot;comments&quot;:0}}
+# 409 {&quot;error&quot;:{&quot;code&quot;:&quot;not_deleted&quot;,&quot;message&quot;:&quot;only items in the Trash can be permanently deleted; delete it first&quot;}}</code></pre>
+<p>Purging a project also purges every task that references it; purging a task also purges its deleted subtasks. In a shared project the role table applies: editors may purge tasks, only the owner may purge the project (403 <code>forbidden</code>); emptying the Trash skips items your role cannot delete. Purge is final and cannot be undone. The server also purges items that have been in the Trash longer than <code>OPENTODO_TRASH_RETENTION_DAYS</code> (default 30, <code>0</code> disables); see <a href="/docs/sync/#purge">sync</a>.</p>
+<h3 id="comments-and-activity">Comments and activity<a class="anchor" href="#comments-and-activity" aria-label="Link to this section: Comments and activity">#</a></h3>
+<p>Comments (OpenSpec <code>comments-and-activity</code>) are threaded markdown notes on a task. They are stored in the operation log like tasks, in the task&#39;s sharing scope, so every route answers <code>404 not_found</code> for a task or comment you cannot read, exactly as for an unknown id. Anyone who can read the task may comment, viewers included. Only the author may edit a comment; the author, project admins and the owner may delete it (<code>403 forbidden</code> otherwise). <code>author_id</code>, <code>task_id</code> and the timestamps are set by the server and cannot be sent. <code>mentions</code> lists account ids; the server keeps only current members of the task&#39;s shared project (always none on a personal task) and notifies each newly mentioned member (<code>kind: &quot;mentioned&quot;</code> in <code>GET /api/v1/notifications</code>, payload <code>{recipientId, actorId, actorName, commentId, taskId, taskTitle, projectId?, projectName?, excerpt, at}</code>). Each account may create 60 comments a minute (<code>429 rate_limited</code>). Bodies are markdown; clients render a safe subset and the server never renders them.</p>
+<pre tabindex="0"><code class="language-sh">curl -sS -X POST &quot;$OT/api/v1/tasks/$TASK/comments&quot; -H &quot;Authorization: Bearer $TOKEN&quot; \
+  -d '{&quot;body&quot;:&quot;Whole or **skimmed**? @bob&quot;,&quot;mentions&quot;:[&quot;&lt;bob&gt;&quot;,&quot;&lt;not a member&gt;&quot;]}'
+# 201 {&quot;author_id&quot;:&quot;&lt;you&gt;&quot;,&quot;body&quot;:&quot;Whole or **skimmed**? @bob&quot;,&quot;created_at&quot;:1760090000000,&quot;deleted_at&quot;:null,
+#      &quot;edited_at&quot;:null,&quot;id&quot;:&quot;…&quot;,&quot;mentions&quot;:[&quot;&lt;bob&gt;&quot;],&quot;parent_id&quot;:null,&quot;task_id&quot;:&quot;&lt;task&gt;&quot;}
+
+curl -sS -X POST &quot;$OT/api/v1/tasks/$TASK/comments&quot; -H &quot;Authorization: Bearer $BOB&quot; -d '{&quot;body&quot;:&quot;Whole&quot;,&quot;parent_id&quot;:&quot;&lt;comment&gt;&quot;}'
+# 201 reply; parent_id must be a comment on the same task (400 invalid_input otherwise)
+
+curl -sS &quot;$OT/api/v1/tasks/$TASK/comments&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+# 200 {&quot;comments&quot;:[ …top-level comments by creation time, each followed by its replies… ]}
+
+curl -sS -X PATCH &quot;$OT/api/v1/comments/$C&quot; -H &quot;Authorization: Bearer $BOB&quot; -d '{&quot;body&quot;:&quot;hijack&quot;}'
+# 403 {&quot;error&quot;:{&quot;code&quot;:&quot;forbidden&quot;,&quot;message&quot;:&quot;only the author can edit a comment; the author, project admins and the owner can delete it&quot;}}
+
+curl -sS -X DELETE &quot;$OT/api/v1/comments/$C&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+# 204; the comment is no longer listed (devices show a placeholder in the thread)</code></pre>
+<p>Activity is derived from the operation log on request, never stored (see <a href="/docs/sync/#activity">sync</a> for the rule shared with the client). A task&#39;s activity covers the task and its comments; a project&#39;s covers its tasks, their comments and the project. Events are newest first; <code>cursor</code> is present when <code>more</code> is true and is passed back as <code>before</code> for the next page (pages never overlap). <code>actor</code> is the author&#39;s account id, <code>actorName</code> and <code>taskTitle</code> are resolved for display, <code>changes</code> lists each touched field with its old and new value (empty for comment events), <code>opIds</code> the operations the event folds.</p>
+<pre tabindex="0"><code class="language-sh">curl -sS &quot;$OT/api/v1/projects/$P/activity?limit=2&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+# 200 {&quot;events&quot;:[
+#   {&quot;id&quot;:&quot;…&quot;,&quot;kind&quot;:&quot;completed&quot;,&quot;actor&quot;:&quot;&lt;bob&gt;&quot;,&quot;actorName&quot;:&quot;Bob&quot;,&quot;entity&quot;:&quot;task&quot;,&quot;entityId&quot;:&quot;&lt;task&gt;&quot;,&quot;taskId&quot;:&quot;&lt;task&gt;&quot;,
+#    &quot;taskTitle&quot;:&quot;Milk&quot;,&quot;ts&quot;:1760090500000,&quot;opIds&quot;:[&quot;…&quot;],&quot;changes&quot;:[{&quot;field&quot;:&quot;completed_at&quot;,&quot;from&quot;:null,&quot;to&quot;:1760090500000}]},
+#   {&quot;id&quot;:&quot;…&quot;,&quot;kind&quot;:&quot;commented&quot;,&quot;actor&quot;:&quot;&lt;you&gt;&quot;,&quot;actorName&quot;:&quot;Alice&quot;,&quot;entity&quot;:&quot;comment&quot;,&quot;entityId&quot;:&quot;&lt;comment&gt;&quot;,
+#    &quot;taskId&quot;:&quot;&lt;task&gt;&quot;,&quot;taskTitle&quot;:&quot;Milk&quot;,&quot;ts&quot;:1760090000000,&quot;opIds&quot;:[&quot;…&quot;,&quot;…&quot;],&quot;changes&quot;:[]}],
+#  &quot;more&quot;:true,&quot;cursor&quot;:&quot;1760090000000:…&quot;}</code></pre>
+<p>Kinds: <code>created</code>, <code>completed</code>, <code>reopened</code>, <code>deleted</code>, <code>restored</code>, <code>rescheduled</code>, <code>assigned</code>, <code>unassigned</code>, <code>moved</code>, <code>archived</code>, <code>unarchived</code>, <code>edited</code>, <code>commented</code>, <code>comment_edited</code>, <code>comment_deleted</code>. A malformed <code>before</code> or a <code>limit</code> outside 1–200 answers <code>400 invalid_input</code>.</p>
+<h3 id="activity-feed">Activity feed<a class="anchor" href="#activity-feed" aria-label="Link to this section: Activity feed">#</a></h3>
+<p><code>GET /api/v1/activity</code> (OpenSpec <code>activity-feed</code>) returns events from every shared project the caller is a member of, newest first, with the same shape and the same cursor as the per-project route plus <code>projectId</code> and <code>projectName</code>. Each project&#39;s events are derived exactly as <code>GET /api/v1/projects/{id}/activity</code> derives them, so an event has the same id in both. Personal projects and the Inbox never appear (their activity is in the project view), nor do projects you are not a member of, even when named in <code>project</code>.</p>
+<p>Query parameters, all optional:</p>
+<ul>
+<li><code>cursor</code> — the <code>cursor</code> of the previous page (<code>before</code> is accepted too); pages never overlap.</li>
+<li><code>limit</code> — 1–200, default 50.</li>
+<li><code>project</code> — a project id; a project you are not a member of yields no events.</li>
+<li><code>actor</code> — an account id.</li>
+<li><code>kind</code> — a feed category: <code>completed</code> (completed, reopened), <code>created</code>, <code>commented</code> (commented, comment_edited, comment_deleted), <code>assigned</code> (assigned, unassigned), <code>rescheduled</code>, <code>other</code> (every other kind).</li>
+</ul>
+<pre tabindex="0"><code class="language-sh">curl -sS &quot;$OT/api/v1/activity?kind=completed&amp;limit=1&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+# 200 {&quot;events&quot;:[
+#   {&quot;id&quot;:&quot;…&quot;,&quot;kind&quot;:&quot;completed&quot;,&quot;actor&quot;:&quot;&lt;bob&gt;&quot;,&quot;actorName&quot;:&quot;Bob&quot;,&quot;entity&quot;:&quot;task&quot;,&quot;entityId&quot;:&quot;&lt;task&gt;&quot;,&quot;taskId&quot;:&quot;&lt;task&gt;&quot;,
+#    &quot;taskTitle&quot;:&quot;Milk&quot;,&quot;projectId&quot;:&quot;&lt;project&gt;&quot;,&quot;projectName&quot;:&quot;Home&quot;,&quot;ts&quot;:1760090500000,&quot;opIds&quot;:[&quot;…&quot;],
+#    &quot;changes&quot;:[{&quot;field&quot;:&quot;completed_at&quot;,&quot;from&quot;:null,&quot;to&quot;:1760090500000}]}],
+#  &quot;more&quot;:true,&quot;cursor&quot;:&quot;1760090500000:…&quot;}
+
+curl -sS &quot;$OT/api/v1/activity?cursor=junk&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+# 400 {&quot;error&quot;:{&quot;code&quot;:&quot;invalid_input&quot;,&quot;message&quot;:&quot;cursor must be a cursor returned by this route&quot;}}</code></pre>
+<p>Without credentials the route answers <code>401 unauthorized</code>; an unknown <code>kind</code>, a malformed cursor or a <code>limit</code> outside 1–200 answers <code>400 invalid_input</code>. What a user has already seen is not stored by this route: it is the <code>project_prefs.feed_seen_at</code> field in the user&#39;s personal scope, written through sync like any other op (see <a href="/docs/sync/#project-preferences-and-the-activity-feed">sync</a>). REST clients may write it with <code>POST /api/v1/sync</code> but have no collection route for it.</p>
+<h3 id="import">Import<a class="anchor" href="#import" aria-label="Link to this section: Import">#</a></h3>
+<p>Import tasks and projects from the app&#39;s own export, CSV, or JSON exports of other task managers. Formats, the CSV columns, mapping rules and limits are documented in <a href="/docs/import/">import.md</a>. Every imported field is written to the operation log with server time and the device id <code>import</code>, so devices receive imports like any other write.</p>
+<p>Uploads are <code>multipart/form-data</code> with a <code>file</code> part. Options go either in one <code>options</code> part holding JSON or in individual fields of the same names: <code>format</code>, <code>targetProject</code>, <code>timeZone</code>, <code>sections</code> (<code>section</code>|<code>label</code>|<code>ignore</code>, default <code>section</code>), <code>duplicates</code> (<code>skip</code>|<code>import</code>), <code>errors</code> (<code>skip_rows</code>|<code>abort</code>), <code>existing</code> (<code>skip</code>|<code>overwrite</code>). The file may be at most <code>OPENTODO_IMPORT_MAX_MB</code> (default 20 MB) and 50,000 rows; these routes do not use the 4 MB JSON body limit.</p>
+<p><strong>Preview</strong> — <code>POST /api/v1/import/preview</code> writes nothing and returns:</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;format&quot;: &quot;csv&quot;,
+  &quot;columns&quot;: { &quot;recognised&quot;: [&quot;title&quot;, &quot;project&quot;, &quot;priority&quot;], &quot;ignored&quot;: [&quot;color&quot;] },
+  &quot;options&quot;: { &quot;timeZone&quot;: &quot;Europe/Rome&quot;, &quot;sections&quot;: &quot;section&quot;, &quot;duplicates&quot;: &quot;skip&quot;, &quot;errors&quot;: &quot;skip_rows&quot;, &quot;existing&quot;: &quot;skip&quot; },
+  &quot;totals&quot;: { &quot;rows&quot;: 100, &quot;create&quot;: 97, &quot;update&quot;: 0, &quot;skip&quot;: 0, &quot;error&quot;: 3, &quot;possibleDuplicates&quot;: 0,
+              &quot;warnings&quot;: 1, &quot;newProjects&quot;: 1, &quot;newLabels&quot;: 2, &quot;newSections&quot;: 2, &quot;recurring&quot;: 4, &quot;reminders&quot;: 3,
+              &quot;entities&quot;: 104, &quot;written&quot;: 0, &quot;ops&quot;: 0 },
+  &quot;rows&quot;: [
+    { &quot;row&quot;: 2, &quot;sourceId&quot;: &quot;…&quot;, &quot;kind&quot;: &quot;task&quot;, &quot;title&quot;: &quot;Write report&quot;, &quot;project&quot;: &quot;Work&quot;, &quot;outcome&quot;: &quot;create&quot; },
+    { &quot;row&quot;: 35, &quot;kind&quot;: &quot;task&quot;, &quot;title&quot;: &quot;Task 34&quot;, &quot;outcome&quot;: &quot;error&quot;, &quot;reason&quot;: &quot;invalid priority \&quot;urgent!\&quot; (expected 1-4 or p1-p4)&quot; },
+    { &quot;row&quot;: 40, &quot;kind&quot;: &quot;task&quot;, &quot;title&quot;: &quot;Call mom&quot;, &quot;outcome&quot;: &quot;skip&quot;, &quot;reason&quot;: &quot;possible_duplicate&quot; },
+    { &quot;row&quot;: 41, &quot;kind&quot;: &quot;task&quot;, &quot;title&quot;: &quot;Standup&quot;, &quot;outcome&quot;: &quot;create&quot;, &quot;warnings&quot;: [&quot;recurrence \&quot;every 3 hours\&quot; not supported; imported without a rule&quot;] }
+  ],
+  &quot;truncated&quot;: false,
+  &quot;notes&quot;: []
+}</code></pre>
+<p><code>kind</code> is <code>project</code>, <code>task</code>, <code>label</code>, <code>section</code>, <code>reminder</code> or <code>view</code>. <code>outcome</code> is <code>create</code>, <code>update</code>, <code>skip</code> (reason <code>exists</code>, <code>unchanged</code>, <code>deleted</code>, <code>already_imported</code>, <code>possible_duplicate</code> or <code>no_project</code>) or <code>error</code> (with <code>reason</code>). <code>newSections</code>, <code>recurring</code> (tasks with a recurrence rule) and <code>reminders</code> count what the import adds; <code>notes</code> holds file-level remarks, such as the number of comments in an own export that are not imported. <code>row</code> is the line in a CSV file or the position in a JSON array; <code>version</code> is set for an own export. At most 5,000 rows are listed, those needing attention first (<code>truncated: true</code>); <code>totals</code> always counts every row.</p>
+<p><strong>Start</strong> — <code>POST /api/v1/import</code> takes the same upload, re-checks it and returns 202:</p>
+<pre tabindex="0"><code class="language-json">{ &quot;job&quot;: { &quot;id&quot;: &quot;…&quot;, &quot;format&quot;: &quot;csv&quot;, &quot;status&quot;: &quot;running&quot;, &quot;options&quot;: { … }, &quot;totals&quot;: { … },
+           &quot;errors&quot;: [{ &quot;row&quot;: 35, &quot;reason&quot;: &quot;invalid priority \&quot;urgent!\&quot; (expected 1-4 or p1-p4)&quot; }],
+           &quot;createdAt&quot;: 1760000000000, &quot;finishedAt&quot;: null, &quot;undoneAt&quot;: null } }</code></pre>
+<p><strong>Status</strong> — <code>GET /api/v1/import/jobs/{id}</code> returns <code>{job}</code>; <code>status</code> is <code>running</code>, <code>done</code>, <code>failed</code> (with <code>message</code>, e.g. the first bad row under <code>abort</code>, or a restart) or <code>undone</code>. <code>totals.written</code> and <code>totals.ops</code> grow while the job runs. <code>GET /api/v1/import/jobs</code> lists <code>{jobs}</code> with at most 20 errors each.</p>
+<p><strong>Undo</strong> — <code>POST /api/v1/import/jobs/{id}/undo</code> soft-deletes every project, task, label, section, reminder and saved view the job created and returns the job with status <code>undone</code>. Calling it again is a no-op.</p>
+<p>Errors: 400 <code>invalid_input</code> (unknown option value, unknown time zone, a <code>targetProject</code> that is not yours; no job is created), 400 <code>unsupported_format</code> (names the supported formats), 400 <code>invalid_file</code> (recognised but unreadable), 400 <code>bad_request</code> (not multipart or no <code>file</code> part), 413 <code>too_large</code> (file or row limit), 409 <code>conflict</code> (another import or undo of yours is running), 404 <code>not_found</code> (unknown job or another account&#39;s job).</p>
+<pre tabindex="0"><code class="language-bash">curl -sS &quot;$OT/api/v1/import/preview&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -F file=@tasks.csv -F timeZone=Europe/Rome
+JOB=$(curl -sS &quot;$OT/api/v1/import&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -F file=@tasks.csv -F timeZone=Europe/Rome | jq -r .job.id)
+curl -sS &quot;$OT/api/v1/import/jobs/$JOB&quot; -H &quot;Authorization: Bearer $TOKEN&quot; | jq .job.status
+curl -sS -X POST &quot;$OT/api/v1/import/jobs/$JOB/undo&quot; -H &quot;Authorization: Bearer $TOKEN&quot;</code></pre>
+<h3 id="caldav-and-app-passwords">CalDAV and app passwords<a class="anchor" href="#caldav-and-app-passwords" aria-label="Link to this section: CalDAV and app passwords">#</a></h3>
+<p>The CalDAV endpoint itself (<code>/dav/</code>, <code>/.well-known/caldav</code>) speaks WebDAV/CalDAV, not this JSON API; see <a href="/docs/caldav/">caldav.md</a>. It authenticates only with HTTP Basic (account email plus an app password). These JSON routes manage it; all require a session or token.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Who</th>
+<th>Body / result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/app-passwords</code></td>
+<td>any user</td>
+<td><code>{&quot;appPasswords&quot;:[{&quot;id&quot;,&quot;name&quot;,&quot;createdAt&quot;,&quot;lastUsedAt&quot;,&quot;revokedAt&quot;}]}</code>, newest first, revoked ones included. Never the secret.</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/app-passwords</code></td>
+<td>any user, recent sign-in (<code>403 reauth_required</code> otherwise, like token creation)</td>
+<td><code>{&quot;name&quot;:&quot;iPhone&quot;}</code> → <code>201 {&quot;appPassword&quot;:{…},&quot;secret&quot;:&quot;otap_…&quot;}</code>. The secret is shown only here.</td>
+</tr>
+<tr>
+<td><code>DELETE</code></td>
+<td><code>/api/v1/app-passwords/{id}</code></td>
+<td>owner of the app password</td>
+<td><code>204</code>; <code>404 not_found</code> for an unknown, foreign or already revoked id.</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/settings/caldav</code></td>
+<td>any user</td>
+<td><code>{&quot;enabled&quot;:false,&quot;url&quot;:&quot;https://todo.example.com/dav/&quot;,&quot;secure&quot;:true}</code>; <code>url</code> is what calendar apps are configured with, <code>secure</code> is false for plain http.</td>
+</tr>
+<tr>
+<td><code>PUT</code></td>
+<td><code>/api/v1/settings/caldav</code></td>
+<td>owner</td>
+<td><code>{&quot;enabled&quot;:true}</code> → the same shape. <code>400 invalid_input</code> without a boolean <code>enabled</code>, <code>403 forbidden</code> for members. Recorded as <code>settings.changed</code> (<code>caldav.enabled</code>).</td>
+</tr>
+</tbody></table></div>
+<p>App passwords are refused by every <code>/api/v1</code> route, and API tokens, passwords and session cookies are refused by <code>/dav/</code>. Creating and revoking one records <code>app_password.created</code> / <code>app_password.revoked</code> in the audit log.</p>
+<h3 id="email-to-task">Email to task<a class="anchor" href="#email-to-task" aria-label="Link to this section: Email to task">#</a></h3>
+<p>Each account can have a secret inbox address; mail sent to it becomes an Inbox task (see <a href="/docs/email/">email.md</a>). The feature exists only when the operator configured a mailbox with <code>OPENTODO_EMAIL_*</code>. All routes require a session or API token and act on the caller&#39;s account. No response ever contains the operator&#39;s mail server, mailbox user or password.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Who</th>
+<th>Body / result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/email-inbox</code></td>
+<td>any user</td>
+<td><code>{&quot;enabledByOperator&quot;:true,&quot;address&quot;:&quot;todo+k3f9…@example.com&quot;,&quot;enabled&quot;:true,&quot;allowlist&quot;:[],&quot;hourlyLimit&quot;:60}</code>. The first call creates the address (enabled). With no operator configuration: <code>{&quot;enabledByOperator&quot;:false,&quot;address&quot;:null,&quot;enabled&quot;:false,&quot;allowlist&quot;:[],&quot;hourlyLimit&quot;:60}</code> and nothing is created.</td>
+</tr>
+<tr>
+<td><code>PATCH</code></td>
+<td><code>/api/v1/email-inbox</code></td>
+<td>any user</td>
+<td><code>{&quot;enabled&quot;:false}</code> and/or <code>{&quot;allowlist&quot;:[&quot;me@example.org&quot;]}</code> → the same shape. <code>allowlist</code> must be an array of at most 50 bare email addresses (stored lowercased, duplicates dropped; <code>[]</code> clears it), otherwise <code>400 invalid_input</code> and nothing changes. <code>409 email_disabled</code> when the operator has not configured email capture.</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/email-inbox/rotate</code></td>
+<td>any user</td>
+<td>→ the same shape with a new address; the old one stops working at once. <code>409 email_disabled</code> as above.</td>
+</tr>
+</tbody></table></div>
+<p>Changes and rotations are limited to 30 per account per hour (<code>429 rate_limited</code>). They are recorded as <code>email_inbox.created</code>, <code>email_inbox.rotated</code> and <code>email_inbox.updated</code> in the audit log.</p>
+<pre tabindex="0"><code class="language-sh">curl -s -H &quot;Authorization: Bearer $TOKEN&quot; https://todo.example.com/api/v1/email-inbox
+# 200 {&quot;enabledByOperator&quot;:true,&quot;address&quot;:&quot;todo+k3f9…@example.com&quot;,&quot;enabled&quot;:true,&quot;allowlist&quot;:[],&quot;hourlyLimit&quot;:60}
+curl -s -X PATCH -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;allowlist&quot;:[&quot;Me@Example.org&quot;]}' https://todo.example.com/api/v1/email-inbox
+# 200 {..., &quot;allowlist&quot;:[&quot;me@example.org&quot;], ...}
+curl -s -X PATCH -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;allowlist&quot;:&quot;me@example.org&quot;}' https://todo.example.com/api/v1/email-inbox
+# 400 {&quot;error&quot;:{&quot;code&quot;:&quot;invalid_input&quot;,&quot;message&quot;:&quot;allowlist: allowlist must be a list of at most 50 email addresses&quot;}}</code></pre>
+<p>Tasks created from mail are ordinary operations with device <code>server</code> (title, description, priority 4, created_at, position; no project, no due date), so they arrive through <code>POST /api/v1/sync</code> like any other change.</p>
+<h3 id="webhooks">Webhooks<a class="anchor" href="#webhooks" aria-label="Link to this section: Webhooks">#</a></h3>
+<p>Outbound webhooks notify a URL you choose when your tasks and projects change. Event list, payload format, signature verification, retries and receiver recipes are in <a href="/docs/webhooks/">docs/webhooks.md</a>; this section covers the management routes. Every route requires authentication and only ever sees the caller&#39;s own webhooks: another account&#39;s webhook id answers 404 <code>not_found</code>. Webhooks are server configuration: they never go through the op log, never sync and are not in the export.</p>
+<p><strong>Create</strong> — <code>POST /api/v1/webhooks</code>:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>url</code></td>
+<td>string</td>
+<td><code>http://</code> or <code>https://</code>, at most 2,048 characters</td>
+</tr>
+<tr>
+<td><code>events</code></td>
+<td>string[]</td>
+<td>non-empty subset of <code>task.created</code>, <code>task.updated</code>, <code>task.completed</code>, <code>task.reopened</code>, <code>task.deleted</code>, <code>project.created</code>, <code>project.updated</code>, <code>project.archived</code>, <code>project.deleted</code>, <code>import.completed</code>, <code>import.undone</code></td>
+</tr>
+<tr>
+<td><code>projectId</code></td>
+<td>string or null</td>
+<td>only events for this project (tasks in it, or the project itself)</td>
+</tr>
+<tr>
+<td><code>enabled</code></td>
+<td>boolean</td>
+<td>default <code>true</code></td>
+</tr>
+</tbody></table></div>
+<pre tabindex="0"><code class="language-bash">curl -sS &quot;$OT/api/v1/webhooks&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;url&quot;:&quot;https://n8n.example.com/webhook/opentodo&quot;,&quot;events&quot;:[&quot;task.completed&quot;,&quot;task.created&quot;]}'</code></pre>
+<p>Response (201):</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;webhook&quot;: {
+    &quot;id&quot;: &quot;…&quot;, &quot;url&quot;: &quot;https://n8n.example.com/webhook/opentodo&quot;, &quot;events&quot;: [&quot;task.created&quot;, &quot;task.completed&quot;],
+    &quot;projectId&quot;: null, &quot;enabled&quot;: true, &quot;disabledReason&quot;: null, &quot;consecutiveFailures&quot;: 0,
+    &quot;createdAt&quot;: 1760000000000, &quot;updatedAt&quot;: 1760000000000,
+    &quot;secret&quot;: &quot;whsec_…&quot;
+  }
+}</code></pre>
+<p><code>secret</code> appears only in this response; store it in the receiver to verify signatures. Errors: 400 <code>invalid_input</code> naming the field (<code>url: url scheme must be http or https</code>, <code>events: unknown event &quot;task.exploded&quot;</code>, <code>events: choose at least one event</code>), 400 <code>private_target</code> when the host resolves only to loopback, private, link-local or other internal addresses and the owner has not allowed private targets, 409 <code>limit_reached</code> beyond 20 webhooks per account.</p>
+<p><strong>Update</strong> — <code>PATCH /api/v1/webhooks/{id}</code> with any of the fields above (<code>projectId: null</code> removes the filter). Changing <code>url</code> re-runs the private-target check. Setting <code>enabled: true</code> on a webhook the server disabled clears <code>disabledReason</code> and the failure counter.</p>
+<p><strong>Read and delete</strong> — <code>GET /api/v1/webhooks</code>, <code>GET /api/v1/webhooks/{id}</code>, <code>DELETE /api/v1/webhooks/{id}</code> (204, also deletes its delivery log and queue). <code>disabledReason</code> is <code>null</code>, or <code>too_many_failures</code> after 20 consecutive failed deliveries.</p>
+<p><strong>Test</strong> — <code>POST /api/v1/webhooks/{id}/test</code> sends a <code>ping</code> immediately (one attempt) and answers 200 <code>{ok, delivery}</code> whether or not the receiver accepted it; <code>ok</code> is true for a <code>2xx</code> answer.</p>
+<p><strong>Delivery log</strong> — <code>GET /api/v1/webhooks/{id}/deliveries</code> → <code>{deliveries: [...]}</code>, newest first, at most 100, entries older than 30 days pruned:</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;id&quot;: &quot;…&quot;, &quot;webhookId&quot;: &quot;…&quot;, &quot;event&quot;: &quot;task.completed&quot;, &quot;status&quot;: &quot;retry&quot;, &quot;attempts&quot;: 1,
+  &quot;nextAttemptAt&quot;: 1760000030000, &quot;statusCode&quot;: 503, &quot;error&quot;: &quot;HTTP 503&quot;, &quot;responseExcerpt&quot;: &quot;Service Unavailable&quot;,
+  &quot;durationMs&quot;: 41, &quot;createdAt&quot;: 1760000000000, &quot;deliveredAt&quot;: null
+}</code></pre>
+<p><code>status</code> is <code>pending</code>, <code>retry</code>, <code>delivered</code> or <code>failed</code>; <code>error</code> is <code>HTTP &lt;code&gt;</code>, <code>timeout</code>, <code>connection failed: …</code> or <code>private_target</code>; <code>responseExcerpt</code> holds the first kilobyte of the response body.</p>
+<p><strong>Redeliver</strong> — <code>POST /api/v1/webhooks/{id}/deliveries/{did}/redeliver</code> queues the same body under a new delivery id → 202 <code>{delivery}</code>. A delivery id that does not belong to that webhook answers 404 <code>not_found</code>.</p>
+<p><strong>Owner policy</strong> — <code>GET</code>/<code>PUT /api/v1/settings/webhooks</code> with <code>{&quot;allowPrivate&quot;: true|false}</code> allows targets on private networks (Home Assistant or n8n on the LAN) for every account. Owner only: members get 403 <code>forbidden</code>. The optional <code>OPENTODO_WEBHOOKS_ALLOW_PRIVATE</code> environment variable presets it on the first start.</p>
+<h3 id="end-to-end-encryption">End-to-end encryption<a class="anchor" href="#end-to-end-encryption" aria-label="Link to this section: End-to-end encryption">#</a></h3>
+<p>Optional per-account encryption of task content (<a href="/docs/e2ee/">e2ee.md</a> has the threat model). The server stores only the key record the browser produced and never decrypts. For an encrypted account, the content fields of personal data — task <code>title</code>, <code>description</code>, <code>ical_extra</code>, <code>notes_doc</code>; project, label and section <code>name</code>; view <code>name</code> and <code>query</code>; comment <code>body</code> — hold ciphertext strings in every REST read, the export and <code>/api/v1/sync</code>:</p>
+<pre tabindex="0"><code>&quot;enc:v1:&quot; + base64url(nonce(12) || AES-256-GCM(utf8(plaintext)) || tag(16))
+additional authenticated data = utf8(entity + &quot;\0&quot; + entityId + &quot;\0&quot; + field)</code></pre>
+<p>All other fields (<code>due</code>, <code>priority</code>, <code>completed_at</code>, <code>project_id</code>, <code>labels</code>, …) stay plaintext. Plaintext REST writes are accepted for an encrypted account; the next unlocked device re-writes them as ciphertext.</p>
+<pre tabindex="0"><code class="language-sh"># Create the key record (version 1). Only wrapped keys and parameters: salt 16 bytes,
+# wrapped keys 40 bytes each (AES-KW of a 256-bit key), base64url without padding.
+curl -X PUT -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;version&quot;:1,&quot;kdf&quot;:1,&quot;salt&quot;:&quot;AQEBAQEBAQEBAQEBAQEBAQ&quot;,&quot;iterations&quot;:600000,&quot;wrappedByPassphrase&quot;:&quot;…&quot;,&quot;wrappedByRecovery&quot;:&quot;…&quot;}' \
+  https://todo.example.com/api/v1/encryption/keys
+# 201 {&quot;keys&quot;:{&quot;version&quot;:1,&quot;kdf&quot;:1,&quot;salt&quot;:&quot;…&quot;,&quot;iterations&quot;:600000,&quot;wrappedByPassphrase&quot;:&quot;…&quot;,&quot;wrappedByRecovery&quot;:&quot;…&quot;,&quot;createdAt&quot;:1760000000000,&quot;updatedAt&quot;:1760000000000}}
+# again with version 1 (another device was first):
+# 409 {&quot;error&quot;:{&quot;code&quot;:&quot;encryption_conflict&quot;,&quot;message&quot;:&quot;the encryption key record was created or changed by another device; unlock with the existing passphrase&quot;}}
+# a malformed record (for example 1000 iterations):
+# 400 {&quot;error&quot;:{&quot;code&quot;:&quot;invalid_input&quot;,&quot;message&quot;:&quot;iterations must be between 600000 and 10000000&quot;}}
+
+# A REST read of an encrypted task: ciphertext title, plaintext due date
+curl -H &quot;Authorization: Bearer $TOKEN&quot; https://todo.example.com/api/v1/tasks/&lt;id&gt;
+# 200 {&quot;id&quot;:&quot;…&quot;,&quot;title&quot;:&quot;enc:v1:oKGio6Slpqeoqaqron0SWSy4dh8xioWkMvJuPN5GjNypnM8&quot;,&quot;due&quot;:{&quot;date&quot;:&quot;2026-10-11&quot;},&quot;priority&quot;:1,…}
+
+# Delete superseded content operations (plaintext history) for your account
+curl -X POST -H &quot;Authorization: Bearer $TOKEN&quot; https://todo.example.com/api/v1/encryption/purge-history
+# 200 {&quot;purged&quot;:3,&quot;notice&quot;:&quot;Superseded content operations were deleted from the server. Backups made before this point, …&quot;}
+# without a key record: 409 {&quot;error&quot;:{&quot;code&quot;:&quot;encryption_disabled&quot;,…}}</code></pre>
+<p>Replacing the record (passphrase change, recovery reset) and <code>DELETE</code> need a fresh re-authentication on cookie sessions (403 <code>reauth_required</code>). <code>GET /api/v1/me</code> and <code>GET /api/v1/auth/status</code> carry <code>&quot;encryption&quot;:{&quot;enabled&quot;:true,&quot;keyVersion&quot;:2}</code> and <code>&quot;minClientVersion&quot;:1</code>. The export adds <code>&quot;encryption&quot;</code>: the key record, or <code>null</code>. Refused for encrypted accounts with 409 <code>encryption_enabled</code>: the first share of a project (<code>POST /api/v1/projects/{id}/members</code> on an unshared project) and <code>POST /api/v1/app-passwords</code>; <code>/dav/</code> answers 403. <code>GET /api/v1/settings/caldav</code> adds <code>&quot;encryption&quot;: true|false</code> for the caller.</p>
+<h2 id="examples">Examples<a class="anchor" href="#examples" aria-label="Link to this section: Examples">#</a></h2>
+<p>Create a task due tomorrow at 9:00 in a project:</p>
+<pre tabindex="0"><code class="language-bash">curl -sS &quot;$OT/api/v1/tasks&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;title&quot;:&quot;Call the plumber&quot;,&quot;priority&quot;:2,&quot;project_id&quot;:&quot;&lt;project-id&gt;&quot;,&quot;due&quot;:{&quot;date&quot;:&quot;2026-10-11&quot;,&quot;time&quot;:&quot;09:00&quot;}}'</code></pre>
+<p>A stand-up fixed to Berlin time (devices elsewhere show it converted to their zone, with <code>09:00 Berlin</code> as a hint):</p>
+<pre tabindex="0"><code class="language-bash">curl -sS &quot;$OT/api/v1/tasks&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;title&quot;:&quot;Stand-up&quot;,&quot;due&quot;:{&quot;date&quot;:&quot;2026-10-11&quot;,&quot;time&quot;:&quot;09:00&quot;,&quot;tz&quot;:&quot;Europe/Berlin&quot;}}'
+# 201 {..., &quot;due&quot;:{&quot;date&quot;:&quot;2026-10-11&quot;,&quot;time&quot;:&quot;09:00&quot;,&quot;tz&quot;:&quot;Europe/Berlin&quot;}, ...}
+curl -sS -X PATCH &quot;$OT/api/v1/tasks/&lt;id&gt;&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;due&quot;:{&quot;date&quot;:&quot;2026-10-11&quot;,&quot;tz&quot;:&quot;Europe/Berlin&quot;}}'
+# 400 {&quot;error&quot;:{&quot;code&quot;:&quot;invalid_input&quot;,&quot;message&quot;:&quot;invalid op: task.due tz requires time&quot;}}</code></pre>
+<p>Complete it:</p>
+<pre tabindex="0"><code class="language-bash">curl -sS -X PATCH &quot;$OT/api/v1/tasks/&lt;id&gt;&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d &quot;{\&quot;completed_at\&quot;: $(date +%s000)}&quot;</code></pre>
+<p>List open tasks in the Inbox with <code>jq</code>:</p>
+<pre tabindex="0"><code class="language-bash">curl -sS &quot;$OT/api/v1/tasks&quot; -H &quot;Authorization: Bearer $TOKEN&quot; | jq '.tasks[] | select(.project_id == null and .completed_at == null) | .title'</code></pre>
+<p>Create a label, then tag a task with it:</p>
+<pre tabindex="0"><code class="language-bash">LABEL=$(curl -sS &quot;$OT/api/v1/labels&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;name&quot;:&quot;errand&quot;}' | jq -r .id)
+curl -sS -X PATCH &quot;$OT/api/v1/tasks/&lt;id&gt;&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d &quot;{\&quot;labels\&quot;:[\&quot;$LABEL\&quot;]}&quot;</code></pre>
+<p>A <code>labels</code> value containing an id that is not an existing, non-deleted label is rejected with 400 <code>invalid_input</code> and the task is unchanged.</p>
+<p>Rename a label (one request, no task is touched):</p>
+<pre tabindex="0"><code class="language-bash">curl -sS -X PATCH &quot;$OT/api/v1/labels/$LABEL&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;name&quot;:&quot;errands&quot;}'</code></pre>
+<p>Save a view and pin it (the response carries <code>id</code>, <code>position</code> and the default grouping and sort; devices show it after their next sync):</p>
+<pre tabindex="0"><code class="language-bash">curl -sS &quot;$OT/api/v1/views&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;name&quot;:&quot;Waiting&quot;,&quot;query&quot;:&quot;@waiting&quot;,&quot;pinned&quot;:true}'
+# 201 {&quot;color&quot;:&quot;#64748b&quot;,&quot;created_at&quot;:1760090000000,&quot;group_by&quot;:&quot;project&quot;,&quot;id&quot;:&quot;…&quot;,&quot;kind&quot;:&quot;list&quot;,&quot;name&quot;:&quot;Waiting&quot;,
+#      &quot;panels&quot;:[],&quot;pinned&quot;:true,&quot;position&quot;:1760090000000,&quot;query&quot;:&quot;@waiting&quot;,&quot;sort_by&quot;:&quot;due&quot;,&quot;sort_dir&quot;:&quot;asc&quot;}</code></pre>
+<p>Group it by due date with priority 1 first, then build a dashboard from it:</p>
+<pre tabindex="0"><code class="language-bash">curl -sS -X PATCH &quot;$OT/api/v1/views/&lt;id&gt;&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;group_by&quot;:&quot;due&quot;,&quot;sort_by&quot;:&quot;priority&quot;,&quot;sort_dir&quot;:&quot;desc&quot;}'
+curl -sS &quot;$OT/api/v1/views&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;name&quot;:&quot;Morning&quot;,&quot;kind&quot;:&quot;dashboard&quot;,&quot;panels&quot;:[&quot;&lt;id&gt;&quot;],&quot;pinned&quot;:true}'</code></pre>
+<p>An option outside the allowed set, or a query that does not parse, is refused and nothing is created:</p>
+<pre tabindex="0"><code class="language-bash">curl -sS &quot;$OT/api/v1/views&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;name&quot;:&quot;x&quot;,&quot;query&quot;:&quot;p1&quot;,&quot;group_by&quot;:&quot;colour&quot;}'
+# 400 {&quot;error&quot;:{&quot;code&quot;:&quot;invalid_input&quot;,&quot;message&quot;:&quot;view.group_by must be one of project, due, priority, label, none&quot;}}
+curl -sS &quot;$OT/api/v1/views&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;name&quot;:&quot;x&quot;,&quot;query&quot;:&quot;@work p1&quot;}'
+# 400 {&quot;error&quot;:{&quot;code&quot;:&quot;invalid_input&quot;,&quot;message&quot;:&quot;view.query: Expected \&quot;\u0026\&quot; or \&quot;|\&quot; before \&quot;p1\&quot; at position 7&quot;}}</code></pre>
+<p>Export everything:</p>
+<pre tabindex="0"><code class="language-bash">curl -sS &quot;$OT/api/v1/export&quot; -H &quot;Authorization: Bearer $TOKEN&quot; -o opentodo-export.json</code></pre>
+<p>The export includes saved views (<code>views</code>, deleted ones too) next to projects, tasks and labels. It resolves label ids: <code>tasks[].labels</code> holds ids and the top-level <code>labels</code> array (including deleted labels) carries their names and colours.</p>
+<p>Follow live updates (the response is a <code>text/event-stream</code> that stays open; <code>-N</code> disables curl&#39;s buffering):</p>
+<pre tabindex="0"><code class="language-bash">curl -sSN &quot;$OT/api/v1/sync/events?device=my-script&quot; -H &quot;Authorization: Bearer $TOKEN&quot;
+# : connected
+# event: ops
+# data: {&quot;cursor&quot;:158}
+# : ping</code></pre>
+<p><code>device</code> is required (400 <code>bad_request</code> without it) and names the subscriber; operations pushed by that same device id through <code>POST /sync</code> do not wake it. Each <code>ops</code> event carries only the user&#39;s latest cursor; fetch the changes with a sync exchange or the REST reads.</p>
+<h2 id="behaviour-notes">Behaviour notes<a class="anchor" href="#behaviour-notes" aria-label="Link to this section: Behaviour notes">#</a></h2>
+<ul>
+<li>Every write through this API is recorded in the operation log with server time. Connected devices are woken over the event stream and sync within a second or two; devices without a live stream pick the change up on their next poll (within 30 s), or immediately when they next edit or regain focus.</li>
+<li>Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.</li>
+<li>Deletes are tombstones. Use <code>include_deleted=true</code> or the export to see them.</li>
+<li>Request bodies are limited to 4 MB, except import uploads (<code>OPENTODO_IMPORT_MAX_MB</code>, default 20 MB).</li>
+<li>Rate limits (per IP): <code>auth/login</code>, <code>auth/register</code>, <code>auth/passkey</code>, the invitation preview and the password-reset routes share one window of 10 per minute; <code>auth/passkey/options</code>, <code>auth/mfa</code> and <code>auth/reauth</code> each have their own window of 10 per minute; <code>auth/oidc/start</code> and <code>auth/oidc/callback</code> share a window of 20 per minute; failed <code>/mcp</code> authentications count toward the login window. Per account: invitation creation 20 per hour, mutating <code>/users</code> requests 60 per hour, <code>/me/password</code> 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour.</li>
+</ul>
+<h3 id="error-codes">Error codes<a class="anchor" href="#error-codes" aria-label="Link to this section: Error codes">#</a></h3>
+<p>Every error answers <code>{&quot;error&quot;:{&quot;code&quot;,&quot;message&quot;}}</code>; some validation errors add <code>field</code>. Codes by area (the sections above give the details):</p>
+<p><strong>General</strong></p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Status</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>bad_request</code></td>
+<td>400</td>
+<td>malformed JSON, a JSON body over 4 MB, or a missing required parameter (for example <code>device</code> on <code>/sync</code> or <code>/sync/events</code>); an import upload that is not multipart or has no <code>file</code> part</td>
+</tr>
+<tr>
+<td><code>invalid_input</code></td>
+<td>400</td>
+<td>validation failure naming the field or parameter</td>
+</tr>
+<tr>
+<td><code>invalid_op</code></td>
+<td>400</td>
+<td><code>/api/v1/sync</code> batch with an op that fails schema validation (unknown entity or field, wrong type); nothing in the batch is applied</td>
+</tr>
+<tr>
+<td><code>unauthorized</code></td>
+<td>401</td>
+<td>any protected route without a valid session or token</td>
+</tr>
+<tr>
+<td><code>demo_expired</code></td>
+<td>401</td>
+<td>demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox</td>
+</tr>
+<tr>
+<td><code>forbidden</code></td>
+<td>403</td>
+<td>an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else&#39;s comment</td>
+</tr>
+<tr>
+<td><code>bad_origin</code></td>
+<td>403</td>
+<td>cookie-authenticated write from another origin; any <code>/mcp</code> request whose <code>Origin</code> is not this server</td>
+</tr>
+<tr>
+<td><code>insufficient_scope</code></td>
+<td>403</td>
+<td>a write route or <code>/api/v1/sync</code> called with a <code>read</code> API token</td>
+</tr>
+<tr>
+<td><code>demo_token</code></td>
+<td>403</td>
+<td><code>POST /api/v1/demo/sandbox</code> without a valid, unused creation token</td>
+</tr>
+<tr>
+<td><code>demo_restricted</code></td>
+<td>403</td>
+<td>a feature a demo instance (<code>OPENTODO_DEMO=true</code>) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, <code>/mcp</code>. See <a href="/docs/self-hosting/demo/#what-is-switched-off">demo instance</a></td>
+</tr>
+<tr>
+<td><code>not_found</code></td>
+<td>404</td>
+<td>unknown id, including another account&#39;s items, webhooks and deliveries, and items you cannot read; <code>/api/v1/push/*</code> with <code>OPENTODO_PUSH=off</code></td>
+</tr>
+<tr>
+<td><code>conflict</code></td>
+<td>409</td>
+<td>starting or undoing an import while another import of yours runs; <code>POST /backups/run</code> while a backup is running</td>
+</tr>
+<tr>
+<td><code>too_large</code></td>
+<td>413</td>
+<td><code>/mcp</code> body over 1 MB; import file over <code>OPENTODO_IMPORT_MAX_MB</code> or 50,000 rows</td>
+</tr>
+<tr>
+<td><code>rate_limited</code></td>
+<td>429</td>
+<td>too many attempts in the window, see <a href="#behaviour-notes">Behaviour notes</a></td>
+</tr>
+<tr>
+<td><code>demo_limit</code></td>
+<td>429</td>
+<td>demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on <code>/sync</code> or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with <code>invalid_input</code> / <code>invalid_op</code></td>
+</tr>
+<tr>
+<td><code>internal</code></td>
+<td>500</td>
+<td>unexpected server error (details only in the server log)</td>
+</tr>
+<tr>
+<td><code>unavailable</code></td>
+<td>503</td>
+<td>backups or webhooks are not available on this server</td>
+</tr>
+<tr>
+<td><code>demo_busy</code></td>
+<td>503</td>
+<td>demo instance: no new sandbox now (live cap reached with none idle for 15 minutes, or the database is above its size limit)</td>
+</tr>
+</tbody></table></div>
+<p><strong>Sign-in, accounts and credentials</strong></p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Status</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>invalid_credentials</code></td>
+<td>401/403</td>
+<td>401 for a wrong sign-in or passkey; 403 for a wrong current password at <code>/me/password</code> or <code>transfer-ownership</code></td>
+</tr>
+<tr>
+<td><code>signup_closed</code></td>
+<td>403</td>
+<td>registration without an invitation while sign-up is closed; first sign-in through the provider when provisioning is not allowed</td>
+</tr>
+<tr>
+<td><code>email_taken</code></td>
+<td>409</td>
+<td>registration with an existing email</td>
+</tr>
+<tr>
+<td><code>invitation_email_mismatch</code></td>
+<td>403</td>
+<td>registration email differs from the invitation&#39;s bound email</td>
+</tr>
+<tr>
+<td><code>invitation_invalid</code></td>
+<td>404</td>
+<td>unknown, expired, revoked or already accepted invitation</td>
+</tr>
+<tr>
+<td><code>invitation_spent</code></td>
+<td>409</td>
+<td>revoking an accepted invitation</td>
+</tr>
+<tr>
+<td><code>reset_invalid</code></td>
+<td>404</td>
+<td>unknown, used, expired or revoked password reset link</td>
+</tr>
+<tr>
+<td><code>self_action</code></td>
+<td>409</td>
+<td>a <code>/users</code> action on your own account</td>
+</tr>
+<tr>
+<td><code>account_deactivated</code></td>
+<td>403/409</td>
+<td>403 at sign-in with the correct password of a deactivated account; 409 for an administrative action on a deactivated account</td>
+</tr>
+<tr>
+<td><code>account_active</code></td>
+<td>409</td>
+<td>reactivating an active account</td>
+</tr>
+<tr>
+<td><code>confirmation_mismatch</code></td>
+<td>400</td>
+<td>deleting an account without its email in <code>confirmEmail</code></td>
+</tr>
+<tr>
+<td><code>reauth_required</code></td>
+<td>403</td>
+<td>a <em>fresh</em> route on a cookie session that has not proved its identity in the last ten minutes</td>
+</tr>
+<tr>
+<td><code>mfa_code_invalid</code></td>
+<td>400/401</td>
+<td>400 confirming enrolment with a wrong or late code; 401 for a wrong, reused or replayed code or recovery code</td>
+</tr>
+<tr>
+<td><code>mfa_challenge_invalid</code></td>
+<td>401</td>
+<td>unknown, expired or exhausted sign-in challenge: enter the password again</td>
+</tr>
+<tr>
+<td><code>mfa_already_enrolled</code> / <code>mfa_not_enrolled</code></td>
+<td>409</td>
+<td>enrolling twice, or disabling/regenerating without a second factor</td>
+</tr>
+<tr>
+<td><code>mfa_required_by_policy</code></td>
+<td>403</td>
+<td>turning off a second factor that the owner&#39;s policy requires</td>
+</tr>
+<tr>
+<td><code>mfa_enrolment_required</code></td>
+<td>403</td>
+<td>any other route while the owner&#39;s policy requires a second factor this account has not set up</td>
+</tr>
+<tr>
+<td><code>passkeys_unavailable</code></td>
+<td>409</td>
+<td>any passkey route when <code>OPENTODO_BASE_URL</code> is not https or localhost</td>
+</tr>
+<tr>
+<td><code>passkey_challenge_invalid</code></td>
+<td>400</td>
+<td>passkey ceremony with an expired, reused or foreign challenge</td>
+</tr>
+<tr>
+<td><code>sso_required</code></td>
+<td>403</td>
+<td>password or passkey sign-in (or password registration) by a non-owner while SSO-only mode is on</td>
+</tr>
+<tr>
+<td><code>oidc_disabled</code></td>
+<td>404</td>
+<td>single sign-on routes while no provider is configured</td>
+</tr>
+<tr>
+<td><code>oidc_state_invalid</code></td>
+<td>400</td>
+<td>provider callback with a missing, forged, expired or reused state</td>
+</tr>
+<tr>
+<td><code>identity_taken</code></td>
+<td>409</td>
+<td>linking a provider identity that belongs to another account</td>
+</tr>
+<tr>
+<td><code>last_credential</code></td>
+<td>409</td>
+<td>unlinking the last way to sign in to the account</td>
+</tr>
+</tbody></table></div>
+<p><strong>Data, sharing and features</strong></p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Status</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>scope_change</code></td>
+<td>400</td>
+<td><code>PATCH</code> of a task&#39;s <code>project_id</code> into another sharing scope</td>
+</tr>
+<tr>
+<td><code>not_a_member</code></td>
+<td>400</td>
+<td>a task&#39;s <code>assignee_id</code> that is not a member of its project (or not you, for a personal task)</td>
+</tr>
+<tr>
+<td><code>user_not_found</code></td>
+<td>404</td>
+<td>adding a project member by an email that has no account</td>
+</tr>
+<tr>
+<td><code>already_member</code></td>
+<td>409</td>
+<td>adding an account that is already a member of the project</td>
+</tr>
+<tr>
+<td><code>owner_must_transfer</code></td>
+<td>409</td>
+<td>the project owner leaving the project</td>
+</tr>
+<tr>
+<td><code>not_deleted</code></td>
+<td>409</td>
+<td>purging a task or project that is not in the Trash</td>
+</tr>
+<tr>
+<td><code>unsupported_format</code></td>
+<td>400</td>
+<td>import file in no supported format</td>
+</tr>
+<tr>
+<td><code>invalid_file</code></td>
+<td>400</td>
+<td>import file recognised but unreadable</td>
+</tr>
+<tr>
+<td><code>private_target</code></td>
+<td>400</td>
+<td>webhook URL on a private, loopback or link-local network while the owner has not allowed private targets</td>
+</tr>
+<tr>
+<td><code>limit_reached</code></td>
+<td>409</td>
+<td>more than 20 webhooks on one account</td>
+</tr>
+<tr>
+<td><code>destination_error</code></td>
+<td>502</td>
+<td><code>POST /backups/test</code> when the destination refuses or cannot be reached</td>
+</tr>
+<tr>
+<td><code>email_disabled</code></td>
+<td>409</td>
+<td>changing or rotating the email-to-task address when the operator has not configured email capture</td>
+</tr>
+<tr>
+<td><code>encryption_disabled</code></td>
+<td>404/409</td>
+<td>404 for <code>GET</code>/<code>DELETE /api/v1/encryption/keys</code> without a key record; 409 for the history purge without one</td>
+</tr>
+<tr>
+<td><code>encryption_conflict</code></td>
+<td>409</td>
+<td><code>PUT /api/v1/encryption/keys</code> with a version that is not the stored version + 1 (another device created or changed the record)</td>
+</tr>
+<tr>
+<td><code>encryption_enabled</code></td>
+<td>409</td>
+<td>sharing a project for the first time, or creating a CalDAV app password, while the account uses end-to-end encryption</td>
+</tr>
+<tr>
+<td><code>method_not_allowed</code></td>
+<td>405</td>
+<td><code>/mcp</code> with a method other than <code>POST</code></td>
+</tr>
+<tr>
+<td><code>not_acceptable</code></td>
+<td>406</td>
+<td><code>/mcp</code> with an <code>Accept</code> header that admits only <code>text/event-stream</code></td>
+</tr>
+<tr>
+<td><code>unsupported_protocol_version</code></td>
+<td>400</td>
+<td><code>/mcp</code> with an <code>MCP-Protocol-Version</code> header naming an unsupported version</td>
+</tr>
+</tbody></table></div>
+<p>CalDAV (<code>/dav/</code>) answers with WebDAV status codes and precondition elements instead of this envelope; MCP tool errors are JSON-RPC errors (see <a href="/docs/mcp/#protocol-details">mcp.md</a>).</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/api.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/self-hosting/demo/"><span>Previous</span>Public demo instance</a>
+      <a class="next" rel="next" href="/docs/cli/"><span>Next</span>Command-line client</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#authentication">Authentication</a><ul><li><a href="#how-a-non-browser-client-signs-in">How a non-browser client signs in</a></li><li><a href="#endpoints">Endpoints</a></li><li><a href="#passkeys">Passkeys</a></li><li><a href="#two-factor-authentication">Two-factor authentication</a></li><li><a href="#single-sign-on">Single sign-on</a></li><li><a href="#task-fields">Task fields</a></li><li><a href="#subtasks">Subtasks</a></li><li><a href="#recurring-tasks">Recurring tasks</a></li><li><a href="#project-fields">Project fields</a></li><li><a href="#sub-projects">Sub-projects</a></li><li><a href="#sections">Sections</a></li><li><a href="#label-fields">Label fields</a></li><li><a href="#view-fields">View fields</a></li><li><a href="#reminders-and-push">Reminders and push</a></li><li><a href="#invitations">Invitations</a></li><li><a href="#user-administration">User administration</a></li><li><a href="#backups">Backups</a></li><li><a href="#audit-log">Audit log</a></li><li><a href="#sharing">Sharing</a></li><li><a href="#assignment-and-notifications">Assignment and notifications</a></li><li><a href="#trash-and-history">Trash and history</a></li><li><a href="#comments-and-activity">Comments and activity</a></li><li><a href="#activity-feed">Activity feed</a></li><li><a href="#import">Import</a></li><li><a href="#caldav-and-app-passwords">CalDAV and app passwords</a></li><li><a href="#email-to-task">Email to task</a></li><li><a href="#webhooks">Webhooks</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li></ul></li><li><a href="#examples">Examples</a></li><li><a href="#behaviour-notes">Behaviour notes</a><ul><li><a href="#error-codes">Error codes</a></li></ul></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

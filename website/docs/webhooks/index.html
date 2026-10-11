@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Webhooks · OpenTodo docs</title>
+  <meta name="description" content="Events, payload, signature checks, retries and recipes for Home Assistant, n8n and Telegram.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/webhooks/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/webhooks/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Webhooks · OpenTodo docs">
+  <meta property="og:description" content="Events, payload, signature checks, retries and recipes for Home Assistant, n8n and Telegram.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/" aria-current="page">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/" aria-current="page">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="developer">
+      <p class="doc-meta"><span class="crumbs">Integrations and internals <span aria-hidden="true">›</span> Integrations</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#events">Events</a></li><li><a href="#payload-version-1">Payload (version 1)</a><ul><li><a href="#encrypted-accounts">Encrypted accounts</a></li><li><a href="#imports">Imports</a></li></ul></li><li><a href="#headers-and-signature">Headers and signature</a><ul><li><a href="#test-vector">Test vector</a></li></ul></li><li><a href="#delivery-retries-and-the-log">Delivery, retries and the log</a></li><li><a href="#private-network-protection">Private network protection</a><ul><li><a href="#allowing-receivers-on-your-lan">Allowing receivers on your LAN</a></li><li><a href="#secrets">Secrets</a></li></ul></li><li><a href="#receiver-recipes">Receiver recipes</a><ul><li><a href="#home-assistant">Home Assistant</a></li><li><a href="#n8n">n8n</a></li><li><a href="#telegram">Telegram</a></li></ul></li></ul></nav></details>
+<h1 id="webhooks">Webhooks</h1>
+<p>OpenTodo can notify other systems when your tasks and projects change: switch on a light when &quot;Water plants&quot; is completed, post to a chat when a task is created, start an n8n flow when a project is archived. Webhooks are configured per account in <strong>Settings → Webhooks</strong> or through the <a href="/docs/api/#webhooks">API</a>. Nothing is sent until you create one, and requests only ever go to the URLs you configured.</p>
+<h2 id="events">Events<a class="anchor" href="#events" aria-label="Link to this section: Events">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Fires when</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>task.created</code></td>
+<td>a task appears for the first time (<code>created_at</code> is set)</td>
+</tr>
+<tr>
+<td><code>task.updated</code></td>
+<td>any other field of a task changes (title, notes, due date, priority, project, labels, position, undelete…)</td>
+</tr>
+<tr>
+<td><code>task.completed</code></td>
+<td><code>completed_at</code> goes from empty to a time</td>
+</tr>
+<tr>
+<td><code>task.reopened</code></td>
+<td><code>completed_at</code> goes from a time back to empty</td>
+</tr>
+<tr>
+<td><code>task.deleted</code></td>
+<td>the task gets a tombstone (<code>deleted_at</code> is set)</td>
+</tr>
+<tr>
+<td><code>project.created</code></td>
+<td>a project appears for the first time</td>
+</tr>
+<tr>
+<td><code>project.updated</code></td>
+<td>any other field of a project changes, including un-archiving</td>
+</tr>
+<tr>
+<td><code>project.archived</code></td>
+<td><code>archived</code> goes from false to true</td>
+</tr>
+<tr>
+<td><code>project.deleted</code></td>
+<td>the project gets a tombstone</td>
+</tr>
+<tr>
+<td><code>import.completed</code></td>
+<td>an <a href="/docs/import/">import</a> job finished (done or failed): one summary for the whole job, see <a href="#imports">Imports</a></td>
+</tr>
+<tr>
+<td><code>import.undone</code></td>
+<td>an import was undone: one summary, see <a href="#imports">Imports</a></td>
+</tr>
+<tr>
+<td><code>ping</code></td>
+<td>you pressed <strong>Send test</strong> (not subscribable, always sent on request)</td>
+</tr>
+</tbody></table></div>
+<p>Task and project events are derived on the server from the operation log, whatever wrote the change: a phone or browser syncing, the REST API, the <code>ot</code> CLI and CalDAV. Imports are the exception: they are reported once per job (see <a href="#imports">Imports</a>). Rules:</p>
+<ul>
+<li><strong>One event per entity per batch.</strong> A sync batch that creates a task and sets six fields produces one <code>task.created</code>, not seven events. When several rules apply the first wins, in this order: created, deleted, completed, reopened, archived, updated.</li>
+<li><strong>Only real changes.</strong> An edit that loses under last-writer-wins (an older offline change arriving after a newer one), a duplicate retry, or a write of the value the field already had produces no event.</li>
+<li><strong>Offline edits fire when they sync.</strong> A task completed on a phone in airplane mode fires <code>task.completed</code> when the phone reconnects. <code>time</code> in the payload is the time the server saw the change; the task&#39;s own <code>completed_at</code> is when you did it.</li>
+<li><strong>Project filter.</strong> A webhook can be limited to one project. Task events then fire only for tasks in that project (or moved into or out of it); project events only for that project.</li>
+<li>Webhooks only see your own data.</li>
+</ul>
+<h2 id="payload-version-1">Payload (version 1)<a class="anchor" href="#payload-version-1" aria-label="Link to this section: Payload (version 1)">#</a></h2>
+<p>Every delivery is a <code>POST</code> with a JSON body:</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;version&quot;: 1,
+  &quot;id&quot;: &quot;6c4f2f0a-8a8e-4d7e-9d7f-3c1b2a0e9f11&quot;,
+  &quot;event&quot;: &quot;task.completed&quot;,
+  &quot;time&quot;: 1760060001000,
+  &quot;webhook_id&quot;: &quot;0b9a2e4c-…&quot;,
+  &quot;source&quot;: &quot;device&quot;,
+  &quot;device&quot;: &quot;e4656b83-…&quot;,
+  &quot;data&quot;: {
+    &quot;task&quot;: {
+      &quot;id&quot;: &quot;…&quot;, &quot;title&quot;: &quot;Water plants&quot;, &quot;description&quot;: &quot;&quot;, &quot;project_id&quot;: null, &quot;parent_id&quot;: null,
+      &quot;priority&quot;: 4, &quot;due&quot;: {&quot;date&quot;: &quot;2026-10-10&quot;}, &quot;labels&quot;: [], &quot;position&quot;: 1760000000000,
+      &quot;created_at&quot;: 1760000000000, &quot;completed_at&quot;: 1760060000000, &quot;deleted_at&quot;: null
+    }
+  },
+  &quot;changes&quot;: {
+    &quot;completed_at&quot;: { &quot;from&quot;: null, &quot;to&quot;: 1760060000000 }
+  }
+}</code></pre>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>version</code></td>
+<td>payload format version; additive changes keep <code>1</code></td>
+</tr>
+<tr>
+<td><code>id</code></td>
+<td>unique delivery id; also in <code>X-OpenTodo-Delivery</code>. Use it to de-duplicate</td>
+</tr>
+<tr>
+<td><code>event</code></td>
+<td>event name, also in <code>X-OpenTodo-Event</code></td>
+</tr>
+<tr>
+<td><code>time</code></td>
+<td>when the server derived the event, Unix milliseconds</td>
+</tr>
+<tr>
+<td><code>webhook_id</code></td>
+<td>the webhook that matched, also in <code>X-OpenTodo-Webhook</code></td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td><code>device</code> (a syncing app), <code>server</code> (REST API / CLI), <code>import</code> or <code>caldav</code>. Lets a receiver ignore changes it caused itself</td>
+</tr>
+<tr>
+<td><code>device</code></td>
+<td>the device id when <code>source</code> is <code>device</code></td>
+</tr>
+<tr>
+<td><code>data.task</code> / <code>data.project</code></td>
+<td>the entity&#39;s current state with the same fields as the <a href="/docs/api/#task-fields">REST API</a>, except the opaque note document <code>notes_doc</code> (the note&#39;s text is <code>description</code>). <code>ping</code> carries <code>data: {}</code></td>
+</tr>
+<tr>
+<td><code>changes</code></td>
+<td>the fields that changed in this batch with their previous (<code>from</code>) and new (<code>to</code>) values; <code>from</code> is <code>null</code> when the field had no value before. <code>notes_doc</code> is never listed, and a change that only touched it (a merged note republished with the same text) sends no event</td>
+</tr>
+</tbody></table></div>
+<h3 id="encrypted-accounts">Encrypted accounts<a class="anchor" href="#encrypted-accounts" aria-label="Link to this section: Encrypted accounts">#</a></h3>
+<p>For an account with <a href="/docs/e2ee/">end-to-end encryption</a>, content fields in payloads (<code>title</code>, <code>description</code>, <code>name</code>) carry the stored ciphertext (<code>&quot;enc:v1:…&quot;</code>); the server cannot decrypt them. Dates, priority and completion stay plaintext.</p>
+<h3 id="imports">Imports<a class="anchor" href="#imports" aria-label="Link to this section: Imports">#</a></h3>
+<p>An import can write tens of thousands of tasks; one delivery per task would flood a receiver and the delivery queue. So the changes an import (or its undo) writes never produce <code>task.*</code> or <code>project.*</code> events. Instead each finished job produces <strong>one</strong> <code>import.completed</code> delivery, and each undo <strong>one</strong> <code>import.undone</code>, per webhook subscribed to that event. Subscribe to them explicitly; a webhook that only lists <code>task.created</code> sees nothing from imports. Changes you make afterwards to imported tasks fire the usual events.</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;version&quot;: 1,
+  &quot;id&quot;: &quot;…&quot;,
+  &quot;event&quot;: &quot;import.completed&quot;,
+  &quot;time&quot;: 1760060001000,
+  &quot;webhook_id&quot;: &quot;…&quot;,
+  &quot;source&quot;: &quot;import&quot;,
+  &quot;data&quot;: {
+    &quot;import&quot;: {
+      &quot;id&quot;: &quot;&lt;import job id&gt;&quot;,
+      &quot;format&quot;: &quot;csv&quot;,
+      &quot;status&quot;: &quot;done&quot;,
+      &quot;totals&quot;: { &quot;rows&quot;: 120, &quot;create&quot;: 120, &quot;written&quot;: 121, &quot;ops&quot;: 360, &quot;...&quot;: 0 },
+      &quot;counts&quot;: { &quot;task&quot;: { &quot;created&quot;: 120 }, &quot;project&quot;: { &quot;created&quot;: 1 } },
+      &quot;project_ids&quot;: [&quot;&lt;project id&gt;&quot;]
+    }
+  },
+  &quot;changes&quot;: {}
+}</code></pre>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>data.import.id</code></td>
+<td>the import job (<code>GET /api/v1/import/jobs/{id}</code>)</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>done</code> or <code>failed</code> for <code>import.completed</code> (<code>message</code> then says why), <code>undone</code> for <code>import.undone</code></td>
+</tr>
+<tr>
+<td><code>totals</code></td>
+<td>the job&#39;s totals as the import API reports them</td>
+</tr>
+<tr>
+<td><code>counts</code></td>
+<td>entities written by this run, per kind (<code>task</code>, <code>project</code>, <code>label</code>, <code>section</code>, <code>reminder</code>, <code>view</code>) and action: <code>created</code> and <code>updated</code> for an import, <code>deleted</code> for an undo</td>
+</tr>
+<tr>
+<td><code>project_ids</code></td>
+<td>the projects the run created or wrote tasks into, sorted</td>
+</tr>
+</tbody></table></div>
+<p>The importing user&#39;s webhooks receive every touched project. When an import writes into a shared project, each other member&#39;s subscribed webhooks receive the same summary with <code>project_ids</code> limited to the shared projects they belong to. A webhook with a project filter receives the summary only when its project is in <code>project_ids</code>. Summaries are queued, signed, retried and logged like every other delivery.</p>
+<h2 id="headers-and-signature">Headers and signature<a class="anchor" href="#headers-and-signature" aria-label="Link to this section: Headers and signature">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Content-Type</code></td>
+<td><code>application/json</code></td>
+</tr>
+<tr>
+<td><code>User-Agent</code></td>
+<td><code>OpenTodo/&lt;version&gt;</code></td>
+</tr>
+<tr>
+<td><code>X-OpenTodo-Event</code></td>
+<td><code>task.completed</code></td>
+</tr>
+<tr>
+<td><code>X-OpenTodo-Delivery</code></td>
+<td>delivery id (same as <code>id</code> in the body)</td>
+</tr>
+<tr>
+<td><code>X-OpenTodo-Webhook</code></td>
+<td>webhook id</td>
+</tr>
+<tr>
+<td><code>X-OpenTodo-Timestamp</code></td>
+<td>Unix <strong>seconds</strong> when this attempt was sent</td>
+</tr>
+<tr>
+<td><code>X-OpenTodo-Signature</code></td>
+<td><code>v1=&lt;hex HMAC-SHA256&gt;</code></td>
+</tr>
+</tbody></table></div>
+<p>The signature is <code>hex(HMAC-SHA256(key = secret, message = &quot;&lt;X-OpenTodo-Timestamp&gt;.&lt;raw request body&gt;&quot;))</code>, prefixed with <code>v1=</code>. The key is the whole secret exactly as shown when you created the webhook, including the <code>whsec_</code> prefix. To verify:</p>
+<ol>
+<li>Read the raw body bytes before parsing JSON (re-serialising changes the bytes).</li>
+<li>Recompute the HMAC over <code>timestamp + &quot;.&quot; + body</code> and compare it to the header with a constant-time comparison.</li>
+<li>Reject the request if the timestamp is too old (five minutes is a good tolerance) to stop replays.</li>
+</ol>
+<p>Each retry and each redelivery is signed again with a fresh timestamp, so signatures differ between attempts while the body stays the same.</p>
+<h3 id="test-vector">Test vector<a class="anchor" href="#test-vector" aria-label="Link to this section: Test vector">#</a></h3>
+<p>Use this to check your implementation:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>secret</td>
+<td><code>whsec_opentodo-test-vector-secret-do-not-use</code></td>
+</tr>
+<tr>
+<td>timestamp</td>
+<td><code>1760060001</code></td>
+</tr>
+<tr>
+<td>body</td>
+<td><code>{&quot;version&quot;:1,&quot;id&quot;:&quot;7d3c1f0e-0000-4000-8000-000000000001&quot;,&quot;event&quot;:&quot;ping&quot;,&quot;time&quot;:1760060001000,&quot;webhook_id&quot;:&quot;0b9a2e4c-0000-4000-8000-000000000002&quot;,&quot;source&quot;:&quot;server&quot;,&quot;data&quot;:{},&quot;changes&quot;:{}}</code></td>
+</tr>
+<tr>
+<td>signature</td>
+<td><code>v1=a049099332920d6f2b44a294b46fc5260f87dfc36294f77069b5ab0058589b98</code></td>
+</tr>
+</tbody></table></div>
+<p>The server&#39;s own test suite (<code>TestSignatureMatchesReferenceVector</code> in <code>internal/webhook</code>) checks the same vector.</p>
+<p><strong>Shell</strong> (OpenSSL):</p>
+<pre tabindex="0"><code class="language-bash">secret='whsec_opentodo-test-vector-secret-do-not-use'
+timestamp='1760060001'
+body='{&quot;version&quot;:1,&quot;id&quot;:&quot;7d3c1f0e-0000-4000-8000-000000000001&quot;,&quot;event&quot;:&quot;ping&quot;,&quot;time&quot;:1760060001000,&quot;webhook_id&quot;:&quot;0b9a2e4c-0000-4000-8000-000000000002&quot;,&quot;source&quot;:&quot;server&quot;,&quot;data&quot;:{},&quot;changes&quot;:{}}'
+printf '%s' &quot;$timestamp.$body&quot; | openssl dgst -sha256 -hmac &quot;$secret&quot; -hex | sed 's/^.*= /v1=/'
+# v1=a049099332920d6f2b44a294b46fc5260f87dfc36294f77069b5ab0058589b98</code></pre>
+<p><strong>Python</strong> (standard library):</p>
+<pre tabindex="0"><code class="language-python">import hashlib, hmac, time
+
+def verify(secret: str, timestamp: str, body: bytes, signature: str, tolerance: int = 300) -&gt; bool:
+    if abs(time.time() - int(timestamp)) &gt; tolerance:
+        return False  # too old: possible replay
+    expected = &quot;v1=&quot; + hmac.new(secret.encode(), timestamp.encode() + b&quot;.&quot; + body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)
+
+# Test vector (tolerance disabled because the vector is old):
+body = b'{&quot;version&quot;:1,&quot;id&quot;:&quot;7d3c1f0e-0000-4000-8000-000000000001&quot;,&quot;event&quot;:&quot;ping&quot;,&quot;time&quot;:1760060001000,&quot;webhook_id&quot;:&quot;0b9a2e4c-0000-4000-8000-000000000002&quot;,&quot;source&quot;:&quot;server&quot;,&quot;data&quot;:{},&quot;changes&quot;:{}}'
+print(verify(&quot;whsec_opentodo-test-vector-secret-do-not-use&quot;, &quot;1760060001&quot;, body,
+             &quot;v1=a049099332920d6f2b44a294b46fc5260f87dfc36294f77069b5ab0058589b98&quot;, tolerance=10**10))  # True</code></pre>
+<p><strong>JavaScript</strong> (Node.js 18+, no dependencies):</p>
+<pre tabindex="0"><code class="language-js">const crypto = require('node:crypto')
+
+function verify(secret, timestamp, rawBody, signature, toleranceSec = 300) {
+  if (Math.abs(Date.now() / 1000 - Number(timestamp)) &gt; toleranceSec) return false // replay
+  const expected = 'v1=' + crypto.createHmac('sha256', secret).update(`${timestamp}.`).update(rawBody).digest('hex')
+  const a = Buffer.from(expected), b = Buffer.from(signature)
+  return a.length === b.length &amp;&amp; crypto.timingSafeEqual(a, b)
+}
+
+// Test vector (tolerance disabled because the vector is old):
+const body = '{&quot;version&quot;:1,&quot;id&quot;:&quot;7d3c1f0e-0000-4000-8000-000000000001&quot;,&quot;event&quot;:&quot;ping&quot;,&quot;time&quot;:1760060001000,&quot;webhook_id&quot;:&quot;0b9a2e4c-0000-4000-8000-000000000002&quot;,&quot;source&quot;:&quot;server&quot;,&quot;data&quot;:{},&quot;changes&quot;:{}}'
+console.log(verify('whsec_opentodo-test-vector-secret-do-not-use', '1760060001', body,
+  'v1=a049099332920d6f2b44a294b46fc5260f87dfc36294f77069b5ab0058589b98', Infinity)) // true</code></pre>
+<p>In an Express app use <code>express.raw({ type: &#39;application/json&#39; })</code> for the webhook route so <code>req.body</code> is the raw <code>Buffer</code>.</p>
+<h2 id="delivery-retries-and-the-log">Delivery, retries and the log<a class="anchor" href="#delivery-retries-and-the-log" aria-label="Link to this section: Delivery, retries and the log">#</a></h2>
+<ul>
+<li>Deliveries are queued in the database, so a restart loses nothing: anything pending is sent after the server starts again.</li>
+<li>Each attempt times out after <strong>10 seconds</strong>. Any <code>2xx</code> answer is success; everything else (other status codes, timeouts, connection errors, redirects) is a failure.</li>
+<li>A failed delivery is retried up to <strong>six times</strong> after the first attempt, waiting 30 s, 5 min, 30 min, 2 h, 8 h and 16 h (each ±20 % jitter), about 27 hours in total. After the last retry the delivery is marked <code>failed</code>.</li>
+<li>Delivery is <strong>at least once</strong> and <strong>not ordered</strong>. A receiver that answers slowly or crashes after processing may see the same delivery again; de-duplicate on <code>id</code>.</li>
+<li>After <strong>20 consecutive failed deliveries</strong> (each having used all its retries) the webhook is disabled automatically. Settings shows &quot;Disabled after repeated failures&quot; (<code>disabledReason: &quot;too_many_failures&quot;</code>); nothing more is queued until you enable it again, which also resets the counter. A successful delivery resets the counter too.</li>
+<li><strong>Send test</strong> sends a <code>ping</code> right away (one attempt, no retries, not counted toward auto-disable) and shows the status code and duration.</li>
+<li>The <strong>delivery log</strong> keeps the last 100 deliveries per webhook with status (<code>pending</code>, <code>retry</code>, <code>delivered</code>, <code>failed</code>), number of attempts, last status code, last error, duration and the first kilobyte of the response body. Entries older than 30 days are removed. <strong>Redeliver</strong> queues the same body again with a new delivery id.</li>
+</ul>
+<h2 id="private-network-protection">Private network protection<a class="anchor" href="#private-network-protection" aria-label="Link to this section: Private network protection">#</a></h2>
+<p>A server that sends HTTP requests on behalf of its users could be abused to reach things that are not meant to be reachable: the router&#39;s admin page, other containers, a cloud metadata endpoint. By default OpenTodo therefore refuses webhook targets on:</p>
+<ul>
+<li>loopback (<code>127.0.0.0/8</code>, <code>::1</code>), unspecified (<code>0.0.0.0</code>, <code>::</code>) and &quot;this network&quot; (<code>0.0.0.0/8</code>),</li>
+<li>private ranges (<code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>, <code>192.168.0.0/16</code>), carrier-grade NAT and Tailscale (<code>100.64.0.0/10</code>), unique-local IPv6 (<code>fc00::/7</code>, including <code>fd00::/8</code>),</li>
+<li>link-local (<code>169.254.0.0/16</code>, <code>fe80::/10</code>), which includes the cloud metadata address <code>169.254.169.254</code>,</li>
+<li>multicast, broadcast and reserved ranges, and IPv4 addresses embedded in IPv6 (<code>::ffff:10.0.0.1</code>, NAT64, 6to4).</li>
+</ul>
+<p>How it is enforced:</p>
+<ul>
+<li>Only <code>http://</code> and <code>https://</code> URLs, at most 2,048 characters.</li>
+<li>The check runs when a webhook is created or its URL is changed (400 <code>private_target</code>) and again on <strong>every delivery</strong>: the server resolves the host name itself, drops denied addresses and connects to the address it checked, so a DNS answer that changes later (DNS rebinding) cannot sneak in a private address. If every address is denied, the delivery fails with <code>private_target</code> and no connection is made.</li>
+<li>Redirects are never followed; a <code>3xx</code> answer counts as a failure.</li>
+<li>The server ignores <code>HTTP_PROXY</code>/<code>HTTPS_PROXY</code> for webhook deliveries, because a proxy would make the connection on its behalf and bypass the check.</li>
+</ul>
+<h3 id="allowing-receivers-on-your-lan">Allowing receivers on your LAN<a class="anchor" href="#allowing-receivers-on-your-lan" aria-label="Link to this section: Allowing receivers on your LAN">#</a></h3>
+<p>Home Assistant, n8n or Node-RED often run on the same network as OpenTodo. The <strong>owner</strong> can switch on <strong>Settings → Webhooks → Allow private network targets</strong> (or <code>PUT /api/v1/settings/webhooks</code> with <code>{&quot;allowPrivate&quot;: true}</code>). This applies to every account on the server, so leave it off on a public multi-user server. The scheme restriction and the no-redirect rule stay in force.</p>
+<p>For deployments managed as code, the optional <code>OPENTODO_WEBHOOKS_ALLOW_PRIVATE=true</code> presets the toggle on the first start. After that the value in Settings wins, so the owner can still turn it off.</p>
+<h3 id="secrets">Secrets<a class="anchor" href="#secrets" aria-label="Link to this section: Secrets">#</a></h3>
+<p>The secret (<code>whsec_…</code>) is shown once, when the webhook is created. It is stored in the server database in plaintext because the server needs it to sign each request; the database file is the trust boundary, just as for sessions and API tokens. If a secret leaks, delete the webhook and create a new one. Webhooks are server configuration: they are not part of the JSON export and not synced to devices.</p>
+<p>Settings warns when a target uses plain <code>http://</code> outside this machine: the payload contains task content and would cross the network unencrypted.</p>
+<h2 id="receiver-recipes">Receiver recipes<a class="anchor" href="#receiver-recipes" aria-label="Link to this section: Receiver recipes">#</a></h2>
+<h3 id="home-assistant">Home Assistant<a class="anchor" href="#home-assistant" aria-label="Link to this section: Home Assistant">#</a></h3>
+<ol>
+<li>In Home Assistant, create an automation with a <strong>Webhook</strong> trigger. Note the webhook id, for example <code>opentodo-plants</code>. Leave &quot;Only accessible from the local network&quot; on if OpenTodo runs on your LAN.</li>
+<li>As the owner, enable <strong>Allow private network targets</strong> in OpenTodo (Home Assistant usually lives at <code>http://192.168.x.x:8123</code>).</li>
+<li>In OpenTodo, add a webhook to <code>http://&lt;home-assistant&gt;:8123/api/webhook/opentodo-plants</code> with the event <code>task.completed</code>, optionally limited to a &quot;Home&quot; project.</li>
+<li>In the automation, add a condition on the payload and an action:</li>
+</ol>
+<pre tabindex="0"><code class="language-yaml">alias: Plants watered
+triggers:
+  - trigger: webhook
+    webhook_id: opentodo-plants
+    allowed_methods: [POST]
+    local_only: true
+conditions:
+  - condition: template
+    value_template: &quot;{{ trigger.json.event == 'task.completed' and 'plants' in trigger.json.data.task.title | lower }}&quot;
+actions:
+  - action: light.turn_on
+    target:
+      entity_id: light.kitchen</code></pre>
+<p>Home Assistant&#39;s webhook trigger does not check signatures; the long random webhook id acts as the shared secret, so keep it unguessable and keep <code>local_only</code> on. Use n8n (below) in front of Home Assistant if you want signature verification.</p>
+<h3 id="n8n">n8n<a class="anchor" href="#n8n" aria-label="Link to this section: n8n">#</a></h3>
+<ol>
+<li>Add a <strong>Webhook</strong> node, method <code>POST</code>, and under <em>Options</em> enable <strong>Raw Body</strong> so the exact bytes are available for verification. Copy the production URL.</li>
+<li>In OpenTodo, add a webhook with that URL and the events you need. If n8n runs on your LAN, the owner enables private network targets first.</li>
+<li>Add a <strong>Code</strong> node after the webhook to verify the signature (set the secret as an n8n credential or environment variable rather than in the code):</li>
+</ol>
+<pre tabindex="0"><code class="language-js">const crypto = require('crypto')
+const secret = $env.OPENTODO_WEBHOOK_SECRET
+const item = $input.first()
+const headers = item.json.headers
+const raw = Buffer.from(item.binary.data.data, 'base64') // raw body from the Webhook node
+const expected = 'v1=' + crypto.createHmac('sha256', secret).update(headers['x-opentodo-timestamp'] + '.').update(raw).digest('hex')
+const fresh = Math.abs(Date.now() / 1000 - Number(headers['x-opentodo-timestamp'])) &lt; 300
+if (!fresh || expected !== headers['x-opentodo-signature']) throw new Error('bad OpenTodo signature')
+return [{ json: JSON.parse(raw.toString('utf8')) }]</code></pre>
+<p>On self-hosted n8n, allow the <code>crypto</code> module in the Code node (<code>NODE_FUNCTION_ALLOW_BUILTIN=crypto</code>). Then branch on <code>{{$json.event}}</code> with a <strong>Switch</strong> node.</p>
+<ol start="4">
+<li>Press <strong>Send test</strong> in OpenTodo: n8n receives a <code>ping</code>.</li>
+</ol>
+<h3 id="telegram">Telegram<a class="anchor" href="#telegram" aria-label="Link to this section: Telegram">#</a></h3>
+<p>Telegram&#39;s Bot API cannot consume an arbitrary JSON body, so put a small relay in between. The simplest is n8n: after the verification step above, add a <strong>Telegram</strong> node with the text <code>✅ {{$json.data.task.title}}</code> for <code>task.completed</code>. Without n8n, a few lines of Python on the same host do the job:</p>
+<pre tabindex="0"><code class="language-python"># telegram_relay.py: python3 telegram_relay.py (listens on 127.0.0.1:8099)
+import hashlib, hmac, http.server, json, os, time, urllib.parse, urllib.request
+
+SECRET = os.environ[&quot;OPENTODO_WEBHOOK_SECRET&quot;]
+BOT, CHAT = os.environ[&quot;TELEGRAM_BOT_TOKEN&quot;], os.environ[&quot;TELEGRAM_CHAT_ID&quot;]
+
+class Relay(http.server.BaseHTTPRequestHandler):
+    def do_POST(self):
+        body = self.rfile.read(int(self.headers[&quot;Content-Length&quot;]))
+        ts, sig = self.headers[&quot;X-OpenTodo-Timestamp&quot;], self.headers[&quot;X-OpenTodo-Signature&quot;]
+        expected = &quot;v1=&quot; + hmac.new(SECRET.encode(), ts.encode() + b&quot;.&quot; + body, hashlib.sha256).hexdigest()
+        if abs(time.time() - int(ts)) &gt; 300 or not hmac.compare_digest(expected, sig):
+            self.send_response(401); self.end_headers(); return
+        event = json.loads(body)
+        task = event.get(&quot;data&quot;, {}).get(&quot;task&quot;) or {}
+        text = {&quot;task.created&quot;: &quot;🆕 &quot;, &quot;task.completed&quot;: &quot;✅ &quot;}.get(event[&quot;event&quot;], event[&quot;event&quot;] + &quot;: &quot;) + task.get(&quot;title&quot;, &quot;&quot;)
+        data = urllib.parse.urlencode({&quot;chat_id&quot;: CHAT, &quot;text&quot;: text}).encode()
+        urllib.request.urlopen(f&quot;https://api.telegram.org/bot{BOT}/sendMessage&quot;, data, timeout=5)
+        self.send_response(204); self.end_headers()
+
+http.server.HTTPServer((&quot;127.0.0.1&quot;, 8099), Relay).serve_forever()</code></pre>
+<p>Point an OpenTodo webhook at <code>http://127.0.0.1:8099/</code> (owner: allow private network targets). The relay, not OpenTodo, talks to Telegram.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/webhooks.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/cli/"><span>Previous</span>Command-line client</a>
+      <a class="next" rel="next" href="/docs/mcp/"><span>Next</span>AI assistants (MCP)</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#events">Events</a></li><li><a href="#payload-version-1">Payload (version 1)</a><ul><li><a href="#encrypted-accounts">Encrypted accounts</a></li><li><a href="#imports">Imports</a></li></ul></li><li><a href="#headers-and-signature">Headers and signature</a><ul><li><a href="#test-vector">Test vector</a></li></ul></li><li><a href="#delivery-retries-and-the-log">Delivery, retries and the log</a></li><li><a href="#private-network-protection">Private network protection</a><ul><li><a href="#allowing-receivers-on-your-lan">Allowing receivers on your LAN</a></li><li><a href="#secrets">Secrets</a></li></ul></li><li><a href="#receiver-recipes">Receiver recipes</a><ul><li><a href="#home-assistant">Home Assistant</a></li><li><a href="#n8n">n8n</a></li><li><a href="#telegram">Telegram</a></li></ul></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

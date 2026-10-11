@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Running with Docker · OpenTodo docs</title>
+  <meta name="description" content="Docker Compose and docker run, reverse proxies, push, updates, managing users and recovering owner access.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/self-hosting/docker/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/self-hosting/docker/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Running with Docker · OpenTodo docs">
+  <meta property="og:description" content="Docker Compose and docker run, reverse proxies, push, updates, managing users and recovering owner access.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/" aria-current="page">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/" aria-current="page">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="admin">
+      <p class="doc-meta"><span class="crumbs">Self-hosting</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#docker-compose">Docker Compose</a></li><li><a href="#plain-docker-run">Plain docker run</a></li><li><a href="#behind-a-reverse-proxy">Behind a reverse proxy</a><ul><li><a href="#email-to-task">Email to task</a></li><li><a href="#calendar-apps-caldav-through-the-proxy">Calendar apps (CalDAV) through the proxy</a></li><li><a href="#passkeys-need-an-https-base-url">Passkeys need an https base URL</a></li><li><a href="#live-updates-through-the-proxy">Live updates through the proxy</a></li></ul></li><li><a href="#reminders-and-web-push">Reminders and web push</a></li><li><a href="#ai-assistants-mcp">AI assistants (MCP)</a></li><li><a href="#bind-mounts">Bind mounts</a></li><li><a href="#backup-and-restore">Backup and restore</a></li><li><a href="#trash-retention">Trash retention</a></li><li><a href="#audit-log">Audit log</a></li><li><a href="#two-factor-authentication">Two-factor authentication</a></li><li><a href="#managing-users">Managing users</a><ul><li><a href="#recovering-owner-access">Recovering owner access</a></li></ul></li><li><a href="#updating">Updating</a></li><li><a href="#health">Health</a></li><li><a href="#resource-usage">Resource usage</a></li></ul></nav></details>
+<h1 id="running-opentodo-with-docker">Running OpenTodo with Docker</h1>
+<h2 id="docker-compose">Docker Compose<a class="anchor" href="#docker-compose" aria-label="Link to this section: Docker Compose">#</a></h2>
+<pre tabindex="0"><code class="language-bash">git clone https://github.com/pixari/opentodo.git
+cd opentodo
+cp .env.example .env        # optional
+docker compose up -d</code></pre>
+<p>Open <a href="http://localhost:8080" rel="noopener">http://localhost:8080</a>. The first visitor creates the owner account.</p>
+<p>To add more people, keep sign-up closed and create single-use invitation links in <strong>Settings → Members</strong> (see <a href="https://github.com/pixari/opentodo/blob/main/README.md#adding-people" rel="noopener">Adding people</a>). <code>OPENTODO_ALLOW_SIGNUP=true</code> opens registration to anyone who can reach the server and is rarely what you want on a public URL.</p>
+<ul>
+<li>Data lives in the named volume <code>opentodo-data</code>, mounted at <code>/data</code>.</li>
+<li>Change the host port with <code>OPENTODO_PORT</code> in <code>.env</code>.</li>
+<li>Every variable in the <a href="https://github.com/pixari/opentodo/blob/main/README.md#configuration" rel="noopener">configuration table</a> can be set in <code>.env</code>; the compose file passes them to the container. With <code>docker run</code>, pass them with <code>-e</code>.</li>
+<li>To build locally instead of pulling: replace <code>image: ghcr.io/pixari/opentodo:latest</code> with <code>build: .</code>.</li>
+</ul>
+<h2 id="plain-docker-run">Plain <code>docker run</code><a class="anchor" href="#plain-docker-run" aria-label="Link to this section: Plain docker run">#</a></h2>
+<pre tabindex="0"><code class="language-bash">docker run -d --name opentodo \
+  -p 8080:8080 \
+  -v opentodo-data:/data \
+  -e OPENTODO_BASE_URL=https://todo.example.com \
+  ghcr.io/pixari/opentodo:latest</code></pre>
+<h2 id="behind-a-reverse-proxy">Behind a reverse proxy<a class="anchor" href="#behind-a-reverse-proxy" aria-label="Link to this section: Behind a reverse proxy">#</a></h2>
+<p>OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set <code>OPENTODO_BASE_URL</code> to the public https URL so cookies are marked <code>Secure</code>, the origin check matches and invitation links point at the public address. The server also honours <code>X-Forwarded-Host</code> for the origin check and <code>X-Forwarded-For</code> for rate limiting and the audit log. It trusts only the <strong>last</strong> <code>X-Forwarded-For</code> hop, the address your proxy appended (Traefik, Caddy, and nginx with <code>proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</code> append it); earlier entries come from the client and are ignored. So run exactly one proxy in front of the container and do not publish the container port, or a client could send its own header.</p>
+<p><strong>A CDN in front of your proxy</strong> (Cloudflare&#39;s orange cloud, or another proxy of yours) adds its own hop, so every visitor would look like the CDN&#39;s address and share one rate-limit bucket. Tell OpenTodo which hops to skip with the optional <code>OPENTODO_TRUSTED_PROXIES</code>: a comma-separated list of IP addresses and CIDR prefixes, and the keyword <code>cloudflare</code> for Cloudflare&#39;s published edge ranges (built in, no network request). With <code>cloudflare</code>, a request that reaches your proxy from a Cloudflare edge is attributed to its <code>CF-Connecting-IP</code> header, which also works when your proxy drops the incoming <code>X-Forwarded-For</code>. Only set it when every request really comes through those proxies.</p>
+<pre tabindex="0"><code class="language-env">OPENTODO_TRUSTED_PROXIES=cloudflare</code></pre>
+<h3 id="email-to-task">Email to task<a class="anchor" href="#email-to-task" aria-label="Link to this section: Email to task">#</a></h3>
+<p><a href="/docs/email/">Email to task</a> needs no port, proxy rule or DNS record: OpenTodo makes one outbound IMAP connection (TLS, port 993 by default) to the mailbox you configure with <code>OPENTODO_EMAIL_*</code>. If your host restricts outbound traffic, allow that one host and port. Keep the password in a Docker secret and point <code>OPENTODO_EMAIL_IMAP_PASSWORD_FILE</code> at it (example in the guide).</p>
+<h3 id="calendar-apps-caldav-through-the-proxy">Calendar apps (CalDAV) through the proxy<a class="anchor" href="#calendar-apps-caldav-through-the-proxy" aria-label="Link to this section: Calendar apps (CalDAV) through the proxy">#</a></h3>
+<p>When the owner enables <a href="/docs/caldav/">CalDAV</a>, calendar apps use <code>/dav/</code> and <code>/.well-known/caldav</code> with WebDAV methods (<code>PROPFIND</code>, <code>REPORT</code>, <code>MKCALENDAR</code>, <code>PROPPATCH</code>). Most proxies (Caddy, Traefik, nginx) forward them unchanged; make sure no rule limits methods to GET/POST or blocks <code>/.well-known/</code>, and that the <code>Authorization</code> header is passed through. App passwords travel in every request, so serve CalDAV over https only.</p>
+<h3 id="passkeys-need-an-https-base-url">Passkeys need an https base URL<a class="anchor" href="#passkeys-need-an-https-base-url" aria-label="Link to this section: Passkeys need an https base URL">#</a></h3>
+<p>Passkeys (Settings → Security) are only offered when <code>OPENTODO_BASE_URL</code> is an <code>https://</code> URL; browsers refuse WebAuthn on plain-http origins. With no base URL or an <code>http://</code> LAN address, the server keeps working with passwords and simply hides passkeys (<code>auth/status</code> reports <code>passkeysAvailable: false</code>). For local development <code>http://localhost:8080</code> also works, because browsers treat localhost as secure.</p>
+<p>Passkeys are bound to the <strong>host</strong> of that URL (the relying-party id, for example <code>todo.example.com</code>). If you move the server to a new domain, existing passkeys stop matching: users sign in with their password and register new passkeys from Settings. Paths and ports do not matter, only the host. See <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">SECURITY.md</a> for the credential model.</p>
+<p>Caddy example:</p>
+<pre tabindex="0"><code>todo.example.com {
+    reverse_proxy opentodo:8080
+}</code></pre>
+<h3 id="live-updates-through-the-proxy">Live updates through the proxy<a class="anchor" href="#live-updates-through-the-proxy" aria-label="Link to this section: Live updates through the proxy">#</a></h3>
+<p>Each open tab keeps one long-lived request open, <code>GET /api/v1/sync/events</code>, a server-sent event stream the server uses to tell devices &quot;new changes, sync now&quot;. It needs nothing special from Caddy, Traefik (Coolify) or nginx with default settings, because the server already:</p>
+<ul>
+<li>sends <code>Cache-Control: no-cache</code> and <code>X-Accel-Buffering: no</code> (nginx honours the latter and stops buffering that response),</li>
+<li>flushes after every write and sends a <code>: ping</code> heartbeat every 25 s, below the usual 30–60 s idle timeouts,</li>
+<li>caps streams at 16 per account and closes them cleanly on shutdown.</li>
+</ul>
+<p>Things to keep in mind:</p>
+<ul>
+<li><strong>Buffering.</strong> If a proxy buffers whole responses (older nginx configs with <code>proxy_buffering on</code> and no respect for <code>X-Accel-Buffering</code>, or some CDN &quot;optimisation&quot; layers), the stream never opens. For nginx add <code>proxy_buffering off;</code> to the <code>location</code> that proxies OpenTodo, or at least <code>proxy_http_version 1.1;</code> and leave <code>X-Accel-Buffering</code> enabled.</li>
+<li><strong>Idle timeouts.</strong> Any read/response timeout on the proxy shorter than 25 s will cut the stream (the client reconnects, but it is wasteful). The defaults of Caddy, Traefik and nginx (<code>proxy_read_timeout 60s</code>) are fine.</li>
+<li><strong>HTTP/2 is recommended.</strong> Browsers allow only six HTTP/1.1 connections per origin, and every open tab holds one for the stream. Terminate TLS at the proxy with HTTP/2 (the default for Caddy and Traefik with https) and the streams are multiplexed over one connection. On plain HTTP/1.1 keep the number of open tabs small.</li>
+</ul>
+<p>Troubleshooting &quot;live updates disconnected&quot; (the status pill says <strong>Polling</strong> instead of <strong>Live</strong>):</p>
+<ol>
+<li>Open <code>https://todo.example.com/api/v1/sync/events?device=test</code> in a signed-in browser tab. You should see <code>: connected</code> immediately and <code>: ping</code> every 25 s. If the page keeps loading with nothing shown, the proxy is buffering.</li>
+<li>If it works but drops after a fixed time, a timeout somewhere in the chain is shorter than the heartbeat; raise it above 25 s.</li>
+<li>Nothing is lost either way: while the stream is down the app polls every 30 s exactly as before.</li>
+</ol>
+<h2 id="reminders-and-web-push">Reminders and web push<a class="anchor" href="#reminders-and-web-push" aria-label="Link to this section: Reminders and web push">#</a></h2>
+<p>Reminders are shown in the app on every device and, for devices that enable notifications in <strong>Settings → Notifications</strong>, sent as web push so a closed app still notifies. Nothing needs configuring: on first use the server generates a VAPID key pair at <code>&lt;data&gt;/push_vapid.pem</code> (mode 0600). Keep it with the database: it is included in backup archives and restored with them, and existing subscriptions only work with the key they were created for.</p>
+<p>Push is the only outbound traffic that is on by default (webhooks, backups to S3 or WebDAV, single sign-on and email to task contact only what you configure; see <a href="https://github.com/pixari/opentodo/blob/main/README.md#privacy" rel="noopener">Privacy</a>). A push goes to the push service the user&#39;s own browser chose when it subscribed (Google, Mozilla, Apple…), carries an encrypted payload the push service cannot read, and by default contains only ids (the device opts in to task titles). Browsers require https for push, so set <code>OPENTODO_BASE_URL</code> to your public https URL (it is also sent as the VAPID contact). To forbid outbound traffic set <code>OPENTODO_PUSH=off</code>: the push routes answer 404, no push is sent, and reminders are still shown in the app.</p>
+<h2 id="ai-assistants-mcp">AI assistants (MCP)<a class="anchor" href="#ai-assistants-mcp" aria-label="Link to this section: AI assistants (MCP)">#</a></h2>
+<p>The read-only <a href="/docs/mcp/">MCP endpoint</a> at <code>/mcp</code> is off until the owner enables it in <strong>Settings → AI assistants</strong> (or <code>OPENTODO_MCP=true</code> presets it on the first start). It needs no extra port or container: assistants reach it through the same URL and reverse proxy as the app, with a read-only API token in the <code>Authorization</code> header. Proxies that buffer or rewrite requests need nothing special, since every answer is a plain JSON response (no event stream). The server makes no outbound request for it. If your proxy logs request headers, exclude <code>Authorization</code>.</p>
+<h2 id="bind-mounts">Bind mounts<a class="anchor" href="#bind-mounts" aria-label="Link to this section: Bind mounts">#</a></h2>
+<p>The container runs as uid 65532 (distroless <code>nonroot</code>). A bind-mounted data directory must be writable by that user:</p>
+<pre tabindex="0"><code class="language-bash">mkdir -p ./data &amp;&amp; sudo chown 65532:65532 ./data
+docker run -v &quot;$PWD/data:/data&quot; ...</code></pre>
+<h2 id="backup-and-restore">Backup and restore<a class="anchor" href="#backup-and-restore" aria-label="Link to this section: Backup and restore">#</a></h2>
+<p>Turn on scheduled backups in <strong>Settings → Backups</strong> (owner only): consistent snapshots of the database, taken while the server runs, written to <code>/data/backups</code>, an S3-compatible bucket or a WebDAV share, with retention and optional encryption. Restore with the binary in the image while the container is stopped:</p>
+<pre tabindex="0"><code class="language-bash">docker compose stop opentodo
+docker compose run --rm --no-deps opentodo restore /data/backups/opentodo-20261010-030000-4f1c0a9e.tar.gz
+docker compose start opentodo</code></pre>
+<p>Destinations, encryption, the archive format and the full restore procedure (including encrypted and downloaded archives) are in <a href="/docs/backups/">docs/backups.md</a>. Copying the <code>/data</code> volume while the container is stopped still works as a manual backup. A per-user JSON export is available from <strong>Settings</strong> in the app or <code>GET /api/v1/export</code> with an API token.</p>
+<h2 id="trash-retention">Trash retention<a class="anchor" href="#trash-retention" aria-label="Link to this section: Trash retention">#</a></h2>
+<p>Deleted tasks and projects stay in the Trash, restorable, for 30 days; then the server purges them for good (operations and values removed, a small marker kept so devices drop their copies). Set <code>OPENTODO_TRASH_RETENTION_DAYS</code> to change the period (<code>0</code> keeps the Trash until a user empties it). The job runs at startup and once a day. Purged data is gone from the live database, but older backup archives still contain it; restoring one brings back the items as they were when it was taken. See <a href="/docs/sync/#purge">docs/sync.md</a>.</p>
+<h2 id="audit-log">Audit log<a class="anchor" href="#audit-log" aria-label="Link to this section: Audit log">#</a></h2>
+<p>The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials (API tokens, app passwords, passkeys, second factors), invitations, user administration, exports, backups and setting changes in <strong>Settings → Audit log</strong> (API: <a href="/docs/api/#audit-log">docs/api.md</a>). It is stored in <code>opentodo.db</code> inside <code>/data</code>, so it is part of every backup of the volume, and it never contains task content. Nothing needs configuring:</p>
+<ul>
+<li><strong>Retention</strong> defaults to 90 days (7–3650, set in Settings). Expired events are pruned at startup, hourly and right after you lower the retention.</li>
+<li><strong>Client addresses</strong> are not recorded unless you turn on address logging in Settings. Behind a reverse proxy the address is the last <code>X-Forwarded-For</code> hop (the one the proxy appended), so make sure the proxy sets that header (Caddy, Traefik and nginx with <code>proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</code> do) and that the container is not reachable around the proxy, or a client could send its own header. Turning address logging off erases every stored address immediately.</li>
+<li><strong>Disk use</strong> is roughly 200 bytes per event: a household produces a few MB per year; a public server under credential stuffing records one <code>rate_limited</code> event per address per minute rather than one per attempt.</li>
+<li><strong>Export</strong> the log as newline-delimited JSON from the same panel to archive it beyond the retention window.</li>
+</ul>
+<h2 id="two-factor-authentication">Two-factor authentication<a class="anchor" href="#two-factor-authentication" aria-label="Link to this section: Two-factor authentication">#</a></h2>
+<p>Users turn on two-factor authentication in <strong>Settings → Two-factor authentication</strong>. The owner can require it for themselves or for every account there. Nothing needs configuring, but two things are worth knowing:</p>
+<ul>
+<li><p><strong>Keep the host clock right.</strong> Codes are checked against the server&#39;s own clock with 30 seconds of tolerance either way, so a host that drifts by a minute or more rejects valid codes. Docker uses the host&#39;s clock: make sure the host runs NTP (<code>timedatectl</code> should report <code>System clock synchronized: yes</code>; Raspberry Pi OS and every major distribution do this by default). The enrolment step catches large drift straight away with a &quot;code does not match&quot; message.</p>
+</li>
+<li><p><strong>Owner locked out.</strong> If the owner loses both their authenticator and their recovery codes, reset the second factor from the host while the container is stopped, then sign in with the password and enrol again:</p>
+<pre tabindex="0"><code class="language-bash">docker compose stop opentodo
+docker compose run --rm --no-deps opentodo mfa-reset owner@example.com
+docker compose start opentodo</code></pre>
+<p>The command works only on the data volume (shell access to the host is the proof of ownership), refuses to run while the server holds it, and is recorded as <code>mfa.reset</code> in the audit log. Members who are locked out are reset by the owner through <code>POST /api/v1/members/{id}/mfa/reset</code> (<a href="/docs/api/#two-factor-authentication">docs/api.md</a>).</p>
+</li>
+</ul>
+<h2 id="managing-users">Managing users<a class="anchor" href="#managing-users" aria-label="Link to this section: Managing users">#</a></h2>
+<p>The owner sees every account in <strong>Settings → Users</strong> with its role, status and last sign-in (<a href="/docs/api/#user-administration">docs/api.md</a>). From there the owner makes trusted people <strong>admins</strong> (they can invite, and deactivate, reset or delete members, but never act on the owner or other admins), <strong>deactivates</strong> an account (signed out everywhere at once, API tokens and pending invitations revoked, data kept, sign-in blocked until reactivated), creates a <strong>password reset link</strong> for someone who forgot their password (single use, 24 hours, nothing is emailed: copy it and send it yourself), <strong>deletes</strong> an account and its data after typing its email, or <strong>transfers ownership</strong> to another account after re-entering the password (you become an admin). Every user changes their own password in <strong>Settings → Password</strong>. Nothing needs configuring and no SQLite editing is ever needed.</p>
+<h3 id="recovering-owner-access">Recovering owner access<a class="anchor" href="#recovering-owner-access" aria-label="Link to this section: Recovering owner access">#</a></h3>
+<p>Nobody can reset the owner&#39;s password through the app. If the owner forgot it, print a reset link from the host, then open it in a browser and choose a new password:</p>
+<pre tabindex="0"><code class="language-bash">docker compose exec opentodo /opentodo reset-owner-password
+# password reset link for the owner owner@example.com (valid until 2026-10-11T09:00:00Z):
+#
+#   https://todo.example.com/reset/otr_…</code></pre>
+<p>The command needs only the data volume: shell access to the host is the proof of ownership. It opens no port, needs no configuration and works while the server runs (or with <code>docker compose run --rm --no-deps opentodo reset-owner-password</code> while it is stopped). The link starts with <code>OPENTODO_BASE_URL</code>; pass <code>--base-url https://…</code> otherwise. It works once, any earlier owner link stops working, and using it signs the owner out everywhere. It is recorded as <code>password.reset_issued</code> in the audit log. If the owner also lost their second factor, run <code>mfa-reset</code> as described above.</p>
+<h2 id="updating">Updating<a class="anchor" href="#updating" aria-label="Link to this section: Updating">#</a></h2>
+<p><code>docker compose pull &amp;&amp; docker compose up -d</code> replaces the container; the new version applies migrations at startup. Orchestrators that start the new container before stopping the old one (Coolify, Docker Swarm, Kubernetes with a shared volume on one node) work too: several server processes may use the data directory at once, and the background jobs (reminder push, webhooks, backups, email polling, Trash cleanup) run in only one of them and move to the newer one when the old one exits. Maintenance commands (<code>restore</code>, <code>mfa-reset</code>, <code>reset-owner-password</code> without a running server) still need every server stopped. Upgrading from 0.1.0 needs one stop-then-start, because that version locked the directory exclusively.</p>
+<h2 id="health">Health<a class="anchor" href="#health" aria-label="Link to this section: Health">#</a></h2>
+<p><code>GET /healthz</code> returns <code>{&quot;status&quot;:&quot;ok&quot;,&quot;version&quot;:&quot;...&quot;}</code>. The image defines a <code>HEALTHCHECK</code> that runs <code>/opentodo healthcheck</code>, which works without curl or a shell.</p>
+<h2 id="resource-usage">Resource usage<a class="anchor" href="#resource-usage" aria-label="Link to this section: Resource usage">#</a></h2>
+<p>Idle memory is around 20 MB (18 MB measured on a fresh instance); the static binary is about 17 MB with the web app embedded, and the image adds only the distroless base (about 2 MB). A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/self-hosting/docker.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/e2ee/"><span>Previous</span>End-to-end encryption</a>
+      <a class="next" rel="next" href="/docs/self-hosting/coolify/"><span>Next</span>Deploying on Coolify</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#docker-compose">Docker Compose</a></li><li><a href="#plain-docker-run">Plain docker run</a></li><li><a href="#behind-a-reverse-proxy">Behind a reverse proxy</a><ul><li><a href="#email-to-task">Email to task</a></li><li><a href="#calendar-apps-caldav-through-the-proxy">Calendar apps (CalDAV) through the proxy</a></li><li><a href="#passkeys-need-an-https-base-url">Passkeys need an https base URL</a></li><li><a href="#live-updates-through-the-proxy">Live updates through the proxy</a></li></ul></li><li><a href="#reminders-and-web-push">Reminders and web push</a></li><li><a href="#ai-assistants-mcp">AI assistants (MCP)</a></li><li><a href="#bind-mounts">Bind mounts</a></li><li><a href="#backup-and-restore">Backup and restore</a></li><li><a href="#trash-retention">Trash retention</a></li><li><a href="#audit-log">Audit log</a></li><li><a href="#two-factor-authentication">Two-factor authentication</a></li><li><a href="#managing-users">Managing users</a><ul><li><a href="#recovering-owner-access">Recovering owner access</a></li></ul></li><li><a href="#updating">Updating</a></li><li><a href="#health">Health</a></li><li><a href="#resource-usage">Resource usage</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

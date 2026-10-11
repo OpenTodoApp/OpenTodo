@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Filter queries · OpenTodo docs</title>
+  <meta name="description" content="The filter language in full: terms, operators, dates, saved views, dashboards and ten worked examples.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/filters/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/filters/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Filter queries · OpenTodo docs">
+  <meta property="og:description" content="The filter language in full: terms, operators, dates, saved views, dashboards and ten worked examples.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/" aria-current="page">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/" aria-current="page">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Reference</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#grammar">Grammar</a><ul><li><a href="#precedence-and-connectives">Precedence and connectives</a></li><li><a href="#names-quoting-and-case">Names, quoting and case</a></li></ul></li><li><a href="#terms">Terms</a><ul><li><a href="#open-completed-and-deleted-tasks">Open, completed and deleted tasks</a></li><li><a href="#dates">Dates</a></li><li><a href="#labels-and-projects-that-change">Labels and projects that change</a></li></ul></li><li><a href="#errors">Errors</a></li><li><a href="#the-filter-view">The Filter view</a></li><li><a href="#saving-views">Saving views</a></li><li><a href="#examples">Examples</a><ul><li><a href="#1-work-due-by-tomorrow-high-priority">1. Work due by tomorrow, high priority</a></li><li><a href="#2-anything-overdue-that-is-not-filed-in-a-project">2. Anything overdue that is not filed in a project</a></li><li><a href="#3-errands-or-calls-outside-the-work-project">3. Errands or calls, outside the Work project</a></li><li><a href="#4-everything-under-work-including-its-sub-projects-due-this-week">4. Everything under Work, including its sub-projects, due this week</a></li><li><a href="#5-tasks-for-a-client-whose-names-contain-spaces">5. Tasks for a client whose names contain spaces</a></li><li><a href="#6-captured-in-the-last-week-and-still-unscheduled">6. Captured in the last week and still unscheduled</a></li><li><a href="#7-due-on-friday-either-priority-1-or-2">7. Due on Friday, either priority 1 or 2</a></li><li><a href="#8-find-a-task-by-a-phrase-in-its-title-or-notes">8. Find a task by a phrase in its title or notes</a></li><li><a href="#9-completed-subtasks-of-the-home-project">9. Completed subtasks of the Home project</a></li><li><a href="#10-due-before-the-end-of-november-unlabelled-with-no-fixed-time">10. Due before the end of November, unlabelled, with no fixed time</a></li></ul></li></ul></nav></details>
+<h1 id="filter-queries">Filter queries</h1>
+<p>The <strong>Filter</strong> view (sidebar, or <code>g</code> then <code>f</code>) lists the tasks that match a one-line query such as:</p>
+<pre tabindex="0"><code class="language-text">@work &amp; due &lt;= tomorrow &amp; p1</code></pre>
+<p>Queries run entirely on your device, over the data the app already holds: they work offline, make no network request, and the results update live as you edit tasks or as changes from your other devices arrive.</p>
+<h2 id="grammar">Grammar<a class="anchor" href="#grammar" aria-label="Link to this section: Grammar">#</a></h2>
+<pre tabindex="0"><code class="language-text">query    := or
+or       := and ( &quot;|&quot; and )*
+and      := not ( &quot;&amp;&quot; not )*
+not      := &quot;!&quot; not | &quot;(&quot; or &quot;)&quot; | term
+term     := &quot;@&quot; name                       label
+          | &quot;##&quot; name | &quot;#&quot; name           project with / without sub-projects
+          | &quot;p1&quot; | &quot;p2&quot; | &quot;p3&quot; | &quot;p4&quot;      priority
+          | (&quot;due&quot; | &quot;created&quot;) cmp date
+          | keyword
+          | &quot;search:&quot; text
+cmp      := &quot;&lt;&quot; | &quot;&lt;=&quot; | &quot;=&quot; | &quot;&gt;=&quot; | &quot;&gt;&quot; | &quot;before&quot; | &quot;after&quot;
+date     := &quot;today&quot; | &quot;tomorrow&quot; | &quot;yesterday&quot; | weekday | YYYY-MM-DD
+          | INT &quot;days&quot; | INT &quot;days ago&quot;
+weekday  := &quot;monday&quot; | &quot;tuesday&quot; | &quot;wednesday&quot; | &quot;thursday&quot; | &quot;friday&quot; | &quot;saturday&quot; | &quot;sunday&quot;
+keyword  := &quot;overdue&quot; | &quot;today&quot; | &quot;tomorrow&quot; | &quot;no date&quot; | &quot;no project&quot;
+          | &quot;no labels&quot; | &quot;no time&quot; | &quot;completed&quot; | &quot;open&quot; | &quot;subtask&quot;
+name     := word | '&quot;' chars '&quot;'
+text     := word | '&quot;' chars '&quot;'</code></pre>
+<h3 id="precedence-and-connectives">Precedence and connectives<a class="anchor" href="#precedence-and-connectives" aria-label="Link to this section: Precedence and connectives">#</a></h3>
+<ul>
+<li><code>!</code> (not) binds tightest, then <code>&amp;</code> (and), then <code>|</code> (or). <code>@errand | @call &amp; p1</code> means <code>@errand | (@call &amp; p1)</code>.</li>
+<li>Use parentheses to group: <code>(@errand | @call) &amp; p1</code>.</li>
+<li><code>&amp;</code> and <code>|</code> are the only connectives. There is no implicit &quot;and&quot;: <code>@work p1</code> is an error, write <code>@work &amp; p1</code>.</li>
+<li>Whitespace between tokens is ignored, so <code>due&lt;=tomorrow</code> and <code>due &lt;= tomorrow</code> are the same.</li>
+</ul>
+<h3 id="names-quoting-and-case">Names, quoting and case<a class="anchor" href="#names-quoting-and-case" aria-label="Link to this section: Names, quoting and case">#</a></h3>
+<ul>
+<li>A bare name (<code>@errand</code>, <code>#Work</code>) runs until whitespace, a double quote, or one of the operator characters <code>&amp; | ! ( ) &lt; &gt; =</code>. Any other character, including <code>#</code>, <code>-</code>, <code>/</code>, <code>.</code> and non-Latin letters, is part of the name.</li>
+<li>Put names with spaces or operator characters in double quotes: <code>#&quot;Client A&quot;</code>, <code>@&quot;follow up&quot;</code>. Inside quotes, <code>\&quot;</code> is a literal quote and <code>\\</code> a literal backslash.</li>
+<li>Keywords, comparison words, weekday names, label names and project names all ignore case: <code>#work</code>, <code>#Work</code> and <code>#WORK</code> are the same.</li>
+</ul>
+<h2 id="terms">Terms<a class="anchor" href="#terms" aria-label="Link to this section: Terms">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>@name</code></td>
+<td>tasks carrying the label with that name</td>
+</tr>
+<tr>
+<td><code>#name</code></td>
+<td>tasks in the project with that name</td>
+</tr>
+<tr>
+<td><code>##name</code></td>
+<td>tasks in that project or in any of its sub-projects, at any depth</td>
+</tr>
+<tr>
+<td><code>p1</code> … <code>p4</code></td>
+<td>tasks with that priority (<code>p1</code> is the highest, <code>p4</code> the default)</td>
+</tr>
+<tr>
+<td><code>due &lt;cmp&gt; &lt;date&gt;</code></td>
+<td>tasks whose due date compares as asked; a task without a due date never matches</td>
+</tr>
+<tr>
+<td><code>created &lt;cmp&gt; &lt;date&gt;</code></td>
+<td>tasks whose creation day, in your time zone, compares as asked</td>
+</tr>
+<tr>
+<td><code>overdue</code></td>
+<td>due before today</td>
+</tr>
+<tr>
+<td><code>today</code></td>
+<td>due today</td>
+</tr>
+<tr>
+<td><code>tomorrow</code></td>
+<td>due tomorrow</td>
+</tr>
+<tr>
+<td><code>no date</code></td>
+<td>no due date</td>
+</tr>
+<tr>
+<td><code>no time</code></td>
+<td>a due date without a time of day</td>
+</tr>
+<tr>
+<td><code>no project</code></td>
+<td>Inbox tasks (no project)</td>
+</tr>
+<tr>
+<td><code>no labels</code></td>
+<td>tasks with no label</td>
+</tr>
+<tr>
+<td><code>subtask</code></td>
+<td>tasks that have a parent task</td>
+</tr>
+<tr>
+<td><code>completed</code></td>
+<td>completed tasks</td>
+</tr>
+<tr>
+<td><code>open</code></td>
+<td>open (not completed) tasks</td>
+</tr>
+<tr>
+<td><code>search: text</code></td>
+<td>title or notes contain the text, ignoring case; quote several words: <code>search: &quot;oat milk&quot;</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="open-completed-and-deleted-tasks">Open, completed and deleted tasks<a class="anchor" href="#open-completed-and-deleted-tasks" aria-label="Link to this section: Open, completed and deleted tasks">#</a></h3>
+<p>A query matches <strong>open tasks only</strong>, unless <code>completed</code> or <code>open</code> appears somewhere in it. <code>completed</code> on its own lists only completed tasks, <code>p1 &amp; completed</code> the completed priority-1 tasks, and <code>completed | open</code> both. Deleted tasks never match. Like the other cross-project views, the Filter view leaves out tasks of archived projects.</p>
+<h3 id="dates">Dates<a class="anchor" href="#dates" aria-label="Link to this section: Dates">#</a></h3>
+<p>Dates compare <strong>calendar days</strong> in your local time zone, the same way Today and Upcoming do; the time of day is ignored.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Expression</th>
+<th>Meaning (when today is Saturday 2026-10-10)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>today</code>, <code>tomorrow</code>, <code>yesterday</code></td>
+<td>2026-10-10, 2026-10-11, 2026-10-09</td>
+</tr>
+<tr>
+<td><code>monday</code> … <code>sunday</code></td>
+<td>the next such day, today included: <code>friday</code> is 2026-10-16, <code>saturday</code> is 2026-10-10</td>
+</tr>
+<tr>
+<td><code>2026-12-01</code></td>
+<td>that date</td>
+</tr>
+<tr>
+<td><code>3 days</code></td>
+<td>three days from today: 2026-10-13</td>
+</tr>
+<tr>
+<td><code>7 days ago</code></td>
+<td>seven days before today: 2026-10-03</td>
+</tr>
+</tbody></table></div>
+<p><code>before</code> is the same as <code>&lt;</code> and <code>after</code> the same as <code>&gt;</code>. <code>today</code> on its own is the keyword (due today); <code>due = today</code> is the same comparison written out, and <code>due &lt;= today</code> also includes overdue tasks. Only English weekday names are accepted.</p>
+<h3 id="labels-and-projects-that-change">Labels and projects that change<a class="anchor" href="#labels-and-projects-that-change" aria-label="Link to this section: Labels and projects that change">#</a></h3>
+<p>Names are looked up every time the query runs, so renaming a label or project is picked up immediately. When several labels or projects share a name (two devices can create the same name while offline), the term matches any of them. A name that matches nothing is <strong>not</strong> an error: the view shows a warning such as <code>No label named &quot;errands&quot;</code>, that term matches no task, and the rest of the query still works. A saved or remembered query therefore survives a rename or deletion.</p>
+<h2 id="errors">Errors<a class="anchor" href="#errors" aria-label="Link to this section: Errors">#</a></h2>
+<p>A query that does not follow the grammar shows a message under the input, and the previous results stay on screen until the query is valid again. Positions count characters from 1:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Query</th>
+<th>Message</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>@errand &amp;</code></td>
+<td><code>Expected a term after &quot;&amp;&quot; at position 9</code></td>
+</tr>
+<tr>
+<td><code>(p1 | p2</code></td>
+<td><code>Missing &quot;)&quot; at end of query</code></td>
+</tr>
+<tr>
+<td><code>@work p1</code></td>
+<td><code>Expected &quot;&amp;&quot; or &quot;|&quot; before &quot;p1&quot; at position 7</code></td>
+</tr>
+<tr>
+<td><code>p1 &amp; urgent</code></td>
+<td><code>Unknown term &quot;urgent&quot; at position 6</code></td>
+</tr>
+<tr>
+<td><code>p5</code></td>
+<td><code>Priority must be p1, p2, p3 or p4 at position 1</code></td>
+</tr>
+<tr>
+<td><code>due today</code></td>
+<td><code>Expected a comparison (&lt;, &lt;=, =, &gt;=, &gt;, before or after) after &quot;due&quot; at position 1</code></td>
+</tr>
+<tr>
+<td><code>due &gt; 7</code></td>
+<td><code>Expected &quot;days&quot; after &quot;7&quot; at position 7</code></td>
+</tr>
+</tbody></table></div>
+<p>An empty query shows a short usage hint and no results.</p>
+<h2 id="the-filter-view">The Filter view<a class="anchor" href="#the-filter-view" aria-label="Link to this section: The Filter view">#</a></h2>
+<ul>
+<li><code>g</code> then <code>f</code>, or <strong>Filter</strong> in the sidebar, opens the view with the cursor in the query input. Results update about 150 ms after you stop typing.</li>
+<li>Results are grouped by project: Inbox first, then projects in sidebar order, each heading showing the project&#39;s path (<code>Work › Client A</code>). Within a group, tasks are ordered by due date, then priority.</li>
+<li><strong>Enter</strong> in the input runs the query at once and moves to the first result; <strong>Esc</strong> returns to the input. In the list, the usual keys work: <code>j</code> / <code>k</code>, Enter to open, <code>c</code> to complete, <code>1</code>–<code>4</code> for priority, <code>L</code> for labels, Delete.</li>
+<li><strong>↑ / ↓</strong> in the input step through the last 20 distinct queries you ran on this device. The history lives in the browser&#39;s local storage for the app, is never synced, and is cleared when you sign out.</li>
+</ul>
+<h2 id="saving-views">Saving views<a class="anchor" href="#saving-views" aria-label="Link to this section: Saving views">#</a></h2>
+<p>A query you come back to can be saved as a <strong>view</strong>: it keeps the query, how its results are grouped and sorted, and syncs to all your devices like your tasks do.</p>
+<ul>
+<li><strong>Save.</strong> In the Filter view, press <code>s</code> while the results have focus (or click <strong>Save view</strong>), type a name and press Enter. The view is created with the current query, grouped by project and sorted by due date, pinned to the sidebar under <strong>Views</strong>, and opened. Saving works offline; other devices show the view after they sync.</li>
+<li><strong>Edit.</strong> Opening a view shows its query in an editable input (<code>/</code> jumps to it). Enter saves a changed query for every device, Esc discards the change. A query that does not parse shows the error and is not saved.</li>
+<li><strong>Group and sort.</strong> The header of a view has three menus, reachable with Tab: <strong>Group</strong> (project, due date, priority, label, none), <strong>Sort</strong> (due date, priority, manual order, created, title) and <strong>Direction</strong>. Defaults are <em>group by project, sort by due date ascending, undated tasks last</em>. Grouping by due date shows <em>Overdue</em>, <em>Today</em>, <em>Tomorrow</em>, then each later date and finally <em>No date</em>; grouping by label lists a task under each of its labels. For priority, <em>descending</em> puts priority 1 first. These options are stored on the view and sync.</li>
+<li><strong>Sidebar.</strong> Pinned views are listed under <strong>Views</strong> with a live count of their open tasks, computed on the device. The <code>⋯</code> menu of a view renames, moves it up or down, unpins or deletes it, and sets it as this device&#39;s start view. <code>g</code> then <code>v</code> opens the overview of every view, pinned or not, where views can be pinned again.</li>
+<li><strong>Start view.</strong> Each device can open on a different view: choose it in <strong>Settings → Start view</strong> or from a view&#39;s menu. The choice stays on the device (it is not synced). If the saved view is deleted, for example on another device, the app opens the Inbox and says so once.</li>
+<li><strong>Dashboards.</strong> <strong>New dashboard</strong> in the overview creates a view that shows up to six other views side by side as panels, each with its name, open-task count and first ten tasks, updating live. Add panels from the header, reorder or remove them with <strong>Arrange</strong>. Tab / Shift+Tab move between panels, <code>j</code> / <code>k</code> select a task inside one, Enter opens it (or the view when nothing is selected) and <code>o</code> opens the panel&#39;s view. A panel whose view was deleted shows <em>View removed</em> with a button to remove it. Panels stack on narrow screens.</li>
+</ul>
+<p>A saved view evaluates its query exactly like the Filter view: open tasks only unless <code>completed</code> or <code>open</code> appears, tasks of archived projects left out, unknown names reported as warnings. If a view was saved by a newer version with a term this version does not understand, it shows the parse error instead of wrong results. When two devices change the same view while offline, each option keeps the newer value: a grouping changed on one device and a sort changed on the other both survive. A dashboard&#39;s panel list is replaced as a whole, so concurrent panel edits keep the newer list. Scripts can manage views through <code>/api/v1/views</code> (see <code>docs/api.md</code>); the server checks that the query parses with the same grammar.</p>
+<h2 id="examples">Examples<a class="anchor" href="#examples" aria-label="Link to this section: Examples">#</a></h2>
+<h3 id="1-work-due-by-tomorrow-high-priority">1. Work due by tomorrow, high priority<a class="anchor" href="#1-work-due-by-tomorrow-high-priority" aria-label="Link to this section: 1. Work due by tomorrow, high priority">#</a></h3>
+<pre tabindex="0"><code class="language-filter">@work &amp; due &lt;= tomorrow &amp; p1</code></pre>
+<h3 id="2-anything-overdue-that-is-not-filed-in-a-project">2. Anything overdue that is not filed in a project<a class="anchor" href="#2-anything-overdue-that-is-not-filed-in-a-project" aria-label="Link to this section: 2. Anything overdue that is not filed in a project">#</a></h3>
+<pre tabindex="0"><code class="language-filter">overdue &amp; no project</code></pre>
+<h3 id="3-errands-or-calls-outside-the-work-project">3. Errands or calls, outside the Work project<a class="anchor" href="#3-errands-or-calls-outside-the-work-project" aria-label="Link to this section: 3. Errands or calls, outside the Work project">#</a></h3>
+<pre tabindex="0"><code class="language-filter">(@errand | @call) &amp; !#Work</code></pre>
+<h3 id="4-everything-under-work-including-its-sub-projects-due-this-week">4. Everything under Work, including its sub-projects, due this week<a class="anchor" href="#4-everything-under-work-including-its-sub-projects-due-this-week" aria-label="Link to this section: 4. Everything under Work, including its sub-projects, due this week">#</a></h3>
+<pre tabindex="0"><code class="language-filter">##Work &amp; due &lt;= 6 days</code></pre>
+<h3 id="5-tasks-for-a-client-whose-names-contain-spaces">5. Tasks for a client whose names contain spaces<a class="anchor" href="#5-tasks-for-a-client-whose-names-contain-spaces" aria-label="Link to this section: 5. Tasks for a client whose names contain spaces">#</a></h3>
+<pre tabindex="0"><code class="language-filter">#&quot;Client A&quot; &amp; @&quot;follow up&quot;</code></pre>
+<h3 id="6-captured-in-the-last-week-and-still-unscheduled">6. Captured in the last week and still unscheduled<a class="anchor" href="#6-captured-in-the-last-week-and-still-unscheduled" aria-label="Link to this section: 6. Captured in the last week and still unscheduled">#</a></h3>
+<pre tabindex="0"><code class="language-filter">created &gt; 7 days ago &amp; no date</code></pre>
+<h3 id="7-due-on-friday-either-priority-1-or-2">7. Due on Friday, either priority 1 or 2<a class="anchor" href="#7-due-on-friday-either-priority-1-or-2" aria-label="Link to this section: 7. Due on Friday, either priority 1 or 2">#</a></h3>
+<pre tabindex="0"><code class="language-filter">due = friday &amp; (p1 | p2)</code></pre>
+<h3 id="8-find-a-task-by-a-phrase-in-its-title-or-notes">8. Find a task by a phrase in its title or notes<a class="anchor" href="#8-find-a-task-by-a-phrase-in-its-title-or-notes" aria-label="Link to this section: 8. Find a task by a phrase in its title or notes">#</a></h3>
+<pre tabindex="0"><code class="language-filter">search: &quot;oat milk&quot; | search: groceries</code></pre>
+<h3 id="9-completed-subtasks-of-the-home-project">9. Completed subtasks of the Home project<a class="anchor" href="#9-completed-subtasks-of-the-home-project" aria-label="Link to this section: 9. Completed subtasks of the Home project">#</a></h3>
+<pre tabindex="0"><code class="language-filter">#Home &amp; subtask &amp; completed</code></pre>
+<h3 id="10-due-before-the-end-of-november-unlabelled-with-no-fixed-time">10. Due before the end of November, unlabelled, with no fixed time<a class="anchor" href="#10-due-before-the-end-of-november-unlabelled-with-no-fixed-time" aria-label="Link to this section: 10. Due before the end of November, unlabelled, with no fixed time">#</a></h3>
+<pre tabindex="0"><code class="language-filter">due before 2026-12-01 &amp; no labels &amp; no time &amp; !today</code></pre>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/filters.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/quick-add/"><span>Previous</span>Quick add syntax</a>
+      <a class="next" rel="next" href="/docs/recurrence/"><span>Next</span>Recurring task rules</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#grammar">Grammar</a><ul><li><a href="#precedence-and-connectives">Precedence and connectives</a></li><li><a href="#names-quoting-and-case">Names, quoting and case</a></li></ul></li><li><a href="#terms">Terms</a><ul><li><a href="#open-completed-and-deleted-tasks">Open, completed and deleted tasks</a></li><li><a href="#dates">Dates</a></li><li><a href="#labels-and-projects-that-change">Labels and projects that change</a></li></ul></li><li><a href="#errors">Errors</a></li><li><a href="#the-filter-view">The Filter view</a></li><li><a href="#saving-views">Saving views</a></li><li><a href="#examples">Examples</a><ul><li><a href="#1-work-due-by-tomorrow-high-priority">1. Work due by tomorrow, high priority</a></li><li><a href="#2-anything-overdue-that-is-not-filed-in-a-project">2. Anything overdue that is not filed in a project</a></li><li><a href="#3-errands-or-calls-outside-the-work-project">3. Errands or calls, outside the Work project</a></li><li><a href="#4-everything-under-work-including-its-sub-projects-due-this-week">4. Everything under Work, including its sub-projects, due this week</a></li><li><a href="#5-tasks-for-a-client-whose-names-contain-spaces">5. Tasks for a client whose names contain spaces</a></li><li><a href="#6-captured-in-the-last-week-and-still-unscheduled">6. Captured in the last week and still unscheduled</a></li><li><a href="#7-due-on-friday-either-priority-1-or-2">7. Due on Friday, either priority 1 or 2</a></li><li><a href="#8-find-a-task-by-a-phrase-in-its-title-or-notes">8. Find a task by a phrase in its title or notes</a></li><li><a href="#9-completed-subtasks-of-the-home-project">9. Completed subtasks of the Home project</a></li><li><a href="#10-due-before-the-end-of-november-unlabelled-with-no-fixed-time">10. Due before the end of November, unlabelled, with no fixed time</a></li></ul></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

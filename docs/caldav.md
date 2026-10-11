@@ -1,3 +1,11 @@
+---
+title: Calendar apps (CalDAV)
+summary: Turn on CalDAV, create app passwords and connect Apple Reminders, Thunderbird or Android apps.
+audience: admin
+specs: [caldav-sync]
+screens: []
+order: 45
+---
 # Calendar apps (CalDAV)
 
 OpenTodo can act as a CalDAV server for tasks, so Apple Reminders, Thunderbird, Nextcloud Tasks (through DAVx⁵) and other CalDAV clients become one more synced device. Each project is a task list (a calendar collection of VTODO resources), and the Inbox is its own list. Edits made in a calendar app are ordinary operations in the op log, so they converge with every other device under the usual rules: no "pick a version" dialogs.

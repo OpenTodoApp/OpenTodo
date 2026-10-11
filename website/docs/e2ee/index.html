@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>End-to-end encryption · OpenTodo docs</title>
+  <meta name="description" content="What encryption hides from the server and what it does not, the threat model, devices, recovery and limits.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/e2ee/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/e2ee/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="End-to-end encryption · OpenTodo docs">
+  <meta property="og:description" content="What encryption hides from the server and what it does not, the threat model, devices, recovery and limits.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/" aria-current="page">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/" aria-current="page">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="user">
+      <p class="doc-meta"><span class="crumbs">Using OpenTodo <span aria-hidden="true">›</span> Reference</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#what-is-encrypted-what-is-not">What is encrypted, what is not</a></li><li><a href="#threat-model">Threat model</a></li><li><a href="#how-it-works">How it works</a></li><li><a href="#devices-locking-and-offline-use">Devices, locking and offline use</a></li><li><a href="#passphrase-change-recovery-losing-both">Passphrase change, recovery, losing both</a></li><li><a href="#enabling-plaintext-that-appears-later-purging-disabling">Enabling, plaintext that appears later, purging, disabling</a></li><li><a href="#server-side-reads-and-integrations">Server-side reads and integrations</a></li><li><a href="#api">API</a></li></ul></nav></details>
+<h1 id="end-to-end-encryption">End-to-end encryption</h1>
+<p>Optional, per account, off by default (OpenSpec change <code>e2ee</code>). When it is on, your devices encrypt the <em>content</em> of your tasks before it is synced, so the server, its backups and every server-side integration hold only ciphertext for it. Sync, offline use and conflict-free merging keep working because ciphertext travels through the unchanged operation log as an ordinary string value.</p>
+<p>Turn it on in <strong>Settings → End-to-end encryption</strong>.</p>
+<h2 id="what-is-encrypted-what-is-not">What is encrypted, what is not<a class="anchor" href="#what-is-encrypted-what-is-not" aria-label="Link to this section: What is encrypted, what is not">#</a></h2>
+<p>Encrypted, in your personal data (Inbox, your own projects, labels, saved views):</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Encrypted fields</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>task</td>
+<td><code>title</code>, <code>description</code>, <code>ical_extra</code>, <code>notes_doc</code> (the rich-text note document, encrypted as one opaque string; its ciphertext must fit the 256 KB document limit, so an encrypted note document is capped at about 196 KB)</td>
+</tr>
+<tr>
+<td>project</td>
+<td><code>name</code></td>
+</tr>
+<tr>
+<td>label</td>
+<td><code>name</code></td>
+</tr>
+<tr>
+<td>section</td>
+<td><code>name</code></td>
+</tr>
+<tr>
+<td>saved view</td>
+<td><code>name</code>, <code>query</code></td>
+</tr>
+<tr>
+<td>comment</td>
+<td><code>body</code> (your comments on your own tasks)</td>
+</tr>
+</tbody></table></div>
+<p>Everything else stays <strong>plaintext</strong>, because views sort and group by it, reminders and calendars schedule with it, and the server needs it to merge and authorize: <code>due</code> (date, time, zone), <code>priority</code>, <code>completed_at</code>, <code>deleted_at</code>, <code>created_at</code>, <code>position</code>, <code>project_id</code>, <code>parent_id</code>, <code>section_id</code>, <code>labels</code> (the list of label ids on a task), <code>recurrence</code>, <code>estimate_minutes</code>, <code>assignee_id</code>, project <code>color</code> and <code>archived</code>, reminder times, and all timestamps and device ids of operations.</p>
+<p>Empty values (<code>&quot;&quot;</code>) and <code>null</code> are not encrypted. The length of a ciphertext reveals the approximate length of the text.</p>
+<p><strong>Shared projects are never encrypted.</strong> A project that was shared before you enabled encryption, and projects other people share with you, stay plaintext for every member. While encryption is on you cannot share a project that is not shared yet (409 <code>encryption_enabled</code>): the members would hold no key.</p>
+<h2 id="threat-model">Threat model<a class="anchor" href="#threat-model" aria-label="Link to this section: Threat model">#</a></h2>
+<p>Protected against:</p>
+<ul>
+<li>Someone who reads the server&#39;s disk, database file, backups (local, S3, WebDAV) or database dumps: they see ciphertext for the fields above.</li>
+<li>The server operator browsing the data, and server-side integrations (CalDAV, the MCP endpoint, webhooks, the REST API with an API token): they see ciphertext or a placeholder.</li>
+<li>A server or a bug moving a ciphertext to another field or task: the value is bound to <code>entity</code>, <code>entityId</code> and <code>field</code> and fails authentication; the app shows &quot;[Cannot decrypt]&quot; and keeps the operation.</li>
+</ul>
+<p>Not protected against (honest limits):</p>
+<ul>
+<li><strong>Metadata.</strong> Everything in the plaintext list above, plus how many tasks, projects and labels you have, when you edit what, from how many devices, and the approximate length of each text.</li>
+<li><strong>A malicious or compromised server serving tampered JavaScript.</strong> The web app is delivered by the same server it protects you from. A server that changes the code can capture the passphrase or the key on the next load. This is inherent to web-delivered end-to-end encryption; a future change may verify release signatures in the service worker.</li>
+<li><strong>Your devices.</strong> The device is the trust boundary: local storage (IndexedDB) holds plaintext and the account key (as a non-extractable <code>CryptoKey</code>). Malware, a browser extension with access to the page, or someone with your unlocked device can read everything. &quot;Lock this device&quot; forgets the key and pauses sync but leaves already synced data in local storage; <strong>Sign out</strong> clears local data.</li>
+<li><strong>Weak passphrases.</strong> The server holds the passphrase-wrapped key. Someone with that record can try passphrases offline; PBKDF2 with 600,000 iterations slows this down but is not memory-hard. Use a long passphrase (at least 12 characters are required).</li>
+<li><strong>Plaintext that existed before.</strong> Content written before encryption was enabled, or written in plaintext later (REST, email), stays in older backups and in the server&#39;s history until you purge it (see below).</li>
+<li><strong>Your account itself.</strong> Encryption protects content, not access: anyone who can sign in can delete, reschedule or tombstone your (encrypted) tasks, and can read the plaintext fields.</li>
+</ul>
+<h2 id="how-it-works">How it works<a class="anchor" href="#how-it-works" aria-label="Link to this section: How it works">#</a></h2>
+<p>Key hierarchy, all generated and used in the browser with the built-in Web Crypto API (no dependency):</p>
+<ul>
+<li><strong>Account key</strong>: 256 random bits, AES-256-GCM. Kept on each unlocked device as a non-extractable key in IndexedDB.</li>
+<li><strong>Passphrase key</strong>: PBKDF2-HMAC-SHA-256 over your passphrase (NFC-normalised) with a 16-byte random salt and 600,000 iterations, producing an AES-KW key.</li>
+<li><strong>Recovery key</strong>: 256 random bits, shown once as 56 base32 characters in 14 groups of four (52 for the key, 4 for a checksum). HKDF-SHA-256 (fixed salt, info <code>opentodo/e2ee/recovery-kek/v1</code>) turns it into an AES-KW key.</li>
+<li>The account key is wrapped (AES-KW, RFC 3394) under both. The <strong>key record</strong> — <code>{version, kdf, salt, iterations, wrappedByPassphrase, wrappedByRecovery}</code> — is the only key material the server stores (<code>encryption_keys</code> table). It never receives the passphrase, the recovery key or the account key.</li>
+</ul>
+<p>Value format (a string in the existing op value):</p>
+<pre tabindex="0"><code>&quot;enc:v1:&quot; + base64url( nonce(12 bytes) || AES-256-GCM(utf8(plaintext)) || tag(16 bytes) )
+additional authenticated data = utf8(entity + &quot;\0&quot; + entityId + &quot;\0&quot; + field)</code></pre>
+<p>Nonces are 96 random bits per encryption. Known-answer vectors shared by the Go and browser test suites are in <a href="https://github.com/pixari/opentodo/blob/main/web/src/lib/e2ee.vectors.json" rel="noopener"><code>web/src/lib/e2ee.vectors.json</code></a>.</p>
+<p>Where it happens on the device:</p>
+<ul>
+<li>Every edit is applied locally in plaintext and queued. The sync engine encrypts content fields <strong>at the single point where operations leave the device</strong> (just before upload), so nothing reaches the server in plaintext whichever path created the operation (edits, re-seeding after a server restore, the migration, encrypt-on-sight).</li>
+<li>Incoming operations are decrypted before they are applied, so search, filters and views work on plaintext locally.</li>
+<li>Convergence is unchanged: winners are chosen by <code>(timestamp, device)</code>, never by value. Two ciphertexts of the same text differ, which does not matter.</li>
+</ul>
+<p>Content larger than 48,000 bytes (UTF-8) in one field is refused before an operation is created, because its ciphertext would exceed the server&#39;s 64 KiB value limit.</p>
+<h2 id="devices-locking-and-offline-use">Devices, locking and offline use<a class="anchor" href="#devices-locking-and-offline-use" aria-label="Link to this section: Devices, locking and offline use">#</a></h2>
+<ul>
+<li><strong>New device</strong>: sign in, then enter the passphrase (or the recovery key) on the unlock screen. Nothing is pulled or pushed before that; the sync status reads <strong>Locked</strong>. Afterwards the device works offline and does not ask again.</li>
+<li><strong>Wrong passphrase</strong>: an error, and after 5 failures within a minute further attempts are delayed for the rest of that minute (on this device).</li>
+<li><strong>Lock this device</strong> (Settings): forgets the key and pauses sync until unlocked.</li>
+<li><strong>Offline unlock</strong> works once the device has seen the key record.</li>
+<li>A device that did not know encryption had been enabled notices the first ciphertext it receives, checks the key record and locks itself without applying the batch.</li>
+</ul>
+<h2 id="passphrase-change-recovery-losing-both">Passphrase change, recovery, losing both<a class="anchor" href="#passphrase-change-recovery-losing-both" aria-label="Link to this section: Passphrase change, recovery, losing both">#</a></h2>
+<ul>
+<li><strong>Change passphrase</strong> (needs the current one and a fresh sign-in confirmation): re-wraps the account key; content is not re-encrypted; other devices keep working; new devices use the new passphrase.</li>
+<li><strong>Reset with the recovery key</strong> (forgotten passphrase): sets a new passphrase and issues a <strong>new recovery key</strong>; the old one stops working.</li>
+<li><strong>Lost both</strong>: the content cannot be recovered by anyone, including the server owner — there is no server-side reset. Settings and the unlock screen offer only to turn encryption off and delete the encrypted content: the key record is removed and every item whose content cannot be decrypted is moved to the Trash as it syncs. Plaintext fields (dates, structure) are kept.</li>
+</ul>
+<h2 id="enabling-plaintext-that-appears-later-purging-disabling">Enabling, plaintext that appears later, purging, disabling<a class="anchor" href="#enabling-plaintext-that-appears-later-purging-disabling" aria-label="Link to this section: Enabling, plaintext that appears later, purging, disabling">#</a></h2>
+<ul>
+<li><strong>Enabling</strong> re-writes every content field of your personal data as ciphertext through ordinary operations, with progress in Settings; the job is resumable after a reload. 500 tasks produce roughly 1,500 operations.</li>
+<li><strong>Plaintext written later</strong> — through the REST API, the CLI, email-to-task or an import — is accepted by the server and shown with a small &quot;not yet encrypted&quot; marker; the next unlocked device that syncs it re-writes it as ciphertext (&quot;encrypt-on-sight&quot;). Two devices doing that at once produce two ciphertexts of the same text; one wins and nothing is re-written again.</li>
+<li><strong>Purge plaintext history</strong> (<code>POST /api/v1/encryption/purge-history</code>) deletes the superseded operations of the content fields in your personal data, including the plaintext from before encryption. Winners stay, so every device still converges. The deletion runs with SQLite <code>secure_delete</code>, then the database is vacuumed and the write-ahead log truncated. Revision history for those fields is gone afterwards. <strong>Backups made before the purge, and copies of the database, may still contain plaintext</strong>: delete them if that matters to you.</li>
+<li><strong>Disabling</strong> (needs an unlocked device and a fresh sign-in confirmation) deletes the key record first, so other devices stop encrypting, then re-writes all content as plaintext. Devices that still hold the key decrypt ciphertext that arrives late and re-write it as plaintext too.</li>
+</ul>
+<h2 id="server-side-reads-and-integrations">Server-side reads and integrations<a class="anchor" href="#server-side-reads-and-integrations" aria-label="Link to this section: Server-side reads and integrations">#</a></h2>
+<p>The server cannot decrypt. Each feature that needs content degrades explicitly:</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Behaviour for an encrypted account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>REST API reads</td>
+<td>Return the ciphertext string in content fields, plaintext elsewhere. Scripts need the key to decrypt (format above).</td>
+</tr>
+<tr>
+<td>REST API writes</td>
+<td>Accepted in plaintext; encrypted on sight by the next unlocked device.</td>
+</tr>
+<tr>
+<td>Export (<code>GET /api/v1/export</code>)</td>
+<td>Ciphertext content, plaintext scheduling fields, and the wrapped key record under <code>encryption</code>, enough to decrypt elsewhere with the passphrase. Importing it into another account keeps the ids (so the binding still matches), but that account needs the same key record to decrypt.</td>
+</tr>
+<tr>
+<td>Import</td>
+<td>Writes plaintext like REST; duplicate detection by name/title cannot match encrypted labels and projects, so an import may create duplicates.</td>
+</tr>
+<tr>
+<td>Backups</td>
+<td>Hold ciphertext and the wrapped key record (plus any plaintext not yet purged).</td>
+</tr>
+<tr>
+<td>CalDAV</td>
+<td>Refused: <code>/dav/</code> answers 403 for the account and creating an app password answers 409 <code>encryption_enabled</code>. Calendar clients can neither read ciphertext nor write it back, and placeholders would overwrite real titles.</td>
+</tr>
+<tr>
+<td>MCP (assistants)</td>
+<td>Encrypted titles, descriptions, project, label and section names read as &quot;Encrypted item&quot; with <code>&quot;encrypted&quot;: true</code>; <code>search_tasks</code> never matches them. Dates, priorities and structure are still reported.</td>
+</tr>
+<tr>
+<td>Email to task</td>
+<td>Creates plaintext Inbox tasks (the mail crossed mail servers in the clear anyway); encrypted on sight; purge removes the plaintext operations.</td>
+</tr>
+<tr>
+<td>Webhooks</td>
+<td>Payloads carry the stored value: ciphertext for encrypted fields.</td>
+</tr>
+<tr>
+<td>Reminder pushes</td>
+<td>An encrypted title is never put in the push payload, even for devices that opted in to content; the notification shows the content-free text.</td>
+</tr>
+<tr>
+<td>Notifications (assignment, mention)</td>
+<td>Use &quot;Encrypted item&quot; instead of a ciphertext title (only relevant if ciphertext ever reaches a shared project).</td>
+</tr>
+<tr>
+<td>Revision history, activity</td>
+<td>Served as stored; the web app decrypts values for display.</td>
+</tr>
+<tr>
+<td>Sharing</td>
+<td>First share of a project refused with 409 <code>encryption_enabled</code>.</td>
+</tr>
+<tr>
+<td>Filters</td>
+<td>Evaluated on the device on plaintext; nothing server-side.</td>
+</tr>
+</tbody></table></div>
+<h2 id="api">API<a class="anchor" href="#api" aria-label="Link to this section: API">#</a></h2>
+<p>See <a href="/docs/api/#end-to-end-encryption">api.md</a>: <code>GET</code>/<code>PUT</code>/<code>DELETE /api/v1/encryption/keys</code>, <code>POST /api/v1/encryption/purge-history</code>, <code>encryption</code> and <code>minClientVersion</code> in <code>GET /api/v1/me</code> and <code>GET /api/v1/auth/status</code>.</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/e2ee.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/import/"><span>Previous</span>Import formats</a>
+      <a class="next" rel="next" href="/docs/self-hosting/docker/"><span>Next</span>Running with Docker</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#what-is-encrypted-what-is-not">What is encrypted, what is not</a></li><li><a href="#threat-model">Threat model</a></li><li><a href="#how-it-works">How it works</a></li><li><a href="#devices-locking-and-offline-use">Devices, locking and offline use</a></li><li><a href="#passphrase-change-recovery-losing-both">Passphrase change, recovery, losing both</a></li><li><a href="#enabling-plaintext-that-appears-later-purging-disabling">Enabling, plaintext that appears later, purging, disabling</a></li><li><a href="#server-side-reads-and-integrations">Server-side reads and integrations</a></li><li><a href="#api">API</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

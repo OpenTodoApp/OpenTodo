@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Backups · OpenTodo docs</title>
+  <meta name="description" content="Scheduled backups to a folder, S3 or WebDAV, encryption, retention, restore and the archive format.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/backups/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/backups/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="Backups · OpenTodo docs">
+  <meta property="og:description" content="Scheduled backups to a folder, S3 or WebDAV, encryption, retention, restore and the archive format.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/" aria-current="page">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/" aria-current="page">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="admin">
+      <p class="doc-meta"><span class="crumbs">Self-hosting</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#quick-start">Quick start</a></li><li><a href="#destinations">Destinations</a><ul><li><a href="#folder-on-the-server">Folder on the server</a></li><li><a href="#s3-compatible-storage">S3-compatible storage</a></li><li><a href="#webdav">WebDAV</a></li></ul></li><li><a href="#schedule-and-retention">Schedule and retention</a></li><li><a href="#encryption-and-secrets">Encryption and secrets</a></li><li><a href="#restore">Restore</a><ul><li><a href="#with-docker-compose">With Docker Compose</a></li><li><a href="#with-the-binary">With the binary</a></li><li><a href="#after-a-restore-devices">After a restore: devices</a></li></ul></li><li><a href="#environment-presets">Environment presets</a></li><li><a href="#what-a-backup-contains">What a backup contains</a><ul><li><a href="#manifestjson">manifest.json</a></li><li><a href="#layers">Layers</a></li></ul></li><li><a href="#encryption-format-otbk1">Encryption format (OTBK1)</a></li></ul></nav></details>
+<h1 id="backups">Backups</h1>
+<p>OpenTodo can back up its data directory on a schedule to a local directory, an
+S3-compatible bucket or a WebDAV collection, keep a bounded number of archives,
+optionally encrypt them with a passphrase, and restore them with nothing but the
+<code>opentodo</code> binary.</p>
+<p>Nothing runs until the owner turns it on. Every setting is optional and managed
+from <strong>Settings → Backups</strong> (owner only); operators who prefer environment
+variables can preset them (see <a href="#environment-presets">Environment presets</a>).</p>
+<ul>
+<li><a href="#quick-start">Quick start</a></li>
+<li><a href="#destinations">Destinations</a></li>
+<li><a href="#schedule-and-retention">Schedule and retention</a></li>
+<li><a href="#encryption-and-secrets">Encryption and secrets</a></li>
+<li><a href="#restore">Restore</a></li>
+<li><a href="#environment-presets">Environment presets</a></li>
+<li><a href="#what-a-backup-contains">What a backup contains</a> and the <a href="#encryption-format-otbk1">encryption format</a></li>
+</ul>
+<h2 id="quick-start">Quick start<a class="anchor" href="#quick-start" aria-label="Link to this section: Quick start">#</a></h2>
+<ol>
+<li>Sign in as the owner and open <strong>Settings → Backups</strong>.</li>
+<li>Pick a destination. <strong>Folder on the server</strong> writes to <code>&lt;data&gt;/backups</code>
+(<code>/data/backups</code> in the container), which is inside the same volume: good
+against mistakes, not against losing the disk. For that, use S3 or WebDAV.</li>
+<li>Choose a schedule (for example daily at 03:00, server time) and how many
+backups to keep (default 7).</li>
+<li>Optionally set a passphrase to encrypt the archives.</li>
+<li><strong>Save</strong>, then <strong>Test destination</strong> and <strong>Back up now</strong>. The status shows the
+run in progress, then its outcome and size.</li>
+</ol>
+<p>The same is available over the API (<a href="/docs/api/#backups">docs/api.md</a>).</p>
+<h2 id="destinations">Destinations<a class="anchor" href="#destinations" aria-label="Link to this section: Destinations">#</a></h2>
+<p>The server contacts a destination only for a test or a backup run, and only the
+destination the owner configured.</p>
+<h3 id="folder-on-the-server">Folder on the server<a class="anchor" href="#folder-on-the-server" aria-label="Link to this section: Folder on the server">#</a></h3>
+<p>An absolute path, or empty for <code>&lt;data&gt;/backups</code>. Archives are written to a
+temporary file in that folder and renamed into place, so an interrupted run
+never leaves a half-written archive under a final name. Mount a second disk or
+a network share there to get the copy off the data volume:</p>
+<pre tabindex="0"><code class="language-yaml">services:
+  opentodo:
+    volumes:
+      - opentodo-data:/data
+      - /mnt/usb/opentodo-backups:/backups   # set the folder to /backups in Settings</code></pre>
+<p>The container runs as uid 65532; the folder must be writable by that user.</p>
+<h3 id="s3-compatible-storage">S3-compatible storage<a class="anchor" href="#s3-compatible-storage" aria-label="Link to this section: S3-compatible storage">#</a></h3>
+<p>Works with AWS S3, Backblaze B2, Cloudflare R2, Wasabi, Scaleway, MinIO, Garage
+and other S3-compatible services. Requests are signed with AWS Signature
+Version 4; only <code>PutObject</code>, <code>ListObjectsV2</code> and <code>DeleteObject</code> are used.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Endpoint</td>
+<td><code>https://s3.eu-central-1.amazonaws.com</code>, <code>https://&lt;account&gt;.r2.cloudflarestorage.com</code>, <code>http://minio:9000</code></td>
+</tr>
+<tr>
+<td>Region</td>
+<td><code>eu-central-1</code> (default <code>us-east-1</code>; R2 uses <code>auto</code>)</td>
+</tr>
+<tr>
+<td>Bucket</td>
+<td><code>my-opentodo-backups</code></td>
+</tr>
+<tr>
+<td>Prefix</td>
+<td><code>opentodo</code> (archives become <code>opentodo/opentodo-….tar.gz</code>)</td>
+</tr>
+<tr>
+<td>Access key / secret key</td>
+<td>a key limited to this bucket</td>
+</tr>
+<tr>
+<td>Path-style</td>
+<td>on for MinIO, Garage and most self-hosted stores; off for AWS (virtual-hosted <code>bucket.endpoint</code>)</td>
+</tr>
+</tbody></table></div>
+<p>Give the key the least privilege it needs: <code>s3:PutObject</code>, <code>s3:ListBucket</code> and
+<code>s3:DeleteObject</code> on the bucket (delete is used by retention and by the
+destination test). Bucket versioning or object lock on the provider side adds
+protection against a compromised server deleting its own backups.</p>
+<h3 id="webdav">WebDAV<a class="anchor" href="#webdav" aria-label="Link to this section: WebDAV">#</a></h3>
+<p>Nextcloud, ownCloud, Synology, a NAS, or any WebDAV server. Enter the URL of the
+collection (folder) that should hold the archives, for example
+<code>https://cloud.example.com/remote.php/dav/files/me/opentodo/</code>, plus a username
+and password (on Nextcloud, create an app password). The collection is created
+on the first run if it does not exist (its parent must). Plain <code>http://</code> URLs
+are refused unless <strong>Allow plain http</strong> is ticked, because the password would
+travel unencrypted.</p>
+<h2 id="schedule-and-retention">Schedule and retention<a class="anchor" href="#schedule-and-retention" aria-label="Link to this section: Schedule and retention">#</a></h2>
+<ul>
+<li><strong>Frequency:</strong> off (default), hourly (at the chosen minute), daily or weekly
+(at the chosen time and weekday), in the server&#39;s time zone (<code>TZ</code> of the
+process; the container defaults to UTC).</li>
+<li><strong>Missed runs:</strong> if the server was stopped when a backup was due, one backup
+runs shortly after it starts again, then the schedule continues at the
+configured time. A failed run is recorded and the next attempt happens at the
+next scheduled time.</li>
+<li><strong>Manual runs</strong> (&quot;Back up now&quot;) do not move the schedule. Only one backup runs
+at a time; a second request gets a 409 <code>conflict</code>.</li>
+<li><strong>Retention</strong> is applied at the destination after each successful run: the
+newest <em>keep last</em> archives (at least 1, default 7) are kept, and archives
+older than <em>delete older than</em> days are removed (0 = no age limit). The
+archive just written and the newest archive are never deleted. Only files
+whose names match <code>opentodo-YYYYMMDD-HHMMSS-xxxxxxxx.tar[.gz][.enc]</code> are ever
+considered, so other files under the same folder or prefix are safe.</li>
+<li><strong>History:</strong> each run (time, outcome, size, duration, error) is recorded and
+shown in Settings for 90 days.</li>
+</ul>
+<p>A run takes a snapshot of the database into <code>&lt;data&gt;/tmp</code>, packages it there,
+uploads it and deletes the temporary files, whether the run succeeded or not.
+Uploads stream from disk; memory use stays at a few megabytes regardless of the
+database size (plus about 19 MiB for a moment while the encryption key is
+derived).</p>
+<h2 id="encryption-and-secrets">Encryption and secrets<a class="anchor" href="#encryption-and-secrets" aria-label="Link to this section: Encryption and secrets">#</a></h2>
+<p>With a passphrase set, every archive is encrypted with AES-256-GCM under a key
+derived from the passphrase with argon2id (format below). The manifest inside
+records that the archive is encrypted and the file name ends in <code>.enc</code>.</p>
+<ul>
+<li>Changing the passphrase affects future backups only. Older archives still
+need the passphrase they were made with.</li>
+<li><strong>A forgotten passphrase cannot be recovered.</strong> Store it in a password manager.
+If in doubt, keep an unencrypted local copy as well.</li>
+<li>The passphrase and the destination credentials are stored only in
+<code>&lt;data&gt;/secrets/backup.json</code> (mode 0600, directory 0700). They are never
+returned by the API (Settings shows only whether each one is set), never
+logged, and never included in an archive. Everything else (destination,
+schedule, retention) is stored in the database and is therefore part of the
+backup.</li>
+</ul>
+<h2 id="restore">Restore<a class="anchor" href="#restore" aria-label="Link to this section: Restore">#</a></h2>
+<p>Restoring replaces the whole database (every account, token, project, task and
+the operation log) with the one in an archive. It runs with the server
+<strong>stopped</strong>, from the same binary:</p>
+<pre tabindex="0"><code class="language-sh">opentodo restore [--data-dir DIR] [--passphrase-file FILE] &lt;archive&gt;</code></pre>
+<p>What it does, in order, before touching anything:</p>
+<ol>
+<li>refuses to run while any server uses the data directory (it needs
+<code>&lt;data&gt;/opentodo.lock</code> exclusively, which every running server holds shared,
+plus a check that SQLite is idle);</li>
+<li>decrypts the archive if needed (without <code>--passphrase-file</code> an encrypted
+archive is rejected, naming the missing passphrase);</li>
+<li>checks the manifest, then the database&#39;s SHA-256 and size against it, and
+authenticates every encrypted chunk (a modified or truncated archive is an
+integrity error);</li>
+<li>refuses an archive made by a newer schema version than the binary knows,
+naming both versions (upgrade the binary first);</li>
+<li>runs SQLite&#39;s integrity check on the extracted database.</li>
+</ol>
+<p>Only then it saves the current database as
+<code>opentodo.db.pre-restore-&lt;YYYYMMDD-HHMMSS&gt;</code> next to it, swaps in the restored
+one and gives it a new <a href="/docs/sync/#log-generation">log generation</a>. Migrations
+run on the next start, so an archive from an older version is upgraded
+automatically.</p>
+<h3 id="with-docker-compose">With Docker Compose<a class="anchor" href="#with-docker-compose" aria-label="Link to this section: With Docker Compose">#</a></h3>
+<pre tabindex="0"><code class="language-sh">docker compose stop opentodo
+
+# The archive must be readable inside the container. For the default local
+# destination it already is (/data/backups/...). For S3 or WebDAV, download it
+# first and copy it into the volume, or mount it:
+docker compose run --rm --no-deps \
+  -v &quot;$PWD/opentodo-20261010-030000-4f1c0a9e.tar.gz.enc:/restore/archive:ro&quot; \
+  -v &quot;$PWD/passphrase.txt:/restore/passphrase:ro&quot; \
+  opentodo restore --passphrase-file /restore/passphrase /restore/archive
+
+docker compose start opentodo</code></pre>
+<p>For an unencrypted archive leave out the passphrase mount and flag. The files
+you mount must be readable by uid 65532. On Coolify the image has no shell for
+the web terminal: stop the resource, run the restore on the host with
+<code>docker run --rm -v &lt;data volume&gt;:/data -v &lt;archive&gt;:/restore/archive:ro ghcr.io/pixari/opentodo restore /restore/archive</code>, then start the resource
+again.</p>
+<h3 id="with-the-binary">With the binary<a class="anchor" href="#with-the-binary" aria-label="Link to this section: With the binary">#</a></h3>
+<pre tabindex="0"><code class="language-sh">systemctl stop opentodo        # or however you run it
+OPENTODO_DATA_DIR=/var/lib/opentodo opentodo restore \
+  --passphrase-file ~/opentodo-passphrase.txt \
+  /var/lib/opentodo/backups/opentodo-20261010-030000-4f1c0a9e.tar.gz.enc
+systemctl start opentodo</code></pre>
+<h3 id="after-a-restore-devices">After a restore: devices<a class="anchor" href="#after-a-restore-devices" aria-label="Link to this section: After a restore: devices">#</a></h3>
+<p>The server went back in time, but your devices did not. Each device notices the
+new log generation on its next sync, shows <strong>Re-syncing after restore…</strong> and
+re-sends every field it holds with the field&#39;s original timestamp. Edits made
+after the backup therefore come back, and when two devices disagree the newer
+edit wins, exactly as in normal sync. No task is duplicated. Devices that are
+offline do this when they reconnect. See <a href="/docs/sync/#log-generation">docs/sync.md</a>.</p>
+<p>If something went wrong, stop the server, move <code>opentodo.db.pre-restore-…</code> back
+to <code>opentodo.db</code> and start it again.</p>
+<h2 id="environment-presets">Environment presets<a class="anchor" href="#environment-presets" aria-label="Link to this section: Environment presets">#</a></h2>
+<p>All optional. They seed the backup settings <strong>once</strong>, on a start where no backup
+settings exist yet; after that, changes in Settings win and the variables are
+ignored. An invalid value stops the server at startup with a message naming the
+variable.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>OPENTODO_BACKUP_DESTINATION</code></td>
+<td><code>local</code>, <code>s3</code>, <code>webdav</code></td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_LOCAL_DIR</code></td>
+<td>absolute path</td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_S3_ENDPOINT</code>, <code>_S3_REGION</code>, <code>_S3_BUCKET</code>, <code>_S3_PREFIX</code>, <code>_S3_ACCESS_KEY</code>, <code>_S3_SECRET_KEY</code></td>
+<td>S3 settings</td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_S3_PATH_STYLE</code></td>
+<td><code>true</code> / <code>false</code></td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_WEBDAV_URL</code>, <code>_WEBDAV_USERNAME</code>, <code>_WEBDAV_PASSWORD</code></td>
+<td>WebDAV settings</td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_WEBDAV_ALLOW_HTTP</code></td>
+<td><code>true</code> / <code>false</code></td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_SCHEDULE</code></td>
+<td><code>off</code>, <code>hourly</code>, <code>daily</code>, <code>weekly</code></td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_TIME</code></td>
+<td><code>HH:MM</code></td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_WEEKDAY</code></td>
+<td><code>0</code>–<code>6</code> (0 = Sunday) or a day name</td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_KEEP</code></td>
+<td>at least 1</td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_MAX_AGE_DAYS</code></td>
+<td>0 or more</td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_COMPRESS</code></td>
+<td><code>true</code> / <code>false</code></td>
+</tr>
+<tr>
+<td><code>OPENTODO_BACKUP_PASSPHRASE</code> or <code>OPENTODO_BACKUP_PASSPHRASE_FILE</code></td>
+<td>passphrase, or a file containing it (Docker secrets)</td>
+</tr>
+</tbody></table></div>
+<p>Secrets given this way are copied into <code>&lt;data&gt;/secrets/backup.json</code> on that
+first start; remove them from the environment afterwards if you prefer.</p>
+<h2 id="what-a-backup-contains">What a backup contains<a class="anchor" href="#what-a-backup-contains" aria-label="Link to this section: What a backup contains">#</a></h2>
+<p>A backup is one archive file:</p>
+<pre tabindex="0"><code>opentodo-&lt;YYYYMMDD-HHMMSS&gt;-&lt;generation8&gt;.tar[.gz][.enc]</code></pre>
+<ul>
+<li><code>YYYYMMDD-HHMMSS</code> is the creation time in UTC, so names sort chronologically.</li>
+<li><code>generation8</code> is the first 8 characters of the server&#39;s <a href="/docs/sync/#log-generation">log generation</a>.</li>
+<li><code>.gz</code> is present when compression is on (the default), <code>.enc</code> when a passphrase is set.</li>
+</ul>
+<p>Inside is a <code>tar</code> stream with these entries, in this order:</p>
+<ol>
+<li><code>manifest.json</code>: what the archive holds.</li>
+<li><code>opentodo.db</code>: a transactionally consistent copy of the database.</li>
+<li><code>push_vapid.pem</code> (only when it exists): the web push key pair of <a href="/docs/reminders/">reminders</a>.
+Restore puts it back next to the database, so devices that enabled notifications
+keep receiving them on the new host. Archives without it restore as before.</li>
+</ol>
+<p>The database copy is taken with SQLite&#39;s <code>VACUUM INTO</code> while the server keeps
+running. It contains every account, session, API token, invitation, project,
+task, label and the complete operation log as of one instant, and no WAL file
+is needed to read it.</p>
+<p>The archive never contains <code>&lt;data&gt;/secrets/</code> (destination credentials and the
+passphrase) or <code>&lt;data&gt;/backups/</code> (earlier archives): only the database snapshot
+and the push key are packaged.</p>
+<h3 id="manifestjson"><code>manifest.json</code><a class="anchor" href="#manifestjson" aria-label="Link to this section: manifest.json">#</a></h3>
+<pre tabindex="0"><code class="language-json">{
+  &quot;format&quot;: &quot;opentodo-backup&quot;,
+  &quot;formatVersion&quot;: 1,
+  &quot;appVersion&quot;: &quot;v0.9.0&quot;,
+  &quot;schemaVersion&quot;: 6,
+  &quot;createdAt&quot;: &quot;2026-10-10T03:00:00Z&quot;,
+  &quot;generation&quot;: &quot;4f1c0a9e2b7d4c55a1e0f3b2c8d9e7f6&quot;,
+  &quot;compression&quot;: &quot;gzip&quot;,
+  &quot;encrypted&quot;: true,
+  &quot;files&quot;: [
+    { &quot;name&quot;: &quot;opentodo.db&quot;, &quot;size&quot;: 1048576, &quot;sha256&quot;: &quot;&lt;hex&gt;&quot; }
+  ]
+}</code></pre>
+<p><code>schemaVersion</code> is the database&#39;s <code>PRAGMA user_version</code>; a binary refuses to
+restore an archive whose schema is newer than the one it knows. <code>sha256</code> and
+<code>size</code> are verified on restore.</p>
+<h3 id="layers">Layers<a class="anchor" href="#layers" aria-label="Link to this section: Layers">#</a></h3>
+<p>Writing an archive is <code>tar → gzip (optional) → encryption (optional) → file</code>.
+Reading it peels the layers in reverse: an encrypted archive starts with the
+five bytes <code>OTBK1</code>, a gzip stream with <code>1f 8b</code>, anything else is read as plain
+<code>tar</code>. An unencrypted archive can be inspected with standard tools:</p>
+<pre tabindex="0"><code class="language-sh">tar -xzf opentodo-20261010-030000-4f1c0a9e.tar.gz   # manifest.json + opentodo.db</code></pre>
+<h2 id="encryption-format-otbk1">Encryption format (<code>OTBK1</code>)<a class="anchor" href="#encryption-format-otbk1" aria-label="Link to this section: Encryption format (OTBK1)">#</a></h2>
+<p>When a passphrase is set, the compressed tar stream is encrypted with
+AES-256-GCM in 1 MiB chunks under a key derived with argon2id. All integers are
+big-endian.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>5</td>
+<td>magic, ASCII <code>OTBK1</code> (the <code>1</code> is the format version)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>1</td>
+<td>key derivation id: <code>0x01</code> = argon2id</td>
+</tr>
+<tr>
+<td>6</td>
+<td>4</td>
+<td>argon2id memory in KiB (<code>19456</code> = 19 MiB)</td>
+</tr>
+<tr>
+<td>10</td>
+<td>4</td>
+<td>argon2id iterations (<code>2</code>)</td>
+</tr>
+<tr>
+<td>14</td>
+<td>1</td>
+<td>argon2id parallelism (<code>1</code>)</td>
+</tr>
+<tr>
+<td>15</td>
+<td>16</td>
+<td>random salt</td>
+</tr>
+<tr>
+<td>31</td>
+<td>4</td>
+<td>plaintext chunk size in bytes (<code>1048576</code>)</td>
+</tr>
+<tr>
+<td>35</td>
+<td>…</td>
+<td>chunks</td>
+</tr>
+</tbody></table></div>
+<ul>
+<li><strong>Key:</strong> <code>argon2id(passphrase as UTF-8, salt, iterations, memory, parallelism)</code>, 32 bytes. The parameters are the same as the account password hasher.</li>
+<li><strong>Chunks:</strong> the plaintext is cut into chunks of exactly <em>chunk size</em> bytes; the last chunk holds the remaining 0 … <em>chunk size</em> bytes (an empty stream still has one, empty, final chunk). Each chunk is written as <code>AES-256-GCM-Seal(key, nonce, plaintext, aad)</code>, i.e. the ciphertext followed by the 16-byte tag, so a full chunk occupies <em>chunk size</em> + 16 bytes on disk.</li>
+<li><strong>Nonce (12 bytes):</strong> bytes 0–7 are the chunk index starting at 0; bytes 8–10 are zero; byte 11 is <code>0x01</code> for the final chunk and <code>0x00</code> otherwise. The key is unique per archive (fresh salt), so nonces never repeat under one key.</li>
+<li><strong>Associated data:</strong> the 35 header bytes, so the parameters and salt cannot be altered.</li>
+</ul>
+<p>A reader takes <em>chunk size</em> + 16 bytes at a time; the chunk that ends the file
+is opened with the final flag. This detects every kind of damage:</p>
+<ul>
+<li>a modified byte fails that chunk&#39;s tag;</li>
+<li>reordered chunks fail because the index is in the nonce;</li>
+<li>a file cut at a chunk boundary fails because that chunk was sealed as non-final;</li>
+<li>bytes appended after the final chunk are rejected.</li>
+</ul>
+<p>A wrong passphrase fails on the first chunk. Changing the passphrase affects
+future backups only; keep the old passphrase for as long as you keep archives
+made with it. <strong>A forgotten passphrase cannot be recovered</strong>: OpenTodo stores
+no copy outside <code>&lt;data&gt;/secrets/backup.json</code>, and that file is not in the archive.</p>
+<p>The same code path is used by <code>opentodo restore</code>, so no external tool is needed.
+<code>internal/backup/crypt_test.go</code> contains an independent reference decryptor
+written from this description (<code>TestFormatMatchesDocumentedLayout</code>).</p>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/backups.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/self-hosting/coolify/"><span>Previous</span>Deploying on Coolify</a>
+      <a class="next" rel="next" href="/docs/self-hosting/sso/"><span>Next</span>Single sign-on</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#quick-start">Quick start</a></li><li><a href="#destinations">Destinations</a><ul><li><a href="#folder-on-the-server">Folder on the server</a></li><li><a href="#s3-compatible-storage">S3-compatible storage</a></li><li><a href="#webdav">WebDAV</a></li></ul></li><li><a href="#schedule-and-retention">Schedule and retention</a></li><li><a href="#encryption-and-secrets">Encryption and secrets</a></li><li><a href="#restore">Restore</a><ul><li><a href="#with-docker-compose">With Docker Compose</a></li><li><a href="#with-the-binary">With the binary</a></li><li><a href="#after-a-restore-devices">After a restore: devices</a></li></ul></li><li><a href="#environment-presets">Environment presets</a></li><li><a href="#what-a-backup-contains">What a backup contains</a><ul><li><a href="#manifestjson">manifest.json</a></li><li><a href="#layers">Layers</a></li></ul></li><li><a href="#encryption-format-otbk1">Encryption format (OTBK1)</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

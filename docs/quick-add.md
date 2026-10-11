@@ -1,3 +1,12 @@
+---
+title: Quick add syntax
+summary: Every word quick add understands: dates, times, projects, labels, priorities, estimates, six languages and voice capture.
+audience: user
+section: Reference
+specs: [natural-language-capture, voice-capture]
+screens: [settings/quick-add, settings/voice]
+order: 10
+---
 # Quick add syntax
 
 Type one line in the quick-add box (press `q` in any task view) and OpenTodo picks out the due date and time, project, labels, priority and estimate:

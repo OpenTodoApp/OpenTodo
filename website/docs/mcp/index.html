@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>AI assistants (MCP) · OpenTodo docs</title>
+  <meta name="description" content="Give an AI assistant read-only access to your tasks over the Model Context Protocol.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#050912" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://opentodo.pixari.dev/docs/mcp/">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://opentodo.pixari.dev/docs/mcp/">
+  <meta property="og:site_name" content="OpenTodo">
+  <meta property="og:title" content="AI assistants (MCP) · OpenTodo docs">
+  <meta property="og:description" content="Give an AI assistant read-only access to your tasks over the Model Context Protocol.">
+  <meta property="og:image" content="https://opentodo.pixari.dev/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs/docs.css">
+  <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
+  <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
+  <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
+  <script defer data-cfasync="false" src="/analytics.js"></script>
+  <script defer data-cfasync="false" src="/docs/docs.js"></script>
+</head>
+<body class="docs">
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="/" aria-label="OpenTodo home"><img src="/assets/favicon.svg" width="26" height="26" alt=""><span>OpenTodo</span></a>
+    <nav class="site-nav" aria-label="Website">
+      <a href="/#features">Features</a>
+      <a href="/#self-host">Self-host</a>
+      <a href="/#tour">Tour</a>
+      <a href="/docs/" aria-current="true">Docs</a>
+    </nav>
+    <a class="gh" href="https://github.com/pixari/opentodo" rel="noopener"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
+  </div>
+</header>
+<div class="docs-bar">
+  <details class="docs-menu"><summary>Menu</summary><nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/" aria-current="page">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav></details>
+  <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-bar">Search the docs</label>
+  <input id="q-bar" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-bar-results" aria-describedby="q-bar-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-bar-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-bar-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+</div>
+<div class="docs-shell">
+  <aside class="docs-side">
+    <form class="docs-search" role="search" action="/docs/" data-search>
+  <label class="sr-only" for="q-side">Search the docs</label>
+  <input id="q-side" type="search" name="q" placeholder="Search the docs" autocomplete="off" spellcheck="false" aria-controls="q-side-results" aria-describedby="q-side-hint">
+  <kbd class="search-key" aria-hidden="true">/</kbd>
+  <p class="sr-only" id="q-side-hint">Results appear below as you type. Press the down arrow to reach them.</p>
+  <div class="search-results" id="q-side-results" hidden></div>
+  <p class="sr-only" aria-live="polite" data-search-status></p>
+</form>
+    <nav aria-label="Documentation"><a class="side-home" href="/docs/">Docs home</a>
+<div class="side-audience"><p class="side-audience-title">Using OpenTodo</p>
+<p class="side-group">Reference</p>
+<ul><li><a href="/docs/quick-add/">Quick add syntax</a></li><li><a href="/docs/filters/">Filter queries</a></li><li><a href="/docs/recurrence/">Recurring task rules</a></li><li><a href="/docs/reminders/">Reminders reference</a></li><li><a href="/docs/capture/">Capturing pages</a></li><li><a href="/docs/import/">Import formats</a></li><li><a href="/docs/e2ee/">End-to-end encryption</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Self-hosting</p>
+<ul><li><a href="/docs/self-hosting/docker/">Running with Docker</a></li><li><a href="/docs/self-hosting/coolify/">Deploying on Coolify</a></li><li><a href="/docs/backups/">Backups</a></li><li><a href="/docs/self-hosting/sso/">Single sign-on</a></li><li><a href="/docs/caldav/">Calendar apps (CalDAV)</a></li><li><a href="/docs/email/">Email to task</a></li><li><a href="/docs/self-hosting/demo/">Public demo instance</a></li></ul>
+</div>
+<div class="side-audience"><p class="side-audience-title">Integrations and internals</p>
+<p class="side-group">Integrations</p>
+<ul><li><a href="/docs/api/">HTTP API</a></li><li><a href="/docs/cli/">Command-line client</a></li><li><a href="/docs/webhooks/">Webhooks</a></li><li><a href="/docs/mcp/" aria-current="page">AI assistants (MCP)</a></li></ul>
+<p class="side-group">Internals</p>
+<ul><li><a href="/docs/architecture/">Architecture</a></li><li><a href="/docs/sync/">Sync protocol</a></li></ul>
+</div></nav>
+  </aside>
+  <main id="content" class="docs-main" tabindex="-1">
+    <article class="prose" data-audience="developer">
+      <p class="doc-meta"><span class="crumbs">Integrations and internals <span aria-hidden="true">›</span> Integrations</span><span class="version" title="Latest release these docs describe">Version 0.1.0</span></p>
+      <details class="toc-inline"><summary>On this page</summary><nav aria-label="On this page (inline)"><ul><li><a href="#1-enable-it-owner">1. Enable it (owner)</a></li><li><a href="#2-create-a-read-only-token">2. Create a read-only token</a></li><li><a href="#3-connect-an-assistant">3. Connect an assistant</a></li><li><a href="#tools">Tools</a></li><li><a href="#resources">Resources</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#protocol-details">Protocol details</a></li><li><a href="#limits-and-security">Limits and security</a></li></ul></nav></details>
+<h1 id="ai-assistants-mcp">AI assistants (MCP)</h1>
+<p>OpenTodo can let an AI assistant read your projects and tasks through the <a href="https://modelcontextprotocol.io" rel="noopener">Model Context Protocol</a> (MCP), so you can ask it &quot;what is on my plate today?&quot; or &quot;summarise the Garden project&quot;. The endpoint is:</p>
+<ul>
+<li><strong>Off by default.</strong> The server owner turns it on; until then <code>/mcp</code> answers 404.</li>
+<li><strong>Read-only.</strong> There are no write tools. An assistant cannot create, complete, edit or delete anything.</li>
+<li><strong>Yours only.</strong> Each request acts as the account whose API token it carries and sees exactly what that account sees in the app: its personal projects and tasks plus the shared projects it is a member of. Deleted items are never returned.</li>
+<li><strong>Passive.</strong> The assistant connects to your server. OpenTodo never contacts a model provider, a registry or anything else on its own.</li>
+</ul>
+<h2 id="1-enable-it-owner">1. Enable it (owner)<a class="anchor" href="#1-enable-it-owner" aria-label="Link to this section: 1. Enable it (owner)">#</a></h2>
+<p><strong>Settings → AI assistants → Allow AI assistants (MCP endpoint)</strong>. The change applies at once, without a restart, and is recorded in the audit log as <code>settings.changed</code> (<code>mcp.enabled</code>).</p>
+<p>For deployments managed as code, the optional <code>OPENTODO_MCP=true</code> presets the toggle on the <strong>first</strong> start. After that the value in Settings wins, so the owner can still turn it off. Members see the status in the same section but no toggle.</p>
+<h2 id="2-create-a-read-only-token">2. Create a read-only token<a class="anchor" href="#2-create-a-read-only-token" aria-label="Link to this section: 2. Create a read-only token">#</a></h2>
+<p>In <strong>Settings → AI assistants</strong>, choose <strong>Create read-only token</strong>, or in <strong>Settings → API tokens</strong> pick the <strong>Read-only</strong> scope. Copy the token: it is shown once. A read-only token is refused on every route that writes (see <a href="/docs/api/#authentication">API → Authentication</a>), so even if it leaks from an assistant&#39;s configuration it cannot change your data. Revoke it in <strong>Settings → API tokens</strong> at any time.</p>
+<p>Full-access tokens also work with <code>/mcp</code>, but there is no reason to give one to an assistant.</p>
+<h2 id="3-connect-an-assistant">3. Connect an assistant<a class="anchor" href="#3-connect-an-assistant" aria-label="Link to this section: 3. Connect an assistant">#</a></h2>
+<p>Use the endpoint URL shown in Settings (<code>https://todo.example.com/mcp</code>) as a <strong>remote MCP server</strong> with the <strong>streamable HTTP</strong> transport, and send the token as a header:</p>
+<pre tabindex="0"><code>Authorization: Bearer ot_…</code></pre>
+<p>Clients that take a JSON server entry (Settings has a copy button that fills in the URL and your new token):</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;mcpServers&quot;: {
+    &quot;opentodo&quot;: {
+      &quot;type&quot;: &quot;http&quot;,
+      &quot;url&quot;: &quot;https://todo.example.com/mcp&quot;,
+      &quot;headers&quot;: { &quot;Authorization&quot;: &quot;Bearer ot_…&quot; }
+    }
+  }
+}</code></pre>
+<p>Menus differ between assistants; look for &quot;add custom connector&quot;, &quot;remote MCP server&quot; or &quot;HTTP server&quot;. Clients that only speak stdio need a bridge that forwards to an HTTP endpoint with a header; OpenTodo does not ship one yet.</p>
+<p>To try the endpoint by hand:</p>
+<pre tabindex="0"><code class="language-bash">curl -sS https://todo.example.com/mcp \
+  -H &quot;Authorization: Bearer $TOKEN&quot; -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;id&quot;:1,&quot;method&quot;:&quot;tools/call&quot;,&quot;params&quot;:{&quot;name&quot;:&quot;today_summary&quot;,&quot;arguments&quot;:{&quot;timezone&quot;:&quot;Europe/Rome&quot;}}}'</code></pre>
+<p><strong>Time zones.</strong> Due dates in OpenTodo are floating calendar dates (&quot;2026-03-11&quot;, optionally with a time) unless they name a zone. What counts as &quot;today&quot; or &quot;overdue&quot; therefore depends on where you are: every date-dependent tool takes a <code>timezone</code> (an IANA name such as <code>Europe/Rome</code>) and uses UTC when none is given. Tell your assistant your time zone, or ask it to pass it. Every result also carries <code>server_time</code> (UTC), so the assistant can say how fresh the data is.</p>
+<p><strong>Offline edits.</strong> The server only knows what your devices have synced. A task added on a phone in airplane mode appears once the phone syncs.</p>
+<h2 id="tools">Tools<a class="anchor" href="#tools" aria-label="Link to this section: Tools">#</a></h2>
+<p>All tools are annotated <code>readOnlyHint: true</code>, <code>destructiveHint: false</code>, <code>openWorldHint: false</code>. Results come back both as <code>structuredContent</code> and as the same JSON in a text block. Timestamps in results are ISO 8601 in UTC; priorities are 1 (highest) to 4 (default). Lists hold at most 200 items; when there are more, the result has a <code>next_cursor</code> to pass back as <code>cursor</code>.</p>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Arguments</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>list_projects</code></td>
+<td><code>include_archived</code> (default false)</td>
+<td><code>{projects:[{id,name,color,archived,parent_id?,shared,role?,open_count}], inbox_open_count, server_time}</code></td>
+</tr>
+<tr>
+<td><code>list_tasks</code></td>
+<td><code>view</code> (<code>all</code> default, <code>inbox</code>, <code>today</code>, <code>upcoming</code>), <code>project_id</code>, <code>label</code> (name or id), <code>priority</code> (1–4), <code>due_from</code>, <code>due_to</code> (YYYY-MM-DD, inclusive), <code>include_completed</code> (default false), <code>timezone</code>, <code>limit</code> (≤200), <code>cursor</code></td>
+<td><code>{tasks:[…], next_cursor, timezone, today, server_time}</code></td>
+</tr>
+<tr>
+<td><code>get_task</code></td>
+<td><code>id</code> (required), <code>timezone</code></td>
+<td><code>{task, subtasks:[…], comments:[{id,parent_id?,author:{id,name},body,created_at,edited_at?}], timezone, today, server_time}</code></td>
+</tr>
+<tr>
+<td><code>search_tasks</code></td>
+<td><code>query</code> (required), <code>include_completed</code>, <code>timezone</code>, <code>limit</code>, <code>cursor</code></td>
+<td>like <code>list_tasks</code>; matches title or description, case-insensitive</td>
+</tr>
+<tr>
+<td><code>today_summary</code></td>
+<td><code>timezone</code></td>
+<td><code>{overdue:[…], due_today:[…], counts:{overdue,due_today,inbox,per_project:[{id,name,open}]}, timezone, today, server_time}</code></td>
+</tr>
+</tbody></table></div>
+<p><code>today</code> lists open tasks due today or earlier, overdue first; <code>upcoming</code> lists open tasks due after today. Tasks are ordered by due date and time (undated last), then priority. Tasks in archived projects are left out unless <code>project_id</code> names that project.</p>
+<p>A task in a result looks like this (<code>description</code>, the note as Markdown text, only in <code>get_task</code> and <code>search_tasks</code>; the opaque rich-text document <code>notes_doc</code> is never returned):</p>
+<pre tabindex="0"><code class="language-json">{
+  &quot;id&quot;: &quot;0b6f…&quot;, &quot;title&quot;: &quot;Water the tomatoes&quot;, &quot;description&quot;: &quot;…&quot;,
+  &quot;project_id&quot;: &quot;e34e…&quot;, &quot;project&quot;: &quot;Garden&quot;, &quot;section_id&quot;: &quot;…&quot;, &quot;section&quot;: &quot;Beds&quot;,
+  &quot;parent_id&quot;: null, &quot;priority&quot;: 2,
+  &quot;due&quot;: { &quot;date&quot;: &quot;2026-03-11&quot;, &quot;time&quot;: &quot;01:00&quot;, &quot;tz&quot;: &quot;Asia/Tokyo&quot;, &quot;local_date&quot;: &quot;2026-03-10&quot;, &quot;local_time&quot;: &quot;12:00&quot; },
+  &quot;overdue&quot;: true, &quot;labels&quot;: [&quot;outside&quot;], &quot;assignee&quot;: { &quot;id&quot;: &quot;…&quot;, &quot;name&quot;: &quot;Sam&quot; },
+  &quot;recurrence&quot;: &quot;every week&quot;, &quot;estimate_minutes&quot;: 30,
+  &quot;completed&quot;: false, &quot;created_at&quot;: &quot;2026-03-01T08:00:00Z&quot;
+}</code></pre>
+<p><code>local_date</code> and <code>local_time</code> appear for due dates pinned to a time zone and give the wall time in the requested <code>timezone</code>. Optional fields are left out when empty; <code>project</code> is <code>&quot;Inbox&quot;</code> for tasks without a project.</p>
+<p>Errors: a missing or malformed argument (for example <code>priority: 7</code>) is a JSON-RPC <code>-32602</code> error whose message names the argument. <code>get_task</code> for an id that does not exist, is deleted or belongs to someone else returns a result with <code>isError: true</code> and the text <code>task not found</code>; the three cases are indistinguishable on purpose.</p>
+<h2 id="resources">Resources<a class="anchor" href="#resources" aria-label="Link to this section: Resources">#</a></h2>
+<div class="table-wrap" tabindex="0"><table>
+<thead>
+<tr>
+<th>URI</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>opentodo://projects</code></td>
+<td>same as <code>list_projects</code></td>
+</tr>
+<tr>
+<td><code>opentodo://views/inbox</code></td>
+<td>open tasks without a project</td>
+</tr>
+<tr>
+<td><code>opentodo://views/today</code></td>
+<td>as <code>list_tasks</code> with <code>view: today</code></td>
+</tr>
+<tr>
+<td><code>opentodo://views/upcoming</code></td>
+<td>as <code>list_tasks</code> with <code>view: upcoming</code></td>
+</tr>
+<tr>
+<td><code>opentodo://projects/{id}</code></td>
+<td>the project, its sections and its open tasks</td>
+</tr>
+<tr>
+<td><code>opentodo://tasks/{id}</code></td>
+<td>same as <code>get_task</code></td>
+</tr>
+</tbody></table></div>
+<p>Contents are <code>application/json</code>. Views use UTC; append <code>?tz=Europe/Rome</code> to the URI for another zone. A resource holds at most 200 tasks and says <code>&quot;truncated&quot;: true</code> when there were more (use <code>list_tasks</code> to page). Reading a deleted or foreign project or task is a <code>-32002</code> &quot;resource not found&quot; error, the same for both.</p>
+<h2 id="end-to-end-encryption">End-to-end encryption<a class="anchor" href="#end-to-end-encryption" aria-label="Link to this section: End-to-end encryption">#</a></h2>
+<p>The server holds no key. For an account with <a href="/docs/e2ee/">end-to-end encryption</a>, encrypted titles, descriptions and project, label and section names are reported as <code>&quot;Encrypted item&quot;</code> with <code>&quot;encrypted&quot;: true</code> on the task; <code>search_tasks</code> never matches encrypted text. Due dates, priorities, completion and structure are still reported because they are stored in plaintext.</p>
+<h2 id="protocol-details">Protocol details<a class="anchor" href="#protocol-details" aria-label="Link to this section: Protocol details">#</a></h2>
+<ul>
+<li>JSON-RPC 2.0 over <code>POST /mcp</code> (streamable HTTP, stateless). Supported protocol versions: <code>2025-11-25</code>, <code>2025-06-18</code> and <code>2025-03-26</code>; <code>initialize</code> echoes the client&#39;s version when supported and answers the newest otherwise. Capabilities: <code>tools</code> and <code>resources</code>; no prompts, sampling, subscriptions or list-change notifications.</li>
+<li>Every request gets one <code>application/json</code> response; notifications get <code>202 Accepted</code> with no body. The server opens no event streams: <code>GET /mcp</code> is 405, and an <code>Accept</code> header that admits only <code>text/event-stream</code> is 406. No <code>Mcp-Session-Id</code> is issued. An <code>MCP-Protocol-Version</code> header naming an unsupported version is 400. Batches (JSON arrays) are accepted.</li>
+<li>Methods: <code>initialize</code>, <code>ping</code>, <code>tools/list</code>, <code>tools/call</code>, <code>resources/list</code>, <code>resources/templates/list</code>, <code>resources/read</code>. Anything else is <code>-32601</code>; malformed JSON is <code>-32700</code> (HTTP 400).</li>
+</ul>
+<h2 id="limits-and-security">Limits and security<a class="anchor" href="#limits-and-security" aria-label="Link to this section: Limits and security">#</a></h2>
+<ul>
+<li><strong>Authentication</strong>: <code>Authorization: Bearer &lt;API token&gt;</code> only. The session cookie is ignored on <code>/mcp</code>, so a web page you visit cannot use your browser session to read your tasks. A missing, unknown or revoked token, or the token of a deactivated account, is 401 with <code>WWW-Authenticate: Bearer realm=&quot;OpenTodo MCP&quot;</code>. Failed attempts count toward the per-address sign-in limit (10 per minute), after which requests get 429.</li>
+<li><strong>Origin</strong>: a request that carries an <code>Origin</code> header other than this server&#39;s own (<code>OPENTODO_BASE_URL</code>, or the request&#39;s host) is refused with 403 <code>bad_origin</code>, as the MCP transport requires against DNS rebinding. Desktop and command-line clients send no <code>Origin</code>.</li>
+<li><strong>Size</strong>: request bodies over 1 MB are refused with 413; responses hold at most 200 items per list.</li>
+<li><strong>Logging</strong>: tool calls are logged at debug level with the JSON-RPC method and duration only, never with arguments or results.</li>
+<li><strong>Network</strong>: the MCP server makes no outbound requests. A reverse proxy in front of OpenTodo should not log <code>Authorization</code> headers.</li>
+<li><strong>Disable</strong>: turn the toggle off in Settings (immediate), or revoke the assistant&#39;s token.</li>
+</ul>
+
+      <p class="edit"><a href="https://github.com/pixari/opentodo/edit/main/docs/mcp.md" rel="noopener">Edit this page on GitHub</a></p>
+    </article>
+    <nav class="pager" aria-label="Previous and next page">
+      <a class="prev" rel="prev" href="/docs/webhooks/"><span>Previous</span>Webhooks</a>
+      <a class="next" rel="next" href="/docs/architecture/"><span>Next</span>Architecture</a>
+    </nav>
+  </main>
+  <aside class="docs-toc"><nav aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#1-enable-it-owner">1. Enable it (owner)</a></li><li><a href="#2-create-a-read-only-token">2. Create a read-only token</a></li><li><a href="#3-connect-an-assistant">3. Connect an assistant</a></li><li><a href="#tools">Tools</a></li><li><a href="#resources">Resources</a></li><li><a href="#end-to-end-encryption">End-to-end encryption</a></li><li><a href="#protocol-details">Protocol details</a></li><li><a href="#limits-and-security">Limits and security</a></li></ul></nav></aside>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p>OpenTodo is free software under the <a href="https://github.com/pixari/opentodo/blob/main/LICENSE" rel="noopener">AGPL-3.0</a>. These docs describe version 0.1.0 and the changes on <code>main</code> since then.</p>
+    <nav aria-label="Footer">
+      <a href="/docs/">Docs home</a>
+      <a href="https://github.com/pixari/opentodo" rel="noopener">GitHub</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/pixari/opentodo/blob/main/SECURITY.md" rel="noopener">Security</a>
+    </nav>
+    <p class="fine">This website (not the app) counts visits and clicks with self-hosted <a href="https://umami.is" rel="noopener">Umami</a>: no cookies, no personal data, and never what you type into search.</p>
+  </div>
+</footer>
+</body>
+</html>

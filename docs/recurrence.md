@@ -1,4 +1,13 @@
-# Recurring tasks
+---
+title: Recurring task rules
+summary: The repeat rule grammar, how the next date is worked out, and what completing, skipping and detaching do.
+audience: user
+section: Reference
+specs: [recurring-tasks]
+screens: []
+order: 30
+---
+# Recurring task rules
 
 A task can repeat. The rule is a short English phrase stored in the task's
 `recurrence` field, for example `every weekday` or `every 3 days after completion`.

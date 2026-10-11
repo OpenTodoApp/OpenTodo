@@ -1,3 +1,11 @@
+---
+title: Deploying on Coolify
+summary: One-click deployment from the compose file, environment variables, passkeys, updates and troubleshooting.
+audience: admin
+specs: [self-hosting]
+screens: []
+order: 20
+---
 # Deploying OpenTodo on Coolify
 
 OpenTodo is built to be a one-click Coolify resource: one service, one volume, no required variables.
