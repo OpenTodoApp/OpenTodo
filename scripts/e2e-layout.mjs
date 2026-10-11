@@ -374,7 +374,13 @@ async function runCombo(engine, width, theme, ids) {
     for (const s of screens(ids)) {
       if (ONLY && !ONLY.has(s.name)) continue
       const p = s.anon ? await anonCtx.newPage() : page
-      const visit = async () => {
+      // A screen that does not load is retried once (a slow CI machine); the second
+      // failure is reported with whether the session was still valid.
+      const visit = () => load().catch(async () => load().catch(async (e) => {
+        const st = s.anon ? null : await ctx.request.get(base + '/api/v1/auth/status').then((r) => r.json()).catch(() => null)
+        throw new Error(`${e.message.split('\n')[0]}${st && !st.authenticated ? ' (the session was signed out)' : ''}`)
+      }))
+      const load = async () => {
         await p.goto(base + s.path)
         await s.ready(p)
         if (s.board) {
