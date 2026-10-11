@@ -17,6 +17,7 @@ import { navigate, useRoute } from './router'
 import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
 import { clearVimPref } from './vim/prefs'
+import { DEMO_BANNER, setDemo, useDemo } from '../lib/demo'
 
 type Phase =
   | { kind: 'loading' }
@@ -31,12 +32,14 @@ export function App() {
   const route = useRoute()
   const sync = useSyncStatus()
   const enc = useEncryption()
+  const demo = useDemo()
   // Shown on the sign-in screen after a password reset (OpenSpec `user-management`).
   const [signInNotice, setSignInNotice] = useState<string | undefined>(undefined)
 
   const refresh = useCallback(async () => {
     try {
       const status = await api.authStatus()
+      setDemo(status.demo)
       if (status.authenticated && status.user) {
         localStorage.setItem('opentodo.user', JSON.stringify(status.user))
         cacheMfa(status.mfa ?? null)
@@ -187,10 +190,27 @@ export function App() {
             A newer version of OpenTodo is required to read your data. <button className="underline" onClick={() => window.location.reload()}>Reload to update</button>
           </div>
         )}
-        <Shell user={phase.user} onLogout={() => void logout()} />
+        {demo ? (
+          // The banner takes its own row so the shell still fills the rest of the screen.
+          <div className="flex h-full flex-col">
+            <DemoBanner />
+            <div className="min-h-0 flex-1"><Shell user={phase.user} onLogout={() => void logout()} /></div>
+          </div>
+        ) : (
+          <Shell user={phase.user} onLogout={() => void logout()} />
+        )}
       </>
     )
   }
+}
+
+/** Shown on every screen of a demo instance (OpenSpec `demo-mode`). */
+export function DemoBanner() {
+  return (
+    <div role="status" data-testid="demo-banner" className="border-b border-sky-200 bg-sky-50 px-4 py-1.5 text-center text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-100">
+      {DEMO_BANNER}
+    </div>
+  )
 }
 
 function Centered({ children }: { children: React.ReactNode }) {

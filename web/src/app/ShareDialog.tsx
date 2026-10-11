@@ -3,6 +3,7 @@ import { api, ApiError } from '../lib/api'
 import { canManage, grantableRoles } from '../lib/sharing'
 import { requestSync } from '../lib/sync'
 import type { Membership, Project, ProjectRole } from '../lib/types'
+import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
 
 const ROLE_HINT: Record<ProjectRole, string> = {
   owner: 'Owner',
@@ -28,7 +29,9 @@ export function ShareDialog({ project, userId, cached, onClose }: {
   const [membership, setMembership] = useState<Membership | undefined>(cached)
   const [email, setEmail] = useState('')
   const myRole: ProjectRole = membership?.role ?? 'owner'
-  const roles = grantableRoles(myRole)
+  // A demo instance refuses every membership change (OpenSpec `demo-mode`): the dialog only lists members.
+  const locked = useDemo() !== null
+  const roles = locked ? [] : grantableRoles(myRole)
   const [role, setRole] = useState<ProjectRole>('editor')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -87,11 +90,12 @@ export function ShareDialog({ project, userId, cached, onClose }: {
             <button className="btn-primary" disabled={busy || !email.trim()}>Share</button>
           </form>
         )}
+        {locked && <p className="mb-3 text-sm text-slate-500" data-testid="demo-share-note">Sharing changes: {DEMO_RESTRICTED_NOTE}</p>}
         {error && <p role="alert" className="mb-3 text-sm text-red-600">{error}</p>}
         <ul aria-label="Members" className="space-y-1">
           {members.map((m) => {
             const self = m.userId === userId
-            const manage = !self && canManage(myRole, m.role)
+            const manage = !locked && !self && canManage(myRole, m.role)
             return (
               <li key={m.userId} className="flex items-center gap-2 rounded-md px-1 py-1 text-sm">
                 <span className="min-w-0 flex-1 truncate" title={m.email}>
@@ -110,13 +114,13 @@ export function ShareDialog({ project, userId, cached, onClose }: {
                   <button className="btn-ghost px-2 py-0.5 text-xs" disabled={busy} aria-label={`Remove ${m.name || m.email}`}
                     onClick={() => void run(async () => { await api.removeMember(project.id, m.userId); return api.listMembers(project.id) })}>Remove</button>
                 )}
-                {myRole === 'owner' && !self && (
+                {!locked && myRole === 'owner' && !self && (
                   <button className="btn-ghost px-2 py-0.5 text-xs" disabled={busy} aria-label={`Make ${m.name || m.email} the owner`}
                     onClick={() => { if (confirm(`Make ${m.name || m.email} the owner of "${project.name}"? You become an admin.`)) void run(() => api.transferProject(project.id, m.userId)) }}>
                     Make owner
                   </button>
                 )}
-                {self && m.role !== 'owner' && (
+                {!locked && self && m.role !== 'owner' && (
                   <button className="btn-ghost px-2 py-0.5 text-xs" disabled={busy}
                     onClick={() => { if (confirm(`Leave "${project.name}"? It disappears from your devices.`)) void run(() => api.removeMember(project.id, 'me'), onClose) }}>
                     Leave

@@ -64,6 +64,9 @@ The first feature-complete version: every item on the [roadmap](ROADMAP.md) is i
 - Audit log of security events with retention, NDJSON export and opt-in client addresses. [What is logged](SECURITY.md#what-is-logged), [API](docs/api.md#audit-log)
 - Optional end-to-end encryption of task content per account (Web Crypto, AES-256-GCM, passphrase plus recovery key); routes under `/api/v1/encryption/`. [E2EE](docs/e2ee.md)
 
+**Launch**
+- Demo mode for a public demo instance: `OPENTODO_DEMO=true` creates a hidden owner and a shared demo account shown on the sign-in screen ("Try the demo"), seeds realistic data through the op log, wipes and reseeds it every night at 03:00 UTC (devices recover through purge markers, sessions stay), shows a banner, and refuses sign-up, account changes, integrations, import and encryption with 403 `demo_restricted`; no outbound requests. [Demo instance](docs/self-hosting/demo.md)
+
 ### Changed
 
 - Deleting a project only tombstones the project; its tasks keep their `project_id` and come back when the project is restored from the Trash.

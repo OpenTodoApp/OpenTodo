@@ -17,6 +17,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Live push of changes between devices | `realtime-sync-channel` | Server-sent event wake-ups; the protocol stays op-based, polling is the fallback |
 | Rich text with collaborative editing for task notes | `collaborative-rich-text` | Yjs document in `task.notes_doc`, editor lazy-loaded; comments stay Markdown |
 | Vim-style modal navigation option | `vim-keybindings` | |
+| Public demo instance for the launch | `demo-mode` | `OPENTODO_DEMO=true`: seeded demo account, nightly reset, abusable features off. See [docs/self-hosting/demo.md](docs/self-hosting/demo.md) |
 
 ### 2. Capture and input
 

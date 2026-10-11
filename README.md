@@ -188,6 +188,7 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `OPENTODO_IMPORT_MAX_MB` | `20` | Largest [import](docs/import.md) file, 1–200 |
 | `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days a deleted task or project stays in the Trash before it is purged, 0–3650; `0` never purges automatically. See [Purge](docs/sync.md#purge) |
+| `OPENTODO_DEMO` | unset (off) | `true` turns a dedicated instance into a [public demo](docs/self-hosting/demo.md): seeded demo account, nightly reset at 03:00 UTC, abusable features refused with 403 `demo_restricted` |
 | `OPENTODO_PUSH` | `on` | `off` disables web push for [reminders](docs/reminders.md): no requests to push services; reminders still show in the app |
 | `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | `true`/`false` presets the owner's "allow private network targets" [webhook](docs/webhooks.md#private-network-protection) policy on first start; afterwards Settings decides |
 | `OPENTODO_MCP` | unset (off) | `true` presets the [AI assistants (MCP)](docs/mcp.md) endpoint on first start; afterwards Settings → AI assistants decides |
@@ -231,7 +232,7 @@ More in [docs/architecture.md](docs/architecture.md) and [docs/sync.md](docs/syn
 All guides are indexed in [docs/README.md](docs/README.md):
 
 - **Using OpenTodo**: [quick add](docs/quick-add.md) · [filters and saved views](docs/filters.md) · [recurring tasks](docs/recurrence.md) · [reminders](docs/reminders.md) · [capture](docs/capture.md) · [import](docs/import.md) · [end-to-end encryption](docs/e2ee.md)
-- **Self-hosting**: [Docker](docs/self-hosting/docker.md) · [Coolify](docs/self-hosting/coolify.md) · [single sign-on](docs/self-hosting/sso.md) · [backups](docs/backups.md) · [email to task](docs/email.md) · [calendar apps (CalDAV)](docs/caldav.md)
+- **Self-hosting**: [Docker](docs/self-hosting/docker.md) · [Coolify](docs/self-hosting/coolify.md) · [single sign-on](docs/self-hosting/sso.md) · [public demo instance](docs/self-hosting/demo.md) · [backups](docs/backups.md) · [email to task](docs/email.md) · [calendar apps (CalDAV)](docs/caldav.md)
 - **Integrations**: [REST API](docs/api.md) · [CLI](docs/cli.md) · [webhooks](docs/webhooks.md) · [AI assistants (MCP)](docs/mcp.md)
 - **Internals**: [architecture](docs/architecture.md) · [sync protocol](docs/sync.md)
 - **Project**: [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security](SECURITY.md) · [contributing](CONTRIBUTING.md)

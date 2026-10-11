@@ -25,6 +25,7 @@ import { EmailInboxPanel } from './EmailInboxPanel'
 import { setStartView, type StartView } from '../lib/views'
 import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
+import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
 
 export function SettingsView({ user, onLogout }: { user: User; onLogout: () => void }) {
   // Bumped when the AI assistants section creates a token, so the list reloads.
@@ -32,6 +33,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
   const sync = useSyncStatus()
   const views = useViews()
   const startView = useStartView()
+  const demo = useDemo()
   const startIsKnown = !startView.startsWith('view:') || views.some((v) => `view:${v.id}` === startView)
 
   return (
@@ -49,9 +51,14 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
         </p>
         <div className="flex flex-wrap gap-2">
           <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/api/v1/export" download="opentodo-export.json">Download export (JSON)</a>
-          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/settings/import"
-            onClick={(e) => { e.preventDefault(); navigate({ view: 'import' }) }}>Import data…</a>
+          {demo ? (
+            <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled aria-describedby="demo-import-note">Import data…</button>
+          ) : (
+            <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/settings/import"
+              onClick={(e) => { e.preventDefault(); navigate({ view: 'import' }) }}>Import data…</a>
+          )}
         </div>
+        {demo && <p id="demo-import-note" className="text-xs text-slate-500">Import: {DEMO_RESTRICTED_NOTE}</p>}
         <p className="text-xs text-slate-400">
           Sync: {sync.state}{sync.pending ? `, ${sync.pending} change(s) waiting to upload` : ''}.
         </p>
@@ -59,13 +66,17 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 
       <CalendarSettingsSection />
 
-      <PasswordSection />
-      <TwoFactorPanel user={user} />
-      <EncryptionPanel />
-      <NotificationsSettings />
+      {demo ? <DemoRestrictedSection /> : (
+        <>
+          <PasswordSection />
+          <TwoFactorPanel user={user} />
+          <EncryptionPanel />
+          <NotificationsSettings />
 
-      <SecurityPanel />
-      <LinkedAccountsPanel />
+          <SecurityPanel />
+          <LinkedAccountsPanel />
+        </>
+      )}
       <section className="space-y-2">
         <h2 className="font-semibold">Start view</h2>
         <p className="text-sm text-slate-500">The view this device opens on launch. Each device keeps its own choice; it is not synced.</p>
@@ -90,25 +101,33 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 
       <AutoArchiveSection />
 
-      <AdministrationSections user={user} />
-      {user.role === 'owner' && <SsoPanel />}
+      {!demo && (
+        <>
+          <AdministrationSections user={user} />
+          {user.role === 'owner' && <SsoPanel />}
 
-      <CaldavPanel isOwner={user.role === 'owner'} email={user.email} />
+          <CaldavPanel isOwner={user.role === 'owner'} email={user.email} />
 
-      <WebhooksPanel isOwner={user.role === 'owner'} />
+          <WebhooksPanel isOwner={user.role === 'owner'} />
+        </>
+      )}
       <QuickAddSettingsSection />
       <VoiceSettingsSection />
 
       <SecuritySettings user={user} />
 
       <CaptureSection />
-      <EmailInboxPanel />
+      {!demo && (
+        <>
+          <EmailInboxPanel />
 
-      {user.role === 'owner' && <BackupsPanel />}
+          {user.role === 'owner' && <BackupsPanel />}
 
-      <AssistantsPanel isOwner={user.role === 'owner'} onTokenCreated={() => setTokenReload((n) => n + 1)} />
+          <AssistantsPanel isOwner={user.role === 'owner'} onTokenCreated={() => setTokenReload((n) => n + 1)} />
 
-      <TokensSection reloadKey={tokenReload} />
+          <TokensSection reloadKey={tokenReload} />
+        </>
+      )}
 
       <section className="space-y-2">
         <h2 className="font-semibold">Session</h2>
@@ -121,6 +140,25 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
         <a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">Source code</a>
       </section>
     </div>
+  )
+}
+
+/** Features a demo instance refuses (OpenSpec `demo-mode`), listed where their sections would be. */
+export const DEMO_RESTRICTED_FEATURES = [
+  'password and two-factor authentication', 'passkeys', 'end-to-end encryption', 'push notifications', 'linked accounts',
+  'users and invitations', 'single sign-on', 'calendar apps (CalDAV)', 'webhooks', 'email to task', 'backups',
+  'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
+]
+
+function DemoRestrictedSection() {
+  return (
+    <section className="space-y-2" aria-labelledby="demo-heading" data-testid="demo-restricted">
+      <h2 id="demo-heading" className="font-semibold">Demo instance</h2>
+      <p className="text-sm text-slate-500">
+        Everyone shares this account and its data resets every night. Account, security and server settings are {DEMO_RESTRICTED_NOTE.toLowerCase().replace(/\.$/, '')}: {DEMO_RESTRICTED_FEATURES.join(', ')}.
+        Run your own server to use them; it takes one container.
+      </p>
+    </section>
   )
 }
 

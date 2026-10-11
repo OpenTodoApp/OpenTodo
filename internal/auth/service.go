@@ -272,6 +272,51 @@ func (s *Service) UserByEmail(ctx context.Context, email string) (*User, error) 
 	return &u, err
 }
 
+// CreateAccount creates a local account with the given role ("member" or
+// "owner") without consulting the sign-up policy or an invitation. It exists
+// for server-side provisioning (OpenSpec change `demo-mode`: the demo accounts
+// and the hidden owner) and is never reachable from a route. An "owner" is
+// refused when an account already exists, so there is still exactly one owner.
+func (s *Service) CreateAccount(ctx context.Context, email, name, password, role string) (*User, error) {
+	email = normalizeEmail(email)
+	if _, err := mail.ParseAddress(email); err != nil || email == "" {
+		return nil, ErrInvalidEmail
+	}
+	if role != "member" && role != "owner" {
+		return nil, errors.New("role must be member or owner")
+	}
+	if err := CheckPasswordPolicy(password); err != nil {
+		return nil, err
+	}
+	hash, err := HashPassword(password)
+	if err != nil {
+		return nil, err
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	if role == "owner" {
+		var n int
+		if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&n); err != nil {
+			return nil, err
+		}
+		if n > 0 {
+			return nil, errors.New("an owner can only be created on an empty server")
+		}
+	}
+	u := &User{ID: ids.New(), Email: email, Name: strings.TrimSpace(name), Role: role, CreatedAt: time.Now().UnixMilli()}
+	if _, err := tx.ExecContext(ctx, "INSERT INTO users(id,email,name,password_hash,role,created_at) VALUES(?,?,?,?,?,?)",
+		u.ID, u.Email, u.Name, hash, u.Role, u.CreatedAt); err != nil {
+		if strings.Contains(err.Error(), "UNIQUE") {
+			return nil, ErrEmailTaken
+		}
+		return nil, err
+	}
+	return u, tx.Commit()
+}
+
 // DeleteSession revokes a session.
 func (s *Service) DeleteSession(ctx context.Context, secret string) error {
 	_, err := s.db.ExecContext(ctx, "DELETE FROM sessions WHERE token_hash = ?", hashToken(secret))

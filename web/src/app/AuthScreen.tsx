@@ -107,6 +107,21 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
     }
   }
 
+  /** "Try the demo" (OpenSpec `demo-mode`): sign in with the public demo credentials. */
+  async function tryDemo() {
+    if (!status.demo) return
+    conditional.current?.abort()
+    setBusy(true)
+    setError(null)
+    try {
+      afterFirstFactor(await api.login(status.demo.email, status.demo.password))
+    } catch (err) {
+      setError(describeAuthError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function submitCode() {
     if (!challenge) return
     setBusy(true)
@@ -144,6 +159,9 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
     <AuthCard version={status.version}>
         {notice && (
           <p className="mb-4 rounded-md bg-slate-100 p-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">{notice}</p>
+        )}
+        {status.demo && !invite && mode === 'login' && (
+          <DemoPanel email={status.demo.email} password={status.demo.password} busy={busy} onTry={() => void tryDemo()} />
         )}
         {status.setupRequired && !invite && (
           <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
@@ -217,6 +235,19 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
           </p>
         )}
     </AuthCard>
+  )
+}
+
+/** Demo instance sign-in (OpenSpec `demo-mode`): the public credentials and a one-click sign-in. */
+export function DemoPanel({ email, password, busy, onTry }: { email: string; password: string; busy: boolean; onTry: () => void }) {
+  return (
+    <div className="mb-4 rounded-md bg-sky-50 p-3 text-sm text-sky-900 dark:bg-sky-950 dark:text-sky-100" data-testid="demo-panel">
+      <p className="font-medium">This is a public demo of OpenTodo.</p>
+      <p className="mt-1 text-xs">
+        Sign in as <code>{email}</code> with the password <code>{password}</code>. Everyone shares this account and the data resets every night, so don't store anything private.
+      </p>
+      <button type="button" className="btn-primary mt-3 w-full" disabled={busy} onClick={onTry}>Try the demo</button>
+    </div>
   )
 }
 

@@ -334,6 +334,15 @@ export interface AuthStatus {
   encryption?: EncryptionStatus
   /** Oldest web client that understands ciphertext values (OpenSpec `e2ee`, design D9). */
   minClientVersion?: number
+  /** Public demo instance (OpenSpec `demo-mode`); absent on a normal server. */
+  demo?: DemoInfo
+}
+
+/** The public credentials of a demo instance and its next nightly reset (Unix ms). */
+export interface DemoInfo {
+  email: string
+  password: string
+  resetsAt: number
 }
 
 /** The profile's view of end-to-end encryption (OpenSpec `e2ee`). */

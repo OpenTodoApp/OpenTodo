@@ -157,6 +157,22 @@ func TestPushSwitchIsOptional(t *testing.T) {
 	}
 }
 
+func TestDemoSwitchIsOptional(t *testing.T) {
+	t.Setenv("OPENTODO_DEMO", "")
+	c, err := Load()
+	if err != nil || c.Demo {
+		t.Fatalf("default: %v demo=%v", err, c.Demo)
+	}
+	t.Setenv("OPENTODO_DEMO", "true")
+	if c, err = Load(); err != nil || !c.Demo {
+		t.Fatalf("true: %v demo=%v", err, c.Demo)
+	}
+	t.Setenv("OPENTODO_DEMO", "sometimes")
+	if _, err = Load(); err == nil {
+		t.Fatal("invalid OPENTODO_DEMO accepted")
+	}
+}
+
 func TestConfigRejectsInvalidRetention(t *testing.T) {
 	t.Setenv("OPENTODO_TRASH_RETENTION_DAYS", "")
 	c, err := Load()

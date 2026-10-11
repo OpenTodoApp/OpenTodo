@@ -18,6 +18,7 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/importer"
@@ -89,6 +90,8 @@ type Server struct {
 	// inbox changes and rotations per account (30/hour).
 	email        *email.Service
 	emailLimiter *rateLimiter
+	// demo is set on a demo instance (OpenSpec `demo-mode`); see demo.go.
+	demo *demo.Service
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -231,7 +234,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	if web != nil {
 		mux.Handle("/", web)
 	}
-	return s.securityHeaders(s.logRequests(auditContext(mux)))
+	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(mux))))
 }
 
 // auditContext hands the client address and user agent to the audit recorder.
@@ -434,6 +437,10 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		// another host can say so; public information, empty without a base URL.
 		"passkeyDomain": s.cfg.RPID(),
 		"oidc":          s.oidcStatus(r.Context()),
+	}
+	if s.demo != nil {
+		// Demo instance (OpenSpec `demo-mode`): the public credentials and the next reset.
+		out["demo"] = s.demo.Info()
 	}
 	if u != nil {
 		st, err := s.auth.MFAStatusFor(r.Context(), u, sess != nil)

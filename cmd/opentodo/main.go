@@ -32,6 +32,7 @@ import (
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
+	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/httpapi"
 	"github.com/pixari/opentodo/internal/mcp"
@@ -99,6 +100,11 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	if cfg.Demo {
+		// Demo instance (OpenSpec `demo-mode`, docs/self-hosting/demo.md): no sign-up,
+		// no web push, and none of the outbound integrations below run.
+		cfg.AllowSignup, cfg.PushDisabled = false, true
+	}
 	authSvc := auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
 	syncSvc := opsync.NewService(db)
 	// Outbound webhooks: events come from the winning changes of each committed
@@ -119,12 +125,14 @@ func run() error {
 	}
 	// Scheduled backups (docs/backups.md): off until the owner configures them.
 	backups := backup.New(db, cfg.DataDir, backup.Options{Version: version, Log: log, Audit: authSvc.Audit()})
-	if seeded, err := backups.ApplyPreset(ctx, cfg.Backup); err != nil {
-		return err
-	} else if seeded {
-		log.Info("backup settings seeded from OPENTODO_BACKUP_* variables")
+	if !cfg.Demo {
+		if seeded, err := backups.ApplyPreset(ctx, cfg.Backup); err != nil {
+			return err
+		} else if seeded {
+			log.Info("backup settings seeded from OPENTODO_BACKUP_* variables")
+		}
+		backups.Start(ctx)
 	}
-	backups.Start(ctx)
 	// Reminders: web push to subscribed devices (docs/reminders.md). On unless
 	// OPENTODO_PUSH=off; the VAPID key pair is created under the data directory on
 	// first use. In-app reminders work either way.
@@ -146,6 +154,16 @@ func run() error {
 	// mailbox; then one goroutine polls it over IMAP.
 	emailSvc := email.New(db, syncSvc, cfg.Email, email.Options{Log: log, Audit: authSvc.Audit()})
 	opts = append(opts, httpapi.WithEmail(emailSvc))
+	var demoSvc *demo.Service
+	if cfg.Demo {
+		// Provision the demo accounts and seed (or reseed stale) data before serving.
+		demoSvc = demo.New(authSvc, syncSvc, log)
+		if err := demoSvc.Start(ctx); err != nil {
+			return fmt.Errorf("demo mode: %w", err)
+		}
+		opts = append(opts, httpapi.WithDemo(demoSvc))
+		log.Warn("demo mode is on: demo accounts are public and their data resets nightly", "reset_hour_utc", demo.ResetHour)
+	}
 	handler := httpapi.New(cfg, authSvc, syncSvc, web.Handler(), log, version, opts...)
 
 	srv := &http.Server{
@@ -168,7 +186,13 @@ func run() error {
 	if pushSvc != nil {
 		go pushSvc.Run(ctx)
 	}
-	go emailSvc.Run(ctx)
+	if demoSvc != nil {
+		go demoSvc.Run(ctx)
+		// The operator (or a test) can force a reset with SIGUSR1; there is no route.
+		go resetOnSignal(ctx, demoSvc, log)
+	} else {
+		go emailSvc.Run(ctx)
+	}
 
 	// Purge items that outlived the Trash retention at startup and daily
 	// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).
@@ -177,6 +201,11 @@ func run() error {
 	workerDone := make(chan struct{})
 	go func() {
 		defer close(workerDone)
+		if cfg.Demo {
+			// No outbound webhook deliveries on a demo instance.
+			<-ctx.Done()
+			return
+		}
 		hooks.Run(ctx)
 	}()
 

@@ -28,6 +28,8 @@ services:
       - OPENTODO_IMPORT_MAX_MB=${OPENTODO_IMPORT_MAX_MB:-20}
       - OPENTODO_TRASH_RETENTION_DAYS=${OPENTODO_TRASH_RETENTION_DAYS:-}
       - OPENTODO_PUSH=${OPENTODO_PUSH:-}
+      # Public demo instance (docs/self-hosting/demo.md); leave empty on a real server.
+      - OPENTODO_DEMO=${OPENTODO_DEMO:-}
       # First-start presets; the owner's Settings win afterwards.
       - OPENTODO_WEBHOOKS_ALLOW_PRIVATE=${OPENTODO_WEBHOOKS_ALLOW_PRIVATE:-}
       - OPENTODO_MCP=${OPENTODO_MCP:-}

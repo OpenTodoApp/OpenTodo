@@ -50,6 +50,10 @@ type Config struct {
 	// Email holds the optional OPENTODO_EMAIL_* settings of email capture
 	// (OpenSpec `email-to-task`, see email.go); off unless fully configured.
 	Email EmailConfig
+	// Demo turns the server into a public demo instance (OPENTODO_DEMO=true;
+	// OpenSpec `demo-mode`): seeded demo accounts, a nightly reset, sign-up and
+	// every abusable feature refused with 403 demo_restricted. Off by default.
+	Demo bool
 }
 
 // OIDCEnv mirrors oidc.Env (converted by the HTTP layer) so this package stays
@@ -165,6 +169,13 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_OIDC_SSO_ONLY must be true or false, got %q", v)
 		}
 		c.OIDC.SSOOnly = &b
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_DEMO")); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return c, fmt.Errorf("OPENTODO_DEMO must be true or false, got %q", v)
+		}
+		c.Demo = b
 	}
 	switch strings.ToLower(getenv("OPENTODO_LOG_LEVEL", "info")) {
 	case "debug":
