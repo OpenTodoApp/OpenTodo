@@ -84,7 +84,7 @@ Redeploy the resource. Coolify pulls the new image (or rebuilds), the new versio
 
 Updates are rolling: Coolify starts the new container while the old one still serves, waits for its health check, then stops the old one. Both may serve the same volume for those few seconds; background jobs (reminder push, webhooks, backups, email, Trash cleanup) stay with the old container until it stops, then the new one takes them over. Migrations are additive, so the old version keeps working on the upgraded database until it is replaced.
 
-**Upgrading from 0.1.0:** that version locked the volume exclusively, so its replacement cannot start beside it ("data directory is in use by another opentodo process", and Coolify rolls back). Click **Stop**, then **Deploy** once; later updates roll without downtime.
+**Upgrading from 0.1.0 to 0.2.0:** 0.1.0 locked the volume exclusively, so its replacement cannot start beside it ("data directory is in use by another opentodo process", and Coolify rolls back). For this one upgrade, click **Stop**, then **Deploy** (a minute of downtime while the new image starts). From 0.2.0 on, updates roll without stopping. If you pinned the image tag (for example `ghcr.io/pixari/opentodo:0.1` in [`deploy/coolify/opentodo.yaml`](https://github.com/pixari/opentodo/blob/main/deploy/coolify/opentodo.yaml)), change it to `0.2` first.
 
 ## Live updates
 
@@ -92,7 +92,7 @@ Devices learn about each other's changes through a long-lived request, `GET /api
 
 ## Troubleshooting
 
-- **Update rolled back with "data directory is in use by another opentodo process"**: the running container is 0.1.0, which locked the volume exclusively. Stop the resource, then deploy; from 0.1.1 on, updates roll without stopping.
+- **Update rolled back with "data directory is in use by another opentodo process"**: the running container is 0.1.0, which locked the volume exclusively. Stop the resource, then deploy; from 0.2.0 on, updates roll without stopping.
 - **"No Available Server" on the domain**: make sure the domain is assigned to the `opentodo` service with port `8080` (the compose file does this through `SERVICE_FQDN_OPENTODO_8080`).
 - **Status pill shows "Polling" instead of "Live"**: something between the browser and the container is buffering or cutting the event stream. Open `https://todo.example.com/api/v1/sync/events?device=test` while signed in: you should see `: connected` at once and `: ping` every 25 s. With stock Coolify this works out of the box; check any extra proxy, CDN or corporate firewall in front of it (see the proxy notes in [docker.md](docker.md)). The app keeps working with 30 s polling in the meantime.
 - **Sign-in works on desktop but not on the phone**: the domain must be https. Coolify handles this when the domain starts with `https://`.

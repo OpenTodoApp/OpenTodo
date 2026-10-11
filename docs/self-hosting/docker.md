@@ -166,7 +166,9 @@ The command needs only the data volume: shell access to the host is the proof of
 
 ## Updating
 
-`docker compose pull && docker compose up -d` replaces the container; the new version applies migrations at startup. Orchestrators that start the new container before stopping the old one (Coolify, Docker Swarm, Kubernetes with a shared volume on one node) work too: several server processes may use the data directory at once, and the background jobs (reminder push, webhooks, backups, email polling, Trash cleanup) run in only one of them and move to the newer one when the old one exits. Maintenance commands (`restore`, `mfa-reset`, `reset-owner-password` without a running server) still need every server stopped. Upgrading from 0.1.0 needs one stop-then-start, because that version locked the directory exclusively.
+`docker compose pull && docker compose up -d` replaces the container; the new version applies migrations at startup. Orchestrators that start the new container before stopping the old one (Coolify, Docker Swarm, Kubernetes with a shared volume on one node) work too: several server processes may use the data directory at once, and the background jobs (reminder push, webhooks, backups, email polling, Trash cleanup) run in only one of them and move to the newer one when the old one exits. Maintenance commands (`restore`, `mfa-reset`, `reset-owner-password` without a running server) still need every server stopped.
+
+**Upgrading from 0.1.0 to 0.2.0:** 0.1.0 locked the data directory exclusively, so a 0.2.0 container cannot start beside it. Plain `docker compose up -d` already stops the old container first and needs nothing special. With an orchestrator that starts the new container first, stop the old one for this one upgrade (`docker compose down && docker compose up -d`, or **Stop** then **Deploy** in Coolify); from 0.2.0 on, updates roll without stopping. If you pinned a tag such as `ghcr.io/pixari/opentodo:0.1`, change it to `0.2` (or `0.2.0`).
 
 ## Health
 

@@ -82,7 +82,7 @@ Seeds a fresh server with realistic demo data (three accounts, shared projects, 
 Prints the `CHANGELOG.md` section for a version, plus install pointers; the release job in CI uses it as the GitHub release body and fails the release when the section is missing.
 
 ```bash
-./scripts/release-notes.sh 0.1.0
+./scripts/release-notes.sh 0.2.0
 ```
 
 ## `demo-gif.mjs`

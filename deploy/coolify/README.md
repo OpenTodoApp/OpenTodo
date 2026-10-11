@@ -2,7 +2,7 @@
 
 `opentodo.yaml` is a service template in the format Coolify uses for its built-in service list (`templates/compose/` in the Coolify repository), and `opentodo.svg` is its logo (`public/svgs/`). Until it is part of Coolify, deploy with **New resource → Docker Compose** pointing at this repository (see [docs/self-hosting/coolify.md](../../docs/self-hosting/coolify.md)), or paste `opentodo.yaml` as an empty Docker Compose resource.
 
-What it does: pulls the `0.1` image line (patch releases update on redeploy), assigns the domain on port 8080, passes it as `OPENTODO_BASE_URL` (secure cookies, passkeys, web push), keeps sign-up closed (the first visit creates the owner) and stores everything in one volume. Every other setting is optional and lives in the app's Settings; the full list of environment variables is in the [README](../../README.md#configuration).
+What it does: pulls the `0.2` image line (patch releases update on redeploy), assigns the domain on port 8080, passes it as `OPENTODO_BASE_URL` (secure cookies, passkeys, web push), keeps sign-up closed (the first visit creates the owner) and stores everything in one volume. Every other setting is optional and lives in the app's Settings; the full list of environment variables is in the [README](../../README.md#configuration).
 
 ## Submitting it to Coolify
 

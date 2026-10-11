@@ -4,6 +4,17 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-11
+
+OpenTodo 0.2.0 is about trying it, using it on a phone and running it without fuss. Every visitor to the public demo now gets a private sandbox. The phone layout has been reworked so menus, pickers and dialogs fit small screens. There is a docs website and a Help view inside the app, which works offline. Archived projects can be restored with one click. Updates roll out without a Stop → Deploy. Rate limits work correctly behind trusted proxies and Cloudflare. The app meets WCAG AA contrast in light and dark, and this release includes several security fixes.
+
+### Upgrade notes
+
+- **From 0.1.0, stop once.** 0.1.0 locked the data directory exclusively, so a 0.2.0 container cannot start beside it. Plain `docker compose pull && docker compose up -d` works as before. With Coolify or another orchestrator that starts the new container first, click **Stop**, then **Deploy** for this one upgrade (otherwise the deploy fails with "data directory is in use by another opentodo process" and rolls back). From 0.2.0 on, updates roll without downtime. ([Docker](docs/self-hosting/docker.md#updating), [Coolify](docs/self-hosting/coolify.md#updating))
+- **Image tags.** The release publishes `ghcr.io/pixari/opentodo:0.2.0` and `:0.2` for `linux/amd64` and `linux/arm64` (`:latest` follows `main`). The Coolify template in `deploy/coolify/opentodo.yaml` now follows `:0.2`; if you pinned `:0.1`, change it.
+- **Migration `0025`** (demo sandbox bookkeeping) is applied automatically at startup. Back up `/data` before upgrading: there are no down-migrations. No new mandatory environment variables; `OPENTODO_TRUSTED_PROXIES`, `OPENTODO_DEMO_MAX_SANDBOXES` and `OPENTODO_DEMO_MAX_DB_MB` are optional.
+- **Behind a CDN or second proxy**, set `OPENTODO_TRUSTED_PROXIES` (for example `cloudflare`) so rate limits and the audit log see visitors' addresses. ([Reverse proxy](docs/self-hosting/docker.md#behind-a-reverse-proxy))
+
 ### Added
 
 - **User documentation**: seventeen task-based guides for people using the app (getting started, installing the app on iOS, Android and desktop, tasks and projects, views, sections and boards, labels and filters, recurring tasks and reminders, time blocking, sharing and comments, notifications, offline and sync, keyboard shortcuts, account security, import and export, trash and history, settings, troubleshooting and FAQ), with light and dark screenshots generated from the demo data (`make docs-screenshots`). Every page in `docs/` has front matter (title, summary, audience, the capabilities it covers, the app screens it explains). ([Docs](docs/README.md))
@@ -26,8 +37,9 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
-- Phones: every menu, popover, picker and dialog now fits the screen. The notifications panel was cut off on the left; it, the mention picker and the section, project, label and view menus open as bottom sheets below 640 px and next to their button (kept inside the screen) above. Dialogs (rename, share, sign-in confirmation, user administration, voice consent, label and assignee pickers, keyboard help) are full screen on phones with a pinned close button, and all overlays close with Escape or a tap outside and return focus to their button. Touch targets are at least 44 px, row menus are visible without hover on touch screens, long words and URLs wrap, the sidebar scrolls on short screens, and layouts respect the safe areas and the on-screen keyboard. A new CI job opens every screen and overlay at 360, 390 and 768 px in Chromium and WebKit (`make layout-check`). ([mobile-layout](openspec/changes/mobile-layout/proposal.md))
+- Phones: every menu, popover, picker and dialog now fits the screen. The notifications panel was cut off on the left; it, the mention picker and the section, project, label and view menus open as bottom sheets below 640 px and next to their button (kept inside the screen) above. Dialogs (rename, share, sign-in confirmation, user administration, voice consent, label and assignee pickers, keyboard help) are full screen on phones with a pinned close button, and all overlays close with Escape or a tap outside and return focus to their button. Touch targets are at least 44 px, row menus are visible without hover on touch screens, long words and URLs wrap, the sidebar scrolls on short screens, and layouts respect the safe areas and the on-screen keyboard. A new CI job opens every screen and overlay at 360, 390 and 768 px in Chromium and WebKit (`make layout-check`). ([mobile-layout](openspec/changes/archive/2026-10-11-mobile-layout/proposal.md))
 - **Contrast and accessibility** across the app: secondary text (sidebar section names, counts, dates, descriptions), the "All" links, primary buttons (now a darker green, white text at 5.5:1), status and priority colours and dark-mode muted text all meet WCAG AA (4.5:1) in light and dark. Secondary text uses two theme-aware tokens, `text-muted` and `text-faint`. Label and assignee pickers no longer nest buttons inside list options, the priority buttons say which one is selected (`aria-pressed`), and the filter and view result lists are named regions. The layout check now runs axe-core on every screen and overlay in light and dark, not only on the Help view, and fails on serious or critical issues.
+- Task and project **History** names people, projects, sections and parent tasks instead of showing their ids, labels fields in words ("assignee" rather than `assignee_id`), and no longer lists writes that kept the value, such as the plain-text copy of a note rewritten when the note is upgraded.
 - Zero-downtime updates work again: several server processes may now use one data directory, so Coolify's rolling update (new container started before the old one stops) no longer fails with "data directory is in use by another opentodo process" and rolls back. Background jobs (reminder push, webhooks, backups, email polling, Trash cleanup, audit pruning, demo reset) run in one process only and move to the new one when the old one stops; maintenance commands still require every server to be stopped. Upgrading from 0.1.0 needs one stop-then-deploy. ([Updating](docs/self-hosting/docker.md#updating))
 
 ## [0.1.0] - 2026-10-11
@@ -168,5 +180,6 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/pixari/opentodo/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/pixari/opentodo/releases/tag/v0.1.0
