@@ -18,7 +18,8 @@ import (
 //     account that could see it (trash-and-history D5), so a device that syncs
 //     afterwards drops its local copy and a stale queued op for a removed id is
 //     discarded instead of resurrecting it.
-//   - The accounts' in-app notifications are deleted.
+//   - The accounts' in-app notifications and the CalDAV resource names of
+//     their tasks are deleted.
 //
 // It returns everyone whose devices must be told (the accounts and any other
 // member of a deleted project); callers wake them with NotifyMembership.
@@ -102,6 +103,13 @@ func (s *Service) WipeAccounts(ctx context.Context, userIDs []string) ([]string,
 	}
 	now := s.now().UnixMilli()
 	for _, k := range order {
+		if k.entity == "task" {
+			// CalDAV resource names go with their task, as in purgeTx.
+			if _, err := tx.ExecContext(ctx, `DELETE FROM caldav_resources WHERE task_id = ?
+				AND NOT EXISTS (SELECT 1 FROM scope_fields WHERE entity = 'task' AND entity_id = ?)`, k.id, k.id); err != nil {
+				return nil, err
+			}
+		}
 		users := make([]string, 0, len(seen[k]))
 		for u := range seen[k] {
 			users = append(users, u)

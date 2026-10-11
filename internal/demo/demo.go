@@ -115,9 +115,6 @@ func (s *Service) ensure(ctx context.Context, email, name, password string) (*au
 	return u, err
 }
 
-// IsDemoAccount reports whether email belongs to one of the demo accounts.
-func IsDemoAccount(email string) bool { return email == Email || email == MemberEmail }
-
 // Reset wipes everything the demo accounts hold and seeds fresh data dated
 // relative to today, then wakes their devices (design D3). Concurrent calls
 // are serialized.
