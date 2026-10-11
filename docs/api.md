@@ -1195,7 +1195,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running |
 | `too_large` | 413 | `/mcp` body over 1 MB; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
-| `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 in total) on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |
+| `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |
 | `internal` | 500 | unexpected server error (details only in the server log) |
 | `unavailable` | 503 | backups or webhooks are not available on this server |
 | `demo_busy` | 503 | demo instance: no new sandbox now (live cap reached with none idle for 15 minutes, or the database is above its size limit) |

@@ -11,7 +11,9 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Security
 
-- Demo instances bound abuse: sandbox creation needs a single-use, signed, 10-minute token from the sign-in page and a same-origin request, at most 5 new sandboxes per address per hour (addresses are stored only as salted hashes), a live cap with idle eviction and a database size guard; each sandbox may write 600 ops per hour and 5,000 in total, and values are capped at 4 KB (32 KB for notes). Every demo response carries `X-Robots-Tag: noindex, nofollow` and the demo page declares `noindex`.
+- Demo instances bound abuse: sandbox creation needs a single-use, signed, 10-minute token from the sign-in page and a same-origin request, at most 5 new sandboxes per address per hour (addresses are stored only as salted hashes), a live cap with idle eviction and a database size guard; each sandbox may write 600 ops per hour, 5,000 ops and 2 MB of values in total, values are capped at 4 KB (32 KB for notes), and above the database size limit live sandboxes cannot write either. Every demo response carries `X-Robots-Tag: noindex, nofollow` and the demo page declares `noindex`.
+
+- Per-address rate limits (sign-in, passkeys, two-factor, single sign-on, CalDAV, demo sandboxes) and audit-log addresses now use the **last** `X-Forwarded-For` hop, the one the reverse proxy appended, instead of the first entry, which the client controls behind an appending proxy such as Traefik and could change to evade the limits. Run one proxy in front of the server and do not publish its port. ([Reverse proxy](docs/self-hosting/docker.md#behind-a-reverse-proxy))
 
 ### Fixed
 

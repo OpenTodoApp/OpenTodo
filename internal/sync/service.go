@@ -32,12 +32,12 @@ type Service struct {
 // WriteGuard bounds what one account may write (OpenSpec change
 // `demo-sandboxes`, design D3). CheckOp runs for every op before the batch's
 // transaction and may refuse it (wrap ErrInvalidOp for a size limit); Charge
-// runs inside the transaction once the number of ops that will be stored is
-// known, and refusing there (wrap ErrWriteLimit) rolls the whole batch back,
+// runs inside the transaction once the number of ops that will be stored and
+// the total size of their values (bytes) are known, and refusing there (wrap ErrWriteLimit) rolls the whole batch back,
 // so nothing is applied.
 type WriteGuard interface {
 	CheckOp(op Op) error
-	Charge(ctx context.Context, tx *sql.Tx, userID string, n int) error
+	Charge(ctx context.Context, tx *sql.Tx, userID string, n int, bytes int64) error
 }
 
 // ErrWriteLimit is wrapped by a WriteGuard that refuses a batch because the
@@ -206,6 +206,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	tracker := newChangeTracker(userID)
 	touched := map[string]bool{}
 	var refused, rewritten []Op
+	var storedBytes int64 // value bytes of the stored ops, for the write guard
 	for _, op := range ops {
 		if op.TS > nowMs+MaxFutureSkewMs {
 			op.TS = nowMs + MaxFutureSkewMs
@@ -266,11 +267,12 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			op.Actor = userID
 			rewritten = append(rewritten, op)
 		}
+		storedBytes += int64(len(op.Value))
 		touched[scope] = true
 		res.Applied++
 	}
 	if guard != nil && res.Applied > 0 {
-		if err := guard.Charge(ctx, tx, userID, res.Applied); err != nil {
+		if err := guard.Charge(ctx, tx, userID, res.Applied, storedBytes); err != nil {
 			return ApplyResult{}, err
 		}
 	}

@@ -49,10 +49,10 @@ func TestMigrationDemoSandboxes(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `INSERT INTO demo_sandboxes(user_id, collaborator_id, created_at, last_active_at) VALUES('s1','c1',1,1)`); err != nil {
 		t.Fatal(err)
 	}
-	var total, hour int
+	var total, hour, bytes int
 	var addr string
-	if err := db.QueryRowContext(ctx, `SELECT ops_total, ops_hour_count, addr_hash FROM demo_sandboxes WHERE user_id = 's1'`).Scan(&total, &hour, &addr); err != nil || total != 0 || hour != 0 || addr != "" {
-		t.Fatalf("defaults: %d %d %q %v", total, hour, addr, err)
+	if err := db.QueryRowContext(ctx, `SELECT ops_total, ops_hour_count, bytes_total, addr_hash FROM demo_sandboxes WHERE user_id = 's1'`).Scan(&total, &hour, &bytes, &addr); err != nil || total != 0 || hour != 0 || bytes != 0 || addr != "" {
+		t.Fatalf("defaults: %d %d %d %q %v", total, hour, bytes, addr, err)
 	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO demo_token_uses(nonce, expires_at) VALUES('n', 1)`); err != nil {
 		t.Fatal(err)

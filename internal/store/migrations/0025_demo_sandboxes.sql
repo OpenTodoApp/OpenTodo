@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS demo_sandboxes (
   addr_hash       TEXT NOT NULL DEFAULT '',
   ops_hour_start  INTEGER NOT NULL DEFAULT 0, -- Unix ms, start of the current hour window
   ops_hour_count  INTEGER NOT NULL DEFAULT 0,
-  ops_total       INTEGER NOT NULL DEFAULT 0
+  ops_total       INTEGER NOT NULL DEFAULT 0,
+  bytes_total     INTEGER NOT NULL DEFAULT 0  -- value bytes of the visitor's stored ops
 );
 CREATE INDEX IF NOT EXISTS demo_sandboxes_active ON demo_sandboxes(last_active_at);
 CREATE INDEX IF NOT EXISTS demo_sandboxes_created ON demo_sandboxes(created_at);

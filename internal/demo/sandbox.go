@@ -197,8 +197,13 @@ func (s *Service) checkSize(ctx context.Context) error {
 
 // usedBytes is the database size without free pages (deleted rows before a
 // VACUUM do not count).
-func (s *Service) usedBytes(ctx context.Context) (int64, error) {
-	db := s.sync.DB()
+func (s *Service) usedBytes(ctx context.Context) (int64, error) { return usedBytes(ctx, s.sync.DB()) }
+
+type rowQuerier interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+func usedBytes(ctx context.Context, db rowQuerier) (int64, error) {
 	var pages, free, size int64
 	if err := db.QueryRowContext(ctx, `PRAGMA page_count`).Scan(&pages); err != nil {
 		return 0, err
@@ -286,13 +291,15 @@ func (g guard) CheckOp(op opsync.Op) error {
 	return nil
 }
 
-// Charge counts n ops against the sandbox's hourly and total budget inside the
-// batch's transaction; refusing rolls the batch back. Accounts without a
-// sandbox row (the hidden owner) are not limited here.
-func (g guard) Charge(ctx context.Context, tx *sql.Tx, userID string, n int) error {
-	var start, hour, total int64
-	err := tx.QueryRowContext(ctx, `SELECT ops_hour_start, ops_hour_count, ops_total FROM demo_sandboxes WHERE user_id = ?`, userID).
-		Scan(&start, &hour, &total)
+// Charge counts n ops of the given total value size against the sandbox's
+// hourly, total and byte budgets inside the batch's transaction, and refuses
+// every sandbox write while the database is above its size limit; refusing
+// rolls the batch back. Accounts without a sandbox row (the hidden owner) are
+// not limited here.
+func (g guard) Charge(ctx context.Context, tx *sql.Tx, userID string, n int, bytes int64) error {
+	var start, hour, total, used int64
+	err := tx.QueryRowContext(ctx, `SELECT ops_hour_start, ops_hour_count, ops_total, bytes_total FROM demo_sandboxes WHERE user_id = ?`, userID).
+		Scan(&start, &hour, &total, &used)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -309,8 +316,16 @@ func (g guard) Charge(ctx context.Context, tx *sql.Tx, userID string, n int) err
 	if total+int64(n) > OpsTotal {
 		return fmt.Errorf("%w: this demo sandbox reached its limit of %d changes; start a new sandbox to keep trying", opsync.ErrWriteLimit, OpsTotal)
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE demo_sandboxes SET ops_hour_start = ?, ops_hour_count = ?, ops_total = ? WHERE user_id = ?`,
-		start, hour+int64(n), total+int64(n), userID)
+	if used+bytes > BytesTotal {
+		return fmt.Errorf("%w: this demo sandbox reached its storage limit of %d MB; start a new sandbox to keep trying", opsync.ErrWriteLimit, BytesTotal>>20)
+	}
+	if size, err := usedBytes(ctx, tx); err != nil {
+		return err
+	} else if size > g.s.maxDBBytes {
+		return fmt.Errorf("%w: the demo is full right now; your changes are kept and saved later", opsync.ErrWriteLimit)
+	}
+	_, err = tx.ExecContext(ctx, `UPDATE demo_sandboxes SET ops_hour_start = ?, ops_hour_count = ?, ops_total = ?, bytes_total = ? WHERE user_id = ?`,
+		start, hour+int64(n), total+int64(n), used+bytes, userID)
 	return err
 }
 

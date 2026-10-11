@@ -38,10 +38,11 @@ The sign-in page gets a creation token from `GET /api/v1/auth/status` (`demo.tok
 | Live sandboxes | 500 (`OPENTODO_DEMO_MAX_SANDBOXES`) | the least recently active sandbox idle for more than 15 minutes is deleted to make room; if there is none, `503 demo_busy` "The demo is busy, try again in a few minutes" |
 | New sandboxes per client address | 5 per hour | `429 rate_limited` |
 | Changes per sandbox | 600 ops per hour, 5,000 in total | `429 demo_limit` on sync and REST writes, nothing of the batch is applied; the app shows a notice in the banner and keeps its changes queued |
+| Stored data per sandbox | 2 MB of values in total | `429 demo_limit`, nothing of the batch is applied |
 | Field size | 4 KB for every value except notes; 32 KB for task notes (`description`, `notes_doc`) | `400 invalid_input` (REST) or `400 invalid_op` (sync), like other size limits |
-| Database size | new sandboxes stop above 1 GB of live data (`OPENTODO_DEMO_MAX_DB_MB`); expired sandboxes are deleted at once | `503 demo_busy` |
+| Database size | above 1 GB of live data (`OPENTODO_DEMO_MAX_DB_MB`) no new sandboxes are created (expired ones are deleted at once) and live sandboxes cannot write | `503 demo_busy` for new sandboxes, `429 demo_limit` for writes |
 
-Both variables are optional. The client address is the first `X-Forwarded-For` entry (as for the sign-in rate limit), so put the demo behind a proxy that sets it. Only a hash of the address, salted with a value that lives in the server's memory, is stored with the sandbox; it cannot be turned back into the address and cannot be linked to it after a restart. The write budget is counted in the database, so it holds across server processes during a rolling update. The other rate limits (sign-in, comments and so on) stay in force.
+Both variables are optional. The client address is the **last** `X-Forwarded-For` hop, the one your reverse proxy appended (as for every rate limit, see [reverse proxy](docker.md#behind-a-reverse-proxy)), or the connection address without the header. Run the demo behind exactly one proxy that appends the client address (Coolify's Traefik does) and do not publish the container port, or a client could send its own header. Only a hash of the address, salted with a value that lives in the server's memory, is stored with the sandbox; it cannot be turned back into the address and cannot be linked to it after a restart. The write budget is counted in the database, so it holds across server processes during a rolling update. The other rate limits (sign-in, comments and so on) stay in force.
 
 ## Expiry and the nightly reset
 

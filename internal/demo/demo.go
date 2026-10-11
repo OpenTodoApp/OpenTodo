@@ -60,6 +60,8 @@ const (
 	// OpsPerHour and OpsTotal are a sandbox's write budget.
 	OpsPerHour = 600
 	OpsTotal   = 5000
+	// BytesTotal caps the summed value size of a sandbox's stored ops.
+	BytesTotal = 2 << 20
 	// MaxTextBytes and MaxNotesBytes cap op values in a sandbox: notes
 	// (task.description, task.notes_doc) and everything else.
 	MaxTextBytes  = 4 * 1024
