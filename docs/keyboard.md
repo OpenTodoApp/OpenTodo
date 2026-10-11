@@ -59,6 +59,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Activity: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters) |
 | <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Import data |
 | <kbd>g</kbd> then <kbd>d</kbd> / <kbd>w</kbd> | Go to the Day / Week calendar |
+| <kbd>g</kbd> then <kbd>?</kbd> | Open Help: the user guide, offline, with search |
 
 ### Tasks in a list
 

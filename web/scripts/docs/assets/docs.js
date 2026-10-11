@@ -39,7 +39,7 @@
     const status = form.querySelector('[data-search-status]')
     let timer = 0
 
-    const close = () => { box.hidden = true; input.setAttribute('aria-expanded', 'false') }
+    const close = () => { box.hidden = true }
     const links = () => [...box.querySelectorAll('a')]
 
     const render = (query) => {
@@ -52,7 +52,6 @@
           ? '<ul>' + results.map((r, i) => `<li><a href="${r.url}" data-rank="${i + 1}"><span class="r-title">${escapeHtml(r.page)}${r.heading ? ` <span aria-hidden="true">›</span> ${escapeHtml(r.heading)}` : ''}</span><span class="r-snip">${r.snippet}</span></a></li>`).join('') + '</ul>'
           : '<p class="r-empty">No matches. Try a shorter or different word.</p>'
         box.hidden = false
-        input.setAttribute('aria-expanded', 'true')
         status.textContent = results.length ? `${results.length} result${results.length === 1 ? '' : 's'}. Press the down arrow to reach them.` : 'No results.'
         report(results.length)
       }).catch(() => {
@@ -85,7 +84,6 @@
       if (a) { track('docs-search-open', { rank: 1 }); location.href = a.href }
     })
     document.addEventListener('click', (e) => { if (!form.contains(e.target)) close() })
-    input.setAttribute('aria-expanded', 'false')
   }
 
   const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')

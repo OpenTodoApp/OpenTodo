@@ -74,3 +74,14 @@ The rows in `ShortcutHelp.tsx` move to `web/src/lib/shortcuts.ts` (key, descript
 - **Docs drift from behaviour.** Mitigated by the spec coverage check, the generated keyboard guide, and the existing archive rule that changes update `docs/`.
 - **Generated files cause merge conflicts.** They are regenerated, never edited; CONTRIBUTING says to rerun `make docs` after a merge.
 - **Screenshots go stale.** One command refreshes them; the 0.x release checklist includes it.
+
+## Implementation notes
+
+Decisions taken while building, where they differ from or refine the plan above:
+
+- **Front matter** gained two optional keys: `section` (sidebar group within an audience: Get started, Guides, Reference; Integrations, Internals) and `card` (the screenshot used on the docs landing page). `docs/README.md` has `layout: index` and becomes the landing page. `screens` entries are `id` or `id#heading-anchor`; the check validates both.
+- **Website styles**: the docs pages load their own `docs.css` (about 20 KB, generated from `web/scripts/docs/assets/`) instead of `styles.css`, which is dark-only and specific to the landing page. It reuses the brand tokens (navy, green, Bricolage Grotesque, Inter) and follows `prefers-color-scheme` with a light theme for long reading; the header stays navy in both themes.
+- **Search** core lives in `web/scripts/docs/search-core.mjs` (typed by `search-core.d.mts`); the build inlines it into `website/docs/docs.js`, and the app imports it. The website counts only that search was used (a bucket of the result count) and which result rank was opened, never the text.
+- **Keyboard guide**: the build rewrites the block between `<!-- shortcuts:start -->` and `<!-- shortcuts:end -->` in `docs/keyboard.md` from `web/src/lib/shortcuts.ts` (Node imports the TypeScript module directly), so GitHub shows the same tables.
+- **In-app Help** ships text only: screenshots stay on the website, which keeps the binary and the precache about 2.4 MB smaller. The guide text is part of the lazily loaded Help chunk (373 KB, 114 KB gzipped, larger than the 40–60 KB estimate because the reference pages are user pages too); the initial chunks grow by about 6.6 KB (about 2 KB gzipped) for the entry points and Help links. Help links are `<HelpLink screen="…">` / `<HelpHeading screen="…">`; the panel is built on the overlay module's primitives (stack, focus, `isolate`) as a right-hand panel from 640 px and a full-screen sheet below.
+- **Accessibility CI** uses `axe-core` directly (injected by the existing Playwright scripts, which load Playwright globally) rather than `@axe-core/playwright`. `scripts/e2e-layout.mjs` checks the Help view and the help panel; `scripts/e2e-docs.mjs` checks the docs website.

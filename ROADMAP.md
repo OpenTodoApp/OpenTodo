@@ -18,6 +18,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Rich text with collaborative editing for task notes | `collaborative-rich-text` | Yjs document in `task.notes_doc`, editor lazy-loaded; comments stay Markdown |
 | Vim-style modal navigation option | `vim-keybindings` | |
 | Public demo instance for the launch | `demo-mode` | `OPENTODO_DEMO=true`: seeded demo account, nightly reset, abusable features off. See [docs/self-hosting/demo.md](docs/self-hosting/demo.md) |
+| User guide, docs website and in-app Help | `user-documentation` | One source in `docs/`, built into [opentodo.pixari.dev/docs](https://opentodo.pixari.dev/docs/) and an offline Help view with contextual help links. See [docs/README.md](docs/README.md) |
 
 ### 2. Capture and input
 

@@ -21,7 +21,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
   <a href="#quick-start">Quick start</a> ·
   <a href="docs/self-hosting/coolify.md">Coolify</a> ·
   <a href="docs/self-hosting/docker.md">Docker</a> ·
-  <a href="docs/README.md">Documentation</a> ·
+  <a href="https://opentodo.pixari.dev/docs/">Documentation</a> ·
   <a href="docs/api.md">API</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
@@ -241,9 +241,10 @@ More in [docs/architecture.md](docs/architecture.md) and [docs/sync.md](docs/syn
 
 ## Documentation
 
-All guides are indexed in [docs/README.md](docs/README.md):
+Read the docs with screenshots and search at **[opentodo.pixari.dev/docs](https://opentodo.pixari.dev/docs/)**, or in the app under **Help** (offline, matching your server's version). The same pages are Markdown in [`docs/`](docs/README.md):
 
-- **Using OpenTodo**: [quick add](docs/quick-add.md) · [filters and saved views](docs/filters.md) · [recurring tasks](docs/recurrence.md) · [reminders](docs/reminders.md) · [capture](docs/capture.md) · [import](docs/import.md) · [end-to-end encryption](docs/e2ee.md)
+- **Start here**: [getting started](docs/getting-started.md) · [installing the app](docs/install-app.md) · [all user guides](docs/README.md#using-opentodo)
+- **Reference**: [quick add](docs/quick-add.md) · [filters and saved views](docs/filters.md) · [recurring tasks](docs/recurrence.md) · [reminders](docs/reminders.md) · [capture](docs/capture.md) · [import](docs/import.md) · [end-to-end encryption](docs/e2ee.md)
 - **Self-hosting**: [Docker](docs/self-hosting/docker.md) · [Coolify](docs/self-hosting/coolify.md) · [single sign-on](docs/self-hosting/sso.md) · [public demo instance](docs/self-hosting/demo.md) · [backups](docs/backups.md) · [email to task](docs/email.md) · [calendar apps (CalDAV)](docs/caldav.md)
 - **Integrations**: [REST API](docs/api.md) · [CLI](docs/cli.md) · [webhooks](docs/webhooks.md) · [AI assistants (MCP)](docs/mcp.md)
 - **Internals**: [architecture](docs/architecture.md) · [sync protocol](docs/sync.md)
@@ -253,7 +254,8 @@ All guides are indexed in [docs/README.md](docs/README.md):
 
 ```bash
 make dev        # Go API on :8080 + Vite with hot reload on :5173
-make check      # vet, typecheck, Go + web + extension tests, OpenSpec validation (what CI runs)
+make check      # vet, typecheck, Go + web + extension tests, docs check, OpenSpec validation (what CI runs)
+make docs       # regenerate the docs website and in-app help from docs/
 ```
 
 Repository layout:

@@ -48,7 +48,7 @@ function header() {
       <a href="/#tour">Tour</a>
       <a href="/docs/" aria-current="true">Docs</a>
     </nav>
-    <a class="gh" href="${REPO_URL}" rel="noopener">${GITHUB_ICON}<span>GitHub</span></a>
+    <a class="gh" href="${REPO_URL}" rel="noopener" aria-label="OpenTodo on GitHub">${GITHUB_ICON}<span>GitHub</span></a>
   </div>
 </header>`
 }

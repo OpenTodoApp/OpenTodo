@@ -81,6 +81,10 @@ When you're done, click the circle next to the task, or select it with <kbd>j</k
 
 OpenTodo runs in the browser, and you can install it like an app on your phone, tablet or computer. It then opens in its own window and works offline. See [Installing the app](install-app.md).
 
+## Help inside the app
+
+Every guide on this site is also in the app: select **Help** at the bottom of the sidebar, or press <kbd>g</kbd> then <kbd>?</kbd>. It works offline and matches the version of your server. Many screens have a small **Help** link that opens the right section next to what you're doing, without closing it.
+
 ## Where to go next
 
 - [Tasks and projects](tasks-and-projects.md): notes, subtasks, priorities and organising your work.

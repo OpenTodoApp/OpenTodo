@@ -4,7 +4,7 @@ summary: A tour of Settings, what each section does, which choices belong to one
 audience: user
 section: Guides
 specs: [web-app]
-screens: [settings, settings/linked-accounts#your-account, settings/session#your-account, settings/users#for-server-admins, settings/sso#for-server-admins, settings/backups#for-server-admins, settings/caldav#connect-other-apps, settings/webhooks#connect-other-apps, settings/email#connect-other-apps, settings/assistants#connect-other-apps, settings/tokens#connect-other-apps]
+screens: [settings/linked-accounts#your-account, settings/session#your-account, settings/users#for-server-admins, settings/sso#for-server-admins, settings/backups#for-server-admins, settings/caldav#connect-other-apps, settings/webhooks#connect-other-apps, settings/email#connect-other-apps, settings/assistants#connect-other-apps, settings/tokens#connect-other-apps]
 order: 140
 card: settings
 ---
@@ -15,6 +15,8 @@ Open **Settings** with the gear next to your name at the bottom of the sidebar, 
 <picture><source srcset="images/settings-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-light.webp" alt="The top of the Settings page with the sections Your data, Calendar and Password."></picture>
 
 Some settings follow your account to every device. Others belong to the device you're on, so your phone and laptop can be set up differently. Settings that apply to one device say "this device" next to them.
+
+Each section has a **Help** link on the right that opens its part of this guide next to Settings.
 
 What you see depends on your role: people who run the server see extra sections, and the public demo hides most account and server settings.
 
