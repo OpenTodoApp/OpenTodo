@@ -48,7 +48,15 @@ describe('history', () => {
     historyCalls.mockResolvedValue({ entity: 'task', id: 't', changeSets: [], more: false })
     await fetchHistory('task', 't', 99)
     expect(historyCalls).toHaveBeenCalledWith('task', 't', 99)
+    historyCalls.mockResolvedValue({ entity: 'task', id: 't', more: false, changeSets: [
+      { ts: 2, device: 'd', userId: 'me', changes: [{ opId: 'a', field: 'description', from: 'Same', to: 'Same', lost: false }] },
+      { ts: 1, device: 'd', userId: 'me', changes: [{ opId: 'b', field: 'title', from: 'Old', to: 'New', lost: false }, { opId: 'c', field: 'description', from: 'x', to: 'x', lost: false }] },
+    ] })
+    const page = await fetchHistory('task', 't')
+    expect(page.changeSets.map((cs) => cs.changes.map((c) => c.opId))).toEqual([['b']])
     expect(formatValue('due', { date: '2026-10-11', time: '09:00' })).toBe('2026-10-11 09:00')
     expect(formatValue('title', null)).toBe('—')
+    expect(formatValue('assignee_id', 'u1', (f, id) => (f === 'assignee_id' && id === 'u1' ? 'Bob Okafor' : undefined))).toBe('Bob Okafor')
+    expect(formatValue('project_id', 'gone', () => undefined)).toBe('unknown')
   })
 })

@@ -265,7 +265,7 @@ const shots = [
     await go(p, plainBase, `/project/${home.id}`, () => row(p, 'Pick paint colours').waitFor())
     await p.getByRole('button', { name: /^Share/ }).first().click(); const d = p.getByRole('dialog', { name: /Share/ }); await d.waitFor()
     await d.getByRole('textbox').first().fill('chen@example.com').catch(() => {}); await settle(p, 500)
-    return clipOf(p, d.locator('> div').first(), 16).catch(() => clipOf(p, d, 0))
+    return clipOf(p, d, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'settings', server: P, card: true, async run(p) { await go(p, plainBase, '/settings', () => p.getByRole('heading', { name: 'Settings', level: 1 }).waitFor()) } },
   { name: 'settings-security', card: true, server: P, async run(p) {

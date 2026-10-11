@@ -11,7 +11,12 @@ import type { ChangeSet, HistoryPage, Membership, Project, Task } from './types'
 /** One page of history; ciphertext values (OpenSpec e2ee) are decrypted for display. */
 export async function fetchHistory(entity: 'task' | 'project', id: string, before?: number): Promise<HistoryPage> {
   const page = await api.history(entity, id, before)
-  const changeSets = await Promise.all(page.changeSets.map(async (s) => ({ ...s, changes: await decryptChanges(entity, id, s.changes) })))
+  const decrypted = await Promise.all(page.changeSets.map(async (s) => ({ ...s, changes: await decryptChanges(entity, id, s.changes) })))
+  // A write that kept the value (for example the plain-text copy of a note rewritten
+  // when the note is upgraded) changes nothing a person can see or restore.
+  const changeSets = decrypted
+    .map((s) => ({ ...s, changes: s.changes.filter((c) => c.lost || JSON.stringify(c.from) !== JSON.stringify(c.to)) }))
+    .filter((s) => s.changes.length > 0)
   return { ...page, changeSets }
 }
 
@@ -52,9 +57,22 @@ export async function restoreValue(entity: 'task' | 'project', id: string, field
   return id
 }
 
-/** A short human rendering of a field value for the timeline. */
-export function formatValue(field: string, value: unknown): string {
+/** Reference fields whose ids the timeline shows by name, and their labels. */
+const REF_LABELS: Record<string, string> = { assignee_id: 'assignee', project_id: 'project', section_id: 'section', parent_id: 'parent' }
+
+/** The label of a field in the timeline (`assignee_id` reads as "assignee"). */
+export function fieldLabel(field: string): string {
+  return REF_LABELS[field] ?? field.replace(/_/g, ' ')
+}
+
+/**
+ * A short human rendering of a field value for the timeline. `names` resolves ids
+ * of reference fields (people, projects, sections, tasks) to names from local data;
+ * an id it does not know is shown as "unknown".
+ */
+export function formatValue(field: string, value: unknown, names?: (field: string, id: string) => string | undefined): string {
   if (value === null || value === undefined || value === '') return '—'
+  if (field in REF_LABELS && typeof value === 'string' && names) return names(field, value) ?? 'unknown'
   if (field.endsWith('_at') && typeof value === 'number') return new Date(value).toLocaleString()
   if (field === 'due' && typeof value === 'object') {
     const d = value as { date?: string; time?: string }

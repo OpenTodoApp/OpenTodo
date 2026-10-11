@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../lib/db'
 import { isNetworkError } from '../lib/api'
-import { canRestoreField, deviceLabel, fetchHistory, formatValue, restoreValue } from '../lib/history'
+import { canRestoreField, deviceLabel, fetchHistory, fieldLabel, formatValue, restoreValue } from '../lib/history'
 import { getDeviceId } from '../lib/ops'
 import { syncNow } from '../lib/sync'
 import type { ChangeSet } from '../lib/types'
@@ -23,6 +25,17 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
   const [state, setState] = useState<'idle' | 'loading' | 'offline' | 'error' | 'empty'>('idle')
   const [device, setDevice] = useState('')
   const [message, setMessage] = useState<string | null>(null)
+  // Names for reference fields (assignee, project, section, parent task), from local data.
+  const refNames = useLiveQuery(async () => {
+    const m = new Map<string, string>()
+    for (const ms of await db.memberships.toArray()) for (const u of ms.members) m.set(`assignee_id:${u.userId}`, u.name || u.email)
+    for (const p of await db.projects.toArray()) m.set(`project_id:${p.id}`, p.name)
+    for (const x of await db.sections.toArray()) m.set(`section_id:${x.id}`, x.name)
+    const parents = [...new Set(sets.flatMap((cs) => cs.changes.filter((c) => c.field === 'parent_id').flatMap((c) => [c.from, c.to]).filter((v): v is string => typeof v === 'string')))]
+    for (const t of await db.tasks.bulkGet(parents)) if (t) m.set(`parent_id:${t.id}`, t.title)
+    return m
+  }, [sets], new Map<string, string>())
+  const fmt = (field: string, value: unknown) => formatValue(field, value, (f, ref) => refNames.get(`${f}:${ref}`))
 
   const load = useCallback(async (older?: number) => {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -92,12 +105,12 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
                 <ul>
                   {s.changes.map((c) => (
                     <li key={c.opId} className={`flex flex-wrap items-baseline gap-x-1 ${c.lost ? 'text-faint' : ''}`}>
-                      <span className="font-medium">{c.field}</span>
-                      <span className="break-all">{formatValue(c.field, c.from)} → {formatValue(c.field, c.to)}</span>
+                      <span className="font-medium">{fieldLabel(c.field)}</span>
+                      <span className="break-all">{fmt(c.field, c.from)} → {fmt(c.field, c.to)}</span>
                       {c.lost && <span className="text-xs italic" title="Arrived after a newer change and was never applied">(lost)</span>}
                       {!readOnly && canRestoreField(entity, c.field) && (
                         <button type="button" className="ml-auto text-xs text-emerald-700 underline dark:text-emerald-300"
-                          aria-label={`Restore ${c.field} to ${formatValue(c.field, c.to)}`} onClick={() => void restore(c.field, c.to)}>
+                          aria-label={`Restore ${fieldLabel(c.field)} to ${fmt(c.field, c.to)}`} onClick={() => void restore(c.field, c.to)}>
                           Restore this value
                         </button>
                       )}

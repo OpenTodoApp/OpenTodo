@@ -329,6 +329,10 @@ await page.keyboard.press('?'); await page.getByText('Keyboard shortcuts').first
 await shot(page, 'shortcuts')
 await page.keyboard.press('Escape')
 
+// In-app Help: the user guide of this version, searchable and offline
+await go(page, '/help/tasks-and-projects', () => page.getByRole('heading', { level: 1, name: 'Tasks and projects' }).waitFor())
+await shot(page, 'help')
+
 // Settings
 await go(page, '/settings', () => page.getByRole('heading', { name: 'Settings' }).waitFor())
 await page.getByRole('button', { name: 'Set up two-factor authentication' }).click().catch((e) => console.log('  2fa:', e.message))
