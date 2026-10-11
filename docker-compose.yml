@@ -30,6 +30,10 @@ services:
       - OPENTODO_PUSH=${OPENTODO_PUSH:-}
       # Public demo instance (docs/self-hosting/demo.md); leave empty on a real server.
       - OPENTODO_DEMO=${OPENTODO_DEMO:-}
+      - OPENTODO_DEMO_MAX_SANDBOXES=${OPENTODO_DEMO_MAX_SANDBOXES:-}
+      - OPENTODO_DEMO_MAX_DB_MB=${OPENTODO_DEMO_MAX_DB_MB:-}
+      # Behind Cloudflare or another CDN in front of your proxy: cloudflare, or IPs/CIDRs.
+      - OPENTODO_TRUSTED_PROXIES=${OPENTODO_TRUSTED_PROXIES:-}
       # First-start presets; the owner's Settings win afterwards.
       - OPENTODO_WEBHOOKS_ALLOW_PRIVATE=${OPENTODO_WEBHOOKS_ALLOW_PRIVATE:-}
       - OPENTODO_MCP=${OPENTODO_MCP:-}
