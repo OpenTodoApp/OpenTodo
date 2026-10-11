@@ -138,8 +138,9 @@ opentodo restore [--data-dir DIR] [--passphrase-file FILE] <archive>
 
 What it does, in order, before touching anything:
 
-1. refuses to run while a server holds the data directory (an exclusive lock on
-   `<data>/opentodo.lock`, plus a check that SQLite is idle);
+1. refuses to run while any server uses the data directory (it needs
+   `<data>/opentodo.lock` exclusively, which every running server holds shared,
+   plus a check that SQLite is idle);
 2. decrypts the archive if needed (without `--passphrase-file` an encrypted
    archive is rejected, naming the missing passphrase);
 3. checks the manifest, then the database's SHA-256 and size against it, and

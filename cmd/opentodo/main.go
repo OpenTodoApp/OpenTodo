@@ -83,9 +83,10 @@ func run() error {
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	slog.SetDefault(log)
 
-	// Hold the data directory for the life of the process: a second server, or
-	// `opentodo restore`, refuses to touch it while we run.
-	unlock, err := store.Lock(cfg.DataDir)
+	// Hold the data directory shared for the life of the process: `opentodo
+	// restore` and the other maintenance commands refuse to touch it while we run,
+	// but a newer server may start beside us (rolling updates).
+	unlock, err := store.LockShared(cfg.DataDir)
 	if err != nil {
 		return fmt.Errorf("%s: %w", cfg.DataDir, err)
 	}
@@ -131,7 +132,6 @@ func run() error {
 		} else if seeded {
 			log.Info("backup settings seeded from OPENTODO_BACKUP_* variables")
 		}
-		backups.Start(ctx)
 	}
 	// Reminders: web push to subscribed devices (docs/reminders.md). On unless
 	// OPENTODO_PUSH=off; the VAPID key pair is created under the data directory on
@@ -180,34 +180,39 @@ func run() error {
 	// clients reconnect to the new process.
 	srv.RegisterOnShutdown(syncSvc.Notifier().CloseAll)
 
-	// Prune audit events past the owner's retention at startup and hourly.
-	go authSvc.Audit().RunPruner(ctx, audit.PruneInterval)
-
-	if pushSvc != nil {
-		go pushSvc.Run(ctx)
-	}
-	if demoSvc != nil {
-		go demoSvc.Run(ctx)
-		// The operator (or a test) can force a reset with SIGUSR1; there is no route.
-		go resetOnSignal(ctx, demoSvc, log)
-	} else {
-		go emailSvc.Run(ctx)
-	}
-
-	// Purge items that outlived the Trash retention at startup and daily
-	// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).
-	go syncSvc.RunRetention(ctx, cfg.TrashRetentionDays, log)
-
+	// Background jobs run in one server process only: during a rolling update the
+	// new container serves beside the old one and takes them over when it stops.
 	workerDone := make(chan struct{})
-	go func() {
-		defer close(workerDone)
-		if cfg.Demo {
-			// No outbound webhook deliveries on a demo instance.
-			<-ctx.Done()
-			return
+	jobsStarted, releaseJobs := runJobsWhenLeader(ctx, cfg.DataDir, log, jobsRetry, func() {
+		// Prune audit events past the owner's retention at startup and hourly.
+		go authSvc.Audit().RunPruner(ctx, audit.PruneInterval)
+		if !cfg.Demo {
+			backups.Start(ctx)
 		}
-		hooks.Run(ctx)
-	}()
+		if pushSvc != nil {
+			go pushSvc.Run(ctx)
+		}
+		if demoSvc != nil {
+			go demoSvc.Run(ctx)
+			// The operator (or a test) can force a reset with SIGUSR1; there is no route.
+			go resetOnSignal(ctx, demoSvc, log)
+		} else {
+			go emailSvc.Run(ctx)
+		}
+		// Purge items that outlived the Trash retention at startup and daily
+		// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).
+		go syncSvc.RunRetention(ctx, cfg.TrashRetentionDays, log)
+		go func() {
+			defer close(workerDone)
+			if cfg.Demo {
+				// No outbound webhook deliveries on a demo instance.
+				<-ctx.Done()
+				return
+			}
+			hooks.Run(ctx)
+		}()
+	})
+	defer releaseJobs()
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -220,7 +225,9 @@ func run() error {
 	select {
 	case err := <-errCh:
 		stop()
-		<-workerDone
+		if jobsStarted() {
+			<-workerDone
+		}
 		return err
 	case <-ctx.Done():
 	}
@@ -230,10 +237,12 @@ func run() error {
 	err = srv.Shutdown(shutdownCtx)
 	// Let the delivery pass in progress finish (each send is capped at 10 s) so its
 	// outcome is recorded; anything still queued is sent after the next start.
-	select {
-	case <-workerDone:
-	case <-time.After(15 * time.Second):
-		log.Warn("webhook worker did not stop in time")
+	if jobsStarted() {
+		select {
+		case <-workerDone:
+		case <-time.After(15 * time.Second):
+			log.Warn("webhook worker did not stop in time")
+		}
 	}
 	return err
 }

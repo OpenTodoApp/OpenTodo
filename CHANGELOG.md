@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- Zero-downtime updates work again: several server processes may now use one data directory, so Coolify's rolling update (new container started before the old one stops) no longer fails with "data directory is in use by another opentodo process" and rolls back. Background jobs (reminder push, webhooks, backups, email polling, Trash cleanup, audit pruning, demo reset) run in one process only and move to the new one when the old one stops; maintenance commands still require every server to be stopped. Upgrading from 0.1.0 needs one stop-then-deploy. ([Updating](docs/self-hosting/docker.md#updating))
+
 ## [0.1.0] - 2026-10-11
 
 The first release, and the first feature-complete version: every item on the [roadmap](ROADMAP.md) is implemented. Each feature was planned and built as an OpenSpec change; the archived changes under `openspec/changes/archive/` hold the full proposals, designs and task lists, and `openspec/specs/` the resulting behaviour contracts.

@@ -8,8 +8,12 @@ import (
 	"syscall"
 )
 
-func tryLock(f *os.File) error {
-	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+func tryLock(f *os.File, shared bool) error {
+	how := syscall.LOCK_EX
+	if shared {
+		how = syscall.LOCK_SH
+	}
+	if err := syscall.Flock(int(f.Fd()), how|syscall.LOCK_NB); err != nil {
 		if errors.Is(err, syscall.EWOULDBLOCK) {
 			return ErrLocked
 		}

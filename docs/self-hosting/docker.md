@@ -150,6 +150,10 @@ docker compose exec opentodo /opentodo reset-owner-password
 
 The command needs only the data volume: shell access to the host is the proof of ownership. It opens no port, needs no configuration and works while the server runs (or with `docker compose run --rm --no-deps opentodo reset-owner-password` while it is stopped). The link starts with `OPENTODO_BASE_URL`; pass `--base-url https://…` otherwise. It works once, any earlier owner link stops working, and using it signs the owner out everywhere. It is recorded as `password.reset_issued` in the audit log. If the owner also lost their second factor, run `mfa-reset` as described above.
 
+## Updating
+
+`docker compose pull && docker compose up -d` replaces the container; the new version applies migrations at startup. Orchestrators that start the new container before stopping the old one (Coolify, Docker Swarm, Kubernetes with a shared volume on one node) work too: several server processes may use the data directory at once, and the background jobs (reminder push, webhooks, backups, email polling, Trash cleanup) run in only one of them and move to the newer one when the old one exits. Maintenance commands (`restore`, `mfa-reset`, `reset-owner-password` without a running server) still need every server stopped. Upgrading from 0.1.0 needs one stop-then-start, because that version locked the directory exclusively.
+
 ## Health
 
 `GET /healthz` returns `{"status":"ok","version":"..."}`. The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.

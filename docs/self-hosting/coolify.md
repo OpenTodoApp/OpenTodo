@@ -74,12 +74,17 @@ Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files
 
 Redeploy the resource. Coolify pulls the new image (or rebuilds), the new version applies database migrations on startup, and your data stays in the volume.
 
+Updates are rolling: Coolify starts the new container while the old one still serves, waits for its health check, then stops the old one. Both may serve the same volume for those few seconds; background jobs (reminder push, webhooks, backups, email, Trash cleanup) stay with the old container until it stops, then the new one takes them over. Migrations are additive, so the old version keeps working on the upgraded database until it is replaced.
+
+**Upgrading from 0.1.0:** that version locked the volume exclusively, so its replacement cannot start beside it ("data directory is in use by another opentodo process", and Coolify rolls back). Click **Stop**, then **Deploy** once; later updates roll without downtime.
+
 ## Live updates
 
 Devices learn about each other's changes through a long-lived request, `GET /api/v1/sync/events` (server-sent events). Coolify's Traefik proxy streams it as is: no labels or settings are needed. The server heartbeats every 25 s, below Traefik's idle timeouts, and sets no-buffering headers. Use an `https://` domain so Traefik serves HTTP/2 and the streams of several tabs share one connection.
 
 ## Troubleshooting
 
+- **Update rolled back with "data directory is in use by another opentodo process"**: the running container is 0.1.0, which locked the volume exclusively. Stop the resource, then deploy; from 0.1.1 on, updates roll without stopping.
 - **"No Available Server" on the domain**: make sure the domain is assigned to the `opentodo` service with port `8080` (the compose file does this through `SERVICE_FQDN_OPENTODO_8080`).
 - **Status pill shows "Polling" instead of "Live"**: something between the browser and the container is buffering or cutting the event stream. Open `https://todo.example.com/api/v1/sync/events?device=test` while signed in: you should see `: connected` at once and `: ping` every 25 s. With stock Coolify this works out of the box; check any extra proxy, CDN or corporate firewall in front of it (see the proxy notes in [docker.md](docker.md)). The app keeps working with 30 s polling in the meantime.
 - **Sign-in works on desktop but not on the phone**: the domain must be https. Coolify handles this when the domain starts with `https://`.
