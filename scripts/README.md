@@ -33,7 +33,10 @@ Browser check of saved views and dashboards (OpenSpec change `custom-views`) wit
 ```bash
 make build
 OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
-CHROMIUM_PATH=/path/to/chrome npx -y -p playwright@1.56.1 node scripts/e2e-views.mjs [screenshot-dir]
+npm i -g playwright@1.56.1 && npx playwright install chromium   # once
+node scripts/e2e-views.mjs [screenshot-dir]
+# or, with a Chromium already on disk:
+CHROMIUM_PATH=/path/to/chrome node scripts/e2e-views.mjs
 ```
 
 ## `screenshots.mjs`
