@@ -15,9 +15,11 @@ OpenTodo can notify other systems when your tasks and projects change: switch on
 | `project.updated` | any other field of a project changes, including un-archiving |
 | `project.archived` | `archived` goes from false to true |
 | `project.deleted` | the project gets a tombstone |
+| `import.completed` | an [import](import.md) job finished (done or failed): one summary for the whole job, see [Imports](#imports) |
+| `import.undone` | an import was undone: one summary, see [Imports](#imports) |
 | `ping` | you pressed **Send test** (not subscribable, always sent on request) |
 
-Events are derived on the server from the operation log, whatever wrote the change: a phone or browser syncing, the REST API, the `ot` CLI, later imports and CalDAV. Rules:
+Task and project events are derived on the server from the operation log, whatever wrote the change: a phone or browser syncing, the REST API, the `ot` CLI and CalDAV. Imports are the exception: they are reported once per job (see [Imports](#imports)). Rules:
 
 - **One event per entity per batch.** A sync batch that creates a task and sets six fields produces one `task.created`, not seven events. When several rules apply the first wins, in this order: created, deleted, completed, reopened, archived, updated.
 - **Only real changes.** An edit that loses under last-writer-wins (an older offline change arriving after a newer one), a duplicate retry, or a write of the value the field already had produces no event.
@@ -66,6 +68,42 @@ Every delivery is a `POST` with a JSON body:
 ### Encrypted accounts
 
 For an account with [end-to-end encryption](e2ee.md), content fields in payloads (`title`, `description`, `name`) carry the stored ciphertext (`"enc:v1:…"`); the server cannot decrypt them. Dates, priority and completion stay plaintext.
+
+### Imports
+
+An import can write tens of thousands of tasks; one delivery per task would flood a receiver and the delivery queue. So the changes an import (or its undo) writes never produce `task.*` or `project.*` events. Instead each finished job produces **one** `import.completed` delivery, and each undo **one** `import.undone`, per webhook subscribed to that event. Subscribe to them explicitly; a webhook that only lists `task.created` sees nothing from imports. Changes you make afterwards to imported tasks fire the usual events.
+
+```json
+{
+  "version": 1,
+  "id": "…",
+  "event": "import.completed",
+  "time": 1760060001000,
+  "webhook_id": "…",
+  "source": "import",
+  "data": {
+    "import": {
+      "id": "<import job id>",
+      "format": "csv",
+      "status": "done",
+      "totals": { "rows": 120, "create": 120, "written": 121, "ops": 360, "...": 0 },
+      "counts": { "task": { "created": 120 }, "project": { "created": 1 } },
+      "project_ids": ["<project id>"]
+    }
+  },
+  "changes": {}
+}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `data.import.id` | the import job (`GET /api/v1/import/jobs/{id}`) |
+| `status` | `done` or `failed` for `import.completed` (`message` then says why), `undone` for `import.undone` |
+| `totals` | the job's totals as the import API reports them |
+| `counts` | entities written by this run, per kind (`task`, `project`, `label`, `section`, `reminder`, `view`) and action: `created` and `updated` for an import, `deleted` for an undo |
+| `project_ids` | the projects the run created or wrote tasks into, sorted |
+
+The importing user's webhooks receive every touched project. When an import writes into a shared project, each other member's subscribed webhooks receive the same summary with `project_ids` limited to the shared projects they belong to. A webhook with a project filter receives the summary only when its project is in `project_ids`. Summaries are queued, signed, retried and logged like every other delivery.
 
 ## Headers and signature
 

@@ -15,6 +15,7 @@ import (
 
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/ids"
+	"github.com/pixari/opentodo/internal/importer"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -529,8 +530,7 @@ func (s *Service) Observe(ctx context.Context, changes []opsync.Change) {
 }
 
 func (s *Service) enqueue(ctx context.Context, changes []opsync.Change) error {
-	type row struct{ id, webhookID, event, payload string }
-	var rows []row
+	var rows []queuedRow
 	now := s.nowMs()
 	// Everyone who can see a change's scope is told through their own webhooks
 	// (project-sharing): the author for personal data, every member of a shared
@@ -542,6 +542,11 @@ func (s *Service) enqueue(ctx context.Context, changes []opsync.Change) error {
 		// that touched nothing else (a merged note republished with the same
 		// text) is not an event (collaborative-rich-text).
 		if c = withoutDocFields(c); len(c.Fields) == 0 {
+			continue
+		}
+		// Imports and their undo are reported once per job by ObserveImport
+		// (harden-server-edges), not once per written entity.
+		if c.Origin == importer.Device {
 			continue
 		}
 		users, ok := usersByScope[c.ScopeID]
@@ -584,10 +589,18 @@ func (s *Service) enqueue(ctx context.Context, changes []opsync.Change) error {
 				if err != nil {
 					return err
 				}
-				rows = append(rows, row{id, sub.id, event, string(body)})
+				rows = append(rows, queuedRow{id, sub.id, event, string(body)})
 			}
 		}
 	}
+	return s.insertQueued(ctx, rows, now)
+}
+
+// queuedRow is one delivery about to be queued.
+type queuedRow struct{ id, webhookID, event, payload string }
+
+// insertQueued stores pending deliveries in one transaction and wakes the worker.
+func (s *Service) insertQueued(ctx context.Context, rows []queuedRow, now int64) error {
 	if len(rows) == 0 {
 		return nil
 	}
@@ -607,6 +620,61 @@ func (s *Service) enqueue(ctx context.Context, changes []opsync.Change) error {
 	}
 	s.Wake()
 	return nil
+}
+
+// ObserveImport is the importer's summary observer (harden-server-edges): one
+// finished import job or undo becomes at most one delivery per subscribed
+// webhook. The importing user's webhooks see every touched project; members of
+// a touched shared project are told through their own webhooks with the shared
+// projects they belong to. Errors are logged; the import is already done.
+func (s *Service) ObserveImport(ctx context.Context, sum importer.Summary) {
+	ctx = context.WithoutCancel(ctx)
+	if err := s.enqueueImport(ctx, sum); err != nil {
+		s.log.Error("webhooks: enqueue import summary failed", "err", err)
+	}
+}
+
+func (s *Service) enqueueImport(ctx context.Context, sum importer.Summary) error {
+	if !KnownEvent(sum.Event) {
+		return fmt.Errorf("unknown import event %q", sum.Event)
+	}
+	visible := map[string][]string{sum.UserID: slices.Clone(sum.ProjectIDs)}
+	for _, pid := range sum.ProjectIDs {
+		members, err := s.sync.ScopeUsers(ctx, opsync.ProjectScope(pid))
+		if err != nil {
+			return err
+		}
+		for _, u := range members {
+			if u != sum.UserID {
+				visible[u] = append(visible[u], pid)
+			}
+		}
+	}
+	users := make([]string, 0, len(visible))
+	for u := range visible {
+		users = append(users, u)
+	}
+	slices.Sort(users)
+	now := s.nowMs()
+	var rows []queuedRow
+	for _, userID := range users {
+		subs, err := s.subscriptions(ctx, userID)
+		if err != nil {
+			return err
+		}
+		for _, sub := range subs {
+			if !slices.Contains(sub.events, sum.Event) || (sub.projectID != "" && !slices.Contains(visible[userID], sub.projectID)) {
+				continue
+			}
+			id := ids.New()
+			body, err := BuildImportPayload(id, sub.id, now, sum, visible[userID])
+			if err != nil {
+				return err
+			}
+			rows = append(rows, queuedRow{id, sub.id, sum.Event, string(body)})
+		}
+	}
+	return s.insertQueued(ctx, rows, now)
 }
 
 func (s *Service) subscriptions(ctx context.Context, userID string) ([]subscription, error) {

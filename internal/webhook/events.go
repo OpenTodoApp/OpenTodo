@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"slices"
 
+	"github.com/pixari/opentodo/internal/importer"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
@@ -21,6 +22,7 @@ const EventPing = "ping"
 var Events = []string{
 	"task.created", "task.updated", "task.completed", "task.reopened", "task.deleted",
 	"project.created", "project.updated", "project.archived", "project.deleted",
+	importer.EventCompleted, importer.EventUndone,
 }
 
 // KnownEvent reports whether name is a subscribable event.
@@ -106,6 +108,38 @@ func BuildPayload(deliveryID, webhookID, event string, timeMs int64, origin, ent
 	if p.Source == "device" {
 		p.Device = origin
 	}
+	return json.Marshal(p)
+}
+
+// importData is the `data.import` object of an import summary delivery.
+type importData struct {
+	ID         string                    `json:"id"`
+	Format     string                    `json:"format"`
+	Status     string                    `json:"status"`
+	Message    string                    `json:"message,omitempty"`
+	Totals     importer.Totals           `json:"totals"`
+	Counts     map[string]map[string]int `json:"counts"`
+	ProjectIDs []string                  `json:"project_ids"`
+}
+
+// BuildImportPayload assembles the body of an import.completed or import.undone
+// delivery: one summary for a whole job, with the projects this receiver's
+// owner can see (projectIDs) instead of one event per written entity.
+func BuildImportPayload(deliveryID, webhookID string, timeMs int64, sum importer.Summary, projectIDs []string) ([]byte, error) {
+	if projectIDs == nil {
+		projectIDs = []string{}
+	}
+	counts := sum.Counts
+	if counts == nil {
+		counts = map[string]map[string]int{}
+	}
+	rawData, err := json.Marshal(map[string]importData{"import": {ID: sum.JobID, Format: sum.Format, Status: sum.Status,
+		Message: sum.Message, Totals: sum.Totals, Counts: counts, ProjectIDs: projectIDs}})
+	if err != nil {
+		return nil, err
+	}
+	p := Payload{Version: PayloadVersion, ID: deliveryID, Event: sum.Event, Time: timeMs, WebhookID: webhookID,
+		Source: importer.Device, Data: rawData, Changes: json.RawMessage(`{}`)}
 	return json.Marshal(p)
 }
 

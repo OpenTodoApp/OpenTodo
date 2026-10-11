@@ -82,7 +82,7 @@ Alarms set in a calendar app stay in that app's data (`ical_extra`) and fire the
 - **Shared projects** appear for every member. Viewers get a read-only list (writes answer 403); editors may add, change and delete tasks; renaming or recolouring needs admin or owner, deleting the list needs the owner.
 - **Creating a list** in the app (MKCALENDAR) creates a project with that name and colour. Renaming or recolouring it (PROPPATCH) renames or recolours the project.
 - **Deleting a list** moves the project to the Trash and its open tasks to the Inbox (for a shared project as copies, since a task never changes sharing scope). The Inbox cannot be deleted or renamed (403).
-- **Deleting a task** moves it to the Trash: it disappears from every device and stays in the export until it is purged. Purged tasks disappear from calendar apps on their next sync.
+- **Deleting a task** moves it to the Trash: it disappears from every device and stays in the export until it is purged. Purged tasks disappear from calendar apps on their next sync. When a calendar app created a task under its own resource name or UID, the server remembers that name (`caldav_resources`); purging the task, purging its project, emptying the Trash or the Trash retention job removes the name in the same transaction, so nothing is left behind for tasks that no longer exist.
 - **Moving a task between lists** changes its project. Moving into a list that is shared differently creates a copy there (keeping the calendar app's UID) and moves the original to the Trash, as the app does.
 
 ## Sync and conflicts

@@ -244,6 +244,10 @@ Triggers: 250 ms after a local edit, on `online`, when the tab becomes visible, 
 
 Server (`internal/sync.Apply`): validate the whole batch, then in one transaction resolve each op's scope, refuse the ones the author may not write (reported in `rejected`), `INSERT OR IGNORE` the others into `ops` (duplicate ids are counted, not re-applied) with their scope in `op_scopes`, and upsert `scope_fields` under the winner rule. `Pull` returns ops after the cursor from every scope the caller can see in `seq` order, skipping the caller's own device but still advancing the cursor past them.
 
+### Paging
+
+A pull page holds at most 1000 ops **and** at most about 4 MB of op values (`sync.MaxPullBytes`, the summed length of the `value`s it serves; ops of the caller's own device are skipped and do not count). The page ends before the op that would cross the budget, `cursor` is the `seq` of the last op served and `hasMore` is `true`; the device simply asks again. A page always carries at least one op, so a single value larger than the budget still travels (alone) and the device always makes progress. The history replay for a newly joined shared project (below) is paged by the same two limits. Purge markers on a partial page are reported up to the page's last op, as before. The rule is additive: the response format is unchanged, a page is only cut earlier, and a client that loops on `hasMore` (the web app does) needs no change. The budget is an internal constant, not a setting.
+
 ## Sharing scopes
 
 Every op and every materialized field belongs to one scope (OpenSpec `project-sharing`): `user:<userId>` holds a user's Inbox, unshared projects, labels and saved views; `project:<projectId>` holds a shared project and its tasks. `ops.user_id` is the op's author. Because `seq` is one global sequence, a device keeps a single cursor across all the scopes it can see, and the request format is unchanged.

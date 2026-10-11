@@ -1,0 +1,21 @@
+# documentation: https://github.com/pixari/opentodo/blob/main/docs/self-hosting/coolify.md
+# slogan: Open-source, local-first task manager. Works offline, syncs every device, one small container.
+# category: productivity
+# tags: todo,tasks,task manager,productivity,gtd,kanban,caldav,local-first,pwa,self-hosted
+# logo: svgs/opentodo.svg
+# port: 8080
+
+services:
+  opentodo:
+    image: ghcr.io/pixari/opentodo:0.1
+    environment:
+      - SERVICE_FQDN_OPENTODO_8080
+      - OPENTODO_BASE_URL=${SERVICE_URL_OPENTODO}
+      - OPENTODO_ALLOW_SIGNUP=${OPENTODO_ALLOW_SIGNUP:-false}
+    volumes:
+      - opentodo-data:/data
+    healthcheck:
+      test: ["CMD", "/opentodo", "healthcheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

@@ -66,7 +66,7 @@ jobs:
         run: ./scripts/cli-smoke.sh | tee /dev/stderr | grep -q '^CLI OK$'
 
   cli:
-    name: CLI (${{ matrix.goos }}/${{ matrix.goarch }})
+    name: Binaries (${{ matrix.goos }}/${{ matrix.goarch }})
     runs-on: ubuntu-latest
     needs: server
     strategy:
@@ -79,8 +79,6 @@ jobs:
           - { goos: darwin, goarch: arm64 }
           - { goos: windows, goarch: amd64, ext: .exe }
           - { goos: windows, goarch: arm64, ext: .exe }
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -92,23 +90,24 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
         run: go build -trimpath -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o dist/ot-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/ot
+      - uses: actions/download-artifact@v8
+        with:
+          name: web-dist
+          path: internal/web/dist
+      - name: Cross-compile the server (web app embedded)
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: go build -trimpath -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o dist/opentodo-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/opentodo
       - uses: actions/upload-artifact@v7
         with:
-          name: ot-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: dist/ot-*
-      - name: Attach to the GitHub release
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release view "${{ github.ref_name }}" >/dev/null 2>&1 || gh release create "${{ github.ref_name }}" --generate-notes --verify-tag
-          gh release upload "${{ github.ref_name }}" dist/ot-* --clobber
+          name: bin-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
 
   extension:
     name: Browser extension (test, package)
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -120,13 +119,6 @@ jobs:
         with:
           name: opentodo-browser-extension
           path: dist/opentodo-browser-extension.zip
-      - name: Attach to the GitHub release
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release view "${{ github.ref_name }}" >/dev/null 2>&1 || gh release create "${{ github.ref_name }}" --generate-notes --verify-tag || gh release view "${{ github.ref_name }}" >/dev/null
-          gh release upload "${{ github.ref_name }}" dist/opentodo-browser-extension.zip --clobber
 
   openspec:
     name: OpenSpec (validate specs and changes)
@@ -175,3 +167,34 @@ jobs:
           build-args: VERSION=${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # One job publishes the GitHub release for a v* tag, after everything it ships
+  # has built: server and `ot` binaries for every platform, the extension zip and
+  # SHA256SUMS. Notes come from the tag's section in CHANGELOG.md.
+  release:
+    name: GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    needs: [cli, extension, docker]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+      - name: Collect assets and checksums
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name 'opentodo-*' -o -name 'ot-*' \) -exec cp {} release/ \;
+          cd release && sha256sum * > SHA256SUMS && cat SHA256SUMS
+      - name: Release notes from CHANGELOG.md
+        run: ./scripts/release-notes.sh "${GITHUB_REF_NAME#v}" > notes.md && cat notes.md
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pre=""
+          case "$GITHUB_REF_NAME" in v0.*|*-*) pre="--prerelease" ;; esac
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "OpenTodo $GITHUB_REF_NAME" --notes-file notes.md $pre
+          gh release upload "$GITHUB_REF_NAME" release/* --clobber

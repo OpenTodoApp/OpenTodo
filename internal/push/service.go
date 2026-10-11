@@ -266,14 +266,25 @@ func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder,
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	// Only reminders on an open task the user can still see fire.
+	// Only reminders on an open task the user can still see fire, and not while
+	// the task's project or any ancestor project is in the Trash.
 	var out []dueReminder
+	trashed := map[string]bool{} // "<user>\x00<project>" -> in the Trash (this pass)
 	for _, d := range cands {
 		t, err := s.sync.Get(ctx, d.UserID, "task", d.TaskID)
 		if err != nil {
 			return nil, err
 		}
 		if t == nil || t.Deleted() || !isNull(t["completed_at"]) {
+			continue
+		}
+		inTrash, err := s.projectTrashed(ctx, d.UserID, jsonString(t["project_id"]), trashed)
+		if err != nil {
+			return nil, err
+		}
+		if inTrash {
+			// Not recorded as delivered: once the project is restored the
+			// reminder is delivered on the next pass (OpenSpec `reminders`).
 			continue
 		}
 		// An end-to-end encrypted title (OpenSpec `e2ee`) is never pushed, not even
@@ -287,6 +298,43 @@ func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder,
 		}
 	}
 	return out, nil
+}
+
+// maxProjectDepth bounds the ancestor walk; the seen set already stops cycles.
+const maxProjectDepth = 64
+
+// projectTrashed reports whether project id, or any project above it through
+// parent_id, carries a tombstone in the user's view. A project the user cannot
+// see ends the walk. Results are cached for one pass in cache.
+func (s *Service) projectTrashed(ctx context.Context, userID, id string, cache map[string]bool) (bool, error) {
+	var path []string
+	seen := map[string]bool{}
+	result := false
+	for depth := 0; id != "" && !seen[id] && depth < maxProjectDepth; depth++ {
+		key := userID + "\x00" + id
+		if v, ok := cache[key]; ok {
+			result = v
+			break
+		}
+		seen[id] = true
+		path = append(path, key)
+		p, err := s.sync.Get(ctx, userID, "project", id)
+		if err != nil {
+			return false, err
+		}
+		if p == nil {
+			break
+		}
+		if p.Deleted() {
+			result = true
+			break
+		}
+		id = jsonString(p["parent_id"])
+	}
+	for _, k := range path {
+		cache[k] = result
+	}
+	return result, nil
 }
 
 func isNull(raw json.RawMessage) bool { return len(raw) == 0 || string(raw) == "null" }

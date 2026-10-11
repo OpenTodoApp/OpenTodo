@@ -395,3 +395,80 @@ func TestKeyFileIsBackedUp(t *testing.T) {
 	}
 	t.Fatalf("backup.ExtraFiles %v does not include %s", backup.ExtraFiles, KeyFile)
 }
+
+// A reminder on a task whose project, or an ancestor project, is in the Trash is
+// not delivered and not recorded; after a restore it is delivered once, even
+// though its firing time passed while the project was trashed.
+func TestSchedulerSkipsTrashedProjects(t *testing.T) {
+	e := newTestEnv(t)
+	f := newFakePush(t)
+	ctx := context.Background()
+	s := e.service()
+	if _, _, err := s.Upsert(ctx, "u1", "", f.input("phone", false)); err != nil {
+		t.Fatal(err)
+	}
+	now := e.clock.UnixMilli()
+	e.apply(t, "u1", map[string]map[string]any{
+		"project:home":   {"name": "Home", "parent_id": nil, "deleted_at": now - 10_000},
+		"project:garden": {"name": "Garden", "parent_id": "home", "deleted_at": nil},
+		"project:work":   {"name": "Work", "parent_id": nil, "deleted_at": now - 10_000},
+		"task:direct":    {"title": "In trashed project", "project_id": "work", "completed_at": nil, "deleted_at": nil},
+		"task:nested":    {"title": "Under trashed ancestor", "project_id": "garden", "completed_at": nil, "deleted_at": nil},
+		"task:gone":      {"title": "Deleted task", "project_id": nil, "completed_at": nil, "deleted_at": now - 10_000},
+		"task:inbox":     {"title": "Inbox task", "project_id": nil, "completed_at": nil, "deleted_at": nil},
+	})
+	e.reminder(t, "u1", "r-direct", "direct", now-60_000)
+	e.reminder(t, "u1", "r-nested", "nested", now-60_000)
+	e.reminder(t, "u1", "r-gone", "gone", now-60_000)
+	e.reminder(t, "u1", "r-inbox", "inbox", now-60_000)
+
+	if n, err := s.Tick(ctx); err != nil || n != 1 {
+		t.Fatalf("tick recorded %d, %v", n, err)
+	}
+	if got := f.received(); len(got) != 1 || got[0].ReminderID != "r-inbox" {
+		t.Fatalf("pushed = %+v", got)
+	}
+	for _, id := range []string{"r-direct", "r-nested", "r-gone"} {
+		r, _ := e.sync.Get(ctx, "u1", "reminder", id)
+		if string(r["delivered_at"]) != "null" {
+			t.Fatalf("%s delivered_at = %s, want null", id, r["delivered_at"])
+		}
+	}
+	// Still trashed a minute later: nothing.
+	*e.clock = e.clock.Add(time.Minute)
+	if n, _ := s.Tick(ctx); n != 0 {
+		t.Fatalf("trashed reminders recorded %d", n)
+	}
+	// Restoring the ancestor and the direct project delivers both once, late.
+	e.apply(t, "u1", map[string]map[string]any{"project:home": {"deleted_at": nil}, "project:work": {"deleted_at": nil}})
+	if n, err := s.Tick(ctx); err != nil || n != 2 {
+		t.Fatalf("tick after restore recorded %d, %v", n, err)
+	}
+	if got := f.received(); len(got) != 3 {
+		t.Fatalf("pushed = %+v", got)
+	}
+	if n, _ := s.Tick(ctx); n != 0 {
+		t.Fatalf("delivered again: %d", n)
+	}
+}
+
+// A cycle in the project tree (concurrent moves) does not hang the walk.
+func TestSchedulerProjectCycle(t *testing.T) {
+	e := newTestEnv(t)
+	f := newFakePush(t)
+	ctx := context.Background()
+	s := e.service()
+	if _, _, err := s.Upsert(ctx, "u1", "", f.input("phone", false)); err != nil {
+		t.Fatal(err)
+	}
+	now := e.clock.UnixMilli()
+	e.apply(t, "u1", map[string]map[string]any{
+		"project:a": {"name": "A", "parent_id": "b", "deleted_at": nil},
+		"project:b": {"name": "B", "parent_id": "a", "deleted_at": nil},
+		"task:t":    {"title": "T", "project_id": "a", "completed_at": nil, "deleted_at": nil},
+	})
+	e.reminder(t, "u1", "r", "t", now-1000)
+	if n, err := s.Tick(ctx); err != nil || n != 1 {
+		t.Fatalf("tick recorded %d, %v", n, err)
+	}
+}

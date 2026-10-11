@@ -5,7 +5,7 @@
 // for the same firing time is skipped (the shared "shown" set below).
 import { db, getMeta, setMeta } from './db'
 import { isDue } from './reminderTime'
-import type { Reminder, Task } from './types'
+import type { Project, Reminder, Task } from './types'
 
 /** How often the watcher looks (the spec allows up to a minute of delay). */
 export const WATCH_INTERVAL_MS = 15_000
@@ -25,16 +25,44 @@ export interface DueReminder {
   task: Task
 }
 
+type ProjectLink = Pick<Project, 'id' | 'parent_id' | 'deleted_at'>
+
+/**
+ * Whether a project, or any project above it, is in the Trash (OpenSpec
+ * `reminders`). Unknown projects end the walk; a cycle from concurrent moves is
+ * stopped by the seen set. Mirrors `projectTrashed` in internal/push.
+ */
+export function inTrashedProject(projectId: string | null | undefined, projects: Map<string, ProjectLink>): boolean {
+  const seen = new Set<string>()
+  let id = projectId ?? null
+  while (id && !seen.has(id)) {
+    seen.add(id)
+    const p = projects.get(id)
+    if (!p) return false
+    if (p.deleted_at) return true
+    id = p.parent_id ?? null
+  }
+  return false
+}
+
 /**
  * The reminders due at `now`: fired, live, not dismissed for this firing, on an open
- * task, and not already shown by the service worker for the same firing time.
- * Oldest first.
+ * task outside any trashed project, and not already shown by the service worker
+ * for the same firing time. Oldest first. A reminder skipped while its project is
+ * trashed shows again once the project is restored.
  */
-export function dueReminders(reminders: Reminder[], tasks: Map<string, Task>, now: number, shown: ShownSet = {}): DueReminder[] {
+export function dueReminders(
+  reminders: Reminder[],
+  tasks: Map<string, Task>,
+  now: number,
+  shown: ShownSet = {},
+  projects: Map<string, ProjectLink> = new Map(),
+): DueReminder[] {
   const out: DueReminder[] = []
   for (const r of reminders) {
     const task = tasks.get(r.task_id)
     if (!isDue(r, task, now)) continue
+    if (inTrashedProject(task?.project_id, projects)) continue
     const s = shown[r.id]
     if (s && s.by === 'sw' && s.fireAt === r.fire_at) continue
     out.push({ reminder: r, task: task as Task })
@@ -49,7 +77,11 @@ export async function checkReminders(now = Date.now()): Promise<DueReminder[]> {
   const ids = [...new Set(reminders.map((r) => r.task_id))]
   const tasks = new Map<string, Task>()
   for (const t of await db.tasks.bulkGet(ids)) if (t) tasks.set(t.id, t)
-  return dueReminders(reminders, tasks, now, await getMeta<ShownSet>(SHOWN_KEY, {}))
+  const projects = new Map<string, ProjectLink>()
+  if ([...tasks.values()].some((t) => t.project_id)) {
+    for (const p of await db.projects.toArray()) projects.set(p.id, p)
+  }
+  return dueReminders(reminders, tasks, now, await getMeta<ShownSet>(SHOWN_KEY, {}), projects)
 }
 
 /** Record that this device showed a reminder for its current firing time. */

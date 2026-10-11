@@ -23,6 +23,16 @@ type Service struct {
 	sinks notify.Multi
 	// commentLimiter caps comment creation per account (comments-and-activity).
 	commentLimiter *fixedWindow
+	// pullBudget overrides MaxPullBytes in tests; 0 means MaxPullBytes.
+	pullBudget int
+}
+
+// pullBytes is the byte budget of one pull page.
+func (s *Service) pullBytes() int {
+	if s.pullBudget > 0 {
+		return s.pullBudget
+	}
+	return MaxPullBytes
 }
 
 // FieldChange is one field's transition within a batch. From is nil (JSON null)
@@ -456,7 +466,7 @@ func (s *Service) PullAll(ctx context.Context, userID string, cursor int64, devi
 		return res, err
 	}
 	next := cursor
-	n := 0
+	n, size := 0, 0
 	for rows.Next() {
 		if n == limit {
 			res.More = true
@@ -467,11 +477,17 @@ func (s *Service) PullAll(ctx context.Context, userID string, cursor int64, devi
 			rows.Close()
 			return res, err
 		}
+		if op.Device != device && len(res.Ops) > 0 && size+len(op.Value) > s.pullBytes() {
+			// Byte budget reached: this op opens the next page.
+			res.More = true
+			break
+		}
 		next = op.Seq
 		n++
 		if op.Device == device {
 			continue
 		}
+		size += len(op.Value)
 		res.Ops = append(res.Ops, op)
 	}
 	rows.Close()
@@ -545,6 +561,7 @@ func (s *Service) backfillPage(ctx context.Context, userID, device string, curso
 		return nil, err
 	}
 	var page []Op
+	size, full := 0, false
 	for _, p := range list {
 		if p.fresh {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO member_backfills(project_id,user_id,device,upto_seq,done_seq) VALUES(?,?,?,?,0)`,
@@ -565,6 +582,12 @@ func (s *Service) backfillPage(ctx context.Context, userID, device string, curso
 					r.Close()
 					return nil, err
 				}
+				if len(page) > 0 && size+len(op.Value) > s.pullBytes() {
+					// Byte budget reached: the rest of this history is the next page.
+					full = true
+					break
+				}
+				size += len(op.Value)
 				page = append(page, op)
 			}
 			r.Close()
@@ -573,7 +596,7 @@ func (s *Service) backfillPage(ctx context.Context, userID, device string, curso
 			}
 		}
 		done := p.upto
-		if len(page) == limit {
+		if full || len(page) == limit {
 			done = page[len(page)-1].Seq
 		}
 		if _, err := tx.ExecContext(ctx, `UPDATE member_backfills SET done_seq = ? WHERE project_id = ? AND user_id = ? AND device = ?`,
