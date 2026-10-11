@@ -16,7 +16,7 @@ Thanks for helping build a task manager people can own. This document covers how
 2. Plan the change: `openspec new change <kebab-name>` or, with Claude Code, `/opsx:propose "<idea>"`. Fill `proposal.md`, `specs/<capability>/spec.md`, `design.md` and `tasks.md`. Run `openspec validate <name> --strict`.
 3. Implement, ticking tasks as you go (`/opsx:apply` does this for you).
 4. Run `make check` (vet, typecheck, Go and web tests, OpenSpec validation).
-5. When touching sync or the UI, run the browser smoke test (see `scripts/README.md`).
+5. When touching sync or the UI, run the browser smoke test (see `scripts/README.md`). When touching layout or adding a screen or overlay, run the layout check (`make layout-check`), and add the new screen or overlay to `scripts/e2e-layout.mjs`.
 6. Open a pull request. CI must be green. Link the change folder in the description.
 7. After merge, the change is archived with `openspec archive <name> -y`, which merges its deltas into `openspec/specs/`. Add a line to `CHANGELOG.md`.
 
@@ -36,6 +36,8 @@ Tests live next to the code: `internal/**/*_test.go` and `web/src/**/*.test.ts`.
 
 - Go: `gofmt`, `go vet`, standard library first. Errors are wrapped with context. Handlers return the JSON error envelope `{ "error": { "code", "message" } }`.
 - TypeScript: strict mode, no `any` in non-test code, React function components, Tailwind utility classes. Keep components small; data access goes through `web/src/lib/`.
+- Overlays: every menu, popover, picker, dialog and toast uses the overlay module in `web/src/app/overlay/` (`Menu`/`Popover`, `Dialog`, `ToastRegion`), never a hand-positioned `absolute`/`fixed` panel or a `<details>` menu (`<details>` is fine for expand/collapse). It gives bottom sheets on phones, viewport-kept popovers above 640 px, full-screen dialogs when tall, Escape, focus return and safe areas.
+- Phone layout: nothing may scroll sideways at 360 px except regions marked `data-scroll-x` (board, week grid, wide tables, code); controls are at least 44 × 44 px on touch screens (a global rule covers buttons, inputs and selects; use `touch-target` for icon controls whose visual is smaller); use `hover-reveal` instead of `opacity-0 group-hover:opacity-100`; `user-text` on user-written text so long words wrap; `dvh`, never `vh`.
 - Specs: requirements use SHALL; every requirement has at least one `#### Scenario:` with WHEN / THEN.
 
 ## Commit messages
