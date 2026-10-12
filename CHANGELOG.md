@@ -4,6 +4,17 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- **Migration `0028`** (members' own assistant provider, own-key usage) is applied automatically at startup. No new environment variables.
+- **Answers on a member's own key no longer count toward the monthly token allowance** on servers that let members bring their own key. To keep one limit for every answer, turn on **Count members' own keys toward the monthly limit** in **Settings → AI → Assistant**.
+
+### Added
+
+- **Your own assistant provider.** When the owner lets members bring their own key, each person can choose Anthropic, OpenAI or Google Gemini, a model and their own key in **Settings → AI → Assistant → Which assistant you use**, with **Test connection**. Members are never offered the compatible endpoint, so they cannot make the server connect to an address of their choosing. The disclosure names the provider actually used ("from this server to … with your own API key") and is asked again when it changes. Turning member keys off makes everyone use the owner's provider again; choices are kept for later. Keys stay in `<data>/secrets/assistant.json`, never returned, logged, exported or backed up. ([AI assistant](docs/assistant.md#use-your-own-provider-and-key))
+- **Own keys outside the allowance.** Answers on a member's own key are recorded and shown as "your key", but neither counted nor stopped by the monthly token allowance unless the owner turns on the new **Count members' own keys toward the monthly limit** (`cap_member_keys`). One answer per person and 8 per server still apply. The owner sees how many people use their own provider and key.
+- API (additive): `own_provider`, `own_model` and new status fields on `GET/PUT /api/v1/me/assistant`; `POST /api/v1/me/assistant/test` (signed-in sessions, 5 per 10 minutes); `cap_member_keys` and `own_key_members` on `/api/v1/settings/assistant`; `counted_tokens` and `own_key` on the usage route and `own_key` on the turn's `usage` event. ([API](docs/api.md#in-app-assistant))
+
 ## [0.3.0] - 2026-10-12
 
 OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat assistant inside the app that answers questions about your tasks and proposes changes you review and undo in one step, with Anthropic, OpenAI, Gemini or a model on your own network. An assistant you already use can now make changes over MCP, and the `ot` command is ready to be driven by coding agents. All of it is off until the owner turns it on; nothing is sent anywhere before that. [Use AI with OpenTodo](docs/ai-and-agents.md) compares the three options. Settings is also split into sections with their own pages, so things are easier to find.

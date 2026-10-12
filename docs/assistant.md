@@ -12,7 +12,7 @@ card: assistant-chat
 
 The assistant is a chat panel inside OpenTodo. Ask it "what is due today?", "move everything overdue to Friday", "break this task into steps" or "what did the team finish yesterday?". It reads your tasks to answer and **proposes** changes. Nothing changes until you review the proposal and apply it, and one step undoes it.
 
-It is off until the server owner turns it on and chooses a model provider: Anthropic (Claude), OpenAI, Google Gemini, or any server that speaks the OpenAI-compatible Chat Completions format, including a model running on your own network. Before your first message you see which provider receives your task content, and you decide.
+It is off until the server owner turns it on and chooses a model provider: Anthropic (Claude), OpenAI, Google Gemini, or any server that speaks the OpenAI-compatible Chat Completions format, including a model running on your own network. If the owner allows it, you can instead [use your own provider and key](#use-your-own-provider-and-key). Before your first message you see which provider receives your task content, and you decide.
 
 <picture><source srcset="images/assistant-chat-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-chat-light.webp" alt="The assistant panel on the right of the Inbox. The question What is due today? is answered with a list of four tasks, three of them overdue, and a token count under the answer."></picture>
 
@@ -26,10 +26,25 @@ The button and the shortcut only appear when the server owner has turned the ass
 
 The panel first shows what will be sent and to whom:
 
-- the provider and model the owner chose,
+- the provider and model the owner chose, or the provider you chose with your own key,
 - what may be sent: task titles and descriptions; project, section and label names; due dates, priorities and completion; comments; names of members of shared projects; your display name, today's date and your time zone; and the messages you type.
 
-In a shared project that includes text other members wrote. Select **Accept and continue** to start. Nothing is sent to any provider before you accept. If the owner later switches to another provider, the assistant asks you again. You can withdraw consent in **Settings → AI → Assistant**.
+In a shared project that includes text other members wrote. Select **Accept and continue** to start. Nothing is sent to any provider before you accept. If the provider changes later (the owner switches, you choose your own, or the owner stops allowing members' own keys), the assistant asks you again. You can withdraw consent in **Settings → AI → Assistant**.
+
+## Use your own provider and key
+
+When the server owner ticks **Let members bring their own key**, **Settings → AI → Assistant** shows **Which assistant you use**:
+
+- **The server's assistant**: the provider and model the owner set up. This is the default.
+- **My own provider and key**: choose **Anthropic (Claude)**, **OpenAI** or **Google Gemini**, a model, and paste an API key from your own account, then select **Save my provider**. For Anthropic you pick one of the offered models; for OpenAI and Gemini you type the model id (up to 100 characters: letters, digits, `.`, `_`, `:` and `-`, for example `gpt-4.1-mini` or `gemini-2.5-flash`). **Test connection** sends one tiny request with your key to check it (up to 5 tests in 10 minutes).
+
+Your questions then go from this server to the provider you chose, with your key, so that provider's terms for your account apply. The assistant asks you to accept the disclosure for that provider before your next message. Your key is stored on the server, never shown again, never sent to your browser and never in backups or exports. Going back to **The server's assistant** deletes the key you stored for your provider.
+
+A compatible endpoint (a model server address) is never offered here: only the server owner decides which other machines the server connects to.
+
+If the owner later stops allowing members' own keys, your choice is kept but not used: the server's assistant answers (after you accept its disclosure) until the owner allows it again. **Forget my provider and key** deletes both.
+
+If you saved a key in an earlier version of OpenTodo, it still works with the server's assistant; **Remove my key** deletes it.
 
 ## Ask and review
 
@@ -70,6 +85,8 @@ Offline you can read earlier conversations and apply or undo a proposal that alr
 
 Each answer shows how many tokens it used and how much of your monthly allowance that is ("1,240 tokens · this month 18% of your limit"); **Settings → AI → Assistant** shows the month so far. The owner sets the allowance (500,000 tokens per person per month by default). When you reach it, the assistant says when it resets (the first day of the next month, UTC). One answer at a time per person.
 
+Answers on your own key are paid by you, so they do not count toward the allowance and are never stopped by it ("1,240 tokens · your key"); Settings shows them separately. The owner can choose to count them as well.
+
 ## Safety
 
 - **You confirm every change.** The assistant cannot change anything by itself: the server never applies its proposals; your device does, after you review them (or, for the small changes above, when you turned that on).
@@ -109,7 +126,8 @@ The model must support tool use. **Test connection** reports an endpoint that re
 
 ### Other settings
 
-- **Let members bring their own key**: each person may then store a key in **Settings → AI → Assistant**; their turns use it instead of yours.
+- **Let members bring their own key**: each person may then choose Anthropic, OpenAI or Google Gemini with their own model and key in **Settings → AI → Assistant**; their turns use it instead of yours. Members are never offered the compatible endpoint, so they cannot make your server connect to an address of their choosing. Turning this off makes everyone use your provider again (each person accepts its disclosure again); their choices are kept for when you turn it back on. Settings shows how many people use their own provider and key.
+- **Count members' own keys toward the monthly limit**: off by default, so a member who pays with their own key is not held to your allowance. Turn it on to apply one limit to every answer. One answer at a time per person and 8 at a time on the server apply either way.
 - **Monthly tokens per person**: 500,000 by default; `0` means unlimited.
 - Changing the provider asks everyone to accept the disclosure again.
 - Keys are stored in `<data>/secrets/assistant.json` (mode 0600), never shown again, never in backups, exports or logs. The audit log records `settings.changed` with `assistant.<provider>.key` going from `unset` to `set`, never the key.

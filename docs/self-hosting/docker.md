@@ -102,7 +102,7 @@ The [MCP endpoint](../mcp.md) at `/mcp` is off until the owner enables it in **S
 
 The [assistant](../assistant.md) is off until the owner turns it on in **Settings → AI → Assistant**. There is no environment variable for it: providers, models and keys are set in Settings, and keys are stored in `/data/secrets/assistant.json` (mode 0600), which backups never include. While it is off, the server makes no request to any model provider.
 
-When it is on, the server makes outbound HTTPS requests only to the provider the owner enabled and only while someone is waiting for an answer (plus **Test connection**, owner only):
+When it is on, the server makes outbound HTTPS requests only to the provider the owner enabled (and, when the owner lets members bring their own key, to the built-in host of the provider a member chose for their key) and only while someone is waiting for an answer (plus **Test connection**, for the owner and for a member's own provider):
 
 | Provider | Host |
 | --- | --- |
@@ -111,9 +111,9 @@ When it is on, the server makes outbound HTTPS requests only to the provider the
 | Google Gemini | `generativelanguage.googleapis.com` |
 | Compatible endpoint | the base URL the owner entered |
 
-If your host restricts outbound traffic, allow that one host. Requests to the three built-in hosts honour the usual `HTTPS_PROXY` environment variable. A compatible base URL is checked like a webhook target: it is resolved before every connection, private, loopback, link-local and cloud-metadata addresses are refused unless the owner ticks **Allow private endpoints** (needed for Ollama or LM Studio on your network), the connection goes to the address that was checked, redirects are never followed, and no proxy is used. Requests carry the conversation and the task data the assistant reads, nothing about your instance or other users.
+If your host restricts outbound traffic, allow that one host (or all three built-in hosts when members may use their own provider). Members can never enter a base URL. Requests to the three built-in hosts honour the usual `HTTPS_PROXY` environment variable. A compatible base URL is checked like a webhook target: it is resolved before every connection, private, loopback, link-local and cloud-metadata addresses are refused unless the owner ticks **Allow private endpoints** (needed for Ollama or LM Studio on your network), the connection goes to the address that was checked, redirects are never followed, and no proxy is used. Requests carry the conversation and the task data the assistant reads, nothing about your instance or other users.
 
-The answer streams to the browser as server-sent events on `POST /api/v1/assistant/turn`, like the live updates stream: a proxy that buffers responses delays the answer until it is complete (see [Live updates through the proxy](#live-updates-through-the-proxy) for the same settings). The server logs one line per answer with the provider, outcome, duration and token counts, never questions, answers or task text. Turns are limited to 8 at a time on the server, one per person, and each person's monthly token allowance.
+The answer streams to the browser as server-sent events on `POST /api/v1/assistant/turn`, like the live updates stream: a proxy that buffers responses delays the answer until it is complete (see [Live updates through the proxy](#live-updates-through-the-proxy) for the same settings). The server logs one line per answer with the provider, whether it ran on the member's own key, outcome, duration and token counts, never questions, answers or task text. Turns are limited to 8 at a time on the server, one per person, and each person's monthly token allowance (answers on a member's own key are outside the allowance unless the owner counts them).
 
 ## Bind mounts
 
