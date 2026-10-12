@@ -1,0 +1,51 @@
+---
+title: "OpenTodo"
+description: "Open-source, local-first task manager that works offline and syncs every device."
+og:
+  description: "Run OpenTodo on Coolify: a self-hosted, local-first task manager with projects, boards, recurring tasks, reminders and CalDAV, in one container with one volume."
+category: "Productivity"
+icon: "/docs/images/services/opentodo-logo.svg"
+---
+
+# OpenTodo
+
+<ZoomImage src="/docs/images/services/opentodo-logo.svg" alt="OpenTodo logo" />
+
+## What is OpenTodo?
+
+OpenTodo is an open-source (AGPL-3.0), self-hosted task manager. The web app is installable on phones and desktops and works fully offline. Changes sync between devices through your server when they reconnect. It has projects, sections and boards, labels and filters, recurring tasks, reminders with web push, sharing and comments, CalDAV for calendar apps, imports, and scheduled backups. Everything runs in one small container and is stored in one SQLite database on one volume.
+
+## Deploy on Coolify
+
+1. Go to **Projects → New Resource** and pick **OpenTodo** from the service list.
+2. Set the domain of the `opentodo` service, for example `https://todo.example.com`. Coolify passes it to the app as `OPENTODO_BASE_URL`, which enables secure cookies and passkeys.
+3. Click **Deploy** and open the domain. The first visit creates the owner account, so open it right after the deployment finishes. Sign-up is closed after that; add people with invitations from **Settings → Members**.
+
+## Environment variables
+
+None is required. The template lists the most useful optional ones:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPENTODO_BASE_URL` | the service's domain | Public URL. Set it only if the service has more than one domain and users open a different one than the first. |
+| `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner. |
+| `OPENTODO_TRUSTED_PROXIES` | empty | Set to `cloudflare` when the domain is proxied by Cloudflare, so rate limits see visitors' addresses. |
+| `OPENTODO_PUSH` | `on` | `off` disables web push for reminders. |
+| `OPENTODO_SESSION_DAYS` | `90` | Session lifetime in days. |
+| `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days deleted items stay in the Trash. |
+| `OPENTODO_IMPORT_MAX_MB` | `20` | Largest import file. |
+| `OPENTODO_LOG_LEVEL` | `info` | `debug` logs every request. |
+| `OPENTODO_EMAIL_*` | empty | Optional email to task: set address, IMAP host, user and password together. |
+
+Other settings (single sign-on, backups, webhooks) are configured in the app's Settings.
+
+## Persistent storage
+
+One volume mounted at `/data`. It holds the SQLite database, settings secrets, the web push keys and local backups.
+
+## Links
+
+- [Official website](https://opentodo.pixari.dev/?utm_source=coolify.io)
+- [Documentation](https://opentodo.pixari.dev/docs/self-hosting/coolify/?utm_source=coolify.io)
+- [Demo](https://opentodo-demo.pixari.dev/?utm_source=coolify.io)
+- [GitHub](https://github.com/pixari/opentodo?utm_source=coolify.io)

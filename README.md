@@ -177,7 +177,7 @@ Data is kept in the `opentodo-data` volume.
 2. Assign a domain to the `opentodo` service; Coolify provisions HTTPS and passes the URL to the app.
 3. Deploy, open the domain, create the owner account.
 
-Details, including building from your fork: [docs/self-hosting/coolify.md](docs/self-hosting/coolify.md).
+Or paste the one-click template [`deploy/coolify/opentodo.yaml`](deploy/coolify/opentodo.yaml) as a **Docker Compose** resource (pending in Coolify's built-in service list). Details, including building from your fork: [docs/self-hosting/coolify.md](docs/self-hosting/coolify.md).
 
 ### Single binary
 
