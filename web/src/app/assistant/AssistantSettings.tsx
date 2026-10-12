@@ -260,7 +260,7 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
       {d.mode === 'own' && (
         <div className="space-y-2 pl-6">
           <label className="block">
-            <span>Provider</span>
+            <span className="block">Provider</span>
             <select className="input mt-1 min-w-0 max-w-full sm:max-w-sm" value={d.provider} disabled={off}
               onChange={(e) => {
                 const provider = e.target.value as MemberProvider
@@ -271,7 +271,7 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
             </select>
           </label>
           <label className="block">
-            <span>Model</span>
+            <span className="block">Model</span>
             {d.provider === 'anthropic' ? (
               <select className="input mt-1 min-w-0 max-w-full sm:max-w-sm" value={d.model} disabled={off} onChange={(e) => set({ model: e.target.value })}>
                 {!models.includes(d.model) && <option value={d.model}>Choose a model</option>}
@@ -283,7 +283,7 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
             )}
           </label>
           <label className="block">
-            <span>Your API key for {SHORT[d.provider]}</span>
+            <span className="block">Your API key for {SHORT[d.provider]}</span>
             <input className="input mt-1 max-w-sm" type="password" autoComplete="off" value={d.key} disabled={off} onChange={(e) => set({ key: e.target.value })}
               placeholder={savedSame ? 'Your key is saved; type to replace it' : 'Paste your key'} />
             <span className="mt-1 block text-xs text-muted">

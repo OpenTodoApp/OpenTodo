@@ -74,7 +74,7 @@ Two additive tables and one additive settings field; no op, no entity field, no 
 
 ## Size and memory
 
-No dependency. Server: a few hundred lines in `internal/assistant` and `internal/httpapi`. The settings UI is in the lazy assistant settings chunk; the main chunk only gains optional type fields (no runtime code). Measured with `npm run build`: see tasks 4.3.
+No dependency; no new runtime memory beyond one rate-limiter map (one entry per member who ran a connection test in the last 10 minutes). Server: a few hundred lines in `internal/assistant` and `internal/httpapi`; binary size change is negligible. Web, measured with `npm run build` against the previous commit: main chunk 912.84 → 912.90 kB (267.77 → 267.79 kB gzip; only the `testMyAssistant` API call), the lazy `AssistantSettings` chunk 12.80 → 21.35 kB (3.90 → 5.90 kB gzip) for the member form.
 
 ## Risks / Trade-offs
 
