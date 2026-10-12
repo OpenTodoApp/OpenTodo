@@ -58,7 +58,7 @@ After applying, **Undo** appears in the panel and in a short notice at the botto
 
 ## Apply small changes without review
 
-**Settings → Assistant → Apply small changes without review (this device)** is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority, labels, project or section is applied at once, with an Undo notice. Anything else, including every new task, every deletion and every text edit, is always shown for review.
+**Settings → Assistant → Apply small changes without review (this device)** is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for review.
 
 ## Conversations stay on this device
 

@@ -193,7 +193,7 @@ export function UserAssistantSettings(p: UserViewProps) {
       )}
       <label className="flex items-start gap-2">
         <input type="checkbox" className="mt-0.5" checked={p.autoApply} onChange={(e) => p.onAutoApply(e.target.checked)} />
-        <span>Apply small changes without review (this device) <span className="block text-muted">Up to 3 existing tasks: completing, dates, priority, labels, project or section. Creating, deleting or editing text always asks you. An Undo button always appears.</span></span>
+        <span>Apply small changes without review (this device) <span className="block text-muted">Up to 3 existing tasks: completing, dates, priority or labels. Creating, moving, deleting or editing text always asks you. An Undo button always appears.</span></span>
       </label>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onClear}>Clear conversations on this device</button>

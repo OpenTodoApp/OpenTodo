@@ -160,7 +160,7 @@ After applying a change set, the panel and a toast SHALL offer Undo, which appli
 - **THEN** that task keeps the hand-edited date and the undo summary names it as skipped
 
 ### Requirement: Optional auto-apply of small reversible changes
-A per-device setting, off by default, MAY apply a change set without review only when it changes at most 3 existing entities, creates and deletes nothing, and touches only completion, due date, priority, labels, project or section; a toast with Undo SHALL always appear. Any other change set SHALL require review. Applied changes converge as reviewed ones do.
+A per-device setting, off by default, MAY apply a change set without review only when it changes at most 3 existing entities, creates and deletes nothing, and touches only completion, due date, priority or labels (moves to another project or section always need review); a toast with Undo SHALL always appear. Any other change set SHALL require review. Applied changes converge as reviewed ones do.
 
 #### Scenario: Small change auto-applied
 - **WHEN** auto-apply is on and the assistant proposes completing 2 tasks

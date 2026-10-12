@@ -385,8 +385,12 @@ export async function undoChanges(id: string): Promise<UndoResult> {
 
 // ------------------------------------------------------------------ auto-apply
 
-/** Fields auto-apply may touch (design D2): small and reversible. */
-export const AUTO_FIELDS = new Set(['completed_at', 'due', 'priority', 'labels', 'project_id', 'section_id'])
+/**
+ * Fields auto-apply may touch (design D2): small, reversible and never a move.
+ * Moves always need review: text in a shared task could otherwise move private
+ * tasks into a shared project, where other members would see them.
+ */
+export const AUTO_FIELDS = new Set(['completed_at', 'due', 'priority', 'labels'])
 export const AUTO_MAX = 3
 
 /** Whether a proposal may skip review when auto-apply is on. */
