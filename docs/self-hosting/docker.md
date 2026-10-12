@@ -46,6 +46,14 @@ OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `
 OPENTODO_TRUSTED_PROXIES=cloudflare
 ```
 
+Entries may be separated by commas or spaces, and the keyword is case-insensitive (`cloudflare, 192.0.2.0/24` and `Cloudflare 192.0.2.0/24` are the same). **An invalid entry does not stop the server.** It is ignored, the valid entries still apply and the server starts and stays healthy. Ignoring an entry only ever trusts fewer hops, so a typo never lets a client choose its own address; if no entry is valid, the server behaves as if the variable were unset. The container log has one error line naming each ignored entry, what is accepted and what was applied, with a hint for a near miss of the keyword:
+
+```text
+level=ERROR msg="OPENTODO_TRUSTED_PROXIES: invalid entries ignored" invalid=cloudflar hint="did you mean \"cloudflare\"?" accepted="IP addresses, CIDR prefixes (such as 192.0.2.0/24) and the keyword \"cloudflare\", separated by commas or spaces" applied="none (only the nearest proxy is trusted, as when unset)"
+```
+
+The owner also sees a **Server configuration warning** at the top of **Settings** and of **Settings → Administration**, naming the ignored value. Admins, members and API tokens do not see it. Correct the value and restart the container; the warning goes away.
+
 ### Email to task
 
 [Email to task](../email.md) needs no port, proxy rule or DNS record: OpenTodo makes one outbound IMAP connection (TLS, port 993 by default) to the mailbox you configure with `OPENTODO_EMAIL_*`. If your host restricts outbound traffic, allow that one host and port. Keep the password in a Docker secret and point `OPENTODO_EMAIL_IMAP_PASSWORD_FILE` at it (example in the guide).

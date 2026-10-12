@@ -75,6 +75,28 @@ type Config struct {
 	// a request whose nearest hop is a Cloudflare edge may then name the client
 	// with CF-Connecting-IP.
 	TrustCloudflare bool
+	// Warnings are configuration problems the server started despite (OpenSpec
+	// `trusted-proxies-lenient`): logged at startup and shown to the owner.
+	Warnings []Warning
+}
+
+// Warning is a configuration problem that did not stop startup: the variable,
+// a message saying what was ignored and how to fix it, and the ignored values.
+// The JSON form is what the owner's /api/v1/me carries in config_warnings.
+type Warning struct {
+	Variable string   `json:"variable"`
+	Message  string   `json:"message"`
+	Ignored  []string `json:"ignored,omitempty"`
+
+	logAttrs []any // the startup log line's fields
+}
+
+// LogWarnings writes one error line per configuration warning, so the cause
+// is in the container log even though the server keeps running.
+func (c Config) LogWarnings(log *slog.Logger) {
+	for _, w := range c.Warnings {
+		log.Error(w.Variable+": invalid entries ignored", w.logAttrs...)
+	}
 }
 
 // OIDCEnv mirrors oidc.Env (converted by the HTTP layer) so this package stays
@@ -218,11 +240,13 @@ func Load() (Config, error) {
 		}
 	}
 	if raw := strings.TrimSpace(os.Getenv("OPENTODO_TRUSTED_PROXIES")); raw != "" {
-		p, cf, err := ParseTrustedProxies(raw)
-		if err != nil {
-			return c, err
+		// Lenient on purpose (trusted-proxies-lenient): a typo must not stop the
+		// server, and dropping an entry only ever trusts fewer hops.
+		t := ParseTrustedProxies(raw)
+		c.TrustedProxies, c.TrustCloudflare = t.Prefixes, t.Cloudflare
+		if w, ok := t.Warning(); ok {
+			c.Warnings = append(c.Warnings, w)
 		}
-		c.TrustedProxies, c.TrustCloudflare = p, cf
 	}
 	switch strings.ToLower(getenv("OPENTODO_LOG_LEVEL", "info")) {
 	case "debug":
