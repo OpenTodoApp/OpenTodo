@@ -6,7 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [0.3.0] - 2026-10-12
 
-OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat assistant inside the app that answers questions about your tasks and proposes changes you review and undo in one step, with Anthropic, OpenAI, Gemini or a model on your own network. An assistant you already use can now make changes over MCP, and the `ot` command is ready to be driven by coding agents. All of it is off until the owner turns it on; nothing is sent anywhere before that. [Use AI with OpenTodo](docs/ai-and-agents.md) compares the three options.
+OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat assistant inside the app that answers questions about your tasks and proposes changes you review and undo in one step, with Anthropic, OpenAI, Gemini or a model on your own network. An assistant you already use can now make changes over MCP, and the `ot` command is ready to be driven by coding agents. All of it is off until the owner turns it on; nothing is sent anywhere before that. [Use AI with OpenTodo](docs/ai-and-agents.md) compares the three options. Settings is also split into sections with their own pages, so things are easier to find.
 
 ### Upgrade notes
 
@@ -42,6 +42,7 @@ OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat a
 
 ### Changed
 
+- **Settings has sections.** Instead of one long page, `/settings` lists the sections with a line on what each holds, and each opens on its own page: **Account**, **General**, **Notifications**, **Data**, **Capture**, **Integrations**, **AI** and, for the owner and admins, **Administration** (`/settings/account`, `/settings/general`, …). Wide screens keep the section list beside the content; phones get a back link. Every setting works as before, Help links open the same guides, and `/settings/import` is unchanged. The user guide now names the section, for example **Settings → AI → AI assistants**. The single sign-on link flow returns to `/settings/account`. ([Settings](docs/settings.md))
 - MCP read results mark text people wrote: titles, descriptions, names and comment bodies now sit inside an `untrusted_text` object, every result carries a `_notice` telling the assistant to treat that text as data, tasks of shared projects carry `shared: true` and comments `author_is_you`. Label ids are listed as `label_ids` next to the names. The tool definitions themselves are unchanged. ([AI assistants](docs/mcp.md#read-tools))
 - `/api/v1/sync` refuses operations from devices whose id starts with `agent:` or `caldav:` (400 `invalid_op`): those ids are reserved for the server's own writers.
 - API requests with a token scope this server does not know are refused on every write route (previously only `read` was).

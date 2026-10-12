@@ -14,7 +14,7 @@ optionally encrypt them with a passphrase, and restore them with nothing but the
 `opentodo` binary.
 
 Nothing runs until the owner turns it on. Every setting is optional and managed
-from **Settings → Backups** (owner only); operators who prefer environment
+from **Settings → Data → Backups** (owner only); operators who prefer environment
 variables can preset them (see [Environment presets](#environment-presets)).
 
 - [Quick start](#quick-start)
@@ -27,7 +27,7 @@ variables can preset them (see [Environment presets](#environment-presets)).
 
 ## Quick start
 
-1. Sign in as the owner and open **Settings → Backups**.
+1. Sign in as the owner and open **Settings → Data → Backups**.
 2. Pick a destination. **Folder on the server** writes to `<data>/backups`
    (`/data/backups` in the container), which is inside the same volume: good
    against mistakes, not against losing the disk. For that, use S3 or WebDAV.

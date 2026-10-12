@@ -27,7 +27,7 @@ As you type, each thing OpenTodo recognises shows up as a chip under the input, 
 | --- | --- |
 | Keep a word literally ("may" is not May 1st) | Click the `×` on its chip, **or** press Backspace at the end of the line: the first press highlights the last chip, the second dismisses it. The text itself is not changed. |
 | Never parse some text | Put it in double quotes: `Watch "Next Friday" tomorrow` → title *Watch Next Friday*, due tomorrow. The quotes are removed from the title. |
-| Turn parsing off on this device | Settings → Quick add → *Parse natural language in quick add*. Quick add then saves the line exactly as typed. |
+| Turn parsing off on this device | Settings → General → Quick add → *Parse natural language in quick add*. Quick add then saves the line exactly as typed. |
 
 A dismissed chip stays dismissed while you keep typing; it comes back only if you edit that word. Backspace only highlights a chip when that chip's text ends the line; otherwise Backspace deletes text as usual.
 
@@ -62,11 +62,11 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, project, priority or estimate.
 
-**Day/month order.** `12/11` is 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month. Change it under Settings → Quick add.
+**Day/month order.** `12/11` is 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month. Change it under Settings → General → Quick add.
 
 ## Languages
 
-Vocabulary is bundled for **English, German, French, Italian, Spanish and Portuguese**. The active languages are your browser's preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. Settings → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish `mar` alone is Tuesday; `mar 3` is March 3rd).
+Vocabulary is bundled for **English, German, French, Italian, Spanish and Portuguese**. The active languages are your browser's preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. Settings → General → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish `mar` alone is Tuesday; `mar 3` is March 3rd).
 
 | | Examples |
 | --- | --- |
@@ -84,7 +84,7 @@ Quick add still takes the view's context for anything the line does not set: tod
 
 ## Voice
 
-Quick add can also be dictated. Voice capture is **off by default** and is switched on per device in **Settings → Voice capture**; it is not synced, so turning it on for your phone leaves your laptop as it is. Browsers without speech recognition (Firefox, for example) show the switch disabled with an explanation, and quick add has no microphone button there.
+Quick add can also be dictated. Voice capture is **off by default** and is switched on per device in **Settings → General → Voice capture**; it is not synced, so turning it on for your phone leaves your laptop as it is. Browsers without speech recognition (Firefox, for example) show the switch disabled with an explanation, and quick add has no microphone button there.
 
 With voice capture on, press the microphone button in quick add or `Shift+V` anywhere outside a text field (plain `v` already toggles list and board in a project). Words appear in the box as they are recognised; when you stop talking, press the button again or press `Esc`, the final transcript is inserted at the caret and parsed exactly like typed text, chips included. **Nothing is saved until you press Enter**, so you can correct the line by hand first.
 

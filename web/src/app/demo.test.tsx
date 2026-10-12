@@ -121,22 +121,24 @@ describe('expired sandbox', () => {
 describe('Settings', () => {
   it('replaces restricted sections with a note and disables Import on a demo instance', () => {
     setDemo(info)
-    const html = renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} />)
-    expect(html).toContain('data-testid="demo-restricted"')
-    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Import data…<\/button>/)
-    expect(html).toContain('Import: Disabled on this demo instance.')
-    expect(html).not.toContain('id="password-heading"')
-    expect(html).not.toContain('href="/settings/import"')
+    const page = (section: 'account' | 'general' | 'data') => renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} section={section} />)
+    const account = page('account')
+    expect(account).toContain('data-testid="demo-restricted"')
+    expect(account).not.toContain('id="password-heading"')
+    const data = page('data')
+    expect(data).toMatch(/<button[^>]*disabled=""[^>]*>Import data…<\/button>/)
+    expect(data).toContain('Import: Disabled on this demo instance.')
+    expect(data).not.toContain('href="/settings/import"')
     // Local preferences and the export keep working.
-    expect(html).toContain('Download export (JSON)')
-    expect(html).toContain('Vim keybindings')
+    expect(data).toContain('Download export (JSON)')
+    expect(page('general')).toContain('Vim keybindings')
   })
 
   it('shows every section on a normal server', () => {
-    const html = renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} />)
-    expect(html).not.toContain('demo-restricted')
-    expect(html).toContain('id="password-heading"')
-    expect(html).toContain('href="/settings/import"')
+    const account = renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} section="account" />)
+    expect(account).not.toContain('demo-restricted')
+    expect(account).toContain('id="password-heading"')
+    expect(renderToStaticMarkup(<SettingsView user={user} onLogout={() => {}} section="data" />)).toContain('href="/settings/import"')
   })
 })
 

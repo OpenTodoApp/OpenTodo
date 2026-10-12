@@ -19,7 +19,7 @@ docker compose up -d
 
 Open <http://localhost:8080>. The first visitor creates the owner account.
 
-To add more people, keep sign-up closed and create single-use invitation links in **Settings → Members** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL.
+To add more people, keep sign-up closed and create single-use invitation links in **Settings → Administration → Members** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL.
 
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`.
@@ -56,7 +56,7 @@ When the owner enables [CalDAV](../caldav.md), calendar apps use `/dav/` and `/.
 
 ### Passkeys need an https base URL
 
-Passkeys (Settings → Security) are only offered when `OPENTODO_BASE_URL` is an `https://` URL; browsers refuse WebAuthn on plain-http origins. With no base URL or an `http://` LAN address, the server keeps working with passwords and simply hides passkeys (`auth/status` reports `passkeysAvailable: false`). For local development `http://localhost:8080` also works, because browsers treat localhost as secure.
+Passkeys (Settings → Account → Security) are only offered when `OPENTODO_BASE_URL` is an `https://` URL; browsers refuse WebAuthn on plain-http origins. With no base URL or an `http://` LAN address, the server keeps working with passwords and simply hides passkeys (`auth/status` reports `passkeysAvailable: false`). For local development `http://localhost:8080` also works, because browsers treat localhost as secure.
 
 Passkeys are bound to the **host** of that URL (the relying-party id, for example `todo.example.com`). If you move the server to a new domain, existing passkeys stop matching: users sign in with their password and register new passkeys from Settings. Paths and ports do not matter, only the host. See [SECURITY.md](../../SECURITY.md) for the credential model.
 
@@ -96,11 +96,11 @@ Push is the only outbound traffic that is on by default (webhooks, backups to S3
 
 ## AI assistants (MCP)
 
-The [MCP endpoint](../mcp.md) at `/mcp` is off until the owner enables it in **Settings → AI assistants** (or `OPENTODO_MCP=true` presets it on the first start). It is read-only unless the owner also allows assistant changes (`OPENTODO_MCP_WRITES=true` presets that on the first start) and a user allows them for their account. It needs no extra port or container: assistants reach it through the same URL and reverse proxy as the app, with an API token in the `Authorization` header. Proxies that buffer or rewrite requests need nothing special, since every answer is a plain JSON response (no event stream). The server makes no outbound request for it. If your proxy logs request headers, exclude `Authorization`.
+The [MCP endpoint](../mcp.md) at `/mcp` is off until the owner enables it in **Settings → AI → AI assistants** (or `OPENTODO_MCP=true` presets it on the first start). It is read-only unless the owner also allows assistant changes (`OPENTODO_MCP_WRITES=true` presets that on the first start) and a user allows them for their account. It needs no extra port or container: assistants reach it through the same URL and reverse proxy as the app, with an API token in the `Authorization` header. Proxies that buffer or rewrite requests need nothing special, since every answer is a plain JSON response (no event stream). The server makes no outbound request for it. If your proxy logs request headers, exclude `Authorization`.
 
 ## In-app assistant
 
-The [assistant](../assistant.md) is off until the owner turns it on in **Settings → Assistant**. There is no environment variable for it: providers, models and keys are set in Settings, and keys are stored in `/data/secrets/assistant.json` (mode 0600), which backups never include. While it is off, the server makes no request to any model provider.
+The [assistant](../assistant.md) is off until the owner turns it on in **Settings → AI → Assistant**. There is no environment variable for it: providers, models and keys are set in Settings, and keys are stored in `/data/secrets/assistant.json` (mode 0600), which backups never include. While it is off, the server makes no request to any model provider.
 
 When it is on, the server makes outbound HTTPS requests only to the provider the owner enabled and only while someone is waiting for an answer (plus **Test connection**, owner only):
 
@@ -126,7 +126,7 @@ docker run -v "$PWD/data:/data" ...
 
 ## Backup and restore
 
-Turn on scheduled backups in **Settings → Backups** (owner only): consistent snapshots of the database, taken while the server runs, written to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption. Restore with the binary in the image while the container is stopped:
+Turn on scheduled backups in **Settings → Data → Backups** (owner only): consistent snapshots of the database, taken while the server runs, written to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption. Restore with the binary in the image while the container is stopped:
 
 ```bash
 docker compose stop opentodo
@@ -142,7 +142,7 @@ Deleted tasks and projects stay in the Trash, restorable, for 30 days; then the 
 
 ## Audit log
 
-The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials (API tokens, app passwords, passkeys, second factors), invitations, user administration, exports, backups and setting changes in **Settings → Audit log** (API: [docs/api.md](../api.md#audit-log)). It is stored in `opentodo.db` inside `/data`, so it is part of every backup of the volume, and it never contains task content. Nothing needs configuring:
+The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials (API tokens, app passwords, passkeys, second factors), invitations, user administration, exports, backups and setting changes in **Settings → Account → Audit log** (API: [docs/api.md](../api.md#audit-log)). It is stored in `opentodo.db` inside `/data`, so it is part of every backup of the volume, and it never contains task content. Nothing needs configuring:
 
 - **Retention** defaults to 90 days (7–3650, set in Settings). Expired events are pruned at startup, hourly and right after you lower the retention.
 - **Client addresses** are not recorded unless you turn on address logging in Settings. Behind a reverse proxy the address is the last `X-Forwarded-For` hop (the one the proxy appended), so make sure the proxy sets that header (Caddy, Traefik and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` do) and that the container is not reachable around the proxy, or a client could send its own header. Turning address logging off erases every stored address immediately.
@@ -151,7 +151,7 @@ The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials
 
 ## Two-factor authentication
 
-Users turn on two-factor authentication in **Settings → Two-factor authentication**. The owner can require it for themselves or for every account there. Nothing needs configuring, but two things are worth knowing:
+Users turn on two-factor authentication in **Settings → Account → Two-factor authentication**. The owner can require it for themselves or for every account there. Nothing needs configuring, but two things are worth knowing:
 
 - **Keep the host clock right.** Codes are checked against the server's own clock with 30 seconds of tolerance either way, so a host that drifts by a minute or more rejects valid codes. Docker uses the host's clock: make sure the host runs NTP (`timedatectl` should report `System clock synchronized: yes`; Raspberry Pi OS and every major distribution do this by default). The enrolment step catches large drift straight away with a "code does not match" message.
 - **Owner locked out.** If the owner loses both their authenticator and their recovery codes, reset the second factor from the host while the container is stopped, then sign in with the password and enrol again:
@@ -166,7 +166,7 @@ Users turn on two-factor authentication in **Settings → Two-factor authenticat
 
 ## Managing users
 
-The owner sees every account in **Settings → Users** with its role, status and last sign-in ([docs/api.md](../api.md#user-administration)). From there the owner makes trusted people **admins** (they can invite, and deactivate, reset or delete members, but never act on the owner or other admins), **deactivates** an account (signed out everywhere at once, API tokens and pending invitations revoked, data kept, sign-in blocked until reactivated), creates a **password reset link** for someone who forgot their password (single use, 24 hours, nothing is emailed: copy it and send it yourself), **deletes** an account and its data after typing its email, or **transfers ownership** to another account after re-entering the password (you become an admin). Every user changes their own password in **Settings → Password**. Nothing needs configuring and no SQLite editing is ever needed.
+The owner sees every account in **Settings → Administration → Users** with its role, status and last sign-in ([docs/api.md](../api.md#user-administration)). From there the owner makes trusted people **admins** (they can invite, and deactivate, reset or delete members, but never act on the owner or other admins), **deactivates** an account (signed out everywhere at once, API tokens and pending invitations revoked, data kept, sign-in blocked until reactivated), creates a **password reset link** for someone who forgot their password (single use, 24 hours, nothing is emailed: copy it and send it yourself), **deletes** an account and its data after typing its email, or **transfers ownership** to another account after re-entering the password (you become an admin). Every user changes their own password in **Settings → Account → Password**. Nothing needs configuring and no SQLite editing is ever needed.
 
 ### Recovering owner access
 

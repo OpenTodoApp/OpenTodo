@@ -18,7 +18,7 @@ These settings need a connection to your server. While you're offline they're sh
 
 A passkey lets you sign in with your fingerprint, face or device PIN instead of typing a password. It can't be phished or reused on another site, and your password keeps working as a fallback.
 
-1. Open **Settings → Security**.
+1. Open **Settings → Account → Security**.
 2. Select **Add passkey** and give it a name you'll recognise, like "Work laptop".
 3. Confirm with your fingerprint, face or PIN when your device asks.
 
@@ -36,7 +36,7 @@ If you don't see the Security section, passkeys aren't available on your server.
 
 With two-factor authentication, signing in takes your password plus a six-digit code from an authenticator app on your phone. Any app that supports time-based codes works.
 
-1. Open **Settings → Two-factor authentication** and select **Set up two-factor authentication**.
+1. Open **Settings → Account → Two-factor authentication** and select **Set up two-factor authentication**.
 2. Scan the QR code with your authenticator app, or type in the key shown under it.
 3. Enter the six-digit code the app shows.
 4. Save the **recovery codes** that appear. They're shown only once: download them as a text file or write them down and keep them somewhere safe.
@@ -59,13 +59,13 @@ Your server's owner can also make two-factor authentication required. If so, you
 
 ## Change your password
 
-Open **Settings → Password**, enter your current password and a new one of at least 10 characters. Changing it signs you out everywhere else; the device you're on stays signed in.
+Open **Settings → Account → Password**, enter your current password and a new one of at least 10 characters. Changing it signs you out everywhere else; the device you're on stays signed in.
 
 Forgot it? There's no self-service reset by email. Ask the owner or an admin of your server for a reset link. If you're the owner, see [recovering owner access](self-hosting/docker.md#recovering-owner-access).
 
 ## Check recent sign-ins
 
-**Settings → Recent activity** lists sign-ins and token changes on your account from the last 90 days. If you see one you don't recognise, change your password, revoke your API tokens and tell the owner of your server.
+**Settings → Account → Recent activity** lists sign-ins and token changes on your account from the last 90 days. If you see one you don't recognise, change your password, revoke your API tokens and tell the owner of your server.
 
 ## Confirm it's you
 
@@ -73,9 +73,9 @@ Some changes, like creating an API token or turning off two-factor authenticatio
 
 ## Sign out
 
-**Settings → Session → Sign out** ends your session on that device and removes your tasks from it. Changes that haven't been sent yet are uploaded first when you're online.
+**Settings → Account → Session → Sign out** ends your session on that device and removes your tasks from it. Changes that haven't been sent yet are uploaded first when you're online.
 
 ## More protection
 
 - [End-to-end encryption](e2ee.md) encrypts your task titles, notes and comments on your devices, so even your server only stores scrambled text.
-- If your server uses a company or family login (single sign-on), you can link it under **Settings → Linked accounts** and sign in with it.
+- If your server uses a company or family login (single sign-on), you can link it under **Settings → Account → Linked accounts** and sign in with it.

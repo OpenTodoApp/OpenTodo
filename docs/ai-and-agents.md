@@ -28,7 +28,7 @@ OpenTodo doesn't come with an AI of its own and never sends your tasks anywhere 
 
 ## What every option has in common
 
-- **Off until someone says yes.** The assistant in the app needs the owner to turn it on and each person to accept, before their first message, what is sent to which provider. MCP needs the owner's switch. Changes over MCP or `ot` need both the owner's and your own switch in **Settings → AI assistants**, plus a token with the `agent` scope.
+- **Off until someone says yes.** The assistant in the app needs the owner to turn it on and each person to accept, before their first message, what is sent to which provider. MCP needs the owner's switch. Changes over MCP or `ot` need both the owner's and your own switch in **Settings → AI → AI assistants**, plus a token with the `agent` scope.
 - **Limited reach.** Assistants can read your tasks and projects and create and edit tasks, projects, labels and comments. They can't touch tokens, settings, sharing, members, encryption, imports or backups, and over MCP or `ot` they can move to the Trash only tasks they created themselves.
 - **Everything is recorded.** Changes go through the same sync as your own edits, show in history as "AI assistant" or "Assistant", and can be undone. MCP and `ot` changes are also in the audit log.
 - **Limits.** An `agent` token changes at most 50 items per call, 30 calls a minute and 1000 items a day. The assistant in the app proposes at most 50 changes at a time and can have a monthly token cap per person.
