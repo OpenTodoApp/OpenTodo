@@ -46,6 +46,14 @@ OpenTodo speaks plain HTTP on 8080 and expects the proxy to terminate TLS. Set `
 OPENTODO_TRUSTED_PROXIES=cloudflare
 ```
 
+Entries may be separated by commas or spaces, and the keyword is case-insensitive (`cloudflare, 192.0.2.0/24` and `Cloudflare 192.0.2.0/24` are the same). **An invalid entry does not stop the server.** It is ignored, the valid entries still apply and the server starts and stays healthy. Ignoring an entry only ever trusts fewer hops, so a typo never lets a client choose its own address; if no entry is valid, the server behaves as if the variable were unset. The container log has one error line naming each ignored entry, what is accepted and what was applied, with a hint for a near miss of the keyword:
+
+```text
+level=ERROR msg="OPENTODO_TRUSTED_PROXIES: invalid entries ignored" invalid=cloudflar hint="did you mean \"cloudflare\"?" accepted="IP addresses, CIDR prefixes (such as 192.0.2.0/24) and the keyword \"cloudflare\", separated by commas or spaces" applied="none (only the nearest proxy is trusted, as when unset)"
+```
+
+The owner also sees a **Server configuration warning** at the top of **Settings** and of **Settings → Administration**, naming the ignored value. Admins, members and API tokens do not see it. Correct the value and restart the container; the warning goes away.
+
 ### Email to task
 
 [Email to task](../email.md) needs no port, proxy rule or DNS record: OpenTodo makes one outbound IMAP connection (TLS, port 993 by default) to the mailbox you configure with `OPENTODO_EMAIL_*`. If your host restricts outbound traffic, allow that one host and port. Keep the password in a Docker secret and point `OPENTODO_EMAIL_IMAP_PASSWORD_FILE` at it (example in the guide).
@@ -102,7 +110,7 @@ The [MCP endpoint](../mcp.md) at `/mcp` is off until the owner enables it in **S
 
 The [assistant](../assistant.md) is off until the owner turns it on in **Settings → AI → Assistant**. There is no environment variable for it: providers, models and keys are set in Settings, and keys are stored in `/data/secrets/assistant.json` (mode 0600), which backups never include. While it is off, the server makes no request to any model provider.
 
-When it is on, the server makes outbound HTTPS requests only to the provider the owner enabled and only while someone is waiting for an answer (plus **Test connection**, owner only):
+When it is on, the server makes outbound HTTPS requests only to the provider the owner enabled (and, when the owner lets members bring their own key, to the built-in host of the provider a member chose for their key) and only while someone is waiting for an answer (plus **Test connection**, for the owner and for a member's own provider):
 
 | Provider | Host |
 | --- | --- |
@@ -111,9 +119,9 @@ When it is on, the server makes outbound HTTPS requests only to the provider the
 | Google Gemini | `generativelanguage.googleapis.com` |
 | Compatible endpoint | the base URL the owner entered |
 
-If your host restricts outbound traffic, allow that one host. Requests to the three built-in hosts honour the usual `HTTPS_PROXY` environment variable. A compatible base URL is checked like a webhook target: it is resolved before every connection, private, loopback, link-local and cloud-metadata addresses are refused unless the owner ticks **Allow private endpoints** (needed for Ollama or LM Studio on your network), the connection goes to the address that was checked, redirects are never followed, and no proxy is used. Requests carry the conversation and the task data the assistant reads, nothing about your instance or other users.
+If your host restricts outbound traffic, allow that one host (or all three built-in hosts when members may use their own provider). Members can never enter a base URL. Requests to the three built-in hosts honour the usual `HTTPS_PROXY` environment variable. A compatible base URL is checked like a webhook target: it is resolved before every connection, private, loopback, link-local and cloud-metadata addresses are refused unless the owner ticks **Allow private endpoints** (needed for Ollama or LM Studio on your network), the connection goes to the address that was checked, redirects are never followed, and no proxy is used. Requests carry the conversation and the task data the assistant reads, nothing about your instance or other users.
 
-The answer streams to the browser as server-sent events on `POST /api/v1/assistant/turn`, like the live updates stream: a proxy that buffers responses delays the answer until it is complete (see [Live updates through the proxy](#live-updates-through-the-proxy) for the same settings). The server logs one line per answer with the provider, outcome, duration and token counts, never questions, answers or task text. Turns are limited to 8 at a time on the server, one per person, and each person's monthly token allowance.
+The answer streams to the browser as server-sent events on `POST /api/v1/assistant/turn`, like the live updates stream: a proxy that buffers responses delays the answer until it is complete (see [Live updates through the proxy](#live-updates-through-the-proxy) for the same settings). The server logs one line per answer with the provider, whether it ran on the member's own key, outcome, duration and token counts, never questions, answers or task text. Turns are limited to 8 at a time on the server, one per person, and each person's monthly token allowance (answers on a member's own key are outside the allowance unless the owner counts them).
 
 ## Bind mounts
 

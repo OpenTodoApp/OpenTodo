@@ -67,6 +67,7 @@ describe('words', () => {
     expect(dueWords({ date: '2026-10-16', time: '09:00' })).toBe('Fri 16 Oct 09:00')
     expect(dueWords(null)).toBe('none')
     expect(usageLine({ input: 1000, output: 240, month_total: 90_000, cap: 500_000 })).toBe('1,240 tokens · this month 18% of your limit')
+    expect(usageLine({ input: 1000, output: 240, month_total: 0, cap: 0, own_key: true })).toBe('1,240 tokens · your key')
     expect(usageLine({ input: 1, output: 1 })).toBe('2 tokens')
   })
   it('describes each change in words', () => {

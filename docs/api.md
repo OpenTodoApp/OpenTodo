@@ -76,7 +76,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth}`; `auth` describes the credential, see [Credential introspection](#credential-introspection) |
+| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth}`; `auth` describes the credential, see [Credential introspection](#credential-introspection). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry), empty when there are none; admins, members and tokens never get the field |
 | POST | `/api/v1/me/password` | yes, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
@@ -1226,11 +1226,14 @@ The [in-app assistant](assistant.md) (OpenSpec `in-app-assistant`). Every route 
     "compatible": {"enabled": false, "model": "", "base_url": "", "key_set": false, "label": "…"}
   },
   "allow_member_keys": false, "monthly_token_cap_per_user": 500000, "allow_private_endpoint": false,
+  "cap_member_keys": false, "member_providers": ["anthropic", "openai", "gemini"], "own_key_members": 0,
   "anthropic_models": ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"], "default_model": "claude-opus-5-5"
 }
 ```
 
-Members get a status without keys or base URL: `{enabled, provider, provider_label, model, allow_member_keys, monthly_token_cap_per_user}`. `PUT` (owner only, 403 `forbidden` otherwise) takes the same fields (a provider object replaces that provider's settings) plus `keys`: `{"anthropic": "sk-…"}` sets a key, `""` removes it, an absent provider keeps it. Unknown fields are refused. Errors: 400 `invalid_input` naming the field (an unknown provider, a provider enabled without a model, a hosted provider without a key while member keys are off, the compatible provider without a valid `http(s)` base URL or with credentials in it, a disabled default provider, a negative cap); 400 `private_target` when the base URL resolves only to private, loopback, link-local or metadata addresses and `allow_private_endpoint` is off. A refused request changes nothing. Every changed value is audited as `settings.changed` (`assistant.<field>`; keys as `assistant.<provider>.key` from `unset` to `set` or back, never the value; a base URL by scheme and host only).
+`cap_member_keys` (default `false`): whether turns on a member's own key count toward `monthly_token_cap_per_user`; off, they are recorded but neither counted nor blocked. `member_providers` lists what members may choose for their own key (never `compatible`); `own_key_members` counts accounts whose turns use their own provider and key right now.
+
+Members get a status without keys or base URL: `{enabled, provider, provider_label, model, allow_member_keys, monthly_token_cap_per_user, cap_member_keys}`. `PUT` (owner only, 403 `forbidden` otherwise) takes the same fields (a provider object replaces that provider's settings) plus `keys`: `{"anthropic": "sk-…"}` sets a key, `""` removes it, an absent provider keeps it. Unknown fields are refused. Errors: 400 `invalid_input` naming the field (an unknown provider, a provider enabled without a model, a hosted provider without a key while member keys are off, the compatible provider without a valid `http(s)` base URL or with credentials in it, a disabled default provider, a negative cap); 400 `private_target` when the base URL resolves only to private, loopback, link-local or metadata addresses and `allow_private_endpoint` is off. A refused request changes nothing. Every changed value is audited as `settings.changed` (`assistant.<field>`; keys as `assistant.<provider>.key` from `unset` to `set` or back, never the value; a base URL by scheme and host only).
 
 ```bash
 curl -sS -X PUT "$OT/api/v1/settings/assistant" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
@@ -1240,21 +1243,37 @@ curl -sS -X PUT "$OT/api/v1/settings/assistant" -H "Authorization: Bearer $TOKEN
 
 **Test connection** — `POST /api/v1/settings/assistant/test` with `{"provider":"compatible"}` (owner only) sends one minimal request with one tool, using the saved settings and key, and answers 200 `{ok, code?, message, status?}`. `code` is `no_tool_support` when the endpoint refuses tool definitions but answers without them, `no_key`, `private_target`, `provider_auth`, `provider_rate_limited` or `provider_error`.
 
-**Your consent and key** — `GET /api/v1/me/assistant`:
+**Your consent, provider and key** — `GET /api/v1/me/assistant`:
 
 ```json
 {
   "available": true, "enabled": true, "reason": "",
-  "provider": "anthropic", "provider_label": "Anthropic (Claude)", "model": "claude-opus-5-5",
-  "consented": true, "consent": {"accepted_at": 1760000000000, "disclosure_version": 1, "provider": "anthropic"},
+  "provider": "openai", "provider_label": "OpenAI", "model": "gpt-4.1-mini",
+  "source": "own", "own_key_in_use": true,
+  "server_provider": "anthropic", "server_provider_label": "Anthropic (Claude)", "server_model": "claude-opus-5-5",
+  "consented": true, "consent": {"accepted_at": 1760000000000, "disclosure_version": 1, "provider": "openai"},
   "disclosure_version": 1, "fields": ["task titles and descriptions", "…"],
-  "allow_member_keys": false, "own_key_set": false, "operator_key_set": true
+  "allow_member_keys": true, "own_key_set": true, "server_own_key_set": false, "operator_key_set": true,
+  "own_provider": {"provider": "openai", "provider_label": "OpenAI", "model": "gpt-4.1-mini", "key_set": true},
+  "member_providers": ["anthropic", "openai", "gemini"], "anthropic_models": ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"],
+  "cap_member_keys": false
 }
 ```
 
-`reason` is `disabled`, `no_provider` or `encryption_enabled` when `available` is false. `consented` is true only for the current disclosure version and provider. `PUT /api/v1/me/assistant` (sessions and full tokens) takes `{"consent": true, "provider": "<the provider the disclosure named>"}`, `{"consent": false}` to withdraw, and `{"own_key": "…"}` (`""` removes it) when the owner allows member keys (403 `forbidden` otherwise; audited as `assistant.own_key.<provider>`). Errors: 409 `provider_changed` when `provider` is not the one in effect, 409 `encryption_enabled`, 409 `assistant_disabled`. Deleting an account deletes its key.
+`provider`, `provider_label` and `model` name what your turns use now: your own provider (`source: "own"`) while the owner allows member keys and your key for it is set, otherwise the owner's (`source: "server"`, the same as `server_provider`). `own_key_in_use` is true when your turns run on your own key, which includes a key you stored for the owner's provider. `own_provider` is your choice (`null` for the server's assistant); it is kept while the owner does not allow member keys, but not used. `own_key_set` and `server_own_key_set` say whether you stored a key for `provider` and for the owner's provider. `reason` is `disabled`, `no_provider` or `encryption_enabled` when `available` is false. `consented` is true only for the current disclosure version and `provider`, so switching providers asks again.
 
-**Usage** — `GET /api/v1/me/assistant/usage` → `{month, input_tokens, output_tokens, total_tokens, turns, cap, resets_at}` for the current UTC month, counted from the provider's usage fields.
+`PUT /api/v1/me/assistant` (sessions and full tokens) takes:
+
+- `{"consent": true, "provider": "<the provider the disclosure named>"}`, or `{"consent": false}` to withdraw;
+- `{"own_provider": "openai", "own_model": "gpt-4.1-mini", "own_key": "sk-…"}` to use your own provider: `anthropic`, `openai` or `gemini` (never `compatible`, and no base URL). Anthropic models must be one of `anthropic_models`; OpenAI and Gemini model ids are 1–100 characters of `A-Z a-z 0-9 . _ : -`. A key is required unless you already stored one for that provider. `own_model` alone changes the model of your provider;
+- `{"own_provider": ""}` to go back to the server's assistant (the key you stored for the provider you had chosen is deleted);
+- `{"own_key": "…"}`: sets the key of your own provider, or of the owner's provider when you have none (as before); `""` removes it (removing your own provider's key also goes back to the server's assistant).
+
+Choosing a provider or storing a key needs the owner's "Let members bring their own key" (403 `forbidden` otherwise); removing either never does. Leaving a provider you chose deletes its key. Audited as `settings.changed`: `assistant.own_provider` (`server` or the provider name), `assistant.own_model`, `assistant.own_key.<provider>` (`unset`/`set`, never the key). Errors: 400 `invalid_input` naming `own_provider`, `own_model` or `own_key`; 409 `provider_changed` when `provider` is not the one in effect after the request, 409 `encryption_enabled`, 409 `assistant_disabled`. A refused request stores nothing. Deleting an account deletes its keys and choice.
+
+**Test your own provider** — `POST /api/v1/me/assistant/test` (no body; **signed-in sessions only**) sends one minimal request with one tool to your own provider with your model and key and answers 200 `{ok, code?, message, status?}` like the owner's test (`provider_auth` says your key was rejected). Errors: 403 `session_required` for API tokens, 409 `assistant_disabled`, 403 `forbidden` while member keys are not allowed, 409 `no_own_provider` when your turns do not use your own provider, 429 `rate_limited` with `Retry-After` after 5 tests in 10 minutes.
+
+**Usage** — `GET /api/v1/me/assistant/usage` → `{month, input_tokens, output_tokens, total_tokens, turns, cap, resets_at, counted_tokens, cap_member_keys, own_key: {input_tokens, output_tokens, total_tokens, turns}}` for the current UTC month, counted from the provider's usage fields. `total_tokens` counts every turn, `own_key` the turns on your own key, and `counted_tokens` what is measured against `cap` (everything but `own_key` unless `cap_member_keys` is on).
 
 **A turn** — `POST /api/v1/assistant/turn`, **signed-in sessions only**:
 
@@ -1262,7 +1281,7 @@ curl -sS -X PUT "$OT/api/v1/settings/assistant" -H "Authorization: Bearer $TOKEN
 {"messages": [{"role": "user", "text": "move everything overdue to Friday"}], "timezone": "Europe/Rome", "view": "today", "selected": []}
 ```
 
-`messages` is the device's conversation (at most 40, the last from the user; the whole body at most 256 KB); `timezone` is an IANA zone; `view` and `selected` are optional context. Checks, in order, before any provider request: 404 `not_found` while the assistant is off; 403 `session_required` for API tokens; 409 `encryption_enabled`; 403 `consent_required`; 413 `too_large`; 400 `invalid_input`; 429 `assistant_quota` (with `resets_at`); 409 `turn_in_progress` (one turn per person); 503 `assistant_busy` with `Retry-After` (8 turns server-wide); 409 `no_key`. Cookie requests from another origin get 403 `bad_origin`.
+`messages` is the device's conversation (at most 40, the last from the user; the whole body at most 256 KB); `timezone` is an IANA zone; `view` and `selected` are optional context. Checks, in order, before any provider request: 404 `not_found` while the assistant is off; 403 `session_required` for API tokens; 409 `encryption_enabled`; 403 `consent_required`; 413 `too_large`; 400 `invalid_input`; 429 `assistant_quota` (with `resets_at`; not for a turn on your own key unless the owner turned on `cap_member_keys`); 409 `turn_in_progress` (one turn per person); 503 `assistant_busy` with `Retry-After` (8 turns server-wide); 409 `no_key`. Cookie requests from another origin get 403 `bad_origin`.
 
 The answer is a `text/event-stream`:
 
@@ -1274,7 +1293,7 @@ event: text
 data: {"text":"I've proposed moving 12 tasks to Friday. "}
 
 event: usage
-data: {"input":2700,"output":360,"month_total":18240,"cap":500000}
+data: {"input":2700,"output":360,"month_total":18240,"cap":500000,"own_key":false}
 
 event: changeset
 data: {"items":[{"entity":"task","entityId":"…","patch":{"due":{"date":"2026-10-16"}},"base":{"due":{"date":"2026-10-09"}},"shared":false}],"limit":50}
@@ -1282,6 +1301,8 @@ data: {"items":[{"entity":"task","entityId":"…","patch":{"due":{"date":"2026-1
 event: done
 data: {"stop_reason":"end_turn","server_time":"2026-10-12T10:00:00Z"}
 ```
+
+In `usage`, `month_total` is what counts toward the cap and `cap` is `0` for a turn the cap does not apply to (your own key while `cap_member_keys` is off); `own_key` marks a turn on your own key.
 
 `changeset` comes at most once, only after `end_turn`, with at most 50 entities: `patch` is what to write, `base` the values it was planned on (for "changed since proposed"), `create` marks new entities, `shared` marks shared projects. The server never applies it: the app applies the confirmed part as ordinary ops with device `assistant:<device-id>`, which `/api/v1/sync` accepts and history labels "Assistant". `done.stop_reason` is `end_turn`, `max_tokens` (with a `message`; no change set), `refusal` (`message`: "The model declined this request."; no change set) or `round_limit` (more than 8 model calls). A failure ends the stream with `event: error` and `{code, message}`: `provider_auth`, `provider_rate_limited`, `provider_error` or `timeout`; never a key. Usage is recorded whatever the outcome.
 
@@ -1482,6 +1503,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `encryption_enabled` | 409 | an assistant turn or consent for an end-to-end encrypted account |
 | `turn_in_progress` | 409 | a second assistant turn while your first is still answering |
 | `no_key` | 409 | an assistant turn when the provider needs a key and none is stored |
+| `no_own_provider` | 409 | testing your own provider while your turns do not use one (choose it and save your key first) |
 | `provider_changed` | 409 | accepting a disclosure that named a provider no longer in effect |
 | `assistant_disabled` | 409 | accepting the disclosure while the assistant is off |
 | `assistant_quota` | 429 | an assistant turn at your monthly token allowance; `resets_at` names the reset date |

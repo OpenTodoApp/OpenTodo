@@ -80,15 +80,13 @@ func (s *Service) Acquire(userID string) (release func(), err error) {
 // ErrNoKey means the provider needs a key and none is stored.
 var ErrNoKey = errors.New("no_key")
 
-// ProviderFor builds the provider of a turn of userID under settings set.
-func (s *Service) ProviderFor(userID string, set Settings) (Provider, error) {
-	name := set.DefaultProvider
-	p := set.Providers[name]
-	key, _, err := s.Store.KeyFor(userID, name, set)
-	if err != nil {
-		return nil, err
+// ProviderFor builds the provider of a turn on route r (see Store.Resolve).
+// A member's own provider is always a built-in host on the fixed client.
+func (s *Service) ProviderFor(r Route, set Settings) (Provider, error) {
+	if r.Member && !IsMemberProvider(r.Provider) {
+		return nil, errors.New("members cannot use this provider")
 	}
-	return s.provider(name, p, key, set.AllowPrivateEndpoint)
+	return s.provider(r.Provider, r.base, r.key, set.AllowPrivateEndpoint)
 }
 
 func (s *Service) fixed() *http.Client {
@@ -137,9 +135,9 @@ var pingTool = ToolDef{Name: "ping", Description: "Answer the connection test.",
 }}
 
 // TestConnection sends a minimal request with one tool to the named provider
-// (owner only, the one request made outside a user turn). An endpoint that
-// refuses the request with the tool but accepts it without is reported as
-// lacking tool support (design D3).
+// (owner only; with TestMember the only requests made outside a user turn).
+// An endpoint that refuses the request with the tool but accepts it without
+// is reported as lacking tool support (design D3).
 func (s *Service) TestConnection(ctx context.Context, name string, set Settings) TestResult {
 	p, ok := set.Providers[name]
 	if !ok {
@@ -167,6 +165,37 @@ func (s *Service) TestConnection(ctx context.Context, name string, set Settings)
 	if err != nil {
 		return TestResult{Code: "internal", Message: err.Error()}
 	}
+	return s.test(ctx, prov)
+}
+
+// TestMember is a member's "Test connection" of their own provider, model and
+// key (assistant-member-provider): only for a route on the member's own
+// provider, so it only ever reaches a built-in host.
+func (s *Service) TestMember(ctx context.Context, r Route, set Settings) TestResult {
+	if !r.Member {
+		return TestResult{Code: "invalid_input", Message: "choose your own provider and save your key first"}
+	}
+	prov, err := s.ProviderFor(r, set)
+	if errors.Is(err, ErrNoKey) {
+		return TestResult{Code: "no_key", Message: "save your API key first"}
+	}
+	if err != nil {
+		return TestResult{Code: "internal", Message: err.Error()}
+	}
+	res := s.test(ctx, prov)
+	if res.Code == CodeProviderAuth {
+		res.Message = ownKeyRejected
+	}
+	return res
+}
+
+// ownKeyRejected replaces the provider_auth message on a member's own key.
+const ownKeyRejected = "the provider rejected your API key; check it in Settings → AI → Assistant"
+
+// OwnKeyRejected is the provider_auth message for a turn on the user's own key.
+func OwnKeyRejected() string { return ownKeyRejected }
+
+func (s *Service) test(ctx context.Context, prov Provider) TestResult {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	run := func(tools []ToolDef) error {
@@ -174,7 +203,7 @@ func (s *Service) TestConnection(ctx context.Context, name string, set Settings)
 		_, err := conv.Next(ctx, func(string) {})
 		return err
 	}
-	err = run([]ToolDef{pingTool})
+	err := run([]ToolDef{pingTool})
 	if err == nil {
 		return TestResult{OK: true, Message: "Connected. The endpoint accepts tool definitions."}
 	}

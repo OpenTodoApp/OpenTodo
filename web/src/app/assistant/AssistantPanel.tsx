@@ -325,7 +325,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
             setStreaming({ text, status: [...statusLines] })
             break
           case 'usage':
-            answer.usage = { input: ev.input, output: ev.output, month_total: ev.month_total, cap: ev.cap }
+            answer.usage = { input: ev.input, output: ev.output, month_total: ev.month_total, cap: ev.cap, own_key: ev.own_key }
             break
           case 'changeset':
             proposal.current = ev.items

@@ -421,6 +421,20 @@ export interface LinkedIdentity {
 /** Owner policy for the second factor (OpenSpec `mfa-totp`). */
 export type MfaPolicy = 'none' | 'owner' | 'all'
 
+/**
+ * A server configuration problem the server started despite (OpenSpec
+ * `trusted-proxies-lenient`), such as an invalid OPENTODO_TRUSTED_PROXIES entry.
+ * Only the owner's session receives these, in /api/v1/me `config_warnings`.
+ */
+export interface ConfigWarning {
+  /** The environment variable, e.g. OPENTODO_TRUSTED_PROXIES. */
+  variable: string
+  /** What was ignored, what is accepted and how to fix it. */
+  message: string
+  /** The ignored values, when the warning is about specific entries. */
+  ignored?: string[]
+}
+
 /** Second-factor state as reported by /me, /mfa and auth/status. Server account data, never synced. */
 export interface MfaStatus {
   enrolled: boolean

@@ -78,6 +78,9 @@ type Settings struct {
 	AllowMemberKeys      bool                        `json:"allow_member_keys"`
 	MonthlyTokenCap      int64                       `json:"monthly_token_cap_per_user"`
 	AllowPrivateEndpoint bool                        `json:"allow_private_endpoint"`
+	// CapMemberKeys counts turns on a member's own key against the monthly
+	// cap (assistant-member-provider). Off by default: the member pays.
+	CapMemberKeys bool `json:"cap_member_keys"`
 }
 
 // Defaults is the configuration of a fresh server: off.
@@ -340,6 +343,7 @@ func diffSettings(a, b Settings) [][3]string {
 	add("assistant.allow_member_keys", fmt.Sprint(a.AllowMemberKeys), fmt.Sprint(b.AllowMemberKeys))
 	add("assistant.monthly_token_cap_per_user", fmt.Sprint(a.MonthlyTokenCap), fmt.Sprint(b.MonthlyTokenCap))
 	add("assistant.allow_private_endpoint", fmt.Sprint(a.AllowPrivateEndpoint), fmt.Sprint(b.AllowPrivateEndpoint))
+	add("assistant.cap_member_keys", fmt.Sprint(a.CapMemberKeys), fmt.Sprint(b.CapMemberKeys))
 	for _, n := range ProviderNames {
 		pa, pb := a.Providers[n], b.Providers[n]
 		add("assistant."+n+".enabled", fmt.Sprint(pa.Enabled), fmt.Sprint(pb.Enabled))
@@ -452,18 +456,39 @@ func (st *Store) SetConsent(ctx context.Context, userID, provider string, accept
 
 // ---- usage ----
 
-// Usage is a user's token usage in one UTC month.
+// Usage is a user's token usage in one UTC month: every turn, and the part
+// of it that ran on the user's own key.
 type Usage struct {
-	Month        string `json:"month"`
-	InputTokens  int64  `json:"input_tokens"`
-	OutputTokens int64  `json:"output_tokens"`
-	Turns        int64  `json:"turns"`
-	Cap          int64  `json:"cap"`
-	ResetsAt     string `json:"resets_at"`
+	Month        string   `json:"month"`
+	InputTokens  int64    `json:"input_tokens"`
+	OutputTokens int64    `json:"output_tokens"`
+	Turns        int64    `json:"turns"`
+	Cap          int64    `json:"cap"`
+	ResetsAt     string   `json:"resets_at"`
+	Own          OwnUsage `json:"own_key"`
+}
+
+// OwnUsage is the part of a month's usage that ran on the user's own key.
+type OwnUsage struct {
+	InputTokens  int64 `json:"input_tokens"`
+	OutputTokens int64 `json:"output_tokens"`
+	Turns        int64 `json:"turns"`
 }
 
 // Total is input plus output tokens.
 func (u Usage) Total() int64 { return u.InputTokens + u.OutputTokens }
+
+// Total is input plus output tokens on the user's own key.
+func (o OwnUsage) Total() int64 { return o.InputTokens + o.OutputTokens }
+
+// Counted is the usage measured against the monthly cap: everything when the
+// owner caps member keys, otherwise everything but the own-key turns.
+func (u Usage) Counted(capMemberKeys bool) int64 {
+	if capMemberKeys {
+		return u.Total()
+	}
+	return max(0, u.Total()-u.Own.Total())
+}
 
 // month is the UTC calendar month of t and the first day of the next one.
 func month(t time.Time) (string, string) {
@@ -481,17 +506,29 @@ func (st *Store) Usage(ctx context.Context, userID string, cap int64) (Usage, er
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return u, fmt.Errorf("read assistant usage: %w", err)
 	}
+	err = st.db.QueryRowContext(ctx, `SELECT input_tokens, output_tokens, turns FROM assistant_usage_own_key WHERE user_id = ? AND month = ?`, userID, m).
+		Scan(&u.Own.InputTokens, &u.Own.OutputTokens, &u.Own.Turns)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return u, fmt.Errorf("read assistant own-key usage: %w", err)
+	}
 	return u, nil
 }
 
-// AddUsage adds one turn's tokens to this month's row.
-func (st *Store) AddUsage(ctx context.Context, userID string, in, out int64) error {
+// AddUsage adds one turn's tokens to this month's row; own marks a turn on
+// the user's own key, which is also added to the own-key row.
+func (st *Store) AddUsage(ctx context.Context, userID string, in, out int64, own bool) error {
 	m, _ := month(st.now())
-	_, err := st.db.ExecContext(ctx, `INSERT INTO assistant_usage(user_id, month, input_tokens, output_tokens, turns) VALUES(?,?,?,?,1)
+	tables := []string{"assistant_usage"}
+	if own {
+		tables = append(tables, "assistant_usage_own_key")
+	}
+	for _, tbl := range tables {
+		_, err := st.db.ExecContext(ctx, `INSERT INTO `+tbl+`(user_id, month, input_tokens, output_tokens, turns) VALUES(?,?,?,?,1)
 		ON CONFLICT(user_id, month) DO UPDATE SET input_tokens = input_tokens + excluded.input_tokens,
 		output_tokens = output_tokens + excluded.output_tokens, turns = turns + 1`, userID, m, in, out)
-	if err != nil {
-		return fmt.Errorf("record assistant usage: %w", err)
+		if err != nil {
+			return fmt.Errorf("record assistant usage: %w", err)
+		}
 	}
 	return nil
 }

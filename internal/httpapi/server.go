@@ -104,6 +104,8 @@ type Server struct {
 	// assistant.go. assistantSetup lets tests adjust it once built.
 	assistant      *assistant.Service
 	assistantSetup func(*assistant.Service)
+	// assistantTestLimiter limits members' own connection tests (assistant-member-provider).
+	assistantTestLimiter *rateLimiter
 	// idemSalt makes Idempotency-Key ids unguessable (agent-ready-cli D5);
 	// see idempotency.go.
 	idemSalt string
@@ -717,8 +719,18 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	}
 	// encryption and minClientVersion: OpenSpec `e2ee` (design D8, D9); auth:
 	// `agent-ready-cli` (design D7).
-	writeJSON(w, http.StatusOK, map[string]any{"user": u, "mfa": st,
-		"encryption": s.encryptionStatus(r.Context(), u.ID), "minClientVersion": MinClientVersion, "auth": authInfo})
+	out := map[string]any{"user": u, "mfa": st,
+		"encryption": s.encryptionStatus(r.Context(), u.ID), "minClientVersion": MinClientVersion, "auth": authInfo}
+	// Configuration problems the server started despite (trusted-proxies-lenient):
+	// for the owner's own session only, never for members, admins or API tokens.
+	if u.Role == auth.RoleOwner && tokenFrom(r.Context()).ID == "" {
+		warnings := s.cfg.Warnings
+		if warnings == nil {
+			warnings = []config.Warning{}
+		}
+		out["config_warnings"] = warnings
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // credentialInfo describes how the request authenticated (agent-ready-cli D7):

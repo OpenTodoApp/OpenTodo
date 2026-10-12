@@ -1,9 +1,10 @@
 import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
-import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestResult, AssistantUsage } from './assistantTypes'
+import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestResult, AssistantUsage, MyAssistantInput } from './assistantTypes'
 import type { KeyRecord } from './crypto'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
+  ConfigWarning,
   AppPassword, CaldavSetting, EmailInbox,
   AccountRole, ActivityPage, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
@@ -118,7 +119,8 @@ export const api = {
   /** Proves identity again (password or code) so sensitive actions work for ten minutes. */
   reauth: (input: { password: string } | { code: string }) =>
     request<{ reauthAt: number; validForMs: number }>('POST', '/api/v1/auth/reauth', input, true),
-  me: () => request<{ user: User; mfa: MfaStatus }>('GET', '/api/v1/me'),
+  /** `config_warnings` is present for the owner's session only (trusted-proxies-lenient). */
+  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[] }>('GET', '/api/v1/me'),
   mfaStatus: () => request<{ mfa: MfaStatus }>('GET', '/api/v1/mfa'),
   enrollTotp: () => request<{ secret: string; uri: string; expiresAt: number }>('POST', '/api/v1/mfa/totp/enroll', {}),
   confirmTotp: (code: string) => request<{ recoveryCodes: string[]; mfa: MfaStatus }>('POST', '/api/v1/mfa/totp/confirm', { code }),
@@ -319,7 +321,9 @@ export const api = {
   saveAssistantSettings: (input: AssistantSettingsInput) => request<AssistantOwnerSettings>('PUT', '/api/v1/settings/assistant', input),
   testAssistant: (provider: string) => request<AssistantTestResult>('POST', '/api/v1/settings/assistant/test', { provider }),
   getMyAssistant: () => request<AssistantStatus>('GET', '/api/v1/me/assistant'),
-  setMyAssistant: (input: { consent?: boolean; provider?: string; own_key?: string }) => request<AssistantStatus>('PUT', '/api/v1/me/assistant', input),
+  setMyAssistant: (input: MyAssistantInput) => request<AssistantStatus>('PUT', '/api/v1/me/assistant', input),
+  /** Your own provider's "Test connection" (assistant-member-provider; sessions only, rate limited). */
+  testMyAssistant: () => request<AssistantTestResult>('POST', '/api/v1/me/assistant/test'),
   assistantUsage: () => request<AssistantUsage>('GET', '/api/v1/me/assistant/usage'),
 }
 

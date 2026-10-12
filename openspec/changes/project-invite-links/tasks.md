@@ -2,7 +2,7 @@
 
 ## 1. Server
 
-- [ ] 1.1 Migration `0028_project_invites.sql`; verify `go test ./internal/store/...`
+- [ ] 1.1 Migration `0029_project_invites.sql`; verify `go test ./internal/store/...`
 - [ ] 1.2 `internal/audit`: `project_invite.*` events and detail keys; verify `go test ./internal/audit/...`
 - [ ] 1.3 `internal/sync`: `AddMemberTx` and `ProjectStatus`; verify `go test ./internal/sync/...`
 - [ ] 1.4 `internal/auth/projectinvites.go`: create, list, revoke, lookup, accept, register in one transaction; deactivation revokes links; verify `go test ./internal/auth/...`

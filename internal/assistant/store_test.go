@@ -181,8 +181,8 @@ func TestConsentValidity(t *testing.T) {
 func TestUsageRecordedPerTurn(t *testing.T) {
 	st := newTestStore(t)
 	ctx := context.Background()
-	_ = st.AddUsage(ctx, "u1", 100, 20)
-	_ = st.AddUsage(ctx, "u1", 50, 5)
+	_ = st.AddUsage(ctx, "u1", 100, 20, false)
+	_ = st.AddUsage(ctx, "u1", 50, 5, false)
 	u, err := st.Usage(ctx, "u1", 1000)
 	if err != nil || u.InputTokens != 150 || u.OutputTokens != 25 || u.Turns != 2 || u.Total() != 175 || u.Cap != 1000 {
 		t.Fatalf("%+v %v", u, err)
@@ -194,7 +194,7 @@ func TestQuotaResetsMonthly(t *testing.T) {
 	now := time.Date(2026, 10, 31, 23, 59, 0, 0, time.UTC)
 	st := NewStore(f.sync.DB(), t.TempDir(), func() time.Time { return now })
 	ctx := context.Background()
-	_ = st.AddUsage(ctx, "u1", 400, 100)
+	_ = st.AddUsage(ctx, "u1", 400, 100, false)
 	u, _ := st.Usage(ctx, "u1", 500)
 	if u.Total() != 500 || u.Month != "2026-10" || u.ResetsAt != "2026-11-01" {
 		t.Fatalf("%+v", u)

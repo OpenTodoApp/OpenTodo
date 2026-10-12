@@ -6,7 +6,7 @@
 
 ## D1 Separate table, same secret handling as invitations
 
-A new table `project_invites` (migration `0028_project_invites.sql`, idempotent statements so it can be renumbered at merge time):
+A new table `project_invites` (migration `0029_project_invites.sql`, idempotent statements so it can be renumbered at merge time):
 
 | column | meaning |
 | --- | --- |
