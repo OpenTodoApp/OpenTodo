@@ -17,6 +17,10 @@ Settings SHALL be split into sections, each at its own address: Account `/settin
 - **WHEN** a user opens `/settings/nonsense`
 - **THEN** the overview is shown
 
+#### Scenario: Back from linking a provider
+- **WHEN** a user finishes linking a single sign-on identity from Linked accounts
+- **THEN** the browser returns to `/settings/account` and the Linked accounts panel confirms the link
+
 #### Scenario: Import keeps its address
 - **WHEN** a user opens `/settings/import`
 - **THEN** the import screen opens as before
@@ -33,7 +37,7 @@ The overview SHALL show the account's name, email and role, a link to Help, one 
 - **THEN** the address becomes `/settings/capture` and the Capture section is shown
 
 ### Requirement: Section page layout
-A section page SHALL have one level-one heading with the section's name, and its panels SHALL keep their own headings below it. From 768 px wide a navigation list of all visible sections SHALL sit beside the content with the current one marked `aria-current="page"`; below 768 px the page SHALL start with a link back to the overview instead. On navigation, focus SHALL move to the section heading. Every control SHALL stay reachable by keyboard.
+A section page SHALL have one level-one heading with the section's name, and its panels SHALL keep their own headings below it. From 1024 px wide a navigation list of all visible sections SHALL sit beside the content with the current one marked `aria-current="page"`; below 1024 px the page SHALL start with a link back to the overview instead. On navigation, focus SHALL move to the section heading. Every control SHALL stay reachable by keyboard.
 
 #### Scenario: Desktop section
 - **WHEN** a user opens `/settings/general` on a 1200 px wide screen

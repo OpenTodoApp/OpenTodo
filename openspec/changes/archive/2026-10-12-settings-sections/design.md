@@ -31,11 +31,14 @@ The section list, labels, one-line descriptions, which roles see a section and w
 
 `Route` gains an optional `section` on `{ view: 'settings' }`. `parseRoute('/settings/<id>')` returns the section for a known id, `{ view: 'import' }` for `import` (unchanged), and the overview for anything else; `routePath` writes `/settings` or `/settings/<id>`. A section the viewer's role does not see (Administration for a member) also renders the overview; the address is left as it is, so the router stays free of user state. Browser back/forward work with no extra code because every section is a history entry.
 
+The single sign-on **link** flow (started from Linked accounts or a re-authentication) redirected to `/settings?linked=1`, `?reauthenticated=1` or `?error=<code>`, which the Linked accounts panel reads. That panel is now in Account, so the server redirects to `/settings/account?…` instead; nothing else about the flow changes.
+
 ### D3. Overview and layout
 
 - **Overview (`/settings`), all widths**: `h1` "Settings", the profile line and "Help and guides" link, then a list of section links (each a full-width row ≥ 44 px with the section name and a one-line description), then the AGPL / no-telemetry footer. The wide-screen overview is this short list rather than the first section: it keeps one meaning for `/settings` at every width, tells a newcomer what exists, and avoids loading Account panels (passkeys, two-factor, activity requests) for someone heading elsewhere.
-- **Section page, from `md` (768 px)**: a two-column layout, a `nav aria-label="Settings sections"` list on the left (overview link plus every visible section, `aria-current="page"` on the current one) and the section content on the right.
-- **Section page, below `md`**: no side list; the page starts with a "← Settings" back link to the overview.
+- **Section page, from `lg` (1024 px)**: a two-column layout, a `nav aria-label="Settings sections"` list on the left (overview link plus every visible section, `aria-current="page"` on the current one) and the section content on the right.
+- Why `lg` and not `md`: at 768 px the app's own sidebar (256 px) leaves 512 px for the main area; a 192 px section list beside it squeezed the panels to about 220 px, and the layout check found the Calendar and CalDAV panels scrolling sideways. From 1024 px the panels get at least 480 px, as wide as the old single page had at 768 px.
+- **Section page, below `lg`**: no side list; the page starts with a "← Settings" back link to the overview.
 - Headings: the section name is the page's only `h1`; panels keep their `h2` (via `HelpHeading`) and `h3`, so the outline is unchanged inside a section. On every Settings navigation focus moves to the `h1` (`tabIndex={-1}`), so screen reader and keyboard users land on the new content; the side list and back link are plain links and keep working with Tab and Enter.
 
 ### D4. Roles
@@ -56,11 +59,11 @@ Every `HelpHeading screen="settings/..."` id stays, so the docs check (`screens`
 
 ## Data model impact
 
-None. No op fields, API routes, migrations or stored preferences change. The section is part of the URL only.
+None. No op fields, API routes, migrations or stored preferences change; only the browser redirect target of the SSO link flow moves to `/settings/account`. The section is part of the URL only.
 
 ## Size impact
 
-No new dependency. Main chunk `index-*.js` before: 907.72 kB (gzip 266.35 kB); after: see the task 4.3 note below. CSS before 71.68 kB (gzip 12.46 kB). No effect on container image size or server memory.
+No new dependency. Main chunk `index-*.js`: 907.72 kB (gzip 266.35 kB) before, 912.72 kB (gzip 267.70 kB) after, so +5.0 kB raw and +1.35 kB gzip for the overview, the section pages, the section table and the per-section demo notes. CSS: 71.68 kB (gzip 12.46 kB) before, 72.04 kB (gzip 12.50 kB) after. The lazy `AssistantSettings` chunk is unchanged (12.80 kB, gzip 3.90 kB) and still loads only when the AI section opens. No effect on container image size or server memory.
 
 ## Risks / Trade-offs
 
