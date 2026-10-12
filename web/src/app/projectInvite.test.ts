@@ -64,7 +64,7 @@ describe('InviteLinksView', () => {
     expect(html).toContain('aria-label="Pending invite links"')
     expect(html).toContain('dora@example.com')
     expect(html).toContain('Anyone with the link')
-    expect(html).toContain('by Alice')
+    expect(html).toContain('created by Alice')
     expect(html).toContain('aria-label="Revoke the editor link for dora@example.com"')
   })
 

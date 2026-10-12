@@ -89,6 +89,9 @@ async function seed() {
   const home = await A('POST', '/api/v1/projects', { name: 'Home renovation with a rather long project name', color: '#f59e0b' })
   const work = await A('POST', '/api/v1/projects', { name: 'Work', color: '#38bdf8' })
   await A('POST', `/api/v1/projects/${home.id}/members`, { email: 'bob@example.com', role: 'editor' })
+  // A pending project invite link (project-invite-links): its acceptance screen is
+  // checked signed out and signed in, and the share dialog lists it.
+  const { link: projectLink } = await A('POST', `/api/v1/projects/${home.id}/invites`, { role: 'editor', email: 'dora@example.com' })
   const sections = {}
   let i = 1
   for (const n of ['Planning', 'In progress', 'Waiting']) sections[n] = (await A('POST', '/api/v1/sections', { name: n, project_id: home.id, position: i++ })).id
@@ -133,7 +136,7 @@ async function seed() {
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
-  return { storageState, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, llm }
+  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, llm }
 }
 
 // ------------------------------------------------------------------ screens
@@ -143,6 +146,9 @@ function screens(ids) {
   const heading = (name) => (p) => p.getByRole('heading', { name, level: 1 }).first().waitFor()
   return [
     { name: 'sign-in', path: '/', anon: true, ready: (p) => p.getByRole('button', { name: 'Sign in' }).waitFor() },
+    // Project invite link (project-invite-links): a visitor's choice, and the creator, who is a member already.
+    { name: 'project-invite', path: `/invite/p/${ids.projectInvite}`, anon: true, ready: (p) => p.getByRole('button', { name: /sign in to join/ }).waitFor() },
+    { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
     { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'reminder-toast', 'assistant', 'assistant-review'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
     { name: 'upcoming', path: '/upcoming', ready: heading('Upcoming') },
@@ -153,7 +159,7 @@ function screens(ids) {
     { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'activity', path: '/activity', ready: heading(/Activity/) },
-    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'section-menu', 'share', 'mention-picker', 'assignee-picker', 'help-panel'] },
+    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), board: true },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
@@ -238,6 +244,15 @@ const OVERLAYS = {
     const trigger = p.getByRole('button', { name: /^Share/ }).first()
     await trigger.click()
     return { overlay: p.getByRole('dialog', { name: /^Share/ }), trigger, kind: 'dialog' }
+  },
+  // The share dialog with the "Invite with a link" form open (project-invite-links).
+  async 'share-invite-link'(p) {
+    const trigger = p.getByRole('button', { name: /^Share/ }).first()
+    await trigger.click()
+    const dialog = p.getByRole('dialog', { name: /^Share/ })
+    await dialog.getByRole('button', { name: 'Create a link…' }).click()
+    await dialog.getByRole('button', { name: 'Create link' }).waitFor()
+    return { overlay: dialog, trigger, kind: 'dialog' }
   },
   async 'mention-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()

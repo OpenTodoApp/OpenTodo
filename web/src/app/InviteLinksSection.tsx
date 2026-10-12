@@ -112,12 +112,14 @@ export function InviteLinksView(p: InviteLinksViewProps) {
       {p.invites && p.invites.length > 0 && (
         <ul aria-label="Pending invite links" className="mt-2 space-y-1">
           {p.invites.map((inv) => (
-            <li key={inv.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-              <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{inv.role}</span>
-              <span className="min-w-0 flex-1 truncate">{inv.email ?? <span className="text-faint">Anyone with the link</span>}</span>
-              <span className="text-faint">expires {when(inv.expiresAt)} · by {inv.createdByName || 'a member'}</span>
-              <button type="button" className="btn-ghost px-2 py-0.5 text-xs" disabled={disabled}
-                aria-label={`Revoke the ${inv.role} link${inv.email ? ` for ${inv.email}` : ''}`} onClick={() => p.onRevoke(inv)}>Revoke</button>
+            <li key={inv.id} className="text-xs">
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{inv.role}</span>
+                <span className="min-w-0 flex-1 truncate" title={inv.email ?? undefined}>{inv.email ?? <span className="text-faint">Anyone with the link</span>}</span>
+                <button type="button" className="btn-ghost px-2 py-0.5 text-xs" disabled={disabled}
+                  aria-label={`Revoke the ${inv.role} link${inv.email ? ` for ${inv.email}` : ''}`} onClick={() => p.onRevoke(inv)}>Revoke</button>
+              </div>
+              <p className="text-faint">Expires {when(inv.expiresAt)} · created by {inv.createdByName || 'a member'}</p>
             </li>
           ))}
         </ul>

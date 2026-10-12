@@ -187,7 +187,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
           <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" data-testid="project-invite-banner">
             <strong>{invite.preview.inviterName}</strong> invited you to <strong className="user-text">{invite.project.name}</strong> as {invite.project.role}. Create your account to join.
             {invite.preview.email && <> This link is for <strong>{invite.preview.email}</strong>.</>}
-            <span className="mt-1 block text-xs opacity-80">The link expires {new Date(invite.preview.expiresAt).toLocaleString()} and works once.</span>
+            <span className="mt-1 block text-xs opacity-80">The link expires {new Date(invite.preview.expiresAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} and works once.</span>
           </p>
         )}
         {invite && !invite.project && (
