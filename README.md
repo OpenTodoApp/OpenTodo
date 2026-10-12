@@ -17,15 +17,9 @@ An open-source, local-first task manager you can host yourself. Everything you e
 </p>
 
 <p align="center">
-  <a href="https://opentodo-demo.pixari.dev"><strong>Try the demo</strong></a> ·
-  <a href="#quick-start">Quick start</a> ·
-  <a href="docs/self-hosting/coolify.md">Coolify</a> ·
-  <a href="docs/self-hosting/docker.md">Docker</a> ·
-  <a href="https://opentodo.pixari.dev/docs/">Documentation</a> ·
-  <a href="docs/api.md">API</a> ·
-  <a href="CHANGELOG.md">Changelog</a> ·
-  <a href="ROADMAP.md">Roadmap</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href="https://opentodo-demo.pixari.dev"><strong>▶ Try the demo</strong></a> (no sign-up) ·
+  <a href="#quick-start"><strong>Install in 2 minutes</strong></a> ·
+  <a href="https://opentodo.pixari.dev/docs/"><strong>Read the docs</strong></a>
 </p>
 
 ---
@@ -33,6 +27,20 @@ An open-source, local-first task manager you can host yourself. Everything you e
 <p align="center">
   <img src="docs/screenshots/demo.gif" width="800" alt="Quick add in plain language with date, priority and project chips, a card moved across a project board, then a task added offline that syncs on reconnect">
 </p>
+
+## Try it in 30 seconds
+
+- **No install:** open the [demo](https://opentodo-demo.pixari.dev) and press **Try the demo**. You get a private copy with sample data, deleted after a few hours.
+- **On your machine or server:**
+
+  ```bash
+  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:0.2
+  ```
+
+  Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Compose and plain binaries are in [Quick start](#quick-start).
+
+If OpenTodo looks useful to you, a ⭐ on GitHub helps other people find it.
+
 
 <p align="center">
   <img src="docs/screenshots/today.png" width="800" alt="Today view with overdue and due-today tasks">
@@ -50,14 +58,25 @@ An open-source, local-first task manager you can host yourself. Everything you e
 ## Why OpenTodo
 
 - **No subscription, no lock-in.** Free software under the AGPL. Nobody can paywall your task list or shut it down with the company.
-- **Local-first.** Every device keeps a full copy of your data and works entirely offline. The server syncs, backs up and shares; it is never in the way of an edit.
+- **Works offline, on every device.** Each phone and computer keeps a full copy of your data (local-first), so the app works with no connection at all. The server syncs, backs up and shares; it is never in the way of an edit.
 - **Your data, one folder.** Everything lives in one `/data` volume around a single SQLite file. Export to JSON at any time, import it (or a CSV, or another app's export) on any instance, and schedule encrypted backups to disk, S3 or WebDAV.
 - **Tiny footprint.** One container, one static binary of about 17 MB with the web app inside, around 20 MB of memory when idle. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no mandatory configuration.
 - **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts or fonts. The server only contacts what you configure (see [Privacy](#privacy)).
 - **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today, `?` for the full list, and optional Vim keybindings.
 - **Built in the open with specs.** Every feature starts as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change under [`openspec/`](openspec/), so behaviour is documented before it is built.
 
+## Status
+
+OpenTodo is at **0.2**: every feature on the roadmap is in, covered by automated tests, but some integrations still need real-world testing (CalDAV with specific apps, single sign-on providers, real phones). If you try it, tell us how it went in the [call for testers](https://github.com/pixari/opentodo/issues/9).
+
+**How it's built:** every feature starts as a written spec ([OpenSpec](openspec/)), and much of the code was written with AI coding agents working from those specs. A strict CI checks every change: Go and web tests, spec validation, a phone-layout check in Chromium and WebKit, and accessibility checks. Everything is reviewed before it's merged, and the full history is public.
+
 ## Features
+
+The highlights: quick add in plain language, projects with sections and boards, recurring tasks, reminders with push, filters and saved views, time blocking, shared projects with comments, CalDAV, webhooks, a REST API and CLI, passkeys, two-factor and single sign-on, optional end-to-end encryption.
+
+<details>
+<summary><strong>Full feature list</strong></summary>
 
 ### Capture
 
@@ -126,6 +145,8 @@ A due date such as "pay rent on the 1st" or "call mum Sunday 18:00" is **floatin
 
 Some times are instants: a stand-up at 09:00 Berlin time, a flight that departs at 14:35 in Lisbon. Open the task, set a time and tick **Fixed to time zone** (or press `z`): the time is pinned to your current zone. A device in Los Angeles then shows the stand-up at 00:00 with `09:00 Berlin` as a hint, and Today, Upcoming, sorting, filters, reminders and the calendar all use the converted time, across daylight-saving changes. The API takes the same shape: `"due":{"date":"2026-10-11","time":"09:00","tz":"Europe/Berlin"}`.
 
+</details>
+
 ## Quick start
 
 No environment variable is required. Open the app, create the owner account, and you are done; everything else is optional.
@@ -134,10 +155,10 @@ No environment variable is required. Open the app, create the owner account, and
 
 ```bash
 docker run -d --name opentodo -p 8080:8080 -v opentodo-data:/data \
-  ghcr.io/pixari/opentodo:latest
+  ghcr.io/pixari/opentodo:0.2
 ```
 
-Open <http://localhost:8080> and create the owner account. Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
+Open <http://localhost:8080> and create the owner account. Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.2` follows the 0.2 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
 
 ### Docker Compose
 
