@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 )
 
 const maxMCPStdioMessage = 1 << 20
+const maxMCPResponse = 64 << 20
 
 // cmdMCP bridges newline-delimited MCP stdio messages to the configured
 // stateless streamable-HTTP endpoint. Stdout is reserved for protocol data;
@@ -31,16 +33,15 @@ func cmdMCP(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		return err
 	}
 	if !*allowFullToken {
-		tokens, err := c.tokens(ctx)
+		_, cred, err := c.meAuth(ctx)
 		if err != nil {
 			return err
 		}
-		current := currentToken(tokens)
-		if current == nil {
+		if cred.Scope == "" {
 			return authErr("could not verify the configured token scope; use a read-only token or pass --allow-full-token")
 		}
-		if current.Scope != "read" {
-			return authErr("the configured token has %q scope; create a read-only token for MCP or pass --allow-full-token", current.Scope)
+		if cred.Scope != "read" {
+			return authErr("the configured token has %q scope; create a read-only token for MCP or pass --allow-full-token", cred.Scope)
 		}
 	}
 
@@ -53,7 +54,21 @@ func cmdMCP(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		}
 		response, status, err := c.mcp(ctx, message)
 		if err != nil {
-			return err
+			switch {
+			case status == http.StatusBadRequest && isJSONRPCError(response):
+				// Parse and invalid-request errors are protocol responses. Forward
+				// them instead of terminating the client's stdio session.
+			case status > 0 && status != http.StatusUnauthorized && status != http.StatusForbidden:
+				if id, ok := jsonRPCRequestID(message); ok {
+					if writeErr := writeJSONRPCError(a.Stdout, id, err.Error()); writeErr != nil {
+						return serverErr("write MCP error response: %v", writeErr)
+					}
+					continue
+				}
+				return err
+			default:
+				return err
+			}
 		}
 		if status == http.StatusAccepted || len(bytes.TrimSpace(response)) == 0 {
 			continue
@@ -87,12 +102,47 @@ func (c *client) mcp(ctx context.Context, message []byte) ([]byte, int, error) {
 		return nil, 0, c.unreachable(err)
 	}
 	defer resp.Body.Close()
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, 64<<20))
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxMCPResponse+1))
 	if err != nil {
 		return nil, resp.StatusCode, c.unreachable(err)
+	}
+	if len(raw) > maxMCPResponse {
+		return nil, resp.StatusCode, serverErr("MCP response exceeds 64 MB")
 	}
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return raw, resp.StatusCode, nil
 	}
-	return nil, resp.StatusCode, c.mapError(resp.StatusCode, raw)
+	return raw, resp.StatusCode, c.mapError(resp.StatusCode, raw)
+}
+
+func isJSONRPCError(raw []byte) bool {
+	var response struct {
+		JSONRPC string          `json:"jsonrpc"`
+		Error   json.RawMessage `json:"error"`
+	}
+	return json.Unmarshal(raw, &response) == nil && response.JSONRPC == "2.0" && len(response.Error) > 0
+}
+
+func jsonRPCRequestID(raw []byte) (json.RawMessage, bool) {
+	var request struct {
+		ID json.RawMessage `json:"id"`
+	}
+	if json.Unmarshal(raw, &request) != nil || len(request.ID) == 0 || bytes.Equal(request.ID, []byte("null")) {
+		return nil, false
+	}
+	return request.ID, true
+}
+
+func writeJSONRPCError(w io.Writer, id json.RawMessage, message string) error {
+	response := struct {
+		JSONRPC string          `json:"jsonrpc"`
+		ID      json.RawMessage `json:"id"`
+		Error   struct {
+			Code    int    `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}{JSONRPC: "2.0", ID: id}
+	response.Error.Code = -32603
+	response.Error.Message = message
+	return json.NewEncoder(w).Encode(response)
 }

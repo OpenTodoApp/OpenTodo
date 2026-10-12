@@ -52,8 +52,23 @@ Clients that take a JSON server entry (Settings has a copy button that fills in 
 
 Menus differ between assistants; look for "add custom connector", "remote MCP server" or "HTTP server".
 
-Clients that only speak stdio can launch the bundled CLI bridge. Sign in with a
-read-only token, then configure the client to run `ot mcp`:
+Clients that only speak stdio can launch the bundled CLI bridge. Create a
+read-only token, store it with `ot auth set-token`, then configure the client to
+run `ot mcp` using the stored profile:
+
+```json
+{
+  "mcpServers": {
+    "opentodo": {
+      "command": "ot",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+If the client cannot use the stored profile, pass the server and read-only token
+through its environment instead:
 
 ```json
 {
@@ -73,8 +88,7 @@ read-only token, then configure the client to run `ot mcp`:
 The bridge reads newline-delimited JSON-RPC from stdin, forwards each message to
 `/mcp`, and writes only JSON-RPC responses to stdout. It refuses a full-access
 token by default so an assistant is not accidentally given write credentials;
-`--allow-full-token` is available for an intentional exception. A stored profile
-from `ot auth set-token` can be used instead of environment variables.
+`--allow-full-token` is available for an intentional exception.
 
 To try the endpoint by hand:
 

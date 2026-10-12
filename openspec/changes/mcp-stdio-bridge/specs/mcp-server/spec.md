@@ -18,6 +18,16 @@ an explicit command-line override.
 - **WHEN** the configured token has full scope and no override is present
 - **THEN** the CLI refuses to start the bridge without forwarding protocol data
 
+#### Scenario: Protocol error recovery
+
+- **WHEN** the server returns a JSON-RPC parse error for a malformed input line
+- **THEN** the CLI forwards that error and continues serving subsequent messages
+
+#### Scenario: Recoverable server error
+
+- **WHEN** the server returns a transient error for a JSON-RPC request with an id
+- **THEN** the CLI writes a JSON-RPC internal error for that id and continues serving
+
 #### Scenario: Server unavailable
 
 - **WHEN** the configured server cannot be reached

@@ -13,12 +13,14 @@ import (
 func TestMCPBridgeInitializeAndToolsList(t *testing.T) {
 	var requests []map[string]any
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/v1/tokens" {
+		if r.URL.Path == "/api/v1/me" {
 			if r.Header.Get("Authorization") != "Bearer read-token" {
-				t.Fatalf("token request authorization = %q", r.Header.Get("Authorization"))
+				t.Errorf("me request authorization = %q", r.Header.Get("Authorization"))
+				http.Error(w, "bad auth", http.StatusBadRequest)
+				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = io.WriteString(w, `{"tokens":[{"id":"mcp-token","name":"assistant","scope":"read","createdAt":1,"lastUsedAt":2}]}`)
+			_, _ = io.WriteString(w, `{"user":{},"auth":{"method":"token","scope":"read","token_id":"mcp-token"}}`)
 			return
 		}
 		if r.URL.Path != "/mcp" {
@@ -26,11 +28,15 @@ func TestMCPBridgeInitializeAndToolsList(t *testing.T) {
 			return
 		}
 		if r.Header.Get("Authorization") != "Bearer read-token" || r.Header.Get("Content-Type") != "application/json" {
-			t.Fatalf("MCP headers = %v", r.Header)
+			t.Errorf("MCP headers = %v", r.Header)
+			http.Error(w, "bad headers", http.StatusBadRequest)
+			return
 		}
 		var request map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			t.Fatal(err)
+			t.Errorf("decode request: %v", err)
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
 		}
 		requests = append(requests, request)
 		if request["id"] == nil {
@@ -81,11 +87,13 @@ func TestMCPBridgeInitializeAndToolsList(t *testing.T) {
 
 func TestMCPBridgeRejectsFullTokenByDefault(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/tokens" {
-			t.Fatalf("unexpected request %s", r.URL.Path)
+		if r.URL.Path != "/api/v1/me" {
+			t.Errorf("unexpected request %s", r.URL.Path)
+			http.NotFound(w, r)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"tokens":[{"id":"full-token","name":"cli","scope":"full","createdAt":1,"lastUsedAt":2}]}`)
+		_, _ = io.WriteString(w, `{"user":{},"auth":{"method":"token","scope":"full","token_id":"full-token"}}`)
 	}))
 	defer srv.Close()
 
@@ -109,5 +117,80 @@ func TestMCPBridgeRejectsFullTokenByDefault(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "read-only token") || stdout.Len() != 0 {
 		t.Fatalf("stdout %q, stderr %q", stdout.String(), stderr.String())
+	}
+}
+
+func TestMCPBridgeContinuesAfterProtocolAndTransientErrors(t *testing.T) {
+	requestNumber := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/me" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, `{"user":{},"auth":{"method":"token","scope":"read"}}`)
+			return
+		}
+		requestNumber++
+		w.Header().Set("Content-Type", "application/json")
+		switch requestNumber {
+		case 1:
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, `{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"parse error"}}`)
+		case 2:
+			w.WriteHeader(http.StatusTooManyRequests)
+			_, _ = io.WriteString(w, `{"error":{"code":"rate_limited","message":"slow down"}}`)
+		default:
+			_, _ = io.WriteString(w, `{"jsonrpc":"2.0","id":3,"result":{}}`)
+		}
+	}))
+	defer srv.Close()
+
+	input := "{\n" +
+		`{"jsonrpc":"2.0","id":2,"method":"ping"}` + "\n" +
+		`{"jsonrpc":"2.0","id":3,"method":"ping"}` + "\n"
+	var stdout, stderr bytes.Buffer
+	a := &App{Stdin: strings.NewReader(input), Stdout: &stdout, Stderr: &stderr, Getenv: func(key string) string {
+		if key == "OPENTODO_URL" {
+			return srv.URL
+		}
+		if key == "OPENTODO_TOKEN" {
+			return "read-token"
+		}
+		return ""
+	}}
+	if code := a.Main([]string{"mcp"}); code != ExitOK {
+		t.Fatalf("exit %d, stderr %q", code, stderr.String())
+	}
+	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
+	if len(lines) != 3 || !strings.Contains(lines[0], `"code":-32700`) ||
+		!strings.Contains(lines[1], `"id":2`) || !strings.Contains(lines[1], `"code":-32603`) ||
+		!strings.Contains(lines[2], `"id":3`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestMCPBridgeServerUnreachableLeavesStdoutEmpty(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	url := srv.URL
+	srv.Close()
+
+	var stdout, stderr bytes.Buffer
+	a := &App{
+		Stdin:  strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"ping"}` + "\n"),
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Getenv: func(key string) string {
+			if key == "OPENTODO_URL" {
+				return url
+			}
+			if key == "OPENTODO_TOKEN" {
+				return "read-token"
+			}
+			return ""
+		},
+	}
+	if code := a.Main([]string{"mcp"}); code != ExitUnreachable {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
