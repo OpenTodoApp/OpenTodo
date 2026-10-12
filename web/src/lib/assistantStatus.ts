@@ -22,8 +22,34 @@ export interface AssistantStatus {
   /** What the disclosure says may be sent. */
   fields: string[]
   allow_member_keys: boolean
+  /** A key of yours is stored for `provider`. */
   own_key_set: boolean
   operator_key_set: boolean
+  // assistant-member-provider (absent on older servers):
+  /** `own` when turns use the provider you chose with your key; `provider`, `provider_label` and `model` then name it. */
+  source?: 'server' | 'own'
+  /** Turns run on your own key (your provider, or a key you stored for the server's provider). */
+  own_key_in_use?: boolean
+  /** The owner's provider and model. */
+  server_provider?: string
+  server_provider_label?: string
+  server_model?: string
+  /** A key of yours is stored for the server's provider (used with the server's assistant). */
+  server_own_key_set?: boolean
+  /** Your own provider choice, kept while the owner does not allow member keys. */
+  own_provider?: OwnProviderView | null
+  /** Providers you may choose (never the compatible endpoint). */
+  member_providers?: string[]
+  anthropic_models?: string[]
+  /** Turns on members' own keys count toward the monthly limit. */
+  cap_member_keys?: boolean
+}
+
+export interface OwnProviderView {
+  provider: string
+  provider_label: string
+  model: string
+  key_set: boolean
 }
 
 const KEY = 'assistant.status'

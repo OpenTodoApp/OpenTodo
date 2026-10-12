@@ -17,15 +17,25 @@ export interface ConsentProps {
 export function AssistantConsent({ status, connected, busy, error, onAccept }: ConsentProps) {
   const [ownKey, setOwnKey] = useState('')
   const changed = status.consent && status.consent.provider !== status.provider
+  // assistant-member-provider: the provider the member chose, with their key.
+  const own = status.source === 'own'
   return (
     <section className="space-y-3 text-sm" aria-labelledby="assistant-consent-heading" data-assistant-consent>
       <h3 id="assistant-consent-heading" className="text-base font-semibold">Before you start</h3>
-      {changed && <p className="rounded-md bg-amber-50 p-2 text-amber-900 dark:bg-amber-950 dark:text-amber-100">The server owner changed the model provider. Read what is sent now and accept again.</p>}
-      <p>
-        To answer, the assistant sends what you type and the task data it needs to <strong>{status.provider_label}</strong>
-        {status.model ? <> (model <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{status.model}</code>)</> : null}. Your server owner chose it.
-        Nothing is sent before you accept.
-      </p>
+      {changed && <p className="rounded-md bg-amber-50 p-2 text-amber-900 dark:bg-amber-950 dark:text-amber-100">{own ? 'The model provider changed.' : 'The server owner changed the model provider.'} Read what is sent now and accept again.</p>}
+      {own ? (
+        <p data-consent-own>
+          To answer, the assistant sends what you type and the task data it needs from this server to <strong>{status.provider_label}</strong>
+          {status.model ? <> (model <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{status.model}</code>)</> : null}, with your own API key. You chose it in Settings → AI → Assistant.
+          Nothing is sent before you accept.
+        </p>
+      ) : (
+        <p>
+          To answer, the assistant sends what you type and the task data it needs to <strong>{status.provider_label}</strong>
+          {status.model ? <> (model <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{status.model}</code>)</> : null}. Your server owner chose it.
+          Nothing is sent before you accept.
+        </p>
+      )}
       <div>
         <p className="font-medium">What may be sent</p>
         <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted">
@@ -36,7 +46,7 @@ export function AssistantConsent({ status, connected, busy, error, onAccept }: C
         In shared projects this includes text other members wrote. Changes are only proposed: nothing in your tasks changes until you review and apply them, and you can undo them.
         Conversations stay on this device. You can withdraw consent in Settings → AI → Assistant.
       </p>
-      {status.allow_member_keys && (
+      {status.allow_member_keys && !own && (
         <label className="block">
           <span className="font-medium">Your own API key (optional)</span>
           <span className="block text-xs text-muted">Used instead of the server’s key. It is stored on the server, never shown again and never sent to your browser.</span>

@@ -1,6 +1,6 @@
 import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
-import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestResult, AssistantUsage } from './assistantTypes'
+import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestResult, AssistantUsage, MyAssistantInput } from './assistantTypes'
 import type { KeyRecord } from './crypto'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
@@ -301,7 +301,9 @@ export const api = {
   saveAssistantSettings: (input: AssistantSettingsInput) => request<AssistantOwnerSettings>('PUT', '/api/v1/settings/assistant', input),
   testAssistant: (provider: string) => request<AssistantTestResult>('POST', '/api/v1/settings/assistant/test', { provider }),
   getMyAssistant: () => request<AssistantStatus>('GET', '/api/v1/me/assistant'),
-  setMyAssistant: (input: { consent?: boolean; provider?: string; own_key?: string }) => request<AssistantStatus>('PUT', '/api/v1/me/assistant', input),
+  setMyAssistant: (input: MyAssistantInput) => request<AssistantStatus>('PUT', '/api/v1/me/assistant', input),
+  /** Your own provider's "Test connection" (assistant-member-provider; sessions only, rate limited). */
+  testMyAssistant: () => request<AssistantTestResult>('POST', '/api/v1/me/assistant/test'),
   assistantUsage: () => request<AssistantUsage>('GET', '/api/v1/me/assistant/usage'),
 }
 

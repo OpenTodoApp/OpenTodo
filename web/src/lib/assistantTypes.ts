@@ -23,6 +23,11 @@ export interface AssistantOwnerSettings {
   allow_private_endpoint: boolean
   anthropic_models: string[]
   default_model: string
+  /** assistant-member-provider (absent on older servers). */
+  cap_member_keys?: boolean
+  member_providers?: ProviderName[]
+  /** Accounts whose turns use their own provider and key. */
+  own_key_members?: number
 }
 
 /** What a member reads from the same route. */
@@ -33,6 +38,7 @@ export interface AssistantMemberSettings {
   model: string
   allow_member_keys: boolean
   monthly_token_cap_per_user: number
+  cap_member_keys?: boolean
 }
 
 export interface AssistantSettingsInput {
@@ -42,6 +48,7 @@ export interface AssistantSettingsInput {
   allow_member_keys?: boolean
   monthly_token_cap_per_user?: number
   allow_private_endpoint?: boolean
+  cap_member_keys?: boolean
   /** A value sets the key, "" clears it, absent keeps it. */
   keys?: Partial<Record<ProviderName, string>>
 }
@@ -61,7 +68,27 @@ export interface AssistantUsage {
   turns: number
   cap: number
   resets_at: string
+  /** assistant-member-provider: what counts toward `cap`, and the turns on your own key. */
+  counted_tokens?: number
+  cap_member_keys?: boolean
+  own_key?: { input_tokens: number; output_tokens: number; total_tokens: number; turns: number }
 }
+
+/** PUT /api/v1/me/assistant. */
+export interface MyAssistantInput {
+  consent?: boolean
+  provider?: string
+  /** A value sets your key (for your own provider when one is chosen), "" removes it. */
+  own_key?: string
+  /** Your own provider (anthropic, openai, gemini); "" goes back to the server's assistant. */
+  own_provider?: string
+  own_model?: string
+}
+
+/** Providers a member may choose for their own key. */
+export const MEMBER_PROVIDERS: ProviderName[] = ['anthropic', 'openai', 'gemini']
+/** Model ids a member may type for OpenAI and Gemini (the server checks the same). */
+export const MEMBER_MODEL_RE = /^[A-Za-z0-9._:-]{1,100}$/
 
 /** One proposed entity change (agenttools.Change plus the shared mark). */
 export interface ProposedChange {
@@ -77,7 +104,7 @@ export type TurnEvent =
   | { type: 'text'; text: string }
   | { type: 'status'; text: string }
   | { type: 'changeset'; items: ProposedChange[]; limit: number }
-  | { type: 'usage'; input: number; output: number; month_total: number; cap: number }
+  | { type: 'usage'; input: number; output: number; month_total: number; cap: number; own_key?: boolean }
   | { type: 'done'; stop_reason: string; message?: string; server_time?: string }
   | { type: 'error'; code: string; message: string }
 

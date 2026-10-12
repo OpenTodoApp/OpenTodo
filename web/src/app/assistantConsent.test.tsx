@@ -27,6 +27,14 @@ describe('AssistantConsent', () => {
   it('asks again after the owner changed the provider', () => {
     expect(render({ provider: 'openai', provider_label: 'OpenAI', consent: { accepted_at: 1, disclosure_version: 1, provider: 'anthropic' } })).toContain('changed the model provider')
   })
+  it('names the member’s own provider, says the key is theirs, and offers no key field (assistant-member-provider)', () => {
+    const html = render({ allow_member_keys: true, source: 'own', provider: 'gemini', provider_label: 'Google Gemini', model: 'gemini-2.5-flash' })
+    expect(html).toContain('from this server to <strong>Google Gemini</strong>')
+    expect(html).toContain('with your own API key')
+    expect(html).not.toContain('Your server owner chose it')
+    expect(html).not.toContain('type="password"')
+    expect(render({ source: 'own', provider: 'gemini', provider_label: 'Google Gemini', consent: { accepted_at: 1, disclosure_version: 1, provider: 'openai' } })).toContain('The model provider changed.')
+  })
   it('needs a connection to accept', () => {
     expect(render({}, false)).toMatch(/disabled=""[^>]*data-assistant-accept|data-assistant-accept[^>]*disabled=""/)
   })
