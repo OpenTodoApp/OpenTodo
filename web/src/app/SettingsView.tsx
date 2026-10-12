@@ -17,6 +17,7 @@ import { NotificationsSettings } from './NotificationsSettings'
 import { SecuritySettings } from './ActivityPanel'
 import { SecurityPanel } from './SecurityPanel'
 import { LinkedAccountsPanel, SsoPanel } from './SsoPanel'
+import { ProjectInvitePolicyPanel } from './ProjectInvitePolicyPanel'
 import { TwoFactorPanel } from './TwoFactorPanel'
 import { EncryptionPanel } from './EncryptionPanel'
 import { navigate, routePath, type Route, type SettingsSectionId } from './router'
@@ -207,6 +208,7 @@ function SectionContent({ id, user, onLogout }: { id: SettingsSectionId; user: U
       return (
         <>
           <AdministrationSections user={user} />
+          {isOwner && <ProjectInvitePolicyPanel />}
           {isOwner && <SsoPanel />}
         </>
       )

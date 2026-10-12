@@ -5,7 +5,7 @@ import type { KeyRecord } from './crypto'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
   AppPassword, CaldavSetting, EmailInbox,
-  AccountRole, ActivityPage, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
+  AccountRole, ActivityPage, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, ResetPreview, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -100,9 +100,14 @@ export const api = {
   authStatus: () => request<AuthStatus>('GET', '/api/v1/auth/status'),
   /** Demo instance (OpenSpec `demo-sandboxes`): create a private sandbox and sign into it. */
   demoSandbox: (token: string) => request<{ user: User }>('POST', '/api/v1/demo/sandbox', { token }),
-  /** Register an account. `invitation` is the secret from an invite link; it admits one member while sign-up is closed. */
-  register: (email: string, name: string, password: string, invitation?: string) =>
-    request<{ user: User }>('POST', '/api/v1/auth/register', invitation ? { email, name, password, invitation } : { email, name, password }),
+  /**
+   * Register an account. `invitation` is the secret from an invite link; it admits one member while sign-up is closed.
+   * `projectInvite` is a project invite link secret: the new account joins that project in the same step.
+   */
+  register: (email: string, name: string, password: string, invitation?: string, projectInvite?: string) =>
+    request<{ user: User; projectId?: string }>('POST', '/api/v1/auth/register', {
+      email, name, password, ...(invitation ? { invitation } : {}), ...(projectInvite ? { projectInvite } : {}),
+    }),
   /** Password step. An account with a second factor answers with a challenge instead of a session. */
   login: (email: string, password: string) => request<LoginResult>('POST', '/api/v1/auth/login', { email, password }),
   /** Second sign-in step: a code from the app, or a recovery code. `remember` trusts this browser for 30 days. */
@@ -222,6 +227,19 @@ export const api = {
     request<{ invitation: Invitation; link: string }>('POST', '/api/v1/invitations', input),
   revokeInvitation: (id: string) => request<void>('DELETE', `/api/v1/invitations/${id}`),
   previewInvitation: (token: string) => request<InvitationPreview>('GET', `/api/v1/invitations/${encodeURIComponent(token)}`),
+  // Project invite links (OpenSpec `project-invite-links`): managed by the project's owner and admins; the link is returned once.
+  listProjectInvites: (projectId: string) =>
+    request<{ invites: ProjectInvite[] }>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/invites`),
+  createProjectInvite: (projectId: string, input: { role: ProjectRole; email?: string; expiresInHours?: number }) =>
+    request<{ invite: ProjectInvite; link: string; newAccounts: boolean }>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/invites`, input),
+  revokeProjectInvite: (projectId: string, id: string) =>
+    request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/invites/${encodeURIComponent(id)}`),
+  previewProjectInvite: (token: string) => request<ProjectInvitePreview>('GET', `/api/v1/project-invites/${encodeURIComponent(token)}`),
+  acceptProjectInvite: (token: string) =>
+    request<{ projectId: string; role: ProjectRole }>('POST', `/api/v1/project-invites/${encodeURIComponent(token)}/accept`, {}),
+  getProjectInviteSettings: () => request<{ membersCanInviteNewPeople: boolean }>('GET', '/api/v1/settings/project-invites'),
+  putProjectInviteSettings: (membersCanInviteNewPeople: boolean) =>
+    request<{ membersCanInviteNewPeople: boolean }>('PUT', '/api/v1/settings/project-invites', { membersCanInviteNewPeople }),
 
   // User administration (OpenSpec `user-management`): owner and admins. Every
   // mutating route is a sensitive one (reauth_required is answered by the

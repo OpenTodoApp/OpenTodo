@@ -212,7 +212,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <CalendarView mode={route.view} date={route.date} />
           ) : (
             // App renders the invite, reset and capture screens itself; a stray /invite, /reset or /share route inside the shell falls back to the Inbox.
-            <TaskListView userId={user.id} route={route.view === 'invite' || route.view === 'reset' || route.view === 'share' ? { view: 'inbox' } : route} />
+            <TaskListView userId={user.id} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'share' ? { view: 'inbox' } : route} />
           )}
         </div>
         {vim && (

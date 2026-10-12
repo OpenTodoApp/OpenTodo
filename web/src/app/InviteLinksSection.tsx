@@ -1,0 +1,216 @@
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { api, ApiError, isNetworkError } from '../lib/api'
+import { useOnline } from '../lib/online'
+import { grantableRoles } from '../lib/sharing'
+import type { ProjectInvite, ProjectRole } from '../lib/types'
+
+// "Invite with a link" in the share dialog (OpenSpec `project-invite-links`):
+// the project's owner and admins create single-use links that add whoever
+// opens them with a role, and revoke pending ones. Links live on the server
+// only, so every action needs a connection. InviteLinksView renders every
+// state and is free of effects so tests can render it to markup.
+
+export const LINK_EXPIRY_OPTIONS: [number, string][] = [
+  [1, '1 hour'],
+  [24, '1 day'],
+  [72, '3 days'],
+  [168, '7 days'],
+  [336, '14 days'],
+  [720, '30 days'],
+]
+
+/** The link just created: shown once, with whether it can create accounts. */
+export interface CreatedLink {
+  link: string
+  newAccounts: boolean
+}
+
+export interface InviteLinksViewProps {
+  /** Roles the viewer may put on a link (viewer and editor; admin for the project owner). */
+  roles: ProjectRole[]
+  open: boolean
+  role: ProjectRole
+  email: string
+  hours: number
+  invites: ProjectInvite[] | null
+  created: CreatedLink | null
+  copied: boolean
+  offline: boolean
+  busy: boolean
+  error: string | null
+  onToggle: () => void
+  onRole: (role: ProjectRole) => void
+  onEmail: (email: string) => void
+  onHours: (hours: number) => void
+  onCreate: () => void
+  onCopy: () => void
+  onRevoke: (invite: ProjectInvite) => void
+}
+
+const when = (ms: number) => new Date(ms).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+
+export function InviteLinksView(p: InviteLinksViewProps) {
+  const disabled = p.offline || p.busy
+  function submit(e: FormEvent) {
+    e.preventDefault()
+    if (!disabled) p.onCreate()
+  }
+  return (
+    <section aria-labelledby="invite-links-heading" className="mb-4 rounded-md border border-slate-200 p-3 dark:border-slate-800" data-testid="invite-links">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 id="invite-links-heading" className="text-sm font-medium">Invite with a link</h3>
+        <button type="button" className="btn-ghost px-2 py-0.5 text-xs" aria-expanded={p.open} aria-controls="invite-links-form" onClick={p.onToggle}>
+          {p.open ? 'Hide' : 'Create a link…'}
+        </button>
+      </div>
+      <p className="mt-1 text-xs text-muted">One link for one person: whoever opens it joins this project with the role you pick. It works once.</p>
+      {p.offline && (
+        <p role="status" className="mt-2 rounded-md bg-amber-50 p-2 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          You are offline. Invite links live on the server, so creating and revoking them needs a connection.
+        </p>
+      )}
+      {p.open && (
+        <form id="invite-links-form" onSubmit={submit} className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-[1fr_auto_auto]">
+          <label className="col-span-2 block text-xs sm:col-span-1">
+            <span className="mb-1 block text-slate-600 dark:text-slate-300">Email <span className="text-faint">(optional, only they can use it)</span></span>
+            <input className="input" type="email" autoComplete="off" placeholder="friend@example.com" value={p.email}
+              onChange={(e) => p.onEmail(e.target.value)} disabled={disabled} />
+          </label>
+          <label className="block text-xs">
+            <span className="mb-1 block text-slate-600 dark:text-slate-300">Role</span>
+            <select className="input" value={p.role} onChange={(e) => p.onRole(e.target.value as ProjectRole)} disabled={disabled}>
+              {p.roles.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </label>
+          <label className="block text-xs">
+            <span className="mb-1 block text-slate-600 dark:text-slate-300">Expires in</span>
+            <select className="input" value={p.hours} onChange={(e) => p.onHours(Number(e.target.value))} disabled={disabled}>
+              {LINK_EXPIRY_OPTIONS.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
+            </select>
+          </label>
+          <button className="btn-primary col-span-2 sm:col-span-3 sm:justify-self-start" disabled={disabled}>{p.busy ? 'Creating…' : 'Create link'}</button>
+        </form>
+      )}
+      {p.created && (
+        <div role="status" className="mt-2 rounded-md border border-emerald-300 bg-emerald-50 p-2 text-xs dark:border-emerald-800 dark:bg-emerald-950" data-testid="invite-link-created">
+          <p className="mb-1 font-medium">Copy this link now. It is shown only once.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <input className="input min-w-0 flex-1 font-mono text-xs" readOnly value={p.created.link} aria-label="Invite link"
+              onFocus={(e) => e.currentTarget.select()} />
+            <button type="button" className="btn-ghost border border-emerald-300 text-xs dark:border-emerald-700" onClick={p.onCopy}>
+              {p.copied ? 'Copied' : 'Copy link'}
+            </button>
+          </div>
+          <p className="mt-1 text-muted">
+            {p.created.newAccounts
+              ? 'People without an account can create one with this link.'
+              : 'Only people who already have an account on this server can use it. The server owner can let members invite new people in Settings → Administration.'}
+          </p>
+        </div>
+      )}
+      {p.error && <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-400">{p.error}</p>}
+      {p.invites && p.invites.length > 0 && (
+        <ul aria-label="Pending invite links" className="mt-2 space-y-1">
+          {p.invites.map((inv) => (
+            <li key={inv.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">{inv.role}</span>
+              <span className="min-w-0 flex-1 truncate">{inv.email ?? <span className="text-faint">Anyone with the link</span>}</span>
+              <span className="text-faint">expires {when(inv.expiresAt)} · by {inv.createdByName || 'a member'}</span>
+              <button type="button" className="btn-ghost px-2 py-0.5 text-xs" disabled={disabled}
+                aria-label={`Revoke the ${inv.role} link${inv.email ? ` for ${inv.email}` : ''}`} onClick={() => p.onRevoke(inv)}>Revoke</button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+/** The section with its state; rendered only for the project's owner and admins. */
+export function InviteLinksSection({ projectId, myRole, onError }: { projectId: string; myRole: ProjectRole; onError?: (message: string) => void }) {
+  const online = useOnline()
+  const roles = grantableRoles(myRole)
+  const [open, setOpen] = useState(false)
+  const [role, setRole] = useState<ProjectRole>('editor')
+  const [email, setEmail] = useState('')
+  const [hours, setHours] = useState(168)
+  const [invites, setInvites] = useState<ProjectInvite[] | null>(null)
+  const [created, setCreated] = useState<CreatedLink | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [unreachable, setUnreachable] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    try {
+      setInvites((await api.listProjectInvites(projectId)).invites)
+      setUnreachable(false)
+    } catch (err) {
+      if (isNetworkError(err)) setUnreachable(true)
+      // Not shared yet or no longer a manager: the section simply lists nothing.
+      else setInvites([])
+    }
+  }, [projectId])
+
+  useEffect(() => {
+    if (online) void load()
+  }, [online, load])
+
+  async function create() {
+    setError(null)
+    setBusy(true)
+    try {
+      const res = await api.createProjectInvite(projectId, { role, expiresInHours: hours, ...(email.trim() ? { email: email.trim() } : {}) })
+      setCreated({ link: res.link, newAccounts: res.newAccounts })
+      setCopied(false)
+      setEmail('')
+      await load()
+    } catch (err) {
+      setError(describeLinkError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function copy() {
+    if (!created) return
+    try {
+      await navigator.clipboard.writeText(created.link)
+      setCopied(true)
+    } catch {
+      setError('Could not access the clipboard; select the link and copy it manually.')
+    }
+  }
+
+  async function revoke(inv: ProjectInvite) {
+    if (!window.confirm(`Revoke the ${inv.role} link${inv.email ? ` for ${inv.email}` : ''}? It will stop working.`)) return
+    setError(null)
+    try {
+      await api.revokeProjectInvite(projectId, inv.id)
+      await load()
+    } catch (err) {
+      const msg = describeLinkError(err)
+      setError(msg)
+      onError?.(msg)
+    }
+  }
+
+  return (
+    <InviteLinksView
+      roles={roles} open={open} role={role} email={email} hours={hours} invites={invites} created={created} copied={copied}
+      offline={!online || unreachable} busy={busy} error={error}
+      onToggle={() => setOpen((o) => !o)} onRole={setRole} onEmail={setEmail} onHours={setHours}
+      onCreate={() => void create()} onCopy={() => void copy()} onRevoke={(inv) => void revoke(inv)}
+    />
+  )
+}
+
+export function describeLinkError(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.code === 'rate_limited') return 'Too many links created recently. Try again later.'
+    if (err.code === 'invitation_spent') return 'This link was already used and cannot be revoked.'
+    if (err.code === 'reauth_required') return 'Confirm your password, then create the link again.'
+    return err.message
+  }
+  return 'The server could not be reached; invite links need a connection.'
+}

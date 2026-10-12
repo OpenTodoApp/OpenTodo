@@ -19,6 +19,7 @@ export type Route =
   | { view: 'settings'; section?: SettingsSectionId }
   | { view: 'import' }
   | { view: 'invite'; token: string }
+  | { view: 'project-invite'; token: string }
   | { view: 'reset'; token: string }
   | { view: 'share' }
   | { view: 'trash' }
@@ -78,6 +79,8 @@ export function parseRoute(pathname: string): Route {
     case 'project':
       return parts[1] ? { view: 'project', id: parts[1] } : { view: 'inbox' }
     case 'invite':
+      // /invite/p/<token> is a project invite link (project-invite-links).
+      if (parts[1] === 'p') return parts[2] ? { view: 'project-invite', token: safeDecode(parts[2]) } : { view: 'inbox' }
       // The secret is URL-safe base64; decode defensively in case a mail client encoded it.
       return parts[1] ? { view: 'invite', token: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'reset':
@@ -107,6 +110,8 @@ export function routePath(r: Route): string {
     case 'invite':
     case 'reset':
       return `/${r.view}/${encodeURIComponent(r.token)}`
+    case 'project-invite':
+      return `/invite/p/${encodeURIComponent(r.token)}`
     case 'day':
     case 'week':
       return r.date ? `/${r.view}/${r.date}` : `/${r.view}`
