@@ -147,7 +147,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Enter</kbd> | On an invitation: Settings → Administration → Members: copy the invite link created in this session |
 | <kbd>Delete</kbd> | On an invitation: Settings → Administration → Members: revoke a pending invitation |
 | <kbd>d</kbd> / <kbd>r</kbd> / <kbd>Delete</kbd> | On a user: Settings → Administration → Users: deactivate or reactivate, create a reset link, delete (each confirms) |
-| <kbd>g</kbd> then <kbd>s</kbd>, <kbd>Tab</kbd> | Settings → Account → Security: add, rename (Enter saves, Esc cancels) or delete passkeys |
+| <kbd>Tab</kbd> | In Settings → Account: security: add, rename (Enter saves, Esc cancels) or delete passkeys |
 
 ### Quick add syntax
 
