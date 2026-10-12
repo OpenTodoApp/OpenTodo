@@ -1,0 +1,32 @@
+# documentation: https://opentodo.pixari.dev/docs/self-hosting/coolify/
+# slogan: Open-source, local-first task manager. Works offline and syncs every device from one small container.
+# category: productivity
+# tags: todo,tasks,task-manager,productivity,gtd,kanban,caldav,local-first,pwa,offline
+# logo: svgs/opentodo.svg
+# port: 8080
+
+services:
+  opentodo:
+    image: ghcr.io/pixari/opentodo:0.2
+    environment:
+      - SERVICE_URL_OPENTODO_8080
+      - OPENTODO_BASE_URL=${OPENTODO_BASE_URL:-${SERVICE_URL_OPENTODO}} # Leave empty to use the service's domain
+      - OPENTODO_ALLOW_SIGNUP=${OPENTODO_ALLOW_SIGNUP:-false}
+      - OPENTODO_TRUSTED_PROXIES=${OPENTODO_TRUSTED_PROXIES:-} # Set to cloudflare when the domain is proxied by Cloudflare
+      - OPENTODO_PUSH=${OPENTODO_PUSH:-on}
+      - OPENTODO_SESSION_DAYS=${OPENTODO_SESSION_DAYS:-90}
+      - OPENTODO_TRASH_RETENTION_DAYS=${OPENTODO_TRASH_RETENTION_DAYS:-30}
+      - OPENTODO_IMPORT_MAX_MB=${OPENTODO_IMPORT_MAX_MB:-20}
+      - OPENTODO_LOG_LEVEL=${OPENTODO_LOG_LEVEL:-info}
+      - OPENTODO_EMAIL_ADDRESS=${OPENTODO_EMAIL_ADDRESS:-}
+      - OPENTODO_EMAIL_IMAP_HOST=${OPENTODO_EMAIL_IMAP_HOST:-}
+      - OPENTODO_EMAIL_IMAP_USER=${OPENTODO_EMAIL_IMAP_USER:-}
+      - OPENTODO_EMAIL_IMAP_PASSWORD=${OPENTODO_EMAIL_IMAP_PASSWORD:-}
+    volumes:
+      - opentodo-data:/data
+    healthcheck:
+      test: ["CMD", "/opentodo", "healthcheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s

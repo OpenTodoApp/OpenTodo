@@ -181,6 +181,21 @@ jobs:
           node-version: 22
       - run: npx --yes @fission-ai/openspec@latest validate --all --strict
 
+  # Coolify one-click template (OpenSpec change coolify-template): conventions, release
+  # tag, variables and upstream copies, `docker compose config`, then a smoke run of the
+  # published image the way Coolify starts it (health check, owner setup, closed sign-up,
+  # https base URL, data surviving a recreate).
+  coolify-template:
+    name: Coolify template (check, smoke test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node --test scripts/coolify-template-check.test.mjs
+      - run: node scripts/coolify-template-check.mjs --smoke
+
   docker:
     name: Docker image
     runs-on: ubuntu-latest

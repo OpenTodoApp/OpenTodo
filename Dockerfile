@@ -29,9 +29,13 @@ RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY cmd/ cmd/
 COPY internal/ internal/
 COPY --from=web /src/internal/web/dist internal/web/dist
+# Coolify passes the git commit when the application's "Source commit availability" is
+# "Available during build"; a build without VERSION then reports dev+<commit> instead of dev.
+ARG SOURCE_COMMIT=
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} \
-    go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /out/opentodo ./cmd/opentodo \
+    v="${VERSION}"; if [ "$v" = dev ] && [ -n "${SOURCE_COMMIT}" ]; then v="dev+$(printf '%.7s' "${SOURCE_COMMIT}")"; fi \
+    && CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} \
+    go build -trimpath -ldflags="-s -w -X main.version=${v}" -o /out/opentodo ./cmd/opentodo \
     && mkdir -p /out/data && chown 65532:65532 /out/data
 
 # ---- 3. runtime -------------------------------------------------------------
@@ -47,5 +51,8 @@ ENV OPENTODO_ADDR=:8080 \
 VOLUME ["/data"]
 EXPOSE 8080
 USER nonroot:nonroot
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/opentodo", "healthcheck"]
+# --start-interval probes every 2 s while starting, so rolling updates (Coolify's Dockerfile and
+# Docker Image build packs read these flags) see a healthy container within seconds. Keep it after
+# --interval: Coolify finds the interval with the pattern "--interval=".
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --start-interval=2s --retries=3 CMD ["/opentodo", "healthcheck"]
 ENTRYPOINT ["/opentodo"]

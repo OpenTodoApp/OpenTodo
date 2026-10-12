@@ -6,7 +6,7 @@ CLI_PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 EXT_ZIP := dist/opentodo-browser-extension.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png
 
-.PHONY: all web server cli cli-release cli-smoke extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check
+.PHONY: all web server cli cli-release cli-smoke extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check coolify-check coolify-smoke
 
 all: build
 
@@ -106,7 +106,17 @@ docs-screenshots: web
 docs-site-check:
 	node scripts/e2e-docs.mjs docs-report
 
-check: lint test docs-check openspec-validate
+## Coolify one-click template (deploy/coolify/): conventions, release tag, variables, upstream copies;
+## `docker compose config` when Docker is available.
+coolify-check:
+	node --test scripts/coolify-template-check.test.mjs
+	node scripts/coolify-template-check.mjs
+
+## Also starts the template's image with Docker and probes it (pulls ghcr.io/pixari/opentodo).
+coolify-smoke:
+	node scripts/coolify-template-check.mjs --smoke
+
+check: lint test docs-check openspec-validate coolify-check
 
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t opentodo:$(VERSION) .

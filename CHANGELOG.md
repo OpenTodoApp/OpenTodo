@@ -4,6 +4,17 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Coolify one-click template, ready to submit upstream.** `deploy/coolify/opentodo.yaml` now follows Coolify's current template conventions: `SERVICE_URL_OPENTODO_8080`, the `0.2` image line, a `/data` volume and a `/opentodo healthcheck` health check. It also lists the useful optional variables with their defaults (including `OPENTODO_TRUSTED_PROXIES` and email to task), because Coolify passes a variable from its UI only when the compose file references it. An explicit `OPENTODO_BASE_URL` wins over Coolify's generated URL. `deploy/coolify/upstream/` mirrors Coolify's repository paths and holds a draft docs page, the pull request text and step-by-step submission notes. Until the template is listed in Coolify, paste it as a **Docker Compose** resource. ([Coolify](docs/self-hosting/coolify.md#one-click-template-pending-in-coolifys-service-list))
+- `scripts/coolify-template-check.mjs` (in `make check` and CI) fails when the template breaks those conventions, names an `OPENTODO_*` variable the server does not read, lags behind the latest release, or differs from its upstream copy. `make coolify-smoke` starts the image the way Coolify does and checks the health check, the owner setup, closed sign-up, the https base URL and data surviving a redeploy.
+
+### Changed
+
+- Images built from source by Coolify report `dev+<commit>` instead of `dev` when the application's **Source commit availability** is *Available during build* (the Dockerfile reads `SOURCE_COMMIT`).
+- The image's health check probes every 2 s while the container starts (`--start-interval=2s`), so Coolify's rolling updates (Dockerfile and Docker Image build packs) see the new container healthy within seconds instead of sometimes waiting another 30 s.
+- Coolify guide: which resource types roll and which recreate, why plain **Restart** and API deploys keep a cached image, first-visit owner setup, domains and passkeys, Cloudflare (proxy and Tunnel, Browser Cache TTL), and Coolify volume backups.
+
 ### Fixed
 
 - Phones could keep running the previous release after an update when a CDN such as Cloudflare sat in front: it cached the service worker script for hours. Service worker scripts are now sent with `Cache-Control: no-store` (and `CDN-Cache-Control: no-store`).
