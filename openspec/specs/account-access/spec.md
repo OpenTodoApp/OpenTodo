@@ -88,7 +88,7 @@ Every API route except the health check and the authentication bootstrap routes 
 - **THEN** the response is a 401 `unauthorized` error
 
 ### Requirement: API tokens
-A signed-in user SHALL be able to create named API tokens with a scope of `full` (default) or `read`, list them with scope, creation and last-use times, and revoke them. The token secret SHALL be shown exactly once at creation and stored only as a hash. A request carrying `Authorization: Bearer <token>` SHALL act as that user; a `read` token SHALL be refused on every route that writes, including `/api/v1/sync`.
+A signed-in user SHALL be able to create named API tokens with a scope of `full` (default), `read` or `agent`, list them with scope, creation and last-use times, and revoke them. The secret SHALL be shown once and stored only as a hash. A bearer token SHALL act as its user; `read` and `agent` tokens SHALL be refused on every route that writes, including `/api/v1/sync`. `agent` also unlocks gated MCP write tools. Tokens are server state, not ops; managing them needs a connection.
 
 #### Scenario: Create and use a token
 - **WHEN** a user creates a token and a script sends a request with it as a bearer token
@@ -101,6 +101,18 @@ A signed-in user SHALL be able to create named API tokens with a scope of `full`
 #### Scenario: Read token on a write route
 - **WHEN** a `read` token is presented on `POST /api/v1/tasks`, `PATCH`, `DELETE` or `POST /api/v1/sync`
 - **THEN** the response is a 403 `insufficient_scope` error and nothing changes
+
+#### Scenario: Agent token on a REST write route
+- **WHEN** an `agent` token is presented on `POST /api/v1/tokens`, `PUT /api/v1/settings/mcp` or `POST /api/v1/sync`
+- **THEN** the response is a 403 `insufficient_scope` error and nothing changes
+
+#### Scenario: Create an agent token
+- **WHEN** a user creates a token with scope `agent`
+- **THEN** the token list shows it with scope `agent` and the `token.created` audit event records `token_scope: agent`
+
+#### Scenario: Invalid scope
+- **WHEN** a user creates a token with scope `admin`
+- **THEN** the response is a 400 `invalid_input` error naming the allowed scopes and no token exists
 
 #### Scenario: Existing tokens keep full access
 - **WHEN** a token created before scopes existed is presented on a write route

@@ -73,7 +73,7 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** nothing changes, the command exits with code 2 and shows both candidates
 
 ### Requirement: Project and token commands
-`ot project list|add|rename|archive|rm` SHALL manage projects and `ot token list|create|revoke` SHALL manage API tokens of the signed-in account, with the same output conventions as task commands. `ot token create` SHALL print the secret exactly once. `ot export` SHALL write the server's JSON export to stdout or to `--out <file>`.
+`ot project list|add|rename|archive|rm` SHALL manage projects and `ot token list|create|revoke` SHALL manage API tokens of the signed-in account, with the same output conventions as task commands. `ot token create <name> [--scope full|read|agent]` SHALL default to `full`, print the secret exactly once, and `ot token list` SHALL show each scope. `ot export` SHALL write the server's JSON export to stdout or `--out <file>`.
 
 #### Scenario: Create a project
 - **WHEN** the user runs `ot project add "Garden"`
@@ -81,7 +81,15 @@ The client SHALL read a configuration file from the platform's user configuratio
 
 #### Scenario: Token secret shown once
 - **WHEN** the user runs `ot token create backup-script`
-- **THEN** the secret is printed with a notice that it will not be shown again
+- **THEN** the secret is printed with a notice that it will not be shown again and the token has scope `full`
+
+#### Scenario: Agent token from the CLI
+- **WHEN** the user runs `ot token create desk-assistant --scope agent`
+- **THEN** the token is created with scope `agent` and the notice says that it can make changes only while both assistant switches are on
+
+#### Scenario: Invalid scope rejected locally
+- **WHEN** the user runs `ot token create x --scope admin`
+- **THEN** the command exits with code 2 before any request is sent and lists the allowed scopes
 
 ### Requirement: JSON output and exit codes
 Every command SHALL accept `--json` and then print only JSON: the API entity or array for reads and writes, `{"error":{"code","message"}}` on failure. Exit codes SHALL be 0 success, 1 server-side error, 2 usage or local validation error, 3 authentication or configuration error, 4 server unreachable. When stdout is not a terminal, colour and prompts SHALL be disabled.

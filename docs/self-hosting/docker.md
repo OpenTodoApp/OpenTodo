@@ -96,7 +96,7 @@ Push is the only outbound traffic that is on by default (webhooks, backups to S3
 
 ## AI assistants (MCP)
 
-The read-only [MCP endpoint](../mcp.md) at `/mcp` is off until the owner enables it in **Settings → AI assistants** (or `OPENTODO_MCP=true` presets it on the first start). It needs no extra port or container: assistants reach it through the same URL and reverse proxy as the app, with a read-only API token in the `Authorization` header. Proxies that buffer or rewrite requests need nothing special, since every answer is a plain JSON response (no event stream). The server makes no outbound request for it. If your proxy logs request headers, exclude `Authorization`.
+The [MCP endpoint](../mcp.md) at `/mcp` is off until the owner enables it in **Settings → AI assistants** (or `OPENTODO_MCP=true` presets it on the first start). It is read-only unless the owner also allows assistant changes (`OPENTODO_MCP_WRITES=true` presets that on the first start) and a user allows them for their account. It needs no extra port or container: assistants reach it through the same URL and reverse proxy as the app, with an API token in the `Authorization` header. Proxies that buffer or rewrite requests need nothing special, since every answer is a plain JSON response (no event stream). The server makes no outbound request for it. If your proxy logs request headers, exclude `Authorization`.
 
 ## Bind mounts
 

@@ -15,13 +15,17 @@ A user SHALL create named tokens with scope `full` (default), `read` or `agent`,
 - **WHEN** a `read` token is presented on `POST /api/v1/tasks`, `PATCH`, `DELETE` or `POST /api/v1/sync`
 - **THEN** the response is a 403 `insufficient_scope` error and nothing changes
 
-#### Scenario: Agent token on a REST write route outside the list
-- **WHEN** an `agent` token is presented on `POST /api/v1/tokens`, `PUT /api/v1/settings/mcp`, `POST /api/v1/sync` or `DELETE /api/v1/projects/{id}`
+#### Scenario: Agent token on a REST write route
+- **WHEN** an `agent` token is presented on `POST /api/v1/tokens`, `PUT /api/v1/settings/mcp`, `POST /api/v1/sync` or `DELETE /api/v1/projects/{id}` (routes outside the agent content routes)
 - **THEN** the response is a 403 `insufficient_scope` error and nothing changes
 
 #### Scenario: Create an agent token
 - **WHEN** a user creates a token with scope `agent`
 - **THEN** the token list shows it with scope `agent` and the `token.created` audit event records `token_scope: agent`
+
+#### Scenario: Invalid scope
+- **WHEN** a user creates a token with scope `admin`
+- **THEN** the response is a 400 `invalid_input` error naming the allowed scopes and no token exists
 
 #### Scenario: Existing tokens keep full access
 - **WHEN** a token created before scopes existed is presented on a write route

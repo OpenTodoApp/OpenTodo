@@ -164,6 +164,13 @@ The open questions were answered by the owner before implementation (2026-10-12)
 
 ### Size
 
-Measured with `CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" ./cmd/opentodo` (linux/amd64, web app embedded) and `gzip -9` of the main web chunk, `origin/main` before this change versus this branch: see the table filled in at merge time below.
+Measured on 2026-10-12 with `CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" ./cmd/opentodo` (linux/amd64, Go 1.26, web app built and embedded in both) and `gzip -9` of the main web chunk, `origin/main` (56e2d44) versus this branch. (The 15,532,297-byte baseline above was measured without the embedded web build, so it is not comparable.)
 
-SIZE_TABLE_PLACEHOLDER
+| | Before | After | Delta |
+| --- | --- | --- | --- |
+| Server binary (stripped) | 17,207,458 B | 17,461,410 B | +253,952 B (+248 KB) |
+| of which `internal/agenttools` symbols (net of the 44 KB moved out of `internal/mcp`) | | | about +131 KB |
+| Main web chunk, gzip | 261,021 B | 262,244 B | +1,223 B |
+| Main web chunk, raw | 899,749 B | 904,515 B | +4,766 B |
+
+The binary grew more than the 150 KB estimate: the registry with ten write tools, their JSON schemas and validation came to about 1,700 lines of Go, and the rest is httpapi glue, the moved recurrence rule and larger embedded docs. No new Go module and no new npm package. The web main chunk stays under the 2 KB gzip estimate.
