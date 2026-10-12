@@ -718,3 +718,18 @@ describe('sections (board-view)', () => {
     expect((await db.tasks.get(t))?.section_id).toBe(later)
   })
 })
+
+describe('mutateMany origin (in-app-assistant)', () => {
+  it("stamps device assistant:<device-id> on a confirmed assistant batch and the plain id otherwise", async () => {
+    const { mutateMany } = await import('./ops')
+    const id = await createTask({ title: 'Water plants' })
+    await db.outbox.clear()
+    await mutateMany([{ entity: 'task', entityId: id, patch: { priority: 1 } }], { origin: 'assistant' })
+    await mutate('task', id, { priority: 2 })
+    const device = await getDeviceId()
+    const ops = await db.outbox.toArray()
+    expect(ops.map((o) => o.device)).toEqual([`assistant:${device}`, device])
+    const t = await db.tasks.get(id)
+    expect(t!._clock.priority.device).toBe(device)
+  })
+})

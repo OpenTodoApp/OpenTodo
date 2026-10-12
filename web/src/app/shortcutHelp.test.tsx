@@ -30,4 +30,15 @@ describe('ShortcutHelp', () => {
     expect(closeAt).toBeLessThan(html.indexOf('Quick add a task'))
     expect(html).toContain('sticky top-0')
   })
+
+  it('lists the assistant shortcut once, without clashing with another key (in-app-assistant)', async () => {
+    const { SHORTCUTS } = await import('../lib/shortcuts')
+    const html = renderToStaticMarkup(<ShortcutHelp onClose={() => undefined} />)
+    expect(html).toContain('Open the assistant')
+    const plain = SHORTCUTS.filter((s) => s.keys === 'Shift+I')
+    expect(plain).toHaveLength(1)
+    // `g` then Shift+I (Import) is a different sequence; nothing else binds plain Shift+I.
+    expect(SHORTCUTS.some((s) => s.keys.startsWith('g then Shift+I'))).toBe(true)
+    expect(VIM_HELP.rows.some((r) => /^I\b|Shift\+I/.test(r[0]))).toBe(false)
+  })
 })
