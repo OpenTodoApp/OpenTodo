@@ -82,6 +82,7 @@ func run() error {
 	}
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	slog.SetDefault(log)
+	cfg.LogWarnings(log)
 
 	// Hold the data directory shared for the life of the process: `opentodo
 	// restore` and the other maintenance commands refuse to touch it while we run,

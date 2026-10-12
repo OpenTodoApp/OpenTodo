@@ -30,10 +30,11 @@ func TestClientAddressBehindTrustedProxies(t *testing.T) {
 		t.Fatalf("default: %q", got)
 	}
 
-	p, cf, err := config.ParseTrustedProxies("cloudflare, 192.0.2.0/24")
-	if err != nil || !cf {
-		t.Fatalf("parse: %v %v", cf, err)
+	tp := config.ParseTrustedProxies("cloudflare, 192.0.2.0/24")
+	if len(tp.Invalid) != 0 || !tp.Cloudflare {
+		t.Fatalf("parse: %+v", tp)
 	}
+	p, cf := tp.Prefixes, tp.Cloudflare
 	setTrustedProxies(p, cf)
 	cases := []struct{ name, xff, cf, want string }{
 		{"proxy keeps the chain", "6.6.6.6, 198.51.100.7, 172.70.1.1", "", "198.51.100.7"},
@@ -50,7 +51,7 @@ func TestClientAddressBehindTrustedProxies(t *testing.T) {
 		}
 	}
 	// Own proxy listed without the keyword: CF-Connecting-IP is never read.
-	p, _, _ = config.ParseTrustedProxies("192.0.2.0/24")
+	p = config.ParseTrustedProxies("192.0.2.0/24").Prefixes
 	setTrustedProxies(p, false)
 	if got := req("198.51.100.7, 192.0.2.10", "6.6.6.6"); got != "198.51.100.7" {
 		t.Fatalf("own proxy: %q", got)
@@ -60,10 +61,41 @@ func TestClientAddressBehindTrustedProxies(t *testing.T) {
 	}
 }
 
-func TestParseTrustedProxiesRejectsGarbage(t *testing.T) {
-	for _, bad := range []string{"nope", "10.0.0.0/99", "1.2.3"} {
-		if _, _, err := config.ParseTrustedProxies(bad); err == nil {
-			t.Errorf("%q accepted", bad)
+// TestInvalidTrustedProxyEntriesNeverWidenTrust (trusted-proxies-lenient): an
+// invalid entry is dropped, the valid ones still apply, and with every entry
+// invalid the client address is the same as with the variable unset.
+func TestInvalidTrustedProxyEntriesNeverWidenTrust(t *testing.T) {
+	t.Cleanup(func() { setTrustedProxies(nil, false) })
+	req := func(xff, cf string) string {
+		r := httptest.NewRequest("GET", "/", nil)
+		r.RemoteAddr = "10.0.1.5:4000"
+		r.Header.Set("X-Forwarded-For", xff)
+		if cf != "" {
+			r.Header.Set("CF-Connecting-IP", cf)
+		}
+		return clientIP(r)
+	}
+	// Mixed: the CIDR applies, the typo does not trust Cloudflare.
+	tp := config.ParseTrustedProxies("cloudflar, 192.0.2.0/24")
+	setTrustedProxies(tp.Prefixes, tp.Cloudflare)
+	if got := req("198.51.100.7, 192.0.2.10", ""); got != "198.51.100.7" {
+		t.Fatalf("valid entry not applied: %q", got)
+	}
+	if got := req("198.51.100.7, 172.70.1.1", "6.6.6.6"); got != "172.70.1.1" {
+		t.Fatalf("typo trusted Cloudflare: %q", got)
+	}
+	// All invalid: same as unset.
+	for _, raw := range []string{"cloudflar", "nope, 10.0.0.0/99, 1.2.3"} {
+		tp = config.ParseTrustedProxies(raw)
+		setTrustedProxies(tp.Prefixes, tp.Cloudflare)
+		for _, c := range []struct{ xff, cf string }{{"198.51.100.7, 172.70.1.1", "198.51.100.7"}, {"6.6.6.6, 192.0.2.10", ""}} {
+			got := req(c.xff, c.cf)
+			setTrustedProxies(nil, false)
+			want := req(c.xff, c.cf)
+			setTrustedProxies(tp.Prefixes, tp.Cloudflare)
+			if got != want {
+				t.Errorf("%q with %q: got %q, unset gives %q", raw, c.xff, got, want)
+			}
 		}
 	}
 }
