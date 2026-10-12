@@ -132,10 +132,10 @@ describe('opening a section', () => {
 
   it('marks the current section in the side list and offers a back link on phones', () => {
     const html = render(member, 'data')
-    expect(html).toMatch(/<nav aria-label="Settings sections" class="hidden [^"]*md:block/)
+    expect(html).toMatch(/<nav aria-label="Settings sections" class="hidden [^"]*lg:block/)
     expect(html).toMatch(/<a href="\/settings\/data" aria-current="page"[^>]*>Data<\/a>/)
     expect(html).not.toMatch(/<a href="\/settings\/general" aria-current/)
-    expect(html).toMatch(/<a class="[^"]*md:hidden[^"]*" href="\/settings" data-settings-back/)
+    expect(html).toMatch(/<a class="[^"]*lg:hidden[^"]*" href="\/settings" data-settings-back/)
     expect(html).toContain('Download export (JSON)')
     expect(html).toContain('href="/settings/import"')
   })

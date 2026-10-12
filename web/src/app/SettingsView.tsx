@@ -55,23 +55,23 @@ export function SettingsView({ user, onLogout, section }: { user: User; onLogout
 
   if (!current) return <SettingsOverview user={user} headingRef={headingRef} />
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 md:flex md:gap-8 md:px-8" data-settings-section={current.id}>
-      <nav aria-label="Settings sections" className="hidden md:sticky md:top-6 md:block md:w-48 md:shrink-0 md:self-start">
-        <a className="block rounded-md px-2 py-1.5 text-sm text-muted hover:bg-slate-200/60 dark:hover:bg-slate-800" href={routePath({ view: 'settings' })}
+    <div className="mx-auto max-w-5xl px-4 py-6 md:px-8 lg:flex lg:gap-8" data-settings-section={current.id}>
+      <nav aria-label="Settings sections" className="hidden lg:sticky lg:top-6 lg:block lg:w-48 lg:shrink-0 lg:self-start">
+        <a className="touch-target flex items-center rounded-md px-2 py-1.5 text-sm text-muted hover:bg-slate-200/60 dark:hover:bg-slate-800" href={routePath({ view: 'settings' })}
           onClick={(e) => followLink(e, { view: 'settings' })}>All settings</a>
         <ul className="mt-1 space-y-0.5">
           {visibleSections(user).map((s) => (
             <li key={s.id}>
               <a href={routePath({ view: 'settings', section: s.id })} aria-current={s.id === current.id ? 'page' : undefined}
-                className={`block rounded-md px-2 py-1.5 text-sm ${s.id === current.id ? 'bg-emerald-100 font-medium text-slate-900 dark:bg-emerald-900/40 dark:text-slate-100' : 'text-slate-700 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                className={`touch-target flex items-center rounded-md px-2 py-1.5 text-sm ${s.id === current.id ? 'bg-emerald-100 font-medium text-slate-900 dark:bg-emerald-900/40 dark:text-slate-100' : 'text-slate-700 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-slate-800'}`}
                 onClick={(e) => followLink(e, { view: 'settings', section: s.id })}>{s.label}</a>
             </li>
           ))}
         </ul>
       </nav>
-      <div className="min-w-0 flex-1 space-y-8 md:max-w-2xl">
+      <div className="min-w-0 flex-1 space-y-8 lg:max-w-2xl">
         <div>
-          <a className="btn-ghost touch-target -ml-3 text-sm md:hidden" href={routePath({ view: 'settings' })} data-settings-back
+          <a className="btn-ghost touch-target -ml-3 text-sm lg:hidden" href={routePath({ view: 'settings' })} data-settings-back
             onClick={(e) => followLink(e, { view: 'settings' })}><span aria-hidden="true">←</span> Settings</a>
           <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold outline-none">{current.label}</h1>
         </div>

@@ -22,7 +22,7 @@ const owner = (u: User) => u.role === 'owner'
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     id: 'account', label: 'Account',
-    description: () => 'Password, two-factor, passkeys, recent activity, linked accounts, encryption and sign out',
+    description: () => 'Password, two-factor, passkeys, encryption and sign out',
     demo: () => ['password and two-factor authentication', 'passkeys', 'linked accounts', 'end-to-end encryption'],
   },
   {
