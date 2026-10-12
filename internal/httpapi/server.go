@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/pixari/opentodo/internal/agenttools"
+	"github.com/pixari/opentodo/internal/assistant"
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
@@ -96,6 +97,10 @@ type Server struct {
 	emailLimiter *rateLimiter
 	// demo is set on a demo instance (OpenSpec `demo-mode`); see demo.go.
 	demo *demo.Service
+	// assistant is the in-app assistant (OpenSpec `in-app-assistant`); see
+	// assistant.go. assistantSetup lets tests adjust it once built.
+	assistant      *assistant.Service
+	assistantSetup func(*assistant.Service)
 	// idemSalt makes Idempotency-Key ids unguessable (agent-ready-cli D5);
 	// see idempotency.go.
 	idemSalt string
@@ -233,6 +238,9 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerEncryptionRoutes(mux)
 	// Read-only MCP endpoint and its owner toggle (OpenSpec `mcp-server`).
 	s.registerMCPRoutes(mux)
+	// In-app assistant (OpenSpec `in-app-assistant`): settings, consent, usage
+	// and the turn route over the same tool registry.
+	s.registerAssistantRoutes(mux)
 	// Email to task (OpenSpec `email-to-task`): literal patterns win over {collection}.
 	s.registerEmailRoutes(mux)
 	// Demo sandboxes (OpenSpec `demo-sandboxes`): registered on a demo instance only.
