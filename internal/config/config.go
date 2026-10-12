@@ -31,6 +31,10 @@ type Config struct {
 	// (nil when OPENTODO_MCP is unset; OpenSpec `mcp-server`). Afterwards the
 	// value set in Settings is authoritative. The endpoint is off by default.
 	MCP *bool
+	// MCPWrites presets the owner's "AI assistants may make changes" switch on
+	// first start only (nil when OPENTODO_MCP_WRITES is unset; OpenSpec
+	// `mcp-write-tools`). Optional; afterwards Settings decides.
+	MCPWrites *bool
 	// Backup holds the optional OPENTODO_BACKUP_* presets (see backup.go).
 	Backup BackupPreset
 	// PushDisabled turns web push off (OPENTODO_PUSH=off): the /api/v1/push routes
@@ -147,6 +151,13 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_MCP must be true or false, got %q", v)
 		}
 		c.MCP = &b
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_MCP_WRITES")); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return c, fmt.Errorf("OPENTODO_MCP_WRITES must be true or false, got %q", v)
+		}
+		c.MCPWrites = &b
 	}
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_CALDAV")); v != "" {
 		b, err := strconv.ParseBool(v)

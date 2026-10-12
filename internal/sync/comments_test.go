@@ -376,3 +376,22 @@ func TestThreadOrder(t *testing.T) {
 		t.Fatalf("order = %v, want %v", got, want)
 	}
 }
+
+// TestAgentDeviceCommentNeverNotifies: a comment written with an AI
+// assistant's device (agent:<token-id>) sends no mention notification, even
+// when its ops carry mentions (mcp-write-tools D9.3).
+func TestAgentDeviceCommentNeverNotifies(t *testing.T) {
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor)
+	rec := &mentionSink{}
+	f.s.AddSink(rec)
+	f.apply("alice", AgentDevice("tok"), f.commentOps("c1", "t1", "alice", "ping @bob", f.op("comment", "c1", "mentions", `["bob"]`))...)
+	if len(rec.events) != 0 {
+		t.Fatalf("assistant comment notified: %+v", rec.events)
+	}
+	// The same comment from a device does notify (the rule is the device).
+	f.apply("alice", "A", f.commentOps("c2", "t1", "alice", "ping @bob", f.op("comment", "c2", "mentions", `["bob"]`))...)
+	if len(rec.events) != 1 {
+		t.Fatalf("device comment: %+v", rec.events)
+	}
+}

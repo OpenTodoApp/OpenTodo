@@ -41,6 +41,9 @@ describe('history', () => {
   it('labels devices and fetches pages', async () => {
     expect(deviceLabel({ device: 'mine', userId: 'u' }, 'mine')).toBe('this device')
     expect(deviceLabel({ device: 'server', userId: 'u' }, 'mine')).toBe('API')
+    // AI assistant writes use the server's label, or a generic one without it.
+    expect(deviceLabel({ device: 'agent:t1', userId: 'u', device_label: 'AI assistant (Desk assistant)' }, 'mine')).toBe('AI assistant (Desk assistant)')
+    expect(deviceLabel({ device: 'agent:t1', userId: 'u' }, 'mine')).toBe('AI assistant')
     expect(deviceLabel({ device: 'abcdef', userId: 'u' }, 'mine')).toBe('another device (abcd)')
     expect(deviceLabel({ device: 'abcdef', userId: 'bob' }, 'mine', 'me', [
       { projectId: 'p', role: 'owner', ownerId: 'me', members: [{ userId: 'bob', name: 'Bob', email: 'b@x', role: 'editor' }] },

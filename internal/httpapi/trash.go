@@ -1,9 +1,11 @@
 package httpapi
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -48,8 +50,39 @@ func (s *Server) historyHandler(entity string) http.HandlerFunc {
 			s.internal(w, err)
 			return
 		}
+		if err := s.labelAgentChanges(r.Context(), userFrom(r.Context()).ID, h.ChangeSets); err != nil {
+			s.internal(w, err)
+			return
+		}
 		writeJSON(w, http.StatusOK, h)
 	}
+}
+
+// labelAgentChanges names AI assistant writes in a history page
+// (mcp-write-tools D6): "AI assistant (<token name>)" when the viewer owns the
+// token and it still exists, "AI assistant" otherwise. Token names are
+// personal, so other members of a shared project see only the generic label.
+func (s *Server) labelAgentChanges(ctx context.Context, viewerID string, sets []opsync.ChangeSet) error {
+	names := map[string]string{}
+	for i := range sets {
+		tokenID, ok := strings.CutPrefix(sets[i].Device, opsync.AgentDevicePrefix)
+		if !ok {
+			continue
+		}
+		name, seen := names[tokenID]
+		if !seen {
+			var err error
+			if name, err = s.auth.TokenName(ctx, viewerID, tokenID); err != nil {
+				return err
+			}
+			names[tokenID] = name
+		}
+		sets[i].DeviceLabel = "AI assistant"
+		if name != "" && sets[i].UserID == viewerID {
+			sets[i].DeviceLabel = "AI assistant (" + name + ")"
+		}
+	}
+	return nil
 }
 
 func (s *Server) purgeHandler(entity string) http.HandlerFunc {

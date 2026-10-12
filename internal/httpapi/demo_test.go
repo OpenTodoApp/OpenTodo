@@ -516,6 +516,7 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 		{"PUT", "/api/v1/settings/caldav"},
 		{"PUT", "/api/v1/settings/oidc"},
 		{"PUT", "/api/v1/settings/mcp"},
+		{"PUT", "/api/v1/me/agent-access"},
 		{"GET", "/mcp"},
 		{"POST", "/mcp"},
 		{"PROPFIND", "/dav/"},
@@ -588,5 +589,20 @@ func TestDemoGuardOffByDefault(t *testing.T) {
 	resp, out = e.do("GET", "/api/v1/tasks", nil)
 	if resp.StatusCode != http.StatusUnauthorized || errCode(out) != "unauthorized" {
 		t.Fatalf("stale cookie: %d %v", resp.StatusCode, out)
+	}
+}
+
+// TestDemoRefusesAgentAccess: a demo visitor cannot switch on assistant writes,
+// and /mcp stays closed before any token is evaluated (mcp-write-tools).
+func TestDemoRefusesAgentAccess(t *testing.T) {
+	d := newDemoServer(t)
+	e, _ := d.visitor()
+	resp, out := e.do("PUT", "/api/v1/me/agent-access", map[string]any{"allow_writes": true})
+	if resp.StatusCode != http.StatusForbidden || errCode(out) != "demo_restricted" {
+		t.Fatalf("PUT agent-access: %d %v", resp.StatusCode, out)
+	}
+	resp, out = e.do("POST", "/mcp", map[string]any{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, "Authorization", "Bearer ot_whatever")
+	if resp.StatusCode != http.StatusForbidden || errCode(out) != "demo_restricted" {
+		t.Fatalf("/mcp: %d %v", resp.StatusCode, out)
 	}
 }

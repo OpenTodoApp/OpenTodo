@@ -1,8 +1,7 @@
-package mcp
+package agenttools
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"sort"
 	"strings"
@@ -12,15 +11,11 @@ import (
 	"github.com/pixari/opentodo/internal/zoned"
 )
 
-// ---- tool definitions (tools/list) ----
-
-type tool struct {
-	Name        string         `json:"name"`
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
-	InputSchema map[string]any `json:"inputSchema"`
-	Annotations map[string]any `json:"annotations"`
-}
+// ---- read tools (always offered) ----
+//
+// The five read tools of the archived `mcp-server` change, moved here without
+// changing their definitions: TestToolsListReadOnlyUnchanged pins tools/list
+// byte for byte.
 
 func annotations(title string) map[string]any {
 	return map[string]any{"title": title, "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false}
@@ -41,21 +36,26 @@ var (
 	completedArg = map[string]any{"type": "boolean", "default": false, "description": "Also return completed tasks."}
 )
 
-func toolDefinitions() []tool {
-	return []tool{
-		{
-			Name: "list_projects", Title: "List projects",
-			Description: "List the user's projects (their own and shared ones they are a member of) with the number of open tasks in each. Archived projects are left out unless include_archived is true.",
-			InputSchema: object(nil, map[string]any{
+func readDef(name, title, desc string, schema map[string]any) func(Caller) Definition {
+	return func(Caller) Definition {
+		return Definition{Name: name, Title: title, Description: desc, InputSchema: schema, Annotations: annotations(title), Kind: KindRead}
+	}
+}
+
+func init() {
+	register(tool{
+		def: readDef("list_projects", "List projects",
+			"List the user's projects (their own and shared ones they are a member of) with the number of open tasks in each. Archived projects are left out unless include_archived is true.",
+			object(nil, map[string]any{
 				"include_archived": map[string]any{"type": "boolean", "default": false, "description": "Also return archived projects."},
-			}),
-			Annotations: annotations("List projects"),
-		},
-		{
-			Name: "list_tasks", Title: "List tasks",
-			Description: "List tasks with filters. view: all (default), inbox (no project), today (open tasks due today or overdue, overdue first) or upcoming (open tasks due after today). " +
+			})),
+		read: (*Registry).listProjects,
+	})
+	register(tool{
+		def: readDef("list_tasks", "List tasks",
+			"List tasks with filters. view: all (default), inbox (no project), today (open tasks due today or overdue, overdue first) or upcoming (open tasks due after today). "+
 				"Tasks of archived projects are left out unless project_id names that project. Results are paged: pass next_cursor back as cursor.",
-			InputSchema: object(nil, map[string]any{
+			object(nil, map[string]any{
 				"view":              map[string]any{"type": "string", "enum": []string{"all", "inbox", "today", "upcoming"}, "default": "all"},
 				"project_id":        map[string]any{"type": "string", "description": "Only tasks of this project (see list_projects)."},
 				"label":             map[string]any{"type": "string", "description": "Only tasks carrying this label (name, case-insensitive, or id)."},
@@ -66,122 +66,60 @@ func toolDefinitions() []tool {
 				"timezone":          timezoneProp,
 				"limit":             limitProp,
 				"cursor":            cursorProp,
-			}),
-			Annotations: annotations("List tasks"),
-		},
-		{
-			Name: "get_task", Title: "Get a task",
-			Description: "Get one task with its description, project, section, labels, subtasks and comments.",
-			InputSchema: object([]string{"id"}, map[string]any{
+			})),
+		read: (*Registry).listTasks,
+	})
+	register(tool{
+		def: readDef("get_task", "Get a task",
+			"Get one task with its description, project, section, labels, subtasks and comments.",
+			object([]string{"id"}, map[string]any{
 				"id":       map[string]any{"type": "string", "description": "Task id."},
 				"timezone": timezoneProp,
-			}),
-			Annotations: annotations("Get a task"),
-		},
-		{
-			Name: "search_tasks", Title: "Search tasks",
-			Description: "Find tasks whose title or description contains the query (case-insensitive). Open tasks only unless include_completed is true. Paged like list_tasks.",
-			InputSchema: object([]string{"query"}, map[string]any{
+			})),
+		read: (*Registry).getTask,
+	})
+	register(tool{
+		def: readDef("search_tasks", "Search tasks",
+			"Find tasks whose title or description contains the query (case-insensitive). Open tasks only unless include_completed is true. Paged like list_tasks.",
+			object([]string{"query"}, map[string]any{
 				"query":             map[string]any{"type": "string", "minLength": 1, "description": "Text to look for."},
 				"include_completed": completedArg,
 				"timezone":          timezoneProp,
 				"limit":             limitProp,
 				"cursor":            cursorProp,
-			}),
-			Annotations: annotations("Search tasks"),
-		},
-		{
-			Name: "today_summary", Title: "Today summary",
-			Description: "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the inbox and each project.",
-			InputSchema: object(nil, map[string]any{
+			})),
+		read: (*Registry).searchTasks,
+	})
+	register(tool{
+		def: readDef("today_summary", "Today summary",
+			"One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the inbox and each project.",
+			object(nil, map[string]any{
 				"timezone": timezoneProp,
-			}),
-			Annotations: annotations("Today summary"),
-		},
-	}
+			})),
+		read: (*Registry).todaySummary,
+	})
 }
 
-// ---- tools/call ----
-
-type content struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
-}
-
-type toolResult struct {
-	Content           []content `json:"content"`
-	StructuredContent any       `json:"structuredContent,omitempty"`
-	IsError           bool      `json:"isError,omitempty"`
-}
-
-// errToolDomain marks an error reported inside the tool result (isError) rather
-// than as a JSON-RPC error: the call was well formed but names nothing visible.
-type errToolDomain struct{ msg string }
-
-func (e *errToolDomain) Error() string { return e.msg }
-
-func (s *Server) callTool(ctx context.Context, userID string, params json.RawMessage) (any, error) {
-	var p struct {
-		Name      string          `json:"name"`
-		Arguments json.RawMessage `json:"arguments"`
-	}
-	if len(params) == 0 || json.Unmarshal(params, &p) != nil || p.Name == "" {
-		return nil, invalidParams("name: the tool name is required")
-	}
-	a := args{}
-	if len(p.Arguments) > 0 && string(p.Arguments) != "null" {
-		if json.Unmarshal(p.Arguments, &a) != nil {
-			return nil, invalidParams("arguments: must be an object")
-		}
-	}
-	var fn func(context.Context, string, args) (any, error)
-	switch p.Name {
-	case "list_projects":
-		fn = s.listProjects
-	case "list_tasks":
-		fn = s.listTasks
-	case "get_task":
-		fn = s.getTask
-	case "search_tasks":
-		fn = s.searchTasks
-	case "today_summary":
-		fn = s.todaySummary
-	default:
-		return nil, invalidParams("unknown tool: " + p.Name)
-	}
-	out, err := fn(ctx, userID, a)
-	var dom *errToolDomain
-	if errors.As(err, &dom) {
-		return toolResult{Content: []content{{Type: "text", Text: dom.msg}}, IsError: true}, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	text, err := json.Marshal(out)
-	if err != nil {
-		return nil, err
-	}
-	return toolResult{Content: []content{{Type: "text", Text: string(text)}}, StructuredContent: out}, nil
-}
-
-func (s *Server) serverTime() string { return s.now().UTC().Format(time.RFC3339) }
-
-func (s *Server) today(loc *time.Location) string {
-	d, _ := zoned.Local(s.now(), loc)
+func (r *Registry) today(loc *time.Location) string {
+	d, _ := zoned.Local(r.now(), loc)
 	return d
 }
 
 // ---- list_projects ----
 
+type nameText struct {
+	Name string `json:"name"`
+}
+
 type projectOut struct {
-	ID        string  `json:"id"`
-	Name      string  `json:"name"`
-	Color     string  `json:"color,omitempty"`
-	Archived  bool    `json:"archived"`
-	ParentID  *string `json:"parent_id,omitempty"`
-	Shared    bool    `json:"shared"`
-	Role      string  `json:"role,omitempty"`
-	OpenCount int     `json:"open_count"`
+	ID        string   `json:"id"`
+	Untrusted nameText `json:"untrusted_text"`
+	Color     string   `json:"color,omitempty"`
+	Archived  bool     `json:"archived"`
+	ParentID  *string  `json:"parent_id,omitempty"`
+	Shared    bool     `json:"shared"`
+	Role      string   `json:"role,omitempty"`
+	OpenCount int      `json:"open_count"`
 }
 
 func (snap *snapshot) openCounts() map[string]int {
@@ -196,7 +134,7 @@ func (snap *snapshot) openCounts() map[string]int {
 
 func (snap *snapshot) renderProject(p opsync.Entity, counts map[string]int) projectOut {
 	id := str(p, "id")
-	out := projectOut{ID: id, Name: str(p, "name"), Color: str(p, "color"), Archived: boolean(p, "archived"),
+	out := projectOut{ID: id, Untrusted: nameText{Name: str(p, "name")}, Color: str(p, "color"), Archived: boolean(p, "archived"),
 		ParentID: strPtr(p, "parent_id"), OpenCount: counts[id]}
 	if acc, ok := snap.shared[id]; ok {
 		out.Shared, out.Role = true, acc.Role
@@ -204,7 +142,7 @@ func (snap *snapshot) renderProject(p opsync.Entity, counts map[string]int) proj
 	return out
 }
 
-func (s *Server) projectsPayload(snap *snapshot, includeArchived bool) map[string]any {
+func (r *Registry) projectsPayload(snap *snapshot, includeArchived bool) map[string]any {
 	counts := snap.openCounts()
 	items := []keyed[projectOut]{}
 	for _, p := range snap.projList {
@@ -218,23 +156,23 @@ func (s *Server) projectsPayload(snap *snapshot, includeArchived bool) map[strin
 	if truncated {
 		list = list[:MaxItems]
 	}
-	out := map[string]any{"projects": list, "inbox_open_count": counts[""], "server_time": s.serverTime()}
+	out := map[string]any{"projects": list, "inbox_open_count": counts[""], "server_time": r.serverTime()}
 	if truncated {
 		out["truncated"] = true
 	}
 	return out
 }
 
-func (s *Server) listProjects(ctx context.Context, userID string, a args) (any, error) {
+func (r *Registry) listProjects(ctx context.Context, userID string, a args) (map[string]any, error) {
 	includeArchived, err := a.boolean("include_archived")
 	if err != nil {
 		return nil, err
 	}
-	snap, err := s.load(ctx, userID)
+	snap, err := r.load(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	return s.projectsPayload(snap, includeArchived), nil
+	return r.projectsPayload(snap, includeArchived), nil
 }
 
 // ---- list_tasks ----
@@ -262,7 +200,7 @@ func parseTaskQuery(a args) (taskQuery, error) {
 		q.view = "all"
 	case "all", "inbox", "today", "upcoming":
 	default:
-		return q, invalidParams("view: must be one of all, inbox, today, upcoming")
+		return q, argErr("view: must be one of all, inbox, today, upcoming")
 	}
 	if q.projectID, err = a.str("project_id"); err != nil {
 		return q, err
@@ -272,7 +210,7 @@ func parseTaskQuery(a args) (taskQuery, error) {
 	}
 	p, has, err := a.integer("priority")
 	if err != nil || (has && (p < 1 || p > 4)) {
-		return q, invalidParams("priority: must be an integer from 1 (highest) to 4")
+		return q, argErr("priority: must be an integer from 1 (highest) to 4")
 	}
 	q.priority = p
 	if q.dueFrom, err = a.date("due_from"); err != nil {
@@ -307,17 +245,17 @@ func (snap *snapshot) labelIDs(label string) map[string]bool {
 	return ids
 }
 
-func (s *Server) queryTasks(snap *snapshot, q taskQuery) (map[string]any, error) {
-	today := s.today(q.loc)
+func (r *Registry) queryTasks(snap *snapshot, q taskQuery) (map[string]any, error) {
+	today := r.today(q.loc)
 	if q.projectID != "" {
 		if _, ok := snap.projects[q.projectID]; !ok {
-			return nil, invalidParams("project_id: no such project")
+			return nil, argErr("project_id: no such project")
 		}
 	}
 	var wantLabels map[string]bool
 	if q.label != "" {
 		if wantLabels = snap.labelIDs(q.label); len(wantLabels) == 0 {
-			return nil, invalidParams("label: no such label")
+			return nil, argErr("label: no such label")
 		}
 	}
 	items := []keyed[taskOut]{}
@@ -367,7 +305,7 @@ func (s *Server) queryTasks(snap *snapshot, q taskQuery) (map[string]any, error)
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"tasks": list, "next_cursor": nullable(next), "timezone": q.loc.String(), "today": today, "server_time": s.serverTime()}, nil
+	return map[string]any{"tasks": list, "next_cursor": nullable(next), "timezone": q.loc.String(), "today": today, "server_time": r.serverTime()}, nil
 }
 
 func nullable(s string) any {
@@ -386,35 +324,44 @@ func hasAny(list []string, want map[string]bool) bool {
 	return false
 }
 
-func (s *Server) listTasks(ctx context.Context, userID string, a args) (any, error) {
+func (r *Registry) listTasks(ctx context.Context, userID string, a args) (map[string]any, error) {
 	q, err := parseTaskQuery(a)
 	if err != nil {
 		return nil, err
 	}
-	snap, err := s.load(ctx, userID)
+	snap, err := r.load(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	return s.queryTasks(snap, q)
+	return r.queryTasks(snap, q)
 }
 
 // ---- get_task ----
 
-type commentOut struct {
-	ID        string  `json:"id"`
-	ParentID  *string `json:"parent_id,omitempty"`
-	Author    person  `json:"author"`
-	Body      string  `json:"body"`
-	CreatedAt *string `json:"created_at,omitempty"`
-	EditedAt  *string `json:"edited_at,omitempty"`
+type commentText struct {
+	Body   string `json:"body"`
+	Author string `json:"author,omitempty"`
 }
 
-var errTaskNotFound = &errToolDomain{msg: "task not found"}
+type commentOut struct {
+	ID        string      `json:"id"`
+	Untrusted commentText `json:"untrusted_text"`
+	ParentID  *string     `json:"parent_id,omitempty"`
+	AuthorID  string      `json:"author_id"`
+	// AuthorIsYou is false for comments other members wrote (design D9.6).
+	AuthorIsYou bool    `json:"author_is_you"`
+	CreatedAt   *string `json:"created_at,omitempty"`
+	EditedAt    *string `json:"edited_at,omitempty"`
+}
 
-// taskDetail is get_task's payload, or errTaskNotFound for an id that is
+// ErrTaskNotFound is get_task's answer for an id that is unknown, deleted or
+// not visible to the user (indistinguishable on purpose).
+var ErrTaskNotFound = &ToolError{Message: "task not found"}
+
+// taskDetail is get_task's payload, or ErrTaskNotFound for an id that is
 // unknown, deleted or not visible to the user (indistinguishable on purpose).
-func (s *Server) taskDetail(ctx context.Context, userID, id string, loc *time.Location) (map[string]any, error) {
-	snap, err := s.load(ctx, userID)
+func (r *Registry) taskDetail(ctx context.Context, userID, id string, loc *time.Location) (map[string]any, error) {
+	snap, err := r.load(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -426,9 +373,9 @@ func (s *Server) taskDetail(ctx context.Context, userID, id string, loc *time.Lo
 		}
 	}
 	if task == nil {
-		return nil, errTaskNotFound
+		return nil, ErrTaskNotFound
 	}
-	today := s.today(loc)
+	today := r.today(loc)
 	out := snap.render(task, loc, today, true)
 	subs := []keyed[taskOut]{}
 	for _, t := range snap.tasks {
@@ -438,9 +385,9 @@ func (s *Server) taskDetail(ctx context.Context, userID, id string, loc *time.Lo
 	}
 	subtasks, _, _ := page(subs, "", MaxItems)
 	comments := []commentOut{}
-	list, err := s.sync.TaskComments(ctx, userID, id)
+	list, err := r.sync.TaskComments(ctx, userID, id)
 	if errors.Is(err, opsync.ErrNotFound) {
-		return nil, errTaskNotFound
+		return nil, ErrTaskNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -451,36 +398,36 @@ func (s *Server) taskDetail(ctx context.Context, userID, id string, loc *time.Lo
 		}
 		aid := str(c, "author_id")
 		name := snap.people[aid]
-		comments = append(comments, commentOut{ID: str(c, "id"), ParentID: strPtr(c, "parent_id"), Author: person{ID: aid, Name: name},
-			Body: str(c, "body"), CreatedAt: isoTime(num(c, "created_at")), EditedAt: isoTime(num(c, "edited_at"))})
+		comments = append(comments, commentOut{ID: str(c, "id"), ParentID: strPtr(c, "parent_id"), AuthorID: aid, AuthorIsYou: aid == userID,
+			Untrusted: commentText{Body: str(c, "body"), Author: name}, CreatedAt: isoTime(num(c, "created_at")), EditedAt: isoTime(num(c, "edited_at"))})
 	}
-	return map[string]any{"task": out, "subtasks": subtasks, "comments": comments, "timezone": loc.String(), "today": today, "server_time": s.serverTime()}, nil
+	return map[string]any{"task": out, "subtasks": subtasks, "comments": comments, "timezone": loc.String(), "today": today, "server_time": r.serverTime()}, nil
 }
 
-func (s *Server) getTask(ctx context.Context, userID string, a args) (any, error) {
+func (r *Registry) getTask(ctx context.Context, userID string, a args) (map[string]any, error) {
 	id, err := a.str("id")
 	if err != nil {
 		return nil, err
 	}
 	if id == "" {
-		return nil, invalidParams("id: the task id is required")
+		return nil, argErr("id: the task id is required")
 	}
 	loc, err := a.location()
 	if err != nil {
 		return nil, err
 	}
-	return s.taskDetail(ctx, userID, id, loc)
+	return r.taskDetail(ctx, userID, id, loc)
 }
 
 // ---- search_tasks ----
 
-func (s *Server) searchTasks(ctx context.Context, userID string, a args) (any, error) {
+func (r *Registry) searchTasks(ctx context.Context, userID string, a args) (map[string]any, error) {
 	query, err := a.str("query")
 	if err != nil {
 		return nil, err
 	}
 	if query == "" {
-		return nil, invalidParams("query: must not be empty")
+		return nil, argErr("query: must not be empty")
 	}
 	includeCompleted, err := a.boolean("include_completed")
 	if err != nil {
@@ -498,11 +445,11 @@ func (s *Server) searchTasks(ctx context.Context, userID string, a args) (any, e
 	if err != nil {
 		return nil, err
 	}
-	snap, err := s.load(ctx, userID)
+	snap, err := r.load(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	today := s.today(loc)
+	today := r.today(loc)
 	needle := strings.ToLower(query)
 	items := []keyed[taskOut]{}
 	for _, t := range snap.tasks {
@@ -520,27 +467,27 @@ func (s *Server) searchTasks(ctx context.Context, userID string, a args) (any, e
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"tasks": list, "next_cursor": nullable(next), "timezone": loc.String(), "today": today, "server_time": s.serverTime()}, nil
+	return map[string]any{"tasks": list, "next_cursor": nullable(next), "timezone": loc.String(), "today": today, "server_time": r.serverTime()}, nil
 }
 
 // ---- today_summary ----
 
 type projectCount struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Open int    `json:"open"`
+	ID        string   `json:"id"`
+	Untrusted nameText `json:"untrusted_text"`
+	Open      int      `json:"open"`
 }
 
-func (s *Server) todaySummary(ctx context.Context, userID string, a args) (any, error) {
+func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map[string]any, error) {
 	loc, err := a.location()
 	if err != nil {
 		return nil, err
 	}
-	snap, err := s.load(ctx, userID)
+	snap, err := r.load(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	today := s.today(loc)
+	today := r.today(loc)
 	var overdueItems, todayItems []keyed[taskOut]
 	inbox := 0
 	perProject := map[string]int{}
@@ -577,7 +524,7 @@ func (s *Server) todaySummary(ctx context.Context, userID string, a args) (any, 
 		if boolean(p, "archived") {
 			continue
 		}
-		counts = append(counts, projectCount{ID: id, Name: str(p, "name"), Open: perProject[id]})
+		counts = append(counts, projectCount{ID: id, Untrusted: nameText{Name: str(p, "name")}, Open: perProject[id]})
 	}
 	sort.SliceStable(counts, func(i, j int) bool { return counts[i].Open > counts[j].Open })
 	if len(counts) > MaxItems {
@@ -589,7 +536,7 @@ func (s *Server) todaySummary(ctx context.Context, userID string, a args) (any, 
 		"counts": map[string]any{
 			"overdue": len(overdueItems), "due_today": len(todayItems), "inbox": inbox, "per_project": counts,
 		},
-		"server_time": s.serverTime(),
+		"server_time": r.serverTime(),
 	}
 	if len(overdue) < len(overdueItems) || len(dueToday) < len(todayItems) {
 		out["truncated"] = true

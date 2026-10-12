@@ -34,19 +34,38 @@ type Token struct {
 	LastUsedAt *int64 `json:"lastUsedAt"`
 }
 
-// Token scopes (OpenSpec change `mcp-server`, design D2). A `read` token is
-// refused on every route that writes; tokens created before scopes existed
-// have no scope row and keep full access.
+// Token scopes (OpenSpec changes `mcp-server` D2 and `mcp-write-tools` D2). A
+// `read` token is refused on every route that writes; tokens created before
+// scopes existed have no scope row and keep full access. An `agent` token is
+// refused on every REST write like `read` and is the only scope that may call
+// MCP write tools (behind the owner's and the user's switches). It is stored
+// as a `read` scope row plus a marker row in api_token_agent, so a binary that
+// does not know the marker treats it as read-only (downgrades fail safe).
 const (
-	ScopeFull = "full"
-	ScopeRead = "read"
+	ScopeFull  = "full"
+	ScopeRead  = "read"
+	ScopeAgent = "agent"
 )
 
 // ValidScope reports whether scope can be given to a new token.
-func ValidScope(scope string) bool { return scope == ScopeFull || scope == ScopeRead }
+func ValidScope(scope string) bool {
+	return scope == ScopeFull || scope == ScopeRead || scope == ScopeAgent
+}
 
 // ErrInvalidScope is returned by CreateTokenScoped for an unknown scope.
-var ErrInvalidScope = errors.New("scope must be full or read")
+var ErrInvalidScope = errors.New("scope must be full, read or agent")
+
+// TokenInfo identifies the API token a request was authenticated with.
+type TokenInfo struct {
+	ID    string
+	Name  string
+	Scope string
+}
+
+// scopeExpr reads a token's effective scope from api_tokens t, api_token_scopes
+// sc and api_token_agent ag: a missing scope row is full, a read row with the
+// agent marker is agent.
+const scopeExpr = `CASE WHEN ag.token_id IS NOT NULL AND sc.scope = 'read' THEN 'agent' ELSE COALESCE(sc.scope,'full') END`
 
 var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
@@ -375,8 +394,17 @@ func (s *Service) CreateTokenScoped(ctx context.Context, userID, name, scope str
 		t.ID, userID, t.Name, hashToken(plain), t.CreatedAt); err != nil {
 		return nil, "", err
 	}
-	if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_scopes(token_id,scope) VALUES(?,?)", t.ID, scope); err != nil {
+	stored := scope
+	if scope == ScopeAgent {
+		stored = ScopeRead // plus the marker below: read-only to older binaries
+	}
+	if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_scopes(token_id,scope) VALUES(?,?)", t.ID, stored); err != nil {
 		return nil, "", err
+	}
+	if scope == ScopeAgent {
+		if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_agent(token_id) VALUES(?)", t.ID); err != nil {
+			return nil, "", err
+		}
 	}
 	if s.afterTokenInsert != nil {
 		if err := s.afterTokenInsert(); err != nil {
@@ -401,26 +429,46 @@ func (s *Service) UserByToken(ctx context.Context, plain string) (*User, error) 
 // UserByTokenScope resolves an API token to its user and scope, or ErrNotFound.
 // Tokens of deactivated accounts never resolve.
 func (s *Service) UserByTokenScope(ctx context.Context, plain string) (*User, string, error) {
+	u, info, err := s.UserByTokenInfo(ctx, plain)
+	return u, info.Scope, err
+}
+
+// UserByTokenInfo resolves an API token to its user and the token's id, name
+// and scope, or ErrNotFound. Tokens of deactivated accounts never resolve.
+func (s *Service) UserByTokenInfo(ctx context.Context, plain string) (*User, TokenInfo, error) {
 	var u User
-	var id, scope string
-	err := s.db.QueryRowContext(ctx, `SELECT t.id,COALESCE(sc.scope,'full'),u.id,u.email,u.name,u.role,u.created_at FROM api_tokens t
-		JOIN users u ON u.id = t.user_id LEFT JOIN api_token_scopes sc ON sc.token_id = t.id WHERE t.token_hash = ?
+	var info TokenInfo
+	err := s.db.QueryRowContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,u.id,u.email,u.name,u.role,u.created_at FROM api_tokens t
+		JOIN users u ON u.id = t.user_id LEFT JOIN api_token_scopes sc ON sc.token_id = t.id
+		LEFT JOIN api_token_agent ag ON ag.token_id = t.id WHERE t.token_hash = ?
 		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`, hashToken(plain)).
-		Scan(&id, &scope, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
+		Scan(&info.ID, &info.Name, &info.Scope, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, "", ErrNotFound
+		return nil, TokenInfo{}, ErrNotFound
 	}
 	if err != nil {
-		return nil, "", err
+		return nil, TokenInfo{}, err
 	}
-	_, _ = s.db.ExecContext(ctx, "UPDATE api_tokens SET last_used_at = ? WHERE id = ?", time.Now().UnixMilli(), id)
-	return &u, scope, nil
+	_, _ = s.db.ExecContext(ctx, "UPDATE api_tokens SET last_used_at = ? WHERE id = ?", time.Now().UnixMilli(), info.ID)
+	return &u, info, nil
+}
+
+// TokenName returns the name of a token owned by userID, or "" when the token
+// no longer exists or belongs to someone else (history labels, mcp-write-tools D6).
+func (s *Service) TokenName(ctx context.Context, userID, tokenID string) (string, error) {
+	var name string
+	err := s.db.QueryRowContext(ctx, "SELECT name FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID).Scan(&name)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return name, err
 }
 
 // ListTokens returns a user's tokens with their scopes.
 func (s *Service) ListTokens(ctx context.Context, userID string) ([]Token, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT t.id,t.name,COALESCE(sc.scope,'full'),t.created_at,t.last_used_at FROM api_tokens t
-		LEFT JOIN api_token_scopes sc ON sc.token_id = t.id WHERE t.user_id = ? ORDER BY t.created_at DESC`, userID)
+	rows, err := s.db.QueryContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,t.created_at,t.last_used_at FROM api_tokens t
+		LEFT JOIN api_token_scopes sc ON sc.token_id = t.id LEFT JOIN api_token_agent ag ON ag.token_id = t.id
+		WHERE t.user_id = ? ORDER BY t.created_at DESC`, userID)
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,47 @@
+package sync
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"strings"
+)
+
+// Reserved device prefixes (mcp-write-tools D4). Ops with these devices are
+// written only by the server: CalDAV clients (caldav:<app-password-id>) and AI
+// assistants (agent:<token-id>). /api/v1/sync refuses them from devices, so a
+// device cannot make its edits look like an assistant's or a calendar app's.
+const (
+	AgentDevicePrefix  = "agent:"
+	CaldavDevicePrefix = "caldav:"
+)
+
+// AgentDevice is the device id of the ops an AI assistant's token writes.
+func AgentDevice(tokenID string) string { return AgentDevicePrefix + tokenID }
+
+// IsAgentDevice reports whether device is an AI assistant's.
+func IsAgentDevice(device string) bool { return strings.HasPrefix(device, AgentDevicePrefix) }
+
+// ReservedDevice reports whether a device id may only be written by the server.
+func ReservedDevice(device string) bool {
+	return strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix)
+}
+
+// CreatedBy returns the device of the first stored created_at op of an entity
+// in the scopes userID can see ("" when there is none). trash_tasks uses it to
+// let an assistant move only its own creations to the Trash (mcp-write-tools D6).
+func (s *Service) CreatedBy(ctx context.Context, userID, entity, id string) (string, error) {
+	acc, err := loadAccess(ctx, s.db, userID)
+	if err != nil {
+		return "", err
+	}
+	scopes := acc.scopes()
+	var device string
+	err = s.db.QueryRowContext(ctx, `SELECT o.device FROM ops o JOIN op_scopes sc ON sc.seq = o.seq
+		WHERE o.entity = ? AND o.entity_id = ? AND o.field = 'created_at' AND sc.scope_id IN (`+placeholders(len(scopes))+`)
+		ORDER BY o.seq LIMIT 1`, append([]any{entity, id}, anys(scopes)...)...).Scan(&device)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return device, err
+}

@@ -48,6 +48,10 @@ type ChangeSet struct {
 	Device  string          `json:"device"`
 	UserID  string          `json:"userId"`
 	Changes []HistoryChange `json:"changes"`
+	// DeviceLabel names a server-side writer for the timeline (additive,
+	// mcp-write-tools D6): set by the history route for agent:<token-id>
+	// devices, computed when history is read, never stored.
+	DeviceLabel string `json:"device_label,omitempty"`
 }
 
 // History is one page of an entity's change sets, oldest first. When More is

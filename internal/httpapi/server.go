@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixari/opentodo/internal/agenttools"
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
@@ -85,6 +86,10 @@ type Server struct {
 	// server behind /mcp (OpenSpec `mcp-server`); see mcp.go.
 	mcpSettings *mcp.Settings
 	mcp         *mcp.Server
+	// agentTools is the AI agent tool registry behind /mcp and agentAccess the
+	// users' "Allow AI assistants to make changes" switches (mcp-write-tools).
+	agentTools  *agenttools.Registry
+	agentAccess *agenttools.Access
 	// email is email capture (OpenSpec `email-to-task`); emailLimiter caps
 	// inbox changes and rotations per account (30/hour).
 	email        *email.Service
@@ -294,9 +299,15 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required")
 			return
 		}
-		// Read-scoped API tokens (mcp-server D2) never reach a handler that writes.
-		if scope == auth.ScopeRead && isWriteRequest(r) {
-			writeError(w, http.StatusForbidden, "insufficient_scope", "this API token is read-only")
+		// Only sessions and full tokens reach a handler that writes: read tokens
+		// (mcp-server D2) and agent tokens (mcp-write-tools D2) are refused, and
+		// so is any scope this binary does not know (fail closed).
+		if scope != auth.ScopeFull && isWriteRequest(r) {
+			msg := "this API token is read-only"
+			if scope == auth.ScopeAgent {
+				msg = "this API token is for AI assistants: it can make changes only through the MCP endpoint's write tools"
+			}
+			writeError(w, http.StatusForbidden, "insufficient_scope", msg)
 			return
 		}
 		if viaCookie && r.Method != http.MethodGet && r.Method != http.MethodHead && !s.originAllowed(r) {
@@ -674,7 +685,7 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 	}
 	t, plain, err := s.auth.CreateTokenScoped(r.Context(), userFrom(r.Context()).ID, in.Name, in.Scope)
 	if errors.Is(err, auth.ErrInvalidScope) {
-		writeError(w, http.StatusBadRequest, "invalid_input", "scope: must be full or read")
+		writeError(w, http.StatusBadRequest, "invalid_input", "scope: must be full, read or agent")
 		return
 	}
 	if err != nil {
@@ -840,6 +851,18 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 	if in.Device == "" {
 		writeError(w, http.StatusBadRequest, "bad_request", "device is required")
 		return
+	}
+	// Devices may not write as an AI assistant or a calendar app: those device
+	// ids are reserved for the server's own writers (mcp-write-tools D4).
+	if opsync.ReservedDevice(in.Device) {
+		writeError(w, http.StatusBadRequest, "invalid_op", "device: ids starting with agent: or caldav: are reserved")
+		return
+	}
+	for _, op := range in.Ops {
+		if opsync.ReservedDevice(op.Device) {
+			writeError(w, http.StatusBadRequest, "invalid_op", "op device: ids starting with agent: or caldav: are reserved")
+			return
+		}
 	}
 	uid := userFrom(r.Context()).ID
 	s.recordTZOffset(r.Context(), uid, in.TZOffset)

@@ -117,6 +117,11 @@ async function seed() {
   const dash = await A('POST', '/api/v1/views', { name: 'Weekly review', kind: 'dashboard', query: '', pinned: true, panels: [v1.id, v2.id], position: 3 })
   await A('POST', '/api/v1/webhooks', { url: 'https://ha.example.com/api/webhook/opentodo', events: ['task.completed'] }).catch(() => {})
   await A('POST', '/api/v1/tokens', { name: 'laptop CLI' }).catch(() => {})
+  // AI assistants with changes allowed, so Settings shows every switch and the
+  // agent token shortcut (mcp-write-tools).
+  await A('PUT', '/api/v1/settings/mcp', { enabled: true, writes_enabled: true })
+  await A('PUT', '/api/v1/me/agent-access', { allow_writes: true })
+  await A('POST', '/api/v1/tokens', { name: 'Desk assistant', scope: 'agent' }).catch(() => {})
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()

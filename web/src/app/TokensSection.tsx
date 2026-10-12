@@ -22,7 +22,10 @@ export function TokensView(p: TokensViewProps) {
       <HelpHeading screen="settings/tokens" id="tokens-heading" className="font-semibold">API tokens</HelpHeading>
       <p className="text-sm text-muted">
         Use a token from scripts or a CLI: <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">Authorization: Bearer &lt;token&gt;</code>.
-        A read-only token can read everything you can but is refused on every change. See docs/api.md.
+        A read-only token can read everything you can but is refused on every change. A token for an AI assistant
+        that can make changes reads like a read-only token and can change tasks only through the assistant (MCP) write
+        tools, and only while the server owner and you allow assistant changes in AI assistants above; it can never
+        create tokens or change settings. See docs/api.md and docs/mcp.md.
       </p>
       <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); p.onCreate() }}>
         <input className="input max-w-xs" aria-label="Token name" placeholder="Token name (e.g. laptop CLI)" value={p.name}
@@ -30,6 +33,7 @@ export function TokensView(p: TokensViewProps) {
         <select className="input w-auto" aria-label="Token scope" value={p.scope} onChange={(e) => p.onScopeChange(e.target.value as TokenScope)}>
           <option value="full">Full access</option>
           <option value="read">Read-only</option>
+          <option value="agent">AI assistant, can make changes</option>
         </select>
         <button type="submit" className="btn-primary">Create</button>
       </form>
@@ -44,7 +48,7 @@ export function TokensView(p: TokensViewProps) {
         {p.tokens?.map((t) => (
           <li key={t.id} className="flex items-center gap-3 py-2 text-sm">
             <span className="flex-1">{t.name}</span>
-            <span className={`rounded px-1.5 py-0.5 text-xs ${t.scope === 'read' ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+            <span className={`rounded px-1.5 py-0.5 text-xs ${t.scope === 'read' ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200' : t.scope === 'agent' ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
               {scopeLabel(t.scope)}
             </span>
             <span className="text-xs text-faint">

@@ -26,7 +26,7 @@
     "request": {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "list_tasks", "arguments": {"view": "today", "timezone": "America/New_York", "limit": 10}}},
     "headers": {"Accept": "application/json, text/event-stream", "MCP-Protocol-Version": "2025-11-25"},
     "status": 200,
-    "expect": {"id": 3, "result": {"structuredContent": {"tasks": [{"title": "Fixture task", "project": "Inbox", "due": {"date": "2020-01-01"}}], "next_cursor": null, "server_time": "*"}}}
+    "expect": {"id": 3, "result": {"structuredContent": {"tasks": [{"untrusted_text": {"title": "Fixture task", "project": "Inbox"}, "due": {"date": "2020-01-01"}}], "next_cursor": null, "server_time": "*", "_notice": "*"}}}
   },
   {
     "request": {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "list_tasks", "arguments": {"priority": 9}}},

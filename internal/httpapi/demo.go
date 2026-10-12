@@ -116,6 +116,7 @@ var demoRules = []demoRule{
 	{"CalDAV", false, prefix("/dav")},
 	{"CalDAV", false, prefix("/.well-known/caldav")},
 	{"AI assistants (MCP)", false, prefix("/mcp")},
+	{"AI assistants (MCP)", true, exact("/api/v1/me/agent-access")},
 	{"Backups", true, prefix("/api/v1/backups")},
 	{"Webhooks", true, prefix("/api/v1/webhooks")},
 	{"Email to task", true, prefix("/api/v1/email-inbox")},

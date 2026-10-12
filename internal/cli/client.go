@@ -277,6 +277,7 @@ type project struct {
 type token struct {
 	ID         string          `json:"id"`
 	Name       string          `json:"name"`
+	Scope      string          `json:"scope"`
 	CreatedAt  int64           `json:"createdAt"`
 	LastUsedAt *int64          `json:"lastUsedAt"`
 	Raw        json.RawMessage `json:"-"`

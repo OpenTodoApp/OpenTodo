@@ -1,4 +1,4 @@
-import type { ApiToken, McpStatus, TokenScope } from './assistants'
+import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { KeyRecord } from './crypto'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
@@ -179,6 +179,11 @@ export const api = {
   // AI assistants (mcp-server): status for everyone, the toggle for the owner.
   getMcpSettings: () => request<McpStatus>('GET', '/api/v1/settings/mcp'),
   setMcpSettings: (enabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { enabled }),
+  /** Owner only: "AI assistants may make changes" (mcp-write-tools). */
+  setMcpWrites: (writesEnabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { writes_enabled: writesEnabled }),
+  /** The user's own "Allow AI assistants to make changes" switch. */
+  getAgentAccess: () => request<AgentAccess>('GET', '/api/v1/me/agent-access'),
+  setAgentAccess: (allowWrites: boolean) => request<AgentAccess>('PUT', '/api/v1/me/agent-access', { allow_writes: allowWrites }),
   deleteToken: (id: string) => request<void>('DELETE', `/api/v1/tokens/${id}`),
   // CalDAV (OpenSpec change `caldav`): the owner toggle and per-user app passwords.
   // End-to-end encryption (OpenSpec `e2ee`): only wrapped key material ever goes here.

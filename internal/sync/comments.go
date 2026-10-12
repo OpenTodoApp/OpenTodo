@@ -291,6 +291,11 @@ func (s *Service) emitMentions(ctx context.Context, author string, at int64, cha
 		if c.Entity != "comment" || !strings.HasPrefix(c.ScopeID, "project:") {
 			continue
 		}
+		// Comments written by an AI assistant never notify anyone (mcp-write-tools
+		// D9): an injected instruction cannot be used to spam other members.
+		if IsAgentDevice(c.Origin) {
+			continue
+		}
 		fc, ok := c.Fields["mentions"]
 		if !ok {
 			continue
