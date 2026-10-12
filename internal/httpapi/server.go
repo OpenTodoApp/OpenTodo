@@ -50,6 +50,9 @@ type Server struct {
 	passkeyOptions *rateLimiter
 	// inviteLimiter caps invitation creation per account (20/hour).
 	inviteLimiter *rateLimiter
+	// projectInviteLimiter caps project invite link creation per account
+	// (20/hour; OpenSpec `project-invite-links`), see projectinvites.go.
+	projectInviteLimiter *rateLimiter
 	// mfaLimiter guards the second sign-in step and reauthLimiter
 	// re-authentication, per client address (10/min each; OpenSpec `mfa-totp`).
 	mfaLimiter    *rateLimiter
@@ -223,6 +226,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("POST /api/v1/backups/test", s.requireAuth(s.handleBackupTest))
 	// Project sharing (OpenSpec `project-sharing`): literal patterns win over {collection}.
 	s.registerSharingRoutes(mux)
+	// Project invite links (OpenSpec `project-invite-links`): literal patterns win over {collection}.
+	s.registerProjectInviteRoutes(mux)
 	// Web push (OpenSpec `reminders`): registered only while push is enabled.
 	s.registerPushRoutes(mux)
 	// Notifications (OpenSpec `task-assignment`): literal patterns win over {collection}.
@@ -466,7 +471,7 @@ func (s *Server) logRequests(next http.Handler) http.Handler {
 		sw := &statusWriter{ResponseWriter: w, status: 200}
 		next.ServeHTTP(sw, r)
 		if strings.HasPrefix(r.URL.Path, "/api/") || sw.status >= 400 {
-			s.log.Debug("http", "method", r.Method, "path", r.URL.Path, "status", sw.status, "ms", time.Since(start).Milliseconds())
+			s.log.Debug("http", "method", r.Method, "path", redactPath(r.URL.Path), "status", sw.status, "ms", time.Since(start).Milliseconds())
 		}
 	})
 }
@@ -531,6 +536,9 @@ type credentials struct {
 	// Invitation is an optional invitation secret that admits one member while
 	// sign-up is closed (OpenSpec `invitations`).
 	Invitation string `json:"invitation"`
+	// ProjectInvite is an optional project invite link secret: the new account
+	// joins that project (OpenSpec `project-invite-links`).
+	ProjectInvite string `json:"projectInvite"`
 }
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -551,6 +559,14 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	// form (the first account is the owner and can always be created).
 	if n, err := s.auth.UserCount(r.Context()); err == nil && n > 0 && s.auth.SSOOnly(r.Context()) {
 		writeError(w, http.StatusForbidden, "sso_required", auth.ErrSSORequired.Error())
+		return
+	}
+	if c.ProjectInvite != "" {
+		if c.Invitation != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", "send either invitation or projectInvite, not both")
+			return
+		}
+		s.registerWithProjectInvite(w, r, c)
 		return
 	}
 	u, err := s.auth.Register(r.Context(), c.Email, c.Name, c.Password, c.Invitation)

@@ -57,7 +57,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | --- | --- | --- | --- |
 | GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
 | GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, mfa?, encryption?, minClientVersion?, demo?}`; `mfa`, `encryption` and `minClientVersion` only when signed in; `demo` (`{token, sandboxHours: {idle, max}, resetsAt}`: a fresh single-use sandbox-creation token valid for 10 minutes, the sandbox lifetimes in hours and the next nightly reset; no credentials) only on a [demo instance](self-hosting/demo.md) (see [Two-factor authentication](#two-factor-authentication), [Single sign-on](#single-sign-on), [End-to-end encryption](#end-to-end-encryption)) |
-| POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?}` → 201 `{user}` + cookie. The first account becomes owner; afterwards an `invitation` secret admits one member while sign-up is closed |
+| POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?, projectInvite?}` → 201 `{user}` + cookie. The first account becomes owner; afterwards an `invitation` secret admits one member while sign-up is closed, and a `projectInvite` secret creates a member who joins that project (201 `{user, projectId, role}`, see [Project invite links](#project-invite-links)) |
 | POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie, or `{mfaRequired:true, challenge, expiresAt}` and no cookie when the account has a second factor |
 | POST | `/api/v1/auth/mfa` | none | `{challenge, code}` or `{challenge, recoveryCode}`, optional `remember` → `{user}` + cookie (+ `ot_trust` cookie when `remember`) |
 | POST | `/api/v1/auth/reauth` | cookie | `{password}` or `{code}` → `{reauthAt, validForMs}`; unlocks *fresh* routes for 10 minutes |
@@ -68,6 +68,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in) |
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid`, see [Invitations](#invitations) |
+| GET | `/api/v1/project-invites/{token}` | none | preview `{inviterName, projectName, role, email, expiresAt, canCreateAccount, alreadyMember?}` or 404 `invitation_invalid`, see [Project invite links](#project-invite-links) |
 | GET | `/api/v1/password-resets/{token}` | none | preview `{email, expiresAt}` or 404 `reset_invalid` |
 | POST | `/api/v1/password-resets/{token}` | none | `{password}` → 204 or 404 `reset_invalid` |
 
@@ -136,6 +137,12 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PATCH | `/api/v1/projects/{id}/members/{userId}` | owner, admin of the project | `{role}` → membership |
 | DELETE | `/api/v1/projects/{id}/members/{userId}` | member | remove a member, or leave with your own id or `me` → 204 |
 | POST | `/api/v1/projects/{id}/transfer` | owner of the project | `{userId}` → membership; the previous owner becomes an admin |
+| GET | `/api/v1/projects/{id}/invites` | owner, admin of the project | pending invite links `{invites:[…]}`, see [Project invite links](#project-invite-links) |
+| POST | `/api/v1/projects/{id}/invites` | owner, admin of the project, fresh | `{role, email?, expiresInHours?}` → 201 `{invite, link, newAccounts}` (link shown once) |
+| DELETE | `/api/v1/projects/{id}/invites/{inviteId}` | owner, admin of the project | revoke a pending link → 204 |
+| POST | `/api/v1/project-invites/{token}/accept` | yes | join the project as the signed-in account → `{projectId, role}` |
+| GET | `/api/v1/settings/project-invites` | yes | `{membersCanInviteNewPeople}` (the owner switch) |
+| PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
 | GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `encryption`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
@@ -232,7 +239,7 @@ For sign-in, `response` carries `clientDataJSON`, `authenticatorData` and `signa
 | `bad_request` | 400 | a field is missing or is not base64url |
 | `invalid_credentials` | 401 | sign-in with an unknown or deleted passkey, a bad signature, or a signature counter that went backwards (the passkey is then marked `suspiciousAt`) |
 | `not_found` | 404 | rename or delete of a passkey id that is not yours |
-| `rate_limited` | 429 | more than 10 requests per minute per address to `auth/login`, `auth/register`, `auth/passkey` and the invitation preview combined (one shared window), or more than 10 per minute to `auth/passkey/options` (its own window, so the sign-in screen's autofill request never uses up password attempts) |
+| `rate_limited` | 429 | more than 10 requests per minute per address to `auth/login`, `auth/register`, `auth/passkey`, the invitation preview and the project invite link preview and accept routes combined (one shared window), or more than 10 per minute to `auth/passkey/options` (its own window, so the sign-in screen's autofill request never uses up password attempts) |
 
 The anonymous `auth/passkey` routes apply the same `Origin` check as `auth/login`. A successful passkey sign-in sets the same `opentodo_session` cookie as a password sign-in. Bearer tokens can list, rename and delete passkeys, but a CLI cannot run a ceremony.
 
@@ -405,7 +412,7 @@ Refusals:
 | 409 | `encryption_enabled` | readable text (title, description, name, comment) for an end-to-end encrypted account |
 | 400 | `invalid_input` | a value the tool refuses (with the tool's message) |
 
-Every other write route (tokens, settings, sync, sharing and members, invitations, encryption keys, imports, backups, webhooks, purging, archiving or deleting projects, user administration) answers 403 `insufficient_scope`, and the list is enforced by the matched route, so a route added later stays refused until it is added on purpose.
+Every other write route (tokens, settings, sync, sharing and members, invitations, project invite links, encryption keys, imports, backups, webhooks, purging, archiving or deleting projects, user administration) answers 403 `insufficient_scope`, and the list is enforced by the matched route, so a route added later stays refused until it is added on purpose.
 
 ### Task fields
 
@@ -776,7 +783,10 @@ The server records security-relevant events in its own database (never synced to
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
 | `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
 | `invitation.revoked` | success | actor = owner | `invitation_id` |
-| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `oidc.*`, `encryption`, `encryption.keys`), `from`, `to` |
+| `project_invite.created` | success | actor = creator | `project_invite_id`, `shared_project_id`, `project_role`, `invited_email` (bound email, if any) |
+| `project_invite.revoked` | success | actor = project owner or admin | `project_invite_id`, `shared_project_id` |
+| `project_invite.accepted` | success | actor = the account that joined (new or existing), target = the link's creator | `project_invite_id`, `shared_project_id`, `project_role` |
+| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `project_invites.members_create_accounts`, `oidc.*`, `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
 | `mfa.enrolled`, `mfa.disabled` | success | actor = user (or the owner, target = account) | `method` |
@@ -854,6 +864,57 @@ curl -X POST … -d '{"userId":"<bob>"}' $BASE/api/v1/projects/$P/transfer
 Collections, single reads and the export include the shared projects and their tasks; a shared project carries the read-only keys `role` (yours) and `owner_id`. They are ignored when sent back in a write. REST writes are checked with the same role table as sync: a refused write answers `403 forbidden` and stores nothing. A task cannot change sharing scope: `PATCH` of `project_id` to a project shared differently (or to the Inbox from a shared project) answers `400 scope_change`; create a copy in the destination and delete the original instead, which is what the web app does.
 
 Membership changes are recorded in the audit log as `role.changed` with `from`/`to` values such as `none` → `project.editor`.
+
+### Project invite links
+
+A project's owner or admin can invite someone with a single-use link instead of an email (OpenSpec `project-invite-links`). Opening the link adds the person to the project with the link's role; it can also create their account. Links are server-side account data: never written to the op log, never synced, and every route needs a connection.
+
+**Create** — `POST /api/v1/projects/{id}/invites` (owner or admin of the project; a *fresh* session, like invitations; `read` and `agent` tokens get 403 `insufficient_scope`):
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `role` | `viewer`, `editor` or `admin` | required; `admin` only for the project's owner (an admin gets 403 `forbidden`) |
+| `email` | string | Bind the link to one address (matched case-insensitively when it is used) |
+| `expiresInHours` | integer 1–720 | Default 168 (seven days) |
+
+```json
+{
+  "invite": {
+    "id": "…", "projectId": "…", "role": "editor", "email": null,
+    "createdBy": "<your id>", "createdByName": "Alice",
+    "createdAt": 1760000000000, "expiresAt": 1760604800000
+  },
+  "link": "https://todo.example.com/invite/p/otp_…",
+  "newAccounts": true
+}
+```
+
+The `link` holds the secret and is returned exactly once; the server stores a hash. `newAccounts` says whether the link can create an account right now (see below). A viewer or editor gets 403 `forbidden`, a non-member 404 `not_found`; bad input is 400 `invalid_input` naming the field; 20 links per account per hour (429 `rate_limited`). An end-to-end encrypted account cannot create a link for a project it has not shared yet (409 `encryption_enabled`).
+
+**List** — `GET /api/v1/projects/{id}/invites` → `{invites: [...]}`: the pending links of the project, newest first, same shape as above, never a secret.
+
+**Revoke** — `DELETE /api/v1/projects/{id}/invites/{inviteId}` → 204 (any owner or admin of the project; repeating it is a no-op). An accepted link answers 409 `invitation_spent`, an unknown id 404 `not_found`.
+
+**Preview** — `GET /api/v1/project-invites/{token}` needs no authentication:
+
+```json
+{"inviterName": "Alice", "projectName": "Home", "role": "editor", "email": null,
+ "expiresAt": 1760604800000, "canCreateAccount": true}
+```
+
+`alreadyMember` (true or false) is added when the request carries a session. No ids are returned. Unknown, expired, revoked and used links, links to a deleted project, links whose creator was deactivated or can no longer grant the role (removed from the project, or no longer its owner or admin) all answer the same 404 `invitation_invalid`. Rate limited per client address together with sign-in.
+
+**Join while signed in** — `POST /api/v1/project-invites/{token}/accept` (session or full token) → 200 `{projectId, role}`. The account becomes a member, the link is spent, and the devices of every member are woken to sync. Errors: 409 `already_member` (the link stays pending), 403 `invitation_email_mismatch`, 404 `invitation_invalid` (also when the creator lost the right since the preview, or another acceptance won).
+
+**Join with a new account** — `POST /api/v1/auth/register` with `projectInvite`:
+
+```bash
+curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
+  -d '{"email":"dora@example.com","name":"Dora","password":"a long passphrase","projectInvite":"otp_…"}'
+# 201 {"user":{…,"role":"member"},"projectId":"…","role":"editor"} + session cookie
+```
+
+The account, the membership and the spend commit in one transaction, so a link creates at most one account. A link may create an account when its creator is the server owner or an admin, when open sign-up is on, or when the owner turned on **Members can invite new people with project links** (`PUT /api/v1/settings/project-invites` `{"membersCanInviteNewPeople": true}`; off by default; any signed-in account can read it with `GET`). Otherwise the answer is 403 `project_invite_not_allowed` and the person signs in with an existing account first. In SSO-only mode registration answers 403 `sso_required`; the person signs in through the provider and then joins. Other errors as for invitations (`invitation_email_mismatch`, `email_taken`, `invalid_input`); in every error case the link stays pending.
 
 ### Assignment and notifications
 
@@ -1330,7 +1391,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
 - Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB).
-- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview and the password-reset routes share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour.
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes and the password-reset routes share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour.
 
 ### Error codes
 
@@ -1350,7 +1411,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `session_required` | 403 | `POST /api/v1/assistant/turn` with an API token: the assistant is used from the app while signed in |
 | `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` or `agent` API token; `/api/v1/me/agent-access` with either |
 | `demo_token` | 403 | `POST /api/v1/demo/sandbox` without a valid, unused creation token |
-| `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
+| `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running |
 | `too_large` | 413 | `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
@@ -1368,8 +1429,9 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed; first sign-in through the provider when provisioning is not allowed |
 | `email_taken` | 409 | registration with an existing email |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
-| `invitation_invalid` | 404 | unknown, expired, revoked or already accepted invitation |
-| `invitation_spent` | 409 | revoking an accepted invitation |
+| `invitation_invalid` | 404 | unknown, expired, revoked or already accepted invitation or project invite link; a project link whose project was deleted or whose creator can no longer grant its role |
+| `project_invite_not_allowed` | 403 | registering through a project invite link that may not create accounts (see [Project invite links](#project-invite-links)) |
+| `invitation_spent` | 409 | revoking an accepted invitation or project invite link |
 | `reset_invalid` | 404 | unknown, used, expired or revoked password reset link |
 | `self_action` | 409 | a `/users` action on your own account |
 | `account_deactivated` | 403/409 | 403 at sign-in with the correct password of a deactivated account; 409 for an administrative action on a deactivated account |
@@ -1396,7 +1458,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
 | `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
 | `user_not_found` | 404 | adding a project member by an email that has no account |
-| `already_member` | 409 | adding an account that is already a member of the project |
+| `already_member` | 409 | adding an account that is already a member of the project, or accepting a project invite link as one |
 | `owner_must_transfer` | 409 | the project owner leaving the project |
 | `not_deleted` | 409 | purging a task or project that is not in the Trash |
 | `unsupported_format` | 400 | import file in no supported format |
