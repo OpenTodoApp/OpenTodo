@@ -22,11 +22,18 @@ export async function fetchHistory(entity: 'task' | 'project', id: string, befor
 
 /**
  * How a change set's device appears: "this device" for ours, "API" for REST
- * writes, otherwise "another device" with a short id; the author's name is added
- * when someone else made the change (shared projects).
+ * writes, the server's label for AI assistant writes ("AI assistant (Desk
+ * assistant)" for your own token, mcp-write-tools), otherwise "another device"
+ * with a short id; the author's name is added when someone else made the change
+ * (shared projects).
  */
-export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId'>, myDevice: string, myUserId?: string, memberships: Membership[] = []): string {
-  const base = set.device === myDevice ? 'this device' : set.device === 'server' ? 'API' : set.device.startsWith('caldav:') ? 'a calendar app (CalDAV)' : `another device (${set.device.slice(0, 4)})`
+export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_label'>, myDevice: string, myUserId?: string, memberships: Membership[] = []): string {
+  const base = set.device === myDevice ? 'this device'
+    : set.device_label ? set.device_label
+    : set.device === 'server' ? 'API'
+    : set.device.startsWith('agent:') ? 'AI assistant'
+    : set.device.startsWith('caldav:') ? 'a calendar app (CalDAV)'
+    : `another device (${set.device.slice(0, 4)})`
   if (!myUserId || set.userId === myUserId) return base
   for (const m of memberships) {
     const who = m.members.find((x) => x.userId === set.userId)

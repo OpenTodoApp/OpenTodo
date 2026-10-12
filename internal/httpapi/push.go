@@ -180,6 +180,12 @@ func relativeFireAt(d *due, offset json.RawMessage, loc *time.Location) json.Raw
 // whose due is being set to dueRaw, stamped with the same ts as the due op so
 // last-writer-wins takes both from the same write (as the web client does).
 func (s *Server) reminderOpsForDue(ctx context.Context, uid, taskID string, dueRaw json.RawMessage, ts int64) ([]opsync.Op, error) {
+	return s.reminderOpsForDueAs(ctx, uid, taskID, dueRaw, ts, serverDevice)
+}
+
+// reminderOpsForDueAs is reminderOpsForDue with the ops' device chosen by the
+// caller (agent:<token-id> for AI assistant writes).
+func (s *Server) reminderOpsForDueAs(ctx context.Context, uid, taskID string, dueRaw json.RawMessage, ts int64, device string) ([]opsync.Op, error) {
 	list, err := s.sync.List(ctx, uid, "reminder", false)
 	if err != nil {
 		return nil, err
@@ -196,11 +202,11 @@ func (s *Server) reminderOpsForDue(ctx context.Context, uid, taskID string, dueR
 		}
 		id := idOf(rem["id"])
 		fire := relativeFireAt(d, rem["offset_minutes"], loc)
-		ops = append(ops, opsync.Op{ID: ids.New(), Entity: "reminder", EntityID: id, Field: "fire_at", Value: fire, TS: ts, Device: serverDevice})
+		ops = append(ops, opsync.Op{ID: ids.New(), Entity: "reminder", EntityID: id, Field: "fire_at", Value: fire, TS: ts, Device: device})
 		if !opsync.SameJSON(fire, rem["fire_at"]) {
 			for _, f := range []string{"delivered_at", "dismissed_at"} {
 				if !isNullish(rem[f]) {
-					ops = append(ops, opsync.Op{ID: ids.New(), Entity: "reminder", EntityID: id, Field: f, Value: json.RawMessage("null"), TS: ts, Device: serverDevice})
+					ops = append(ops, opsync.Op{ID: ids.New(), Entity: "reminder", EntityID: id, Field: f, Value: json.RawMessage("null"), TS: ts, Device: device})
 				}
 			}
 		}

@@ -75,6 +75,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | CalDAV two-way sync (Apple Reminders, Thunderbird, Android via DAVx⁵) | `caldav` |
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
+| AI assistants can make changes through MCP: `agent` tokens, owner and user switches, limits, audit, history labels | `mcp-write-tools` |
 
 ### 7. Security and access
 
@@ -91,11 +92,11 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 
 ## Next: Bring your agent
 
-Planned, in this order. Each is a proposed OpenSpec change under `openspec/changes/`. The cross-cutting decisions (one agent tool registry shared by MCP and the in-app assistant, the `agent` token scope, the "Allow AI assistants to make changes" switch, and the prompt-injection threat model) are recorded in `mcp-write-tools/design.md`.
+In this order. Each starts as an OpenSpec change under `openspec/changes/`. The cross-cutting decisions (one agent tool registry shared by MCP and the in-app assistant, the `agent` token scope, the "Allow AI assistants to make changes" switch, and the prompt-injection threat model) are recorded in the `mcp-write-tools` design (archived under `openspec/changes/archive/`).
 
 | # | Capability | Change name | Notes |
 | --- | --- | --- | --- |
-| 1 | AI assistants can act through MCP: create, edit, complete, reschedule and move tasks, create projects and labels, comment | `mcp-write-tools` | Needs an `agent` token plus owner and user switches (both off by default). Every write goes through the op log, is attributed in history, audited, rate limited and reversible. No permanent deletion |
+| 1 | **Shipped.** AI assistants can act through MCP: create, edit, complete, reschedule and move tasks, create projects and labels, comment | `mcp-write-tools` | Needs an `agent` token plus owner and user switches (both off by default). Every write goes through the op log, is attributed in history, audited, rate limited and reversible. No permanent deletion |
 | 2 | `ot` as a dependable tool for agent harnesses | `agent-ready-cli` | Versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` required without a terminal, read-only mode, a shipped agent skill file. The CLI stays in this repository |
 | 3 | Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. Not available for end-to-end encrypted accounts in the first version |
 
@@ -111,6 +112,8 @@ Not commitments, just honest next steps. Each would start as an OpenSpec change.
 - **Quick add for recurrence and reminders** ("every Monday", "remind me at 9") and quick-add parsing in `ot`.
 - **Published browser extension** in the Chromium and Firefox stores, and file and image sharing through the share target.
 - **Shell completion** for `ot`.
+- **In-app assistant for end-to-end encrypted accounts.** The first in-app assistant runs its loop on the server, which cannot read encrypted content. A direct-from-device mode (the browser holds the key and calls the model provider itself) could serve encrypted accounts, at the cost of exposing the model key to the browser and depending on provider CORS rules.
+- **Keep a shared project away from AI assistants.** A per-project switch so that one member's assistant cannot read or change a shared project the others want kept out of assistants.
 
 ## Principles that do not change
 

@@ -826,3 +826,46 @@ func TestLabelFlagResolvesNamesToIDs(t *testing.T) {
 		t.Fatalf("edit created a duplicate label: %d labels", n)
 	}
 }
+
+func TestTokenCreateScope(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	code, out, errb := h.run("token", "create", "desk-assistant", "--scope", "agent")
+	if code != 0 || !strings.HasPrefix(strings.TrimSpace(out), "ot_") || !strings.Contains(errb, "scope agent") || !strings.Contains(errb, "both assistant switches") {
+		t.Fatalf("agent token: %d %q %q", code, out, errb)
+	}
+	code, _, errb = h.run("token", "create", "reader", "--scope", "read")
+	if code != 0 || !strings.Contains(errb, "scope read") {
+		t.Fatalf("read token: %d %q", code, errb)
+	}
+	code, _, errb = h.run("token", "create", "x", "--scope", "admin")
+	if code != ExitUsage || !strings.Contains(errb, "full, read, agent") {
+		t.Fatalf("admin scope: %d %q", code, errb)
+	}
+	listed := h.mustRun("token", "list")
+	if !strings.Contains(listed, "SCOPE") || !strings.Contains(listed, "agent") || !strings.Contains(listed, "read") || strings.Contains(listed, " x ") {
+		t.Fatalf("token list = %q", listed)
+	}
+	out = h.mustRun("token", "list", "--json")
+	var tokens []map[string]any
+	_ = json.Unmarshal([]byte(out), &tokens)
+	scopes := map[string]string{}
+	for _, tk := range tokens {
+		scopes[tk["name"].(string)], _ = tk["scope"].(string)
+	}
+	if scopes["desk-assistant"] != "agent" || scopes["reader"] != "read" || scopes["backup-script"] != "" {
+		t.Fatalf("scopes = %v", scopes)
+	}
+	if _, ok := scopes["x"]; ok {
+		t.Fatal("a token with an invalid scope was created")
+	}
+	// The default stays full.
+	h.mustRun("token", "create", "plain")
+	out = h.mustRun("token", "list", "--json")
+	_ = json.Unmarshal([]byte(out), &tokens)
+	for _, tk := range tokens {
+		if tk["name"] == "plain" && tk["scope"] != "full" {
+			t.Fatalf("default scope = %v", tk["scope"])
+		}
+	}
+}

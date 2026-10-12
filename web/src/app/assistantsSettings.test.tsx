@@ -11,8 +11,9 @@ const endpoint = 'https://todo.example.com/mcp'
 
 function render(over: Partial<AssistantsViewProps> = {}) {
   const props: AssistantsViewProps = {
-    isOwner: true, connected: true, status: { enabled: false, endpoint }, busy: false, error: null, secret: null, copied: null,
-    onToggle: noop, onCreateToken: noop, onCopy: noop, onDismissSecret: noop, ...over,
+    isOwner: true, connected: true, status: { enabled: false, endpoint }, access: { allow_writes: false, owner_allows_writes: false },
+    busy: false, error: null, secret: null, copied: null,
+    onToggle: noop, onToggleWrites: noop, onToggleAccess: noop, onCreateToken: noop, onCopy: noop, onDismissSecret: noop, ...over,
   }
   return renderToStaticMarkup(<AssistantsView {...props} />)
 }
@@ -66,7 +67,7 @@ describe('AssistantsView', () => {
     expect(html).toContain('Bearer ot_assistant123')
     const plain = render()
     expect(plain).not.toContain('ot_')
-    expect(plain).toContain('Bearer &lt;your read-only token&gt;')
+    expect(plain).toContain('Bearer &lt;your token&gt;')
     expect(render({ copied: 'endpoint' })).toContain('Copied')
   })
 
@@ -79,6 +80,56 @@ describe('AssistantsView', () => {
   })
 })
 
+const checkboxes = (html: string) => [...html.matchAll(/<input([^>]*type="checkbox"[^>]*)>/g)].map((m) => m[1])
+const AGENT = 'Create a token for an assistant that can make changes'
+
+describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
+  const on = { enabled: true, writes_enabled: true, endpoint }
+
+  it('gives the owner a second switch once the endpoint is on', () => {
+    expect(render()).not.toContain('AI assistants may make changes')
+    const html = render({ status: { enabled: true, writes_enabled: false, endpoint } })
+    expect(html).toContain('AI assistants may make changes')
+    expect(html).toContain('assistants can only read')
+    expect(render({ status: on })).toContain('create, edit, complete, reschedule and move')
+    // Members get no owner switches, only their own.
+    const member = render({ isOwner: false, status: on })
+    expect(member).not.toContain('AI assistants may make changes</span>')
+    expect(member).toContain('allows assistants to make changes')
+    expect(checkboxes(member)).toHaveLength(1)
+  })
+
+  it('shows every user their own switch with what assistants can and cannot do', () => {
+    const html = render({ isOwner: false, status: { enabled: true, endpoint } })
+    expect(html).toContain('Allow AI assistants to make changes to my tasks')
+    expect(html).toContain('cannot delete anything permanently')
+    expect(html).toContain('has not allowed assistants to make changes')
+    expect(html).toContain('aria-describedby="assistant-writes-help"')
+    expect(render({ status: on, access: { allow_writes: true, owner_allows_writes: true } })).not.toContain('has not allowed assistants')
+  })
+
+  it('offers the agent token only when both switches are on; read-only stays the default', () => {
+    expect(button(render({ status: on }), AGENT)).toBeUndefined()
+    expect(button(render({ status: { enabled: true, endpoint }, access: { allow_writes: true, owner_allows_writes: false } }), AGENT)).toBeUndefined()
+    const both = render({ status: on, access: { allow_writes: true, owner_allows_writes: true } })
+    expect(button(both, AGENT)).toBeTruthy()
+    const labels = buttons(both).map((b) => b.label)
+    expect(labels.indexOf('Create read-only token')).toBeLessThan(labels.indexOf(AGENT))
+    expect(button(both, 'Create read-only token')?.attrs).toContain('btn-primary')
+    expect(render({ status: on, secret: 'ot_a', secretScope: 'agent' })).toContain('assistant that can make changes now')
+  })
+
+  it('disables every switch and action offline, keeping the last state', () => {
+    const html = render({ connected: false, status: on, access: { allow_writes: true, owner_allows_writes: true } })
+    const boxes = checkboxes(html)
+    expect(boxes).toHaveLength(3)
+    for (const b of boxes) expect(b).toContain('disabled=""')
+    expect(boxes.every((b) => b.includes('checked=""'))).toBe(true)
+    expect(button(html, AGENT)?.attrs).toContain('disabled')
+    expect(html).toContain('needs a connection')
+  })
+})
+
 describe('assistants helpers', () => {
   it('builds an MCP client entry with URL and bearer header', () => {
     expect(JSON.parse(connectionSnippet(endpoint, 'ot_x'))).toEqual({
@@ -88,6 +139,7 @@ describe('assistants helpers', () => {
 
   it('describes errors', () => {
     expect(describeAssistantsError(new ApiError(403, 'forbidden', 'only the owner'))).toContain('Only the server owner')
+    expect(describeAssistantsError(new ApiError(403, 'insufficient_scope', 'no'))).toContain('Only you')
     expect(describeAssistantsError(new TypeError('Failed to fetch'))).toContain('unreachable')
   })
 })
@@ -103,9 +155,15 @@ describe('api MCP settings', () => {
     }))
     expect(await api.getMcpSettings()).toEqual({ enabled: true, endpoint })
     await api.setMcpSettings(true)
+    await api.setMcpWrites(true)
+    await api.getAgentAccess()
+    await api.setAgentAccess(false)
     expect(calls).toEqual([
       { method: 'GET', url: '/api/v1/settings/mcp', body: null },
       { method: 'PUT', url: '/api/v1/settings/mcp', body: { enabled: true } },
+      { method: 'PUT', url: '/api/v1/settings/mcp', body: { writes_enabled: true } },
+      { method: 'GET', url: '/api/v1/me/agent-access', body: null },
+      { method: 'PUT', url: '/api/v1/me/agent-access', body: { allow_writes: false } },
     ])
   })
 })

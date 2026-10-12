@@ -1,4 +1,4 @@
-package mcp
+package agenttools
 
 import (
 	"context"
@@ -26,39 +26,44 @@ type snapshot struct {
 	tasks    []opsync.Entity
 	people   map[string]string // account id → display name
 	shared   map[string]opsync.ProjectAccess
+	// sectionProject maps a section id onto its project id (write validation).
+	sectionProject map[string]string
+	labelList      []opsync.Entity
 }
 
-func (s *Server) load(ctx context.Context, userID string) (*snapshot, error) {
-	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}}
+func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
+	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, sectionProject: map[string]string{}}
 	var err error
-	if snap.projList, err = s.sync.List(ctx, userID, "project", false); err != nil {
+	if snap.projList, err = r.sync.List(ctx, userID, "project", false); err != nil {
 		return nil, err
 	}
 	for _, p := range snap.projList {
 		snap.projects[str(p, "id")] = p
 	}
-	labels, err := s.sync.List(ctx, userID, "label", false)
+	labels, err := r.sync.List(ctx, userID, "label", false)
 	if err != nil {
 		return nil, err
 	}
+	snap.labelList = labels
 	for _, l := range labels {
 		snap.labels[str(l, "id")] = str(l, "name")
 	}
-	sections, err := s.sync.List(ctx, userID, "section", false)
+	sections, err := r.sync.List(ctx, userID, "section", false)
 	if err != nil {
 		return nil, err
 	}
 	for _, sec := range sections {
 		snap.sections[str(sec, "id")] = str(sec, "name")
+		snap.sectionProject[str(sec, "id")] = rawStr(sec, "project_id")
 	}
-	if snap.tasks, err = s.sync.List(ctx, userID, "task", false); err != nil {
+	if snap.tasks, err = r.sync.List(ctx, userID, "task", false); err != nil {
 		return nil, err
 	}
-	if snap.shared, err = s.sync.SharedProjects(ctx, userID); err != nil {
+	if snap.shared, err = r.sync.SharedProjects(ctx, userID); err != nil {
 		return nil, err
 	}
 	if len(snap.shared) > 0 {
-		ms, err := s.sync.Memberships(ctx, userID)
+		ms, err := r.sync.Memberships(ctx, userID)
 		if err != nil {
 			return nil, err
 		}
@@ -226,30 +231,40 @@ func localDue(d *due, loc *time.Location) (date, clock string) {
 
 // ---- output shapes ----
 
-type person struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+// Every user-written string (titles, descriptions, names, comment bodies)
+// travels inside an `untrusted_text` object, and every result carries Notice
+// (design D9.5): a cooperative model treats that text as data. The server's
+// defences never depend on it.
+
+// taskText is the user-written text of a task.
+type taskText struct {
+	Title       string   `json:"title"`
+	Description *string  `json:"description,omitempty"`
+	Project     string   `json:"project"`
+	Section     string   `json:"section,omitempty"`
+	Labels      []string `json:"labels"`
+	Assignee    string   `json:"assignee,omitempty"`
 }
 
 type taskOut struct {
 	ID              string   `json:"id"`
-	Title           string   `json:"title"`
-	Description     *string  `json:"description,omitempty"`
+	Untrusted       taskText `json:"untrusted_text"`
 	ProjectID       *string  `json:"project_id"`
-	Project         string   `json:"project"`
 	SectionID       *string  `json:"section_id,omitempty"`
-	Section         string   `json:"section,omitempty"`
 	ParentID        *string  `json:"parent_id,omitempty"`
 	Priority        int      `json:"priority"`
 	Due             *dueOut  `json:"due"`
 	Overdue         bool     `json:"overdue,omitempty"`
-	Labels          []string `json:"labels"`
-	Assignee        *person  `json:"assignee,omitempty"`
+	LabelIDs        []string `json:"label_ids"`
+	AssigneeID      *string  `json:"assignee_id,omitempty"`
 	Recurrence      *string  `json:"recurrence,omitempty"`
 	EstimateMinutes *int     `json:"estimate_minutes,omitempty"`
 	Completed       bool     `json:"completed"`
 	CompletedAt     *string  `json:"completed_at,omitempty"`
 	CreatedAt       *string  `json:"created_at,omitempty"`
+	// Shared is true for tasks of a shared project: other members may have
+	// written its text (design D9.6).
+	Shared bool `json:"shared,omitempty"`
 	// Encrypted is true when the title or description is end-to-end encrypted
 	// (OpenSpec `e2ee`) and therefore shown as a placeholder.
 	Encrypted bool `json:"encrypted,omitempty"`
@@ -259,30 +274,34 @@ type taskOut struct {
 // against today (a YYYY-MM-DD in loc).
 func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, withDescription bool) taskOut {
 	out := taskOut{
-		ID: str(t, "id"), Title: str(t, "title"),
+		ID: str(t, "id"), Untrusted: taskText{Title: str(t, "title"), Labels: []string{}},
 		ProjectID: strPtr(t, "project_id"), ParentID: strPtr(t, "parent_id"),
-		Priority: priority(t), Labels: []string{},
+		Priority: priority(t), LabelIDs: []string{},
 		Recurrence: strPtr(t, "recurrence"), Completed: !isOpen(t),
 		CompletedAt: isoTime(num(t, "completed_at")), CreatedAt: isoTime(num(t, "created_at")),
 	}
 	out.Encrypted = e2ee.IsCiphertext(rawStr(t, "title")) || e2ee.IsCiphertext(rawStr(t, "description"))
-	out.Project = snap.projectName(str(t, "project_id"))
+	pid := str(t, "project_id")
+	out.Untrusted.Project = snap.projectName(pid)
+	_, out.Shared = snap.shared[pid]
 	if withDescription {
 		d := str(t, "description")
-		out.Description = &d
+		out.Untrusted.Description = &d
 	}
 	if sid := str(t, "section_id"); sid != "" {
 		if name, ok := snap.sections[sid]; ok {
-			out.SectionID, out.Section = &sid, name
+			out.SectionID, out.Untrusted.Section = &sid, name
 		}
 	}
 	for _, lid := range stringList(t, "labels") {
 		if name, ok := snap.labels[lid]; ok {
-			out.Labels = append(out.Labels, name)
+			out.Untrusted.Labels = append(out.Untrusted.Labels, name)
+			out.LabelIDs = append(out.LabelIDs, lid)
 		}
 	}
 	if aid := str(t, "assignee_id"); aid != "" {
-		out.Assignee = &person{ID: aid, Name: snap.people[aid]}
+		out.AssigneeID = &aid
+		out.Untrusted.Assignee = snap.people[aid]
 	}
 	if m := int(num(t, "estimate_minutes")); m > 0 {
 		out.EstimateMinutes = &m
@@ -344,7 +363,7 @@ func decodeCursor(c string) (cursorData, error) {
 	var d cursorData
 	b, err := base64.RawURLEncoding.DecodeString(c)
 	if err != nil || json.Unmarshal(b, &d) != nil || d.I == "" {
-		return d, invalidParams("cursor: invalid cursor")
+		return d, argErr("cursor: invalid cursor")
 	}
 	return d, nil
 }
@@ -388,6 +407,39 @@ func page[T any](items []keyed[T], cursor string, limit int) ([]T, string, error
 
 type args map[string]json.RawMessage
 
+// mentions reports whether any object in the arguments, at any depth, has the
+// key name (content fields of encrypted accounts, design D7).
+func (a args) mentions(name string) bool {
+	var walk func(v any) bool
+	walk = func(v any) bool {
+		switch t := v.(type) {
+		case map[string]any:
+			for k, x := range t {
+				if k == name || walk(x) {
+					return true
+				}
+			}
+		case []any:
+			for _, x := range t {
+				if walk(x) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	for k, raw := range a {
+		if k == name {
+			return true
+		}
+		var v any
+		if json.Unmarshal(raw, &v) == nil && walk(v) {
+			return true
+		}
+	}
+	return false
+}
+
 func (a args) present(name string) bool {
 	raw, ok := a[name]
 	return ok && string(raw) != "null"
@@ -399,7 +451,7 @@ func (a args) str(name string) (string, error) {
 	}
 	var v string
 	if json.Unmarshal(a[name], &v) != nil {
-		return "", invalidParams(name + ": must be a string")
+		return "", argErr(name + ": must be a string")
 	}
 	return strings.TrimSpace(v), nil
 }
@@ -410,7 +462,7 @@ func (a args) boolean(name string) (bool, error) {
 	}
 	var v bool
 	if json.Unmarshal(a[name], &v) != nil {
-		return false, invalidParams(name + ": must be true or false")
+		return false, argErr(name + ": must be true or false")
 	}
 	return v, nil
 }
@@ -422,7 +474,7 @@ func (a args) integer(name string) (int, bool, error) {
 	}
 	var f float64
 	if json.Unmarshal(a[name], &f) != nil || f != math.Trunc(f) || math.Abs(f) > 1e9 {
-		return 0, false, invalidParams(name + ": must be an integer")
+		return 0, false, argErr(name + ": must be an integer")
 	}
 	return int(f), true, nil
 }
@@ -436,7 +488,7 @@ func (a args) limit() (int, error) {
 		return MaxItems, nil
 	}
 	if n < 1 {
-		return 0, invalidParams("limit: must be at least 1")
+		return 0, argErr("limit: must be at least 1")
 	}
 	return min(n, MaxItems), nil
 }
@@ -455,7 +507,7 @@ func parseZone(tz, name string) (*time.Location, error) {
 	}
 	loc, err := zoned.Load(tz)
 	if err != nil {
-		return nil, invalidParams(name + ": unknown IANA time zone " + fmt.Sprintf("%q", tz))
+		return nil, argErr(name + ": unknown IANA time zone " + fmt.Sprintf("%q", tz))
 	}
 	return loc, nil
 }
@@ -466,7 +518,7 @@ func (a args) date(name string) (string, error) {
 		return "", err
 	}
 	if t, perr := time.Parse("2006-01-02", v); perr != nil || t.Format("2006-01-02") != v {
-		return "", invalidParams(name + ": must be a date in YYYY-MM-DD form")
+		return "", argErr(name + ": must be a date in YYYY-MM-DD form")
 	}
 	return v, nil
 }

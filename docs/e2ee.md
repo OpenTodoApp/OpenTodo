@@ -108,7 +108,7 @@ The server cannot decrypt. Each feature that needs content degrades explicitly:
 | Import | Writes plaintext like REST; duplicate detection by name/title cannot match encrypted labels and projects, so an import may create duplicates. |
 | Backups | Hold ciphertext and the wrapped key record (plus any plaintext not yet purged). |
 | CalDAV | Refused: `/dav/` answers 403 for the account and creating an app password answers 409 `encryption_enabled`. Calendar clients can neither read ciphertext nor write it back, and placeholders would overwrite real titles. |
-| MCP (assistants) | Encrypted titles, descriptions, project, label and section names read as "Encrypted item" with `"encrypted": true`; `search_tasks` never matches them. Dates, priorities and structure are still reported. |
+| MCP (assistants) | Encrypted titles, descriptions, project, label and section names read as "Encrypted item" with `"encrypted": true`; `search_tasks` never matches them. Dates, priorities and structure are still reported. Write tools that need readable text are not offered and are refused with `encryption_enabled`; scheduling, completing, moving, priorities and labels still work. |
 | Email to task | Creates plaintext Inbox tasks (the mail crossed mail servers in the clear anyway); encrypted on sight; purge removes the plaintext operations. |
 | Webhooks | Payloads carry the stored value: ciphertext for encrypted fields. |
 | Reminder pushes | An encrypted title is never put in the push payload, even for devices that opted in to content; the notification shows the content-free text. |

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/url"
 	"strings"
+
+	"github.com/pixari/opentodo/internal/agenttools"
 )
 
 // Resources (design D4): static URIs for the project list and the three
@@ -68,66 +70,33 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 	if err != nil || u.Scheme != "opentodo" {
 		return nil, notFound(p.URI)
 	}
-	loc, err := parseZone(u.Query().Get("tz"), "tz")
+	loc, err := agenttools.ParseZone(u.Query().Get("tz"), "tz")
 	if err != nil {
+		var ae *agenttools.ArgError
+		if errors.As(err, &ae) {
+			return nil, invalidParams(ae.Msg)
+		}
 		return nil, err
 	}
 	id := strings.TrimPrefix(u.Path, "/")
-	var payload any
+	var payload map[string]any
+	found := true
 	switch {
 	case u.Host == "projects" && id == "":
-		snap, err := s.load(ctx, userID)
-		if err != nil {
-			return nil, err
-		}
-		payload = s.projectsPayload(snap, false)
+		payload, err = s.tools.ProjectsResource(ctx, userID)
 	case u.Host == "projects" && !strings.Contains(id, "/"):
-		snap, err := s.load(ctx, userID)
-		if err != nil {
-			return nil, err
-		}
-		proj, ok := snap.projects[id]
-		if !ok {
-			return nil, notFound(p.URI)
-		}
-		res, err := s.queryTasks(snap, taskQuery{view: "all", projectID: id, loc: loc, limit: MaxItems})
-		if err != nil {
-			return nil, err
-		}
-		sections := []map[string]string{}
-		secs, err := s.sync.List(ctx, userID, "section", false)
-		if err != nil {
-			return nil, err
-		}
-		for _, sec := range secs {
-			if str(sec, "project_id") == id {
-				sections = append(sections, map[string]string{"id": str(sec, "id"), "name": str(sec, "name")})
-			}
-		}
-		payload = map[string]any{"project": snap.renderProject(proj, snap.openCounts()), "sections": sections,
-			"tasks": res["tasks"], "truncated": res["next_cursor"] != nil, "timezone": res["timezone"], "today": res["today"], "server_time": res["server_time"]}
+		payload, found, err = s.tools.ProjectResource(ctx, userID, id, loc)
 	case u.Host == "tasks" && id != "" && !strings.Contains(id, "/"):
-		detail, err := s.taskDetail(ctx, userID, id, loc)
-		if errors.Is(err, errTaskNotFound) {
-			return nil, notFound(p.URI)
-		}
-		if err != nil {
-			return nil, err
-		}
-		payload = detail
+		payload, found, err = s.tools.TaskResource(ctx, userID, id, loc)
 	case u.Host == "views" && (id == "inbox" || id == "today" || id == "upcoming"):
-		snap, err := s.load(ctx, userID)
-		if err != nil {
-			return nil, err
-		}
-		res, err := s.queryTasks(snap, taskQuery{view: id, loc: loc, limit: MaxItems})
-		if err != nil {
-			return nil, err
-		}
-		res["truncated"] = res["next_cursor"] != nil
-		delete(res, "next_cursor")
-		payload = res
+		payload, err = s.tools.ViewResource(ctx, userID, id, loc)
 	default:
+		return nil, notFound(p.URI)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !found {
 		return nil, notFound(p.URI)
 	}
 	text, err := json.Marshal(payload)

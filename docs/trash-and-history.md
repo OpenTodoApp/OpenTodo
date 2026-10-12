@@ -40,7 +40,7 @@ Items are also deleted for good automatically after 30 days in the Trash. Your s
 
 ## See what changed on a task
 
-Open a task and select **History** at the bottom of its panel. You see every change, newest first: what the field was, what it became, when, and from where (this device, another device, the API).
+Open a task and select **History** at the bottom of its panel. You see every change, newest first: what the field was, what it became, when, and from where (this device, another device, the API, a calendar app, or an AI assistant). Changes made by an [AI assistant](mcp.md#letting-an-assistant-make-changes) read "AI assistant (*token name*)" for your own assistants and "AI assistant" for someone else's in a shared project, and can be restored like any other change.
 
 <picture><source srcset="images/history-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/history-light.webp" alt="The History list of a task, showing changes to its description, assignee, title and priority, each with a Restore this value link."></picture>
 

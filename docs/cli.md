@@ -132,9 +132,13 @@ Projects are referenced by name (case-insensitive), full id or unique id prefix.
 
 ## Tokens and export
 
+`--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads like a read-only token and can make changes only through the MCP write tools, and only while both assistant switches are on (the owner's and yours, in Settings → AI assistants).
+
 ```bash
-ot token list
+ot token list                           # with each token's scope
 ot token create backup-script           # prints the secret once, with a notice on stderr
+ot token create reporting --scope read  # read-only: refused on every change
+ot token create desk-assistant --scope agent   # for an AI assistant that may make changes
 ot token revoke backup-script           # by name, id or id prefix
 ot export                               # full JSON export (including tombstones) to stdout
 ot export --out opentodo-$(date +%F).json

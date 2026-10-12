@@ -12,7 +12,7 @@ import (
 
 func cmdToken(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if len(args) == 0 {
-		return usageErr("usage: ot token list|create <name>|revoke <id-or-name>")
+		return usageErr("usage: ot token list|create <name> [--scope full|read|agent]|revoke <id-or-name>")
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
@@ -51,7 +51,7 @@ func tokenList(a *App, ctx context.Context, g *globalFlags, args []string) error
 		return nil
 	}
 	cur := currentToken(tokens)
-	tbl := newTable("ID", "NAME", "CREATED", "LAST USED", "")
+	tbl := newTable("ID", "NAME", "SCOPE", "CREATED", "LAST USED", "")
 	for _, t := range tokens {
 		last := "never"
 		if t.LastUsedAt != nil {
@@ -61,28 +61,48 @@ func tokenList(a *App, ctx context.Context, g *globalFlags, args []string) error
 		if cur != nil && cur.ID == t.ID {
 			mark = "(this client)"
 		}
-		tbl.add(cell{text: shortID(t.ID), style: styleCyan}, plain(t.Name), plain(formatMillis(float64(t.CreatedAt))), plain(last), cell{text: mark, style: styleDim})
+		tbl.add(cell{text: shortID(t.ID), style: styleCyan}, plain(t.Name), plain(scopeOf(t)), plain(formatMillis(float64(t.CreatedAt))), plain(last), cell{text: mark, style: styleDim})
 	}
 	tbl.render(a.Stdout, a.color())
 	return nil
 }
 
+// tokenScopes are the scopes `ot token create --scope` accepts (mcp-write-tools).
+var tokenScopes = []string{"full", "read", "agent"}
+
+// scopeOf is a token's scope as listed; servers from before scopes send none.
+func scopeOf(t token) string {
+	if t.Scope == "" {
+		return "full"
+	}
+	return t.Scope
+}
+
 func tokenCreate(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("token create", g)
+	scope := fs.String("scope", "full", "token scope: full, read or agent")
 	pos, err := parseArgs(fs, "token create", args)
 	if err != nil {
 		return a.helpOr("token", err)
 	}
 	name := strings.TrimSpace(strings.Join(pos, " "))
 	if name == "" {
-		return usageErr("usage: ot token create <name>")
+		return usageErr("usage: ot token create <name> [--scope full|read|agent]")
+	}
+	// Validated before any request is sent (exit 2).
+	valid := false
+	for _, s := range tokenScopes {
+		valid = valid || s == *scope
+	}
+	if !valid {
+		return usageErr("unknown scope %q: expected one of %s", *scope, strings.Join(tokenScopes, ", "))
 	}
 	c, _, err := a.connect(g)
 	if err != nil {
 		return err
 	}
 	var raw json.RawMessage
-	if err := c.postJSON(ctx, "/tokens", map[string]string{"name": name}, &raw); err != nil {
+	if err := c.postJSON(ctx, "/tokens", map[string]string{"name": name, "scope": *scope}, &raw); err != nil {
 		return err
 	}
 	if g.json {
@@ -94,7 +114,13 @@ func tokenCreate(a *App, ctx context.Context, g *globalFlags, args []string) err
 	}
 	_ = json.Unmarshal(raw, &created)
 	fmt.Fprintf(a.Stdout, "%s\n", created.Secret)
-	fmt.Fprintf(a.Stderr, "Token %q (%s) created. This secret is shown only once; store it now.\n", created.Token.Name, shortID(created.Token.ID))
+	fmt.Fprintf(a.Stderr, "Token %q (%s, scope %s) created. This secret is shown only once; store it now.\n", created.Token.Name, shortID(created.Token.ID), scopeOf(created.Token))
+	switch *scope {
+	case "read":
+		fmt.Fprintln(a.Stderr, "It can read everything you can and is refused on every change.")
+	case "agent":
+		fmt.Fprintln(a.Stderr, "It is for an AI assistant: it reads like a read-only token and can make changes only through the MCP endpoint's write tools, and only while both assistant switches are on (the owner's \"AI assistants may make changes\" and your \"Allow AI assistants to make changes\", in Settings → AI assistants). See docs/mcp.md.")
+	}
 	return nil
 }
 

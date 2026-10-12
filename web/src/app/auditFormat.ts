@@ -35,6 +35,7 @@ export const AUDIT_LABELS: Record<AuditEventName, string> = {
   'password.reset_completed': 'Password reset through a link',
   'password.changed': 'Password changed',
   'owner.transferred': 'Ownership transferred',
+  'agent.write': 'AI assistant made changes',
 }
 
 const REASONS: Record<string, string> = {
@@ -45,6 +46,10 @@ const REASONS: Record<string, string> = {
   unknown_passkey: 'unknown passkey',
   passkey_rejected: 'passkey rejected',
   passkey_counter_regression: 'possible cloned passkey',
+  writes_disabled_by_owner: 'assistant changes are off on this server',
+  writes_disabled_by_user: 'assistant changes are off for this account',
+  encryption_enabled: 'end-to-end encryption is on',
+  not_permitted: 'not created by this assistant',
 }
 
 const SETTINGS: Record<string, string> = {
@@ -52,6 +57,8 @@ const SETTINGS: Record<string, string> = {
   'audit.log_ip': 'Address logging',
   webhooks_allow_private: 'Private webhook targets',
   'mcp.enabled': 'AI assistants (MCP)',
+  'mcp.writes': 'AI assistants may make changes',
+  'agent.writes': 'Allow AI assistants to make changes',
 }
 
 /** One-line summary of an event's allow-listed details. */
@@ -60,13 +67,17 @@ export function eventSummary(ev: AuditEvent): string {
   const parts: string[] = []
   if (d.reason) parts.push(REASONS[d.reason] ?? d.reason.replace(/_/g, ' '))
   if (d.method && d.method !== 'password') parts.push(d.method === 'register' ? 'new account' : `via ${d.method}`)
-  if (d.token_name) parts.push(`“${d.token_name}”${d.token_scope === 'read' ? ' (read-only)' : ''}`)
+  if (d.tool) parts.push(d.tool)
+  if (d.token_name) parts.push(`“${d.token_name}”${d.token_scope === 'read' ? ' (read-only)' : d.token_scope === 'agent' ? ' (assistant, can make changes)' : ''}`)
   if (d.passkey_name) parts.push(`“${d.passkey_name}”`)
   if (d.invited_email) parts.push(`for ${d.invited_email}`)
   if (d.setting) parts.push(`${SETTINGS[d.setting] ?? d.setting}: ${d.from ?? '?'} → ${d.to ?? '?'}`)
   else if (d.from || d.to) parts.push(`${d.from ?? '?'} → ${d.to ?? '?'}`)
   if (d.provider) parts.push(d.provider)
-  if (d.count) parts.push(`${d.count} ${d.count === '1' ? 'event' : 'events'}`)
+  if (d.count) {
+    const noun = ev.name === 'agent.write' ? ['item changed', 'items changed'] : ['event', 'events']
+    parts.push(`${d.count} ${d.count === '1' ? noun[0] : noun[1]}`)
+  }
   return parts.join(' · ')
 }
 

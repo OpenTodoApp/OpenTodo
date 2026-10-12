@@ -29,6 +29,8 @@ func allConstructors() []Event {
 		LoginSucceeded("u", "u@example.com", "password"),
 		LoginFailed("u", "u@example.com", ReasonWrongPassword),
 		Logout("u"),
+		AgentWrite("u", "complete_tasks", "t", "Desk assistant", 3),
+		AgentWrite("u", "create_tasks", "t", "Desk assistant", 0).Failed("writes_disabled_by_user"),
 		MFAEnrolled("u", "totp"),
 		MFADisabled("o", "u", "totp"),
 		MFAReset("o", "u"),

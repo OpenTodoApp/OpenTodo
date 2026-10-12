@@ -131,7 +131,7 @@ func init() {
 		{"reopen", "reopen one or more completed tasks", "ot reopen <ref>...", cmdReopen},
 		{"rm", "delete one or more tasks (soft delete)", "ot rm <ref>... [--yes]", cmdRm},
 		{"project", "manage projects: list, add, rename, archive, rm", "ot project list [--all]\not project add <name> [--color <css-colour>]\not project rename <ref> <new-name>\not project archive <ref> [--undo]\not project rm <ref> [--yes]", cmdProject},
-		{"token", "manage API tokens: list, create, revoke", "ot token list\not token create <name>\not token revoke <id-or-name>", cmdToken},
+		{"token", "manage API tokens: list, create, revoke", "ot token list\not token create <name> [--scope full|read|agent]\not token revoke <id-or-name>", cmdToken},
 		{"export", "download the full JSON export", "ot export [--out <file>]", cmdExport},
 		{"version", "print the client version", "ot version", cmdVersion},
 		{"help", "show help for a command", "ot help [command]", cmdHelp},

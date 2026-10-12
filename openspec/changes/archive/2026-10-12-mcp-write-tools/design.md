@@ -62,7 +62,7 @@ Each write tool's ChangeSet becomes ops with fresh op ids, server timestamps fro
 - At most 50 entities per call (`create_tasks` items, `update_tasks` patches, ids in the bulk tools). Larger requests get `-32602` with the limit in the message.
 - For each token: 30 write calls per rolling minute and 1,000 changed entities per UTC day. Counters are kept in memory (a map keyed by token id with a small ring buffer). A restart resets them, which is acceptable because the limits are there to contain runaway loops, not to bill anyone. Over a limit the tool error is `rate_limited` with `retry_after_seconds`.
 - String lengths and op values stay under the existing op validation limits. The 1 MB request body cap is unchanged.
-- The owner cannot tune the limits in v1. The constants are documented. Open question Q2.
+- The owner cannot tune the limits in v1. The constants are documented (owner decision 3 below).
 
 ### D6. Attribution, audit and undo
 - **History.** `GET /api/v1/{tasks|projects}/{id}/history` adds `device_label` to each change group whose device starts with `agent:`: `AI assistant (<token name>)` when the viewer owns the token and it still exists, `AI assistant` otherwise. Token names are personal, so other members of a shared project see only "AI assistant". `history.ts` uses `device_label` when present.
@@ -135,7 +135,42 @@ Each change ships something useful by itself. Doing them in this order means the
 
 Additive migration (two new side tables, a new setting key). Nothing changes until the owner enables writes, a user enables their switch and creates an `agent` token. Rollback: turn the owner switch off (instant), or run an older image. Agent tokens then act as read tokens (see Data model impact).
 
-## Open Questions
+## Owner decisions
 
-- Q1. Should `full` tokens also get write tools once both switches are on? The recommendation is no (D2). The owner may prefer convenience over explicitness.
-- Q2. Should limits be owner-tunable in v1 (per-token calls per minute and entities per day), or are fixed documented constants enough to start with?
+The open questions were answered by the owner before implementation (2026-10-12):
+
+1. **Anthropic SDK size for the later in-app assistant:** accepted, single image. Not relevant to this change's code; recorded for `in-app-assistant`.
+2. **`full` tokens and MCP write tools (was Q1):** no. Only `agent` tokens get write tools (D2 as proposed).
+3. **Owner-tunable limits (was Q2):** no. The limits are fixed constants in v1 (D5).
+4. **Homebrew/Scoop repositories:** no (an `agent-ready-cli` concern; recorded there when that change is implemented).
+5. **Direct-from-device assistant for encrypted accounts:** not now. Added to `ROADMAP.md` as a future idea.
+6. **Excluding a shared project from AI assistants:** not in v1. Added to `ROADMAP.md` as a future idea.
+
+## Implementation notes
+
+- **Package layout.** `internal/agenttools` holds the registry (`registry.go`: `Definition`, `Kind`, `Caller`, `Plan`, `Change`/`ChangeSet`, `Call`, the gate and audit), the moved read tools (`read.go`, `data.go`), resource payloads for MCP (`resources.go`), the write tools (`write.go`), `Apply` (`apply.go`), the limiter (`limits.go`) and the per-user switch store (`access.go`). `internal/mcp` keeps JSON-RPC, resources and the owner switches (`mcp.enabled`, new `mcp.writes`) and dispatches every tool through `Registry.Call`. `Plan` is public and side-effect free, so `in-app-assistant` can call it with an overlay and hand the ChangeSet to the browser; `Call` (gate, limits, plan, `Apply`, audit) is what `agent-ready-cli`'s REST routes will reuse. The limiter is one instance per registry, so MCP and future agent REST routes share the per-token counters.
+- **The REST completion rule moved** from `internal/httpapi/recurring.go` to `sync.RecurringCompletion` (pure planning, no writes); REST, CalDAV and `complete_tasks` call the same function. Relative reminders follow a new due date through an `ExtraOps` hook that httpapi supplies, with the ops stamped with the agent device.
+- **Untrusted-text shape (deviation, documented).** Read results moved user-written strings (`title`, `description`, `project`, `section`, `labels` names, `assignee` name, project and comment names/bodies) into `untrusted_text` objects and gained `_notice`, `shared`, `author_is_you` and `label_ids`. This changes the read results of the archived `mcp-server` tools (clients are language models, which read the new shape without code changes); the read tools' **definitions** in `tools/list` are byte-identical (`TestToolsListShape`, `TestToolsListReadOnlyUnchanged`). D9.5 said tool descriptions would repeat the notice; to keep `tools/list` byte-identical the read tool descriptions were left unchanged and the notice is instead in every result, in `initialize` instructions, and in every write tool description.
+- **Write results never echo content.** They carry ids and a status per item, so a result can never contain ciphertext or text an injected instruction planted.
+- **Role pre-checks.** Planning checks sharing roles with `sync.CanWrite` and returns every refused item at once (`forbidden` with `items`); `ApplyStrict` still enforces the same table as the backstop. Moves between differently shared scopes are refused in planning as `scope_change`.
+- **`client_request_id`.** Entity ids are `ids.NameID("agent-entity", seed:index)` with `seed = NameID("agent-request", user, token, request id)`; op ids are derived from the seed, entity and field, so a retry is all duplicates in the op log and returns the same ids. A retry does not count against the daily budget.
+- **`create_label`** returns an existing label with the same plaintext name (`status: exists`) instead of creating a duplicate; encrypted names never match.
+- **`/api/v1/me/agent-access`** refuses `read` and `agent` tokens on `GET` as well as `PUT` (the spec says both need a session or full token). `GET` also returns `mcp_enabled` (additive) for the settings screen.
+- **Audit scope.** `agent.write` is recorded only for calls made with an `agent` token (success and refusal, including gate refusals by the user's or owner's switch); a `read` or `full` token calling a write tool gets `token_scope` without an audit event, so a read token cannot flood the audit log. `agent.write` is in the personal activity list, so users see their own assistants' writes.
+- **Fail closed on unknown scopes.** `requireAuth` now refuses every token whose scope is not `full` on write routes (it used to compare with `read` only).
+- **Reserved devices.** `/api/v1/sync` checks the request's `device` and every op's device for `agent:` and `caldav:`.
+- **Task 6.3** (`ot mcp --allow-agent-token`) is skipped: PR #11 is still open (checked 2026-10-12).
+- **Web.** Settings → AI assistants gained the owner's "AI assistants may make changes" switch (shown once the endpoint is on), the user's "Allow AI assistants to make changes to my tasks" switch with the capability text, and the agent token shortcut shown only when both are on (read-only stays the primary button). Offline, every switch keeps its last fetched state (cached in the meta table) and is disabled. The token dialog offers "AI assistant, can make changes"; the list labels such tokens "assistant, can make changes". History uses the server's `device_label`, falling back to "AI assistant" for `agent:` devices.
+
+### Size
+
+Measured on 2026-10-12 with `CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" ./cmd/opentodo` (linux/amd64, Go 1.26, web app built and embedded in both) and `gzip -9` of the main web chunk, `origin/main` (56e2d44) versus this branch. (The 15,532,297-byte baseline above was measured without the embedded web build, so it is not comparable.)
+
+| | Before | After | Delta |
+| --- | --- | --- | --- |
+| Server binary (stripped) | 17,207,458 B | 17,461,410 B | +253,952 B (+248 KB) |
+| of which `internal/agenttools` symbols (net of the 44 KB moved out of `internal/mcp`) | | | about +131 KB |
+| Main web chunk, gzip | 261,021 B | 262,244 B | +1,223 B |
+| Main web chunk, raw | 899,749 B | 904,515 B | +4,766 B |
+
+The binary grew more than the 150 KB estimate: the registry with ten write tools, their JSON schemas and validation came to about 1,700 lines of Go, and the rest is httpapi glue, the moved recurrence rule and larger embedded docs. No new Go module and no new npm package. The web main chunk stays under the 2 KB gzip estimate.

@@ -61,6 +61,9 @@ const (
 	PasswordResetCompletedName Name = "password.reset_completed"
 	PasswordChangedName        Name = "password.changed"
 	OwnerTransferredName       Name = "owner.transferred"
+	// A write tool call made with an `agent` token (mcp-write-tools D6): the
+	// one deliberate exception to "task edits are not events", without content.
+	AgentWriteName Name = "agent.write"
 )
 
 // Names lists the whole catalogue in a stable order (used by the API docs, the
@@ -80,6 +83,7 @@ var Names = []Name{
 	UserDeactivatedName, UserReactivatedName, UserDeletedName,
 	PasswordResetIssuedName, PasswordResetCompletedName, PasswordChangedName,
 	OwnerTransferredName,
+	AgentWriteName,
 }
 
 // PersonalNames are the events a user sees about themselves in
@@ -93,6 +97,7 @@ var PersonalNames = []Name{
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	PasswordResetCompletedName, PasswordChangedName,
+	AgentWriteName,
 }
 
 // Known reports whether n is in the catalogue.
@@ -134,7 +139,8 @@ var allowedDetailKeys = map[string]bool{
 	"reason":            true, // short failure reason code
 	"token_id":          true,
 	"token_name":        true,
-	"token_scope":       true, // full | read (mcp-server)
+	"token_scope":       true, // full | read | agent (mcp-server, mcp-write-tools)
+	"tool":              true, // name of an AI assistant write tool (mcp-write-tools)
 	"app_password_id":   true,
 	"app_password_name": true,
 	"invitation_id":     true,
@@ -146,7 +152,7 @@ var allowedDetailKeys = map[string]bool{
 	"to":                true, // new value of a setting or role
 	"provider":          true, // identity provider name
 	"format":            true, // export format
-	"count":             true, // number of exported events
+	"count":             true, // number of exported events, or entities an assistant changed
 	"backup_id":         true,
 	"reset_id":          true, // id of a password reset link (never its secret)
 }
@@ -253,6 +259,14 @@ func TokenCreated(userID, tokenID, name string) Event {
 // TokenCreatedScoped records a new API token with its scope (never its secret).
 func TokenCreatedScoped(userID, tokenID, name, scope string) Event {
 	return ev(TokenCreatedName, Success, userID, "", "token_id", tokenID, "token_name", name, "token_scope", scope)
+}
+
+// AgentWrite records one write tool call of an AI assistant's `agent` token
+// (mcp-write-tools D6): the tool name, the token and how many entities it
+// changed. Never content and never entity ids. A refused call is recorded with
+// Failed(reason) and count 0.
+func AgentWrite(userID, tool, tokenID, tokenName string, count int) Event {
+	return ev(AgentWriteName, Success, userID, "", "tool", tool, "token_id", tokenID, "token_name", tokenName, "count", strconv.Itoa(count))
 }
 
 // TokenRevoked records a revoked API token.
