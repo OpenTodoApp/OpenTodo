@@ -16,7 +16,7 @@ export type Route =
   | { view: 'filter' }
   | { view: 'views' }
   | { view: 'view'; id: string }
-  | { view: 'settings' }
+  | { view: 'settings'; section?: SettingsSectionId }
   | { view: 'import' }
   | { view: 'invite'; token: string }
   | { view: 'reset'; token: string }
@@ -24,6 +24,14 @@ export type Route =
   | { view: 'trash' }
   | { view: 'feed' }
   | { view: 'help'; page?: string; q?: string }
+
+/** Settings sections, each at /settings/<id> (settings-navigation); order is the overview's. */
+export const SETTINGS_SECTION_IDS = ['account', 'general', 'notifications', 'data', 'capture', 'integrations', 'ai', 'admin'] as const
+export type SettingsSectionId = (typeof SETTINGS_SECTION_IDS)[number]
+
+function isSettingsSection(s: string | undefined): s is SettingsSectionId {
+  return (SETTINGS_SECTION_IDS as readonly string[]).includes(s ?? '')
+}
 
 export function parseRoute(pathname: string): Route {
   const [path, query = ''] = pathname.split('?')
@@ -45,7 +53,9 @@ export function parseRoute(pathname: string): Route {
       // An optional anchor date; anything that is not YYYY-MM-DD means "today".
       return parts[1] && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? { view: parts[0], date: parts[1] } : { view: parts[0] }
     case 'settings':
-      return parts[1] === 'import' ? { view: 'import' } : { view: 'settings' }
+      // /settings/import is the import screen; an unknown section shows the overview.
+      if (parts[1] === 'import') return { view: 'import' }
+      return isSettingsSection(parts[1]) ? { view: 'settings', section: parts[1] } : { view: 'settings' }
     case 'labels':
       return { view: 'labels' }
     case 'filter':
@@ -102,6 +112,8 @@ export function routePath(r: Route): string {
       return r.date ? `/${r.view}/${r.date}` : `/${r.view}`
     case 'inbox':
       return '/'
+    case 'settings':
+      return r.section ? `/settings/${r.section}` : '/settings'
     case 'import':
       return '/settings/import'
     case 'feed':

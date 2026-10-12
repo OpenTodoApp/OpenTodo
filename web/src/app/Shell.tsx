@@ -193,7 +193,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           {route.view === 'help' ? (
             <Suspense fallback={<p className="px-4 py-6 text-sm text-muted" role="status">Loading help…</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
-            <SettingsView user={user} onLogout={onLogout} />
+            <SettingsView user={user} onLogout={onLogout} section={route.section} />
           ) : route.view === 'import' ? (
             <ImportScreen />
           ) : route.view === 'labels' ? (
