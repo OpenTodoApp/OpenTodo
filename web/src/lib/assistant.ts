@@ -477,9 +477,9 @@ export function describeStreamError(code: string, message: string): string {
 }
 
 /** "1,240 tokens · this month 18% of your limit". */
-export function usageLine(u: { input: number; output: number; month_total?: number; cap?: number }): string {
+export function usageLine(u: { input: number; output: number; month_total?: number; cap?: number; own_key?: boolean }): string {
   const n = (u.input + u.output).toLocaleString('en')
-  if (!u.cap) return `${n} tokens`
+  if (!u.cap) return u.own_key ? `${n} tokens · your key` : `${n} tokens`
   const pct = Math.min(100, Math.round(((u.month_total ?? 0) / u.cap) * 100))
   return `${n} tokens · this month ${pct}% of your limit`
 }

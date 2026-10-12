@@ -207,8 +207,10 @@ func TestArchiveNamePattern(t *testing.T) {
 func TestBackupExcludesAssistantSecrets(t *testing.T) {
 	e := newTestEnv(t)
 	key, own := "sk-ant-ASSISTANT-KEY-0001", "sk-user-OWN-KEY-0002"
+	// A member's key for their own provider (assistant-member-provider).
+	memberOwn := "sk-member-OWN-OPENAI-0003"
 	f := settings.NewSecretsFile(e.dir, "assistant")
-	if err := f.Update(map[string]*string{"operator:anthropic": &key, "user:u1:anthropic": &own}); err != nil {
+	if err := f.Update(map[string]*string{"operator:anthropic": &key, "user:u1:anthropic": &own, "user:u2:openai": &memberOwn}); err != nil {
 		t.Fatal(err)
 	}
 	snap, err := e.svc.snapshot(context.Background())
@@ -236,7 +238,7 @@ func TestBackupExcludesAssistantSecrets(t *testing.T) {
 		io.Copy(&all, tr)
 	}
 	_ = finish()
-	for _, needle := range []string{key, own, "assistant.json", "secrets/"} {
+	for _, needle := range []string{key, own, memberOwn, "assistant.json", "secrets/"} {
 		if bytes.Contains(all.Bytes(), []byte(needle)) {
 			t.Fatalf("archive contains %q", needle)
 		}

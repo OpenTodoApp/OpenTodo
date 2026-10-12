@@ -557,7 +557,7 @@ func TestTurnRouteGuards(t *testing.T) {
 	refused("bad zone", 400, "invalid_input", e, map[string]any{"messages": []any{map[string]any{"role": "user", "text": "x"}}, "timezone": "Mars/Base"})
 	refused("last is not the user", 400, "invalid_input", e, map[string]any{"messages": []any{map[string]any{"role": "assistant", "text": "x"}}, "timezone": "UTC"})
 	// Quota: at the cap, 429 naming the reset date.
-	if err := (*svc).Store.AddUsage(context.Background(), userIDOf(t, e), 900, 100); err != nil {
+	if err := (*svc).Store.AddUsage(context.Background(), userIDOf(t, e), 900, 100, false); err != nil {
 		t.Fatal(err)
 	}
 	got, out, _ := e.turn(ask("hi"))

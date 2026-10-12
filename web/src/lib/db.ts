@@ -31,7 +31,7 @@ export interface AssistantMessage {
   /** The answer ended with this stop reason (refusal and max_tokens are shown). */
   stop?: string
   error?: string
-  usage?: { input: number; output: number; month_total?: number; cap?: number }
+  usage?: { input: number; output: number; month_total?: number; cap?: number; own_key?: boolean }
   at: number
 }
 
