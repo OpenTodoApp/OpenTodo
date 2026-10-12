@@ -20,7 +20,7 @@ Base path: `/api/v1`. All requests and responses are JSON. Errors look like:
 Two options:
 
 - **Session cookie** (the web app). Obtained from `auth/register` or `auth/login`. State-changing requests must come from the app's own origin.
-- **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → API tokens** or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
+- **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → Integrations → API tokens** or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
 
 A token has a **scope**: `full` (the default), `read` or `agent`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
@@ -303,9 +303,9 @@ The identity is matched by issuer and subject first; a first-time identity whose
 | `oidc_email_unverified` | a first-time identity without an email marked verified |
 | `signup_closed` | no matching account and provisioning is not allowed |
 
-`start` while signed in **links** the provider identity to the current account instead (Settings → Linked accounts) and returns to `/settings?linked=1`. If that identity is already linked to the same account, the flow is a fresh proof of identity for the session (the *fresh* routes work for ten minutes) and returns to `/settings?reauthenticated=1`.
+`start` while signed in **links** the provider identity to the current account instead (Settings → Account → Linked accounts) and returns to `/settings/account?linked=1`. If that identity is already linked to the same account, the flow is a fresh proof of identity for the session (the *fresh* routes work for ten minutes) and returns to `/settings/account?reauthenticated=1`.
 
-The callback answers `400 oidc_state_invalid` (missing, forged, expired or already used state) and `409 identity_taken` (linking an identity that belongs to another account) as JSON; a browser navigation (`Accept: text/html`) is redirected to `/?error=<code>` or `/settings?error=<code>` instead, so people never see raw JSON.
+The callback answers `400 oidc_state_invalid` (missing, forged, expired or already used state) and `409 identity_taken` (linking an identity that belongs to another account) as JSON; a browser navigation (`Accept: text/html`) is redirected to `/?error=<code>` or `/settings/account?error=<code>` instead, so people never see raw JSON.
 
 **Owner settings.** `GET /api/v1/settings/oidc`:
 

@@ -29,7 +29,7 @@ The panel first shows what will be sent and to whom:
 - the provider and model the owner chose,
 - what may be sent: task titles and descriptions; project, section and label names; due dates, priorities and completion; comments; names of members of shared projects; your display name, today's date and your time zone; and the messages you type.
 
-In a shared project that includes text other members wrote. Select **Accept and continue** to start. Nothing is sent to any provider before you accept. If the owner later switches to another provider, the assistant asks you again. You can withdraw consent in **Settings → Assistant**.
+In a shared project that includes text other members wrote. Select **Accept and continue** to start. Nothing is sent to any provider before you accept. If the owner later switches to another provider, the assistant asks you again. You can withdraw consent in **Settings → AI → Assistant**.
 
 ## Ask and review
 
@@ -58,7 +58,7 @@ After applying, **Undo** appears in the panel and in a short notice at the botto
 
 ## Apply small changes without review
 
-**Settings → Assistant → Apply small changes without review (this device)** is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for review.
+**Settings → AI → Assistant → Apply small changes without review (this device)** is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for review.
 
 ## Conversations stay on this device
 
@@ -68,7 +68,7 @@ Offline you can read earlier conversations and apply or undo a proposal that alr
 
 ## Costs and limits
 
-Each answer shows how many tokens it used and how much of your monthly allowance that is ("1,240 tokens · this month 18% of your limit"); **Settings → Assistant** shows the month so far. The owner sets the allowance (500,000 tokens per person per month by default). When you reach it, the assistant says when it resets (the first day of the next month, UTC). One answer at a time per person.
+Each answer shows how many tokens it used and how much of your monthly allowance that is ("1,240 tokens · this month 18% of your limit"); **Settings → AI → Assistant** shows the month so far. The owner sets the allowance (500,000 tokens per person per month by default). When you reach it, the assistant says when it resets (the first day of the next month, UTC). One answer at a time per person.
 
 ## Safety
 
@@ -89,7 +89,7 @@ The assistant is switched off on the public demo.
 
 ### Turn it on
 
-**Settings → Assistant** (owner only):
+**Settings → AI → Assistant** (owner only):
 
 1. Tick **Allow this provider** for one or more providers and enter the model and key.
 2. Choose the **Provider everyone uses**.
@@ -109,7 +109,7 @@ The model must support tool use. **Test connection** reports an endpoint that re
 
 ### Other settings
 
-- **Let members bring their own key**: each person may then store a key in **Settings → Assistant**; their turns use it instead of yours.
+- **Let members bring their own key**: each person may then store a key in **Settings → AI → Assistant**; their turns use it instead of yours.
 - **Monthly tokens per person**: 500,000 by default; `0` means unlimited.
 - Changing the provider asks everyone to accept the disclosure again.
 - Keys are stored in `<data>/secrets/assistant.json` (mode 0600), never shown again, never in backups, exports or logs. The audit log records `settings.changed` with `assistant.<provider>.key` going from `unset` to `set`, never the key.

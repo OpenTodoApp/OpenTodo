@@ -160,7 +160,13 @@ function screens(ids) {
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
     { name: 'labels', path: '/labels', ready: heading('Labels'), overlays: ['label-menu', 'new-label'] },
     { name: 'views', path: '/views', ready: heading('Views'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
-    { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications', 'voice-consent', 'delete-user'] },
+    // Settings (settings-navigation): the overview and every section, each overlay on
+    // the section that holds its control (the owner sees all of them).
+    { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications'] },
+    ...[
+      ['account', 'Account'], ['general', 'General', ['voice-consent']], ['notifications', 'Notifications'], ['data', 'Data'],
+      ['capture', 'Capture'], ['integrations', 'Integrations'], ['ai', 'AI'], ['admin', 'Administration', ['delete-user']],
+    ].map(([id, title, overlays]) => ({ name: `settings-${id}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
     // In-app Help (user-documentation): also checked offline.
     { name: 'help', path: '/help', ready: heading('Help'), offline: '/help/keyboard' },

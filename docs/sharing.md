@@ -39,7 +39,7 @@ For viewers, the project is read-only: the add box and edit controls are switche
 
 ## Invite someone new
 
-Sign-up on an OpenTodo server is closed by default, so new people join with an invitation. If you're the owner or an admin of the server, go to **Settings → Members**, optionally enter their email, choose how long the link stays valid, and select **Create invitation**. Copy the link and send it to them however you like; OpenTodo doesn't send emails. The link works once.
+Sign-up on an OpenTodo server is closed by default, so new people join with an invitation. If you're the owner or an admin of the server, go to **Settings → Administration → Members**, optionally enter their email, choose how long the link stays valid, and select **Create invitation**. Copy the link and send it to them however you like; OpenTodo doesn't send emails. The link works once.
 
 <picture><source srcset="images/members-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/members-light.webp" alt="Settings, Members section: an email field, an expiry menu set to 7 days, a Create invitation button, and a list with one pending and one accepted invitation."></picture>
 

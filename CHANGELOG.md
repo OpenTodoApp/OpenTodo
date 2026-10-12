@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **Settings has sections.** Instead of one long page, `/settings` lists the sections with a line on what each holds, and each opens on its own page: **Account**, **General**, **Notifications**, **Data**, **Capture**, **Integrations**, **AI** and, for the owner and admins, **Administration** (`/settings/account`, `/settings/general`, …). Wide screens keep the section list beside the content; phones get a back link. Every setting works as before, Help links open the same guides, and `/settings/import` is unchanged. The user guide now names the section, for example **Settings → AI → AI assistants**. The single sign-on link flow returns to `/settings/account`. ([Settings](docs/settings.md))
+
 ## [0.3.0] - 2026-10-12
 
 OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat assistant inside the app that answers questions about your tasks and proposes changes you review and undo in one step, with Anthropic, OpenAI, Gemini or a model on your own network. An assistant you already use can now make changes over MCP, and the `ot` command is ready to be driven by coding agents. All of it is off until the owner turns it on; nothing is sent anywhere before that. [Use AI with OpenTodo](docs/ai-and-agents.md) compares the three options.

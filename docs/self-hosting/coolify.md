@@ -67,16 +67,16 @@ None is required. With a Compose resource (the one-click template or Option A), 
 | `OPENTODO_IMPORT_MAX_MB` | `20` | Largest import file (1–200 MB); see [import](../import.md) |
 | `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days a deleted item stays in the Trash before it is purged for good (0–3650; `0` never purges automatically). See [sync](../sync.md#purge) |
 | `OPENTODO_PUSH` | `on` | `off` disables web push for reminders (no outbound requests to push services); reminders are still shown in the app. See [docker.md](docker.md#reminders-and-web-push) |
-| `OPENTODO_MCP` | unset | `true` presets the AI assistants (MCP) endpoint on first start; afterwards Settings → AI assistants decides. See [mcp](../mcp.md) |
-| `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | Presets "allow private network targets" for webhooks on first start; afterwards Settings → Webhooks decides. See [webhooks](../webhooks.md#private-network-protection) |
-| `OPENTODO_CALDAV` | unset | `true` presets the CalDAV endpoint for calendar apps on first start; afterwards Settings → Calendar apps decides. See [caldav](../caldav.md) |
+| `OPENTODO_MCP` | unset | `true` presets the AI assistants (MCP) endpoint on first start; afterwards Settings → AI → AI assistants decides. See [mcp](../mcp.md) |
+| `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | Presets "allow private network targets" for webhooks on first start; afterwards Settings → Integrations → Webhooks decides. See [webhooks](../webhooks.md#private-network-protection) |
+| `OPENTODO_CALDAV` | unset | `true` presets the CalDAV endpoint for calendar apps on first start; afterwards Settings → Integrations → Calendar apps decides. See [caldav](../caldav.md) |
 | `OPENTODO_EMAIL_*` | unset | Optional [email to task](../email.md): `ADDRESS`, `IMAP_HOST`, `IMAP_USER` and `IMAP_PASSWORD` together (mark the password as a secret, or mount a file and set `IMAP_PASSWORD_FILE`). Partial settings stop the container at startup with the missing name in the log |
-| `OPENTODO_OIDC_*` | unset | Optional [single sign-on](sso.md) settings (`ISSUER`, `CLIENT_ID`, `CLIENT_SECRET`, `DISPLAY_NAME`, `SSO_ONLY`) that override and lock the fields in Settings → Single sign-on |
-| `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](../backups.md#environment-presets), applied once; Settings → Backups wins afterwards |
+| `OPENTODO_OIDC_*` | unset | Optional [single sign-on](sso.md) settings (`ISSUER`, `CLIENT_ID`, `CLIENT_SECRET`, `DISPLAY_NAME`, `SSO_ONLY`) that override and lock the fields in Settings → Administration → Single sign-on |
+| `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](../backups.md#environment-presets), applied once; Settings → Data → Backups wins afterwards |
 
 ## Passkeys
 
-Users can add passkeys in **Settings → Security** once the domain is https, which Coolify provisions when the domain starts with `https://`. Passkeys are tied to the domain's host. If you later change the domain assigned to the service, existing passkeys stop working: users sign in with their password and register new ones. Passwords are never disabled by passkeys. Details in [Running with Docker](docker.md#passkeys-need-an-https-base-url).
+Users can add passkeys in **Settings → Account → Security** once the domain is https, which Coolify provisions when the domain starts with `https://`. Passkeys are tied to the domain's host. If you later change the domain assigned to the service, existing passkeys stop working: users sign in with their password and register new ones. Passwords are never disabled by passkeys. Details in [Running with Docker](docker.md#passkeys-need-an-https-base-url).
 
 ## First visit
 
@@ -88,15 +88,15 @@ Coolify gives the app the **first** domain of the service as `OPENTODO_BASE_URL`
 
 ## Adding people
 
-Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → Members**, create an invitation (optionally bound to an email, expiring in 1 hour to 30 days) and send the link. It creates one account and then stops working; pending links can be revoked. Links use `OPENTODO_BASE_URL`, which the compose file sets from Coolify's domain. See [Adding people](../../README.md#adding-people). **Settings → Users** manages accounts afterwards: admins, deactivation, reset links, deletion and owner transfer. If the owner forgot their password, open the service's terminal in Coolify and run `/opentodo reset-owner-password` (see [Recovering owner access](docker.md#recovering-owner-access)).
+Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → Administration → Members**, create an invitation (optionally bound to an email, expiring in 1 hour to 30 days) and send the link. It creates one account and then stops working; pending links can be revoked. Links use `OPENTODO_BASE_URL`, which the compose file sets from Coolify's domain. See [Adding people](../../README.md#adding-people). **Settings → Administration → Users** manages accounts afterwards: admins, deactivation, reset links, deletion and owner transfer. If the owner forgot their password, open the service's terminal in Coolify and run `/opentodo reset-owner-password` (see [Recovering owner access](docker.md#recovering-owner-access)).
 
 ## Backups
 
-Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files while running, the web push keys and settings secrets). Turn on scheduled backups in **Settings → Backups**: consistent snapshots to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption, restorable with `opentodo restore` (see [docs/backups.md](../backups.md#restore)). Coolify's scheduled volume backups archive the volume with `tar`; a copy taken while the server writes can catch the database mid-write, so set **Archive behavior** to *Stop containers during archive* there, or rely on the built-in backups. The in-app **Settings → Download export** gives a portable JSON copy at any time.
+Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files while running, the web push keys and settings secrets). Turn on scheduled backups in **Settings → Data → Backups**: consistent snapshots to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption, restorable with `opentodo restore` (see [docs/backups.md](../backups.md#restore)). Coolify's scheduled volume backups archive the volume with `tar`; a copy taken while the server writes can catch the database mid-write, so set **Archive behavior** to *Stop containers during archive* there, or rely on the built-in backups. The in-app **Settings → Data → Download export** gives a portable JSON copy at any time.
 
 ## Audit log
 
-**Settings → Audit log** (owner only) lists sign-ins, failed sign-ins, credentials, invitations, user administration, exports, backups and setting changes, with filters and an NDJSON export. It lives in the `/data` volume with everything else and needs no configuration: retention defaults to 90 days, client addresses are off by default. If you enable address logging, the address is the last hop of Traefik's `X-Forwarded-For` header (the one Traefik appended), which Coolify sets for you; do not publish the container port directly, or clients could bypass the proxy and forge that header. Expect roughly 200 bytes per event. Details in [Running with Docker](docker.md#audit-log).
+**Settings → Account → Audit log** (owner only) lists sign-ins, failed sign-ins, credentials, invitations, user administration, exports, backups and setting changes, with filters and an NDJSON export. It lives in the `/data` volume with everything else and needs no configuration: retention defaults to 90 days, client addresses are off by default. If you enable address logging, the address is the last hop of Traefik's `X-Forwarded-For` header (the one Traefik appended), which Coolify sets for you; do not publish the container port directly, or clients could bypass the proxy and forge that header. Expect roughly 200 bytes per event. Details in [Running with Docker](docker.md#audit-log).
 
 ## Updating
 
@@ -110,7 +110,7 @@ Click **Deploy**. The new version applies database migrations on startup, and yo
 
 ## Behind Cloudflare
 
-When the domain's DNS record is proxied by Cloudflare (orange cloud), every request reaches Coolify's proxy from a Cloudflare address. Set `OPENTODO_TRUSTED_PROXIES=cloudflare` in the environment tab and redeploy, so rate limits and the audit log see visitors' addresses (from `CF-Connecting-IP`) instead of one shared Cloudflare address. With a Cloudflare Tunnel instead, requests arrive from the `cloudflared` container on Coolify's Docker network; add that network's range, for example `OPENTODO_TRUSTED_PROXIES=10.0.0.0/8` (Coolify's default address pool), and check **Settings → Audit log** with addresses enabled to confirm it shows your own address. See [Behind a reverse proxy](docker.md#behind-a-reverse-proxy).
+When the domain's DNS record is proxied by Cloudflare (orange cloud), every request reaches Coolify's proxy from a Cloudflare address. Set `OPENTODO_TRUSTED_PROXIES=cloudflare` in the environment tab and redeploy, so rate limits and the audit log see visitors' addresses (from `CF-Connecting-IP`) instead of one shared Cloudflare address. With a Cloudflare Tunnel instead, requests arrive from the `cloudflared` container on Coolify's Docker network; add that network's range, for example `OPENTODO_TRUSTED_PROXIES=10.0.0.0/8` (Coolify's default address pool), and check **Settings → Account → Audit log** with addresses enabled to confirm it shows your own address. See [Behind a reverse proxy](docker.md#behind-a-reverse-proxy).
 
 The server sends the service worker with `Cache-Control: no-store`, so phones pick up a new version on their next visit. Keep Cloudflare's **Caching → Configuration → Browser Cache TTL** at *Respect Existing Headers*, and do not add a Cache Rule that caches everything, or Cloudflare may serve an old app shell for hours.
 
