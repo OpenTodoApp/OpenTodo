@@ -77,4 +77,4 @@ New catalogue names `project_invite.created`, `project_invite.revoked`, `project
 
 ## Size
 
-About 700 lines of Go and 600 of TSX including tests; no dependency; no measurable binary or bundle size change (a few kB of minified JS).
+About 700 lines of Go and 600 of TSX plus tests; no dependency. The main JS bundle grows by about 18 kB minified (4 kB gzip); the binary grows by the same embedded assets plus a few kB of Go code. No runtime memory change beyond one rate limiter map.
