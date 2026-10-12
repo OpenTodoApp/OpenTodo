@@ -193,6 +193,21 @@ func (s *Service) membershipTx(ctx context.Context, actorID, projectID string, f
 		return MemberChange{}, err
 	}
 	defer tx.Rollback()
+	ch, err := membershipIn(ctx, tx, actorID, projectID, fn)
+	if err != nil {
+		return MemberChange{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return MemberChange{}, err
+	}
+	if s.observer != nil && len(ch.changes) > 0 {
+		s.observer(ctx, ch.changes)
+	}
+	return ch, nil
+}
+
+// membershipIn is membershipTx inside a transaction the caller owns and commits.
+func membershipIn(ctx context.Context, tx *sql.Tx, actorID, projectID string, fn func(tx *sql.Tx, role string, shared bool) (MemberChange, error)) (MemberChange, error) {
 	role, shared, err := projectRole(ctx, tx, actorID, projectID)
 	if err != nil {
 		return MemberChange{}, err
@@ -211,12 +226,6 @@ func (s *Service) membershipTx(ctx context.Context, actorID, projectID string, f
 	after, err := scopeUsers(ctx, tx, ProjectScope(projectID))
 	if err != nil {
 		return MemberChange{}, err
-	}
-	if err := tx.Commit(); err != nil {
-		return MemberChange{}, err
-	}
-	if s.observer != nil && len(ch.changes) > 0 {
-		s.observer(ctx, ch.changes)
 	}
 	seen := map[string]bool{}
 	for _, u := range append(append([]string{actorID}, before...), after...) {
@@ -244,11 +253,13 @@ func (s *Service) AddMember(ctx context.Context, actorID, projectID, targetID, r
 	if !ValidMemberRole(role) {
 		return MemberChange{}, fmt.Errorf("%w: role must be viewer, editor or admin", ErrInvalidMember)
 	}
-	return s.membershipTx(ctx, actorID, projectID, func(tx *sql.Tx, actorRole string, shared bool) (MemberChange, error) {
-		switch {
-		case actorRole == RoleOwner:
-		case actorRole == RoleAdmin && role != RoleAdmin:
-		default:
+	return s.membershipTx(ctx, actorID, projectID, s.addMember(ctx, actorID, projectID, targetID, role))
+}
+
+// addMember is AddMember's change, run by membershipTx or membershipIn.
+func (s *Service) addMember(ctx context.Context, actorID, projectID, targetID, role string) func(tx *sql.Tx, actorRole string, shared bool) (MemberChange, error) {
+	return func(tx *sql.Tx, actorRole string, shared bool) (MemberChange, error) {
+		if !CanGrant(actorRole, role) {
 			return MemberChange{}, ErrForbidden
 		}
 		if targetID == actorID {
@@ -275,7 +286,86 @@ func (s *Service) AddMember(ctx context.Context, actorID, projectID, targetID, r
 			return MemberChange{}, err
 		}
 		return MemberChange{From: "", To: role}, nil
-	})
+	}
+}
+
+// CanGrant reports whether a member with actorRole may add someone with role:
+// the owner grants any member role, an admin viewers and editors.
+func CanGrant(actorRole, role string) bool {
+	switch actorRole {
+	case RoleOwner:
+		return ValidMemberRole(role)
+	case RoleAdmin:
+		return role == RoleViewer || role == RoleEditor
+	}
+	return false
+}
+
+// AddMemberTx is AddMember inside a transaction the caller owns, for project
+// invite links (OpenSpec `project-invite-links`, design D3): the link's creator
+// is the actor, so their current right to grant the role is checked at the
+// moment the link is used, and a deleted project is refused with ErrNotFound.
+// The caller commits and then wakes the returned audience.
+func (s *Service) AddMemberTx(ctx context.Context, tx *sql.Tx, actorID, projectID, targetID, role string) (MemberChange, error) {
+	if !ValidMemberRole(role) {
+		return MemberChange{}, fmt.Errorf("%w: role must be viewer, editor or admin", ErrInvalidMember)
+	}
+	if _, live, err := projectStatus(ctx, tx, projectID); err != nil {
+		return MemberChange{}, err
+	} else if !live {
+		return MemberChange{}, ErrNotFound
+	}
+	if targetID == actorID {
+		return MemberChange{}, ErrAlreadyMember
+	}
+	return membershipIn(ctx, tx, actorID, projectID, s.addMember(ctx, actorID, projectID, targetID, role))
+}
+
+// ProjectStatus reports whether a project exists and is not deleted, whether it
+// is shared, and the role actorID holds on it ("" for none). It never reveals
+// the project's name; see ProjectName.
+func (s *Service) ProjectStatus(ctx context.Context, actorID, projectID string) (live, shared bool, role string, err error) {
+	if _, live, err = projectStatus(ctx, s.db, projectID); err != nil || !live {
+		return false, false, "", err
+	}
+	role, shared, err = projectRole(ctx, s.db, actorID, projectID)
+	return live, shared, role, err
+}
+
+// ProjectName returns the stored name of a live project, or ok false when the
+// project does not exist or is deleted. The name may be ciphertext for an
+// encrypted account's unshared project; callers show it through e2ee.Display.
+func (s *Service) ProjectName(ctx context.Context, projectID string) (name string, ok bool, err error) {
+	return projectStatus(ctx, s.db, projectID)
+}
+
+// projectStatus reads a project's name and whether it is live (it exists in
+// some scope and its deleted_at is unset).
+func projectStatus(ctx context.Context, q querier, projectID string) (string, bool, error) {
+	rows, err := q.QueryContext(ctx, `SELECT field, value FROM scope_fields WHERE entity = 'project' AND entity_id = ? AND field IN ('name','deleted_at')`, projectID)
+	if err != nil {
+		return "", false, err
+	}
+	defer rows.Close()
+	found, deleted := false, false
+	name := ""
+	for rows.Next() {
+		var field, value string
+		if err := rows.Scan(&field, &value); err != nil {
+			return "", false, err
+		}
+		found = true
+		switch field {
+		case "name":
+			_ = json.Unmarshal([]byte(value), &name)
+		case "deleted_at":
+			deleted = value != "null" && value != ""
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return "", false, err
+	}
+	return name, found && !deleted, nil
 }
 
 // share creates the project's scope and moves the project, its tasks and sections from the

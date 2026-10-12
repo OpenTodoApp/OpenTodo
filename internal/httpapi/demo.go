@@ -96,6 +96,17 @@ func projectMembership(p string) bool {
 	return len(parts) >= 2 && (parts[1] == "members" || parts[1] == "transfer")
 }
 
+// projectInvites matches /api/v1/projects/{id}/invites[/...] (OpenSpec
+// `project-invite-links`).
+func projectInvites(p string) bool {
+	rest, ok := strings.CutPrefix(p, "/api/v1/projects/")
+	if !ok {
+		return false
+	}
+	parts := strings.Split(rest, "/")
+	return len(parts) >= 2 && parts[1] == "invites"
+}
+
 // demoRules is the lock-down list of design D4. Everything not listed (tasks,
 // projects, labels, views, sections, reminders, comments, sync, export, trash,
 // history, notifications) works as usual; rate limits stay in place.
@@ -128,6 +139,9 @@ var demoRules = []demoRule{
 	{"End-to-end encryption", true, prefix("/api/v1/encryption")},
 	{"Web push", true, prefix("/api/v1/push")},
 	{"Sharing changes", true, projectMembership},
+	// Every method: links would let one sandbox join another's project.
+	{"Project invite links", false, projectInvites},
+	{"Project invite links", false, prefix("/api/v1/project-invites")},
 }
 
 // demoRestricted returns the refused feature's name, or "" when allowed.

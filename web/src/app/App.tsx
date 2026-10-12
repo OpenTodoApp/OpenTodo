@@ -8,6 +8,7 @@ import { startSync, stopSync, useSyncStatus } from '../lib/sync'
 import type { AuthStatus, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { InviteScreen } from './InviteScreen'
+import { ProjectInviteScreen, takePendingInvite } from './ProjectInviteScreen'
 import { ResetScreen } from './ResetScreen'
 import { ACCOUNT_CHANGED_EVENT } from './UsersPanel'
 import { ReauthHost } from './ReauthDialog'
@@ -101,6 +102,14 @@ export function App() {
     else stopSync()
   }, [phase.kind, route.view])
 
+  // A visitor who went to sign in from a project invite link (possibly through
+  // the identity provider, which returns to /) comes back to the link.
+  useEffect(() => {
+    if (phase.kind !== 'ready' || route.view === 'project-invite') return
+    const token = takePendingInvite()
+    if (token) navigate({ view: 'project-invite', token }, { replace: true })
+  }, [phase.kind, route.view])
+
   const logout = useCallback(async () => {
     let redirect: string | undefined
     try {
@@ -159,6 +168,19 @@ export function App() {
             navigate({ view: 'inbox' })
             void refresh()
           }}
+          onLogout={() => void logout()}
+        />
+      )
+    }
+    if (route.view === 'project-invite') {
+      // Project invite links (OpenSpec `project-invite-links`) work signed in
+      // (join) and signed out (sign in, or create an account when allowed).
+      return (
+        <ProjectInviteScreen
+          token={route.token}
+          user={phase.kind === 'ready' ? phase.user : null}
+          status={phase.kind === 'anonymous' ? phase.status : null}
+          onAuthenticated={() => void refresh()}
           onLogout={() => void logout()}
         />
       )

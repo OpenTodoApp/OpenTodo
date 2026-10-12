@@ -78,6 +78,7 @@ Only the owner and admins of the server see this section.
 
 - **Users**: everyone with an account, their role and last sign-in. Make someone an admin (owner only), deactivate or reactivate an account, create a password reset link, or delete an account.
 - **Members**: invite people with a single-use link. See [Sharing and comments](sharing.md#invite-someone-new).
+- **Project invite links**: **Members can invite new people with project links** (owner only, off by default) lets links that members create in a project's Share dialog also create accounts. See [Who can bring new people](sharing.md#who-can-bring-new-people).
 - **Single sign-on**: sign-in through your company or family identity provider (owner only). See [Single sign-on](self-hosting/sso.md).
 
 Running the server itself is covered in [Running with Docker](self-hosting/docker.md).

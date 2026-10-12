@@ -61,6 +61,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Capability | Change name |
 | --- | --- |
 | Share projects with roles (viewer, editor, admin) | `project-sharing` |
+| Invite links for shared projects, creating the account when allowed | `project-invite-links` |
 | Assignees and in-app notifications | `task-assignment` |
 | Threaded Markdown comments and activity log | `comments-and-activity` |
 | Live activity feed in shared lists | `activity-feed` |

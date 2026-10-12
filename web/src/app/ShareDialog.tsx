@@ -6,6 +6,7 @@ import { requestSync } from '../lib/sync'
 import type { Membership, Project, ProjectRole } from '../lib/types'
 import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
 import { Dialog } from './overlay'
+import { InviteLinksSection } from './InviteLinksSection'
 
 const ROLE_HINT: Record<ProjectRole, string> = {
   owner: 'Owner',
@@ -18,7 +19,8 @@ const ROLE_HINT: Record<ProjectRole, string> = {
  * Share dialog (OpenSpec `project-sharing`): add a member by exact email with a
  * role, change roles, remove members, leave, transfer ownership. Membership is
  * server data, so every action is a REST call followed by a sync that refreshes
- * the local cache on all devices. Fully keyboard operable: the email field has
+ * the local cache on all devices. Owners and admins can also invite with a
+ * single-use link (OpenSpec `project-invite-links`, InviteLinksSection). Fully keyboard operable: the email field has
  * focus, Enter shares, Esc closes.
  */
 export function ShareDialog({ project, userId, cached, onClose }: {
@@ -82,6 +84,7 @@ export function ShareDialog({ project, userId, cached, onClose }: {
             <button className="btn-primary" disabled={busy || !email.trim()}>Share</button>
           </form>
         )}
+        {roles.length > 0 && <InviteLinksSection projectId={project.id} myRole={myRole} />}
         {locked && <p className="mb-3 text-sm text-muted" data-testid="demo-share-note">Sharing changes: {DEMO_RESTRICTED_NOTE}</p>}
         {error && <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
         <ul aria-label="Members" className="space-y-1">
@@ -123,7 +126,7 @@ export function ShareDialog({ project, userId, cached, onClose }: {
           })}
         </ul>
         <p className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-faint">
-          <span>Only people who already have an account on this server can be added. Labels stay personal.</span>
+          <span>Adding by email works for accounts on this server; invite anyone else with a link. Labels stay personal.</span>
           <HelpLink screen="share-dialog" topic="Sharing projects" />
         </p>
         <button className="btn-ghost mt-3 w-full" onClick={onClose}>Close <span className="kbd ml-1">Esc</span></button>

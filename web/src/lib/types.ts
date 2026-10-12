@@ -492,6 +492,28 @@ export interface InvitationPreview {
   expiresAt: number
 }
 
+/** A pending project invite link as the project's owner and admins see it (OpenSpec `project-invite-links`). Never carries the secret. */
+export interface ProjectInvite {
+  id: string
+  projectId: string
+  role: Exclude<ProjectRole, 'owner'>
+  email: string | null
+  createdBy: string
+  createdByName: string
+  createdAt: number
+  expiresAt: number
+}
+
+/** What anyone holding a project invite link may learn before joining. */
+export interface ProjectInvitePreview extends InvitationPreview {
+  projectName: string
+  role: Exclude<ProjectRole, 'owner'>
+  /** Whether the link may create a new account (server owner/admin link, open sign-up, or the owner switch). */
+  canCreateAccount: boolean
+  /** Present when the request carried a session: whether that account is on the project already. */
+  alreadyMember?: boolean
+}
+
 /** Events an outbound webhook can subscribe to (OpenSpec `webhooks`). */
 export type WebhookEvent =
   | 'task.created' | 'task.updated' | 'task.completed' | 'task.reopened' | 'task.deleted'
@@ -643,6 +665,7 @@ export const AUDIT_EVENT_NAMES = [
   'token.created', 'token.revoked', 'app_password.created', 'app_password.revoked',
   'email_inbox.created', 'email_inbox.rotated', 'email_inbox.updated',
   'invitation.created', 'invitation.accepted', 'invitation.revoked',
+  'project_invite.created', 'project_invite.revoked', 'project_invite.accepted',
   'role.changed', 'settings.changed',
   'identity.linked', 'identity.unlinked',
   'export.requested', 'audit.exported',
