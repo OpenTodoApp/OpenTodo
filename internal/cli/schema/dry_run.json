@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "dry_run",
+  "description": "Printed by a write command with --dry-run --json instead of its normal output. Nothing that writes was sent.",
+  "type": "object",
+  "required": ["dry_run", "command", "requests", "targets"],
+  "properties": {
+    "dry_run": {"const": true},
+    "command": {"type": "string"},
+    "requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["method", "path"],
+        "properties": {
+          "method": {"enum": ["POST", "PATCH", "PUT", "DELETE"]},
+          "path": {"type": "string"},
+          "body": {},
+          "headers": {"type": "object"}
+        }
+      }
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ref", "id", "title_preview"],
+        "properties": {
+          "ref": {"type": "string"},
+          "id": {"type": "string"},
+          "title_preview": {"type": "string"},
+          "status": {"type": "string"}
+        }
+      }
+    },
+    "local": {"type": "array", "items": {"type": "string"}, "description": "changes to the local config file that would be made"}
+  }
+}

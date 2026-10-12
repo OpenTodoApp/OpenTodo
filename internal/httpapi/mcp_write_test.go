@@ -151,8 +151,9 @@ func TestInvalidScope400(t *testing.T) {
 	}
 }
 
-// TestAgentTokenRefusedOnRestWrites: an agent token cannot write through REST
-// at all: no tasks, no sync, no tokens, no settings, no switches, no sharing.
+// TestAgentTokenRefusedOnRestWrites: outside the agent content routes an agent
+// token cannot write through REST: no sync, no tokens, no settings, no
+// switches, no sharing.
 func TestAgentTokenRefusedOnRestWrites(t *testing.T) {
 	e, _, secret, c := agentReady(t)
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Existing"})
@@ -166,10 +167,11 @@ func TestAgentTokenRefusedOnRestWrites(t *testing.T) {
 		method, path string
 		body         any
 	}{
-		{"POST", "/api/v1/tasks", map[string]any{"title": "Nope"}},
-		{"PATCH", "/api/v1/tasks/" + taskID, map[string]any{"title": "Renamed"}},
-		{"DELETE", "/api/v1/tasks/" + taskID, nil},
-		{"POST", "/api/v1/tasks/" + taskID + "/comments", map[string]any{"body": "hi"}},
+		// The agent content routes (agent-ready-cli) are covered by
+		// TestAgentRestAllowList; refused fields on them stay refused.
+		{"PATCH", "/api/v1/tasks/" + taskID, map[string]any{"assignee_id": nil}},
+		{"PATCH", "/api/v1/projects/" + projectID, map[string]any{"archived": true}},
+		{"DELETE", "/api/v1/projects/" + projectID, nil},
 		{"POST", "/api/v1/sync", map[string]any{"device": "d", "cursor": 0, "ops": []any{}}},
 		{"GET", "/api/v1/sync", nil},
 		{"POST", "/api/v1/tokens", map[string]any{"name": "escalate", "scope": "full"}},

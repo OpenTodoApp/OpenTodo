@@ -445,7 +445,11 @@ func (a args) requestID(c Caller) (string, error) {
 	if strings.TrimSpace(v) == "" {
 		return "", argErr("client_request_id: must not be empty")
 	}
-	return ids.NameID("agent-request", c.UserID+"\x00"+c.TokenID+"\x00"+v), nil
+	return requestSeed(c, v), nil
+}
+
+func requestSeed(c Caller, v string) string {
+	return ids.NameID("agent-request", c.UserID+"\x00"+c.TokenID+"\x00"+v)
 }
 
 func entityID(seed string, i int) string {

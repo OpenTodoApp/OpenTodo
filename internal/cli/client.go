@@ -20,7 +20,17 @@ const (
 	ExitUsage       = 2 // bad arguments or local validation
 	ExitAuth        = 3 // authentication or configuration problem
 	ExitUnreachable = 4 // the server could not be reached
+	// ExitNotPermitted: refused by scope, role, a switch, encryption or
+	// read-only mode. Retrying cannot help (agent-ready-cli D2).
+	ExitNotPermitted = 5
 )
+
+// notPermittedCodes are the envelope codes that exit with ExitNotPermitted.
+var notPermittedCodes = map[string]bool{
+	"insufficient_scope": true, "forbidden": true, "not_permitted": true,
+	"writes_disabled_by_owner": true, "writes_disabled_by_user": true,
+	"read_only": true, "encryption_enabled": true,
+}
 
 // exitError carries an exit code and, optionally, the exact JSON envelope to print
 // in --json mode. Local errors synthesise an envelope with a stable code.
@@ -33,10 +43,18 @@ type exitError struct {
 
 func (e *exitError) Error() string { return e.msg }
 
-// Envelope returns the JSON to print on stdout in --json mode.
+// Envelope returns the JSON to print on stdout in --json mode: the server's
+// envelope as it came, or a synthesised one, with the additive field exit
+// (the process exit code) inside error.
 func (e *exitError) Envelope() []byte {
-	if len(e.envelope) > 0 && json.Valid(e.envelope) {
-		return bytes.TrimSpace(e.envelope)
+	if len(e.envelope) > 0 {
+		var env map[string]any
+		if json.Unmarshal(e.envelope, &env) == nil {
+			if inner, ok := env["error"].(map[string]any); ok {
+				inner["exit"] = e.code
+				return encodeCompact(env)
+			}
+		}
 	}
 	code := e.jsonCode
 	if code == "" {
@@ -51,10 +69,14 @@ func (e *exitError) Envelope() []byte {
 			code = "error"
 		}
 	}
+	return encodeCompact(map[string]any{"error": map[string]any{"code": code, "message": e.msg, "exit": e.code}})
+}
+
+func encodeCompact(v any) []byte {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
-	_ = enc.Encode(map[string]any{"error": map[string]string{"code": code, "message": e.msg}})
+	_ = enc.Encode(v)
 	return bytes.TrimSpace(buf.Bytes())
 }
 
@@ -94,6 +116,9 @@ type client struct {
 	http  *http.Client
 	// cookie is set only during login, when the client acts with a session.
 	cookie *http.Cookie
+	// gate is shared by every client of one run: read-only mode, dry run and
+	// the token scope (gate.go). nil for the login client.
+	gate *writeGate
 }
 
 func newClient(base, token string) *client {
@@ -103,6 +128,11 @@ func newClient(base, token string) *client {
 // do performs one request. body is JSON-encoded when non-nil. On 2xx the response
 // body is returned raw. Errors are already mapped to exit codes.
 func (c *client) do(ctx context.Context, method, path string, body any, headers map[string]string) ([]byte, int, error) {
+	if method != http.MethodGet && c.gate != nil {
+		if planned, err := c.gate.beforeWrite(ctx, c, method, path, body, headers); err != nil || planned != nil {
+			return planned, http.StatusOK, err
+		}
+	}
 	var rd io.Reader
 	if body != nil {
 		b, err := json.Marshal(body)
@@ -178,6 +208,9 @@ func (c *client) mapError(status int, raw []byte) error {
 		raw = nil
 	}
 	ee := &exitError{code: ExitServer, jsonCode: ae.Code, msg: ae.Message, envelope: raw}
+	if notPermittedCodes[ae.Code] {
+		ee.code = ExitNotPermitted
+	}
 	if status == http.StatusUnauthorized {
 		ee.code = ExitAuth
 		if ae.Code == "unauthorized" {
@@ -415,17 +448,35 @@ func (c *client) tokens(ctx context.Context) ([]token, error) {
 	return list, nil
 }
 
+// credential is the additive auth object of GET /api/v1/me (agent-ready-cli
+// D7). Servers from before it send none: Scope is then "".
+type credential struct {
+	Method        string `json:"method"`
+	Scope         string `json:"scope"`
+	TokenID       string `json:"token_id,omitempty"`
+	TokenName     string `json:"token_name,omitempty"`
+	WritesAllowed *bool  `json:"writes_allowed,omitempty"`
+	WritesDenied  string `json:"writes_denied,omitempty"`
+}
+
 func (c *client) me(ctx context.Context) (*user, error) {
+	u, _, err := c.meAuth(ctx)
+	return u, err
+}
+
+// meAuth returns the user and the credential the request used.
+func (c *client) meAuth(ctx context.Context) (*user, credential, error) {
 	var out struct {
-		User *user `json:"user"`
+		User *user     `json:"user"`
+		Auth credential `json:"auth"`
 	}
 	if err := c.getJSON(ctx, "/me", &out); err != nil {
-		return nil, err
+		return nil, credential{}, err
 	}
 	if out.User == nil {
-		return nil, serverErr("unexpected response from server: missing user")
+		return nil, credential{}, serverErr("unexpected response from server: missing user")
 	}
-	return out.User, nil
+	return out.User, out.Auth, nil
 }
 
 // normalizeURL accepts "todo.example.com", "http://host:8080/" and friends.

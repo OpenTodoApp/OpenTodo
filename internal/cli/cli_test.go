@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -39,6 +40,30 @@ type harness struct {
 	stdin      string
 	tty        bool
 	apiToken   string // a token minted directly through the API, for seeding
+	// reqMu guards requests: every request the in-process server received.
+	reqMu    sync.Mutex
+	requests []string
+}
+
+// requestLog returns the requests received since the last call, as
+// "METHOD /path", and clears it.
+func (h *harness) requestLog() []string {
+	h.reqMu.Lock()
+	defer h.reqMu.Unlock()
+	out := h.requests
+	h.requests = nil
+	return out
+}
+
+// writesIn filters a request log down to requests that are not GET.
+func writesIn(log []string) []string {
+	var out []string
+	for _, r := range log {
+		if !strings.HasPrefix(r, "GET ") {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 func newHarness(t *testing.T) *harness {
@@ -51,9 +76,15 @@ func newHarness(t *testing.T) *harness {
 	cfg := config.Config{SessionTTL: time.Hour}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	h := httpapi.New(cfg, auth.NewService(db, cfg.SessionTTL, false), opsync.NewService(db), nil, log, "test")
-	srv := httptest.NewServer(h)
+	hs := &harness{t: t, db: db, configPath: filepath.Join(t.TempDir(), "cfg", "config.json"), env: map[string]string{}}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hs.reqMu.Lock()
+		hs.requests = append(hs.requests, r.Method+" "+r.URL.Path)
+		hs.reqMu.Unlock()
+		h.ServeHTTP(w, r)
+	}))
 	t.Cleanup(srv.Close)
-	hs := &harness{t: t, db: db, srv: srv, configPath: filepath.Join(t.TempDir(), "cfg", "config.json"), env: map[string]string{}}
+	hs.srv = srv
 
 	// Owner setup through the API, then a token for seeding fixtures.
 	resp := hs.api("POST", "/api/v1/auth/register", map[string]string{"email": ownerEmail, "name": "Owner", "password": ownerPassword}, "")
@@ -299,7 +330,7 @@ func TestLoginCreatesTokenAndDropsSession(t *testing.T) {
 	}
 
 	// logout revokes on the server and forgets locally.
-	out = h.mustRun("auth", "logout")
+	out = h.mustRun("auth", "logout", "--yes")
 	if !strings.Contains(out, "Revoked token \"cli@testbox\"") {
 		t.Fatalf("logout = %q", out)
 	}
@@ -550,10 +581,13 @@ func TestRmPromptsOnlyOnTTY(t *testing.T) {
 	if code, _, errb = h.run("rm", "dent", "--yes"); code != 0 || strings.Contains(errb, "[y/N]") || h.task("dent0001") != nil {
 		t.Fatalf("--yes: exit %d %q", code, errb)
 	}
-	// Not a terminal: no prompt at all.
+	// Not a terminal: no prompt, and without --yes nothing is deleted (exit 2).
 	h.tty = false
-	if code, _, errb = h.run("rm", "rent"); code != 0 || strings.Contains(errb, "[y/N]") || h.task("rent0001") != nil {
-		t.Fatalf("non-tty: exit %d %q", code, errb)
+	if code, _, errb = h.run("rm", "rent"); code != ExitUsage || strings.Contains(errb, "[y/N]") || !strings.Contains(errb, "--yes") || h.task("rent0001") == nil {
+		t.Fatalf("non-tty without --yes: exit %d %q", code, errb)
+	}
+	if code, _, errb = h.run("rm", "rent", "--yes"); code != 0 || strings.Contains(errb, "[y/N]") || h.task("rent0001") != nil {
+		t.Fatalf("non-tty with --yes: exit %d %q", code, errb)
 	}
 	// Soft delete: still in the export.
 	var export struct {
@@ -703,13 +737,13 @@ func TestTokenAndExport(t *testing.T) {
 		t.Fatalf("token create --json = %q", out)
 	}
 
-	h.mustRun("token", "revoke", "backup-script")
+	h.mustRun("token", "revoke", "backup-script", "--yes")
 	resp = h.api("GET", "/api/v1/me", nil, secret)
 	resp.Body.Close()
 	if resp.StatusCode != 401 {
 		t.Fatalf("revoked token still works: %d", resp.StatusCode)
 	}
-	if code, _, errb = h.run("token", "revoke", "nope"); code != ExitUsage || !strings.Contains(errb, "no token") {
+	if code, _, errb = h.run("token", "revoke", "nope", "--yes"); code != ExitUsage || !strings.Contains(errb, "no token") {
 		t.Fatalf("revoke unknown: %d %q", code, errb)
 	}
 
@@ -764,8 +798,11 @@ func TestJSONOutputIsPureAPIShape(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &one); err != nil || one["id"] != "plum0001" || one["completed_at"] == nil {
 		t.Fatalf("done --json = %q", out)
 	}
-	out = h.mustRun("rm", "plant", "--json")
-	if err := json.Unmarshal([]byte(out), &one); err != nil || one["id"] != "plant001" {
+	if one["status"] != "completed" || one["ref"] != "plum" {
+		t.Fatalf("done --json lacks ref and status: %q", out)
+	}
+	out = h.mustRun("rm", "plant", "--json", "--yes")
+	if err := json.Unmarshal([]byte(out), &one); err != nil || one["id"] != "plant001" || one["status"] != "deleted" {
 		t.Fatalf("rm --json = %q", out)
 	}
 	out = h.mustRun("project", "add", "Garden", "--json")
@@ -773,12 +810,16 @@ func TestJSONOutputIsPureAPIShape(t *testing.T) {
 		t.Fatalf("project add --json = %q", out)
 	}
 
-	// Errors in --json mode go to stdout as the envelope, nothing on stderr.
+	// Errors in --json mode go to stdout as the envelope (with exit), and one
+	// human line to stderr.
 	code, out, errb := h.run("done", "d", "--json") // dent0001 and done0001
 	var env struct {
-		Error struct{ Code, Message string } `json:"error"`
+		Error struct {
+			Code, Message string
+			Exit          int
+		} `json:"error"`
 	}
-	if code != ExitUsage || errb != "" || json.Unmarshal([]byte(out), &env) != nil || env.Error.Code != "usage" {
+	if code != ExitUsage || !strings.HasPrefix(errb, "ot: ") || strings.Count(errb, "\n") != 1 || json.Unmarshal([]byte(out), &env) != nil || env.Error.Code != "usage" || env.Error.Exit != ExitUsage {
 		t.Fatalf("json error: exit %d stdout %q stderr %q", code, out, errb)
 	}
 

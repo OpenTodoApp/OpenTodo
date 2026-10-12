@@ -28,7 +28,7 @@ func cmdToken(a *App, ctx context.Context, g *globalFlags, args []string) error 
 
 func tokenList(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("token list", g)
-	if _, err := parseArgs(fs, "token list", args); err != nil {
+	if _, err := a.parse(g, fs, "token list", args); err != nil {
 		return a.helpOr("token", err)
 	}
 	c, _, err := a.connect(g)
@@ -50,7 +50,7 @@ func tokenList(a *App, ctx context.Context, g *globalFlags, args []string) error
 		fmt.Fprintln(a.Stdout, "No tokens.")
 		return nil
 	}
-	cur := currentToken(tokens)
+	cur := a.currentTokenOf(ctx, c, tokens)
 	tbl := newTable("ID", "NAME", "SCOPE", "CREATED", "LAST USED", "")
 	for _, t := range tokens {
 		last := "never"
@@ -81,7 +81,7 @@ func scopeOf(t token) string {
 func tokenCreate(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("token create", g)
 	scope := fs.String("scope", "full", "token scope: full, read or agent")
-	pos, err := parseArgs(fs, "token create", args)
+	pos, err := a.parse(g, fs, "token create", args)
 	if err != nil {
 		return a.helpOr("token", err)
 	}
@@ -119,19 +119,21 @@ func tokenCreate(a *App, ctx context.Context, g *globalFlags, args []string) err
 	case "read":
 		fmt.Fprintln(a.Stderr, "It can read everything you can and is refused on every change.")
 	case "agent":
-		fmt.Fprintln(a.Stderr, "It is for an AI assistant: it reads like a read-only token and can make changes only through the MCP endpoint's write tools, and only while both assistant switches are on (the owner's \"AI assistants may make changes\" and your \"Allow AI assistants to make changes\", in Settings → AI assistants). See docs/mcp.md.")
+		fmt.Fprintln(a.Stderr, "It is for an AI assistant: it reads everything and can create and edit tasks, projects, labels and comments (through MCP write tools or ot), and nothing else, and only while both assistant switches are on (the owner's \"AI assistants may make changes\" and your \"Allow AI assistants to make changes\", in Settings → AI assistants). See docs/mcp.md and docs/cli.md.")
 	}
 	return nil
 }
 
 func tokenRevoke(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("token revoke", g)
-	pos, err := parseArgs(fs, "token revoke", args)
+	yes := fs.Bool("yes", false, "do not ask for confirmation")
+	fs.BoolVar(yes, "y", false, "do not ask for confirmation")
+	pos, err := a.parse(g, fs, "token revoke", args)
 	if err != nil {
 		return a.helpOr("token", err)
 	}
 	if len(pos) != 1 {
-		return usageErr("usage: ot token revoke <id-or-name>")
+		return usageErr("usage: ot token revoke <id-or-name> [--yes]")
 	}
 	c, _, err := a.connect(g)
 	if err != nil {
@@ -163,6 +165,17 @@ func tokenRevoke(a *App, ctx context.Context, g *globalFlags, args []string) err
 			return usageErr("%q matches %d tokens; use the id", pos[0], len(candidates))
 		}
 	}
+	a.target(pos[0], match.ID, match.Name, "revoked")
+	// Off a terminal or with --json, a.parse already refused without --yes.
+	if !*yes && !a.dryRun() {
+		ok, err := a.confirm(fmt.Sprintf("Revoke token %q? Scripts using it stop working.", match.Name))
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return usageErr("aborted")
+		}
+	}
 	if err := c.delete(ctx, "/tokens/"+match.ID); err != nil {
 		return err
 	}
@@ -170,7 +183,7 @@ func tokenRevoke(a *App, ctx context.Context, g *globalFlags, args []string) err
 		return a.printJSON(match.Raw)
 	}
 	fmt.Fprintf(a.Stdout, "revoked  %s  %s\n", shortID(match.ID), match.Name)
-	if cur := currentToken(tokens); cur != nil && cur.ID == match.ID {
+	if cur := a.currentTokenOf(ctx, c, tokens); cur != nil && cur.ID == match.ID {
 		fmt.Fprintln(a.Stderr, "That was this client's own token; run `ot login` before the next command.")
 	}
 	return nil
@@ -180,7 +193,7 @@ func cmdExport(a *App, ctx context.Context, g *globalFlags, args []string) error
 	fs := a.flagSet("export", g)
 	out := fs.String("out", "", "write to this file instead of stdout")
 	fs.StringVar(out, "o", "", "write to this file instead of stdout")
-	if _, err := parseArgs(fs, "export", args); err != nil {
+	if _, err := a.parse(g, fs, "export", args); err != nil {
 		return a.helpOr("export", err)
 	}
 	c, _, err := a.connect(g)

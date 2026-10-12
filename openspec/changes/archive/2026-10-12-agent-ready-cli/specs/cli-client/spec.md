@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: JSON output and exit codes
-Every command SHALL accept `--json` and then print only JSON on stdout, matching the documented schemas of `output_version` 1: the entity, array or bulk result on success, `{"error":{"code","message","exit"}}` on failure, plus one human line on stderr. Exit codes SHALL be 0 success, 1 server error, 2 usage, 3 authentication or configuration, 4 unreachable, 5 not permitted. Without a terminal, colour and prompts SHALL be off.
+Every command SHALL accept `--json` and then print only JSON on stdout, matching the documented schemas of `output_version` 1: the entity or array on success, `{"error":{"code","message","exit"}}` on failure, plus one human line on stderr. Exit codes SHALL be 0 success, 1 server error, 2 usage, 3 authentication or configuration, 4 unreachable, 5 not permitted (scope, role, a switch, encryption or read-only mode). Without a terminal, colour and prompts SHALL be off.
 
 #### Scenario: Script consumption
 - **WHEN** a script runs `ot list --json --today`
@@ -20,7 +20,7 @@ Every command SHALL accept `--json` and then print only JSON on stdout, matching
 - **THEN** the output contains the client version and `output_version: 1`
 
 ### Requirement: Complete, reopen and delete
-`ot done <ref...>`, `ot reopen <ref...>` and `ot rm <ref...>` SHALL act on one or more tasks, a `<ref>` being a full id or a prefix matching exactly one non-deleted task. A task already in the requested state SHALL be reported as `unchanged` without a write. `ot rm` SHALL soft-delete, SHALL ask on a terminal unless `--yes`, and without a terminal or with `--json` SHALL refuse without `--yes` (exit 2). Writes are online-only and converge like web edits.
+`ot done`, `ot reopen` and `ot rm` SHALL act on one or more `<ref>`s, each a full id or a prefix matching exactly one non-deleted task. With `--json` each task SHALL carry the additive fields `ref` and `status`. A task already in the requested state SHALL be reported as `unchanged` without a write. `ot rm` SHALL soft-delete, SHALL ask on a terminal unless `--yes`, and without a terminal or with `--json` SHALL refuse without `--yes` (exit 2). Writes converge like web edits.
 
 #### Scenario: Prefix reference
 - **WHEN** exactly one open task id starts with `8c2a` and the user runs `ot done 8c2a`
@@ -63,7 +63,7 @@ Without a terminal on stdin and stdout, `ot` SHALL never prompt. Destructive com
 - **THEN** both `ot help <command>` and `ot schema` show it, and a test fails if either lacks it
 
 ### Requirement: Dry run for writes
-Every write command SHALL accept `--dry-run`: it SHALL resolve references with reads, validate, and print the requests it would send (method, path, body) and the resolved targets, then exit as a real run would, without sending any write. Nothing changes on the server or on any device; an unreachable server SHALL exit 4.
+Every write command SHALL accept `--dry-run`: it SHALL resolve references with reads, validate, and print the requests it would send (method, path, body) and the resolved targets, then exit as a real run would, without sending any write or changing the config file. A dry run of a destructive command needs no `--yes`. Nothing changes on the server or on any device; an unreachable server SHALL exit 4.
 
 #### Scenario: Preview a bulk completion
 - **WHEN** an agent runs `ot done 8c2a 91f0 --dry-run --json`

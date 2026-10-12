@@ -22,7 +22,7 @@ This change is the second of the "Bring your agent" group. It builds on `mcp-wri
 - **Read-only mode.** `--read-only`, or the optional `OPENTODO_READ_ONLY=1`, refuses write commands locally. `ot` learns its token's scope from the additive `auth` object on `GET /api/v1/me`, and with a `read` token it refuses writes locally with exit 5. `ot auth status` shows the scope.
 - **`agent` tokens on REST content routes.** An `agent` token may create tasks, projects, labels and comments, edit tasks, rename or recolour projects, and move to the Trash tasks it created itself, under the same two switches, limits, audit event, E2EE rules and missing mention notifications as MCP write tools. These writes run through the shared registry and carry device `agent:<token-id>`. Every other REST write stays refused.
 - **Agent skill file.** `SKILL.md` describes how an agent should use `ot` safely. It is embedded in `ot` (`ot skill` prints it) and published with each release as `opentodo-agent-skill.zip`.
-- **Repository decision:** the CLI stays in the monorepo. Homebrew and Scoop manifests may live in tiny separate repositories that release CI updates (design D10).
+- **Repository decision:** the CLI stays in the monorepo. No Homebrew tap or Scoop bucket repositories for now: release assets and `go install` (owner decision, design D10).
 
 ## Out of scope
 
@@ -30,7 +30,7 @@ This change is the second of the "Bring your agent" group. It builds on `mcp-wri
 - Shell completion (a separate ROADMAP idea, although `ot schema` makes it easy later).
 - Natural-language quick add in `ot` (separate ROADMAP idea).
 - The MCP stdio bridge `ot mcp`. That is open PR #11 from an external contributor and is not duplicated here (design D11).
-- Publishing to Homebrew or Scoop. This change prepares the manifests and the CI step, and creating the external repositories is an owner decision (open question).
+- Publishing to Homebrew or Scoop. The owner decided against separate manifest repositories for now; they remain a documented future option.
 - Any change to MCP tools (`mcp-write-tools`) or the in-app assistant (`in-app-assistant`).
 
 ROADMAP: advances "Bring your agent" item 2, `agent-ready-cli`. It also prepares the "Shell completion for `ot`" idea, since `ot schema` provides the command model.
@@ -51,6 +51,6 @@ ROADMAP: advances "Bring your agent" item 2, `agent-ready-cli`. It also prepares
 
 - CLI: `internal/cli` (schema model, dry-run plumbing, flags, exit code 5, stderr line, embedded `SKILL.md`), `cmd/ot`.
 - Server: `internal/httpapi` (`Idempotency-Key`, the `auth` object on `/api/v1/me`, agent-token routing of REST content writes through `internal/agenttools`), `internal/auth` (scope helpers).
-- Release: CI publishes `opentodo-agent-skill.zip` next to `ot-<os>-<arch>`, plus optional manifest generation for Homebrew and Scoop.
+- Release: CI publishes `opentodo-agent-skill.zip` next to `ot-<os>-<arch>`.
 - Docs: `docs/cli.md` (agent section, schema, exit codes, dry run, idempotency), `docs/api.md` (`Idempotency-Key`, `auth` on `/me`, agent routes), the skill file itself.
 - Size: no new dependency. The `ot` binary is expected to grow by under 80 KB (schema model and embedded skill text), the server by under 40 KB. No web change.

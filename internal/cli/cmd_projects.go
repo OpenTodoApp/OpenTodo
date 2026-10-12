@@ -40,7 +40,7 @@ func cmdProject(a *App, ctx context.Context, g *globalFlags, args []string) erro
 func projectList(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("project list", g)
 	all := fs.Bool("all", false, "include archived projects")
-	if _, err := parseArgs(fs, "project list", args); err != nil {
+	if _, err := a.parse(g, fs, "project list", args); err != nil {
 		return a.helpOr("project", err)
 	}
 	c, _, err := a.connect(g)
@@ -83,8 +83,9 @@ func projectList(a *App, ctx context.Context, g *globalFlags, args []string) err
 
 func projectAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("project add", g)
-	color := fs.String("color", "", "CSS colour, e.g. #3b82f6")
-	pos, err := parseArgs(fs, "project add", args)
+	color := fs.String("color", "", "colour as #rrggbb")
+	key := fs.String("idempotency-key", "", "retry-safe create")
+	pos, err := a.parse(g, fs, "project add", args)
 	if err != nil {
 		return a.helpOr("project", err)
 	}
@@ -95,16 +96,20 @@ func projectAdd(a *App, ctx context.Context, g *globalFlags, args []string) erro
 	if *color == "" {
 		*color = defaultColor(name)
 	}
+	headers, err := idempotencyHeaders(visited(fs)["idempotency-key"], *key)
+	if err != nil {
+		return err
+	}
 	c, _, err := a.connect(g)
 	if err != nil {
 		return err
 	}
-	var raw json.RawMessage
-	if err := c.postJSON(ctx, "/projects", map[string]any{"name": name, "color": *color, "archived": false}, &raw); err != nil {
+	raw, _, err := c.do(ctx, "POST", "/projects", map[string]any{"name": name, "color": *color, "archived": false}, headers)
+	if err != nil {
 		return err
 	}
 	if g.json {
-		return a.printJSON(raw)
+		return a.printJSON(json.RawMessage(raw))
 	}
 	var p project
 	_ = json.Unmarshal(raw, &p)
@@ -125,6 +130,7 @@ func projectPatch(a *App, ctx context.Context, g *globalFlags, ref string, patch
 	if err != nil {
 		return err
 	}
+	a.target(ref, p.ID, p.Name, "")
 	var raw json.RawMessage
 	if err := c.patchJSON(ctx, "/projects/"+p.ID, patch, &raw); err != nil {
 		return err
@@ -140,7 +146,7 @@ func projectPatch(a *App, ctx context.Context, g *globalFlags, ref string, patch
 
 func projectRename(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("project rename", g)
-	pos, err := parseArgs(fs, "project rename", args)
+	pos, err := a.parse(g, fs, "project rename", args)
 	if err != nil {
 		return a.helpOr("project", err)
 	}
@@ -157,7 +163,7 @@ func projectRename(a *App, ctx context.Context, g *globalFlags, args []string) e
 func projectArchive(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("project archive", g)
 	undo := fs.Bool("undo", false, "restore an archived project")
-	pos, err := parseArgs(fs, "project archive", args)
+	pos, err := a.parse(g, fs, "project archive", args)
 	if err != nil {
 		return a.helpOr("project", err)
 	}
@@ -175,7 +181,7 @@ func projectRm(a *App, ctx context.Context, g *globalFlags, args []string) error
 	fs := a.flagSet("project rm", g)
 	yes := fs.Bool("yes", false, "do not ask for confirmation")
 	fs.BoolVar(yes, "y", false, "do not ask for confirmation")
-	pos, err := parseArgs(fs, "project rm", args)
+	pos, err := a.parse(g, fs, "project rm", args)
 	if err != nil {
 		return a.helpOr("project", err)
 	}
@@ -194,7 +200,9 @@ func projectRm(a *App, ctx context.Context, g *globalFlags, args []string) error
 	if err != nil {
 		return err
 	}
-	if !*yes && !g.json {
+	a.target(pos[0], p.ID, p.Name, "deleted")
+	// Off a terminal or with --json, a.parse already refused without --yes.
+	if !*yes && !a.dryRun() {
 		ok, err := a.confirm(fmt.Sprintf("Delete project %q? Its tasks stay and move to the Inbox view only after you reassign them.", p.Name))
 		if err != nil {
 			return err

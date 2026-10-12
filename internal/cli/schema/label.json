@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "label",
+  "description": "A label exactly as the REST API returns it.",
+  "type": "object",
+  "required": ["id", "name"],
+  "properties": {
+    "id": {"type": "string"},
+    "name": {"type": "string"},
+    "color": {"type": "string"},
+    "position": {"type": "number"},
+    "created_at": {"type": "number"},
+    "deleted_at": {"type": ["number", "null"]}
+  }
+}
