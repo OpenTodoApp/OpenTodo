@@ -63,7 +63,7 @@ Membership, accounts, tokens, settings, webhooks, audit events and backup runs a
 
 ### Reads
 
-REST collections, the export, MCP tools and resources, CalDAV reports and webhook payloads all read materialised entities through `sync.List` / `sync.Get` (and helpers such as `TaskComments`, `Memberships`), restricted to the scopes the caller can see. History and activity are derived on request from the op log (`ActivityOps`, `activity.Derive`); there is no separate activity table on the server.
+REST collections, the export, MCP tools (the shared agent tool registry in `internal/agenttools`, whose write tools plan changes and apply them with `ApplyStrict` as device `agent:<token-id>`) and resources, CalDAV reports and webhook payloads all read materialised entities through `sync.List` / `sync.Get` (and helpers such as `TaskComments`, `Memberships`), restricted to the scopes the caller can see. History and activity are derived on request from the op log (`ActivityOps`, `activity.Derive`); there is no separate activity table on the server.
 
 ### Live updates
 
@@ -104,7 +104,8 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | `importer` | Reads the own export, CSV and other apps' JSON exports into rows, plans projects, labels, parents and duplicates, and writes ops in background jobs with undo. See [import.md](import.md) |
 | `backup` | Snapshots (`VACUUM INTO`), tar/gzip archives, `OTBK1` encryption, local / S3 (SigV4) / WebDAV destinations, scheduler, retention, `Restore`. See [backups.md](backups.md) |
 | `caldav` | Protocol pieces of the CalDAV endpoint: iCalendar tokenizer and serialiser for VTODO, the VTODO ↔ task mapping (unmapped lines kept in `ical_extra`), WebDAV XML parsing and multistatus rendering; HTTP handling lives in `httpapi`. See [caldav.md](caldav.md) |
-| `mcp` | Read-only Model Context Protocol server: a JSON-RPC 2.0 subset whose tools and `opentodo://` resources only call the materialised reads, and the owner toggle. See [mcp.md](mcp.md) |
+| `mcp` | Model Context Protocol server: a JSON-RPC 2.0 subset that serves the tools of `agenttools` (read tools always; write tools behind the owner's switch, the user's switch and an `agent` token) and read-only `opentodo://` resources, plus the owner switches. See [mcp.md](mcp.md) |
+| `agenttools` | The one registry of tools an AI agent can call (definitions, argument validation, planning into change sets, untrusted-text marking, write limits, the write permission gate, `agent.write` audit), shared by MCP and the planned in-app assistant; writes only through `ApplyStrict`. Also the per-user "Allow AI assistants to make changes" switch |
 | `email` | Email to task: minimal IMAP client (TLS or STARTTLS), MIME parsing to title and description, sub-address routing, per-account inboxes, limits and the poller. See [email.md](email.md) |
 | `e2ee` | Server side of end-to-end encryption: stores the wrapped key record with optimistic versioning, recognises ciphertext so server-side features degrade explicitly, purges superseded content ops. The server runs no content cryptography. See [e2ee.md](e2ee.md) |
 | `ids` | UUID v4, name-based ids (SHA-256, version 8 UUIDs, for recurring occurrences and tasks created from email) and random secrets |
@@ -116,7 +117,7 @@ Started by `cmd/opentodo` and stopped on shutdown:
 | --- | --- |
 | Op log and current values | `ops` (append-only, `user_id` = author, `seq` autoincrement), `op_scopes` (the sharing scope of each op), `scope_fields` (winner per field within a scope), `purges` (markers for permanently deleted entities) |
 | Sharing | `project_scopes`, `project_members` (roles, outside the op log), `member_backfills` (history replay per member device) |
-| Accounts and credentials | `users`, `user_status`, `sessions`, `session_auth`, `session_oidc`, `api_tokens`, `api_token_scopes`, `app_passwords`, `passkeys`, `identities`, `mfa_totp`, `mfa_recovery_codes`, `trusted_devices`, `invitations`, `password_resets` |
+| Accounts and credentials | `users`, `user_status`, `sessions`, `session_auth`, `session_oidc`, `api_tokens`, `api_token_scopes`, `api_token_agent`, `user_agent_access`, `app_passwords`, `passkeys`, `identities`, `mfa_totp`, `mfa_recovery_codes`, `trusted_devices`, `invitations`, `password_resets` |
 | Features | `notifications`, `push_subscriptions`, `webhooks`, `webhook_deliveries`, `import_jobs`, `import_items`, `caldav_resources`, `email_inboxes`, `email_receipts`, `encryption_keys` |
 | Operations | `settings` (owner key/value settings, also the log `generation`), `audit_events`, `backup_runs` |
 

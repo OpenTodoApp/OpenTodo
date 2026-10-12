@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "project",
+  "description": "A project exactly as the REST API returns it.",
+  "type": "object",
+  "required": ["id", "name"],
+  "properties": {
+    "id": {"type": "string"},
+    "name": {"type": "string", "description": "user-written"},
+    "color": {"type": "string"},
+    "archived": {"type": "boolean"},
+    "parent_id": {"type": ["string", "null"]},
+    "position": {"type": "number"},
+    "created_at": {"type": "number"},
+    "deleted_at": {"type": ["number", "null"]},
+    "role": {"type": "string", "description": "your role in a shared project"},
+    "owner_id": {"type": "string"}
+  }
+}

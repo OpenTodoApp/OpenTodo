@@ -55,8 +55,8 @@ These sections connect OpenTodo to other tools. Some appear only when the person
 - **Calendar apps (CalDAV)**: see your tasks in calendar and reminder apps on your phone or computer, with an app password. See [Calendar apps](caldav.md).
 - **Webhooks**: send a message to another service when tasks change. See [Webhooks](webhooks.md).
 - **Email to task**: your own secret address; emails sent there become tasks. See [Email to task](email.md).
-- **AI assistants**: give an AI assistant read-only access to your tasks. See [AI assistants (MCP)](mcp.md).
-- **API tokens**: keys for scripts and the `ot` command-line client. A token is shown once, when you create it. Read-only tokens can't change anything. See [HTTP API](api.md) and [Command-line client](cli.md).
+- **AI assistants**: give an AI assistant read-only access to your tasks, or, when the server owner allows it and you switch on **Allow AI assistants to make changes**, a token for an assistant that can make changes you can undo. See [AI assistants (MCP)](mcp.md).
+- **API tokens**: keys for scripts and the `ot` command-line client. A token is shown once, when you create it. Read-only tokens can't change anything; tokens for an AI assistant that can make changes work only through the assistant tools and never on the rest of the API. See [HTTP API](api.md) and [Command-line client](cli.md).
 
 ## For server admins
 

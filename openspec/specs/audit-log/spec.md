@@ -6,7 +6,7 @@ Gives the owner a durable, queryable record of security-relevant events on the s
 ## Requirements
 
 ### Requirement: Recorded events
-The server SHALL record an event for each sign-in success and failure, sign-out, second-factor change, passkey registration and removal, API token creation and revocation, invitation creation, acceptance and revocation, role change, security settings change, data or audit export, and backup creation or restoration. Each event SHALL carry a time, name, outcome, the acting account when known and the target account when different. Events are server records, never synced to devices.
+The server SHALL record sign-in success and failure, sign-out, second-factor changes, passkey registration and removal, token creation and revocation, invitation creation, acceptance and revocation, role changes, security settings changes, data or audit exports, backup creation or restoration, and each write tool call made with an `agent` token (`agent.write`). Each event SHALL carry a time, name, outcome, the actor when known and the target when different. Events are never synced.
 
 #### Scenario: Token creation is recorded
 - **WHEN** a user creates an API token named "laptop script"
@@ -17,8 +17,16 @@ The server SHALL record an event for each sign-in success and failure, sign-out,
 - **THEN** the log contains a `login.failed` event with outcome `failure`, the account as target, no actor, and the reason in its details
 
 #### Scenario: Task edits are not events
-- **WHEN** a user creates, edits, completes or deletes tasks and projects
+- **WHEN** a user creates, edits, completes or deletes tasks and projects from a device, the REST API or CalDAV
 - **THEN** no audit event is recorded for those operations
+
+#### Scenario: Assistant write is recorded without content
+- **WHEN** an assistant with an `agent` token completes three tasks in one `complete_tasks` call
+- **THEN** the log contains one `agent.write` event with the user as actor, outcome `success`, and details `tool`, `token_id`, `token_name` and `count: 3`, and no task title or other content
+
+#### Scenario: Refused assistant write is recorded
+- **WHEN** an assistant's write call is refused because the user's switch is off
+- **THEN** the log contains an `agent.write` event with outcome `failure` and reason `writes_disabled_by_user`
 
 ### Requirement: Content and privacy limits
 An event's details SHALL be limited to an allow-list of identifiers and credential or setting names; no field of a task or project, no password, token secret, one-time code or recovery code SHALL ever be stored. The client address SHALL be recorded only when the owner has enabled address logging, and disabling it SHALL remove addresses from stored events. The user agent SHALL be stored truncated to 200 characters.

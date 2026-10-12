@@ -136,13 +136,19 @@ func run() error {
 	// Reminders: web push to subscribed devices (docs/reminders.md). On unless
 	// OPENTODO_PUSH=off; the VAPID key pair is created under the data directory on
 	// first use. In-app reminders work either way.
-	// Read-only MCP endpoint for AI assistants (docs/mcp.md): off until the owner
-	// enables it; OPENTODO_MCP presets the toggle on first start only.
+	// MCP endpoint for AI assistants (docs/mcp.md): off until the owner enables
+	// it; OPENTODO_MCP presets the toggle and OPENTODO_MCP_WRITES the "AI
+	// assistants may make changes" switch, on first start only.
 	mcpSettings := mcp.NewSettings(db)
 	if seeded, err := mcpSettings.Seed(ctx, cfg.MCP); err != nil {
 		return err
 	} else if seeded {
 		log.Info("MCP setting seeded from OPENTODO_MCP", "enabled", *cfg.MCP)
+	}
+	if seeded, err := mcpSettings.SeedWrites(ctx, cfg.MCPWrites); err != nil {
+		return err
+	} else if seeded {
+		log.Info("MCP writes setting seeded from OPENTODO_MCP_WRITES", "enabled", *cfg.MCPWrites)
 	}
 	opts := []httpapi.Option{httpapi.WithWebhooks(hooks), httpapi.WithBackups(backups), httpapi.WithNotifications(inbox), httpapi.WithMCPSettings(mcpSettings)}
 	var pushSvc *push.Service

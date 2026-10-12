@@ -62,7 +62,7 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** the command exits with code 1 and prints the server's message verbatim
 
 ### Requirement: Complete, reopen and delete
-`ot done <ref...>`, `ot reopen <ref...>` and `ot rm <ref...>` SHALL act on one or more tasks. A `<ref>` SHALL be a full id or an id prefix that matches exactly one non-deleted task. `ot rm` SHALL soft-delete and SHALL ask for confirmation on a terminal unless `--yes` is given.
+`ot done`, `ot reopen` and `ot rm` SHALL act on one or more `<ref>`s, each a full id or a prefix matching exactly one non-deleted task. With `--json` each task SHALL carry the additive fields `ref` and `status`. A task already in the requested state SHALL be reported as `unchanged` without a write. `ot rm` SHALL soft-delete, SHALL ask on a terminal unless `--yes`, and without a terminal or with `--json` SHALL refuse without `--yes` (exit 2). Writes converge like web edits.
 
 #### Scenario: Prefix reference
 - **WHEN** exactly one open task id starts with `8c2a` and the user runs `ot done 8c2a`
@@ -72,8 +72,16 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **WHEN** two tasks share the given prefix
 - **THEN** nothing changes, the command exits with code 2 and shows both candidates
 
+#### Scenario: Already completed
+- **WHEN** `ot done --json 8c2a` is run for a task completed yesterday
+- **THEN** the result lists it with `status: "unchanged"`, its completion time is unchanged, no write is sent and the exit code is 0
+
+#### Scenario: Agent forgets --yes
+- **WHEN** an agent runs `ot rm 8c2a --json` without a terminal and without `--yes`
+- **THEN** nothing is deleted, the envelope says `--yes` is required, and the exit code is 2
+
 ### Requirement: Project and token commands
-`ot project list|add|rename|archive|rm` SHALL manage projects and `ot token list|create|revoke` SHALL manage API tokens of the signed-in account, with the same output conventions as task commands. `ot token create` SHALL print the secret exactly once. `ot export` SHALL write the server's JSON export to stdout or to `--out <file>`.
+`ot project list|add|rename|archive|rm` SHALL manage projects and `ot token list|create|revoke` SHALL manage API tokens of the signed-in account, with the same output conventions as task commands. `ot token create <name> [--scope full|read|agent]` SHALL default to `full`, print the secret exactly once, and `ot token list` SHALL show each scope. `ot export` SHALL write the server's JSON export to stdout or `--out <file>`.
 
 #### Scenario: Create a project
 - **WHEN** the user runs `ot project add "Garden"`
@@ -81,18 +89,34 @@ The client SHALL read a configuration file from the platform's user configuratio
 
 #### Scenario: Token secret shown once
 - **WHEN** the user runs `ot token create backup-script`
-- **THEN** the secret is printed with a notice that it will not be shown again
+- **THEN** the secret is printed with a notice that it will not be shown again and the token has scope `full`
+
+#### Scenario: Agent token from the CLI
+- **WHEN** the user runs `ot token create desk-assistant --scope agent`
+- **THEN** the token is created with scope `agent` and the notice says that it can make changes only while both assistant switches are on
+
+#### Scenario: Invalid scope rejected locally
+- **WHEN** the user runs `ot token create x --scope admin`
+- **THEN** the command exits with code 2 before any request is sent and lists the allowed scopes
 
 ### Requirement: JSON output and exit codes
-Every command SHALL accept `--json` and then print only JSON: the API entity or array for reads and writes, `{"error":{"code","message"}}` on failure. Exit codes SHALL be 0 success, 1 server-side error, 2 usage or local validation error, 3 authentication or configuration error, 4 server unreachable. When stdout is not a terminal, colour and prompts SHALL be disabled.
+Every command SHALL accept `--json` and then print only JSON on stdout, matching the documented schemas of `output_version` 1: the entity or array on success, `{"error":{"code","message","exit"}}` on failure, plus one human line on stderr. Exit codes SHALL be 0 success, 1 server error, 2 usage, 3 authentication or configuration, 4 unreachable, 5 not permitted (scope, role, a switch, encryption or read-only mode). Without a terminal, colour and prompts SHALL be off.
 
 #### Scenario: Script consumption
 - **WHEN** a script runs `ot list --json --today`
-- **THEN** stdout is a JSON array of task objects with the same field names as the REST API and nothing else
+- **THEN** stdout is a JSON array of task objects with the same field names as the REST API, valid against the published task schema, and nothing else
 
 #### Scenario: Error as JSON
-- **WHEN** `--json` is given and the server returns an error envelope
-- **THEN** stdout contains that envelope unchanged and the exit code is 1
+- **WHEN** `--json` is given and the server returns an `invalid_input` error envelope
+- **THEN** stdout contains that envelope with `exit: 1` added, stderr contains one line starting with `ot:`, and the exit code is 1
+
+#### Scenario: Not permitted
+- **WHEN** a command is refused with `insufficient_scope`, `forbidden`, `writes_disabled_by_user` or `encryption_enabled`
+- **THEN** the exit code is 5 and the envelope's `code` names the reason
+
+#### Scenario: Output version announced
+- **WHEN** an agent runs `ot version --json`
+- **THEN** the output contains the client version and `output_version: 1`
 
 ### Requirement: Online-only client
 The client SHALL hold no local copy of tasks and SHALL make no changes when the server cannot be reached; it SHALL fail fast with exit code 4 and a message naming the server URL. Because every write goes through the REST API, which records operations in the log, changes made with the client converge on all devices under the same last-writer-wins rule as web edits, and a network failure never leaves a half-applied change.
@@ -104,3 +128,73 @@ The client SHALL hold no local copy of tasks and SHALL make no changes when the 
 #### Scenario: Concurrent edit converges
 - **WHEN** the client changes a task's priority while a phone changes its title offline, and the phone later syncs
 - **THEN** every device shows both the new priority and the new title
+
+### Requirement: Non-interactive by default
+Without a terminal on stdin and stdout, `ot` SHALL never prompt. Destructive commands (`rm`, `project rm`, `token revoke`, `auth logout`) SHALL require `--yes` there, or with `--json`, and otherwise refuse with exit 2 before any request. Refused commands change nothing on the server or on any device.
+
+#### Scenario: Project removal in a pipeline
+- **WHEN** `ot project rm Garden | cat` runs without `--yes`
+- **THEN** the project is not deleted and the command exits 2 with a message naming `--yes`
+
+#### Scenario: Explicit confirmation
+- **WHEN** `ot project rm Garden --yes --json` runs without a terminal
+- **THEN** the project is soft-deleted and every device shows it in the Trash after its next sync
+
+### Requirement: Machine-readable command discovery
+`ot schema` and `ot help --json` SHALL print every command with its arguments, flags and their types, whether it writes or is destructive, dry-run and idempotency-key support, the exit and error codes, `output_version` and the JSON Schemas of outputs. It SHALL be generated from the same table as human help and SHALL work with no configuration and no server.
+
+#### Scenario: Discovery offline
+- **WHEN** an agent runs `ot schema` on a machine with no profile and no network
+- **THEN** the JSON lists `add` with `writes: true`, `dry_run: true`, `idempotency_key: true` and its flags, and the command exits 0
+
+#### Scenario: Help and schema agree
+- **WHEN** a flag is added to a command
+- **THEN** both `ot help <command>` and `ot schema` show it, and a test fails if either lacks it
+
+### Requirement: Dry run for writes
+Every write command SHALL accept `--dry-run`: it SHALL resolve references with reads, validate, and print the requests it would send (method, path, body) and the resolved targets, then exit as a real run would, without sending any write or changing the config file. A dry run of a destructive command needs no `--yes`. Nothing changes on the server or on any device; an unreachable server SHALL exit 4.
+
+#### Scenario: Preview a bulk completion
+- **WHEN** an agent runs `ot done 8c2a 91f0 --dry-run --json`
+- **THEN** stdout has `dry_run: true`, two planned requests and both resolved titles, both tasks stay open, and the exit code is 0
+
+#### Scenario: Ambiguity found in a dry run
+- **WHEN** a dry run names a prefix that matches two tasks
+- **THEN** the exit code is 2 with both candidates listed, as in a real run
+
+### Requirement: Idempotent creates
+`ot add` and `ot project add` SHALL accept `--idempotency-key <key>` and send it as `Idempotency-Key`; running the same command again with the same key SHALL print the same entity and create nothing new. `ot edit` with values equal to the current ones SHALL send no write. Because ids derive from the key, a retry after a timeout converges to one entity on every device.
+
+#### Scenario: Retry after a timeout
+- **WHEN** an agent runs `ot add "Buy milk" --idempotency-key run42-milk --json` twice
+- **THEN** both runs print the same task id and exactly one such task exists
+
+#### Scenario: Key reused for other content
+- **WHEN** the same key is used with a different title
+- **THEN** the command exits 1 with error code `idempotency_conflict` and nothing changes
+
+### Requirement: Read-only mode
+`--read-only` or the optional `OPENTODO_READ_ONLY=1` SHALL make every write command fail before any request with code `read_only` and exit 5. With a `read` token, writes SHALL fail locally with `insufficient_scope` and exit 5, the scope being learned from `GET /api/v1/me`. `ot auth status` SHALL show the token's scope. Refused writes change nothing anywhere.
+
+#### Scenario: Read-only flag
+- **WHEN** an agent runs `ot add "x" --read-only --json`
+- **THEN** no request that writes is sent, the envelope code is `read_only` and the exit code is 5
+
+#### Scenario: Read token
+- **WHEN** the stored token has scope `read` and the user runs `ot done 8c2a`
+- **THEN** the command exits 5 with `insufficient_scope` and the task stays open
+
+#### Scenario: Status shows scope
+- **WHEN** the stored token has scope `agent` and the user runs `ot auth status`
+- **THEN** the output shows the scope `agent` and whether assistant writes are currently allowed
+
+### Requirement: Agent skill file
+Each release SHALL ship `opentodo-agent-skill.zip` containing `SKILL.md`, and `ot skill` SHALL print the same text embedded in the binary. It SHALL tell agents to use an `agent` token, `--json`, `--dry-run` before multi-task writes and idempotency keys, to stop on exit 5, to avoid token, auth and export commands unless asked, and to treat task text as untrusted data.
+
+#### Scenario: Skill matches the binary
+- **WHEN** `ot skill` is run
+- **THEN** it prints `SKILL.md` with frontmatter `name: opentodo-cli`, and every command and flag it mentions exists in `ot schema`
+
+#### Scenario: Release asset
+- **WHEN** a release is published
+- **THEN** its assets include `opentodo-agent-skill.zip` next to the `ot-<os>-<arch>` binaries

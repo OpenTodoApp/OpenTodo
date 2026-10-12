@@ -103,7 +103,7 @@ func rpcCode(out map[string]any) float64 {
 func taskTitles(list any) []string {
 	out := []string{}
 	for _, it := range list.([]any) {
-		out = append(out, it.(map[string]any)["title"].(string))
+		out = append(out, it.(map[string]any)["untrusted_text"].(map[string]any)["title"].(string))
 	}
 	return out
 }
@@ -345,7 +345,7 @@ func TestMcpSession(t *testing.T) {
 		t.Fatalf("today = %v", got)
 	}
 	task := c.mcpTool(secret, "get_task", map[string]any{"id": tid})["task"].(map[string]any)
-	if task["project"] != "Garden" || task["overdue"] != true || task["priority"].(float64) != 2 {
+	if task["untrusted_text"].(map[string]any)["project"] != "Garden" || task["overdue"] != true || task["priority"].(float64) != 2 {
 		t.Fatalf("task = %v", task)
 	}
 	if got := taskTitles(c.mcpTool(secret, "search_tasks", map[string]any{"query": "DENTIST"})["tasks"]); len(got) != 1 {

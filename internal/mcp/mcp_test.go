@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pixari/opentodo/internal/agenttools"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
@@ -68,7 +70,7 @@ func (f *fixture) task(uid, id, title string, extra map[string]any) {
 // rpc sends one raw message and decodes the reply.
 func (f *fixture) rpc(uid, body string) map[string]any {
 	f.t.Helper()
-	out, _ := f.srv.Handle(context.Background(), uid, []byte(body))
+	out, _ := f.srv.Handle(context.Background(), agenttools.Caller{UserID: uid, Scope: "read"}, []byte(body))
 	if out == nil {
 		return nil
 	}
@@ -105,7 +107,7 @@ func errCode(r map[string]any) float64 {
 func titles(list any) []string {
 	out := []string{}
 	for _, it := range list.([]any) {
-		out = append(out, it.(map[string]any)["title"].(string))
+		out = append(out, it.(map[string]any)["untrusted_text"].(map[string]any)["title"].(string))
 	}
 	return out
 }
@@ -156,14 +158,14 @@ func TestUnknownMethod32601(t *testing.T) {
 
 func TestMalformedJSON32700(t *testing.T) {
 	f := newFixture(t)
-	out, malformed := f.srv.Handle(context.Background(), "u1", []byte(`{"jsonrpc":"2.0","id":1,"method":`))
+	out, malformed := f.srv.Handle(context.Background(), u1, []byte(`{"jsonrpc":"2.0","id":1,"method":`))
 	var r map[string]any
 	_ = json.Unmarshal(out, &r)
 	if !malformed || errCode(r) != CodeParseError || r["id"] != nil {
 		t.Fatalf("parse error: %s malformed=%v", out, malformed)
 	}
 	for _, body := range []string{`{"id":1,"method":"ping"}`, `{"jsonrpc":"2.0","id":{"a":1},"method":"ping"}`, `{"jsonrpc":"2.0","id":1}`, `42`, `[]`} {
-		out, malformed := f.srv.Handle(context.Background(), "u1", []byte(body))
+		out, malformed := f.srv.Handle(context.Background(), u1, []byte(body))
 		_ = json.Unmarshal(out, &r)
 		if !malformed || errCode(r) != CodeInvalidRequest {
 			t.Fatalf("%s: %s malformed=%v", body, out, malformed)
@@ -177,18 +179,18 @@ func TestMalformedJSON32700(t *testing.T) {
 
 func TestNotificationsAndBatches(t *testing.T) {
 	f := newFixture(t)
-	if out, malformed := f.srv.Handle(context.Background(), "u1", []byte(`{"jsonrpc":"2.0","method":"notifications/initialized"}`)); out != nil || malformed {
+	if out, malformed := f.srv.Handle(context.Background(), u1, []byte(`{"jsonrpc":"2.0","method":"notifications/initialized"}`)); out != nil || malformed {
 		t.Fatalf("notification answered: %s", out)
 	}
 	// A notification for an unknown method is still silent.
-	if out, _ := f.srv.Handle(context.Background(), "u1", []byte(`{"jsonrpc":"2.0","method":"tasks/delete"}`)); out != nil {
+	if out, _ := f.srv.Handle(context.Background(), u1, []byte(`{"jsonrpc":"2.0","method":"tasks/delete"}`)); out != nil {
 		t.Fatalf("unknown notification answered: %s", out)
 	}
 	// A client response (to a request this server never sends) is accepted silently.
-	if out, _ := f.srv.Handle(context.Background(), "u1", []byte(`{"jsonrpc":"2.0","id":"s1","result":{}}`)); out != nil {
+	if out, _ := f.srv.Handle(context.Background(), u1, []byte(`{"jsonrpc":"2.0","id":"s1","result":{}}`)); out != nil {
 		t.Fatalf("response answered: %s", out)
 	}
-	out, _ := f.srv.Handle(context.Background(), "u1", []byte(`[{"jsonrpc":"2.0","id":"a","method":"ping"},{"jsonrpc":"2.0","method":"notifications/initialized"},{"jsonrpc":"2.0","id":"b","method":"nope"}]`))
+	out, _ := f.srv.Handle(context.Background(), u1, []byte(`[{"jsonrpc":"2.0","id":"a","method":"ping"},{"jsonrpc":"2.0","method":"notifications/initialized"},{"jsonrpc":"2.0","id":"b","method":"nope"}]`))
 	var replies []map[string]any
 	if err := json.Unmarshal(out, &replies); err != nil || len(replies) != 2 {
 		t.Fatalf("batch: %s", out)
@@ -285,11 +287,11 @@ func TestListTasksTodayInTimezone(t *testing.T) {
 		t.Fatalf("meta = %v %v %v", ny["today"], ny["timezone"], ny["server_time"])
 	}
 	first := ny["tasks"].([]any)[0].(map[string]any)
-	if first["overdue"] != true || first["project"] != "Inbox" || first["priority"].(float64) != 1 {
+	if first["overdue"] != true || ut(first)["project"] != "Inbox" || first["priority"].(float64) != 1 {
 		t.Fatalf("overdue task = %v", first)
 	}
 	water := ny["tasks"].([]any)[2].(map[string]any)
-	if water["project"] != "Garden" || water["labels"].([]any)[0] != "outside" {
+	if ut(water)["project"] != "Garden" || ut(water)["labels"].([]any)[0] != "outside" {
 		t.Fatalf("task with project and label = %v", water)
 	}
 	standup := ny["tasks"].([]any)[1].(map[string]any)["due"].(map[string]any)
@@ -371,14 +373,14 @@ func TestGetTaskExcludesDeleted(t *testing.T) {
 
 	res := f.tool("u1", "get_task", map[string]any{"id": "t1"})
 	task := res["task"].(map[string]any)
-	if task["description"] != "San Marzano" || task["project"] != "Garden" || task["section"] != "Beds" {
+	if ut(task)["description"] != "San Marzano" || ut(task)["project"] != "Garden" || ut(task)["section"] != "Beds" {
 		t.Fatalf("task = %v", task)
 	}
 	if got := strings.Join(titles(res["subtasks"]), ","); got != "Buy seeds" {
 		t.Fatalf("subtasks = %s", got)
 	}
 	comments := res["comments"].([]any)
-	if len(comments) != 1 || comments[0].(map[string]any)["body"] != "after the frost" {
+	if len(comments) != 1 || ut(comments[0].(map[string]any))["body"] != "after the frost" || comments[0].(map[string]any)["author_is_you"] != true {
 		t.Fatalf("comments = %v", comments)
 	}
 	for _, id := range []string{"t2", "t1b", "does-not-exist"} {
@@ -443,7 +445,7 @@ func TestEncryptedContentIsOpaque(t *testing.T) {
 		m := it.(map[string]any)
 		if m["id"] == "t1" {
 			found = true
-			if m["title"] != "Encrypted item" || m["encrypted"] != true || m["project"] != "Encrypted item" {
+			if ut(m)["title"] != "Encrypted item" || m["encrypted"] != true || ut(m)["project"] != "Encrypted item" {
 				t.Fatalf("encrypted task = %v", m)
 			}
 		}
@@ -484,7 +486,7 @@ func TestTodaySummaryCounts(t *testing.T) {
 		t.Fatalf("counts = %v", counts)
 	}
 	per := counts["per_project"].([]any)
-	if len(per) != 2 || per[0].(map[string]any)["name"] != "Garden" || per[0].(map[string]any)["open"].(float64) != 2 ||
+	if len(per) != 2 || ut(per[0].(map[string]any))["name"] != "Garden" || per[0].(map[string]any)["open"].(float64) != 2 ||
 		per[1].(map[string]any)["open"].(float64) != 1 {
 		t.Fatalf("per project = %v", per)
 	}
@@ -519,7 +521,7 @@ func TestReadResources(t *testing.T) {
 		return payload, r
 	}
 	p, _ := read("opentodo://projects/p1")
-	if p["project"].(map[string]any)["name"] != "Garden" || len(p["tasks"].([]any)) != 1 || len(p["sections"].([]any)) != 1 {
+	if ut(p["project"].(map[string]any))["name"] != "Garden" || len(p["tasks"].([]any)) != 1 || len(p["sections"].([]any)) != 1 {
 		t.Fatalf("project resource = %v", p)
 	}
 	today, _ := read("opentodo://views/today")
@@ -533,7 +535,7 @@ func TestReadResources(t *testing.T) {
 	if lst, _ := read("opentodo://projects"); len(lst["projects"].([]any)) != 1 {
 		t.Fatalf("projects = %v", lst)
 	}
-	if task, _ := read("opentodo://tasks/t1"); task["task"].(map[string]any)["title"] != "Water" {
+	if task, _ := read("opentodo://tasks/t1"); ut(task["task"].(map[string]any))["title"] != "Water" {
 		t.Fatalf("task = %v", task)
 	}
 	for _, uri := range []string{"opentodo://tasks/t2", "opentodo://tasks/nope", "opentodo://projects/nope", "opentodo://views/someday", "https://example.com/x"} {
@@ -596,5 +598,124 @@ func TestMcpPresetSeedsOnce(t *testing.T) {
 	}
 	if seeded, _ := again.Seed(ctx, &off); seeded {
 		t.Fatal("seeded twice")
+	}
+}
+
+// u1 is a read-token caller for transport-level tests.
+var u1 = agenttools.Caller{UserID: "u1", Scope: "read"}
+
+// ut is an item's untrusted_text object (mcp-write-tools D9.5).
+func ut(m map[string]any) map[string]any {
+	u, _ := m["untrusted_text"].(map[string]any)
+	return u
+}
+
+// TestToolsListReadOnlyUnchanged: every caller without write permission sees
+// exactly today's five read tools, byte-identical to the mcp-server golden
+// (mcp-write-tools task 2.1), however the switches are set.
+func TestToolsListReadOnlyUnchanged(t *testing.T) {
+	f := newFixture(t)
+	want, err := os.ReadFile(filepath.Join("testdata", "tools_list.golden.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []agenttools.Caller{
+		{UserID: "u1", Scope: "read", OwnerAllowsWrites: true, UserAllowsWrites: true},
+		{UserID: "u1", Scope: "full", OwnerAllowsWrites: true, UserAllowsWrites: true},
+		{UserID: "u1", Scope: "agent", OwnerAllowsWrites: false, UserAllowsWrites: true},
+		{UserID: "u1", Scope: "agent", OwnerAllowsWrites: true, UserAllowsWrites: false},
+	} {
+		out, _ := f.srv.Handle(context.Background(), c, []byte(`{"jsonrpc":"2.0","id":1,"method":"tools/list"}`))
+		var r map[string]any
+		_ = json.Unmarshal(out, &r)
+		got, _ := json.MarshalIndent(r["result"], "", "  ")
+		if !bytes.Equal(append(got, '\n'), want) {
+			t.Fatalf("%+v: tools/list differs from the read-only golden:\n%s", c, got)
+		}
+	}
+}
+
+func TestWriteToolsThroughHandle(t *testing.T) {
+	f := newFixture(t)
+	f.task("u1", "t1", "Water", nil)
+	agent := agenttools.Caller{UserID: "u1", TokenID: "tk", TokenName: "Desk", Scope: "agent", OwnerAllowsWrites: true, UserAllowsWrites: true}
+	send := func(c agenttools.Caller, body string) map[string]any {
+		out, _ := f.srv.Handle(context.Background(), c, []byte(body))
+		var r map[string]any
+		_ = json.Unmarshal(out, &r)
+		return r
+	}
+	// Listed with readOnlyHint false; instructions mention undo.
+	r := send(agent, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+	tools := r["result"].(map[string]any)["tools"].([]any)
+	if len(tools) != 15 {
+		t.Fatalf("tools = %d", len(tools))
+	}
+	for _, tl := range tools[5:] {
+		if tl.(map[string]any)["annotations"].(map[string]any)["readOnlyHint"] != false {
+			t.Fatalf("write tool annotations: %v", tl)
+		}
+	}
+	init := send(agent, `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}`)
+	if init["result"].(map[string]any)["instructions"] != WriteInstructions {
+		t.Fatal("write instructions missing")
+	}
+	// A gate refusal is a tool error naming the condition, never -32601.
+	full := agent
+	full.Scope = "full"
+	r = send(full, `{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"complete_tasks","arguments":{"ids":["t1"]}}}`)
+	res := r["result"].(map[string]any)
+	if res["isError"] != true || res["structuredContent"].(map[string]any)["error"] != "token_scope" {
+		t.Fatalf("full token: %v", r)
+	}
+	// 51 ids: -32602.
+	ids := make([]string, 51)
+	for i := range ids {
+		ids[i] = fmt.Sprintf("id-%d", i)
+	}
+	b, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": map[string]any{"name": "complete_tasks", "arguments": map[string]any{"ids": ids}}})
+	if r = send(agent, string(b)); errCode(r) != CodeInvalidParams {
+		t.Fatalf("51 ids: %v", r)
+	}
+	r = send(agent, `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"complete_tasks","arguments":{"ids":["t1"]}}}`)
+	if res := r["result"].(map[string]any); res["isError"] == true || res["structuredContent"].(map[string]any)["changed"].(float64) != 1 {
+		t.Fatalf("complete: %v", r)
+	}
+	// The ops carry the agent device.
+	var dev string
+	_ = f.sync.DB().QueryRow(`SELECT device FROM ops WHERE entity_id = 't1' AND field = 'completed_at'`).Scan(&dev)
+	if dev != "agent:tk" {
+		t.Fatalf("device = %q", dev)
+	}
+	// Arguments and results never reach the log.
+	if strings.Contains(f.logs.String(), "Water") || strings.Contains(f.logs.String(), "t1") {
+		t.Fatalf("log leaks: %s", f.logs.String())
+	}
+}
+
+func TestMcpWritesPresetSeedsOnce(t *testing.T) {
+	db, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	s := NewSettings(db)
+	if s.WritesEnabled(ctx) {
+		t.Fatal("writes on by default")
+	}
+	on := true
+	if seeded, err := s.SeedWrites(ctx, &on); err != nil || !seeded || !s.WritesEnabled(ctx) {
+		t.Fatalf("first seed: %v %v", seeded, err)
+	}
+	if s.Enabled(ctx) {
+		t.Fatal("the writes preset turned the endpoint on")
+	}
+	if err := s.SetWrites(ctx, "owner", false, nil); err != nil || s.WritesEnabled(ctx) {
+		t.Fatalf("owner turns it off: %v", err)
+	}
+	again := NewSettings(db)
+	if seeded, err := again.SeedWrites(ctx, &on); err != nil || seeded || again.WritesEnabled(ctx) {
+		t.Fatalf("second seed: %v %v", seeded, err)
 	}
 }

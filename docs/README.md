@@ -64,7 +64,7 @@ The full list of environment variables is in the [README](../README.md#configura
 | [HTTP API](api.md) | Authentication, every route, entity fields, error codes, examples |
 | [Command-line client](cli.md) | `ot`: install, sign in, commands, JSON output and exit codes |
 | [Webhooks](webhooks.md) | Events, payload, signature verification, retries, receiver recipes |
-| [AI assistants (MCP)](mcp.md) | Enabling the read-only MCP endpoint, tokens, tools and resources |
+| [AI assistants (MCP)](mcp.md) | Enabling the MCP endpoint, read-only and assistant tokens, read and write tools, limits, prompt-injection safety |
 
 ## Internals
 

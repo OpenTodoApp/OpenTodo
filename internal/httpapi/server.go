@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixari/opentodo/internal/agenttools"
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
@@ -85,12 +86,19 @@ type Server struct {
 	// server behind /mcp (OpenSpec `mcp-server`); see mcp.go.
 	mcpSettings *mcp.Settings
 	mcp         *mcp.Server
+	// agentTools is the AI agent tool registry behind /mcp and agentAccess the
+	// users' "Allow AI assistants to make changes" switches (mcp-write-tools).
+	agentTools  *agenttools.Registry
+	agentAccess *agenttools.Access
 	// email is email capture (OpenSpec `email-to-task`); emailLimiter caps
 	// inbox changes and rotations per account (30/hour).
 	email        *email.Service
 	emailLimiter *rateLimiter
 	// demo is set on a demo instance (OpenSpec `demo-mode`); see demo.go.
 	demo *demo.Service
+	// idemSalt makes Idempotency-Key ids unguessable (agent-ready-cli D5);
+	// see idempotency.go.
+	idemSalt string
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -121,6 +129,11 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		o(s)
 	}
 	setTrustedProxies(cfg.TrustedProxies, cfg.TrustCloudflare)
+	if err := s.loadIdempotencySalt(context.Background()); err != nil {
+		// Without a stored salt keyed ids still derive per user; they are only
+		// guessable by someone who knows the user id and the key.
+		log.Error("idempotency salt unavailable", "err", err)
+	}
 	if s.demo != nil {
 		// Sandbox writes are bounded: field sizes and the write budget (demo-sandboxes D3).
 		syncSvc.SetWriteGuard(s.demo.Guard())
@@ -264,7 +277,15 @@ const (
 	// sessionKey holds the *auth.Session of cookie-authenticated requests; it is
 	// absent for bearer tokens, which step-up and policy never touch.
 	sessionKey ctxKey = 2
+	// tokenKey holds the auth.TokenInfo of the request: the API token's id,
+	// name and scope, or only scope full for a session (agent-ready-cli D7).
+	tokenKey ctxKey = 3
 )
+
+func tokenFrom(ctx context.Context) auth.TokenInfo {
+	t, _ := ctx.Value(tokenKey).(auth.TokenInfo)
+	return t
+}
 
 func userFrom(ctx context.Context) *auth.User {
 	u, _ := ctx.Value(userKey).(*auth.User)
@@ -278,7 +299,8 @@ func sessionFrom(ctx context.Context) *auth.Session {
 
 func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, sess, viaCookie, scope, err := s.authenticateScoped(r)
+		u, sess, viaCookie, tok, err := s.authenticateScoped(r)
+		scope := tok.Scope
 		if err != nil {
 			s.log.Error("auth lookup failed", "err", err)
 			writeError(w, http.StatusInternalServerError, "internal", "internal error")
@@ -294,9 +316,25 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required")
 			return
 		}
-		// Read-scoped API tokens (mcp-server D2) never reach a handler that writes.
-		if scope == auth.ScopeRead && isWriteRequest(r) {
-			writeError(w, http.StatusForbidden, "insufficient_scope", "this API token is read-only")
+		ctx := context.WithValue(r.Context(), userKey, u)
+		ctx = context.WithValue(ctx, tokenKey, tok)
+		// Only sessions and full tokens reach a handler that writes: read tokens
+		// (mcp-server D2) and agent tokens (mcp-write-tools D2) are refused, and
+		// so is any scope this binary does not know (fail closed). The one
+		// exception is the fixed list of agent content routes (agent-ready-cli
+		// D8): an agent token's write there never reaches the regular handler but
+		// runs through the agent tool registry, with its switches, limits and
+		// audit (agent_rest.go).
+		if scope != auth.ScopeFull && isWriteRequest(r) {
+			if scope == auth.ScopeAgent && agentRoute(r) != "" {
+				s.handleAgentWrite(w, r.WithContext(ctx), u, tok)
+				return
+			}
+			msg := "this API token is read-only"
+			if scope == auth.ScopeAgent {
+				msg = "this API token is for AI assistants: it can create and edit tasks, projects, labels and comments, and nothing else (see docs/api.md#agent-tokens)"
+			}
+			writeError(w, http.StatusForbidden, "insufficient_scope", msg)
 			return
 		}
 		if viaCookie && r.Method != http.MethodGet && r.Method != http.MethodHead && !s.originAllowed(r) {
@@ -315,7 +353,6 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 				s.log.Warn("demo sandbox activity not recorded", "err", err)
 			}
 		}
-		ctx := context.WithValue(r.Context(), userKey, u)
 		if sess != nil {
 			ctx = context.WithValue(ctx, sessionKey, sess)
 		}
@@ -335,28 +372,28 @@ func (s *Server) authenticateSession(r *http.Request) (*auth.User, *auth.Session
 	return u, sess, viaCookie, err
 }
 
-// authenticateScoped is authenticateSession plus the API token's scope
-// (auth.ScopeFull for sessions).
-func (s *Server) authenticateScoped(r *http.Request) (*auth.User, *auth.Session, bool, string, error) {
+// authenticateScoped is authenticateSession plus the API token's id, name and
+// scope (only auth.ScopeFull for sessions).
+func (s *Server) authenticateScoped(r *http.Request) (*auth.User, *auth.Session, bool, auth.TokenInfo, error) {
 	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
-		u, scope, err := s.auth.UserByTokenScope(r.Context(), strings.TrimSpace(strings.TrimPrefix(h, "Bearer ")))
+		u, tok, err := s.auth.UserByTokenInfo(r.Context(), strings.TrimSpace(strings.TrimPrefix(h, "Bearer ")))
 		if errors.Is(err, auth.ErrNotFound) {
-			return nil, nil, false, "", nil
+			return nil, nil, false, auth.TokenInfo{}, nil
 		}
-		return u, nil, false, scope, err
+		return u, nil, false, tok, err
 	}
 	c, err := r.Cookie(sessionCookie)
 	if err != nil {
-		return nil, nil, false, "", nil
+		return nil, nil, false, auth.TokenInfo{}, nil
 	}
 	sess, err := s.auth.LookupSession(r.Context(), c.Value)
 	if errors.Is(err, auth.ErrNotFound) {
-		return nil, nil, true, "", nil
+		return nil, nil, true, auth.TokenInfo{}, nil
 	}
 	if err != nil {
-		return nil, nil, true, "", err
+		return nil, nil, true, auth.TokenInfo{}, err
 	}
-	return sess.User, sess, true, auth.ScopeFull, nil
+	return sess.User, sess, true, auth.TokenInfo{Scope: auth.ScopeFull}, nil
 }
 
 // isWriteRequest reports whether a request may change state: every method but
@@ -649,9 +686,38 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	// encryption and minClientVersion: OpenSpec `e2ee` (design D8, D9).
+	authInfo, err := s.credentialInfo(r)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	// encryption and minClientVersion: OpenSpec `e2ee` (design D8, D9); auth:
+	// `agent-ready-cli` (design D7).
 	writeJSON(w, http.StatusOK, map[string]any{"user": u, "mfa": st,
-		"encryption": s.encryptionStatus(r.Context(), u.ID), "minClientVersion": MinClientVersion})
+		"encryption": s.encryptionStatus(r.Context(), u.ID), "minClientVersion": MinClientVersion, "auth": authInfo})
+}
+
+// credentialInfo describes how the request authenticated (agent-ready-cli D7):
+// method session or token, the scope and, for tokens, the token's id and name,
+// never its secret. For an agent token it adds whether writes are allowed right
+// now (both switches), since the switch route itself refuses agent tokens.
+func (s *Server) credentialInfo(r *http.Request) (map[string]any, error) {
+	tok := tokenFrom(r.Context())
+	if tok.ID == "" {
+		return map[string]any{"method": "session", "scope": auth.ScopeFull}, nil
+	}
+	out := map[string]any{"method": "token", "scope": tok.Scope, "token_id": tok.ID, "token_name": tok.Name}
+	if tok.Scope == auth.ScopeAgent && s.agentAccess != nil {
+		c, err := s.agentCaller(r.Context(), userFrom(r.Context()), tok)
+		if err != nil {
+			return nil, err
+		}
+		out["writes_allowed"] = c.CanWrite()
+		if d := c.WriteDenial(); d != "" {
+			out["writes_denied"] = d
+		}
+	}
+	return out, nil
 }
 
 func (s *Server) handleListTokens(w http.ResponseWriter, r *http.Request) {
@@ -674,7 +740,7 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 	}
 	t, plain, err := s.auth.CreateTokenScoped(r.Context(), userFrom(r.Context()).ID, in.Name, in.Scope)
 	if errors.Is(err, auth.ErrInvalidScope) {
-		writeError(w, http.StatusBadRequest, "invalid_input", "scope: must be full or read")
+		writeError(w, http.StatusBadRequest, "invalid_input", "scope: must be full, read or agent")
 		return
 	}
 	if err != nil {
@@ -841,6 +907,18 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", "device is required")
 		return
 	}
+	// Devices may not write as an AI assistant or a calendar app: those device
+	// ids are reserved for the server's own writers (mcp-write-tools D4).
+	if opsync.ReservedDevice(in.Device) {
+		writeError(w, http.StatusBadRequest, "invalid_op", "device: ids starting with agent: or caldav: are reserved")
+		return
+	}
+	for _, op := range in.Ops {
+		if opsync.ReservedDevice(op.Device) {
+			writeError(w, http.StatusBadRequest, "invalid_op", "op device: ids starting with agent: or caldav: are reserved")
+			return
+		}
+	}
 	uid := userFrom(r.Context()).ID
 	s.recordTZOffset(r.Context(), uid, in.TZOffset)
 	res, err := s.sync.Apply(r.Context(), uid, in.Ops)
@@ -966,8 +1044,16 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
 		return
 	}
+	key, keyed, handled := idempotencyKey(w, r)
+	if handled {
+		return
+	}
+	uid := userFrom(r.Context()).ID
 	now := time.Now().UnixMilli()
 	id := ids.New()
+	if keyed {
+		id = s.idemEntityID(uid, r.PathValue("collection"), key)
+	}
 	if _, has := body["created_at"]; !has {
 		body["created_at"] = json.RawMessage(fmt.Sprint(now))
 	}
@@ -981,7 +1067,12 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			body["name"] = json.RawMessage(`""`)
 		}
 		if _, has := body["color"]; !has {
-			body["color"] = json.RawMessage(fmt.Sprintf("%q", labelPalette[int(now)%len(labelPalette)]))
+			pick := int(now)
+			if keyed {
+				// A retried keyed create must plan the same colour.
+				pick = int(id[0])
+			}
+			body["color"] = json.RawMessage(fmt.Sprintf("%q", labelPalette[pick%len(labelPalette)]))
 		}
 	}
 	if entity == "view" {
@@ -1010,6 +1101,21 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if keyed {
+		state, err := s.replayState(r.Context(), uid, entity, id, body, func(f string) string { return idemOpID(id, f) })
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		switch state {
+		case replayMatch:
+			s.writeReplay(w, r, entity, id)
+			return
+		case replayConflict:
+			writeIdempotencyConflict(w, "")
+			return
+		}
+	}
 	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
 		s.internal(w, err)
 		return
@@ -1026,6 +1132,15 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := s.validateParent(r.Context(), entity, id, body, nil); err != nil {
 		s.parentError(w, err)
+		return
+	}
+	if keyed {
+		ts := s.opTS()
+		ops := make([]opsync.Op, 0, len(body))
+		for field, value := range body {
+			ops = append(ops, opsync.Op{ID: idemOpID(id, field), Entity: entity, EntityID: id, Field: field, Value: value, TS: ts, Device: serverDevice})
+		}
+		s.writeOps(w, r, entity, id, ops, http.StatusCreated, body)
 		return
 	}
 	s.writeFields(w, r, entity, id, body, http.StatusCreated)
@@ -1335,13 +1450,24 @@ func (s *Server) writeFieldsWith(w http.ResponseWriter, r *http.Request, entity,
 
 // writeFieldsAt is writeFieldsWith with the body's op timestamp chosen by the caller.
 func (s *Server) writeFieldsAt(w http.ResponseWriter, r *http.Request, entity, id string, body map[string]json.RawMessage, status int, extra []opsync.Op, ts int64) {
-	ops := append(fieldOps(entity, id, body, ts), extra...)
+	s.writeOps(w, r, entity, id, append(fieldOps(entity, id, body, ts), extra...), status, nil)
+}
+
+// writeOps applies a REST write's ops and answers with entity/id. keyedBody is
+// the planned body of an Idempotency-Key create (nil otherwise): a concurrent
+// duplicate that applied nothing new answers as a replay or a conflict, and a
+// refused keyed create as a conflict.
+func (s *Server) writeOps(w http.ResponseWriter, r *http.Request, entity, id string, ops []opsync.Op, status int, keyedBody map[string]json.RawMessage) {
 	uid := userFrom(r.Context()).ID
+	keyed := keyedBody != nil
 	// REST writes are all or nothing: one refused field refuses the request.
 	res, err := s.sync.ApplyStrict(r.Context(), uid, ops)
 	if err != nil {
 		var rej *opsync.RejectedError
 		switch {
+		case keyed && errors.As(err, &rej) && rej.Reason == opsync.ReasonForbidden:
+			// The derived id is taken by an entity this user may not write.
+			writeIdempotencyConflict(w, "")
 		case writeLimited(w, err):
 		case errors.Is(err, opsync.ErrInvalidOp):
 			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
@@ -1361,6 +1487,19 @@ func (s *Server) writeFieldsAt(w http.ResponseWriter, r *http.Request, entity, i
 	if res.Applied > 0 {
 		// REST writes come from no browser device, so every connected device is woken.
 		s.sync.NotifyApplied(res, serverDevice)
+	} else if keyed {
+		// A concurrent request with the same key applied first.
+		state, err := s.replayState(r.Context(), uid, entity, id, keyedBody, func(f string) string { return idemOpID(id, f) })
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		if state != replayMatch {
+			writeIdempotencyConflict(w, "")
+			return
+		}
+		s.writeReplay(w, r, entity, id)
+		return
 	}
 	if status == http.StatusNoContent {
 		w.WriteHeader(status)

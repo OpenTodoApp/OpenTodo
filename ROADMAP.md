@@ -75,6 +75,8 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | CalDAV two-way sync (Apple Reminders, Thunderbird, Android via DAVx⁵) | `caldav` |
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
+| AI assistants can make changes through MCP: `agent` tokens, owner and user switches, limits, audit, history labels | `mcp-write-tools` |
+| `ot` for agent harnesses: versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` off a terminal, exit code 5, read-only mode, `agent` tokens on REST content routes, the agent skill file | `agent-ready-cli` |
 
 ### 7. Security and access
 
@@ -89,6 +91,16 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | User administration: list users, admin role, deactivate, delete, password reset, owner transfer | `user-management` |
 | Optional end-to-end encryption of task content | `e2ee` |
 
+## Next: Bring your agent
+
+In this order. Each starts as an OpenSpec change under `openspec/changes/`. The cross-cutting decisions (one agent tool registry shared by MCP and the in-app assistant, the `agent` token scope, the "Allow AI assistants to make changes" switch, and the prompt-injection threat model) are recorded in the `mcp-write-tools` design (archived under `openspec/changes/archive/`).
+
+| # | Capability | Change name | Notes |
+| --- | --- | --- | --- |
+| 1 | **Shipped.** AI assistants can act through MCP: create, edit, complete, reschedule and move tasks, create projects and labels, comment | `mcp-write-tools` | Needs an `agent` token plus owner and user switches (both off by default). Every write goes through the op log, is attributed in history, audited, rate limited and reversible. No permanent deletion |
+| 2 | **Shipped.** `ot` as a dependable tool for agent harnesses | `agent-ready-cli` | Versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` required without a terminal, read-only mode, a shipped agent skill file. The CLI stays in this repository; no Homebrew or Scoop repositories for now |
+| 3 | Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. Not available for end-to-end encrypted accounts in the first version |
+
 ## Future ideas
 
 Not commitments, just honest next steps. Each would start as an OpenSpec change.
@@ -96,11 +108,13 @@ Not commitments, just honest next steps. Each would start as an OpenSpec change.
 - **Real-world verification.** Exercise the integrations that automated tests could only simulate: CalDAV with Apple Reminders, Thunderbird and DAVx⁵; single sign-on with Authentik and Keycloak; email to task with common IMAP providers; MCP with real assistant clients; voice capture, web push, passkeys and touch drag and drop on real devices; the Firefox share flow. Fix what they turn up and record the results in the docs.
 - **Reminders over CalDAV.** Map `VALARM` to OpenTodo reminders in both directions instead of only preserving alarms verbatim.
 - **Rich text for comments.** Comments are Markdown today; reuse the notes editor where it helps without losing the plain-text API.
-- **stdio MCP bridge.** A tiny bridge for assistants that only speak stdio, forwarding to the HTTP endpoint with a read-only token.
+- **stdio MCP bridge.** A tiny bridge for assistants that only speak stdio, forwarding to the HTTP endpoint with a read-only token. In review as open pull request #11 (`ot mcp`, `mcp-stdio-bridge`).
 - **Built-in SMTP receiver** for email to task, for operators who own an MX record (`email-smtp-receiver`).
 - **Quick add for recurrence and reminders** ("every Monday", "remind me at 9") and quick-add parsing in `ot`.
 - **Published browser extension** in the Chromium and Firefox stores, and file and image sharing through the share target.
-- **Shell completion** for `ot`.
+- **Shell completion** for `ot` (`ot schema` already describes every command and flag).
+- **In-app assistant for end-to-end encrypted accounts.** The first in-app assistant runs its loop on the server, which cannot read encrypted content. A direct-from-device mode (the browser holds the key and calls the model provider itself) could serve encrypted accounts, at the cost of exposing the model key to the browser and depending on provider CORS rules.
+- **Keep a shared project away from AI assistants.** A per-project switch so that one member's assistant cannot read or change a shared project the others want kept out of assistants.
 
 ## Principles that do not change
 

@@ -22,7 +22,11 @@ Two options:
 - **Session cookie** (the web app). Obtained from `auth/register` or `auth/login`. State-changing requests must come from the app's own origin.
 - **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → API tokens** or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
 
-A token has a **scope**: `full` (the default) or `read`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
+A token has a **scope**: `full` (the default), `read` or `agent`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
+
+An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, labels and comments) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
+
+`GET /api/v1/me` tells a client which credential it is using: see [Credential introspection](#credential-introspection).
 
 ```bash
 export OT=https://todo.example.com
@@ -71,13 +75,15 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion}` |
+| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth}`; `auth` describes the credential, see [Credential introspection](#credential-introspection) |
 | POST | `/api/v1/me/password` | yes, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
+| GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
+| PUT | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes: boolean}` → same shape; recorded as `settings.changed` (`agent.writes`); anything else → 400 `invalid_input`; demo instances → 403 `demo_restricted` |
 | GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
 | DELETE | `/api/v1/me/identities/{id}` | yes | 204, or 409 `last_credential` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}` |
-| POST | `/api/v1/tokens` | yes, fresh | `{name, scope?}` (`full` default, or `read`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input` |
+| POST | `/api/v1/tokens` | yes, fresh | `{name, scope?}` (`full` default, `read` or `agent`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input` |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
 | POST | `/api/v1/passkeys/register/options` | yes | → `{publicKey}` creation options |
 | POST | `/api/v1/passkeys/register` | yes | `{name, credential}` → 201 `{passkey}` |
@@ -107,7 +113,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones |
-| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields) |
+| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create) |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
 | PATCH | `/api/v1/tasks/{id}` | yes | partial update → task |
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete (to the Trash) → 204 |
@@ -158,7 +164,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PATCH | `/api/v1/email-inbox` | yes | `{enabled?, allowlist?}` → the same shape |
 | POST | `/api/v1/email-inbox/rotate` | yes | new address; the old one stops working |
 | * | `/dav/`, `/.well-known/caldav` | HTTP Basic with an app password | CalDAV (WebDAV methods), 404 while disabled; see [caldav.md](caldav.md) |
-| POST | `/mcp` | bearer token only | read-only Model Context Protocol endpoint, 404 while disabled; see [mcp.md](mcp.md) |
+| POST | `/mcp` | bearer token only | Model Context Protocol endpoint, 404 while disabled; write tools only for `agent` tokens with both switches on; see [mcp.md](mcp.md) |
 
 #### Administration (owner and admins)
 
@@ -180,8 +186,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/settings/oidc` | owner | provider configuration, secret masked, see [Single sign-on](#single-sign-on) |
 | PUT | `/api/v1/settings/oidc` | owner, fresh | change the provider configuration |
 | POST | `/api/v1/settings/oidc/test` | owner | `{issuer?}` → `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` |
-| GET | `/api/v1/settings/mcp` | yes | `{enabled, endpoint}`: whether the [MCP endpoint](mcp.md) is on and its URL |
-| PUT | `/api/v1/settings/mcp` | owner | `{enabled}` → `{enabled, endpoint}` |
+| GET | `/api/v1/settings/mcp` | yes | `{enabled, writes_enabled, endpoint}`: whether the [MCP endpoint](mcp.md) is on, whether assistants may make changes, and its URL |
+| PUT | `/api/v1/settings/mcp` | owner | `{enabled?, writes_enabled?}` (at least one) → `{enabled, writes_enabled, endpoint}`; each change is recorded as `settings.changed` (`mcp.enabled`, `mcp.writes`) |
 | GET | `/api/v1/settings/caldav` | yes | `{enabled, url, secure, encryption}` |
 | PUT | `/api/v1/settings/caldav` | owner | `{enabled}` → the same shape |
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
@@ -332,6 +338,74 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | `invalid_input` | 400 | issuer not https, discovery failed or names another issuer, client id missing, scopes without `openid`, changing an environment-managed field |
 | `forbidden` | 403 | `settings/oidc` by a non-owner |
 | `rate_limited` | 429 | more than 20 requests per minute per address to `auth/oidc/start` and `callback` together |
+
+### Idempotency keys
+
+`POST /api/v1/{collection}` (tasks, projects, labels, sections, views, reminders) accepts an optional `Idempotency-Key` header: 1 to 128 characters of letters, digits and `. _ : -`. The server derives the new entity's id and the ids of its operations from the key, your account and the collection, so a retry after a timeout cannot create a second entity:
+
+- The first request applies and answers **201** with the entity.
+- A repeat with the same content answers **200** with the stored entity (later edits included, a tombstone with `deleted_at` set) and the header `Idempotent-Replayed: true`. Nothing new is written.
+- A repeat with different content (another title, a field added or left out) answers **409 `idempotency_conflict`** and changes nothing. Use a new key.
+- A malformed key answers **400 `invalid_input`** naming `Idempotency-Key`. Unauthenticated and `read`-token requests are refused as usual (401, 403).
+
+Keys are scoped to your account: the same key used by someone else names a different entity, and one person's key can never return, overwrite or collide with another person's entity (an instance-wide random salt also keeps the derived ids unguessable). There is no key table to expire: the operation log is the record, so a key stays usable for as long as the entity exists. After the entity is permanently deleted from the Trash, or its history purged by end-to-end encryption, the key answers 409. Devices never send the header and sync converges with keyed creates like with any other write. With an [`agent` token](#agent-tokens) the derivation also includes the token, so two tokens using the same key create two entities.
+
+```bash
+curl -s -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: run42-milk' \
+  -H 'Content-Type: application/json' -d '{"title":"Buy milk"}'          # 201
+curl -si -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: run42-milk' \
+  -H 'Content-Type: application/json' -d '{"title":"Buy milk"}'          # 200, Idempotent-Replayed: true, same id
+curl -s -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: run42-milk' \
+  -H 'Content-Type: application/json' -d '{"title":"Buy bread"}'
+# 409 {"error":{"code":"idempotency_conflict","message":"this Idempotency-Key was already used for a create with different content; …"}}
+```
+
+### Credential introspection
+
+`GET /api/v1/me` carries an `auth` object describing the credential of the request. It never contains the secret.
+
+| Field | When | Value |
+| --- | --- | --- |
+| `method` | always | `session` or `token` |
+| `scope` | always | `full`, `read` or `agent` (a session is `full`) |
+| `token_id`, `token_name` | tokens | the token in use, as listed by `GET /api/v1/tokens` |
+| `writes_allowed` | `agent` tokens | whether both assistant switches are on right now |
+| `writes_denied` | `agent` tokens with writes off | `writes_disabled_by_owner` or `writes_disabled_by_user` |
+
+```json
+{"user":{…},"auth":{"method":"token","scope":"agent","token_id":"9f1c…","token_name":"desk-assistant","writes_allowed":true}}
+```
+
+`ot auth status` shows it. A revoked token gets 401 `unauthorized` and no `auth` object.
+
+### Agent tokens
+
+An `agent` token may write through REST on this fixed list of routes only, and only while the owner's **AI assistants may make changes** and the user's **Allow AI assistants to make changes** are both on:
+
+| Route | What an agent token may send |
+| --- | --- |
+| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `recurrence` |
+| `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
+| `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
+| `POST /api/v1/projects` | `name`, `color`, `parent_id` (`archived: false` is accepted) |
+| `PATCH /api/v1/projects/{id}` | `name`, `color` |
+| `POST /api/v1/labels` | `name`, `color` (an existing label of that name is returned with 200) |
+| `POST /api/v1/tasks/{id}/comments` | `body`, `parent_id` (`mentions` is accepted and dropped: assistant comments notify nobody) |
+
+These requests never reach the regular handlers: they are translated into calls of the same tool registry as the [MCP write tools](mcp.md#letting-an-assistant-make-changes) (one request is one write call) and applied in one batch through the operation log with device `agent:<token-id>`, so they show in history as "AI assistant (*token name*)", are recorded as `agent.write` in the audit log, share the token's limits with MCP (30 write calls a minute, 1,000 changed items a day; beyond that 429 `rate_limited` with `Retry-After`), and follow the same rules for end-to-end encrypted accounts. Responses have the usual REST shapes.
+
+Refusals:
+
+| Status | Code | When |
+| --- | --- | --- |
+| 403 | `writes_disabled_by_owner`, `writes_disabled_by_user` | a switch is off (recorded as a failed `agent.write`) |
+| 403 | `insufficient_scope` | any other write route, or a field outside the list above (`assignee_id`, `position`, `archived`, restoring with `deleted_at: null`, …) |
+| 403 | `forbidden`, `not_permitted` | the user's role in a shared project does not allow it; trashing a task the token did not create |
+| 404 | `not_found` | unknown, deleted or invisible ids (indistinguishable) |
+| 409 | `encryption_enabled` | readable text (title, description, name, comment) for an end-to-end encrypted account |
+| 400 | `invalid_input` | a value the tool refuses (with the tool's message) |
+
+Every other write route (tokens, settings, sync, sharing and members, invitations, encryption keys, imports, backups, webhooks, purging, archiving or deleting projects, user administration) answers 403 `insufficient_scope`, and the list is enforced by the matched route, so a route added later stays refused until it is added on purpose.
 
 ### Task fields
 
@@ -694,14 +768,15 @@ The server records security-relevant events in its own database (never synced to
 | `login.succeeded` | success | actor = user | `email`, `method` (`password`, `register`, `passkey`, `oidc`, or a two-step method such as `password+totp`) |
 | `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`, `unknown_passkey`, `passkey_rejected`, `passkey_counter_regression`, `deactivated`) |
 | `logout` | success | actor = user | |
-| `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name`; `token.created` also `token_scope` (`full` or `read`) |
+| `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name`; `token.created` also `token_scope` (`full`, `read` or `agent`) |
+| `agent.write` | success or failure | actor = user | `tool`, `token_id`, `token_name`, `count` (items changed; 0 on failure), `reason` on failure (`writes_disabled_by_owner`, `writes_disabled_by_user`, `rate_limited`, `encryption_enabled`, `not_found`, `forbidden`, `scope_change`, `not_permitted`, `invalid_arguments`, …). One per MCP write tool call of an `agent` token, and one per tool a REST write of an `agent` token runs (`update_project` for a project rename); never content or entity ids |
 | `app_password.created`, `app_password.revoked` | success | actor = user | `app_password_id`, `app_password_name` |
 | `email_inbox.created`, `email_inbox.rotated` | success | actor = user | (never the secret) |
 | `email_inbox.updated` | success | actor = user | `setting` (`enabled` or `allowlist`), `from`, `to` (true/false, or the number of allowlist entries; never the addresses) |
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
 | `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
 | `invitation.revoked` | success | actor = owner | `invitation_id` |
-| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `caldav.enabled`, `oidc.*`, `encryption`, `encryption.keys`), `from`, `to` |
+| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `oidc.*`, `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
 | `mfa.enrolled`, `mfa.disabled` | success | actor = user (or the owner, target = account) | `method` |
@@ -816,7 +891,7 @@ curl -X POST -H "Authorization: Bearer $BOB" $BASE/api/v1/notifications/$N/read
 
 Deleting (`DELETE /api/v1/{tasks|projects}/{id}`) is a tombstone: the item goes to the Trash and can be restored by writing `deleted_at: null` (`PATCH` accepts deleted items). Deleting a project leaves its tasks' `project_id` alone; clients hide those tasks until the project is restored or purged.
 
-History is read from the operation log. Each change set groups the field writes made at one timestamp by one device (`server` for REST writes); `from` is the previous value in timestamp order, and `lost: true` marks a write that arrived after a newer one and never became the stored value. Members of a shared project see the history of its tasks; nobody sees another account's personal items (404 `not_found`, as for unknown ids and purged items). Restoring an old value is an ordinary write, so it appears in the history too.
+History is read from the operation log. Each change set groups the field writes made at one timestamp by one device (`server` for REST writes, `caldav:<id>` for calendar apps, `agent:<token-id>` for AI assistants); a change set written by an AI assistant also carries `device_label`: `"AI assistant (<token name>)"` when you own the token and it still exists, `"AI assistant"` otherwise. `from` is the previous value in timestamp order, and `lost: true` marks a write that arrived after a newer one and never became the stored value. Members of a shared project see the history of its tasks; nobody sees another account's personal items (404 `not_found`, as for unknown ids and purged items). Restoring an old value is an ordinary write, so it appears in the history too.
 
 ```sh
 curl -sS "$OT/api/v1/tasks/$ID/history" -H "Authorization: Bearer $TOKEN"
@@ -1192,12 +1267,12 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | --- | --- | --- |
 | `bad_request` | 400 | malformed JSON, a JSON body over 4 MB, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
 | `invalid_input` | 400 | validation failure naming the field or parameter |
-| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type); nothing in the batch is applied |
+| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type), or a device id starting with the reserved `agent:` or `caldav:`; nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
 | `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
 | `bad_origin` | 403 | cookie-authenticated write from another origin; any `/mcp` request whose `Origin` is not this server |
-| `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` API token |
+| `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` or `agent` API token; `/api/v1/me/agent-access` with either |
 | `demo_token` | 403 | `POST /api/v1/demo/sandbox` without a valid, unused creation token |
 | `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, `/mcp`. See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |

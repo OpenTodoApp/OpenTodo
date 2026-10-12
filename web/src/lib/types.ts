@@ -636,6 +636,7 @@ export const AUDIT_EVENT_NAMES = [
   'user.deactivated', 'user.reactivated', 'user.deleted',
   'password.reset_issued', 'password.reset_completed', 'password.changed',
   'owner.transferred',
+  'agent.write',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 
@@ -818,6 +819,8 @@ export interface ChangeSet {
   device: string
   userId: string
   changes: HistoryChange[]
+  /** Server-computed name of the writer, set for AI assistant writes (mcp-write-tools). */
+  device_label?: string
 }
 
 export interface HistoryPage {

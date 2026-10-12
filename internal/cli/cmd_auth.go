@@ -13,7 +13,7 @@ import (
 func cmdLogin(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("login", g)
 	email := fs.String("email", "", "account email (prompted when omitted)")
-	pos, err := parseArgs(fs, "login", args)
+	pos, err := a.parse(g, fs, "login", args)
 	if err != nil {
 		return a.helpOr("login", err)
 	}
@@ -39,6 +39,21 @@ func cmdLogin(a *App, ctx context.Context, g *globalFlags, args []string) error 
 	serverURL, err = normalizeURL(serverURL)
 	if err != nil {
 		return err
+	}
+	tokenName := "cli@" + a.Hostname
+	if a.dryRun() {
+		// Nothing is prompted or sent: check that the server answers, then
+		// show the three requests a real sign-in makes.
+		c := newClient(serverURL, "")
+		if _, _, err := c.do(ctx, "GET", "/auth/status", nil, nil); err != nil {
+			return err
+		}
+		plan := a.gate.dry
+		plan.add("POST", "/auth/login", map[string]string{"email": strings.TrimSpace(*email), "password": "(prompted, never shown)"}, nil)
+		plan.add("POST", "/tokens", map[string]string{"name": tokenName}, nil)
+		plan.add("POST", "/auth/logout", nil, nil)
+		a.localChange(fmt.Sprintf("store the new token in profile %q of %s", name, a.ConfigPath))
+		return nil
 	}
 	if *email == "" {
 		if *email, err = a.readLine("Email: "); err != nil {
@@ -71,7 +86,6 @@ func cmdLogin(a *App, ctx context.Context, g *globalFlags, args []string) error 
 		Token  json.RawMessage `json:"token"`
 		Secret string          `json:"secret"`
 	}
-	tokenName := "cli@" + a.Hostname
 	if err := c.postJSON(ctx, "/tokens", map[string]string{"name": tokenName}, &created); err != nil {
 		_ = c.postJSON(ctx, "/auth/logout", nil, nil)
 		return err
@@ -116,7 +130,7 @@ func cmdAuth(a *App, ctx context.Context, g *globalFlags, args []string) error {
 
 func authSetToken(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("auth set-token", g)
-	pos, err := parseArgs(fs, "auth set-token", args)
+	pos, err := a.parse(g, fs, "auth set-token", args)
 	if err != nil {
 		return a.helpOr("auth", err)
 	}
@@ -141,6 +155,10 @@ func authSetToken(a *App, ctx context.Context, g *globalFlags, args []string) er
 	if err != nil {
 		return err
 	}
+	if a.dryRun() {
+		a.localChange(fmt.Sprintf("store the token for %s in profile %q of %s", u.Email, name, a.ConfigPath))
+		return nil
+	}
 	p := cfg.Profiles[name]
 	p.URL, p.Token = serverURL, pos[0]
 	cfg.Profiles[name] = p
@@ -157,8 +175,33 @@ func authSetToken(a *App, ctx context.Context, g *globalFlags, args []string) er
 	return nil
 }
 
+// currentTokenOf finds the token this client authenticates with: by the
+// token id GET /api/v1/me reports (agent-ready-cli D7), or, for servers from
+// before that, by the most recent last-use time.
+func (a *App) currentTokenOf(ctx context.Context, c *client, list []token) *token {
+	id := ""
+	if a.gate != nil && a.gate.scopeKnown {
+		id = a.gate.cred.TokenID
+	} else if _, cred, err := c.meAuth(ctx); err == nil {
+		id = cred.TokenID
+		if a.gate != nil {
+			a.gate.cred, a.gate.scopeKnown = cred, true
+		}
+	}
+	if id != "" {
+		for i := range list {
+			if list[i].ID == id {
+				return &list[i]
+			}
+		}
+		return nil
+	}
+	return currentToken(list)
+}
+
 // currentToken picks the token the client is using: authentication just updated
-// its last-use time, so it is the most recently used one.
+// its last-use time, so it is the most recently used one. Only a fallback for
+// servers without the auth object on /api/v1/me.
 func currentToken(list []token) *token {
 	var best *token
 	for i := range list {
@@ -175,56 +218,107 @@ func currentToken(list []token) *token {
 
 func authStatus(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("auth status", g)
-	if _, err := parseArgs(fs, "auth status", args); err != nil {
+	if _, err := a.parse(g, fs, "auth status", args); err != nil {
 		return a.helpOr("auth", err)
 	}
 	c, t, err := a.connect(g)
 	if err != nil {
 		return err
 	}
-	u, err := c.me(ctx)
+	u, cred, err := c.meAuth(ctx)
 	if err != nil {
 		return err
 	}
-	tokens, err := c.tokens(ctx)
-	if err != nil {
-		return err
+	a.gate.cred, a.gate.scopeKnown = cred, true
+	// Read and agent tokens cannot list tokens; /me names the token anyway.
+	var cur *token
+	if cred.Scope == "" || cred.Scope == "full" {
+		tokens, err := c.tokens(ctx)
+		if err != nil {
+			return err
+		}
+		cur = a.currentTokenOf(ctx, c, tokens)
 	}
-	cur := currentToken(tokens)
+	tokenName := cred.TokenName
+	if cur != nil {
+		tokenName = cur.Name
+	}
 	if g.json {
 		var raw json.RawMessage
 		if cur != nil {
 			raw = cur.Raw
+		} else if cred.TokenID != "" {
+			raw = encodeCompact(map[string]any{"id": cred.TokenID, "name": cred.TokenName, "scope": cred.Scope})
 		}
-		return a.printJSON(map[string]any{"server": t.URL, "profile": t.Profile, "user": u, "token": raw})
+		out := map[string]any{"server": t.URL, "profile": t.Profile, "user": u, "token": raw, "scope": cred.Scope}
+		if cred.WritesAllowed != nil {
+			out["writes_allowed"] = *cred.WritesAllowed
+			if cred.WritesDenied != "" {
+				out["writes_denied"] = cred.WritesDenied
+			}
+		}
+		return a.printJSON(out)
 	}
-	tokenName := "(unknown)"
-	if cur != nil {
-		tokenName = cur.Name
+	if tokenName == "" {
+		tokenName = "(unknown)"
 	}
 	source := "profile " + t.Profile
 	if a.Getenv("OPENTODO_TOKEN") != "" {
 		source = "OPENTODO_TOKEN"
 	}
-	fmt.Fprintf(a.Stdout, "Server:   %s\nAccount:  %s (%s)\nToken:    %s\nSource:   %s\nConfig:   %s\n", t.URL, u.Email, u.Role, tokenName, source, a.ConfigPath)
+	scope := cred.Scope
+	if scope == "" {
+		scope = "(not reported by this server)"
+	}
+	fmt.Fprintf(a.Stdout, "Server:   %s\nAccount:  %s (%s)\nToken:    %s\nScope:    %s\n", t.URL, u.Email, u.Role, tokenName, scope)
+	if cred.WritesAllowed != nil {
+		state := "allowed (both assistant switches are on)"
+		if !*cred.WritesAllowed {
+			state = "not allowed: " + map[string]string{
+				"writes_disabled_by_owner": "the server owner has not allowed AI assistants to make changes",
+				"writes_disabled_by_user":  "\"Allow AI assistants to make changes\" is off in Settings → AI assistants",
+			}[cred.WritesDenied]
+		}
+		fmt.Fprintf(a.Stdout, "Writes:   %s\n", state)
+	}
+	fmt.Fprintf(a.Stdout, "Source:   %s\nConfig:   %s\n", source, a.ConfigPath)
 	return nil
 }
 
 func authLogout(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("auth logout", g)
-	if _, err := parseArgs(fs, "auth logout", args); err != nil {
+	yes := fs.Bool("yes", false, "do not ask for confirmation")
+	fs.BoolVar(yes, "y", false, "do not ask for confirmation")
+	if _, err := a.parse(g, fs, "auth logout", args); err != nil {
 		return a.helpOr("auth", err)
 	}
 	c, t, err := a.connect(g)
 	if err != nil {
 		return err
 	}
-	revoked := ""
+	if !*yes && !a.dryRun() {
+		ok, err := a.confirm(fmt.Sprintf("Sign out of %s and revoke this token?", t.URL))
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return usageErr("aborted")
+		}
+	}
+	revoked, limited := "", ""
 	tokens, err := c.tokens(ctx)
 	var ee *exitError
 	switch {
 	case err == nil:
-		if cur := currentToken(tokens); cur != nil {
+		cur := a.currentTokenOf(ctx, c, tokens)
+		if sc := a.gate.cred.Scope; sc == "read" || sc == "agent" {
+			// Such a token may not revoke tokens, itself included: forget it
+			// locally and say where to revoke it.
+			limited = sc
+			cur = nil
+		}
+		if cur != nil {
+			a.target("", cur.ID, cur.Name, "revoked")
 			if err := c.delete(ctx, "/tokens/"+cur.ID); err != nil {
 				return err
 			}
@@ -240,7 +334,9 @@ func authLogout(a *App, ctx context.Context, g *globalFlags, args []string) erro
 		return authErr("%v", err)
 	}
 	removedLocally := false
-	if p, ok := cfg.Profiles[t.Profile]; ok && p.Token != "" && a.Getenv("OPENTODO_TOKEN") == "" {
+	if p, ok := cfg.Profiles[t.Profile]; ok && p.Token != "" && a.Getenv("OPENTODO_TOKEN") == "" && a.dryRun() {
+		a.localChange(fmt.Sprintf("remove the token from profile %q of %s", t.Profile, a.ConfigPath))
+	} else if ok && p.Token != "" && a.Getenv("OPENTODO_TOKEN") == "" {
 		p.Token = ""
 		cfg.Profiles[t.Profile] = p
 		if err := saveConfig(a.ConfigPath, cfg); err != nil {
@@ -254,6 +350,8 @@ func authLogout(a *App, ctx context.Context, g *globalFlags, args []string) erro
 	switch {
 	case revoked != "":
 		fmt.Fprintf(a.Stdout, "Revoked token %q on %s", revoked, t.URL)
+	case limited != "":
+		fmt.Fprintf(a.Stdout, "A %s token cannot revoke itself; revoke it in Settings → API tokens on %s", limited, t.URL)
 	default:
 		fmt.Fprintf(a.Stdout, "Token was already invalid on %s", t.URL)
 	}

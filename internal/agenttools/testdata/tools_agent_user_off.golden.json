@@ -1,0 +1,194 @@
+{
+  "tools": [
+    {
+      "name": "list_projects",
+      "title": "List projects",
+      "description": "List the user's projects (their own and shared ones they are a member of) with the number of open tasks in each. Archived projects are left out unless include_archived is true.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "include_archived": {
+            "default": false,
+            "description": "Also return archived projects.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "List projects"
+      }
+    },
+    {
+      "name": "list_tasks",
+      "title": "List tasks",
+      "description": "List tasks with filters. view: all (default), inbox (no project), today (open tasks due today or overdue, overdue first) or upcoming (open tasks due after today). Tasks of archived projects are left out unless project_id names that project. Results are paged: pass next_cursor back as cursor.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "description": "next_cursor from a previous result, to get the following page.",
+            "type": "string"
+          },
+          "due_from": {
+            "description": "Only tasks due on or after this date (YYYY-MM-DD).",
+            "format": "date",
+            "type": "string"
+          },
+          "due_to": {
+            "description": "Only tasks due on or before this date (YYYY-MM-DD).",
+            "format": "date",
+            "type": "string"
+          },
+          "include_completed": {
+            "default": false,
+            "description": "Also return completed tasks.",
+            "type": "boolean"
+          },
+          "label": {
+            "description": "Only tasks carrying this label (name, case-insensitive, or id).",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Maximum number of tasks to return (default and maximum 200).",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "priority": {
+            "description": "Only tasks of this priority: 1 is the highest, 4 the default.",
+            "maximum": 4,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "project_id": {
+            "description": "Only tasks of this project (see list_projects).",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          },
+          "view": {
+            "default": "all",
+            "enum": [
+              "all",
+              "inbox",
+              "today",
+              "upcoming"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "List tasks"
+      }
+    },
+    {
+      "name": "get_task",
+      "title": "Get a task",
+      "description": "Get one task with its description, project, section, labels, subtasks and comments.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "Task id.",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "Get a task"
+      }
+    },
+    {
+      "name": "search_tasks",
+      "title": "Search tasks",
+      "description": "Find tasks whose title or description contains the query (case-insensitive). Open tasks only unless include_completed is true. Paged like list_tasks.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor": {
+            "description": "next_cursor from a previous result, to get the following page.",
+            "type": "string"
+          },
+          "include_completed": {
+            "default": false,
+            "description": "Also return completed tasks.",
+            "type": "boolean"
+          },
+          "limit": {
+            "description": "Maximum number of tasks to return (default and maximum 200).",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "query": {
+            "description": "Text to look for.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "Search tasks"
+      }
+    },
+    {
+      "name": "today_summary",
+      "title": "Today summary",
+      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the inbox and each project.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "Today summary"
+      }
+    }
+  ]
+}

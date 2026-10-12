@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # End-to-end smoke test of the `ot` CLI against a freshly started local server:
-# owner setup -> login -> add -> list --json -> done -> export. Prints "CLI OK".
+# owner setup -> login -> add -> list --json -> done (dry run first) -> exit codes
+# -> schema -> export -> logout. Prints "CLI OK".
 #
 # Usage: scripts/cli-smoke.sh            (expects bin/opentodo and bin/ot; see `make cli-smoke`)
 # Env:   OPENTODO_BIN, OT_BIN            override the binaries
@@ -60,7 +61,10 @@ esac
 echo "$LIST" | grep -q "\"id\":\"$ID\"" || fail "new task missing from list --json"
 echo "$LIST" | grep -q '"priority":2' || fail "priority not applied"
 
-# 5. Complete it with an id prefix, then it leaves the open views.
+# 5. Complete it with an id prefix (after a dry run that changes nothing), then
+#    it leaves the open views.
+"$OT" done "${ID:0:6}" --dry-run --json | grep -q '"dry_run":true' || fail "ot done --dry-run"
+"$OT" today --json | grep -q "$ID" || fail "a dry run completed the task"
 "$OT" done "${ID:0:6}" >/dev/null || fail "ot done"
 "$OT" today --json | grep -q "$ID" && fail "completed task still in today"
 "$OT" list --completed --json | grep -q "$ID" || fail "completed task not in --completed"
@@ -70,7 +74,10 @@ set +e
 "$OT" add "bad" --priority 9 >/dev/null 2>&1; [ $? -eq 2 ] || fail "usage error should exit 2"
 OPENTODO_URL="http://127.0.0.1:1" OPENTODO_TOKEN=ot_x "$OT" list >/dev/null 2>&1; [ $? -eq 4 ] || fail "unreachable server should exit 4"
 OPENTODO_TOKEN=ot_wrong "$OT" list >/dev/null 2>&1; [ $? -eq 3 ] || fail "bad token should exit 3"
+"$OT" rm "$ID" >/dev/null 2>&1; [ $? -eq 2 ] || fail "rm without --yes off a terminal should exit 2"
+"$OT" add "nope" --read-only >/dev/null 2>&1; [ $? -eq 5 ] || fail "--read-only write should exit 5"
 set -e
+OPENTODO_URL= OPENTODO_CONFIG=/nonexistent/config.json "$OT" schema | grep -q '"output_version": 1' || fail "ot schema offline"
 
 # 7. Export includes the task.
 "$OT" export --out "$WORK/export.json" >/dev/null || fail "ot export"
@@ -78,7 +85,7 @@ grep -q '"format":"opentodo-export"' "$WORK/export.json" || fail "export format"
 grep -q "$ID" "$WORK/export.json" || fail "export content"
 
 # 8. Logout revokes the token.
-"$OT" auth logout >/dev/null || fail "ot auth logout"
+"$OT" auth logout --yes >/dev/null || fail "ot auth logout"
 set +e
 "$OT" list >/dev/null 2>&1; [ $? -eq 2 ] || fail "after logout the CLI should ask to sign in (exit 2)"
 set -e

@@ -18,7 +18,7 @@ const maxMCPStdioMessage = 1 << 20
 func cmdMCP(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("mcp", g)
 	allowFullToken := fs.Bool("allow-full-token", false, "allow a full-access API token")
-	pos, err := parseArgs(fs, "mcp", args)
+	pos, err := a.parse(g, fs, "mcp", args)
 	if err != nil {
 		return a.helpOr("mcp", err)
 	}

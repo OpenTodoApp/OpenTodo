@@ -1,19 +1,27 @@
 package httpapi
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"mime"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/pixari/opentodo/internal/agenttools"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/mcp"
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
-// MCP endpoint (OpenSpec change `mcp-server`): streamable HTTP in stateless
-// mode, JSON-RPC handled by internal/mcp. Off by default; while disabled the
-// path answers 404 before credentials are looked at (design D5).
+// MCP endpoint (OpenSpec changes `mcp-server` and `mcp-write-tools`):
+// streamable HTTP in stateless mode, JSON-RPC handled by internal/mcp over the
+// agent tool registry (internal/agenttools). Off by default; while disabled the
+// path answers 404 before credentials are looked at (design D5). Write tools
+// need the owner's switch, the user's switch and an `agent` token, all read on
+// every request (mcp-write-tools D3).
 
 // mcpMaxBody caps an MCP request body (spec "Limits and no outbound calls").
 const mcpMaxBody = 1 << 20
@@ -26,7 +34,20 @@ func (s *Server) registerMCPRoutes(mux *http.ServeMux) {
 	if s.mcpSettings == nil {
 		s.mcpSettings = mcp.NewSettings(s.sync.DB())
 	}
-	s.mcp = mcp.New(s.sync, mcp.Options{Version: s.version, Log: s.log})
+	s.agentAccess = agenttools.NewAccess(s.sync.DB())
+	s.agentTools = agenttools.New(s.sync, agenttools.Options{
+		Audit: s.audit, Log: s.log,
+		LocalToday: func() string { return localToday(time.Now()) },
+		// Relative reminders follow a new due date, as for a REST write.
+		ExtraOps: func(ctx context.Context, uid string, c agenttools.Change, ts int64, device string) ([]opsync.Op, error) {
+			dueRaw, ok := c.Patch["due"]
+			if c.Entity != "task" || c.Create || !ok {
+				return nil, nil
+			}
+			return s.reminderOpsForDueAs(ctx, uid, c.EntityID, dueRaw, ts, device)
+		},
+	})
+	s.mcp = mcp.New(s.sync, mcp.Options{Version: s.version, Log: s.log, Tools: s.agentTools})
 	// Every method reaches the handler so a disabled endpoint is 404 for all of
 	// them and an enabled one can answer 405 for anything but POST.
 	mux.HandleFunc("/mcp", s.handleMCP)
@@ -34,6 +55,10 @@ func (s *Server) registerMCPRoutes(mux *http.ServeMux) {
 	// members too); changing it is owner only.
 	mux.Handle("GET /api/v1/settings/mcp", s.requireAuth(s.handleGetMCPSettings))
 	mux.Handle("PUT /api/v1/settings/mcp", s.requireAuth(s.handlePutMCPSettings))
+	// The user's own "Allow AI assistants to make changes" switch: sessions and
+	// full tokens only, so an assistant can never flip it (mcp-write-tools D3).
+	mux.Handle("GET /api/v1/me/agent-access", s.requireAuth(s.handleGetAgentAccess))
+	mux.Handle("PUT /api/v1/me/agent-access", s.requireAuth(s.handlePutAgentAccess))
 }
 
 func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
@@ -61,9 +86,10 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 	// Bearer API tokens only: the session cookie is never consulted, so there is
 	// no browser-originated access and nothing to forge (design D2).
 	var u *auth.User
+	var tok auth.TokenInfo
 	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
 		var err error
-		u, _, err = s.auth.UserByTokenScope(r.Context(), strings.TrimSpace(strings.TrimPrefix(h, "Bearer ")))
+		u, tok, err = s.auth.UserByTokenInfo(r.Context(), strings.TrimSpace(strings.TrimPrefix(h, "Bearer ")))
 		if err != nil && !errors.Is(err, auth.ErrNotFound) {
 			s.internal(w, err)
 			return
@@ -93,7 +119,12 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", "could not read the request body")
 		return
 	}
-	out, malformed := s.mcp.Handle(r.Context(), u.ID, body)
+	caller, err := s.agentCaller(r.Context(), u, tok)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out, malformed := s.mcp.Handle(r.Context(), caller, body)
 	if out == nil {
 		w.WriteHeader(http.StatusAccepted)
 		return
@@ -125,8 +156,24 @@ func acceptsJSON(h string) bool {
 	return false
 }
 
+// agentCaller reads the switches for this request: they are server state,
+// consulted on every call so turning one off takes effect at once.
+func (s *Server) agentCaller(ctx context.Context, u *auth.User, tok auth.TokenInfo) (agenttools.Caller, error) {
+	c := agenttools.Caller{UserID: u.ID, TokenID: tok.ID, TokenName: tok.Name, Scope: tok.Scope,
+		OwnerAllowsWrites: s.mcpSettings.WritesEnabled(ctx)}
+	var err error
+	if c.UserAllowsWrites, err = s.agentAccess.AllowsWrites(ctx, u.ID); err != nil {
+		return c, err
+	}
+	if c.Encrypted, err = s.keys().Enabled(ctx, u.ID); err != nil {
+		return c, err
+	}
+	return c, nil
+}
+
 func (s *Server) mcpStatus(r *http.Request) map[string]any {
-	return map[string]any{"enabled": s.mcpSettings.Enabled(r.Context()), "endpoint": s.publicOrigin(r) + "/mcp"}
+	return map[string]any{"enabled": s.mcpSettings.Enabled(r.Context()), "writes_enabled": s.mcpSettings.WritesEnabled(r.Context()),
+		"endpoint": s.publicOrigin(r) + "/mcp"}
 }
 
 func (s *Server) handleGetMCPSettings(w http.ResponseWriter, r *http.Request) {
@@ -137,20 +184,102 @@ func (s *Server) handlePutMCPSettings(w http.ResponseWriter, r *http.Request) {
 	if !requireOwner(w, r, "the AI assistants (MCP) setting") {
 		return
 	}
-	var in struct {
-		Enabled *bool `json:"enabled"`
-	}
+	var in map[string]json.RawMessage
 	if err := readJSON(r, &in); err != nil {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
 		return
 	}
-	if in.Enabled == nil {
+	var enabled, writes *bool
+	for k, v := range in {
+		var b bool
+		if json.Unmarshal(v, &b) != nil {
+			writeError(w, http.StatusBadRequest, "invalid_input", k+": must be true or false")
+			return
+		}
+		switch k {
+		case "enabled":
+			enabled = &b
+		case "writes_enabled":
+			writes = &b
+		default:
+			writeError(w, http.StatusBadRequest, "invalid_input", k+": unknown setting (expected enabled or writes_enabled)")
+			return
+		}
+	}
+	if enabled == nil && writes == nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", "enabled: must be true or false")
 		return
 	}
-	if err := s.mcpSettings.Set(r.Context(), userFrom(r.Context()).ID, *in.Enabled, s.audit); err != nil {
+	actor := userFrom(r.Context()).ID
+	if enabled != nil {
+		if err := s.mcpSettings.Set(r.Context(), actor, *enabled, s.audit); err != nil {
+			s.internal(w, err)
+			return
+		}
+	}
+	if writes != nil {
+		if err := s.mcpSettings.SetWrites(r.Context(), actor, *writes, s.audit); err != nil {
+			s.internal(w, err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, s.mcpStatus(r))
+}
+
+// ---- the user's agent access switch ----
+
+func (s *Server) agentAccessStatus(r *http.Request, allow bool) map[string]any {
+	return map[string]any{"allow_writes": allow, "owner_allows_writes": s.mcpSettings.WritesEnabled(r.Context()),
+		"mcp_enabled": s.mcpSettings.Enabled(r.Context())}
+}
+
+// requireSessionOrFull refuses read and agent tokens even on reads: the switch
+// is managed by the person, never by an assistant (mcp-write-tools D3).
+func (s *Server) requireSessionOrFull(w http.ResponseWriter, r *http.Request) bool {
+	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
+		_, scope, err := s.auth.UserByTokenScope(r.Context(), strings.TrimSpace(strings.TrimPrefix(h, "Bearer ")))
+		if err != nil && !errors.Is(err, auth.ErrNotFound) {
+			s.internal(w, err)
+			return false
+		}
+		if scope != auth.ScopeFull {
+			writeError(w, http.StatusForbidden, "insufficient_scope", "only you can change this, signed in or with a full-access token")
+			return false
+		}
+	}
+	return true
+}
+
+func (s *Server) handleGetAgentAccess(w http.ResponseWriter, r *http.Request) {
+	if !s.requireSessionOrFull(w, r) {
+		return
+	}
+	allow, err := s.agentAccess.AllowsWrites(r.Context(), userFrom(r.Context()).ID)
+	if err != nil {
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, s.mcpStatus(r))
+	writeJSON(w, http.StatusOK, s.agentAccessStatus(r, allow))
+}
+
+func (s *Server) handlePutAgentAccess(w http.ResponseWriter, r *http.Request) {
+	if !s.requireSessionOrFull(w, r) {
+		return
+	}
+	var in map[string]json.RawMessage
+	if err := readJSON(r, &in); err != nil {
+		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		return
+	}
+	var allow bool
+	v, ok := in["allow_writes"]
+	if !ok || json.Unmarshal(v, &allow) != nil || len(in) != 1 {
+		writeError(w, http.StatusBadRequest, "invalid_input", "allow_writes: must be true or false")
+		return
+	}
+	if err := s.agentAccess.Set(r.Context(), userFrom(r.Context()).ID, allow, s.audit); err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, s.agentAccessStatus(r, allow))
 }

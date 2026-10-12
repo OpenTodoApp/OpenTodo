@@ -1,6 +1,6 @@
 ---
 title: Command-line client
-summary: The ot command: install, sign in, add and complete tasks, JSON output and exit codes for scripts.
+summary: The ot command: install, sign in, add and complete tasks, JSON output, exit codes, dry runs and safe use by AI agents.
 audience: developer
 section: Integrations
 specs: [cli-client]
@@ -15,13 +15,15 @@ It is an **online** client: it keeps no local copy of your tasks and makes no ch
 
 ## Install
 
-Release assets are published for linux, macOS and Windows on amd64 and arm64 (`ot-<os>-<arch>`); download one, make it executable and put it on your `PATH`. Or build from source (Go 1.26+, no other dependency):
+Release assets are published for linux, macOS and Windows on amd64 and arm64 (`ot-<os>-<arch>`, with `SHA256SUMS`); download one, make it executable and put it on your `PATH`. Or build from source (Go 1.26+, no other dependency):
 
 ```bash
-go install github.com/pixari/opentodo/cmd/ot@latest   # into $(go env GOPATH)/bin
+go install github.com/pixari/opentodo/cmd/ot@latest   # into $(go env GOPATH)/bin; or @vX.Y.Z for a release
 # or, from a checkout:
 make cli                                              # -> bin/ot
 ```
+
+`go install` works from a clean `GOPATH` with the module path as declared (`github.com/pixari/opentodo`, lower case); an older local Go downloads the required toolchain itself. There is no Homebrew tap or Scoop bucket yet: release assets and `go install` are the supported ways (package manager manifests may follow later).
 
 The server container image does not include `ot`; it belongs on the machine you type on.
 
@@ -42,8 +44,8 @@ Other ways to get credentials in:
 | Command | Purpose |
 | --- | --- |
 | `ot auth set-token <token> --server <url>` | Store a token you created in Settings or with `ot token create` |
-| `ot auth status` | Show the server, the account and the token name in use |
-| `ot auth logout` | Revoke the stored token on the server and remove it locally |
+| `ot auth status` | Show the server, the account, the token name and its scope (for an `agent` token also whether assistant writes are allowed right now) |
+| `ot auth logout --yes` | Revoke the stored token on the server and remove it locally (asks on a terminal without `--yes`). A `read` or `agent` token cannot revoke itself: it is removed locally and you revoke it in Settings |
 
 ### Configuration file and profiles
 
@@ -105,6 +107,7 @@ ot edit 8c2a --due none --project none --note ""     # clear values
 | `--label <l>` | Repeatable; a label name (case-insensitive) or id. Unknown names create the label. With `ot edit` the given labels replace the list |
 | `--note <text>` | Description; `--note ""` clears it |
 | `--title <text>` | New title (`ot edit` only) |
+| `--idempotency-key <key>` | `ot add` only: a retry with the same key returns the same task, see [Retry-safe creates](#retry-safe-creates) |
 
 `ot add` prints the new task's id (the whole task with `--json`). Priority, time and date are validated locally before any request is sent.
 
@@ -113,16 +116,19 @@ ot edit 8c2a --due none --project none --note ""     # clear values
 ```bash
 ot done 8c2a 3f1d          # one or more references
 ot reopen 8c2a
-ot rm 8c2a                 # asks on a terminal; --yes for scripts
+ot rm 8c2a                 # asks on a terminal
+ot rm 8c2a --yes           # required off a terminal and with --json
 ```
 
 A `<ref>` is a full task id or an id prefix that matches exactly one non-deleted task. An ambiguous prefix changes nothing, exits with code 2 and lists the candidates; with several references all are resolved before anything is changed. Scripts should use full ids from `--json`. `ot rm` is a soft delete: the task becomes a tombstone that still appears in the export.
+
+A task that is already in the requested state (`ot done` on a completed task, `ot reopen` on an open one) is reported as `unchanged`, keeps its completion time and nothing is sent; the command still exits 0. `ot edit` with values equal to the current ones sends nothing either.
 
 ## Projects
 
 ```bash
 ot project list [--all]                 # --all includes archived projects
-ot project add "Garden" [--color "#22c55e"]
+ot project add "Garden" [--color "#22c55e"] [--idempotency-key <key>]
 ot project rename Garden "Back garden"
 ot project archive Garden [--undo]
 ot project rm Garden [--yes]
@@ -132,17 +138,33 @@ Projects are referenced by name (case-insensitive), full id or unique id prefix.
 
 ## Tokens and export
 
+`--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, labels and comments (through the MCP write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → AI assistants).
+
 ```bash
-ot token list
+ot token list                           # with each token's scope
 ot token create backup-script           # prints the secret once, with a notice on stderr
-ot token revoke backup-script           # by name, id or id prefix
+ot token create reporting --scope read  # read-only: refused on every change
+ot token create desk-assistant --scope agent   # for an AI assistant that may make changes
+ot token revoke backup-script --yes     # by name, id or id prefix
 ot export                               # full JSON export (including tombstones) to stdout
 ot export --out opentodo-$(date +%F).json
 ```
 
 ## Scripting: JSON output and exit codes
 
-Every command accepts `--json`. Stdout then holds only JSON, with the same field names as the [REST API](api.md): an array for lists, the entity for single results, and the error envelope `{"error":{"code":"…","message":"…"}}` on failure. Nothing else is printed on stdout in that mode, and errors from the server are passed through unchanged.
+Every command accepts `--json`. Stdout then holds only JSON, with the same field names as the [REST API](api.md): an array for lists, the entity for single results, and the error envelope on failure. The shapes are documented as JSON Schemas with an **`output_version`** (currently `1`, reported by `ot version --json` and `ot schema`). Within a version fields are only added; a breaking change would need a new version you opt into.
+
+| Command | `--json` output (schema) |
+| --- | --- |
+| `list`, `today`, `inbox`, `upcoming` | array of `task` |
+| `add`, `edit` | `task` |
+| `done`, `reopen`, `rm` | `task_result` (one reference) or an array of them: the task plus `ref` (what you typed) and `status` (`completed`, `reopened`, `deleted` or `unchanged`) |
+| `project list` / `add`, `rename`, `archive`, `rm` | array of `project` / `project` |
+| `token list` / `create` / `revoke` | array of `token` / `token_created` (`{token, secret}`) / `token` |
+| any write command with `--dry-run` | `dry_run` |
+| any failure | `error`: `{"error":{"code":"…","message":"…","exit":N}}` |
+
+On failure the envelope goes to stdout as before (server envelopes keep their `code` and `message`; `exit` is added) and stderr gets one line starting with `ot:`, so harnesses that only show stderr see what went wrong. Without `--json` errors go to stderr only.
 
 ```bash
 ot list --json --today | jq -r '.[] | "\(.priority) \(.title)"'
@@ -151,15 +173,52 @@ ot add "Nightly backup check" --json | jq -r .id
 
 Exit codes:
 
-| Code | Meaning |
-| --- | --- |
-| 0 | Success |
-| 1 | The server rejected the request (its message is printed verbatim) |
-| 2 | Usage or local validation error (bad flag, invalid priority or date, ambiguous reference, missing configuration) |
-| 3 | Authentication or configuration error (wrong password, revoked token, unreadable config file) |
-| 4 | The server could not be reached within the timeout (15 s) |
+| Code | Meaning | What a script should do |
+| --- | --- | --- |
+| 0 | Success, including "already in that state" | continue |
+| 1 | The server rejected the request or failed (its message is printed verbatim) | read `error.code`; retry only `internal` or `rate_limited` |
+| 2 | Usage or local validation error (bad flag, invalid priority or date, ambiguous reference, missing configuration, a destructive command without `--yes`) | fix the command |
+| 3 | Authentication or configuration error (wrong password, revoked token, unreadable config file) | sign in again |
+| 4 | The server could not be reached within the timeout (15 s) | retry later |
+| 5 | Not permitted: `insufficient_scope`, `forbidden`, `not_permitted`, `writes_disabled_by_owner`, `writes_disabled_by_user`, `encryption_enabled` or `read_only` | do not retry; change the token, the switch or the role |
 
-When stdout is not a terminal, or `NO_COLOR` is set, colour is off and nothing is prompted (`ot rm` deletes without asking; pass `--yes` to be explicit). `ot login` reads the password from stdin when stdin is not a terminal.
+### Machine-readable help: `ot schema`
+
+`ot schema` (or `ot help --json`) prints every command with its arguments, flags and their types, whether it writes or is destructive, whether it supports `--dry-run` and `--idempotency-key`, its output schema, the exit codes, the error codes and every JSON Schema. It is generated from the same table as `ot help`, needs no configuration and no server, and exits 0 offline.
+
+```bash
+ot schema | jq '.commands[] | select(.writes) | .name'
+ot schema | jq '.schemas.task'
+```
+
+### Non-interactive by default
+
+Without a terminal on stdin and stdout, `ot` never prompts and colour is off (also with `NO_COLOR`). The destructive commands `ot rm`, `ot project rm`, `ot token revoke` and `ot auth logout` then need `--yes`, and so do they with `--json` even on a terminal; without it they exit 2 with code `confirmation_required` before sending any request. On a terminal without `--json` they ask. `ot login` reads the password from stdin when stdin is not a terminal.
+
+### Dry run
+
+Every command that writes accepts `--dry-run`. It resolves references and current values with reads (so an ambiguous prefix still exits 2), validates, and prints the requests it would send and the resolved targets, then exits as a real run would. Nothing that writes is sent, nothing changes on the server or on any device, and the config file is not touched. An unreachable server exits 4.
+
+```bash
+ot done 8c2a 91f0 --dry-run --json
+# {"command":"done","dry_run":true,"requests":[{"method":"PATCH","path":"/api/v1/tasks/8c2a…","body":{"completed_at":1760…}},…],
+#  "targets":[{"ref":"8c2a","id":"8c2a…","title_preview":"Pay rent","status":"completed"},…]}
+```
+
+A label that `ot add --label` would create appears as a planned `POST /api/v1/labels`, and the planned task refers to it as `(planned-1)`. `ot login --dry-run` shows the three requests of a sign-in without prompting for the password.
+
+### Retry-safe creates
+
+`ot add` and `ot project add` take `--idempotency-key <key>` (1 to 128 characters of letters, digits and `. _ : -`), sent as the [`Idempotency-Key`](api.md#idempotency-keys) header. Running the same command again with the same key prints the same entity and creates nothing; the same key with different content exits 1 with `idempotency_conflict`. Because the ids derive from the key, a retry after a timeout converges to one task on every device.
+
+```bash
+ot add "Buy milk" --idempotency-key run42-milk --json    # creates
+ot add "Buy milk" --idempotency-key run42-milk --json    # same task, nothing new
+```
+
+### Read-only mode
+
+`--read-only`, or the optional `OPENTODO_READ_ONLY=1`, makes every write command fail before any request with code `read_only` and exit 5; reads work as usual. With a `read` token, `ot` refuses writes itself (exit 5, `insufficient_scope`): it learns the token's scope from `GET /api/v1/me` once per run, before its first write. With an `agent` token it refuses locally what the server would refuse (for example `ot project archive` or `ot token create`); the server checks again regardless.
 
 ### Cron example
 
@@ -181,4 +240,28 @@ Or add a reminder task every Monday morning:
 - Online only: no offline queue, no local cache. Offline capture is what the web app and PWA are for.
 - `--due` understands a fixed set of words; the natural-language quick-add grammar lives in the web client.
 - Rate limits on `auth/login` apply (10 per minute per address); `ot auth set-token` avoids them entirely.
-- No shell completion scripts yet.
+- No shell completion scripts yet (`ot schema` has everything a completion script needs).
+
+## Using ot from an agent
+
+`ot` is a dependable tool for coding agents and automation harnesses. The short version, which the skill file below spells out for the agent itself:
+
+1. **Give the agent an `agent` token**, not a full one: `ot token create "my assistant" --scope agent`, then on the agent's machine `ot auth set-token <token> --server <url>`. Turn on **AI assistants may make changes** (owner) and **Allow AI assistants to make changes** (you) in Settings → AI assistants. With that token `ot` can list everything and create and edit tasks, projects, labels and comments, complete and reopen tasks, and move to the Trash only tasks the same token created. Writes carry the device `agent:<token-id>`, show in history as "AI assistant (*token name*)", are audited as `agent.write` and share the token's [limits](mcp.md#limits) with MCP. Tokens, settings, sharing, members, encryption, imports and backups stay out of reach (exit 5). `ot auth status` shows the scope and whether writes are allowed right now. A `full` token works too, with everything that implies; a `read` token for an agent that only looks.
+2. **Use `--json`** everywhere, and `ot schema` to discover commands and output shapes.
+3. **Use `--dry-run`** before a write that touches more than one task, and **`--idempotency-key`** on creates.
+4. **Handle exit codes:** stop and ask on 3, do not retry 5, retry 4 later.
+5. **Off a terminal, destructive commands need `--yes`.**
+6. **`--read-only`** (or `OPENTODO_READ_ONLY=1`) for an agent that must never change anything, whatever its token allows.
+
+### The agent skill file
+
+`ot skill` prints `SKILL.md`, a skill file that teaches an agent to use `ot` carefully: read first, always `--json`, preview with `--dry-run`, retry-safe creates, stop on exit 5, never run `token`, `auth` or `export` commands unless asked, and treat task titles, descriptions and comments as untrusted data rather than instructions. It is embedded in the binary, so it always matches the version you run, and every release also ships it as `opentodo-agent-skill.zip` (a folder `opentodo-cli/` with `SKILL.md`) next to the `ot-<os>-<arch>` binaries. Unpack it where your agent harness looks for skills, or save the output of `ot skill`.
+
+### Migrating scripts
+
+Two changes in this version can affect existing scripts:
+
+- **`--yes` off a terminal.** `ot rm`, `ot project rm`, `ot token revoke` and `ot auth logout` used to proceed silently when stdout was not a terminal or `--json` was given. They now exit 2 without `--yes`. Add `--yes` to scripts that delete on purpose.
+- **Exit code 5.** A refusal for scope, role, switch or encryption (for example 403 `insufficient_scope`) used to exit 1 and now exits 5. Scripts that test for "non-zero" are unaffected; scripts that test for exactly 1 should also accept 5.
+
+`--json` errors also gained the `exit` field and a stderr line, and `ot done`/`ot reopen`/`ot rm` add `ref` and `status` to each printed task; both are additive.

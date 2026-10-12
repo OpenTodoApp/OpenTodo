@@ -123,7 +123,7 @@ func TestConfigFileMode(t *testing.T) {
 		t.Fatalf("dir mode = %o, want 700", di.Mode().Perm())
 	}
 	// Rewriting keeps the mode and never leaves a temp file behind.
-	h.mustRun("auth", "logout")
+	h.mustRun("auth", "logout", "--yes")
 	fi, _ = os.Stat(h.configPath)
 	if fi.Mode().Perm() != 0o600 {
 		t.Fatalf("file mode after rewrite = %o", fi.Mode().Perm())
@@ -170,12 +170,15 @@ func TestExitCodes(t *testing.T) {
 		}
 	}
 
-	// --json prints the server envelope untouched, on stdout only.
+	// --json prints the server envelope on stdout with exit added, and one
+	// human line on stderr.
 	h.env["OPENTODO_URL"] = bad.URL
 	code, out, errb := h.run("list", "--json")
-	if code != ExitServer || strings.TrimSpace(out) != envelope || errb != "" {
+	want := `{"error":{"code":"invalid_input","exit":1,"message":"task.priority must be an integer from 1 (highest) to 4 (lowest)"}}`
+	if code != ExitServer || strings.TrimSpace(out) != want || errb != "ot: task.priority must be an integer from 1 (highest) to 4 (lowest)\n" {
 		t.Fatalf("json envelope: exit %d stdout %q stderr %q", code, out, errb)
 	}
+	_ = envelope
 	// Local and connectivity errors get a synthesised envelope.
 	h.env["OPENTODO_URL"] = closedURL
 	code, out, _ = h.run("list", "--json")

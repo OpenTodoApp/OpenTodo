@@ -67,7 +67,7 @@ None is required. With a Compose resource (the one-click template or Option A), 
 | `OPENTODO_IMPORT_MAX_MB` | `20` | Largest import file (1–200 MB); see [import](../import.md) |
 | `OPENTODO_TRASH_RETENTION_DAYS` | `30` | Days a deleted item stays in the Trash before it is purged for good (0–3650; `0` never purges automatically). See [sync](../sync.md#purge) |
 | `OPENTODO_PUSH` | `on` | `off` disables web push for reminders (no outbound requests to push services); reminders are still shown in the app. See [docker.md](docker.md#reminders-and-web-push) |
-| `OPENTODO_MCP` | unset | `true` presets the read-only AI assistants (MCP) endpoint on first start; afterwards Settings → AI assistants decides. See [mcp](../mcp.md) |
+| `OPENTODO_MCP` | unset | `true` presets the AI assistants (MCP) endpoint on first start; afterwards Settings → AI assistants decides. See [mcp](../mcp.md) |
 | `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | Presets "allow private network targets" for webhooks on first start; afterwards Settings → Webhooks decides. See [webhooks](../webhooks.md#private-network-protection) |
 | `OPENTODO_CALDAV` | unset | `true` presets the CalDAV endpoint for calendar apps on first start; afterwards Settings → Calendar apps decides. See [caldav](../caldav.md) |
 | `OPENTODO_EMAIL_*` | unset | Optional [email to task](../email.md): `ADDRESS`, `IMAP_HOST`, `IMAP_USER` and `IMAP_PASSWORD` together (mark the password as a secret, or mount a file and set `IMAP_PASSWORD_FILE`). Partial settings stop the container at startup with the missing name in the log |
