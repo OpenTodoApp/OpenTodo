@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: API tokens
-A signed-in user SHALL be able to create named API tokens with a scope of `full` (default), `read` or `agent`, list them with scope, creation and last-use times, and revoke them. The secret SHALL be shown once and stored only as a hash. A bearer token SHALL act as its user; `read` tokens SHALL be refused on every route that writes, including `/api/v1/sync`, and `agent` tokens likewise on every route that writes except the agent content routes. `agent` also unlocks gated MCP write tools. Tokens are server state, not ops; managing them needs a connection.
+A signed-in user SHALL be able to create named API tokens with a scope of `full` (default), `read` or `agent`, list them with scope, creation and last-use times, and revoke them. The secret SHALL be shown once and stored only as a hash. A bearer token SHALL act as its user; `read` tokens SHALL be refused on every write route, including `/api/v1/sync`, and `agent` tokens too except on the agent content routes and gated MCP write tools. Tokens are server state, not ops.
 
 #### Scenario: Create and use a token
 - **WHEN** a user creates a token and a script sends a request with it as a bearer token
