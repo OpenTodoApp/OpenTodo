@@ -24,7 +24,9 @@ Two options:
 
 A token has a **scope**: `full` (the default), `read` or `agent`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
-An `agent` token is for an AI assistant that may make changes. On the REST API it behaves exactly like a `read` token: refused on every write, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
+An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, labels and comments) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
+
+`GET /api/v1/me` tells a client which credential it is using: see [Credential introspection](#credential-introspection).
 
 ```bash
 export OT=https://todo.example.com
@@ -73,7 +75,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion}` |
+| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth}`; `auth` describes the credential, see [Credential introspection](#credential-introspection) |
 | POST | `/api/v1/me/password` | yes, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
@@ -111,7 +113,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones |
-| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields) |
+| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create) |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
 | PATCH | `/api/v1/tasks/{id}` | yes | partial update → task |
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete (to the Trash) → 204 |
@@ -336,6 +338,74 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | `invalid_input` | 400 | issuer not https, discovery failed or names another issuer, client id missing, scopes without `openid`, changing an environment-managed field |
 | `forbidden` | 403 | `settings/oidc` by a non-owner |
 | `rate_limited` | 429 | more than 20 requests per minute per address to `auth/oidc/start` and `callback` together |
+
+### Idempotency keys
+
+`POST /api/v1/{collection}` (tasks, projects, labels, sections, views, reminders) accepts an optional `Idempotency-Key` header: 1 to 128 characters of letters, digits and `. _ : -`. The server derives the new entity's id and the ids of its operations from the key, your account and the collection, so a retry after a timeout cannot create a second entity:
+
+- The first request applies and answers **201** with the entity.
+- A repeat with the same content answers **200** with the stored entity (later edits included, a tombstone with `deleted_at` set) and the header `Idempotent-Replayed: true`. Nothing new is written.
+- A repeat with different content (another title, a field added or left out) answers **409 `idempotency_conflict`** and changes nothing. Use a new key.
+- A malformed key answers **400 `invalid_input`** naming `Idempotency-Key`. Unauthenticated and `read`-token requests are refused as usual (401, 403).
+
+Keys are scoped to your account: the same key used by someone else names a different entity, and one person's key can never return, overwrite or collide with another person's entity (an instance-wide random salt also keeps the derived ids unguessable). There is no key table to expire: the operation log is the record, so a key stays usable for as long as the entity exists. After the entity is permanently deleted from the Trash, or its history purged by end-to-end encryption, the key answers 409. Devices never send the header and sync converges with keyed creates like with any other write. With an [`agent` token](#agent-tokens) the derivation also includes the token, so two tokens using the same key create two entities.
+
+```bash
+curl -s -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: run42-milk' \
+  -H 'Content-Type: application/json' -d '{"title":"Buy milk"}'          # 201
+curl -si -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: run42-milk' \
+  -H 'Content-Type: application/json' -d '{"title":"Buy milk"}'          # 200, Idempotent-Replayed: true, same id
+curl -s -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: run42-milk' \
+  -H 'Content-Type: application/json' -d '{"title":"Buy bread"}'
+# 409 {"error":{"code":"idempotency_conflict","message":"this Idempotency-Key was already used for a create with different content; …"}}
+```
+
+### Credential introspection
+
+`GET /api/v1/me` carries an `auth` object describing the credential of the request. It never contains the secret.
+
+| Field | When | Value |
+| --- | --- | --- |
+| `method` | always | `session` or `token` |
+| `scope` | always | `full`, `read` or `agent` (a session is `full`) |
+| `token_id`, `token_name` | tokens | the token in use, as listed by `GET /api/v1/tokens` |
+| `writes_allowed` | `agent` tokens | whether both assistant switches are on right now |
+| `writes_denied` | `agent` tokens with writes off | `writes_disabled_by_owner` or `writes_disabled_by_user` |
+
+```json
+{"user":{…},"auth":{"method":"token","scope":"agent","token_id":"9f1c…","token_name":"desk-assistant","writes_allowed":true}}
+```
+
+`ot auth status` shows it. A revoked token gets 401 `unauthorized` and no `auth` object.
+
+### Agent tokens
+
+An `agent` token may write through REST on this fixed list of routes only, and only while the owner's **AI assistants may make changes** and the user's **Allow AI assistants to make changes** are both on:
+
+| Route | What an agent token may send |
+| --- | --- |
+| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `recurrence` |
+| `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
+| `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
+| `POST /api/v1/projects` | `name`, `color`, `parent_id` (`archived: false` is accepted) |
+| `PATCH /api/v1/projects/{id}` | `name`, `color` |
+| `POST /api/v1/labels` | `name`, `color` (an existing label of that name is returned with 200) |
+| `POST /api/v1/tasks/{id}/comments` | `body`, `parent_id` (`mentions` is accepted and dropped: assistant comments notify nobody) |
+
+These requests never reach the regular handlers: they are translated into calls of the same tool registry as the [MCP write tools](mcp.md#letting-an-assistant-make-changes) (one request is one write call) and applied in one batch through the operation log with device `agent:<token-id>`, so they show in history as "AI assistant (*token name*)", are recorded as `agent.write` in the audit log, share the token's limits with MCP (30 write calls a minute, 1,000 changed items a day; beyond that 429 `rate_limited` with `Retry-After`), and follow the same rules for end-to-end encrypted accounts. Responses have the usual REST shapes.
+
+Refusals:
+
+| Status | Code | When |
+| --- | --- | --- |
+| 403 | `writes_disabled_by_owner`, `writes_disabled_by_user` | a switch is off (recorded as a failed `agent.write`) |
+| 403 | `insufficient_scope` | any other write route, or a field outside the list above (`assignee_id`, `position`, `archived`, restoring with `deleted_at: null`, …) |
+| 403 | `forbidden`, `not_permitted` | the user's role in a shared project does not allow it; trashing a task the token did not create |
+| 404 | `not_found` | unknown, deleted or invisible ids (indistinguishable) |
+| 409 | `encryption_enabled` | readable text (title, description, name, comment) for an end-to-end encrypted account |
+| 400 | `invalid_input` | a value the tool refuses (with the tool's message) |
+
+Every other write route (tokens, settings, sync, sharing and members, invitations, encryption keys, imports, backups, webhooks, purging, archiving or deleting projects, user administration) answers 403 `insufficient_scope`, and the list is enforced by the matched route, so a route added later stays refused until it is added on purpose.
 
 ### Task fields
 
@@ -699,7 +769,7 @@ The server records security-relevant events in its own database (never synced to
 | `login.failed` | failure | target = account if it exists | `email` (existing accounts only), `reason` (`wrong_password`, `unknown_account`, `rate_limited`, `unknown_passkey`, `passkey_rejected`, `passkey_counter_regression`, `deactivated`) |
 | `logout` | success | actor = user | |
 | `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name`; `token.created` also `token_scope` (`full`, `read` or `agent`) |
-| `agent.write` | success or failure | actor = user | `tool`, `token_id`, `token_name`, `count` (items changed; 0 on failure), `reason` on failure (`writes_disabled_by_owner`, `writes_disabled_by_user`, `rate_limited`, `encryption_enabled`, `not_found`, `forbidden`, `scope_change`, `not_permitted`, `invalid_arguments`, …). One per MCP write tool call of an `agent` token; never content or entity ids |
+| `agent.write` | success or failure | actor = user | `tool`, `token_id`, `token_name`, `count` (items changed; 0 on failure), `reason` on failure (`writes_disabled_by_owner`, `writes_disabled_by_user`, `rate_limited`, `encryption_enabled`, `not_found`, `forbidden`, `scope_change`, `not_permitted`, `invalid_arguments`, …). One per MCP write tool call of an `agent` token, and one per tool a REST write of an `agent` token runs (`update_project` for a project rename); never content or entity ids |
 | `app_password.created`, `app_password.revoked` | success | actor = user | `app_password_id`, `app_password_name` |
 | `email_inbox.created`, `email_inbox.rotated` | success | actor = user | (never the secret) |
 | `email_inbox.updated` | success | actor = user | `setting` (`enabled` or `allowlist`), `from`, `to` (true/false, or the number of allowlist entries; never the addresses) |

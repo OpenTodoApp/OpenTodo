@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "comment",
+  "description": "A comment exactly as the REST API returns it.",
+  "type": "object",
+  "required": ["id", "task_id", "body"],
+  "properties": {
+    "id": {"type": "string"},
+    "task_id": {"type": "string"},
+    "author_id": {"type": "string"},
+    "body": {"type": "string", "description": "Markdown; user-written"},
+    "parent_id": {"type": ["string", "null"]},
+    "mentions": {"type": "array", "items": {"type": "string"}},
+    "created_at": {"type": "number"},
+    "edited_at": {"type": ["number", "null"]},
+    "deleted_at": {"type": ["number", "null"]}
+  }
+}

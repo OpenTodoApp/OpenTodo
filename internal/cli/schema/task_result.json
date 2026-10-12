@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "task_result",
+  "description": "What ot done, ot reopen and ot rm print for each task: the task (after the change; for rm, as it was before deletion) plus the reference given and what happened.",
+  "allOf": [
+    {"$ref": "#/schemas/task"},
+    {
+      "type": "object",
+      "required": ["ref", "status"],
+      "properties": {
+        "ref": {"type": "string", "description": "the id or id prefix given on the command line"},
+        "status": {"enum": ["completed", "reopened", "deleted", "unchanged"]}
+      }
+    }
+  ]
+}

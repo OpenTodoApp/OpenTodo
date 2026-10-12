@@ -215,6 +215,9 @@ func New(syncSvc *opsync.Service, opts Options) *Registry {
 func (r *Registry) Limits() *Limiter { return r.limits }
 
 type tool struct {
+	// rest marks a tool reachable only through CallAll (the agent REST routes,
+	// agent-ready-cli D8): never listed or callable on MCP.
+	rest bool
 	def  func(c Caller) Definition
 	read func(r *Registry, ctx context.Context, userID string, a args) (map[string]any, error)
 	plan func(r *Registry, ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error)
@@ -225,6 +228,19 @@ var registry []tool
 func register(t tool) { registry = append(registry, t) }
 
 func lookup(name string, c Caller) (tool, Definition, bool) {
+	for _, t := range registry {
+		if t.rest {
+			continue
+		}
+		if d := t.def(c); d.Name == name {
+			return t, d, true
+		}
+	}
+	return tool{}, Definition{}, false
+}
+
+// lookupAll is lookup including the REST-only tools.
+func lookupAll(name string, c Caller) (tool, Definition, bool) {
 	for _, t := range registry {
 		if d := t.def(c); d.Name == name {
 			return t, d, true
@@ -239,6 +255,9 @@ func lookup(name string, c Caller) (tool, Definition, bool) {
 func (r *Registry) Definitions(c Caller) []Definition {
 	out := []Definition{}
 	for _, t := range registry {
+		if t.rest {
+			continue
+		}
 		d := t.def(c)
 		if d.Kind == KindWrite && (!c.CanWrite() || (c.Encrypted && d.RequiresContent)) {
 			continue

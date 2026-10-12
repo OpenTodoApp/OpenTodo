@@ -76,6 +76,8 @@ Weighed:
 
 **Recommendation:** keep `ot` in the monorepo. Optionally create `homebrew-tap` and `scoop-bucket` manifest repos, fed by release CI. Ship the skill from the monorepo as a release asset. Revisit only if the CLI grows independent consumers that need a release cadence of their own.
 
+**Decision (owner):** keep the CLI in the monorepo; no Homebrew tap or Scoop bucket repositories for now. Release assets (with `SHA256SUMS`) and `go install` are the supported install paths; manifest repositories stay a documented future option (task 5.1).
+
 ### D11. Relationship to PR #11
 PR #11 (`ot mcp`) is complementary. It bridges MCP over stdio, while this change makes `ot`'s own commands agent-friendly. Nothing here modifies its files or requirements. Two touchpoints: `auth.scope` on `/api/v1/me` (D7) can replace its `lastUsedAt` heuristic, and `ot schema` should list `mcp` once it exists. Both are follow-ups after #11 merges (task 6.3).
 
@@ -102,6 +104,35 @@ PR #11 (`ot mcp`) is complementary. It bridges MCP over stdio, while this change
 
 No database migration. Release notes call out `--yes` and exit code 5. Rollback: an older `ot` keeps working against a newer server, because all server changes are additive.
 
-## Open Questions
+## Owner decisions
 
-- Q1. Create the `homebrew-tap` and `scoop-bucket` repositories (and a CI secret allowed to push to them), or rely on release assets and `go install` for now?
+- **Repository:** the CLI stays in the monorepo (D10).
+- **Q1 answered:** no `homebrew-tap` / `scoop-bucket` repositories and no CI secret for them now. Release assets and `go install` only; Homebrew and Scoop are documented as a future option.
+
+## Implementation notes
+
+What was built differs from the decisions above in these points, each deliberate:
+
+- **`done`/`reopen`/`rm` output (D1).** The design assumed these commands printed a small result object; they printed the task (or an array of tasks). Wrapping that in `{results:[…]}` would have broken scripts, so output version 1 keeps the entity shape and adds `ref` and `status` (`completed`, `reopened`, `deleted`, `unchanged`) to each task: schema `task_result`. There is no separate bulk-result schema.
+- **Project rename on the agent route (D8).** No registry tool renamed or recoloured a project, so `internal/agenttools` gained `update_project`, marked REST-only: `Definitions`, `Lookup`, `Plan` and `Call` (MCP) never see it; only `CallAll` reaches it. The MCP tool surface is unchanged (`TestToolSurfaceIsClosed`, `TestRestOnlyToolHiddenFromMCP`).
+- **One REST write = one write call.** `CallAll`/`PlanAll` run the tools a request maps to (a task `PATCH` may need `update_tasks`, `move_tasks`, `schedule_tasks`, `complete_tasks`/`reopen_tasks`, `trash_tasks`) with one gate check, one per-minute count, plans laid over each other, one `Apply` batch, and one `agent.write` event per tool. REST's whole-due replacement is kept by passing `time`/`tz` as null when absent.
+- **Narrower task `PATCH` (D8).** Fields with no tool (`parent_id`, `position`, restoring with `deleted_at: null`) are refused with 403 `insufficient_scope` like `assignee_id`. `mentions` on an agent comment is accepted and dropped. `archived: false` is accepted on project create (`ot project add` sends it).
+- **Fail closed by route pattern.** `requireAuth` hands an agent write to the agent handler only when the matched mux pattern and collection are on the list, before any regular handler runs; everything else stays 403. `TestAgentRestAllowList` parses every `mux.Handle` pattern in the package (so new routes are covered automatically) and asserts the refusals, the unchanged op count and token count, and that every allowed route works.
+- **Idempotency derivation (D5).** The entity id is `NameID("idem", salt, user, collection, key)` with a random per-instance salt stored once in the `settings` table (`idempotency.salt`), so collaborators cannot predict anyone's ids. A replay is recognised only by ops the same user stored under the derived op ids (ops are unique per user), compared field by field against the planned create, ignoring the clock-filled `created_at` and `position`; an entity merely present under the id is a conflict, never a replay. A keyed label without a colour gets a colour derived from its id so a retry plans the same value. For `agent` tokens the key becomes the registry's `client_request_id` (`rest:` + a salted hash of collection and key), so the token is part of the derivation as for MCP. No table, no TTL.
+- **Credential introspection (D7).** `/api/v1/me/agent-access` refuses agent tokens by design (mcp-write-tools D3), so `auth` on `/api/v1/me` adds `writes_allowed` and `writes_denied` for agent tokens; `ot auth status` reads those. `ot` now finds its own token by `auth.token_id` (fallback to `lastUsedAt` for older servers) in `auth status`, `auth logout`, `token list` and `token revoke`. PR #11 was not touched.
+- **Dry run and `--yes`.** A dry run of a destructive command needs no `--yes` (it deletes nothing). `--read-only` refuses before parsing reaches any request; the scope check runs before the first write and is also what makes a dry run exit 4 when the server is unreachable. `ot login --dry-run` prompts for nothing and shows the three requests.
+- **`auth logout` with a `read` or `agent` token** removes it locally and says to revoke it in Settings, since such a token may not revoke tokens.
+- **`ot schema`** also lists `global_flags`, `environment` and `notes`; the dry-run JSON carries `command` and, for config changes, `local`. `--output-version` is not implemented yet (only version 1 exists).
+- **Skill location.** `skills/opentodo-cli/SKILL.md` with a tiny `skills` Go package that embeds it (go:embed cannot reach outside a package directory). `make skill` zips the folder; a `skill` CI job uploads it and the release job collects it with its existing `opentodo-*` pattern.
+- **No `regexp` in `ot`.** The Idempotency-Key syntax is checked with a loop: importing `regexp` alone added about 250 KB to the binary.
+
+### Size
+
+Measured with `CGO_ENABLED=0 go build -trimpath -ldflags="-s -w"` (linux/amd64), `origin/main` before this change against this branch, same embedded web build:
+
+| Binary | Before | After | Delta | Estimate |
+| --- | --- | --- | --- | --- |
+| `ot` | 6,856,866 B | 6,963,362 B | +106 KB | < 80 KB |
+| `opentodo` | 17,461,410 B | 17,604,770 B | +143 KB | < 40 KB |
+
+Both exceed the estimates: `ot` by the command model, 14 JSON Schemas (about 11 KB) and the skill text (4.5 KB); the server by the agent REST translation, idempotency and the batch call in `agenttools`. No new dependency in either; `go list -deps ./cmd/opentodo` is unchanged. No web change, so no bundle change.

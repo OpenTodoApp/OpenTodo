@@ -4,9 +4,10 @@ LDFLAGS := -s -w -X main.version=$(VERSION)
 CLI_PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 
 EXT_ZIP := dist/opentodo-browser-extension.zip
+SKILL_ZIP := dist/opentodo-agent-skill.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png
 
-.PHONY: all web server cli cli-release cli-smoke extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check coolify-check coolify-smoke
+.PHONY: all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check coolify-check coolify-smoke
 
 all: build
 
@@ -34,6 +35,13 @@ cli-release:
 ## End-to-end check of the CLI against a freshly started local server.
 cli-smoke: server cli
 	./scripts/cli-smoke.sh
+
+## Zip the agent skill (skills/opentodo-cli/SKILL.md, also embedded in `ot skill`)
+## into dist/ for the release.
+skill:
+	@mkdir -p dist && rm -f $(SKILL_ZIP)
+	cd skills && zip -q -X ../$(SKILL_ZIP) opentodo-cli/SKILL.md
+	@echo "  $(SKILL_ZIP) ($$(wc -c < $(SKILL_ZIP)) bytes)"
 
 ## Test the browser extension and zip it into dist/ (not part of the container image).
 extension: test-extension

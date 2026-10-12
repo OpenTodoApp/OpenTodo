@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "token_created",
+  "description": "ot token create: the token and its secret, shown this once.",
+  "type": "object",
+  "required": ["token", "secret"],
+  "properties": {
+    "token": {"$ref": "#/schemas/token"},
+    "secret": {"type": "string"}
+  }
+}

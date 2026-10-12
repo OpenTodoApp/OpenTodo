@@ -110,7 +110,7 @@ Write tools are offered only when **all three** of these hold, and they are chec
 2. **You allow it for your account.** Settings → AI assistants → **Allow AI assistants to make changes to my tasks** (off by default; `PUT /api/v1/me/agent-access`). Only you can change it, signed in or with a full-access token; no assistant token can. Turning it off stops all your assistants from making changes at once, without revoking their tokens.
 3. **The assistant uses an `agent` token.** Once both switches are on, Settings → AI assistants offers **Create a token for an assistant that can make changes** (or pick **AI assistant, can make changes** in Settings → API tokens, or run `ot token create desk-assistant --scope agent`). Read-only and full-access tokens never get write tools.
 
-An `agent` token reads like a read-only token. On the REST API it is refused on **every** route that writes, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and your own switch: it cannot mint tokens, raise its own permissions, change settings, sharing or members, or submit raw operations. It can make changes only through the write tools below.
+An `agent` token reads like a read-only token. It can make changes through the write tools below, and through the same tools behind a short list of REST routes (create and edit tasks, projects, labels and comments) that the [`ot` command-line client](cli.md#using-ot-from-an-agent) uses; see [agent tokens in the API](api.md#agent-tokens). Every other REST route that writes refuses it, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and your own switch: it cannot mint tokens, raise its own permissions, change settings, sharing or members, or submit raw operations.
 
 If a condition is missing, `tools/list` shows only the read tools, and calling a write tool anyway returns a tool error (`isError: true`) naming what to change: `writes_disabled_by_owner`, `writes_disabled_by_user` or `token_scope`.
 
@@ -148,6 +148,8 @@ Fixed in this version, the same for every token:
 - at most **50** items per call,
 - at most **30** write calls per minute per token,
 - at most **1,000** changed items per UTC day per token.
+
+The REST routes of an `agent` token share these counters: one REST write is one write call.
 
 Over a limit the result is `rate_limited` with `retry_after_seconds`, and nothing changes. Read tools never count. Counters are kept in memory and reset when the server restarts; they are there to stop a runaway loop, not to bill anyone.
 

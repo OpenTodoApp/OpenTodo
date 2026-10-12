@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "version",
+  "type": "object",
+  "required": ["version", "output_version"],
+  "properties": {
+    "version": {"type": "string"},
+    "output_version": {"type": "integer"}
+  }
+}

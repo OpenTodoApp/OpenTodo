@@ -752,3 +752,75 @@ func TestPlanOverlaySeesEarlierChanges(t *testing.T) {
 		t.Fatalf("trash of a task planned in the same turn: %v", err)
 	}
 }
+
+// TestRestOnlyToolHiddenFromMCP: update_project exists for the agent REST
+// routes (agent-ready-cli D8) and is never listed or callable through Call.
+func TestRestOnlyToolHiddenFromMCP(t *testing.T) {
+	f := newFixture(t)
+	c := agent("u1")
+	for _, d := range f.reg.Definitions(c) {
+		if d.Name == "update_project" {
+			t.Fatal("update_project listed for MCP")
+		}
+	}
+	if _, ok := f.reg.Lookup("update_project", c); ok {
+		t.Fatal("update_project found by Lookup")
+	}
+	f.put("u1", "project", "p1", map[string]any{"name": "Home", "color": "#64748b", "archived": false})
+	if _, err := f.call(c, "update_project", map[string]any{"id": "p1", "name": "x"}); !isArgErr(err) {
+		t.Fatalf("Call(update_project) = %v", err)
+	}
+	if _, err := f.reg.Plan(context.Background(), c, "update_project", json.RawMessage(`{"id":"p1","name":"x"}`), nil); !isArgErr(err) {
+		t.Fatalf("Plan(update_project) = %v", err)
+	}
+}
+
+// TestCallAllOneBatch: a REST write's tools apply as one batch, counted as one
+// write call, audited per tool; a refused plan applies nothing.
+func TestCallAllOneBatch(t *testing.T) {
+	f := newFixture(t)
+	c := agent("u1")
+	f.task("u1", "t1", "Draft", nil)
+	f.put("u1", "project", "p1", map[string]any{"name": "Home", "color": "#64748b", "archived": false})
+	calls := []ToolCall{
+		{Name: "update_tasks", Args: json.RawMessage(`{"updates":[{"id":"t1","title":"Final"}]}`)},
+		{Name: "schedule_tasks", Args: json.RawMessage(`{"ids":["t1"],"due":{"date":"2026-10-20"}}`)},
+		{Name: "update_project", Args: json.RawMessage(`{"id":"p1","name":"Home 2","color":"#22C55E"}`)},
+	}
+	res, err := f.reg.CallAll(context.Background(), c, calls)
+	if err != nil || len(res) != 3 {
+		t.Fatalf("CallAll = %v, %v", res, err)
+	}
+	if str(f.get("u1", "t1"), "title") != "Final" || taskDue(f.get("u1", "t1")).Date != "2026-10-20" {
+		t.Fatalf("task = %v", f.get("u1", "t1"))
+	}
+	p, _ := f.sync.Get(context.Background(), "u1", "project", "p1")
+	if str(p, "name") != "Home 2" || str(p, "color") != "#22c55e" {
+		t.Fatalf("project = %v", p)
+	}
+	evs, _, err := f.rec.List(context.Background(), audit.Filter{Name: audit.AgentWriteName, Limit: 10})
+	if err != nil || len(evs) != 3 {
+		t.Fatalf("audit = %d %v", len(evs), err)
+	}
+	// One refused plan refuses everything.
+	_, err = f.reg.CallAll(context.Background(), c, []ToolCall{
+		{Name: "update_tasks", Args: json.RawMessage(`{"updates":[{"id":"t1","title":"Again"}]}`)},
+		{Name: "trash_tasks", Args: json.RawMessage(`{"ids":["t1"]}`)}, // not its own creation
+	})
+	if toolCode(err) != "not_permitted" || str(f.get("u1", "t1"), "title") != "Final" {
+		t.Fatalf("refused batch: %v, title %q", err, str(f.get("u1", "t1"), "title"))
+	}
+	// Encrypted accounts: renaming is content, recolouring is not.
+	c.Encrypted = true
+	if _, err := f.reg.CallAll(context.Background(), c, []ToolCall{{Name: "update_project", Args: json.RawMessage(`{"id":"p1","name":"x"}`)}}); toolCode(err) != "encryption_enabled" {
+		t.Fatalf("encrypted rename: %v", err)
+	}
+	if _, err := f.reg.CallAll(context.Background(), c, []ToolCall{{Name: "update_project", Args: json.RawMessage(`{"id":"p1","color":"#000000"}`)}}); err != nil {
+		t.Fatalf("encrypted recolour: %v", err)
+	}
+	// The gate applies.
+	c.UserAllowsWrites = false
+	if _, err := f.reg.CallAll(context.Background(), c, calls[:1]); toolCode(err) != DeniedByUser {
+		t.Fatalf("gate: %v", err)
+	}
+}

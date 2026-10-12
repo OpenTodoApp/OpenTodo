@@ -14,7 +14,7 @@ Every API write SHALL be recorded as operations stamped with server time, with d
 ## ADDED Requirements
 
 ### Requirement: Idempotency keys on create
-`POST /api/v1/{collection}` SHALL accept `Idempotency-Key` (1 to 128 characters of letters, digits and `._:-`). The entity and op ids SHALL derive from user, collection and key: the first request answers 201, a repeat answers 200 with the stored entity and `Idempotent-Replayed: true`, and a repeat with different content answers 409 `idempotency_conflict`. Retries converge to one entity on every device.
+`POST /api/v1/{collection}` SHALL accept `Idempotency-Key` (1 to 128 characters of letters, digits and `._:-`) and derive entity and op ids from user, collection and key: 201 first, 200 with the stored entity and `Idempotent-Replayed: true` on a same-content repeat, 409 `idempotency_conflict` on other content. A replay SHALL be recognised only by the same user's stored ops, so keys never cross accounts. Retries converge on every device.
 
 #### Scenario: Replayed create
 - **WHEN** a script POSTs `{"title":"Buy milk"}` to `/api/v1/tasks` twice with `Idempotency-Key: k1`
@@ -35,3 +35,7 @@ Every API write SHALL be recorded as operations stamped with server time, with d
 #### Scenario: Read token
 - **WHEN** a `read` token sends a keyed create
 - **THEN** the response is 403 `insufficient_scope` and nothing is created
+
+#### Scenario: Keys are per account
+- **WHEN** two accounts each POST `{"title":"Same"}` with `Idempotency-Key: k1`, and a collaborator has planted a task under the id the first account's next key would derive
+- **THEN** the two creates make two tasks, each account's repeat returns only its own task, and the first account's keyed create over the planted task answers 409 `idempotency_conflict` without changing it

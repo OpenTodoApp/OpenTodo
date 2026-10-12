@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "skill",
+  "description": "ot skill --json.",
+  "type": "object",
+  "required": ["name", "content"],
+  "properties": {
+    "name": {"type": "string"},
+    "content": {"type": "string", "description": "the SKILL.md text"}
+  }
+}

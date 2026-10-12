@@ -54,7 +54,7 @@ func cmdList(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("list", g)
 	var o listOptions
 	o.bind(fs)
-	pos, err := parseArgs(fs, "list", args)
+	pos, err := a.parse(g, fs, "list", args)
 	if err != nil {
 		return a.helpOr("list", err)
 	}
@@ -74,7 +74,7 @@ func viewAlias(name string) func(a *App, ctx context.Context, g *globalFlags, ar
 		fs := a.flagSet(name, g)
 		var o listOptions
 		fs.IntVar(&o.limit, "limit", 0, "print at most n tasks")
-		pos, err := parseArgs(fs, name, args)
+		pos, err := a.parse(g, fs, name, args)
 		if err != nil {
 			return a.helpOr(name, err)
 		}
@@ -298,22 +298,22 @@ func resolveTask(all []task, ref string) (*task, error) {
 	return nil, usageErr("%q is ambiguous; it matches %d tasks:\n%s\nUse a longer prefix or the full id.", ref, len(matches), strings.Join(lines, "\n"))
 }
 
-// resolveTasks resolves every ref before anything changes, so an ambiguous ref
-// aborts the whole command.
-func resolveTasks(all []task, refs []string) ([]*task, error) {
+// resolveTaskRefs resolves every ref before anything changes, so an ambiguous
+// ref aborts the whole command. refOf maps each task id to the ref given.
+func resolveTaskRefs(all []task, refs []string) ([]*task, map[string]string, error) {
 	out := make([]*task, 0, len(refs))
-	seen := map[string]bool{}
+	refOf := map[string]string{}
 	for _, ref := range refs {
 		t, err := resolveTask(all, ref)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		if !seen[t.ID] {
-			seen[t.ID] = true
+		if _, seen := refOf[t.ID]; !seen {
+			refOf[t.ID] = ref
 			out = append(out, t)
 		}
 	}
-	return out, nil
+	return out, refOf, nil
 }
 
 // findProject matches a project by name (case-insensitive), full id or unique id prefix.
@@ -397,7 +397,8 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("add", g)
 	var f taskFlags
 	f.bind(fs, false)
-	pos, err := parseArgs(fs, "add", args)
+	key := fs.String("idempotency-key", "", "retry-safe create")
+	pos, err := a.parse(g, fs, "add", args)
 	if err != nil {
 		return a.helpOr("add", err)
 	}
@@ -407,6 +408,10 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	}
 	set := visited(fs)
 	if err := f.validateLocal(set); err != nil {
+		return err
+	}
+	headers, err := idempotencyHeaders(set["idempotency-key"], *key)
+	if err != nil {
 		return err
 	}
 	body := map[string]any{"title": title}
@@ -455,12 +460,12 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		}
 		body["labels"] = ids
 	}
-	var raw json.RawMessage
-	if err := c.postJSON(ctx, "/tasks", body, &raw); err != nil {
+	raw, _, err := c.do(ctx, "POST", "/tasks", body, headers)
+	if err != nil {
 		return err
 	}
 	if g.json {
-		return a.printJSON(raw)
+		return a.printJSON(json.RawMessage(raw))
 	}
 	var created task
 	_ = json.Unmarshal(raw, &created)
@@ -472,7 +477,7 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("edit", g)
 	var f taskFlags
 	f.bind(fs, true)
-	pos, err := parseArgs(fs, "edit", args)
+	pos, err := a.parse(g, fs, "edit", args)
 	if err != nil {
 		return a.helpOr("edit", err)
 	}
@@ -564,6 +569,16 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		}
 		patch["due"] = d.rezone(a.Now().Location())
 	}
+	// Values equal to the current ones send nothing (design D5).
+	if patchIsNoop(t.Raw, patch) {
+		a.target(pos[0], t.ID, t.Title, "unchanged")
+		if g.json {
+			return a.printJSON(t.Raw)
+		}
+		fmt.Fprintf(a.Stdout, "unchanged  %s  %s\n", shortID(t.ID), t.Title)
+		return nil
+	}
+	a.target(pos[0], t.ID, t.Title, "")
 	var raw json.RawMessage
 	if err := c.patchJSON(ctx, "/tasks/"+t.ID, patch, &raw); err != nil {
 		return err
@@ -575,6 +590,62 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	_ = json.Unmarshal(raw, &updated)
 	fmt.Fprintf(a.Stdout, "updated  %s  %s\n", shortID(updated.ID), updated.Title)
 	return nil
+}
+
+// patchIsNoop reports whether every patched field already holds that value.
+func patchIsNoop(current json.RawMessage, patch map[string]any) bool {
+	var cur map[string]json.RawMessage
+	if json.Unmarshal(current, &cur) != nil {
+		return false
+	}
+	for f, v := range patch {
+		want, err := json.Marshal(v)
+		if err != nil || !sameJSON(cur[f], want) {
+			return false
+		}
+	}
+	return true
+}
+
+// sameJSON compares two JSON values structurally (a missing value is null).
+func sameJSON(a, b json.RawMessage) bool {
+	var x, y any
+	if len(a) == 0 {
+		a = json.RawMessage("null")
+	}
+	if len(b) == 0 {
+		b = json.RawMessage("null")
+	}
+	if json.Unmarshal(a, &x) != nil || json.Unmarshal(b, &y) != nil {
+		return false
+	}
+	ja, _ := json.Marshal(x)
+	jb, _ := json.Marshal(y)
+	return string(ja) == string(jb)
+}
+
+// withStatus adds the command-line reference and the outcome to an entity
+// for done, reopen and rm (schema task_result).
+func withStatus(raw json.RawMessage, ref, status string) json.RawMessage {
+	var m map[string]json.RawMessage
+	if json.Unmarshal(raw, &m) != nil || m == nil {
+		m = map[string]json.RawMessage{}
+	}
+	m["ref"], _ = json.Marshal(ref)
+	m["status"], _ = json.Marshal(status)
+	return encodeCompact(m)
+}
+
+// idempotencyHeaders validates --idempotency-key locally (exit 2) and returns
+// the Idempotency-Key header for it.
+func idempotencyHeaders(given bool, key string) (map[string]string, error) {
+	if !given {
+		return nil, nil
+	}
+	if !validIdempotencyKey(key) {
+		return nil, usageErr("--idempotency-key must be 1 to 128 characters of letters, digits and . _ : -")
+	}
+	return map[string]string{"Idempotency-Key": key}, nil
 }
 
 // ---- done / reopen / rm ----
@@ -589,7 +660,7 @@ func cmdReopen(a *App, ctx context.Context, g *globalFlags, args []string) error
 
 func setCompleted(a *App, ctx context.Context, g *globalFlags, args []string, name string, complete bool) error {
 	fs := a.flagSet(name, g)
-	refs, err := parseArgs(fs, name, args)
+	refs, err := a.parse(g, fs, name, args)
 	if err != nil {
 		return a.helpOr(name, err)
 	}
@@ -604,21 +675,33 @@ func setCompleted(a *App, ctx context.Context, g *globalFlags, args []string, na
 	if err != nil {
 		return err
 	}
-	targets, err := resolveTasks(all, refs)
+	targets, refOf, err := resolveTaskRefs(all, refs)
 	if err != nil {
 		return err
 	}
 	var value any
+	status := "reopened"
 	if complete {
 		value = a.Now().UnixMilli()
+		status = "completed"
 	}
 	results := make([]json.RawMessage, 0, len(targets))
 	for _, t := range targets {
+		// Already in the requested state: report it, send nothing (design D5).
+		if (t.CompletedAt != nil) == complete {
+			a.target(refOf[t.ID], t.ID, t.Title, "unchanged")
+			results = append(results, withStatus(t.Raw, refOf[t.ID], "unchanged"))
+			if !g.json {
+				fmt.Fprintf(a.Stdout, "%-8s %s  %s\n", "unchanged", shortID(t.ID), t.Title)
+			}
+			continue
+		}
+		a.target(refOf[t.ID], t.ID, t.Title, status)
 		var raw json.RawMessage
 		if err := c.patchJSON(ctx, "/tasks/"+t.ID, map[string]any{"completed_at": value}, &raw); err != nil {
 			return err
 		}
-		results = append(results, raw)
+		results = append(results, withStatus(raw, refOf[t.ID], status))
 		if !g.json {
 			fmt.Fprintf(a.Stdout, "%-8s %s  %s\n", name, shortID(t.ID), t.Title)
 		}
@@ -636,7 +719,7 @@ func cmdRm(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("rm", g)
 	yes := fs.Bool("yes", false, "do not ask for confirmation")
 	fs.BoolVar(yes, "y", false, "do not ask for confirmation")
-	refs, err := parseArgs(fs, "rm", args)
+	refs, err := a.parse(g, fs, "rm", args)
 	if err != nil {
 		return a.helpOr("rm", err)
 	}
@@ -651,11 +734,12 @@ func cmdRm(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err != nil {
 		return err
 	}
-	targets, err := resolveTasks(all, refs)
+	targets, refOf, err := resolveTaskRefs(all, refs)
 	if err != nil {
 		return err
 	}
-	if !*yes && !g.json {
+	// Off a terminal or with --json, a.parse already refused without --yes.
+	if !*yes && !a.dryRun() {
 		for _, t := range targets {
 			fmt.Fprintf(a.Stderr, "  %s  %s\n", shortID(t.ID), t.Title)
 		}
@@ -669,10 +753,11 @@ func cmdRm(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	}
 	results := make([]json.RawMessage, 0, len(targets))
 	for _, t := range targets {
+		a.target(refOf[t.ID], t.ID, t.Title, "deleted")
 		if err := c.delete(ctx, "/tasks/"+t.ID); err != nil {
 			return err
 		}
-		results = append(results, t.Raw)
+		results = append(results, withStatus(t.Raw, refOf[t.ID], "deleted"))
 		if !g.json {
 			fmt.Fprintf(a.Stdout, "deleted  %s  %s\n", shortID(t.ID), t.Title)
 		}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "auth_result",
+  "description": "ot login, ot auth set-token and ot auth logout.",
+  "type": "object",
+  "required": ["server", "profile"],
+  "properties": {
+    "server": {"type": "string"},
+    "profile": {"type": "string"},
+    "user": {"type": "object"},
+    "token": {},
+    "revoked": {"type": "string"},
+    "removedLocally": {"type": "boolean"}
+  }
+}

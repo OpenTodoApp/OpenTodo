@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "auth_status",
+  "type": "object",
+  "required": ["server", "profile", "user", "scope"],
+  "properties": {
+    "server": {"type": "string"},
+    "profile": {"type": "string"},
+    "user": {"type": "object", "required": ["id", "email"], "properties": {"id": {"type": "string"}, "email": {"type": "string"}, "name": {"type": "string"}, "role": {"type": "string"}}},
+    "token": {"type": ["object", "null"], "description": "the token in use as listed (null when it cannot be told)"},
+    "scope": {"type": "string", "description": "full, read or agent; empty for a server that does not report it"},
+    "writes_allowed": {"type": "boolean", "description": "agent tokens: whether both assistant switches are on"},
+    "writes_denied": {"type": "string", "description": "agent tokens: the first switch that is off"}
+  }
+}
