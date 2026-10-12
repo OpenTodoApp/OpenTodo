@@ -132,6 +132,7 @@ func init() {
 		{"rm", "delete one or more tasks (soft delete)", "ot rm <ref>... [--yes]", cmdRm},
 		{"project", "manage projects: list, add, rename, archive, rm", "ot project list [--all]\not project add <name> [--color <css-colour>]\not project rename <ref> <new-name>\not project archive <ref> [--undo]\not project rm <ref> [--yes]", cmdProject},
 		{"token", "manage API tokens: list, create, revoke", "ot token list\not token create <name>\not token revoke <id-or-name>", cmdToken},
+		{"mcp", "bridge stdio MCP clients to the configured server", "ot mcp [--allow-full-token]", cmdMCP},
 		{"export", "download the full JSON export", "ot export [--out <file>]", cmdExport},
 		{"version", "print the client version", "ot version", cmdVersion},
 		{"help", "show help for a command", "ot help [command]", cmdHelp},
@@ -262,6 +263,7 @@ var commandHelp = map[string]string{
 	"add":  "--due accepts YYYY-MM-DD, today, tomorrow or an English weekday (next occurrence). --time needs HH:MM.\n--label may be repeated. Prints the new task id; with --json prints the task.",
 	"edit": "Clear a value with --due none, --project none or --note \"\". Only the given flags change.",
 	"rm":   "Soft-deletes (tombstone). Asks for confirmation on a terminal unless --yes is given.",
+	"mcp":  "Reads newline-delimited JSON-RPC messages from stdin and writes responses to stdout.\nA read-only token is required unless --allow-full-token is given.",
 }
 
 func cmdHelp(a *App, _ context.Context, _ *globalFlags, args []string) error {

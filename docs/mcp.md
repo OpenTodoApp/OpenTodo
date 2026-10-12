@@ -50,7 +50,31 @@ Clients that take a JSON server entry (Settings has a copy button that fills in 
 }
 ```
 
-Menus differ between assistants; look for "add custom connector", "remote MCP server" or "HTTP server". Clients that only speak stdio need a bridge that forwards to an HTTP endpoint with a header; OpenTodo does not ship one yet.
+Menus differ between assistants; look for "add custom connector", "remote MCP server" or "HTTP server".
+
+Clients that only speak stdio can launch the bundled CLI bridge. Sign in with a
+read-only token, then configure the client to run `ot mcp`:
+
+```json
+{
+  "mcpServers": {
+    "opentodo": {
+      "command": "ot",
+      "args": ["mcp"],
+      "env": {
+        "OPENTODO_URL": "https://todo.example.com",
+        "OPENTODO_TOKEN": "ot_…"
+      }
+    }
+  }
+}
+```
+
+The bridge reads newline-delimited JSON-RPC from stdin, forwards each message to
+`/mcp`, and writes only JSON-RPC responses to stdout. It refuses a full-access
+token by default so an assistant is not accidentally given write credentials;
+`--allow-full-token` is available for an intentional exception. A stored profile
+from `ot auth set-token` can be used instead of environment variables.
 
 To try the endpoint by hand:
 
