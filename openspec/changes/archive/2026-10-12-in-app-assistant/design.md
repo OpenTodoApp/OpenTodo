@@ -175,3 +175,18 @@ Recorded before implementation (2026-10-12, see also the `mcp-write-tools` desig
 - **Client.** `mutateMany(changes, {origin: 'assistant'})` stamps `assistant:<device-id>`. `lib/assistant.ts` (lazy) holds the SSE parser, stale detection (`base` against local values, re-checked right before applying), apply with the inverse stored first in `assistantUndo` and the applied field clocks recorded, undo that skips any field whose clock is no longer the assistant's, the auto-apply rule, sentence chunking for the live region, and thread retention. `lib/assistantStatus.ts` is the only part in the main chunk (status, launcher rule, open signal). Undo of a created entity moves it to the Trash. Dexie version 13 adds `assistantThreads` and `assistantUndo`; `clearLocalData()` (called by the app's `clearDeviceData()` at sign-out) clears both.
 - **Panel.** `AssistantSheet` uses the overlay module's `useOverlay`, `trapTab` and `isolate` directly (the `Dialog` component centres a card; the side sheet needs its own frame). Esc discards a proposal when focus is inside it, otherwise closes. Settings → Assistant is a second lazy chunk.
 - **Fake provider for screenshots and the layout check.** `scripts/fake-llm.mjs` is a scripted OpenAI-compatible server; `scripts/e2e-layout.mjs` and `scripts/docs-screenshots.mjs` point the compatible provider at it (private endpoints allowed), so no real provider or key is used and answers are deterministic.
+
+### Size
+
+Measured on 2026-10-12 with `CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" ./cmd/opentodo` (linux/amd64, Go 1.26, web app built and embedded in both) and `gzip -9` of the web chunks, `origin/main` (aa28b7e) versus this branch. (The 15,532,297-byte baseline in D10 was measured without the embedded web build, so it is not comparable.)
+
+| | Before | After | Delta |
+| --- | --- | --- | --- |
+| Server binary (stripped) | 17,604,770 B | 22,991,010 B | +5,386,240 B (+5.1 MB, +30.6%) |
+| of which function symbols of the Anthropic SDK and its dependencies (`go tool nm -size`, unstripped build) | | | about 1.9 MB; the rest of the SDK's share is type and reflection data |
+| of which `internal/assistant` function symbols | | | about 81 KB |
+| Main web chunk, gzip | 262,244 B | 263,154 B | +910 B |
+| Main web chunk, raw | 904,515 B | 907,728 B | +3,213 B |
+| Lazy assistant chunks, gzip (panel 6,833 B, data layer 4,402 B, Settings → Assistant 3,943 B) | | 15,178 B | new, loaded on first open |
+
+The binary delta matches the D10 estimate (+4.9 MB for the SDK plus own code). The container image (distroless static) grows by the same amount; it was not rebuilt here because Docker is not available in this environment. No new npm package.

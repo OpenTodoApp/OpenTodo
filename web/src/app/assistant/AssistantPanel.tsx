@@ -242,6 +242,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
   // The cached status renders at once (offline too); a fresh one follows.
   const [status, setStatus] = useState<AssistantStatus | null>(assistantStatus)
   const [thread, setThread] = useState<AssistantThread | null>(null)
+  const threadState = thread
   const [threads, setThreads] = useState<AssistantThread[] | null>(null)
   const [draft, setDraft] = useState('')
   const [streaming, setStreaming] = useState<{ text: string; status: string[] } | null>(null)
@@ -258,7 +259,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
 
   useEffect(() => {
     void refreshAssistantStatus().then(setStatus)
-    void listThreads().then((all) => setThread(all[0] ?? newThread('')))
+    void listThreads().then((all) => setThread((cur) => cur ?? all[0] ?? newThread('')))
     return () => abort.current?.abort()
   }, [])
 
@@ -289,7 +290,9 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
 
   const send = async () => {
     const question = draft.trim()
-    if (!question || !thread || streaming) return
+    if (!question || streaming) return
+    // The latest thread may still be loading from the device: start a new one then.
+    const thread = threadState ?? newThread(status?.provider ?? '')
     setDraft('')
     setError(null)
     setReview(null)
