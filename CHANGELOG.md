@@ -4,10 +4,6 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
-### Fixed
-
-- A reminder that became due while a dialog, menu or popover was open took the keyboard focus out of it. It is still announced, but focus now stays where you are.
-
 ## [0.3.0] - 2026-10-12
 
 OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat assistant inside the app that answers questions about your tasks and proposes changes you review and undo in one step, with Anthropic, OpenAI, Gemini or a model on your own network. An assistant you already use can now make changes over MCP, and the `ot` command is ready to be driven by coding agents. All of it is off until the owner turns it on; nothing is sent anywhere before that. [Use AI with OpenTodo](docs/ai-and-agents.md) compares the three options.
@@ -56,6 +52,7 @@ OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat a
 
 ### Fixed
 
+- A reminder that became due while a dialog, menu or popover was open took the keyboard focus out of it. It is still announced, but focus now stays where you are.
 - Phones could keep running the previous release after an update when a CDN such as Cloudflare sat in front: it cached the service worker script for hours. Service worker scripts are now sent with `Cache-Control: no-store` (and `CDN-Cache-Control: no-store`).
 
 ## [0.2.0] - 2026-10-11
