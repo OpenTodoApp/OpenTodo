@@ -4,6 +4,17 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-12
+
+OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat assistant inside the app that answers questions about your tasks and proposes changes you review and undo in one step, with Anthropic, OpenAI, Gemini or a model on your own network. An assistant you already use can now make changes over MCP, and the `ot` command is ready to be driven by coding agents. All of it is off until the owner turns it on; nothing is sent anywhere before that. [Use AI with OpenTodo](docs/ai-and-agents.md) compares the three options.
+
+### Upgrade notes
+
+- **Migrations `0026` and `0027`** (agent tokens and switches; assistant consent and usage) are applied automatically at startup. Back up `/data` before upgrading: there are no down-migrations. No new environment variables are required; `OPENTODO_MCP_WRITES` is optional.
+- **Image tags.** The release publishes `ghcr.io/pixari/opentodo:0.3.0` and `:0.3` for `linux/amd64` and `linux/arm64` (`:latest` follows `main`). The Coolify template now follows `:0.3`; if you use `:0.2`, change the tag in **Edit Compose file** and click **Deploy**.
+- **`ot` scripts:** destructive commands now need `--yes` off a terminal, and refusals exit 5 instead of 1 (see Breaking below).
+- **Binary size.** The server binary grows from about 17 MB to about 23 MB, mostly the official Anthropic SDK used by the assistant.
+
 ### Breaking
 
 - **`ot`: destructive commands need `--yes` without a terminal.** `ot rm`, `ot project rm`, `ot token revoke` and `ot auth logout` used to proceed silently when stdout was not a terminal or `--json` was given. They now refuse with exit code 2 (`confirmation_required`) before sending anything. **Migration:** add `--yes` to scripts and cron jobs that delete on purpose, e.g. `ot rm "$ID" --yes`. On a terminal without `--json` they still ask. ([CLI](docs/cli.md#migrating-scripts))
@@ -219,6 +230,7 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/pixari/opentodo/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/pixari/opentodo/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/pixari/opentodo/releases/tag/v0.1.0
