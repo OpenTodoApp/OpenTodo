@@ -50,7 +50,7 @@ func (s *Server) webhookError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusNotFound, "not_found", "webhook not found")
 	case errors.Is(err, webhook.ErrPrivateTarget):
 		writeError(w, http.StatusBadRequest, "private_target",
-			"url: the target resolves to a private, loopback or link-local address; the server owner can allow private network targets in Settings → Webhooks")
+			"url: the target resolves to a private, loopback or link-local address; the server owner can allow private network targets in Settings → Integrations → Webhooks")
 	case errors.Is(err, webhook.ErrLimit):
 		writeError(w, http.StatusConflict, "limit_reached", "at most 20 webhooks per account")
 	case errors.Is(err, webhook.ErrInvalid):

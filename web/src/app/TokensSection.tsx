@@ -24,7 +24,7 @@ export function TokensView(p: TokensViewProps) {
         Use a token from scripts or a CLI: <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">Authorization: Bearer &lt;token&gt;</code>.
         A read-only token can read everything you can but is refused on every change. A token for an AI assistant
         that can make changes reads like a read-only token and can change tasks only through the assistant (MCP) write
-        tools, and only while the server owner and you allow assistant changes in AI assistants above; it can never
+        tools, and only while the server owner and you allow assistant changes in Settings → AI → AI assistants; it can never
         create tokens or change settings. See docs/api.md and docs/mcp.md.
       </p>
       <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); p.onCreate() }}>

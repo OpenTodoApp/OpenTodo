@@ -34,7 +34,7 @@ export function AssistantConsent({ status, connected, busy, error, onAccept }: C
       </div>
       <p className="text-muted">
         In shared projects this includes text other members wrote. Changes are only proposed: nothing in your tasks changes until you review and apply them, and you can undo them.
-        Conversations stay on this device. You can withdraw consent in Settings → Assistant.
+        Conversations stay on this device. You can withdraw consent in Settings → AI → Assistant.
       </p>
       {status.allow_member_keys && (
         <label className="block">
