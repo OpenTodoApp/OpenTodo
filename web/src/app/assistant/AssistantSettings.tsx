@@ -10,6 +10,7 @@ import { useOnline } from '../../lib/online'
 import { HelpHeading } from '../help/HelpLink'
 
 const LABEL: Record<ProviderName, string> = { anthropic: 'Anthropic (Claude)', openai: 'OpenAI', gemini: 'Google Gemini', compatible: 'Compatible endpoint (Ollama, LM Studio, OpenRouter, …)' }
+const SHORT: Record<ProviderName, string> = { anthropic: 'Anthropic (Claude)', openai: 'OpenAI', gemini: 'Google Gemini', compatible: 'Compatible endpoint' }
 /** Pre-filled suggestions the owner can change; only the Anthropic default is built into the server. */
 const MODEL_HINT: Record<ProviderName, string> = { anthropic: 'claude-opus-5-5', openai: 'a model id from your OpenAI account', gemini: 'a Gemini model id', compatible: 'the model name your server serves' }
 
@@ -73,8 +74,8 @@ export function OwnerAssistantSettings(p: OwnerViewProps) {
       </label>
       <label className="block text-sm">
         <span className="font-medium">Provider everyone uses</span>
-        <select className="input mt-1 max-w-sm" value={d.default_provider} disabled={off} onChange={(e) => set({ default_provider: e.target.value as ProviderName })}>
-          {PROVIDERS.map((n) => <option key={n} value={n}>{LABEL[n]}</option>)}
+        <select className="input mt-1 min-w-0 max-w-full sm:max-w-sm" value={d.default_provider} disabled={off} onChange={(e) => set({ default_provider: e.target.value as ProviderName })}>
+          {PROVIDERS.map((n) => <option key={n} value={n}>{SHORT[n]}</option>)}
         </select>
         <span className="mt-1 block text-xs text-muted">Changing it asks every person to accept the disclosure again.</span>
       </label>

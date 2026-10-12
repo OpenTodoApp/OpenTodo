@@ -60,9 +60,15 @@ export async function refreshAssistantStatus(): Promise<AssistantStatus | null> 
 }
 
 export function setAssistantStatus(next: AssistantStatus): void {
+  // Unchanged status: no re-render of the shell (the header stays put).
+  if (status && JSON.stringify(status) === JSON.stringify(next)) return
   status = next
   emit()
-  void setMeta(KEY, next).catch(() => {})
+  // Write the offline copy only when it differs, so other live queries on the
+  // meta table are not woken on every launch.
+  void getMeta<AssistantStatus | null>(KEY, null)
+    .then((cached) => (JSON.stringify(cached) === JSON.stringify(next) ? undefined : setMeta(KEY, next)))
+    .catch(() => {})
 }
 
 export function assistantStatus(): AssistantStatus | null {
