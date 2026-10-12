@@ -55,7 +55,7 @@ Every day at 03:00 UTC, and at startup when the last reset predates the most rec
 - **THEN** it deletes all sandboxes before serving requests
 
 ### Requirement: Restricted features
-With demo mode on, requests to sign-up, invitations, user administration, password change or reset, API tokens, app passwords, CalDAV, passkeys, two-factor, server settings, backups, webhooks, email to task, import, end-to-end encryption, web push, sharing changes and MCP SHALL be refused with 403 `demo_restricted` before authentication. The server SHALL make no outbound request. Rate limits SHALL stay.
+With demo mode on, requests to sign-up, invitations, user administration, password change or reset, API tokens, app passwords, CalDAV, passkeys, two-factor, server settings, backups, webhooks, email to task, import, end-to-end encryption, web push, sharing changes, MCP and the in-app assistant SHALL be refused with 403 `demo_restricted` before authentication. The server SHALL make no outbound request. Rate limits SHALL stay.
 
 #### Scenario: Refused while signed in
 - **WHEN** the signed-in demo account POSTs to `/api/v1/tokens`
@@ -68,6 +68,10 @@ With demo mode on, requests to sign-up, invitations, user administration, passwo
 #### Scenario: Everyday use allowed
 - **WHEN** the demo account creates, edits, completes and deletes tasks, syncs or exports
 - **THEN** the requests succeed as on any instance
+
+#### Scenario: Assistant refused
+- **WHEN** a demo account calls `POST /api/v1/assistant/turn` or `PUT /api/v1/me/assistant`
+- **THEN** the response is 403 `demo_restricted`, no provider is contacted, and the app shows that the assistant is not available on the demo
 
 #### Scenario: Demo mode off
 - **WHEN** demo mode is off

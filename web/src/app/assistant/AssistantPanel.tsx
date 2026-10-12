@@ -466,7 +466,7 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
         <div className="space-y-1">
           <Composer draft={draft} onDraft={setDraft} onSend={() => void send()} onStop={() => abort.current?.abort()} streaming={!!streaming} connected={connected} disabled={!ready} />
           <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs text-faint">
-            <span>{!connected ? OFFLINE_MESSAGE : status ? `${status.provider_label}${status.model ? ` · ${status.model}` : ''}` : ''}</span>
+            <span>{!connected ? OFFLINE_MESSAGE : status ? `${status.provider === 'compatible' ? 'Model server' : status.provider_label}${status.model ? ` · ${status.model}` : ''}` : ''}</span>
             {threads && <button type="button" className="btn-ghost touch-target px-2 text-xs" onClick={() => void clearAll()}>Clear conversations</button>}
           </div>
         </div>

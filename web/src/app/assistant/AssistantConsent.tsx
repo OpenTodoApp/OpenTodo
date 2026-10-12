@@ -23,7 +23,7 @@ export function AssistantConsent({ status, connected, busy, error, onAccept }: C
       {changed && <p className="rounded-md bg-amber-50 p-2 text-amber-900 dark:bg-amber-950 dark:text-amber-100">The server owner changed the model provider. Read what is sent now and accept again.</p>}
       <p>
         To answer, the assistant sends what you type and the task data it needs to <strong>{status.provider_label}</strong>
-        {status.model ? <> (model <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{status.model}</code>)</> : null}, chosen by your server owner.
+        {status.model ? <> (model <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{status.model}</code>)</> : null}. Your server owner chose it.
         Nothing is sent before you accept.
       </p>
       <div>

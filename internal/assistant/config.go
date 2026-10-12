@@ -125,7 +125,7 @@ func ProviderLabel(name string) string {
 	case Gemini:
 		return "Google Gemini"
 	case Compatible:
-		return "a compatible endpoint chosen by the server owner"
+		return "the model server your server owner set up"
 	}
 	return name
 }
