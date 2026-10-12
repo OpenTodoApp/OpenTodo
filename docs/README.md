@@ -24,6 +24,7 @@ The same guides are published, with screenshots and search, at [opentodo.pixari.
 | [Sharing and comments](sharing.md) | Roles, invitations, assignments, comments and the activity feed |
 | [Notifications](notifications.md) | The bell, reminder pop-ups and push notifications |
 | [Offline and sync](offline-and-sync.md) | Working offline, the sync status and several devices |
+| [Use AI with OpenTodo](ai-and-agents.md) | The three ways to bring an AI assistant (in the app, MCP, the `ot` CLI), which to pick, and what each can see and change |
 | [AI assistant](assistant.md) | The in-app assistant: asking, reviewing and applying proposed changes, undo, what is sent, owner setup |
 | [Keyboard shortcuts](keyboard.md) | Every shortcut, generated from the app, and Vim keybindings |
 | [Account security](account-security.md) | Passkeys, two-factor authentication, password and sign-ins |

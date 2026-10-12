@@ -60,8 +60,9 @@ If OpenTodo looks useful to you, a ⭐ on GitHub helps other people find it.
 - **No subscription, no lock-in.** Free software under the AGPL. Nobody can paywall your task list or shut it down with the company.
 - **Works offline, on every device.** Each phone and computer keeps a full copy of your data (local-first), so the app works with no connection at all. The server syncs, backs up and shares; it is never in the way of an edit.
 - **Your data, one folder.** Everything lives in one `/data` volume around a single SQLite file. Export to JSON at any time, import it (or a CSV, or another app's export) on any instance, and schedule encrypted backups to disk, S3 or WebDAV.
-- **Tiny footprint.** One container, one static binary of about 17 MB with the web app inside, around 20 MB of memory when idle. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no mandatory configuration.
+- **Tiny footprint.** One container, one static binary of about 23 MB with the web app inside, around 20 MB of memory when idle. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no mandatory configuration.
 - **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts or fonts. The server only contacts what you configure (see [Privacy](#privacy)).
+- **Bring your own AI, if you want it.** Plan and change tasks by talking to the assistant in the app (Anthropic, OpenAI, Gemini or a model on your own network), connect the assistant you already use over MCP, or let a coding agent drive the `ot` CLI. Off by default, every change recorded and undoable, no AI vendor built in. See [Use AI with OpenTodo](docs/ai-and-agents.md).
 - **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today, `?` for the full list, and optional Vim keybindings.
 - **Built in the open with specs.** Every feature starts as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change under [`openspec/`](openspec/), so behaviour is documented before it is built.
 
@@ -269,6 +270,7 @@ Read the docs with screenshots and search at **[opentodo.pixari.dev/docs](https:
 - **Start here**: [getting started](docs/getting-started.md) · [installing the app](docs/install-app.md) · [all user guides](docs/README.md#using-opentodo)
 - **Reference**: [quick add](docs/quick-add.md) · [filters and saved views](docs/filters.md) · [recurring tasks](docs/recurrence.md) · [reminders](docs/reminders.md) · [capture](docs/capture.md) · [import](docs/import.md) · [end-to-end encryption](docs/e2ee.md)
 - **Self-hosting**: [Docker](docs/self-hosting/docker.md) · [Coolify](docs/self-hosting/coolify.md) · [single sign-on](docs/self-hosting/sso.md) · [public demo instance](docs/self-hosting/demo.md) · [backups](docs/backups.md) · [email to task](docs/email.md) · [calendar apps (CalDAV)](docs/caldav.md)
+- **AI**: [overview: which option to pick](docs/ai-and-agents.md) · [assistant in the app](docs/assistant.md) · [MCP](docs/mcp.md) · [`ot` for agents](docs/cli.md#using-ot-from-an-agent)
 - **Integrations**: [REST API](docs/api.md) · [CLI](docs/cli.md) · [webhooks](docs/webhooks.md) · [AI assistant in the app](docs/assistant.md) · [AI assistants (MCP)](docs/mcp.md)
 - **Internals**: [architecture](docs/architecture.md) · [sync protocol](docs/sync.md)
 - **Project**: [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security](SECURITY.md) · [contributing](CONTRIBUTING.md)

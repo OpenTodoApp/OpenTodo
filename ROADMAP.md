@@ -12,7 +12,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | --- | --- | --- |
 | Local-first storage, works fully offline, installable PWA | `bootstrap-core-platform` | IndexedDB is the source of truth on each device |
 | Conflict-free multi-device sync | `bootstrap-core-platform` | Field-level last-writer-wins op log, convergent by construction. See [docs/sync.md](docs/sync.md) |
-| Single small container, runs on a Raspberry Pi | `bootstrap-core-platform` | Static Go binary of about 17 MB with the web app embedded, distroless image under 25 MB |
+| Single small container, runs on a Raspberry Pi | `bootstrap-core-platform` | Static Go binary of about 23 MB with the web app embedded, distroless image of about 25 MB |
 | Keyboard navigation (q, j/k, c, 1–4, g+key, ?) | `bootstrap-core-platform` | |
 | Live push of changes between devices | `realtime-sync-channel` | Server-sent event wake-ups; the protocol stays op-based, polling is the fallback |
 | Rich text with collaborative editing for task notes | `collaborative-rich-text` | Yjs document in `task.notes_doc`, editor lazy-loaded; comments stay Markdown |

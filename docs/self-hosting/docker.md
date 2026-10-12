@@ -193,4 +193,4 @@ The command needs only the data volume: shell access to the host is the proof of
 
 ## Resource usage
 
-Idle memory is around 20 MB (18 MB measured on a fresh instance); the static binary is about 17 MB with the web app embedded, and the image adds only the distroless base (about 2 MB). A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty.
+Idle memory is around 20 MB (18 MB measured on a fresh instance); the static binary is about 23 MB with the web app embedded, and the image adds only the distroless base (about 2 MB). A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty.
