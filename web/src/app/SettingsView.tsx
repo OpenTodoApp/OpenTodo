@@ -24,6 +24,7 @@ import { joinList, resolveSection, SETTINGS_SECTIONS, visibleSections } from './
 import { TokensSection } from './TokensSection'
 import { WebhooksPanel } from './WebhooksPanel'
 import { CaldavPanel } from './CaldavPanel'
+import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
 import { setStartView, type StartView } from '../lib/views'
 import { useStartView, useViews } from './useViews'
@@ -91,6 +92,8 @@ function SettingsOverview({ user, headingRef }: { user: User; headingRef: RefObj
         </div>
         <ProfileLine user={user} />
       </section>
+
+      <ConfigWarningsNotice user={user} />
 
       <nav aria-label="Settings sections">
         <ul className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
@@ -206,6 +209,7 @@ function SectionContent({ id, user, onLogout }: { id: SettingsSectionId; user: U
     case 'admin':
       return (
         <>
+          <ConfigWarningsNotice user={user} />
           <AdministrationSections user={user} />
           {isOwner && <SsoPanel />}
         </>
