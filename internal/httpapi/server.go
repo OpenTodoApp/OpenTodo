@@ -101,6 +101,8 @@ type Server struct {
 	// assistant.go. assistantSetup lets tests adjust it once built.
 	assistant      *assistant.Service
 	assistantSetup func(*assistant.Service)
+	// assistantTestLimiter limits members' own connection tests (assistant-member-provider).
+	assistantTestLimiter *rateLimiter
 	// idemSalt makes Idempotency-Key ids unguessable (agent-ready-cli D5);
 	// see idempotency.go.
 	idemSalt string
