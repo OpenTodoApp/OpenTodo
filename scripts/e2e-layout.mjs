@@ -177,6 +177,9 @@ async function openSidebar(p) {
   const burger = p.getByRole('button', { name: 'Open menu' })
   if (await burger.isVisible()) { await burger.click(); await p.waitForTimeout(350) }
 }
+// Serialises assistant turns across parallel viewports (see 'assistant-review').
+let assistantTurnLock = Promise.resolve()
+
 const OVERLAYS = {
   async notifications(p) {
     const trigger = p.locator('[data-notifications]')
@@ -315,14 +318,26 @@ const OVERLAYS = {
     await trigger.click()
     return { overlay: p.locator('[data-assistant-panel]'), trigger, kind: 'dialog' }
   },
+  // Viewports run in parallel as the same user and the server allows one turn
+  // per user at a time (409 turn_in_progress), so turns take a shared lock
+  // until the answer has finished streaming.
   async 'assistant-review'(p) {
-    await p.keyboard.press('Shift+I')
-    const panel = p.locator('[data-assistant-panel]')
-    await panel.waitFor()
-    await panel.locator('[data-assistant-composer]').fill('Move everything overdue to Friday')
-    await p.keyboard.press('Enter')
-    await panel.locator('[data-assistant-review]').waitFor({ timeout: 20000 })
-    return { overlay: panel, kind: 'dialog', after: async () => { if (await panel.isVisible()) await p.keyboard.press('Escape') } }
+    let release
+    const prev = assistantTurnLock
+    assistantTurnLock = new Promise((r) => { release = r })
+    await prev
+    try {
+      await p.keyboard.press('Shift+I')
+      const panel = p.locator('[data-assistant-panel]')
+      await panel.waitFor()
+      await panel.locator('[data-assistant-composer]').fill('Move everything overdue to Friday')
+      await p.keyboard.press('Enter')
+      await panel.locator('[data-assistant-review]').waitFor({ timeout: 20000 })
+      await panel.locator('[aria-busy="true"]').waitFor({ state: 'detached', timeout: 10000 }).catch(() => {})
+      return { overlay: panel, kind: 'dialog', after: async () => { if (await panel.isVisible()) await p.keyboard.press('Escape') } }
+    } finally {
+      release()
+    }
   },
   async 'delete-user'(p) {
     const del = p.getByRole('button', { name: 'Delete', exact: true }).first()
