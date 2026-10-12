@@ -51,8 +51,5 @@ ENV OPENTODO_ADDR=:8080 \
 VOLUME ["/data"]
 EXPOSE 8080
 USER nonroot:nonroot
-# --start-interval probes every 2 s while starting, so rolling updates (Coolify's Dockerfile and
-# Docker Image build packs read these flags) see a healthy container within seconds. Keep it after
-# --interval: Coolify finds the interval with the pattern "--interval=".
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --start-interval=2s --retries=3 CMD ["/opentodo", "healthcheck"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/opentodo", "healthcheck"]
 ENTRYPOINT ["/opentodo"]

@@ -12,7 +12,6 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Changed
 
 - Images built from source by Coolify report `dev+<commit>` instead of `dev` when the application's **Source commit availability** is *Available during build* (the Dockerfile reads `SOURCE_COMMIT`).
-- The image's health check probes every 2 s while the container starts (`--start-interval=2s`), so Coolify's rolling updates (Dockerfile and Docker Image build packs) see the new container healthy within seconds instead of sometimes waiting another 30 s.
 - Coolify guide: which resource types roll and which recreate, why plain **Restart** and API deploys keep a cached image, first-visit owner setup, domains and passkeys, Cloudflare (proxy and Tunnel, Browser Cache TTL), and Coolify volume backups.
 
 ### Fixed

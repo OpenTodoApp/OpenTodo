@@ -15,7 +15,6 @@ What the template does: it pulls the `0.2` image line (patch releases arrive on 
 | --- | --- |
 | `opentodo.yaml`, `opentodo.svg` | The template and logo. Edit these. |
 | `upstream/` | Ready to submit: byte-identical copies at the paths they take in `coollabsio/coolify`, a draft docs page for `coollabsio/coolify-docs`, `PR.md` (title and body) and `HOW-TO-SUBMIT.md` (test first, then submit). |
-| `ANALYSIS.md` | How well OpenTodo fits Coolify, checked against Coolify's source, and what to improve. |
 
 `make check` runs `scripts/coolify-template-check.mjs`. It fails when the template breaks Coolify's conventions, when its tag does not match the latest release in `CHANGELOG.md`, when it names an `OPENTODO_*` variable the server does not read, or when the upstream copies differ. With Docker it also validates the file with `docker compose config`. `make coolify-smoke` starts the image the way Coolify does and checks the health check, the owner setup, closed sign-up, the https base URL and data surviving a redeploy.
 
