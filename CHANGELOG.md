@@ -56,6 +56,7 @@ OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat a
 
 ### Fixed
 
+- A reminder that became due while a dialog, menu or popover was open took the keyboard focus out of it. It is still announced, but focus now stays where you are.
 - Phones could keep running the previous release after an update when a CDN such as Cloudflare sat in front: it cached the service worker script for hours. Service worker scripts are now sent with `Cache-Control: no-store` (and `CDN-Cache-Control: no-store`).
 
 ## [0.2.0] - 2026-10-11

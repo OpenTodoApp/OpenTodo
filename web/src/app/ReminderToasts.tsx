@@ -47,13 +47,10 @@ export function ReminderToasts() {
     }
   }, [])
 
-  // Move focus to a newly arrived reminder, unless the user is typing somewhere.
+  // Move focus to a newly arrived reminder, unless the user is typing somewhere
+  // or working in an open dialog, menu or popover (the toast is still announced).
   useEffect(() => {
-    if (due.length > seenCount.current) {
-      const active = document.activeElement as HTMLElement | null
-      const typing = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable)
-      if (!typing) firstButton.current?.focus()
-    }
+    if (due.length > seenCount.current && !keepFocus(document.activeElement as HTMLElement | null)) firstButton.current?.focus()
     seenCount.current = due.length
   }, [due])
 
@@ -157,4 +154,11 @@ async function handleWorkerMessage(data: WorkerMessage, w: Watcher): Promise<voi
       return
     }
   }
+}
+
+/** Whether a newly arrived reminder must leave focus where it is. */
+export function keepFocus(active: Pick<HTMLElement, 'tagName' | 'isContentEditable' | 'closest'> | null): boolean {
+  if (!active || active.tagName === 'BODY') return false
+  if (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable) return true
+  return active.closest('[role="dialog"], [role="menu"], [role="listbox"], [aria-modal="true"]') !== null
 }
