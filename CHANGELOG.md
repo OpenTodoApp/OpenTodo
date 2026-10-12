@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **An invalid `OPENTODO_TRUSTED_PROXIES` entry no longer stops the server.** A typo such as `cloudflar` used to fail startup, so the health check failed and Coolify rolled the deploy back with the cause only in the container log. Now the server starts, ignores the invalid entries (keeping the valid ones; with none valid it behaves as unset, so trust is never widened), logs one error line naming them with a "did you mean cloudflare?" hint, and shows the owner a **Server configuration warning** at the top of **Settings** and **Settings → Administration**. Entries may also be separated by spaces. `GET /api/v1/me` gains an additive `config_warnings` array for the owner's session only. Every other invalid variable still stops startup. ([Behind a reverse proxy](docs/self-hosting/docker.md#behind-a-reverse-proxy))
+
 ## [0.3.0] - 2026-10-12
 
 OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat assistant inside the app that answers questions about your tasks and proposes changes you review and undo in one step, with Anthropic, OpenAI, Gemini or a model on your own network. An assistant you already use can now make changes over MCP, and the `ot` command is ready to be driven by coding agents. All of it is off until the owner turns it on; nothing is sent anywhere before that. [Use AI with OpenTodo](docs/ai-and-agents.md) compares the three options. Settings is also split into sections with their own pages, so things are easier to find.
