@@ -239,6 +239,18 @@ export interface Change {
   patch: Record<string, unknown>
 }
 
+/** Where a batch comes from: the user's own edit, or an in-app assistant proposal they confirmed. */
+export interface MutateOptions {
+  /** 'assistant' stamps device assistant:<device-id> (in-app-assistant D1): history labels it "Assistant". */
+  origin?: 'assistant'
+}
+
+/** The op device of a batch with this origin. */
+export async function deviceFor(opts: MutateOptions = {}): Promise<string> {
+  const id = await getDeviceId()
+  return opts.origin === 'assistant' ? `assistant:${id}` : id
+}
+
 /** Tables a read-modify-write helper must lock to wrap mutate()/mutateMany() in one transaction. */
 export function mutationTables() {
   return [...entityTables(), db.outbox, db.meta]
@@ -251,9 +263,9 @@ export function mutationTables() {
  * read the current row first (e.g. the task label array) wrap the read and this call in
  * `db.transaction('rw', mutationTables(), …)` after awaiting getDeviceId() once.
  */
-export async function mutateMany(changes: Change[]): Promise<void> {
+export async function mutateMany(changes: Change[], opts: MutateOptions = {}): Promise<void> {
   checkEncryptedSize(changes)
-  const device = await getDeviceId()
+  const device = await deviceFor(opts)
   changes = [...changes, ...(await reminderFollowUps(changes))]
   if (!changes.some((c) => Object.keys(c.patch).length > 0)) return
   const rt = await richTextFor(changes)

@@ -98,6 +98,23 @@ Push is the only outbound traffic that is on by default (webhooks, backups to S3
 
 The [MCP endpoint](../mcp.md) at `/mcp` is off until the owner enables it in **Settings → AI assistants** (or `OPENTODO_MCP=true` presets it on the first start). It is read-only unless the owner also allows assistant changes (`OPENTODO_MCP_WRITES=true` presets that on the first start) and a user allows them for their account. It needs no extra port or container: assistants reach it through the same URL and reverse proxy as the app, with an API token in the `Authorization` header. Proxies that buffer or rewrite requests need nothing special, since every answer is a plain JSON response (no event stream). The server makes no outbound request for it. If your proxy logs request headers, exclude `Authorization`.
 
+## In-app assistant
+
+The [assistant](../assistant.md) is off until the owner turns it on in **Settings → Assistant**. There is no environment variable for it: providers, models and keys are set in Settings, and keys are stored in `/data/secrets/assistant.json` (mode 0600), which backups never include. While it is off, the server makes no request to any model provider.
+
+When it is on, the server makes outbound HTTPS requests only to the provider the owner enabled and only while someone is waiting for an answer (plus **Test connection**, owner only):
+
+| Provider | Host |
+| --- | --- |
+| Anthropic | `api.anthropic.com` |
+| OpenAI | `api.openai.com` |
+| Google Gemini | `generativelanguage.googleapis.com` |
+| Compatible endpoint | the base URL the owner entered |
+
+If your host restricts outbound traffic, allow that one host. Requests to the three built-in hosts honour the usual `HTTPS_PROXY` environment variable. A compatible base URL is checked like a webhook target: it is resolved before every connection, private, loopback, link-local and cloud-metadata addresses are refused unless the owner ticks **Allow private endpoints** (needed for Ollama or LM Studio on your network), the connection goes to the address that was checked, redirects are never followed, and no proxy is used. Requests carry the conversation and the task data the assistant reads, nothing about your instance or other users.
+
+The answer streams to the browser as server-sent events on `POST /api/v1/assistant/turn`, like the live updates stream: a proxy that buffers responses delays the answer until it is complete (see [Live updates through the proxy](#live-updates-through-the-proxy) for the same settings). The server logs one line per answer with the provider, outcome, duration and token counts, never questions, answers or task text. Turns are limited to 8 at a time on the server, one per person, and each person's monthly token allowance.
+
 ## Bind mounts
 
 The container runs as uid 65532 (distroless `nonroot`). A bind-mounted data directory must be writable by that user:

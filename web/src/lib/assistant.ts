@@ -1,0 +1,487 @@
+// In-app assistant data layer (OpenSpec change `in-app-assistant`), loaded with
+// the assistant chunk: the turn stream client (server-sent events over fetch),
+// change-set review with "changed since proposed" detection, apply through
+// mutateMany with device assistant:<device-id>, one-step undo, the auto-apply
+// rule, sentence chunks for the live region, and the device-local threads.
+// The server never applies a proposal; this module does, after review.
+import { ApiError } from './api'
+import { db, getMeta, setMeta, type AssistantMessage, type AssistantThread, type AssistantUndo } from './db'
+import { mutateMany, type Change } from './ops'
+import { syncNow } from './sync'
+import type { Entity, Label, Project, Section, Task } from './types'
+import type { ProposedChange, TurnEvent } from './assistantTypes'
+
+// ------------------------------------------------------------------ stream
+
+/** Parses a server-sent event stream fed in arbitrary chunks. */
+export class SSEParser {
+  private buf = ''
+  private event = 'message'
+  private data: string[] = []
+
+  feed(chunk: string): TurnEvent[] {
+    this.buf += chunk
+    const out: TurnEvent[] = []
+    let nl: number
+    while ((nl = this.buf.indexOf('\n')) >= 0) {
+      let line = this.buf.slice(0, nl)
+      this.buf = this.buf.slice(nl + 1)
+      if (line.endsWith('\r')) line = line.slice(0, -1)
+      if (line === '') {
+        if (this.data.length) {
+          try {
+            out.push({ type: this.event, ...JSON.parse(this.data.join('\n')) } as TurnEvent)
+          } catch {
+            // A malformed event is skipped.
+          }
+        }
+        this.event = 'message'
+        this.data = []
+      } else if (line.startsWith('event:')) this.event = line.slice(6).trim()
+      else if (line.startsWith('data:')) this.data.push(line.slice(5).trimStart())
+    }
+    return out
+  }
+}
+
+export interface TurnRequest {
+  messages: { role: 'user' | 'assistant'; text: string }[]
+  timezone: string
+  view?: string
+  selected?: string[]
+}
+
+/**
+ * Runs one turn: uploads pending local edits first (so the server reads what
+ * the user sees), then streams the answer. Throws ApiError when the server
+ * refuses the turn before streaming (consent, quota, size, busy, …).
+ */
+export async function streamTurn(req: TurnRequest, onEvent: (e: TurnEvent) => void, signal?: AbortSignal): Promise<void> {
+  await Promise.race([syncNow().catch(() => {}), new Promise((r) => setTimeout(r, 4000))])
+  const res = await fetch('/api/v1/assistant/turn', {
+    method: 'POST', credentials: 'same-origin', signal,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  })
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => ({}))
+    const err = (data as { error?: { code: string; message: string } }).error
+    throw new ApiError(res.status, err?.code ?? 'error', err?.message ?? res.statusText)
+  }
+  const reader = res.body.getReader()
+  const dec = new TextDecoder()
+  const parser = new SSEParser()
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    for (const ev of parser.feed(dec.decode(value, { stream: true }))) onEvent(ev)
+  }
+  for (const ev of parser.feed(dec.decode() + '\n\n')) onEvent(ev)
+}
+
+/** Messages of a turn: the last 40 at most and about 200 KB, older ones summarised in one line. */
+export function turnMessages(history: AssistantMessage[], question: string): TurnRequest['messages'] {
+  const all = [...history.filter((m) => m.text && !m.error && m.stop !== 'refusal').map((m) => ({ role: m.role, text: m.text })), { role: 'user' as const, text: question }]
+  const out: TurnRequest['messages'] = []
+  let bytes = 0
+  for (let i = all.length - 1; i >= 0; i--) {
+    const size = all[i].text.length * 3
+    if (out.length >= 39 || bytes + size > 200_000) {
+      out.unshift({ role: 'user', text: `(${i + 1} earlier message${i ? 's were' : ' was'} left out of this conversation.)` })
+      break
+    }
+    bytes += size
+    out.unshift(all[i])
+  }
+  // The server wants alternation to start with the user; it joins repeats itself.
+  while (out.length && out[0].role !== 'user') out.shift()
+  return out
+}
+
+/** Splits streamed text at the last sentence boundary: [complete sentences, rest]. */
+export function takeSentences(buffer: string): [string, string] {
+  const re = /[.!?…](?:["'”’)\]]*)(?=\s)|\n/g
+  let end = -1
+  let m: RegExpExecArray | null
+  while ((m = re.exec(buffer))) end = m.index + m[0].length
+  if (end < 0) return ['', buffer]
+  return [buffer.slice(0, end).trim(), buffer.slice(end).replace(/^\s+/, '')]
+}
+
+// ------------------------------------------------------------------ review
+
+export type ItemState = 'ok' | 'stale'
+
+export interface ReviewItem {
+  change: ProposedChange
+  state: ItemState
+  /** Unchecked items are not applied; stale items start unchecked. */
+  checked: boolean
+  /** The entity in words ("Water plants", "New project Garden"). */
+  title: string
+  /** Each change in words ("Due Wed 14 Oct → Fri 16 Oct"). */
+  lines: string[]
+  shared: boolean
+}
+
+export interface Review {
+  items: ReviewItem[]
+  /** Items dropped because the entity is gone on this device. */
+  dropped: string[]
+}
+
+function tableOf(entity: Entity) {
+  switch (entity) {
+    case 'project': return db.projects
+    case 'label': return db.labels
+    case 'section': return db.sections
+    case 'comment': return db.comments
+    case 'reminder': return db.reminders
+    case 'view': return db.views
+    case 'project_prefs': return db.prefs
+    default: return db.tasks
+  }
+}
+
+const norm = (v: unknown) => (v === undefined ? null : v)
+/** Value equality of field values (JSON, key order ignored). */
+export function sameValue(a: unknown, b: unknown): boolean {
+  const canon = (v: unknown): unknown => {
+    v = norm(v)
+    if (Array.isArray(v)) return v.map(canon)
+    if (v && typeof v === 'object') return Object.fromEntries(Object.keys(v as object).sort().map((k) => [k, canon((v as Record<string, unknown>)[k])]))
+    return v
+  }
+  return JSON.stringify(canon(a)) === JSON.stringify(canon(b))
+}
+
+interface Names {
+  projects: Map<string, string>
+  labels: Map<string, string>
+  sections: Map<string, string>
+  tasks: Map<string, string>
+}
+
+async function loadNames(changes: ProposedChange[]): Promise<Names> {
+  const [projects, labels, sections] = await Promise.all([db.projects.toArray(), db.labels.toArray(), db.sections.toArray()])
+  const n: Names = {
+    projects: new Map(projects.map((p: Project) => [p.id, p.name])),
+    labels: new Map(labels.map((l: Label) => [l.id, l.name])),
+    sections: new Map(sections.map((s: Section) => [s.id, s.name])),
+    tasks: new Map(),
+  }
+  // Entities created in the same proposal are named from their patch.
+  for (const c of changes) {
+    const name = typeof c.patch.name === 'string' ? c.patch.name : ''
+    if (c.entity === 'project' && name) n.projects.set(c.entityId, name)
+    if (c.entity === 'label' && name) n.labels.set(c.entityId, name)
+    if (c.entity === 'task' && typeof c.patch.title === 'string') n.tasks.set(c.entityId, c.patch.title)
+  }
+  return n
+}
+
+const DAY = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
+
+/** A floating due date in words: "Fri 16 Oct", "Fri 16 Oct 09:00", "none". */
+export function dueWords(due: unknown): string {
+  const d = due as { date?: string; time?: string } | null
+  if (!d || !d.date) return 'none'
+  const [y, m, day] = d.date.split('-').map(Number)
+  const text = Number.isFinite(y) ? DAY.format(new Date(Date.UTC(y, m - 1, day))).replace(',', '') : d.date
+  return d.time ? `${text} ${d.time}` : text
+}
+
+const clip = (s: string, n = 80) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
+
+/** Every field change of one proposed change, in words. */
+export function describe(c: ProposedChange, local: Record<string, unknown> | undefined, names: Names): { title: string; lines: string[] } {
+  const p = c.patch
+  const base = { ...(local ?? {}), ...(c.base ?? {}) } as Record<string, unknown>
+  const project = (id: unknown) => (id ? names.projects.get(String(id)) ?? 'a project' : 'Inbox')
+  if (c.create) {
+    switch (c.entity) {
+      case 'project': return { title: `New project: ${String(p.name ?? '')}`, lines: [] }
+      case 'label': return { title: `New label: ${String(p.name ?? '')}`, lines: [] }
+      case 'comment': {
+        const task = names.tasks.get(String(p.task_id)) ?? 'a task'
+        return { title: `Comment on “${clip(task, 50)}”`, lines: [clip(String(p.body ?? ''), 140)] }
+      }
+      case 'task': {
+        const lines: string[] = []
+        if (p.due) lines.push(`Due ${dueWords(p.due)}`)
+        if (p.priority && p.priority !== 4) lines.push(`Priority P${p.priority}`)
+        if (Array.isArray(p.labels) && p.labels.length) lines.push(`Labels: ${p.labels.map((id) => names.labels.get(String(id)) ?? 'a label').join(', ')}`)
+        if (p.parent_id) lines.push(`Subtask of “${clip(names.tasks.get(String(p.parent_id)) ?? 'a task', 50)}”`)
+        if (p.deleted_at) lines.push('Moved to the Trash')
+        return { title: `New task in ${project(p.project_id)}: ${String(p.title ?? '')}`, lines }
+      }
+    }
+    return { title: `New ${c.entity}`, lines: [] }
+  }
+  const title = String((local as { title?: string; name?: string } | undefined)?.title ?? (local as { name?: string } | undefined)?.name ?? `a ${c.entity}`)
+  const lines: string[] = []
+  for (const [f, v] of Object.entries(p)) {
+    const old = base[f]
+    switch (f) {
+      case 'due': lines.push(`Due ${dueWords(old)} → ${dueWords(v)}`); break
+      case 'completed_at': lines.push(v ? 'Completed' : 'Reopened'); break
+      case 'priority': lines.push(`Priority P${old ?? 4} → P${v}`); break
+      case 'project_id': lines.push(`Moved from ${project(old)} to ${project(v)}`); break
+      case 'section_id': lines.push(v ? `Section: ${names.sections.get(String(v)) ?? 'a section'}` : 'No section'); break
+      case 'labels': {
+        const before = new Set((old as string[] | null) ?? [])
+        const after = new Set((v as string[] | null) ?? [])
+        const name = (id: string) => names.labels.get(id) ?? 'a label'
+        const add = [...after].filter((x) => !before.has(x)).map((x) => `+${name(x)}`)
+        const del = [...before].filter((x) => !after.has(x)).map((x) => `−${name(x)}`)
+        lines.push(`Labels: ${[...add, ...del].join(', ') || 'unchanged'}`)
+        break
+      }
+      case 'title': case 'name': lines.push(`Renamed “${clip(String(old ?? ''), 50)}” → “${clip(String(v ?? ''), 50)}”`); break
+      case 'description': lines.push('Description changed'); break
+      case 'estimate_minutes': lines.push(v ? `Estimate ${old ? `${old} min → ` : ''}${v} min` : 'Estimate removed'); break
+      case 'recurrence': lines.push(v ? `Repeats ${v}` : 'Stops repeating'); break
+      case 'deleted_at': lines.push(v ? 'Moved to the Trash' : 'Restored'); break
+      case 'parent_id': lines.push(v ? `Subtask of “${clip(names.tasks.get(String(v)) ?? 'a task', 50)}”` : 'No longer a subtask'); break
+      case 'color': lines.push(`Colour ${String(v)}`); break
+      case 'position': case 'created_at': case 'notes_doc': break
+      default: lines.push(`${f.replace(/_/g, ' ')} changed`)
+    }
+  }
+  return { title, lines }
+}
+
+/**
+ * Prepares a proposal for review against this device's data: an item whose
+ * entity is gone is dropped with a note; one whose current value differs from
+ * the value the proposal was planned on is unchecked and marked stale
+ * ("changed since proposed").
+ */
+export async function reviewChangeSet(changes: ProposedChange[]): Promise<Review> {
+  const names = await loadNames(changes)
+  for (const c of changes) {
+    if (c.entity === 'task' && !names.tasks.has(c.entityId)) {
+      const t = await db.tasks.get(c.entityId)
+      if (t) names.tasks.set(t.id, t.title)
+    }
+    if (c.entity === 'comment' && c.patch.task_id && !names.tasks.has(String(c.patch.task_id))) {
+      const t = await db.tasks.get(String(c.patch.task_id))
+      if (t) names.tasks.set(t.id, t.title)
+    }
+  }
+  const review: Review = { items: [], dropped: [] }
+  for (const c of changes) {
+    const local = (await tableOf(c.entity).get(c.entityId)) as Record<string, unknown> | undefined
+    if (!c.create && (!local || local.deleted_at)) {
+      const { title } = describe(c, undefined, names)
+      review.dropped.push(`${title === `a ${c.entity}` ? `A ${c.entity}` : `“${title}”`} is no longer on this device, so its change was left out.`)
+      continue
+    }
+    let stale = false
+    if (!c.create) {
+      for (const [f, b] of Object.entries(c.base ?? {})) {
+        if (!sameValue(local?.[f], b)) stale = true
+      }
+    }
+    const { title, lines } = describe(c, local, names)
+    review.items.push({ change: c, state: stale ? 'stale' : 'ok', checked: !stale, title, lines, shared: !!c.shared })
+  }
+  return review
+}
+
+/** Re-checks a review before applying (another device may have synced meanwhile). */
+export async function refreshReview(r: Review): Promise<Review> {
+  const fresh = await reviewChangeSet(r.items.map((i) => i.change))
+  const wasChecked = new Map(r.items.map((i) => [i.change.entity + i.change.entityId, i.checked]))
+  for (const i of fresh.items) {
+    if (i.state === 'ok') i.checked = wasChecked.get(i.change.entity + i.change.entityId) ?? true
+  }
+  return { items: fresh.items, dropped: [...r.dropped, ...fresh.dropped.filter((d) => !r.dropped.includes(d))] }
+}
+
+// ------------------------------------------------------------------ apply and undo
+
+export const UNDO_KEEP = 20
+
+/**
+ * Applies the given changes as ONE mutateMany batch with device
+ * assistant:<device-id>: locally first, queued for sync, offline-capable. The
+ * inverse (previous values; Trash for created entities) is stored first so the
+ * batch can be undone in one step.
+ */
+export async function applyChanges(changes: ProposedChange[]): Promise<AssistantUndo | null> {
+  if (changes.length === 0) return null
+  const inverse: AssistantUndo['inverse'] = []
+  for (const c of changes) {
+    if (c.create) {
+      if (!c.patch.deleted_at) inverse.push({ entity: c.entity, entityId: c.entityId, patch: { deleted_at: Date.now() }, created: true })
+      continue
+    }
+    const local = (await tableOf(c.entity).get(c.entityId)) as Record<string, unknown> | undefined
+    const patch: Record<string, unknown> = {}
+    for (const f of Object.keys(c.patch)) patch[f] = norm(local?.[f] ?? c.base?.[f])
+    inverse.push({ entity: c.entity, entityId: c.entityId, patch })
+  }
+  const batch: Change[] = changes.map((c) => ({ entity: c.entity, entityId: c.entityId, patch: { ...c.patch } }))
+  await mutateMany(batch, { origin: 'assistant' })
+  const clocks: AssistantUndo['clocks'] = []
+  for (const c of changes) {
+    const row = (await tableOf(c.entity).get(c.entityId)) as { _clock?: Record<string, { ts: number; device: string }> } | undefined
+    if (c.create) continue
+    const fields = Object.keys(c.patch)
+    for (const f of fields) {
+      const ck = row?._clock?.[f]
+      if (ck) clocks.push({ entity: c.entity, entityId: c.entityId, field: f, ts: ck.ts, device: ck.device })
+    }
+  }
+  const entry: AssistantUndo = { id: crypto.randomUUID(), created_at: Date.now(), count: changes.length, inverse, clocks }
+  await db.assistantUndo.put(entry)
+  const all = await db.assistantUndo.orderBy('created_at').reverse().primaryKeys()
+  if (all.length > UNDO_KEEP) await db.assistantUndo.bulkDelete(all.slice(UNDO_KEEP))
+  return entry
+}
+
+export interface UndoResult {
+  restored: number
+  /** Titles of items whose field was changed again after the assistant's change. */
+  skipped: string[]
+}
+
+/**
+ * Undoes one applied change set as one new batch: previous values come back,
+ * created entities go to the Trash. A field changed again since (its clock is
+ * no longer the assistant's) keeps the newer value and is named as skipped.
+ */
+export async function undoChanges(id: string): Promise<UndoResult> {
+  const entry = await db.assistantUndo.get(id)
+  if (!entry || entry.undone_at) return { restored: 0, skipped: [] }
+  const batch: Change[] = []
+  const skipped: string[] = []
+  for (const inv of entry.inverse) {
+    const row = (await tableOf(inv.entity as Entity).get(inv.entityId)) as (Record<string, unknown> & { _clock?: Record<string, { ts: number; device: string }> }) | undefined
+    const patch: Record<string, unknown> = {}
+    let skippedHere = false
+    if (inv.created) {
+      // Created by the proposal: undo moves it to the Trash (restorable).
+      if (row && !row.deleted_at) patch.deleted_at = Date.now()
+    } else {
+      for (const [f, v] of Object.entries(inv.patch)) {
+        const applied = entry.clocks.find((c) => c.entityId === inv.entityId && c.entity === inv.entity && c.field === f)
+        const now = row?._clock?.[f]
+        if (!row || !applied || !now || now.ts !== applied.ts || now.device !== applied.device) {
+          skippedHere = true
+          continue
+        }
+        patch[f] = v
+      }
+    }
+    if (skippedHere) skipped.push(String(row?.title ?? row?.name ?? `a ${inv.entity}`))
+    if (Object.keys(patch).length) batch.push({ entity: inv.entity as Entity, entityId: inv.entityId, patch })
+  }
+  if (batch.length) await mutateMany(batch, { origin: 'assistant' })
+  await db.assistantUndo.update(id, { undone_at: Date.now() })
+  return { restored: batch.length, skipped }
+}
+
+// ------------------------------------------------------------------ auto-apply
+
+/**
+ * Fields auto-apply may touch (design D2): small, reversible and never a move.
+ * Moves always need review: text in a shared task could otherwise move private
+ * tasks into a shared project, where other members would see them.
+ */
+export const AUTO_FIELDS = new Set(['completed_at', 'due', 'priority', 'labels'])
+export const AUTO_MAX = 3
+
+/** Whether a proposal may skip review when auto-apply is on. */
+export function autoApplicable(changes: ProposedChange[]): boolean {
+  if (changes.length === 0 || changes.length > AUTO_MAX) return false
+  return changes.every((c) => !c.create && c.entity === 'task' && Object.keys(c.patch).every((f) => AUTO_FIELDS.has(f)))
+}
+
+const AUTO_KEY = 'assistant.autoApply'
+
+/** Per device, off by default. */
+export async function getAutoApply(): Promise<boolean> {
+  try {
+    return await getMeta<boolean>(AUTO_KEY, false)
+  } catch {
+    return false
+  }
+}
+
+export async function setAutoApply(on: boolean): Promise<void> {
+  await setMeta(AUTO_KEY, on)
+}
+
+// ------------------------------------------------------------------ threads (device only)
+
+export const THREAD_KEEP = 50
+export const THREAD_DAYS = 30
+
+/** Saves a conversation on this device and applies retention (50 threads, 30 days). */
+export async function saveThread(t: AssistantThread): Promise<void> {
+  await db.assistantThreads.put(t)
+  await pruneThreads()
+}
+
+export async function pruneThreads(now = Date.now()): Promise<void> {
+  const cutoff = now - THREAD_DAYS * 86_400_000
+  const old = await db.assistantThreads.where('updated_at').below(cutoff).primaryKeys()
+  if (old.length) await db.assistantThreads.bulkDelete(old)
+  const keys = await db.assistantThreads.orderBy('updated_at').reverse().primaryKeys()
+  if (keys.length > THREAD_KEEP) await db.assistantThreads.bulkDelete(keys.slice(THREAD_KEEP))
+}
+
+export async function listThreads(): Promise<AssistantThread[]> {
+  return db.assistantThreads.orderBy('updated_at').reverse().toArray()
+}
+
+export async function clearThreads(): Promise<void> {
+  await db.assistantThreads.clear()
+}
+
+export function newThread(provider: string): AssistantThread {
+  const now = Date.now()
+  return { id: crypto.randomUUID(), title: 'New conversation', messages: [], created_at: now, updated_at: now, provider, usage: { input: 0, output: 0 } }
+}
+
+// ------------------------------------------------------------------ messages
+
+/** The panel's words for refused turns and stream errors. */
+export function describeTurnError(err: unknown): string {
+  if (err instanceof ApiError) {
+    switch (err.code) {
+      case 'consent_required': return 'Accept the disclosure first: the assistant sends task content to the model provider only after you agree.'
+      case 'encryption_enabled': return 'The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.'
+      case 'assistant_quota': return err.message.charAt(0).toUpperCase() + err.message.slice(1) + '.'
+      case 'turn_in_progress': return 'Another answer is still being written. Wait for it or stop it first.'
+      case 'assistant_busy': return 'The assistant is busy on this server. Try again in a few seconds.'
+      case 'too_large': return 'This conversation is too long. Start a new conversation.'
+      case 'not_found': return 'The assistant is not enabled on this server.'
+      case 'demo_restricted': return 'The assistant is not available on the demo instance.'
+      case 'no_key': return 'No API key is configured for this provider. Ask the server owner.'
+    }
+    return err.message
+  }
+  return 'The server is unreachable. The assistant needs a connection.'
+}
+
+export function describeStreamError(code: string, message: string): string {
+  switch (code) {
+    case 'provider_auth': return 'The model provider rejected the API key. The server owner can check it in Settings → Assistant.'
+    case 'provider_rate_limited': return 'The model provider is rate limiting requests. Try again in a moment.'
+    case 'timeout': return 'The answer took too long and was stopped.'
+  }
+  return message ? message.charAt(0).toUpperCase() + message.slice(1) + '.' : 'The model provider could not answer.'
+}
+
+/** "1,240 tokens · this month 18% of your limit". */
+export function usageLine(u: { input: number; output: number; month_total?: number; cap?: number }): string {
+  const n = (u.input + u.output).toLocaleString('en')
+  if (!u.cap) return `${n} tokens`
+  const pct = Math.min(100, Math.round(((u.month_total ?? 0) / u.cap) * 100))
+  return `${n} tokens · this month ${pct}% of your limit`
+}
+
+export type { Task }

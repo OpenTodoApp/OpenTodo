@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -198,5 +199,46 @@ func TestArchiveNamePattern(t *testing.T) {
 	}
 	if _, ok := archiveTime("opentodo-probe-1.txt"); ok {
 		t.Fatal("probe matched archive pattern")
+	}
+}
+
+// TestBackupExcludesAssistantSecrets (in-app-assistant): provider keys in
+// secrets/assistant.json never reach an archive.
+func TestBackupExcludesAssistantSecrets(t *testing.T) {
+	e := newTestEnv(t)
+	key, own := "sk-ant-ASSISTANT-KEY-0001", "sk-user-OWN-KEY-0002"
+	f := settings.NewSecretsFile(e.dir, "assistant")
+	if err := f.Update(map[string]*string{"operator:anthropic": &key, "user:u1:anthropic": &own}); err != nil {
+		t.Fatal(err)
+	}
+	snap, err := e.svc.snapshot(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	if err := writeArchive(&buf, snap, testManifest(), archiveOptions{extras: e.svc.extraFiles()}); err != nil {
+		t.Fatal(err)
+	}
+	tr, finish, _, err := openArchive(&buf, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var all bytes.Buffer
+	for {
+		h, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		all.WriteString(h.Name + "\n")
+		io.Copy(&all, tr)
+	}
+	_ = finish()
+	for _, needle := range []string{key, own, "assistant.json", "secrets/"} {
+		if bytes.Contains(all.Bytes(), []byte(needle)) {
+			t.Fatalf("archive contains %q", needle)
+		}
 	}
 }

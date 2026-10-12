@@ -1,4 +1,6 @@
 import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
+import type { AssistantStatus } from './assistantStatus'
+import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestResult, AssistantUsage } from './assistantTypes'
 import type { KeyRecord } from './crypto'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
@@ -293,6 +295,14 @@ export const api = {
   getWebhookPolicy: () => request<{ allowPrivate: boolean }>('GET', '/api/v1/settings/webhooks'),
   setWebhookPolicy: (allowPrivate: boolean) =>
     request<{ allowPrivate: boolean }>('PUT', '/api/v1/settings/webhooks', { allowPrivate }),
+  // In-app assistant (OpenSpec `in-app-assistant`): owner settings (keys go in,
+  // only presence flags come back), the user's consent and own key, usage.
+  getAssistantSettings: () => request<AssistantOwnerSettings | AssistantMemberSettings>('GET', '/api/v1/settings/assistant'),
+  saveAssistantSettings: (input: AssistantSettingsInput) => request<AssistantOwnerSettings>('PUT', '/api/v1/settings/assistant', input),
+  testAssistant: (provider: string) => request<AssistantTestResult>('POST', '/api/v1/settings/assistant/test', { provider }),
+  getMyAssistant: () => request<AssistantStatus>('GET', '/api/v1/me/assistant'),
+  setMyAssistant: (input: { consent?: boolean; provider?: string; own_key?: string }) => request<AssistantStatus>('PUT', '/api/v1/me/assistant', input),
+  assistantUsage: () => request<AssistantUsage>('GET', '/api/v1/me/assistant/usage'),
 }
 
 function auditQuery(f: AuditFilters): URLSearchParams {

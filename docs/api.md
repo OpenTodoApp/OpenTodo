@@ -1149,6 +1149,81 @@ curl -X POST -H "Authorization: Bearer $TOKEN" https://todo.example.com/api/v1/e
 
 Replacing the record (passphrase change, recovery reset) and `DELETE` need a fresh re-authentication on cookie sessions (403 `reauth_required`). `GET /api/v1/me` and `GET /api/v1/auth/status` carry `"encryption":{"enabled":true,"keyVersion":2}` and `"minClientVersion":1`. The export adds `"encryption"`: the key record, or `null`. Refused for encrypted accounts with 409 `encryption_enabled`: the first share of a project (`POST /api/v1/projects/{id}/members` on an unshared project) and `POST /api/v1/app-passwords`; `/dav/` answers 403. `GET /api/v1/settings/caldav` adds `"encryption": true|false` for the caller.
 
+### In-app assistant
+
+The [in-app assistant](assistant.md) (OpenSpec `in-app-assistant`). Every route requires authentication. Settings, consent and usage are server state, never ops; conversations exist only on the device. Keys are write-only: no route ever returns one.
+
+**Owner settings** — `GET /api/v1/settings/assistant` returns, for the owner:
+
+```json
+{
+  "enabled": true, "active": true, "default_provider": "anthropic",
+  "providers": {
+    "anthropic":  {"enabled": true,  "model": "claude-opus-5-5", "key_set": true,  "label": "Anthropic (Claude)"},
+    "openai":     {"enabled": false, "model": "",                "key_set": false, "label": "OpenAI"},
+    "gemini":     {"enabled": false, "model": "",                "key_set": false, "label": "Google Gemini"},
+    "compatible": {"enabled": false, "model": "", "base_url": "", "key_set": false, "label": "…"}
+  },
+  "allow_member_keys": false, "monthly_token_cap_per_user": 500000, "allow_private_endpoint": false,
+  "anthropic_models": ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"], "default_model": "claude-opus-5-5"
+}
+```
+
+Members get a status without keys or base URL: `{enabled, provider, provider_label, model, allow_member_keys, monthly_token_cap_per_user}`. `PUT` (owner only, 403 `forbidden` otherwise) takes the same fields (a provider object replaces that provider's settings) plus `keys`: `{"anthropic": "sk-…"}` sets a key, `""` removes it, an absent provider keeps it. Unknown fields are refused. Errors: 400 `invalid_input` naming the field (an unknown provider, a provider enabled without a model, a hosted provider without a key while member keys are off, the compatible provider without a valid `http(s)` base URL or with credentials in it, a disabled default provider, a negative cap); 400 `private_target` when the base URL resolves only to private, loopback, link-local or metadata addresses and `allow_private_endpoint` is off. A refused request changes nothing. Every changed value is audited as `settings.changed` (`assistant.<field>`; keys as `assistant.<provider>.key` from `unset` to `set` or back, never the value; a base URL by scheme and host only).
+
+```bash
+curl -sS -X PUT "$OT/api/v1/settings/assistant" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"enabled":true,"default_provider":"compatible","allow_private_endpoint":true,
+       "providers":{"compatible":{"enabled":true,"model":"llama3.1","base_url":"http://192.168.1.20:11434/v1"}}}'
+```
+
+**Test connection** — `POST /api/v1/settings/assistant/test` with `{"provider":"compatible"}` (owner only) sends one minimal request with one tool, using the saved settings and key, and answers 200 `{ok, code?, message, status?}`. `code` is `no_tool_support` when the endpoint refuses tool definitions but answers without them, `no_key`, `private_target`, `provider_auth`, `provider_rate_limited` or `provider_error`.
+
+**Your consent and key** — `GET /api/v1/me/assistant`:
+
+```json
+{
+  "available": true, "enabled": true, "reason": "",
+  "provider": "anthropic", "provider_label": "Anthropic (Claude)", "model": "claude-opus-5-5",
+  "consented": true, "consent": {"accepted_at": 1760000000000, "disclosure_version": 1, "provider": "anthropic"},
+  "disclosure_version": 1, "fields": ["task titles and descriptions", "…"],
+  "allow_member_keys": false, "own_key_set": false, "operator_key_set": true
+}
+```
+
+`reason` is `disabled`, `no_provider` or `encryption_enabled` when `available` is false. `consented` is true only for the current disclosure version and provider. `PUT /api/v1/me/assistant` (sessions and full tokens) takes `{"consent": true, "provider": "<the provider the disclosure named>"}`, `{"consent": false}` to withdraw, and `{"own_key": "…"}` (`""` removes it) when the owner allows member keys (403 `forbidden` otherwise; audited as `assistant.own_key.<provider>`). Errors: 409 `provider_changed` when `provider` is not the one in effect, 409 `encryption_enabled`, 409 `assistant_disabled`. Deleting an account deletes its key.
+
+**Usage** — `GET /api/v1/me/assistant/usage` → `{month, input_tokens, output_tokens, total_tokens, turns, cap, resets_at}` for the current UTC month, counted from the provider's usage fields.
+
+**A turn** — `POST /api/v1/assistant/turn`, **signed-in sessions only**:
+
+```json
+{"messages": [{"role": "user", "text": "move everything overdue to Friday"}], "timezone": "Europe/Rome", "view": "today", "selected": []}
+```
+
+`messages` is the device's conversation (at most 40, the last from the user; the whole body at most 256 KB); `timezone` is an IANA zone; `view` and `selected` are optional context. Checks, in order, before any provider request: 404 `not_found` while the assistant is off; 403 `session_required` for API tokens; 409 `encryption_enabled`; 403 `consent_required`; 413 `too_large`; 400 `invalid_input`; 429 `assistant_quota` (with `resets_at`); 409 `turn_in_progress` (one turn per person); 503 `assistant_busy` with `Retry-After` (8 turns server-wide); 409 `no_key`. Cookie requests from another origin get 403 `bad_origin`.
+
+The answer is a `text/event-stream`:
+
+```
+event: status
+data: {"text":"Looking at Today…"}
+
+event: text
+data: {"text":"I've proposed moving 12 tasks to Friday. "}
+
+event: usage
+data: {"input":2700,"output":360,"month_total":18240,"cap":500000}
+
+event: changeset
+data: {"items":[{"entity":"task","entityId":"…","patch":{"due":{"date":"2026-10-16"}},"base":{"due":{"date":"2026-10-09"}},"shared":false}],"limit":50}
+
+event: done
+data: {"stop_reason":"end_turn","server_time":"2026-10-12T10:00:00Z"}
+```
+
+`changeset` comes at most once, only after `end_turn`, with at most 50 entities: `patch` is what to write, `base` the values it was planned on (for "changed since proposed"), `create` marks new entities, `shared` marks shared projects. The server never applies it: the app applies the confirmed part as ordinary ops with device `assistant:<device-id>`, which `/api/v1/sync` accepts and history labels "Assistant". `done.stop_reason` is `end_turn`, `max_tokens` (with a `message`; no change set), `refusal` (`message`: "The model declined this request."; no change set) or `round_limit` (more than 8 model calls). A failure ends the stream with `event: error` and `{code, message}`: `provider_auth`, `provider_rate_limited`, `provider_error` or `timeout`; never a key. Usage is recorded whatever the outcome.
+
 ## Examples
 
 Create a task due tomorrow at 9:00 in a project:
@@ -1267,17 +1342,18 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | --- | --- | --- |
 | `bad_request` | 400 | malformed JSON, a JSON body over 4 MB, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
 | `invalid_input` | 400 | validation failure naming the field or parameter |
-| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type), or a device id starting with the reserved `agent:` or `caldav:`; nothing in the batch is applied |
+| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type), or a device id starting with the reserved `agent:` or `caldav:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
 | `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
 | `bad_origin` | 403 | cookie-authenticated write from another origin; any `/mcp` request whose `Origin` is not this server |
+| `session_required` | 403 | `POST /api/v1/assistant/turn` with an API token: the assistant is used from the app while signed in |
 | `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` or `agent` API token; `/api/v1/me/agent-access` with either |
 | `demo_token` | 403 | `POST /api/v1/demo/sandbox` without a valid, unused creation token |
-| `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, `/mcp`. See [demo instance](self-hosting/demo.md#what-is-switched-off) |
+| `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running |
-| `too_large` | 413 | `/mcp` body over 1 MB; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
+| `too_large` | 413 | `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
 | `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |
 | `internal` | 500 | unexpected server error (details only in the server log) |
@@ -1335,5 +1411,19 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `method_not_allowed` | 405 | `/mcp` with a method other than `POST` |
 | `not_acceptable` | 406 | `/mcp` with an `Accept` header that admits only `text/event-stream` |
 | `unsupported_protocol_version` | 400 | `/mcp` with an `MCP-Protocol-Version` header naming an unsupported version |
+
+**In-app assistant**
+
+| Code | Status | Where |
+| --- | --- | --- |
+| `consent_required` | 403 | an assistant turn before you accepted the disclosure for the current provider |
+| `encryption_enabled` | 409 | an assistant turn or consent for an end-to-end encrypted account |
+| `turn_in_progress` | 409 | a second assistant turn while your first is still answering |
+| `no_key` | 409 | an assistant turn when the provider needs a key and none is stored |
+| `provider_changed` | 409 | accepting a disclosure that named a provider no longer in effect |
+| `assistant_disabled` | 409 | accepting the disclosure while the assistant is off |
+| `assistant_quota` | 429 | an assistant turn at your monthly token allowance; `resets_at` names the reset date |
+| `assistant_busy` | 503 | 8 assistant turns already running on the server; retry after `Retry-After` |
+| `private_target` | 400 | the compatible endpoint's base URL resolves only to private addresses and private endpoints are not allowed |
 
 CalDAV (`/dav/`) answers with WebDAV status codes and precondition elements instead of this envelope; MCP tool errors are JSON-RPC errors (see [mcp.md](mcp.md#protocol-details)).

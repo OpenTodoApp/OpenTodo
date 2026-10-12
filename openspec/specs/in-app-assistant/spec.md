@@ -1,4 +1,9 @@
-## ADDED Requirements
+# in-app-assistant Specification
+
+## Purpose
+A conversational assistant inside the web app that reads the user's tasks through the shared agent tool registry and proposes changes for review, using a model provider and key the server owner (or the user) chooses. It is off by default, needs per-user consent, never applies changes on the server, applies confirmed changes as ordinary undoable ops on the device, keeps keys server-side and conversations device-local, and is unavailable for end-to-end encrypted accounts and on demo instances.
+
+## Requirements
 
 ### Requirement: Off by default, configured by the owner
 The assistant SHALL be disabled until the owner enables it and configures at least one provider through `PUT /api/v1/settings/assistant`, which only the owner may call; members SHALL read a status without keys through `GET`. While disabled, no assistant UI appears and the server makes no provider request. Settings are server state, not ops, and need a connection to change.
@@ -155,7 +160,7 @@ After applying a change set, the panel and a toast SHALL offer Undo, which appli
 - **THEN** that task keeps the hand-edited date and the undo summary names it as skipped
 
 ### Requirement: Optional auto-apply of small reversible changes
-A per-device setting, off by default, MAY apply a change set without review only when it changes at most 3 existing entities, creates and deletes nothing, and touches only completion, due date, priority, labels, project or section; a toast with Undo SHALL always appear. Any other change set SHALL require review. Applied changes converge as reviewed ones do.
+A per-device setting, off by default, MAY apply a change set without review only when it changes at most 3 existing entities, creates and deletes nothing, and touches only completion, due date, priority or labels (moves to another project or section always need review); a toast with Undo SHALL always appear. Any other change set SHALL require review. Applied changes converge as reviewed ones do.
 
 #### Scenario: Small change auto-applied
 - **WHEN** auto-apply is on and the assistant proposes completing 2 tasks

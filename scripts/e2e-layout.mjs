@@ -31,6 +31,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { execSync } from 'node:child_process'
 import { join } from 'node:path'
+import { startFakeLLM } from './fake-llm.mjs'
 
 // axe-core (web devDependency, user-documentation task 5.1), or a global install.
 const AXE = (() => {
@@ -122,10 +123,17 @@ async function seed() {
   await A('PUT', '/api/v1/settings/mcp', { enabled: true, writes_enabled: true })
   await A('PUT', '/api/v1/me/agent-access', { allow_writes: true })
   await A('POST', '/api/v1/tokens', { name: 'Desk assistant', scope: 'agent' }).catch(() => {})
+  // The in-app assistant (in-app-assistant) against the scripted fake provider
+  // in scripts/fake-llm.mjs: no real model provider is ever contacted.
+  const llm = await startFakeLLM(0)
+  await A('PUT', '/api/v1/settings/assistant', { enabled: true, default_provider: 'compatible', allow_private_endpoint: true,
+    providers: { compatible: { enabled: true, model: 'fake-model', base_url: `http://127.0.0.1:${llm.address().port}/v1` } } })
+  await A('PUT', '/api/v1/me/assistant', { consent: true, provider: 'compatible' })
+  await A('POST', '/api/v1/tasks', { title: 'Water the plants', due: { date: new Date(Date.now() - 2 * 86400e3).toISOString().slice(0, 10) } })
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
-  return { storageState, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id }
+  return { storageState, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, llm }
 }
 
 // ------------------------------------------------------------------ screens
@@ -135,7 +143,7 @@ function screens(ids) {
   const heading = (name) => (p) => p.getByRole('heading', { name, level: 1 }).first().waitFor()
   return [
     { name: 'sign-in', path: '/', anon: true, ready: (p) => p.getByRole('button', { name: 'Sign in' }).waitFor() },
-    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'reminder-toast'] },
+    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'reminder-toast', 'assistant', 'assistant-review'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
     { name: 'upcoming', path: '/upcoming', ready: heading('Upcoming') },
     { name: 'assigned', path: '/assigned', ready: row('Pick paint colours') },
@@ -299,6 +307,22 @@ const OVERLAYS = {
         await p.keyboard.press('Escape')
       },
     }
+  },
+  // In-app assistant (in-app-assistant): the panel from the header button, and
+  // a proposal to review after a scripted answer.
+  async assistant(p) {
+    const trigger = p.locator('[data-assistant-launcher]')
+    await trigger.click()
+    return { overlay: p.locator('[data-assistant-panel]'), trigger, kind: 'dialog' }
+  },
+  async 'assistant-review'(p) {
+    await p.keyboard.press('Shift+I')
+    const panel = p.locator('[data-assistant-panel]')
+    await panel.waitFor()
+    await panel.locator('[data-assistant-composer]').fill('Move everything overdue to Friday')
+    await p.keyboard.press('Enter')
+    await panel.locator('[data-assistant-review]').waitFor({ timeout: 20000 })
+    return { overlay: panel, kind: 'dialog', after: async () => { if (await panel.isVisible()) await p.keyboard.press('Escape') } }
   },
   async 'delete-user'(p) {
     const del = p.getByRole('button', { name: 'Delete', exact: true }).first()
@@ -578,6 +602,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
 // ------------------------------------------------------------------ main
 log('· seeding', base)
 const ids = await seed()
+const llmServer = ids.llm
 const combos = []
 for (const e of ENGINES) for (const w of WIDTHS) for (const t of THEMES) combos.push([e, w, t])
 log(`· checking ${combos.length} combinations (${ENGINES.join(', ')} × ${WIDTHS.join('/')} px × ${THEMES.join('/')})`)
@@ -585,6 +610,7 @@ const queue = [...combos]
 await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
   while (queue.length) { const [e, w, t] = queue.shift(); await runCombo(e, w, t, ids) }
 }))
+llmServer?.close()
 writeFileSync(`${outDir}/failures.txt`, failures.join('\n') + '\n')
 if (failures.length) {
   log(`\n✗ ${failures.length} layout problems (screenshots in ${outDir}/):`)

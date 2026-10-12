@@ -14,7 +14,7 @@ OpenTodo can let an AI assistant read your projects and tasks through the [Model
 - **Off by default.** The server owner turns it on; until then `/mcp` answers 404.
 - **Read-only unless you opt in three times.** Write tools exist only when the owner allows assistant changes, you allow them for your account, and the assistant uses a token created for that purpose (scope `agent`). See [Letting an assistant make changes](#letting-an-assistant-make-changes).
 - **Yours only.** Each request acts as the account whose API token it carries and sees exactly what that account sees in the app: its personal projects and tasks plus the shared projects it is a member of. Deleted items are never returned.
-- **Passive.** The assistant connects to your server. OpenTodo never contacts a model provider, a registry or anything else on its own.
+- **Passive.** The assistant connects to your server. For MCP, OpenTodo never contacts a model provider, a registry or anything else on its own. (The separate [in-app assistant](assistant.md) does contact the provider the owner chooses, and only when it is turned on.)
 
 ## 1. Enable it (owner)
 

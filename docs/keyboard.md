@@ -45,6 +45,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | Keys | What it does |
 | --- | --- |
 | <kbd>q</kbd> | Quick add a task |
+| <kbd>Shift+I</kbd> | Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes |
+| <kbd>Enter</kbd> / <kbd>Esc</kbd> | Proposed changes: assistant: apply the checked changes / discard the proposal; Space toggles an item |
 | <kbd>Shift+V</kbd> | Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves |
 | <kbd>Esc</kbd> | Close panel, clear selection |
 | <kbd>?</kbd> | Toggle this help |

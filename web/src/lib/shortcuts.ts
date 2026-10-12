@@ -28,6 +28,8 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
 /** Every shortcut, in the order the overlay lists them. */
 export const SHORTCUTS: Shortcut[] = [
   { keys: 'q', description: 'Quick add a task', section: 'everywhere' },
+  { keys: 'Shift+I', description: 'Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes', section: 'everywhere' },
+  { keys: 'Enter / Esc (proposed changes)', description: 'Assistant: apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere' },
   { keys: 'Shift+V', description: 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves', section: 'everywhere' },
   { keys: 'j / k', description: 'Move selection down / up', section: 'tasks' },
   { keys: 'Enter', description: 'Open selected task; accept "complete parent too?"', section: 'tasks' },

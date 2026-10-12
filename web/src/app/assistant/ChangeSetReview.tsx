@@ -1,0 +1,97 @@
+import { useId, type KeyboardEvent, type RefObject } from 'react'
+import type { Review } from '../../lib/assistant'
+
+export interface ReviewResult {
+  applied: number
+  total: number
+  undoId: string | null
+  /** After Undo: what came back and what was skipped. */
+  undone?: { restored: number; skipped: string[] }
+  discarded?: boolean
+  auto?: boolean
+}
+
+export interface ChangeSetReviewProps {
+  review: Review | null
+  result: ReviewResult | null
+  busy: boolean
+  onToggle: (index: number, checked: boolean) => void
+  onApply: () => void
+  onDiscard: () => void
+  onUndo: () => void
+  regionRef?: RefObject<HTMLDivElement | null>
+}
+
+/** "4 of 5 changes applied." */
+export function appliedSummary(r: ReviewResult): string {
+  if (r.discarded) return 'Proposal discarded. Nothing was changed.'
+  if (r.undone) {
+    const base = `Undone: ${r.undone.restored} restored.`
+    return r.undone.skipped.length ? `${base} Kept because they were changed again since: ${r.undone.skipped.join(', ')}.` : base
+  }
+  const what = r.applied === r.total ? `${r.applied} change${r.applied === 1 ? '' : 's'} applied` : `${r.applied} of ${r.total} changes applied`
+  return `${what}${r.auto ? ' automatically' : ''}.`
+}
+
+/**
+ * The proposed change set (in-app-assistant D2): items grouped by entity with
+ * each change in words, checked by default, shared items badged, stale items
+ * unchecked and marked. Enter applies the checked items, Esc discards.
+ */
+export function ChangeSetReview(p: ChangeSetReviewProps) {
+  const headingId = useId()
+  if (p.result) {
+    return (
+      <div className="rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-700" data-assistant-result>
+        <p role="status">{appliedSummary(p.result)}</p>
+        {p.result.undoId && !p.result.undone && !p.result.discarded && (
+          <button type="button" className="btn-ghost mt-2 border border-slate-300 dark:border-slate-700" onClick={p.onUndo} aria-busy={p.busy}>Undo</button>
+        )}
+      </div>
+    )
+  }
+  const review = p.review
+  if (!review) return null
+  const checked = review.items.filter((i) => i.checked).length
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && (e.target as HTMLElement).tagName !== 'BUTTON') {
+      e.preventDefault()
+      if (!p.busy && checked > 0) p.onApply()
+    }
+  }
+  return (
+    <div ref={p.regionRef} role="group" aria-labelledby={headingId} onKeyDown={onKeyDown} data-assistant-review
+      className="space-y-2 rounded-lg border border-emerald-300 bg-emerald-50/60 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
+      <h3 id={headingId} className="text-sm font-semibold">
+        Proposed changes ({review.items.length})
+      </h3>
+      <p className="text-xs text-muted">Nothing changes until you apply. <span className="kbd">Enter</span> applies the checked items, <span className="kbd">Esc</span> discards.</p>
+      {review.dropped.map((d) => <p key={d} className="text-xs text-muted">{d}</p>)}
+      <ul className="space-y-1" aria-label="Proposed changes">
+        {review.items.map((item, i) => {
+          const label = `${item.title}${item.lines.length ? ': ' + item.lines.join('; ') : ''}`
+          return (
+            <li key={item.change.entity + item.change.entityId}>
+              <label className="flex items-start gap-2 rounded-md p-1.5 text-sm hover:bg-white/60 dark:hover:bg-slate-900/60">
+                <input type="checkbox" className="mt-1 h-4 w-4 shrink-0" checked={item.checked} onChange={(e) => p.onToggle(i, e.target.checked)}
+                  aria-label={label + (item.state === 'stale' ? ' (changed since proposed)' : '') + (item.shared ? ' (shared project)' : '')} />
+                <span className="min-w-0 flex-1 user-text">
+                  <span className="font-medium">{item.title}</span>
+                  {item.shared && <span className="ml-1.5 rounded border border-sky-400 px-1 text-[11px] font-medium text-sky-800 dark:border-sky-700 dark:text-sky-200">shared</span>}
+                  {item.state === 'stale' && <span className="ml-1.5 rounded border border-amber-500 px-1 text-[11px] font-medium text-amber-900 dark:border-amber-700 dark:text-amber-200">changed since proposed</span>}
+                  {item.lines.map((l) => <span key={l} className="block text-muted">{l}</span>)}
+                </span>
+              </label>
+            </li>
+          )
+        })}
+      </ul>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <button type="button" className="btn-primary" onClick={p.onApply} disabled={checked === 0} aria-busy={p.busy} data-assistant-apply>
+          Apply {checked === review.items.length ? 'all' : `${checked} of ${review.items.length}`}
+        </button>
+        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onDiscard}>Discard</button>
+      </div>
+    </div>
+  )
+}

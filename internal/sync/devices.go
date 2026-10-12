@@ -16,6 +16,12 @@ const (
 	CaldavDevicePrefix = "caldav:"
 )
 
+// AssistantDevicePrefix marks ops a device applied from an in-app assistant
+// proposal (in-app-assistant D1): assistant:<device-id>. Unlike agent: and
+// caldav: it is written by devices, so /api/v1/sync accepts it; history labels
+// it "Assistant".
+const AssistantDevicePrefix = "assistant:"
+
 // AgentDevice is the device id of the ops an AI assistant's token writes.
 func AgentDevice(tokenID string) string { return AgentDevicePrefix + tokenID }
 

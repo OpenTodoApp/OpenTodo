@@ -59,12 +59,18 @@ func (s *Server) historyHandler(entity string) http.HandlerFunc {
 }
 
 // labelAgentChanges names AI assistant writes in a history page
-// (mcp-write-tools D6): "AI assistant (<token name>)" when the viewer owns the
+// (mcp-write-tools D6; in-app assistant writes are "Assistant"): "AI assistant (<token name>)" when the viewer owns the
 // token and it still exists, "AI assistant" otherwise. Token names are
 // personal, so other members of a shared project see only the generic label.
 func (s *Server) labelAgentChanges(ctx context.Context, viewerID string, sets []opsync.ChangeSet) error {
 	names := map[string]string{}
 	for i := range sets {
+		// In-app assistant writes are applied by the user's own device after
+		// review (in-app-assistant): the same label for every viewer.
+		if strings.HasPrefix(sets[i].Device, opsync.AssistantDevicePrefix) {
+			sets[i].DeviceLabel = "Assistant"
+			continue
+		}
 		tokenID, ok := strings.CutPrefix(sets[i].Device, opsync.AgentDevicePrefix)
 		if !ok {
 			continue

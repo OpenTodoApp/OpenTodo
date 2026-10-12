@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { HelpHeading } from './help/HelpLink'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getAutoArchive, setAutoArchive } from '../lib/archive'
@@ -28,6 +28,9 @@ import { setStartView, type StartView } from '../lib/views'
 import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
 import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
+
+// Settings → Assistant (in-app-assistant): part of the lazy assistant code.
+const AssistantSettingsSection = lazy(() => import('./assistant/AssistantSettings'))
 
 export function SettingsView({ user, onLogout }: { user: User; onLogout: () => void }) {
   // Bumped when the AI assistants section creates a token, so the list reloads.
@@ -128,6 +131,8 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 
           {user.role === 'owner' && <BackupsPanel />}
 
+          <Suspense fallback={null}><AssistantSettingsSection isOwner={user.role === 'owner'} /></Suspense>
+
           <AssistantsPanel isOwner={user.role === 'owner'} onTokenCreated={() => setTokenReload((n) => n + 1)} />
 
           <TokensSection reloadKey={tokenReload} />
@@ -152,7 +157,7 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
 export const DEMO_RESTRICTED_FEATURES = [
   'password and two-factor authentication', 'passkeys', 'end-to-end encryption', 'push notifications', 'linked accounts',
   'users and invitations', 'single sign-on', 'calendar apps (CalDAV)', 'webhooks', 'email to task', 'backups',
-  'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
+  'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
 ]
 
 function DemoRestrictedSection() {

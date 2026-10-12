@@ -117,6 +117,10 @@ var demoRules = []demoRule{
 	{"CalDAV", false, prefix("/.well-known/caldav")},
 	{"AI assistants (MCP)", false, prefix("/mcp")},
 	{"AI assistants (MCP)", true, exact("/api/v1/me/agent-access")},
+	// The in-app assistant would make outbound requests on the operator's key
+	// (in-app-assistant): every method, so the app sees it as unavailable.
+	{"The assistant", false, prefix("/api/v1/assistant")},
+	{"The assistant", false, prefix("/api/v1/me/assistant")},
 	{"Backups", true, prefix("/api/v1/backups")},
 	{"Webhooks", true, prefix("/api/v1/webhooks")},
 	{"Email to task", true, prefix("/api/v1/email-inbox")},

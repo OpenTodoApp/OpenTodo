@@ -22,6 +22,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { startFakeLLM } from './fake-llm.mjs'
 
 const OUT = 'docs/images'
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
@@ -54,7 +55,7 @@ function stopServers() {
 process.on('exit', stopServers)
 
 const demoBase = await startServer({ OPENTODO_DEMO: 'true' })
-const plainBase = await startServer({})
+const plainBase = only && [...only].every((n) => n.startsWith('assistant-')) ? null : await startServer({})
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
 
 // ------------------------------------------------------------------ encoder
@@ -158,6 +159,42 @@ async function plainSetup() {
   await api('PATCH', `/api/v1/projects/${garden.id}`, { archived: true })
   await p.reload(); await settle(p, 1500)
   const state = await c.storageState(); await c.close(); return { state, home }
+}
+
+// ------------------------------------------------------------------ assistant instance
+// The in-app assistant (in-app-assistant) on its own instance, so the other
+// screenshots keep their header: the "compatible endpoint" is the scripted fake
+// in scripts/fake-llm.mjs, so answers are deterministic and no provider is used.
+let assistantBase = null
+async function assistantSetup() {
+  const llmPort = await freePort()
+  const llm = await startFakeLLM(llmPort)
+  servers.push({ proc: { kill: () => llm.close() }, dir: mkdtempSync(join(tmpdir(), 'opentodo-docs-llm-')) })
+  assistantBase = await startServer({})
+  const c = await context('light'); const p = await c.newPage()
+  const api = async (method, path, body) => {
+    const r = await c.request.fetch(assistantBase + path, { method, headers: { Origin: assistantBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+    if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+    const t = await r.text(); return t ? JSON.parse(t) : null
+  }
+  await api('POST', '/api/v1/auth/register', { email: 'ada@example.com', name: 'Ada Lovelace', password: PASSWORD })
+  const day = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10)
+  const home = await api('POST', '/api/v1/projects', { name: 'Home renovation', color: '#f59e0b' })
+  await api('POST', '/api/v1/tasks', { title: 'Water the plants', due: { date: day(-2) } })
+  await api('POST', '/api/v1/tasks', { title: 'Renew passport', due: { date: day(-1) }, priority: 2 })
+  await api('POST', '/api/v1/tasks', { title: 'Get three quotes for the kitchen', project_id: home.id, due: { date: day(-1) } })
+  await api('POST', '/api/v1/tasks', { title: 'Plan the team offsite', due: { date: day(0) } })
+  await api('PUT', '/api/v1/settings/assistant', { enabled: true, default_provider: 'compatible', allow_private_endpoint: true,
+    providers: { compatible: { enabled: true, model: 'llama3.1', base_url: `http://127.0.0.1:${llmPort}/v1` } } })
+  await api('PUT', '/api/v1/me/assistant', { consent: true, provider: 'compatible' })
+  await p.goto(assistantBase + '/inbox'); await p.getByLabel('Add a task').waitFor(); await settle(p, 1000)
+  const state = await c.storageState(); await c.close(); return state
+}
+async function ask(p, question, ready) {
+  await go(p, assistantBase, '/inbox', () => p.getByLabel('Add a task').waitFor())
+  await p.keyboard.press('Shift+I'); await p.locator('[data-assistant-panel]').waitFor(); await settle(p, 400)
+  await p.locator('[data-assistant-composer]').fill(question); await p.keyboard.press('Enter')
+  await ready(); await settle(p, 600)
 }
 
 // ------------------------------------------------------------------ shots
@@ -306,11 +343,29 @@ const shots = [
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 380 }
   } },
   { name: 'import', card: true, server: P, async run(p) { await go(p, plainBase, '/settings/import', () => p.getByRole('heading', { level: 1 }).first().waitFor()) } },
+  // In-app assistant (in-app-assistant), against the scripted fake provider.
+  { name: 'assistant-chat', card: true, server: 'assistant', async run(p) {
+    await ask(p, 'What is due today?', () => p.locator('[data-assistant-panel] li').filter({ hasText: 'Want me to move' }).waitFor({ timeout: 20000 }))
+  } },
+  { name: 'assistant-review', server: 'assistant', async run(p) {
+    await ask(p, 'Move everything overdue to Friday', () => p.locator('[data-assistant-review]').waitFor({ timeout: 20000 }))
+  }, async after(p) { await p.locator('[data-assistant-review]').getByRole('button', { name: 'Discard' }).click().catch(() => {}) } },
+  { name: 'assistant-phone', server: 'assistant', phone: true, async run(p) {
+    await ask(p, 'Move everything overdue to Friday', () => p.locator('[data-assistant-review]').waitFor({ timeout: 20000 }))
+  }, async after(p) { await p.locator('[data-assistant-review]').getByRole('button', { name: 'Discard' }).click().catch(() => {}) } },
+  { name: 'assistant-settings', server: 'assistant', async run(p) {
+    await go(p, assistantBase, '/settings', () => p.getByRole('heading', { name: 'Settings', level: 1 }).waitFor())
+    const h = p.locator('#assistant-settings-heading'); await h.waitFor(); await p.locator('[data-assistant-owner]').waitFor()
+    await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
+    const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
+    return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 560 }
+  } },
 ]
 
 // ------------------------------------------------------------------ run
 const demo = shots.some((s) => s.server === D && want(s.name)) ? await demoState() : null
 const plain = shots.some((s) => s.server === P && want(s.name)) || want('signin') ? await plainSetup() : null
+const assistant = shots.some((s) => s.server === 'assistant' && want(s.name)) ? await assistantSetup() : null
 let failed = 0
 for (const shot of shots) {
   if (!want(shot.name)) continue
@@ -318,7 +373,7 @@ for (const shot of shots) {
     const opts = shot.phone ? { viewport: PHONE, deviceScaleFactor: 1.5, isMobile: true, hasTouch: true } : {}
     let extra = {}
     if (shot.server === 'setup') extra.setupBase = await startServer({})
-    const storageState = shot.server === D ? demo : shot.server === P ? plain.state : undefined
+    const storageState = shot.server === D ? demo : shot.server === P ? plain.state : shot.server === 'assistant' ? assistant : undefined
     const ctx = await context(theme, { ...opts, storageState, ...(shot.permissions ? { permissions: shot.permissions } : {}) })
     const p = await ctx.newPage()
     try {
