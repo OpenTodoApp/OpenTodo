@@ -20,7 +20,7 @@ Base path: `/api/v1`. All requests and responses are JSON. Errors look like:
 Two options:
 
 - **Session cookie** (the web app). Obtained from `auth/register` or `auth/login`. State-changing requests must come from the app's own origin.
-- **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → API tokens** or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
+- **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → Integrations → API tokens** or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
 
 A token has a **scope**: `full` (the default), `read` or `agent`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
@@ -57,7 +57,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | --- | --- | --- | --- |
 | GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
 | GET | `/api/v1/auth/status` | none | `{setupRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, mfa?, encryption?, minClientVersion?, demo?}`; `mfa`, `encryption` and `minClientVersion` only when signed in; `demo` (`{token, sandboxHours: {idle, max}, resetsAt}`: a fresh single-use sandbox-creation token valid for 10 minutes, the sandbox lifetimes in hours and the next nightly reset; no credentials) only on a [demo instance](self-hosting/demo.md) (see [Two-factor authentication](#two-factor-authentication), [Single sign-on](#single-sign-on), [End-to-end encryption](#end-to-end-encryption)) |
-| POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?}` → 201 `{user}` + cookie. The first account becomes owner; afterwards an `invitation` secret admits one member while sign-up is closed |
+| POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?, projectInvite?}` → 201 `{user}` + cookie. The first account becomes owner; afterwards an `invitation` secret admits one member while sign-up is closed, and a `projectInvite` secret creates a member who joins that project (201 `{user, projectId, role}`, see [Project invite links](#project-invite-links)) |
 | POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie, or `{mfaRequired:true, challenge, expiresAt}` and no cookie when the account has a second factor |
 | POST | `/api/v1/auth/mfa` | none | `{challenge, code}` or `{challenge, recoveryCode}`, optional `remember` → `{user}` + cookie (+ `ot_trust` cookie when `remember`) |
 | POST | `/api/v1/auth/reauth` | cookie | `{password}` or `{code}` → `{reauthAt, validForMs}`; unlocks *fresh* routes for 10 minutes |
@@ -68,6 +68,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in) |
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid`, see [Invitations](#invitations) |
+| GET | `/api/v1/project-invites/{token}` | none | preview `{inviterName, projectName, role, email, expiresAt, canCreateAccount, alreadyMember?}` or 404 `invitation_invalid`, see [Project invite links](#project-invite-links) |
 | GET | `/api/v1/password-resets/{token}` | none | preview `{email, expiresAt}` or 404 `reset_invalid` |
 | POST | `/api/v1/password-resets/{token}` | none | `{password}` → 204 or 404 `reset_invalid` |
 
@@ -75,7 +76,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth}`; `auth` describes the credential, see [Credential introspection](#credential-introspection) |
+| GET | `/api/v1/me` | yes | `{user, mfa, encryption: {enabled, keyVersion}, minClientVersion, auth}`; `auth` describes the credential, see [Credential introspection](#credential-introspection). The owner's session also gets `config_warnings: [{variable, message, ignored?}]`, configuration problems the server started despite (an invalid `OPENTODO_TRUSTED_PROXIES` entry), empty when there are none; admins, members and tokens never get the field |
 | POST | `/api/v1/me/password` | yes, fresh | `{currentPassword, newPassword}` → 204; signs out your other sessions |
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
@@ -136,6 +137,12 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PATCH | `/api/v1/projects/{id}/members/{userId}` | owner, admin of the project | `{role}` → membership |
 | DELETE | `/api/v1/projects/{id}/members/{userId}` | member | remove a member, or leave with your own id or `me` → 204 |
 | POST | `/api/v1/projects/{id}/transfer` | owner of the project | `{userId}` → membership; the previous owner becomes an admin |
+| GET | `/api/v1/projects/{id}/invites` | owner, admin of the project | pending invite links `{invites:[…]}`, see [Project invite links](#project-invite-links) |
+| POST | `/api/v1/projects/{id}/invites` | owner, admin of the project, fresh | `{role, email?, expiresInHours?}` → 201 `{invite, link, newAccounts}` (link shown once) |
+| DELETE | `/api/v1/projects/{id}/invites/{inviteId}` | owner, admin of the project | revoke a pending link → 204 |
+| POST | `/api/v1/project-invites/{token}/accept` | yes | join the project as the signed-in account → `{projectId, role}` |
+| GET | `/api/v1/settings/project-invites` | yes | `{membersCanInviteNewPeople}` (the owner switch) |
+| PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
 | GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `encryption`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
@@ -232,7 +239,7 @@ For sign-in, `response` carries `clientDataJSON`, `authenticatorData` and `signa
 | `bad_request` | 400 | a field is missing or is not base64url |
 | `invalid_credentials` | 401 | sign-in with an unknown or deleted passkey, a bad signature, or a signature counter that went backwards (the passkey is then marked `suspiciousAt`) |
 | `not_found` | 404 | rename or delete of a passkey id that is not yours |
-| `rate_limited` | 429 | more than 10 requests per minute per address to `auth/login`, `auth/register`, `auth/passkey` and the invitation preview combined (one shared window), or more than 10 per minute to `auth/passkey/options` (its own window, so the sign-in screen's autofill request never uses up password attempts) |
+| `rate_limited` | 429 | more than 10 requests per minute per address to `auth/login`, `auth/register`, `auth/passkey`, the invitation preview and the project invite link preview and accept routes combined (one shared window), or more than 10 per minute to `auth/passkey/options` (its own window, so the sign-in screen's autofill request never uses up password attempts) |
 
 The anonymous `auth/passkey` routes apply the same `Origin` check as `auth/login`. A successful passkey sign-in sets the same `opentodo_session` cookie as a password sign-in. Bearer tokens can list, rename and delete passkeys, but a CLI cannot run a ceremony.
 
@@ -303,9 +310,9 @@ The identity is matched by issuer and subject first; a first-time identity whose
 | `oidc_email_unverified` | a first-time identity without an email marked verified |
 | `signup_closed` | no matching account and provisioning is not allowed |
 
-`start` while signed in **links** the provider identity to the current account instead (Settings → Linked accounts) and returns to `/settings?linked=1`. If that identity is already linked to the same account, the flow is a fresh proof of identity for the session (the *fresh* routes work for ten minutes) and returns to `/settings?reauthenticated=1`.
+`start` while signed in **links** the provider identity to the current account instead (Settings → Account → Linked accounts) and returns to `/settings/account?linked=1`. If that identity is already linked to the same account, the flow is a fresh proof of identity for the session (the *fresh* routes work for ten minutes) and returns to `/settings/account?reauthenticated=1`.
 
-The callback answers `400 oidc_state_invalid` (missing, forged, expired or already used state) and `409 identity_taken` (linking an identity that belongs to another account) as JSON; a browser navigation (`Accept: text/html`) is redirected to `/?error=<code>` or `/settings?error=<code>` instead, so people never see raw JSON.
+The callback answers `400 oidc_state_invalid` (missing, forged, expired or already used state) and `409 identity_taken` (linking an identity that belongs to another account) as JSON; a browser navigation (`Accept: text/html`) is redirected to `/?error=<code>` or `/settings/account?error=<code>` instead, so people never see raw JSON.
 
 **Owner settings.** `GET /api/v1/settings/oidc`:
 
@@ -405,7 +412,7 @@ Refusals:
 | 409 | `encryption_enabled` | readable text (title, description, name, comment) for an end-to-end encrypted account |
 | 400 | `invalid_input` | a value the tool refuses (with the tool's message) |
 
-Every other write route (tokens, settings, sync, sharing and members, invitations, encryption keys, imports, backups, webhooks, purging, archiving or deleting projects, user administration) answers 403 `insufficient_scope`, and the list is enforced by the matched route, so a route added later stays refused until it is added on purpose.
+Every other write route (tokens, settings, sync, sharing and members, invitations, project invite links, encryption keys, imports, backups, webhooks, purging, archiving or deleting projects, user administration) answers 403 `insufficient_scope`, and the list is enforced by the matched route, so a route added later stays refused until it is added on purpose.
 
 ### Task fields
 
@@ -776,7 +783,10 @@ The server records security-relevant events in its own database (never synced to
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
 | `invitation.accepted` | success | actor = new member | `invitation_id`, `email` |
 | `invitation.revoked` | success | actor = owner | `invitation_id` |
-| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `oidc.*`, `encryption`, `encryption.keys`), `from`, `to` |
+| `project_invite.created` | success | actor = creator | `project_invite_id`, `shared_project_id`, `project_role`, `invited_email` (bound email, if any) |
+| `project_invite.revoked` | success | actor = project owner or admin | `project_invite_id`, `shared_project_id` |
+| `project_invite.accepted` | success | actor = the account that joined (new or existing), target = the link's creator | `project_invite_id`, `shared_project_id`, `project_role` |
+| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `project_invites.members_create_accounts`, `oidc.*`, `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
 | `mfa.enrolled`, `mfa.disabled` | success | actor = user (or the owner, target = account) | `method` |
@@ -854,6 +864,57 @@ curl -X POST … -d '{"userId":"<bob>"}' $BASE/api/v1/projects/$P/transfer
 Collections, single reads and the export include the shared projects and their tasks; a shared project carries the read-only keys `role` (yours) and `owner_id`. They are ignored when sent back in a write. REST writes are checked with the same role table as sync: a refused write answers `403 forbidden` and stores nothing. A task cannot change sharing scope: `PATCH` of `project_id` to a project shared differently (or to the Inbox from a shared project) answers `400 scope_change`; create a copy in the destination and delete the original instead, which is what the web app does.
 
 Membership changes are recorded in the audit log as `role.changed` with `from`/`to` values such as `none` → `project.editor`.
+
+### Project invite links
+
+A project's owner or admin can invite someone with a single-use link instead of an email (OpenSpec `project-invite-links`). Opening the link adds the person to the project with the link's role; it can also create their account. Links are server-side account data: never written to the op log, never synced, and every route needs a connection.
+
+**Create** — `POST /api/v1/projects/{id}/invites` (owner or admin of the project; a *fresh* session, like invitations; `read` and `agent` tokens get 403 `insufficient_scope`):
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `role` | `viewer`, `editor` or `admin` | required; `admin` only for the project's owner (an admin gets 403 `forbidden`) |
+| `email` | string | Bind the link to one address (matched case-insensitively when it is used) |
+| `expiresInHours` | integer 1–720 | Default 168 (seven days) |
+
+```json
+{
+  "invite": {
+    "id": "…", "projectId": "…", "role": "editor", "email": null,
+    "createdBy": "<your id>", "createdByName": "Alice",
+    "createdAt": 1760000000000, "expiresAt": 1760604800000
+  },
+  "link": "https://todo.example.com/invite/p/otp_…",
+  "newAccounts": true
+}
+```
+
+The `link` holds the secret and is returned exactly once; the server stores a hash. `newAccounts` says whether the link can create an account right now (see below). A viewer or editor gets 403 `forbidden`, a non-member 404 `not_found`; bad input is 400 `invalid_input` naming the field; 20 links per account per hour (429 `rate_limited`). An end-to-end encrypted account cannot create a link for a project it has not shared yet (409 `encryption_enabled`).
+
+**List** — `GET /api/v1/projects/{id}/invites` → `{invites: [...]}`: the pending links of the project, newest first, same shape as above, never a secret.
+
+**Revoke** — `DELETE /api/v1/projects/{id}/invites/{inviteId}` → 204 (any owner or admin of the project; repeating it is a no-op). An accepted link answers 409 `invitation_spent`, an unknown id 404 `not_found`.
+
+**Preview** — `GET /api/v1/project-invites/{token}` needs no authentication:
+
+```json
+{"inviterName": "Alice", "projectName": "Home", "role": "editor", "email": null,
+ "expiresAt": 1760604800000, "canCreateAccount": true}
+```
+
+`alreadyMember` (true or false) is added when the request carries a session. No ids are returned. Unknown, expired, revoked and used links, links to a deleted project, links whose creator was deactivated or can no longer grant the role (removed from the project, or no longer its owner or admin) all answer the same 404 `invitation_invalid`. Rate limited per client address together with sign-in.
+
+**Join while signed in** — `POST /api/v1/project-invites/{token}/accept` (session or full token) → 200 `{projectId, role}`. The account becomes a member, the link is spent, and the devices of every member are woken to sync. Errors: 409 `already_member` (the link stays pending), 403 `invitation_email_mismatch`, 404 `invitation_invalid` (also when the creator lost the right since the preview, or another acceptance won).
+
+**Join with a new account** — `POST /api/v1/auth/register` with `projectInvite`:
+
+```bash
+curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
+  -d '{"email":"dora@example.com","name":"Dora","password":"a long passphrase","projectInvite":"otp_…"}'
+# 201 {"user":{…,"role":"member"},"projectId":"…","role":"editor"} + session cookie
+```
+
+The account, the membership and the spend commit in one transaction, so a link creates at most one account. A link may create an account when its creator is the server owner or an admin, when open sign-up is on, or when the owner turned on **Members can invite new people with project links** (`PUT /api/v1/settings/project-invites` `{"membersCanInviteNewPeople": true}`; off by default; any signed-in account can read it with `GET`). Otherwise the answer is 403 `project_invite_not_allowed` and the person signs in with an existing account first. In SSO-only mode registration answers 403 `sso_required`; the person signs in through the provider and then joins. Other errors as for invitations (`invitation_email_mismatch`, `email_taken`, `invalid_input`); in every error case the link stays pending.
 
 ### Assignment and notifications
 
@@ -1149,6 +1210,102 @@ curl -X POST -H "Authorization: Bearer $TOKEN" https://todo.example.com/api/v1/e
 
 Replacing the record (passphrase change, recovery reset) and `DELETE` need a fresh re-authentication on cookie sessions (403 `reauth_required`). `GET /api/v1/me` and `GET /api/v1/auth/status` carry `"encryption":{"enabled":true,"keyVersion":2}` and `"minClientVersion":1`. The export adds `"encryption"`: the key record, or `null`. Refused for encrypted accounts with 409 `encryption_enabled`: the first share of a project (`POST /api/v1/projects/{id}/members` on an unshared project) and `POST /api/v1/app-passwords`; `/dav/` answers 403. `GET /api/v1/settings/caldav` adds `"encryption": true|false` for the caller.
 
+### In-app assistant
+
+The [in-app assistant](assistant.md) (OpenSpec `in-app-assistant`). Every route requires authentication. Settings, consent and usage are server state, never ops; conversations exist only on the device. Keys are write-only: no route ever returns one.
+
+**Owner settings** — `GET /api/v1/settings/assistant` returns, for the owner:
+
+```json
+{
+  "enabled": true, "active": true, "default_provider": "anthropic",
+  "providers": {
+    "anthropic":  {"enabled": true,  "model": "claude-opus-5-5", "key_set": true,  "label": "Anthropic (Claude)"},
+    "openai":     {"enabled": false, "model": "",                "key_set": false, "label": "OpenAI"},
+    "gemini":     {"enabled": false, "model": "",                "key_set": false, "label": "Google Gemini"},
+    "compatible": {"enabled": false, "model": "", "base_url": "", "key_set": false, "label": "…"}
+  },
+  "allow_member_keys": false, "monthly_token_cap_per_user": 500000, "allow_private_endpoint": false,
+  "cap_member_keys": false, "member_providers": ["anthropic", "openai", "gemini"], "own_key_members": 0,
+  "anthropic_models": ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"], "default_model": "claude-opus-5-5"
+}
+```
+
+`cap_member_keys` (default `false`): whether turns on a member's own key count toward `monthly_token_cap_per_user`; off, they are recorded but neither counted nor blocked. `member_providers` lists what members may choose for their own key (never `compatible`); `own_key_members` counts accounts whose turns use their own provider and key right now.
+
+Members get a status without keys or base URL: `{enabled, provider, provider_label, model, allow_member_keys, monthly_token_cap_per_user, cap_member_keys}`. `PUT` (owner only, 403 `forbidden` otherwise) takes the same fields (a provider object replaces that provider's settings) plus `keys`: `{"anthropic": "sk-…"}` sets a key, `""` removes it, an absent provider keeps it. Unknown fields are refused. Errors: 400 `invalid_input` naming the field (an unknown provider, a provider enabled without a model, a hosted provider without a key while member keys are off, the compatible provider without a valid `http(s)` base URL or with credentials in it, a disabled default provider, a negative cap); 400 `private_target` when the base URL resolves only to private, loopback, link-local or metadata addresses and `allow_private_endpoint` is off. A refused request changes nothing. Every changed value is audited as `settings.changed` (`assistant.<field>`; keys as `assistant.<provider>.key` from `unset` to `set` or back, never the value; a base URL by scheme and host only).
+
+```bash
+curl -sS -X PUT "$OT/api/v1/settings/assistant" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"enabled":true,"default_provider":"compatible","allow_private_endpoint":true,
+       "providers":{"compatible":{"enabled":true,"model":"llama3.1","base_url":"http://192.168.1.20:11434/v1"}}}'
+```
+
+**Test connection** — `POST /api/v1/settings/assistant/test` with `{"provider":"compatible"}` (owner only) sends one minimal request with one tool, using the saved settings and key, and answers 200 `{ok, code?, message, status?}`. `code` is `no_tool_support` when the endpoint refuses tool definitions but answers without them, `no_key`, `private_target`, `provider_auth`, `provider_rate_limited` or `provider_error`.
+
+**Your consent, provider and key** — `GET /api/v1/me/assistant`:
+
+```json
+{
+  "available": true, "enabled": true, "reason": "",
+  "provider": "openai", "provider_label": "OpenAI", "model": "gpt-4.1-mini",
+  "source": "own", "own_key_in_use": true,
+  "server_provider": "anthropic", "server_provider_label": "Anthropic (Claude)", "server_model": "claude-opus-5-5",
+  "consented": true, "consent": {"accepted_at": 1760000000000, "disclosure_version": 1, "provider": "openai"},
+  "disclosure_version": 1, "fields": ["task titles and descriptions", "…"],
+  "allow_member_keys": true, "own_key_set": true, "server_own_key_set": false, "operator_key_set": true,
+  "own_provider": {"provider": "openai", "provider_label": "OpenAI", "model": "gpt-4.1-mini", "key_set": true},
+  "member_providers": ["anthropic", "openai", "gemini"], "anthropic_models": ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"],
+  "cap_member_keys": false
+}
+```
+
+`provider`, `provider_label` and `model` name what your turns use now: your own provider (`source: "own"`) while the owner allows member keys and your key for it is set, otherwise the owner's (`source: "server"`, the same as `server_provider`). `own_key_in_use` is true when your turns run on your own key, which includes a key you stored for the owner's provider. `own_provider` is your choice (`null` for the server's assistant); it is kept while the owner does not allow member keys, but not used. `own_key_set` and `server_own_key_set` say whether you stored a key for `provider` and for the owner's provider. `reason` is `disabled`, `no_provider` or `encryption_enabled` when `available` is false. `consented` is true only for the current disclosure version and `provider`, so switching providers asks again.
+
+`PUT /api/v1/me/assistant` (sessions and full tokens) takes:
+
+- `{"consent": true, "provider": "<the provider the disclosure named>"}`, or `{"consent": false}` to withdraw;
+- `{"own_provider": "openai", "own_model": "gpt-4.1-mini", "own_key": "sk-…"}` to use your own provider: `anthropic`, `openai` or `gemini` (never `compatible`, and no base URL). Anthropic models must be one of `anthropic_models`; OpenAI and Gemini model ids are 1–100 characters of `A-Z a-z 0-9 . _ : -`. A key is required unless you already stored one for that provider. `own_model` alone changes the model of your provider;
+- `{"own_provider": ""}` to go back to the server's assistant (the key you stored for the provider you had chosen is deleted);
+- `{"own_key": "…"}`: sets the key of your own provider, or of the owner's provider when you have none (as before); `""` removes it (removing your own provider's key also goes back to the server's assistant).
+
+Choosing a provider or storing a key needs the owner's "Let members bring their own key" (403 `forbidden` otherwise); removing either never does. Leaving a provider you chose deletes its key. Audited as `settings.changed`: `assistant.own_provider` (`server` or the provider name), `assistant.own_model`, `assistant.own_key.<provider>` (`unset`/`set`, never the key). Errors: 400 `invalid_input` naming `own_provider`, `own_model` or `own_key`; 409 `provider_changed` when `provider` is not the one in effect after the request, 409 `encryption_enabled`, 409 `assistant_disabled`. A refused request stores nothing. Deleting an account deletes its keys and choice.
+
+**Test your own provider** — `POST /api/v1/me/assistant/test` (no body; **signed-in sessions only**) sends one minimal request with one tool to your own provider with your model and key and answers 200 `{ok, code?, message, status?}` like the owner's test (`provider_auth` says your key was rejected). Errors: 403 `session_required` for API tokens, 409 `assistant_disabled`, 403 `forbidden` while member keys are not allowed, 409 `no_own_provider` when your turns do not use your own provider, 429 `rate_limited` with `Retry-After` after 5 tests in 10 minutes.
+
+**Usage** — `GET /api/v1/me/assistant/usage` → `{month, input_tokens, output_tokens, total_tokens, turns, cap, resets_at, counted_tokens, cap_member_keys, own_key: {input_tokens, output_tokens, total_tokens, turns}}` for the current UTC month, counted from the provider's usage fields. `total_tokens` counts every turn, `own_key` the turns on your own key, and `counted_tokens` what is measured against `cap` (everything but `own_key` unless `cap_member_keys` is on).
+
+**A turn** — `POST /api/v1/assistant/turn`, **signed-in sessions only**:
+
+```json
+{"messages": [{"role": "user", "text": "move everything overdue to Friday"}], "timezone": "Europe/Rome", "view": "today", "selected": []}
+```
+
+`messages` is the device's conversation (at most 40, the last from the user; the whole body at most 256 KB); `timezone` is an IANA zone; `view` and `selected` are optional context. Checks, in order, before any provider request: 404 `not_found` while the assistant is off; 403 `session_required` for API tokens; 409 `encryption_enabled`; 403 `consent_required`; 413 `too_large`; 400 `invalid_input`; 429 `assistant_quota` (with `resets_at`; not for a turn on your own key unless the owner turned on `cap_member_keys`); 409 `turn_in_progress` (one turn per person); 503 `assistant_busy` with `Retry-After` (8 turns server-wide); 409 `no_key`. Cookie requests from another origin get 403 `bad_origin`.
+
+The answer is a `text/event-stream`:
+
+```
+event: status
+data: {"text":"Looking at Today…"}
+
+event: text
+data: {"text":"I've proposed moving 12 tasks to Friday. "}
+
+event: usage
+data: {"input":2700,"output":360,"month_total":18240,"cap":500000,"own_key":false}
+
+event: changeset
+data: {"items":[{"entity":"task","entityId":"…","patch":{"due":{"date":"2026-10-16"}},"base":{"due":{"date":"2026-10-09"}},"shared":false}],"limit":50}
+
+event: done
+data: {"stop_reason":"end_turn","server_time":"2026-10-12T10:00:00Z"}
+```
+
+In `usage`, `month_total` is what counts toward the cap and `cap` is `0` for a turn the cap does not apply to (your own key while `cap_member_keys` is off); `own_key` marks a turn on your own key.
+
+`changeset` comes at most once, only after `end_turn`, with at most 50 entities: `patch` is what to write, `base` the values it was planned on (for "changed since proposed"), `create` marks new entities, `shared` marks shared projects. The server never applies it: the app applies the confirmed part as ordinary ops with device `assistant:<device-id>`, which `/api/v1/sync` accepts and history labels "Assistant". `done.stop_reason` is `end_turn`, `max_tokens` (with a `message`; no change set), `refusal` (`message`: "The model declined this request."; no change set) or `round_limit` (more than 8 model calls). A failure ends the stream with `event: error` and `{code, message}`: `provider_auth`, `provider_rate_limited`, `provider_error` or `timeout`; never a key. Usage is recorded whatever the outcome.
+
 ## Examples
 
 Create a task due tomorrow at 9:00 in a project:
@@ -1255,7 +1412,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
 - Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB).
-- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview and the password-reset routes share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour.
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes and the password-reset routes share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour.
 
 ### Error codes
 
@@ -1267,17 +1424,18 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | --- | --- | --- |
 | `bad_request` | 400 | malformed JSON, a JSON body over 4 MB, or a missing required parameter (for example `device` on `/sync` or `/sync/events`); an import upload that is not multipart or has no `file` part |
 | `invalid_input` | 400 | validation failure naming the field or parameter |
-| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type), or a device id starting with the reserved `agent:` or `caldav:`; nothing in the batch is applied |
+| `invalid_op` | 400 | `/api/v1/sync` batch with an op that fails schema validation (unknown entity or field, wrong type), or a device id starting with the reserved `agent:` or `caldav:` (`assistant:` is a device prefix and is accepted); nothing in the batch is applied |
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
 | `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
 | `bad_origin` | 403 | cookie-authenticated write from another origin; any `/mcp` request whose `Origin` is not this server |
+| `session_required` | 403 | `POST /api/v1/assistant/turn` with an API token: the assistant is used from the app while signed in |
 | `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` or `agent` API token; `/api/v1/me/agent-access` with either |
 | `demo_token` | 403 | `POST /api/v1/demo/sandbox` without a valid, unused creation token |
-| `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, `/mcp`. See [demo instance](self-hosting/demo.md#what-is-switched-off) |
+| `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running |
-| `too_large` | 413 | `/mcp` body over 1 MB; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
+| `too_large` | 413 | `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
 | `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |
 | `internal` | 500 | unexpected server error (details only in the server log) |
@@ -1292,8 +1450,9 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed; first sign-in through the provider when provisioning is not allowed |
 | `email_taken` | 409 | registration with an existing email |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |
-| `invitation_invalid` | 404 | unknown, expired, revoked or already accepted invitation |
-| `invitation_spent` | 409 | revoking an accepted invitation |
+| `invitation_invalid` | 404 | unknown, expired, revoked or already accepted invitation or project invite link; a project link whose project was deleted or whose creator can no longer grant its role |
+| `project_invite_not_allowed` | 403 | registering through a project invite link that may not create accounts (see [Project invite links](#project-invite-links)) |
+| `invitation_spent` | 409 | revoking an accepted invitation or project invite link |
 | `reset_invalid` | 404 | unknown, used, expired or revoked password reset link |
 | `self_action` | 409 | a `/users` action on your own account |
 | `account_deactivated` | 403/409 | 403 at sign-in with the correct password of a deactivated account; 409 for an administrative action on a deactivated account |
@@ -1320,7 +1479,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
 | `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
 | `user_not_found` | 404 | adding a project member by an email that has no account |
-| `already_member` | 409 | adding an account that is already a member of the project |
+| `already_member` | 409 | adding an account that is already a member of the project, or accepting a project invite link as one |
 | `owner_must_transfer` | 409 | the project owner leaving the project |
 | `not_deleted` | 409 | purging a task or project that is not in the Trash |
 | `unsupported_format` | 400 | import file in no supported format |
@@ -1335,5 +1494,20 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `method_not_allowed` | 405 | `/mcp` with a method other than `POST` |
 | `not_acceptable` | 406 | `/mcp` with an `Accept` header that admits only `text/event-stream` |
 | `unsupported_protocol_version` | 400 | `/mcp` with an `MCP-Protocol-Version` header naming an unsupported version |
+
+**In-app assistant**
+
+| Code | Status | Where |
+| --- | --- | --- |
+| `consent_required` | 403 | an assistant turn before you accepted the disclosure for the current provider |
+| `encryption_enabled` | 409 | an assistant turn or consent for an end-to-end encrypted account |
+| `turn_in_progress` | 409 | a second assistant turn while your first is still answering |
+| `no_key` | 409 | an assistant turn when the provider needs a key and none is stored |
+| `no_own_provider` | 409 | testing your own provider while your turns do not use one (choose it and save your key first) |
+| `provider_changed` | 409 | accepting a disclosure that named a provider no longer in effect |
+| `assistant_disabled` | 409 | accepting the disclosure while the assistant is off |
+| `assistant_quota` | 429 | an assistant turn at your monthly token allowance; `resets_at` names the reset date |
+| `assistant_busy` | 503 | 8 assistant turns already running on the server; retry after `Retry-After` |
+| `private_target` | 400 | the compatible endpoint's base URL resolves only to private addresses and private endpoints are not allowed |
 
 CalDAV (`/dav/`) answers with WebDAV status codes and precondition elements instead of this envelope; MCP tool errors are JSON-RPC errors (see [mcp.md](mcp.md#protocol-details)).

@@ -61,7 +61,7 @@ Completing a task removes its block and lowers the day's total.
 
 ## Adjust the grid
 
-In **Settings → Calendar** you can set when the grid starts and ends (6:00 to 22:00 by default; you can still scroll beyond) and how long your working day is (8 hours by default). These settings belong to each device, so your phone and laptop can differ.
+In **Settings → General → Calendar** you can set when the grid starts and ends (6:00 to 22:00 by default; you can still scroll beyond) and how long your working day is (8 hours by default). These settings belong to each device, so your phone and laptop can differ.
 
 ## Tips
 

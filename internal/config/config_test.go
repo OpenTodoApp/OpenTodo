@@ -1,6 +1,9 @@
 package config
 
 import (
+	"bytes"
+	"fmt"
+	"log/slog"
 	"net/url"
 	"strconv"
 	"strings"
@@ -203,5 +206,74 @@ func TestConfigRejectsInvalidRetention(t *testing.T) {
 		if _, err := Load(); err == nil || !strings.Contains(err.Error(), "OPENTODO_TRASH_RETENTION_DAYS") {
 			t.Fatalf("%q: err = %v", bad, err)
 		}
+	}
+}
+
+// TestTrustedProxiesLenient (trusted-proxies-lenient): invalid entries never
+// stop startup; they are left out, listed, and reported as one warning.
+func TestTrustedProxiesLenient(t *testing.T) {
+	cases := []struct {
+		raw        string
+		applied    []string
+		invalid    []string
+		cloudflare bool
+		hint       bool
+	}{
+		{"cloudflare", []string{"cloudflare"}, nil, true, false},
+		{"CloudFlare", []string{"cloudflare"}, nil, true, false},
+		{"cloudflar", nil, []string{"cloudflar"}, false, true},
+		{"cluodflare, 10.0.0.1", []string{"10.0.0.1"}, []string{"cluodflare"}, false, true},
+		{"cloudflare, nope, 192.0.2.0/24", []string{"cloudflare", "192.0.2.0/24"}, []string{"nope"}, true, false},
+		{" 192.0.2.1 \t2001:db8::/32,,\n203.0.113.0/24 ", []string{"192.0.2.1", "2001:db8::/32", "203.0.113.0/24"}, nil, false, false},
+		{"10.0.0.0/99 1.2.3", nil, []string{"10.0.0.0/99", "1.2.3"}, false, false},
+		{"cloudflareX", nil, []string{"cloudflareX"}, false, true},
+		{"cdn", nil, []string{"cdn"}, false, false},
+	}
+	for _, c := range cases {
+		tp := ParseTrustedProxies(c.raw)
+		if fmt.Sprint(tp.Applied) != fmt.Sprint(c.applied) || fmt.Sprint(tp.Invalid) != fmt.Sprint(c.invalid) ||
+			tp.Cloudflare != c.cloudflare || (tp.Hint != "") != c.hint {
+			t.Errorf("%q: got %+v", c.raw, tp)
+		}
+		_, warn := tp.Warning()
+		if warn != (len(c.invalid) > 0) {
+			t.Errorf("%q: warning %v", c.raw, warn)
+		}
+	}
+	if n := len(ParseTrustedProxies("cloudflare cloudflare").Prefixes); n != len(CloudflareRanges) {
+		t.Errorf("keyword twice: %d prefixes", n)
+	}
+
+	// Load: the server starts, keeps the valid entries and records one warning.
+	t.Setenv("OPENTODO_TRUSTED_PROXIES", "cloudflar, 192.0.2.0/24")
+	c, err := Load()
+	if err != nil {
+		t.Fatalf("invalid entry stopped startup: %v", err)
+	}
+	if c.TrustCloudflare || len(c.TrustedProxies) != 1 || c.TrustedProxies[0].String() != "192.0.2.0/24" {
+		t.Fatalf("applied: %v %v", c.TrustCloudflare, c.TrustedProxies)
+	}
+	if len(c.Warnings) != 1 || c.Warnings[0].Variable != "OPENTODO_TRUSTED_PROXIES" ||
+		!strings.Contains(c.Warnings[0].Message, `"cloudflar"`) || !strings.Contains(c.Warnings[0].Message, `did you mean "cloudflare"?`) ||
+		!strings.Contains(c.Warnings[0].Message, "Still applied: 192.0.2.0/24") {
+		t.Fatalf("warnings: %+v", c.Warnings)
+	}
+	var buf bytes.Buffer
+	c.LogWarnings(slog.New(slog.NewTextHandler(&buf, nil)))
+	line := buf.String()
+	if strings.Count(line, "\n") != 1 || !strings.Contains(line, "level=ERROR") || !strings.Contains(line, "invalid=cloudflar") ||
+		!strings.Contains(line, "applied=192.0.2.0/24") || !strings.Contains(line, "cloudflare") {
+		t.Fatalf("log: %s", line)
+	}
+
+	// All invalid equals unset.
+	t.Setenv("OPENTODO_TRUSTED_PROXIES", "cloudflar")
+	if c, err = Load(); err != nil || len(c.TrustedProxies) != 0 || c.TrustCloudflare || len(c.Warnings) != 1 ||
+		!strings.Contains(c.Warnings[0].Message, "as when the variable is unset") {
+		t.Fatalf("all invalid: %v %+v", err, c)
+	}
+	t.Setenv("OPENTODO_TRUSTED_PROXIES", "cloudflare")
+	if c, err = Load(); err != nil || len(c.Warnings) != 0 || !c.TrustCloudflare {
+		t.Fatalf("valid: %v %+v", err, c.Warnings)
 	}
 }

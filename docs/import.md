@@ -9,7 +9,7 @@ order: 60
 ---
 # Import formats
 
-OpenTodo imports tasks, projects, sections, recurrence rules and reminders from files: its own JSON export (for moving between instances or recovering), CSV from a spreadsheet or a script, and the JSON exports of other task managers. Open **Settings → Import data** in the web app (or press `g` then `Shift+I`), or drive the same endpoints from a script; see [API](#api) below.
+OpenTodo imports tasks, projects, sections, recurrence rules and reminders from files: its own JSON export (for moving between instances or recovering), CSV from a spreadsheet or a script, and the JSON exports of other task managers. Open **Settings → Data → Import data** in the web app (or press `g` then `Shift+I`), or drive the same endpoints from a script; see [API](#api) below.
 
 Every import works in two steps:
 
@@ -34,7 +34,7 @@ A file matching none of these is refused with `400 unsupported_format`, naming t
 
 ### Own export (`opentodo`)
 
-The file from **Settings → Download export** or `GET /api/v1/export`. Labels, projects (with their sub-project tree), sections, tasks (with subtasks, completion and tombstones), reminders and saved views are recreated with their original ids and field values, so importing an export into an empty account and exporting again gives an equivalent file (comments aside, see below).
+The file from **Settings → Data → Download export** or `GET /api/v1/export`. Labels, projects (with their sub-project tree), sections, tasks (with subtasks, completion and tombstones), reminders and saved views are recreated with their original ids and field values, so importing an export into an empty account and exporting again gives an equivalent file (comments aside, see below).
 
 Because ids are kept, nothing needs remapping: a task's `section_id`, a recurring series and its occurrence records (`series_id`, whose ids are derived from the series id), a reminder's `task_id` and a dashboard's `panels` all point at the same entities as before. Every task field is carried: `recurrence` (stored in canonical form, for example `Every  Monday` becomes `every monday`), `series_id`, `section_id`, `notes_doc` (rich-text notes), `due` including a zoned `tz`, `estimate_minutes` and `ical_extra`.
 

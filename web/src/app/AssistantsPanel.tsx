@@ -158,7 +158,7 @@ export function AssistantsView(p: AssistantsViewProps) {
         <details className="text-sm">
           <summary className="cursor-pointer text-slate-600 dark:text-slate-300">Connection instructions</summary>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted">
-            <li>Create a token above (or in API tokens below).</li>
+            <li>Create a token above (or under Settings → Integrations → API tokens).</li>
             <li>In your assistant, add a remote MCP server (“streamable HTTP”) with the endpoint URL.</li>
             <li>Send the token as the header <code>Authorization: Bearer &lt;token&gt;</code>. Clients that take a JSON entry accept:</li>
           </ol>

@@ -31,6 +31,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { execSync } from 'node:child_process'
 import { join } from 'node:path'
+import { startFakeLLM } from './fake-llm.mjs'
 
 // axe-core (web devDependency, user-documentation task 5.1), or a global install.
 const AXE = (() => {
@@ -88,6 +89,9 @@ async function seed() {
   const home = await A('POST', '/api/v1/projects', { name: 'Home renovation with a rather long project name', color: '#f59e0b' })
   const work = await A('POST', '/api/v1/projects', { name: 'Work', color: '#38bdf8' })
   await A('POST', `/api/v1/projects/${home.id}/members`, { email: 'bob@example.com', role: 'editor' })
+  // A pending project invite link (project-invite-links): its acceptance screen is
+  // checked signed out and signed in, and the share dialog lists it.
+  const { link: projectLink } = await A('POST', `/api/v1/projects/${home.id}/invites`, { role: 'editor', email: 'dora@example.com' })
   const sections = {}
   let i = 1
   for (const n of ['Planning', 'In progress', 'Waiting']) sections[n] = (await A('POST', '/api/v1/sections', { name: n, project_id: home.id, position: i++ })).id
@@ -122,10 +126,19 @@ async function seed() {
   await A('PUT', '/api/v1/settings/mcp', { enabled: true, writes_enabled: true })
   await A('PUT', '/api/v1/me/agent-access', { allow_writes: true })
   await A('POST', '/api/v1/tokens', { name: 'Desk assistant', scope: 'agent' }).catch(() => {})
+  // The in-app assistant (in-app-assistant) against the scripted fake provider
+  // in scripts/fake-llm.mjs: no real model provider is ever contacted.
+  const llm = await startFakeLLM(0)
+  // Member keys allowed, so Settings → AI shows "Which assistant you use" and
+  // the owner's cap switch (assistant-member-provider); Ada stays on the server's.
+  await A('PUT', '/api/v1/settings/assistant', { enabled: true, default_provider: 'compatible', allow_private_endpoint: true, allow_member_keys: true,
+    providers: { compatible: { enabled: true, model: 'fake-model', base_url: `http://127.0.0.1:${llm.address().port}/v1` } } })
+  await A('PUT', '/api/v1/me/assistant', { consent: true, provider: 'compatible' })
+  await A('POST', '/api/v1/tasks', { title: 'Water the plants', due: { date: new Date(Date.now() - 2 * 86400e3).toISOString().slice(0, 10) } })
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
-  return { storageState, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id }
+  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, llm }
 }
 
 // ------------------------------------------------------------------ screens
@@ -135,7 +148,10 @@ function screens(ids) {
   const heading = (name) => (p) => p.getByRole('heading', { name, level: 1 }).first().waitFor()
   return [
     { name: 'sign-in', path: '/', anon: true, ready: (p) => p.getByRole('button', { name: 'Sign in' }).waitFor() },
-    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'reminder-toast'] },
+    // Project invite link (project-invite-links): a visitor's choice, and the creator, who is a member already.
+    { name: 'project-invite', path: `/invite/p/${ids.projectInvite}`, anon: true, ready: (p) => p.getByRole('button', { name: /sign in to join/ }).waitFor() },
+    { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
+    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'reminder-toast', 'assistant', 'assistant-review'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
     { name: 'upcoming', path: '/upcoming', ready: heading('Upcoming') },
     { name: 'assigned', path: '/assigned', ready: row('Pick paint colours') },
@@ -145,14 +161,20 @@ function screens(ids) {
     { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'activity', path: '/activity', ready: heading(/Activity/) },
-    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'section-menu', 'share', 'mention-picker', 'assignee-picker', 'help-panel'] },
+    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), board: true },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
     { name: 'labels', path: '/labels', ready: heading('Labels'), overlays: ['label-menu', 'new-label'] },
     { name: 'views', path: '/views', ready: heading('Views'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
-    { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications', 'voice-consent', 'delete-user'] },
+    // Settings (settings-navigation): the overview and every section, each overlay on
+    // the section that holds its control (the owner sees all of them).
+    { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications'] },
+    ...[
+      ['account', 'Account'], ['general', 'General', ['voice-consent']], ['notifications', 'Notifications'], ['data', 'Data'],
+      ['capture', 'Capture'], ['integrations', 'Integrations'], ['ai', 'AI'], ['admin', 'Administration', ['delete-user']],
+    ].map(([id, title, overlays]) => ({ name: `settings-${id}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
     // In-app Help (user-documentation): also checked offline.
     { name: 'help', path: '/help', ready: heading('Help'), offline: '/help/keyboard' },
@@ -169,6 +191,9 @@ async function openSidebar(p) {
   const burger = p.getByRole('button', { name: 'Open menu' })
   if (await burger.isVisible()) { await burger.click(); await p.waitForTimeout(350) }
 }
+// Serialises assistant turns across parallel viewports (see 'assistant-review').
+let assistantTurnLock = Promise.resolve()
+
 const OVERLAYS = {
   async notifications(p) {
     const trigger = p.locator('[data-notifications]')
@@ -221,6 +246,15 @@ const OVERLAYS = {
     const trigger = p.getByRole('button', { name: /^Share/ }).first()
     await trigger.click()
     return { overlay: p.getByRole('dialog', { name: /^Share/ }), trigger, kind: 'dialog' }
+  },
+  // The share dialog with the "Invite with a link" form open (project-invite-links).
+  async 'share-invite-link'(p) {
+    const trigger = p.getByRole('button', { name: /^Share/ }).first()
+    await trigger.click()
+    const dialog = p.getByRole('dialog', { name: /^Share/ })
+    await dialog.getByRole('button', { name: 'Create a link…' }).click()
+    await dialog.getByRole('button', { name: 'Create link' }).waitFor()
+    return { overlay: dialog, trigger, kind: 'dialog' }
   },
   async 'mention-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
@@ -298,6 +332,34 @@ const OVERLAYS = {
         if (v !== 'chen@example.com') throw new Error(`the typed email was lost when help opened (now "${v}")`)
         await p.keyboard.press('Escape')
       },
+    }
+  },
+  // In-app assistant (in-app-assistant): the panel from the header button, and
+  // a proposal to review after a scripted answer.
+  async assistant(p) {
+    const trigger = p.locator('[data-assistant-launcher]')
+    await trigger.click()
+    return { overlay: p.locator('[data-assistant-panel]'), trigger, kind: 'dialog' }
+  },
+  // Viewports run in parallel as the same user and the server allows one turn
+  // per user at a time (409 turn_in_progress), so turns take a shared lock
+  // until the answer has finished streaming.
+  async 'assistant-review'(p) {
+    let release
+    const prev = assistantTurnLock
+    assistantTurnLock = new Promise((r) => { release = r })
+    await prev
+    try {
+      await p.keyboard.press('Shift+I')
+      const panel = p.locator('[data-assistant-panel]')
+      await panel.waitFor()
+      await panel.locator('[data-assistant-composer]').fill('Move everything overdue to Friday')
+      await p.keyboard.press('Enter')
+      await panel.locator('[data-assistant-review]').waitFor({ timeout: 20000 })
+      await panel.locator('[aria-busy="true"]').waitFor({ state: 'detached', timeout: 10000 }).catch(() => {})
+      return { overlay: panel, kind: 'dialog', after: async () => { if (await panel.isVisible()) await p.keyboard.press('Escape') } }
+    } finally {
+      release()
     }
   },
   async 'delete-user'(p) {
@@ -578,6 +640,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
 // ------------------------------------------------------------------ main
 log('· seeding', base)
 const ids = await seed()
+const llmServer = ids.llm
 const combos = []
 for (const e of ENGINES) for (const w of WIDTHS) for (const t of THEMES) combos.push([e, w, t])
 log(`· checking ${combos.length} combinations (${ENGINES.join(', ')} × ${WIDTHS.join('/')} px × ${THEMES.join('/')})`)
@@ -585,6 +648,7 @@ const queue = [...combos]
 await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
   while (queue.length) { const [e, w, t] = queue.shift(); await runCombo(e, w, t, ids) }
 }))
+llmServer?.close()
 writeFileSync(`${outDir}/failures.txt`, failures.join('\n') + '\n')
 if (failures.length) {
   log(`\n✗ ${failures.length} layout problems (screenshots in ${outDir}/):`)

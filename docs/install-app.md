@@ -62,4 +62,4 @@ When your server is updated, the app fetches the new version in the background a
 
 Remove it the way you remove any app on that device: long-press the icon and choose **Remove App** (iPhone) or **Uninstall** (Android), or use **Uninstall** from the app window's menu on a computer. Your tasks stay on your server.
 
-Signing out (**Settings → Session → Sign out**) clears the copy of your tasks on that device. Changes that haven't reached the server yet are uploaded first when you're online.
+Signing out (**Settings → Account → Session → Sign out**) clears the copy of your tasks on that device. Changes that haven't reached the server yet are uploaded first when you're online.

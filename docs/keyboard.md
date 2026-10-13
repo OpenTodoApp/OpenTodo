@@ -45,6 +45,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | Keys | What it does |
 | --- | --- |
 | <kbd>q</kbd> | Quick add a task |
+| <kbd>Shift+I</kbd> | Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes |
+| <kbd>Enter</kbd> / <kbd>Esc</kbd> | Proposed changes: assistant: apply the checked changes / discard the proposal; Space toggles an item |
 | <kbd>Shift+V</kbd> | Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves |
 | <kbd>Esc</kbd> | Close panel, clear selection |
 | <kbd>?</kbd> | Toggle this help |
@@ -57,7 +59,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>a</kbd> | Go to Assigned to me |
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Activity: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters) |
-| <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Import data |
+| <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Data → Import data |
 | <kbd>g</kbd> then <kbd>d</kbd> / <kbd>w</kbd> | Go to the Day / Week calendar |
 | <kbd>g</kbd> then <kbd>?</kbd> | Open Help: the user guide, offline, with search |
 
@@ -142,10 +144,10 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 | Keys | What it does |
 | --- | --- |
-| <kbd>Enter</kbd> | On an invitation: Settings → Members: copy the invite link created in this session |
-| <kbd>Delete</kbd> | On an invitation: Settings → Members: revoke a pending invitation |
-| <kbd>d</kbd> / <kbd>r</kbd> / <kbd>Delete</kbd> | On a user: Settings → Users: deactivate or reactivate, create a reset link, delete (each confirms) |
-| <kbd>g</kbd> then <kbd>s</kbd>, <kbd>Tab</kbd> | Settings → Security: add, rename (Enter saves, Esc cancels) or delete passkeys |
+| <kbd>Enter</kbd> | On an invitation: Settings → Administration → Members: copy the invite link created in this session |
+| <kbd>Delete</kbd> | On an invitation: Settings → Administration → Members: revoke a pending invitation |
+| <kbd>d</kbd> / <kbd>r</kbd> / <kbd>Delete</kbd> | On a user: Settings → Administration → Users: deactivate or reactivate, create a reset link, delete (each confirms) |
+| <kbd>Tab</kbd> | In Settings → Account: security: add, rename (Enter saves, Esc cancels) or delete passkeys |
 
 ### Quick add syntax
 
@@ -160,7 +162,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 ## Vim keybindings
 
-If you're used to Vim, turn on **Settings → Keyboard → Vim keybindings**. It's off by default and applies to that device only. With it on, a small indicator shows the mode (Normal, Insert or Command), and you get:
+If you're used to Vim, turn on **Settings → General → Keyboard → Vim keybindings**. It's off by default and applies to that device only. With it on, a small indicator shows the mode (Normal, Insert or Command), and you get:
 
 - counts like <kbd>3</kbd><kbd>j</kbd>, <kbd>g</kbd><kbd>g</kbd> and <kbd>G</kbd> for the first and last task,
 - <kbd>d</kbd><kbd>d</kbd> to delete, <kbd>x</kbd> to complete, <kbd>o</kbd> to add a task below and <kbd>i</kbd> to edit,

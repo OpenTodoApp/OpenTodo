@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, type MouseEvent, type RefObject, Suspense, useEffect, useRef, useState } from 'react'
 import { HelpHeading } from './help/HelpLink'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getAutoArchive, setAutoArchive } from '../lib/archive'
@@ -17,128 +17,102 @@ import { NotificationsSettings } from './NotificationsSettings'
 import { SecuritySettings } from './ActivityPanel'
 import { SecurityPanel } from './SecurityPanel'
 import { LinkedAccountsPanel, SsoPanel } from './SsoPanel'
+import { ProjectInvitePolicyPanel } from './ProjectInvitePolicyPanel'
 import { TwoFactorPanel } from './TwoFactorPanel'
 import { EncryptionPanel } from './EncryptionPanel'
-import { navigate } from './router'
+import { navigate, routePath, type Route, type SettingsSectionId } from './router'
+import { joinList, resolveSection, SETTINGS_SECTIONS, visibleSections } from './settingsSections'
 import { TokensSection } from './TokensSection'
 import { WebhooksPanel } from './WebhooksPanel'
 import { CaldavPanel } from './CaldavPanel'
+import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
 import { setStartView, type StartView } from '../lib/views'
 import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
 import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
 
-export function SettingsView({ user, onLogout }: { user: User; onLogout: () => void }) {
-  // Bumped when the AI assistants section creates a token, so the list reloads.
-  const [tokenReload, setTokenReload] = useState(0)
-  const sync = useSyncStatus()
-  const views = useViews()
-  const startView = useStartView()
-  const demo = useDemo()
-  const startIsKnown = !startView.startsWith('view:') || views.some((v) => `view:${v.id}` === startView)
+// Settings → AI → Assistant (in-app-assistant): part of the lazy assistant code.
+const AssistantSettingsSection = lazy(() => import('./assistant/AssistantSettings'))
 
+/** Follows an in-app link without a reload; modified clicks (new tab, new window) keep the browser's behaviour. */
+export function followLink(e: Pick<MouseEvent<HTMLAnchorElement>, 'button' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey' | 'preventDefault'>, r: Route) {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+  e.preventDefault()
+  navigate(r)
+}
+
+/**
+ * Settings (OpenSpec `settings-navigation`): `/settings` is the overview, a list of
+ * sections; `/settings/<section>` opens one. A section this user may not see (or an
+ * unknown one) shows the overview.
+ */
+export function SettingsView({ user, onLogout, section }: { user: User; onLogout: () => void; section?: SettingsSectionId }) {
+  const current = resolveSection(user, section)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  // Focus follows navigation, so keyboard and screen reader users land on the new page.
+  useEffect(() => {
+    headingRef.current?.focus({ preventScroll: true })
+  }, [current?.id])
+
+  if (!current) return <SettingsOverview user={user} headingRef={headingRef} />
   return (
-    <div className="mx-auto max-w-2xl space-y-8 px-4 py-6 md:px-8">
+    <div className="mx-auto max-w-5xl px-4 py-6 md:px-8 lg:flex lg:gap-8" data-settings-section={current.id}>
+      <nav aria-label="Settings sections" className="hidden lg:sticky lg:top-6 lg:block lg:w-48 lg:shrink-0 lg:self-start">
+        <a className="touch-target flex items-center rounded-md px-2 py-1.5 text-sm text-muted hover:bg-slate-200/60 dark:hover:bg-slate-800" href={routePath({ view: 'settings' })}
+          onClick={(e) => followLink(e, { view: 'settings' })}>All settings</a>
+        <ul className="mt-1 space-y-0.5">
+          {visibleSections(user).map((s) => (
+            <li key={s.id}>
+              <a href={routePath({ view: 'settings', section: s.id })} aria-current={s.id === current.id ? 'page' : undefined}
+                className={`touch-target flex items-center rounded-md px-2 py-1.5 text-sm ${s.id === current.id ? 'bg-emerald-100 font-medium text-slate-900 dark:bg-emerald-900/40 dark:text-slate-100' : 'text-slate-700 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                onClick={(e) => followLink(e, { view: 'settings', section: s.id })}>{s.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div className="min-w-0 flex-1 space-y-8 lg:max-w-2xl">
+        <div>
+          <a className="btn-ghost touch-target -ml-3 text-sm lg:hidden" href={routePath({ view: 'settings' })} data-settings-back
+            onClick={(e) => followLink(e, { view: 'settings' })}><span aria-hidden="true">←</span> Settings</a>
+          <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold outline-none">{current.label}</h1>
+        </div>
+        <SectionContent id={current.id} user={user} onLogout={onLogout} />
+      </div>
+    </div>
+  )
+}
+
+function SettingsOverview({ user, headingRef }: { user: User; headingRef: RefObject<HTMLHeadingElement | null> }) {
+  return (
+    <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 md:px-8" data-settings-overview>
       <section>
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-xl font-semibold">Settings</h1>
-          <a className="btn-ghost touch-target text-sm" href="/help" onClick={(e) => { e.preventDefault(); navigate({ view: 'help' }) }}>Help and guides</a>
+          <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold outline-none">Settings</h1>
+          <a className="btn-ghost touch-target text-sm" href="/help" onClick={(e) => followLink(e, { view: 'help' })}>Help and guides</a>
         </div>
-        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted">{user.name || user.email} · {user.email} · {user.role}</p>
+        <ProfileLine user={user} />
       </section>
 
-      <section className="space-y-2">
-        <HelpHeading screen="settings/data" className="font-semibold">Your data</HelpHeading>
-        <p className="text-sm text-muted">
-          Everything you see is stored on this device and on your server. Export it any time as JSON, or import an export,
-          a CSV file or another task manager's JSON export (<span className="kbd">g</span> <span className="kbd">Shift+I</span>).
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/api/v1/export" download="opentodo-export.json">Download export (JSON)</a>
-          {demo ? (
-            <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled aria-describedby="demo-import-note">Import data…</button>
-          ) : (
-            <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/settings/import"
-              onClick={(e) => { e.preventDefault(); navigate({ view: 'import' }) }}>Import data…</a>
-          )}
-        </div>
-        {demo && <p id="demo-import-note" className="text-xs text-muted">Import: {DEMO_RESTRICTED_NOTE}</p>}
-        <p className="text-xs text-faint">
-          Sync: {sync.state}{sync.pending ? `, ${sync.pending} change(s) waiting to upload` : ''}.
-        </p>
-      </section>
+      <ConfigWarningsNotice user={user} />
 
-      <CalendarSettingsSection />
-
-      {demo ? <DemoRestrictedSection /> : (
-        <>
-          <PasswordSection />
-          <TwoFactorPanel user={user} />
-          <EncryptionPanel />
-          <NotificationsSettings />
-
-          <SecurityPanel />
-          <LinkedAccountsPanel />
-        </>
-      )}
-      <section className="space-y-2">
-        <HelpHeading screen="settings/start-view" className="font-semibold">Start view</HelpHeading>
-        <p className="text-sm text-muted">The view this device opens on launch. Each device keeps its own choice; it is not synced.</p>
-        <select className="input max-w-xs" aria-label="Start view on this device" value={startIsKnown ? startView : 'inbox'}
-          onChange={(e) => void setStartView(e.target.value as StartView)}>
-          <optgroup label="Built-in">
-            <option value="inbox">Inbox</option>
-            <option value="today">Today</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="completed">Completed</option>
-            <option value="filter">Filter</option>
-          </optgroup>
-          {views.length > 0 && (
-            <optgroup label="Saved views">
-              {views.map((v) => <option key={v.id} value={`view:${v.id}`}>{v.name}</option>)}
-            </optgroup>
-          )}
-        </select>
-      </section>
-
-      <KeyboardSection />
-
-      <AutoArchiveSection />
-
-      {!demo && (
-        <>
-          <AdministrationSections user={user} />
-          {user.role === 'owner' && <SsoPanel />}
-
-          <CaldavPanel isOwner={user.role === 'owner'} email={user.email} />
-
-          <WebhooksPanel isOwner={user.role === 'owner'} />
-        </>
-      )}
-      <QuickAddSettingsSection />
-      <VoiceSettingsSection />
-
-      <SecuritySettings user={user} />
-
-      <CaptureSection />
-      {!demo && (
-        <>
-          <EmailInboxPanel />
-
-          {user.role === 'owner' && <BackupsPanel />}
-
-          <AssistantsPanel isOwner={user.role === 'owner'} onTokenCreated={() => setTokenReload((n) => n + 1)} />
-
-          <TokensSection reloadKey={tokenReload} />
-        </>
-      )}
-
-      <section className="space-y-2">
-        <HelpHeading screen="settings/session" className="font-semibold">Session</HelpHeading>
-        <p className="text-sm text-muted">Signing out clears the local copy of your tasks on this device. Unsynced changes are uploaded first when online.</p>
-        <button className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={onLogout}>Sign out</button>
-      </section>
+      <nav aria-label="Settings sections">
+        <ul className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+          {visibleSections(user).map((s) => (
+            <li key={s.id}>
+              <a href={routePath({ view: 'settings', section: s.id })} data-settings-link={s.id}
+                className="flex min-h-11 items-center gap-3 px-3 py-2.5 hover:bg-slate-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-500 dark:hover:bg-slate-800/60"
+                onClick={(e) => followLink(e, { view: 'settings', section: s.id })}>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium">{s.label}</span>
+                  <span className="block text-sm text-muted">{s.description(user)}</span>
+                </span>
+                <span aria-hidden="true" className="text-faint">›</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       <section className="text-xs text-faint">
         OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.
@@ -148,20 +122,173 @@ export function SettingsView({ user, onLogout }: { user: User; onLogout: () => v
   )
 }
 
-/** Features a demo instance refuses (OpenSpec `demo-mode`), listed where their sections would be. */
+function ProfileLine({ user }: { user: User }) {
+  return <p className="user-text mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted" data-profile-line>{user.name || user.email} · {user.email} · {user.role}</p>
+}
+
+/** The panels of one section, unchanged from the single page, with the demo note in place of refused ones. */
+function SectionContent({ id, user, onLogout }: { id: SettingsSectionId; user: User; onLogout: () => void }) {
+  const demo = useDemo()
+  const isOwner = user.role === 'owner'
+  const section = SETTINGS_SECTIONS.find((s) => s.id === id)
+  const refused = demo ? (section?.demo?.(user) ?? []) : []
+  const note = refused.length > 0 ? <DemoRestrictedSection features={refused} /> : null
+  if (demo && section?.demoOnly) return note
+  switch (id) {
+    case 'account':
+      return (
+        <>
+          <ProfileLine user={user} />
+          {note}
+          {!demo && (
+            <>
+              <PasswordSection />
+              <TwoFactorPanel user={user} />
+              <SecurityPanel />
+            </>
+          )}
+          <SecuritySettings user={user} />
+          {!demo && (
+            <>
+              <LinkedAccountsPanel />
+              <EncryptionPanel />
+            </>
+          )}
+          <section className="space-y-2">
+            <HelpHeading screen="settings/session" className="font-semibold">Session</HelpHeading>
+            <p className="text-sm text-muted">Signing out clears the local copy of your tasks on this device. Unsynced changes are uploaded first when online.</p>
+            <button className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={onLogout}>Sign out</button>
+          </section>
+        </>
+      )
+    case 'general':
+      return (
+        <>
+          <CalendarSettingsSection />
+          <StartViewSection />
+          <KeyboardSection />
+          <QuickAddSettingsSection />
+          <VoiceSettingsSection />
+          <AutoArchiveSection />
+        </>
+      )
+    case 'notifications':
+      return <NotificationsSettings />
+    case 'data':
+      return (
+        <>
+          <YourDataSection demo={!!demo} />
+          {note}
+          {!demo && isOwner && <BackupsPanel />}
+        </>
+      )
+    case 'capture':
+      return (
+        <>
+          <CaptureSection />
+          {note}
+          {!demo && <EmailInboxPanel />}
+        </>
+      )
+    case 'integrations':
+      // TokensSection loads its list whenever this section mounts, so a token
+      // created under AI → AI assistants is listed here without shared state.
+      return (
+        <>
+          <CaldavPanel isOwner={isOwner} email={user.email} />
+          <WebhooksPanel isOwner={isOwner} />
+          <TokensSection />
+        </>
+      )
+    case 'ai':
+      return (
+        <>
+          <Suspense fallback={null}><AssistantSettingsSection isOwner={isOwner} /></Suspense>
+          <AssistantsPanel isOwner={isOwner} />
+        </>
+      )
+    case 'admin':
+      return (
+        <>
+          <ConfigWarningsNotice user={user} />
+          <AdministrationSections user={user} />
+          {isOwner && <ProjectInvitePolicyPanel />}
+          {isOwner && <SsoPanel />}
+        </>
+      )
+  }
+}
+
+function YourDataSection({ demo }: { demo: boolean }) {
+  const sync = useSyncStatus()
+  return (
+    <section className="space-y-2">
+      <HelpHeading screen="settings/data" className="font-semibold">Your data</HelpHeading>
+      <p className="text-sm text-muted">
+        Everything you see is stored on this device and on your server. Export it any time as JSON, or import an export,
+        a CSV file or another task manager's JSON export (<span className="kbd">g</span> <span className="kbd">Shift+I</span>).
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/api/v1/export" download="opentodo-export.json">Download export (JSON)</a>
+        {demo ? (
+          <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled aria-describedby="demo-import-note">Import data…</button>
+        ) : (
+          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/settings/import"
+            onClick={(e) => followLink(e, { view: 'import' })}>Import data…</a>
+        )}
+      </div>
+      {demo && <p id="demo-import-note" className="text-xs text-muted">Import: {DEMO_RESTRICTED_NOTE}</p>}
+      <p className="text-xs text-faint">
+        Sync: {sync.state}{sync.pending ? `, ${sync.pending} change(s) waiting to upload` : ''}.
+      </p>
+    </section>
+  )
+}
+
+function StartViewSection() {
+  const views = useViews()
+  const startView = useStartView()
+  const startIsKnown = !startView.startsWith('view:') || views.some((v) => `view:${v.id}` === startView)
+  return (
+    <section className="space-y-2">
+      <HelpHeading screen="settings/start-view" className="font-semibold">Start view</HelpHeading>
+      <p className="text-sm text-muted">The view this device opens on launch. Each device keeps its own choice; it is not synced.</p>
+      <select className="input max-w-xs" aria-label="Start view on this device" value={startIsKnown ? startView : 'inbox'}
+        onChange={(e) => void setStartView(e.target.value as StartView)}>
+        <optgroup label="Built-in">
+          <option value="inbox">Inbox</option>
+          <option value="today">Today</option>
+          <option value="upcoming">Upcoming</option>
+          <option value="completed">Completed</option>
+          <option value="filter">Filter</option>
+        </optgroup>
+        {views.length > 0 && (
+          <optgroup label="Saved views">
+            {views.map((v) => <option key={v.id} value={`view:${v.id}`}>{v.name}</option>)}
+          </optgroup>
+        )}
+      </select>
+    </section>
+  )
+}
+
+/** Features a demo instance refuses (OpenSpec `demo-mode`); each section names its own (settingsSections.ts). */
 export const DEMO_RESTRICTED_FEATURES = [
   'password and two-factor authentication', 'passkeys', 'end-to-end encryption', 'push notifications', 'linked accounts',
   'users and invitations', 'single sign-on', 'calendar apps (CalDAV)', 'webhooks', 'email to task', 'backups',
-  'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
+  'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
 ]
 
-function DemoRestrictedSection() {
+/** The demo note in place of a section's refused panels, naming them. */
+function DemoRestrictedSection({ features }: { features: string[] }) {
+  const many = features.length > 1
   return (
     <section className="space-y-2" aria-labelledby="demo-heading" data-testid="demo-restricted">
       <h2 id="demo-heading" className="font-semibold">Demo instance</h2>
       <p className="text-sm text-muted">
-        This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Account, security and server settings are {DEMO_RESTRICTED_NOTE.toLowerCase().replace(/\.$/, '')}: {DEMO_RESTRICTED_FEATURES.join(', ')}.
-        Run your own server to use them; it takes one container.
+        This sandbox is private to you and is deleted after 2 hours of inactivity, and every night.
+        Here, {joinList(features)} {many ? 'are' : 'is'} {DEMO_RESTRICTED_NOTE.toLowerCase().replace(/\.$/, '')}.
+        Run your own server to use {many ? 'them' : 'it'}; it takes one container.
       </p>
     </section>
   )

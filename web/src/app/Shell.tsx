@@ -26,6 +26,7 @@ import { setCurrentUserId } from '../lib/sharing'
 import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
 import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from './help/store'
+import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
 
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
@@ -34,6 +35,9 @@ const VimLayer = lazy(() => import('./vim/VimLayer'))
 // chunks of their own, fetched when Help first opens (and precached for offline).
 const HelpView = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpView })))
 const HelpPanel = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpPanel })))
+// In-app assistant (in-app-assistant D9): its own chunk, fetched on first open;
+// the main bundle carries only the launcher, the shortcut and the status.
+const AssistantRoot = lazy(() => import('./assistant/AssistantRoot'))
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -74,6 +78,18 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   useEffect(() => {
     setSidebarOpen(false)
   }, [route])
+
+  // Whether the owner turned the assistant on for this account (cached offline).
+  const assistant = useAssistantStatus()
+  const assistantOpen = useAssistantOpen()
+  const [assistantLoaded, setAssistantLoaded] = useState(false)
+  useEffect(() => { if (assistantOpen) setAssistantLoaded(true) }, [assistantOpen])
+  useEffect(() => {
+    void refreshAssistantStatus()
+    const onOnline = () => void refreshAssistantStatus()
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+  }, [])
 
   // Assignment rules (task-assignment) need the account id offline too.
   useEffect(() => {
@@ -123,6 +139,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         e.preventDefault()
         setShowHelp((v) => !v)
       }
+      // Shift+I opens the assistant (`g` then Shift+I stays Import, handled above).
+      if (e.key === 'I' && showLauncher(assistantStatus())) {
+        e.preventDefault()
+        openAssistant()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -145,6 +166,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         <header className="flex items-center gap-2 border-b border-slate-200 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] dark:border-slate-800 md:px-6">
           <button className="btn-ghost touch-target md:hidden" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>☰</button>
           <div className="flex-1" />
+          {showLauncher(assistant) && (
+            <button type="button" className="btn-ghost touch-target text-sm" onClick={openAssistant} aria-haspopup="dialog" title="Assistant (Shift+I)" data-assistant-launcher>
+              Assistant
+            </button>
+          )}
           <NotificationBell />
           <SyncStatus />
           <button className="btn-ghost touch-target text-xs" onClick={() => setShowHelp(true)} title="Keyboard shortcuts" aria-label="Keyboard shortcuts" aria-haspopup="dialog">
@@ -167,7 +193,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           {route.view === 'help' ? (
             <Suspense fallback={<p className="px-4 py-6 text-sm text-muted" role="status">Loading help…</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
-            <SettingsView user={user} onLogout={onLogout} />
+            <SettingsView user={user} onLogout={onLogout} section={route.section} />
           ) : route.view === 'import' ? (
             <ImportScreen />
           ) : route.view === 'labels' ? (
@@ -186,7 +212,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <CalendarView mode={route.view} date={route.date} />
           ) : (
             // App renders the invite, reset and capture screens itself; a stray /invite, /reset or /share route inside the shell falls back to the Inbox.
-            <TaskListView userId={user.id} route={route.view === 'invite' || route.view === 'reset' || route.view === 'share' ? { view: 'inbox' } : route} />
+            <TaskListView userId={user.id} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'share' ? { view: 'inbox' } : route} />
           )}
         </div>
         {vim && (
@@ -197,6 +223,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       </main>
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} extraSections={vim && vimHelp ? [vimHelp] : []} />}
       {helpRequest && <Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense>}
+      {assistantLoaded && <Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense>}
       <ReminderToasts />
       <ArchivePrompt />
     </div>

@@ -421,6 +421,20 @@ export interface LinkedIdentity {
 /** Owner policy for the second factor (OpenSpec `mfa-totp`). */
 export type MfaPolicy = 'none' | 'owner' | 'all'
 
+/**
+ * A server configuration problem the server started despite (OpenSpec
+ * `trusted-proxies-lenient`), such as an invalid OPENTODO_TRUSTED_PROXIES entry.
+ * Only the owner's session receives these, in /api/v1/me `config_warnings`.
+ */
+export interface ConfigWarning {
+  /** The environment variable, e.g. OPENTODO_TRUSTED_PROXIES. */
+  variable: string
+  /** What was ignored, what is accepted and how to fix it. */
+  message: string
+  /** The ignored values, when the warning is about specific entries. */
+  ignored?: string[]
+}
+
 /** Second-factor state as reported by /me, /mfa and auth/status. Server account data, never synced. */
 export interface MfaStatus {
   enrolled: boolean
@@ -476,6 +490,28 @@ export interface InvitationPreview {
   inviterName: string
   email: string | null
   expiresAt: number
+}
+
+/** A pending project invite link as the project's owner and admins see it (OpenSpec `project-invite-links`). Never carries the secret. */
+export interface ProjectInvite {
+  id: string
+  projectId: string
+  role: Exclude<ProjectRole, 'owner'>
+  email: string | null
+  createdBy: string
+  createdByName: string
+  createdAt: number
+  expiresAt: number
+}
+
+/** What anyone holding a project invite link may learn before joining. */
+export interface ProjectInvitePreview extends InvitationPreview {
+  projectName: string
+  role: Exclude<ProjectRole, 'owner'>
+  /** Whether the link may create a new account (server owner/admin link, open sign-up, or the owner switch). */
+  canCreateAccount: boolean
+  /** Present when the request carried a session: whether that account is on the project already. */
+  alreadyMember?: boolean
 }
 
 /** Events an outbound webhook can subscribe to (OpenSpec `webhooks`). */
@@ -629,6 +665,7 @@ export const AUDIT_EVENT_NAMES = [
   'token.created', 'token.revoked', 'app_password.created', 'app_password.revoked',
   'email_inbox.created', 'email_inbox.rotated', 'email_inbox.updated',
   'invitation.created', 'invitation.accepted', 'invitation.revoked',
+  'project_invite.created', 'project_invite.revoked', 'project_invite.accepted',
   'role.changed', 'settings.changed',
   'identity.linked', 'identity.unlinked',
   'export.requested', 'audit.exported',

@@ -6,6 +6,48 @@ export interface OutboxOp extends Op {
   local?: number
 }
 
+/**
+ * In-app assistant conversations (in-app-assistant D8): on this device only,
+ * never synced, never in the outbox, exports or backups; cleared at sign-out.
+ */
+export interface AssistantThread {
+  id: string
+  title: string
+  messages: AssistantMessage[]
+  created_at: number
+  updated_at: number
+  provider: string
+  usage: { input: number; output: number }
+}
+
+/** One message as shown: text, status lines and change-set summaries, never raw tool results. */
+export interface AssistantMessage {
+  role: 'user' | 'assistant'
+  text: string
+  /** Status lines shown while the answer was written ("Looking at Today…"). */
+  status?: string[]
+  /** "4 of 5 changes applied", "Proposal discarded", "Undone". */
+  note?: string
+  /** The answer ended with this stop reason (refusal and max_tokens are shown). */
+  stop?: string
+  error?: string
+  usage?: { input: number; output: number; month_total?: number; cap?: number; own_key?: boolean }
+  at: number
+}
+
+/** The inverse of one applied change set (in-app-assistant D2): kept for the last 20. */
+export interface AssistantUndo {
+  id: string
+  created_at: number
+  /** How many changes were applied, for the summary. */
+  count: number
+  /** Field values to restore, per entity. */
+  inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean }[]
+  /** The clock each applied field got, to skip fields changed again since. */
+  clocks: { entity: string; entityId: string; field: string; ts: number; device: string }[]
+  undone_at?: number
+}
+
 interface Meta {
   key: string
   value: unknown
@@ -35,6 +77,9 @@ class OpenTodoDB extends Dexie {
   prefs!: Table<ProjectPrefs, string>
   outbox!: Table<OutboxOp, number>
   meta!: Table<Meta, string>
+  /** In-app assistant conversations and undo batches: device-local, never ops. */
+  assistantThreads!: Table<AssistantThread, string>
+  assistantUndo!: Table<AssistantUndo, string>
 
   constructor(name = 'opentodo') {
     super(name)
@@ -150,6 +195,25 @@ class OpenTodoDB extends Dexie {
       activity: 'id, [projectKey+ts], taskId, entityId',
       prefs: 'id',
     })
+    // v13 (in-app-assistant): device-local conversations and undo batches.
+    // Additive; every store is redeclared. Never synced and never in the outbox.
+    this.version(13).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+      comments: 'id, task_id',
+      activity: 'id, [projectKey+ts], taskId, entityId',
+      prefs: 'id',
+      assistantThreads: 'id, updated_at',
+      assistantUndo: 'id, created_at',
+    })
   }
 }
 
@@ -180,10 +244,10 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
-  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications], async () => {
+  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo], async () => {
     await Promise.all([
       ...entityTables().map((t) => t.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(),
-      db.notifications.clear(),
+      db.notifications.clear(), db.assistantThreads.clear(), db.assistantUndo.clear(),
     ])
   })
 }

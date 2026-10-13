@@ -20,6 +20,9 @@ export const AUDIT_LABELS: Record<AuditEventName, string> = {
   'invitation.created': 'Invitation created',
   'invitation.accepted': 'Invitation accepted',
   'invitation.revoked': 'Invitation revoked',
+  'project_invite.created': 'Project invite link created',
+  'project_invite.revoked': 'Project invite link revoked',
+  'project_invite.accepted': 'Joined a project with a link',
   'role.changed': 'Role changed',
   'settings.changed': 'Setting changed',
   'identity.linked': 'Sign-in provider linked',
@@ -59,6 +62,7 @@ const SETTINGS: Record<string, string> = {
   'mcp.enabled': 'AI assistants (MCP)',
   'mcp.writes': 'AI assistants may make changes',
   'agent.writes': 'Allow AI assistants to make changes',
+  'project_invites.members_create_accounts': 'Members can invite new people with project links',
 }
 
 /** One-line summary of an event's allow-listed details. */
@@ -70,6 +74,7 @@ export function eventSummary(ev: AuditEvent): string {
   if (d.tool) parts.push(d.tool)
   if (d.token_name) parts.push(`“${d.token_name}”${d.token_scope === 'read' ? ' (read-only)' : d.token_scope === 'agent' ? ' (assistant, can make changes)' : ''}`)
   if (d.passkey_name) parts.push(`“${d.passkey_name}”`)
+  if (d.project_role) parts.push(`as ${d.project_role}`)
   if (d.invited_email) parts.push(`for ${d.invited_email}`)
   if (d.setting) parts.push(`${SETTINGS[d.setting] ?? d.setting}: ${d.from ?? '?'} → ${d.to ?? '?'}`)
   else if (d.from || d.to) parts.push(`${d.from ?? '?'} → ${d.to ?? '?'}`)

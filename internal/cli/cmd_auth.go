@@ -276,7 +276,7 @@ func authStatus(a *App, ctx context.Context, g *globalFlags, args []string) erro
 		if !*cred.WritesAllowed {
 			state = "not allowed: " + map[string]string{
 				"writes_disabled_by_owner": "the server owner has not allowed AI assistants to make changes",
-				"writes_disabled_by_user":  "\"Allow AI assistants to make changes\" is off in Settings → AI assistants",
+				"writes_disabled_by_user":  "\"Allow AI assistants to make changes\" is off in Settings → AI → AI assistants",
 			}[cred.WritesDenied]
 		}
 		fmt.Fprintf(a.Stdout, "Writes:   %s\n", state)
@@ -351,7 +351,7 @@ func authLogout(a *App, ctx context.Context, g *globalFlags, args []string) erro
 	case revoked != "":
 		fmt.Fprintf(a.Stdout, "Revoked token %q on %s", revoked, t.URL)
 	case limited != "":
-		fmt.Fprintf(a.Stdout, "A %s token cannot revoke itself; revoke it in Settings → API tokens on %s", limited, t.URL)
+		fmt.Fprintf(a.Stdout, "A %s token cannot revoke itself; revoke it in Settings → Integrations → API tokens on %s", limited, t.URL)
 	default:
 		fmt.Fprintf(a.Stdout, "Token was already invalid on %s", t.URL)
 	}

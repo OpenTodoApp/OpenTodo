@@ -4,7 +4,7 @@ summary: Share a project with people on your server, choose what they can do, as
 audience: user
 section: Guides
 specs: [project-sharing, task-assignment, comments, invitations, activity-feed]
-screens: [share-dialog#share-a-project, settings/members#invite-someone-new]
+screens: [share-dialog#share-a-project, settings/members#invite-someone-new, settings/project-invites#who-can-bring-new-people]
 order: 70
 card: comments
 ---
@@ -22,7 +22,36 @@ Projects can be shared with other people who have an account on the same OpenTod
 
 The project appears on their devices the next time they sync, with all its tasks. Shared projects have a small people icon in the sidebar.
 
-You can only add people who already have an account on your server. If they don't, invite them first (see below).
+Adding by email works only for people who already have an account on your server. For anyone else, send an invite link (next section).
+
+## Invite with a link
+
+An invite link adds one person to the project, whether or not they have an account yet.
+
+1. Open **Share** and select **Create a link…** under **Invite with a link**.
+2. Pick the role they get. Owners can also invite admins; admins can invite viewers and editors.
+3. Optionally enter their email: then only an account with that address can use the link.
+4. Choose how long it stays valid (1 hour to 30 days, 7 days by default) and select **Create link**.
+5. Select **Copy link** and send it however you like. OpenTodo never sends it for you.
+
+The link is shown only once and works once. The dialog lists the links that are still waiting, with their role, email, expiry and who created them; **Revoke** stops one from working. Creating and revoking links need a connection.
+
+When the person opens the link they see who invited them, the project and the role:
+
+- **Already have an account?** They select **Sign in to join**, sign in (with single sign-on too), and select **Join project**. Someone who is signed in already just selects **Join project**.
+- **New to the server?** They select **Create an account**, choose a name and password, and land in the project. This option appears only when the link is allowed to create accounts (see below). Otherwise the page tells them to get an account on the server first, then come back and sign in.
+
+A link stops working when it expires, is revoked or has been used, when the project is deleted, or when the person who created it is no longer the project's owner or an admin. Someone who is already a member is told so, and the link stays unused for whoever it was meant for.
+
+### Who can bring new people
+
+New accounts are created through a project link only when one of these is true:
+
+- the link was created by the **owner or an admin of the server**;
+- open sign-up is on for the server;
+- the server owner switched on **Members can invite new people with project links** in **Settings → Administration**. It is off by default.
+
+When none applies, the Share dialog says so under the new link: it then works only for people who already have an account. The switch is checked when a link is used, so turning it on or off also affects links that were already sent.
 
 ## Choose a role
 
@@ -39,11 +68,11 @@ For viewers, the project is read-only: the add box and edit controls are switche
 
 ## Invite someone new
 
-Sign-up on an OpenTodo server is closed by default, so new people join with an invitation. If you're the owner or an admin of the server, go to **Settings → Members**, optionally enter their email, choose how long the link stays valid, and select **Create invitation**. Copy the link and send it to them however you like; OpenTodo doesn't send emails. The link works once.
+Sign-up on an OpenTodo server is closed by default. The quickest way to bring someone into one project is an [invite link](#invite-with-a-link). To invite someone to the server without a project, if you're the owner or an admin of the server, go to **Settings → Administration → Members**, optionally enter their email, choose how long the link stays valid, and select **Create invitation**. Copy the link and send it to them however you like; OpenTodo doesn't send emails. The link works once.
 
 <picture><source srcset="images/members-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/members-light.webp" alt="Settings, Members section: an email field, an expiry menu set to 7 days, a Create invitation button, and a list with one pending and one accepted invitation."></picture>
 
-If you're not an admin of the server, ask whoever runs it to invite the person. Once they've joined, you can share projects with them yourself.
+If you're not an admin of the server and your invite link can't create accounts, ask whoever runs it to invite the person, or to switch on **Members can invite new people with project links**. Once they've joined, you can share projects with them yourself.
 
 ## Leave or hand over a project
 

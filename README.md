@@ -34,7 +34,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 - **On your machine or server:**
 
   ```bash
-  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:0.2
+  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:0.3
   ```
 
   Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Compose and plain binaries are in [Quick start](#quick-start).
@@ -60,14 +60,15 @@ If OpenTodo looks useful to you, a ⭐ on GitHub helps other people find it.
 - **No subscription, no lock-in.** Free software under the AGPL. Nobody can paywall your task list or shut it down with the company.
 - **Works offline, on every device.** Each phone and computer keeps a full copy of your data (local-first), so the app works with no connection at all. The server syncs, backs up and shares; it is never in the way of an edit.
 - **Your data, one folder.** Everything lives in one `/data` volume around a single SQLite file. Export to JSON at any time, import it (or a CSV, or another app's export) on any instance, and schedule encrypted backups to disk, S3 or WebDAV.
-- **Tiny footprint.** One container, one static binary of about 17 MB with the web app inside, around 20 MB of memory when idle. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no mandatory configuration.
+- **Tiny footprint.** One container, one static binary of about 23 MB with the web app inside, around 20 MB of memory when idle. Runs on a Raspberry Pi or the cheapest VPS. No database server, no Redis, no mandatory configuration.
 - **Private by design.** No telemetry, no analytics, no phone-home, no third-party scripts or fonts. The server only contacts what you configure (see [Privacy](#privacy)).
+- **Bring your own AI, if you want it.** Plan and change tasks by talking to the assistant in the app (Anthropic, OpenAI, Gemini or a model on your own network), connect the assistant you already use over MCP, or let a coding agent drive the `ot` CLI. Off by default, every change recorded and undoable, no AI vendor built in. See [Use AI with OpenTodo](docs/ai-and-agents.md).
 - **Keyboard-first.** `q` to capture, `j`/`k` to move, `c` to complete, `1`–`4` for priority, `g` `t` for Today, `?` for the full list, and optional Vim keybindings.
 - **Built in the open with specs.** Every feature starts as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change under [`openspec/`](openspec/), so behaviour is documented before it is built.
 
 ## Status
 
-OpenTodo is at **0.2**: every feature on the roadmap is in, covered by automated tests, but some integrations still need real-world testing (CalDAV with specific apps, single sign-on providers, real phones). If you try it, tell us how it went in the [call for testers](https://github.com/pixari/opentodo/issues/9).
+OpenTodo is at **0.3**: every feature on the roadmap is in, covered by automated tests, but some integrations still need real-world testing (CalDAV with specific apps, single sign-on providers, real phones). If you try it, tell us how it went in the [call for testers](https://github.com/pixari/opentodo/issues/9).
 
 **How it's built:** every feature starts as a written spec ([OpenSpec](openspec/)), and much of the code was written with AI coding agents working from those specs. A strict CI checks every change: Go and web tests, spec validation, a phone-layout check in Chromium and WebKit, and accessibility checks. Everything is reviewed before it's merged, and the full history is public.
 
@@ -119,6 +120,7 @@ The highlights: quick add in plain language, projects with sections and boards, 
 
 - **REST API and API tokens** (full or read-only) that write through the same op log as the app. [API](docs/api.md)
 - **Calendar apps (CalDAV)**: two-way sync with Apple Reminders, Thunderbird and Android tasks apps via DAVx⁵, with per-device app passwords. Off until the owner enables it. [CalDAV](docs/caldav.md)
+- **AI assistant in the app**: plan and change your tasks by talking (<kbd>Shift</kbd>+<kbd>I</kbd>), with Anthropic (Claude), OpenAI, Gemini or a model on your own network, using your own key. Off until the owner enables it; each person accepts what is sent first; every change is proposed for review and undone in one step; conversations stay on the device. [AI assistant](docs/assistant.md)
 - **AI assistants (MCP)**: a read-only Model Context Protocol endpoint so an assistant can answer "what is on my plate today?". Off until the owner enables it. [MCP](docs/mcp.md)
 - **Webhooks** on task and project events for Home Assistant, n8n or a Telegram relay: signed, retried, logged, with private-network protection. [Webhooks](docs/webhooks.md)
 - **Import** the app's own export, CSV or other task managers' JSON exports, with a preview, duplicate detection and undo. [Import](docs/import.md)
@@ -155,7 +157,7 @@ No environment variable is required. Open the app, create the owner account, and
 
 ```bash
 docker run -d --name opentodo -p 8080:8080 -v opentodo-data:/data \
-  ghcr.io/pixari/opentodo:0.2
+  ghcr.io/pixari/opentodo:0.3
 ```
 
 Open <http://localhost:8080> and create the owner account. Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.2` follows the 0.2 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
@@ -224,21 +226,21 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_TRUSTED_PROXIES` | — | Optional: proxies in front of your reverse proxy whose `X-Forwarded-For` hops are skipped for rate limits and the audit log (IPs, CIDRs, `cloudflare`) |
 | `OPENTODO_PUSH` | `on` | `off` disables web push for [reminders](docs/reminders.md): no requests to push services; reminders still show in the app |
 | `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset | `true`/`false` presets the owner's "allow private network targets" [webhook](docs/webhooks.md#private-network-protection) policy on first start; afterwards Settings decides |
-| `OPENTODO_MCP` | unset (off) | `true` presets the [AI assistants (MCP)](docs/mcp.md) endpoint on first start; afterwards Settings → AI assistants decides |
-| `OPENTODO_MCP_WRITES` | unset (off) | `true` presets "AI assistants may make changes" on first start; each user must still allow it and use an `agent` token. Afterwards Settings → AI assistants decides |
-| `OPENTODO_CALDAV` | unset (off) | `true` presets the [CalDAV](docs/caldav.md) endpoint on first start; afterwards Settings → Calendar apps decides |
-| `OPENTODO_OIDC_ISSUER`, `_CLIENT_ID`, `_CLIENT_SECRET`, `_DISPLAY_NAME`, `_SSO_ONLY` | unset | Optional [single sign-on](docs/self-hosting/sso.md) settings; each one set overrides and locks that field in Settings → Single sign-on. The issuer must be https |
+| `OPENTODO_MCP` | unset (off) | `true` presets the [AI assistants (MCP)](docs/mcp.md) endpoint on first start; afterwards Settings → AI → AI assistants decides |
+| `OPENTODO_MCP_WRITES` | unset (off) | `true` presets "AI assistants may make changes" on first start; each user must still allow it and use an `agent` token. Afterwards Settings → AI → AI assistants decides |
+| `OPENTODO_CALDAV` | unset (off) | `true` presets the [CalDAV](docs/caldav.md) endpoint on first start; afterwards Settings → Integrations → Calendar apps decides |
+| `OPENTODO_OIDC_ISSUER`, `_CLIENT_ID`, `_CLIENT_SECRET`, `_DISPLAY_NAME`, `_SSO_ONLY` | unset | Optional [single sign-on](docs/self-hosting/sso.md) settings; each one set overrides and locks that field in Settings → Administration → Single sign-on. The issuer must be https |
 | `OPENTODO_EMAIL_ADDRESS`, `_IMAP_HOST`, `_IMAP_USER`, `_IMAP_PASSWORD` (or `_IMAP_PASSWORD_FILE`) | unset (off) | [Email to task](docs/email.md): all four together turn it on; setting only some stops startup |
 | `OPENTODO_EMAIL_IMAP_MAILBOX`, `_POLL_SECONDS`, `_PROCESSED` | `INBOX`, `60`, `move:OpenTodo/Processed` | Email to task tuning (minimum poll 15 s; `_PROCESSED` may be `delete`) |
-| `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](docs/backups.md#environment-presets) (`DESTINATION`, `SCHEDULE`, `TIME`, `WEEKDAY`, `KEEP`, `MAX_AGE_DAYS`, `COMPRESS`, `LOCAL_DIR`, `S3_*`, `WEBDAV_*`, `PASSPHRASE`/`PASSPHRASE_FILE`), applied once; Settings → Backups wins afterwards |
+| `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](docs/backups.md#environment-presets) (`DESTINATION`, `SCHEDULE`, `TIME`, `WEEKDAY`, `KEEP`, `MAX_AGE_DAYS`, `COMPRESS`, `LOCAL_DIR`, `S3_*`, `WEBDAV_*`, `PASSPHRASE`/`PASSPHRASE_FILE`), applied once; Settings → Data → Backups wins afterwards |
 
 `OPENTODO_PORT` in `.env` only changes the host port published by `docker-compose.yml`. The `ot` client reads its own variables (`OPENTODO_URL`, `OPENTODO_TOKEN`, `OPENTODO_PROFILE`, `OPENTODO_CONFIG`), see [docs/cli.md](docs/cli.md).
 
 ## Adding people
 
-Sign-up stays closed after the owner account exists. To add a partner or a colleague, open **Settings → Members**, optionally enter their email, pick an expiry (1 hour to 30 days, default 7 days) and create an invitation. Copy the link (it is shown once) and send it however you like; OpenTodo sends no email. The link creates exactly one `member` account and then stops working; you can revoke a pending link at any time. Admins can create invitations too.
+Sign-up stays closed after the owner account exists. To add a partner or a colleague, open **Settings → Administration → Members**, optionally enter their email, pick an expiry (1 hour to 30 days, default 7 days) and create an invitation. Copy the link (it is shown once) and send it however you like; OpenTodo sends no email. The link creates exactly one `member` account and then stops working; you can revoke a pending link at any time. Admins can create invitations too.
 
-Manage accounts afterwards in **Settings → Users**: promote admins, deactivate and reactivate, issue password reset links, delete accounts, transfer ownership ([docs/self-hosting/docker.md](docs/self-hosting/docker.md#managing-users)). If the owner forgets their password, `opentodo reset-owner-password` on the host prints a reset link. With single sign-on configured, people can also sign in through your identity provider. Set `OPENTODO_BASE_URL` so links point at your public URL. API details: [docs/api.md](docs/api.md#invitations).
+Manage accounts afterwards in **Settings → Administration → Users**: promote admins, deactivate and reactivate, issue password reset links, delete accounts, transfer ownership ([docs/self-hosting/docker.md](docs/self-hosting/docker.md#managing-users)). If the owner forgets their password, `opentodo reset-owner-password` on the host prints a reset link. With single sign-on configured, people can also sign in through your identity provider. Set `OPENTODO_BASE_URL` so links point at your public URL. API details: [docs/api.md](docs/api.md#invitations).
 
 ## How it works
 
@@ -268,7 +270,8 @@ Read the docs with screenshots and search at **[opentodo.pixari.dev/docs](https:
 - **Start here**: [getting started](docs/getting-started.md) · [installing the app](docs/install-app.md) · [all user guides](docs/README.md#using-opentodo)
 - **Reference**: [quick add](docs/quick-add.md) · [filters and saved views](docs/filters.md) · [recurring tasks](docs/recurrence.md) · [reminders](docs/reminders.md) · [capture](docs/capture.md) · [import](docs/import.md) · [end-to-end encryption](docs/e2ee.md)
 - **Self-hosting**: [Docker](docs/self-hosting/docker.md) · [Coolify](docs/self-hosting/coolify.md) · [single sign-on](docs/self-hosting/sso.md) · [public demo instance](docs/self-hosting/demo.md) · [backups](docs/backups.md) · [email to task](docs/email.md) · [calendar apps (CalDAV)](docs/caldav.md)
-- **Integrations**: [REST API](docs/api.md) · [CLI](docs/cli.md) · [webhooks](docs/webhooks.md) · [AI assistants (MCP)](docs/mcp.md)
+- **AI**: [overview: which option to pick](docs/ai-and-agents.md) · [assistant in the app](docs/assistant.md) · [MCP](docs/mcp.md) · [`ot` for agents](docs/cli.md#using-ot-from-an-agent)
+- **Integrations**: [REST API](docs/api.md) · [CLI](docs/cli.md) · [webhooks](docs/webhooks.md) · [AI assistant in the app](docs/assistant.md) · [AI assistants (MCP)](docs/mcp.md)
 - **Internals**: [architecture](docs/architecture.md) · [sync protocol](docs/sync.md)
 - **Project**: [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security](SECURITY.md) · [contributing](CONTRIBUTING.md)
 
@@ -312,7 +315,8 @@ The web app makes no network requests except to your own server: no analytics, c
 - webhook URLs you add;
 - backup destinations (S3 or WebDAV) you configure;
 - the single sign-on issuer you configure;
-- the IMAP mailbox you configure for email to task.
+- the IMAP mailbox you configure for email to task;
+- the model provider you enable for the [in-app assistant](docs/assistant.md) (off by default), only after a person has accepted what is sent and only while they wait for an answer.
 
 The CalDAV and MCP endpoints only answer requests; they never call out. The audit log records security events (sign-ins, tokens, invitations, exports), never task content, and stores client addresses only if the owner turns that on; see [SECURITY.md](SECURITY.md#what-is-logged). With optional [end-to-end encryption](docs/e2ee.md) the server holds only ciphertext for task content.
 

@@ -14,17 +14,17 @@ OpenTodo can let an AI assistant read your projects and tasks through the [Model
 - **Off by default.** The server owner turns it on; until then `/mcp` answers 404.
 - **Read-only unless you opt in three times.** Write tools exist only when the owner allows assistant changes, you allow them for your account, and the assistant uses a token created for that purpose (scope `agent`). See [Letting an assistant make changes](#letting-an-assistant-make-changes).
 - **Yours only.** Each request acts as the account whose API token it carries and sees exactly what that account sees in the app: its personal projects and tasks plus the shared projects it is a member of. Deleted items are never returned.
-- **Passive.** The assistant connects to your server. OpenTodo never contacts a model provider, a registry or anything else on its own.
+- **Passive.** The assistant connects to your server. For MCP, OpenTodo never contacts a model provider, a registry or anything else on its own. (The separate [in-app assistant](assistant.md) does contact the provider the owner chooses, and only when it is turned on.)
 
 ## 1. Enable it (owner)
 
-**Settings → AI assistants → Allow AI assistants (MCP endpoint)**. The change applies at once, without a restart, and is recorded in the audit log as `settings.changed` (`mcp.enabled`).
+**Settings → AI → AI assistants → Allow AI assistants (MCP endpoint)**. The change applies at once, without a restart, and is recorded in the audit log as `settings.changed` (`mcp.enabled`).
 
 For deployments managed as code, the optional `OPENTODO_MCP=true` presets the toggle on the **first** start. After that the value in Settings wins, so the owner can still turn it off. Members see the status in the same section but no toggle.
 
 ## 2. Create a read-only token
 
-In **Settings → AI assistants**, choose **Create read-only token**, or in **Settings → API tokens** pick the **Read-only** scope. Copy the token: it is shown once. A read-only token is refused on every route that writes (see [API → Authentication](api.md#authentication)), so even if it leaks from an assistant's configuration it cannot change your data. Revoke it in **Settings → API tokens** at any time.
+In **Settings → AI → AI assistants**, choose **Create read-only token**, or in **Settings → Integrations → API tokens** pick the **Read-only** scope. Copy the token: it is shown once. A read-only token is refused on every route that writes (see [API → Authentication](api.md#authentication)), so even if it leaks from an assistant's configuration it cannot change your data. Revoke it in **Settings → Integrations → API tokens** at any time.
 
 Full-access tokens also work with `/mcp`, but only with the read tools: they never get write tools, so a full token pasted into an assistant long ago does not gain write power when someone turns assistant changes on. There is no reason to give one to an assistant.
 
@@ -144,9 +144,9 @@ Errors: a missing or malformed argument (for example `priority: 7`) is a JSON-RP
 
 Write tools are offered only when **all three** of these hold, and they are checked again on every request:
 
-1. **The owner allows it.** Settings → AI assistants → **AI assistants may make changes** (owner only, off by default; `PUT /api/v1/settings/mcp` with `{"writes_enabled": true}`). The optional `OPENTODO_MCP_WRITES=true` presets it on the first start only, like `OPENTODO_MCP`.
-2. **You allow it for your account.** Settings → AI assistants → **Allow AI assistants to make changes to my tasks** (off by default; `PUT /api/v1/me/agent-access`). Only you can change it, signed in or with a full-access token; no assistant token can. Turning it off stops all your assistants from making changes at once, without revoking their tokens.
-3. **The assistant uses an `agent` token.** Once both switches are on, Settings → AI assistants offers **Create a token for an assistant that can make changes** (or pick **AI assistant, can make changes** in Settings → API tokens, or run `ot token create desk-assistant --scope agent`). Read-only and full-access tokens never get write tools.
+1. **The owner allows it.** Settings → AI → AI assistants → **AI assistants may make changes** (owner only, off by default; `PUT /api/v1/settings/mcp` with `{"writes_enabled": true}`). The optional `OPENTODO_MCP_WRITES=true` presets it on the first start only, like `OPENTODO_MCP`.
+2. **You allow it for your account.** Settings → AI → AI assistants → **Allow AI assistants to make changes to my tasks** (off by default; `PUT /api/v1/me/agent-access`). Only you can change it, signed in or with a full-access token; no assistant token can. Turning it off stops all your assistants from making changes at once, without revoking their tokens.
+3. **The assistant uses an `agent` token.** Once both switches are on, Settings → AI → AI assistants offers **Create a token for an assistant that can make changes** (or pick **AI assistant, can make changes** in Settings → Integrations → API tokens, or run `ot token create desk-assistant --scope agent`). Read-only and full-access tokens never get write tools.
 
 An `agent` token reads like a read-only token. It can make changes through the write tools below, and through the same tools behind a short list of REST routes (create and edit tasks, projects, labels and comments) that the [`ot` command-line client](cli.md#using-ot-from-an-agent) uses; see [agent tokens in the API](api.md#agent-tokens). Every other REST route that writes refuses it, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and your own switch: it cannot mint tokens, raise its own permissions, change settings, sharing or members, or submit raw operations.
 

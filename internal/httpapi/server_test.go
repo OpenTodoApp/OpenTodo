@@ -38,18 +38,26 @@ type env struct {
 
 func newEnv(t *testing.T, allowSignup bool) *env {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	return newEnvWith(t, allowSignup)
+}
+
+// newEnvWith is newEnv with extra server options. The data directory is the
+// database's temporary directory, so secrets files land there too.
+func newEnvWith(t *testing.T, allowSignup bool, opts ...Option) *env {
+	t.Helper()
+	dir := t.TempDir()
+	db, err := store.Open(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	cfg := config.Config{SessionTTL: time.Hour, AllowSignup: allowSignup}
+	cfg := config.Config{SessionTTL: time.Hour, AllowSignup: allowSignup, DataDir: dir}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	syncSvc := opsync.NewService(db)
 	clock := &testClock{t: time.UnixMilli(1_760_000_000_000)}
 	hooks := webhook.New(db, syncSvc, webhook.Options{Version: "test", Log: log, Now: clock.Now, Rand: func() float64 { return 0.5 }})
 	syncSvc.SetObserver(hooks.Observe)
-	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), syncSvc, nil, log, "test", WithWebhooks(hooks))
+	h := New(cfg, auth.NewService(db, cfg.SessionTTL, allowSignup), syncSvc, nil, log, "test", append([]Option{WithWebhooks(hooks)}, opts...)...)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	// Open event streams would otherwise hold srv.Close; mirror main.go's shutdown hook.

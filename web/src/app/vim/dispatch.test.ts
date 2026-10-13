@@ -299,3 +299,22 @@ describe('vim dispatcher', () => {
     expect(isTextField(null)).toBe(false)
   })
 })
+
+describe('in-app assistant shortcut', () => {
+  it('Shift+I passes through the Vim layer to the default shortcuts, in a list and outside one', () => {
+    for (const list of [true, false]) {
+      const { press, calls, defaults } = setup({ list })
+      const e = press('I')
+      expect(e.stopped).toBe(false)
+      expect(e.prevented).toBe(false)
+      expect(defaults).toEqual(['I'])
+      expect(calls).toEqual([])
+    }
+  })
+  it('g then Shift+I stays Shell navigation (Import)', () => {
+    const { press, defaults } = setup()
+    press('g')
+    press('I')
+    expect(defaults).toEqual(['g', 'I'])
+  })
+})

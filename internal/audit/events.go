@@ -45,14 +45,18 @@ const (
 	InvitationCreatedName  Name = "invitation.created"
 	InvitationAcceptedName Name = "invitation.accepted"
 	InvitationRevokedName  Name = "invitation.revoked"
-	RoleChangedName        Name = "role.changed"
-	SettingsChangedName    Name = "settings.changed"
-	IdentityLinkedName     Name = "identity.linked"
-	IdentityUnlinkedName   Name = "identity.unlinked"
-	ExportRequestedName    Name = "export.requested"
-	AuditExportedName      Name = "audit.exported"
-	BackupCreatedName      Name = "backup.created"
-	BackupRestoredName     Name = "backup.restored"
+	// Project invite links (OpenSpec `project-invite-links`).
+	ProjectInviteCreatedName  Name = "project_invite.created"
+	ProjectInviteRevokedName  Name = "project_invite.revoked"
+	ProjectInviteAcceptedName Name = "project_invite.accepted"
+	RoleChangedName           Name = "role.changed"
+	SettingsChangedName       Name = "settings.changed"
+	IdentityLinkedName        Name = "identity.linked"
+	IdentityUnlinkedName      Name = "identity.unlinked"
+	ExportRequestedName       Name = "export.requested"
+	AuditExportedName         Name = "audit.exported"
+	BackupCreatedName         Name = "backup.created"
+	BackupRestoredName        Name = "backup.restored"
 	// User administration (user-management).
 	UserDeactivatedName        Name = "user.deactivated"
 	UserReactivatedName        Name = "user.reactivated"
@@ -76,6 +80,7 @@ var Names = []Name{
 	AppPasswordCreatedName, AppPasswordRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
+	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
 	RoleChangedName, SettingsChangedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	ExportRequestedName, AuditExportedName,
@@ -145,6 +150,11 @@ var allowedDetailKeys = map[string]bool{
 	"app_password_name": true,
 	"invitation_id":     true,
 	"invited_email":     true, // email an invitation is bound to, if any
+	// Project invite links: the link id, the project's id (not under
+	// "project_id", which is an op field name) and the granted project role.
+	"project_invite_id": true,
+	"shared_project_id": true,
+	"project_role":      true,
 	"passkey_id":        true,
 	"passkey_name":      true,
 	"setting":           true, // settings key, e.g. audit.retention_days
@@ -317,6 +327,26 @@ func InvitationCreated(ownerID, invitationID, boundEmail string) Event {
 // InvitationAccepted records the account created from an invitation.
 func InvitationAccepted(userID, email, invitationID string) Event {
 	return ev(InvitationAcceptedName, Success, userID, "", "email", email, "invitation_id", invitationID)
+}
+
+// ---- project invite links ----
+
+// ProjectInviteCreated records a project invite link; boundEmail is empty for an open link.
+func ProjectInviteCreated(actorID, inviteID, projectID, role, boundEmail string) Event {
+	return ev(ProjectInviteCreatedName, Success, actorID, "", "project_invite_id", inviteID, "shared_project_id", projectID,
+		"project_role", role, "invited_email", boundEmail)
+}
+
+// ProjectInviteRevoked records a revoked project invite link.
+func ProjectInviteRevoked(actorID, inviteID, projectID string) Event {
+	return ev(ProjectInviteRevokedName, Success, actorID, "", "project_invite_id", inviteID, "shared_project_id", projectID)
+}
+
+// ProjectInviteAccepted records the account that joined a project through a
+// link; creatorID is the link's creator, recorded as the target.
+func ProjectInviteAccepted(userID, creatorID, inviteID, projectID, role string) Event {
+	return ev(ProjectInviteAcceptedName, Success, userID, creatorID, "project_invite_id", inviteID, "shared_project_id", projectID,
+		"project_role", role)
 }
 
 // InvitationRevoked records a revoked invitation.

@@ -164,6 +164,12 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.sync.Notifier().CloseUser(id)
+	// Their own assistant keys go with the account (in-app-assistant D4).
+	if s.assistant != nil {
+		if err := s.assistant.Store.RemoveUserKeys(id); err != nil {
+			s.log.Error("assistant keys of a deleted account not removed", "err", err)
+		}
+	}
 	// Members of projects the account owned or joined re-sync their membership.
 	s.sync.NotifyMembership(notify)
 	w.WriteHeader(http.StatusNoContent)

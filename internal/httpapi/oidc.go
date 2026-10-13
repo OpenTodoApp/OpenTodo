@@ -148,7 +148,7 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	page := "/"
 	if f.Mode == oidc.ModeLink {
-		page = "/settings"
+		page = "/settings/account"
 	}
 	if e := q.Get("error"); e != "" || q.Get("code") == "" {
 		s.log.Info("oidc provider refused sign-in", "error", truncateLog(e))
@@ -217,13 +217,13 @@ func (s *Server) finishOIDCLink(w http.ResponseWriter, r *http.Request, c oidc.C
 	ctx := r.Context()
 	_, sess, _, err := s.authenticateSession(r)
 	if err != nil || sess == nil || sess.User.ID != f.UserID {
-		s.oidcError(w, r, http.StatusBadRequest, "oidc_state_invalid", "sign in again before linking an account", "/settings")
+		s.oidcError(w, r, http.StatusBadRequest, "oidc_state_invalid", "sign in again before linking an account", "/settings/account")
 		return
 	}
 	already, err := s.auth.LinkIdentity(ctx, sess.User.ID, id, c.Name())
 	switch {
 	case errors.Is(err, auth.ErrIdentityTaken):
-		s.oidcError(w, r, http.StatusConflict, "identity_taken", err.Error(), "/settings")
+		s.oidcError(w, r, http.StatusConflict, "identity_taken", err.Error(), "/settings/account")
 		return
 	case err != nil:
 		s.internal(w, err)
@@ -239,7 +239,7 @@ func (s *Server) finishOIDCLink(w http.ResponseWriter, r *http.Request, c oidc.C
 	if already {
 		v = url.Values{"reauthenticated": {"1"}}
 	}
-	redirectTo(w, r, "/settings", v)
+	redirectTo(w, r, "/settings/account", v)
 }
 
 func truncateLog(s string) string {

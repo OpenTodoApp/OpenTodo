@@ -5,10 +5,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 )
 
 const maxMCPStdioMessage = 1 << 20
@@ -78,7 +78,7 @@ func cmdMCP(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		if strings.Contains(err.Error(), "token too long") {
+		if errors.Is(err, bufio.ErrTooLong) {
 			return usageErr("MCP stdio message exceeds 1 MB")
 		}
 		return usageErr("read MCP stdio message: %v", err)

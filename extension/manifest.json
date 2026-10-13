@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "OpenTodo Capture",
   "short_name": "OpenTodo",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Send the current page, its title and the selected text to the capture screen of your own OpenTodo server. No tracking, no network requests.",
   "icons": { "16": "icons/icon-16.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
   "action": {

@@ -1,0 +1,131 @@
+package assistant
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+)
+
+// Provider is a model provider (design D3). Adding one means implementing it.
+type Provider interface {
+	// Start begins a conversation for one turn; Next then runs model calls.
+	Start(req Request) Conversation
+}
+
+// Conversation is one turn's provider-native history (Anthropic keeps thinking
+// blocks here so they pass back unchanged within the tool loop).
+type Conversation interface {
+	// Next runs one model call, streaming text deltas through onText.
+	Next(ctx context.Context, onText func(string)) (Round, error)
+	// AddToolResults answers every tool call of the last round in one message.
+	AddToolResults(results []ToolResult)
+}
+
+// Message is one message of the device-local conversation: user or assistant text.
+type Message struct {
+	Role string `json:"role"`
+	Text string `json:"text"`
+}
+
+// ToolDef is a tool offered to the model (from the registry).
+type ToolDef struct {
+	Name        string
+	Description string
+	Schema      map[string]any
+}
+
+// Request is everything a provider needs to start a turn.
+type Request struct {
+	System    string
+	Messages  []Message
+	Tools     []ToolDef
+	MaxTokens int64
+}
+
+// ToolCall is a tool call requested by the model.
+type ToolCall struct {
+	ID   string
+	Name string
+	Args json.RawMessage
+}
+
+// ToolResult answers one ToolCall.
+type ToolResult struct {
+	ID      string
+	Content string
+	IsError bool
+}
+
+// Stop is a normalised stop reason.
+type Stop string
+
+const (
+	StopEndTurn   Stop = "end_turn"
+	StopToolUse   Stop = "tool_use"
+	StopMaxTokens Stop = "max_tokens"
+	StopRefusal   Stop = "refusal"
+	StopPauseTurn Stop = "pause_turn"
+)
+
+// Round is the outcome of one model call.
+type Round struct {
+	Stop Stop
+	// RawStop is the provider's own value (for unknown reasons).
+	RawStop   string
+	ToolCalls []ToolCall
+	Input     int64
+	Output    int64
+}
+
+// Provider error codes (design D5). Messages never contain the key.
+const (
+	CodeProviderError       = "provider_error"
+	CodeProviderAuth        = "provider_auth"
+	CodeProviderRateLimited = "provider_rate_limited"
+	CodeNoToolSupport       = "no_tool_support"
+)
+
+// ProviderError is a failed provider request, safe to show and log: status,
+// the provider's error type and a fixed message, never request content or keys.
+type ProviderError struct {
+	Code   string
+	Status int
+	Type   string
+	Msg    string
+}
+
+func (e *ProviderError) Error() string {
+	s := e.Code
+	if e.Status != 0 {
+		s += fmt.Sprintf(" (HTTP %d", e.Status)
+		if e.Type != "" {
+			s += " " + e.Type
+		}
+		s += ")"
+	}
+	if e.Msg != "" {
+		s += ": " + e.Msg
+	}
+	return s
+}
+
+// providerErr classifies an HTTP status into a ProviderError.
+func providerErr(status int, typ string) *ProviderError {
+	switch {
+	case status == 401 || status == 403:
+		return &ProviderError{Code: CodeProviderAuth, Status: status, Type: typ, Msg: "the provider rejected the API key; the server owner can check it in Settings → AI → Assistant"}
+	case status == 429:
+		return &ProviderError{Code: CodeProviderRateLimited, Status: status, Type: typ, Msg: "the provider is rate limiting requests; try again in a moment"}
+	case status >= 500:
+		return &ProviderError{Code: CodeProviderError, Status: status, Type: typ, Msg: "the provider had a problem; try again in a moment"}
+	}
+	return &ProviderError{Code: CodeProviderError, Status: status, Type: typ, Msg: "the provider refused the request"}
+}
+
+// AsProviderError unwraps a ProviderError.
+func AsProviderError(err error) (*ProviderError, bool) {
+	var pe *ProviderError
+	ok := errors.As(err, &pe)
+	return pe, ok
+}

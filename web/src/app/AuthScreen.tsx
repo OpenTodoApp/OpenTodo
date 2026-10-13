@@ -9,9 +9,19 @@ import { oidcErrorMessage, ssoLayout, takeQueryParam } from './sso'
 export interface InviteContext {
   token: string
   preview: InvitationPreview
+  /** Set for a project invite link (OpenSpec `project-invite-links`): the new account joins this project. */
+  project?: { name: string; role: string }
+  /** Project links also work with an existing account: switch to sign-in instead of registering. */
+  onSignIn?: () => void
 }
 
-export function AuthScreen({ status, invite, notice, onAuthenticated }: { status: AuthStatus; invite?: InviteContext; notice?: string; onAuthenticated: () => void }) {
+export function AuthScreen({ status, invite, notice, onAuthenticated }: {
+  status: AuthStatus
+  invite?: InviteContext
+  notice?: string
+  /** Called once signed in; a registration through a project link passes the project it joined. */
+  onAuthenticated: (result?: { projectId?: string }) => void
+}) {
   const [mode, setMode] = useState<'login' | 'register'>(status.setupRequired || invite ? 'register' : 'login')
   const [email, setEmail] = useState(invite?.preview.email ?? '')
   const [name, setName] = useState('')
@@ -96,8 +106,10 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
     setError(null)
     try {
       if (mode === 'register') {
-        await api.register(email, name, password, invite?.token)
-        onAuthenticated()
+        const res = invite?.project
+          ? await api.register(email, name, password, undefined, invite.token)
+          : await api.register(email, name, password, invite?.token)
+        onAuthenticated({ projectId: res?.projectId })
       } else {
         afterFirstFactor(await api.login(email, password))
       }
@@ -171,7 +183,14 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
             Welcome! Create the owner account for this server. Only you can do this; sign-up closes afterwards unless you open it.
           </p>
         )}
-        {invite && (
+        {invite?.project && (
+          <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" data-testid="project-invite-banner">
+            <strong>{invite.preview.inviterName}</strong> invited you to <strong className="user-text">{invite.project.name}</strong> as {invite.project.role}. Create your account to join.
+            {invite.preview.email && <> This link is for <strong>{invite.preview.email}</strong>.</>}
+            <span className="mt-1 block text-xs opacity-80">The link expires {new Date(invite.preview.expiresAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} and works once.</span>
+          </p>
+        )}
+        {invite && !invite.project && (
           <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
             <strong>{invite.preview.inviterName}</strong> invited you to join this server. Create your account below.
             {invite.preview.email && <> This invitation is for <strong>{invite.preview.email}</strong>.</>}
@@ -213,7 +232,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
           </label>
           {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
           <button className="btn-primary w-full" disabled={busy}>
-            {busy ? 'Please wait…' : mode === 'register' ? (status.setupRequired ? 'Create owner account' : invite ? 'Accept invitation' : 'Create account') : 'Sign in'}
+            {busy ? 'Please wait…' : mode === 'register' ? (status.setupRequired ? 'Create owner account' : invite?.project ? 'Create account and join' : invite ? 'Accept invitation' : 'Create account') : 'Sign in'}
           </button>
         </form>}
 
@@ -232,7 +251,12 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: { status
             {mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
           </button>
         )}
-        {invite && (
+        {invite && invite.onSignIn && (
+          <p className="mt-3 text-center text-xs text-muted">
+            Already have an account here? <button type="button" className="underline" onClick={invite.onSignIn}>Sign in to join</button> instead.
+          </p>
+        )}
+        {invite && !invite.onSignIn && (
           <p className="mt-3 text-center text-xs text-muted">
             Already have an account here? <a className="underline" href="/">Sign in</a> instead; invitations are for new accounts only.
           </p>

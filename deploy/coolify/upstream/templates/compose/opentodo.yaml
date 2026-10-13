@@ -7,7 +7,7 @@
 
 services:
   opentodo:
-    image: ghcr.io/pixari/opentodo:0.2
+    image: ghcr.io/pixari/opentodo:0.3
     environment:
       - SERVICE_URL_OPENTODO_8080
       - OPENTODO_BASE_URL=${OPENTODO_BASE_URL:-${SERVICE_URL_OPENTODO}} # Leave empty to use the service's domain

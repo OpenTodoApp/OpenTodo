@@ -289,6 +289,8 @@ func (s *Service) Deactivate(ctx context.Context, actorID, targetID string) (*Ad
 			// CalDAV app passwords are revoked too (OpenSpec `caldav`).
 			{"UPDATE app_passwords SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL", []any{now, target.ID}},
 			{"UPDATE invitations SET revoked_at = ? WHERE created_by = ? AND accepted_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
+			// Project invite links too (OpenSpec `project-invite-links`).
+			{"UPDATE project_invites SET revoked_at = ? WHERE created_by = ? AND accepted_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
 			{"UPDATE password_resets SET revoked_at = ? WHERE user_id = ? AND used_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
 		} {
 			if _, err := tx.ExecContext(ctx, st.q, st.args...); err != nil {

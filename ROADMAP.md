@@ -12,7 +12,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | --- | --- | --- |
 | Local-first storage, works fully offline, installable PWA | `bootstrap-core-platform` | IndexedDB is the source of truth on each device |
 | Conflict-free multi-device sync | `bootstrap-core-platform` | Field-level last-writer-wins op log, convergent by construction. See [docs/sync.md](docs/sync.md) |
-| Single small container, runs on a Raspberry Pi | `bootstrap-core-platform` | Static Go binary of about 17 MB with the web app embedded, distroless image under 25 MB |
+| Single small container, runs on a Raspberry Pi | `bootstrap-core-platform` | Static Go binary of about 23 MB with the web app embedded, distroless image of about 25 MB |
 | Keyboard navigation (q, j/k, c, 1–4, g+key, ?) | `bootstrap-core-platform` | |
 | Live push of changes between devices | `realtime-sync-channel` | Server-sent event wake-ups; the protocol stays op-based, polling is the fallback |
 | Rich text with collaborative editing for task notes | `collaborative-rich-text` | Yjs document in `task.notes_doc`, editor lazy-loaded; comments stay Markdown |
@@ -61,6 +61,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Capability | Change name |
 | --- | --- |
 | Share projects with roles (viewer, editor, admin) | `project-sharing` |
+| Invite links for shared projects, creating the account when allowed | `project-invite-links` |
 | Assignees and in-app notifications | `task-assignment` |
 | Threaded Markdown comments and activity log | `comments-and-activity` |
 | Live activity feed in shared lists | `activity-feed` |
@@ -99,7 +100,7 @@ In this order. Each starts as an OpenSpec change under `openspec/changes/`. The 
 | --- | --- | --- | --- |
 | 1 | **Shipped.** AI assistants can act through MCP: create, edit, complete, reschedule and move tasks, create projects and labels, comment | `mcp-write-tools` | Needs an `agent` token plus owner and user switches (both off by default). Every write goes through the op log, is attributed in history, audited, rate limited and reversible. No permanent deletion |
 | 2 | **Shipped.** `ot` as a dependable tool for agent harnesses | `agent-ready-cli` | Versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` required without a terminal, read-only mode, a shipped agent skill file. The CLI stays in this repository; no Homebrew or Scoop repositories for now |
-| 3 | Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. Not available for end-to-end encrypted accounts in the first version |
+| 3 | **Shipped.** Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. Not available for end-to-end encrypted accounts in the first version |
 
 ## Future ideas
 
