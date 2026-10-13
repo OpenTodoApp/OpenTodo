@@ -120,6 +120,70 @@ func TestMCPBridgeRejectsFullTokenByDefault(t *testing.T) {
 	}
 }
 
+func TestMCPBridgeAllowsFullTokenWithFlag(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/mcp" {
+			t.Errorf("unexpected request %s", r.URL.Path)
+			http.NotFound(w, r)
+			return
+		}
+		if r.Header.Get("Authorization") != "Bearer full-token" {
+			t.Errorf("authorization = %q", r.Header.Get("Authorization"))
+			http.Error(w, "bad auth", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"jsonrpc":"2.0","id":1,"result":{}}`)
+	}))
+	defer srv.Close()
+
+	var stdout, stderr bytes.Buffer
+	a := &App{
+		Stdin:  strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"ping"}` + "\n"),
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Getenv: func(key string) string {
+			if key == "OPENTODO_URL" {
+				return srv.URL
+			}
+			if key == "OPENTODO_TOKEN" {
+				return "full-token"
+			}
+			return ""
+		},
+	}
+	if code := a.Main([]string{"mcp", "--allow-full-token"}); code != ExitOK {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"id":1`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestMCPBridgeRejectsOversizedMessage(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	a := &App{
+		Stdin:  strings.NewReader(strings.Repeat("x", maxMCPStdioMessage+1) + "\n"),
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Getenv: func(key string) string {
+			if key == "OPENTODO_URL" {
+				return "https://example.invalid"
+			}
+			if key == "OPENTODO_TOKEN" {
+				return "full-token"
+			}
+			return ""
+		},
+	}
+	if code := a.Main([]string{"mcp", "--allow-full-token"}); code != ExitUsage {
+		t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+	}
+	if stdout.Len() != 0 || !strings.Contains(stderr.String(), "exceeds 1 MB") {
+		t.Fatalf("stdout %q, stderr %q", stdout.String(), stderr.String())
+	}
+}
+
 func TestMCPBridgeContinuesAfterProtocolAndTransientErrors(t *testing.T) {
 	requestNumber := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
