@@ -89,7 +89,7 @@ export function groupOf(fm) {
   if (fm.audience === 'admin') return fm.section || 'Self-hosting'
   return fm.section || 'Integrations'
 }
-export const GROUP_ORDER = ['Get started', 'Guides', 'Reference', 'Self-hosting', 'Integrations', 'Internals']
+export const GROUP_ORDER = ['Get started', 'Switch from another app', 'Guides', 'Reference', 'Self-hosting', 'Integrations', 'Internals']
 export const AUDIENCE_LABEL = { user: 'Using OpenTodo', admin: 'Self-hosting', developer: 'Integrations and internals' }
 
 /**

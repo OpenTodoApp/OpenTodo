@@ -52,6 +52,7 @@ type State struct {
 // RowResult is the per-row outcome shown in a preview.
 type RowResult struct {
 	Row      int      `json:"row,omitempty"`
+	File     string   `json:"file,omitempty"`
 	SourceID string   `json:"sourceId,omitempty"`
 	Kind     string   `json:"kind"`
 	Title    string   `json:"title"`
@@ -117,6 +118,9 @@ type Plan struct {
 	Truncated bool        `json:"truncated"`
 	// Notes are file-level remarks, such as records that are not imported.
 	Notes []string `json:"notes"`
+	// ViewHints are projects this import creates that were boards in the source
+	// app; the web app opens them as boards on the importing device.
+	ViewHints []PlanViewHint `json:"viewHints,omitempty"`
 
 	changes []change
 	errors  []RowError
@@ -203,6 +207,16 @@ type planner struct {
 	sectionByKey map[string]string    // project id NUL lower name → existing live section id
 	implicitSec  map[string]*implicit // sections to create, by the same key
 	secOrder     []*implicit
+
+	// createdBySource maps a project row's source id to the id of the project this
+	// import creates (for view hints).
+	createdBySource map[string]string
+}
+
+// PlanViewHint asks the importing device to open a created project as a board.
+type PlanViewHint struct {
+	ProjectID string `json:"projectId"`
+	View      string `json:"view"`
 }
 
 type implicit struct {
@@ -223,7 +237,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 			KindSection: {}, KindReminder: {}, KindView: {}, KindUserPrefs: {}},
 		projectByName: map[string]string{}, labelByName: map[string]string{}, fingerprints: map[string]string{},
 		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
-		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}}
+		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}, createdBySource: map[string]string{}}
 	if st.Remembered == nil {
 		st.Remembered = map[string]string{}
 	}
@@ -277,7 +291,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 	}
 	pl.results = make([]RowResult, len(parsed.Rows))
 	for i, r := range parsed.Rows {
-		pl.results[i] = RowResult{Row: r.Line, SourceID: r.SourceID, Kind: r.Kind, Title: r.Title, Warnings: r.Warnings}
+		pl.results[i] = RowResult{Row: r.Line, File: r.File, SourceID: r.SourceID, Kind: r.Kind, Title: r.Title, Warnings: r.Warnings}
 	}
 	if parsed.Format == "opentodo" {
 		p.changes = pl.planOwn(parsed.Rows)
@@ -323,6 +337,13 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 	}
 	p.Totals.Entities = len(p.changes)
+	seenHint := map[string]bool{}
+	for _, h := range parsed.ViewHints {
+		if id, ok := pl.createdBySource[h.ProjectSourceID]; ok && !seenHint[id] {
+			seenHint[id] = true
+			p.ViewHints = append(p.ViewHints, PlanViewHint{ProjectID: id, View: h.View})
+		}
+	}
 	p.Rows, p.Truncated = previewRows(pl.results)
 	return p
 }
@@ -580,6 +601,9 @@ func (pl *planner) planForeign(rows []Row) []change {
 				continue
 			}
 			res.Outcome = OutcomeCreate
+			if row.SourceID != "" {
+				pl.createdBySource[row.SourceID] = pp.id
+			}
 			c := &change{entity: KindProject, id: pp.id, fields: fields, created: true, sourceID: row.SourceID}
 			projChanges = append(projChanges, c)
 			projChangeByID[pp.id] = c
@@ -800,6 +824,12 @@ func (pl *planner) planForeign(rows []Row) []change {
 		}
 		if row.Recurrence != "" {
 			fields = append(fields, field{"recurrence", raw(row.Recurrence)})
+		}
+		if row.EstimateMinutes > 0 {
+			fields = append(fields, field{"estimate_minutes", raw(row.EstimateMinutes)})
+		}
+		if row.AssignSelf && pl.st.UserID != "" {
+			fields = append(fields, field{"assignee_id", raw(pl.st.UserID)})
 		}
 		if row.Completed {
 			at := row.CompletedAt

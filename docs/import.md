@@ -25,10 +25,17 @@ The format is detected from the content, in this order; the preview shows what w
 | Format id | Recognised by | Notes |
 | --- | --- | --- |
 | `opentodo` | a top-level `"format": "opentodo-export"` | Exact round trip, see below |
+| `things-db` | a SQLite database with Things 3's tables | a copy of Things' `main.sqlite`, see [Things](#things-database-things-db) |
 | `json-items` | top-level `items` and `projects` arrays | "projects / sections / items" backups |
 | `json-lists` | a top-level `lists` array | lists of tasks; each list becomes a project |
 | `json-generic` | a top-level array of objects, or a `tasks` array | a generic task list |
+| `todoist-csv` | a header starting with `TYPE` and containing `CONTENT`, `PRIORITY`, `INDENT` | one project exported from Todoist, see [Todoist](#todoist-todoist-csv-todoist-backup) |
+| `todoist-backup` | a ZIP of `todoist-csv` files | Todoist's backup of every project |
+| `ticktick-csv` | a preamble starting with `Date:`, then a `Folder Name, List Name, Title, Kind` header | TickTick's CSV backup, see [TickTick](#ticktick-ticktick-csv) |
+| `linear-csv` | a header with `ID`, `Team`, `Title`, `Status`, `Priority` and `UUID` | Linear's workspace export, see [Linear](#linear-linear-csv) |
 | `csv` | a header row with a `title` column | the documented columns below |
+
+**ZIP files.** A ZIP whose files are all of one format is imported as one job, one preview and one undo; each preview row shows the file it came from. Folders, `__MACOSX/` and hidden files are skipped. An archive with more than 1,000 files, mixed formats, an unsafe file name, or more than ten times the upload limit when unpacked is refused with `400 invalid_file` before anything is written. A zipped `Things Database.thingsdatabase` folder is read as a [Things database](#things-database-things-db).
 
 A file matching none of these is refused with `400 unsupported_format`, naming the supported formats. If a JSON export from another app is not recognised, convert it to the CSV columns below; every field the data model holds can be expressed there.
 
@@ -46,6 +53,87 @@ What is handled differently, and why:
 - The read-only `role` and `owner_id` the export adds to shared projects are not data and are skipped silently; the end-to-end encryption key record is not imported.
 
 When an id already exists in the account the row is skipped (`exists`), unless the `existing` option is `overwrite`: then only fields whose value differs are written (`update`), and fields that are unchanged keep their original clock, so a concurrent edit on a device is not clobbered needlessly. An entity that is deleted in the account is never resurrected (`skip`, reason `deleted`). Fields unknown to this server version are dropped with a warning.
+
+### Todoist (`todoist-csv`, `todoist-backup`)
+
+Todoist exports one project as CSV from the project's menu, and keeps backups of every project as a ZIP in its settings (Backups). The backup is the better choice: its file names carry the project names (`Work [2203306141].csv`), so projects keep their names. A single CSV does not name its project, so its tasks go to the target project.
+
+| Todoist | Becomes |
+| --- | --- |
+| each file in the backup | a project (the `Inbox` file goes to your Inbox or the target project) |
+| `meta` row `view_style=board` | the project opens as a board on the device that imports it |
+| `section` row | a section of the project |
+| `task` row, `INDENT` 1, 2, 3 … | a task; deeper indents are subtasks of the task above |
+| `PRIORITY` 1–4 | priority p1–p4 (1 is Todoist's red flag) |
+| `@label` in `CONTENT` | a label, removed from the title |
+| `DESCRIPTION` | the description |
+| `DATE` with `DATE_LANG` | the due date (and time); recurring dates become a rule, see below |
+| `DURATION` in minutes | the estimate |
+| `REMINDER_OFFSET` / `REMINDER_DATE` | a relative or absolute reminder |
+| `note` row | appended to the task's description under "Comments" (with a warning) |
+| `DEADLINE` | kept as a "Deadline: …" line in the description (with a warning) |
+| `RESPONSIBLE` | dropped with a warning |
+
+`DATE` is the text Todoist showed, in the language named by `DATE_LANG` (English, German, French, Italian, Spanish or Portuguese): `Oct 21`, `21 Okt.`, `21 de octubre de 2027 15:00`, `tomorrow`, `every monday`, `jeden Montag`, `alle 2 Wochen`. A date without a year takes the year of the export (the newest file time in the backup, otherwise the day you import). A recurring date becomes a rule whose first date is the next occurrence. A date that cannot be read leaves the task without a due date and adds a warning quoting it.
+
+### TickTick (`ticktick-csv`)
+
+TickTick's backup is one CSV, created from its settings (Backup). It starts with a few lines of metadata (the export date, the version and a status legend) before the header; the importer skips them.
+
+| TickTick | Becomes |
+| --- | --- |
+| `Folder Name` | a parent project |
+| `List Name` | a project inside its folder (`Inbox` goes to your Inbox or the target project) |
+| `View Mode` `kanban` | the project opens as a board on the importing device |
+| `Column Name` | the section |
+| `Kind` `CHECKLIST` with item lines in `Content` | a task with one subtask per item; checked items are completed |
+| `parentId` | the parent task |
+| `Tags` | labels |
+| `Content` | the description |
+| `Priority` 5 / 3 / 1 / 0 | p1 / p2 / p3 / p4 |
+| `Due Date`, `Is All Day`, `Is Floating`, `Timezone` | the due date (and time) as you saw it in TickTick |
+| `Reminder` | reminders (for example `-PT15M`) |
+| `Repeat` (RRULE) | a recurrence rule, when the grammar can express it |
+| `Status` 2 / -1 | completed / completed with the label `canceled` (abandoned) |
+
+### Linear (`linear-csv`)
+
+Linear exports a workspace's issues as CSV from its workspace settings (Import / Export).
+
+| Linear | Becomes |
+| --- | --- |
+| `Project` (or `Team` when there is none) | a project, which opens as a board on the importing device |
+| `Status` | a section, in the order statuses first appear, so the board shows the same columns |
+| `Title`, `Description` | the title, and the description starting with the issue identifier (`ENG-123`) |
+| `Priority` Urgent / High / Medium / Low / No priority | p1 / p2 / p3 / p4 / p4 |
+| `Labels` | labels |
+| `Due Date` | the due date |
+| `Parent issue` | the parent task |
+| `Completed` / `Canceled` | completed / completed with the label `canceled` |
+| `Assignee` | kept when it is your own email address, otherwise dropped with a warning |
+| `Estimate`, cycles, milestones, initiatives, SLA, relations | dropped with a warning |
+
+### Things database (`things-db`)
+
+Things 3 has no export, but its database can be copied, as Cultured Code's support article "Accessing the Things database" explains. Quit Things first. On a Mac, open `~/Library/Group Containers/JLMPQHK86H.com.culturedcode.ThingsMac/`, then the `ThingsData-…` folder, and copy `Things Database.thingsdatabase`. Upload its `main.sqlite` (right-click the folder and choose **Show Package Contents**), or a ZIP of the whole folder. On iPhone or iPad the article describes a diagnostics code that sends `Things Database.aar`; tap it to unpack it into the same folder.
+
+The file is read from a private copy on the server, read-only, using only Things' own tables, and deleted after the preview or import. A SQLite file that is not a Things database is refused with `400 invalid_file`.
+
+| Things | Becomes |
+| --- | --- |
+| area | a parent project |
+| project | a project inside its area |
+| heading | a section of its project |
+| to-do | a task in its project (or area, or your Inbox) |
+| checklist item | a subtask; checked items are completed |
+| tag (nested tags as `parent/child`) | a label |
+| notes | the description |
+| start date ("When") | the due date; a reminder time becomes a reminder |
+| repeating to-do | a recurrence rule, when the grammar can express it |
+| completed / canceled | completed / completed with the label `canceled` |
+| deadline | a "Deadline: …" line in the description (with a warning) |
+| Someday, This Evening | dropped with a warning |
+| trashed items | skipped |
 
 ### CSV (`csv`)
 

@@ -5,6 +5,7 @@ import { HelpLink } from './help/HelpLink'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { db } from '../lib/db'
+import { applyImportViewHints } from '../lib/sections'
 import { useOnline } from '../lib/online'
 import { syncNow, useSyncStatus } from '../lib/sync'
 import {
@@ -21,6 +22,11 @@ const TABLE_LIMIT = 500
 
 const FORMAT_LABELS: Record<ImportFormat, string> = {
   opentodo: 'OpenTodo export (JSON)',
+  'todoist-backup': 'Todoist backup (ZIP)',
+  'todoist-csv': 'Todoist project (CSV)',
+  'things-db': 'Things 3 database',
+  'ticktick-csv': 'TickTick backup (CSV)',
+  'linear-csv': 'Linear export (CSV)',
   'json-items': 'JSON: projects / sections / items',
   'json-lists': 'JSON: lists of tasks',
   'json-generic': 'JSON: task list',
@@ -239,7 +245,7 @@ export function ImportView(p: ImportViewProps) {
               <tbody>
                 {p.preview.rows.slice(0, TABLE_LIMIT).map((r, i) => (
                   <tr key={`${r.sourceId ?? ''}-${i}`} className="border-t border-slate-100 align-top dark:border-slate-800">
-                    <td className="px-2 py-1 text-xs text-faint">{r.row ?? r.sourceId}</td>
+                    <td className="px-2 py-1 text-xs text-faint">{r.file ? `${r.file}:${r.row ?? ''}` : r.row ?? r.sourceId}</td>
                     <td className="px-2 py-1">{r.kind !== 'task' && <span className="mr-1 text-xs text-faint">{r.kind}</span>}{r.title || <em className="text-faint">untitled</em>}</td>
                     <td className="px-2 py-1 text-muted">{r.project}</td>
                     <td className={`px-2 py-1 font-medium ${OUTCOME_STYLE[r.outcome]}`}>{r.outcome}</td>
@@ -372,6 +378,7 @@ export function ImportScreen() {
     setError(null)
     try {
       const { job: j } = await api.startImport(file, file.name, requestOptions())
+      await applyImportViewHints(j.viewHints)
       setJob(j)
       poll(j.id)
       void loadJobs()

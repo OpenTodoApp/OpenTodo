@@ -1,0 +1,553 @@
+{
+  "format": "todoist-backup",
+  "notes": [],
+  "totals": {
+    "rows": 52,
+    "create": 52,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 4,
+    "newProjects": 10,
+    "newLabels": 0,
+    "newSections": 10,
+    "recurring": 0,
+    "reminders": 0,
+    "entities": 52,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": [
+    {
+      "projectId": "id-0003",
+      "view": "board"
+    }
+  ],
+  "rows": [
+    {
+      "row": 1,
+      "file": "Project 1 [p000001].csv",
+      "sourceId": "todoist:project:p000001",
+      "kind": "project",
+      "title": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Project 1 [p000001].csv",
+      "sourceId": "todoist:bd82a86e61e4a41f:1",
+      "kind": "task",
+      "title": "Task 1",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "file": "Project 1 [p000001].csv",
+      "sourceId": "todoist:c56dbd126c0d2fec:1",
+      "kind": "task",
+      "title": "Task 2",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "file": "Project 1 [p000001].csv",
+      "sourceId": "todoist:551d1a309656a503:1",
+      "kind": "task",
+      "title": "Task 3",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "file": "Project 1 [p000001].csv",
+      "sourceId": "todoist:8baf53fe01dcda25:1",
+      "kind": "task",
+      "title": "Task 4",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "file": "Project 1 [p000001].csv",
+      "sourceId": "todoist:ef4fb102b9282e32:1",
+      "kind": "task",
+      "title": "Task 5",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "file": "Project 1 [p000001].csv",
+      "sourceId": "todoist:e6aeb7a6cd868745:1",
+      "kind": "task",
+      "title": "Task 6",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "file": "Project 2 [p000002].csv",
+      "sourceId": "todoist:project:p000002",
+      "kind": "project",
+      "title": "Project 2",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:project:p000003",
+      "kind": "project",
+      "title": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:7d8f6e63841d3d04:1",
+      "kind": "task",
+      "title": "Task 7",
+      "project": "Project 3",
+      "outcome": "create",
+      "warnings": [
+        "assignee dropped (only your own account can be assigned by an import)"
+      ]
+    },
+    {
+      "row": 5,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:9476bb6b5ec3d6cc:1",
+      "kind": "task",
+      "title": "Task 8",
+      "project": "Project 3",
+      "outcome": "create",
+      "warnings": [
+        "assignee dropped (only your own account can be assigned by an import)"
+      ]
+    },
+    {
+      "row": 6,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:781fe3aac04c5d3a:1",
+      "kind": "task",
+      "title": "Task 9",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:6c55633e29ce1ae9:1",
+      "kind": "task",
+      "title": "Task 10",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:section:p000003:Task 11",
+      "kind": "section",
+      "title": "Task 11",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:section:p000003:Task 12",
+      "kind": "section",
+      "title": "Task 12",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:e59e919cfd8a8e32:1",
+      "kind": "task",
+      "title": "Task 13",
+      "project": "Project 3",
+      "outcome": "create",
+      "warnings": [
+        "assignee dropped (only your own account can be assigned by an import)"
+      ]
+    },
+    {
+      "row": 12,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:e5ab1b47144dbccd:1",
+      "kind": "task",
+      "title": "Task 14",
+      "project": "Project 3",
+      "outcome": "create",
+      "warnings": [
+        "assignee dropped (only your own account can be assigned by an import)"
+      ]
+    },
+    {
+      "row": 14,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:section:p000003:Task 15",
+      "kind": "section",
+      "title": "Task 15",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 15,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:8af9fd0d7489908d:1",
+      "kind": "task",
+      "title": "Task 16",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 16,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:4bc2c3622d0f0fa4:1",
+      "kind": "task",
+      "title": "Task 17",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 17,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:67656e994106a882:1",
+      "kind": "task",
+      "title": "Task 18",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 18,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:cc7fa28397889a21:1",
+      "kind": "task",
+      "title": "Task 19",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 20,
+      "file": "Project 3 [p000003].csv",
+      "sourceId": "todoist:section:p000003:Task 20",
+      "kind": "section",
+      "title": "Task 20",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "file": "Project 4 [p000004].csv",
+      "sourceId": "todoist:project:p000004",
+      "kind": "project",
+      "title": "Project 4",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Project 4 [p000004].csv",
+      "sourceId": "todoist:de9e57cf72f6630a:1",
+      "kind": "task",
+      "title": "Task 21",
+      "project": "Project 4",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "file": "Project 4 [p000004].csv",
+      "sourceId": "todoist:fcf6e98843a198c6:1",
+      "kind": "task",
+      "title": "Task 22",
+      "project": "Project 4",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "file": "Project 5 [p000005].csv",
+      "sourceId": "todoist:project:p000005",
+      "kind": "project",
+      "title": "Project 5",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Project 5 [p000005].csv",
+      "sourceId": "todoist:section:p000005:Task 23",
+      "kind": "section",
+      "title": "Task 23",
+      "project": "Project 5",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "file": "Project 5 [p000005].csv",
+      "sourceId": "todoist:section:p000005:Task 24",
+      "kind": "section",
+      "title": "Task 24",
+      "project": "Project 5",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "file": "Project 5 [p000005].csv",
+      "sourceId": "todoist:section:p000005:Task 25",
+      "kind": "section",
+      "title": "Task 25",
+      "project": "Project 5",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "file": "Project 5 [p000005].csv",
+      "sourceId": "todoist:section:p000005:Task 26",
+      "kind": "section",
+      "title": "Task 26",
+      "project": "Project 5",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "file": "Project 5 [p000005].csv",
+      "sourceId": "todoist:section:p000005:Task 27",
+      "kind": "section",
+      "title": "Task 27",
+      "project": "Project 5",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "file": "Project 5 [p000005].csv",
+      "sourceId": "todoist:section:p000005:Task 28",
+      "kind": "section",
+      "title": "Task 28",
+      "project": "Project 5",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:project:p000006",
+      "kind": "project",
+      "title": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:0a4d225558684355:1",
+      "kind": "task",
+      "title": "Task 29",
+      "project": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:91fc519f95af0505:1",
+      "kind": "task",
+      "title": "Task 30",
+      "project": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:d0757f2336ff026f:1",
+      "kind": "task",
+      "title": "Task 31",
+      "project": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:b494e45d06a5da84:1",
+      "kind": "task",
+      "title": "Task 32",
+      "project": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:800fd7b9f23f34f9:1",
+      "kind": "task",
+      "title": "Task 33",
+      "project": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:9cde8e9ed1108cd1:1",
+      "kind": "task",
+      "title": "Task 34",
+      "project": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:24517947f6fea075:1",
+      "kind": "task",
+      "title": "Task 35",
+      "project": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:f7bb2a98c5566f31:1",
+      "kind": "task",
+      "title": "Task 36",
+      "project": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:e31e6a59d93f2196:1",
+      "kind": "task",
+      "title": "Task 37",
+      "project": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 13,
+      "file": "Project 6 [p000006].csv",
+      "sourceId": "todoist:053b058fe71cb9a1:1",
+      "kind": "task",
+      "title": "Task 38",
+      "project": "Project 6",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "file": "Project 7 [p000007].csv",
+      "sourceId": "todoist:project:p000007",
+      "kind": "project",
+      "title": "Project 7",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Project 7 [p000007].csv",
+      "sourceId": "todoist:3664575edc0b8968:1",
+      "kind": "task",
+      "title": "Task 39",
+      "project": "Project 7",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "file": "Project 8 [p000008].csv",
+      "sourceId": "todoist:project:p000008",
+      "kind": "project",
+      "title": "Project 8",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Project 8 [p000008].csv",
+      "sourceId": "todoist:70c2f1fb72ef1c0a:1",
+      "kind": "task",
+      "title": "Task 40",
+      "project": "Project 8",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "file": "Project 8 [p000008].csv",
+      "sourceId": "todoist:e843c236a500f774:1",
+      "kind": "task",
+      "title": "Task 41",
+      "project": "Project 8",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "file": "Project 9 [p000009].csv",
+      "sourceId": "todoist:project:p000009",
+      "kind": "project",
+      "title": "Project 9",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Project 9 [p000009].csv",
+      "sourceId": "todoist:efb040b14e1bdb51:1",
+      "kind": "task",
+      "title": "Task 42",
+      "project": "Project 9",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "file": "Project 10 [p000010].csv",
+      "sourceId": "todoist:project:p000010",
+      "kind": "project",
+      "title": "Project 10",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "project id-0001: name=\"Project 1\" archived=false created_at=1791979200000",
+    "project id-0002: name=\"Project 2\" archived=false created_at=1791979200000",
+    "project id-0003: name=\"Project 3\" archived=false created_at=1791979200000",
+    "project id-0004: name=\"Project 4\" archived=false created_at=1791979200000",
+    "project id-0005: name=\"Project 5\" archived=false created_at=1791979200000",
+    "project id-0006: name=\"Project 6\" archived=false created_at=1791979200000",
+    "project id-0007: name=\"Project 7\" archived=false created_at=1791979200000",
+    "project id-0008: name=\"Project 8\" archived=false created_at=1791979200000",
+    "project id-0009: name=\"Project 9\" archived=false created_at=1791979200000",
+    "project id-0010: name=\"Project 10\" archived=false created_at=1791979200000",
+    "section id-0011: name=\"Task 11\" project_id=\"id-0003\" created_at=1791979200000",
+    "section id-0012: name=\"Task 12\" project_id=\"id-0003\" created_at=1791979200000",
+    "section id-0013: name=\"Task 15\" project_id=\"id-0003\" created_at=1791979200000",
+    "section id-0014: name=\"Task 20\" project_id=\"id-0003\" created_at=1791979200000",
+    "section id-0015: name=\"Task 23\" project_id=\"id-0005\" created_at=1791979200000",
+    "section id-0016: name=\"Task 24\" project_id=\"id-0005\" created_at=1791979200000",
+    "section id-0017: name=\"Task 25\" project_id=\"id-0005\" created_at=1791979200000",
+    "section id-0018: name=\"Task 26\" project_id=\"id-0005\" created_at=1791979200000",
+    "section id-0019: name=\"Task 27\" project_id=\"id-0005\" created_at=1791979200000",
+    "section id-0020: name=\"Task 28\" project_id=\"id-0005\" created_at=1791979200000",
+    "task id-0021: title=\"Task 1\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-04-24\"} labels=[]",
+    "task id-0022: title=\"Task 2\" description=\"Notes 1\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[]",
+    "task id-0023: title=\"Task 3\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[]",
+    "task id-0024: title=\"Task 4\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[]",
+    "task id-0025: title=\"Task 5\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[]",
+    "task id-0026: title=\"Task 6\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[]",
+    "task id-0027: title=\"Task 7\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0003\" due={\"date\":\"2026-09-30\"} labels=[]",
+    "task id-0028: title=\"Task 8\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0003\" due={\"date\":\"2026-09-30\"} labels=[]",
+    "task id-0029: title=\"Task 9\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0003\" due={\"date\":\"2026-10-11\"} labels=[]",
+    "task id-0030: title=\"Task 10\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0003\" due={\"date\":\"2026-10-25\"} labels=[]",
+    "task id-0031: title=\"Task 13\" description=\"\" priority=3 created_at=1791979200000 project_id=\"id-0003\" due={\"date\":\"2026-04-30\"} labels=[] section_id=\"id-0012\"",
+    "task id-0032: title=\"Task 14\" description=\"\" priority=2 created_at=1791979200000 project_id=\"id-0003\" labels=[] section_id=\"id-0012\"",
+    "task id-0033: title=\"Task 16\" description=\"\" priority=3 created_at=1791979200000 project_id=\"id-0003\" labels=[] section_id=\"id-0013\"",
+    "task id-0034: title=\"Task 17\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0003\" parent_id=\"id-0033\" labels=[] section_id=\"id-0013\"",
+    "task id-0035: title=\"Task 18\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0003\" parent_id=\"id-0033\" labels=[] section_id=\"id-0013\"",
+    "task id-0036: title=\"Task 19\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0003\" labels=[] section_id=\"id-0013\"",
+    "task id-0037: title=\"Task 21\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0004\" labels=[]",
+    "task id-0038: title=\"Task 22\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0004\" labels=[]",
+    "task id-0039: title=\"Task 29\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0006\" due={\"date\":\"2026-04-23\"} labels=[]",
+    "task id-0040: title=\"Task 30\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0006\" labels=[]",
+    "task id-0041: title=\"Task 31\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0006\" parent_id=\"id-0040\" labels=[]",
+    "task id-0042: title=\"Task 32\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0006\" parent_id=\"id-0040\" labels=[]",
+    "task id-0043: title=\"Task 33\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0006\" parent_id=\"id-0040\" labels=[]",
+    "task id-0044: title=\"Task 34\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0006\" parent_id=\"id-0040\" labels=[]",
+    "task id-0045: title=\"Task 35\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0006\" parent_id=\"id-0040\" labels=[]",
+    "task id-0046: title=\"Task 36\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0006\" labels=[]",
+    "task id-0047: title=\"Task 37\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0006\" labels=[]",
+    "task id-0048: title=\"Task 38\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0006\" labels=[]",
+    "task id-0049: title=\"Task 39\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0007\" labels=[]",
+    "task id-0050: title=\"Task 40\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0008\" labels=[]",
+    "task id-0051: title=\"Task 41\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0008\" labels=[]",
+    "task id-0052: title=\"Task 42\" description=\"Notes 2\" priority=4 created_at=1791979200000 project_id=\"id-0009\" labels=[]"
+  ]
+}
