@@ -41,10 +41,10 @@ The project view SHALL show the note, rendered from the document, directly under
 - **THEN** no note area and no "Add a note" control are shown
 
 ### Requirement: Editing the note in place
-A user who may edit the note SHALL open it for editing in place by activating the note or pressing <kbd>Shift</kbd>+<kbd>N</kbd> in the project view, in the same rich-text editor as task notes, with the same formatting, keyboard shortcuts, size limit and remote-edit behaviour. <kbd>Esc</kbd> SHALL leave the editor with the note saved. A viewer SHALL see the note as read-only text.
+A user who may edit the note SHALL open it for editing in place by activating the note or pressing <kbd>Shift</kbd>+<kbd>P</kbd> in the project view, in the same rich-text editor as task notes, with the same formatting, keyboard shortcuts, size limit and remote-edit behaviour. <kbd>Esc</kbd> SHALL leave the editor with the note saved. A viewer SHALL see the note as read-only text.
 
 #### Scenario: Keyboard edit
-- **WHEN** an editor presses <kbd>Shift</kbd>+<kbd>N</kbd> in a project while no text field has focus
+- **WHEN** an editor presses <kbd>Shift</kbd>+<kbd>P</kbd> in a project while no text field has focus
 - **THEN** the note editor opens with the caret at the end of the note, and <kbd>Esc</kbd> closes it with the text kept
 
 #### Scenario: Remote edit while editing
