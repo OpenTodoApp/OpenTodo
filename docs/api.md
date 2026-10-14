@@ -1287,13 +1287,15 @@ Choosing a provider or storing a key needs the owner's "Let members bring their 
 
 **Usage** — `GET /api/v1/me/assistant/usage` → `{month, input_tokens, output_tokens, total_tokens, turns, cap, resets_at, counted_tokens, cap_member_keys, own_key: {input_tokens, output_tokens, total_tokens, turns}}` for the current UTC month, counted from the provider's usage fields. `total_tokens` counts every turn, `own_key` the turns on your own key, and `counted_tokens` what is measured against `cap` (everything but `own_key` unless `cap_member_keys` is on).
 
+**Skills** — `GET /api/v1/assistant/skills` → `{"skills": [{"id": "plan-week", "name": "Plan my week", "description": "…", "example": "…", "result": "changes"}]}`: the built-in skills `idea-to-project`, `plan-week`, `weekly-review`, `triage-inbox` and `break-down`, or an empty list when the assistant is not available to you (off, or an encrypted account). Ids are only ever added. Each turn that runs a skill is counted per month in `assistant_skill_usage`.
+
 **A turn** — `POST /api/v1/assistant/turn`, **signed-in sessions only**:
 
 ```json
 {"messages": [{"role": "user", "text": "move everything overdue to Friday"}], "timezone": "Europe/Rome", "view": "today", "selected": []}
 ```
 
-`messages` is the device's conversation (at most 40, the last from the user; the whole body at most 256 KB); `timezone` is an IANA zone; `view` and `selected` are optional context. Checks, in order, before any provider request: 404 `not_found` while the assistant is off; 403 `session_required` for API tokens; 409 `encryption_enabled`; 403 `consent_required`; 413 `too_large`; 400 `invalid_input`; 429 `assistant_quota` (with `resets_at`; not for a turn on your own key unless the owner turned on `cap_member_keys`); 409 `turn_in_progress` (one turn per person); 503 `assistant_busy` with `Retry-After` (8 turns server-wide); 409 `no_key`. Cookie requests from another origin get 403 `bad_origin`.
+`messages` is the device's conversation (at most 40, the last from the user; the whole body at most 256 KB); `timezone` is an IANA zone; `view` and `selected` are optional context. Optional (assistant skills): `skill`, a skill id from `GET /api/v1/assistant/skills`; `workday` `{startHour, endHour, dayLength}` (hours 0–24 with start before end, `dayLength` 15–1440 minutes), used by `plan-week`; and `"untrusted": true` on a user message that holds pasted text, which the server wraps as untrusted data and joins to the question (it cannot be the last message). Checks, in order, before any provider request: 404 `not_found` while the assistant is off; 403 `session_required` for API tokens; 409 `encryption_enabled`; 403 `consent_required`; 413 `too_large`; 400 `invalid_input`; 400 `unknown_skill`; 429 `assistant_quota` (with `resets_at`; not for a turn on your own key unless the owner turned on `cap_member_keys`); 409 `turn_in_progress` (one turn per person); 503 `assistant_busy` with `Retry-After` (8 turns server-wide); 409 `no_key`. Cookie requests from another origin get 403 `bad_origin`.
 
 The answer is a `text/event-stream`:
 
@@ -1442,6 +1444,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
 | `bad_origin` | 403 | cookie-authenticated write from another origin; any `/mcp` request whose `Origin` is not this server |
 | `session_required` | 403 | `POST /api/v1/assistant/turn` with an API token: the assistant is used from the app while signed in |
+| `unknown_skill` | 400 | `POST /api/v1/assistant/turn` naming a skill id the server does not have |
 | `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` or `agent` API token; `/api/v1/me/agent-access` with either |
 | `demo_token` | 403 | `POST /api/v1/demo/sandbox` without a valid, unused creation token |
 | `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |

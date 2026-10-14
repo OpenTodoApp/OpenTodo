@@ -82,6 +82,12 @@ Each skill's instructions specify a fixed output shape (for example `idea-to-pro
 
 Additive: a new route, optional request fields, a new MCP capability and new UI. Older clients ignore the skill list, and older MCP clients ignore prompts. Rollback is a revert. No data is stored beyond the skill id on usage rows (an additive column or a JSON field in the existing usage record).
 
+## Implementation notes
+
+- **No section tool.** The registry has no `create_section` write tool, so `idea-to-project` builds phases as top-level tasks of the new project with subtasks under them, instead of sections. Adding `create_section` would widen the MCP write surface and is left to a follow-up change; the spec scenario's "sections" is met by phases until then.
+- **Skill usage.** Usage is kept per month (`assistant_usage`), so the skill id is counted in a new table `assistant_skill_usage(user_id, month, skill, turns)` (migration 0030) rather than on a per-turn row.
+- **Pasted text** is sent as a user message with `untrusted: true`. The loop wraps it in the `untrusted_text` envelope and folds it into the following user message, so providers that need alternating roles see one message.
+
 ## Open Questions
 
 - Exact wording of each skill's instructions, refined while testing with the default and a small local model. Doesn't change specs or tasks.

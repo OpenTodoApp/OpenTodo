@@ -105,7 +105,7 @@ describe('Ask screen (3.4)', () => {
     expect(parseRoute('/ask')).toEqual({ view: 'ask' })
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     setAssistantStatus(base)
-    const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'member', created_at: 0 } as User
+    const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'member', created_at: 0 } as unknown as User
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await flush(30)
