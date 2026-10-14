@@ -2,7 +2,7 @@
 title: Backups
 summary: Scheduled backups to a folder, S3 or WebDAV, encryption, retention, restore and the archive format.
 audience: admin
-specs: [backups]
+specs: [backups, backup-restore]
 screens: []
 order: 30
 ---

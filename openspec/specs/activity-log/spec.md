@@ -28,7 +28,7 @@ The activity log SHALL be derived only from the operation log; no separate event
 - **THEN** each appears as a distinct event wording the change, such as "completed", "moved the due date to 2026-10-12", "assigned to Bob", "commented"
 
 ### Requirement: Per-task activity
-The task detail panel SHALL show the task's activity in reverse chronological order, interleaved with comments, built from the operations already in local storage so it is available offline, and extended with older history from the server when online and more exists.
+The task detail panel SHALL show the task's activity in its Activity tab in reverse chronological order, with comment events as compact one-line entries, built from the operations already in local storage so it is available offline, and extended with older history from the server when online and more exists.
 
 #### Scenario: Offline history
 - **WHEN** the user opens a task's detail panel without a network
@@ -37,6 +37,10 @@ The task detail panel SHALL show the task's activity in reverse chronological or
 #### Scenario: Older history on demand
 - **WHEN** the user asks for more at the end of the list while online
 - **THEN** older events are fetched from the server and appended without duplicates
+
+#### Scenario: Comment events are compact
+- **WHEN** Bob commented on the task an hour ago
+- **THEN** the Activity tab shows one line "Bob commented" with its time, and choosing it opens the Comments tab at that comment
 
 ### Requirement: Per-project activity
 Each project SHALL have an activity view listing events across its tasks and the project itself, newest first, filterable by actor and by event kind. For shared projects it SHALL include every member's changes; for personal projects it SHALL cover the user's own devices and API writes.
@@ -70,3 +74,18 @@ A device SHALL keep derived events for recent history locally with a bounded siz
 #### Scenario: Bounded local storage
 - **WHEN** a project accumulates more events than the local bound
 - **THEN** the oldest local events are discarded and the server still serves them on request
+
+### Requirement: Grouped activity runs
+Consecutive events by the same actor on the same task within ten minutes of each other SHALL be shown as one run summarising what changed ("You changed the due date and priority"), expandable to the individual events with their values. Each run and event SHALL show the actor's avatar initials, an icon for the kind of change, and a relative time with the absolute time in the user's format on hover and focus. Grouping SHALL be presentation only and SHALL NOT change the events.
+
+#### Scenario: Burst of edits
+- **WHEN** the user changed a task's title, due date and priority within two minutes
+- **THEN** the Activity tab shows one run "You renamed the task and changed the due date and priority" that expands to three events
+
+#### Scenario: Different actors are not merged
+- **WHEN** Alice changes the due date and Bob changes the priority a minute later
+- **THEN** two separate entries are shown
+
+#### Scenario: Pending inside a run
+- **WHEN** one of the events in a run comes from an unsent local change
+- **THEN** the run is marked pending until the change is acknowledged by the server

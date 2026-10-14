@@ -21,6 +21,8 @@ TickTick creates a backup as one CSV file from its settings (look for **Backup**
 2. Choose the CSV file. The preview shows **TickTick backup (CSV)**.
 3. Check the warnings and select **Import**.
 
+<picture><source srcset="../images/import-ticktick-dark.webp" media="(prefers-color-scheme: dark)"><img src="../images/import-ticktick-light.webp" alt="The import preview of a TickTick backup: the detected format, how many projects, sections and tasks will be created, and the first tasks with their list and dates."></picture>
+
 Lists you used as a board (kanban) open as boards on this device.
 
 ## What carries over

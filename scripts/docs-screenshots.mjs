@@ -365,6 +365,18 @@ const shots = [
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 380 }
   } },
   { name: 'import', card: true, server: P, async run(p) { await go(p, plainBase, '/settings/import', () => p.getByRole('heading', { level: 1 }).first().waitFor()) } },
+  // The switch guides (named-importers 7.4): the import preview of each app's real
+  // export, from the sanitised fixtures in internal/importer/testdata.
+  ...[['todoist', 'todoist-backup/backup.zip'], ['things', 'things-db/main.sqlite'], ['ticktick', 'ticktick-csv/backup.csv'], ['linear', 'linear-csv/export.csv']].map(([app, fixture]) => (
+    { name: `import-${app}`, server: P, async run(p) {
+      await go(p, plainBase, '/settings/import', () => p.getByRole('heading', { level: 1 }).first().waitFor())
+      await p.locator('#import-file').setInputFiles(`internal/importer/testdata/${fixture}`)
+      await p.getByRole('button', { name: 'Preview', exact: true }).click()
+      const h = p.getByRole('heading', { level: 2, name: /^Preview · / }); await h.waitFor({ timeout: 20000 })
+      await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
+      const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
+      return { x: main.x, y: Math.max(0, top.y - 16), width: main.width, height: 460 }
+    } })),
   // In-app assistant (in-app-assistant), against the scripted fake provider.
   { name: 'assistant-chat', card: true, server: 'assistant', async run(p) {
     await ask(p, 'What is due today?', () => p.locator('[data-assistant-panel] li').filter({ hasText: 'Want me to move' }).waitFor({ timeout: 20000 }))

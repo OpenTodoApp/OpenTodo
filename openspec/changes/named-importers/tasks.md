@@ -39,5 +39,5 @@
 - [x] 7.1 Reorder `Profiles` (D1) and add a detection test that every fixture, including the existing generic ones, gets its own format and nothing else. Verify `go test ./...`.
 - [x] 7.2 Add `viewHints` to the job result (D8) and apply them in the web import screen after a commit by setting those projects to board on the device. Verify an `httpapi` test of the hints and a happy-dom test that an imported Todoist board project opens as a board. Run `npm test` and `npm run build`.
 - [x] 7.3 Show the new format names and descriptions in the import screen's format selector, and list them in the `unsupported_format` message. Verify an `httpapi` test of the error body and a happy-dom test of the selector. Run `npm test` and `npm run build`.
-- [ ] 7.4 Add screenshots of an import preview for the switch guides via `scripts/screenshots.mjs` with a fixture. Verify the images exist with alt text and `make docs-check` passes.
+- [x] 7.4 Add screenshots of an import preview for the switch guides via `scripts/screenshots.mjs` with a fixture. Verify the images exist with alt text and `make docs-check` passes.
 - [x] 7.5 Add a CHANGELOG entry under Unreleased and run `make check`. Verify it passes, including `openspec validate --all --strict`.

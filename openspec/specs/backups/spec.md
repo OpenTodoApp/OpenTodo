@@ -76,7 +76,7 @@ Backup settings SHALL be manageable by the owner from Settings and through `GET`
 - **THEN** the response is a 409 `conflict` error and no second run starts
 
 ### Requirement: Restore procedure
-The binary SHALL offer a `restore <archive>` subcommand that verifies the manifest checksum, decrypts when needed, refuses archives from a newer schema version, keeps a timestamped safety copy of the current database beside it, replaces the database and applies pending migrations on next start. It SHALL refuse to run while a server process holds the database. The procedure SHALL be documented in `docs/backups.md`.
+The binary SHALL offer `restore <archive>`, which verifies the manifest checksum, decrypts when needed, refuses archives from a newer schema version, keeps a timestamped safety copy of the current database, replaces the database and migrates on the next start. It SHALL refuse to run while a server holds the database. The web app restore (`backup-restore`) SHALL use the same verification, safety copy and generation change. `docs/backups.md` SHALL document both.
 
 #### Scenario: Successful restore
 - **WHEN** the operator stops the server, runs `opentodo restore backup.tar` and starts the server
@@ -85,6 +85,10 @@ The binary SHALL offer a `restore <archive>` subcommand that verifies the manife
 #### Scenario: Newer archive
 - **WHEN** an archive produced by a newer schema version is restored with an older binary
 - **THEN** the command exits non-zero naming both versions and changes nothing
+
+#### Scenario: Same result from the web app and the CLI
+- **WHEN** the same archive is restored once with `opentodo restore` and once from Settings → Backups on identical servers
+- **THEN** both servers end with the same accounts, projects, tasks and operation log, each with a safety copy and a new log generation
 
 ### Requirement: Devices stay convergent after a restore
 The server SHALL carry a log generation identifier that changes on every restore and SHALL include it in sync responses. A client that sees a generation other than the one it stored SHALL reset its cursor, keep its outbox, re-emit every local field with its stored timestamp and device as new operations, then re-pull, so post-backup edits win by the ordinary last-writer-wins rule. Offline clients SHALL do this on their next successful exchange.
@@ -96,3 +100,14 @@ The server SHALL carry a log generation identifier that changes on every restore
 #### Scenario: Two devices re-seed concurrently
 - **WHEN** two devices with different local edits both detect the new generation and re-seed
 - **THEN** every field ends with the value carrying the greatest stored timestamp on the server and on both devices
+
+### Requirement: Archives can be read back from destinations
+Every destination kind (local directory, S3-compatible bucket, WebDAV collection) SHALL support reading an archive back by name as a stream, so that a restore never holds the whole archive in memory. Reading SHALL only accept names of OpenTodo archives, never paths, and SHALL report the destination's error without exposing credentials.
+
+#### Scenario: Read back from S3
+- **WHEN** the owner restores an archive that lives in the configured S3 bucket
+- **THEN** the server downloads it by streaming into its data directory, and memory use does not grow with the archive size
+
+#### Scenario: Path in an archive name
+- **WHEN** a request names `../opentodo.db` or any name that is not an OpenTodo archive
+- **THEN** it is refused with 400 `invalid_input`, and no destination is contacted

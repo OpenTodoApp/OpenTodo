@@ -54,15 +54,19 @@ The client SHALL offer an "Assigned to me" view listing the user's open assigned
 - **THEN** the task leaves the view and the sidebar count decreases without a reload
 
 ### Requirement: Assignee on task rows and detail
-Task rows in shared projects SHALL show the assignee compactly, and the detail panel SHALL offer an assignee picker limited to the project's current members from the local membership cache, so it works offline. Clearing the picker SHALL unassign.
+Task rows in shared projects SHALL show the assignee compactly. The detail panel SHALL offer an assignee picker limited to the project's current members from the local membership cache, so it works offline; clearing it SHALL unassign. When the user is the only assignable account (the Inbox, an unshared project, or a shared project with no other member), the panel SHALL show the assignee as "You" with a "Show in Assigned to me" switch, which writes no operation by itself.
 
 #### Scenario: Picker lists members only
 - **WHEN** the user opens the assignee picker on a task in a shared project
 - **THEN** it lists exactly the project's members with their names and an "Unassigned" option, filterable by typing
 
 #### Scenario: Personal task
-- **WHEN** the user opens the detail panel of a task in an unshared project
-- **THEN** the picker offers only themselves and "Unassigned"
+- **WHEN** the user opens the detail panel of an unassigned task in an unshared project
+- **THEN** the assignee row reads "You", the "Show in Assigned to me" switch is off, and no operation is written
+
+#### Scenario: Shared project with several members keeps Unassigned
+- **WHEN** the user opens an unassigned task in a project shared with Bob
+- **THEN** the assignee row reads "Unassigned"
 
 ### Requirement: Assignment notification hook
 Assigning a task to someone other than the author SHALL emit an assignment event on the server when the operation is applied. This change SHALL deliver it as an in-app notification to the assignee, listed and markable as read through `GET /api/v1/notifications` and `POST /api/v1/notifications/{id}/read`, both requiring authentication. Notifications SHALL be stored server-side and cached on the client, so they are visible offline once fetched; no external service is contacted.
@@ -89,3 +93,21 @@ The assignee picker SHALL follow the design-system picker rules. With an empty q
 #### Scenario: Offline assignment converges
 - **WHEN** the device is offline and the user assigns a task to a member from the picker
 - **THEN** the assignee is written as one operation applied locally, and on reconnect the server re-checks membership and the field converges on all devices under last-writer-wins
+
+### Requirement: Show in Assigned to me
+In a scope where the user is the only assignable account, turning on "Show in Assigned to me" SHALL assign the task to the user and turning it off SHALL unassign it, each as one ordinary assignee operation applied locally first, working offline and converging by last-writer-wins. The Assigned to me view SHALL keep listing only explicitly assigned tasks.
+
+#### Scenario: Pin a personal task to Assigned to me
+- **WHEN** the user turns on "Show in Assigned to me" for an Inbox task while offline
+- **THEN** the task appears in Assigned to me at once, and on the user's other devices after sync
+
+#### Scenario: Implicit You is not listed
+- **WHEN** the user has ten unassigned tasks in an unshared project
+- **THEN** Assigned to me does not list them, although each panel reads "You"
+
+### Requirement: Implicit You ends when a project gains members
+When a project the user owned alone gains a member, its unassigned tasks SHALL read "Unassigned" from then on, and tasks the user had explicitly assigned to themselves SHALL stay assigned to them; no operation SHALL be written for this transition.
+
+#### Scenario: Sharing a project
+- **WHEN** the user shares a project containing one self-assigned task and four unassigned tasks with Bob
+- **THEN** after the membership syncs, the self-assigned task reads "You" in the assignee picker and the other four read "Unassigned"
