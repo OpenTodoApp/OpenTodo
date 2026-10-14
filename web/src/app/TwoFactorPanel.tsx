@@ -94,8 +94,8 @@ export function RecoveryCodesView(p: RecoveryCodesViewProps) {
         {p.codes.map((c) => <li key={c}>{c}</li>)}
       </ol>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy codes'}</button>
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onDownload}>Download as text</button>
+        <button type="button" className="btn-secondary" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy codes'}</button>
+        <button type="button" className="btn-secondary" onClick={p.onDownload}>Download as text</button>
       </div>
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={p.acknowledged} onChange={(e) => p.onAcknowledge(e.target.checked)} />
@@ -294,7 +294,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
           {st && !st.enrolled && <button className="btn-primary" disabled={disabled} onClick={p.onStart}>Set up two-factor authentication</button>}
           {st?.enrolled && (
             <>
-              <button className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={disabled} onClick={p.onRegenerate}>New recovery codes</button>
+              <button className="btn-secondary" disabled={disabled} onClick={p.onRegenerate}>New recovery codes</button>
               <button className="btn-danger" disabled={disabled || st.required} onClick={p.onDisable}
                 title={st.required ? 'Required by the server owner' : undefined}>
                 Turn off

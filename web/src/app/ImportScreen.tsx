@@ -192,7 +192,7 @@ export function ImportView(p: ImportViewProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={disabled || !p.fileName} onClick={p.onPreview}>
+          <button className="btn-secondary" disabled={disabled || !p.fileName} onClick={p.onPreview}>
             {p.preview ? 'Refresh preview' : 'Preview'}
           </button>
           <button className="btn-primary" disabled={disabled || !p.preview || actionable === 0 || p.job?.status === 'running'} onClick={p.onStart}>

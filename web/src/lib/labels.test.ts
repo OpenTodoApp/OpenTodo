@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useDatabase } from './db'
 import {
-  LabelExistsError, activeLabels, addLabel, countOpenByLabel, createLabel, deleteLabel, duplicateLabelIds,
+  LABEL_PALETTE, LabelExistsError, activeLabels, addLabel, countOpenByLabel, createLabel, deleteLabel, duplicateLabelIds,
   mergeLabels, removeLabel, reorderLabel, resolveLabels, updateLabel,
 } from './labels'
 import { applyOps, createTask, resetDeviceId } from './ops'
@@ -34,6 +34,14 @@ describe('createLabel / updateLabel / reorderLabel', () => {
     await deleteLabel(id)
     const again = await createLabel({ name: 'ERRAND' })
     expect(again).not.toBe(id)
+  })
+
+  it('new labels cycle through all 12 palette colours before repeating', async () => {
+    const db = useDatabase(`palette-${Date.now()}`)
+    for (let i = 0; i < 12; i++) await createLabel({ name: `l${i}` })
+    const colours = (await db.labels.toArray()).map((l) => l.color)
+    expect(new Set(colours)).toEqual(new Set(LABEL_PALETTE))
+    expect(LABEL_PALETTE).toHaveLength(12)
   })
 
   it('rename is exactly one op and never writes a task', async () => {

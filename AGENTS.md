@@ -25,6 +25,7 @@ Open-source, self-hosted, local-first task manager that replaces subscription ta
 ## Conventions
 - Go: stdlib `net/http` mux with method patterns, JSON error envelope `{error:{code,message}}`, `slog` logging, errors wrapped with context.
 - TS: strict, function components, Tailwind classes, data access only via `src/lib`. Custom CSS classes live in `@layer components` so utilities can override them.
+- Design: colours, type, radius, elevation and motion come from the tokens in `web/src/index.css` (no raw palette classes or hex in `web/src/ui`); shared UI is built and checked in the Storybook workbench (`make storybook`, `make ui-check`). See `docs/design-system.md`.
 - Dates: `due` is a floating `{date: "YYYY-MM-DD", time?: "HH:MM"}`; timestamps are Unix milliseconds.
 - Priority: 1 = highest … 4 = default/lowest.
 - Deletion is a tombstone (`deleted_at`); lists filter it out, export includes it.

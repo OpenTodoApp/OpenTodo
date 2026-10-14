@@ -284,7 +284,7 @@ export function DemoPanel({ hours, busy, error, onTry }: { hours?: { idle: numbe
 /** "Sign in with <provider>": a plain link, so the browser navigates to the provider. */
 export function ProviderSignIn({ name, primary }: { name: string; primary: boolean }) {
   return (
-    <a href={OIDC_START_URL} className={`${primary ? 'btn-primary' : 'btn-ghost border border-slate-300 dark:border-slate-700'} flex w-full justify-center`}
+    <a href={OIDC_START_URL} className={`${primary ? 'btn-primary' : 'btn-secondary'} flex w-full justify-center`}
       data-testid="sso-sign-in">
       Sign in with {name}
     </a>

@@ -90,7 +90,7 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
         <button type="button" className="btn-primary" onClick={p.onApply} disabled={checked === 0} aria-busy={p.busy} data-assistant-apply>
           Apply {checked === review.items.length ? 'all' : `${checked} of ${review.items.length}`}
         </button>
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onDiscard}>Discard</button>
+        <button type="button" className="btn-secondary" onClick={p.onDiscard}>Discard</button>
       </div>
     </div>
   )

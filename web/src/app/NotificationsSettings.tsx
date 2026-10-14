@@ -85,7 +85,7 @@ export function NotificationsSettings() {
           )}
           <div className="flex flex-wrap items-center gap-2">
             <button
-              className="btn-ghost border border-slate-300 dark:border-slate-700"
+              className="btn-secondary"
               disabled={busy || s.permission !== 'granted'}
               onClick={() => void run(() => testNotification(), 'Test notification sent.')}
             >

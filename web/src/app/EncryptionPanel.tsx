@@ -78,8 +78,8 @@ function RecoveryKeyBox(p: { recoveryKey: string; copied: boolean; onCopy: () =>
       <p className="text-sm">Your recovery key. It is shown once; store it somewhere safe and separate from this device (a password manager or paper):</p>
       <code className="block select-all rounded border border-slate-300 bg-slate-50 p-3 font-mono text-sm break-all dark:border-slate-700 dark:bg-slate-900" data-recovery-key>{p.recoveryKey}</code>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy recovery key'}</button>
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onDownload}>Download as text</button>
+        <button type="button" className="btn-secondary" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy recovery key'}</button>
+        <button type="button" className="btn-secondary" onClick={p.onDownload}>Download as text</button>
       </div>
     </div>
   )
@@ -144,10 +144,10 @@ export function EncryptionView(p: EncryptionViewProps) {
             Keep your recovery key safe: without it and your passphrase, encrypted content is lost.
           </p>
           <div className="flex flex-wrap gap-2">
-            {state.unlocked && <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={() => p.onMode({ kind: 'change' })}>Change passphrase…</button>}
-            <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={() => p.onMode({ kind: 'reset' })}>Reset passphrase with recovery key…</button>
-            <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={() => p.onMode({ kind: 'confirmPurge' })}>Purge plaintext history…</button>
-            {state.unlocked && <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onLock}>Lock this device</button>}
+            {state.unlocked && <button type="button" className="btn-secondary" onClick={() => p.onMode({ kind: 'change' })}>Change passphrase…</button>}
+            <button type="button" className="btn-secondary" onClick={() => p.onMode({ kind: 'reset' })}>Reset passphrase with recovery key…</button>
+            <button type="button" className="btn-secondary" onClick={() => p.onMode({ kind: 'confirmPurge' })}>Purge plaintext history…</button>
+            {state.unlocked && <button type="button" className="btn-secondary" onClick={p.onLock}>Lock this device</button>}
             {state.unlocked
               ? <button type="button" className="btn-danger" onClick={() => p.onMode({ kind: 'confirmDisable' })}>Turn off encryption…</button>
               : <button type="button" className="btn-danger" onClick={() => p.onMode({ kind: 'confirmLost' })}>I lost my passphrase and recovery key…</button>}

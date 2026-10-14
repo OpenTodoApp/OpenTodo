@@ -76,5 +76,7 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
+    // Token tests read index.css as text (src/ui/tokens); other CSS stays stubbed.
+    css: { include: [/index\.css/] },
   },
 })
