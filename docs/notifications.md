@@ -37,13 +37,36 @@ Push notifications deliver reminders even when OpenTodo isn't open. Each device 
 
 1. Open **Settings → Notifications** on the device.
 2. Tick **Enable notifications on this device** and allow notifications when the browser asks.
-3. Select **Send test notification** to check that one arrives.
+3. Select **Send test notification**. Your server sends a real push to this device, the same way it sends reminders, and a notification appears even while OpenTodo is open.
 
 <picture><source srcset="images/settings-notifications-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-notifications-light.webp" alt="Settings, Notifications section with the options Enable notifications on this device and Include task titles."></picture>
 
 Repeat this on every device where you want them: your phone, your laptop, your tablet. Turning it off, or signing out, removes that device.
 
 From a push notification you can **Snooze 10 min** or **Dismiss**, and that applies on all your devices.
+
+### Check that it works
+
+Below the options, **Delivery check** lists everything push needs on this device, with a fix next to each problem:
+
+| Step | What it means |
+| --- | --- |
+| Browser supports push | Private windows and some browsers can't receive push at all. |
+| Notifications allowed | You allowed notifications for this site when the browser asked. |
+| Offline service worker active | The background part of the app that receives pushes is running. Reload if it isn't. |
+| Subscribed on the server | Your server knows where to send pushes for this device. Select **Enable** if not. |
+| Server reaches the push service | The last push to this device went through. After failures it shows the error; select **Re-enable**. |
+| Test notification received | This device reported the last test. |
+
+After **Send test notification** you see one of these:
+
+- **Received on this device**: the push arrived and the notification was handed to your system. Reminders will reach this device while the app is closed. If you still saw no banner, your operating system hid it (see below).
+- **Accepted, but this device has not reported receiving it**: your server delivered the push to the browser's push service, but nothing reached this device within a few seconds. Check the operating system's notification settings for your browser or the app, focus and do-not-disturb modes, and on iPhone and iPad use the installed app. If it arrives late, the result updates to received.
+- **This device is not subscribed**: nothing was sent. Tick **Enable notifications on this device** first.
+- **The subscription expired**: the push service no longer accepts it and your server removed it. Select **Enable** to subscribe again.
+- **The push service rejected the test**: the message shows its answer. Try **Re-enable**; if it keeps failing, the push service may be unreachable from your server.
+
+You can run up to five tests in ten minutes. Without a subscription, **Show a local notification** shows one straight from the page: it only proves that the browser may show notifications, not that reminders reach the device.
 
 ### On iPhone and iPad
 
@@ -60,6 +83,8 @@ A push message goes through your browser's push service (run by the browser make
 - **"Notifications are blocked for this site"**: you said no when the browser asked. Allow notifications for your OpenTodo address in the browser's site settings, then select **Re-enable**.
 - **"Push notifications are turned off on this server"**: the person running your server has switched push off. Reminders still show inside the app.
 - **"This browser does not support push notifications"**: try the installed app, or open OpenTodo over `https://`.
+- **The test says accepted but not received**: the push left your server but didn't reach this device. On a Mac, check **System Settings → Notifications** for your browser; on Windows, **Settings → System → Notifications**; on Android, the browser's or app's notification settings; on iPhone and iPad, the installed app's notification settings. Focus and do-not-disturb modes hide notifications too.
 - **Nothing arrives on a phone**: check that the operating system allows notifications for the app (or the browser), and that battery saving or focus modes aren't holding them back.
+- **Running OpenTodo from source with `make dev`**: development builds have no service worker, so push can't work there and the delivery check says so. Use the production build (`make run`, http://localhost:8080) to test push.
 
 More fixes in [Troubleshooting](troubleshooting.md).

@@ -178,6 +178,21 @@
       } catch {
         data = {}
       }
+      if (data.type === 'test' && data.testId) {
+        // A test push (push-test-delivery D4) always becomes a system notification,
+        // even with the app in front, with its own tag so a second test does not
+        // replace the first. It writes nothing locally; it only reports receipt.
+        await self.registration.showNotification('OpenTodo', {
+          body: 'Test notification: push works on this device.',
+          tag: `opentodo-test:${data.testId}`,
+          icon: '/pwa-192.png',
+          badge: '/pwa-192.png',
+          data: { test: true, testId: data.testId },
+        })
+        const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+        for (const w of windows) w.postMessage({ type: 'push:test-received', testId: data.testId, receivedAt: Date.now() })
+        return
+      }
       if (data.type !== 'reminder' || !data.reminderId) {
         await self.registration.showNotification('OpenTodo', { body: 'You have a reminder', icon: '/pwa-192.png' })
         return
@@ -216,6 +231,16 @@
     const d = n.data || {}
     n.close()
     event.waitUntil((async () => {
+      if (d.test) {
+        const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+        if (windows.length > 0 && 'navigate' in windows[0]) {
+          await windows[0].navigate('/settings/notifications')
+          if ('focus' in windows[0]) await windows[0].focus()
+          return
+        }
+        await self.clients.openWindow('/settings/notifications')
+        return
+      }
       if (!d.reminderId) return
       if (event.action === 'snooze10' || event.action === 'dismiss') {
         const now = Date.now()
