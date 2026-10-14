@@ -1,4 +1,5 @@
 import { Icon, type IconName } from '../ui/Icon'
+import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { db, getMeta } from '../lib/db'
@@ -293,13 +294,8 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
           <form onSubmit={(e) => void submit(e)} className="space-y-1 px-1 pt-1">
             <input className="input" autoFocus placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Escape' && setAdding(false)} />
-            <select className="input py-1 text-xs" aria-label="Parent project" value={parentId} onChange={(e) => setParentId(e.target.value)}
-              onKeyDown={(e) => e.key === 'Escape' && setAdding(false)}>
-              <option value="">Top level</option>
-              {flattenTree(tree.roots).map((n) => (
-                <option key={n.id} value={n.id}>{'  '.repeat(n.depth)}{n.item.name}</option>
-              ))}
-            </select>
+            <ProjectPickerField label="Parent project" projects={projects} value={parentId || null} onChange={(id) => setParentId(id ?? '')}
+              rankContext="project.parent" inbox={false} noneLabel="Top level" className="py-1 text-xs" />
             <div className="flex gap-1">
               <button type="submit" className="btn-primary flex-1 text-xs">Create</button>
               <button type="button" className="btn-ghost text-xs" onClick={() => setAdding(false)}>Cancel</button>

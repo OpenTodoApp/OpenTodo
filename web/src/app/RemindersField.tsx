@@ -6,6 +6,8 @@ import { addDaysISO, localDueOf, todayISO } from '../lib/dates'
 import { addReminder, deleteReminder, dismissReminder, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'
 import { DEFAULT_REMINDER_TIME, isDelivered, isDismissed, offsetLabel, RELATIVE_PRESETS } from '../lib/reminderTime'
 import type { Reminder, Task } from '../lib/types'
+import { MenuGroup, MenuItem, MenuSeparator } from '../ui/Menu'
+import { Menu } from './overlay/Menu'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { DateField } from './datetime/DateField'
 import { TimeField } from './datetime/TimeField'
@@ -33,17 +35,18 @@ function defaultMoment(task: Task): { date: string; time: string } {
 }
 
 /**
- * Reminders section of the task detail panel (OpenSpec change `reminders`): list,
- * add relative (presets or a custom offset) or absolute (date and time), edit,
- * delete, and snooze or dismiss a reminder that has fired. Every control is a
- * native button, select or input, so the section is reachable with Tab.
+ * Reminders row of the task panel (OpenSpec change `reminders`; layout from
+ * task-detail-redesign D8): each reminder is a chip with its own actions menu
+ * (edit, snooze and dismiss once it has fired, delete), and "Add reminder" is a
+ * menu of relative presets plus a custom offset or a set date and time. The
+ * date and time editors are the date-time-preferences fields.
  */
 export function RemindersField({ task }: { task: Task }) {
   const reminders = useLiveQuery(
     () => db.reminders.where('task_id').equals(task.id).filter((r) => !r.deleted_at).toArray().then(sortReminders),
     [task.id], [] as Reminder[],
   )
-  const [adding, setAdding] = useState<'menu' | 'custom' | 'absolute' | null>(null)
+  const [adding, setAdding] = useState<'custom' | 'absolute' | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const { formatInstant } = useDateTimeFormat()
@@ -61,63 +64,53 @@ export function RemindersField({ task }: { task: Task }) {
 
   const now = Date.now()
   return (
-    <div>
-      <ul className="mb-2 space-y-1 empty:hidden" aria-label="Reminders">
+    <div className="space-y-2">
+      <ul className="flex flex-wrap gap-1.5 empty:hidden" aria-label="Reminders">
         {reminders.map((r) => {
           const fired = r.fire_at !== null && r.fire_at <= now
           const state = r.fire_at === null ? 'no due date' : isDismissed(r) ? 'dismissed' : fired ? (isDelivered(r) ? 'sent' : 'fired') : ''
-          return (
-            <li key={r.id} className="rounded-md border border-slate-200 px-2 py-1.5 text-sm dark:border-slate-800" data-reminder-id={r.id}>
-              {editing === r.id ? (
+          const when = r.fire_at !== null ? formatInstant(r.fire_at, 'long') : 'Not scheduled'
+          const name = r.kind === 'relative' ? offsetLabel(r.offset_minutes) : when
+          if (editing === r.id) {
+            return (
+              <li key={r.id} className="w-full" data-reminder-id={r.id}>
                 <ReminderEditor task={task} initial={r} onCancel={() => setEditing(null)} onSave={(input) => void run(() => updateReminder(r.id, input))} />
-              ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-muted"><Icon name="alarm-clock" /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="font-medium" data-testid="reminder-time">{r.fire_at !== null ? formatInstant(r.fire_at, 'long') : 'Not scheduled'}</span>
-                    <span className="ml-1 text-xs text-muted">
-                      {r.kind === 'relative' ? offsetLabel(r.offset_minutes) : 'at a set time'}{state ? ` · ${state}` : ''}
-                    </span>
-                  </span>
-                  {fired && !isDismissed(r) && (
-                    <>
-                      <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" onClick={() => void run(() => snoozeReminder(r.id, '10m'))}>Snooze 10 min</button>
-                      <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" onClick={() => void run(() => dismissReminder(r.id))}>Dismiss</button>
-                    </>
-                  )}
-                  <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" aria-label="Edit reminder" onClick={() => setEditing(r.id)}>Edit</button>
-                  <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" aria-label="Delete reminder" title="Delete reminder" onClick={() => void run(() => deleteReminder(r.id))}><Icon name="x" /></button>
-                </div>
-              )}
+              </li>
+            )
+          }
+          return (
+            <li key={r.id} data-reminder-id={r.id}
+              className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 pl-2.5 pr-0.5 text-sm ${isDismissed(r) ? 'text-faint' : 'text-default'}`}>
+              <Icon name="bell" className={fired && !isDismissed(r) ? 'text-accent' : 'text-faint'} />
+              <span className="min-w-0 truncate">
+                {r.kind === 'relative' ? <>{name} <span className="text-meta text-muted" data-testid="reminder-time">{when}</span></> : <span data-testid="reminder-time">{when}</span>}
+                {state && <span className="text-meta text-muted"> · {state}</span>}
+              </span>
+              <Menu kind="menu" label={`Actions for reminder ${name}`} trigger={<Icon name="ellipsis" />} triggerClassName="btn-ghost rounded-full px-1.5 py-1" width="sm:w-56">
+                <MenuItem label="Edit" icon="pencil" onSelect={() => setEditing(r.id)} />
+                {fired && !isDismissed(r) && <MenuItem label="Snooze 10 minutes" icon="clock" onSelect={() => void run(() => snoozeReminder(r.id, '10m'))} />}
+                {fired && !isDismissed(r) && <MenuItem label="Dismiss" icon="check" onSelect={() => void run(() => dismissReminder(r.id))} />}
+                <MenuSeparator />
+                <MenuItem label="Delete reminder" icon="trash-2" danger onSelect={() => void run(() => deleteReminder(r.id))} />
+              </Menu>
             </li>
           )
         })}
       </ul>
-      {adding === null && (
-        <button type="button" className="btn-ghost text-sm text-emerald-700 dark:text-emerald-400" onClick={() => setAdding('menu')}>+ Add reminder</button>
-      )}
-      {adding === 'menu' && (
-        <select
-          className="input"
-          aria-label="Add reminder"
-          autoFocus
-          defaultValue=""
-          onKeyDown={(e) => { if (e.key === 'Escape') setAdding(null) }}
-          onChange={(e) => {
-            const v = e.target.value
-            if (v === 'custom' || v === 'absolute') setAdding(v)
-            else if (v !== '') void run(() => addReminder(task.id, { kind: 'relative', offset_minutes: Number(v) }))
-          }}
-        >
-          <option value="" disabled>Choose when…</option>
-          <optgroup label={task.due ? 'Relative to the due time' : 'Relative to the due time (set a due date first)'}>
-            {RELATIVE_PRESETS.map((p) => <option key={p.minutes} value={p.minutes}>{p.label}</option>)}
-            <option value="custom">Custom offset…</option>
-          </optgroup>
-          <option value="absolute">At a specific date and time…</option>
-        </select>
-      )}
-      {(adding === 'custom' || adding === 'absolute') && (
+      {adding === null ? (
+        <Menu kind="menu" label="Add reminder" align="start" width="sm:w-64"
+          trigger={<><Icon name="plus" />Add reminder</>} triggerClassName="btn-ghost px-2 py-1 text-sm text-accent">
+          <MenuGroup label="Before the due time">
+            {RELATIVE_PRESETS.map((p) => (
+              <MenuItem key={p.minutes} label={p.label} icon="bell" description={task.due ? undefined : 'Fires once the task has a due date'}
+                onSelect={() => void run(() => addReminder(task.id, { kind: 'relative', offset_minutes: p.minutes }))} />
+            ))}
+          </MenuGroup>
+          <MenuSeparator />
+          <MenuItem label="Custom…" icon="pencil" onSelect={() => setAdding('custom')} />
+          <MenuItem label="At a time…" icon="calendar-days" onSelect={() => setAdding('absolute')} />
+        </Menu>
+      ) : (
         <ReminderEditor
           task={task}
           initial={null}
@@ -127,12 +120,12 @@ export function RemindersField({ task }: { task: Task }) {
         />
       )}
       {!task.due && reminders.some((r) => r.kind === 'relative') && (
-        <p className="mt-1 text-xs text-faint">Relative reminders fire once the task has a due date.</p>
+        <p className="text-meta text-faint">Relative reminders fire once the task has a due date.</p>
       )}
       {task.due && !task.due.time && reminders.some((r) => r.kind === 'relative') && (
-        <p className="mt-1 text-xs text-faint">No due time: relative reminders count from {DEFAULT_REMINDER_TIME}.</p>
+        <p className="text-meta text-faint">No due time: relative reminders count from {DEFAULT_REMINDER_TIME}.</p>
       )}
-      {error && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-meta text-danger">{error}</p>}
     </div>
   )
 }

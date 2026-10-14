@@ -131,9 +131,10 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 | Keys | What it does |
 | --- | --- |
-| <kbd>Shift+C</kbd> | Comment on the open task: focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick) |
+| <kbd>Shift+C</kbd> | Comment on the open task: switch to the Comments tab and focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick) |
 | <kbd>Ctrl+Enter</kbd> / <kbd>⌘+Enter</kbd> | In a comment: post the comment, reply or edit; Esc cancels or leaves the field |
-| <kbd>Tab</kbd>, <kbd>Enter</kbd> | In the comment thread: reach Reply, Edit and Delete on a comment; Load older activity at the end |
+| <kbd>Tab</kbd>, <kbd>Enter</kbd> | In the comment thread: in the Comments tab: reach Reply, Edit and Delete; in the Activity tab: expand a group or load older activity |
+| <kbd>←</kbd> / <kbd>→</kbd> | On the task tabs: switch between Comments, Activity and History in the task panel |
 | <kbd>Shift+H</kbd> | In a project: show or hide the project activity; Tab reaches the person and kind filters |
 | <kbd>Ctrl/⌘+B</kbd>, <kbd>I</kbd>, <kbd>Shift+X</kbd>, <kbd>E</kbd>, <kbd>K</kbd> | In the notes: bold, italic, strikethrough, inline code, link |
 | <kbd>Ctrl/⌘+Alt+1</kbd>–<kbd>3</kbd> / <kbd>0</kbd> | In the notes: heading 1–3 / normal text |

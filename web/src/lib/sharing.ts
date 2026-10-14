@@ -44,6 +44,17 @@ export function assignableIn(projectId: string | null | undefined, memberships: 
   return new Set(me ? [me] : [])
 }
 
+/**
+ * True when the viewer is the only person who can be assigned in `projectId`: the
+ * Inbox, an unshared project, or a shared project whose only member is the viewer
+ * (OpenSpec task-detail-redesign, D3). The panel then shows the assignee as "You";
+ * that is display only and writes nothing.
+ */
+export function isSoloScope(projectId: string | null | undefined, memberships: Map<string, Membership>, me: string | null): boolean {
+  const who = assignableIn(projectId, memberships, me)
+  return !!me && who.size === 1 && who.has(me)
+}
+
 /** The people the assignee picker offers for a task in `projectId` (the local membership cache). */
 export function assigneeOptions(
   projectId: string | null | undefined, memberships: Map<string, Membership>, me: { id: string; name: string; email: string },

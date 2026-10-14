@@ -215,6 +215,18 @@ export function fixDueToZone(due: Due, zone = viewerZone()): Due {
   return { date: due.date, time: due.time, tz: zone }
 }
 
+/**
+ * Fix a timed due to any IANA `zone`, keeping its stored wall date and time
+ * (OpenSpec task-detail-redesign, D4): "15:00" becomes 15:00 in that zone. From a
+ * floating due this is "fix to that zone"; from a zoned one it re-interprets the
+ * clock time in the new zone. Returns null when the due has no time or the zone is
+ * unknown, so the caller writes nothing.
+ */
+export function setDueZone(due: Due, zone: string): Due | null {
+  if (!due.time || !isKnownZone(zone)) return null
+  return { date: due.date, time: due.time, tz: zone }
+}
+
 /** Release a zoned due to a floating one at the date and time displayed in `zone`. */
 export function releaseDue(due: Due, zone = viewerZone()): Due {
   if (!due.tz) return due

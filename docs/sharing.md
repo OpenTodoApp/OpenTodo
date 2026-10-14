@@ -87,20 +87,23 @@ In a shared project, each task can be assigned to one member. Open the task and 
 
 **Assigned to me** in the sidebar (<kbd>g</kbd> <kbd>a</kbd>) lists every open task assigned to you, across projects.
 
+In your Inbox, in a project you haven't shared, or in a shared project where you are the only member, nobody else can be assigned, so the **Assignee** row reads **You**. That is only how the panel shows it: such a task is not in **Assigned to me** unless you turn on **Show in Assigned to me** in the same row, which assigns it to you. Turning it off unassigns it again. When you share the project with someone, its unassigned tasks read **Unassigned** from then on, and the tasks you assigned to yourself stay yours.
+
 ## Comment on a task
 
-Open a task and scroll to **Comments**, or press <kbd>Shift</kbd>+<kbd>C</kbd> with the task open. Write your comment and post it with **Comment** or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (<kbd>⌘</kbd>+<kbd>Enter</kbd> on a Mac).
+Open a task: **Comments** is the first tab below its details, next to **Activity** and **History**, and the panel remembers the tab you used last on this device. Press <kbd>Shift</kbd>+<kbd>C</kbd> with the task open to jump to the comment box from any tab. Comments read like a chat, oldest first, with the box at the end. Write your comment and post it with **Comment** or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (<kbd>⌘</kbd>+<kbd>Enter</kbd> on a Mac). If you close the task before sending, your draft is still there when you open it again on this device.
 
 <picture><source srcset="images/comments-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/comments-light.webp" alt="A task's comment thread with a comment that mentions Alex, a reply nested under it, and a newer comment."></picture>
 
 - **Mention** someone by typing `@` and picking their name. They get a notification.
-- **Reply** to a comment to keep a conversation together. Replies are nested under it.
-- **Edit** or **Delete** your own comments. Edited comments are marked as edited. Project admins and the owner can delete any comment.
+- **Reply** to a comment to keep a conversation together. The comment box shows who you're replying to, with a button to cancel and post a new comment instead. Replies are nested under the comment.
+- **Edit** or **Delete** your own comments; deleting asks you to confirm. Edited comments are marked as edited. Project admins and the owner can delete any comment. On a computer these actions appear when you point at a comment or move to it with the keyboard; on a phone they're always shown.
+- Hover over or focus a comment's time ("2 h ago") to see the full date and time in your format.
 - Comments support simple formatting: `**bold**`, `*italic*`, `` `code` ``, lists, quotes and links.
 
 Everyone who can see a task can comment on it, viewers included. Rows with comments show a speech bubble and a count. Comments work offline too and are sent when you're back online.
 
-The same thread shows the task's activity: who created it, completed it or changed its date.
+The **Activity** tab shows the task's changes: who created it, completed it or changed its date. See [Activity on a task](trash-and-history.md#activity-on-a-task).
 
 ## See what others changed
 

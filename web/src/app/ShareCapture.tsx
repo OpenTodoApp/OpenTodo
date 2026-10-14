@@ -2,12 +2,11 @@
 // system share sheet (manifest share_target), the Settings bookmarklet and the
 // browser extension, all of which open /share?title=…&text=…&url=…
 import { useLiveQuery } from 'dexie-react-hooks'
+import { ProjectPickerField } from './ProjectPickerField'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { createTask } from '../lib/ops'
-import { buildProjectTree } from '../lib/projects'
 import { isEmptyShare, parseShare, proposedDescription, proposedTitle, type SharePayload } from '../lib/share'
-import { flattenTree } from '../lib/tree'
 import type { Label } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { navigate, type Route } from './router'
@@ -54,7 +53,6 @@ export function ShareCapture() {
   // Same inputs as the task views' quick add, so `#project`, `@label`, dates and `p1` in the title parse alike.
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
-  const options = useMemo(() => flattenTree(buildProjectTree(projects).roots), [projects])
 
   useEffect(() => {
     titleRef.current?.focus()
@@ -121,15 +119,10 @@ export function ShareCapture() {
             }}
           />
         </label>
-        <label className="mt-3 block text-sm">
-          <span className="mb-1 block text-slate-600 dark:text-slate-300">Project</span>
-          <select className="input" aria-label="Project" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-            <option value="">Inbox</option>
-            {options.map((n) => (
-              <option key={n.id} value={n.id}>{'  '.repeat(n.depth)}{n.item.name}</option>
-            ))}
-          </select>
-        </label>
+        <div className="mt-3 block text-sm">
+          <span className="mb-1 block text-slate-600 dark:text-slate-300" aria-hidden>Project</span>
+          <ProjectPickerField label="Project" projects={projects} value={projectId || null} onChange={(id) => setProjectId(id ?? '')} rankContext="capture.project" />
+        </div>
         {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
         <div className="mt-4 flex items-center justify-end gap-2">
           <span className="mr-auto hidden text-xs text-faint sm:inline">

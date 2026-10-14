@@ -258,7 +258,7 @@ const shots = [
   { name: 'day', server: D, async run(p) { await go(p, demoBase, '/day', () => p.getByRole('button', { name: 'Day' }).first().waitFor()) } },
   { name: 'comments', server: D, card: true, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
-    await scrollPanelTo(p, detail(p).getByRole('region', { name: 'Comments and activity' }), 8)
+    await scrollPanelTo(p, detail(p).getByRole('region', { name: 'Comments, activity and history' }), 8)
   } },
   { name: 'notifications', card: true, server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
@@ -270,11 +270,20 @@ const shots = [
   { name: 'activity', server: D, card: true, async run(p) { await go(p, demoBase, '/activity', () => p.getByRole('heading', { name: 'Activity' }).waitFor()) } },
   { name: 'history', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Pick paint colours')
-    const hist = detail(p).getByRole('button', { name: /History/ }).first(); await hist.scrollIntoViewIfNeeded(); await hist.click(); await settle(p, 1200)
+    // History is a tab of the panel (task-detail-redesign); expand the newest version.
+    const hist = detail(p).getByRole('tab', { name: 'History' }); await hist.scrollIntoViewIfNeeded(); await hist.click(); await settle(p, 1200)
+    await detail(p).getByRole('list', { name: 'Versions' }).getByRole('button', { expanded: false }).first().click().catch(() => {}); await settle(p, 400)
     await scrollPanelTo(p, hist, 8)
     const b = await detail(p).boundingBox()
     return { x: b.x, y: b.y, width: b.width, height: Math.min(b.height, 470) }
   } },
+  // The time-zone popover of a timed due (task-detail-redesign 5.4).
+  { name: 'time-zone', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
+    const chip = detail(p).getByRole('button', { name: /^Time zone:/ }).first(); await scrollPanelTo(p, chip, 120); await chip.click()
+    const d = p.getByRole('dialog', { name: 'Time zone' }); await d.waitFor(); await settle(p, 400)
+    return clipOf(p, d, 16)
+  }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'trash', server: D, card: true, async run(p) { await go(p, demoBase, '/trash', () => p.getByRole('heading', { name: 'Trash' }).waitFor()) } },
   { name: 'shortcuts', server: D, card: true, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())

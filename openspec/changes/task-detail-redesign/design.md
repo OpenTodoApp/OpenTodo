@@ -118,6 +118,8 @@ None of these are synced or exported.
 ### Size and runtime
 No new dependencies. The client code adds roughly 8–12 KB minified. The tab components can be split so History (rarely opened) loads with its tab via `lazy()`. The image size, binary and server memory are unchanged.
 
+Measured at apply (`npm run build`, gzipped): the entry chunk grew from 232.51 KB to 239.86 KB (+7.35 KB, within the 15 KB budget). The History tab is a separate lazy chunk of 9.41 KB (3.75 KB gzipped), fetched when the tab is first opened. No dependency was added.
+
 ## Risks / Trade-offs
 
 - [Read-mode rows add one keystroke before editing] → Enter or Space on a focused row opens its editor, typing a printable character on a focused picker row opens the picker with that character, and existing global shortcuts still work without opening rows.
