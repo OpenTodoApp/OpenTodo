@@ -7,7 +7,7 @@ Lets a project define typed fields (text, number, date, choice, link, checkbox) 
 ## ADDED Requirements
 
 ### Requirement: Field definition entity
-A field definition SHALL belong to one project and have a name, a type (`text`, `number`, `date`, `choice`, `link` or `checkbox`), the options of a choice field, a sort position, a creation time and an optional deletion time. Its project and type SHALL NOT change after creation. Definitions SHALL be created, edited and deleted as operations in the log, applied locally first so they work offline, and SHALL converge under per-field last-writer-wins. A project SHALL have at most 30 live definitions.
+A field definition SHALL belong to one project and have a name, a type (`text`, `number`, `date`, `choice`, `link` or `checkbox`), the options of a choice field, a sort position, a creation time and an optional deletion time. Its project and type SHALL NOT change after creation. Definitions SHALL be written as operations, applied locally first so they work offline, and SHALL converge under per-field last-writer-wins. A project SHALL have at most 30 live definitions.
 
 #### Scenario: Add a field offline
 - **WHEN** the device is offline and the user adds a number field "Cost" to project "Kitchen"
@@ -26,7 +26,7 @@ A field definition SHALL belong to one project and have a name, a type (`text`, 
 - **THEN** the addition is refused with a message naming the limit
 
 ### Requirement: Typed values and their limits
-A value SHALL match its definition's type: text at most 2,000 characters; a finite number; a floating date `YYYY-MM-DD`; a choice equal to one of the definition's options; an `http` or `https` link of at most 2,000 characters; a boolean. Clients, the REST API and assistant tools SHALL refuse a value that does not match. The server SHALL refuse any value that is not null, a string, a finite number or a boolean, and SHALL NOT check it against the definition, so a value and its definition may arrive in any order.
+A value SHALL match its definition's type: text of at most 2,000 characters; a finite number; a floating date `YYYY-MM-DD`; a choice equal to one of the options; an `http` or `https` link of at most 2,000 characters; a boolean. Clients, the REST API and assistant tools SHALL refuse a mismatch. The server SHALL refuse any value that is not null, a string, a finite number or a boolean, and SHALL NOT check it against the definition, so a value and its definition may arrive in any order.
 
 #### Scenario: Number refused in the panel
 - **WHEN** the user types `abc` into the "Cost" editor
@@ -112,7 +112,7 @@ In a project whose definitions are not empty, the list view SHALL offer a column
 - **THEN** rows show the values as badges and no header row
 
 ### Requirement: Field terms in queries
-A query term `name cmp value` SHALL match tasks holding a value under a live definition with that name (ignoring case, in any project the user sees) that satisfies the comparison for the definition's type: numbers compare numerically; dates compare with the date grammar; text, link and choice allow `=` only, ignoring case; checkbox allows `= true` and `= false`. `no name` SHALL match tasks of a project defining that field with no value. An unknown name SHALL produce a warning and match nothing. Evaluation is on the device.
+A term `name cmp value` SHALL match tasks holding a value under a live definition of that name (ignoring case, in any project the user sees) that satisfies the comparison for the definition's type: numbers numerically; dates with the date grammar; text, link and choice with `=` only, ignoring case; checkbox with `= true` or `= false`. `no name` SHALL match tasks of a project defining that field with no value. An unknown name SHALL warn and match nothing. Evaluation is on the device.
 
 #### Scenario: Numeric comparison
 - **WHEN** the user enters `cost > 100`

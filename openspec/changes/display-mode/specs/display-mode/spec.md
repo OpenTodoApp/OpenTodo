@@ -48,7 +48,7 @@ The Upcoming display SHALL show the next days (default 7) as columns. A project 
 - **THEN** the tasks appear under the view's date groups, sorted as the view sorts them
 
 ### Requirement: Presentation options
-A display SHALL read its presentation from the URL: `size` `m`, `l` (default) or `xl`, where body text is at least 20, 24 and 32 px; `contrast=high` for a black-on-white or white-on-black presentation with no soft tints and borders of at least 3:1; `motion=none` for instant state changes with no transitions; and `eink=1` as the preset for high contrast, no motion and a clock without seconds. Options SHALL apply only while a display route is shown and SHALL not change the user's theme or synced preferences.
+A display SHALL read its presentation from the URL: `size` `m`, `l` (default) or `xl` (body text at least 20, 24 and 32 px); `contrast=high` (black on white or white on black, no soft tints, borders of at least 3:1); `motion=none` (no transitions); and `eink=1` as the preset for high contrast, no motion and a clock without seconds. Options SHALL apply only while a display route is shown and SHALL not change the user's theme or synced preferences.
 
 #### Scenario: E-ink preset
 - **WHEN** `/display/today?eink=1` opens
