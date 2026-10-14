@@ -185,7 +185,7 @@ ${header()}
       <h1>${e(index.fm.title)}</h1>
       <p class="lede">${e(index.fm.summary ?? '')}</p>
       ${searchForm('q-home', true)}
-      <p class="home-try">New here? Start with <a href="/docs/getting-started/">Getting started</a>, or open the <a href="https://opentodo-demo.pixari.dev" rel="noopener">demo</a> in another tab and follow along.</p>
+      <p class="home-try">New here? Start with <a href="/docs/getting-started/">Getting started</a>, or open the <a href="https://demo.open-todo.app" rel="noopener">demo</a> in another tab and follow along.</p>
     </div>
   </section>
   <section class="home-section" aria-labelledby="h-start">

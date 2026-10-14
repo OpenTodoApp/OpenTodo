@@ -5,7 +5,7 @@ import type { SearchEntry } from '../../../scripts/docs/search-core.mjs'
 import { navigate } from '../router'
 import { HelpContent } from './HelpContent'
 
-const SITE = 'https://opentodo.pixari.dev/docs/'
+const SITE = 'https://open-todo.app/docs/'
 
 /**
  * The Help view (OpenSpec change `user-documentation`, design D5): the user guide
