@@ -216,6 +216,7 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_ADDR` | `:8080` | Listen address |
 | `OPENTODO_DATA_DIR` | `./data` (binary), `/data` (image) | Directory for the SQLite database, secrets, the VAPID key and local backups |
 | `OPENTODO_BASE_URL` | unset (inferred from requests) | Public URL. With https: `Secure` cookies, passkeys and web push; also used for strict origin checks and in invitation, reset and CalDAV links |
+| `OPENTODO_SETUP_TOKEN` | unset | When set (16+ characters), creating the first account requires this token, so a fresh public server cannot be claimed by a stranger. No effect once the owner exists. The Coolify template generates one |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner exists. Prefer [invitations](#adding-people) |
 | `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime in days |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |

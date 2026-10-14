@@ -43,6 +43,11 @@ test('variables: unknown, required, without default, and the magic domain variab
   has(check((t) => t.replace(/ {6}- OPENTODO_TRUSTED_PROXIES=.*\n/, '')), /must reference OPENTODO_TRUSTED_PROXIES/)
 })
 
+test('the setup token comes from a Coolify-generated secret', () => {
+  has(check((t) => t.replace(/ {6}- OPENTODO_SETUP_TOKEN=.*\n/, '')), /must set OPENTODO_SETUP_TOKEN/)
+  has(check((t) => t.replace('${SERVICE_PASSWORD_SETUP}', '${OPENTODO_SETUP_TOKEN:-}')), /OPENTODO_SETUP_TOKEN must be \$\{SERVICE_PASSWORD_SETUP\}/)
+})
+
 test('header fields and order', () => {
   has(check((t) => t.replace(/^# port: 8080\n/m, '')), /header fields must be exactly/)
   has(check((t) => t.replace(/^(# slogan:.*)\n(# documentation:.*)$/m, '$2\n$1').replace(/^(# documentation:.*)\n(# slogan:.*)$/m, '$2\n$1')), /in that order/)
