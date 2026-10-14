@@ -56,7 +56,7 @@
 
 - [x] 8.1 Update `scripts/e2e-layout.mjs` to iterate all fourteen sections and the overview at 320, 390 and 1280 px, and `scripts/docs-screenshots.mjs` paths and headings; verify with `make layout-check` passing with no horizontal overflow
 - [x] 8.2 Regenerate help and screenshots (`make docs`, `make docs-screenshots`) and confirm every `settings/...` screen id resolves; verify with `make docs-check` and `make docs-site-check`
-- [ ] 8.3 Run the Storybook gates from `design-language` (axe, visual regression light/dark at 375 and 1280) for every settings story; verify the gate command passes with zero axe violations and approved baselines
+- [x] 8.3 Run the Storybook gates from `design-language` (axe, visual regression light/dark at 375 and 1280) for every settings story; verify the gate command passes with zero axe violations and approved baselines
 - [x] 8.4 Manual keyboard pass: overview → each section → each action and dialog without a mouse, focus visible throughout, and a screen reader announcing group headings; record the result in the PR description
 - [x] 8.5 Run `make check` and `npx @fission-ai/openspec validate --all --strict`; both pass
 
