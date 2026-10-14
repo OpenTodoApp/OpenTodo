@@ -60,6 +60,15 @@ Each saved view can group its tasks (by project, date, priority or label) and so
 
 The **All** link next to **Views** (or <kbd>g</kbd> <kbd>v</kbd>) opens the list of all your saved views. From there you can rename, reorder, unpin or delete them.
 
+Every saved view has the same menu, wherever you open it: the **⋯** button on its row in the sidebar or the views list, its header, or a dashboard. With a row focused, <kbd>.</kbd> (or <kbd>Shift</kbd>+<kbd>F10</kbd>) opens it too.
+
+- **Rename**.
+- **Pinned to sidebar** and **Start view on this device**: a check mark shows which apply.
+- **Move up** and **Move down**: unavailable at the top or bottom of the list, with the reason shown.
+- **Delete view…** asks for confirmation first. Deleting a view never touches your tasks.
+
+<picture><source srcset="images/view-menu-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/view-menu-light.webp" alt="The menu of a saved view: Rename, the Pinned to sidebar and Start view on this device check items, Move up and Move down, and Delete view at the bottom."></picture>
+
 ## Build a dashboard
 
 A dashboard puts up to six saved views side by side, each showing its count and first ten tasks. It's handy for a morning review: "Due this week", "Deep work" and "Waiting on others" on one screen.
@@ -70,7 +79,7 @@ Open the views list (<kbd>g</kbd> <kbd>v</kbd>), choose **+ New dashboard**, nam
 
 ## Choose where the app opens
 
-Each device can open on a different view: your laptop on a "Work" view, your phone on Today. Pick it in **Settings → Preferences → Start view**, or from a saved view's menu with **Set as start view on this device**. If that view is deleted later, the device opens on the Inbox and tells you why.
+Each device can open on a different view: your laptop on a "Work" view, your phone on Today. Pick it in **Settings → Preferences → Start view**, or from a saved view's menu with **Start view on this device**. If that view is deleted later, the device opens on the Inbox and tells you why.
 
 ## Tips
 

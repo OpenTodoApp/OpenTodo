@@ -79,6 +79,13 @@ type Row struct {
 	Warnings  []string
 	// Err marks a row that cannot be imported; the reason is shown per row.
 	Err string
+	// File is the archive entry the row came from (ZIP uploads), shown with Line.
+	File string
+	// EstimateMinutes is the task's duration estimate (0 = none).
+	EstimateMinutes int
+	// AssignSelf assigns the task to the importing account (a Linear issue
+	// assigned to the importer's own email address).
+	AssignSelf bool
 
 	// Entity carries an own-export record verbatim (its id plus every field), so the
 	// round trip is exact. Only the opentodo profile sets it.
@@ -105,6 +112,15 @@ type Parsed struct {
 	// Notes are file-level remarks shown in the preview (for example records
 	// of a kind that is not imported).
 	Notes []string
+	// ViewHints name projects that were boards in the source app; the web app
+	// opens them as boards on the importing device (named-importers D8).
+	ViewHints []ViewHint
+}
+
+// ViewHint asks the importing device to show a project in a view ("board").
+type ViewHint struct {
+	ProjectSourceID string
+	View            string
 }
 
 // Profile reads one file format.
@@ -122,13 +138,31 @@ type Profile interface {
 
 // Profiles lists every format in detection order: the own export first, then each
 // JSON shape by its structural signature, then CSV.
-var Profiles = []Profile{opentodoProfile{}, itemsProfile{}, listsProfile{}, genericProfile{}, csvProfile{}}
+var Profiles = []Profile{opentodoProfile{}, thingsDBProfile{}, itemsProfile{}, listsProfile{}, genericProfile{},
+	todoistProfile{}, tickTickProfile{}, linearProfile{}, csvProfile{}}
+
+// formatAliases are format names that select a profile for a container: a
+// Todoist backup is a ZIP of todoist-csv files.
+var formatAliases = map[string]string{todoistBackupFormat: todoistFormat}
+
+// formatProfile maps a requested format to the profile that reads its files.
+func formatProfile(format string) string {
+	if p, ok := formatAliases[format]; ok {
+		return p
+	}
+	return format
+}
 
 // ProfileNames returns the identifiers of every supported format.
 func ProfileNames() []string {
-	out := make([]string, len(Profiles))
-	for i, p := range Profiles {
-		out[i] = p.Name()
+	out := make([]string, 0, len(Profiles)+len(formatAliases))
+	for _, p := range Profiles {
+		out = append(out, p.Name())
+		for alias, target := range formatAliases {
+			if target == p.Name() {
+				out = append(out, alias)
+			}
+		}
 	}
 	return out
 }
@@ -153,6 +187,7 @@ func (e *OptionError) Error() string { return e.Msg }
 // otherwise the first profile whose signature matches.
 func Detect(data []byte, override string) (Profile, error) {
 	if override != "" {
+		override = formatProfile(override)
 		for _, p := range Profiles {
 			if p.Name() == override {
 				return p, nil
@@ -169,12 +204,23 @@ func Detect(data []byte, override string) (Profile, error) {
 	return nil, fmt.Errorf("%w: supported formats are %s", ErrUnsupportedFormat, strings.Join(ProfileNames(), ", "))
 }
 
-// Parse detects and reads a file.
+// Parse detects and reads a file; a ZIP is read as a container of files.
 func Parse(data []byte, opts Options) (*Parsed, error) {
+	if opts.exportedAt.IsZero() {
+		opts.exportedAt = time.Now()
+	}
+	if isZip(data) {
+		return parseArchive(data, opts)
+	}
 	p, err := Detect(data, opts.Format)
 	if err != nil {
 		return nil, err
 	}
+	return parseOne(p, data, opts)
+}
+
+// parseOne reads one file with a known profile.
+func parseOne(p Profile, data []byte, opts Options) (*Parsed, error) {
 	parsed, err := p.Read(bytes.NewReader(trimBOM(data)), opts)
 	if err != nil {
 		return nil, err
@@ -207,6 +253,23 @@ type Options struct {
 	Existing string `json:"existing,omitempty"`
 
 	loc *time.Location
+	// Set by the Service for one preview or job, never by the client:
+	maxBytes      int64     // upload limit, which bounds unpacked archives
+	tempDir       string    // where an uploaded database is copied to be read
+	exportedAt    time.Time // reference date for dates written without a year
+	importerEmail string    // the importing account's email (Linear assignees)
+	entryName     string    // archive entry being read
+	thingsWAL     []byte    // a Things database's WAL from the same archive
+}
+
+// DefaultMaxBytes is the upload limit when the Service was not told another.
+const DefaultMaxBytes = 20 << 20
+
+func (o Options) maxBytesOrDefault() int64 {
+	if o.maxBytes > 0 {
+		return o.maxBytes
+	}
+	return DefaultMaxBytes
 }
 
 // Normalize fills defaults and validates every option except TargetProject, which
@@ -217,7 +280,7 @@ func (o *Options) Normalize() error {
 		o.Format = ""
 	}
 	if o.Format != "" {
-		if _, err := Detect(nil, o.Format); err != nil {
+		if _, err := Detect(nil, formatProfile(o.Format)); err != nil {
 			return err
 		}
 	}

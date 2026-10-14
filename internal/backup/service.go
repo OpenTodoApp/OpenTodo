@@ -40,6 +40,13 @@ type Service struct {
 	stateMu sync.Mutex
 	running *Run // the run in progress, if any
 	wakeCh  chan struct{}
+
+	// Web restore (staging.go): the one staged restore and the restart hook.
+	restoreMu sync.Mutex
+	stagedID  string
+	restart   func()
+	// freeSpace reports free bytes on a filesystem; tests replace it.
+	freeSpace func(dir string) (int64, bool)
 }
 
 // Options configure New; zero values pick defaults.
@@ -50,6 +57,8 @@ type Options struct {
 	Loc     *time.Location
 	Client  *http.Client
 	Audit   *audit.Recorder
+	// FreeSpace overrides the free-disk-space probe used by restores (tests).
+	FreeSpace func(dir string) (int64, bool)
 }
 
 // New wires a Service for the database in dataDir.
@@ -58,7 +67,10 @@ func New(db *sql.DB, dataDir string, o Options) *Service {
 		db: db, dataDir: dataDir, version: o.Version, log: o.Log,
 		settings: settings.New(db), secrets: settings.NewSecretsFile(dataDir, "backup"),
 		now: o.Now, loc: o.Loc, client: o.Client, audit: o.Audit, startupDelay: 10 * time.Second,
-		wakeCh: make(chan struct{}, 1),
+		wakeCh: make(chan struct{}, 1), freeSpace: o.FreeSpace,
+	}
+	if s.freeSpace == nil {
+		s.freeSpace = freeBytes
 	}
 	if s.version == "" {
 		s.version = "dev"

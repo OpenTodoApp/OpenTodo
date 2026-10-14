@@ -192,3 +192,23 @@ func (d *s3Dest) Delete(ctx context.Context, name string) error {
 	}
 	return nil
 }
+
+func (d *s3Dest) Open(ctx context.Context, name string) (io.ReadCloser, int64, error) {
+	if !IsArchiveName(name) {
+		return nil, 0, ErrNotArchiveName
+	}
+	resp, err := d.do(ctx, http.MethodGet, d.url(d.key(name), nil), nil, 0, emptySHA256Hex)
+	if err != nil {
+		return nil, 0, fmt.Errorf("s3 get: %w", err)
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		return nil, 0, ErrArchiveNotFound
+	}
+	if resp.StatusCode/100 != 2 {
+		err := s3Error("get "+d.key(name), resp)
+		resp.Body.Close()
+		return nil, 0, err
+	}
+	return resp.Body, resp.ContentLength, nil
+}

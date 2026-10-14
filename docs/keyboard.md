@@ -48,6 +48,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Shift+I</kbd> | Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes |
 | <kbd>Enter</kbd> / <kbd>Esc</kbd> | Proposed changes: assistant: apply the checked changes / discard the proposal; Space toggles an item |
 | <kbd>Shift+V</kbd> | Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves |
+| <kbd>.</kbd> / <kbd>Shift+F10</kbd> / <kbd>Menu key</kbd> | Open the menu of the focused row: a label, view, section heading or project |
+| <kbd>F2</kbd> | Focused label: rename the label in place; Alt+↑ / Alt+↓ move it, Alt+Shift+↑ / ↓ to the top / bottom |
 | <kbd>Esc</kbd> | Close panel, clear selection |
 | <kbd>?</kbd> | Toggle this help |
 
@@ -58,6 +60,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>i</kbd> / <kbd>t</kbd> / <kbd>u</kbd> / <kbd>c</kbd> / <kbd>l</kbd> / <kbd>f</kbd> / <kbd>v</kbd> / <kbd>s</kbd> | Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings |
 | <kbd>g</kbd> then <kbd>a</kbd> | Go to Assigned to me |
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
+| <kbd>g</kbd> then <kbd>k</kbd> | Go to Ask: the assistant’s composer and skills (when the assistant is on) |
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Activity: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters) |
 | <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Data → Import data |
 | <kbd>g</kbd> then <kbd>d</kbd> / <kbd>w</kbd> | Go to the Day / Week calendar |

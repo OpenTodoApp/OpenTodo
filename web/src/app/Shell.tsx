@@ -12,6 +12,7 @@ import { SavedViewRoute } from './SavedViewView'
 import { ViewsView } from './ViewsView'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
+import { AskScreen } from './assistant/AskEntry'
 import { TrashView } from './TrashView'
 import { FeedView } from './FeedView'
 import { ImportScreen } from './ImportScreen'
@@ -130,6 +131,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         if (e.key === 'x') navigate({ view: 'trash' })
         // `g f` is the Filter view, so the activity feed is `g h` (activity-feed).
         if (e.key === 'h') navigate({ view: 'feed' })
+        // `g k`: the Ask screen (assistant-skills; `g a` is Assigned to me).
+        if (e.key === 'k') navigate({ view: 'ask' })
         // `g i` is the Inbox, so Import is `g` then Shift+I.
         if (e.key === 'I') navigate({ view: 'import' })
         // `g` then `?` opens the Help view (user-documentation); `?` alone stays the shortcut list.
@@ -209,11 +212,13 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <TrashView />
           ) : route.view === 'feed' ? (
             <FeedView />
+          ) : route.view === 'ask' ? (
+            <AskScreen role={user.role} />
           ) : route.view === 'day' || route.view === 'week' ? (
             <CalendarView mode={route.view} date={route.date} />
           ) : (
             // App renders the invite, reset and capture screens itself; a stray /invite, /reset or /share route inside the shell falls back to the Inbox.
-            <TaskListView userId={user.id} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'share' ? { view: 'inbox' } : route} />
+            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'share' ? { view: 'inbox' } : route} />
           )}
         </div>
         {vim && (

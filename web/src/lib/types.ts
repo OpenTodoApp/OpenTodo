@@ -683,6 +683,74 @@ export interface BackupStatus {
   lastRun: BackupRun | null
   history: BackupRun[]
 }
+// ---- web restore (backup-restore-web; owner only, never synced) ----
+
+export interface RestoreArchive {
+  name: string
+  size: number
+  createdAt: number
+  encrypted: boolean
+}
+
+export interface BackupManifest {
+  appVersion: string
+  schemaVersion: number
+  createdAt: string
+  encrypted: boolean
+}
+
+export interface RestoreCounts {
+  accounts: number
+  projects: number
+  tasks: number
+  ops: number
+}
+
+export type RestoreSourceKind = 'archive' | 'upload' | 'safety-copy'
+
+/** A prepared (verified) or uploaded archive. */
+export interface StagedRestore {
+  id: string
+  source: RestoreSourceKind
+  archive: string
+  size: number
+  encrypted: boolean
+  manifest?: BackupManifest
+  counts?: RestoreCounts
+  verified: boolean
+  createdAt: number
+  expiresAt: number
+}
+
+export interface LastRestore {
+  source: RestoreSourceKind
+  archive: string
+  actorId: string
+  requestedAt: number
+  finishedAt: number
+  ok: boolean
+  error?: string
+  safetyCopy?: string
+}
+
+export interface SafetyCopy {
+  name: string
+  size: number
+  createdAt: number
+}
+
+export interface RestoreState {
+  staged: StagedRestore | null
+  last: LastRestore | null
+  safetyCopies: SafetyCopy[]
+  undoAvailable: boolean
+  /** -1 when the server cannot tell. */
+  freeBytes: number
+  uploadLimit: number
+}
+
+export type RestoreSource = { archive: string } | { upload: string } | { safetyCopy: string }
+
 /** Event names of the server audit log (closed catalogue, see docs/api.md#audit-log). */
 export const AUDIT_EVENT_NAMES = [
   'login.succeeded', 'login.failed', 'logout',
@@ -695,7 +763,7 @@ export const AUDIT_EVENT_NAMES = [
   'role.changed', 'settings.changed',
   'identity.linked', 'identity.unlinked',
   'export.requested', 'audit.exported',
-  'backup.created', 'backup.restored',
+  'backup.created', 'backup.restored', 'backup.restore_requested', 'backup.restore_failed', 'backup.safety_copy_deleted',
   'user.deactivated', 'user.reactivated', 'user.deleted',
   'password.reset_issued', 'password.reset_completed', 'password.changed',
   'owner.transferred',
@@ -735,8 +803,12 @@ export interface AuditSettings {
 
 // ---- Import (server-side jobs, never synced; see docs/import.md) ----
 
-export type ImportFormat = 'opentodo' | 'json-items' | 'json-lists' | 'json-generic' | 'csv'
-export const IMPORT_FORMATS: readonly ImportFormat[] = ['opentodo', 'json-items', 'json-lists', 'json-generic', 'csv']
+export type ImportFormat =
+  | 'opentodo' | 'things-db' | 'json-items' | 'json-lists' | 'json-generic'
+  | 'todoist-csv' | 'todoist-backup' | 'ticktick-csv' | 'linear-csv' | 'csv'
+export const IMPORT_FORMATS: readonly ImportFormat[] = [
+  'opentodo', 'todoist-backup', 'todoist-csv', 'things-db', 'ticktick-csv', 'linear-csv', 'json-items', 'json-lists', 'json-generic', 'csv',
+]
 
 export interface ImportOptions {
   format?: ImportFormat
@@ -774,6 +846,8 @@ export type ImportOutcome = 'create' | 'update' | 'skip' | 'error'
 
 export interface ImportRow {
   row?: number
+  /** Archive entry the row came from (ZIP uploads such as a Todoist backup). */
+  file?: string
   sourceId?: string
   kind: 'project' | 'task' | 'label' | 'section' | 'reminder' | 'view'
   title: string
@@ -804,6 +878,8 @@ export interface ImportJob {
   options: ImportOptions
   totals: ImportTotals
   errors: { row?: number; sourceId?: string; reason: string }[]
+  /** Projects this import creates that were boards in the source app (named-importers D8); only on the start response. */
+  viewHints?: { projectId: string; view: 'board' }[]
   message?: string
   createdAt: number
   finishedAt: number | null

@@ -228,7 +228,7 @@ func (d *decryptReader) next() error {
 	plain, oerr := d.aead.Open(nil, chunkNonce(d.index, final), sealed[:n], d.hdr)
 	if oerr != nil {
 		if d.index == 0 {
-			return integrity("wrong passphrase or corrupted archive")
+			return ErrPassphraseInvalid
 		}
 		return integrity("chunk %d failed authentication (tampered or truncated)", d.index)
 	}

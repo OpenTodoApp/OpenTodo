@@ -102,6 +102,7 @@ func (s *Service) Start(ctx context.Context) {
 	if err := s.markInterrupted(context.WithoutCancel(ctx)); err != nil {
 		s.log.Error("backup: mark interrupted runs", "err", err)
 	}
+	s.startRestoreHousekeeping(context.WithoutCancel(ctx))
 	s.recordPendingRestore(context.WithoutCancel(ctx))
 	go s.loop(ctx)
 }

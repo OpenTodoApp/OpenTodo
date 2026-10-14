@@ -514,6 +514,37 @@ func (st *Store) Usage(ctx context.Context, userID string, cap int64) (Usage, er
 	return u, nil
 }
 
+// AddSkillUse counts one turn that ran the named skill this month.
+func (st *Store) AddSkillUse(ctx context.Context, userID, skill string) error {
+	m, _ := month(st.now())
+	_, err := st.db.ExecContext(ctx, `INSERT INTO assistant_skill_usage(user_id, month, skill, turns) VALUES(?,?,?,1)
+		ON CONFLICT(user_id, month, skill) DO UPDATE SET turns = turns + 1`, userID, m, skill)
+	if err != nil {
+		return fmt.Errorf("record skill use: %w", err)
+	}
+	return nil
+}
+
+// SkillUses returns this month's skill runs of a user, by skill id.
+func (st *Store) SkillUses(ctx context.Context, userID string) (map[string]int64, error) {
+	m, _ := month(st.now())
+	rows, err := st.db.QueryContext(ctx, `SELECT skill, turns FROM assistant_skill_usage WHERE user_id = ? AND month = ?`, userID, m)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]int64{}
+	for rows.Next() {
+		var k string
+		var n int64
+		if err := rows.Scan(&k, &n); err != nil {
+			return nil, err
+		}
+		out[k] = n
+	}
+	return out, rows.Err()
+}
+
 // AddUsage adds one turn's tokens to this month's row; own marks a turn on
 // the user's own key, which is also added to the own-key row.
 func (st *Store) AddUsage(ctx context.Context, userID string, in, out int64, own bool) error {

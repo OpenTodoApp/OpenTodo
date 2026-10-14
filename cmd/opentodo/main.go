@@ -22,6 +22,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 	// Embedded IANA zone data: the distroless image has no /usr/share/zoneinfo,
@@ -55,6 +56,14 @@ func main() {
 			return
 		case "healthcheck":
 			os.Exit(healthcheck())
+		case "--print-formats":
+			// Hidden: the import formats as JSON, for the site bundle manifest
+			// (OpenSpec site-bundle D5).
+			if err := printFormats(os.Stdout); err != nil {
+				fmt.Fprintln(os.Stderr, "opentodo:", err)
+				os.Exit(1)
+			}
+			return
 		case "restore":
 			os.Exit(restore(os.Args[2:]))
 		case "mfa-reset":
@@ -73,7 +82,19 @@ func main() {
 		fmt.Fprintln(os.Stderr, "opentodo:", err)
 		os.Exit(1)
 	}
+	if restartRequested.Load() {
+		// A restore was confirmed in the web app (backup-restore-web D1): start
+		// again in the same process, so the next start applies it without relying
+		// on a container restart policy.
+		if err := reexec(); err != nil {
+			slog.Error("could not restart in place: restart OpenTodo to finish the restore", "err", err)
+		}
+		os.Exit(0)
+	}
 }
+
+// restartRequested is set when the server stops to apply a confirmed restore.
+var restartRequested atomic.Bool
 
 func run() error {
 	cfg, err := config.Load()
@@ -83,6 +104,12 @@ func run() error {
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	slog.SetDefault(log)
 	cfg.LogWarnings(log)
+
+	// A restore confirmed in the web app is applied before the database opens. A
+	// failure is recorded and the server starts on the previous database.
+	if err := backup.ApplyPendingRestore(cfg.DataDir, log, nil); err != nil {
+		log.Error("restore: could not record the outcome", "err", err)
+	}
 
 	// Hold the data directory shared for the life of the process: `opentodo
 	// restore` and the other maintenance commands refuse to touch it while we run,
@@ -101,6 +128,9 @@ func run() error {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	// A confirmed web restore stops the server like SIGTERM does, then main re-execs.
+	ctx, requestRestart := context.WithCancel(ctx)
+	defer requestRestart()
 
 	if cfg.Demo {
 		// Demo instance (OpenSpec `demo-mode`, docs/self-hosting/demo.md): no sign-up,
@@ -128,6 +158,10 @@ func run() error {
 	}
 	// Scheduled backups (docs/backups.md): off until the owner configures them.
 	backups := backup.New(db, cfg.DataDir, backup.Options{Version: version, Log: log, Audit: authSvc.Audit()})
+	backups.SetRestartFunc(func() {
+		restartRequested.Store(true)
+		requestRestart()
+	})
 	if !cfg.Demo {
 		if seeded, err := backups.ApplyPreset(ctx, cfg.Backup); err != nil {
 			return err

@@ -10,7 +10,8 @@ import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from 
 import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
 import { canEditTasks, memberName, roleOf } from '../lib/sharing'
 import { flattenTree, type Tree, type TreeNode } from '../lib/tree'
-import type { Label, Priority, Project, Section, Task } from '../lib/types'
+import type { AccountRole, Label, Priority, Project, Section, Task } from '../lib/types'
+import { TodayAsk } from './assistant/AskEntry'
 import { beginDrag } from '../lib/dnd'
 import { moveTask, moveTaskBy } from '../lib/move'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
@@ -33,7 +34,7 @@ import { registerListState, taskDefaults } from './listActions'
 import { Dialog } from './overlay'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
-type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'help' }>
+type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'help' } | { view: 'ask' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 interface Row {
@@ -76,7 +77,7 @@ function saveCollapsed(set: Set<string>) {
   }
 }
 
-export function TaskListView({ route, userId }: { route: ListRoute; userId?: string }) {
+export function TaskListView({ route, userId, userRole }: { route: ListRoute; userId?: string; userRole?: AccountRole }) {
   const dt = useDateTimeFormat()
   const today = todayISO()
   // Zoned dues (absolute-datetimes) are grouped in the viewer zone; re-group when it changes.
@@ -761,6 +762,8 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
               )}
             </h1>
           )}
+
+          {route.view === 'today' && <TodayAsk role={userRole} />}
 
           {route.view !== 'completed' && (
             <div className="mb-3 border-b border-default pb-2">

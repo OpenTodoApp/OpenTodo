@@ -10,8 +10,8 @@ order: 30
 
 OpenTodo can back up its data directory on a schedule to a local directory, an
 S3-compatible bucket or a WebDAV collection, keep a bounded number of archives,
-optionally encrypt them with a passphrase, and restore them with nothing but the
-`opentodo` binary.
+optionally encrypt them with a passphrase, and restore them from the web app or
+with nothing but the `opentodo` binary.
 
 Nothing runs until the owner turns it on. Every setting is optional and managed
 from **Settings → Backups** (owner only); operators who prefer environment
@@ -21,7 +21,7 @@ variables can preset them (see [Environment presets](#environment-presets)).
 - [Destinations](#destinations)
 - [Schedule and retention](#schedule-and-retention)
 - [Encryption and secrets](#encryption-and-secrets)
-- [Restore](#restore)
+- [Restore](#restore): [from the web app](#restore-from-the-web-app) or [from the command line](#restore-from-the-command-line)
 - [Environment presets](#environment-presets)
 - [What a backup contains](#what-a-backup-contains) and the [encryption format](#encryption-format-otbk1)
 
@@ -140,14 +140,76 @@ records that the archive is encrypted and the file name ends in `.enc`.
 ## Restore
 
 Restoring replaces the whole database (every account, token, project, task and
-the operation log) with the one in an archive. It runs with the server
-**stopped**, from the same binary:
+the operation log) with the one in an archive. There are two ways, with the
+same checks and the same result: from **Settings → Backups** while the server
+runs, or with `opentodo restore` while it is stopped.
+
+### Restore from the web app
+
+1. Open **Settings → Backups** as the owner and scroll to **Restore from a
+   backup**.
+2. Choose the source:
+   - **From the backup destination** lists the archives in the configured
+     folder, S3 bucket or WebDAV collection, newest first, with their size and
+     whether they are encrypted. Choose **Preview** on one.
+   - **Upload a file** sends an archive from your computer, for example one
+     made on another server. It is streamed to the data directory, never held
+     in memory.
+3. The server verifies the archive completely (the same checks as the command
+   line, listed below) and shows a preview: when it was made, by which version,
+   its size, and how many accounts, projects and tasks it holds. Nothing has
+   changed yet. An encrypted archive made by this server opens with the stored
+   passphrase; for one from another server you are asked for its passphrase.
+4. Read **What will happen**, type `RESTORE` and choose **Restore and
+   restart**. If you have not confirmed your identity in the last ten minutes,
+   you are asked for your password (or a code) first.
+5. The server stops gracefully, applies the restore before it reopens the
+   database, and starts again in the same process: no container restart policy
+   or shell is needed. The page shows **Restoring and restarting…** and reloads
+   when the server is back, usually within seconds.
+
+Sessions live in the database, so anyone who signed in after the backup was
+taken (possibly you) signs in again; the sign-in screen says that the server
+was restored. After a restart the restore section shows the outcome: when, from
+which archive, and whether it worked. A restore that fails while it is applied
+(for example a damaged staged file) leaves the previous database in place: the
+server starts normally and the section, and the audit log, say why.
+
+A prepared restore you do not confirm is discarded after 30 minutes, or at once
+when you cancel. Confirming is refused while a backup is running; try again
+when it has finished. The audit log records who asked for which archive, then
+`backup.restored` or `backup.restore_failed`.
+
+**Undo.** Every restore keeps the database it replaced as a safety copy.
+While the safety copy of the last restore exists, **Undo last restore** puts it
+back through the same preview, confirmation and restart. Undoing makes a new
+safety copy of its own.
+
+**Safety copies and disk space.** Safety copies are listed under the restore
+section with their size and can be deleted (after a confirmation, and with a
+fresh sign-in check) to free space. They are never deleted automatically. A
+restore needs room for the archive, the extracted database and the safety copy,
+roughly *archive size + 2 × database size* plus a 64 MiB margin; the server
+checks first and refuses with the space it needs.
+
+**Reverse proxies.** Uploads go through your reverse proxy, and many limit
+request bodies (nginx allows 1 MiB by default). If an upload is refused, raise
+the limit for `/api/v1/backups/restore/uploads` (nginx:
+`client_max_body_size 2g;`, Caddy needs nothing) or restore from the backup
+destination instead, which needs no upload.
+
+Restoring from the web app is owner-only, needs a signed-in session (API tokens
+cannot do it) and is not available on a [demo instance](self-hosting/demo.md).
+
+### Restore from the command line
+
+The command line works with the server **stopped**, from the same binary:
 
 ```sh
 opentodo restore [--data-dir DIR] [--passphrase-file FILE] <archive>
 ```
 
-What it does, in order, before touching anything:
+What both paths check, in order, before touching anything:
 
 1. refuses to run while any server uses the data directory (it needs
    `<data>/opentodo.lock` exclusively, which every running server holds shared,
@@ -167,7 +229,7 @@ one and gives it a new [log generation](sync.md#log-generation). Migrations
 run on the next start, so an archive from an older version is upgraded
 automatically.
 
-### With Docker Compose
+#### With Docker Compose
 
 ```sh
 docker compose stop opentodo
@@ -190,7 +252,7 @@ the web terminal: stop the resource, run the restore on the host with
 ghcr.io/pixari/opentodo restore /restore/archive`, then start the resource
 again.
 
-### With the binary
+#### With the binary
 
 ```sh
 systemctl stop opentodo        # or however you run it
@@ -209,8 +271,13 @@ after the backup therefore come back, and when two devices disagree the newer
 edit wins, exactly as in normal sync. No task is duplicated. Devices that are
 offline do this when they reconnect. See [docs/sync.md](sync.md#log-generation).
 
-If something went wrong, stop the server, move `opentodo.db.pre-restore-…` back
-to `opentodo.db` and start it again.
+This is a merge, not a rollback: a device that changed a task after the backup
+sends that change back, so the restored server ends up with the backup plus
+everything your devices did since. There is no mode that makes devices discard
+their newer edits.
+
+If something went wrong, use **Undo last restore**, or stop the server, move
+`opentodo.db.pre-restore-…` back to `opentodo.db` and start it again.
 
 ## Environment presets
 

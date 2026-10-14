@@ -111,7 +111,7 @@ Only the owner and admins see this group; **Backups** and **Access policies** ar
 
 ### Backups
 
-Scheduled backups to a folder, S3 or WebDAV, the last run and its result, and the next one. See [Backups](backups.md).
+Scheduled backups to a folder, S3 or WebDAV, the last run and its result, and the next one. **Restore from a backup** puts the whole server back to an archive from the destination or one you upload: you see a verified preview first, type `RESTORE` to confirm, and the server restarts into the restored data. **Undo last restore** puts the previous database back, and old safety copies can be deleted to free space. See [Backups](backups.md#restore-from-the-web-app).
 
 ### Access policies
 

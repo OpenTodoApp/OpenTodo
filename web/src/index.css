@@ -411,6 +411,8 @@ select.input { @apply truncate; contain: layout paint; }
 @media (hover: hover) {
   .hover-reveal { opacity: 0; }
   .group:hover .hover-reveal, .hover-reveal:focus-visible, .hover-reveal:focus-within, .hover-reveal[aria-expanded="true"] { opacity: 1; }
+  /* Row-aware (labels-and-menus D6): keyboard focus anywhere in the row, or a selected row, shows its trigger. */
+  .group:focus-within .hover-reveal, .group[data-active] .hover-reveal { opacity: 1; }
 }
 }
 @media (pointer: coarse) {

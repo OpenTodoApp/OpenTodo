@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
@@ -44,6 +45,9 @@ var ErrNewerSchema = errors.New("archive was made by a newer version of OpenTodo
 // opentodo.db.pre-restore-<timestamp>, and the restored database gets a fresh
 // log generation so devices re-seed it (see docs/sync.md). Pending migrations
 // run on the next server start.
+//
+// It is Stage, then Apply: the web restore (backup-restore-web) runs the same
+// two steps with a server restart in between, so both paths give the same result.
 func Restore(o RestoreOptions) (RestoreResult, error) {
 	var res RestoreResult
 	if o.Now == nil {
@@ -57,8 +61,7 @@ func Restore(o RestoreOptions) (RestoreResult, error) {
 		return res, err
 	}
 	defer release()
-	dbPath := store.DBPath(o.DataDir)
-	if err := checkNotInUse(dbPath); err != nil {
+	if err := checkNotInUse(store.DBPath(o.DataDir)); err != nil {
 		return res, err
 	}
 
@@ -67,28 +70,58 @@ func Restore(o RestoreOptions) (RestoreResult, error) {
 		return res, fmt.Errorf("open archive: %w", err)
 	}
 	defer f.Close()
-	tr, finish, _, err := openArchive(f, o.Passphrase)
+	tmpDir := filepath.Join(o.DataDir, "tmp")
+	if err := os.MkdirAll(tmpDir, 0o700); err != nil {
+		return res, err
+	}
+	dir, err := os.MkdirTemp(tmpDir, "restore-*")
 	if err != nil {
 		return res, err
 	}
+	defer os.RemoveAll(dir)
+	st, err := Stage(dir, f, o.Passphrase, filepath.Base(o.Archive))
+	if err != nil {
+		return res, err
+	}
+	return applyLocked(o.DataDir, st, st.Archive, o.Now)
+}
+
+// Files of a staged restore inside its directory.
+const (
+	stagedDBName    = "extracted.db"
+	stagedExtrasDir = "extras"
+)
+
+// Staged is an archive that passed every check and was extracted into Dir: the
+// database (with its original generation) and the extra files listed in the
+// manifest. Nothing in the data directory has changed yet.
+type Staged struct {
+	Dir      string
+	Archive  string // archive file name, for the audit log
+	Manifest Manifest
+}
+
+// DBPath is the extracted database.
+func (st Staged) DBPath() string { return filepath.Join(st.Dir, stagedDBName) }
+
+// Stage verifies the archive read from r and extracts it into dir, which is
+// created if needed. It runs every check of the restore procedure: manifest,
+// decryption, checksums, schema version and SQLite integrity. Memory stays
+// constant; the database is streamed to disk while it is hashed.
+func Stage(dir string, r io.Reader, passphrase, archiveName string) (Staged, error) {
+	st := Staged{Dir: dir, Archive: archiveName}
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return st, err
+	}
+	tr, finish, _, err := openArchive(r, passphrase)
+	if err != nil {
+		return st, err
+	}
 
 	// 1. The manifest comes first.
-	h, err := tr.Next()
-	if err != nil || h.Name != ManifestName {
-		return res, fmt.Errorf("%w: %s is not the first entry (is this an OpenTodo backup?)", ErrIntegrity, ManifestName)
-	}
-	var m Manifest
-	if err := json.NewDecoder(io.LimitReader(tr, 1<<20)).Decode(&m); err != nil {
-		return res, fmt.Errorf("%w: manifest: %v", ErrIntegrity, err)
-	}
-	if m.Format != ManifestFormat || m.FormatVersion < 1 {
-		return res, fmt.Errorf("%w: not an OpenTodo backup manifest", ErrIntegrity)
-	}
-	if m.FormatVersion > ManifestVersion {
-		return res, fmt.Errorf("%w: archive format %d, this binary reads up to %d", ErrNewerSchema, m.FormatVersion, ManifestVersion)
-	}
-	if latest := store.LatestVersion(); m.SchemaVersion > latest {
-		return res, fmt.Errorf("%w: archive schema version %d, this binary supports up to %d; restore with a newer opentodo", ErrNewerSchema, m.SchemaVersion, latest)
+	m, err := readManifest(tr)
+	if err != nil {
+		return st, err
 	}
 	var want *ManifestFile
 	for i := range m.Files {
@@ -97,62 +130,152 @@ func Restore(o RestoreOptions) (RestoreResult, error) {
 		}
 	}
 	if want == nil {
-		return res, fmt.Errorf("%w: manifest lists no %s", ErrIntegrity, store.DBFile)
+		return st, fmt.Errorf("%w: manifest lists no %s", ErrIntegrity, store.DBFile)
 	}
 
-	// 2. Extract the database into the temp dir, hashing as we go.
-	tmpDir := filepath.Join(o.DataDir, "tmp")
-	if err := os.MkdirAll(tmpDir, 0o700); err != nil {
-		return res, err
-	}
-	tmp, err := os.CreateTemp(tmpDir, "restore-*.db")
+	// 2. Extract the database, hashing as we go.
+	h, err := tr.Next()
 	if err != nil {
-		return res, err
-	}
-	keep := false
-	defer func() {
-		tmp.Close()
-		if !keep {
-			os.Remove(tmp.Name())
-		}
-	}()
-	h, err = tr.Next()
-	if err != nil {
-		return res, fmt.Errorf("%w: %s missing: %v", ErrIntegrity, store.DBFile, err)
+		return st, fmt.Errorf("%w: %s missing: %v", ErrIntegrity, store.DBFile, err)
 	}
 	if h.Name != store.DBFile {
-		return res, fmt.Errorf("%w: unexpected entry %q", ErrIntegrity, h.Name)
+		return st, fmt.Errorf("%w: unexpected entry %q", ErrIntegrity, h.Name)
+	}
+	out, err := os.OpenFile(st.DBPath(), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o600)
+	if err != nil {
+		return st, err
 	}
 	sum := sha256.New()
-	n, err := io.Copy(io.MultiWriter(tmp, sum), tr)
+	n, err := io.Copy(io.MultiWriter(out, sum), tr)
 	if err != nil {
-		return res, fmt.Errorf("%w: %v", ErrIntegrity, err)
+		out.Close()
+		return st, fmt.Errorf("%w: %v", ErrIntegrity, err)
+	}
+	if err := out.Sync(); err != nil {
+		out.Close()
+		return st, err
+	}
+	if err := out.Close(); err != nil {
+		return st, err
 	}
 	extras, err := readExtras(tr, m)
 	if err != nil {
-		return res, err
+		return st, err
 	}
 	if err := finish(); err != nil {
-		return res, err
+		return st, err
 	}
 	if n != want.Size || hex.EncodeToString(sum.Sum(nil)) != want.SHA256 {
-		return res, fmt.Errorf("%w: %s checksum does not match the manifest", ErrIntegrity, store.DBFile)
+		return st, fmt.Errorf("%w: %s checksum does not match the manifest", ErrIntegrity, store.DBFile)
 	}
-	if err := tmp.Sync(); err != nil {
-		return res, err
-	}
-	if err := tmp.Close(); err != nil {
-		return res, err
+	if len(extras) > 0 {
+		if err := os.MkdirAll(filepath.Join(dir, stagedExtrasDir), 0o700); err != nil {
+			return st, err
+		}
+		for name, raw := range extras {
+			if err := writeFileAtomic(filepath.Join(dir, stagedExtrasDir, name), raw); err != nil {
+				return st, err
+			}
+		}
 	}
 
-	// 3. Check the database itself and give it a new generation.
-	gen, err := prepareRestored(tmp.Name(), m.SchemaVersion, filepath.Base(o.Archive))
+	// 3. Check the database itself.
+	if err := verifyRestored(st.DBPath(), m.SchemaVersion); err != nil {
+		return st, err
+	}
+	st.Manifest = m
+	return st, nil
+}
+
+// readManifest reads and checks the first archive entry.
+func readManifest(tr *tar.Reader) (Manifest, error) {
+	var m Manifest
+	h, err := tr.Next()
+	if err != nil || h.Name != ManifestName {
+		return m, fmt.Errorf("%w: %s is not the first entry (is this an OpenTodo backup?)", ErrIntegrity, ManifestName)
+	}
+	if err := json.NewDecoder(io.LimitReader(tr, 1<<20)).Decode(&m); err != nil {
+		return m, fmt.Errorf("%w: manifest: %v", ErrIntegrity, err)
+	}
+	if m.Format != ManifestFormat || m.FormatVersion < 1 {
+		return m, fmt.Errorf("%w: not an OpenTodo backup manifest", ErrIntegrity)
+	}
+	if m.FormatVersion > ManifestVersion {
+		return m, fmt.Errorf("%w: archive format %d, this binary reads up to %d", ErrNewerSchema, m.FormatVersion, ManifestVersion)
+	}
+	if latest := store.LatestVersion(); m.SchemaVersion > latest {
+		return m, fmt.Errorf("%w: archive schema version %d, this binary supports up to %d; restore with a newer opentodo", ErrNewerSchema, m.SchemaVersion, latest)
+	}
+	return m, nil
+}
+
+// stagedExtras reads the extra files of a staged restore back.
+func (st Staged) extras() (map[string][]byte, error) {
+	out := map[string][]byte{}
+	entries, err := os.ReadDir(filepath.Join(st.Dir, stagedExtrasDir))
+	if errors.Is(err, fs.ErrNotExist) {
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	allowed := map[string]bool{}
+	for _, name := range ExtraFiles {
+		allowed[name] = true
+	}
+	for _, e := range entries {
+		if !allowed[e.Name()] {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(st.Dir, stagedExtrasDir, e.Name()))
+		if err != nil {
+			return nil, err
+		}
+		out[e.Name()] = raw
+	}
+	return out, nil
+}
+
+// Apply swaps a staged database into dataDir. It takes the exclusive data
+// directory lock, so it only succeeds while no server holds it. marker is what
+// the next server start records in the audit log (see recordPendingRestore).
+func Apply(dataDir string, st Staged, marker string, now func() time.Time) (RestoreResult, error) {
+	if now == nil {
+		now = time.Now
+	}
+	release, err := store.Lock(dataDir)
+	if err != nil {
+		return RestoreResult{}, err
+	}
+	defer release()
+	if err := checkNotInUse(store.DBPath(dataDir)); err != nil {
+		return RestoreResult{}, err
+	}
+	return applyLocked(dataDir, st, marker, now)
+}
+
+// applyLocked is Apply for a caller that already holds the exclusive lock.
+func applyLocked(dataDir string, st Staged, marker string, now func() time.Time) (RestoreResult, error) {
+	var res RestoreResult
+	dbPath := store.DBPath(dataDir)
+	extras, err := st.extras()
 	if err != nil {
 		return res, err
 	}
+	// The final check: the staged file may have sat on disk across a restart.
+	if err := verifyRestored(st.DBPath(), st.Manifest.SchemaVersion); err != nil {
+		return res, err
+	}
+	gen, err := stampRestored(st.DBPath(), marker)
+	if err != nil {
+		return res, err
+	}
+	if err := ensureFreeSpace(dataDir, fileSize(dbPath)); err != nil {
+		return res, err
+	}
 
-	// 4. Safety copy of the current database (consistent, WAL included).
-	stamp := o.Now().UTC().Format(archiveTimeLayout)
+	// Safety copy of the current database (consistent, WAL included).
+	stamp := now().UTC().Format(archiveTimeLayout)
 	if _, err := os.Stat(dbPath); err == nil {
 		res.SafetyCopy = dbPath + ".pre-restore-" + stamp
 		if err := vacuumInto(dbPath, res.SafetyCopy); err != nil {
@@ -162,27 +285,33 @@ func Restore(o RestoreOptions) (RestoreResult, error) {
 		return res, err
 	}
 
-	// 5. Swap.
+	// Swap.
 	for _, suffix := range []string{"-wal", "-shm"} {
 		if err := os.Remove(dbPath + suffix); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return res, err
 		}
 	}
-	if err := os.Rename(tmp.Name(), dbPath); err != nil {
+	if err := os.Rename(st.DBPath(), dbPath); err != nil {
 		return res, fmt.Errorf("replace database: %w", err)
 	}
-	keep = true
 	for name, raw := range extras {
-		if err := writeFileAtomic(filepath.Join(o.DataDir, name), raw); err != nil {
+		if err := writeFileAtomic(filepath.Join(dataDir, name), raw); err != nil {
 			return res, fmt.Errorf("restore %s: %w", name, err)
 		}
 	}
-	if d, err := os.Open(o.DataDir); err == nil {
+	if d, err := os.Open(dataDir); err == nil {
 		_ = d.Sync()
 		d.Close()
 	}
-	res.Manifest, res.Generation = m, gen
+	res.Manifest, res.Generation = st.Manifest, gen
 	return res, nil
+}
+
+func fileSize(path string) int64 {
+	if fi, err := os.Stat(path); err == nil {
+		return fi.Size()
+	}
+	return 0
 }
 
 // checkNotInUse is a second line of defence next to the directory lock (and the
@@ -220,24 +349,39 @@ func vacuumInto(src, dst string) error {
 	return err
 }
 
-// prepareRestored verifies the extracted database and stamps a new generation.
-func prepareRestored(path string, schema int, archiveName string) (string, error) {
+// verifyRestored checks an extracted database: SQLite integrity and the schema
+// version the manifest promised.
+func verifyRestored(path string, schema int) error {
+	db, err := store.OpenFile(path)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	var ok string
+	if err := db.QueryRow("PRAGMA integrity_check").Scan(&ok); err != nil || ok != "ok" {
+		return fmt.Errorf("%w: database integrity check: %s %v", ErrIntegrity, ok, err)
+	}
+	var v int
+	if err := db.QueryRow("PRAGMA user_version").Scan(&v); err != nil {
+		return err
+	}
+	if v != schema {
+		return fmt.Errorf("%w: database schema %d differs from the manifest (%d)", ErrIntegrity, v, schema)
+	}
+	if latest := store.LatestVersion(); v > latest {
+		return fmt.Errorf("%w: database schema version %d, this binary supports up to %d", ErrNewerSchema, v, latest)
+	}
+	return nil
+}
+
+// stampRestored gives the database about to be restored a new log generation
+// and the marker the next server start turns into the backup.restored event.
+func stampRestored(path, marker string) (string, error) {
 	db, err := store.OpenFile(path)
 	if err != nil {
 		return "", err
 	}
 	defer db.Close()
-	var ok string
-	if err := db.QueryRow("PRAGMA integrity_check").Scan(&ok); err != nil || ok != "ok" {
-		return "", fmt.Errorf("%w: database integrity check: %s %v", ErrIntegrity, ok, err)
-	}
-	var v int
-	if err := db.QueryRow("PRAGMA user_version").Scan(&v); err != nil {
-		return "", err
-	}
-	if v != schema {
-		return "", fmt.Errorf("%w: database schema %d differs from the manifest (%d)", ErrIntegrity, v, schema)
-	}
 	gen := randomHex(16)
 	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL DEFAULT 0)`); err != nil {
 		return "", err
@@ -251,30 +395,49 @@ func prepareRestored(path string, schema int, archiveName string) (string, error
 	// server on its next start (Service.recordPendingRestore).
 	if _, err := db.Exec(`INSERT INTO settings(key, value, updated_at) VALUES(?, ?, ?)
 		ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
-		pendingRestoreKey, archiveName, time.Now().UnixMilli()); err != nil {
+		pendingRestoreKey, marker, time.Now().UnixMilli()); err != nil {
 		return "", err
 	}
 	// Runs that were in progress when the snapshot was taken did not finish in
 	// this timeline.
 	_, _ = db.Exec(`UPDATE backup_runs SET status = 'failed', finished_at = started_at, error = 'outcome unknown: this database was restored from the backup taken during this run' WHERE status = 'running'`)
+	// Flush the WAL into the file so the rename moves everything.
+	_, _ = db.Exec(`PRAGMA wal_checkpoint(TRUNCATE)`)
 	return gen, nil
 }
 
 // pendingRestoreKey marks a restore that the server has not audited yet.
 const pendingRestoreKey = "backup_restored_pending"
 
+// restoreMarker is the value of pendingRestoreKey written by a web restore; the
+// CLI writes the bare archive name.
+type restoreMarker struct {
+	Archive string `json:"archive"`
+	ActorID string `json:"actorId,omitempty"`
+}
+
+func parseMarker(v string) restoreMarker {
+	var m restoreMarker
+	if strings.HasPrefix(v, "{") && json.Unmarshal([]byte(v), &m) == nil && m.Archive != "" {
+		return m
+	}
+	return restoreMarker{Archive: v}
+}
+
 // recordPendingRestore writes the backup.restored audit event for a restore
-// performed by `opentodo restore` while the server was stopped.
+// applied while the server was stopped: by `opentodo restore`, or by the web
+// restore during its restart.
 func (s *Service) recordPendingRestore(ctx context.Context) {
-	name, err := s.settings.GetString(ctx, pendingRestoreKey)
-	if err != nil || name == "" {
+	v, err := s.settings.GetString(ctx, pendingRestoreKey)
+	if err != nil || v == "" {
 		return
 	}
-	s.audit.Record(ctx, audit.BackupRestored("", name))
+	m := parseMarker(v)
+	s.audit.Record(ctx, audit.BackupRestored(m.ActorID, m.Archive))
 	if err := s.settings.Delete(ctx, pendingRestoreKey); err != nil {
 		s.log.Error("backup: clear restore marker", "err", err)
 	}
-	s.log.Info("database was restored from a backup", "archive", name)
+	s.log.Info("database was restored from a backup", "archive", m.Archive)
 }
 
 // readExtras reads the ExtraFiles that follow the database in an archive,

@@ -18,9 +18,27 @@ It is off until the server owner turns it on and chooses a model provider: Anthr
 
 ## Open the assistant
 
-Press <kbd>Shift</kbd>+<kbd>I</kbd>, or select **Assistant** in the header. On a wide screen it opens as a panel on the right; on a phone it fills the screen, with the message box above the keyboard. <kbd>Esc</kbd> closes it and puts the focus back where it was.
+Press <kbd>Shift</kbd>+<kbd>I</kbd>, select **Assistant** in the header, or type in the **Ask OpenTodo** box at the top of **Today** or on the **Ask** screen (sidebar, or <kbd>g</kbd> then <kbd>k</kbd>). On a wide screen it opens as a panel on the right; on a phone it fills the screen, with the message box above the keyboard. <kbd>Esc</kbd> closes it and puts the focus back where it was.
 
-The button and the shortcut only appear when the server owner has turned the assistant on.
+The button, the shortcut, the Ask box and the Ask screen only appear when the assistant is available to you. While it is off, the server owner sees one line on Today pointing to the assistant settings, which **Dismiss** hides for good on that device; other members see nothing.
+
+## Skills
+
+Skills are ready-made jobs the assistant knows how to do. Pick one from **Skills** in the Ask box or in the panel (next to the message box), or select one of the example cards. The panel shows what the skill does and an example; add your own words if you like, then send.
+
+| Skill | What it does |
+|---|---|
+| **Turn an idea into a project** | Turns an idea or pasted notes into one new project: a few phases, each with tasks and estimates. |
+| **Plan my week** | Proposes due dates and times for your open work over the next 7 days, within your working day (Settings → Preferences → Calendar: day start, day end and planned hours). It never plans more than a day holds, and counts tasks without an estimate as 30 minutes. |
+| **Weekly review** | Looks at the Inbox, overdue tasks and the coming week, and proposes what to reschedule, move or complete, with a short summary. It never proposes trashing your tasks. |
+| **Triage my inbox** | Proposes a project, and a priority, labels and a date where the task gives a reason, for each Inbox task. |
+| **Break this down** | Turns the selected task into subtasks with estimates. Also in a task's **⋯** menu. |
+
+A skill can only use the tools it needs (Break this down cannot move or complete anything), and what it proposes is reviewed, applied and undone exactly like any other answer.
+
+## Paste notes
+
+Paste meeting notes, an email or a list into the Ask box or the message box and it is kept apart as **pasted text**: the assistant uses it as material, never as instructions. If the text contains instructions ("ignore your rules…"), the assistant ignores them and says so. Pasted text counts toward the 256 KB limit of one message.
 
 ## Before your first message
 

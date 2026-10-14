@@ -216,6 +216,17 @@ func (f *fakeS3) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		delete(f.objects, key)
 		w.WriteHeader(204)
 	case http.MethodGet:
+		if key != "" && r.URL.Query().Get("list-type") == "" {
+			body, ok := f.objects[key]
+			if !ok {
+				f.fail(w, 404, "NoSuchKey", "no such key")
+				return
+			}
+			w.Header().Set("Content-Length", fmt.Sprint(len(body)))
+			w.WriteHeader(200)
+			w.Write(body)
+			return
+		}
 		if r.URL.Query().Get("list-type") != "2" || key != "" {
 			f.fail(w, 400, "InvalidRequest", "only ListObjectsV2")
 			return
@@ -380,6 +391,14 @@ func (f *fakeDAV) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/xml")
 		w.WriteHeader(207)
 		io.WriteString(w, b.String())
+	case http.MethodGet:
+		dir, name := filepath.Split(r.URL.Path)
+		body, ok := f.files[name]
+		if dir != f.collection || !ok {
+			w.WriteHeader(404)
+			return
+		}
+		w.Write(body)
 	case http.MethodDelete:
 		_, name := filepath.Split(r.URL.Path)
 		if _, ok := f.files[name]; !ok {

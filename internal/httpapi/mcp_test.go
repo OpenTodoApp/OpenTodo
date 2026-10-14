@@ -672,3 +672,20 @@ func subset(want, got any, path string) (string, bool) {
 	b, _ := json.Marshal(got)
 	return path, bytes.Equal(a, b)
 }
+
+// assistant-skills 4.1: prompts need a valid token like every MCP request, and
+// a read token can get them (running them is still bound by tools/call).
+func TestMcpPromptsAuth(t *testing.T) {
+	e := ownerEnv(t)
+	e.enableMCP(true)
+	resp, raw := e.mcpPost("", `{"jsonrpc":"2.0","id":1,"method":"prompts/list"}`)
+	if resp.StatusCode != 401 || strings.Contains(string(raw), "weekly-review") {
+		t.Fatalf("no token: %d %s", resp.StatusCode, raw)
+	}
+	read := e.token("read")
+	out := e.bearerClient().rpc(read, "prompts/get", map[string]any{"name": "triage-inbox"})
+	msgs := out["result"].(map[string]any)["messages"].([]any)
+	if len(msgs) != 1 {
+		t.Fatalf("prompts/get with a read token: %v", out)
+	}
+}

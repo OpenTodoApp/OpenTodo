@@ -56,7 +56,11 @@ See proposal.md (Why). The relevant code today:
   - `Apply(dataDir, Staged)`: lock, `checkNotInUse`, generation and marker, safety copy, swap, extras.
 - **Confirm** writes `<data>/restore-pending.json` (staged id, archive name, actor id, requested-at) atomically, answers 202, then cancels the server's root context. That runs the existing graceful shutdown, including draining the webhook worker and closing live-update streams.
 - **After `run()` returns**, `main` checks for an "exec requested" flag and calls `syscall.Exec(os.Executable(), os.Args, os.Environ())`. The PID stays the same, so a container whose PID 1 is `opentodo` never exits and no restart policy is involved.
-- **Early in `run()`**, before `store.LockShared` and `store.Open`, a new `applyPendingRestore(dataDir)` takes the exclusive lock, applies the staged restore, and removes the marker and staging dir. It records the outcome in the restored DB's `settings` (success) or in a sidecar `restore-last.json` (failure, because the live DB stays the old one). Then startup continues normally. `recordPendingRestore` already emits `backup.restored` on success.
+- **Early in `run()`**, before `store.LockShared` and `store.Open`, `backup.ApplyPendingRestore(dataDir)` takes the exclusive lock, applies the staged restore, and removes the marker and staging dir.
+  - The outcome is always written to the sidecar `restore-last.json`: time, archive, actor, success or error, and the safety copy's name. The restore section reads it, and "Undo" is offered while that safety copy exists.
+  - On success, the restored DB's `settings` also carries the `backup_restored_pending` marker, as JSON with the actor, and `recordPendingRestore` emits `backup.restored`.
+  - Startup then continues normally.
+- **Audit order.** The audit log lives in the database being replaced, so `backup.restore_requested` (and `backup.restore_failed`) are recorded from `restore-last.json` on the start that applied the restore, not at confirm time. The trail therefore survives the swap: request first, then outcome.
 
 **Alternatives considered:**
 - **Hot swap in-process** (quiesce handlers, close and reopen `*sql.DB`): rejected. Every service holds the `*sql.DB` directly, and several cache state from it (sessions, settings, sync notifier, schedulers). A safe swap would mean an indirection layer plus a restart of every goroutine, which is a large, error-prone refactor for a rare operation. A process restart gives the same result with code that already exists and is tested.
@@ -83,12 +87,15 @@ See proposal.md (Why). The relevant code today:
 
 - `prepare` tries the passphrase in the request, otherwise the one stored in backup secrets (`Service` already reads it for writing).
 - `openArchive` already returns `ErrPassphraseRequired` for an encrypted archive without a passphrase, which maps to `passphrase_required`. A wrong passphrase currently surfaces as `ErrIntegrity`, because the first chunk fails AEAD authentication. This change adds `ErrPassphraseInvalid`, returned when the *first* chunk fails to open, so a wrong passphrase (`passphrase_invalid`) is told apart from later corruption (`integrity`).
+  - `ErrPassphraseInvalid` wraps `ErrIntegrity`, so the CLI and its tests are unchanged.
+  - `openArchive` opens the first chunk up front, so the error is not hidden behind the gzip or tar layer.
+  - With the default 1 MiB chunks, a small archive is a single chunk. Damage anywhere in it therefore reads as `passphrase_invalid`. The two can't be told apart without a key-check value in the format, which this change does not add.
 - Passphrases are never stored with the staged files and never logged.
 - `prepare` gets the same per-IP rate limiter that `reauth` uses, to slow brute-forcing of a stolen archive's passphrase through the server.
 
 ### 5. Preview counts
 
-`Preview` opens the extracted DB read-only (`mode=ro`) and counts `users`, `projects WHERE deleted_at IS NULL`, `tasks WHERE deleted_at IS NULL` and `ops`. It does not run migrations: the counts come from the archive's schema, using columns that every schema since 0001 has. A test pins this against the oldest supported fixture.
+`Preview` opens the extracted DB read-only (`mode=ro`) and counts `users` and `ops`, plus live projects and tasks. There are no `projects` or `tasks` tables: entities are materialized field by field, in `fields` (schema 0001 to 0007) and `scope_fields` (since project sharing). An entity counts as live when it has no `deleted_at` field or that field is `null`. The preview runs no migrations: the counts come from the archive's own schema. A test pins this against a schema-0001 database and the current schema.
 
 ### 6. Staging lifecycle and identifiers
 
@@ -105,7 +112,7 @@ See proposal.md (Why). The relevant code today:
 
 ### 8. HTTP surface
 
-All routes are registered with `requireAuth`, gated by `requireBackupOwner`, and covered by the existing demo deny prefix. Mutating routes that change or delete data use `requireFresh`.
+All routes are registered with `requireAuth` and gated by `requireBackupOwner`. The confirm and safety-copy delete routes apply the freshness check after the owner check, so a member gets `forbidden` rather than a re-authentication prompt. The demo deny list covers the existing `/api/v1/backups` prefix for writes only. `/api/v1/backups/archives` (which contacts the destination) and everything under `/api/v1/backups/restore` are therefore denied for every method. Upload and prepare lift the server's 60 s read and write deadlines for their own connection, because a large archive takes longer.
 
 | Method and path | Fresh | Purpose |
 |---|---|---|
@@ -151,8 +158,8 @@ Upload uses `fetch` with a `ReadableStream` body only where supported. Otherwise
 
 ### Size and resource impact
 
-- **Container image and binary:** no dependencies; a few KB of Go code.
-- **Web bundle:** roughly 4–6 KB gzipped, in the settings chunk.
+- **Container image and binary:** no dependencies. Measured with the same embedded web assets and `-s -w`: 23,466,146 → 23,617,698 bytes, **+148 KiB (+0.6%)**. That is more than the "few KB" first estimated: staging, the startup apply, three destination readers and the HTTP handlers add about 1,500 lines of Go.
+- **Web bundle:** measured with `vite build`, every JS and CSS asset gzipped at level 9: 588,303 → 592,856 bytes, **+4.4 KiB**, including the longer in-app help text. The restore section and the `lib/restore.ts` helpers ship in the settings code.
 - **Runtime memory:** constant (64 KiB copy buffers, streaming decrypt), plus about 19 MiB for the Argon2id key derivation of an encrypted archive (the same cost as a password check). The preview opens a second SQLite connection briefly.
 - **Disk at peak:** archive + extracted DB + safety copy, roughly archive size + 2 × DB size, checked up front.
 - **Downtime:** graceful shutdown (up to 10 s, plus up to 15 s for webhook delivery) + apply (`VACUUM INTO` of the current DB plus a rename, seconds for typical sizes) + startup.

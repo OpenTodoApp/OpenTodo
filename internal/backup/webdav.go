@@ -188,3 +188,23 @@ func (d *webdavDest) Delete(ctx context.Context, name string) error {
 	}
 	return nil
 }
+
+func (d *webdavDest) Open(ctx context.Context, name string) (io.ReadCloser, int64, error) {
+	if !IsArchiveName(name) {
+		return nil, 0, ErrNotArchiveName
+	}
+	resp, err := d.do(ctx, http.MethodGet, d.objectURL(name), nil, 0, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		return nil, 0, ErrArchiveNotFound
+	}
+	if resp.StatusCode/100 != 2 {
+		err := webdavError("get "+name, resp)
+		resp.Body.Close()
+		return nil, 0, err
+	}
+	return resp.Body, resp.ContentLength, nil
+}
