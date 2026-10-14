@@ -265,6 +265,12 @@ var Schema = map[string]map[string]kind{
 		"date_format": kString,
 		"time_format": kString,
 		"week_start":  kString,
+		// Appearance (OpenSpec change theming, design D1): theme_mode is
+		// system|light|dark and theme_accent one of emerald, blue, indigo,
+		// violet, rose, orange, teal, graphite. Like the date fields the values
+		// are not restricted here; clients read unknown values as the default.
+		"theme_mode":   kString,
+		"theme_accent": kString,
 	},
 }
 

@@ -4,8 +4,10 @@ import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
 
 const root = process.env.STORYBOOK_DIR ?? join(__dirname, '../../web/storybook-static')
-const index = JSON.parse(readFileSync(join(root, 'index.json'), 'utf8')) as { entries: Record<string, { id: string; type: string }> }
-const ids = Object.values(index.entries).filter((e) => e.type === 'story').map((e) => e.id)
+const index = JSON.parse(readFileSync(join(root, 'index.json'), 'utf8')) as { entries: Record<string, { id: string; type: string; tags?: string[] }> }
+// Stories tagged `no-visual` (for example every accent theme, OpenSpec theming) are
+// checked by the a11y gate only, so CI keeps one baseline set: default theme, light and dark.
+const ids = Object.values(index.entries).filter((e) => e.type === 'story' && !e.tags?.includes('no-visual')).map((e) => e.id)
 
 for (const id of ids) {
   for (const theme of ['light', 'dark']) {

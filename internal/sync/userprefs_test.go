@@ -60,4 +60,21 @@ func TestUserPrefsArePersonalAndConverge(t *testing.T) {
 	if got := f.field("alice", "user_prefs", "me", "week_start"); got != `"sat"` {
 		t.Fatalf("tie on ts: alice reads %s, want the greater device's \"sat\"", got)
 	}
+
+	// Appearance (theming D1): mode and accent converge per field, so a mode
+	// change on one device and an accent change on another both survive.
+	mode := f.op("user_prefs", "me", "theme_mode", `"dark"`)
+	accent := f.op("user_prefs", "me", "theme_accent", `"orange"`)
+	if res := f.apply("alice", "A", mode); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("theme_mode = %+v", res)
+	}
+	if res := f.apply("alice", "A2", accent); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("theme_accent = %+v", res)
+	}
+	if f.field("alice", "user_prefs", "me", "theme_mode") != `"dark"` || f.field("alice", "user_prefs", "me", "theme_accent") != `"orange"` {
+		t.Fatal("appearance fields did not both survive")
+	}
+	if got := f.field("bob", "user_prefs", "me", "theme_accent"); got != "" {
+		t.Fatalf("bob sees alice's accent: %s", got)
+	}
 }

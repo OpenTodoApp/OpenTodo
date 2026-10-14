@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import css from '../../index.css?raw'
 import { contrast } from './contrast'
-import { parseThemes } from './css'
+import { ACCENT_TOKENS } from './accents'
+import { parseAccents, parseThemes } from './css'
 import { PAIRS } from './pairs'
 
 // OpenSpec design-system "Accessible contrast in both themes".
@@ -17,6 +18,20 @@ describe('token contrast', () => {
       })
       expect(failures).toEqual([])
     })
+  }
+
+  // theming D5: every accent in both modes meets the pairs that involve an accent token.
+  const accentPairs = PAIRS.filter((p) => (ACCENT_TOKENS as readonly string[]).includes(p.fg) || (ACCENT_TOKENS as readonly string[]).includes(p.bg))
+  for (const [name, a] of Object.entries(parseAccents(css))) {
+    for (const [mode, tokens] of [['light', a.light], ['dark', a.dark]] as const) {
+      it(`the ${name} accent meets every accent pair in ${mode}`, () => {
+        const failures = accentPairs.flatMap(({ fg, bg, min, kind }) => {
+          const ratio = contrast(tokens[fg], tokens[bg])
+          return ratio + 1e-9 >= min ? [] : [`${name} ${mode}: ${fg} on ${bg} (${kind}) ${ratio.toFixed(2)}:1, needs ${min}:1`]
+        })
+        expect(failures).toEqual([])
+      })
+    }
   }
 
   it('checks all 12 chip pairs', () => {

@@ -97,6 +97,13 @@ The importer's preview title for the `user_prefs` row changes from "Date and tim
 - Deploy is a normal release. The web app is embedded in the server binary, so client and schema ship together. A device still running a cached older app ignores the new fields until it updates. If a server is rolled back below this release, it refuses the two ops per op (as for any unknown field), and the rest of the outbox keeps syncing.
 - Rollback: revert the client. Stored appearance fields stay harmlessly in `scope_fields`.
 
+## Implementation notes
+
+- **Mapping blocks instead of changing the mode blocks.** The three mode blocks keep their literal emerald values (so `css.ts`, the contrast test and the computed default are unchanged). After them, `[data-accent="…"]` blocks hold each accent's raw `--ot-al-*` / `--ot-ad-*` values (emerald included, so a nested emerald tile is not overridden by the page's accent), and three mapping blocks (light, dark by preference, dark by attribute) set the seven public accent tokens on any `[data-accent]` element. On `<html>` the mapping uses `:root[data-accent]…` selectors to match the mode blocks' specificity; the dark-by-attribute mapping is skipped under a nearer light container.
+- **No new baselines.** The visual check skips stories tagged `no-visual`; the accent and Appearance stories carry it and are covered by the a11y gate in light and dark.
+- **Accent values** (light accent / dark text): blue `#1d4ed8`/`#60a5fa`, indigo `#4338ca`/`#818cf8`, violet `#6d28d9`/`#a78bfa`, rose `#be123c`/`#fb7185`, orange `#c2410c`/`#fb923c` (the 700 step passes for white labels), teal `#0f766e`/`#2dd4bf`, graphite `#334155`/`#cbd5e1`. All pass `contrast.test.ts`.
+- **Smoke (5.1)**, scripted with Playwright on `./bin/opentodo`: orange + dark on one browser reached a second browser of the same user without a reload; the first frame after a reload was already themed; a second user stayed on the defaults; no emerald colour remained on Today, Upcoming, a project board, the task detail or Settings in dark and light orange (success, palette hues and the Emerald tile excluded, by meaning); the bar colour followed mode and accent. The installed-PWA title bar was not checked on a device.
+
 ## Open Questions
 
 - Exact hex values per accent, settled against the contrast test while implementing (D4).

@@ -26,3 +26,25 @@ export function parseThemes(css: string) {
   const darkAttr = declarations(block(css, ':root[data-theme="dark"], [data-theme="dark"] {').body)
   return { light, darkMedia, darkAttr }
 }
+
+export interface AccentTokens {
+  /** The raw values the accent declares, by token name, per mode. */
+  rawLight: ThemeTokens
+  rawDark: ThemeTokens
+  /** The full token set with the accent applied: base tokens overlaid with the accent's. */
+  light: ThemeTokens
+  dark: ThemeTokens
+}
+
+/** Every [data-accent="…"] block of index.css (theming D5), in file order. */
+export function parseAccents(css: string): Record<string, AccentTokens> {
+  const base = parseThemes(css)
+  const out: Record<string, AccentTokens> = {}
+  for (const m of css.matchAll(/\[data-accent="([a-z]+)"\]\s*\{([^}]*)\}/g)) {
+    const rawLight: ThemeTokens = {}
+    const rawDark: ThemeTokens = {}
+    for (const d of m[2].matchAll(/--ot-a([ld])-([\w-]+):\s*([^;]+);/g)) (d[1] === 'l' ? rawLight : rawDark)[d[2]] = d[3].trim()
+    out[m[1]] = { rawLight, rawDark, light: { ...base.light, ...rawLight }, dark: { ...base.darkAttr, ...rawDark } }
+  }
+  return out
+}

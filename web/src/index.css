@@ -270,6 +270,55 @@
   --ot-hue-slate-solid: #94a3b8; --ot-hue-slate-soft: #1e293b; --ot-hue-slate-text: #cbd5e1;
 }
 
+/* Accents (OpenSpec change theming, design D3, D4): raw values per accent for
+   light (--ot-al-*) and dark (--ot-ad-*), then the public accent tokens mapped from
+   them on any [data-accent] element: the document root for the user's theme, or a
+   subtree such as a theme tile. Without data-accent the blocks above apply, which
+   is emerald. Every accent is listed, emerald too, so a nested tile is never
+   overridden by the page's accent. A light container inside a dark page keeps the
+   light mapping. The :root variants match the specificity of the mode blocks above
+   (:root[data-theme="dark"], :root:not(...)) and come later, so they win on <html>.
+   Values pass contrast.test.ts in both modes. */
+[data-accent="emerald"] { --ot-al-accent: #047857; --ot-al-accent-hover: #065f46; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #047857; --ot-al-accent-soft: #ecfdf5; --ot-al-accent-soft-text: #065f46; --ot-al-focus: #059669; --ot-ad-accent: #047857; --ot-ad-accent-hover: #065f46; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #34d399; --ot-ad-accent-soft: #022c22; --ot-ad-accent-soft-text: #6ee7b7; --ot-ad-focus: #34d399; }
+[data-accent="blue"] { --ot-al-accent: #1d4ed8; --ot-al-accent-hover: #1e40af; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #1d4ed8; --ot-al-accent-soft: #eff6ff; --ot-al-accent-soft-text: #1e40af; --ot-al-focus: #2563eb; --ot-ad-accent: #1d4ed8; --ot-ad-accent-hover: #1e40af; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #60a5fa; --ot-ad-accent-soft: #172554; --ot-ad-accent-soft-text: #93c5fd; --ot-ad-focus: #60a5fa; }
+[data-accent="indigo"] { --ot-al-accent: #4338ca; --ot-al-accent-hover: #3730a3; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #4338ca; --ot-al-accent-soft: #eef2ff; --ot-al-accent-soft-text: #3730a3; --ot-al-focus: #4f46e5; --ot-ad-accent: #4338ca; --ot-ad-accent-hover: #3730a3; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #818cf8; --ot-ad-accent-soft: #1e1b4b; --ot-ad-accent-soft-text: #a5b4fc; --ot-ad-focus: #818cf8; }
+[data-accent="violet"] { --ot-al-accent: #6d28d9; --ot-al-accent-hover: #5b21b6; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #6d28d9; --ot-al-accent-soft: #f5f3ff; --ot-al-accent-soft-text: #5b21b6; --ot-al-focus: #7c3aed; --ot-ad-accent: #6d28d9; --ot-ad-accent-hover: #5b21b6; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #a78bfa; --ot-ad-accent-soft: #2e1065; --ot-ad-accent-soft-text: #c4b5fd; --ot-ad-focus: #a78bfa; }
+[data-accent="rose"] { --ot-al-accent: #be123c; --ot-al-accent-hover: #9f1239; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #be123c; --ot-al-accent-soft: #fff1f2; --ot-al-accent-soft-text: #9f1239; --ot-al-focus: #e11d48; --ot-ad-accent: #be123c; --ot-ad-accent-hover: #9f1239; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #fb7185; --ot-ad-accent-soft: #4c0519; --ot-ad-accent-soft-text: #fda4af; --ot-ad-focus: #fb7185; }
+[data-accent="orange"] { --ot-al-accent: #c2410c; --ot-al-accent-hover: #9a3412; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #c2410c; --ot-al-accent-soft: #fff7ed; --ot-al-accent-soft-text: #9a3412; --ot-al-focus: #ea580c; --ot-ad-accent: #c2410c; --ot-ad-accent-hover: #9a3412; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #fb923c; --ot-ad-accent-soft: #431407; --ot-ad-accent-soft-text: #fdba74; --ot-ad-focus: #fb923c; }
+[data-accent="teal"] { --ot-al-accent: #0f766e; --ot-al-accent-hover: #115e59; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #0f766e; --ot-al-accent-soft: #f0fdfa; --ot-al-accent-soft-text: #115e59; --ot-al-focus: #0d9488; --ot-ad-accent: #0f766e; --ot-ad-accent-hover: #115e59; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #2dd4bf; --ot-ad-accent-soft: #042f2e; --ot-ad-accent-soft-text: #5eead4; --ot-ad-focus: #2dd4bf; }
+[data-accent="graphite"] { --ot-al-accent: #334155; --ot-al-accent-hover: #1e293b; --ot-al-on-accent: #ffffff; --ot-al-accent-text: #334155; --ot-al-accent-soft: #f1f5f9; --ot-al-accent-soft-text: #1e293b; --ot-al-focus: #475569; --ot-ad-accent: #475569; --ot-ad-accent-hover: #334155; --ot-ad-on-accent: #ffffff; --ot-ad-accent-text: #cbd5e1; --ot-ad-accent-soft: #1e293b; --ot-ad-accent-soft-text: #e2e8f0; --ot-ad-focus: #94a3b8; }
+:root[data-accent], [data-accent] {
+  --ot-accent: var(--ot-al-accent, #047857);
+  --ot-accent-hover: var(--ot-al-accent-hover, #065f46);
+  --ot-on-accent: var(--ot-al-on-accent, #ffffff);
+  --ot-accent-text: var(--ot-al-accent-text, #047857);
+  --ot-accent-soft: var(--ot-al-accent-soft, #ecfdf5);
+  --ot-accent-soft-text: var(--ot-al-accent-soft-text, #065f46);
+  --ot-focus: var(--ot-al-focus, #059669);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-accent]:where(:not([data-theme="light"])), [data-accent]:where(:not([data-theme="light"], [data-theme="light"] *)) {
+    --ot-accent: var(--ot-ad-accent, #047857);
+    --ot-accent-hover: var(--ot-ad-accent-hover, #065f46);
+    --ot-on-accent: var(--ot-ad-on-accent, #ffffff);
+    --ot-accent-text: var(--ot-ad-accent-text, #34d399);
+    --ot-accent-soft: var(--ot-ad-accent-soft, #022c22);
+    --ot-accent-soft-text: var(--ot-ad-accent-soft-text, #6ee7b7);
+    --ot-focus: var(--ot-ad-focus, #34d399);
+  }
+}
+:root[data-accent][data-theme="dark"],
+[data-accent]:where([data-theme="dark"], [data-theme="dark"] *):where(:not([data-theme="dark"] [data-theme="light"], [data-theme="dark"] [data-theme="light"] *)) {
+  --ot-accent: var(--ot-ad-accent, #047857);
+  --ot-accent-hover: var(--ot-ad-accent-hover, #065f46);
+  --ot-on-accent: var(--ot-ad-on-accent, #ffffff);
+  --ot-accent-text: var(--ot-ad-accent-text, #34d399);
+  --ot-accent-soft: var(--ot-ad-accent-soft, #022c22);
+  --ot-accent-soft-text: var(--ot-ad-accent-soft-text, #6ee7b7);
+  --ot-focus: var(--ot-ad-focus, #34d399);
+}
+
+
 /* Stored project/label/view colours render through the nearest palette hue
    (src/ui/tokens/palette.ts hueFor): data-hue sets --hue-*, read by bg-hue-solid,
    bg-hue-soft and text-hue. The --ot-hue-* values follow the theme. */

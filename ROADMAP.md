@@ -45,6 +45,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Saved filters pinned to the sidebar, custom dashboards | `custom-views` |
 | Trash with restore, auto-archive of completed projects, revision history from the op log | `trash-and-history` |
 | Drag-and-drop ordering | `manual-ordering` |
+| Appearance: light, dark or system, and eight colour themes, synced to every device | `theming` |
 
 ### 4. Time management
 
