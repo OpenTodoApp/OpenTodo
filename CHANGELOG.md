@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
+- **Icons, menus and a smart picker.** Every emoji and symbol that stood in for an icon is now a line icon from one consistent set (Lucide, bundled, no new download). Menus have icons, groups and shortcut hints and work fully with the keyboard (arrow keys, Home and End, typing a letter). The label and assignee pickers show the labels and people you use most on this device first, and find them by the start of any word or by letters in order, ignoring case and accents (“cafe” finds “Café”). Your pick history stays on the device and is cleared when you sign out. ([Design system](docs/design-system.md#building-blocks))
 - **New visual foundation.** Design tokens for colour, type, spacing, radius, elevation and motion in light and dark, the bundled Inter typeface (54 KB, served by your own server, never a font CDN), and refreshed buttons and inputs, keeping OpenTodo's emerald and slate look. Every text colour meets WCAG AA contrast in both themes, checked automatically. Contributors get a component workbench (Storybook, development only) with accessibility and visual-regression checks. ([Design system](docs/design-system.md))
 
 ### Fixed
