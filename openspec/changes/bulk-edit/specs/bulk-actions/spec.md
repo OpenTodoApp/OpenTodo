@@ -52,7 +52,11 @@ Selection SHALL work in the Inbox, Today, Upcoming, Assigned to me, Completed, p
 - **THEN** the next card of the same column is ticked
 
 ### Requirement: Selection bar and Actions menu
-While tasks are ticked the list SHALL show a bar with the count (announced to assistive technology), an Actions button and Clear. `.` SHALL open the Actions menu for the ticked tasks, or for the cursor task when nothing is ticked, outside text fields. The menu SHALL offer complete or reopen, priority 1–4, labels, date (today, tomorrow, next week, no date, pick a date), move to a project, move to a section, assign and move to Trash, each with its shortcut, and SHALL show an unavailable action disabled with the reason.
+While tasks are ticked the list SHALL show a bar with the count (announced to assistive technology), an Actions button and Clear. `.` outside text fields SHALL open the Actions menu for the ticked tasks, or for the cursor task when nothing is ticked. Each menu item SHALL show its shortcut, and an unavailable action SHALL be disabled with the reason.
+
+#### Scenario: Menu contents
+- **WHEN** the user opens the Actions menu
+- **THEN** it offers complete or reopen, priority 1–4, labels, date (today, tomorrow, next week, no date, pick a date), move to a project, move to a section, assign, and move to Trash last in the danger colour
 
 #### Scenario: Open the menu by key
 - **WHEN** four rows are ticked and the user presses `.`
@@ -63,7 +67,7 @@ While tasks are ticked the list SHALL show a bar with the count (announced to as
 - **THEN** "Assign" is disabled and its description says the tasks must be in one shared project
 
 ### Requirement: Actions apply to every ticked task as one batch
-Complete or reopen (`c`), priority (`1`–`4`), date and move to Trash (Delete) SHALL apply to every ticked task as one batch of operations written together: the change shows at once on every affected row, is queued while offline, syncs as ordinary per-field operations and converges by last-writer-wins per task and field. A recurring task SHALL roll forward by its rule as a single completion does; completing or trashing a parent SHALL include its open subtasks; a task listed twice through its parent SHALL get each change once.
+Complete or reopen (`c`), priority (`1`–`4`), date and move to Trash (Delete) SHALL apply to every ticked task as one batch of operations written together: the change shows at once on every affected row, is queued while offline, syncs as ordinary per-field operations and converges by last-writer-wins per task and field. Each task SHALL follow the same rules as the single-task action (recurrence, subtasks), and a task reached twice SHALL get each change once.
 
 #### Scenario: Complete five offline
 - **WHEN** the device is offline, five rows are ticked, one of them repeating every week, and the user presses `c`
@@ -97,22 +101,26 @@ Complete or reopen (`c`), priority (`1`–`4`), date and move to Trash (Delete) 
 - **THEN** "waiting" is removed from each ticked task and their other labels are kept
 
 ### Requirement: Moves and assignments are reviewed first
-Moving ticked tasks to a project or section and assigning them SHALL first show the list of changes, one per task with old → new, shared destinations marked, every item checked; Enter applies the checked items as one batch and Escape discards. A move into another sharing scope SHALL be shown as "copied into <project>" and SHALL be written as the copy-and-tombstone the single-task move uses. Assign SHALL be offered only when every ticked task is in the same shared project. Applied changes converge like any edit.
+Moving ticked tasks to a project or section and assigning them SHALL first show the list of changes, one per task with old → new, shared destinations marked, every item checked; Enter applies the checked items as one batch and Escape discards. A move into another sharing scope SHALL be written as the copy-and-tombstone the single-task move uses. Assign SHALL be offered only when every ticked task is in one shared project. Applied changes converge like any edit.
 
 #### Scenario: Move with review
 - **WHEN** six Inbox tasks are ticked and the user chooses Move to → "Home", unticks one in the review and presses Enter
 - **THEN** five tasks are in "Home", the sixth stays in the Inbox, and the summary reads "5 of 6 changes applied"
 
 #### Scenario: Move into a shared project
-- **WHEN** the user moves two personal tasks to a shared project and applies the review
-- **THEN** each task is copied into the shared project under a new id and the original is in the Trash, in one batch, as the single-task move does
+- **WHEN** the user moves two personal tasks to a shared project
+- **THEN** the review shows each as "copied into <project>" marked shared, and applying it copies each task into the shared project under a new id with the original in the Trash, in one batch, as the single-task move does
 
 #### Scenario: Discard
 - **WHEN** the review is shown and the user presses Escape
 - **THEN** nothing is written and the selection is kept
 
 ### Requirement: Undo a bulk action in one step
-After a bulk action a toast SHALL name it ("12 tasks completed") with an Undo control for ten seconds; the control, or `Ctrl`/`⌘`+`Z` outside a text field while the toast shows, SHALL restore the previous values as one new batch, offline-capable and convergent. A field changed again since the action SHALL be skipped and the task named. Copies made by a cross-scope move SHALL go to the Trash and the originals SHALL be restored. The last 20 batches SHALL stay undoable on the device; undo state SHALL be device-local, never synced or exported, and cleared at sign-out.
+After a bulk action a toast SHALL name it ("12 tasks completed") with an Undo control for ten seconds; the control, or `Ctrl`/`⌘`+`Z` outside a text field while the toast shows, SHALL restore the previous values as one new batch, offline-capable and convergent. A field changed again since the action SHALL be skipped and the task named. Undo state SHALL be device-local (the last 20 batches), never synced or exported, and cleared at sign-out.
+
+#### Scenario: Undo a cross-scope move
+- **WHEN** the user moved two personal tasks into a shared project and activates Undo
+- **THEN** the two copies go to the Trash and the two originals are restored, in one batch
 
 #### Scenario: Undo a reschedule
 - **WHEN** the user rescheduled eight tasks to tomorrow and activates Undo
