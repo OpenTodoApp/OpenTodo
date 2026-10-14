@@ -55,12 +55,15 @@
     try {
       const db = await openDB()
       try {
-        const tx = db.transaction(['tasks', 'reminders'], 'readonly')
-        const [task, reminder] = await Promise.all([
+        // userPrefs (date-time-preferences) is missing on a database older than v15.
+        const hasPrefs = db.objectStoreNames.contains('userPrefs')
+        const tx = db.transaction(hasPrefs ? ['tasks', 'reminders', 'userPrefs'] : ['tasks', 'reminders'], 'readonly')
+        const [task, reminder, prefs] = await Promise.all([
           req(tx.objectStore('tasks').get(taskId)),
           req(tx.objectStore('reminders').get(reminderId)),
+          hasPrefs ? req(tx.objectStore('userPrefs').get('me')) : Promise.resolve(undefined),
         ])
-        return { task, reminder }
+        return { task, reminder, prefs }
       } finally {
         db.close()
       }
@@ -163,10 +166,48 @@
     }
   }
 
-  function due(task, fallbackTitle) {
+  // The due line in the user's date and time format (OpenSpec date-time-preferences,
+  // design D7): an inline copy of formatDate(…, 'compact') and formatTime from
+  // src/lib/dates.ts, checked against it by src/lib/pushWorker.test.ts. A missing
+  // row or an unknown value means "system": the locale's date and the stored HH:MM.
+  function formatDue(dueValue, prefs, today) {
+    const p = prefs || {}
+    const pad = (n) => String(n).padStart(2, '0')
+    const [y, m, d] = String(dueValue.date).split('-').map(Number)
+    const dt = new Date(y, m - 1, d)
+    let date = dueValue.date
+    if (!Number.isNaN(dt.getTime()) && p.date_format !== 'iso') {
+      const otherYear = String(dueValue.date).slice(0, 4) !== String(today).slice(0, 4)
+      if (p.date_format === 'day-month' || p.date_format === 'month-day') {
+        const month = new Intl.DateTimeFormat(undefined, { month: 'short' }).format(dt)
+        date = p.date_format === 'day-month'
+          ? `${d} ${month}${otherYear ? ` ${y}` : ''}`
+          : `${month} ${d}${otherYear ? `, ${y}` : ''}`
+      } else {
+        date = new Intl.DateTimeFormat(undefined, otherYear ? { year: 'numeric', month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric' }).format(dt)
+      }
+    }
+    if (!dueValue.time) return date
+    let time = dueValue.time
+    const t = /^(\d{1,2}):(\d{2})$/.exec(dueValue.time)
+    if (t && p.time_format === '24h') time = `${pad(Number(t[1]))}:${t[2]}`
+    if (t && p.time_format === '12h') {
+      const h = Number(t[1])
+      time = `${h % 12 === 0 ? 12 : h % 12}:${t[2]} ${h < 12 ? 'AM' : 'PM'}`
+    }
+    return `${date}, ${time}`
+  }
+  self.__opentodoFormatDue = formatDue
+
+  function localToday() {
+    const n = new Date()
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`
+  }
+
+  function due(task, fallbackTitle, prefs) {
     const title = (task && task.title) || fallbackTitle || 'Reminder'
     let body = 'Reminder'
-    if (task && task.due) body = task.due.time ? `Due ${task.due.date} ${task.due.time}` : `Due ${task.due.date}`
+    if (task && task.due) body = `Due ${formatDue(task.due, prefs, localToday())}`
     return { title, body }
   }
 
@@ -204,11 +245,11 @@
         focused.postMessage({ type: 'reminders:push', reminderId: data.reminderId, taskId: data.taskId, fireAt: data.fireAt })
         return
       }
-      const { task, reminder } = await readLocal(data.reminderId, data.taskId)
+      const { task, reminder, prefs } = await readLocal(data.reminderId, data.taskId)
       // Local state may be fresher than the server's (completed or dismissed offline).
       if (task && (task.completed_at || task.deleted_at)) return
       if (reminder && (reminder.deleted_at || (reminder.dismissed_at != null && reminder.dismissed_at >= data.fireAt))) return
-      const text = due(task, data.title)
+      const text = due(task, data.title, prefs)
       await self.registration.showNotification(text.title, {
         body: text.body,
         tag: `reminder:${data.reminderId}`,

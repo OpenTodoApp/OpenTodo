@@ -48,7 +48,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     id: 'activity', label: 'Activity', group: 'you', icon: 'history',
     description: (u) => (owner(u) ? 'Recent sign-ins and token changes, and the audit log' : 'Recent sign-ins and token changes on your account'),
   },
-  { id: 'preferences', label: 'Preferences', group: 'app', icon: 'settings', description: () => 'Start view, calendar and keyboard' },
+  { id: 'preferences', label: 'Preferences', group: 'app', icon: 'settings', description: () => 'Start view, date and time, calendar and keyboard' },
   {
     id: 'notifications', label: 'Notifications', group: 'app', icon: 'bell',
     description: () => 'Push notifications for reminders on this device',

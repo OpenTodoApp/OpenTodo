@@ -2,7 +2,8 @@ import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, us
 import type { HueName } from '../ui/tokens/palette'
 import { Icon } from '../ui/Icon'
 import { HelpLink } from './help/HelpLink'
-import { describeDue, todayISO } from '../lib/dates'
+import { describeDue, formatDate, todayISO } from '../lib/dates'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { createLabel, LabelExistsError } from '../lib/labels'
 import {
   chipAtCaret, type Chip, dismissChip, findLabel, formatMinutes, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, parse,
@@ -33,8 +34,7 @@ function browserLanguages(): readonly string[] {
 
 function dueInWords(due: Due): string {
   const words = describeDue(due)?.label ?? due.date
-  const [y, m, d] = due.date.split('-').map(Number)
-  const full = new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+  const full = formatDate(due.date, 'long')
   return words.startsWith('Today') || words.startsWith('Tomorrow') ? `${words} · ${full}` : words
 }
 
@@ -109,6 +109,9 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const [highlight, setHighlight] = useState<number | null>(null)
   const [settings, setSettings] = useState(loadQuickAddSettings)
   useEffect(() => onQuickAddSettingsChange(() => setSettings(loadQuickAddSettings())), [])
+  // The user's date format fills the automatic numeric order, and their first day of
+  // the week decides "next week" (date-time-preferences D5, D6).
+  const { prefs: dtPrefs, resolved } = useDateTimeFormat()
 
   const parsed = useMemo(() => {
     if (!settings.enabled || !value.trim()) return null
@@ -117,11 +120,12 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
       today: todayISO(),
       now: nowHHMM(),
       languages: resolveLanguages(settings, langs),
-      dayMonthOrder: resolveDayMonthOrder(settings, langs),
+      dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs),
+      weekStart: resolved.weekStart,
       projects,
       dismissed,
     })
-  }, [value, dismissed, projects, settings])
+  }, [value, dismissed, projects, settings, dtPrefs, resolved])
   const chips = parsed?.chips ?? []
   const emptyTitle = parsed !== null && parsed.title === ''
 

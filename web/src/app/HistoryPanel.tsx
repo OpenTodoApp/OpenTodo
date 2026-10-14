@@ -7,6 +7,7 @@ import { canRestoreField, deviceLabel, fetchHistory, fieldLabel, formatValue, re
 import { getDeviceId } from '../lib/ops'
 import { syncNow } from '../lib/sync'
 import type { ChangeSet } from '../lib/types'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
  * Revision history of a task or project (OpenSpec `trash-and-history`): a timeline
@@ -20,6 +21,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
   /** Called with the entity id after a restore (a task moved across scopes gets a new id). */
   onRestored?: (id: string) => void
 }) {
+  const dt = useDateTimeFormat()
   const [open, setOpen] = useState(false)
   const [sets, setSets] = useState<ChangeSet[]>([])
   const [before, setBefore] = useState<number | undefined>()
@@ -102,7 +104,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
           <ol className="space-y-2" aria-label="Changes">
             {sets.map((s) => (
               <li key={`${s.ts}:${s.device}`} className="border-l-2 border-slate-200 pl-2 dark:border-slate-700">
-                <div className="text-xs text-faint">{new Date(s.ts).toLocaleString()} · {deviceLabel(s, device)}</div>
+                <div className="text-xs text-faint">{dt.formatInstant(s.ts, 'datetime')} · {deviceLabel(s, device)}</div>
                 <ul>
                   {s.changes.map((c) => (
                     <li key={c.opId} className={`flex flex-wrap items-baseline gap-x-1 ${c.lost ? 'text-faint' : ''}`}>

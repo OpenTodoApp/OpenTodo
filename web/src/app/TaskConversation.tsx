@@ -12,6 +12,7 @@ import { currentUserId, membershipMap, memberName, roleOf } from '../lib/sharing
 import type { ActivityEvent, Comment, Membership, ProjectMember, Task } from '../lib/types'
 import { Markdown } from './Markdown'
 import { Popover } from './overlay'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /** Comment kinds are shown by the thread itself, not repeated as events in a task's timeline. */
 const COMMENT_KINDS = new Set(['commented', 'comment_edited', 'comment_deleted'])
@@ -26,6 +27,7 @@ type Item = { kind: 'thread'; ts: number; thread: Thread } | { kind: 'event'; ts
  * the read-only fieldset of the task panel.
  */
 export function TaskConversation({ task, userId }: { task: Task; userId?: string }) {
+  const dt = useDateTimeFormat()
   const online = useOnline()
   const storedMe = useLiveQuery(() => currentUserId(), [], null)
   const me = userId ?? storedMe
@@ -120,8 +122,8 @@ export function TaskConversation({ task, userId }: { task: Task; userId?: string
       <div>
         <div className="flex flex-wrap items-baseline gap-x-2 text-xs text-faint">
           <span className="font-semibold text-slate-600 dark:text-slate-300">{name(c.author_id)}</span>
-          <time dateTime={new Date(c.created_at).toISOString()}>{new Date(c.created_at).toLocaleString()}</time>
-          {c.edited_at && <span title={`Edited ${new Date(c.edited_at).toLocaleString()}`}>(edited)</span>}
+          <time dateTime={new Date(c.created_at).toISOString()}>{dt.formatInstant(c.created_at, 'datetime')}</time>
+          {c.edited_at && <span title={`Edited ${dt.formatInstant(c.edited_at, 'datetime')}`}>(edited)</span>}
         </div>
         <Markdown source={c.body} className="text-sm" />
         <div className="mt-0.5 flex gap-2 text-xs">
@@ -169,7 +171,7 @@ export function TaskConversation({ task, userId }: { task: Task; userId?: string
               {describeEvent(it.event, name, projectName)}
               {isPending(it.event, pending) && <span className="ml-1 italic text-amber-700 dark:text-amber-400" title="Not yet synced">(pending)</span>}
             </span>
-            <time className="shrink-0 text-faint" dateTime={new Date(it.event.ts).toISOString()}>{new Date(it.event.ts).toLocaleString()}</time>
+            <time className="shrink-0 text-faint" dateTime={new Date(it.event.ts).toISOString()}>{dt.formatInstant(it.event.ts, 'datetime')}</time>
           </li>
         ))}
       </ol>

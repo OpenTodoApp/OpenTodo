@@ -254,6 +254,18 @@ var Schema = map[string]map[string]kind{
 	"project_prefs": {
 		"feed_seen_at": kNumber,
 	},
+	// user_prefs: one user's date and time preferences (OpenSpec change
+	// `date-time-preferences`, design D1). Clients write a single row with the
+	// entityId "me"; like every entity without a project it resolves to the
+	// author's personal scope, so each user's "me" row stays separate. Values are
+	// enumerations carried as strings (date_format: system|day-month|month-day|iso,
+	// time_format: system|12h|24h, week_start: system|mon|sun|sat); clients read
+	// an unknown value as "system", so new values stay additive.
+	"user_prefs": {
+		"date_format": kString,
+		"time_format": kString,
+		"week_start":  kString,
+	},
 }
 
 // Plural maps REST collection names to entity names.

@@ -10,6 +10,7 @@ import {
   IMPORT_FORMATS, type ImportFormat, type ImportJob, type ImportOptions, type ImportPreview, type ImportRow, type Project,
 } from '../lib/types'
 import { navigate } from './router'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /** Last fetched job list, kept per device so past summaries stay readable offline. */
 const JOBS_CACHE_KEY = 'opentodo.importJobs'
@@ -111,6 +112,7 @@ function jobSummary(j: ImportJob): string {
 
 /** Pure view: every state of the Import screen renders from props (tested without a DOM). */
 export function ImportView(p: ImportViewProps) {
+  const dt = useDateTimeFormat()
   const { options: o } = p
   const disabled = p.offline || p.busy
   const isOwn = (p.format || p.preview?.format) === 'opentodo'
@@ -267,7 +269,7 @@ export function ImportView(p: ImportViewProps) {
               <div className="min-w-0 flex-1">
                 <p>
                   <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">{j.status}</span>
-                  {new Date(j.createdAt).toLocaleString()}
+                  {dt.formatInstant(j.createdAt, 'datetime')}
                 </p>
                 <p className="truncate text-xs text-muted">{jobSummary(j)}{j.message ? ` · ${j.message}` : ''}</p>
               </div>

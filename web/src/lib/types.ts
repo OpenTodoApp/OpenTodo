@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs']
 
 export interface Op {
   id: string
@@ -213,6 +213,20 @@ export interface ProjectPrefs {
   id: string
   /** Activity of the project up to this event time (Unix ms) has been seen; 0 = never marked. */
   feed_seen_at: number
+  _clock: Clock
+}
+
+/** Date and time preference values (OpenSpec `date-time-preferences`); unknown values read as 'system'. */
+export type DateFormatPref = 'system' | 'day-month' | 'month-day' | 'iso'
+export type TimeFormatPref = 'system' | '12h' | '24h'
+export type WeekStartPref = 'system' | 'mon' | 'sun' | 'sat'
+
+/** The user's date and time preferences: the synced `user_prefs` entity, one row with id "me" in the personal scope. */
+export interface UserPrefs {
+  id: string
+  date_format: DateFormatPref
+  time_format: TimeFormatPref
+  week_start: WeekStartPref
   _clock: Clock
 }
 

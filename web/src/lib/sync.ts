@@ -273,6 +273,7 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
       ['section', db.sections],
       ['comment', db.comments],
       ['project_prefs', db.prefs],
+      ['user_prefs', db.userPrefs],
     ]
     const me = (await db.meta.get('userId'))?.value
     for (const [entity, table] of tables) {

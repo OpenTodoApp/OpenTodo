@@ -15,6 +15,7 @@ import { trapTab } from '../overlay/stack'
 import { isolate, useOverlay } from '../overlay/useOverlay'
 import { AssistantConsent } from './AssistantConsent'
 import { ChangeSetReview, type ReviewResult } from './ChangeSetReview'
+import { useDateTimeFormat } from '../DateTimePrefsProvider'
 
 export const ENCRYPTED_MESSAGE = 'The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.'
 export const OFFLINE_MESSAGE = 'The assistant needs a connection.'
@@ -91,6 +92,7 @@ export interface PanelViewProps {
 
 /** The panel's content without state (rendered to markup in tests). */
 export function AssistantPanelBody(p: PanelViewProps) {
+  const dt = useDateTimeFormat()
   const s = p.status
   if (!s) return <p className="text-sm text-muted" role="status">Loading…</p>
   if (s.reason === 'encryption_enabled') {
@@ -114,7 +116,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
                 <li key={t.id}>
                   <button type="button" className="btn-ghost w-full justify-start text-left" onClick={() => p.onPickThread(t.id)}>
                     <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                    <span className="text-xs text-faint">{new Date(t.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-xs text-faint">{dt.formatInstant(t.updated_at, 'date')}</span>
                   </button>
                 </li>
               ))}

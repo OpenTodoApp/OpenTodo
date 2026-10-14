@@ -15,6 +15,8 @@ import { Notice } from '../../ui/patterns/Notice'
 import { SettingRow, SettingsSection } from '../../ui/patterns/SettingsSection'
 import { Checkbox, Switch } from '../../ui/Switch'
 import { Dialog } from '../overlay/Dialog'
+import { formatDate } from '../../lib/dates'
+import { useDateTimeFormat } from '../DateTimePrefsProvider'
 
 const LABEL: Record<ProviderName, string> = { anthropic: 'Anthropic (Claude)', openai: 'OpenAI', gemini: 'Google Gemini', compatible: 'Compatible endpoint (Ollama, LM Studio, OpenRouter, …)' }
 const SHORT: Record<ProviderName, string> = { anthropic: 'Anthropic (Claude)', openai: 'OpenAI', gemini: 'Google Gemini', compatible: 'Compatible endpoint' }
@@ -252,7 +254,7 @@ function usageText(u: AssistantUsage): string {
   const counted = u.counted_tokens ?? u.total_tokens
   const pct = u.cap ? Math.min(100, Math.round((counted / u.cap) * 100)) : null
   let text = `This month: ${u.total_tokens.toLocaleString('en')} tokens in ${u.turns} answer${u.turns === 1 ? '' : 's'}`
-  text += pct !== null ? ` · ${pct}% of your ${u.cap.toLocaleString('en')}-token limit, resets ${u.resets_at}` : ' · no limit'
+  text += pct !== null ? ` · ${pct}% of your ${u.cap.toLocaleString('en')}-token limit, resets ${formatDate(u.resets_at, 'compact')}` : ' · no limit'
   const own = u.own_key?.total_tokens ?? 0
   if (own > 0) text += ` · ${own.toLocaleString('en')} on your own key${u.cap_member_keys || !u.cap ? '' : ', not counted toward the limit'}`
   return `${text}.`
@@ -366,6 +368,7 @@ function LegacyOwnKey(p: UserViewProps & { status: AssistantStatus }) {
 
 /** Settings → AI → Assistant for everyone: consent, which assistant you use, usage, auto-apply, conversations. */
 export function UserAssistantSettings(p: UserViewProps) {
+  useDateTimeFormat()
   const s = p.status
   if (!s) return null
   if (s.reason === 'encryption_enabled') return <div className="py-3"><Notice>The assistant can’t read end-to-end encrypted tasks, so it is not available for your account.</Notice></div>

@@ -6,6 +6,8 @@ import { db, getMeta, useDatabase } from './db'
 import { createTask, getDeviceId, resetDeviceId } from './ops'
 import { addReminder } from './reminders'
 import { checkReminders, SHOWN_KEY, type ShownSet } from './reminderWatcher'
+import { formatDate, formatTime, resolveDateTime } from './dates'
+import { setUserPref, type DateTimePrefs } from './userPrefs'
 import source from '../../public/push-sw.js?raw'
 
 interface Scope {
@@ -156,5 +158,56 @@ describe('service worker test pushes (push-test-delivery)', () => {
     await dispatch(scope, 'notificationclick', { notification: { data: { test: true, testId: 'abc' }, close: () => undefined }, action: '' })
     expect(scope.opened).toEqual(['/settings/notifications'])
     expect(scope.fetches).toEqual([])
+  })
+})
+
+type DueFormatter = (due: { date: string; time?: string }, prefs: Partial<DateTimePrefs> | undefined, today: string) => string
+
+/** Loads push-sw.js into a bare scope and returns its inline due formatter. */
+function workerFormatter(): DueFormatter {
+  const self: { addEventListener: () => void; __opentodoFormatDue?: DueFormatter } = { addEventListener: () => undefined }
+  new Function('self', 'fetch', 'indexedDB', source)(self, undefined, undefined)
+  return self.__opentodoFormatDue!
+}
+
+describe('service worker due text (date-time-preferences D7)', () => {
+  const TODAY = '2026-10-14'
+  const P = (p: Partial<DateTimePrefs>): DateTimePrefs => ({ date_format: 'system', time_format: 'system', week_start: 'system', ...p })
+  // One table for both formatters: the inline copy in push-sw.js and lib/dates.ts.
+  const FIXTURE: [Partial<DateTimePrefs>, { date: string; time?: string }][] = [
+    [{}, { date: '2026-11-03', time: '15:00' }],
+    [{}, { date: '2027-02-03' }],
+    [{ date_format: 'day-month', time_format: '24h' }, { date: '2026-11-03', time: '9:05' }],
+    [{ date_format: 'day-month' }, { date: '2027-02-03', time: '15:00' }],
+    [{ date_format: 'month-day', time_format: '12h' }, { date: '2026-11-03', time: '15:00' }],
+    [{ date_format: 'month-day', time_format: '12h' }, { date: '2027-02-03', time: '00:30' }],
+    [{ date_format: 'iso', time_format: '12h' }, { date: '2026-11-03', time: '12:00' }],
+    [{ date_format: 'unknown' as never, time_format: '36h' as never }, { date: '2026-11-03', time: '15:00' }],
+  ]
+  it.each(FIXTURE)('%o %o matches lib/dates.ts', (prefs, due) => {
+    const fmt = workerFormatter()
+    const r = resolveDateTime(P(prefs), { order: 'MD', hour12: false, weekStart: 1 })
+    const want = due.time ? `${formatDate(due.date, 'compact', r, TODAY)}, ${formatTime(due.time, r)}` : formatDate(due.date, 'compact', r, TODAY)
+    expect(fmt(due, prefs, TODAY)).toBe(want)
+  })
+
+  it('a pushed reminder reads Due Nov 3, 3:00 PM with month-day and 12h stored on the device', async () => {
+    const taskId = await createTask({ title: 'Pay rent', due: { date: `${new Date().getFullYear()}-11-03`, time: '15:00' } })
+    const reminderId = await addReminder(taskId, { kind: 'absolute', fire_at: Date.now() - 1000 })
+    await setUserPref('date_format', 'month-day')
+    await setUserPref('time_format', '12h')
+    db.close()
+    await db.open()
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: Date.now() - 1000 }))
+    expect(sw.shown[0].options.body).toBe('Due Nov 3, 3:00 PM')
+  })
+
+  it('falls back to the locale date and the stored time without preferences', async () => {
+    const { taskId, reminderId, now } = await setup()
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
+    const date = new Date(2026, 9, 11).toLocaleDateString(undefined, new Date().getFullYear() === 2026 ? { month: 'short', day: 'numeric' } : { year: 'numeric', month: 'short', day: 'numeric' })
+    expect(sw.shown[0].options.body).toBe(`Due ${date}, 10:00`)
   })
 })

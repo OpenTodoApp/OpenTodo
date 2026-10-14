@@ -15,6 +15,7 @@ import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
 import type { HueName } from '../ui/tokens/palette'
 import { Dialog } from './overlay/Dialog'
 import { Menu } from './overlay/Menu'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 const EXPIRY_OPTIONS: [number, string][] = [
   [1, '1 hour'],
@@ -136,6 +137,7 @@ export interface MembersViewProps {
 
 /** Pure rendering of the Members section. */
 export function MembersView(p: MembersViewProps) {
+  const dt = useDateTimeFormat()
   const disabled = p.offline || p.busy
   const pending = p.invitations?.filter((i) => i.status === 'pending').length ?? 0
 
@@ -171,7 +173,7 @@ export function MembersView(p: MembersViewProps) {
                   leading={<Icon name={inv.status === 'accepted' ? 'user-check' : 'link'} size="md" />}
                   label={<>{who}{inv.acceptedBy && <span className="text-muted"> · joined as {inv.acceptedBy.name || inv.acceptedBy.email}</span>}</>}
                   ariaLabel={`Invitation ${inv.email ?? 'open'}, ${inv.status}`}
-                  meta={`${inv.status === 'pending' ? `Expires ${new Date(inv.expiresAt).toLocaleString()}` : `Created ${new Date(inv.createdAt).toLocaleDateString()}`}${inv.createdByName ? ` · by ${inv.createdByName}` : ''}`}
+                  meta={`${inv.status === 'pending' ? `Expires ${dt.formatInstant(inv.expiresAt, 'datetime')}` : `Created ${dt.formatInstant(inv.createdAt, 'date')}`}${inv.createdByName ? ` · by ${inv.createdByName}` : ''}`}
                   badges={<Badge hue={STATUS[inv.status].hue}>{STATUS[inv.status].label}</Badge>}
                   onKeyDown={(e) => onRowKey(e, inv)}
                   menu={inv.status === 'pending' && (

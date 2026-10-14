@@ -20,6 +20,7 @@ import { markTaskNotificationsRead } from '../lib/notifications'
 import { HistoryPanel } from './HistoryPanel'
 import { TaskConversation } from './TaskConversation'
 import { Markdown } from './Markdown'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 // The rich-text editor and its libraries are a separate chunk, fetched when a
 // note is first opened (collaborative-rich-text, task 3.1).
@@ -46,6 +47,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   /** Complete / reopen through the list so the "complete parent too" prompt can follow. */
   onToggleComplete?: (task: Task) => void
 }) {
+  const dt = useDateTimeFormat()
   const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
   const [title, setTitle] = useState('')
   const [parentError, setParentError] = useState<string | null>(null)
@@ -254,8 +256,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         </Field>
 
         <p className="pt-4 text-xs text-faint">
-          Created {new Date(task.created_at).toLocaleString()}
-          {task.completed_at && <> · Completed {new Date(task.completed_at).toLocaleString()}</>}
+          Created {dt.formatInstant(task.created_at, 'datetime')}
+          {task.completed_at && <> · Completed {dt.formatInstant(task.completed_at, 'datetime')}</>}
         </p>
       </fieldset>
       <div className="border-t border-slate-200 px-4 pb-4 dark:border-slate-800">

@@ -9,6 +9,7 @@ import { useCommentCount } from './useCommentCounts'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 // Priority tokens (design-system): ring in the priority colour, soft fill behind it.
 const PRIORITY_RING: Record<number, string> = {
@@ -58,7 +59,8 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   /** Where the dragged task would land relative to this row (manual-ordering). */
   dropIndicator?: 'before' | 'after' | 'inside' | null
 }) {
-  const due = describeDue(task.due)
+  const dt = useDateTimeFormat()
+  const due = describeDue(task.due, undefined, undefined, dt.resolved)
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
   const hint = zoneHint(task.due)
   const done = !!task.completed_at

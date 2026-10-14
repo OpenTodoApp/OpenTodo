@@ -1,4 +1,5 @@
 import type { Due } from './types'
+import type { DateTimePrefs } from './userPrefs'
 
 /** Local calendar date as YYYY-MM-DD. */
 export function todayISO(now = new Date()): string {
@@ -256,33 +257,217 @@ export function compareDue(a: Due | null, b: Due | null, zone?: string): number 
   return ta < tb ? -1 : ta > tb ? 1 : 0
 }
 
-export function describeDue(due: Due | null, today = todayISO(), zone?: string): { label: string; tone: 'overdue' | 'today' | 'soon' | 'later' } | null {
+export function describeDue(due: Due | null, today = todayISO(), zone?: string, p: ResolvedDateTime = current): { label: string; tone: 'overdue' | 'today' | 'soon' | 'later' } | null {
   if (!due) return null
   const local = localDueOf(due, zone)
-  const time = local.time ? ` ${local.time}` : ''
-  if (local.date < today) return { label: `${formatShort(local.date)}${time}`, tone: 'overdue' }
+  const time = local.time ? ` ${formatTime(local.time, p)}` : ''
+  if (local.date < today) return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'overdue' }
   if (local.date === today) return { label: `Today${time}`, tone: 'today' }
   if (local.date === addDaysISO(today, 1)) return { label: `Tomorrow${time}`, tone: 'soon' }
   if (local.date < addDaysISO(today, 7)) return { label: `${weekday(local.date)}${time}`, tone: 'soon' }
-  return { label: `${formatShort(local.date)}${time}`, tone: 'later' }
+  return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'later' }
 }
 
 export function weekday(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'long' })
+  return fmt({ weekday: 'long' }).format(dateOf(iso))
 }
 
-export function formatShort(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  const dt = new Date(y, m - 1, d)
-  const sameYear = dt.getFullYear() === new Date().getFullYear()
-  return dt.toLocaleDateString(undefined, sameYear ? { month: 'short', day: 'numeric' } : { year: 'numeric', month: 'short', day: 'numeric' })
+export function formatShort(iso: string, p: ResolvedDateTime = current): string {
+  return formatDate(iso, 'compact', p)
 }
 
 /** Heading of a date group; `iso` is already a local date (see `localDueOf`). */
-export function formatDateHeading(iso: string, today = todayISO()): string {
+export function formatDateHeading(iso: string, today = todayISO(), p: ResolvedDateTime = current): string {
   if (iso === today) return 'Today'
   if (iso === addDaysISO(today, 1)) return 'Tomorrow'
+  return formatDate(iso, 'heading', p, today)
+}
+
+// ---- date and time preferences (OpenSpec change date-time-preferences, design D2) ----
+//
+// Every user-facing date and time goes through these functions. They take the
+// user's preferences resolved once (`system` values filled in from Intl) and read
+// a module snapshot by default, which DateTimePrefsProvider keeps current; tests
+// pass a resolved value. Month and weekday names always come from the browser
+// locale; only the order, the clock and the week start change. With every
+// preference on `system` the output is what the app showed before the change:
+// dates as the locale writes them and due times as their stored `HH:MM`.
+
+export type DateStyle = 'compact' | 'numeric' | 'long' | 'heading'
+export type InstantStyle = 'time' | 'date' | 'datetime' | 'long'
+
+export interface ResolvedDateTime {
+  /** How dates are written: the locale's way, or a forced order. */
+  date: 'system' | 'DM' | 'MD' | 'iso'
+  /** Order used to read numeric dates such as 3/11 (the forced order, else the locale's). */
+  order: 'DM' | 'MD' | 'YMD'
+  /** How times are written: due times stay `HH:MM` on `system`; instants follow the locale. */
+  time: 'system' | '12h' | '24h'
+  /** Whether a time is shown on a 12-hour clock (the locale's choice on `system`). */
+  hour12: boolean
+  /** First day of the week, 0 = Sunday … 6 = Saturday. */
+  weekStart: number
+  /** Bumped whenever the snapshot changes; part of every cache key. */
+  version: number
+}
+
+/** What `system` means on this device. */
+export interface SystemDateTime {
+  order: 'DM' | 'MD' | 'YMD'
+  hour12: boolean
+  weekStart: number
+}
+
+let systemCache: SystemDateTime | null = null
+
+/** The browser locale's date order, clock and first day of the week (Monday when the browser cannot tell). */
+export function systemDateTime(): SystemDateTime {
+  if (systemCache) return systemCache
+  let order: SystemDateTime['order'] = 'MD'
+  let hour12 = false
+  let weekStart = 1
+  try {
+    const parts = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date(2026, 10, 3))
+    const at = (type: string) => parts.findIndex((x) => x.type === type)
+    order = at('year') < at('month') ? 'YMD' : at('day') < at('month') ? 'DM' : 'MD'
+    const cycle = new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hourCycle
+    hour12 = cycle === 'h12' || cycle === 'h11'
+    const locale = new Intl.DateTimeFormat().resolvedOptions().locale
+    const loc = new Intl.Locale(locale) as Intl.Locale & { getWeekInfo?: () => { firstDay: number }; weekInfo?: { firstDay: number } }
+    const first = (loc.getWeekInfo?.() ?? loc.weekInfo)?.firstDay
+    if (typeof first === 'number' && first >= 1 && first <= 7) weekStart = first % 7
+  } catch {
+    // keep the fallbacks
+  }
+  systemCache = { order, hour12, weekStart }
+  return systemCache
+}
+
+const WEEK_START: Record<string, number> = { sun: 0, mon: 1, sat: 6 }
+let version = 0
+
+/** Fills in `system` values. Unknown values are read as `system` (lib/userPrefs). */
+export function resolveDateTime(prefs: DateTimePrefs, sys: SystemDateTime = systemDateTime()): ResolvedDateTime {
+  const date = prefs.date_format === 'day-month' ? 'DM' : prefs.date_format === 'month-day' ? 'MD' : prefs.date_format === 'iso' ? 'iso' : 'system'
+  return {
+    date,
+    order: date === 'DM' || date === 'MD' ? date : date === 'iso' ? 'YMD' : sys.order,
+    time: prefs.time_format === '12h' || prefs.time_format === '24h' ? prefs.time_format : 'system',
+    hour12: prefs.time_format === '12h' ? true : prefs.time_format === '24h' ? false : sys.hour12,
+    weekStart: WEEK_START[prefs.week_start] ?? sys.weekStart,
+    version: 0,
+  }
+}
+
+let current: ResolvedDateTime = resolveDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
+
+/** The snapshot every formatter reads by default. */
+export function currentDateTime(): ResolvedDateTime {
+  return current
+}
+
+/** Replaces the snapshot (DateTimePrefsProvider; tests). Returns the new value. */
+export function setDateTime(prefs: DateTimePrefs, sys?: SystemDateTime): ResolvedDateTime {
+  current = { ...resolveDateTime(prefs, sys), version: ++version }
+  return current
+}
+
+const dateFormatters = new Map<string, Intl.DateTimeFormat>()
+function fmt(opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = JSON.stringify(opts)
+  let f = dateFormatters.get(key)
+  if (!f) {
+    f = new Intl.DateTimeFormat(undefined, opts)
+    dateFormatters.set(key, f)
+  }
+  return f
+}
+
+function dateOf(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
+  return new Date(y, m - 1, d)
+}
+
+const pad = (n: number) => String(n).padStart(2, '0')
+
+/**
+ * A calendar date (`YYYY-MM-DD`) as text.
+ * - compact: `14 Oct` / `Oct 14` (a year is added outside the current year)
+ * - numeric: `14/10/2026` / `10/14/2026`
+ * - long: `Wed 14 Oct` / `Wed, Oct 14` (the reminder list)
+ * - heading: `Wednesday 14 Oct` / `Wednesday, Oct 14` (date group headings)
+ * With `iso` every style shows `2026-10-14`, after the weekday for long and heading.
+ */
+export function formatDate(iso: string, style: DateStyle, p: ResolvedDateTime = current, today = todayISO()): string {
+  const dt = dateOf(iso)
+  if (Number.isNaN(dt.getTime())) return iso
+  const otherYear = iso.slice(0, 4) !== today.slice(0, 4)
+  const wd = style === 'long' ? fmt({ weekday: 'short' }).format(dt) : style === 'heading' ? fmt({ weekday: 'long' }).format(dt) : ''
+  if (p.date === 'iso') return wd ? `${wd} ${iso}` : iso
+  if (p.date === 'system') {
+    switch (style) {
+      case 'numeric': return fmt({ year: 'numeric', month: '2-digit', day: '2-digit' }).format(dt)
+      case 'compact': return fmt(otherYear ? { year: 'numeric', month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric' }).format(dt)
+      case 'long': return fmt(otherYear ? { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' } : { weekday: 'short', month: 'short', day: 'numeric' }).format(dt)
+      case 'heading': return fmt({ weekday: 'long', month: 'short', day: 'numeric' }).format(dt)
+    }
+  }
+  const day = dt.getDate()
+  const year = dt.getFullYear()
+  if (style === 'numeric') {
+    return p.date === 'DM' ? `${pad(day)}/${pad(dt.getMonth() + 1)}/${year}` : `${pad(dt.getMonth() + 1)}/${pad(day)}/${year}`
+  }
+  const month = fmt({ month: 'short' }).format(dt)
+  const withYear = otherYear && style !== 'heading'
+  if (p.date === 'DM') return `${wd ? `${wd} ` : ''}${day} ${month}${withYear ? ` ${year}` : ''}`
+  return `${wd ? `${wd}, ` : ''}${month} ${day}${withYear ? `, ${year}` : ''}`
+}
+
+/**
+ * A wall-clock time (`HH:MM`, as stored in a due) as text: `3:00 PM` on a
+ * 12-hour clock, `15:00` on a 24-hour one, and the stored value on `system`.
+ */
+export function formatTime(hhmm: string, p: ResolvedDateTime = current): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm)
+  if (!m || p.time === 'system') return hhmm
+  const h = Number(m[1])
+  if (p.time === '24h') return `${pad(h)}:${m[2]}`
+  return `${h % 12 === 0 ? 12 : h % 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`
+}
+
+/** An hour of the day (0–23) for grid labels: `9 AM` on a 12-hour clock, else `09:00`. */
+export function formatHour(hour: number, p: ResolvedDateTime = current): string {
+  if (p.time === '12h') return `${hour % 12 === 0 ? 12 : hour % 12} ${hour < 12 ? 'AM' : 'PM'}`
+  return `${pad(hour)}:00`
+}
+
+/**
+ * An instant (Unix ms) in the viewer's zone. `time` and `datetime` follow the
+ * locale's clock on `system` (as the app's timestamps always did); `long` is the
+ * reminder list form, `Tue 3 Nov, 09:00`.
+ */
+export function formatInstant(ms: number, style: InstantStyle, p: ResolvedDateTime = current, today = todayISO()): string {
+  const d = new Date(ms)
+  if (Number.isNaN(d.getTime())) return ''
+  const iso = todayISO(d)
+  const hhmm = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  const time = p.time === 'system' ? fmt({ hour: 'numeric', minute: '2-digit' }).format(d) : formatTime(hhmm, p)
+  switch (style) {
+    case 'time': return time
+    case 'date': return formatDate(iso, 'compact', p, today)
+    case 'long': return `${formatDate(iso, 'long', p, today)}, ${time}`
+    default: return `${formatDate(iso, 'compact', p, today)}, ${time}`
+  }
+}
+
+/** The first day (`YYYY-MM-DD`) of the week that contains `iso`. */
+export function weekStartOf(iso: string, p: ResolvedDateTime = current): string {
+  const back = (dateOf(iso).getDay() - p.weekStart + 7) % 7
+  return addDaysISO(iso, -back)
+}
+
+/** The seven days of the week that contains `iso`, starting on the preferred first day. */
+export function weekDays(iso: string, p: ResolvedDateTime = current): string[] {
+  const start = weekStartOf(iso, p)
+  return Array.from({ length: 7 }, (_, i) => addDaysISO(start, i))
 }

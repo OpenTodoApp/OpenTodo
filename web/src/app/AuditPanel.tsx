@@ -11,6 +11,7 @@ import { Notice } from '../ui/patterns/Notice'
 import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
 import { AUDIT_EVENT_NAMES, type AuditEvent, type AuditFilters, type AuditSettings } from '../lib/types'
 import { AUDIT_LABELS, EMPTY_FORM, eventAccount, eventSummary, type FilterForm, shortAgent, toFilters } from './auditFormat'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 export type LogStatus = 'loading' | 'ready' | 'offline' | 'error'
 
@@ -262,6 +263,7 @@ export function AuditPanel() {
 
 /** The event table. Pure, so tests can render every state. */
 export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; events: AuditEvent[]; onKeyDown?: (e: KeyboardEvent<HTMLDivElement>) => void }) {
+  const dt = useDateTimeFormat()
   if (status === 'offline') return <NeedsConnection what="audit log" />
   return (
     <div className="overflow-x-auto rounded-control border border-default focus-visible:outline-2 focus-visible:outline-focus"
@@ -279,7 +281,7 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
         <tbody className="divide-y divide-(--ot-border)">
           {events.map((ev) => (
             <tr key={ev.id} tabIndex={0} className="align-top focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus" data-event={ev.name}>
-              <td className="whitespace-nowrap px-2 py-1.5 text-meta text-muted">{new Date(ev.ts).toLocaleString()}</td>
+              <td className="whitespace-nowrap px-2 py-1.5 text-meta text-muted">{dt.formatInstant(ev.ts, 'datetime')}</td>
               <td className="px-2 py-1.5">
                 <span className={ev.outcome === 'failure' ? 'text-danger' : ''}>{AUDIT_LABELS[ev.name] ?? ev.name}</span>
                 {ev.outcome === 'failure' && <> <Badge hue="red">failure</Badge></>}

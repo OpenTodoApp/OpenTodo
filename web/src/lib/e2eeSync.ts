@@ -42,7 +42,7 @@ type AnyTable = { get(id: string): Promise<Row | undefined>; put(v: Row): Promis
 function tableOf(entity: Entity): AnyTable {
   const t = {
     project: db.projects, task: db.tasks, label: db.labels, view: db.views, reminder: db.reminders, section: db.sections,
-    comment: db.comments, project_prefs: db.prefs,
+    comment: db.comments, project_prefs: db.prefs, user_prefs: db.userPrefs,
   }[entity]
   return t as unknown as AnyTable
 }

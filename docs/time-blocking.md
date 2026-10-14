@@ -31,6 +31,8 @@ Choose **Day** or **Week** in the sidebar, or press <kbd>g</kbd> <kbd>d</kbd> or
 
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 
+The Week view starts on your first day of the week, and the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → Preferences → Date and time** and follow you to all your devices. Moving a block still sets the same time; only how it is shown changes.
+
 ## Place a task on the calendar
 
 Drag a task from the Unscheduled lane onto a time slot. Its due date and time become that slot. The grid works in 15-minute steps.

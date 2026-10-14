@@ -14,6 +14,8 @@ import { api, ApiError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { createPasskey, isCancellation, passkeysSupported, rpIdMatches } from '../lib/passkeys'
 import type { Passkey } from '../lib/types'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { formatInstant } from '../lib/dates'
 
 // Settings → Security → Passkeys (OpenSpec change `passkeys`; layout by settings-redesign). The server list is
 // authoritative and not cached for offline use: offline, the panel shows what
@@ -29,7 +31,7 @@ export function relativeTime(ts: number | null, now = Date.now()): string {
   if (m < 60) return `${m} min ago`
   const h = Math.round(m / 60)
   if (h < 24) return `${h} h ago`
-  return new Date(ts).toLocaleDateString()
+  return formatInstant(ts, 'date')
 }
 
 function readCachedAvailability(): boolean {
@@ -134,6 +136,7 @@ export interface SecurityPanelViewProps {
 
 /** Presentational part, rendered without effects so it can be tested directly. */
 export function SecurityPanelView(p: SecurityPanelViewProps) {
+  const dt = useDateTimeFormat()
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
@@ -216,7 +219,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
               </form>
             ) : (
               <ListRow key={k.id} leading={<Icon name="key-round" size="md" />} label={k.name}
-                meta={`Created ${new Date(k.createdAt).toLocaleDateString()} · used ${relativeTime(k.lastUsedAt, p.now)}`}
+                meta={`Created ${dt.formatInstant(k.createdAt, 'date')} · used ${relativeTime(k.lastUsedAt, p.now)}`}
                 badges={k.suspiciousAt !== null ? (
                   <Badge hue="red" title="A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.">Suspicious</Badge>
                 ) : undefined}

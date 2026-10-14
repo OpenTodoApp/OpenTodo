@@ -6,9 +6,9 @@ export type { ProjectRef } from './attributes'
 export { activeLanguages, BUNDLED_LANGUAGES, VOCABULARIES } from './vocab'
 export type { DayMonthOrder } from './vocab'
 export {
-  DEFAULT_QUICK_ADD_SETTINGS, formatMinutes, loadQuickAddSettings, onQuickAddSettingsChange, resolveDayMonthOrder, resolveLanguages,
+  dayMonthOrderSource, DEFAULT_QUICK_ADD_SETTINGS, formatMinutes, loadQuickAddSettings, onQuickAddSettingsChange, resolveDayMonthOrder, resolveLanguages,
   saveQuickAddSettings,
 } from './settings'
-export type { QuickAddSettings } from './settings'
+export type { DayMonthOrderSource, QuickAddSettings } from './settings'
 export { chipAtCaret, dismissChip, findLabel, labelNameKey, toTaskInput } from './quickadd'
 export type { LabelRef, QuickAddInput } from './quickadd'

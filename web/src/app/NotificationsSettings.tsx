@@ -12,6 +12,7 @@ import {
   disablePush, enablePush, loadPushState, localTestNotification, PushPermissionError, pushChecklist, sendTestPush, setIncludeContent,
   type ChecklistStep, type PushState, type StepAction, type TestOutcome,
 } from '../lib/push'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
  * Settings → Notifications (OpenSpec change `reminders`): per device, enable or
@@ -190,6 +191,7 @@ export function PushDelivery(props: {
   onLocalTest: () => void
   onAction: (action: StepAction) => void
 }) {
+  useDateTimeFormat()
   const { state: s, lastTest, online, dev, busy, phase } = props
   const steps = pushChecklist(s, lastTest, online, { dev })
   const summary = testSummary(lastTest, phase)

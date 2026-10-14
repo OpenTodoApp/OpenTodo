@@ -16,6 +16,7 @@ import { useOnline } from '../lib/online'
 import { qrMatrix, qrPath } from '../lib/qr'
 import type { MfaPolicy, MfaStatus, TrustedDevice, User } from '../lib/types'
 import { relativeTime } from './SecurityPanel'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 // Settings → Two-factor authentication and the enrolment wizard (OpenSpec
 // `mfa-totp`). The server is authoritative; the last known status is cached
@@ -272,6 +273,7 @@ export const POLICY_LABEL: Record<MfaPolicy, string> = {
 
 /** Presentational part of the Settings section, rendered without effects for tests. */
 export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
+  const dt = useDateTimeFormat()
   const disabled = !p.online || p.busy
   const st = p.online ? p.status : null
   const few = !!st?.enrolled && st.recoveryCodesRemaining <= 3
@@ -303,7 +305,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
           <div className="-mx-3">
             {p.devices?.map((d) => (
               <ListRow key={d.id} leading={<Icon name="globe" size="md" />} label={browserName(d.userAgent)}
-                meta={`Used ${relativeTime(d.lastUsedAt ?? d.createdAt, p.now)} · until ${new Date(d.expiresAt).toLocaleDateString()}`}
+                meta={`Used ${relativeTime(d.lastUsedAt ?? d.createdAt, p.now)} · until ${dt.formatInstant(d.expiresAt, 'date')}`}
                 menu={(
                   <Menu label={`Actions for ${browserName(d.userAgent)}`} trigger={<Icon name="ellipsis" />} kind="menu"
                     triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">

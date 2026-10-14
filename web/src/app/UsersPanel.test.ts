@@ -88,7 +88,8 @@ describe('UsersView', () => {
     render()
     await db.open()
     for (const table of db.tables) {
-      expect(table.name).not.toMatch(/user/i)
+      // userPrefs is the signed-in account's own date and time preferences (date-time-preferences).
+      if (table.name !== 'userPrefs') expect(table.name).not.toMatch(/user/i)
       const rows = JSON.stringify(await table.toArray())
       expect(rows).not.toContain(member.email)
       expect(rows).not.toContain(admin.email)
