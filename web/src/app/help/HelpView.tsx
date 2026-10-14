@@ -1,3 +1,4 @@
+import { Icon } from '../../ui/Icon'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { findTopic, helpSections, loadHelp, searchHelp, type HelpBundle } from '../../lib/help'
 import type { SearchEntry } from '../../../scripts/docs/search-core.mjs'
@@ -37,7 +38,7 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
     <div className="mx-auto max-w-5xl px-4 py-6 md:px-8" data-help-scroll data-help-view>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         {page ? (
-          <p className="text-sm"><a className="underline" href="/help" onClick={(e) => { e.preventDefault(); setQuery(''); navigate({ view: 'help' }) }}>Help</a> <span aria-hidden="true">›</span> {page.section}</p>
+          <p className="text-sm"><a className="underline" href="/help" onClick={(e) => { e.preventDefault(); setQuery(''); navigate({ view: 'help' }) }}>Help</a> <Icon name="chevron-right" size="xs" className="inline align-[-1px]" /> {page.section}</p>
         ) : (
           <h1 className="text-xl font-semibold">Help</h1>
         )}

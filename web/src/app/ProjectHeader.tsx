@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
@@ -116,7 +117,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
         {canManageMembers(role) ? 'Share' : 'Members'} <span className="kbd ml-1">S</span>
       </button>
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} onClose={() => setSharing(false)} />}
-      {editable && <Menu label="Project menu" title={project.name} trigger={<>Project ⌄</>} triggerClassName="btn-ghost text-xs" className="p-2"
+      {editable && <Menu label="Project menu" title={project.name} trigger={<>Project<Icon name="chevron-down" size="xs" /></>} triggerClassName="btn-ghost text-xs" className="p-2"
         open={menuOpen} onOpenChange={setMenuOpen}>
           <p className="px-1 pb-1 text-xs text-faint">Color</p>
           <div className="mb-2 flex flex-wrap gap-1 px-1">

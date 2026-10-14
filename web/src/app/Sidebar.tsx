@@ -1,3 +1,4 @@
+import { Icon, type IconName } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { db, getMeta } from '../lib/db'
@@ -177,12 +178,12 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
     else if (has) focusRow(n.children[0].id)
   }
 
-  const item = (r: Route, label: string, icon: string, count?: number) => {
+  const item = (r: Route, label: string, icon: IconName, count?: number) => {
     // Day and Week stay highlighted whatever date they show.
     const active = r.view === 'day' || r.view === 'week' ? route.view === r.view : JSON.stringify(r) === JSON.stringify(route)
     return (
       <button key={label} onClick={() => navigate(r)} className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${active ? ACTIVE : IDLE}`}>
-        <span className="w-5 text-center">{icon}</span>
+        <span className="flex w-5 justify-center text-muted"><Icon name={icon} /></span>
         <span className="flex-1 truncate">{label}</span>
         {count ? <span className="text-xs text-faint">{count}</span> : null}
       </button>
@@ -196,19 +197,19 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         <span className="font-semibold">OpenTodo</span>
       </div>
       <nav className="space-y-0.5">
-        {item({ view: 'inbox' }, 'Inbox', '📥', counts.inbox)}
-        {item({ view: 'today' }, 'Today', '📅', counts.today)}
-        {item({ view: 'upcoming' }, 'Upcoming', '🗓️')}
-        {item({ view: 'assigned' }, 'Assigned to me', '👤', counts.assigned)}
-        {item({ view: 'day' }, 'Day', '🕘')}
-        {item({ view: 'week' }, 'Week', '📆')}
-        {item({ view: 'completed' }, 'Completed', '✅')}
-        {item({ view: 'filter' }, 'Filter', '🔎')}
-        {item({ view: 'trash' }, 'Trash', '🗑️', trashCount)}
+        {item({ view: 'inbox' }, 'Inbox', 'inbox', counts.inbox)}
+        {item({ view: 'today' }, 'Today', 'calendar-check', counts.today)}
+        {item({ view: 'upcoming' }, 'Upcoming', 'calendar-days')}
+        {item({ view: 'assigned' }, 'Assigned to me', 'user-check', counts.assigned)}
+        {item({ view: 'day' }, 'Day', 'clock')}
+        {item({ view: 'week' }, 'Week', 'calendar-range')}
+        {item({ view: 'completed' }, 'Completed', 'circle-check-big')}
+        {item({ view: 'filter' }, 'Filter', 'filter')}
+        {item({ view: 'trash' }, 'Trash', 'trash-2', trashCount)}
         {sharedIds.size > 0 && (
           <button onClick={() => navigate({ view: 'feed' })} title='Activity in shared projects (g h)'
             className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'feed' ? ACTIVE : IDLE}`}>
-            <span className="w-5 text-center">📰</span>
+            <span className="flex w-5 justify-center text-muted"><Icon name="newspaper" /></span>
             <span className="flex-1 truncate">Activity</span>
             {unread.total > 0 && <UnreadBadge n={unread.total} label="unread in shared projects" />}
           </button>
@@ -226,7 +227,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
           return (
             <div key={v.id} className={`group flex items-center rounded-md ${active ? ACTIVE : IDLE}`}>
               <button data-view-id={v.id} onClick={() => navigate({ view: 'view', id: v.id })} className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm">
-                <span className="w-5 text-center" style={{ color: v.color }} aria-hidden>{viewIcon(v)}</span>
+                <span className="flex w-5 justify-center" style={{ color: v.color }}><Icon name={viewIcon(v)} /></span>
                 <span className="flex-1 truncate">{v.name}</span>
                 {!isDashboard(v) && c && (c.ok ? (c.count ? <span className="text-xs text-faint">{c.count}</span> : null) : <span className="text-xs text-red-600 dark:text-red-400" title={c.error}>!</span>)}
               </button>
@@ -264,7 +265,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
                     <button type="button" tabIndex={-1} aria-label={isCollapsed ? `Expand ${p.name}` : `Collapse ${p.name}`}
                       onClick={() => void toggleCollapsedProject(n.id)}
                       className="flex h-5 w-4 items-center justify-center rounded text-xs text-faint hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700">
-                      {isCollapsed ? '▸' : '▾'}
+                      <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${isCollapsed ? '' : 'rotate-90'}`} />
                     </button>
                   )}
                 </span>
@@ -278,9 +279,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
                   <span className="flex-1 truncate">{p.name}</span>
                   {sharedIds.has(n.id) && (
                     <span className="text-faint" title="Shared project" aria-label="Shared">
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
-                        <path d="M7 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1 16c0-2.8 2.7-5 6-5s6 2.2 6 5v1H1v-1Zm13 1v-1c0-1.5-.5-2.8-1.4-3.8.5-.1.9-.2 1.4-.2 2.8 0 5 1.8 5 4v1h-5Z" />
-                      </svg>
+                      <Icon name="users" size={14} />
                     </span>
                   )}
                   {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label="unread changes" /> : null}
@@ -311,11 +310,11 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
 
         <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
           <button className="flex items-center gap-1 uppercase hover:text-slate-600 dark:hover:text-slate-200" onClick={() => setLabelsOpen((v) => !v)} aria-expanded={labelsOpen}>
-            <span className="inline-block w-3 text-[10px]">{labelsOpen ? '▾' : '▸'}</span>Labels
+            <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${labelsOpen ? 'rotate-90' : ''}`} />Labels
           </button>
           <span className="flex items-center gap-1">
             <button className={`rounded px-1 text-[10px] normal-case hover:bg-slate-200 dark:hover:bg-slate-800 ${route.view === 'labels' ? 'text-emerald-700 dark:text-emerald-300' : ''}`} onClick={() => navigate({ view: 'labels' })} title="All labels (g l)">All</button>
-            <button className="rounded px-1 text-base leading-none hover:bg-slate-200 dark:hover:bg-slate-800" onClick={() => { setLabelsOpen(true); setAddingLabel(true) }} title="New label">+</button>
+            <button className="rounded px-1 text-base leading-none hover:bg-slate-200 dark:hover:bg-slate-800" onClick={() => { setLabelsOpen(true); setAddingLabel(true) }} title="New label" aria-label="New label"><Icon name="plus" size="xs" /></button>
           </span>
         </div>
         {labelsOpen && (
@@ -328,7 +327,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
       </nav>
       <button onClick={() => navigate({ view: 'help' })} title="Help and guides (g then ?)"
         className={`mt-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'help' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}>
-        <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-xs text-muted dark:border-slate-600">?</span>
+        <span className="flex h-6 w-6 items-center justify-center text-muted"><Icon name="circle-help" /></span>
         <span className="flex-1 text-slate-700 dark:text-slate-300">Help</span>
       </button>
       <button onClick={() => navigate({ view: 'settings' })}
@@ -337,7 +336,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
           {(user.name || user.email).slice(0, 1).toUpperCase()}
         </span>
         <span className="flex-1 truncate text-slate-700 dark:text-slate-300">{user.name || user.email}</span>
-        <span className="text-faint">⚙</span>
+        <span className="text-faint"><Icon name="settings" /></span>
       </button>
     </div>
   )

@@ -293,7 +293,7 @@ const OVERLAYS = {
   },
   async 'rename-view'(p) {
     await p.locator('main').getByRole('button', { name: /^Menu for view/ }).first().click()
-    await overlayLoc(p).getByRole('button', { name: 'Rename' }).click()
+    await overlayLoc(p).getByRole('menuitem', { name: 'Rename' }).click()
     return { overlay: p.getByRole('dialog', { name: 'Rename view' }), kind: 'dialog' }
   },
   async 'new-dashboard'(p) {

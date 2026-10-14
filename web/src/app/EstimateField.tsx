@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useEffect, useRef, useState } from 'react'
 import { ESTIMATE_PRESETS, formatMinutes, parseDuration } from '../lib/duration'
 import { updateTask } from '../lib/ops'
@@ -93,7 +94,7 @@ export function EstimateField({ task }: { task: Task }) {
             </button>
           ))}
           {task.estimate_minutes !== null && (
-            <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={() => set(null)} aria-label="Clear estimate">✕</button>
+            <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={() => set(null)} aria-label="Clear estimate" title="Clear estimate"><Icon name="x" /></button>
           )}
         </div>
       </div>

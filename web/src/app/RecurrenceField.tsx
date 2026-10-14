@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/db'
@@ -73,7 +74,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           }}
         />
         {task.recurrence && (
-          <button className="btn-ghost" aria-label="Stop repeating" title="Stop repeating" onClick={() => { setDraft(''); void setRecurrence(task.id, null) }}>✕</button>
+          <button className="btn-ghost" aria-label="Stop repeating" title="Stop repeating" onClick={() => { setDraft(''); void setRecurrence(task.id, null) }}><Icon name="x" /></button>
         )}
       </div>
       <datalist id="recurrence-suggestions">

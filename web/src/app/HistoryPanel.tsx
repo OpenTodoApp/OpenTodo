@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useCallback, useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
@@ -89,7 +90,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
   return (
     <section className="pt-4" aria-label="History">
       <button type="button" className="btn-ghost px-2 py-0.5 text-xs" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        {open ? '▾' : '▸'} History
+        <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />History
       </button>
       {open && (
         <div className="mt-2 text-sm">

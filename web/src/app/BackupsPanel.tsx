@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
@@ -75,7 +76,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
               <span className="font-medium">Schedule:</span> {status.enabled ? scheduleLabel(status.schedule) : 'Off (manual backups only)'}
               {status.encrypted && (
                 <span className="ml-2 inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800" title="Archives are encrypted with your passphrase">
-                  <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor"><path d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-.5V4.5A3.5 3.5 0 0 0 8 1Zm2 6H6V4.5a2 2 0 1 1 4 0V7Z" /></svg>
+                  <Icon name="lock" size="xs" />
                   encrypted
                 </span>
               )}

@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/db'
@@ -109,7 +110,7 @@ export function TrashView() {
             return (
               <li key={`${it.entity}:${it.id}`} data-trash-id={it.id} onClick={() => setSelected(i)}
                 className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-2 py-2 text-sm ${i === selected ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}`}>
-                <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : '○'}</span>
+                <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : <Icon name="circle" size="xs" />}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{it.title}</span>
                   <span className="block text-xs text-faint">

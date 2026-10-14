@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, fetchActivity, isPending, KIND_FILTERS, mergeOlder, pendingOpIds, projectActivity } from '../lib/activity'
@@ -32,7 +33,7 @@ export function ProjectActivity({ project }: { project: Project }) {
   return (
     <section className="pt-2" aria-label="Project activity">
       <button type="button" className="btn-ghost px-2 py-0.5 text-xs" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        {open ? '▾' : '▸'} Activity <span className="kbd ml-1">H</span>
+        <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />Activity <span className="kbd ml-1">H</span>
       </button>
       {open && <ActivityList project={project} />}
     </section>

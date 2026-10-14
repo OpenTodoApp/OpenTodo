@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { lazy, type MouseEvent, type RefObject, Suspense, useEffect, useRef, useState } from 'react'
 import { HelpHeading } from './help/HelpLink'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -74,7 +75,7 @@ export function SettingsView({ user, onLogout, section }: { user: User; onLogout
       <div className="min-w-0 flex-1 space-y-8 lg:max-w-2xl">
         <div>
           <a className="btn-ghost touch-target -ml-3 text-sm lg:hidden" href={routePath({ view: 'settings' })} data-settings-back
-            onClick={(e) => followLink(e, { view: 'settings' })}><span aria-hidden="true">←</span> Settings</a>
+            onClick={(e) => followLink(e, { view: 'settings' })}><Icon name="arrow-left" /> Settings</a>
           <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold outline-none">{current.label}</h1>
         </div>
         <SectionContent id={current.id} user={user} onLogout={onLogout} />
@@ -107,7 +108,7 @@ function SettingsOverview({ user, headingRef }: { user: User; headingRef: RefObj
                   <span className="block font-medium">{s.label}</span>
                   <span className="block text-sm text-muted">{s.description(user)}</span>
                 </span>
-                <span aria-hidden="true" className="text-faint">›</span>
+                <span className="text-faint"><Icon name="chevron-right" /></span>
               </a>
             </li>
           ))}

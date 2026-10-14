@@ -1,3 +1,4 @@
+import { Icon, type IconName } from '../ui/Icon'
 import { useEffect, useState } from 'react'
 import { HelpHeading } from './help/HelpLink'
 import { getDeviceId } from '../lib/ops'
@@ -132,12 +133,12 @@ export function NotificationsSettings() {
 
 export type TestPhase = 'idle' | 'sending' | 'waiting'
 
-const STATUS_MARK: Record<ChecklistStep['status'], { mark: string; label: string; className: string }> = {
-  ok: { mark: '✓', label: 'OK', className: 'text-emerald-700 dark:text-emerald-400' },
-  fail: { mark: '✕', label: 'Problem', className: 'text-red-600 dark:text-red-400' },
-  pending: { mark: '…', label: 'Pending', className: 'text-amber-700 dark:text-amber-400' },
-  not_checked: { mark: '–', label: 'Not checked', className: 'text-faint' },
-  unknown: { mark: '?', label: 'Unknown', className: 'text-faint' },
+const STATUS_MARK: Record<ChecklistStep['status'], { icon: IconName; label: string; className: string }> = {
+  ok: { icon: 'check', label: 'OK', className: 'text-emerald-700 dark:text-emerald-400' },
+  fail: { icon: 'x', label: 'Problem', className: 'text-red-600 dark:text-red-400' },
+  pending: { icon: 'clock', label: 'Pending', className: 'text-amber-700 dark:text-amber-400' },
+  not_checked: { icon: 'circle', label: 'Not checked', className: 'text-faint' },
+  unknown: { icon: 'circle-help', label: 'Unknown', className: 'text-faint' },
 }
 const ACTION_LABEL: Record<StepAction, string> = { enable: 'Enable', reenable: 'Re-enable', reload: 'Reload' }
 
@@ -186,7 +187,7 @@ export function PushDelivery(props: {
           const m = STATUS_MARK[step.status]
           return (
             <li key={step.id} className="flex items-start gap-2 p-2" data-step={step.id} data-status={step.status}>
-              <span className={`w-4 shrink-0 text-center font-semibold ${m.className}`} aria-hidden="true">{m.mark}</span>
+              <span className={`mt-0.5 flex w-4 shrink-0 justify-center ${m.className}`}><Icon name={m.icon} /></span>
               <div className="min-w-0 flex-1">
                 <div className="font-medium"><span className="sr-only">{m.label}: </span>{step.label}</div>
                 <div className="text-xs text-muted user-text">{step.detail}</div>
