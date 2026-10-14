@@ -116,11 +116,15 @@ Projects keep related tasks together. To create one, click **+** next to **Proje
 
 The **Project** menu at the top right of a project lets you:
 
-- pick a **color**,
-- **Move to** another project, or back to the top level (shortcut <kbd>m</kbd>),
+- pick a **colour** from the swatches at the top,
+- **Move to…** another project, or back to the top level. Type to find the target: each candidate shows the projects it sits in, and the project itself and its sub-projects are never offered. <kbd>m</kbd> opens the menu straight at this step, and <kbd>Esc</kbd> goes back to the menu.
 - **Rename** it,
-- **Archive** it, which hides it and its sub-projects from the sidebar while keeping every task,
-- **Delete project**, which moves it to the Trash.
+- **Archive…** it, which hides it and its sub-projects from the sidebar while keeping every task,
+- **Delete project…**, which moves it to the Trash.
+
+Archive and delete ask first and say what they affect, for example how many open tasks and sub-projects move with the project.
+
+<picture><source srcset="images/project-move-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-move-light.webp" alt="The Move to step of the project menu: a search field above the possible targets, Top level first, each project shown with the projects it sits in."></picture>
 
 The number next to each project in the sidebar counts its open tasks. When a project with sub-projects is folded, the number includes them.
 

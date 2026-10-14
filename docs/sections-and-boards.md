@@ -26,11 +26,11 @@ Select the **+** on a section heading and type: the task goes straight into that
 
 ## Rename, reorder or delete a section
 
-Use the **⋯** menu on a section heading:
+Use the **⋯** menu on a section heading (or press <kbd>.</kbd> with the heading focused):
 
-- **Rename**
-- **Move** it up or down (left or right on the board)
-- **Delete section**. Its open tasks aren't deleted; they move to **No section**.
+- **Rename** (<kbd>F2</kbd>)
+- **Move** it up or down (left or right on the board). At the first or last place the option is unavailable and says why.
+- **Delete section…** asks first and says how many open tasks move to **No section**. The tasks aren't deleted.
 
 Fold a section with the small arrow next to its name. Folding is remembered on that device only.
 

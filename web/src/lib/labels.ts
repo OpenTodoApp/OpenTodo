@@ -3,13 +3,16 @@
 // The array itself is a whole-value LWW register (see docs/sync.md, "Task labels"),
 // which is why every write here reads the current array in the same transaction.
 import { db } from './db'
-import { getDeviceId, mutate, mutationTables } from './ops'
+import { getDeviceId, mutate, mutateMany, mutationTables } from './ops'
+import { compareByPosition, planMove, planStep, type Placement, type PositionChange } from './ordering'
 import type { Label, Task } from './types'
+import { HUES } from '../ui/tokens/palette'
 
 // The canonical hexes of the design-system palette (src/ui/tokens/palette.ts). The
 // original nine keep their order so older clients and stored colours stay valid;
 // lime, cyan and indigo were appended by design-language.
-export const LABEL_PALETTE = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b', '#84cc16', '#06b6d4', '#6366f1']
+// LABEL_PALETTE is an alias of the palette's canonical solid hexes (labels-and-menus 4.3).
+export const LABEL_PALETTE: readonly string[] = HUES.map((h) => h.hex)
 
 /** Thrown by createLabel when a non-deleted label with the same name (ignoring case) exists. */
 export class LabelExistsError extends Error {
@@ -22,9 +25,9 @@ export function labelKey(name: string): string {
   return name.trim().toLocaleLowerCase()
 }
 
-/** Non-deleted labels in sidebar order. */
+/** Non-deleted labels in sidebar order: the shared order rule (position, then id), total on every device. */
 export function activeLabels(labels: Label[]): Label[] {
-  return labels.filter((l) => !l.deleted_at).sort((a, b) => a.position - b.position || a.created_at - b.created_at)
+  return labels.filter((l) => !l.deleted_at).sort(compareByPosition)
 }
 
 export async function findLabelByName(name: string): Promise<Label | undefined> {
@@ -58,18 +61,28 @@ export async function updateLabel(id: string, patch: Partial<Pick<Label, 'name' 
   await mutate('label', id, patch)
 }
 
-/** Move a label one step up (-1) or down (+1) in the sidebar by swapping positions. */
-export async function reorderLabel(id: string, delta: -1 | 1): Promise<void> {
-  const list = activeLabels(await db.labels.toArray())
-  const i = list.findIndex((l) => l.id === id)
-  const j = i + delta
-  if (i < 0 || j < 0 || j >= list.length) return
-  const a = list[i], b = list[j]
-  // Equal positions (e.g. two labels created in the same millisecond) would not swap.
-  const pa = a.position === b.position ? b.position + delta : b.position
-  const pb = a.position === b.position ? a.position : a.position
-  await mutate('label', a.id, { position: pa })
-  await mutate('label', b.id, { position: pb })
+async function writePositions(plan: PositionChange[] | null): Promise<void> {
+  if (!plan || plan.length === 0) return
+  await mutateMany(plan.map((c) => ({ entity: 'label' as const, entityId: c.id, patch: { position: c.position } })))
+}
+
+/**
+ * Move a label one step up (-1) or down (+1), or to the top or bottom, on the shared
+ * ordering helpers (labels-and-menus D4): an ordinary step is one op; neighbours are
+ * renumbered only when their positions leave no gap.
+ */
+export async function reorderLabel(id: string, step: -1 | 1 | 'top' | 'bottom'): Promise<void> {
+  await writePositions(planStep(activeLabels(await db.labels.toArray()), id, step))
+}
+
+/** Put a label at a placement (drag and drop: { before | after: id }), in one batch. */
+export async function moveLabelTo(id: string, placement: Placement): Promise<void> {
+  await writePositions(planMove(activeLabels(await db.labels.toArray()), id, placement))
+}
+
+/** Non-deleted tasks carrying the label: the same set deleteLabel and mergeLabels rewrite. */
+export async function labelUsage(id: string): Promise<number> {
+  return (await tasksCarrying(id)).length
 }
 
 /**
