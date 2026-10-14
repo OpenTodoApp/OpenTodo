@@ -109,4 +109,19 @@ describe('import route', () => {
     expect(render({ options: { ...DEFAULT_OPTIONS, targetProject: 'p2' } })).toContain('aria-label="Tasks without a project go to: Work › Acme"')
     expect(render({ offline: true })).toMatch(/<button type="button" class="input[^"]*" disabled=""[^>]*aria-label="Tasks without a project go to: Inbox"/)
   })
+
+  it('offers the named app formats and shows archive entry names (named-importers)', () => {
+    const html = render()
+    for (const label of ['Todoist backup (ZIP)', 'Todoist project (CSV)', 'Things 3 database', 'TickTick backup (CSV)', 'Linear export (CSV)']) {
+      expect(html).toContain(label)
+    }
+    const preview: ImportPreview = {
+      format: 'todoist-backup', options: {}, truncated: false, totals: totals({ rows: 1, create: 1 }),
+      rows: [{ row: 4, file: 'Home [123].csv', kind: 'task', title: 'Buy milk', outcome: 'create' }],
+      notes: [],
+    }
+    const withPreview = render({ preview, fileName: 'backup.zip' })
+    expect(withPreview).toContain('Preview · Todoist backup (ZIP)')
+    expect(withPreview).toContain('Home [123].csv:4')
+  })
 })

@@ -65,7 +65,7 @@ Two shapes are recognised:
 - **Todoist.**
   - The BOM is stripped. The `meta` row records the project's `view_style`, and blank rows are skipped.
   - An indent stack builds subtasks.
-  - `PRIORITY` uses Todoist's internal scale. The working assumption is 4 = p1, 3 = p2, 2 = p3, 1 = p4, confirmed by a fixture task whose UI flag is known before the mapping ships.
+  - `PRIORITY` uses the numbers the app shows (1 = the red flag, 4 = no priority), unlike Todoist's API where 4 is the highest. The maintainer's backup settles it: 29 of 32 tasks carry 4, which can only be the default. It maps directly (1 = p1 … 4 = p4). A richer sample with a known red-flag task will pin it further.
   - `@label` tokens in `CONTENT` become labels.
   - `DATE` goes through D7, with `TIMEZONE` for timed values.
   - `DEADLINE` and `DURATION` are kept as warnings until `deadlines` exists; `DURATION` with unit minute maps to `estimate_minutes`.
@@ -108,7 +108,7 @@ Mapping:
 Alternative considered: an Apple Shortcut writing a published JSON shape. Rejected now that the database can be copied directly. It needed a Shortcut per user, and it lost fields the database has.
 
 ### D5. Fixtures from real exports, sanitised
-`internal/importer/testdata/sanitize.go` (a `go run` tool, not in the binary) replaces titles, notes, project, area, tag and label names, people's names, user ids and email addresses with deterministic placeholders. It keeps structure, dates, priorities, recurrence, indent, statuses, column order, the meta and BOM, and for SQLite rewrites text columns in a copy, then runs `VACUUM`. Fixtures live in `testdata/<format>/` with golden previews (`*.golden.json`), and `-update` regenerates them. The maintainer reviews every sanitised fixture before commit.
+`internal/importer/sanitize` (a `go run` tool that nothing imports, so it is never in the binary; its tests run with `go test ./...`) replaces titles, notes, project, area, tag and label names, people's names, user ids and email addresses with deterministic placeholders. It keeps structure, dates, priorities, recurrence, indent, statuses, column order, the meta and BOM, and for SQLite rewrites text columns in a copy, then runs `VACUUM`. Fixtures live in `testdata/<format>/` with golden previews (`*.golden.json`), and `-update` regenerates them. The maintainer reviews every sanitised fixture before commit.
 
 ### D6. Switch guides
 Each `docs/switch/<app>.md` has four parts:

@@ -1,0 +1,138 @@
+{
+  "format": "ticktick-csv",
+  "notes": [
+    "TickTick backup Version: 7.2"
+  ],
+  "totals": {
+    "rows": 12,
+    "create": 12,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 0,
+    "newProjects": 1,
+    "newLabels": 0,
+    "newSections": 3,
+    "recurring": 0,
+    "reminders": 0,
+    "entities": 15,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 8,
+      "sourceId": "ticktick:list:/List 1",
+      "kind": "project",
+      "title": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "sourceId": "ticktick:t000001",
+      "kind": "task",
+      "title": "Task 1",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "ticktick:t000002",
+      "kind": "task",
+      "title": "Task 2",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "ticktick:t000003",
+      "kind": "task",
+      "title": "Task 3",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "sourceId": "ticktick:t000004",
+      "kind": "task",
+      "title": "Task 4",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "sourceId": "ticktick:t000005",
+      "kind": "task",
+      "title": "Task 5",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 13,
+      "sourceId": "ticktick:t000006",
+      "kind": "task",
+      "title": "Task 6",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 14,
+      "sourceId": "ticktick:t000007",
+      "kind": "task",
+      "title": "Task 7",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 15,
+      "sourceId": "ticktick:t000008",
+      "kind": "task",
+      "title": "Task 8",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 16,
+      "sourceId": "ticktick:t000009",
+      "kind": "task",
+      "title": "Task 9",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 17,
+      "sourceId": "ticktick:t000010",
+      "kind": "task",
+      "title": "Task 10",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 18,
+      "sourceId": "ticktick:t000011",
+      "kind": "task",
+      "title": "Task 11",
+      "project": "List 1",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "project id-0001: name=\"List 1\" archived=false created_at=1791979200000",
+    "section id-0003: name=\"Column 1\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0007: name=\"Column 2\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0010: name=\"Column 3\" project_id=\"id-0001\" created_at=1791979200000",
+    "task id-0002: title=\"Task 1\" description=\"Item 1\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0003\"",
+    "task id-0004: title=\"Task 2\" description=\"Item 2\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0003\"",
+    "task id-0005: title=\"Task 3\" description=\"Item 3\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0003\"",
+    "task id-0006: title=\"Task 4\" description=\"Item 4\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0007\"",
+    "task id-0008: title=\"Task 5\" description=\"Item 5\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0007\"",
+    "task id-0009: title=\"Task 6\" description=\"Item 6\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0010\"",
+    "task id-0011: title=\"Task 7\" description=\"Item 7\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0010\"",
+    "task id-0012: title=\"Task 8\" description=\"Item 8\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0010\"",
+    "task id-0013: title=\"Task 9\" description=\"Item 9\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0003\"",
+    "task id-0014: title=\"Task 10\" description=\"Item 10\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0010\"",
+    "task id-0015: title=\"Task 11\" description=\"Item 11\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[] section_id=\"id-0003\""
+  ]
+}

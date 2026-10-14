@@ -141,6 +141,17 @@ export async function saveViewMode(projectId: string, mode: ProjectViewMode): Pr
   await setMeta(modeKey(projectId), mode)
 }
 
+/**
+ * Opens projects an import just created as boards on this device when they were
+ * boards in the source app (OpenSpec change named-importers, design D8). Only the
+ * importing device is affected; nothing is synced.
+ */
+export async function applyImportViewHints(hints: readonly { projectId: string; view: string }[] | undefined): Promise<void> {
+  for (const h of hints ?? []) {
+    if (h.view === 'board' && h.projectId) await saveViewMode(h.projectId, 'board')
+  }
+}
+
 /** Section ids ('' = "No section") collapsed in this project's list view on this device. */
 export async function loadCollapsedSections(projectId: string): Promise<string[]> {
   const v = await getMeta<unknown>(collapsedKey(projectId), [])
