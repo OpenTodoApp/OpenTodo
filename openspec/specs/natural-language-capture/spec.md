@@ -35,6 +35,21 @@ The parser SHALL recognise relative day words, weekday names with an optional "n
 - **WHEN** today is 2026-10-09 and the user enters `Renew passport 3 Feb`
 - **THEN** the task is due `2027-02-03`
 
+### Requirement: Numeric order and week start follow the preferences
+While the device's numeric date order is automatic, numeric dates SHALL be read in the order of the user's date format (OpenSpec `date-time-preferences`; `iso` and `system` keep the language's order). "next week" and the "next <weekday>" rule SHALL use weeks that start on the user's preferred first day of the week.
+
+#### Scenario: Numeric date follows the date format
+- **WHEN** the browser language is English (US), the quick-add order is automatic, the date format is `day-month`, today is 2026-10-09, and the user enters `Pay rent 3/11`
+- **THEN** the task is due `2026-11-03`
+
+#### Scenario: Explicit quick-add order wins
+- **WHEN** the device's quick-add numeric order is set to month-day and the date format is `day-month`, and the user enters `Pay rent 3/11` on 2026-10-09
+- **THEN** the task is due `2027-03-11`
+
+#### Scenario: Next week with a Sunday start
+- **WHEN** the first day of the week is `sun`, today is Wednesday 2026-10-14, and the user enters `Plan trip next week`
+- **THEN** the task is due Sunday `2026-10-18`
+
 ### Requirement: Multi-language vocabulary
 Date and time vocabulary SHALL be bundled for English, German, French, Italian, Spanish and Portuguese and SHALL be available with no network. The active set SHALL be the browser's preferred languages that are bundled, with English always active, and SHALL be overridable in Settings. Attribute tokens (`#`, `@`, `p1`–`p4`, `+`) SHALL be language-independent.
 
