@@ -1,5 +1,6 @@
 import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import type { HueName } from '../ui/tokens/palette'
+import { Icon } from '../ui/Icon'
 import { HelpLink } from './help/HelpLink'
 import { describeDue, todayISO } from '../lib/dates'
 import { createLabel, LabelExistsError } from '../lib/labels'
@@ -209,10 +210,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
             onClick={voice.toggle}
           >
             {voice.listening && <span className="absolute inset-0 animate-ping rounded-full bg-red-400/40 motion-reduce:hidden" aria-hidden="true" />}
-            <svg viewBox="0 0 24 24" className="relative h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="9" y="3" width="6" height="11" rx="3" />
-              <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-            </svg>
+            <Icon name="mic" className="relative" />
           </button>
         )}
         {!hideHint && <span className="kbd hidden sm:inline">q</span>}
@@ -260,7 +258,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
             })}
             <span className="text-muted" data-testid="quick-add-title">
               <span className="sr-only">Title: </span>
-              {emptyTitle ? <em>Type a title</em> : <>→ {parsed?.title}</>}
+              {emptyTitle ? <em>Type a title</em> : <span className="inline-flex items-center gap-1"><Icon name="arrow-right" size="xs" />{parsed?.title}</span>}
             </span>
           </div>
         )}

@@ -1,3 +1,4 @@
+import { Icon } from '../../ui/Icon'
 import { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { place } from './position'
@@ -93,16 +94,19 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
     return createPortal(
       <div className="fixed inset-0 z-50" data-overlay-root {...isolate} onKeyDown={onKeyDown} style={modal ? undefined : { pointerEvents: 'none' }}>
         {modal && <div className="absolute inset-0 bg-black/30" aria-hidden="true" onClick={onClose} data-overlay-backdrop />}
-        <div ref={panel} role={ariaRole} aria-label={label} aria-modal={ariaRole === 'dialog' ? true : undefined} tabIndex={-1} data-overlay="sheet"
+        {/* A menu sheet is a dialog whose list carries the menu role: the title and the
+            close button may not sit inside a menu. */}
+        <div ref={panel} role={ariaRole === 'menu' ? 'dialog' : ariaRole} aria-label={label} aria-modal={ariaRole ? true : undefined} tabIndex={-1} data-overlay="sheet"
           className="pointer-events-auto absolute inset-x-0 flex max-h-[80dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-white text-sm shadow-2xl outline-none dark:border-slate-700 dark:bg-slate-900"
           style={{ bottom: 'var(--vv-bottom, 0px)' }}>
           <div className="relative flex shrink-0 items-center gap-2 border-b border-slate-100 pl-4 pr-1 pt-2 dark:border-slate-800">
             <span aria-hidden="true" className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-slate-300 dark:bg-slate-600" />
             <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{label}</h2>
             <button type="button" className="btn-ghost touch-target px-2 text-lg leading-none" aria-label="Close" data-overlay-close
-              onMouseDown={modal ? undefined : (e) => e.preventDefault()} onClick={onClose}>×</button>
+              onMouseDown={modal ? undefined : (e) => e.preventDefault()} onClick={onClose}><Icon name="x" size="md" /></button>
           </div>
-          <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(0.5rem,env(safe-area-inset-bottom))] ${className}`}>{children}</div>
+          <div role={ariaRole === 'menu' ? 'menu' : undefined} aria-label={ariaRole === 'menu' ? label : undefined}
+            className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(0.5rem,env(safe-area-inset-bottom))] ${className}`}>{children}</div>
         </div>
       </div>,
       document.body,

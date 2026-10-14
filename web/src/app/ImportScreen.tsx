@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { HelpLink } from './help/HelpLink'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -117,7 +118,7 @@ export function ImportView(p: ImportViewProps) {
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 md:px-8">
       <section>
-        <button className="btn-ghost -ml-3 text-xs" onClick={() => navigate({ view: 'settings', section: 'data' })}>← Data settings</button>
+        <button className="btn-ghost -ml-3 text-xs" onClick={() => navigate({ view: 'settings', section: 'data' })}><Icon name="arrow-left" />Data settings</button>
         <div className="flex items-center justify-between gap-2"><h1 className="text-xl font-semibold">Import data</h1><HelpLink screen="import" topic="Importing data" /></div>
         <p className="mt-1 text-sm text-muted">
           Bring in tasks from an OpenTodo export, a CSV file or another task manager's JSON export. You see a preview first;

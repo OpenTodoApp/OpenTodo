@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useCallback, useEffect, useState } from 'react'
 import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, OIDC_START_URL } from '../lib/api'
@@ -125,7 +126,7 @@ export interface SsoPanelViewProps {
 function Lock() {
   return (
     <span className="ml-1 inline-flex items-center gap-1 text-xs text-faint" title="Set by an OPENTODO_OIDC_* environment variable">
-      <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor"><path d="M5 7V5a3 3 0 1 1 6 0v2h1v7H4V7h1Zm1.5 0h3V5a1.5 1.5 0 1 0-3 0v2Z" /></svg>
+      <Icon name="lock" size="xs" />
       set by environment
     </span>
   )

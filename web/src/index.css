@@ -318,6 +318,23 @@ body {
   @apply w-full min-w-0 rounded-control border border-input bg-surface px-3 py-2 text-body text-default placeholder:text-faint
     focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/30;
 }
+/* Shared Button (src/ui/Button.tsx, OpenSpec change ui-primitives D3): the same
+   tokens as the legacy classes, plus sizes, icon-only and busy states. */
+.ui-btn {
+  @apply relative inline-flex items-center justify-center gap-2 rounded-control font-medium whitespace-nowrap transition duration-(--duration-ui) ease-calm
+    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus
+    disabled:cursor-not-allowed disabled:opacity-50 aria-busy:cursor-progress;
+}
+.ui-btn--sm { @apply h-8 px-2.5 text-meta; }
+.ui-btn--md { @apply h-10 px-3.5 text-sm; }
+.ui-btn--lg { @apply h-12 px-4 text-body; }
+.ui-btn--icon.ui-btn--sm { @apply w-8 px-0; }
+.ui-btn--icon.ui-btn--md { @apply w-10 px-0; }
+.ui-btn--icon.ui-btn--lg { @apply w-12 px-0; }
+.ui-btn--primary { @apply bg-accent text-on-accent shadow-1 hover:bg-accent-hover active:translate-y-px; }
+.ui-btn--secondary { @apply border border-input bg-surface text-default hover:bg-sunken active:bg-sunken dark:hover:bg-raised; }
+.ui-btn--ghost { @apply text-muted hover:bg-sunken hover:text-default active:bg-sunken dark:hover:bg-raised; }
+.ui-btn--danger { @apply text-danger hover:bg-danger-soft active:bg-danger-soft; }
 /* WebKit lets a long option label in a native select paint past the box, and the
    GTK port (Linux) ignores overflow on it; paint containment keeps it inside. */
 select.input { @apply truncate; contain: layout paint; }

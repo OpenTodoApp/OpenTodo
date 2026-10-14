@@ -14,9 +14,12 @@ for (const id of ids) {
         await page.setViewportSize({ width, height: 800 })
         await page.goto(`/iframe.html?id=${id}&viewMode=story&globals=theme:${theme};width:${width}`)
         const story = page.locator('#storybook-root')
-        await expect(story).not.toBeEmpty()
+        // Rendered, not necessarily with text (an input, an icon-only trigger).
+        await page.locator('#storybook-root > *').first().waitFor()
         await page.evaluate(() => document.fonts.ready)
-        await expect(story).toHaveScreenshot(`${id}--${theme}-${width}.png`)
+        // An open menu or dialog renders in a portal outside the story root: capture the viewport.
+        const overlay = await page.locator('[data-overlay]').count()
+        await expect(overlay ? page : story).toHaveScreenshot(`${id}--${theme}-${width}.png`)
       })
     }
   }

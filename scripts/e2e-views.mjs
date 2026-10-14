@@ -85,7 +85,7 @@ await sidebarViews.getByText('Work tomorrow').waitFor()
 await pageA.waitForFunction(() => document.querySelector('h1 + span')?.textContent === '4', null, { timeout: 5000 }).catch(() => undefined)
 const viewCount = await pageA.locator('h1 + span').first().textContent()
 assert(viewCount === '4', 'view result count ' + viewCount)
-await pageA.waitForFunction(() => [...document.querySelectorAll('nav[aria-label="Views"] button')].some((b) => b.textContent === '≡Work tomorrow4'))
+await pageA.waitForFunction(() => [...document.querySelectorAll('nav[aria-label="Views"] button')].some((b) => b.textContent === 'Work tomorrow4'))
 await shot(pageA, 'views-saved.png')
 
 step('Edit a saved query: / then add "& !@waiting", Enter')
@@ -137,10 +137,10 @@ await pageA.getByLabel('View name').fill('Waiting')
 await pageA.getByLabel('View name').press('Enter')
 await pageA.getByRole('heading', { name: 'Waiting' }).waitFor()
 await sidebarViews.getByLabel('Menu for view Waiting').click()
-await pageA.locator('[data-overlay]').getByRole('button', { name: 'Move up' }).click() // menus open in the overlay layer
+await pageA.locator('[data-overlay]').getByRole('menuitem', { name: 'Move up' }).click() // menus open in the overlay layer
 await pageA.waitForFunction(() => {
   const t = [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].map((b) => b.textContent)
-  return t[0] === '≡Waiting2' && t[1] === '≡Work tomorrow3'
+  return t[0] === 'Waiting2' && t[1] === 'Work tomorrow3'
 })
 await shot(pageA, 'views-sidebar-order.png')
 
@@ -153,7 +153,7 @@ await pageB.goto(base)
 const sidebarB = pageB.getByRole('navigation', { name: 'Views' })
 await pageB.waitForFunction(() => {
   const t = [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].map((b) => b.textContent)
-  return t[0] === '≡Waiting2' && t[1] === '≡Work tomorrow3'
+  return t[0] === 'Waiting2' && t[1] === 'Work tomorrow3'
 }, null, { timeout: 15000 })
 // The edited query arrived on B too.
 await sidebarB.getByText('Work tomorrow').click()
@@ -162,7 +162,7 @@ assert((await pageB.getByLabel('Group by').inputValue()) === 'due', 'B sees grou
 
 step('Unpin "Waiting": leaves the sidebar, still in the g v overview')
 await sidebarViews.getByLabel('Menu for view Waiting').click()
-await pageA.locator('[data-overlay]').getByRole('button', { name: 'Unpin from sidebar' }).click()
+await pageA.locator('[data-overlay]').getByRole('menuitemcheckbox', { name: 'Pin to sidebar' }).click()
 await sidebarViews.getByText('Waiting').waitFor({ state: 'detached' })
 await pageA.locator('body').click({ position: { x: 900, y: 700 } })
 await pageA.keyboard.press('g'); await pageA.keyboard.press('v')
@@ -241,7 +241,7 @@ assert(new URL(pageB.url()).pathname === '/', 'B stays on the Inbox: ' + pageB.u
 await pageB.getByLabel('Add a task').waitFor()
 step('B sets its own start view from a view menu')
 await pageB.getByRole('navigation', { name: 'Views' }).getByLabel('Menu for view Morning').click()
-await pageB.getByRole('button', { name: 'Set as start view on this device' }).click()
+await pageB.getByRole('menuitemcheckbox', { name: 'Start view on this device' }).click()
 await pageB.waitForTimeout(200) // the preference is written to IndexedDB asynchronously
 await pageB.goto(base)
 await pageB.waitForURL(`**/view/${dashId}`)
@@ -250,7 +250,7 @@ await pageA.waitForURL(`**/view/${workId}`)
 
 step('Deleted start view: B deletes "Work tomorrow"; A syncs, relaunches on the Inbox with a notice')
 await pageB.getByRole('navigation', { name: 'Views' }).getByLabel('Menu for view Work tomorrow').click()
-await pageB.getByRole('button', { name: 'Delete view' }).click()
+await pageB.getByRole('menuitem', { name: 'Delete view' }).click()
 await pageA.getByText('This view does not exist').waitFor({ timeout: 15000 })
 await pageA.goto(base)
 await pageA.getByRole('status').filter({ hasText: 'start view was deleted' }).waitFor()

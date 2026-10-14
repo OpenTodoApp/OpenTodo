@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useEffect, useRef, useState } from 'react'
 import { db, getMeta } from '../lib/db'
 import { hlcSeed } from '../lib/hlc'
@@ -78,7 +79,7 @@ export function ReminderToasts() {
           }}
         >
           <div className="flex items-start gap-2">
-            <span aria-hidden className="pt-0.5">⏰</span>
+            <span className="pt-0.5 text-muted"><Icon name="alarm-clock" /></span>
             <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)} title="Open task">
               <p className="line-clamp-2 user-text text-sm font-medium">{d.task.title || 'Untitled'}</p>
               <p className="text-xs text-muted">Reminder · {new Date(d.reminder.fire_at as number).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>

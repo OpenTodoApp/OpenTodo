@@ -1,3 +1,4 @@
+import { Icon } from '../../ui/Icon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { api, ApiError } from '../../lib/api'
@@ -48,7 +49,7 @@ export function AssistantSheet({ title, onClose, onEscape, children, footer, hea
         <div className="flex items-center gap-1 border-b border-slate-100 pl-4 pr-1 pt-[env(safe-area-inset-top)] dark:border-slate-800">
           <h2 id={titleId} className="min-w-0 flex-1 truncate py-2 text-base font-semibold">{title}</h2>
           {headerExtra}
-          <button type="button" className="btn-ghost touch-target my-1 px-2 text-lg leading-none" onClick={onClose} aria-label="Close" data-overlay-close>×</button>
+          <button type="button" className="btn-ghost touch-target my-1 px-2 text-lg leading-none" onClick={onClose} aria-label="Close" title="Close" data-overlay-close><Icon name="x" size="md" /></button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3" data-assistant-scroll>{children}</div>
         {footer && <div className="border-t border-slate-100 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 dark:border-slate-800">{footer}</div>}

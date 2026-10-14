@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { db } from '../lib/db'
@@ -71,7 +72,7 @@ export function RemindersField({ task }: { task: Task }) {
                 <ReminderEditor task={task} initial={r} onCancel={() => setEditing(null)} onSave={(input) => void run(() => updateReminder(r.id, input))} />
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span aria-hidden>⏰</span>
+                  <span className="text-muted"><Icon name="alarm-clock" /></span>
                   <span className="min-w-0 flex-1">
                     <span className="font-medium" data-testid="reminder-time">{r.fire_at !== null ? formatWhen(r.fire_at) : 'Not scheduled'}</span>
                     <span className="ml-1 text-xs text-muted">
@@ -85,7 +86,7 @@ export function RemindersField({ task }: { task: Task }) {
                     </>
                   )}
                   <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" aria-label="Edit reminder" onClick={() => setEditing(r.id)}>Edit</button>
-                  <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" aria-label="Delete reminder" onClick={() => void run(() => deleteReminder(r.id))}>✕</button>
+                  <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" aria-label="Delete reminder" title="Delete reminder" onClick={() => void run(() => deleteReminder(r.id))}><Icon name="x" /></button>
                 </div>
               )}
             </li>

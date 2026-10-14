@@ -12,7 +12,8 @@
     "docs:build": "node scripts/docs/build.mjs",
     "docs:check": "node scripts/docs/check.mjs",
     "storybook": "storybook dev -p 6006 --no-open",
-    "build-storybook": "storybook build -o storybook-static --quiet"
+    "build-storybook": "storybook build -o storybook-static --quiet",
+    "ui:check": "node ../scripts/ui-check.mjs"
   },
   "dependencies": {
     "dexie": "4.4.6",
@@ -41,6 +42,7 @@
     "@vitejs/plugin-react": "6.1.2",
     "axe-core": "4.13.0",
     "fake-indexeddb": "6.2.5",
+    "happy-dom": "20.14.5",
     "marked": "18.0.14",
     "storybook": "10.6.1",
     "tailwindcss": "4.3.3",

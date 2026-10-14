@@ -1,3 +1,4 @@
+import { Icon } from '../../ui/Icon'
 import { useEffect, useState } from 'react'
 import { undoChanges } from '../../lib/assistant'
 import { closeAssistant, useAssistantOpen } from '../../lib/assistantStatus'
@@ -29,7 +30,7 @@ export default function AssistantRoot({ context }: { context: () => { view?: str
                 Undo
               </button>
             )}
-            <button type="button" className="rounded-md px-2 py-1" aria-label="Dismiss" onClick={() => setToast(null)}>×</button>
+            <button type="button" className="rounded-md px-2 py-1" aria-label="Dismiss" title="Dismiss" onClick={() => setToast(null)}><Icon name="x" /></button>
           </div>
         )}
       </ToastRegion>

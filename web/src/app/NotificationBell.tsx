@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useRef, useState } from 'react'
 import { db } from '../lib/db'
@@ -35,7 +36,7 @@ export function NotificationBell() {
     <>
       <button ref={ref} className="btn-ghost touch-target relative text-sm" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open}
         aria-haspopup="dialog" onClick={() => setOpen((v) => !v)} data-notifications>
-        <span aria-hidden>🔔</span>
+        <Icon name="bell" />
         {unread > 0 && (
           <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] font-semibold leading-4 text-white" data-unread>{unread}</span>
         )}

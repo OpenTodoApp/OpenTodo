@@ -2,6 +2,7 @@
 // local tasks: a task with a due time is a block at that time, as long as its
 // estimate; date-only tasks sit in each day's unscheduled lane. Every placement,
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op).
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -333,9 +334,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-3 py-2 dark:border-slate-800 md:px-6">
           <h1 className="mr-2 text-lg font-semibold">{title}</h1>
           <div className="flex items-center gap-1">
-            <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} aria-label={mode === 'day' ? 'Previous day' : 'Previous week'} title="Previous ([)">‹</button>
+            <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} aria-label={mode === 'day' ? 'Previous day' : 'Previous week'} title="Previous ([)"><Icon name="chevron-left" /></button>
             <button className="btn-ghost px-2 py-1 text-xs" onClick={() => goTo(today)} title="Today (t)">Today</button>
-            <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))} aria-label={mode === 'day' ? 'Next day' : 'Next week'} title="Next (])">›</button>
+            <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))} aria-label={mode === 'day' ? 'Next day' : 'Next week'} title="Next (])"><Icon name="chevron-right" /></button>
           </div>
           <div className="flex rounded-md border border-slate-200 text-xs dark:border-slate-700" role="group" aria-label="Calendar range">
             <button className={`px-2 py-1 ${mode === 'day' ? 'bg-slate-100 font-medium dark:bg-slate-800' : ''}`} aria-pressed={mode === 'day'} onClick={() => navigate({ view: 'day', date: date })} title="Day (g d)">Day</button>

@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
@@ -164,7 +165,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       </aside>
       <main className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center gap-2 border-b border-slate-200 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] dark:border-slate-800 md:px-6">
-          <button className="btn-ghost touch-target md:hidden" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>☰</button>
+          <button className="btn-ghost touch-target md:hidden" aria-label="Open menu" onClick={() => setSidebarOpen(true)}><Icon name="menu" size="md" /></button>
           <div className="flex-1" />
           {showLauncher(assistant) && (
             <button type="button" className="btn-ghost touch-target text-sm" onClick={openAssistant} aria-haspopup="dialog" title="Assistant (Shift+I)" data-assistant-launcher>

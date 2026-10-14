@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
@@ -922,7 +923,7 @@ function DurationChips({ active, onChange }: { active: DurationFilter | null; on
       ))}
       {active && (
         <button type="button" className="btn-ghost px-2 py-0.5 text-xs" onClick={() => onChange(null)} data-clear-duration>
-          ✕ Clear filter
+          <Icon name="x" size="xs" />Clear filter
         </button>
       )}
     </div>

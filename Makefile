@@ -7,7 +7,7 @@ EXT_ZIP := dist/opentodo-browser-extension.zip
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png
 
-.PHONY: all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check coolify-check coolify-smoke storybook ui-check ui-baselines
+.PHONY: all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check coolify-check coolify-smoke storybook ui-check ui-baselines ui-lint
 
 all: build
 
@@ -151,7 +151,12 @@ coolify-check:
 coolify-smoke:
 	node scripts/coolify-template-check.mjs --smoke
 
-check: lint test docs-check openspec-validate coolify-check
+check: lint test ui-lint docs-check openspec-validate coolify-check
+
+## Design-system check (ui-primitives): stories for every shared component, no
+## emoji or glyph icons in web/src/app.
+ui-lint:
+	node scripts/ui-check.mjs
 
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t opentodo:$(VERSION) .

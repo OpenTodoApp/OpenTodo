@@ -8,8 +8,10 @@ import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
 import { useStartView, useViewData } from './useViews'
 import { Menu } from './overlay'
+import { Icon, type IconName } from '../ui/Icon'
+import { MenuGroup, MenuItem, MenuSeparator } from '../ui/Menu'
 
-export const viewIcon = (v: View) => (isDashboard(v) ? '▦' : '≡')
+export const viewIcon = (v: View): IconName => (isDashboard(v) ? 'kanban' : 'list')
 
 /** "Rename" opens a NamePrompt owned by the menu, so every caller gets the same flow. */
 export function ViewMenu({ view, align = 'end', className = '' }: { view: View; align?: 'start' | 'end'; className?: string }) {
@@ -22,25 +24,21 @@ export function ViewMenu({ view, align = 'end', className = '' }: { view: View; 
   }
   return (
     <>
-      <Menu label={`Menu for view ${view.name}`} title={view.name} trigger="⋯" align={align}
+      <Menu label={`Menu for view ${view.name}`} title={view.name} trigger={<Icon name="ellipsis" />} align={align} kind="menu" width="sm:w-64"
         triggerClassName={`touch-target rounded px-1.5 py-0.5 text-faint hover:bg-slate-300/60 dark:hover:bg-slate-700 ${className}`}>
-        {(close) => {
-          const act = (fn: () => unknown) => () => { close(); void fn() }
-          return (
-            <>
-              <button className="btn-ghost w-full justify-start" onClick={act(() => setRenaming(true))}>Rename</button>
-              <div className="flex">
-                <button className="btn-ghost flex-1 justify-start" onClick={act(() => reorderView(view.id, -1))}>Move up</button>
-                <button className="btn-ghost flex-1 justify-start" onClick={act(() => reorderView(view.id, 1))}>Move down</button>
-              </div>
-              <button className="btn-ghost w-full justify-start" onClick={act(() => setPinned(view.id, !view.pinned))}>{view.pinned ? 'Unpin from sidebar' : 'Pin to sidebar'}</button>
-              <button className="btn-ghost w-full justify-start" disabled={isStart} onClick={act(() => setStartView(`view:${view.id}`))}>
-                {isStart ? 'Start view on this device ✓' : 'Set as start view on this device'}
-              </button>
-              <button className="btn-danger w-full justify-start" onClick={act(remove)}>Delete view</button>
-            </>
-          )
-        }}
+        <MenuGroup>
+          <MenuItem label="Rename" icon="pencil" onSelect={() => setRenaming(true)} />
+          <MenuItem label="Move up" icon="arrow-up" onSelect={() => void reorderView(view.id, -1)} />
+          <MenuItem label="Move down" icon="arrow-down" onSelect={() => void reorderView(view.id, 1)} />
+        </MenuGroup>
+        <MenuSeparator />
+        <MenuGroup>
+          <MenuItem label="Pin to sidebar" checked={view.pinned} onSelect={() => void setPinned(view.id, !view.pinned)} />
+          <MenuItem label="Start view on this device" checked={isStart} disabled={isStart}
+            description={isStart ? 'This view opens when the app starts' : undefined} onSelect={() => void setStartView(`view:${view.id}`)} />
+        </MenuGroup>
+        <MenuSeparator />
+        <MenuItem label="Delete view" icon="trash-2" danger onSelect={() => void remove()} />
       </Menu>
       {renaming && (
         <NamePrompt title="Rename view" label="View name" initial={view.name} onCancel={() => setRenaming(false)}
@@ -62,7 +60,7 @@ export function ViewsView() {
     return (
       <li key={v.id} className="group flex items-center gap-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800/60">
         <button className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left text-sm" onClick={() => navigate({ view: 'view', id: v.id })}>
-          <span className="w-5 text-center text-faint" aria-hidden>{viewIcon(v)}</span>
+          <span className="flex w-5 justify-center text-faint"><Icon name={viewIcon(v)} /></span>
           <span className="truncate font-medium">{v.name}</span>
           <code className="hidden truncate text-xs text-faint sm:inline">{isDashboard(v) ? `${v.panels.length} panel${v.panels.length === 1 ? '' : 's'}` : v.query}</code>
           <span className="flex-1" />
