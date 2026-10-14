@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Someday and evening phrases
-The parser SHALL recognise `someday` and `tonight` / `this evening`, each with its bundled equivalent in every active language. `someday` SHALL park the task (start `someday`, no due date) and SHALL be left in the title when the line also has a date phrase. `tonight` and `this evening` SHALL make the task due today with the evening flag; a time in the line SHALL become the due time as usual. Each SHALL show its own chip, dismissable like any other. The Someday view SHALL be a capture context that parks the task unless the line sets a date.
+The parser SHALL recognise `someday` and `tonight` / `this evening`, each with its bundled equivalent in every active language. `someday` SHALL park the task (start `someday`, no due date) and SHALL stay in the title when the line also has a date phrase. `tonight` and `this evening` SHALL make the task due today with the evening flag; a time still sets the due time. Each SHALL show a dismissable chip. The Someday view SHALL park a captured task unless the line sets a date.
 
 #### Scenario: Park from quick add
 - **WHEN** the user enters `Learn to sail someday @hobby`

@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Imported start dates, Someday and evening
-An imported Someday state SHALL become `start` `someday`, a start date SHALL become the `start` date, and an evening mark SHALL set `evening`, each written as an operation like every imported field: the Things to-do `start` value 2 (Someday) and `startBucket` value 1 (This Evening), and the CSV columns `start` (`YYYY-MM-DD` or `someday`) and `evening` (`true`/`false`). A row that is both parked and dated SHALL keep the date and drop Someday with a warning. The own export SHALL round-trip both fields.
+An imported Someday state SHALL become `start` `someday`, a start date the `start` date, and an evening mark `evening`, written as operations like every imported field: Things `start` 2 (Someday) and `startBucket` 1 (This Evening), and the CSV columns `start` (`YYYY-MM-DD` or `someday`) and `evening` (`true`/`false`). A row that is both parked and dated SHALL keep the date and drop Someday with a warning. The own export SHALL round-trip both fields.
 
 #### Scenario: Things Someday to-do
 - **WHEN** a Things to-do has `start` 2 and no start date

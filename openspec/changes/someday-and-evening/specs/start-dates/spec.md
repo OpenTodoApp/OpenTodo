@@ -60,7 +60,7 @@ A task whose start is a date on or before the viewer's local date SHALL be activ
 - **THEN** it is listed in Today and under 24 October in Upcoming
 
 ### Requirement: Someday
-A task whose start is `someday` SHALL be parked: absent from Today, Upcoming, Anytime and the sidebar counts, listed in the Someday view and in its project's or the Inbox's Later group with a "Someday" chip. Parking a task from the app SHALL clear its due date in the same batch of operations; giving a parked task a due date or a start date from the app SHALL un-park it in the same batch. A parked task with a due date written by another client SHALL stay parked, except that a due date or deadline today or earlier puts it in Today.
+A task whose start is `someday` SHALL be parked: absent from Today, Upcoming, Anytime and the sidebar counts, listed in the Someday view and in its project's or the Inbox's Later group with a "Someday" chip. Parking from the app SHALL clear the due date in the same batch; giving a parked task a due or start date from the app SHALL un-park it in the same batch. A parked task dated by another client SHALL stay parked, except that a due date or deadline today or earlier puts it in Today.
 
 #### Scenario: Park a scheduled task
 - **WHEN** the user parks a task due 2026-10-16 with `every week` in Someday
@@ -116,7 +116,7 @@ In Today, tasks of today's group with `evening` set SHALL be listed under a **Th
 - **THEN** the task moves between the groups at once and the change uploads on the next sync
 
 ### Requirement: Setting when from the panel and the keyboard
-The detail panel SHALL show a **When** row next to Due offering Anytime (no start), a start date through the same date field and calendar as the due date, and Someday, plus an Evening switch; viewers of a shared project SHALL see them as text. In a list, `n` SHALL park or un-park the selected task, `Shift+N` SHALL open the inline date field for the start date, and `Shift+E` SHALL toggle This Evening. The date field SHALL refuse a start date after the task's due date with a message and leave the task unchanged.
+The detail panel SHALL show a **When** row next to Due offering Anytime (no start), a start date through the same date field and calendar as the due date, and Someday, plus an Evening switch; viewers SHALL see them as text. In a list, `n` SHALL park or un-park the selected task, `Shift+N` SHALL open the inline start date field and `Shift+E` SHALL toggle This Evening. The date field SHALL refuse a start after the due date with a message and leave the task unchanged.
 
 #### Scenario: Defer from the list
 - **WHEN** a task is selected, focus is not in a text field, and the user presses `Shift+N`, types `21/10` (with a day-month date format) and Enter

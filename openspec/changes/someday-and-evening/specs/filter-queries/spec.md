@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Start, Someday and evening terms
-`someday` SHALL match parked tasks, `deferred` tasks whose start date is after the viewer's local date, and `evening` tasks with the evening flag. `start` SHALL accept the comparisons and date expressions of `due`, compared on the viewer's local calendar date; a task without a start date (null or Someday) SHALL never match a `start` comparison. `no start` SHALL match tasks with a null start. Queries SHALL keep matching parked and deferred tasks unless a term excludes them, and SHALL be evaluated on the device from local data.
+`someday` SHALL match parked tasks, `deferred` tasks whose start date is after the viewer's local date, and `evening` tasks with the evening flag. `start` SHALL accept the comparisons and date expressions of `due` on the viewer's local calendar date; a task without a start date SHALL never match it. `no start` SHALL match a null start. Queries SHALL keep matching parked and deferred tasks unless a term excludes them, evaluated on the device from local data.
 
 #### Scenario: Waiting-for list without parked tasks
 - **WHEN** the user enters `@waiting & !someday`
