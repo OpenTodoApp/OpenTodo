@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **Settings: grouped into fourteen sections with a clearer layout.** Settings opens on your profile card and the sections grouped under **You**, **App**, **Data and connections** and, for the owner and admins, **Server**. Security, Encryption, Activity, Preferences, Projects, Backups and Access policies now have their own pages. Every panel is a card that leads with its state (for example whether two-factor authentication is on and how many recovery codes are left), with settings as rows, forms that open from a button, and confirmations that say what will be lost. Old links such as `/settings/general` still work. ([Settings](docs/settings.md))
+
 ### Added
 
 - **Icons, menus and a smart picker.** Every emoji and symbol that stood in for an icon is now a line icon from one consistent set (Lucide, bundled, no new download). Menus have icons, groups and shortcut hints and work fully with the keyboard (arrow keys, Home and End, typing a letter). The label and assignee pickers show the labels and people you use most on this device first, and find them by the start of any word or by letters in order, ignoring case and accents (“cafe” finds “Café”). Your pick history stays on the device and is cleared when you sign out. ([Design system](docs/design-system.md#building-blocks))
