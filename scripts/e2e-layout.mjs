@@ -384,10 +384,20 @@ function pageOverflow() {
     const cs = getComputedStyle(el)
     if (!/(auto|scroll)/.test(cs.overflowX)) continue
     if (el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0) {
-      out.push(`${describe(el)} scrolls sideways (${el.scrollWidth}px in ${el.clientWidth}px)`)
+      out.push(`${describe(el)} scrolls sideways (${el.scrollWidth}px in ${el.clientWidth}px)${culprits(el)}`)
     }
   }
   return out
+  // The descendants that stick out of a sideways-scrolling box (deepest first), so
+  // a failure names the element to fix instead of only its scroll container.
+  function culprits(box) {
+    const right = box.getBoundingClientRect().right
+    const wide = [...box.querySelectorAll('*')]
+      .filter((c) => c.getBoundingClientRect().width > 0 && (c.getBoundingClientRect().right > right + 1 || c.scrollWidth > c.clientWidth + 1))
+      .filter((c, _, all) => !all.some((o) => o !== c && c.contains(o)))
+      .slice(0, 3)
+    return wide.length ? `; widest: ${wide.map((c) => `${describe(c)} (${Math.round(c.getBoundingClientRect().width)}px, scroll ${c.scrollWidth}px)`).join(', ')}` : ''
+  }
   function describe(el) {
     const label = el.getAttribute('aria-label') || el.getAttribute('role') || ''
     return `<${el.tagName.toLowerCase()}${label ? ` "${label}"` : ''}${el.className && typeof el.className === 'string' ? ` .${el.className.split(' ').slice(0, 3).join('.')}` : ''}>`
