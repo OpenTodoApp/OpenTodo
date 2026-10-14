@@ -1,0 +1,18 @@
+﻿Date: 2026-10-14+0000
+Version: 7.2
+"Status: 
+0 Normal
+-1 Abandoned 
+2 Completed"
+Folder Name,List Name,Title,Kind,Tags,Content,Is Check list,Start Date,Due Date,Reminder,Repeat,Priority,Status,Created Time,Completed Time,Order,Timezone,Is All Day,Is Floating,Column Name,Column Order,View Mode,taskId,parentId,projectKind
+,List 1,Task 1,TEXT,,Item 1,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,,false,Column 1,0,list,t000001,,TASK
+,List 1,Task 2,TEXT,,Item 2,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,,false,Column 1,0,list,t000002,,TASK
+,List 1,Task 3,TEXT,,Item 3,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,,false,Column 1,0,list,t000003,,TASK
+,List 1,Task 4,TEXT,,Item 4,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,,false,Column 2,-2199023255552,list,t000004,,TASK
+,List 1,Task 5,TEXT,,Item 5,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,,false,Column 2,-2199023255552,list,t000005,,TASK
+,List 1,Task 6,TEXT,,Item 6,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,,false,Column 3,-1099511627776,list,t000006,,TASK
+,List 1,Task 7,TEXT,,Item 7,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,,false,Column 3,-1099511627776,list,t000007,,TASK
+,List 1,Task 8,TEXT,,Item 8,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,,false,Column 3,-1099511627776,list,t000008,,TASK
+,List 1,Task 9,TEXT,,Item 9,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,true,false,Column 1,0,list,t000009,,TASK
+,List 1,Task 10,TEXT,,Item 10,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,,false,Column 3,-1099511627776,list,t000010,,TASK
+,List 1,Task 11,TEXT,,Item 11,N,,,,,0,0,2026-10-14T15:18:27+0000,,-1099511627776,Asia/Shanghai,true,false,Column 1,0,list,t000011,,TASK

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -138,6 +140,18 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
 		emailLimiter: newRateLimiter(30, time.Hour),
 		importer:     importer.New(syncSvc.DB(), syncSvc, log)}
+	// Imports: unpacked archives are bounded by the upload limit, and an uploaded
+	// database is read from a private copy under the data directory (OpenSpec
+	// change named-importers).
+	importTmp := ""
+	if cfg.DataDir != "" {
+		importTmp = filepath.Join(cfg.DataDir, "tmp")
+		if err := os.MkdirAll(importTmp, 0o700); err != nil {
+			log.Warn("import: temporary directory", "err", err)
+			importTmp = ""
+		}
+	}
+	s.importer.SetLimits(cfg.ImportMaxBytes(), importTmp)
 	for _, o := range opts {
 		o(s)
 	}

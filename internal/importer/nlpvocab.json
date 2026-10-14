@@ -1,0 +1,974 @@
+{
+  "en": {
+    "dayMonthOrder": "MD",
+    "dayWords": {
+      "today": 0,
+      "tonight": 0,
+      "tomorrow": 1,
+      "tmrw": 1,
+      "day after tomorrow": 2
+    },
+    "weekdays": [
+      [
+        "monday",
+        "mon"
+      ],
+      [
+        "tuesday",
+        "tue",
+        "tues"
+      ],
+      [
+        "wednesday",
+        "wed"
+      ],
+      [
+        "thursday",
+        "thu",
+        "thur",
+        "thurs"
+      ],
+      [
+        "friday",
+        "fri"
+      ],
+      [
+        "saturday",
+        "sat"
+      ],
+      [
+        "sunday",
+        "sun"
+      ]
+    ],
+    "months": [
+      {
+        "names": [
+          "january"
+        ],
+        "abbr": [
+          "jan"
+        ]
+      },
+      {
+        "names": [
+          "february"
+        ],
+        "abbr": [
+          "feb"
+        ]
+      },
+      {
+        "names": [
+          "march"
+        ],
+        "abbr": [
+          "mar"
+        ]
+      },
+      {
+        "names": [
+          "april"
+        ],
+        "abbr": [
+          "apr"
+        ]
+      },
+      {
+        "names": [
+          "may"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "june"
+        ],
+        "abbr": [
+          "jun"
+        ]
+      },
+      {
+        "names": [
+          "july"
+        ],
+        "abbr": [
+          "jul"
+        ]
+      },
+      {
+        "names": [
+          "august"
+        ],
+        "abbr": [
+          "aug"
+        ]
+      },
+      {
+        "names": [
+          "september"
+        ],
+        "abbr": [
+          "sep",
+          "sept"
+        ]
+      },
+      {
+        "names": [
+          "october"
+        ],
+        "abbr": [
+          "oct"
+        ]
+      },
+      {
+        "names": [
+          "november"
+        ],
+        "abbr": [
+          "nov"
+        ]
+      },
+      {
+        "names": [
+          "december"
+        ],
+        "abbr": [
+          "dec"
+        ]
+      }
+    ],
+    "units": {
+      "day": [
+        "day",
+        "days"
+      ],
+      "week": [
+        "week",
+        "weeks",
+        "wk",
+        "wks"
+      ],
+      "month": [
+        "month",
+        "months"
+      ]
+    },
+    "ofWords": [
+      "of"
+    ],
+    "atWords": [
+      "at"
+    ],
+    "hourWords": [
+      "o'clock"
+    ],
+    "am": [
+      "am",
+      "a.m."
+    ],
+    "pm": [
+      "pm",
+      "p.m."
+    ]
+  },
+  "de": {
+    "dayMonthOrder": "DM",
+    "dayWords": {
+      "heute": 0,
+      "heute abend": 0,
+      "morgen": 1,
+      "ubermorgen": 2
+    },
+    "weekdays": [
+      [
+        "montag",
+        "mo."
+      ],
+      [
+        "dienstag",
+        "di."
+      ],
+      [
+        "mittwoch",
+        "mi."
+      ],
+      [
+        "donnerstag",
+        "do."
+      ],
+      [
+        "freitag",
+        "fr."
+      ],
+      [
+        "samstag",
+        "sonnabend",
+        "sa."
+      ],
+      [
+        "sonntag",
+        "so."
+      ]
+    ],
+    "months": [
+      {
+        "names": [
+          "januar",
+          "janner"
+        ],
+        "abbr": [
+          "jan"
+        ]
+      },
+      {
+        "names": [
+          "februar"
+        ],
+        "abbr": [
+          "feb"
+        ]
+      },
+      {
+        "names": [
+          "marz"
+        ],
+        "abbr": [
+          "mar",
+          "mrz"
+        ]
+      },
+      {
+        "names": [
+          "april"
+        ],
+        "abbr": [
+          "apr"
+        ]
+      },
+      {
+        "names": [
+          "mai"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "juni"
+        ],
+        "abbr": [
+          "jun"
+        ]
+      },
+      {
+        "names": [
+          "juli"
+        ],
+        "abbr": [
+          "jul"
+        ]
+      },
+      {
+        "names": [
+          "august"
+        ],
+        "abbr": [
+          "aug"
+        ]
+      },
+      {
+        "names": [
+          "september"
+        ],
+        "abbr": [
+          "sep",
+          "sept"
+        ]
+      },
+      {
+        "names": [
+          "oktober"
+        ],
+        "abbr": [
+          "okt"
+        ]
+      },
+      {
+        "names": [
+          "november"
+        ],
+        "abbr": [
+          "nov"
+        ]
+      },
+      {
+        "names": [
+          "dezember"
+        ],
+        "abbr": [
+          "dez"
+        ]
+      }
+    ],
+    "units": {
+      "day": [
+        "tag",
+        "tage",
+        "tagen"
+      ],
+      "week": [
+        "woche",
+        "wochen"
+      ],
+      "month": [
+        "monat",
+        "monate",
+        "monaten"
+      ]
+    },
+    "ofWords": [],
+    "atWords": [
+      "um"
+    ],
+    "hourWords": [
+      "uhr"
+    ],
+    "am": [],
+    "pm": []
+  },
+  "fr": {
+    "dayMonthOrder": "DM",
+    "dayWords": {
+      "aujourd'hui": 0,
+      "ce soir": 0,
+      "demain": 1,
+      "apres-demain": 2,
+      "apres demain": 2
+    },
+    "weekdays": [
+      [
+        "lundi",
+        "lun"
+      ],
+      [
+        "mardi",
+        "mar"
+      ],
+      [
+        "mercredi",
+        "mer"
+      ],
+      [
+        "jeudi",
+        "jeu"
+      ],
+      [
+        "vendredi",
+        "ven"
+      ],
+      [
+        "samedi",
+        "sam"
+      ],
+      [
+        "dimanche",
+        "dim"
+      ]
+    ],
+    "months": [
+      {
+        "names": [
+          "janvier"
+        ],
+        "abbr": [
+          "janv"
+        ]
+      },
+      {
+        "names": [
+          "fevrier"
+        ],
+        "abbr": [
+          "fevr",
+          "fev"
+        ]
+      },
+      {
+        "names": [
+          "mars"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "avril"
+        ],
+        "abbr": [
+          "avr"
+        ]
+      },
+      {
+        "names": [
+          "mai"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "juin"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "juillet"
+        ],
+        "abbr": [
+          "juil"
+        ]
+      },
+      {
+        "names": [
+          "aout"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "septembre"
+        ],
+        "abbr": [
+          "sept"
+        ]
+      },
+      {
+        "names": [
+          "octobre"
+        ],
+        "abbr": [
+          "oct"
+        ]
+      },
+      {
+        "names": [
+          "novembre"
+        ],
+        "abbr": [
+          "nov"
+        ]
+      },
+      {
+        "names": [
+          "decembre"
+        ],
+        "abbr": [
+          "dec"
+        ]
+      }
+    ],
+    "units": {
+      "day": [
+        "jour",
+        "jours"
+      ],
+      "week": [
+        "semaine",
+        "semaines"
+      ],
+      "month": [
+        "mois"
+      ]
+    },
+    "ofWords": [],
+    "atWords": [
+      "a",
+      "a"
+    ],
+    "hourWords": [
+      "heures",
+      "heure"
+    ],
+    "am": [],
+    "pm": []
+  },
+  "it": {
+    "dayMonthOrder": "DM",
+    "dayWords": {
+      "oggi": 0,
+      "stasera": 0,
+      "domani": 1,
+      "dopodomani": 2
+    },
+    "weekdays": [
+      [
+        "lunedi",
+        "lun"
+      ],
+      [
+        "martedi",
+        "mar"
+      ],
+      [
+        "mercoledi",
+        "mer"
+      ],
+      [
+        "giovedi",
+        "gio"
+      ],
+      [
+        "venerdi",
+        "ven"
+      ],
+      [
+        "sabato",
+        "sab"
+      ],
+      [
+        "domenica",
+        "dom"
+      ]
+    ],
+    "months": [
+      {
+        "names": [
+          "gennaio"
+        ],
+        "abbr": [
+          "gen"
+        ]
+      },
+      {
+        "names": [
+          "febbraio"
+        ],
+        "abbr": [
+          "feb"
+        ]
+      },
+      {
+        "names": [
+          "marzo"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "aprile"
+        ],
+        "abbr": [
+          "apr"
+        ]
+      },
+      {
+        "names": [
+          "maggio"
+        ],
+        "abbr": [
+          "mag"
+        ]
+      },
+      {
+        "names": [
+          "giugno"
+        ],
+        "abbr": [
+          "giu"
+        ]
+      },
+      {
+        "names": [
+          "luglio"
+        ],
+        "abbr": [
+          "lug"
+        ]
+      },
+      {
+        "names": [
+          "agosto"
+        ],
+        "abbr": [
+          "ago"
+        ]
+      },
+      {
+        "names": [
+          "settembre"
+        ],
+        "abbr": [
+          "set",
+          "sett"
+        ]
+      },
+      {
+        "names": [
+          "ottobre"
+        ],
+        "abbr": [
+          "ott"
+        ]
+      },
+      {
+        "names": [
+          "novembre"
+        ],
+        "abbr": [
+          "nov"
+        ]
+      },
+      {
+        "names": [
+          "dicembre"
+        ],
+        "abbr": [
+          "dic"
+        ]
+      }
+    ],
+    "units": {
+      "day": [
+        "giorno",
+        "giorni"
+      ],
+      "week": [
+        "settimana",
+        "settimane"
+      ],
+      "month": [
+        "mese",
+        "mesi"
+      ]
+    },
+    "ofWords": [],
+    "atWords": [
+      "alle",
+      "all",
+      "all'"
+    ],
+    "hourWords": [],
+    "am": [],
+    "pm": []
+  },
+  "es": {
+    "dayMonthOrder": "DM",
+    "dayWords": {
+      "hoy": 0,
+      "esta noche": 0,
+      "manana": 1,
+      "pasado manana": 2
+    },
+    "weekdays": [
+      [
+        "lunes",
+        "lun"
+      ],
+      [
+        "martes",
+        "mar"
+      ],
+      [
+        "miercoles",
+        "mie",
+        "mie"
+      ],
+      [
+        "jueves",
+        "jue"
+      ],
+      [
+        "viernes",
+        "vie"
+      ],
+      [
+        "sabado",
+        "sab"
+      ],
+      [
+        "domingo",
+        "dom"
+      ]
+    ],
+    "months": [
+      {
+        "names": [
+          "enero"
+        ],
+        "abbr": [
+          "ene"
+        ]
+      },
+      {
+        "names": [
+          "febrero"
+        ],
+        "abbr": [
+          "feb"
+        ]
+      },
+      {
+        "names": [
+          "marzo"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "abril"
+        ],
+        "abbr": [
+          "abr"
+        ]
+      },
+      {
+        "names": [
+          "mayo"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "junio"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "julio"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "agosto"
+        ],
+        "abbr": [
+          "ago"
+        ]
+      },
+      {
+        "names": [
+          "septiembre",
+          "setiembre"
+        ],
+        "abbr": [
+          "sep",
+          "sept",
+          "set"
+        ]
+      },
+      {
+        "names": [
+          "octubre"
+        ],
+        "abbr": [
+          "oct"
+        ]
+      },
+      {
+        "names": [
+          "noviembre"
+        ],
+        "abbr": [
+          "nov"
+        ]
+      },
+      {
+        "names": [
+          "diciembre"
+        ],
+        "abbr": [
+          "dic"
+        ]
+      }
+    ],
+    "units": {
+      "day": [
+        "dia",
+        "dias"
+      ],
+      "week": [
+        "semana",
+        "semanas"
+      ],
+      "month": [
+        "mes",
+        "meses"
+      ]
+    },
+    "ofWords": [
+      "de"
+    ],
+    "atWords": [
+      "a las",
+      "a la"
+    ],
+    "hourWords": [
+      "horas",
+      "hs"
+    ],
+    "am": [],
+    "pm": []
+  },
+  "pt": {
+    "dayMonthOrder": "DM",
+    "dayWords": {
+      "hoje": 0,
+      "hoje a noite": 0,
+      "amanha": 1,
+      "depois de amanha": 2
+    },
+    "weekdays": [
+      [
+        "segunda-feira",
+        "segunda",
+        "seg"
+      ],
+      [
+        "terca-feira",
+        "terca",
+        "ter"
+      ],
+      [
+        "quarta-feira",
+        "quarta",
+        "qua"
+      ],
+      [
+        "quinta-feira",
+        "quinta",
+        "qui"
+      ],
+      [
+        "sexta-feira",
+        "sexta",
+        "sex"
+      ],
+      [
+        "sabado",
+        "sab"
+      ],
+      [
+        "domingo",
+        "dom"
+      ]
+    ],
+    "months": [
+      {
+        "names": [
+          "janeiro"
+        ],
+        "abbr": [
+          "jan"
+        ]
+      },
+      {
+        "names": [
+          "fevereiro"
+        ],
+        "abbr": [
+          "fev"
+        ]
+      },
+      {
+        "names": [
+          "marco"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "abril"
+        ],
+        "abbr": [
+          "abr"
+        ]
+      },
+      {
+        "names": [
+          "maio"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "junho"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "julho"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "agosto"
+        ],
+        "abbr": [
+          "ago"
+        ]
+      },
+      {
+        "names": [
+          "setembro"
+        ],
+        "abbr": [
+          "set"
+        ]
+      },
+      {
+        "names": [
+          "outubro"
+        ],
+        "abbr": [
+          "out"
+        ]
+      },
+      {
+        "names": [
+          "novembro"
+        ],
+        "abbr": [
+          "nov"
+        ]
+      },
+      {
+        "names": [
+          "dezembro"
+        ],
+        "abbr": [
+          "dez"
+        ]
+      }
+    ],
+    "units": {
+      "day": [
+        "dia",
+        "dias"
+      ],
+      "week": [
+        "semana",
+        "semanas"
+      ],
+      "month": [
+        "mes",
+        "meses"
+      ]
+    },
+    "ofWords": [
+      "de"
+    ],
+    "atWords": [
+      "as",
+      "as",
+      "a"
+    ],
+    "hourWords": [
+      "horas"
+    ],
+    "am": [],
+    "pm": []
+  }
+}

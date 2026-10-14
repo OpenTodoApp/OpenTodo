@@ -35,16 +35,18 @@ func (e *ConflictError) Error() string {
 
 // Job is an import's status and summary.
 type Job struct {
-	ID         string     `json:"id"`
-	Format     string     `json:"format"`
-	Status     string     `json:"status"`
-	Options    Options    `json:"options"`
-	Totals     Totals     `json:"totals"`
-	Errors     []RowError `json:"errors"`
-	Message    string     `json:"message,omitempty"`
-	CreatedAt  int64      `json:"createdAt"`
-	FinishedAt *int64     `json:"finishedAt"`
-	UndoneAt   *int64     `json:"undoneAt"`
+	ID      string     `json:"id"`
+	Format  string     `json:"format"`
+	Status  string     `json:"status"`
+	Options Options    `json:"options"`
+	Totals  Totals     `json:"totals"`
+	Errors  []RowError `json:"errors"`
+	// ViewHints come from the plan and are only present on the response to Start.
+	ViewHints  []PlanViewHint `json:"viewHints,omitempty"`
+	Message    string         `json:"message,omitempty"`
+	CreatedAt  int64          `json:"createdAt"`
+	FinishedAt *int64         `json:"finishedAt"`
+	UndoneAt   *int64         `json:"undoneAt"`
 }
 
 type jobErrors struct {
@@ -71,6 +73,18 @@ type Service struct {
 	wg sync.WaitGroup
 	// beforeBatch, when set by tests, runs before each batch of a job is written.
 	beforeBatch func(jobID string)
+
+	// maxBytes is the upload limit (it bounds unpacked archives) and tempDir the
+	// directory an uploaded database is copied to (named-importers D2, D4).
+	maxBytes int64
+	tempDir  string
+}
+
+// SetLimits tells the Service the configured upload limit and a private
+// directory for temporary copies (under the data directory); empty uses the
+// system temporary directory.
+func (s *Service) SetLimits(maxBytes int64, tempDir string) {
+	s.maxBytes, s.tempDir = maxBytes, tempDir
 }
 
 // New returns a Service. Jobs left "running" by a previous process are marked
@@ -164,6 +178,10 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 			return nil, &OptionError{"targetProject: your role on this shared project does not allow adding tasks"}
 		}
 	}
+	opts.maxBytes, opts.tempDir, opts.exportedAt = s.maxBytes, s.tempDir, s.now()
+	if err := s.db.QueryRowContext(ctx, "SELECT email FROM users WHERE id = ?", uid).Scan(&opts.importerEmail); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
 	parsed, err := Parse(data, opts)
 	if err != nil {
 		return nil, err
@@ -219,7 +237,7 @@ func (s *Service) Start(ctx context.Context, uid string, data []byte, opts Optio
 		return nil, err
 	}
 	job := &Job{ID: jobID, Format: plan.Format, Status: StatusRunning, Options: plan.Options, Totals: plan.Totals,
-		Errors: capErrors(plan.errors), CreatedAt: s.now().UnixMilli()}
+		Errors: capErrors(plan.errors), ViewHints: plan.ViewHints, CreatedAt: s.now().UnixMilli()}
 	if err := s.insertJob(ctx, uid, job); err != nil {
 		s.release(uid)
 		return nil, err

@@ -1,0 +1,167 @@
+{
+  "format": "linear-csv",
+  "notes": [],
+  "totals": {
+    "rows": 14,
+    "create": 14,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 0,
+    "newProjects": 1,
+    "newLabels": 8,
+    "newSections": 3,
+    "recurring": 0,
+    "reminders": 0,
+    "entities": 25,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": [
+    {
+      "projectId": "id-0001",
+      "view": "board"
+    }
+  ],
+  "rows": [
+    {
+      "row": 2,
+      "sourceId": "linear:project:00000000-0000-4000-8000-000000000002",
+      "kind": "project",
+      "title": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "linear:ENG-5",
+      "kind": "task",
+      "title": "Issue 1",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "linear:ENG-6",
+      "kind": "task",
+      "title": "Issue 2",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "linear:ENG-7",
+      "kind": "task",
+      "title": "Issue 3",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "linear:ENG-8",
+      "kind": "task",
+      "title": "Issue 4",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "linear:ENG-9",
+      "kind": "task",
+      "title": "Issue 5",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "sourceId": "linear:ENG-10",
+      "kind": "task",
+      "title": "Issue 6",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "sourceId": "linear:ENG-11",
+      "kind": "task",
+      "title": "Issue 7",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "linear:ENG-12",
+      "kind": "task",
+      "title": "Issue 8",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "linear:ENG-13",
+      "kind": "task",
+      "title": "Issue 9",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "sourceId": "linear:ENG-14",
+      "kind": "task",
+      "title": "Issue 10",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "sourceId": "linear:ENG-15",
+      "kind": "task",
+      "title": "Issue 11",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 13,
+      "sourceId": "linear:ENG-16",
+      "kind": "task",
+      "title": "Issue 12",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 14,
+      "sourceId": "linear:ENG-17",
+      "kind": "task",
+      "title": "Issue 13",
+      "project": "Project 1",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0003: name=\"label1\" created_at=1791979200000",
+    "label id-0006: name=\"label2\" created_at=1791979200000",
+    "label id-0008: name=\"label3\" created_at=1791979200000",
+    "label id-0011: name=\"label4\" created_at=1791979200000",
+    "label id-0014: name=\"label5\" created_at=1791979200000",
+    "label id-0016: name=\"label6\" created_at=1791979200000",
+    "label id-0017: name=\"label7\" created_at=1791979200000",
+    "label id-0024: name=\"label8\" created_at=1791979200000",
+    "project id-0001: name=\"Project 1\" archived=false created_at=1791979200000",
+    "section id-0004: name=\"Backlog\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0009: name=\"Done\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0018: name=\"In Progress\" project_id=\"id-0001\" created_at=1791979200000",
+    "task id-0002: title=\"Issue 1\" description=\"ENG-5\\n\\nNotes 1\" priority=4 created_at=1767040204405 project_id=\"id-0001\" labels=[\"id-0003\"] section_id=\"id-0004\"",
+    "task id-0005: title=\"Issue 2\" description=\"ENG-6\\n\\nNotes 2\" priority=4 created_at=1767042657888 project_id=\"id-0001\" labels=[\"id-0006\"] section_id=\"id-0004\"",
+    "task id-0007: title=\"Issue 3\" description=\"ENG-7\\n\\nNotes 3\" priority=2 created_at=1767042680976 project_id=\"id-0001\" assignee_id=\"user-1\" completed_at=1767043523984 labels=[\"id-0006\",\"id-0008\"] section_id=\"id-0009\"",
+    "task id-0010: title=\"Issue 4\" description=\"ENG-8\" priority=4 created_at=1767042715696 project_id=\"id-0001\" labels=[\"id-0011\"] section_id=\"id-0004\"",
+    "task id-0012: title=\"Issue 5\" description=\"ENG-9\\n\\nNotes 4\" priority=4 created_at=1767042731301 project_id=\"id-0001\" labels=[\"id-0011\"] section_id=\"id-0004\"",
+    "task id-0013: title=\"Issue 6\" description=\"ENG-10\\n\\nNotes 5\" priority=4 created_at=1767042743306 project_id=\"id-0001\" labels=[\"id-0011\",\"id-0014\"] section_id=\"id-0004\"",
+    "task id-0015: title=\"Issue 7\" description=\"ENG-11\\n\\nNotes 6\" priority=4 created_at=1767042813338 project_id=\"id-0001\" assignee_id=\"user-1\" labels=[\"id-0016\",\"id-0017\"] section_id=\"id-0018\"",
+    "task id-0019: title=\"Issue 8\" description=\"ENG-12\\n\\nNotes 7\" priority=4 created_at=1767042825528 project_id=\"id-0001\" assignee_id=\"user-1\" labels=[\"id-0017\",\"id-0016\"] section_id=\"id-0018\"",
+    "task id-0020: title=\"Issue 9\" description=\"ENG-13\\n\\nNotes 8\" priority=4 created_at=1767042843776 project_id=\"id-0001\" labels=[\"id-0017\",\"id-0016\"] section_id=\"id-0004\"",
+    "task id-0021: title=\"Issue 10\" description=\"ENG-14\\n\\nNotes 9\" priority=4 created_at=1767042854195 project_id=\"id-0001\" labels=[\"id-0017\",\"id-0016\"] section_id=\"id-0004\"",
+    "task id-0022: title=\"Issue 11\" description=\"ENG-15\\n\\nNotes 10\" priority=4 created_at=1767042872569 project_id=\"id-0001\" labels=[\"id-0017\",\"id-0016\"] section_id=\"id-0004\"",
+    "task id-0023: title=\"Issue 12\" description=\"ENG-16\\n\\nNotes 11\" priority=4 created_at=1767042906891 project_id=\"id-0001\" labels=[\"id-0024\"] section_id=\"id-0004\"",
+    "task id-0025: title=\"Issue 13\" description=\"ENG-17\\n\\nNotes 12\" priority=4 created_at=1767042932816 project_id=\"id-0001\" labels=[\"id-0024\"] section_id=\"id-0004\""
+  ]
+}

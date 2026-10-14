@@ -735,8 +735,12 @@ export interface AuditSettings {
 
 // ---- Import (server-side jobs, never synced; see docs/import.md) ----
 
-export type ImportFormat = 'opentodo' | 'json-items' | 'json-lists' | 'json-generic' | 'csv'
-export const IMPORT_FORMATS: readonly ImportFormat[] = ['opentodo', 'json-items', 'json-lists', 'json-generic', 'csv']
+export type ImportFormat =
+  | 'opentodo' | 'things-db' | 'json-items' | 'json-lists' | 'json-generic'
+  | 'todoist-csv' | 'todoist-backup' | 'ticktick-csv' | 'linear-csv' | 'csv'
+export const IMPORT_FORMATS: readonly ImportFormat[] = [
+  'opentodo', 'todoist-backup', 'todoist-csv', 'things-db', 'ticktick-csv', 'linear-csv', 'json-items', 'json-lists', 'json-generic', 'csv',
+]
 
 export interface ImportOptions {
   format?: ImportFormat
@@ -774,6 +778,8 @@ export type ImportOutcome = 'create' | 'update' | 'skip' | 'error'
 
 export interface ImportRow {
   row?: number
+  /** Archive entry the row came from (ZIP uploads such as a Todoist backup). */
+  file?: string
   sourceId?: string
   kind: 'project' | 'task' | 'label' | 'section' | 'reminder' | 'view'
   title: string
@@ -804,6 +810,8 @@ export interface ImportJob {
   options: ImportOptions
   totals: ImportTotals
   errors: { row?: number; sourceId?: string; reason: string }[]
+  /** Projects this import creates that were boards in the source app (named-importers D8); only on the start response. */
+  viewHints?: { projectId: string; view: 'board' }[]
   message?: string
   createdAt: number
   finishedAt: number | null
