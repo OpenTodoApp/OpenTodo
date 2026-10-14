@@ -159,6 +159,7 @@ function screens(ids) {
     { name: 'week', path: '/week', ready: (p) => p.locator('main').first().waitFor() },
     { name: 'completed', path: '/completed', ready: row('Submit expense report') },
     { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
+    { name: 'ask', path: '/ask', ready: heading('Ask OpenTodo') },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'activity', path: '/activity', ready: heading(/Activity/) },
     { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history'] },

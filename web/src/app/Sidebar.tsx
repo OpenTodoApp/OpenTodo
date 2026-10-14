@@ -2,6 +2,7 @@ import { Icon, type IconName } from '../ui/Icon'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { useAssistantStatus } from '../lib/assistantStatus'
 import { db, getMeta } from '../lib/db'
 import { localDueOf, todayISO } from '../lib/dates'
 import { createProject } from '../lib/ops'
@@ -28,6 +29,7 @@ const IDLE = 'text-muted hover:bg-sunken dark:hover:bg-raised'
 const INDENT_REM = 0.75
 
 export function Sidebar({ route, user }: { route: Route; user: User }) {
+  const assistant = useAssistantStatus()
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at && !p.archived).toArray(), [], [])
   // Shared projects carry a badge (project-sharing); read from the cached memberships.
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [])
@@ -207,6 +209,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         {item({ view: 'week' }, 'Week', 'calendar-range')}
         {item({ view: 'completed' }, 'Completed', 'circle-check-big')}
         {item({ view: 'filter' }, 'Filter', 'filter')}
+        {assistant?.available && item({ view: 'ask' }, 'Ask', 'message-circle')}
         {item({ view: 'trash' }, 'Trash', 'trash-2', trashCount)}
         {sharedIds.size > 0 && (
           <button onClick={() => navigate({ view: 'feed' })} title='Activity in shared projects (g h)'

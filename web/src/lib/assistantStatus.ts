@@ -119,6 +119,39 @@ export function openAssistant(): void {
   emit()
 }
 
+/** What the panel starts with when opened from the composer, the Ask screen or a task menu (assistant-skills D4). */
+export interface AssistantPrefill {
+  text?: string
+  skill?: string
+  /** Text the user pasted; sent as untrusted material. */
+  pasted?: string
+  /** Send at once (Enter in a composer) instead of waiting in the panel's input. */
+  send?: boolean
+  /** Task ids the turn is about (Break this down from a task's menu). */
+  selected?: string[]
+}
+
+let prefill: AssistantPrefill | null = null
+
+/** Opens the panel with text, a skill or pasted material filled in. */
+export function openAssistantWith(p: AssistantPrefill): void {
+  prefill = p
+  open = true
+  emit()
+}
+
+/** The pending prefill, once: the panel takes it when it opens. */
+export function takeAssistantPrefill(): AssistantPrefill | null {
+  const p = prefill
+  prefill = null
+  return p
+}
+
+/** A prefill waiting for an already open panel. */
+export function useAssistantPrefill(): AssistantPrefill | null {
+  return useSyncExternalStore(subscribe, () => prefill, () => prefill)
+}
+
 export function closeAssistant(): void {
   open = false
   emit()
@@ -132,5 +165,6 @@ export function useAssistantOpen(): boolean {
 export function resetAssistantStatus(): void {
   status = null
   open = false
+  prefill = null
   emit()
 }

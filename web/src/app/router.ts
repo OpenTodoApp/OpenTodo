@@ -24,6 +24,7 @@ export type Route =
   | { view: 'share' }
   | { view: 'trash' }
   | { view: 'feed' }
+  | { view: 'ask' }
   | { view: 'help'; page?: string; q?: string }
 
 /** Settings sections, each at /settings/<id> (settings-navigation); order is the overview's. */
@@ -76,6 +77,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'trash' }
     case 'activity':
       return { view: 'feed' }
+    case 'ask':
+      return { view: 'ask' }
     case 'help': {
       // In-app Help (user-documentation): /help, /help/<guide>, /help?q=<topic>.
       const q = new URLSearchParams(query).get('q') ?? undefined
@@ -132,6 +135,8 @@ export function routePath(r: Route): string {
       return '/settings/import'
     case 'feed':
       return '/activity'
+    case 'ask':
+      return '/ask'
     case 'help':
       return `/help${r.page ? `/${encodeURIComponent(r.page)}` : ''}${r.q ? `?q=${encodeURIComponent(r.q)}` : ''}`
     default:

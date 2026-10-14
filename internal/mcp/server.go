@@ -253,6 +253,10 @@ func (s *Server) dispatch(ctx context.Context, c agenttools.Caller, method strin
 		return map[string]any{"resourceTemplates": resourceTemplates()}, nil
 	case "resources/read":
 		return s.readResource(ctx, c.UserID, params)
+	case "prompts/list":
+		return map[string]any{"prompts": promptList()}, nil
+	case "prompts/get":
+		return s.getPrompt(params)
 	}
 	return nil, &rpcError{Code: CodeMethodNotFound, Message: "method not found: " + method}
 }
@@ -287,6 +291,7 @@ func (s *Server) initialize(c agenttools.Caller, params json.RawMessage) (any, e
 		"capabilities": map[string]any{
 			"tools":     map[string]any{"listChanged": false},
 			"resources": map[string]any{"subscribe": false, "listChanged": false},
+			"prompts":   map[string]any{"listChanged": false},
 		},
 		"serverInfo":   map[string]any{"name": "opentodo", "title": "OpenTodo", "version": s.version},
 		"instructions": instructions(c),

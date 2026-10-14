@@ -53,6 +53,26 @@ func (s *Server) registerAssistantRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /api/v1/me/assistant/usage", s.requireAuth(s.handleMyAssistantUsage))
 	mux.Handle("POST /api/v1/me/assistant/test", s.requireAuth(s.handleTestMyAssistant))
 	mux.Handle("POST /api/v1/assistant/turn", s.requireAuth(s.handleAssistantTurn))
+	mux.Handle("GET /api/v1/assistant/skills", s.requireAuth(s.handleAssistantSkills))
+}
+
+// handleAssistantSkills lists the built-in skills (assistant-skills), or an
+// empty list when the assistant is not available to this user: not enabled
+// on the server, or an end-to-end encrypted account.
+func (s *Server) handleAssistantSkills(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	out := []agenttools.Skill{}
+	if s.assistantSettings(ctx).Active() {
+		enc, err := s.keys().Enabled(ctx, userFrom(ctx).ID)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		if !enc {
+			out = agenttools.Skills
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"skills": out})
 }
 
 // ---- owner settings ----
@@ -488,6 +508,10 @@ type turnRequest struct {
 	Timezone string              `json:"timezone"`
 	View     string              `json:"view"`
 	Selected []string            `json:"selected"`
+	// Skill is a built-in skill id and Workday the device's working day
+	// (assistant-skills D2); both optional.
+	Skill   string             `json:"skill,omitempty"`
+	Workday *assistant.Workday `json:"workday,omitempty"`
 }
 
 func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
@@ -547,6 +571,15 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", msg)
 		return
 	}
+	var skill *agenttools.Skill
+	if in.Skill != "" {
+		sk, ok := agenttools.SkillByID(in.Skill)
+		if !ok {
+			writeError(w, http.StatusBadRequest, "unknown_skill", "there is no skill with this id")
+			return
+		}
+		skill = &sk
+	}
 	zone, err := agenttools.ParseZone(in.Timezone, "timezone")
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", "timezone: must be an IANA time zone such as Europe/Rome")
@@ -604,7 +637,7 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	start := time.Now()
 	res := s.assistant.Loop.Run(tctx, prov, assistant.TurnInput{
-		UserID: u.ID, UserName: u.Name, Zone: zone, Messages: in.Messages, View: in.View, Selected: in.Selected,
+		UserID: u.ID, UserName: u.Name, Zone: zone, Messages: in.Messages, View: in.View, Selected: in.Selected, Skill: skill, Workday: in.Workday,
 	}, assistant.Events{
 		Text:   func(t string) { send("text", map[string]string{"text": t}) },
 		Status: func(t string) { send("status", map[string]string{"text": t}) },
@@ -615,9 +648,14 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 		if err := s.assistant.Store.AddUsage(context.WithoutCancel(ctx), u.ID, res.Input, res.Output, route.Own); err != nil {
 			s.log.Error("assistant usage not recorded", "err", err)
 		}
+		if skill != nil {
+			if err := s.assistant.Store.AddSkillUse(context.WithoutCancel(ctx), u.ID, skill.ID); err != nil {
+				s.log.Error("assistant skill use not recorded", "err", err)
+			}
+		}
 	}
 	// Logs hold the provider, outcome, duration and token counts only (design D8).
-	s.log.Info("assistant turn", "provider", route.Provider, "own_key", route.Own, "stop", string(res.Stop), "duration_ms", time.Since(start).Milliseconds(),
+	s.log.Info("assistant turn", "provider", route.Provider, "own_key", route.Own, "skill", in.Skill, "stop", string(res.Stop), "duration_ms", time.Since(start).Milliseconds(),
 		"input_tokens", res.Input, "output_tokens", res.Output, "proposed", len(res.Changes), "failed", res.Err != nil)
 	if ctx.Err() != nil {
 		return // the browser went away (stopped or closed)
@@ -667,9 +705,17 @@ func validateTurn(in turnRequest) string {
 			return fmt.Sprintf("messages[%d].role: must be user or assistant", i)
 		}
 	}
+	for i, m := range in.Messages {
+		if m.Untrusted && m.Role != "user" {
+			return fmt.Sprintf("messages[%d]: only user messages can carry pasted text", i)
+		}
+	}
 	last := in.Messages[len(in.Messages)-1]
-	if last.Role != "user" || strings.TrimSpace(last.Text) == "" {
+	if last.Role != "user" || last.Untrusted || strings.TrimSpace(last.Text) == "" {
 		return "messages: the last message must be the user's question"
+	}
+	if in.Workday != nil && !in.Workday.Valid() {
+		return "workday: startHour before endHour within 0–24, dayLength 15–1440 minutes"
 	}
 	if len(in.Selected) > 200 {
 		return "selected: at most 200 ids"

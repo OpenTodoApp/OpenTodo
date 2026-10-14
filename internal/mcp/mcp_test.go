@@ -127,7 +127,7 @@ func TestInitializeNegotiatesVersion(t *testing.T) {
 			t.Fatalf("asked %s: got %v, want %s", tc.asked, res["protocolVersion"], tc.want)
 		}
 		caps := res["capabilities"].(map[string]any)
-		if caps["tools"] == nil || caps["resources"] == nil || caps["prompts"] != nil {
+		if caps["tools"] == nil || caps["resources"] == nil || caps["prompts"] == nil {
 			t.Fatalf("capabilities = %v", caps)
 		}
 		if res["serverInfo"].(map[string]any)["version"] != "test" {
@@ -147,9 +147,6 @@ func TestUnknownMethod32601(t *testing.T) {
 	r := f.call("u1", "tasks/complete", map[string]any{"id": "x"})
 	if errCode(r) != CodeMethodNotFound || r["id"].(float64) != 1 {
 		t.Fatalf("unknown method: %v", r)
-	}
-	if r := f.call("u1", "prompts/list", nil); errCode(r) != CodeMethodNotFound {
-		t.Fatalf("prompts/list: %v", r)
 	}
 	if r := f.call("u1", "tools/call", map[string]any{"name": "create_task", "arguments": map[string]any{}}); errCode(r) != CodeInvalidParams {
 		t.Fatalf("unknown tool: %v", r)

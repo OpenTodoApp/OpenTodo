@@ -247,13 +247,17 @@ Contents are `application/json`. Views use UTC; append `?tz=Europe/Rome` to the 
 
 Resources are read-only and use the same `untrusted_text` shapes and `_notice` as the read tools.
 
+## Prompts
+
+The server offers the assistant's [skills](assistant.md#skills) as MCP prompts, so a client such as Claude Desktop can run "Weekly review" against your OpenTodo: `idea-to-project`, `plan-week`, `weekly-review`, `triage-inbox` and `break-down`. Each takes an optional `text` argument for your request (`plan-week` also takes `startHour`, `endHour` and `dayLength`). A prompt is only instructions for your client's model: everything it reads or changes still goes through the tools, under your token's scope and the write switches, so with a read-only token the model can read and suggest but every write is refused.
+
 ## End-to-end encryption
 
 The server holds no key. For an account with [end-to-end encryption](e2ee.md), encrypted titles, descriptions and project, label and section names are reported as `"Encrypted item"` with `"encrypted": true` on the task; `search_tasks` never matches encrypted text. Due dates, priorities, completion and structure are still reported because they are stored in plaintext. For writes, see [Encrypted accounts](#encrypted-accounts).
 
 ## Protocol details
 
-- JSON-RPC 2.0 over `POST /mcp` (streamable HTTP, stateless). Supported protocol versions: `2025-11-25`, `2025-06-18` and `2025-03-26`; `initialize` echoes the client's version when supported and answers the newest otherwise. Capabilities: `tools` and `resources`; no prompts, sampling, subscriptions or list-change notifications.
+- JSON-RPC 2.0 over `POST /mcp` (streamable HTTP, stateless). Supported protocol versions: `2025-11-25`, `2025-06-18` and `2025-03-26`; `initialize` echoes the client's version when supported and answers the newest otherwise. Capabilities: `tools`, `resources` and `prompts`; no sampling, subscriptions or list-change notifications.
 - Every request gets one `application/json` response; notifications get `202 Accepted` with no body. The server opens no event streams: `GET /mcp` is 405, and an `Accept` header that admits only `text/event-stream` is 406. No `Mcp-Session-Id` is issued. An `MCP-Protocol-Version` header naming an unsupported version is 400. Batches (JSON arrays) are accepted.
 - Methods: `initialize`, `ping`, `tools/list`, `tools/call`, `resources/list`, `resources/templates/list`, `resources/read`. Anything else is `-32601`; malformed JSON is `-32700` (HTTP 400).
 

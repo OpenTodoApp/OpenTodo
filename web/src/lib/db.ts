@@ -32,6 +32,10 @@ export interface AssistantMessage {
   stop?: string
   error?: string
   usage?: { input: number; output: number; month_total?: number; cap?: number; own_key?: boolean }
+  /** The skill this question ran (assistant-skills), by name. */
+  skill?: string
+  /** Lines of pasted material sent with this question. */
+  pastedLines?: number
   at: number
 }
 

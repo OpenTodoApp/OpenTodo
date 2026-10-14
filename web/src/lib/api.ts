@@ -1,3 +1,4 @@
+import type { AssistantSkill } from './assistantSkills'
 import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
 import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestResult, AssistantUsage, MyAssistantInput } from './assistantTypes'
@@ -358,6 +359,8 @@ export const api = {
   saveAssistantSettings: (input: AssistantSettingsInput) => request<AssistantOwnerSettings>('PUT', '/api/v1/settings/assistant', input),
   testAssistant: (provider: string) => request<AssistantTestResult>('POST', '/api/v1/settings/assistant/test', { provider }),
   getMyAssistant: () => request<AssistantStatus>('GET', '/api/v1/me/assistant'),
+  /** Built-in assistant skills (assistant-skills); empty when the assistant is not available to you. */
+  assistantSkills: () => request<{ skills: AssistantSkill[] }>('GET', '/api/v1/assistant/skills'),
   setMyAssistant: (input: MyAssistantInput) => request<AssistantStatus>('PUT', '/api/v1/me/assistant', input),
   /** Your own provider's "Test connection" (assistant-member-provider; sessions only, rate limited). */
   testMyAssistant: () => request<AssistantTestResult>('POST', '/api/v1/me/assistant/test'),
