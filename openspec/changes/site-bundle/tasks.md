@@ -15,6 +15,7 @@
 
 - [x] 3.1 Add a `site-bundle` job on pushes to main that uploads the bundle as an artefact named with the short commit. Verify on a branch run that the artefact downloads and unpacks to the D1 layout.
 - [ ] 3.2 Make the `release` job depend on the bundle and upload `opentodo-site-bundle-<tag>.tar.gz` with the other assets (and in `SHA256SUMS`). Verify with a pre-release tag (`v0.x.y-rc.1`) on a branch that the asset is attached.
+  - Checked locally on 2026-10-15 without publishing anything: a bundle built as `v0.3.1-rc.1` is named `opentodo-site-bundle-v0.3.1-rc.1.tar.gz`, the release job's collection step (`find artifacts … -name 'opentodo-*'`) copies it next to the binaries and lists it in `SHA256SUMS`, and `release` needs `site-bundle`. Found: `scripts/release-notes.sh` exits 1 for a version without its own CHANGELOG section, so a pre-release tag needs a `## [0.3.1-rc.1]` section first or the release step fails. The tag itself publishes a GitHub pre-release and a container tag, so it waits for the maintainer.
 - [x] 3.3 Add path filters (D7) with a `git diff` step. Verify a docs-only PR skips the Go, cross-compile and layout jobs, and a Go change runs them.
 
 ## 4. Switch-over (after the website repository serves the site)
