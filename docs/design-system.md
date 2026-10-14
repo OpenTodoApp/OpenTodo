@@ -3,7 +3,7 @@ title: Design system
 summary: The visual language for contributors: principles, design tokens, the bundled typeface, the Storybook workbench and the accessibility and visual-regression checks.
 audience: developer
 section: Internals
-specs: []
+specs: [design-system]
 screens: []
 order: 30
 ---

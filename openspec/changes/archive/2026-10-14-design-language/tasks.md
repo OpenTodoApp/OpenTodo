@@ -40,7 +40,7 @@
 - [x] 7.1 Add `scripts/ui-check/a11y.mjs`. It reads `storybook-static/index.json`, opens each story in Chromium (light and dark), injects `axe-core` with WCAG 2.2 AA rules, and fails on serious or critical violations. Verify that it passes on the Foundations stories, and that a temporary story with an unnamed icon-only button fails, naming the story, theme and rule.
 - [x] 7.2 Add `scripts/ui-check/visual.spec.ts` and its config using `@playwright/test` (pinned to the CI Playwright version). It covers each story × light/dark × 375/1280, with animations and caret disabled, `maxDiffPixelRatio: 0.002`, and baselines under `web/src/ui/__screenshots__/`. Verify that a run against freshly generated baselines passes, and that changing the `.btn` padding fails with before, after and diff images.
 - [ ] 7.3 Add Make targets: `storybook`, `ui-check` (build the workbench, then the a11y and visual checks) and `ui-baselines` (runs in `mcr.microsoft.com/playwright:v1.56.1-noble` via Docker), plus a manually triggered `ui-baselines` workflow that uploads baselines as an artifact. Verify that `make ui-check` passes locally and that `make ui-baselines` rewrites the PNGs.
-- [ ] 7.4 Add a `ui-check` job to `.github/workflows/ci.yml` (Node 22, `npm ci`, global Playwright and `@playwright/test` at 1.56.1, Chromium) that uploads the diff artifact on failure. Verify that the job is green on the PR.
+- [x] 7.4 Add a `ui-check` job to `.github/workflows/ci.yml` (Node 22, `npm ci`, global Playwright and `@playwright/test` at 1.56.1, Chromium) that uploads the diff artifact on failure. Verify that the job is green on the PR.
 
 ## 8. Documentation and roadmap
 
@@ -49,7 +49,7 @@
 
 ## 9. Integration
 
-- [ ] 9.1 Run `make check` and `make ui-check`, and confirm the production bundle size change is only the font (compare `internal/web/dist` before and after). Record the numbers in design.md. Verify that both commands pass.
+- [x] 9.1 Run `make check` and `make ui-check`, and confirm the production bundle size change is only the font (compare `internal/web/dist` before and after). Record the numbers in design.md. Verify that both commands pass.
 
 ## Workflow follow-up
 
