@@ -76,7 +76,7 @@ The project's owner and admins SHALL list its active links through `GET /api/v1/
 - **THEN** the response is a 404 `link_invalid` error with the same shape in every case
 
 ### Requirement: Ticking through a public link
-`POST /api/v1/public/{token}/tick` with `{taskId, completed}` SHALL, for a `tick` link, complete or reopen one open or recently completed task of the project by writing the change as operations authored by the link's creator with device `public:<link-id>` and server time, through the same path as an API write. Members' devices receive it on their next sync; a concurrent edit of the same task on a device converges by last-writer-wins. A tick on a recurring task SHALL complete the occurrence as an API completion does.
+`POST /api/v1/public/{token}/tick` with `{taskId, completed}` SHALL, for a `tick` link, complete or reopen one open or recently completed task of the project as operations authored by the link's creator with device `public:<link-id>` and server time, through the same path as an API write. Devices receive it on their next sync and concurrent edits converge by last-writer-wins. A recurring task SHALL complete its occurrence as an API completion does.
 
 #### Scenario: Tick a task
 - **WHEN** a guest posts `{"taskId":"t1","completed":true}` to a tick link

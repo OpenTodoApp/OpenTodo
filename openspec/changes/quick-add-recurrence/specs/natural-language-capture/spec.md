@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Recurrence phrases
-The parser SHALL recognise a recurrence phrase in the quick-add line and SHALL store it as the canonical English rule of the recurring-tasks grammar. Phrases SHALL cover every pattern of that grammar: `every [N] day|week|month|year`, weekday lists, `every weekday`, a day of month, `last day`, `last weekday`, an ordinal weekday, `after completion`, `until <date phrase>` and `for N times`, plus one-word forms (`daily`, `weekly`, `monthly`, `yearly`). The phrase SHALL be removed from the title. A phrase the grammar cannot express SHALL stay in the title.
+The parser SHALL recognise a recurrence phrase in the quick-add line and SHALL store it as the canonical English rule of the recurring-tasks grammar. Phrases SHALL cover every pattern of that grammar (intervals, weekday lists, `weekday`, day of month, `last day`, `last weekday`, ordinal weekday, `after completion`, `until <date phrase>`, `for N times`) and one-word forms (`daily`, `weekly`, `monthly`, `yearly`). The phrase SHALL be removed from the title; a phrase the grammar cannot express SHALL stay in it.
 
 #### Scenario: Weekday rule
 - **WHEN** the user enters `Water plants every Monday`
@@ -64,7 +64,7 @@ The parser SHALL recognise reminder phrases introduced by a reminder word (`remi
 - **THEN** the task is due tomorrow at `15:00` with a relative reminder of −30 minutes
 
 ### Requirement: Reminder moments resolve against the due date
-A moment reminder (`remind me at 9`, `remind me tomorrow at 9`) SHALL be resolved after the view's defaults are applied. If the task then has a due date, the reminder SHALL be relative, with its offset the whole number of minutes from the due time (09:00 for a date-only due) to the moment, whose date defaults to the due date. If the task has no due date, the reminder SHALL be absolute at that moment in the device's time zone, with the date defaulting to today, or tomorrow when the moment has already passed.
+A moment reminder (`remind me at 9`, `remind me tomorrow at 9`) SHALL be resolved after the view's defaults are applied. With a due date, the reminder SHALL be relative: its offset is the whole minutes from the due time (09:00 for a date-only due) to the moment, whose date defaults to the due date. Without one, the reminder SHALL be absolute at that moment in the device's zone, the date defaulting to today, or tomorrow when the moment has passed.
 
 #### Scenario: Moment on a timed task becomes relative
 - **WHEN** the user enters `Dentist tomorrow at 15:00 remind me at 9`

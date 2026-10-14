@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Natural-language line in `ot add`
-`ot add --natural <line>` SHALL parse the line with the quick-add grammar (dates, times, `#project`, `@label`, priority, estimate, recurrence and reminders) and create the task from the result. The active languages SHALL be `--lang` (comma-separated codes), else the bundled language of the process locale, with English always active; numeric dates follow the first language's order and weeks start on Monday. For every line in the shared quick-add test vectors the result SHALL equal the web parser's. Without `--natural` the title is taken verbatim, as today.
+`ot add --natural <line>` SHALL parse the line with the quick-add grammar (dates, times, `#project`, `@label`, priority, estimate, recurrence, reminders) and create the task and its reminders from the result. Languages come from `--lang`, else the process locale, with English always active; numeric dates follow the first language and weeks start on Monday. For every line in the shared quick-add vectors the result SHALL equal the web parser's. Without `--natural` the title is taken verbatim.
 
 #### Scenario: Line with a rule and a reminder
 - **WHEN** the user runs `ot add --natural "Water plants every Monday remind me at 8 #home"` on Friday 2026-10-09 with a project named Home

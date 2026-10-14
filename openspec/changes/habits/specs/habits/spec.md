@@ -22,7 +22,7 @@ A task SHALL have an additive boolean `habit`, default false. The detail panel S
 - **THEN** every device ends with the value written with the greater timestamp
 
 ### Requirement: Skipping a habit records a skipped occurrence
-Skipping the current occurrence of a habit SHALL write the occurrence record of that date (the same derived id a completion writes, with the task's fields, `completed_at` set and `series_id` pointing at the series) carrying the additive boolean `skipped` set to true, and SHALL move the series to the next occurrence, in one batch. Completing a habit SHALL write the record with `skipped` false. Both work offline; because the record id is derived, devices acting on the same occurrence converge to one record.
+Skipping the current occurrence of a habit SHALL write that date's occurrence record (the same derived id a completion writes, `completed_at` set, `series_id` pointing at the series) with the additive boolean `skipped` true, and move the series on, in one batch. Completing a habit SHALL write the record with `skipped` false. Both SHALL work offline; because the record id is derived, devices acting on the same occurrence converge to one record.
 
 #### Scenario: Skip today
 - **WHEN** the user skips a habit with `every day` due 2026-10-14
@@ -56,7 +56,7 @@ A skipped occurrence record SHALL NOT appear in Completed, SHALL NOT match `comp
 - **THEN** the skipped record is present as a task with `series_id`, `completed_at` and `skipped: true`
 
 ### Requirement: Streak derived from the schedule and the records
-A habit's scheduled dates SHALL be the dates its calendar rule matches, plus any date that has an occurrence record. The current streak SHALL be the number of consecutive scheduled dates, walking backward from the date before the current occurrence, that have a record (done or skipped), plus one when the current occurrence itself has a record. The current occurrence SHALL be pending, never missed. A scheduled date before it with no record SHALL end the streak. The best streak SHALL be the longest such run over all records. Both SHALL be computed on the device only.
+A habit's scheduled dates SHALL be the dates its calendar rule matches plus any date with an occurrence record. The current streak SHALL count consecutive scheduled dates with a record (done or skipped), walking back from the date before the current occurrence. The current occurrence SHALL be pending, never missed; an earlier scheduled date without a record ends the streak. The best streak is the longest such run. Both SHALL be computed on the device only.
 
 #### Scenario: Three days in a row
 - **WHEN** a habit with `every day` has records for the 11th, 12th and 13th and is due on the 14th, not yet done
@@ -79,7 +79,7 @@ A habit's scheduled dates SHALL be the dates its calendar rule matches, plus any
 - **THEN** both show the same streak, since it is a function of the rule, the due date and the records alone
 
 ### Requirement: Month history
-The detail panel of a habit SHALL show a grid of the days of one month, starting with the current month and navigable to earlier and later months with buttons and the keyboard. Each scheduled day SHALL show one of: done, skipped, missed (scheduled before the current occurrence, no record), or upcoming; unscheduled days are blank. Colours SHALL come from the design tokens, each state SHALL also differ by glyph, and every day's state SHALL be exposed to assistive technology. The grid SHALL be read-only and rendered from local data.
+The detail panel of a habit SHALL show a grid of one month's days, starting with the current month, navigable to other months with buttons and the keyboard. Each scheduled day SHALL read as done, skipped, missed (scheduled before the current occurrence, no record), pending or upcoming; unscheduled days are blank. Colours SHALL come from the design tokens, states SHALL also differ by glyph, and each day's state SHALL be exposed to assistive technology. The grid is read-only and local.
 
 #### Scenario: October at a glance
 - **WHEN** a habit with `every weekday` was done on every weekday of October up to the 13th except the 6th, which was skipped, and the user opens it on the 14th
