@@ -11,9 +11,11 @@ export interface SwitchProps {
   /** Hide the visible label (it stays the accessible name). */
   hideLabel?: boolean
   id?: string
+  /** id of text elsewhere that describes the switch (e.g. a setting row's description). */
+  describedBy?: string
 }
 
-export function Switch({ checked, onChange, label, description, disabled, hideLabel, id }: SwitchProps) {
+export function Switch({ checked, onChange, label, description, disabled, hideLabel, id, describedBy }: SwitchProps) {
   return (
     <label className={`inline-flex items-start gap-3 ${disabled ? '' : 'cursor-pointer'}`}>
       <button
@@ -21,6 +23,7 @@ export function Switch({ checked, onChange, label, description, disabled, hideLa
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-describedby={describedBy}
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={`relative mt-0.5 inline-flex h-6 w-10 shrink-0 items-center rounded-full border transition duration-(--duration-ui) ease-calm

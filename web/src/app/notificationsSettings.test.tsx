@@ -3,7 +3,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import type { PushState, TestOutcome } from '../lib/push'
-import { PushDelivery, testSummary, type TestPhase } from './NotificationsSettings'
+import { NotificationsView, PushDelivery, testSummary, type TestPhase } from './NotificationsSettings'
 
 const subscribed: PushState = {
   supported: true, available: true, permission: 'granted', enabled: true, includeContent: false, needsRenewal: false,
@@ -64,5 +64,39 @@ describe('testSummary', () => {
     expect(testSummary(null, 'waiting')).toMatch(/Waiting for this device/)
     expect(testSummary({ kind: 'failed', status: 500, error: 'push service answered 500' }, 'idle')).toMatch(/status 500/)
     expect(testSummary(null, 'idle')).toBeNull()
+  })
+})
+
+describe('NotificationsView', () => {
+  const view = (state: PushState | null, extra: Partial<Parameters<typeof NotificationsView>[0]> = {}) => renderToStaticMarkup(
+    <NotificationsView state={state} busy={false} message={null} onEnable={() => {}} onIncludeContent={() => {}} onRenew={() => {}} now={1_760_000_060_000} {...extra} />,
+  )
+
+  it('leads with this device: on, permission and the last delivery', () => {
+    const html = view(subscribed)
+    expect(html).toContain('data-testid="push-summary"')
+    expect(html).toContain('>On<')
+    expect(html).toContain('Permission: Allowed')
+    expect(html).toContain('Last delivered')
+    expect(html).toContain('Enable notifications on this device')
+    expect(html).toContain('role="switch"')
+  })
+
+  it('off and blocked: says so with a warning', () => {
+    const html = view({ ...subscribed, enabled: false, permission: 'denied', subscription: null })
+    expect(html).toContain('>Off<')
+    expect(html).toContain('Permission: Blocked')
+    expect(html).toContain('blocked for this site')
+    expect(html).not.toContain('Last delivered')
+  })
+
+  it('offers Re-enable when the push service stopped accepting', () => {
+    expect(view({ ...subscribed, needsRenewal: true })).toMatch(/stopped accepting[\s\S]*>Re-enable</)
+  })
+
+  it('says when the server turned push off, with no controls', () => {
+    const html = view({ ...subscribed, available: false })
+    expect(html).toContain('turned off on this server')
+    expect(html).not.toContain('role="switch"')
   })
 })

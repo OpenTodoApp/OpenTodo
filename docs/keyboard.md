@@ -147,7 +147,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Enter</kbd> | On an invitation: Settings → Administration → Members: copy the invite link created in this session |
 | <kbd>Delete</kbd> | On an invitation: Settings → Administration → Members: revoke a pending invitation |
 | <kbd>d</kbd> / <kbd>r</kbd> / <kbd>Delete</kbd> | On a user: Settings → Administration → Users: deactivate or reactivate, create a reset link, delete (each confirms) |
-| <kbd>Tab</kbd> | In Settings → Account: security: add, rename (Enter saves, Esc cancels) or delete passkeys |
+| <kbd>Tab</kbd> | In Settings → Security: passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys |
 
 ### Quick add syntax
 
@@ -162,7 +162,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 ## Vim keybindings
 
-If you're used to Vim, turn on **Settings → General → Keyboard → Vim keybindings**. It's off by default and applies to that device only. With it on, a small indicator shows the mode (Normal, Insert or Command), and you get:
+If you're used to Vim, turn on **Settings → Preferences → Keyboard → Vim keybindings**. It's off by default and applies to that device only. With it on, a small indicator shows the mode (Normal, Insert or Command), and you get:
 
 - counts like <kbd>3</kbd><kbd>j</kbd>, <kbd>g</kbd><kbd>g</kbd> and <kbd>G</kbd> for the first and last task,
 - <kbd>d</kbd><kbd>d</kbd> to delete, <kbd>x</kbd> to complete, <kbd>o</kbd> to add a task below and <kbd>i</kbd> to edit,

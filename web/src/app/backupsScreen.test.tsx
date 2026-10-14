@@ -35,11 +35,16 @@ function render(patch: Partial<BackupsPanelViewProps> = {}, settings: Partial<Ba
     busy: null,
     message: null,
     error: null,
+    editing: true,
     onDraft: noop, onSecrets: noop, onSave: noop, onTest: noop, onRun: noop,
     ...patch,
   }
   return renderToStaticMarkup(<BackupsPanelView {...props} />)
 }
+
+/** The opening tag of the button labelled `label`. */
+const button = (html: string, label: string) => html.match(new RegExp(`<button(?:(?!<button)[\\s\\S])*?${label}`))?.[0] ?? ''
+const isDisabled = (html: string, label: string) => /^<button[^>]*disabled=""/.test(button(html, label))
 
 /** Every element carrying `disabled` (buttons and fieldsets). */
 function disabledCount(html: string): number {
@@ -87,18 +92,20 @@ describe('Settings → Backups', () => {
   it('warns that a passphrase is irrecoverable and blocks saving until acknowledged', () => {
     const typed = render({ secrets: { ...noSecrets, passphrase: 'secret words' } })
     expect(typed).toContain('A forgotten passphrase cannot be recovered')
-    expect(typed).toMatch(/<button class="btn-primary" disabled="">Save backup settings/)
+    expect(isDisabled(typed, 'Save backup settings')).toBe(true)
     const acked = render({ secrets: { ...noSecrets, passphrase: 'secret words', acknowledged: true } })
-    expect(acked).toMatch(/<button class="btn-primary">Save backup settings/)
+    expect(button(acked, 'Save backup settings')).not.toBe('')
+    expect(isDisabled(acked, 'Save backup settings')).toBe(false)
     expect(render()).not.toContain('cannot be recovered')
   })
 
   it('shows a run in progress, then failures with the destination error', () => {
     const running = render({ status: status({ running: { ...status().lastRun!, id: 'r2', status: 'running', finishedAt: null } }) })
     expect(running).toContain('Backup in progress')
-    expect(running).toMatch(/<button type="button" class="btn-primary" disabled="">Backing up/)
+    expect(isDisabled(running, 'Backing up')).toBe(true)
     const failed = render({ status: status({ lastRun: { ...status().lastRun!, status: 'failed', error: 'webdav put: connection refused' } }) })
     expect(failed).toContain('connection refused')
+    expect(failed).toMatch(/data-hue="red"[^>]*>(<span[^>]*>(<\/span>)?)*Failed/)
   })
 
   it('offline: shows the cached status and disables every action', () => {
@@ -106,13 +113,33 @@ describe('Settings → Backups', () => {
     const offline = render({ offline: true })
     expect(offline).toContain('You are offline')
     expect(offline).toContain('Every day at 03:00') // the cached status is still shown
-    expect(offline).toMatch(/<button type="button" class="btn-primary" disabled="">Back up now/)
-    expect(offline).toMatch(/disabled="">Test destination/)
-    expect(offline).toMatch(/<button class="btn-primary" disabled="">Save backup settings/)
+    for (const label of ['Back up now', 'Test destination', 'Save backup settings']) expect(isDisabled(offline, label)).toBe(true)
+    expect(isDisabled(online, 'Back up now')).toBe(false)
     // Every fieldset of the form is disabled too.
     expect(disabledCount(offline)).toBeGreaterThan(disabledCount(online))
     expect(online).not.toContain('You are offline')
     // Nothing cached yet.
     expect(render({ offline: true, status: null })).toContain('No status fetched yet')
+  })
+
+  it('summarizes the settings as rows until "Change settings" opens the form', () => {
+    const html = render({ editing: false, flags: { hasS3SecretKey: false, hasWebdavPassword: false, hasPassphrase: true } })
+    expect(html).toContain('Change settings')
+    expect(html).toContain('Folder on the server')
+    expect(html).toContain('Keep the last 7')
+    expect(html).toContain('Encrypted with your passphrase')
+    expect(html).not.toContain('name="local-dir"')
+    expect(html).toContain('data-help-screen="settings/backups"')
+    expect(html).toContain('id="backups-heading"')
+  })
+
+  it('lists recent runs as rows with an outcome badge, size and error', () => {
+    const ok = status().lastRun!
+    const html = render({ status: status({ history: [ok, { ...ok, id: 'r0', status: 'failed', error: 'disk full', bytes: 0 }] }) })
+    expect(html).toContain('data-testid="backups-history"')
+    expect(html).toContain('>Succeeded<')
+    expect(html).toContain('>Failed<')
+    expect(html).toContain('disk full')
+    expect(html).toContain('178.1 KB')
   })
 })

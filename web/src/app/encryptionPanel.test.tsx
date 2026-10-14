@@ -20,8 +20,11 @@ function render(state: EncryptionSnapshot, mode: Mode = { kind: 'idle' }, over: 
   }
   return renderToStaticMarkup(<EncryptionView {...props} />)
 }
-const labels = (html: string) => [...html.matchAll(/<button[^>]*>([^<]*)<\/button>/g)].map((m) => m[1])
-const button = (html: string, label: string) => [...html.matchAll(/<button[^>]*>([^<]*)<\/button>/g)].find((m) => m[1] === label)?.[0]
+// Button labels without their icons; Help links are not actions of the panel.
+const buttons = (html: string) => [...html.matchAll(/<button([^>]*)>(.*?)<\/button>/g)]
+  .filter((m) => !m[1].includes('data-help-screen')).map((m) => ({ html: m[0], label: m[2].replace(/<[^>]+>/g, '') }))
+const labels = (html: string) => buttons(html).map((b) => b.label)
+const button = (html: string, label: string) => buttons(html).find((b) => b.label === label)?.html
 
 describe('EncryptionView', () => {
   it('off: explains the boundary and offers set-up', () => {
@@ -52,7 +55,8 @@ describe('EncryptionView', () => {
 
   it('on and unlocked: management actions, keyboard reachable buttons', () => {
     const html = render(on)
-    expect(html).toContain('unlocked on this device')
+    expect(html).toContain('Unlocked on this device')
+    expect(html).toContain('data-testid="e2ee-status"')
     expect(labels(html)).toEqual(['Change passphrase…', 'Reset passphrase with recovery key…', 'Purge plaintext history…', 'Lock this device', 'Turn off encryption…'])
     expect(html).not.toContain('tabindex="-1"')
   })
@@ -73,7 +77,8 @@ describe('EncryptionView', () => {
   })
 
   it('shows errors and notices', () => {
-    expect(render(on, { kind: 'idle' }, { error: 'nope', notice: 'done' })).toMatch(/role="alert"[^>]*>nope.*role="status"[^>]*>done/)
+    const html = render(on, { kind: 'idle' }, { error: 'nope', notice: 'done' })
+    expect(html).toMatch(/role="alert".*nope.*role="status".*done/)
     expect(encryptionMessage(new WrongSecretError())).toMatch(/not correct/)
     expect(encryptionMessage(new UnlockThrottledError(Date.now() + 30_000))).toMatch(/Try again in 30 seconds/)
   })

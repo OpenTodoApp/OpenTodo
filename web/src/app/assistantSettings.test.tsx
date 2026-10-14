@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import type { AssistantStatus } from '../lib/assistantStatus'
 import type { AssistantOwnerSettings } from '../lib/assistantTypes'
-import { draftFrom, inputFrom, ownDraftFrom, ownInputFrom, OwnerAssistantSettings, UserAssistantSettings } from './assistant/AssistantSettings'
+import { draftFrom, inputFrom, ownDraftFrom, ownInputFrom, OwnerAssistantSettings, OwnerAssistantSummary, UserAssistantSettings } from './assistant/AssistantSettings'
 
 const noop = () => {}
 const saved: AssistantOwnerSettings = {
@@ -43,6 +43,28 @@ describe('OwnerAssistantSettings', () => {
   })
 })
 
+describe('OwnerAssistantSummary (settings-redesign)', () => {
+  const summary = (over: Partial<AssistantOwnerSettings> = {}, connected = true) =>
+    renderToStaticMarkup(<OwnerAssistantSummary saved={{ ...saved, ...over }} connected={connected} onConfigure={noop} />)
+  it('shows the state at a glance with the form behind Configure', () => {
+    const html = summary()
+    expect(html).toContain('data-assistant-owner')
+    expect(html).toMatch(/data-hue="green"[^>]*><span[^>]*>On<\/span>/)
+    expect(html).toContain('Everyone uses Anthropic (Claude) (claude-opus-5-5).')
+    expect(html).toContain('500,000 tokens')
+    expect(html).toContain('Not allowed.')
+    expect(html).toMatch(/<button[^>]*>.*Configure<\/button>/)
+    expect(html).not.toContain('type="password"')
+  })
+  it('says when it is off, flags a provider without a key and disables Configure offline', () => {
+    const html = summary({ enabled: false, monthly_token_cap_per_user: 0, providers: { ...saved.providers, openai: { enabled: true, model: 'x', key_set: false, label: 'OpenAI' } } })
+    expect(html).toMatch(/data-hue="slate"[^>]*><span[^>]*>Off<\/span>/)
+    expect(html).toContain('OpenAI · no key')
+    expect(html).toContain('Unlimited')
+    expect(summary({}, false)).toMatch(/<button[^>]*disabled=""[^>]*>.*Configure/)
+  })
+})
+
 describe('UserAssistantSettings', () => {
   const render = (over: Partial<Parameters<typeof UserAssistantSettings>[0]> = {}) => renderToStaticMarkup(
     <UserAssistantSettings status={status} usage={{ month: '2026-10', input_tokens: 80000, output_tokens: 10000, total_tokens: 90000, turns: 12, cap: 500000, resets_at: '2026-11-01' }}
@@ -56,6 +78,8 @@ describe('UserAssistantSettings', () => {
     expect(html).toContain('Apply small changes without review (this device)')
     expect(html).not.toMatch(/type="checkbox"[^>]*checked=""/)
     expect(html).toContain('Clear conversations on this device')
+    expect(html).toContain('role="switch"')
+    expect(html).toContain('Accepted')
   })
   it('explains an encrypted account', () => {
     expect(render({ status: { ...status, reason: 'encryption_enabled', available: false } })).toContain('end-to-end encrypted')

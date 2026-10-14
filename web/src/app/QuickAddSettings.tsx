@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
+import { Select } from '../ui/Field'
+import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Checkbox, Switch } from '../ui/Switch'
 import {
   BUNDLED_LANGUAGES, loadQuickAddSettings, type QuickAddSettings, resolveDayMonthOrder, resolveLanguages, saveQuickAddSettings,
 } from '../lib/nlp'
@@ -31,55 +33,32 @@ export function QuickAddSettingsSection() {
   }
 
   return (
-    <section className="space-y-3">
-      <HelpHeading screen="settings/quick-add" className="font-semibold">Quick add</HelpHeading>
-      <label className="flex items-start gap-2 text-sm">
-        <input type="checkbox" className="mt-0.5" checked={s.enabled} onChange={(e) => update({ ...s, enabled: e.target.checked })} />
-        <span>
-          Parse natural language in quick add
-          <span className="block text-xs text-muted">
-            Dates and times (“tomorrow at 3pm”), <code>#project</code>, <code>@label</code>, <code>p1</code>–<code>p4</code> and estimates
-            (<code>+30m</code>). Put text in "double quotes" to keep it literal. Applies to this device only.
-          </span>
-        </span>
-      </label>
-      <fieldset disabled={!s.enabled} className="space-y-2 disabled:opacity-50">
-        <legend className="text-sm text-slate-600 dark:text-slate-300">Languages for dates and times</legend>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={followBrowser}
-            onChange={(e) => update({ ...s, languages: e.target.checked ? null : active.filter((c) => c !== 'en') })}
-          />
-          Follow browser languages ({browser.join(', ')})
-        </label>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 pl-6 text-sm">
+    <SettingsSection title="Quick add" helpId="settings/quick-add" headingId="quick-add-heading"
+      description="How quick add reads what you type. Applies to this device only.">
+      <SettingRow label="Parse natural language" description={
+        <>Dates and times (“tomorrow at 3pm”), <code>#project</code>, <code>@label</code>, <code>p1</code>–<code>p4</code> and estimates
+          (<code>+30m</code>). Put text in "double quotes" to keep it literal.</>
+      } control={<Switch checked={s.enabled} onChange={(on) => update({ ...s, enabled: on })} label="Parse natural language in quick add" hideLabel />} />
+      <fieldset disabled={!s.enabled} className="space-y-2 py-3 disabled:opacity-50">
+        <legend className="text-sm font-medium text-default">Languages for dates and times</legend>
+        <p className="text-meta text-muted">English is always on.</p>
+        <Checkbox label={`Follow browser languages (${browser.join(', ')})`} checked={followBrowser}
+          onChange={(e) => update({ ...s, languages: e.target.checked ? null : active.filter((c) => c !== 'en') })} />
+        <div className="flex flex-wrap gap-x-5 gap-y-1 pl-6">
           {BUNDLED_LANGUAGES.map((code) => (
-            <label key={code} className="flex items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={active.includes(code)}
-                disabled={code === 'en' || followBrowser}
-                onChange={(e) => toggleLanguage(code, e.target.checked)}
-              />
-              {LANGUAGE_NAMES[code] ?? code}
-            </label>
+            <Checkbox key={code} label={LANGUAGE_NAMES[code] ?? code} checked={active.includes(code)}
+              disabled={code === 'en' || followBrowser} onChange={(e) => toggleLanguage(code, e.target.checked)} />
           ))}
         </div>
-        <p className="pl-6 text-xs text-faint">English is always on.</p>
-        <label className="flex items-center gap-2 text-sm">
-          Numeric dates like 12/11
-          <select
-            className="input w-auto py-1"
-            value={s.dayMonthOrder}
-            onChange={(e) => update({ ...s, dayMonthOrder: e.target.value as QuickAddSettings['dayMonthOrder'] })}
-          >
-            <option value="auto">Automatic ({order === 'DM' ? 'day/month' : 'month/day'})</option>
-            <option value="DM">Day/month (12 November)</option>
-            <option value="MD">Month/day (December 11)</option>
-          </select>
-        </label>
       </fieldset>
-    </section>
+      <SettingRow label="Numeric dates like 12/11" htmlFor="quickadd-order" control={
+        <Select id="quickadd-order" className="sm:w-60" disabled={!s.enabled} value={s.dayMonthOrder}
+          onChange={(e) => update({ ...s, dayMonthOrder: e.target.value as QuickAddSettings['dayMonthOrder'] })}>
+          <option value="auto">Automatic ({order === 'DM' ? 'day/month' : 'month/day'})</option>
+          <option value="DM">Day/month (12 November)</option>
+          <option value="MD">Month/day (December 11)</option>
+        </Select>
+      } />
+    </SettingsSection>
   )
 }

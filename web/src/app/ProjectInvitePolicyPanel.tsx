@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
+import { Switch } from '../ui/Switch'
+import { Notice } from '../ui/patterns/Notice'
+import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
 import { api, ApiError } from '../lib/api'
 
-// Settings → Administration, owner only (OpenSpec `project-invite-links`):
+// Settings → Access policies, owner only (OpenSpec `project-invite-links`):
 // "Members can invite new people with project links". Off by default: then
 // only links created by the owner or an admin (or any link while open sign-up
 // is on) can create an account. The pure view renders every state.
@@ -15,25 +17,17 @@ export function ProjectInvitePolicyView({ value, busy, error, onChange }: {
   onChange: (on: boolean) => void
 }) {
   return (
-    <section className="space-y-2" aria-labelledby="project-invite-policy-heading" data-testid="project-invite-policy">
-      <HelpHeading screen="settings/project-invites" id="project-invite-policy-heading" className="font-semibold">Project invite links</HelpHeading>
-      <p className="text-sm text-muted">
-        Project owners and admins can invite people to a project with a single-use link. Links created by you or an admin can also
-        create an account for someone new; links created by members only work for people who already have an account, unless you allow it here.
-      </p>
+    <SettingsSection title="Project invite links" helpId="settings/project-invites" headingId="project-invite-policy-heading" testId="project-invite-policy"
+      description="Project owners and admins can invite people to a project with a single-use link. Links created by you or an admin can also create an account for someone new.">
       {value === null ? (
-        <p className="text-sm text-faint">This setting is available when you are online.</p>
+        <Notice>This setting is available when you are online.</Notice>
       ) : (
-        <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" className="mt-0.5" checked={value} disabled={busy} onChange={(e) => onChange(e.target.checked)} />
-          <span>
-            Members can invite new people with project links
-            <span className="block text-xs text-muted">Applies to links already handed out too: they are checked when they are used.</span>
-          </span>
-        </label>
+        <SettingRow label="Members can invite new people with project links"
+          description="Off: links created by members only work for people who already have an account. Applies to links already handed out too, since they are checked when used."
+          control={<Switch checked={value} disabled={busy} onChange={onChange} label="Members can invite new people with project links" hideLabel />} />
       )}
-      {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-    </section>
+      {error && <Notice tone="danger">{error}</Notice>}
+    </SettingsSection>
   )
 }
 

@@ -7,7 +7,7 @@ import { ApiError } from '../lib/api'
 import { db } from '../lib/db'
 import type { AdminUser, User } from '../lib/types'
 import { PasswordView } from './PasswordSection'
-import { AdministrationSections, DeleteDialog, describeUserError, TransferDialog, UsersView, type UsersViewProps } from './UsersPanel'
+import { AdministrationSections, confirmCopy, DeleteDialog, describeUserError, TransferDialog, UsersView, type UsersViewProps } from './UsersPanel'
 
 const owner: User = { id: 'o', email: 'owner@example.com', name: 'Owner', role: 'owner', createdAt: 0 }
 const admin: User = { id: 'a', email: 'admin@example.com', name: 'Admin', role: 'admin', createdAt: 0 }
@@ -33,51 +33,33 @@ function rowHtml(html: string, email: string): string {
 }
 
 describe('UsersView', () => {
-  it('lists accounts with role, status and last sign-in', () => {
+  it('lists accounts with role and status badges, last sign-in and a summary', () => {
     const html = render()
     for (const u of users) expect(html).toContain(`data-user="${u.email}"`)
     expect(html).toContain('last sign-in')
-    expect(html).toContain('>admin<')
-    expect(html).toContain('>active<')
+    expect(html).toContain('>Admin<')
+    expect(html).toContain('>Active<')
     expect(html).toContain('tabindex="0"')
+    expect(html).toContain('3 accounts · 1 admin')
+    expect(html).toContain('data-help-screen="settings/users"')
   })
 
-  it('gives an admin member actions only and no role or transfer controls', () => {
+  it('offers no action menu on rows the viewer may not act on', () => {
     const html = render({ viewer: admin })
-    const m = rowHtml(html, member.email)
-    expect(m).toContain('Deactivate')
-    expect(m).toContain('Reset password')
-    expect(m).toContain('Delete')
+    expect(rowHtml(html, member.email)).toContain('aria-label="Actions for Member"')
     expect(rowHtml(html, owner.email)).not.toContain('<button')
     expect(rowHtml(html, admin.email)).not.toContain('<button')
-    expect(html).not.toContain('Make admin')
-    expect(html).not.toContain('Make member')
-    expect(html).not.toContain('Transfer ownership')
-    expect(html).not.toContain('Reset 2FA')
+    expect(rowHtml(render(), owner.email)).not.toContain('<button')
   })
 
-  it('gives the owner role toggles, transfer and two-factor reset, never on themselves', () => {
-    const html = render()
-    expect(rowHtml(html, member.email)).toContain('Make admin')
-    expect(rowHtml(html, admin.email)).toContain('Make member')
-    expect(rowHtml(html, admin.email)).toContain('Transfer ownership')
-    expect(rowHtml(html, member.email)).toContain('Reset 2FA')
-    expect(rowHtml(html, owner.email)).not.toContain('<button')
-  })
-
-  it('offers reactivate on a deactivated account', () => {
+  it('marks a deactivated account', () => {
     const html = render({ users: [row(owner), row(member, 'deactivated')] })
-    const m = rowHtml(html, member.email)
-    expect(m).toContain('Reactivate')
-    expect(m).not.toContain('>Deactivate<')
-    expect(m).not.toContain('Reset password')
-    expect(m).toContain('>deactivated<')
+    expect(rowHtml(html, member.email)).toContain('>Deactivated<')
+    expect(html).toContain('2 accounts · 1 deactivated')
   })
 
-  it('disables every action offline with an explanation', () => {
-    const html = render({ offline: true })
-    expect(html).toContain('needs a connection')
-    expect(html).not.toMatch(/<button(?![^>]*disabled)[^>]*>(Deactivate|Delete|Make admin|Reset password)/)
+  it('explains that it needs a connection offline', () => {
+    expect(render({ offline: true })).toContain('needs a connection')
   })
 
   it('shows a reset link once with a copy button and the token caveat', () => {
@@ -93,6 +75,13 @@ describe('UsersView', () => {
     expect(html).toContain('<span class="kbd">d</span>')
     expect(html).toContain('<span class="kbd">r</span>')
     expect(html).toContain('<span class="kbd">Delete</span>')
+  })
+
+  it('names what each confirmation changes', () => {
+    expect(confirmCopy({ kind: 'deactivate', user: row(member) }, 'Member')).toMatchObject({ tone: 'danger', title: 'Deactivate Member?' })
+    expect(confirmCopy({ kind: 'deactivate', user: row(member) }, 'Member').consequence).toContain('API tokens')
+    expect(confirmCopy({ kind: 'role', user: row(member), role: 'admin' }, 'Member').confirmLabel).toBe('Make admin')
+    expect(confirmCopy({ kind: 'reset', user: row(member) }, 'Member').consequence).toContain('24 hours')
   })
 
   it('stores nothing about other accounts on the device', async () => {

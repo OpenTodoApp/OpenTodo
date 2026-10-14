@@ -26,8 +26,9 @@ describe('EmailInboxView', () => {
     expect(html).toContain('todo+k3f9abc@example.com')
     expect(html).toContain('Copy address')
     expect(html).toContain('New address')
-    expect(html).toContain('type="checkbox"')
-    expect(html).toContain('checked=""')
+    expect(html).toContain('role="switch"')
+    expect(html).toContain('aria-checked="true"')
+    expect(html).toContain('>On<')
     expect(html).toContain('<textarea')
     expect(html).toContain('at most 60 per hour')
   })
@@ -37,7 +38,7 @@ describe('EmailInboxView', () => {
     expect(html).toContain('operator has not enabled')
     // Only the Help link (user-documentation) remains.
     expect(html.replace(/<button[^>]*data-help-screen[\s\S]*?<\/button>/g, '')).not.toContain('<button')
-    expect(html).not.toContain('type="checkbox"')
+    expect(html).not.toContain('role="switch"')
   })
 
   it('needs a connection to load', () => {
@@ -46,7 +47,7 @@ describe('EmailInboxView', () => {
 
   it('keeps the controls native and in tab order: copy, rotate, switch, allowlist, save', () => {
     const html = render({ draft: 'me@example.org' })
-    const order = ['Copy address', 'New address', 'type="checkbox"', '<textarea', 'Save senders'].map((s) => html.indexOf(s))
+    const order = ['Copy address', 'New address', 'role="switch"', '<textarea', 'Save senders'].map((s) => html.indexOf(s))
     expect(order.every((i) => i >= 0)).toBe(true)
     expect([...order].sort((a, b) => a - b)).toEqual(order)
     expect(html).not.toMatch(/tabindex="-1"/)
@@ -55,8 +56,8 @@ describe('EmailInboxView', () => {
   })
 
   it('enables saving only when the allowlist changed, and shows errors', () => {
-    expect(render({ draft: '' })).toMatch(/<button class="btn-primary text-xs" disabled="">Save senders/)
-    expect(render({ draft: 'me@example.org' })).toMatch(/<button class="btn-primary text-xs">Save senders/)
+    expect(render({ draft: '' })).toMatch(/<button[^>]*disabled=""[^>]*>Save senders/)
+    expect(render({ draft: 'me@example.org' })).not.toMatch(/<button[^>]*disabled=""[^>]*>Save senders/)
     expect(render({ error: 'allowlist: bad' })).toContain('role="alert"')
   })
 

@@ -43,7 +43,7 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
             </section>
           ))}
           {extraSections.length === 0 && (
-            <p className="mt-3 text-xs text-muted" data-vim-hint>Prefer modal editing? Vim keybindings can be enabled in Settings → General → Keyboard.</p>
+            <p className="mt-3 text-xs text-muted" data-vim-hint>Prefer modal editing? Vim keybindings can be enabled in Settings → Preferences → Keyboard.</p>
           )}
           <h3 className="mb-2 mt-4 text-sm font-semibold">Quick add syntax</h3>
           <table className="w-full table-fixed text-sm">

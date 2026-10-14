@@ -1,11 +1,21 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
+import { Button } from '../ui/Button'
+import { Badge } from '../ui/Card'
+import { Field, Input } from '../ui/Field'
+import { Icon } from '../ui/Icon'
+import { MenuItem, MenuSeparator } from '../ui/Menu'
+import { ConfirmDialog } from '../ui/patterns/ConfirmDialog'
+import { EmptyState } from '../ui/patterns/EmptyState'
+import { ListRow } from '../ui/patterns/ListRow'
+import { Notice } from '../ui/patterns/Notice'
+import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Menu } from './overlay/Menu'
 import { api, ApiError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { createPasskey, isCancellation, passkeysSupported, rpIdMatches } from '../lib/passkeys'
 import type { Passkey } from '../lib/types'
 
-// Settings → Security (OpenSpec change `passkeys`). The server list is
+// Settings → Security → Passkeys (OpenSpec change `passkeys`; layout by settings-redesign). The server list is
 // authoritative and not cached for offline use: offline, the panel shows what
 // it fetched earlier in this session, read-only.
 
@@ -38,6 +48,7 @@ export function SecurityPanel() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const online = useOnline()
+  const [removing, setRemoving] = useState<Passkey | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -78,6 +89,7 @@ export function SecurityPanel() {
   }, [load])
 
   return (
+    <>
     <SecurityPanelView
       available={available}
       supported={passkeysSupported()}
@@ -93,8 +105,14 @@ export function SecurityPanel() {
         await api.passkeyRegister(name, credential)
       })}
       onRename={(id, name) => run(() => api.renamePasskey(id, name))}
-      onDelete={(id) => run(() => api.deletePasskey(id))}
+      onDelete={(id) => setRemoving(passkeys?.find((k) => k.id === id) ?? null)}
     />
+    {removing && (
+      <ConfirmDialog title={`Remove the passkey “${removing.name}”?`} confirmLabel="Remove passkey"
+        consequence="It will no longer sign you in. Your password and other passkeys keep working."
+        onConfirm={() => run(() => api.deletePasskey(removing.id))} onCancel={() => setRemoving(null)} />
+    )}
+    </>
   )
 }
 
@@ -123,6 +141,7 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
 
   if (!p.available) return null
   const disabled = !p.online || p.busy || !p.supported
+  const count = p.passkeys?.length ?? 0
 
   function submitAdd(e: FormEvent) {
     e.preventDefault()
@@ -143,84 +162,76 @@ export function SecurityPanelView(p: SecurityPanelViewProps) {
     }
   }
 
+  const addForm = (
+    <form className="flex flex-wrap items-end gap-2 py-3" onSubmit={submitAdd}>
+      <div className="min-w-0 flex-1 basis-56">
+        <Field label="Passkey name" description="So you can tell your devices apart.">
+          <Input autoFocus placeholder="Device name (e.g. Work laptop)" value={newName} onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => escapeTo(e, () => setAdding(false))} disabled={disabled} />
+        </Field>
+      </div>
+      <div className="flex gap-2 pb-0.5">
+        <Button variant="ghost" onClick={() => setAdding(false)}>Cancel</Button>
+        <Button variant="primary" type="submit" disabled={disabled}>Continue</Button>
+      </div>
+    </form>
+  )
+
   return (
-    <section className="space-y-2" aria-labelledby="security-heading" data-testid="security-panel">
-      <HelpHeading screen="settings/security" id="security-heading" className="font-semibold">Security</HelpHeading>
-      <p className="text-sm text-muted">
-        Passkeys let you sign in with your device's fingerprint, face or PIN instead of your password. Your password keeps working.
-        Register a passkey on a second device so losing one is never a problem.
-      </p>
-      {p.domain && <p className="text-xs text-faint" data-passkey-domain>Passkeys are tied to <span className="font-mono">{p.domain}</span>.</p>}
+    <SettingsSection title="Passkeys" helpId="settings/security" headingId="security-heading" testId="security-panel"
+      description="Sign in with your device's fingerprint, face or PIN instead of your password. Your password keeps working; add a passkey on a second device so losing one is never a problem.">
       {p.domain && p.pageHost && !rpIdMatches(p.domain, p.pageHost) && (
-        <p role="alert" className="rounded-md bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        <Notice tone="danger">
           This page is open at <span className="font-mono">{p.pageHost}</span>, so passkeys will not work here. Open the app at{' '}
           <a className="underline" href={`https://${p.domain}`}>https://{p.domain}</a>, or set <span className="font-mono">OPENTODO_BASE_URL</span> to{' '}
           <span className="font-mono">https://{p.pageHost}</span> and redeploy.
-        </p>
+        </Notice>
       )}
-      {!p.online && (
-        <p role="status" className="rounded-md bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          You are offline. Managing passkeys needs a connection to your server.
-        </p>
-      )}
-      {p.online && !p.supported && (
-        <p role="status" className="text-sm text-muted">This browser does not support passkeys.</p>
-      )}
+      {!p.online && <Notice>You are offline. Managing passkeys needs a connection to your server.</Notice>}
+      {p.online && !p.supported && <Notice>This browser does not support passkeys.</Notice>}
+      {p.error && <Notice tone="danger">{p.error}</Notice>}
 
-      {adding ? (
-        <form className="flex gap-2" onSubmit={submitAdd}>
-          <input
-            className="input max-w-xs" autoFocus aria-label="Passkey name" placeholder="Device name (e.g. Work laptop)"
-            value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => escapeTo(e, () => setAdding(false))}
-            disabled={disabled}
-          />
-          <button className="btn-primary" disabled={disabled}>Continue</button>
-          <button type="button" className="btn-ghost" onClick={() => setAdding(false)}>Cancel</button>
-        </form>
+      {p.passkeys && count === 0 ? (
+        adding ? addForm : (
+          <EmptyState icon="key-round" title="No passkeys yet"
+            body="A passkey is the fastest way to sign in: no password to type, and it cannot be phished."
+            action={<Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>Add passkey</Button>} />
+        )
       ) : (
-        <button className="btn-primary" disabled={disabled} onClick={() => setAdding(true)}>Add passkey</button>
-      )}
-      {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
-
-      <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-        {p.passkeys?.map((k) => (
-          <li key={k.id} className="flex flex-wrap items-center gap-3 py-2 text-sm">
-            {editing === k.id ? (
-              <form className="flex flex-1 gap-2" onSubmit={(e) => submitRename(e, k.id)}>
-                <input
-                  className="input max-w-xs" autoFocus aria-label={`New name for ${k.name}`} value={draft}
-                  onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => escapeTo(e, () => setEditing(null))}
-                />
-                <button className="btn-primary text-xs" disabled={disabled}>Save</button>
-                <button type="button" className="btn-ghost text-xs" onClick={() => setEditing(null)}>Cancel</button>
+        <>
+          <SettingRow label={count === 1 ? '1 passkey' : `${count} passkeys`}
+            description={p.domain ? <span data-passkey-domain>Tied to <span className="font-mono">{p.domain}</span>.</span> : undefined}
+            control={!adding && <Button variant="primary" icon="plus" disabled={disabled} onClick={() => setAdding(true)}>Add passkey</Button>} />
+          {adding && addForm}
+          <div className="-mx-3 py-1">
+            {p.passkeys?.map((k) => (editing === k.id ? (
+              <form key={k.id} className="flex flex-wrap items-end gap-2 px-3 py-2" onSubmit={(e) => submitRename(e, k.id)}>
+                <div className="min-w-0 flex-1 basis-56">
+                  <Field label={`New name for ${k.name}`} hideLabel>
+                    <Input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => escapeTo(e, () => setEditing(null))} />
+                  </Field>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
+                <Button variant="primary" size="sm" type="submit" disabled={disabled}>Save</Button>
               </form>
             ) : (
-              <>
-                <span className="flex-1">
-                  {k.name}
-                  {k.suspiciousAt !== null && (
-                    <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300"
-                      title="A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.">
-                      Suspicious
-                    </span>
-                  )}
-                </span>
-                <span className="text-xs text-faint">
-                  created {new Date(k.createdAt).toLocaleDateString()} · used {relativeTime(k.lastUsedAt, p.now)}
-                </span>
-                <button className="btn-ghost text-xs" disabled={disabled} aria-label={`Rename ${k.name}`}
-                  onClick={() => { setDraft(k.name); setEditing(k.id) }}>Rename</button>
-                <button className="btn-danger text-xs" disabled={disabled} aria-label={`Delete ${k.name}`}
-                  onClick={() => { if (window.confirm(`Delete the passkey "${k.name}"? It will no longer sign in.`)) void p.onDelete(k.id) }}>
-                  Delete
-                </button>
-              </>
-            )}
-          </li>
-        ))}
-        {p.passkeys && p.passkeys.length === 0 && <li className="py-2 text-sm text-faint">No passkeys yet.</li>}
-      </ul>
-    </section>
+              <ListRow key={k.id} leading={<Icon name="key-round" size="md" />} label={k.name}
+                meta={`Created ${new Date(k.createdAt).toLocaleDateString()} · used ${relativeTime(k.lastUsedAt, p.now)}`}
+                badges={k.suspiciousAt !== null ? (
+                  <Badge hue="red" title="A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.">Suspicious</Badge>
+                ) : undefined}
+                menu={(
+                  <Menu label={`Actions for ${k.name}`} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
+                    <MenuItem label="Rename" icon="pencil" disabled={disabled} onSelect={() => { setDraft(k.name); setEditing(k.id) }} />
+                    <MenuSeparator />
+                    <MenuItem label="Remove" icon="trash-2" danger disabled={disabled} onSelect={() => void p.onDelete(k.id)} />
+                  </Menu>
+                )} />
+            )))}
+          </div>
+        </>
+      )}
+    </SettingsSection>
   )
 }
 

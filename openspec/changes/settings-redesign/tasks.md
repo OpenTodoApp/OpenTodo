@@ -24,41 +24,41 @@
 - [x] 4.1 Account: profile card plus Session card with "Sign out of this device" through `ConfirmDialog`, and a row linking to Security; verify with tests that sign-out runs only after confirm and Cancel returns focus to the button (web-app delta scenarios)
 - [x] 4.2 Password: `SettingRow` with "Change password" opening an inline expansion containing the existing form; verify with a test that no password fields render until the action is activated and Escape/cancel restores focus
 - [x] 4.3 Two-factor: summary (On/Off badge, "N of 10 recovery codes left", warning at ≤3 with promoted "New recovery codes"), enrolment in a `Dialog`, remembered browsers as `ListRow`s, disable in the danger area via `ConfirmDialog`, owner link to Access policies; verify with `TwoFactorPanelView` stories (off, on, few codes, offline) and tests for the summary text and the offline state
-- [ ] 4.4 Passkeys: summary count, `ListRow` per passkey (created, last used, suspicious badge, Rename/Remove menu), empty state with "Add passkey", removal through `ConfirmDialog`; verify with `SecurityPanel.test.ts` updated and stories (none, two, suspicious)
-- [ ] 4.5 Linked accounts: identities as `ListRow`s, link action, empty state, and `?linked`/`?error` confirmation on `/settings/security`; verify with a test rendering the linked and error states
-- [ ] 4.6 Encryption: state badge summary (off / on / locked on this device), actions by state, reset in the danger area through `ConfirmDialog`; verify with `encryptionPanel.test.tsx` updated and stories per state
-- [ ] 4.7 Activity: Recent activity as `ListRow`s (icon per event kind, relative time, agent and IP secondary, failure tint) and the owner's Audit log card; verify with `ActivityView` and `AuditPanel.test.ts` updated, the offline notice still shown, and a member seeing no Audit log
-- [ ] 4.8 Update docs for this group (`docs/account-security.md`, `docs/e2ee.md`, `docs/settings.md` You section, every "Settings → Account → …" that moved to Security/Encryption/Activity); verify with `make docs-check`
+- [x] 4.4 Passkeys: summary count, `ListRow` per passkey (created, last used, suspicious badge, Rename/Remove menu), empty state with "Add passkey", removal through `ConfirmDialog`; verify with `SecurityPanel.test.ts` updated and stories (none, two, suspicious)
+- [x] 4.5 Linked accounts: identities as `ListRow`s, link action, empty state, and `?linked`/`?error` confirmation on `/settings/security`; verify with a test rendering the linked and error states
+- [x] 4.6 Encryption: state badge summary (off / on / locked on this device), actions by state, reset in the danger area through `ConfirmDialog`; verify with `encryptionPanel.test.tsx` updated and stories per state
+- [x] 4.7 Activity: Recent activity as `ListRow`s (icon per event kind, relative time, agent and IP secondary, failure tint) and the owner's Audit log card; verify with `ActivityView` and `AuditPanel.test.ts` updated, the offline notice still shown, and a member seeing no Audit log
+- [x] 4.8 Update docs for this group (`docs/account-security.md`, `docs/e2ee.md`, `docs/settings.md` You section, every "Settings → Account → …" that moved to Security/Encryption/Activity); verify with `make docs-check`
 
 ## 5. App: Preferences, Notifications, Capture, Projects
 
-- [ ] 5.1 Preferences: Start view, Calendar and Keyboard as `SettingRow`s (select, numeric rows, Vim `Switch` with `role="switch"`), with a slot for the `date-time-preferences` panel; verify with tests that each control still writes the same per-device preference and a 320 px story without horizontal scroll
-- [ ] 5.2 Notifications: summary ("On/Off on this device", permission badge, last delivery line) and rows, keeping the existing actions; verify with a `NotificationsSettings` story per permission state and existing tests passing
-- [ ] 5.3 Capture: Quick add languages and Voice as rows, bookmarklet and extension card, Email to task summary with copy action and demo note; verify with `emailInbox.test.tsx` updated and the demo test for Capture
-- [ ] 5.4 Projects: auto-archive row (switch plus delay) and archived projects as `ListRow`s with Restore and an empty state; verify with `archivedProjects.test.tsx` updated and the project-organization scenarios (sorted list, restore) still passing
-- [ ] 5.5 Update docs for this group (`docs/settings.md` App section, `docs/keyboard.md`, `docs/quick-add.md`, `docs/capture.md`, `docs/email.md`, `docs/notifications.md`, `docs/time-blocking.md`, every "Settings → General → …"); verify with `make docs-check`
+- [x] 5.1 Preferences: Start view, Calendar and Keyboard as `SettingRow`s (select, numeric rows, Vim `Switch` with `role="switch"`), with a slot for the `date-time-preferences` panel; verify with tests that each control still writes the same per-device preference and a 320 px story without horizontal scroll
+- [x] 5.2 Notifications: summary ("On/Off on this device", permission badge, last delivery line) and rows, keeping the existing actions; verify with a `NotificationsSettings` story per permission state and existing tests passing
+- [x] 5.3 Capture: Quick add languages and Voice as rows, bookmarklet and extension card, Email to task summary with copy action and demo note; verify with `emailInbox.test.tsx` updated and the demo test for Capture
+- [x] 5.4 Projects: auto-archive row (switch plus delay) and archived projects as `ListRow`s with Restore and an empty state; verify with `archivedProjects.test.tsx` updated and the project-organization scenarios (sorted list, restore) still passing
+- [x] 5.5 Update docs for this group (`docs/settings.md` App section, `docs/keyboard.md`, `docs/quick-add.md`, `docs/capture.md`, `docs/email.md`, `docs/notifications.md`, `docs/time-blocking.md`, every "Settings → General → …"); verify with `make docs-check`
 
 ## 6. Data and connections: Data, Integrations, AI
 
-- [ ] 6.1 Data: Export and Import rows, sync summary, and for the owner a row linking to Backups; verify with tests for member and owner Data sections and the demo import note
-- [ ] 6.2 Integrations: CalDAV summary with copy and app passwords as `ListRow`s; webhooks list with last-delivery badge; tokens list with scope badge; each "New …" in a `Dialog` whose success step shows the one-time secret with copy; revokes through `ConfirmDialog`; verify with `caldavSettings.test.tsx` and token tests updated, the "Token shown once" scenario, and the empty state for no tokens
-- [ ] 6.3 AI: Assistant summary or owner configuration behind "Configure", AI assistants as switch rows plus token action; verify with `assistantSettings.test.tsx` and `assistantsSettings.test.tsx` updated and the read-token-preselected scenario
-- [ ] 6.4 Update docs for this group (`docs/import-export.md`, `docs/caldav.md`, `docs/webhooks.md`, `docs/api.md`, `docs/mcp.md`, `docs/assistant.md`, `docs/ai-and-agents.md`); verify with `make docs-check`
+- [x] 6.1 Data: Export and Import rows, sync summary, and for the owner a row linking to Backups; verify with tests for member and owner Data sections and the demo import note
+- [x] 6.2 Integrations: CalDAV summary with copy and app passwords as `ListRow`s; webhooks list with last-delivery badge; tokens list with scope badge; each "New …" in a `Dialog` whose success step shows the one-time secret with copy; revokes through `ConfirmDialog`; verify with `caldavSettings.test.tsx` and token tests updated, the "Token shown once" scenario, and the empty state for no tokens
+- [x] 6.3 AI: Assistant summary or owner configuration behind "Configure", AI assistants as switch rows plus token action; verify with `assistantSettings.test.tsx` and `assistantsSettings.test.tsx` updated and the read-token-preselected scenario
+- [x] 6.4 Update docs for this group (`docs/import-export.md`, `docs/caldav.md`, `docs/webhooks.md`, `docs/api.md`, `docs/mcp.md`, `docs/assistant.md`, `docs/ai-and-agents.md`); verify with `make docs-check`
 
 ## 7. Server: Administration, Backups, Access policies
 
-- [ ] 7.1 Administration: config warnings, Users as `ListRow`s with role and status badges and per-row menu (keeping `onRowKey`), Members and invitations list with "New invitation" in a `Dialog`, delete and revoke through `ConfirmDialog`; verify with UsersView tests (admin sees member actions only) and invitation tests updated
-- [ ] 7.2 Backups: summary (last run time and outcome badge, next run), destinations and schedule as rows, recent runs as `ListRow`s; verify with `backupsScreen.test.tsx` updated and a story per outcome
-- [ ] 7.3 Access policies: two-factor policy select row, project invite links switch row, single sign-on summary with configuration behind "Configure" (env-locked fields kept); verify with `projectInvite.test.ts` and the SSO panel tests updated and an admin opening `/settings/access` seeing the overview
-- [ ] 7.4 Update docs for this group (`docs/backups.md`, `docs/self-hosting/sso.md`, `docs/sharing.md`, `docs/self-hosting/demo.md`, every "Settings → Administration/Data → Backups"); verify with `make docs-check`
+- [x] 7.1 Administration: config warnings, Users as `ListRow`s with role and status badges and per-row menu (keeping `onRowKey`), Members and invitations list with "New invitation" in a `Dialog`, delete and revoke through `ConfirmDialog`; verify with UsersView tests (admin sees member actions only) and invitation tests updated
+- [x] 7.2 Backups: summary (last run time and outcome badge, next run), destinations and schedule as rows, recent runs as `ListRow`s; verify with `backupsScreen.test.tsx` updated and a story per outcome
+- [x] 7.3 Access policies: two-factor policy select row, project invite links switch row, single sign-on summary with configuration behind "Configure" (env-locked fields kept); verify with `projectInvite.test.ts` and the SSO panel tests updated and an admin opening `/settings/access` seeing the overview
+- [x] 7.4 Update docs for this group (`docs/backups.md`, `docs/self-hosting/sso.md`, `docs/sharing.md`, `docs/self-hosting/demo.md`, every "Settings → Administration/Data → Backups"); verify with `make docs-check`
 
 ## 8. Integration checks
 
-- [ ] 8.1 Update `scripts/e2e-layout.mjs` to iterate all fourteen sections and the overview at 320, 390 and 1280 px, and `scripts/docs-screenshots.mjs` paths and headings; verify with `make layout-check` passing with no horizontal overflow
-- [ ] 8.2 Regenerate help and screenshots (`make docs`, `make docs-screenshots`) and confirm every `settings/...` screen id resolves; verify with `make docs-check` and `make docs-site-check`
+- [x] 8.1 Update `scripts/e2e-layout.mjs` to iterate all fourteen sections and the overview at 320, 390 and 1280 px, and `scripts/docs-screenshots.mjs` paths and headings; verify with `make layout-check` passing with no horizontal overflow
+- [x] 8.2 Regenerate help and screenshots (`make docs`, `make docs-screenshots`) and confirm every `settings/...` screen id resolves; verify with `make docs-check` and `make docs-site-check`
 - [ ] 8.3 Run the Storybook gates from `design-language` (axe, visual regression light/dark at 375 and 1280) for every settings story; verify the gate command passes with zero axe violations and approved baselines
-- [ ] 8.4 Manual keyboard pass: overview → each section → each action and dialog without a mouse, focus visible throughout, and a screen reader announcing group headings; record the result in the PR description
-- [ ] 8.5 Run `make check` and `npx @fission-ai/openspec validate --all --strict`; both pass
+- [x] 8.4 Manual keyboard pass: overview → each section → each action and dialog without a mouse, focus visible throughout, and a screen reader announcing group headings; record the result in the PR description
+- [x] 8.5 Run `make check` and `npx @fission-ai/openspec validate --all --strict`; both pass
 
 ## Workflow follow-up
 

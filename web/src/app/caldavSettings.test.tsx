@@ -13,7 +13,7 @@ function render(over: Partial<CaldavViewProps> = {}) {
   const props: CaldavViewProps = {
     isOwner: true, email: 'me@example.com', setting: { enabled: true, url: 'https://todo.example.com/dav/', secure: true },
     passwords: [], newName: '', secret: null, error: null, busy: false,
-    onToggle: noop, onNameChange: noop, onCreate: noop, onRevoke: noop, onDismissSecret: noop, ...over,
+    onToggle: noop, onNameChange: noop, onCreate: noop, onRevoke: noop, onNew: noop, onCloseNew: noop, ...over,
   }
   return renderToStaticMarkup(<CaldavView {...props} />)
 }
@@ -21,8 +21,9 @@ function render(over: Partial<CaldavViewProps> = {}) {
 describe('CaldavView', () => {
   it('gives the owner a toggle and shows the address, user name and client hints when on', () => {
     const html = render()
-    expect(html).toContain('type="checkbox"')
-    expect(html).toContain('checked=""')
+    expect(html).toContain('role="switch"')
+    expect(html).toContain('aria-checked="true"')
+    expect(html).toContain('aria-label="Copy server address"')
     expect(html).toContain('https://todo.example.com/dav/')
     expect(html).toContain('me@example.com')
     for (const client of ['Apple Reminders', 'Thunderbird', 'DAVx⁵']) expect(html).toContain(client)
@@ -31,7 +32,7 @@ describe('CaldavView', () => {
 
   it('tells members whether CalDAV is on, without a toggle', () => {
     const off = render({ isOwner: false, setting: { enabled: false, url: 'https://x/dav/', secure: true } })
-    expect(off).not.toContain('type="checkbox"')
+    expect(off).not.toContain('role="switch"')
     expect(off).toContain('Ask the server owner')
     expect(off).not.toContain('https://x/dav/')
     expect(render({ isOwner: false })).toContain('CalDAV is on for this server.')
@@ -43,22 +44,22 @@ describe('CaldavView', () => {
     expect(html).toContain('plain http')
   })
 
-  it('shows a new app password once, lists active and revoked ones with revoke buttons', () => {
-    const html = render({
-      secret: 'otap_secret123',
-      passwords: [pw({ lastUsedAt: 2 }), pw({ id: 'a2', name: 'Old laptop', revokedAt: 3 })],
-    })
-    expect(html).toContain('otap_secret123')
-    expect(html).toContain('will not be shown again')
+  it('shows a new app password once in the dialog, lists active and revoked ones', () => {
+    const shown = render({ creating: true, secret: 'otap_secret123' })
+    expect(shown).toContain('otap_secret123')
+    expect(shown).toContain('will not be shown again')
+    const html = render({ passwords: [pw({ lastUsedAt: 2 }), pw({ id: 'a2', name: 'Old laptop', revokedAt: 3 })] })
     expect(html).toContain('iPhone')
     expect(html).toContain('Old laptop')
-    expect((html.match(/>Revoke</g) ?? []).length).toBe(1)
+    expect(html).toContain('aria-label="Actions for iPhone"')
+    expect(html).not.toContain('aria-label="Actions for Old laptop"')
+    expect(html).toContain('>Revoked<')
     expect(render({ passwords: [pw()] })).not.toContain('otap_')
     expect(render()).toContain('No app passwords yet.')
   })
 
   it('keeps every control a native, keyboard-reachable element', () => {
-    const html = render({ passwords: [pw()] })
+    const html = render({ passwords: [pw()], creating: true })
     expect(html).toContain('aria-label="App password name"')
     expect(html).not.toMatch(/<div[^>]*onclick/i)
     expect(html).toContain('<button')
@@ -67,7 +68,7 @@ describe('CaldavView', () => {
   it('says the status needs a connection while offline', () => {
     const html = render({ setting: null, passwords: null })
     expect(html).toContain('available when you are online')
-    expect(html).toMatch(/<button class="btn-primary" disabled="">Create app password/)
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>.*New app password/)
   })
 })
 

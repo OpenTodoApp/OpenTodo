@@ -5,7 +5,7 @@ import { COMMANDS } from './commands'
 
 export const VIM_HELP: HelpSection = {
   title: 'Vim keybindings',
-  note: 'On for this device; turn off in Settings → General → Keyboard. All shortcuts above still work in Normal mode.',
+  note: 'On for this device; turn off in Settings → Preferences → Keyboard. All shortcuts above still work in Normal mode.',
   rows: [
     ['NORMAL / INSERT / COMMAND', 'Mode shown at the bottom; a focused text field is Insert mode'],
     ['3j, 5k, 2↓', 'Count: move the selection that many tasks (clamped)'],

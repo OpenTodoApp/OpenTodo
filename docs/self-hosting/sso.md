@@ -28,7 +28,7 @@ Providers only accept the exact redirect URI you register. Set `OPENTODO_BASE_UR
 OPENTODO_BASE_URL=https://todo.example.com
 ```
 
-The redirect URI is then `https://todo.example.com/api/v1/auth/oidc/callback`. **Settings → Administration → Single sign-on** always shows the exact value; without `OPENTODO_BASE_URL` it is derived from the address in your browser and the panel warns you.
+The redirect URI is then `https://todo.example.com/api/v1/auth/oidc/callback`. **Settings → Access policies → Single sign-on** always shows the exact value; without `OPENTODO_BASE_URL` it is derived from the address in your browser and the panel warns you.
 
 ## 2. Create a client at the provider
 
@@ -55,7 +55,7 @@ Provider notes:
 
 ## 3. Configure OpenTodo
 
-Open **Settings → Administration → Single sign-on** as the owner:
+Open **Settings → Access policies → Single sign-on** as the owner:
 
 1. Enter the **Issuer URL**, **Client ID**, **Client secret** and a **Button label** (for example "Home SSO").
 2. Click **Test connection**. OpenTodo fetches the discovery document and shows the sign-in and token hosts. An issuer that is not https, unreachable, or reports a different issuer is refused and nothing changes.
@@ -83,9 +83,9 @@ The other switches (new accounts via SSO, provider sign-out, scopes) are set in 
 - An identity is recognised by its issuer and subject (`sub`), never by email once linked. Changing your email at the provider keeps you on the same OpenTodo account, and a changed email cannot take over another account.
 - A first-time identity with a verified email that matches an account is linked to it. An unverified or missing email is refused (`oidc_email_unverified`) and nothing is created.
 - When nothing matches, a `member` account is created only if **Allow new accounts via SSO** is on or `OPENTODO_ALLOW_SIGNUP=true`. Otherwise the person sees "There is no account for this identity yet" and you can invite them.
-- Accounts created this way have no password. They can add a passkey in Settings.
-- Everyone can link or unlink the provider in **Settings → Account → Linked accounts**. Unlinking is refused when it would leave the account with no way to sign in.
-- A provider sign-in counts as two-factor: someone with an authenticator app is not asked for a code, because the provider applies its own policy. If the owner requires two-factor for everyone (**Settings → Account → Two-factor**), accounts without an authenticator are still asked to enrol one.
+- Accounts created this way have no password. They can add a passkey in **Settings → Security**.
+- Everyone can link or unlink the provider in **Settings → Security → Linked accounts**. Unlinking is refused when it would leave the account with no way to sign in.
+- A provider sign-in counts as two-factor: someone with an authenticator app is not asked for a code, because the provider applies its own policy. If the owner requires two-factor for everyone (**Settings → Access policies → Two-factor authentication**), accounts without an authenticator are still asked to enrol one.
 
 ## SSO only
 
