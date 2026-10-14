@@ -52,7 +52,27 @@ Tokens are defined once in `web/src/index.css`:
 
 Rules for code under `web/src/ui/`:
 
-- Use token utilities only. A raw palette class (`bg-slate-200`) or a hex literal fails `src/ui/tokens/lint.test.ts`. Screens in `web/src/app` are exempt until their redesign change migrates them.
+- Use token utilities only, in shared components, screens (`web/src/app`) and the component classes of `index.css`. A raw palette class (`bg-slate-200`), a fixed `bg-white`/`text-black` or a hex literal fails `src/ui/tokens/lint.test.ts`, which names the file and line. A hex passed as `color=` is stored data and allowed. Screens that an open change is rewriting sit on the lint's named allow-list, which may only shrink.
+- Choose a token by what the colour **means**, not by its hue today. Emerald is both the accent and the success colour, and only the meaning keeps them apart when a theme changes the accent:
+
+| Meaning | Tokens |
+| --- | --- |
+| Card, panel, input background | `bg-surface` |
+| Page background | `bg-canvas` |
+| Well, inset, hover tint | `bg-sunken` (dark hovers `dark:hover:bg-raised`) |
+| Body text, headings | `text-default`, `text-strong` |
+| Secondary text | `text-muted` |
+| Hints, placeholders | `text-faint`, `placeholder-faint` |
+| Dividers and card borders, input borders | `border-default`, `border-input` |
+| Actions, links, selection, focus, current navigation | `bg-accent`, `text-accent`, `bg-accent-soft` with `text-on-accent-soft`, `ring-focus`, `text-on-accent` on the accent |
+| Done, saved, connected | `text-success`, `bg-success-soft` with `text-on-success-soft` |
+| Errors, destructive actions | `text-danger`, `border-danger`, `bg-danger-soft` with `text-on-danger-soft` |
+| Cautions | `text-warning`, `bg-warning-soft` with `text-on-warning-soft` |
+| Neutral notices | `text-info`, `bg-info-soft` with `text-on-info-soft` |
+| Task priority | `p1` to `p4` |
+| Overlay scrim, search highlight | `bg-scrim`, `bg-highlight` |
+
+A token switches between light and dark by itself, so a screen needs no `dark:` partner for colour.
 - Before using a new foreground and background combination, add it to `src/ui/tokens/pairs.ts`. `contrast.test.ts` recomputes every pair from `index.css` in both themes and fails with the pair, theme and ratio.
 
 The legacy classes `.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.btn-danger`, `.input` and `.kbd` keep their names and draw from the tokens. Use `.btn-secondary` for bordered neutral buttons.

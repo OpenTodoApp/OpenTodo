@@ -104,10 +104,12 @@ export const api = {
   /**
    * Register an account. `invitation` is the secret from an invite link; it admits one member while sign-up is closed.
    * `projectInvite` is a project invite link secret: the new account joins that project in the same step.
+   * `setupToken` is the operator's OPENTODO_SETUP_TOKEN, required for the first account when configured.
    */
-  register: (email: string, name: string, password: string, invitation?: string, projectInvite?: string) =>
+  register: (email: string, name: string, password: string, invitation?: string, projectInvite?: string, setupToken?: string) =>
     request<{ user: User; projectId?: string }>('POST', '/api/v1/auth/register', {
       email, name, password, ...(invitation ? { invitation } : {}), ...(projectInvite ? { projectInvite } : {}),
+      ...(setupToken ? { setupToken } : {}),
     }),
   /** Password step. An account with a second factor answers with a challenge instead of a session. */
   login: (email: string, password: string) => request<LoginResult>('POST', '/api/v1/auth/login', { email, password }),

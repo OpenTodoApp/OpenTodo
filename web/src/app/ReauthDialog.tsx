@@ -38,7 +38,7 @@ export function ReauthDialogView(p: ReauthDialogViewProps) {
             <input className="input font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" aria-label="Code from your authenticator app"
               required autoFocus maxLength={7} value={p.value} onChange={(e) => p.onValue(e.target.value)} />
           )}
-          {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
+          {p.error && <p className="text-sm text-danger" role="alert">{p.error}</p>}
           <div className="flex flex-wrap items-center gap-2">
             <button className="btn-primary" disabled={p.busy}>{p.busy ? 'Checking…' : 'Continue'}</button>
             <button type="button" className="btn-ghost" onClick={p.onCancel}>Cancel</button>

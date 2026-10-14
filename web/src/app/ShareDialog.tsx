@@ -86,7 +86,7 @@ export function ShareDialog({ project, userId, cached, onClose }: {
         )}
         {roles.length > 0 && <InviteLinksSection projectId={project.id} myRole={myRole} />}
         {locked && <p className="mb-3 text-sm text-muted" data-testid="demo-share-note">Sharing changes: {DEMO_RESTRICTED_NOTE}</p>}
-        {error && <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p role="alert" className="mb-3 text-sm text-danger">{error}</p>}
         <ul aria-label="Members" className="space-y-1">
           {members.map((m) => {
             const self = m.userId === userId

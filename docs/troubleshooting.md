@@ -90,7 +90,7 @@ No. OpenTodo is a web app that you install from your server's address, and it th
 
 ### Can I use OpenTodo on my own, without a server?
 
-OpenTodo needs a server to sign in and sync, but it can be small: a single container on a Raspberry Pi or a cheap virtual server is enough. To try it first, use the [demo](https://opentodo-demo.pixari.dev). Setting up a server is described in [Running with Docker](self-hosting/docker.md).
+OpenTodo needs a server to sign in and sync, but it can be small: a single container on a Raspberry Pi or a cheap virtual server is enough. To try it first, use the [demo](https://demo.open-todo.app). Setting up a server is described in [Running with Docker](self-hosting/docker.md).
 
 ### Can I move my tasks from another task app?
 

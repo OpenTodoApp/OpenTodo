@@ -8,17 +8,17 @@ export function SyncStatus() {
   const dt = useDateTimeFormat()
   const s = useSyncStatus()
   const map = {
-    idle: { dot: 'bg-emerald-500', text: s.pending > 0 ? `${s.pending} pending` : 'Synced' },
-    syncing: { dot: 'bg-sky-500 animate-pulse', text: 'Syncing…' },
-    reseeding: { dot: 'bg-sky-500 animate-pulse', text: 'Re-syncing after restore…' },
-    offline: { dot: 'bg-slate-400', text: s.pending > 0 ? `Offline · ${s.pending} pending` : 'Offline' },
-    error: { dot: 'bg-red-500', text: 'Sync error' },
-    unauthenticated: { dot: 'bg-amber-500', text: 'Signed out' },
-    restricted: { dot: 'bg-amber-500', text: s.pending > 0 ? `Set up two-factor · ${s.pending} waiting` : 'Set up two-factor to sync' },
+    idle: { dot: 'bg-success', text: s.pending > 0 ? `${s.pending} pending` : 'Synced' },
+    syncing: { dot: 'bg-info animate-pulse', text: 'Syncing…' },
+    reseeding: { dot: 'bg-info animate-pulse', text: 'Re-syncing after restore…' },
+    offline: { dot: 'bg-faint', text: s.pending > 0 ? `Offline · ${s.pending} pending` : 'Offline' },
+    error: { dot: 'bg-danger', text: 'Sync error' },
+    unauthenticated: { dot: 'bg-warning', text: 'Signed out' },
+    restricted: { dot: 'bg-warning', text: s.pending > 0 ? `Set up two-factor · ${s.pending} waiting` : 'Set up two-factor to sync' },
     // End-to-end encryption (OpenSpec e2ee): no key on this device, sync paused.
-    locked: { dot: 'bg-amber-500', text: 'Locked' },
+    locked: { dot: 'bg-warning', text: 'Locked' },
     // Demo sandbox write budget used up (OpenSpec `demo-sandboxes`); changes wait.
-    limited: { dot: 'bg-amber-500', text: s.pending > 0 ? `Demo limit · ${s.pending} waiting` : 'Demo limit reached' },
+    limited: { dot: 'bg-warning', text: s.pending > 0 ? `Demo limit · ${s.pending} waiting` : 'Demo limit reached' },
   }[s.state]
   // Live state is secondary information: shown next to the existing text, and only
   // when it says something (offline and signed out already imply "not live").
@@ -31,7 +31,7 @@ export function SyncStatus() {
       type="button"
       onClick={() => (s.state === 'restricted' ? window.dispatchEvent(new Event(ENROLMENT_EVENT)) : requestSync(0))}
       title={s.state === 'locked' ? 'This device is locked: unlock it with your encryption passphrase to sync.' : s.state === 'restricted' ? 'The server owner requires two-factor authentication for your account. Click to set it up; your changes upload afterwards.' : s.error ?? `${lastSynced} · ${liveTitle}`}
-      className="flex items-center gap-2 rounded-md px-2 py-1 text-xs text-muted hover:bg-slate-100 dark:hover:bg-slate-800"
+      className="flex items-center gap-2 rounded-md px-2 py-1 text-xs text-muted hover:bg-sunken dark:hover:bg-raised"
     >
       <span className={`h-2 w-2 rounded-full ${map.dot}`} />
       {map.text}

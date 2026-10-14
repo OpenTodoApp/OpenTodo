@@ -20,6 +20,13 @@ function Colours() {
           ))}
         </div>
       </Section>
+      <Section title="Overlay scrim">
+        <p className="text-meta text-muted">Dims the page behind dialogs, sheets and the phone sidebar (bg-scrim).</p>
+        <div className="relative h-20 overflow-hidden rounded-card border border-default bg-surface">
+          <div className="p-3 text-body">Page content</div>
+          <div className="absolute inset-y-0 right-0 w-1/2 bg-scrim" aria-hidden="true" />
+        </div>
+      </Section>
       <Section title="Foreground tokens and their contrast">
         <p className="text-meta text-muted">Each row lists the backgrounds the token is allowed on, with the live ratio and the minimum (src/ui/tokens/pairs.ts).</p>
         <ul className="divide-y divide-(--ot-border) rounded-card border border-default bg-surface">

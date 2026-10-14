@@ -85,33 +85,33 @@ export function TrashView() {
     <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
       <div className="mb-1 flex items-center gap-2">
         <h1 className="flex-1 text-xl font-semibold">Trash</h1>
-        {items.length > 0 && <button className="btn-ghost text-sm text-red-600 dark:text-red-400" onClick={() => setConfirm('all')}>Empty Trash</button>}
+        {items.length > 0 && <button className="btn-ghost text-sm text-danger" onClick={() => setConfirm('all')}>Empty Trash</button>}
       </div>
       <p className="mb-4 text-sm text-muted">
         {retention > 0 ? `Items are deleted permanently after ${retention} days.` : 'Items stay here until you delete them permanently.'}{' '}
         <span className="hidden md:inline"><span className="kbd">r</span> restores, <span className="kbd">Delete</span> deletes permanently.</span>
       </p>
-      {error && <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="mb-3 text-sm text-danger">{error}</p>}
       {confirm && (
-        <div role="alertdialog" aria-label="Confirm permanent deletion" className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+        <div role="alertdialog" aria-label="Confirm permanent deletion" className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-danger bg-danger-soft px-3 py-2 text-sm text-on-danger-soft">
           <span className="flex-1">
             {confirm === 'all' ? `Permanently delete all ${items.length} items? This cannot be undone.` : `Permanently delete “${confirm.title}”${confirm.entity === 'project' ? ' and its tasks' : ''}? This cannot be undone.`}
           </span>
-          <button className="btn-primary bg-red-600 text-xs hover:bg-red-700" autoFocus onClick={() => void purge(confirm)}>Delete permanently</button>
+          <button className="btn-primary bg-danger text-xs hover:bg-danger/90" autoFocus onClick={() => void purge(confirm)}>Delete permanently</button>
           <button className="btn-ghost text-xs" onClick={() => setConfirm(null)}>Cancel</button>
         </div>
       )}
       {items.length === 0 ? (
         <p className="py-12 text-center text-sm text-faint">The Trash is empty.</p>
       ) : (
-        <ul className="divide-y divide-slate-100 dark:divide-slate-800" aria-label="Deleted items">
+        <ul className="divide-y divide-(--ot-border)" aria-label="Deleted items">
           {items.map((it, i) => {
             const days = remainingDays(it.deletedAt, retention, now)
             const isPending = pendingKeys.has(`${it.entity}:${it.id}`)
             const ok = allowed(it)
             return (
               <li key={`${it.entity}:${it.id}`} data-trash-id={it.id} onClick={() => setSelected(i)}
-                className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-2 py-2 text-sm ${i === selected ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}`}>
+                className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-2 py-2 text-sm ${i === selected ? 'bg-accent-soft' : ''}`}>
                 <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : <Icon name="circle" size="xs" />}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{it.title}</span>
@@ -123,7 +123,7 @@ export function TrashView() {
                 {ok && (
                   <span className="flex gap-1">
                     <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => void restore(it)}>Restore</button>
-                    <button className="btn-ghost px-2 py-0.5 text-xs text-red-600 dark:text-red-400" disabled={isPending} onClick={() => setConfirm(it)}>Delete permanently</button>
+                    <button className="btn-ghost px-2 py-0.5 text-xs text-danger" disabled={isPending} onClick={() => setConfirm(it)}>Delete permanently</button>
                   </span>
                 )}
               </li>
