@@ -4,8 +4,9 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { buildAll, writeAll } from './build.mjs'
+import { buildAll, COMMITTED_SITE, writeAll } from './build.mjs'
 import { runChecks } from './check.mjs'
+import { SCREENSHOTS, SHOTS_DIR } from '../../../scripts/site-bundle.mjs'
 
 // A 1×1 WebP (VP8L).
 const WEBP = Buffer.from('UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==', 'base64')
@@ -30,8 +31,9 @@ export const QUICK_ADD_SYNTAX = [['p1', 'Priority']]
   write('docs/boards.md', page('title: Boards\nsummary: Columns.\naudience: user\nspecs: [boards]\nscreens: [board-view#switch-to-a-board]\norder: 1',
     '# Boards\n\n## Switch to a board\n\n![A board](images/board-light.webp)\n\nSee [the readme](../README.md#configuration) and [keys](keyboard.md#all-shortcuts).\n'))
   write('docs/keyboard.md', page('title: Keys\nsummary: Shortcuts.\naudience: user\nspecs: []\norder: 2', '# Keys\n\n## All shortcuts\n\n<!-- shortcuts:start -->\n<!-- shortcuts:end -->\n'))
-  const { files } = await buildAll(root)
-  writeAll(root, files)
+  for (const n of SCREENSHOTS) write(`${SHOTS_DIR}/${n}.webp`, WEBP)
+  const { files } = await buildAll(root, { site: COMMITTED_SITE })
+  writeAll(root, files, COMMITTED_SITE)
 })
 afterEach(() => rmSync(root, { recursive: true, force: true }))
 
@@ -95,5 +97,11 @@ describe('docs check', () => {
     expect(await runChecks(root)).toContainEqual(expect.stringMatching(/^generated docs are out of date; run `make docs` \(website\/docs\/boards\/index\.html/))
     write('website/docs/old/index.html', 'stale')
     expect((await runChecks(root)).join('\n')).toContain('website/docs/old/index.html (no longer generated)')
+  })
+
+  it('fails when a screenshot named by the site bundle is missing (site-bundle 2.3)', async () => {
+    expect(await runChecks(root)).toEqual([])
+    rmSync(join(root, SHOTS_DIR, `${SCREENSHOTS[0]}.webp`))
+    expect((await runChecks(root)).join('\n')).toContain(`${SHOTS_DIR}/${SCREENSHOTS[0]}.webp: named by the site bundle but missing`)
   })
 })
