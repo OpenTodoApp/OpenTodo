@@ -65,7 +65,12 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: { '/api': 'http://localhost:8080', '/healthz': 'http://localhost:8080' },
+    // changeOrigin stays false: the API's cross-site check compares Origin with Host,
+    // and the browser's Origin is this dev server (localhost:5173).
+    proxy: {
+      '/api': { target: 'http://localhost:8080', changeOrigin: false },
+      '/healthz': { target: 'http://localhost:8080', changeOrigin: false },
+    },
   },
   test: {
     environment: 'node',

@@ -13,10 +13,11 @@ interface Scope {
   shown: { title: string; options: Record<string, unknown> }[]
   messages: unknown[]
   fetches: { url: string; body: unknown }[]
+  opened: string[]
 }
 
 function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean } = {}): Scope {
-  const scope: Scope = { listeners: {}, shown: [], messages: [], fetches: [] }
+  const scope: Scope = { listeners: {}, shown: [], messages: [], fetches: [], opened: [] }
   const windows = (opts.windows ?? []).map((w) => ({
     focused: w.focused, visibilityState: w.focused ? 'visible' : 'hidden',
     postMessage: (m: unknown) => scope.messages.push(m), focus: async () => undefined,
@@ -24,7 +25,7 @@ function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean 
   const self = {
     crypto: globalThis.crypto,
     addEventListener: (type: string, fn: (ev: unknown) => void) => (scope.listeners[type] = fn),
-    clients: { matchAll: async () => windows, openWindow: vi.fn() },
+    clients: { matchAll: async () => windows, openWindow: vi.fn(async (url: string) => scope.opened.push(url)) },
     registration: { showNotification: async (title: string, options: Record<string, unknown>) => scope.shown.push({ title, options }) },
   }
   const fetchStub = async (url: string, init: { body: string }) => {
@@ -128,5 +129,32 @@ describe('service worker reminder handlers', () => {
     expect(sw.fetches).toEqual([])
     expect(sw.messages).toMatchObject([{ type: 'reminders:changed', reminderIds: [reminderId] }])
     expect(await db.outbox.count()).toBe(1)
+  })
+})
+
+describe('service worker test pushes (push-test-delivery)', () => {
+  it('shows a system notification even with the app focused, with a unique tag, and reports receipt', async () => {
+    const scope = loadWorker({ windows: [{ focused: true }, { focused: false }] })
+    await dispatch(scope, 'push', pushEvent({ type: 'test', testId: 'abc', sentAt: 1 }))
+    await dispatch(scope, 'push', pushEvent({ type: 'test', testId: 'def', sentAt: 2 }))
+    expect(scope.shown.map((s) => s.options.tag)).toEqual(['opentodo-test:abc', 'opentodo-test:def'])
+    expect(scope.shown[0].options.body).toMatch(/push works on this device/)
+    const receipts = scope.messages.filter((m) => (m as { type: string }).type === 'push:test-received')
+    expect(receipts.map((m) => (m as { testId: string }).testId)).toEqual(['abc', 'abc', 'def', 'def'])
+    expect(scope.messages.some((m) => (m as { type: string }).type === 'reminders:push')).toBe(false)
+  })
+
+  it('writes nothing to the database', async () => {
+    const before = { outbox: await db.outbox.count(), meta: await getMeta(SHOWN_KEY, null) }
+    const scope = loadWorker()
+    await dispatch(scope, 'push', pushEvent({ type: 'test', testId: 'abc', sentAt: 1 }))
+    expect({ outbox: await db.outbox.count(), meta: await getMeta(SHOWN_KEY, null) }).toEqual(before)
+  })
+
+  it('a click opens notification settings', async () => {
+    const scope = loadWorker()
+    await dispatch(scope, 'notificationclick', { notification: { data: { test: true, testId: 'abc' }, close: () => undefined }, action: '' })
+    expect(scope.opened).toEqual(['/settings/notifications'])
+    expect(scope.fetches).toEqual([])
   })
 })

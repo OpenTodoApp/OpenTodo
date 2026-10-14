@@ -290,6 +290,16 @@ export interface PushSubscriptionStatus {
   needsRenewal: boolean
 }
 
+/** Answer of POST /api/v1/push/test (OpenSpec `push-test-delivery`). */
+export interface PushTestResponse {
+  outcome: 'sent' | 'no_subscription' | 'gone' | 'failed'
+  testId?: string
+  subscription?: PushSubscriptionStatus | null
+  /** The push service's HTTP status, for `failed` (absent when it could not be reached). */
+  status?: number
+  error?: string
+}
+
 /** Account role on the server (OpenSpec `user-management`). */
 export type AccountRole = 'owner' | 'admin' | 'member'
 
