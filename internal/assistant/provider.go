@@ -23,9 +23,13 @@ type Conversation interface {
 }
 
 // Message is one message of the device-local conversation: user or assistant text.
+// Untrusted marks text the user pasted (assistant-skills D3): the loop wraps it
+// as untrusted data and folds it into the user's next message before any
+// provider sees it.
 type Message struct {
-	Role string `json:"role"`
-	Text string `json:"text"`
+	Role      string `json:"role"`
+	Text      string `json:"text"`
+	Untrusted bool   `json:"untrusted,omitempty"`
 }
 
 // ToolDef is a tool offered to the model (from the registry).

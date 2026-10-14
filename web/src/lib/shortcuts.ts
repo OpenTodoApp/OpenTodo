@@ -58,6 +58,7 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: 'g then i / t / u / c / l / f / v / s', description: 'Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings', section: 'go' },
   { keys: 'g then a', description: 'Go to Assigned to me', section: 'go' },
   { keys: 'g then x', description: 'Go to the Trash', section: 'go' },
+  { keys: 'g then k', description: 'Go to Ask: the assistant’s composer and skills (when the assistant is on)', section: 'go' },
   { keys: 'g then h', description: 'Go to Activity: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters)', section: 'go' },
   { keys: 'j / k, r, Delete (in the Trash)', description: 'Select, restore, delete permanently (Enter confirms, Esc cancels)', section: 'trash' },
   { keys: 'Enter (after completing the last task of a project)', description: 'Archive the project; any other key dismisses', section: 'trash' },

@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Component, type FormEvent, type KeyboardEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import { db } from '../../lib/db'
 import { markTaskNotificationsRead } from '../../lib/notifications'
 import { createSubtask, deleteTask, setTaskCompleted, updateTask } from '../../lib/ops'
@@ -40,6 +41,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   onToggleComplete?: (task: Task) => void
 }) {
   const dt = useDateTimeFormat()
+  const assistant = useAssistantStatus()
   const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
   const [title, setTitle] = useState('')
   const [copied, setCopied] = useState(false)
@@ -62,6 +64,9 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   }, [taskId])
 
   if (!task) return null
+
+  // assistant-skills: "Break this down" runs the skill with this task as its subject.
+  const breakDown = () => openAssistantWith({ skill: 'break-down', text: `Break down “${task.title}”`, selected: [task.id] })
 
   const commitTitle = () => {
     const t = title.trim()
@@ -98,6 +103,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           <MenuItem label="Copy link" icon="link" onSelect={copyLink} />
           {parent && <MenuItem label="Open parent task" icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
           {series && <MenuItem label="Open recurring task" icon="repeat" onSelect={() => onOpen?.(series.id)} />}
+          {!readOnly && assistant?.available && <MenuItem label="Break this down" icon="list" onSelect={breakDown} />}
           {!readOnly && <MenuSeparator />}
           {!readOnly && <MenuItem label="Delete" icon="trash-2" danger onSelect={remove} />}
         </Menu>

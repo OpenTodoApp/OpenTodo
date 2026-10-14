@@ -45,10 +45,14 @@ export class SSEParser {
 }
 
 export interface TurnRequest {
-  messages: { role: 'user' | 'assistant'; text: string }[]
+  /** `untrusted` marks text the user pasted (assistant-skills D3). */
+  messages: { role: 'user' | 'assistant'; text: string; untrusted?: boolean }[]
   timezone: string
   view?: string
   selected?: string[]
+  /** A built-in skill id and the device's working day (assistant-skills D2). */
+  skill?: string
+  workday?: { startHour: number; endHour: number; dayLength: number }
 }
 
 /**
@@ -79,8 +83,12 @@ export async function streamTurn(req: TurnRequest, onEvent: (e: TurnEvent) => vo
   for (const ev of parser.feed(dec.decode() + '\n\n')) onEvent(ev)
 }
 
-/** Messages of a turn: the last 40 at most and about 200 KB, older ones summarised in one line. */
-export function turnMessages(history: AssistantMessage[], question: string): TurnRequest['messages'] {
+/**
+ * Messages of a turn: the last 40 at most and about 200 KB, older ones
+ * summarised in one line. Pasted material goes just before the question,
+ * marked untrusted; the server wraps it and folds it into the question.
+ */
+export function turnMessages(history: AssistantMessage[], question: string, pasted?: string): TurnRequest['messages'] {
   const all = [...history.filter((m) => m.text && !m.error && m.stop !== 'refusal').map((m) => ({ role: m.role, text: m.text })), { role: 'user' as const, text: question }]
   const out: TurnRequest['messages'] = []
   let bytes = 0
@@ -95,6 +103,7 @@ export function turnMessages(history: AssistantMessage[], question: string): Tur
   }
   // The server wants alternation to start with the user; it joins repeats itself.
   while (out.length && out[0].role !== 'user') out.shift()
+  if (pasted) out.splice(out.length - 1, 0, { role: 'user', text: pasted, untrusted: true })
   return out
 }
 

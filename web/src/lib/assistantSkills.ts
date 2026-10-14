@@ -1,0 +1,63 @@
+// Built-in assistant skills (OpenSpec change assistant-skills): the list the
+// server offers, the device's working day for "Plan my week", and how pasted
+// text is told apart from a typed question. The skills' instructions stay on
+// the server; the client only names a skill by id.
+import { useEffect, useState } from 'react'
+import { api } from './api'
+import { DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
+import { getMeta } from './db'
+
+export interface AssistantSkill {
+  id: string
+  name: string
+  description: string
+  example: string
+  result: 'changes' | 'answer'
+  subject?: 'selection' | 'pasted'
+}
+
+let cache: AssistantSkill[] | null = null
+const listeners = new Set<(s: AssistantSkill[]) => void>()
+
+/** Fetches the skill list (empty when the assistant is not available to you). */
+export async function loadSkills(): Promise<AssistantSkill[]> {
+  try {
+    cache = (await api.assistantSkills()).skills
+  } catch {
+    cache ??= []
+  }
+  listeners.forEach((fn) => fn(cache!))
+  return cache
+}
+
+/** The skills, loaded once per session and shared. */
+export function useAssistantSkills(enabled = true): AssistantSkill[] {
+  const [skills, setSkills] = useState<AssistantSkill[]>(cache ?? [])
+  useEffect(() => {
+    if (!enabled) return
+    listeners.add(setSkills)
+    if (cache === null) void loadSkills()
+    else setSkills(cache)
+    return () => { listeners.delete(setSkills) }
+  }, [enabled])
+  return enabled ? skills : []
+}
+
+/** Test hook. */
+export function resetSkills(list: AssistantSkill[] | null = null): void {
+  cache = list
+}
+
+/** The device's working day (Settings → Calendar), for plan-week. */
+export async function workday(): Promise<GridPrefs> {
+  try {
+    return normalizeGridPrefs(await getMeta<unknown>(GRID_PREFS_META_KEY, null))
+  } catch {
+    return DEFAULT_GRID_PREFS
+  }
+}
+
+/** A paste becomes untrusted material when it is long or has line breaks (design D3). */
+export function isMaterial(text: string): boolean {
+  return text.length > 280 || /\r|\n/.test(text.trim())
+}

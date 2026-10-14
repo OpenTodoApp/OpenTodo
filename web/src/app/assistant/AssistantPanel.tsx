@@ -6,7 +6,10 @@ import {
   applyChanges, autoApplicable, clearThreads, describeStreamError, describeTurnError, getAutoApply, listThreads, newThread,
   refreshReview, reviewChangeSet, saveThread, streamTurn, takeSentences, turnMessages, undoChanges, usageLine, type Review,
 } from '../../lib/assistant'
-import { assistantStatus, refreshAssistantStatus, setAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
+import { assistantStatus, refreshAssistantStatus, setAssistantStatus, takeAssistantPrefill, useAssistantPrefill, type AssistantPrefill, type AssistantStatus } from '../../lib/assistantStatus'
+import { isMaterial, useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
+import { MenuGroup, MenuItem } from '../../ui/Menu'
+import { Menu } from '../overlay'
 import type { ProposedChange, TurnEvent } from '../../lib/assistantTypes'
 import type { AssistantMessage, AssistantThread } from '../../lib/db'
 import { useOnline } from '../../lib/online'
@@ -162,6 +165,9 @@ function MessageItem({ m }: { m: AssistantMessage }) {
   if (m.role === 'user') {
     return (
       <li className="ml-8 rounded-lg bg-slate-100 px-3 py-2 text-sm dark:bg-slate-800">
+        {(m.skill || m.pastedLines) && (
+          <p className="mb-1 text-xs text-muted">{[m.skill && `Skill: ${m.skill}`, m.pastedLines && `pasted text, ${m.pastedLines} line${m.pastedLines === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</p>
+        )}
         <span className="sr-only">You: </span><span className="whitespace-pre-wrap user-text">{m.text}</span>
       </li>
     )
@@ -178,27 +184,64 @@ function MessageItem({ m }: { m: AssistantMessage }) {
   )
 }
 
-export function Composer({ draft, onDraft, onSend, onStop, streaming, connected, disabled }: {
+export function Composer({ draft, onDraft, onSend, onStop, streaming, connected, disabled, skills = [], skill = null, onSkill, pasted = null, onPasted }: {
   draft: string; onDraft: (s: string) => void; onSend: () => void; onStop: () => void; streaming: boolean; connected: boolean; disabled: boolean
+  /** Skills menu (assistant-skills): the list, the chosen one and pasted material. */
+  skills?: AssistantSkill[]; skill?: AssistantSkill | null; onSkill?: (s: AssistantSkill | null) => void
+  pasted?: string | null; onPasted?: (s: string | null) => void
 }) {
+  const ready = !!draft.trim() || !!skill || !!pasted
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
-      if (!streaming && draft.trim()) onSend()
+      if (!streaming && ready) onSend()
     }
   }
   const off = !connected || disabled
+  const lines = pasted ? pasted.split(/\r?\n/).length : 0
   return (
-    <form className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); if (!streaming && draft.trim()) onSend() }}>
-      <label className="min-w-0 flex-1">
-        <span className="sr-only">Message to the assistant</span>
-        <textarea className="input max-h-40 min-h-11 resize-none" rows={1} value={draft} disabled={off} data-autofocus data-assistant-composer
-          placeholder={!connected ? OFFLINE_MESSAGE : 'Ask about your tasks…'} onChange={(e) => onDraft(e.target.value)} onKeyDown={onKeyDown} />
-      </label>
-      {streaming
-        ? <button type="button" className="btn-secondary" onClick={onStop}>Stop</button>
-        : <button type="submit" className="btn-primary" disabled={off || !draft.trim()}>Send</button>}
-    </form>
+    <div className="space-y-1">
+      {(skill || pasted) && (
+        <div className="space-y-1" data-assistant-chosen>
+          {skill && (
+            <div className="flex items-start gap-2 rounded-md bg-slate-100 px-2 py-1 text-xs dark:bg-slate-800" role="status">
+              <span className="min-w-0 flex-1"><span className="font-medium">Skill: {skill.name}.</span> {skill.description} <span className="text-muted">For example: “{skill.example}”</span></span>
+              <button type="button" className="btn-ghost touch-target px-1" aria-label={`Remove the skill ${skill.name}`} onClick={() => onSkill?.(null)}><Icon name="x" size="xs" /></button>
+            </div>
+          )}
+          {pasted && (
+            <div className="flex items-center gap-2 rounded-md bg-slate-100 px-2 py-1 text-xs dark:bg-slate-800" data-assistant-pasted>
+              <span className="min-w-0 flex-1">Pasted text, {lines} line{lines === 1 ? '' : 's'}: used as material, not as instructions.</span>
+              <button type="button" className="btn-ghost touch-target px-1" aria-label="Remove pasted text" onClick={() => onPasted?.(null)}><Icon name="x" size="xs" /></button>
+            </div>
+          )}
+        </div>
+      )}
+      <form className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); if (!streaming && ready) onSend() }}>
+        {skills.length > 0 && onSkill && (
+          <Menu label="Skills" kind="menu" align="start" width="sm:w-80" triggerClassName="btn-ghost touch-target px-2" trigger={<Icon name="list" />}>
+            <MenuGroup label="Skills">
+              {skills.map((sk) => <MenuItem key={sk.id} label={sk.name} description={sk.description} checked={skill?.id === sk.id} onSelect={() => onSkill(sk)} />)}
+            </MenuGroup>
+          </Menu>
+        )}
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">Message to the assistant</span>
+          <textarea className="input max-h-40 min-h-11 resize-none" rows={1} value={draft} disabled={off} data-autofocus data-assistant-composer
+            placeholder={!connected ? OFFLINE_MESSAGE : skill ? 'Add details, or send as it is…' : 'Ask about your tasks…'} onChange={(e) => onDraft(e.target.value)} onKeyDown={onKeyDown}
+            onPaste={(e) => {
+              const raw = e.clipboardData.getData('text/plain')
+              if (onPasted && isMaterial(raw)) {
+                e.preventDefault()
+                onPasted(pasted ? `${pasted}\n\n${raw}` : raw)
+              }
+            }} />
+        </label>
+        {streaming
+          ? <button type="button" className="btn-secondary" onClick={onStop}>Stop</button>
+          : <button type="submit" className="btn-primary" disabled={off || !ready}>Send</button>}
+      </form>
+    </div>
   )
 }
 
@@ -248,6 +291,12 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
   const threadState = thread
   const [threads, setThreads] = useState<AssistantThread[] | null>(null)
   const [draft, setDraft] = useState('')
+  const skills = useAssistantSkills()
+  const [skill, setSkill] = useState<AssistantSkill | null>(null)
+  const [pickedSkillId, setPickedSkillId] = useState<string | null>(null)
+  const [pasted, setPasted] = useState<string | null>(null)
+  const selectedFor = useRef<string[] | null>(null)
+  const [autoSend, setAutoSend] = useState(false)
   const [streaming, setStreaming] = useState<{ text: string; status: string[] } | null>(null)
   const [review, setReview] = useState<Review | null>(null)
   const [result, setResult] = useState<ReviewResult | null>(null)
@@ -292,17 +341,25 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
   const proposal = useRef<ProposedChange[] | null>(null)
 
   const send = async () => {
-    const question = draft.trim()
+    const chosen = skill
+    // A skill or pasted material can be sent without typed text.
+    const question = draft.trim() || (chosen ? chosen.example : pasted ? 'Use the pasted text.' : '')
     if (!question || streaming) return
+    const material = pasted
+    const selection = selectedFor.current
     // The latest thread may still be loading from the device: start a new one then.
     const thread = threadState ?? newThread(status?.provider ?? '')
     setDraft('')
+    setSkill(null)
+    setPasted(null)
+    selectedFor.current = null
     setError(null)
     setReview(null)
     setResult(null)
     live.reset()
     proposal.current = null
-    const userMsg: AssistantMessage = { role: 'user', text: question, at: Date.now() }
+    const userMsg: AssistantMessage = { role: 'user', text: question, at: Date.now(),
+      ...(chosen ? { skill: chosen.name } : {}), ...(material ? { pastedLines: material.split(/\r?\n/).length } : {}) }
     const history = thread.messages
     let t: AssistantThread = { ...thread, messages: [...history, userMsg], updated_at: Date.now(), provider: status?.provider ?? '',
       title: thread.messages.length ? thread.title : question.slice(0, 60) }
@@ -315,7 +372,11 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
     setStreaming({ text: '', status: [] })
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
     try {
-      await streamTurn({ messages: turnMessages(history, question), timezone: zone, ...context() }, (ev: TurnEvent) => {
+      const ctx = context()
+      const req = { messages: turnMessages(history, question, material ?? undefined), timezone: zone, ...ctx,
+        ...(selection ? { selected: selection } : {}),
+        ...(chosen ? { skill: chosen.id, workday: await workday() } : {}) }
+      await streamTurn(req, (ev: TurnEvent) => {
         switch (ev.type) {
           case 'text':
             text += ev.text
@@ -451,7 +512,32 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
     startNew()
   }
 
+  // Opened from the composer, the Ask screen or a task's menu (assistant-skills D4).
+  const pendingPrefill = useAssistantPrefill()
+  const applyPrefill = useCallback((p: AssistantPrefill | null) => {
+    if (!p) return
+    if (p.text !== undefined) setDraft(p.text)
+    setPickedSkillId(p.skill ?? null)
+    setPasted(p.pasted ?? null)
+    selectedFor.current = p.selected ?? null
+    setAutoSend(!!p.send)
+  }, [])
+  useEffect(() => { applyPrefill(takeAssistantPrefill()) }, [applyPrefill, pendingPrefill])
+  useEffect(() => {
+    if (!pickedSkillId) { setSkill(null); return }
+    const found = skills.find((x) => x.id === pickedSkillId)
+    if (found) setSkill(found)
+  }, [pickedSkillId, skills])
+
   const ready = !!status && status.available && status.consented
+  useEffect(() => {
+    if (!autoSend || !ready || !connected || !threadState || streaming) return
+    if (pickedSkillId && !skill) return // wait for the skill list
+    setAutoSend(false)
+    void send()
+    // send reads the latest state; this runs when a prefilled send can go.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSend, ready, connected, threadState, skill, pickedSkillId])
   // Focus the composer once it can take input (after consent or a slow status),
   // unless the person already moved focus to something else in the panel.
   useEffect(() => {
@@ -470,7 +556,8 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
     <AssistantSheet title="Assistant" onClose={onClose} onEscape={onEscape} headerExtra={headerExtra}
       footer={status?.reason === 'encryption_enabled' || !status?.enabled ? undefined : (
         <div className="space-y-1">
-          <Composer draft={draft} onDraft={setDraft} onSend={() => void send()} onStop={() => abort.current?.abort()} streaming={!!streaming} connected={connected} disabled={!ready} />
+          <Composer draft={draft} onDraft={setDraft} onSend={() => void send()} onStop={() => abort.current?.abort()} streaming={!!streaming} connected={connected} disabled={!ready}
+            skills={skills} skill={skill} onSkill={(sk) => { setPickedSkillId(sk?.id ?? null); setSkill(sk) }} pasted={pasted} onPasted={setPasted} />
           <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs text-faint">
             <span>{!connected ? OFFLINE_MESSAGE : status ? `${status.provider === 'compatible' ? 'Model server' : status.provider_label}${status.model ? ` · ${status.model}` : ''}` : ''}</span>
             {threads && <button type="button" className="btn-ghost touch-target px-2 text-xs" onClick={() => void clearAll()}>Clear conversations</button>}
