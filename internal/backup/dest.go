@@ -32,7 +32,19 @@ type Destination interface {
 	Put(ctx context.Context, name string, body io.ReadSeeker, size int64) error
 	List(ctx context.Context) ([]Object, error)
 	Delete(ctx context.Context, name string) error
+	// Open streams an archive back (backup-restore-web). Only archive names are
+	// accepted, never paths; size is -1 when the destination does not say.
+	Open(ctx context.Context, name string) (body io.ReadCloser, size int64, err error)
 }
+
+// ErrNotArchiveName is returned by Open for anything but an OpenTodo archive name.
+var ErrNotArchiveName = errors.New("not an OpenTodo archive name")
+
+// ErrArchiveNotFound is returned by Open when the destination has no such archive.
+var ErrArchiveNotFound = errors.New("archive not found at the destination")
+
+// IsArchiveName reports whether name is an archive this package writes.
+func IsArchiveName(name string) bool { return archiveNameRE.MatchString(name) }
 
 // validObjectName keeps names flat: archives and probes never contain a path.
 func validObjectName(name string) error {
@@ -128,6 +140,25 @@ func (d *localDest) Delete(_ context.Context, name string) error {
 		return nil
 	}
 	return err
+}
+
+func (d *localDest) Open(_ context.Context, name string) (io.ReadCloser, int64, error) {
+	if !IsArchiveName(name) {
+		return nil, 0, ErrNotArchiveName
+	}
+	f, err := os.Open(filepath.Join(d.dir, name))
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, 0, ErrArchiveNotFound
+	}
+	if err != nil {
+		return nil, 0, fmt.Errorf("open in %s: %w", d.dir, err)
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, 0, err
+	}
+	return f, fi.Size(), nil
 }
 
 // ---- probe ----

@@ -132,6 +132,10 @@ var demoRules = []demoRule{
 	// (in-app-assistant): every method, so the app sees it as unavailable.
 	{"The assistant", false, prefix("/api/v1/assistant")},
 	{"The assistant", false, prefix("/api/v1/me/assistant")},
+	// Listing archives contacts the destination, and restore is never for a
+	// demo (backup-restore-web): every method.
+	{"Backups", false, exact("/api/v1/backups/archives")},
+	{"Backups", false, prefix("/api/v1/backups/restore")},
 	{"Backups", true, prefix("/api/v1/backups")},
 	{"Webhooks", true, prefix("/api/v1/webhooks")},
 	{"Email to task", true, prefix("/api/v1/email-inbox")},

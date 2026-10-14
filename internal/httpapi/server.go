@@ -243,6 +243,15 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	mux.Handle("PUT /api/v1/backups/settings", s.requireAuth(s.handlePutBackupSettings))
 	mux.Handle("POST /api/v1/backups/run", s.requireAuth(s.handleBackupRun))
 	mux.Handle("POST /api/v1/backups/test", s.requireAuth(s.handleBackupTest))
+	// Web restore (backup-restore-web): owner only; confirm and safety-copy
+	// delete also need a fresh session and refuse API tokens (in the handlers).
+	mux.Handle("GET /api/v1/backups/archives", s.requireAuth(s.handleBackupArchives))
+	mux.Handle("GET /api/v1/backups/restore", s.requireAuth(s.handleRestoreState))
+	mux.Handle("POST /api/v1/backups/restore", s.requireAuth(s.handleRestoreConfirm))
+	mux.Handle("POST /api/v1/backups/restore/uploads", s.requireAuth(s.handleRestoreUpload))
+	mux.Handle("POST /api/v1/backups/restore/prepare", s.requireAuth(s.handleRestorePrepare))
+	mux.Handle("DELETE /api/v1/backups/restore/safety-copies/{name}", s.requireAuth(s.handleDeleteSafetyCopy))
+	mux.Handle("DELETE /api/v1/backups/restore/{id}", s.requireAuth(s.handleRestoreCancel))
 	// Project sharing (OpenSpec `project-sharing`): literal patterns win over {collection}.
 	s.registerSharingRoutes(mux)
 	// Project invite links (OpenSpec `project-invite-links`): literal patterns win over {collection}.
