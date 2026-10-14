@@ -23,6 +23,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **The assistant says what an encrypted account can do.** On an account with end-to-end encryption, the assistant panel, the Ask screen and **Settings → AI → Assistant** now link to **Settings → Encryption**, where encryption can be turned off to use the assistant, instead of only saying it is unavailable. ([AI assistant](docs/assistant.md))
 - **Test notifications prove delivery.** **Settings → Notifications → Send test notification** used to show a notification from the page and always say "sent", even when reminders could never reach the device. It now sends a real push through your server and the push service, shows it even while the app is open, and says **Received on this device** only when the device confirms it, otherwise **accepted, not seen** with the operating-system settings to check. A new **Delivery check** lists each step push needs on the device (permission, service worker, subscription, push service, last test) with a fix for each problem. New route `POST /api/v1/push/test` (session or full token, 5 per 10 minutes). ([Notifications](docs/notifications.md#check-that-it-works), [API](docs/api.md#reminders-and-push))
 
 ## [0.3.0] - 2026-10-12

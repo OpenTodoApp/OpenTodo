@@ -17,6 +17,7 @@ import { Checkbox, Switch } from '../../ui/Switch'
 import { Dialog } from '../overlay/Dialog'
 import { formatDate } from '../../lib/dates'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { EncryptionOffHint } from './AssistantPanel'
 
 const LABEL: Record<ProviderName, string> = { anthropic: 'Anthropic (Claude)', openai: 'OpenAI', gemini: 'Google Gemini', compatible: 'Compatible endpoint (Ollama, LM Studio, OpenRouter, …)' }
 const SHORT: Record<ProviderName, string> = { anthropic: 'Anthropic (Claude)', openai: 'OpenAI', gemini: 'Google Gemini', compatible: 'Compatible endpoint' }
@@ -371,7 +372,7 @@ export function UserAssistantSettings(p: UserViewProps) {
   useDateTimeFormat()
   const s = p.status
   if (!s) return null
-  if (s.reason === 'encryption_enabled') return <div className="py-3"><Notice>The assistant can’t read end-to-end encrypted tasks, so it is not available for your account.</Notice></div>
+  if (s.reason === 'encryption_enabled') return <div className="py-3"><Notice>The assistant can’t read end-to-end encrypted tasks, so it is not available for your account. <EncryptionOffHint /></Notice></div>
   if (!s.enabled) return <div className="py-3"><Notice>The server owner has not turned the assistant on.</Notice></div>
   const ownSupported = s.source !== undefined
   const keptChoice = !s.allow_member_keys && s.own_provider

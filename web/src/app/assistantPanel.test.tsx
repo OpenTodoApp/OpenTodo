@@ -56,6 +56,12 @@ describe('AssistantPanelBody', () => {
     expect(html).not.toContain('textarea')
   })
 
+  it('tells an encrypted account how to use the assistant: turning encryption off in Settings', () => {
+    const html = body({ status: { ...status, available: false, reason: 'encryption_enabled', consented: false } })
+    expect(html).toContain('data-assistant-encryption-hint')
+    expect(html).toContain('href="/settings/encryption"')
+  })
+
   it('asks for consent before the first message, naming the provider and the fields', () => {
     const html = body({ status: { ...status, consented: false } })
     expect(html).toContain('data-assistant-consent')

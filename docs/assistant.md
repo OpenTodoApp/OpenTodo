@@ -114,7 +114,7 @@ Answers on your own key are paid by you, so they do not count toward the allowan
 
 ## End-to-end encrypted accounts
 
-If your account uses [end-to-end encryption](e2ee.md), the assistant is not available: the server holds no key to your tasks, so it cannot pass them to a model, and relaying them in plain text would break what encryption promises. The panel explains this and offers no consent step.
+If your account uses [end-to-end encryption](e2ee.md), the assistant is not available: the server holds no key to your tasks, so it cannot pass them to a model, and relaying them in plain text would break what encryption promises. The panel explains this, offers no consent step, and links to **Settings → Encryption**, where you can turn encryption off if you want to use the assistant (your tasks are then stored without end-to-end encryption).
 
 ## Demo instance
 
