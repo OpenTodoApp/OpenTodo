@@ -3,7 +3,11 @@
 //   web/src/generated/help.json the user guide for the in-app Help view
 //   docs/keyboard.md           its shortcut tables, regenerated from the app
 //
-//   node scripts/docs/build.mjs          (from web/; `make docs` from the root)
+//   node scripts/docs/build.mjs [--site DIR]   (from web/; `make docs` from the root)
+//
+// DIR is the docs website's output, repository-relative (default dist/docs-site).
+// Until the website repository serves the site (OpenSpec site-bundle D6),
+// `npm run docs:build` passes --site website/docs and the result is committed.
 //
 // The output is deterministic: running it twice changes nothing.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -15,7 +19,10 @@ import { landingHtml, pageHtml } from './site.mjs'
 
 const here = fileURLToPath(import.meta.url)
 const ASSETS = join(dirname(here), 'assets')
-export const OUT_SITE = 'website/docs'
+/** Where the docs website is written unless a caller says otherwise. */
+export const OUT_SITE = 'dist/docs-site'
+/** The committed copy, checked by docs:check until the switch-over (site-bundle D6). */
+export const COMMITTED_SITE = 'website/docs'
 export const OUT_HELP = 'web/src/generated/help.json'
 const TEXT_CAP = 1500
 
@@ -23,7 +30,8 @@ const TEXT_CAP = 1500
  * Builds everything in memory. Returns { files, pages, rendered, problems } where
  * files maps repository-relative paths to their content (string or Buffer).
  */
-export async function buildAll(repoRoot) {
+export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
+  const OUT_SITE = site
   const files = new Map()
   const problems = []
   const pages = loadPages(join(repoRoot, 'docs'))
@@ -111,7 +119,7 @@ export function withoutImages(html) {
 }
 
 /** Files currently under the generated website directory, repository-relative. */
-export function existingSiteFiles(repoRoot) {
+export function existingSiteFiles(repoRoot, site = OUT_SITE) {
   const out = []
   const walk = (dir) => {
     if (!existsSync(dir)) return
@@ -121,12 +129,12 @@ export function existingSiteFiles(repoRoot) {
       else out.push(relative(repoRoot, p).split('\\').join('/'))
     }
   }
-  walk(join(repoRoot, OUT_SITE))
+  walk(join(repoRoot, site))
   return out.sort()
 }
 
 /** Paths whose content on disk differs from the build, plus stale files. */
-export function staleFiles(repoRoot, files) {
+export function staleFiles(repoRoot, files, site = OUT_SITE) {
   const out = []
   for (const [path, content] of files) {
     const p = join(repoRoot, path)
@@ -134,12 +142,12 @@ export function staleFiles(repoRoot, files) {
     const disk = readFileSync(p)
     if (!disk.equals(Buffer.isBuffer(content) ? content : Buffer.from(content))) out.push(path)
   }
-  for (const path of existingSiteFiles(repoRoot)) if (!files.has(path)) out.push(`${path} (no longer generated)`)
+  for (const path of existingSiteFiles(repoRoot, site)) if (!files.has(path)) out.push(`${path} (no longer generated)`)
   return out
 }
 
-export function writeAll(repoRoot, files) {
-  for (const path of existingSiteFiles(repoRoot)) if (!files.has(path)) rmSync(join(repoRoot, path))
+export function writeAll(repoRoot, files, site = OUT_SITE) {
+  for (const path of existingSiteFiles(repoRoot, site)) if (!files.has(path)) rmSync(join(repoRoot, path))
   let changed = 0
   for (const [path, content] of files) {
     const p = join(repoRoot, path)
@@ -155,18 +163,25 @@ export function writeAll(repoRoot, files) {
     for (const name of readdirSync(dir)) { const p = join(dir, name); if (statSync(p).isDirectory()) prune(p) }
     if (!readdirSync(dir).length) rmSync(dir, { recursive: true })
   }
-  prune(join(repoRoot, OUT_SITE))
+  prune(join(repoRoot, site))
   return changed
+}
+
+/** The value of `--site DIR` in argv, or the default. */
+export function siteArg(argv) {
+  const i = argv.indexOf('--site')
+  return i >= 0 && argv[i + 1] ? argv[i + 1].replace(/\/+$/, '') : OUT_SITE
 }
 
 if (process.argv[1] === here) {
   const repoRoot = repoRootFrom(here)
-  const { files, problems, sorted } = await buildAll(repoRoot)
+  const site = siteArg(process.argv)
+  const { files, problems, sorted } = await buildAll(repoRoot, { site })
   if (problems.length) {
     for (const p of problems) console.error('  ' + p)
     console.error(`docs: ${problems.length} problem(s); run \`npm run docs:check\` for details`)
     process.exit(1)
   }
-  const changed = writeAll(repoRoot, files)
+  const changed = writeAll(repoRoot, files, site)
   console.log(`docs: ${sorted.length} pages, ${files.size} files, ${changed} changed`)
 }
