@@ -9,7 +9,7 @@ import { createTask, resetDeviceId } from '../../lib/ops'
 import { recordPick } from '../../lib/pickRank'
 import type { Task } from '../../lib/types'
 import { click, flush, key, render, type } from '../../ui/test-utils'
-import { ZONE_RANK_CONTEXT, ZoneControl, zoneChipText, zoneOffset } from './ZoneControl'
+import { offsetLabel, ZONE_RANK_CONTEXT, ZoneControl, zoneChipText, zoneOffset } from './ZoneControl'
 
 const BERLIN = 'Europe/Berlin'
 let n = 0
@@ -34,6 +34,11 @@ describe('zone chip text', () => {
     expect(zoneChipText({ date: '2026-11-02', time: '09:00', tz: 'America/New_York' })).toBe('New York · UTC−5')
     expect(zoneChipText({ date: '2026-07-02', time: '09:00', tz: 'America/New_York' })).toBe('New York · UTC−4')
     expect(zoneOffset('Asia/Kolkata', Date.UTC(2026, 0, 1))).toBe('UTC+5:30')
+    // Every ICU spelling of a zero offset reads UTC; others keep their sign and minutes.
+    for (const z of ['GMT', 'GMT+0', 'GMT-0', 'GMT+00:00']) expect(offsetLabel(z)).toBe('UTC')
+    expect(offsetLabel('GMT-04:00')).toBe('UTC−4')
+    expect(offsetLabel('GMT+05:30')).toBe('UTC+5:30')
+    expect(offsetLabel('GMT+2')).toBe('UTC+2')
   })
 })
 

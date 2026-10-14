@@ -17,7 +17,7 @@ Prerequisites: `design-language`, `ui-primitives` and `date-time-preferences` ar
 - [x] 2.3 Implement `PropertyRow` read and edit modes (D1): the value button, Enter or Space opens the editor, Escape or commit returns focus, quiet placeholders for empty values. Verify with a component test covering the "Edit a row with the keyboard" and "Values read as values" scenarios.
 - [x] 2.4 Move Priority, Estimate, Repeat, Labels and Subtasks into rows and sections with the new primitives. Keep the `1`–`4` shortcuts. Verify by setting priority with the keyboard shortcuts and with the segmented control in a component test.
 - [x] 2.5 Viewer mode: render values without editors, show the read-only note, omit Complete and Delete, keep the composer. Verify with a component test of the "Viewer opens a task" scenario.
-- [ ] 2.6 Add a Storybook story for `PropertyRow` and the assembled properties card (light and dark, 375 and 1280, seeded fixture task). Verify that `make ui-check` passes with new baselines from `make ui-baselines`.
+- [x] 2.6 Add a Storybook story for `PropertyRow` and the assembled properties card (light and dark, 375 and 1280, seeded fixture task). Verify that `make ui-check` passes with new baselines from `make ui-baselines`.
 
 ## 3. Entity pickers
 
@@ -37,7 +37,7 @@ Prerequisites: `design-language`, `ui-primitives` and `date-time-preferences` ar
 
 - [x] 5.1 Build `ZoneControl` (D4): a chip with city and offset or "Floating"; a popover with the two explained modes, "Fix to my zone" / "Make floating", a zone Combobox (viewer zone pinned, rank context `due.zone`, `Intl.supportedValuesOf` with fallback), and a live preview; disabled with a reason when there is no time. Verify with component tests: the "Meeting in another city" preview and result; "No time set"; a recently used zone listed after the viewer zone.
 - [x] 5.2 Move the `z` handler into `ZoneControl` unchanged and keep `ZONE_TOGGLE_KEY` exported for the shortcut help. Verify that the existing `dates.test.ts` zone scenarios still pass, plus a component test for `z` fix and release.
-- [ ] 5.3 Add a Storybook story (floating, zoned in the viewer zone, zoned elsewhere, disabled) and a `zone-control` overlay in `scripts/e2e-layout.mjs`. Verify that `make ui-check` and the layout check pass.
+- [x] 5.3 Add a Storybook story (floating, zoned in the viewer zone, zoned elsewhere, disabled) and a `zone-control` overlay in `scripts/e2e-layout.mjs`. Verify that `make ui-check` and the layout check pass.
 - [x] 5.4 Update the time-zone section of the user guide with the new control and a screenshot. Verify that `make docs-check` passes.
 
 ## 6. Comments tab
@@ -45,19 +45,19 @@ Prerequisites: `design-language`, `ui-primitives` and `date-time-preferences` ar
 - [x] 6.1 Add `ConversationTabs` (Comments with count, Activity, History) with the last tab remembered in `localStorage` (try/catch, Comments as the fallback) and `Shift+C` switching to Comments and focusing the composer. Verify with component tests for "Shortcut to the composer" and "Remembered tab".
 - [x] 6.2 Render threads oldest first with the Timeline thread item: Avatar, name, relative time with an absolute `title` and `aria-label` in the user's format, "edited" marker, `max-w-prose` body, hover and focus actions always visible on touch, indented replies. Verify with component tests for "Chronological reading", "Absolute time on focus" and "Actions on touch" (coarse pointer mocked).
 - [x] 6.3 Restyle the composer: auto-growing to about 10 lines, at the bottom, a reply target chip with cancel, the `Ctrl/⌘+Enter` hint, and a per-task draft in `sessionStorage`. Replace the comment delete `confirm()` with the shared Dialog. Verify with component tests for "Draft survives closing the panel", "Cancel a reply" and keyboard-only posting; keep the mention combobox tests green.
-- [ ] 6.4 Update `scripts/e2e-layout.mjs` (`mention-picker` now under the Comments tab) and add a Storybook story for a thread with replies and a deleted comment. Verify that the layout check and `make ui-check` pass.
+- [x] 6.4 Update `scripts/e2e-layout.mjs` (`mention-picker` now under the Comments tab) and add a Storybook story for a thread with replies and a deleted comment. Verify that the layout check and `make ui-check` pass.
 
 ## 7. Activity tab
 
 - [x] 7.1 Render activity with `groupRuns`: a run line with Avatar, kind Icon, summary, relative time and a pending marker, expandable to events; comment events as compact lines that open the Comments tab at the comment; "Load older" paging via `fetchActivity` and `mergeOlder`. Verify with component tests for "Burst of edits", "Different actors are not merged", "Pending inside a run", "Comment events are compact", and offline rendering.
-- [ ] 7.2 Add a Storybook story for runs (single, grouped, pending, comment line). Verify that `make ui-check` passes.
+- [x] 7.2 Add a Storybook story for runs (single, grouped, pending, comment line). Verify that `make ui-check` passes.
 
 ## 8. History tab
 
 - [x] 8.1 Render versions with `toVersions`: Avatar or device label, summary, relative time, expandable diffs with the old value struck through and the new emphasised, formatted values (due via preferences, priority Badge, label chips, reference names), "not applied" for lost changes, and per-field "Restore this value". Load the tab lazily. Verify with component tests for "Summary line", "Bursts are grouped", "Readable values" and "Lost change" using a mocked `fetchHistory`.
 - [x] 8.2 Add "Restore this version" with a confirm Dialog listing the fields, sequential `restoreValue` calls that follow a new id after a cross-scope restore, then `syncNow` and reload. Verify with a component test for "Restore a version" (two ops written, one new version after reload), and `history.test.ts` still green.
 - [x] 8.3 Offline and error states with EmptyState ("History needs a connection to the server"). Verify with a component test for "Offline history tab" (navigator offline mocked) and the 404 empty state.
-- [ ] 8.4 Add Storybook stories (collapsed, expanded, lost change, offline) and a `task-history` overlay in `scripts/e2e-layout.mjs`. Verify that `make ui-check` and the layout check pass.
+- [x] 8.4 Add Storybook stories (collapsed, expanded, lost change, offline) and a `task-history` overlay in `scripts/e2e-layout.mjs`. Verify that `make ui-check` and the layout check pass.
 
 ## 9. Reminders row layout
 
@@ -68,7 +68,7 @@ Prerequisites: `design-language`, `ui-primitives` and `date-time-preferences` ar
 - [x] 10.1 Update the user guide pages for the task panel, comments and history in `docs/` (keeping help ids) and regenerate screenshots with `make docs-screenshots`. Verify that `make docs-check` passes and that the new screenshots show the redesigned panel in light and dark.
 - [ ] 10.2 Update the panel selectors in `scripts/e2e-views.mjs` and `scripts/e2e-smoke.mjs`. Verify that both scripts pass against `./bin/opentodo`.
 - [x] 10.3 Measure the bundle impact (gzipped entry and the lazy History chunk before and after `npm run build`) and record it in design.md "Size and runtime". Verify that the numbers are committed and the entry grows by less than 15 KB gzipped.
-- [ ] 10.4 Run `make check` and `make ui-check`. Verify that both pass.
+- [x] 10.4 Run `make check` and `make ui-check`. Verify that both pass.
 
 ## Workflow follow-up
 

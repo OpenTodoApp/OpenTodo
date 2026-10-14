@@ -19,14 +19,22 @@ export const ZONE_TOGGLE_KEY = 'z'
 /** Pick history context for zones (ui-primitives pickRank), device-local. */
 export const ZONE_RANK_CONTEXT = 'due.zone'
 
+/**
+ * "GMT+2" → "UTC+2", "GMT-04:00" → "UTC−4", "GMT+5:30" → "UTC+5:30". ICU versions
+ * write a zero offset differently ("GMT", "GMT+0", "GMT+00:00"); all read "UTC".
+ */
+export function offsetLabel(gmt: string): string {
+  if (/^GMT(?:[+-]0+(?::00)?)?$/.test(gmt)) return 'UTC'
+  return `UTC${gmt.slice(3).replace(/^([+-])0?(\d+)(?::00)?/, '$1$2').replace('-', '−')}`
+}
+
 /** "UTC+2", "UTC−4", "UTC+5:30" or "UTC" for `zone` at instant `at`; '' when the platform cannot tell. */
 export function zoneOffset(zone: string, at: number = Date.now()): string {
   for (const style of ['shortOffset', 'longOffset'] as const) {
     try {
       const part = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: style }).formatToParts(at).find((p) => p.type === 'timeZoneName')?.value
       if (!part || !/^GMT/.test(part)) continue
-      const rest = part.slice(3).replace(/^([+-])0?(\d+)(?::00)?/, '$1$2').replace('-', '−')
-      return rest ? `UTC${rest}` : 'UTC'
+      return offsetLabel(part)
     } catch {
       // try the next style
     }
