@@ -40,7 +40,7 @@ describe('LabelPicker', () => {
     expect((await db.tasks.get(task))?.labels).toEqual([errands])
     const ops = (await db.outbox.toArray()).filter((o) => o.entityId === task && o.field === 'labels')
     expect(ops.length - before).toBe(1)
-    expect((await db.pickHistory.get(['label', errands]))?.count).toBe(1)
+    expect((await db.pickHistory.get(`label\u0000${errands}`))?.count).toBe(1)
     await unmount()
   })
 })

@@ -6,6 +6,7 @@ import { db } from './db'
 const HALF_LIFE_DAYS = 14
 const MAX_PER_CONTEXT = 200
 const DAY = 86_400_000
+const rowId = (context: string, key: string) => `${context}\u0000${key}`
 
 /** Score of a pick: count, halved every 14 days since it was last made. */
 export function pickScore(count: number, lastAt: number, now = Date.now()): number {
@@ -15,12 +16,13 @@ export function pickScore(count: number, lastAt: number, now = Date.now()): numb
 /** Records a pick; fire-and-forget after the pick itself succeeded. */
 export async function recordPick(context: string, key: string, now = Date.now()): Promise<void> {
   await db.transaction('rw', db.pickHistory, async () => {
-    const row = await db.pickHistory.get([context, key])
-    await db.pickHistory.put({ context, key, count: (row?.count ?? 0) + 1, lastAt: now })
+    const id = rowId(context, key)
+    const row = await db.pickHistory.get(id)
+    await db.pickHistory.put({ id, context, key, count: (row?.count ?? 0) + 1, lastAt: now })
     const rows = await db.pickHistory.where('context').equals(context).toArray()
     if (rows.length > MAX_PER_CONTEXT) {
       const drop = rows.sort((a, b) => pickScore(a.count, a.lastAt, now) - pickScore(b.count, b.lastAt, now)).slice(0, rows.length - MAX_PER_CONTEXT)
-      await db.pickHistory.bulkDelete(drop.map((r) => [r.context, r.key] as [string, string]))
+      await db.pickHistory.bulkDelete(drop.map((r) => r.id))
     }
   })
 }

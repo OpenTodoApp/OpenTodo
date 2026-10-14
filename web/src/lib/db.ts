@@ -55,6 +55,8 @@ interface Meta {
 
 /** One pick in a picker context on this device (ui-primitives D7). */
 export interface PickHistory {
+  /** `${context}\u0000${key}`: a plain string key (WebKit's IndexedDB is fragile with compound keys). */
+  id: string
   context: string
   key: string
   count: number
@@ -89,7 +91,7 @@ class OpenTodoDB extends Dexie {
   assistantThreads!: Table<AssistantThread, string>
   assistantUndo!: Table<AssistantUndo, string>
   /** Device-local pick history for picker ranking (ui-primitives D7): never synced or exported. */
-  pickHistory!: Table<PickHistory, [string, string]>
+  pickHistory!: Table<PickHistory, string>
 
   constructor(name = 'opentodo') {
     super(name)
@@ -242,7 +244,7 @@ class OpenTodoDB extends Dexie {
       prefs: 'id',
       assistantThreads: 'id, updated_at',
       assistantUndo: 'id, created_at',
-      pickHistory: '[context+key], context, lastAt',
+      pickHistory: 'id, context',
     })
   }
 }
