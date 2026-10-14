@@ -19,8 +19,20 @@ import { isolate, useOverlay } from '../overlay/useOverlay'
 import { AssistantConsent } from './AssistantConsent'
 import { ChangeSetReview, type ReviewResult } from './ChangeSetReview'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { navigate } from '../router'
 
 export const ENCRYPTED_MESSAGE = 'The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.'
+
+/** What an encrypted account can do to use the assistant: a link to the encryption settings. */
+export function EncryptionOffHint() {
+  return (
+    <span data-assistant-encryption-hint>
+      To use the assistant, you can turn encryption off in{' '}
+      <a className="underline" href="/settings/encryption" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'encryption' }) }}>Settings → Encryption</a>;
+      your tasks are then stored on the server without end-to-end encryption.
+    </span>
+  )
+}
 export const OFFLINE_MESSAGE = 'The assistant needs a connection.'
 
 // ------------------------------------------------------------------ frame
@@ -103,6 +115,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
       <div className="space-y-2 text-sm" data-assistant-encrypted>
         <p className="font-medium">{ENCRYPTED_MESSAGE}</p>
         <p className="text-muted">Your account uses end-to-end encryption, so the server holds no key to your tasks and cannot pass them to a model. The rest of the app works as usual.</p>
+        <p className="text-muted"><EncryptionOffHint /></p>
       </div>
     )
   }

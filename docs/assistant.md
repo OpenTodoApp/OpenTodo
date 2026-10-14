@@ -114,7 +114,7 @@ Answers on your own key are paid by you, so they do not count toward the allowan
 
 ## End-to-end encrypted accounts
 
-If your account uses [end-to-end encryption](e2ee.md), the assistant is not available: the server holds no key to your tasks, so it cannot pass them to a model, and relaying them in plain text would break what encryption promises. The panel explains this and offers no consent step.
+If your account uses [end-to-end encryption](e2ee.md), the assistant is not available: the server holds no key to your tasks, so it cannot pass them to a model, and relaying them in plain text would break what encryption promises. The panel explains this, offers no consent step, and links to **Settings → Encryption**, where you can turn encryption off if you want to use the assistant (your tasks are then stored without end-to-end encryption).
 
 ## Demo instance
 
@@ -140,7 +140,7 @@ The assistant is switched off on the public demo.
 
 The model must support tool use. **Test connection** reports an endpoint that rejects tool definitions as `no_tool_support`.
 
-**A local model.** Run Ollama or LM Studio on a machine in your network, choose **Compatible endpoint**, enter its base URL (Ollama: `http://<host>:11434/v1`; LM Studio: `http://<host>:1234/v1`) and a model that supports tools, and tick **Allow private endpoints**. Without that switch, addresses on private networks are refused, the same rule as for [webhooks](webhooks.md).
+**A local model.** Run Ollama or LM Studio on a machine in your network, choose **Compatible endpoint**, enter its base URL (Ollama: `http://<host>:11434/v1`; LM Studio: `http://<host>:1234/v1`) and a model that supports tools, and tick **Allow private endpoints**. Small models answer questions well but struggle with the multi-step [skills](#skills): in testing, a 3-billion-parameter model handled **Break this down** but not the others, so choose a model of 7B or more for skills. Without that switch, addresses on private networks are refused, the same rule as for [webhooks](webhooks.md).
 
 ### Other settings
 

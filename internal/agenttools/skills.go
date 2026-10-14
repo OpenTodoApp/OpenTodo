@@ -49,8 +49,11 @@ var Skills = []Skill{
 		Example:     "Plan a garden makeover in spring, budget 2000",
 		Tools:       []string{"list_projects", "create_project", "create_tasks", "create_label"},
 		Instructions: `Turn the user's idea (and any pasted notes) into exactly one new project.
-- First call list_projects to avoid a name that already exists.
-- Propose one project with 2 to 6 phases and 3 to 20 tasks in total. Each phase is a top-level task of the project named after the phase; the work items are its subtasks (parent_id), each with an estimate in minutes.
+Do it in exactly these steps:
+1. Call list_projects, and pick a project name that does not exist yet.
+2. Call create_project with that name. Its result has the new project's id.
+3. Call create_tasks once with 2 to 6 phases: items with project_id set to the new project's id, each titled after a phase.
+4. Call create_tasks once more with the work items, 3 to 20 in total: each with parent_id set to its phase's id and estimate_minutes.
 - Use short, concrete task titles that start with a verb. Put details in the description only when they help.
 - Add due dates only when the idea names a date or deadline. Add labels only when the user asks for them.
 - Do not change existing projects or tasks.
@@ -63,7 +66,8 @@ var Skills = []Skill{
 		Tools:       []string{"list_tasks", "search_tasks", "get_task", "schedule_tasks", "update_tasks"},
 		Instructions: `Plan the user's open work over the next 7 days, starting today.
 - Read what is due, overdue and in the Inbox with list_tasks (views today, upcoming and inbox), and what the user mentions with search_tasks.
-- Schedule with schedule_tasks: overdue and high-priority tasks first, then the rest. Keep dates that are already set unless the day is over-full or the date has passed.
+- Call schedule_tasks with a date (YYYY-MM-DD) in the next 7 days for every task you plan: overdue and high-priority tasks first, then the rest. Keep dates that are already set unless the day is over-full or the date has passed.
+- Never set a due date to null and never remove a date.
 - Respect the working day below: count every task's estimate on the day it is due, including tasks already scheduled there, and never plan more minutes on a day than the day allows. Tasks without an estimate count as 30 minutes; say so in the answer.
 - Give times only within the day's start and end, and only when the task needs a slot.
 - Do not create, complete or trash tasks.
@@ -76,7 +80,7 @@ var Skills = []Skill{
 		Tools:       withRead("schedule_tasks", "move_tasks", "complete_tasks", "update_tasks", "trash_tasks"),
 		Instructions: `Run a weekly review of the user's tasks.
 - Look at the Inbox, overdue tasks and tasks due in the next 7 days with list_tasks, and at each project with list_projects.
-- For each item that needs attention, propose one action: reschedule it, move it to a project, complete it if the user said it is done, or lower its priority. Never propose trashing an existing task; mention it as a candidate instead.
+- For each item that needs attention, call a write tool to propose one action: schedule_tasks to give an overdue task a new date in the next 7 days, move_tasks to put an Inbox task in a project, complete_tasks only when the user said it is done, update_tasks to lower a priority. Propose at least one change when anything is overdue. Never propose trashing an existing task; mention it as a candidate instead.
 - Keep the proposal within 50 changed items; offer to continue afterwards.
 - End with a short summary: what is overdue, what was rescheduled or moved, and up to three tasks that deserve attention this week.`,
 	},
@@ -87,7 +91,7 @@ var Skills = []Skill{
 		Tools:       withRead("update_tasks", "move_tasks", "schedule_tasks", "create_label"),
 		Instructions: `Triage the user's Inbox.
 - Read the Inbox with list_tasks (view inbox) and the projects with list_projects.
-- For each Inbox task, propose a project that fits (move_tasks), and a priority, labels and a due date only when the task's text gives a reason. Leave a task in the Inbox when no project fits, and say so.
+- For each Inbox task that fits a project, call move_tasks with that project's id from list_projects. Add a priority, labels or a due date (update_tasks, schedule_tasks) only when the task's text gives a reason. Leave a task in the Inbox when no project fits, and say so.
 - Create a label only when several tasks clearly share a theme that no existing label covers.
 - Keep the proposal within 50 changed items.
 - End with a table-free list: task, where it goes, and why in a few words.`,
@@ -99,7 +103,7 @@ var Skills = []Skill{
 		Tools:       []string{"get_task", "create_tasks"},
 		Instructions: `Break the user's selected task into subtasks. When no task is selected, ask which one, and propose nothing.
 - Read the task with get_task.
-- Propose 3 to 10 subtasks with create_tasks, each with parent_id set to the task, a short title that starts with a verb and an estimate in minutes.
+- Call create_tasks once with 3 to 10 items, each with parent_id set to the selected task's id (the project is taken from the parent), a short title that starts with a verb, and estimate_minutes.
 - Keep the parent task as it is; do not change its title, date or project.
 - End with the subtasks as a list and their total estimate.`,
 	},

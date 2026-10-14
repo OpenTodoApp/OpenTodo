@@ -1,6 +1,8 @@
 package agenttools
 
 import (
+	"context"
+	"encoding/json"
 	"slices"
 	"strings"
 	"testing"
@@ -50,5 +52,19 @@ func TestSkillCatalogue(t *testing.T) {
 	}
 	if n := WorkdayNote(9, 17, 420); !strings.Contains(n, "09:00") || !strings.Contains(n, "17:00") || !strings.Contains(n, "420 minutes") {
 		t.Fatalf("workday note = %q", n)
+	}
+}
+
+// A subtask named only by its parent goes in the parent's project (assistant-skills 5.2).
+func TestCreateSubtaskInheritsParentProject(t *testing.T) {
+	f := newFixture(t)
+	f.put("u1", "project", "p1", map[string]any{"name": "Work"})
+	f.put("u1", "task", "t1", map[string]any{"title": "Plan the offsite", "project_id": "p1"})
+	plan, err := f.reg.Plan(context.Background(), agent("u1"), "create_tasks", json.RawMessage(`{"items":[{"title":"Book the venue","parent_id":"t1","estimate_minutes":30}]}`), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(plan.Changes[0].Patch["project_id"]); got != `"p1"` {
+		t.Fatalf("project_id = %s, want the parent's", got)
 	}
 }

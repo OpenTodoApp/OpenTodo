@@ -22,7 +22,7 @@ A backup SHALL contain a transactionally consistent copy of the database as of a
 - **THEN** the archive is still valid: the file is either absent (its row is absent from the snapshot too) or present as an extra file that a restore keeps and the orphan sweep ignores for seven days
 
 ### Requirement: Restore procedure
-The binary SHALL offer a `restore <archive>` subcommand that verifies the manifest checksum, decrypts when needed, refuses archives from a newer schema version, keeps a timestamped safety copy of the current database beside it, replaces the database, writes every attachment file of the archive into the data directory after verifying its size and checksum (streamed, each file renamed into place), keeps files already on disk that the archive does not hold, and applies pending migrations on next start. It SHALL refuse to run while a server process holds the database. The procedure SHALL be documented in `docs/backups.md`.
+The binary SHALL offer `restore <archive>`, which verifies the manifest checksum, decrypts when needed, refuses newer schema versions, keeps a timestamped safety copy of the database, replaces it, writes each attachment file after checking its size and checksum (renamed into place) while keeping files the archive lacks, and migrates on the next start. It SHALL refuse to run while a server holds the database. The web app restore SHALL do the same. `docs/backups.md` SHALL document both.
 
 #### Scenario: Successful restore
 - **WHEN** the operator stops the server, runs `opentodo restore backup.tar` and starts the server
@@ -31,6 +31,10 @@ The binary SHALL offer a `restore <archive>` subcommand that verifies the manife
 #### Scenario: Newer archive
 - **WHEN** an archive produced by a newer schema version is restored with an older binary
 - **THEN** the command exits non-zero naming both versions and changes nothing
+
+#### Scenario: Same result from the web app and the CLI
+- **WHEN** the same archive is restored once with `opentodo restore` and once from Settings → Backups on identical servers
+- **THEN** both servers end with the same accounts, projects, tasks, attachments and operation log, each with a safety copy and a new log generation
 
 #### Scenario: Corrupt attachment file
 - **WHEN** an attachment entry's checksum does not match the manifest

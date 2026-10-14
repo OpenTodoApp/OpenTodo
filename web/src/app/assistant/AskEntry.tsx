@@ -13,6 +13,7 @@ import { Card } from '../../ui/Card'
 import { AskComposer, type AskRequest } from '../../ui/patterns/AskComposer'
 import { Notice } from '../../ui/patterns/Notice'
 import { navigate } from '../router'
+import { EncryptionOffHint } from './AssistantPanel'
 
 /** Device setting: the owner dismissed the "Set up the assistant" line for good. */
 export const HINT_DISMISSED_KEY = 'assistant.askHintDismissed'
@@ -94,7 +95,7 @@ export function AskScreen({ role }: { role?: AccountRole }) {
           </ul>
         </>
       )}
-      {mode === 'encrypted' && <Notice tone="info"><span data-ask-unavailable>{ENCRYPTED}</span></Notice>}
+      {mode === 'encrypted' && <Notice tone="info"><span data-ask-unavailable>{ENCRYPTED}</span> <EncryptionOffHint /></Notice>}
       {(mode === 'owner-hint' || mode === 'none') && (
         <Notice tone="info">
           <span data-ask-unavailable>
