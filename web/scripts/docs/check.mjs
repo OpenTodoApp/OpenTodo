@@ -8,9 +8,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildAll, staleFiles } from './build.mjs'
+import { buildAll, COMMITTED_SITE, staleFiles } from './build.mjs'
 import { headingsOf, parseFrontMatter, repoRootFrom, specNames } from './lib.mjs'
 import { END, START, loadShortcuts, shortcutsMarkdown } from './shortcuts.mjs'
+import { missingScreenshots } from '../../../scripts/site-bundle.mjs'
 
 /** Help screen ids the app links to: <HelpLink screen="id">, <HelpHeading screen="id">, <SettingsSection helpId="id">, data-help-screen="id" or helpScreen('id'). */
 export function appScreenIds(repoRoot) {
@@ -34,7 +35,7 @@ export function appScreenIds(repoRoot) {
 
 /** Runs every check; returns a list of problems (empty when all is well). */
 export async function runChecks(repoRoot) {
-  const { files, pages, rendered, problems } = await buildAll(repoRoot)
+  const { files, pages, rendered, problems } = await buildAll(repoRoot, { site: COMMITTED_SITE })
   const out = [...problems]
   const byRel = new Map(pages.map((p) => [p.rel, p]))
   const headings = new Map(pages.map((p) => [p.rel, rendered.get(p.rel).site.headings]))
@@ -108,8 +109,12 @@ export async function runChecks(repoRoot) {
     }
   }
 
+  // Every screenshot the site bundle names exists (site-bundle 2.3), so a release
+  // never ships a website without its images.
+  for (const path of missingScreenshots(repoRoot)) out.push(`${path}: named by the site bundle but missing; run scripts/screenshots.mjs`)
+
   // Generated files are up to date.
-  const stale = staleFiles(repoRoot, files).filter((f) => f !== 'docs/keyboard.md')
+  const stale = staleFiles(repoRoot, files, COMMITTED_SITE).filter((f) => f !== 'docs/keyboard.md')
   if (stale.length) out.push(`generated docs are out of date; run \`make docs\` (${stale.slice(0, 5).join(', ')}${stale.length > 5 ? `, and ${stale.length - 5} more` : ''})`)
   return out
 }

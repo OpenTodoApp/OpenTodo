@@ -27,14 +27,8 @@ export function rawColours(path: string, source: string): string[] {
  * Screens being rewritten by an open change keep their raw colours until that
  * change lands (screen-token-migration design D3). This list may only shrink.
  */
-export const REDESIGN_ALLOW_LIST: readonly string[] = [
-  // labels-and-menus
-  'src/app/LabelsView.tsx',
-  'src/app/ViewsView.tsx',
-  'src/app/Sections.tsx',
-  'src/app/ProjectHeader.tsx',
-]
-const REDESIGN_ALLOW_LIST_MAX = 4
+export const REDESIGN_ALLOW_LIST: readonly string[] = []
+const REDESIGN_ALLOW_LIST_MAX = 0
 
 /** Files the migration has not reached yet; removed as each slice lands, empty at the end. */
 export const NOT_YET_MIGRATED: readonly string[] = []

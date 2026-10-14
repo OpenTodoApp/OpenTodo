@@ -100,7 +100,7 @@ Drag reuses the pattern of `listDrop.ts` / `calendarDrag.ts`: pointer events, a 
 
 ### 6. Trigger visibility keyed to the row
 
-`.hover-reveal` gains a row-level rule: `.group:focus-within .hover-reveal` and `.group[aria-selected="true"] .hover-reveal` show the trigger. The existing no-hover media query keeps triggers always visible on touch.
+`.hover-reveal` gains a row-level rule: `.group:focus-within .hover-reveal` and `.group[data-active] .hover-reveal` (the active row; `aria-selected` is not valid on a plain row) show the trigger. The existing no-hover media query keeps triggers always visible on touch.
 
 The trigger becomes `Button` icon-only (the `more-horizontal` icon), sized by `touch-target`, with the accessible names already in use ("Menu for label errand"). That keeps the e2e selectors stable.
 
@@ -160,7 +160,7 @@ None. No new entity, field or op type. The `label.position`, `label.color`, `vie
 ## Size and runtime impact
 
 - **No new dependency.** Container image and Go binary only change by the embedded web assets.
-- **Expected bundle change:** about −1 to +2 KB gzipped. Duplicated menu and picker markup is removed, and `ActionMenu`, `useConfirm` and the drag helper are added. The measured value is recorded in tasks.
+- **Expected bundle change:** about −1 to +2 KB gzipped. Duplicated menu and picker markup is removed, and `ActionMenu`, `useConfirm` and the drag helper are added. Measured (`vite build`, every JS and CSS asset gzipped at level 9, against `feat/screen-token-migration`): 584,630 → 589,190 bytes, **+4.6 KB gzipped (+0.8%)**. That is above the estimate: the label edit panel, drag-reorder with auto-scroll and the duplicate banner are new UI rather than replacements.
 - **Runtime memory:** unchanged.
 
 ## Risks / Trade-offs

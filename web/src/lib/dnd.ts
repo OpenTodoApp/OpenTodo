@@ -49,7 +49,7 @@ function makeGhost(label: string): HTMLElement {
   g.textContent = label || 'Untitled'
   g.setAttribute('aria-hidden', 'true')
   g.setAttribute('data-drag-ghost', '')
-  g.className = 'pointer-events-none fixed left-0 top-0 z-50 max-w-60 truncate rounded-md border border-emerald-400 bg-white px-2 py-1 text-sm shadow-lg dark:bg-slate-900'
+  g.className = 'pointer-events-none fixed left-0 top-0 z-50 max-w-60 truncate rounded-md border border-accent bg-surface px-2 py-1 text-sm shadow-lg'
   document.body.appendChild(g)
   return g
 }

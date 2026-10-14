@@ -161,12 +161,12 @@ function screens(ids) {
     { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'activity', path: '/activity', ready: heading(/Activity/) },
-    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history'] },
+    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), board: true },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
-    { name: 'labels', path: '/labels', ready: heading('Labels'), overlays: ['label-menu', 'new-label'] },
+    { name: 'labels', path: '/labels', ready: heading('Labels'), overlays: ['label-menu', 'label-edit', 'label-merge-picker', 'confirm-dialog', 'new-label'] },
     { name: 'views', path: '/views', ready: heading('Views'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
     // Settings (settings-navigation): the overview and every section, each overlay on
     // the section that holds its control (the owner sees all of them).
@@ -323,8 +323,34 @@ const OVERLAYS = {
     await trigger.click()
     return { overlay: overlayLoc(p), trigger, kind: 'popover' }
   },
+  // labels-and-menus: the edit panel, the merge picker step and a destructive confirmation.
+  async 'label-edit'(p) {
+    const trigger = p.locator('main').getByRole('button', { name: 'Menu for label errand' })
+    await trigger.click()
+    await overlayLoc(p).getByRole('menuitem', { name: 'Edit…' }).click()
+    return { overlay: p.getByRole('dialog', { name: 'Edit label errand' }), kind: 'popover', after: async () => p.keyboard.press('Escape') }
+  },
+  async 'label-merge-picker'(p) {
+    const trigger = p.locator('main').getByRole('button', { name: 'Menu for label errand' })
+    await trigger.click()
+    await overlayLoc(p).getByRole('menuitem', { name: 'Merge into…' }).click()
+    await p.locator('[data-picker-step]').waitFor()
+    // The first Escape goes back to the items, the second closes (spec: picker steps).
+    return { overlay: overlayLoc(p), trigger, kind: 'popover', escapes: 2 }
+  },
+  async 'confirm-dialog'(p) {
+    await p.locator('main').getByRole('button', { name: 'Menu for label errand' }).click()
+    await overlayLoc(p).getByRole('menuitem', { name: 'Delete label…' }).click()
+    return { overlay: p.getByRole('alertdialog', { name: /Delete label/ }), kind: 'dialog', after: async () => p.getByRole('alertdialog').getByRole('button', { name: 'Cancel' }).click() }
+  },
+  async 'project-move-picker'(p) {
+    await p.locator('main').click({ position: { x: 5, y: 5 } }).catch(() => {})
+    await p.keyboard.press('m')
+    await p.locator('[data-picker-step]').waitFor()
+    return { overlay: overlayLoc(p), kind: 'popover', escapes: 2 }
+  },
   async 'new-label'(p) {
-    await p.getByRole('button', { name: '+ New label' }).click()
+    await p.locator('main').getByRole('button', { name: 'New label' }).first().click()
     return { overlay: p.locator('main form').first(), kind: 'inline', after: async () => p.keyboard.press('Escape') }
   },
   async 'view-menu'(p) {
@@ -614,7 +640,7 @@ async function runCombo(engine, width, theme, ids) {
   log(`  ${tag}: ${checked} screens and overlays checked`)
 }
 
-async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructive }, fail, shot) {
+async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructive, escapes = 1 }, fail, shot) {
   await overlay.waitFor({ state: 'visible', timeout: 5000 })
   await p.waitForTimeout(250)
   const handle = await overlay.elementHandle()
@@ -651,9 +677,8 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
       if ((await p.evaluate(scrollers)) !== before) await fail(p, screen, name, 'the page behind scrolls while the overlay is open')
     }
   }
-  // Escape closes, focus returns to the trigger.
-  await p.keyboard.press('Escape')
-  await p.waitForTimeout(150)
+  // Escape closes (a picker step needs two: back, then close), focus returns to the trigger.
+  for (let i = 0; i < escapes; i++) { await p.keyboard.press('Escape'); await p.waitForTimeout(150) }
   if (await overlay.isVisible().catch(() => false)) await fail(p, screen, name, 'does not close with Escape')
   else if (trigger) {
     const back = await trigger.evaluate((el) => el === document.activeElement || el.contains(document.activeElement)).catch(() => false)

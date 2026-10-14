@@ -7,7 +7,7 @@ EXT_ZIP := dist/opentodo-browser-extension.zip
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png
 
-.PHONY: all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check coolify-check coolify-smoke storybook ui-check ui-baselines ui-lint
+.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check coolify-check coolify-smoke storybook ui-check ui-baselines ui-lint
 
 all: build
 
@@ -136,6 +136,12 @@ docs-screenshots: web
 	OPENTODO_BIN=bin/opentodo-docs node scripts/docs-screenshots.mjs
 	$(MAKE) docs
 
+## Site bundle (site-bundle): docs site, screenshots, tokens, icons, changelog and
+## manifest for the website repository, in dist/opentodo-site-bundle-<version>/ and
+## its .tar.gz. VERSION defaults to `git describe`.
+site-bundle: build
+	node scripts/site-bundle.mjs --bin bin/opentodo $(if $(SITE_VERSION),--version $(SITE_VERSION),)
+
 ## Docs website in a browser: sideways scrolling, axe-core, search, no-JS (needs
 ## Playwright with Chromium and `npm ci` in web/ for axe-core).
 docs-site-check:
@@ -144,7 +150,7 @@ docs-site-check:
 ## Coolify one-click template (deploy/coolify/): conventions, release tag, variables, upstream copies;
 ## `docker compose config` when Docker is available.
 coolify-check:
-	node --test scripts/coolify-template-check.test.mjs
+	node --test scripts/coolify-template-check.test.mjs scripts/site-bundle.test.mjs
 	node scripts/coolify-template-check.mjs
 
 ## Also starts the template's image with Docker and probes it (pulls ghcr.io/pixari/opentodo).
