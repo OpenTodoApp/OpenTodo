@@ -1,4 +1,5 @@
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { RestoreSection } from './RestoreSection'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { cacheBackupStatus, cachedBackupStatus, defaultBackupSettings, formatBytes, runSummary, scheduleLabel, WEEKDAYS } from '../lib/backups'
 import { useOnline } from '../lib/online'
@@ -45,6 +46,8 @@ export interface BackupsPanelViewProps {
   onSave: () => void
   onTest: () => void
   onRun: () => void
+  /** The restore section (backup-restore-web); omitted in stories and static tests. */
+  restore?: ReactNode
 }
 
 const RUN: Record<BackupRun['status'], { label: string; hue: HueName; icon: IconName }> = {
@@ -84,7 +87,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
 
   return (
     <SettingsSection title="Backups" helpId="settings/backups" headingId="backups-heading"
-      description={<>Scheduled copies of the whole server (every account, task and the sync log), written to a folder on the server, an S3-compatible bucket or a WebDAV share. Restore with <code className="rounded-chip bg-sunken px-1 font-mono text-default">opentodo restore</code>.</>}>
+      description={<>Scheduled copies of the whole server (every account, task and the sync log), written to a folder on the server, an S3-compatible bucket or a WebDAV share, and restored from here.</>}>
       {offline && (
         <div data-testid="backups-offline" className="py-3 first:pt-0">
           <Notice tone="warning">You are offline. Backups run on the server, so changing settings and starting a backup need a connection. The status below is the last one fetched.</Notice>
@@ -242,6 +245,8 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
           </div>
         </form>
       )}
+
+      {p.restore}
 
       {status && status.history.length > 0 && (
         <div className="py-3 last:pb-0">
@@ -415,6 +420,7 @@ export function BackupsPanel() {
       onSave={() => void save()}
       onTest={() => void test()}
       onRun={() => void run()}
+      restore={<RestoreSection offline={!online || unreachable} />}
     />
   )
 }
