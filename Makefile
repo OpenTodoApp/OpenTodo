@@ -103,7 +103,8 @@ docs-check:
 
 ## Screenshots of the user guide (docs/images/*.webp, light and dark) from the seeded
 ## demo data. Needs Playwright with Chromium (CHROMIUM_PATH to use another binary).
-DOCS_VERSION := $(shell sed -n 's/^## \[\([0-9][0-9.]*\)\].*/\1/p' CHANGELOG.md | head -1)
+HASH := \#
+DOCS_VERSION := $(shell sed -n 's/^$(HASH)$(HASH) \[\([0-9][0-9.]*\)\].*/\1/p' CHANGELOG.md | head -1)
 docs-screenshots: web
 	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=$(DOCS_VERSION)" -o bin/opentodo-docs ./cmd/opentodo
 	OPENTODO_BIN=bin/opentodo-docs node scripts/docs-screenshots.mjs
