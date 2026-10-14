@@ -57,6 +57,10 @@ const (
 	AuditExportedName         Name = "audit.exported"
 	BackupCreatedName         Name = "backup.created"
 	BackupRestoredName        Name = "backup.restored"
+	// Web restore (backup-restore-web).
+	BackupRestoreRequestedName  Name = "backup.restore_requested"
+	BackupRestoreFailedName     Name = "backup.restore_failed"
+	BackupSafetyCopyDeletedName Name = "backup.safety_copy_deleted"
 	// User administration (user-management).
 	UserDeactivatedName        Name = "user.deactivated"
 	UserReactivatedName        Name = "user.reactivated"
@@ -85,6 +89,7 @@ var Names = []Name{
 	IdentityLinkedName, IdentityUnlinkedName,
 	ExportRequestedName, AuditExportedName,
 	BackupCreatedName, BackupRestoredName,
+	BackupRestoreRequestedName, BackupRestoreFailedName, BackupSafetyCopyDeletedName,
 	UserDeactivatedName, UserReactivatedName, UserDeletedName,
 	PasswordResetIssuedName, PasswordResetCompletedName, PasswordChangedName,
 	OwnerTransferredName,
@@ -164,6 +169,7 @@ var allowedDetailKeys = map[string]bool{
 	"format":            true, // export format
 	"count":             true, // number of exported events, or entities an assistant changed
 	"backup_id":         true,
+	"source":            true, // restore source: archive, upload or safety-copy
 	"reset_id":          true, // id of a password reset link (never its secret)
 }
 
@@ -400,6 +406,23 @@ func BackupCreated(actorID, backupID string) Event {
 // BackupRestored records a restore from a backup.
 func BackupRestored(actorID, backupID string) Event {
 	return ev(BackupRestoredName, Success, actorID, "", "backup_id", backupID)
+}
+
+// BackupRestoreRequested records the owner confirming a restore in the web app
+// (backup-restore-web). source is archive, upload or safety-copy (an undo).
+func BackupRestoreRequested(actorID, archive, source string) Event {
+	return ev(BackupRestoreRequestedName, Success, actorID, "", "backup_id", archive, "source", source)
+}
+
+// BackupRestoreFailed records a confirmed restore that could not be applied;
+// the server kept running on the previous database.
+func BackupRestoreFailed(actorID, archive, reason string) Event {
+	return ev(BackupRestoreFailedName, Failure, actorID, "", "backup_id", archive, "reason", reason)
+}
+
+// BackupSafetyCopyDeleted records the owner deleting a pre-restore safety copy.
+func BackupSafetyCopyDeleted(actorID, name string) Event {
+	return ev(BackupSafetyCopyDeletedName, Success, actorID, "", "backup_id", name)
 }
 
 // ---- user administration (user-management) ----

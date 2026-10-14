@@ -209,6 +209,13 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/backups/settings` | owner | `{settings, secrets?}` → `{settings, secrets}` |
 | POST | `/api/v1/backups/run` | owner | start a backup now → 202, or 409 `conflict` while one runs |
 | POST | `/api/v1/backups/test` | owner | write and delete a probe object at the saved destination → 200 `{ok:true}` or 502 `destination_error` |
+| GET | `/api/v1/backups/archives` | owner | archives in the destination, newest first, see [Restore](#restore-from-the-web-app) |
+| GET | `/api/v1/backups/restore` | owner | staged restore, last restore outcome, safety copies, free space |
+| POST | `/api/v1/backups/restore/uploads` | owner | raw archive body → 201 staged upload |
+| POST | `/api/v1/backups/restore/prepare` | owner | `{source, passphrase?}` → verified preview |
+| POST | `/api/v1/backups/restore` | owner, fresh session | `{id, confirm:"RESTORE"}` → 202, then the server restarts |
+| DELETE | `/api/v1/backups/restore/{id}` | owner | cancel a staged restore → 204 |
+| DELETE | `/api/v1/backups/restore/safety-copies/{name}` | owner, fresh session | delete a safety copy → 204 |
 
 ### Passkeys
 
@@ -762,7 +769,43 @@ curl -sS -X POST "$OT/api/v1/backups/run" -H "Authorization: Bearer $TOKEN"
 curl -sS "$OT/api/v1/backups" -H "Authorization: Bearer $TOKEN" | jq '.lastRun'
 ```
 
-**Test destination** — `POST /api/v1/backups/test` writes a small `opentodo-probe-<ms>.txt` object to the saved destination and deletes it again → 200 `{"ok":true}`. A destination failure is a 502 `destination_error` whose message is the destination's own (for example `s3 put opentodo/opentodo-probe-…: 403 Forbidden AccessDenied: …`). The server contacts a remote destination only for a test or a run.
+**Test destination** — `POST /api/v1/backups/test` writes a small `opentodo-probe-<ms>.txt` object to the saved destination and deletes it again → 200 `{"ok":true}`. A destination failure is a 502 `destination_error` whose message is the destination's own (for example `s3 put opentodo/opentodo-probe-…: 403 Forbidden AccessDenied: …`). The server contacts a remote destination only for a test, a run, the archive list or a restore.
+
+#### Restore from the web app
+
+The owner can restore the whole server from a backup without shell access (see [backups.md](backups.md#restore-from-the-web-app)). The flow is *prepare* (verify and preview, nothing changes), then *confirm* (the server restarts and applies it before reopening the database). Every route below needs the owner (403 `forbidden` otherwise, before anything is read or stored) and is refused on a demo instance.
+
+**List archives** — `GET /api/v1/backups/archives` → `{"destination": "/data/backups", "archives": [{"name": "opentodo-20261013-030000-4f1c0a9e.tar.gz.enc", "size": 182344, "createdAt": 1791860400000, "encrypted": true}]}`. Objects that are not OpenTodo archives are left out. An unreachable destination is a 502 `destination_error` naming it without credentials.
+
+**Upload** — `POST /api/v1/backups/restore/uploads` with the archive as the raw body (`Content-Type: application/octet-stream`) → 201 with the staged restore (below). The body is streamed to `<data>/tmp/restore/<id>/`. Errors: 400 `integrity` (not an OpenTodo archive; nothing is kept), 507 `insufficient_storage` (the free space cannot hold the archive plus twice the current database and a 64 MiB margin; the partial file is removed). A reverse proxy with a small body limit answers 413 before the request arrives.
+
+```sh
+curl -sS -X POST "$OT/api/v1/backups/restore/uploads" -b cookies.txt \
+  -H 'Content-Type: application/octet-stream' --data-binary @opentodo-20261010-030000-4f1c0a9e.tar.gz
+```
+
+**Prepare** — `POST /api/v1/backups/restore/prepare` with exactly one source and an optional passphrase:
+
+```json
+{"source": {"archive": "opentodo-20261013-030000-4f1c0a9e.tar.gz.enc"}, "passphrase": "only for another server's archive"}
+```
+
+`source` is `{"archive": name}` (from the list), `{"upload": id}` or `{"safetyCopy": "opentodo.db.pre-restore-20261013-030000"}` (undo). Encrypted archives are tried with the stored backup passphrase when none is given. The response is the staged restore:
+
+```json
+{"id": "3f9c…", "source": "archive", "archive": "opentodo-20261013-030000-4f1c0a9e.tar.gz.enc", "size": 182344, "encrypted": true,
+ "manifest": {"appVersion": "0.4.0", "schemaVersion": 31, "createdAt": "2026-10-13T03:00:00Z", …},
+ "counts": {"accounts": 2, "projects": 7, "tasks": 214, "ops": 5120},
+ "verified": true, "createdAt": 1791900000000, "expiresAt": 1791901800000}
+```
+
+Errors: 422 `passphrase_required` / `passphrase_invalid`, 409 `newer_schema` (names both versions), 400 `integrity` (the failed check; staged files are removed), 400 `invalid_input` with `field: "source"` (a path or a name that is not an archive; no destination is contacted), 404 `not_found`, 502 `destination_error`, 507 `insufficient_storage`, 429 `rate_limited` (the re-authentication limit, against passphrase guessing). Only one restore is staged at a time; preparing another replaces it, and an unconfirmed one expires after 30 minutes.
+
+**Confirm** — `POST /api/v1/backups/restore` with `{"id": "3f9c…", "confirm": "RESTORE"}` → 202 `{"status": "restarting"}`. The server shuts down gracefully, applies the restore before the database reopens (safety copy `opentodo.db.pre-restore-<ts>`, new log generation) and starts again in the same process; poll `GET /healthz`. Errors: 400 `invalid_input` with `field: "confirm"`, 404 `not_found` (unknown or expired id), 409 `conflict` (a backup is running), 403 `reauth_required` (re-authenticate first) and 403 `session_required` for any API token: only a signed-in owner can restore.
+
+**State** — `GET /api/v1/backups/restore` → `{"staged": {…} | null, "last": {"source", "archive", "actorId", "requestedAt", "finishedAt", "ok", "error"?, "safetyCopy"?} | null, "safetyCopies": [{"name", "size", "createdAt"}], "undoAvailable": true, "freeBytes": 51539607552, "uploadLimit": 51400000000}`. `freeBytes` and `uploadLimit` are -1 where the platform cannot tell. A restore that failed while applying left the previous database in place; `last.error` says why.
+
+**Cancel** — `DELETE /api/v1/backups/restore/{id}` → 204; the staged files are removed. **Delete a safety copy** — `DELETE /api/v1/backups/restore/safety-copies/{name}` → 204 (fresh session, no API tokens; 400 `invalid_input` for a name that is not a safety copy).
 
 ### Audit log
 
@@ -814,7 +857,10 @@ The server records security-relevant events in its own database (never synced to
 | `password.changed` | success | actor = user | |
 | `owner.transferred` | success | actor = previous owner, target = new owner | `from` (`owner`), `to` (`admin`): the previous owner's role change |
 | `backup.created` | success or failure | actor = owner for "Back up now", none for scheduled runs | `backup_id` (the run id), `reason` (`run_failed`) on failure |
-| `backup.restored` | success | none (recorded by the server on its first start after `opentodo restore`) | `backup_id` (the archive file name) |
+| `backup.restored` | success | none after `opentodo restore`; the owner who confirmed a web restore | `backup_id` (the archive file name), recorded on the first start after the restore |
+| `backup.restore_requested` | success | owner | `backup_id` (archive or safety copy name), `source` (`archive`, `upload` or `safety-copy` for an undo); recorded on the start that applies it |
+| `backup.restore_failed` | failure | owner | `backup_id`, `reason` (`integrity`, `newer_schema`, `insufficient_storage`, `data_dir_in_use`, `apply_failed`); the server kept the previous database |
+| `backup.safety_copy_deleted` | success | owner | `backup_id` (the safety copy file name) |
 
 While sign-in is rate limited for an address, one `login.failed` event with reason `rate_limited` is recorded per window instead of one per refused attempt. Task and project edits are never audit events.
 
@@ -1443,13 +1489,13 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
 | `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
 | `bad_origin` | 403 | cookie-authenticated write from another origin; any `/mcp` request whose `Origin` is not this server |
-| `session_required` | 403 | `POST /api/v1/assistant/turn` with an API token: the assistant is used from the app while signed in |
+| `session_required` | 403 | `POST /api/v1/assistant/turn` with an API token: the assistant is used from the app while signed in; confirming a restore or deleting a safety copy with an API token |
 | `unknown_skill` | 400 | `POST /api/v1/assistant/turn` naming a skill id the server does not have |
 | `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` or `agent` API token; `/api/v1/me/agent-access` with either |
 | `demo_token` | 403 | `POST /api/v1/demo/sandbox` without a valid, unused creation token |
 | `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
-| `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running |
+| `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running, or after a restore was confirmed; confirming a restore while a backup runs |
 | `too_large` | 413 | `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
 | `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |
@@ -1501,7 +1547,12 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `invalid_file` | 400 | import file recognised but unreadable |
 | `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
 | `limit_reached` | 409 | more than 20 webhooks on one account |
-| `destination_error` | 502 | `POST /backups/test` when the destination refuses or cannot be reached |
+| `destination_error` | 502 | `POST /backups/test`, the archive list or preparing a restore when the destination refuses or cannot be reached |
+| `passphrase_required` | 422 | preparing an encrypted archive without a passphrase when the stored one is missing |
+| `passphrase_invalid` | 422 | preparing an encrypted archive with a passphrase that does not open it |
+| `newer_schema` | 409 | preparing an archive made by a newer OpenTodo version |
+| `integrity` | 400 | an uploaded or prepared file that is not an OpenTodo archive, or fails its checksum or database check |
+| `insufficient_storage` | 507 | an upload or restore the free disk space cannot hold |
 | `email_disabled` | 409 | changing or rotating the email-to-task address when the operator has not configured email capture |
 | `encryption_disabled` | 404/409 | 404 for `GET`/`DELETE /api/v1/encryption/keys` without a key record; 409 for the history purge without one |
 | `encryption_conflict` | 409 | `PUT /api/v1/encryption/keys` with a version that is not the stored version + 1 (another device created or changed the record) |

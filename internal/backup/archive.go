@@ -237,6 +237,12 @@ var ErrPassphraseRequired = errors.New("archive is encrypted: a passphrase is re
 // ErrIntegrity covers checksum mismatches and authentication failures.
 var ErrIntegrity = errors.New("archive integrity check failed")
 
+// ErrPassphraseInvalid is returned when the first encrypted chunk fails to open:
+// almost always a wrong passphrase. It wraps ErrIntegrity, so callers that only
+// tell "verified" from "not verified" keep working; later chunks failing stay
+// plain ErrIntegrity (tampering or truncation).
+var ErrPassphraseInvalid = fmt.Errorf("%w: wrong passphrase or corrupted archive", ErrIntegrity)
+
 // openArchive peels the outer layers off r and returns a tar reader plus a
 // function that must be called after the tar stream is read: it drains and
 // authenticates whatever follows, so truncation and tampering past the last tar
@@ -255,6 +261,11 @@ func openArchive(r io.Reader, passphrase string) (*tar.Reader, func() error, boo
 			return nil, nil, true, err
 		}
 		inner = bufio.NewReaderSize(dr, 64<<10)
+		// Open the first chunk now, so a wrong passphrase is reported as such
+		// rather than as whatever layer reads first.
+		if _, err := inner.(*bufio.Reader).Peek(1); err != nil && !errors.Is(err, io.EOF) {
+			return nil, nil, true, err
+		}
 	}
 	ib := inner.(*bufio.Reader)
 	if magic, _ := ib.Peek(2); len(magic) == 2 && magic[0] == 0x1f && magic[1] == 0x8b {

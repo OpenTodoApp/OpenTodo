@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -182,7 +184,8 @@ func TestImportInvalidOptions400(t *testing.T) {
 	resp, out = e.upload("/api/v1/import/preview", "notes.txt", []byte("name,email\nx,y\n"), nil)
 	e.mustStatus(resp, 400, out)
 	msg := out["error"].(map[string]any)["message"].(string)
-	if errCode(out) != "unsupported_format" || !strings.Contains(msg, "csv") || !strings.Contains(msg, "opentodo") {
+	if errCode(out) != "unsupported_format" || !strings.Contains(msg, "csv") || !strings.Contains(msg, "opentodo") ||
+		!strings.Contains(msg, "todoist-backup") || !strings.Contains(msg, "things-db") || !strings.Contains(msg, "linear-csv") {
 		t.Fatalf("unsupported: %v", out)
 	}
 	resp, out = e.upload("/api/v1/import/preview", "broken.json", []byte(`{"format":"opentodo-export","version":1,"tasks":{}}`), nil)
@@ -453,5 +456,66 @@ func TestImportGenericJSONOverHTTP(t *testing.T) {
 	// The recurrence is imported as a rule (import-completeness).
 	if byTitle["Repeats"]["recurrence"] != "every day" {
 		t.Fatalf("recurrence = %v", byTitle["Repeats"]["recurrence"])
+	}
+}
+
+// OpenSpec change named-importers: archive and database refusals are 400s with a
+// clear message, and real exports import over HTTP.
+func TestImportNamedFormatRefusals(t *testing.T) {
+	e := newEnv(t, false)
+	e.register("o@example.com")
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	w, _ := zw.Create("../evil.csv")
+	w.Write([]byte("title\nA\n"))
+	zw.Close()
+	resp, out := e.upload("/api/v1/import/preview", "backup.zip", buf.Bytes(), nil)
+	e.mustStatus(resp, 400, out)
+	if errCode(out) != "invalid_file" || !strings.Contains(fmt.Sprint(out), "unsafe entry name") {
+		t.Fatalf("unsafe archive: %v", out)
+	}
+	resp, out = e.upload("/api/v1/import/preview", "main.sqlite", []byte("SQLite format 3\x00 not really a database"), nil)
+	e.mustStatus(resp, 400, out)
+	if errCode(out) != "invalid_file" {
+		t.Fatalf("broken database: %v", out)
+	}
+	anon := &env{t: t, srv: e.srv, client: &http.Client{}}
+	resp, out = anon.upload("/api/v1/import/preview", "backup.zip", buf.Bytes(), nil)
+	anon.mustStatus(resp, 401, out)
+}
+
+func TestImportLinearOverHTTP(t *testing.T) {
+	e := newEnv(t, false)
+	e.register("owner@example.test")
+	data, err := os.ReadFile("../importer/testdata/linear-csv/export.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, out := e.upload("/api/v1/import", "export.csv", data, nil)
+	e.mustStatus(resp, 202, out)
+	job := out["job"].(map[string]any)
+	if job["format"] != "linear-csv" || len(job["viewHints"].([]any)) != 1 {
+		t.Fatalf("job: %v", job)
+	}
+	id := job["id"].(string)
+	for deadline := time.Now().Add(10 * time.Second); ; {
+		_, st := e.do("GET", "/api/v1/import/jobs/"+id, nil)
+		if j, _ := st["job"].(map[string]any); j != nil && j["status"] != "running" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("import did not finish")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	resp, out = e.do("GET", "/api/v1/tasks", nil)
+	assigned := 0
+	for _, task := range out["tasks"].([]any) {
+		if task.(map[string]any)["assignee_id"] != nil {
+			assigned++
+		}
+	}
+	if assigned != 3 {
+		t.Fatalf("issues assigned to the importer: %d, want 3", assigned)
 	}
 }
