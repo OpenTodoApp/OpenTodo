@@ -20,7 +20,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 ```json
 {
   "id": "0d1f…",                 // unique per op (UUID v4)
-  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "section" | "comment" | "project_prefs"
+  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "section" | "comment" | "project_prefs" | "user_prefs"
   "entityId": "8c2a…",           // UUID of the entity
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
@@ -80,6 +80,9 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | comment | `created_at` | number |
 | comment | `edited_at`, `deleted_at` | number or null |
 | project_prefs | `feed_seen_at` | number (Unix ms: the activity-feed "seen until" time; personal scope only) |
+| user_prefs | `date_format` | string: `"system"`, `"day-month"`, `"month-day"` or `"iso"` (personal scope only) |
+| user_prefs | `time_format` | string: `"system"`, `"12h"` or `"24h"` |
+| user_prefs | `week_start` | string: `"system"`, `"mon"`, `"sun"` or `"sat"` |
 
 `actor` on served ops (OpenSpec `comments-and-activity`) is the account that wrote the op, taken from `ops.user_id`, which the server always sets from the authenticated submitter; a value sent by a client is ignored. It is additive and optional: older clients ignore it, and ops from an older server simply lack it.
 
@@ -158,6 +161,10 @@ The event id is the id of its first op. Devices record every task, project and c
 `project_prefs` (OpenSpec `activity-feed`, design D1) holds one user's personal preferences for a project; its `entityId` is the project id. Its ops always resolve to the **author's personal scope**, also for a shared project, so they sync to the author's own devices and never to other members; any member, viewers included, may write their own. Today it has one field, `feed_seen_at`: the time up to which the user has seen the project's activity, taken from the newest displayed event's `ts` (an op timestamp, not the device clock). A client never writes a value smaller than the one it holds, and LWW on `(ts, device)` keeps the later mark, so two devices converge to the later time. Purging a project purges every member's `project_prefs` for it (with markers, so a stale mark cannot bring it back); sharing a project or leaving it does not touch them.
 
 Unread counts are computed locally: events of a shared project by another actor with `ts` greater than `feed_seen_at`. A device with no `feed_seen_at` for a project uses the time of its first sync after the upgrade (stored per device as `feedBaseline`), so existing history does not show up as unread. `GET /api/v1/activity` serves the cross-project feed from the op log (see [api.md](api.md#activity-feed)).
+
+### Date and time preferences
+
+`user_prefs` (OpenSpec `date-time-preferences`, design D1) holds one user's date format, time format and first day of the week. Every client writes it with the `entityId` `"me"`; like labels and reminders it resolves to the **author's personal scope**, so each account's `"me"` row is separate, syncs to that account's devices only, and is never shared with project members. Values are enumerations carried as strings: a client reads an unknown value (from a newer client) as `"system"` without rewriting it, so new values stay additive, and an absent row means `"system"` for all three. Concurrent edits converge per field by LWW on `(ts, device)`. The row has no REST collection, derives no activity, and is included in the JSON export as `user_prefs`; importing an own export into an account without preferences restores them. The values are not user-written content, so they stay in plaintext for an encrypted account.
 
 ### Task labels
 

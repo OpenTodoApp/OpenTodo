@@ -597,6 +597,15 @@
           ]
         }
       ]
+    },
+    {
+      "name": "user_prefs ops derive no event (date-time-preferences)",
+      "ops": [
+        {"id":"up1","seq":1,"actor":"alice","entity":"user_prefs","entityId":"me","field":"date_format","value":"day-month","ts":1000,"device":"da"},
+        {"id":"up2","seq":2,"actor":"alice","entity":"user_prefs","entityId":"me","field":"time_format","value":"24h","ts":1000,"device":"da"},
+        {"id":"up3","seq":3,"actor":"alice","entity":"user_prefs","entityId":"me","field":"week_start","value":"sun","ts":2000,"device":"db"}
+      ],
+      "events": []
     }
   ]
 }

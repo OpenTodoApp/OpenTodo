@@ -134,6 +134,7 @@ function tableFor(entity: Entity) {
     case 'section': return db.sections
     case 'comment': return db.comments
     case 'project_prefs': return db.prefs
+    case 'user_prefs': return db.userPrefs
     default: return db.tasks
   }
 }

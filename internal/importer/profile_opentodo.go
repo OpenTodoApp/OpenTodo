@@ -36,6 +36,9 @@ func (opentodoProfile) Read(r io.Reader, _ Options) (*Parsed, error) {
 		Reminders []map[string]json.RawMessage `json:"reminders"`
 		Views     []map[string]json.RawMessage `json:"views"`
 		Comments  []json.RawMessage            `json:"comments"`
+		// UserPrefs is the exporting account's date and time preferences row
+		// (date-time-preferences D1); it is restored like any other record.
+		UserPrefs []map[string]json.RawMessage `json:"user_prefs"`
 	}
 	if err := json.NewDecoder(r).Decode(&doc); err != nil {
 		return nil, &FileError{fmt.Sprintf("not a readable OpenTodo export: %v", err)}
@@ -68,6 +71,9 @@ func (opentodoProfile) Read(r io.Reader, _ Options) (*Parsed, error) {
 				_ = json.Unmarshal(e["task_id"], &task)
 				row.Title = "Reminder: " + taskTitles[task]
 			}
+			if kind == KindUserPrefs {
+				row.Title = "Date and time preferences"
+			}
 			out.Rows = append(out.Rows, row)
 		}
 	}
@@ -78,6 +84,7 @@ func (opentodoProfile) Read(r io.Reader, _ Options) (*Parsed, error) {
 	add(KindTask, "title", doc.Tasks)
 	add(KindReminder, "", doc.Reminders)
 	add(KindView, "name", doc.Views)
+	add(KindUserPrefs, "", doc.UserPrefs)
 	// Comments cannot be imported faithfully (design D3 of import-completeness):
 	// author_id must be the submitting account and creation is rate limited.
 	if n := len(doc.Comments); n > 0 {

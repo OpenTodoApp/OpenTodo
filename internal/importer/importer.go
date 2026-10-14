@@ -41,6 +41,9 @@ const (
 	KindSection  = "section"
 	KindReminder = "reminder"
 	KindView     = "view"
+	// KindUserPrefs is the date and time preferences row (OpenSpec change
+	// date-time-preferences): restored from an own export, never undone.
+	KindUserPrefs = "user_prefs"
 )
 
 // Due is a floating due date with an optional wall-clock time.

@@ -2,23 +2,23 @@
 
 ## 1. Synced `user_prefs` entity (design D1)
 
-- [ ] 1.1 Add `user_prefs` (`date_format`, `time_format`, `week_start`, all `kString`) to `internal/sync/ops.go` `Schema` with a comment citing this change. Add a sync test showing an op from user A lands in A's personal scope only and that concurrent writes converge by `(ts, device)`. Verify with `go test ./internal/sync/...`.
-- [ ] 1.2 Add a `user_prefs` op to `internal/activity/testdata/activity_fixture.json` that must produce no activity event. Verify with `go test ./internal/activity/...` and the matching `web/src/lib/activity.test.ts` (`npm test` in web/).
-- [ ] 1.3 Client data layer:
+- [x] 1.1 Add `user_prefs` (`date_format`, `time_format`, `week_start`, all `kString`) to `internal/sync/ops.go` `Schema` with a comment citing this change. Add a sync test showing an op from user A lands in A's personal scope only and that concurrent writes converge by `(ts, device)`. Verify with `go test ./internal/sync/...`.
+- [x] 1.2 Add a `user_prefs` op to `internal/activity/testdata/activity_fixture.json` that must produce no activity event. Verify with `go test ./internal/activity/...` and the matching `web/src/lib/activity.test.ts` (`npm test` in web/).
+- [x] 1.3 Client data layer:
   - the `UserPrefs` type in `web/src/lib/types.ts`
   - defaults (`system` ×3) in `web/src/lib/ops.ts`
   - the next free Dexie version (v15 if `ui-primitives` has taken v14) with a `userPrefs: 'id'` table (redeclare every store) in `web/src/lib/db.ts`
   - entity maps in `lib/e2eeSync.ts` and `lib/assistant.ts`
 
   Verify with a vitest that applies a remote `user_prefs` op and reads it back, and that an offline `mutate()` queues it in the outbox (`npm test` in web/).
-- [ ] 1.4 Include the caller's `user_prefs` row in the JSON export (a `user_prefs` array beside the `Plural` collections in `handleExport`) and restore it when an own export is imported. Verify with an export test in `internal/httpapi` and an importer round-trip test in `internal/importer` (`go test ./...`).
-- [ ] 1.5 Document the entity in the `docs/sync.md` entity table and personal-scope paragraph. Verify with `npm run docs:check` in web/.
+- [x] 1.4 Include the caller's `user_prefs` row in the JSON export (a `user_prefs` array beside the `Plural` collections in `handleExport`) and restore it when an own export is imported. Verify with an export test in `internal/httpapi` and an importer round-trip test in `internal/importer` (`go test ./...`).
+- [x] 1.5 Document the entity in the `docs/sync.md` entity table and personal-scope paragraph. Verify with `npm run docs:check` in web/.
 
 ## 2. Formatting API (design D2, D3)
 
-- [ ] 2.1 Implement `DateTimePrefs` resolution in `web/src/lib/dates.ts`: `system` hour cycle, date order from `formatToParts`, week start from `Intl.Locale` week info with a Monday fallback. Verify with unit tests covering each value and an unknown value (→ `system`).
-- [ ] 2.2 Implement `formatDate` (compact, numeric, long, heading), `formatTime`, `formatInstant`, `weekStartOf` and `weekDays` with cached formatters. Rebase `weekday`, `formatShort`, `formatDateHeading` and `dueLabel` on them. Verify with table-driven tests for each preference combination, including the spec examples (`3 Nov`, `Feb 3, 2027`, `2026-10-14`, `3:00 PM`), and snapshot tests showing `system` output equals the previous `toLocale*` output.
-- [ ] 2.3 Add `DateTimePrefsProvider` (live query on `userPrefs`, React context plus module snapshot) and a `useDateTimeFormat()` hook, mounted in `App.tsx`. Verify with a component test showing a written op re-renders a date without a reload.
+- [x] 2.1 Implement `DateTimePrefs` resolution in `web/src/lib/dates.ts`: `system` hour cycle, date order from `formatToParts`, week start from `Intl.Locale` week info with a Monday fallback. Verify with unit tests covering each value and an unknown value (→ `system`).
+- [x] 2.2 Implement `formatDate` (compact, numeric, long, heading), `formatTime`, `formatInstant`, `weekStartOf` and `weekDays` with cached formatters. Rebase `weekday`, `formatShort`, `formatDateHeading` and `dueLabel` on them. Verify with table-driven tests for each preference combination, including the spec examples (`3 Nov`, `Feb 3, 2027`, `2026-10-14`, `3:00 PM`), and snapshot tests showing `system` output equals the previous `toLocale*` output.
+- [x] 2.3 Add `DateTimePrefsProvider` (live query on `userPrefs`, React context plus module snapshot) and a `useDateTimeFormat()` hook, mounted in `App.tsx`. Verify with a component test showing a written op re-renders a date without a reload.
 - [ ] 2.4 Migrate every direct `toLocaleDateString`, `toLocaleString` and `toLocaleTimeString` call in `web/src/app` and user-facing `web/src/lib` code (TaskConversation, FeedView, CalendarView, `lib/history.ts`, TrashView, SecurityPanel, TokensSection, BackupsPanel, `lib/backups.ts`, ReminderToasts, UsersPanel, ImportScreen, WebhooksPanel, TwoFactorPanel, SyncStatus, TaskListView, TaskDetail, ProjectInviteScreen, AuthScreen, AssistantPanel/Settings, `lib/labels.ts`, `lib/webhooks.ts`, `lib/ops.ts` where user-facing). Verify with `npm test` and `npm run build` in web/.
 - [ ] 2.5 Add the guard test that fails on a new direct `toLocale*String(` outside `lib/dates.ts` and the documented allow-list (`lib/assistant.ts` `dueWords`, `lib/filter` comparison helpers). Verify it fails on a planted call and passes on the tree (`npm test`).
 

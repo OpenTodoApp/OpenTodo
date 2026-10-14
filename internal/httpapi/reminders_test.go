@@ -42,3 +42,23 @@ func TestExportIncludesReminders(t *testing.T) {
 	resp, out = e.do("POST", "/api/v1/sync", map[string]any{"device": "devA", "cursor": 0, "ops": []any{rop("bad", "reminder", "r3", "kind", "weekly", 2)}})
 	e.mustStatus(resp, 400, out)
 }
+
+// TestExportIncludesUserPrefs (date-time-preferences D1): the export carries the
+// caller's own date and time preferences row, and only theirs.
+func TestExportIncludesUserPrefs(t *testing.T) {
+	e := ownerEnv(t)
+	e.syncOps("devA",
+		rop("p1", "user_prefs", "me", "date_format", "iso", 1),
+		rop("p2", "user_prefs", "me", "time_format", "24h", 1),
+	)
+	resp, out := e.do("GET", "/api/v1/export", nil)
+	e.mustStatus(resp, 200, out)
+	list, ok := out["user_prefs"].([]any)
+	if !ok || len(list) != 1 {
+		t.Fatalf("export user_prefs = %v", out["user_prefs"])
+	}
+	row := list[0].(map[string]any)
+	if row["id"] != "me" || row["date_format"] != "iso" || row["time_format"] != "24h" {
+		t.Fatalf("exported row = %v", row)
+	}
+}
