@@ -10,6 +10,8 @@ export interface DateContext {
   now?: string
   vocabs: readonly Vocabulary[]
   dayMonthOrder: DayMonthOrder
+  /** First day of the week, 0 = Sunday … 6 = Saturday (date-time-preferences D5); Monday when absent. */
+  weekStart?: number
 }
 
 /** A phrase match over the token range [from, to). */
