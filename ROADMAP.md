@@ -78,6 +78,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 | AI assistants can make changes through MCP: `agent` tokens, owner and user switches, limits, audit, history labels | `mcp-write-tools` |
+| stdio bridge for assistants that only speak stdio (`ot mcp`), read-only by default | `mcp-stdio-bridge` |
 | `ot` for agent harnesses: versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` off a terminal, exit code 5, read-only mode, `agent` tokens on REST content routes, the agent skill file | `agent-ready-cli` |
 
 ### 7. Security and access
@@ -124,7 +125,6 @@ Not commitments, just honest next steps. Each would start as an OpenSpec change.
 - **Real-world verification.** Exercise the integrations that automated tests could only simulate: CalDAV with Apple Reminders, Thunderbird and DAVx⁵; single sign-on with Authentik and Keycloak; email to task with common IMAP providers; MCP with real assistant clients; voice capture, web push, passkeys and touch drag and drop on real devices; the Firefox share flow. Fix what they turn up and record the results in the docs.
 - **Reminders over CalDAV.** Map `VALARM` to OpenTodo reminders in both directions instead of only preserving alarms verbatim.
 - **Rich text for comments.** Comments are Markdown today; reuse the notes editor where it helps without losing the plain-text API.
-- **stdio MCP bridge.** A tiny bridge for assistants that only speak stdio, forwarding to the HTTP endpoint with a read-only token. In review as open pull request #11 (`ot mcp`, `mcp-stdio-bridge`).
 - **Built-in SMTP receiver** for email to task, for operators who own an MX record (`email-smtp-receiver`).
 - **Quick add for recurrence and reminders** ("every Monday", "remind me at 9") and quick-add parsing in `ot`.
 - **Published browser extension** in the Chromium and Firefox stores, and file and image sharing through the share target.
