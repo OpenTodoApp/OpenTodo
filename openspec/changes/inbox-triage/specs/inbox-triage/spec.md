@@ -22,7 +22,7 @@ The client SHALL offer a triage mode for the Inbox, entered with `g` then `p`, w
 - **THEN** it shows an "Inbox zero" state with a control that returns to the Inbox, and no decision key does anything
 
 ### Requirement: Queue and progress
-The queue SHALL be the open top-level Inbox tasks in the Inbox's manual order when the mode opens. Tasks that become open Inbox tasks while the mode is open SHALL join the end of the queue; a task that stops being an open Inbox task (completed, moved, trashed, on this or another device) SHALL leave it. The mode SHALL show "n of N", where N is the queue length and n the current position; a decision or skip advances, `k` returns to the previous task. When the last task is handled the mode SHALL show the empty state.
+The queue SHALL be the open top-level Inbox tasks in the Inbox's manual order when the mode opens. Tasks that become open Inbox tasks meanwhile SHALL join its end; a task that stops being one (on any device) SHALL leave it. The mode SHALL show "n of N", N being the queue length and n the position; a decision or skip advances, `k` returns to the previous task, and after the last task the empty state is shown.
 
 #### Scenario: Progress counts decisions and skips
 - **WHEN** the Inbox holds 17 open tasks and the user schedules three and skips one
@@ -60,7 +60,7 @@ In the mode, `t` SHALL set the task's due date to today, `c` SHALL complete it, 
 - **THEN** the card shows the new title and the progress is unchanged
 
 ### Requirement: Schedule, move and delegate with a picker
-`s` SHALL open the date field (with its calendar popover) for the task; `m` SHALL open the project picker; `a` SHALL open a delegate picker listing every person who can be assigned in a project the user shares, each entry naming the person and the project. Confirming SHALL apply the change and advance; Escape SHALL cancel and stay. Delegating SHALL move the task into that project and assign it in one operation set. While a picker or field has focus the decision keys SHALL not fire. When no shared project offers another person, `a` SHALL be shown disabled with an explanation.
+`s` SHALL open the date field with its calendar popover; `m` SHALL open the project picker; `a` SHALL open a delegate picker of every person assignable in a project the user shares, each entry naming person and project. Confirming SHALL apply the change and advance; Escape SHALL cancel and stay. Delegating SHALL move the task into that project and assign it in one operation set. Decision keys SHALL not fire while a picker or field has focus.
 
 #### Scenario: Schedule with a typed date
 - **WHEN** the user presses `s`, types `fri` and presses Enter
