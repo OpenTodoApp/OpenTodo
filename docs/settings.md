@@ -4,7 +4,7 @@ summary: A tour of Settings, what each section does, which choices belong to one
 audience: user
 section: Guides
 specs: [web-app, settings-navigation, date-time-preferences]
-screens: [settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/sso#access-policies, settings/backups#backups, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations]
+screens: [settings/appearance#appearance, settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/sso#access-policies, settings/backups#backups, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations]
 order: 140
 card: settings
 ---
@@ -51,10 +51,18 @@ Sign-ins and token changes from the last 90 days. The owner also sees the server
 
 How the app behaves on this device.
 
+- **Appearance**: light or dark, and a colour theme, on all your devices (see below).
 - **Start view**: the view this device opens on. See [Views](views.md#choose-where-the-app-opens).
 - **Date and time**: how dates and times look and where weeks start, on all your devices (see below).
 - **Calendar**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
 - **Keyboard**: turn on Vim keybindings. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
+
+#### Appearance
+
+- **Mode**: **System** follows your device's light or dark setting (the default), **Light** and **Dark** keep the app that way whatever the device says.
+- **Theme**: the colour of buttons, links, the focus ring and selected items: **Emerald** (the default), **Blue**, **Indigo**, **Violet**, **Rose**, **Orange**, **Teal** or **Graphite**. Each tile previews its theme; with the keyboard, the arrow keys move between them.
+
+Both apply at once, without a reload, and follow your account to every device, also when you change them offline. They never change other people's app. Priority colours (P1 to P4), warnings and errors, and the colours of your projects, labels and views keep their meaning in every theme. The installed app's title bar follows the theme too; the splash screen when it starts stays neutral, because it is the same for everyone on the server. Every theme meets the same contrast rules in light and dark.
 
 #### Date and time
 

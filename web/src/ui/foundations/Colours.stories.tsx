@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { ACCENTS } from '../tokens/accents'
 import { PAIRS } from '../tokens/pairs'
 import { ratio, Section, useTokenValues } from './tokens'
 
@@ -57,6 +58,30 @@ function Colours() {
   )
 }
 
+/** Every accent theme (theming D3) in light and dark, each a data-accent subtree on the real tokens. */
+function Accents() {
+  return (
+    <div className="space-y-6">
+      {(['light', 'dark'] as const).map((mode) => (
+        <Section key={mode} title={mode === 'light' ? 'Accents in light' : 'Accents in dark'}>
+          <div className="grid gap-3 sm:grid-cols-4" data-theme={mode}>
+            {ACCENTS.map((a) => (
+              <div key={a.id} data-accent={a.id} className="space-y-2 rounded-card border border-default bg-surface p-3 text-default">
+                <div className="text-body font-medium">{a.label}</div>
+                <button type="button" className="ui-btn ui-btn--primary ui-btn--sm">Add task</button>
+                <p className="text-meta text-accent">Accent text on surface</p>
+                <p className="rounded-control bg-accent-soft px-2 py-1 text-meta text-on-accent-soft">Selected item</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      ))}
+    </div>
+  )
+}
+
 const meta: Meta<typeof Colours> = { title: 'Foundations/Colours', component: Colours }
 export default meta
 export const Default: StoryObj<typeof Colours> = {}
+/** The a11y gate checks it; it has no screenshot baseline (tag no-visual). */
+export const AccentThemes: StoryObj = { render: () => <Accents />, tags: ['no-visual'] }

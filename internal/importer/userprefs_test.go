@@ -7,7 +7,7 @@ import (
 
 const prefsOwnExport = `{"format":"opentodo-export","version":1,
   "projects":[],"tasks":[],"labels":[],"sections":[],"reminders":[],"views":[],"comments":[],
-  "user_prefs":[{"id":"me","date_format":"iso","time_format":"24h","week_start":"sun"}],
+  "user_prefs":[{"id":"me","date_format":"iso","time_format":"24h","week_start":"sun","theme_mode":"dark","theme_accent":"indigo"}],
   "encryption":null}`
 
 // TestOwnExportRestoresUserPrefs (date-time-preferences D1): an own export brings
@@ -23,7 +23,8 @@ func TestOwnExportRestoresUserPrefs(t *testing.T) {
 	if err != nil || row == nil {
 		t.Fatalf("user_prefs: %v %v", row, err)
 	}
-	if str(row, "date_format") != "iso" || str(row, "time_format") != "24h" || str(row, "week_start") != "sun" {
+	if str(row, "date_format") != "iso" || str(row, "time_format") != "24h" || str(row, "week_start") != "sun" ||
+		str(row, "theme_mode") != "dark" || str(row, "theme_accent") != "indigo" {
 		t.Fatalf("restored prefs = %v", row)
 	}
 
@@ -32,7 +33,7 @@ func TestOwnExportRestoresUserPrefs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(plan.Rows) != 1 || plan.Rows[0].Outcome != OutcomeSkip || plan.Rows[0].Title != "Date and time preferences" {
+	if len(plan.Rows) != 1 || plan.Rows[0].Outcome != OutcomeSkip || plan.Rows[0].Title != "Preferences" {
 		t.Fatalf("second import rows = %+v", plan.Rows)
 	}
 }

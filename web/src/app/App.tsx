@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { AppearanceProvider } from './AppearanceProvider'
 import { DateTimePrefsProvider } from './DateTimePrefsProvider'
 import { api, onEnrolmentRequired } from '../lib/api'
 import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
@@ -132,10 +133,12 @@ export function App() {
 
   // ReauthHost answers `reauth_required` on any screen (OpenSpec `mfa-totp`).
   return (
-    <DateTimePrefsProvider>
-      <ReauthHost />
-      {screen()}
-    </DateTimePrefsProvider>
+    <AppearanceProvider>
+      <DateTimePrefsProvider>
+        <ReauthHost />
+        {screen()}
+      </DateTimePrefsProvider>
+    </AppearanceProvider>
   )
 
   // The screen for the current phase and route; ReauthHost above serves all of them.

@@ -227,8 +227,13 @@ export interface UserPrefs {
   date_format: DateFormatPref
   time_format: TimeFormatPref
   week_start: WeekStartPref
+  /** Appearance (theming): unknown values read as the defaults. */
+  theme_mode: ThemeModePref
+  theme_accent: string
   _clock: Clock
 }
+
+export type ThemeModePref = 'system' | 'light' | 'dark'
 
 export type ActivityKind =
   | 'created' | 'completed' | 'reopened' | 'deleted' | 'restored' | 'rescheduled' | 'assigned' | 'unassigned'

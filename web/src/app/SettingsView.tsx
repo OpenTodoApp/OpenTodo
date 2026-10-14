@@ -3,6 +3,7 @@ import { DateTimeSection } from './DateTimeSettings'
 import { lazy, type MouseEvent, type RefObject, Suspense, useEffect, useRef } from 'react'
 import type { User } from '../lib/types'
 import { AssistantsPanel } from './AssistantsPanel'
+import { AppearanceSection } from './AppearanceSection'
 import { BackupsPanel } from './BackupsPanel'
 import { QuickAddSettingsSection } from './QuickAddSettings'
 import { VoiceSettingsSection } from './VoiceSettings'
@@ -190,6 +191,7 @@ function SectionContent({ id, user, onLogout }: { id: SettingsSectionId; user: U
     case 'preferences':
       return (
         <>
+          <AppearanceSection />
           <StartViewSection />
           <DateTimeSection />
           <CalendarSettingsSection />

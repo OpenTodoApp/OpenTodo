@@ -72,7 +72,7 @@ func (opentodoProfile) Read(r io.Reader, _ Options) (*Parsed, error) {
 				row.Title = "Reminder: " + taskTitles[task]
 			}
 			if kind == KindUserPrefs {
-				row.Title = "Date and time preferences"
+				row.Title = "Preferences"
 			}
 			out.Rows = append(out.Rows, row)
 		}
