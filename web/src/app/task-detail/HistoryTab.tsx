@@ -122,7 +122,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
         <div className="ml-11 mt-2 space-y-2">
           <ul className="space-y-2" aria-label={`Changes: ${summary}`}>
             {v.changes.map((c) => (
-              <li key={c.opIds.join(':')} className={`rounded-control border border-default p-2 text-sm ${c.lost ? 'opacity-70' : ''}`} data-change={c.field}>
+              <li key={c.opIds.join(':')} className={`rounded-control border p-2 text-sm ${c.lost ? 'border-dashed border-input bg-sunken' : 'border-default'}`} data-change={c.field}>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="font-medium text-default">{changeLabel(c.field)}</span>
                   {c.lost && <Badge hue="slate" title="Arrived after a newer change and was never applied">not applied</Badge>}
@@ -241,7 +241,8 @@ export function HistoryTab({ taskId, readOnly, onRestored }: HistoryTabProps) {
   const author = (v: Version) => ({
     id: v.userId,
     name: v.userId && v.userId === me ? 'You' : memberName(v.userId, memberMap) ?? 'Someone',
-    device: deviceLabel(v, device, me ?? undefined, memberships),
+    // The name is shown on its own; deviceLabel would add it again for someone else's change.
+    device: deviceLabel(v, device),
   })
 
   async function afterRestore(id: string, what: string) {

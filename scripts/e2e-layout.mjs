@@ -161,7 +161,7 @@ function screens(ids) {
     { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'activity', path: '/activity', ready: heading(/Activity/) },
-    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel'] },
+    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), board: true },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
@@ -260,11 +260,50 @@ const OVERLAYS = {
   },
   async 'mention-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    const comments = p.locator('aside[data-detail-for]').getByRole('tab', { name: /^Comments/ })
+    await comments.evaluate((el) => el.scrollIntoView({ block: 'start' }))
+    await comments.click()
     const box = p.locator('aside[data-detail-for]').getByLabel('Write a comment')
-    await box.scrollIntoViewIfNeeded()
-    await box.click()
+    // The composer sits at the end of the Comments tab, where the reminder toast can
+    // cover it on a phone; focus it as a keyboard user would.
+    await box.focus()
     await box.pressSequentially('@B')
     return { overlay: p.getByRole('listbox', { name: 'Mention a member' }), kind: 'combobox', after: async () => { await box.fill(''); await p.keyboard.press('Escape'); await p.keyboard.press('Escape') } }
+  },
+  // Task panel (task-detail-redesign): the property pickers open inline in their row.
+  ...Object.fromEntries(['project', 'parent', 'section'].map((field) => [`${field}-picker`, async (p) => {
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    const row = p.locator(`aside[data-detail-for] [data-property="${field}"]`)
+    const value = row.locator('button[aria-labelledby]').first()
+    await value.scrollIntoViewIfNeeded()
+    await value.click()
+    await row.getByRole('combobox').first().waitFor()
+    return { overlay: row, kind: 'inline', after: async () => p.keyboard.press('Escape') }
+  }])),
+  async 'zone-control'(p) {
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    const trigger = p.locator('aside[data-detail-for]').getByRole('button', { name: /^Time zone:/ }).first()
+    await trigger.scrollIntoViewIfNeeded()
+    await trigger.click()
+    return { overlay: p.getByRole('dialog', { name: 'Time zone' }), trigger, kind: 'popover' }
+  },
+  async 'task-history'(p) {
+    await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
+    const panel = p.locator('aside[data-detail-for]')
+    const tab = panel.getByRole('tab', { name: 'History' })
+    await tab.evaluate((el) => el.scrollIntoView({ block: 'start' }))
+    await tab.click()
+    const versions = panel.getByRole('list', { name: 'Versions' })
+    await versions.waitFor({ timeout: 10000 })
+    const first = versions.getByRole('button', { expanded: false }).first()
+    await first.focus()
+    await p.keyboard.press('Enter')
+    // The first change of the expanded version (values and its Restore action) is the
+    // part to check; a whole version can be taller than a phone screen.
+    const change = panel.locator('[aria-label^="Changes:"] > li').first()
+    await change.waitFor()
+    await change.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    return { overlay: change, kind: 'inline', after: async () => panel.getByRole('tab', { name: /^Comments/ }).click() }
   },
   async 'assignee-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().getByRole('button').nth(1).click()

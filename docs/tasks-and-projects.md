@@ -85,6 +85,8 @@ Under the due date, the **time zone** button shows how the time is meant: **Floa
 - **Fix to another time zone:** search any city or zone, for example a call at 15:00 in New York. The panel shows how that reads for you ("15:00 in New York = 21:00 your time (Berlin)") before you choose **Fix to New York**. Your own zone is listed first, then the zones you used recently.
 - **Make floating:** release a fixed time to the clock time you currently see.
 
+<picture><source srcset="images/time-zone-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/time-zone-light.webp" alt="The time zone popover of a due time: the floating and fixed modes explained, Fix to my zone, and a search for another time zone."></picture>
+
 Devices elsewhere show a fixed time converted to their local time, with the original time and city as a hint. Without a time the button is off: a due date alone always stays floating.
 
 ## Complete, reopen and delete

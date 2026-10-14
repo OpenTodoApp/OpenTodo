@@ -46,9 +46,14 @@ describe('summarizeVersion', () => {
     expect(summarizeVersion(v(['completed_at', 1]))).toBe('Completed')
     expect(summarizeVersion(v(['completed_at', null]))).toBe('Reopened')
   })
+  it('reads the creating version as Created', () => {
+    expect(summarizeVersion(v(['title'], ['priority'], ['created_at', 1]))).toBe('Created')
+  })
   it('uses an Oxford comma beyond two verbs and names other fields', () => {
     expect(summarizeVersion(v(['project_id'], ['title'], ['due']))).toBe('Renamed, rescheduled, and moved')
     expect(summarizeVersion(v(['labels']))).toBe('Edited the labels')
+    expect(summarizeVersion(v(['assignee_id', 'u2'], ['title']))).toBe('Renamed and reassigned')
+    expect(summarizeVersion(v(['assignee_id', null]))).toBe('Unassigned')
     expect(summarizeVersion(v(['description'], ['notes_doc']))).toBe('Edited the notes')
   })
 })

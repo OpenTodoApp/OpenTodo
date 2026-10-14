@@ -64,7 +64,8 @@ describe('CommentsView', () => {
     const v = await render(<CommentsView {...props()} />)
     const time = v.container.querySelector('[data-thread="c1"] time')!
     expect(time.textContent).toContain('3 d ago')
-    expect(time.getAttribute('aria-label')).toBe('2026-10-12, 15:05')
+    expect(time.getAttribute('aria-label')).toBeNull()
+    expect(time.querySelector('.sr-only')?.textContent).toBe('2026-10-12, 15:05')
     expect(time.getAttribute('tabindex')).toBe('0')
     expect(time.getAttribute('title')).toBe('2026-10-12, 15:05')
     await v.unmount()

@@ -60,7 +60,7 @@ export function toVersions(sets: readonly ChangeSet[], opts: { windowMs?: number
   return out.reverse()
 }
 
-const VERB_ORDER = ['title', 'due', 'project_id', 'priority', 'completed_at', 'deleted_at']
+const VERB_ORDER = ['title', 'due', 'project_id', 'priority', 'assignee_id', 'completed_at', 'deleted_at']
 
 function verbOf(c: VersionChange): string {
   switch (c.field) {
@@ -68,6 +68,7 @@ function verbOf(c: VersionChange): string {
     case 'due': return 'rescheduled'
     case 'project_id': return 'moved'
     case 'priority': return 'reprioritised'
+    case 'assignee_id': return c.to == null ? 'unassigned' : 'reassigned'
     case 'completed_at': return c.to == null ? 'reopened' : 'completed'
     case 'deleted_at': return c.to == null ? 'restored' : 'deleted'
     case 'description': case 'notes_doc': return 'edited the notes'
@@ -75,8 +76,10 @@ function verbOf(c: VersionChange): string {
   }
 }
 
-/** "Renamed and rescheduled", "Renamed, rescheduled, and moved", "Completed". */
+/** "Renamed and rescheduled", "Renamed, rescheduled, and moved", "Completed"; the creating version reads "Created". */
 export function summarizeVersion(v: Pick<Version, 'changes'>): string {
+  // The version that created the entity sets every field at once; it reads "Created".
+  if (v.changes.some((c) => c.field === 'created_at')) return 'Created'
   const rank = (f: string) => { const i = VERB_ORDER.indexOf(f); return i < 0 ? VERB_ORDER.length : i }
   const verbs: string[] = []
   for (const c of [...v.changes].sort((a, b) => rank(a.field) - rank(b.field))) {

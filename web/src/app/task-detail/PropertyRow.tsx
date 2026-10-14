@@ -81,11 +81,11 @@ export function PropertyRow({ icon, label, value, empty, placeholder, readOnly, 
       <button ref={button} type="button" id={valueId} aria-labelledby={`${labelId} ${valueId}`}
         className="flex min-h-9 w-full min-w-0 items-center rounded-control px-2 py-1.5 text-left text-sm text-default hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus dark:hover:bg-raised"
         onClick={() => setEditing(true)}>
-        <span className="min-w-0 flex-1 truncate">{shown}</span>
+        <span className="min-w-0 flex-1 break-words">{shown}</span>
       </button>
     )
   }
-  if (aside && !editing && control === undefined) body = <div className="flex min-w-0 flex-wrap items-center gap-1"><div className="min-w-0 flex-1">{body}</div>{aside}</div>
+  if (aside && !editing && control === undefined) body = <div className="flex min-w-0 flex-wrap items-center gap-1"><div className="min-w-40 flex-1">{body}</div>{aside}</div>
   return (
     <div role="group" aria-labelledby={labelId} data-property={testId} className="grid gap-1 py-1 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-start sm:gap-3">
       <span id={labelId} className="flex items-center gap-2 pt-1.5 text-meta text-muted sm:min-h-9 sm:pt-0">

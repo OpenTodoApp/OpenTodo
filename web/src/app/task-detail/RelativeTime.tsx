@@ -15,16 +15,17 @@ export function relativeLabel(ts: number, now: number, date: (ms: number) => str
   return date(ts)
 }
 
-/** Focusable so keyboard users get the absolute time too: it is the accessible name and shown while focused. */
+/** Focusable so keyboard users get the absolute time too: it is the element's text for screen readers and shown while focused. */
 export function RelativeTime({ ts, now = Date.now(), className = '' }: { ts: number; now?: number; className?: string }) {
   const dt = useDateTimeFormat()
   const abs = dt.formatInstant(ts, 'datetime')
   const rel = relativeLabel(ts, now, (ms) => dt.formatInstant(ms, 'date'))
   return (
-    <time dateTime={new Date(ts).toISOString()} title={abs} aria-label={abs} tabIndex={0}
+    <time dateTime={new Date(ts).toISOString()} title={abs} tabIndex={0}
       className={`group/time rounded-sm text-faint focus-visible:outline-2 focus-visible:outline-focus ${className}`}>
       <span className="group-focus/time:hidden" aria-hidden="true">{rel}</span>
-      <span className="hidden group-focus/time:inline" aria-hidden="true">{abs}</span>
+      {/* The absolute time is the text assistive technology reads, and is shown while focused. */}
+      <span className="sr-only group-focus/time:not-sr-only">{abs}</span>
     </time>
   )
 }

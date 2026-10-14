@@ -64,9 +64,15 @@ step('task detail: priority + due date')
 await row(page, 'Get three quotes for the kitchen').click()
 await detail(page).getByRole('button', { name: 'P1' }).click()
 const today = new Date(); const iso = today.toISOString().slice(0, 10)
-// The due date is a text field in the user's format; ISO is always accepted and Enter commits it.
-await detail(page).getByLabel('Due date').fill(iso)
-await detail(page).getByLabel('Due date').press('Enter')
+// The Due row opens its editor (task-detail-redesign); the date is a text field in
+// the user's format, ISO is always accepted and Enter commits it.
+const dueInput = async (p) => {
+  await detail(p).locator('[data-property="due"] button[aria-labelledby]').first().click()
+  return detail(p).getByRole('textbox', { name: 'Due date', exact: true })
+}
+const due1 = await dueInput(page)
+await due1.fill(iso)
+await due1.press('Enter')
 // Notes are a rich-text editor (contenteditable, role textbox) that saves after a short pause.
 const notes = detail(page).getByRole('textbox', { name: 'Notes' })
 await notes.click(); await notes.fill('Ask about lead times and payment schedule.')
@@ -75,8 +81,9 @@ await row(page, 'Pick paint colours').click()
 await page.waitForFunction((t) => document.querySelector('aside[data-detail-for] [aria-label="Title"]')?.value === t, 'Pick paint colours')
 await detail(page).getByRole('button', { name: 'P2' }).click()
 const tomorrow = new Date(today.getTime() + 86400000).toISOString().slice(0, 10)
-await detail(page).getByLabel('Due date').fill(tomorrow)
-await detail(page).getByLabel('Due date').press('Enter')
+const due2 = await dueInput(page)
+await due2.fill(tomorrow)
+await due2.press('Enter')
 await page.keyboard.press('Escape')
 
 step('keyboard: j, c completes')
@@ -153,8 +160,11 @@ step('settings + export')
 await page.keyboard.press('Escape')
 await page.keyboard.press('g'); await page.keyboard.press('s')
 await page.getByRole('heading', { name: 'Settings' }).waitFor()
-await page.getByPlaceholder(/Token name/).fill('e2e')
-await page.getByRole('button', { name: 'Create', exact: true }).click()
+// API tokens live in Settings → Integrations (settings-redesign); "New token" opens the form.
+await page.goto(`${base}/settings/integrations`)
+await page.getByRole('button', { name: 'New token' }).click()
+await page.getByLabel('Token name').fill('e2e')
+await page.getByRole('button', { name: 'Create token', exact: true }).click()
 await page.getByText('Copy this token now').waitFor()
 await snap(page, 'settings')
 

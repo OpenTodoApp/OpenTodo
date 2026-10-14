@@ -65,7 +65,7 @@ describe('HistoryView', () => {
     await click(v.container.querySelector('[data-version] button[aria-expanded]')!)
     const row = v.container.querySelector('[data-change="title"]')!
     expect(row.textContent).toContain('not applied')
-    expect(row.className).toContain('opacity-70')
+    expect(row.className).toContain('border-dashed')
     await click(button(row, 'Restore this value'))
     expect(p.onRestoreValue).toHaveBeenCalledWith('title', 'lost title')
     await v.unmount()
