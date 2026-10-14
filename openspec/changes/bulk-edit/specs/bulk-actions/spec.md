@@ -7,7 +7,7 @@ Lets the user tick several tasks in a list and complete, prioritise, label, resc
 ## ADDED Requirements
 
 ### Requirement: Select tasks with the keyboard
-In a task list `x` or Space SHALL tick or untick the cursor row, `Shift+↓` and `Shift+↑` (and `Shift+J`/`Shift+K` without Vim keybindings) SHALL move the cursor and select the range from where ticking started to the cursor, `Ctrl`/`⌘`+`A` SHALL tick every row of the list once at least one row is ticked, and Escape SHALL clear the selection before clearing the cursor. The cursor row SHALL stay distinct from the ticked set. Read-only tasks SHALL never be ticked. The selection is interface state on the device: it touches no data and is not synced.
+In a task list `x` or Space SHALL tick or untick the cursor row, `Shift+↓`/`Shift+↑` (also `Shift+J`/`Shift+K` without Vim keybindings) SHALL move the cursor and select the range from where ticking started, `Ctrl`/`⌘`+`A` SHALL tick every row once one is ticked, and Escape SHALL clear the ticks before the cursor. The cursor stays distinct from the ticked set; read-only tasks are never ticked. The selection is device interface state: no data, nothing synced.
 
 #### Scenario: Tick and extend
 - **WHEN** the cursor is on the second row and the user presses `x`, then `Shift+↓` twice

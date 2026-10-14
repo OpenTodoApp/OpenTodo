@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Recurrence phrases
-The parser SHALL recognise a recurrence phrase in the quick-add line and SHALL store it as the canonical English rule of the recurring-tasks grammar. Phrases SHALL cover every pattern of that grammar (intervals, weekday lists, `weekday`, day of month, `last day`, `last weekday`, ordinal weekday, `after completion`, `until <date phrase>`, `for N times`) and one-word forms (`daily`, `weekly`, `monthly`, `yearly`). The phrase SHALL be removed from the title; a phrase the grammar cannot express SHALL stay in it.
+The parser SHALL recognise a recurrence phrase in the quick-add line and SHALL store it as the canonical English rule of the recurring-tasks grammar. Phrases SHALL cover every pattern of that grammar, including `after completion`, `until <date phrase>` and `for N times`, plus one-word forms (`daily`, `weekly`, `monthly`, `yearly`). The phrase SHALL be removed from the title; a phrase the grammar cannot express SHALL stay in it.
 
 #### Scenario: Weekday rule
 - **WHEN** the user enters `Water plants every Monday`
