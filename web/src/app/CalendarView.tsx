@@ -360,7 +360,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
           </button>
         </div>
 
-        <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto" data-calendar-scroller data-scroll-x>
+        {/* Focusable, so the grid scrolls with the keyboard even when no block is in view (axe scrollable-region-focusable). */}
+        <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
+          data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? 'Week calendar' : 'Day calendar'}>
           <div className="min-w-full" style={{ width: mode === 'week' ? 'max(100%, 56rem)' : undefined }}>
             {/* Sticky header: day name, capacity and the unscheduled lane of each column. */}
             <div className="sticky top-0 z-20 flex border-b border-default bg-surface">
