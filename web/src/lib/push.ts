@@ -5,6 +5,7 @@ import { api, ApiError } from './api'
 import { getMeta, setMeta } from './db'
 import { getDeviceId } from './ops'
 import type { PushSubscriptionStatus } from './types'
+import { formatInstant } from './dates'
 
 const META_ENABLED = 'push:enabled'
 const META_INCLUDE = 'push:includeContent'
@@ -331,7 +332,7 @@ export function pushChecklist(
   } else if (sub.failures > 0) {
     add({ id: 'delivery', label: 'Server reaches the push service', status: 'fail', detail: `The last ${sub.failures === 1 ? 'send' : `${sub.failures} sends`} failed: ${sub.lastError || 'unknown error'}.`, action: 'reenable' })
   } else if (sub.lastOkAt) {
-    add({ id: 'delivery', label: 'Server reaches the push service', status: 'ok', detail: `Last delivered ${new Date(sub.lastOkAt).toLocaleString()}.` })
+    add({ id: 'delivery', label: 'Server reaches the push service', status: 'ok', detail: `Last delivered ${formatInstant(sub.lastOkAt, 'datetime')}.` })
   } else {
     add({ id: 'delivery', label: 'Server reaches the push service', status: 'pending', detail: 'Nothing delivered yet; send a test.' })
   }
@@ -340,7 +341,7 @@ export function pushChecklist(
   if (!lastTest) {
     add({ id: 'test', label: 'Test notification received', status: serverUnknown ? 'unknown' : 'pending', detail: serverUnknown ? 'The test needs the server; go online to run it.' : 'Not run yet.' })
   } else if (lastTest.kind === 'received') {
-    add({ id: 'test', label: 'Test notification received', status: 'ok', detail: `Received on this device at ${new Date(lastTest.receivedAt).toLocaleTimeString()}. If no banner appeared, the operating system hid it. ${hint}` })
+    add({ id: 'test', label: 'Test notification received', status: 'ok', detail: `Received on this device at ${formatInstant(lastTest.receivedAt, 'time')}. If no banner appeared, the operating system hid it. ${hint}` })
   } else if (lastTest.kind === 'accepted_not_seen') {
     add({ id: 'test', label: 'Test notification received', status: 'fail', detail: `The push service accepted the test, but this device has not reported it. ${hint}` })
   } else {

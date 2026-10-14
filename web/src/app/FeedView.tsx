@@ -10,6 +10,7 @@ import type { ActivityEvent, Membership, Project, Task } from '../lib/types'
 import { navigate } from './router'
 import { isGPending, openTaskInList } from './signals'
 import { isTyping } from './useViews'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
  * The activity feed (OpenSpec `activity-feed`): every shared project's recent
@@ -21,6 +22,7 @@ import { isTyping } from './useViews'
  * including syncs started by the server's wake-up channel.
  */
 export function FeedView() {
+  const dt = useDateTimeFormat()
   const online = useOnline()
   const me = useLiveQuery(() => currentUserId(), [], null)
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
@@ -127,7 +129,7 @@ export function FeedView() {
 
   const today = dayOf(Date.now())
   const yesterday = dayOf(Date.now() - 86_400_000)
-  const dayLabel = (d: string) => (d === today ? 'Today' : d === yesterday ? 'Yesterday' : new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }))
+  const dayLabel = (d: string) => (d === today ? 'Today' : d === yesterday ? 'Yesterday' : dt.formatDate(d, d.slice(0, 4) === today.slice(0, 4) ? 'heading' : 'long'))
   const isNew = (e: ActivityEvent) => !!seenAtOpen && !!e.projectId && e.actor !== me && e.ts > (seenAtOpen.get(e.projectId) ?? Number.POSITIVE_INFINITY)
 
   return (
@@ -196,7 +198,7 @@ export function FeedView() {
                       </span>
                     </span>
                     <time className="shrink-0 text-xs text-faint" dateTime={new Date(e.ts).toISOString()}>
-                      {new Date(e.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                      {dt.formatInstant(e.ts, 'time')}
                     </time>
                   </li>
                 )

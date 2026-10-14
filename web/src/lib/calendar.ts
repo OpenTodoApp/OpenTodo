@@ -129,12 +129,15 @@ export function formatLoad(load: DayLoad, dayLength: number): string {
   return `${formatMinutes(load.planned)} / ${formatMinutes(dayLength)}`
 }
 
-/** The Monday-started week containing `iso`. */
-export function weekDates(iso: string): string[] {
+/**
+ * The week containing `iso`, starting on `weekStart` (0 = Sunday … 6 = Saturday;
+ * the user's first day of the week, date-time-preferences D5). Monday by default.
+ */
+export function weekDates(iso: string, weekStart = 1): string[] {
   const [y, m, d] = iso.split('-').map(Number)
-  const dow = (new Date(y, m - 1, d).getDay() + 6) % 7 // Monday = 0
-  const monday = addDaysISO(iso, -dow)
-  return Array.from({ length: 7 }, (_, i) => addDaysISO(monday, i))
+  const back = (new Date(y, m - 1, d).getDay() - weekStart + 7) % 7
+  const first = addDaysISO(iso, -back)
+  return Array.from({ length: 7 }, (_, i) => addDaysISO(first, i))
 }
 
 /**

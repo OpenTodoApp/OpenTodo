@@ -18,6 +18,7 @@ import { ListRow } from '../ui/patterns/ListRow'
 import { Notice } from '../ui/patterns/Notice'
 import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
 import type { HueName } from '../ui/tokens/palette'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /** Dispatched after the viewer's own role changed (ownership transfer): the app re-reads its profile. */
 export const ACCOUNT_CHANGED_EVENT = 'opentodo:account-changed'
@@ -206,6 +207,7 @@ const ROLE_LABEL: Record<AdminUser['role'], string> = { owner: 'Owner', admin: '
 
 /** Pure rendering of the Users section; free of effects so tests can render it to markup. */
 export function UsersView(p: UsersViewProps) {
+  const dt = useDateTimeFormat()
   const disabled = p.offline || p.busy
   const isOwner = p.viewer.role === 'owner'
   const deactivated = p.users?.filter((u) => u.status === 'deactivated').length ?? 0
@@ -252,7 +254,7 @@ export function UsersView(p: UsersViewProps) {
             <p className="font-medium">Reset link for {p.resetLink.email}. Copy it now: it will not be shown again.</p>
             <code className="block break-all py-1" tabIndex={0}>{p.resetLink.link}</code>
             <p>
-              Deliver it yourself; nothing is emailed. It works once until {new Date(p.resetLink.expiresAt).toLocaleString()}.
+              Deliver it yourself; nothing is emailed. It works once until {dt.formatInstant(p.resetLink.expiresAt, 'datetime')}.
               API tokens keep working after a reset; deactivate the account instead if it may be compromised.
             </p>
           </Notice>
@@ -271,7 +273,7 @@ export function UsersView(p: UsersViewProps) {
                 leading={<Avatar id={u.id} name={label} size="md" />}
                 label={<>{label}{u.id === p.viewer.id && <span className="text-faint"> (you)</span>}</>}
                 ariaLabel={`${label}, ${u.role}, ${u.status}`}
-                meta={`${u.name ? `${u.email} · ` : ''}joined ${new Date(u.createdAt).toLocaleDateString()} · ${u.lastLoginAt ? `last sign-in ${new Date(u.lastLoginAt).toLocaleString()}` : 'no sign-in since the upgrade'}`}
+                meta={`${u.name ? `${u.email} · ` : ''}joined ${dt.formatInstant(u.createdAt, 'date')} · ${u.lastLoginAt ? `last sign-in ${dt.formatInstant(u.lastLoginAt, 'datetime')}` : 'no sign-in since the upgrade'}`}
                 badges={(
                   <>
                     <Badge hue={ROLE_HUE[u.role]}>{ROLE_LABEL[u.role]}</Badge>

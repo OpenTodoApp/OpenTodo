@@ -6,6 +6,7 @@ import { restoreProject, restoreTask } from '../lib/ops'
 import { canDeleteProject, canEditTasks, roleOf } from '../lib/sharing'
 import { emptyTrash, PENDING_PURGES_KEY, purgeItems, remainingDays, RETENTION_KEY, trashItems, type PurgeRequest, type TrashItem } from '../lib/trash'
 import type { Membership } from '../lib/types'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
  * The Trash (OpenSpec `trash-and-history`): deleted tasks and projects from local
@@ -13,6 +14,7 @@ import type { Membership } from '../lib/types'
  * and shows as pending while offline. Keys: j/k select, r restore, Delete purge.
  */
 export function TrashView() {
+  const dt = useDateTimeFormat()
   const tasks = useLiveQuery(() => db.tasks.filter((t) => !!t.deleted_at).toArray(), [], [])
   const projects = useLiveQuery(() => db.projects.toArray(), [], [])
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
@@ -114,7 +116,7 @@ export function TrashView() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{it.title}</span>
                   <span className="block text-xs text-faint">
-                    {it.entity === 'project' ? 'Project' : it.projectName} · deleted {new Date(it.deletedAt).toLocaleString()}
+                    {it.entity === 'project' ? 'Project' : it.projectName} · deleted {dt.formatInstant(it.deletedAt, 'datetime')}
                     {isPending ? ' · pending permanent deletion' : days !== null ? ` · ${days} day${days === 1 ? '' : 's'} left` : ''}
                   </span>
                 </span>

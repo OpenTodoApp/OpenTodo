@@ -14,6 +14,8 @@ import { SettingsSection } from '../ui/patterns/SettingsSection'
 import type { HueName } from '../ui/tokens/palette'
 import { Dialog } from './overlay/Dialog'
 import { Menu } from './overlay/Menu'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { formatInstant } from '../lib/dates'
 
 /**
  * A secret shown once, with a copy action (API tokens, app passwords). The parent
@@ -42,7 +44,7 @@ export function SecretReveal({ what, secret, testId }: { what: string; secret: s
 }
 
 const SCOPE_HUE: Record<TokenScope, HueName> = { full: 'slate', read: 'blue', agent: 'violet' }
-const day = (ms: number) => new Date(ms).toLocaleDateString()
+const day = (ms: number) => formatInstant(ms, 'date')
 
 export interface TokensViewProps {
   tokens: ApiToken[] | null
@@ -63,6 +65,7 @@ export interface TokensViewProps {
 
 /** Pure rendering of Settings → Integrations → API tokens; state lives in TokensSection. */
 export function TokensView(p: TokensViewProps) {
+  useDateTimeFormat()
   const newButton = <Button variant="primary" size="sm" icon="plus" onClick={p.onNew}>New token</Button>
   return (
     <SettingsSection title="API tokens" helpId="settings/tokens" headingId="tokens-heading" testId="tokens-panel"

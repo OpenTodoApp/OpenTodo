@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { AssistantStatus } from '../lib/assistantStatus'
 import type { AssistantOwnerSettings } from '../lib/assistantTypes'
 import { draftFrom, inputFrom, ownDraftFrom, ownInputFrom, OwnerAssistantSettings, OwnerAssistantSummary, UserAssistantSettings } from './assistant/AssistantSettings'
+import { formatDate } from '../lib/dates'
 
 const noop = () => {}
 const saved: AssistantOwnerSettings = {
@@ -73,7 +74,8 @@ describe('UserAssistantSettings', () => {
     const html = render()
     expect(html).toContain('Withdraw consent')
     expect(html).toContain('90,000 tokens in 12 answers · 18%')
-    expect(html).toContain('resets 2026-11-01')
+    // The reset date follows the date format (date-time-preferences).
+    expect(html).toContain(`resets ${formatDate('2026-11-01', 'compact')}`)
     expect(html).toContain('Your key is saved')
     expect(html).toContain('Apply small changes without review (this device)')
     expect(html).not.toMatch(/type="checkbox"[^>]*checked=""/)

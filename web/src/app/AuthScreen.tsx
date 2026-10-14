@@ -4,6 +4,7 @@ import { conditionalMediationAvailable, getPasskey, isCancellation, PasskeyDomai
 import { sandboxErrorMessage, startSandbox } from '../lib/demo'
 import type { AuthStatus, InvitationPreview, LoginResult } from '../lib/types'
 import { oidcErrorMessage, ssoLayout, takeQueryParam } from './sso'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /** When set, the screen is the acceptance form of an invitation (OpenSpec `invitations`). */
 export interface InviteContext {
@@ -22,6 +23,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
   /** Called once signed in; a registration through a project link passes the project it joined. */
   onAuthenticated: (result?: { projectId?: string }) => void
 }) {
+  const dt = useDateTimeFormat()
   const [mode, setMode] = useState<'login' | 'register'>(status.setupRequired || invite ? 'register' : 'login')
   const [email, setEmail] = useState(invite?.preview.email ?? '')
   const [name, setName] = useState('')
@@ -187,14 +189,14 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
           <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" data-testid="project-invite-banner">
             <strong>{invite.preview.inviterName}</strong> invited you to <strong className="user-text">{invite.project.name}</strong> as {invite.project.role}. Create your account to join.
             {invite.preview.email && <> This link is for <strong>{invite.preview.email}</strong>.</>}
-            <span className="mt-1 block text-xs opacity-80">The link expires {new Date(invite.preview.expiresAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} and works once.</span>
+            <span className="mt-1 block text-xs opacity-80">The link expires {dt.formatInstant(invite.preview.expiresAt, 'datetime')} and works once.</span>
           </p>
         )}
         {invite && !invite.project && (
           <p className="mb-4 rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
             <strong>{invite.preview.inviterName}</strong> invited you to join this server. Create your account below.
             {invite.preview.email && <> This invitation is for <strong>{invite.preview.email}</strong>.</>}
-            <span className="mt-1 block text-xs opacity-80">The link expires {new Date(invite.preview.expiresAt).toLocaleString()} and works once.</span>
+            <span className="mt-1 block text-xs opacity-80">The link expires {dt.formatInstant(invite.preview.expiresAt, 'datetime')} and works once.</span>
           </p>
         )}
 

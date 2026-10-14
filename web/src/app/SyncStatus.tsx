@@ -1,9 +1,11 @@
 import { requestSync, useSyncStatus } from '../lib/sync'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /** Fired to show the two-factor enrolment wizard (App listens; OpenSpec `mfa-totp`). */
 export const ENROLMENT_EVENT = 'opentodo:mfa-enrolment-required'
 
 export function SyncStatus() {
+  const dt = useDateTimeFormat()
   const s = useSyncStatus()
   const map = {
     idle: { dot: 'bg-emerald-500', text: s.pending > 0 ? `${s.pending} pending` : 'Synced' },
@@ -23,7 +25,7 @@ export function SyncStatus() {
   const showLive = s.state !== 'offline' && s.state !== 'unauthenticated' && s.state !== 'restricted' && s.state !== 'locked'
   const liveText = s.live ? 'Live' : 'Polling'
   const liveTitle = s.live ? 'Live updates connected' : 'Live updates disconnected; checking every 30 s'
-  const lastSynced = s.lastSyncedAt ? `Last synced ${new Date(s.lastSyncedAt).toLocaleTimeString()}` : 'Click to sync now'
+  const lastSynced = s.lastSyncedAt ? `Last synced ${dt.formatInstant(s.lastSyncedAt, 'time')}` : 'Click to sync now'
   return (
     <button
       type="button"

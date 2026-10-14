@@ -5,10 +5,12 @@ import type { EmailInbox, Project } from '../lib/types'
 import { ArchivedProjectsList } from './ArchivedProjects'
 import { CalendarSettingsView } from './CalendarSettings'
 import { CaptureView } from './CaptureSettings'
+import { DateTimeView } from './DateTimeSettings'
 import { EmailInboxView, type EmailInboxViewProps } from './EmailInboxPanel'
 import { NotificationsView, PushDelivery } from './NotificationsSettings'
 import { KeyboardView, StartViewView } from './PreferencesPanels'
 import { AutoArchiveView } from './ProjectsSettings'
+import { resolveDateTime } from '../lib/dates'
 import { QuickAddSettingsSection } from './QuickAddSettings'
 import { VoiceSettingsSection } from './VoiceSettings'
 
@@ -47,6 +49,11 @@ export const Preferences: StoryObj = {
       <KeyboardView vim={false} onVim={noop} />
     </div>
   ),
+}
+// Date and time (date-time-preferences): a fixed day so the week strip is stable.
+const dayMonth = { date_format: 'day-month', time_format: '24h', week_start: 'sun' } as const
+export const DateAndTime: StoryObj = {
+  render: () => <DateTimeView prefs={dayMonth} resolved={resolveDateTime(dayMonth, { order: 'MD', hour12: true, weekStart: 0 })} onChange={noop} today="2026-10-14" />,
 }
 export const NotificationsOn: StoryObj = { render: () => notif(push) }
 export const NotificationsBlocked: StoryObj = { render: () => notif({ ...push, enabled: false, permission: 'denied', subscription: null }) }

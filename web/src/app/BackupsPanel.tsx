@@ -12,6 +12,7 @@ import { ListRow } from '../ui/patterns/ListRow'
 import { Notice } from '../ui/patterns/Notice'
 import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
 import type { HueName } from '../ui/tokens/palette'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 const POLL_MS = 1000
 
@@ -66,6 +67,7 @@ function destinationSummary(d: BackupSettings): string {
  * and the recent runs. Every control is native, so the page works with the keyboard alone.
  */
 export function BackupsPanelView(p: BackupsPanelViewProps) {
+  const dt = useDateTimeFormat()
   const { draft, flags, status, secrets, offline, busy } = p
   const [editing, setEditing] = useState(p.editing ?? false)
   const disabled = offline || busy !== null
@@ -98,7 +100,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
               <span className="font-medium">Schedule:</span> {status.enabled ? scheduleLabel(status.schedule) : 'Off (manual backups only)'}
               {status.encrypted && <Badge hue="slate" title="Archives are encrypted with your passphrase"><Icon name="lock" size="xs" /> encrypted</Badge>}
             </p>
-            {status.nextRunAt !== null && <p><span className="font-medium">Next run:</span> <span className="text-muted">{new Date(status.nextRunAt).toLocaleString()}</span></p>}
+            {status.nextRunAt !== null && <p><span className="font-medium">Next run:</span> <span className="text-muted">{dt.formatInstant(status.nextRunAt, 'datetime')}</span></p>}
             {running && <p data-testid="backups-running"><Badge hue="blue">Backup in progress…</Badge></p>}
             {status.lastRun && (
               <p className="flex flex-wrap items-center gap-2" data-testid="backups-last">
@@ -249,8 +251,8 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
               <li key={r.id}>
                 <ListRow
                   leading={<Icon name={RUN[r.status].icon} size="md" className={r.status === 'running' ? 'animate-spin motion-reduce:animate-none' : undefined} />}
-                  label={`${new Date(r.startedAt).toLocaleString()} · ${r.kind}`}
-                  ariaLabel={`${RUN[r.status].label} backup, ${new Date(r.startedAt).toLocaleString()}, ${r.kind}`}
+                  label={`${dt.formatInstant(r.startedAt, 'datetime')} · ${r.kind}`}
+                  ariaLabel={`${RUN[r.status].label} backup, ${dt.formatInstant(r.startedAt, 'datetime')}, ${r.kind}`}
                   meta={r.error || (r.status === 'succeeded' ? `${formatBytes(r.bytes)}${r.destination ? ` · ${r.destination}` : ''}` : undefined)}
                   badges={<Badge hue={RUN[r.status].hue}>{RUN[r.status].label}</Badge>}
                 />

@@ -78,18 +78,29 @@ export function nextWeekday(today: string, wd: number): string {
 }
 
 /**
- * "next <weekday>": the bare weekday, unless that still falls in the current
- * Monday–Sunday week, in which case the one a week later (design D2).
+ * Days since the first day of the week containing `iso`; `weekStart` is the
+ * user's first day (0 = Sunday … 6 = Saturday, date-time-preferences D5), Monday
+ * by default.
  */
-export function nextNextWeekday(today: string, wd: number): string {
-  const bare = nextWeekday(today, wd)
-  const sunday = addDays(today, 6 - weekdayIndex(today))
-  return bare <= sunday ? addDays(bare, 7) : bare
+export function daysIntoWeek(iso: string, weekStart = 1): number {
+  const [y, m, d] = fromISO(iso)
+  return (new Date(y, m - 1, d).getDay() - weekStart + 7) % 7
 }
 
-/** Monday of the following week. */
-export function startOfNextWeek(today: string): string {
-  return addDays(today, 7 - weekdayIndex(today))
+/**
+ * "next <weekday>": the bare weekday, unless that still falls in the current
+ * week (starting on `weekStart`, Monday by default), in which case the one a week
+ * later (design D2).
+ */
+export function nextNextWeekday(today: string, wd: number, weekStart = 1): string {
+  const bare = nextWeekday(today, wd)
+  const lastDay = addDays(today, 6 - daysIntoWeek(today, weekStart))
+  return bare <= lastDay ? addDays(bare, 7) : bare
+}
+
+/** First day of the following week (Monday unless `weekStart` says otherwise). */
+export function startOfNextWeek(today: string, weekStart = 1): string {
+  return addDays(today, 7 - daysIntoWeek(today, weekStart))
 }
 
 /** First day of the following month. */
@@ -271,7 +282,7 @@ function weekdayPhraseAt(tokens: readonly Token[], j: number, v: Vocabulary, ctx
       k += na
     }
   }
-  const date = qualifier === 'next' ? nextNextWeekday(ctx.today, wd) : nextWeekday(ctx.today, wd)
+  const date = qualifier === 'next' ? nextNextWeekday(ctx.today, wd, ctx.weekStart) : nextWeekday(ctx.today, wd)
   return { date, n: k - j }
 }
 
@@ -287,7 +298,7 @@ function nextPeriodAt(tokens: readonly Token[], j: number, v: Vocabulary, ctx: D
     if (!na) return null
     k += na
   }
-  return { date: unit.unit === 'week' ? startOfNextWeek(ctx.today) : startOfNextMonth(ctx.today), n: k - j }
+  return { date: unit.unit === 'week' ? startOfNextWeek(ctx.today, ctx.weekStart) : startOfNextMonth(ctx.today), n: k - j }
 }
 
 function inPeriodAt(tokens: readonly Token[], j: number, v: Vocabulary, ctx: DateContext): { date: string; n: number } | null {

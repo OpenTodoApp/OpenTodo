@@ -9,6 +9,7 @@ import { useOnline } from '../lib/online'
 import { currentUserId, memberName, membershipMap } from '../lib/sharing'
 import type { ActivityEvent, Membership, Project, Task } from '../lib/types'
 import { openTask } from './signals'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
  * A project's activity (OpenSpec `comments-and-activity`): every member's
@@ -41,6 +42,7 @@ export function ProjectActivity({ project }: { project: Project }) {
 }
 
 function ActivityList({ project }: { project: Project }) {
+  const dt = useDateTimeFormat()
   const online = useOnline()
   const me = useLiveQuery(() => currentUserId(), [], null)
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
@@ -135,7 +137,7 @@ function ActivityList({ project }: { project: Project }) {
                 )}
                 {isPending(e, pending) && <span className="ml-1 italic text-amber-700 dark:text-amber-400" title="Not yet synced">(pending)</span>}
               </span>
-              <time className="shrink-0 text-faint" dateTime={new Date(e.ts).toISOString()}>{new Date(e.ts).toLocaleString()}</time>
+              <time className="shrink-0 text-faint" dateTime={new Date(e.ts).toISOString()}>{dt.formatInstant(e.ts, 'datetime')}</time>
             </li>
           )
         })}

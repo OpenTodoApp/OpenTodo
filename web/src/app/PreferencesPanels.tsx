@@ -36,7 +36,6 @@ export function StartViewView({ views, startView, onChange }: { views: View[]; s
           )}
         </Select>
       } />
-      {/* Slot: the date and time format panel of `date-time-preferences` lands in this section. */}
     </SettingsSection>
   )
 }

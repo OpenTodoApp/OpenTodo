@@ -3,6 +3,7 @@
 // screen still has something to show while offline.
 import { getMeta, setMeta } from './db'
 import type { BackupRun, BackupSettings, BackupStatus } from './types'
+import { formatInstant, formatTime } from './dates'
 
 const STATUS_KEY = 'backupStatus'
 
@@ -40,16 +41,16 @@ export function scheduleLabel(s: BackupSettings['schedule']): string {
     case 'hourly':
       return `Every hour at :${s.time.slice(3)}`
     case 'daily':
-      return `Every day at ${s.time}`
+      return `Every day at ${formatTime(s.time)}`
     case 'weekly':
-      return `Every ${WEEKDAYS[s.weekday] ?? 'week'} at ${s.time}`
+      return `Every ${WEEKDAYS[s.weekday] ?? 'week'} at ${formatTime(s.time)}`
     default:
       return 'Off'
   }
 }
 
 export function runSummary(r: BackupRun): string {
-  const when = new Date(r.startedAt).toLocaleString()
+  const when = formatInstant(r.startedAt, 'datetime')
   if (r.status === 'running') return `Running since ${when}`
   if (r.status === 'failed') return `Failed ${when}: ${r.error}`
   const secs = r.durationMs !== null ? ` in ${(r.durationMs / 1000).toFixed(1)} s` : ''

@@ -7,6 +7,7 @@ import type { AppNotification } from '../lib/types'
 import { navigate, routePath, type Route } from './router'
 import { openTask } from './signals'
 import { Popover } from './overlay'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
  * Notification badge and list (OpenSpec `task-assignment`; mentions from
@@ -15,6 +16,7 @@ import { Popover } from './overlay'
  * every notification about that task read.
  */
 export function NotificationBell() {
+  const dt = useDateTimeFormat()
   const list = useLiveQuery(() => db.notifications.orderBy('createdAt').reverse().limit(50).toArray(), [], [] as AppNotification[])
   const unread = list.filter((n) => n.readAt === null).length
   const [open, setOpen] = useState(false)
@@ -58,7 +60,7 @@ export function NotificationBell() {
                       <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> assigned you <strong>{n.payload.taskTitle || 'a task'}</strong></span>
                     )}
                     <span className="block text-xs text-faint">
-                      {n.payload.projectName ? `${n.payload.projectName} · ` : ''}{new Date(n.createdAt).toLocaleString()}
+                      {n.payload.projectName ? `${n.payload.projectName} · ` : ''}{dt.formatInstant(n.createdAt, 'datetime')}
                     </span>
                   </span>
                 </button>

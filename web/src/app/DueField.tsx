@@ -1,12 +1,14 @@
 // Due date and time in the detail panel, with the "Fixed to time zone" toggle
-// (OpenSpec change absolute-datetimes). The inputs always show the due in the
+// (OpenSpec change absolute-datetimes). The fields always show the due in the
 // viewer's zone; edits of a zoned due are converted back into its zone
 // (dueFromView), so it stays fixed. Every change is one `updateTask` due edit.
-import { Icon } from '../ui/Icon'
+import { IconButton } from '../ui/Button'
 import { useEffect } from 'react'
 import { dueFromView, fixDueToZone, localDueOf, releaseDue, zoneCity, zoneHint } from '../lib/dates'
 import { updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'
+import { DateField } from './datetime/DateField'
+import { TimeField } from './datetime/TimeField'
 import { isTyping, useViewerZone } from './useViews'
 
 /** `z` with the panel open (not typing) toggles the zone; listed in the shortcut help. */
@@ -39,13 +41,13 @@ export function DueField({ task, readOnly = false }: { task: Task; readOnly?: bo
 
   return (
     <div className="space-y-1">
-      {/* Wraps on narrow panels: WebKit's date field does not shrink below its own minimum. */}
-      <div className="flex flex-wrap gap-2">
-        <input type="date" className="input min-w-40 flex-1" aria-label="Due date" value={view?.date ?? ''}
-          onChange={(e) => setView(e.target.value ? { date: e.target.value, ...(view?.time ? { time: view.time } : {}) } : null)} />
-        <input type="time" className="input w-36" aria-label="Due time" value={view?.time ?? ''} disabled={!view}
-          onChange={(e) => view && setView(e.target.value ? { date: view.date, time: e.target.value } : { date: view.date })} />
-        {task.due && <button className="btn-ghost" onClick={() => void updateTask(task.id, { due: null })} aria-label="Clear due date" title="Clear due date"><Icon name="x" /></button>}
+      {/* Text fields in the user's date and time format (date-time-preferences D4); they wrap on narrow panels. */}
+      <div className="flex flex-wrap items-start gap-2">
+        <DateField label="Due date" hideLabel className="min-w-44 flex-1" value={view?.date ?? null}
+          onChange={(date) => setView(date ? { date, ...(view?.time ? { time: view.time } : {}) } : null)} />
+        <TimeField label="Due time" hideLabel value={view?.time ?? null} disabled={!view}
+          onChange={(time) => view && setView(time ? { date: view.date, time } : { date: view.date })} />
+        {task.due && <IconButton icon="x" label="Clear due date" onClick={() => void updateTask(task.id, { due: null })} />}
       </div>
       <label className={`flex items-center gap-2 text-xs ${canFix ? 'text-slate-600 dark:text-slate-300' : 'text-faint'}`}
         title={canFix ? `Keep this time fixed in ${zoned ? task.due!.tz : zone} wherever it is viewed (z)` : 'Set a time to fix it to a time zone'}>

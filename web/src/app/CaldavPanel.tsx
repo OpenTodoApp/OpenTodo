@@ -14,6 +14,8 @@ import { Menu } from './overlay/Menu'
 import { SecretReveal } from './TokensSection'
 import { api, ApiError } from '../lib/api'
 import type { AppPassword, CaldavSetting } from '../lib/types'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { formatInstant } from '../lib/dates'
 
 // Settings → Calendar apps (OpenSpec change `caldav`): the owner's toggle, the
 // server address with per-client setup hints, and per-user app passwords. The
@@ -39,7 +41,7 @@ export interface CaldavViewProps {
   onCloseNew?: () => void
 }
 
-const day = (ms: number) => new Date(ms).toLocaleDateString()
+const day = (ms: number) => formatInstant(ms, 'date')
 
 function CopyValue({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false)
@@ -53,6 +55,7 @@ function CopyValue({ value, label }: { value: string; label: string }) {
 }
 
 export function CaldavView(p: CaldavViewProps) {
+  useDateTimeFormat()
   const on = p.setting?.enabled ?? false
   const live = (p.passwords ?? []).filter((x) => !x.revokedAt)
   const revoked = (p.passwords ?? []).filter((x) => x.revokedAt)

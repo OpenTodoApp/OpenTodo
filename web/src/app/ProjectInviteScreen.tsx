@@ -5,6 +5,8 @@ import { requestSync } from '../lib/sync'
 import type { AuthStatus, ProjectInvitePreview, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { navigate } from './router'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { formatInstant } from '../lib/dates'
 
 // Screen behind /invite/p/<token> (OpenSpec `project-invite-links`): previews a
 // project invite link, lets a signed-in person join, and offers a visitor
@@ -127,7 +129,7 @@ export function ProjectInviteScreen({ token, user, status, onAuthenticated, onLo
   )
 }
 
-const when = (ms: number) => new Date(ms).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+const when = (ms: number) => formatInstant(ms, 'datetime')
 
 /** Pure rendering of every state; kept free of effects so tests can render it to markup. */
 export function ProjectInviteView({ state, user, join, step, form, onRetry, onJoin, onSignIn, onRegister, onLogout }: {
@@ -142,6 +144,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
   onRegister: () => void
   onLogout: () => void
 }) {
+  useDateTimeFormat()
   switch (state.kind) {
     case 'loading':
       return <Card title="Checking your invite link…"><p className="text-sm text-muted">One moment.</p></Card>

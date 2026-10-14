@@ -1,4 +1,5 @@
 import { Icon } from '../ui/Icon'
+import { DateTimeSection } from './DateTimeSettings'
 import { lazy, type MouseEvent, type RefObject, Suspense, useEffect, useRef } from 'react'
 import type { User } from '../lib/types'
 import { AssistantsPanel } from './AssistantsPanel'
@@ -190,6 +191,7 @@ function SectionContent({ id, user, onLogout }: { id: SettingsSectionId; user: U
       return (
         <>
           <StartViewSection />
+          <DateTimeSection />
           <CalendarSettingsSection />
           <KeyboardSection />
         </>

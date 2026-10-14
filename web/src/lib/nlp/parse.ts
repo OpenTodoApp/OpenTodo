@@ -31,6 +31,8 @@ export interface ParseContext {
   dismissed?: readonly Span[]
   /** Numeric date order; defaults to the first active language's order. */
   dayMonthOrder?: DayMonthOrder
+  /** First day of the week, 0 = Sunday … 6 = Saturday (date-time-preferences D5); Monday when absent. */
+  weekStart?: number
 }
 
 export interface ParseResult {
@@ -66,6 +68,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     now: ctx.now,
     vocabs,
     dayMonthOrder: ctx.dayMonthOrder ?? vocabs[0].dayMonthOrder,
+    weekStart: ctx.weekStart,
   }
   const bareHourIsTime = vocabs.some((v) => v.hourSuffixH)
   const dismissed = liveDismissals(line, ctx.dismissed)

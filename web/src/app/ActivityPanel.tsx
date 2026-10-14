@@ -11,6 +11,7 @@ import type { AuditEvent, User } from '../lib/types'
 import { AuditPanel, type LogStatus, NeedsConnection } from './AuditPanel'
 import { AUDIT_LABELS, eventSummary, shortAgent } from './auditFormat'
 import { relativeTime } from './SecurityPanel'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
  * Every user's own recent access events (sign-ins, failed sign-ins against the
@@ -63,6 +64,7 @@ export function activityIcon(ev: AuditEvent): IconName {
 
 /** Pure view of the activity list, so tests can render every state. */
 export function ActivityView({ status, events, error, now = Date.now() }: { status: LogStatus; events: AuditEvent[]; error?: string | null; now?: number }) {
+  const dt = useDateTimeFormat()
   return (
     <SettingsSection
       title="Recent activity"
@@ -92,7 +94,7 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
                       label={<span className={failed ? 'text-danger' : undefined}>{AUDIT_LABELS[ev.name] ?? ev.name}{summary && <span className="text-muted"> · {summary}</span>}</span>}
                       meta={
                         <span title={ev.userAgent}>
-                          <time dateTime={new Date(ev.ts).toISOString()} title={new Date(ev.ts).toLocaleString()}>{relativeTime(ev.ts, now)}</time>
+                          <time dateTime={new Date(ev.ts).toISOString()} title={dt.formatInstant(ev.ts, 'datetime')}>{relativeTime(ev.ts, now)}</time>
                           {' · '}{shortAgent(ev.userAgent)}{ev.ip ? ` · ${ev.ip}` : ''}
                         </span>
                       }

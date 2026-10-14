@@ -9,6 +9,7 @@ import { Notice } from '../ui/patterns/Notice'
 import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
 import type { HueName } from '../ui/tokens/palette'
 import { followLink } from './SettingsView'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 const SYNC: Record<SyncState, { label: string; hue: HueName }> = {
   idle: { label: 'Up to date', hue: 'green' },
@@ -33,6 +34,7 @@ const linkButton = 'ui-btn ui-btn--secondary ui-btn--sm'
 
 /** Pure rendering of Settings → Data; `sync` comes from the live sync status. */
 export function YourDataView({ demo, isOwner, sync }: { demo: boolean; isOwner: boolean; sync: SyncSummary }) {
+  const dt = useDateTimeFormat()
   const s = SYNC[sync.state] ?? { label: sync.state, hue: 'slate' as HueName }
   return (
     <SettingsSection title="Your data" helpId="settings/data" headingId="data-heading" testId="data-panel"
@@ -52,7 +54,7 @@ export function YourDataView({ demo, isOwner, sync }: { demo: boolean; isOwner: 
             <Badge hue={s.hue}>{s.label}</Badge>
             <span className="text-muted">
               {sync.pending ? `${sync.pending} change(s) waiting to upload.` : 'No changes waiting.'}
-              {sync.lastSyncedAt ? ` Last synced ${new Date(sync.lastSyncedAt).toLocaleString()}.` : ''}
+              {sync.lastSyncedAt ? ` Last synced ${dt.formatInstant(sync.lastSyncedAt, 'datetime')}.` : ''}
             </span>
           </span>
         )} />

@@ -3,6 +3,7 @@ import {
   blockFor, calendarTasks, dayLoad, DEFAULT_GRID_PREFS, dropStart, formatLoad, formatTime, normalizeGridPrefs, nudgeDue, parseTime,
   placementStart, resizeEstimate, slotFromOffset, stepEstimate, weekDates,
 } from './calendar'
+import { formatHour, formatTime as formatWallTime, resolveDateTime } from './dates'
 import type { Task } from './types'
 
 function task(p: Partial<Task> = {}): Task {
@@ -159,6 +160,20 @@ describe('weeks and placement', () => {
     expect(weekDates('2026-10-12')[0]).toBe('2026-10-12')
     expect(weekDates('2026-10-18')[0]).toBe('2026-10-12')
     expect(weekDates('2026-11-01')).toContain('2026-10-26')
+  })
+
+  it('starts the week on the preferred first day (date-time-preferences)', () => {
+    expect(weekDates('2026-10-14', 0)).toEqual(['2026-10-11', '2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17'])
+    expect(weekDates('2026-10-11', 0)[0]).toBe('2026-10-11')
+    expect(weekDates('2026-10-14', 6)[0]).toBe('2026-10-10')
+    expect(weekDates('2026-10-14', 1)).toEqual(weekDates('2026-10-14'))
+  })
+
+  it('labels grid hours in the time format while stored times stay HH:MM', () => {
+    const twelve = resolveDateTime({ date_format: 'system', time_format: '12h', week_start: 'system' })
+    expect([9, 10, 12, 13].map((h) => formatHour(h, twelve))).toEqual(['9 AM', '10 AM', '12 PM', '1 PM'])
+    expect(formatWallTime(formatTime(570), twelve)).toBe('9:30 AM')
+    expect(formatTime(570)).toBe('09:30')
   })
 
   it('starts placement at the task time, then the next slot today, then the grid start', () => {

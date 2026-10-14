@@ -9,6 +9,7 @@ import type { SnoozeChoice } from '../lib/reminderTime'
 import { requestSync } from '../lib/sync'
 import { openTaskInList } from './signals'
 import { ToastRegion } from './overlay'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
  * In-app reminder notifications (OpenSpec change `reminders`). Mounted once by
@@ -20,6 +21,7 @@ import { ToastRegion } from './overlay'
  * wrote from a notification action, and "open this task".
  */
 export function ReminderToasts() {
+  const dt = useDateTimeFormat()
   const [due, setDue] = useState<DueReminder[]>([])
   const watcher = useRef<Watcher | null>(null)
   const notified = useRef(new Set<string>())
@@ -82,7 +84,7 @@ export function ReminderToasts() {
             <span className="pt-0.5 text-muted"><Icon name="alarm-clock" /></span>
             <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)} title="Open task">
               <p className="line-clamp-2 user-text text-sm font-medium">{d.task.title || 'Untitled'}</p>
-              <p className="text-xs text-muted">Reminder · {new Date(d.reminder.fire_at as number).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+              <p className="text-xs text-muted">Reminder · {dt.formatInstant(d.reminder.fire_at as number, 'datetime')}</p>
             </button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1">

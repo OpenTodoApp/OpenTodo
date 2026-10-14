@@ -59,11 +59,11 @@ Open a task and select **+ Add reminder** under **Reminders**. Choose one of:
 
 - **At due time**, **10 minutes before**, **30 minutes before**, **1 hour before** or **1 day before**,
 - **Custom offset…**, for any number of minutes, hours or days before or after,
-- **At a specific date and time…**, for a fixed moment that doesn't depend on the due date.
+- **At a specific date and time…**, for a fixed moment that doesn't depend on the due date. Its date and time fields work like the ones under **Due**: type the date and time in your format or pick them from the calendar and the list of times (see [Dates and times](tasks-and-projects.md#dates-and-times)).
 
 <picture><source srcset="images/reminders-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/reminders-light.webp" alt="The Due and Reminders fields of a task: due today at 10:00, with one reminder 30 minutes before and one at a set time tomorrow morning."></picture>
 
-A task can have several reminders. Reminders relative to the due time move with it: change the due date and they follow, and on a repeating task they carry over to the next occurrence. If the task has a date but no time, "before" and "after" count from 09:00 that day.
+Reminders are listed with their day, date and time in your format, for example `Tue 3 Nov, 09:00`. A task can have several reminders. Reminders relative to the due time move with it: change the due date and they follow, and on a repeating task they carry over to the next occurrence. If the task has a date but no time, "before" and "after" count from 09:00 that day.
 
 ## When a reminder goes off
 

@@ -4,7 +4,7 @@ summary: A tour of Settings, what each section does, which choices belong to one
 audience: user
 section: Guides
 specs: [web-app, settings-navigation]
-screens: [settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/sso#access-policies, settings/backups#backups, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations]
+screens: [settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/sso#access-policies, settings/backups#backups, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations]
 order: 140
 card: settings
 ---
@@ -52,8 +52,19 @@ Sign-ins and token changes from the last 90 days. The owner also sees the server
 How the app behaves on this device.
 
 - **Start view**: the view this device opens on. See [Views](views.md#choose-where-the-app-opens).
+- **Date and time**: how dates and times look and where weeks start, on all your devices (see below).
 - **Calendar**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
 - **Keyboard**: turn on Vim keybindings. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
+
+#### Date and time
+
+Three choices that follow your account to every device, also when you change them offline:
+
+- **Date format**: **System** (the way this browser writes dates), **Day-month** (`14 Oct`, `14/10/2026`), **Month-day** (`Oct 14`, `10/14/2026`) or **ISO** (`2026-10-14`). Each option shows today's date in that format. Month and weekday names stay in your browser's language.
+- **Time format**: **System**, **12-hour** (`3:00 PM`) or **24-hour** (`15:00`).
+- **First day of the week**: **System**, **Monday**, **Sunday** or **Saturday**. It decides where the Week view and the calendar of a date field start.
+
+The **Preview** shows a due date, a date, a due time, a comment time and this week as they will appear. A change applies at once everywhere in the app, without a reload: task rows, the task detail, reminders, the Day and Week views, comments, history and the lists in Settings. With a numeric date order on **Automatic**, quick add reads dates like `3/11` in your date format too.
 
 ### Notifications
 

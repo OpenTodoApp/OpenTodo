@@ -23,6 +23,7 @@ import {
   cacheWebhooks, deliveryOutcome, describeWebhookError, insecureTarget, loadCachedWebhooks,
   toggleEvent, WEBHOOK_EVENTS, webhookStatus, type WebhookTone,
 } from '../lib/webhooks'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 export interface WebhookDraft {
   /** null when creating a new webhook. */
@@ -66,6 +67,7 @@ const DELIVERY_TONE: Record<WebhookDelivery['status'], HueName> = { delivered: '
 
 /** Pure rendering of the Webhooks section; all state lives in WebhooksPanel. */
 export function WebhooksView(p: WebhooksViewProps) {
+  const dt = useDateTimeFormat()
   const disabled = !p.connected || p.busy
   const projectName = (id: string | null) => (id ? p.projects.find((x) => x.id === id)?.name ?? 'Unknown project' : 'All projects')
   const draft = p.draft
@@ -128,7 +130,7 @@ export function WebhooksView(p: WebhooksViewProps) {
                       <li key={d.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta">
                         <Badge hue={DELIVERY_TONE[d.status]}>{d.status}</Badge>
                         <code className="text-default">{d.event}</code>
-                        <span className="text-faint">{new Date(d.createdAt).toLocaleString()}</span>
+                        <span className="text-faint">{dt.formatInstant(d.createdAt, 'datetime')}</span>
                         <span className="text-muted">
                           {d.attempts} attempt{d.attempts === 1 ? '' : 's'}{deliveryOutcome(d) ? ` · ${deliveryOutcome(d)}` : ''}
                         </span>

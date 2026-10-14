@@ -49,9 +49,9 @@ Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when
 | `today`, `tonight`, `tomorrow`, `day after tomorrow` | that day |
 | `Monday` … `Sunday`, `mon`, `wed.` | the next one **after** today (on a Friday, `fri` means next Friday) |
 | `this sat` | same as the bare weekday |
-| `next Monday` | same as the bare weekday, unless that day is still in the current Monday–Sunday week; then the one a week later. On Friday 9 Oct, `next Wed` is 14 Oct and `next Sat` is 17 Oct (not tomorrow). |
+| `next Monday` | same as the bare weekday, unless that day is still in the current week; then the one a week later. Weeks start on your first day of the week (Monday unless you change it). On Friday 9 Oct, `next Wed` is 14 Oct and `next Sat` is 17 Oct (not tomorrow). |
 | `in 3 days`, `in 2 weeks`, `in a month` | today plus that much (months keep the day, clamped to the month's end) |
-| `next week`, `next month` | Monday of next week; the 1st of next month |
+| `next week`, `next month` | the first day of next week (Monday unless you start your week on Sunday or Saturday); the 1st of next month |
 | `3 Feb`, `Feb 3`, `3rd of February`, `December 25th 2027` | that date; without a year, the next time it comes round (today counts) |
 | `May`, `December` (full name alone) | the 1st of that month. Abbreviations (`mar`, `jan`) need a day number next to them. |
 | `12/11`, `12-11`, `12/11/2027`, `2026-11-03` | numeric dates; see day/month order below |
@@ -62,7 +62,9 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, project, priority or estimate.
 
-**Day/month order.** `12/11` is 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month. Change it under Settings → Capture → Quick add.
+**Day/month order.** While **Numeric dates like 12/11** is on **Automatic**, the order follows your date format in **Settings → Preferences → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, it follows your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The Automatic option says which one decided. Choosing day/month or month/day under **Settings → Capture → Quick add** fixes the order on this device and wins over your date format. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
+
+**First day of the week.** `next week` and `next <weekday>` use the first day of the week you chose in **Settings → Preferences → Date and time**, so they give the same result on all your devices.
 
 ## Languages
 
