@@ -53,6 +53,22 @@ export interface AssistantSettingsInput {
   keys?: Partial<Record<ProviderName, string>>
 }
 
+/** The owner's on-screen values for one provider sent with "Test connection"; absent fields use the saved settings. */
+export interface AssistantTestDraft {
+  model?: string
+  base_url?: string
+  /** Absent: the saved key; "": no key; otherwise used for this test only. */
+  key?: string
+  allow_private_endpoint?: boolean
+}
+
+/** A member's on-screen provider, model and key sent with "Test connection". */
+export interface MyAssistantTestDraft {
+  provider?: string
+  model?: string
+  key?: string
+}
+
 export interface AssistantTestResult {
   ok: boolean
   code?: string

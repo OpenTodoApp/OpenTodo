@@ -191,16 +191,23 @@ func (s *Server) handleTestAssistant(w http.ResponseWriter, r *http.Request) {
 	if !requireOwner(w, r, "the assistant settings") {
 		return
 	}
+	// The on-screen values are optional; absent ones fall back to the saved
+	// settings (assistant-test-unsaved-settings).
 	var in struct {
-		Provider string `json:"provider"`
+		Provider             string  `json:"provider"`
+		Model                *string `json:"model"`
+		BaseURL              *string `json:"base_url"`
+		Key                  *string `json:"key"`
+		AllowPrivateEndpoint *bool   `json:"allow_private_endpoint"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
 		return
 	}
-	res := s.assistant.TestConnection(r.Context(), in.Provider, s.assistantSettings(r.Context()))
+	res := s.assistant.TestConnection(r.Context(), in.Provider, s.assistantSettings(r.Context()),
+		assistant.Draft{Model: in.Model, BaseURL: in.BaseURL, Key: in.Key, AllowPrivateEndpoint: in.AllowPrivateEndpoint})
 	if res.Code == "invalid_input" {
-		writeError(w, http.StatusBadRequest, "invalid_input", "provider: "+res.Message)
+		writeError(w, http.StatusBadRequest, "invalid_input", res.Message)
 		return
 	}
 	writeJSON(w, http.StatusOK, res)
@@ -463,18 +470,32 @@ func (s *Server) handleTestMyAssistant(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "forbidden", "the server owner has not allowed members to bring their own key")
 		return
 	}
-	route, err := s.assistant.Store.Resolve(ctx, u.ID, set)
-	if err != nil {
-		s.internal(w, err)
-		return
+	// The on-screen provider, model and key are optional; absent ones fall
+	// back to the member's saved choice (assistant-test-unsaved-settings).
+	var in struct {
+		Provider *string `json:"provider"`
+		Model    *string `json:"model"`
+		Key      *string `json:"key"`
 	}
-	if !route.Member {
-		writeError(w, http.StatusConflict, "no_own_provider", "choose your own provider and save your key first")
-		return
+	if r.ContentLength != 0 {
+		if err := readJSON(r, &in); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+			return
+		}
 	}
 	if !s.assistantTestLimiter.allow(u.ID) {
 		w.Header().Set("Retry-After", fmt.Sprint(int(memberTestWindow.Seconds())))
 		writeError(w, http.StatusTooManyRequests, "rate_limited", fmt.Sprintf("at most %d connection tests in %d minutes; try again later", memberTestLimit, int(memberTestWindow.Minutes())))
+		return
+	}
+	route, err := s.assistant.Store.MemberTestRoute(ctx, u.ID, assistant.MemberDraft{Provider: in.Provider, Model: in.Model, Key: in.Key})
+	var inv *assistant.InvalidError
+	if errors.As(err, &inv) {
+		writeError(w, http.StatusBadRequest, "invalid_input", inv.Error())
+		return
+	}
+	if err != nil {
+		s.internal(w, err)
 		return
 	}
 	res := s.assistant.TestMember(ctx, route, set)

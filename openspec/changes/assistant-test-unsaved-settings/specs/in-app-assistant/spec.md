@@ -24,7 +24,7 @@
 - **THEN** the response is 403 `forbidden`, 403 `session_required` or 401 `unauthorized`, and no outbound request is made
 
 ### Requirement: Test keys and checks
-In a connection test, `key` SHALL follow the save semantics: absent uses the saved key, an empty string means no key, a value is used for that request only. The merged values SHALL pass the same checks as a save, including the private-address check with the on-screen private-endpoint value, before any outbound request; a failure SHALL answer 400 naming the field. A test SHALL never save, audit, log or return a key.
+In a connection test, `key` SHALL follow the save semantics: absent uses the saved key, an empty string means no key, a value is used for that request only. The merged values SHALL pass the same checks as a save, including the private-address check with the on-screen private-endpoint value, before any outbound request; a failure SHALL be reported naming the field (400 `invalid_input`, or code `private_target` for a private address). A test SHALL never save, audit, log or return a key.
 
 #### Scenario: Key removed on screen
 - **WHEN** the owner selects "Remove saved key" for Gemini and tests before saving
@@ -36,7 +36,7 @@ In a connection test, `key` SHALL follow the save semantics: absent uses the sav
 
 #### Scenario: Private endpoint switch not yet saved
 - **WHEN** the owner types a compatible base URL resolving to `192.168.1.20`, turns on "Allow private endpoints" without saving, and tests
-- **THEN** the test reaches that address; with the switch off on screen the response is 400 `private_target` and no outbound request is made
+- **THEN** the test reaches that address; with the switch off on screen the result has code `private_target` and no outbound request is made
 
 #### Scenario: Nothing saved or logged
 - **WHEN** the owner or a member tests with a typed key

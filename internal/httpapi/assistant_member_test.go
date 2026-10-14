@@ -408,12 +408,13 @@ func TestLegacyOwnKeyStillWorks(t *testing.T) {
 	}
 }
 
-// TestMemberConnectionTest: session only, member keys allowed, own provider
-// chosen, rate limited; a rejected key names the member's own key.
+// TestMemberConnectionTest: session only, member keys allowed, a provider
+// chosen on screen or saved, rate limited; a rejected key names the member's
+// own key.
 func TestMemberConnectionTest(t *testing.T) {
 	me := newOwnProviderEnv(t, nil)
 	resp, out := me.member.do("POST", "/api/v1/me/assistant/test", nil)
-	if resp.StatusCode != 409 || errCode(out) != "no_own_provider" {
+	if resp.StatusCode != 400 || errCode(out) != "invalid_input" {
 		t.Fatalf("without a choice: %d %v", resp.StatusCode, out)
 	}
 	me.chooseOpenAI(t)
@@ -442,8 +443,8 @@ func TestMemberConnectionTest(t *testing.T) {
 	if resp.StatusCode != 401 {
 		t.Fatalf("anonymous: %d", resp.StatusCode)
 	}
-	// Rate limit: 5 per 10 minutes per account (2 used above).
-	for i := 0; i < 3; i++ {
+	// Rate limit: 5 per 10 minutes per account (3 used above).
+	for i := 0; i < 2; i++ {
 		resp, out = me.member.do("POST", "/api/v1/me/assistant/test", nil)
 		me.member.mustStatus(resp, 200, out)
 	}

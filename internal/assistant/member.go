@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
+	"strings"
 
 	"github.com/pixari/opentodo/internal/audit"
 )
@@ -212,4 +213,56 @@ func (r Route) GoString() string { return "assistant.Route" + r.String() }
 // LogValue implements slog.LogValuer without the key.
 func (r Route) LogValue() slog.Value {
 	return slog.GroupValue(slog.String("provider", r.Provider), slog.String("model", r.Model), slog.Bool("own_key", r.Own), slog.Bool("member_provider", r.Member))
+}
+
+// MemberDraft is what a member has on screen in "Which assistant you use"
+// when they select "Test connection" (assistant-test-unsaved-settings). A nil
+// field falls back to their saved choice; Key nil uses the key saved for the
+// tested provider, "" means no key.
+type MemberDraft struct {
+	Provider *string
+	Model    *string
+	Key      *string
+}
+
+// MemberTestRoute builds the route a member's connection test uses: the
+// on-screen draft over their saved provider, model and key. A saved model is
+// kept only for the provider it was saved with, and a saved key is only ever
+// the one stored for the tested provider. The choice is checked like a save.
+func (st *Store) MemberTestRoute(ctx context.Context, userID string, d MemberDraft) (Route, error) {
+	choice, err := st.MemberChoice(ctx, userID)
+	if err != nil {
+		return Route{}, err
+	}
+	provider := ""
+	if choice != nil {
+		provider = choice.Provider
+	}
+	if d.Provider != nil {
+		provider = *d.Provider
+	}
+	if provider == "" {
+		return Route{}, invalid("provider", "choose your own provider first")
+	}
+	model := ""
+	if choice != nil && choice.Provider == provider {
+		model = choice.Model
+	}
+	if d.Model != nil {
+		model = strings.TrimSpace(*d.Model)
+	}
+	if err := ValidateMemberChoice(provider, model); err != nil {
+		return Route{}, err
+	}
+	var key string
+	if d.Key != nil {
+		key = strings.TrimSpace(*d.Key)
+	} else {
+		sec, err := st.secrets.Load()
+		if err != nil {
+			return Route{}, err
+		}
+		key = sec.Value(UserKey(userID, provider))
+	}
+	return Route{Provider: provider, Model: model, Own: true, Member: true, key: key, base: ProviderSettings{Enabled: true, Model: model}}, nil
 }

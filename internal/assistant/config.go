@@ -170,26 +170,8 @@ func (s Settings) validateStatic() error {
 		return invalid("monthly_token_cap_per_user", "must be 0 (unlimited) or a positive number of tokens")
 	}
 	for _, name := range ProviderNames {
-		p := s.Providers[name]
-		if len(p.Model) > 200 || strings.ContainsAny(p.Model, "\r\n\t") {
-			return invalid("providers."+name+".model", "must be a model id of at most 200 characters")
-		}
-		if name != Compatible && p.BaseURL != "" {
-			return invalid("providers."+name+".base_url", "only the compatible provider takes a base URL")
-		}
-		if !p.Enabled {
-			continue
-		}
-		if strings.TrimSpace(p.Model) == "" {
-			return invalid("providers."+name+".model", "a model id is required to enable this provider")
-		}
-		if name == Compatible {
-			if strings.TrimSpace(p.BaseURL) == "" {
-				return invalid("providers.compatible.base_url", "a base URL is required for the compatible provider")
-			}
-			if _, err := webhook.ValidateURL(p.BaseURL); err != nil {
-				return invalid("providers.compatible.base_url", strings.TrimPrefix(err.Error(), webhook.ErrBadURL.Error()+": "))
-			}
+		if err := validateProvider(name, s.Providers[name], "a model id is required to enable this provider"); err != nil {
+			return err
 		}
 	}
 	if s.Enabled && !s.Providers[s.DefaultProvider].Enabled {
@@ -247,6 +229,33 @@ type KeyChange = map[string]*string
 // SaveSettings validates next with the keys that will be in effect, stores
 // settings and keys, and records settings.changed for every changed setting
 // (keys as unset/set, never values). check resolves the compatible base URL.
+// validateProvider checks one provider's settings; an enabled provider needs
+// a model id (noModel is the message when it is missing) and, for the
+// compatible provider, a valid base URL. Saving and "Test connection" share it.
+func validateProvider(name string, p ProviderSettings, noModel string) error {
+	if len(p.Model) > 200 || strings.ContainsAny(p.Model, "\r\n\t") {
+		return invalid("providers."+name+".model", "must be a model id of at most 200 characters")
+	}
+	if name != Compatible && p.BaseURL != "" {
+		return invalid("providers."+name+".base_url", "only the compatible provider takes a base URL")
+	}
+	if !p.Enabled {
+		return nil
+	}
+	if strings.TrimSpace(p.Model) == "" {
+		return invalid("providers."+name+".model", noModel)
+	}
+	if name == Compatible {
+		if strings.TrimSpace(p.BaseURL) == "" {
+			return invalid("providers.compatible.base_url", "a base URL is required for the compatible provider")
+		}
+		if _, err := webhook.ValidateURL(p.BaseURL); err != nil {
+			return invalid("providers.compatible.base_url", strings.TrimPrefix(err.Error(), webhook.ErrBadURL.Error()+": "))
+		}
+	}
+	return nil
+}
+
 func (st *Store) SaveSettings(ctx context.Context, actorID string, next Settings, keys KeyChange, check func(ctx context.Context, rawURL string, allowPrivate bool) error, rec *audit.Recorder) (Settings, error) {
 	next.normalise()
 	if err := next.validateStatic(); err != nil {

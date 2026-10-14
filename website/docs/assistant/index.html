@@ -159,7 +159,7 @@
 <p>When the server owner turns on <strong>Let members bring their own key</strong>, <strong>Settings → AI → Assistant</strong> shows <strong>Which assistant you use</strong>:</p>
 <ul>
 <li><strong>The server&#39;s assistant</strong>: the provider and model the owner set up. This is the default.</li>
-<li><strong>My own provider and key</strong>: choose <strong>Anthropic (Claude)</strong>, <strong>OpenAI</strong> or <strong>Google Gemini</strong>, a model, and paste an API key from your own account, then select <strong>Save my provider</strong>. For Anthropic you pick one of the offered models; for OpenAI and Gemini you type the model id (up to 100 characters: letters, digits, <code>.</code>, <code>_</code>, <code>:</code> and <code>-</code>, for example <code>gpt-4.1-mini</code> or <code>gemini-2.5-flash</code>). <strong>Test connection</strong> sends one tiny request with your key to check it (up to 5 tests in 10 minutes).</li>
+<li><strong>My own provider and key</strong>: choose <strong>Anthropic (Claude)</strong>, <strong>OpenAI</strong> or <strong>Google Gemini</strong>, a model, and paste an API key from your own account, then select <strong>Save my provider</strong>. For Anthropic you pick one of the offered models; for OpenAI and Gemini you type the model id (up to 100 characters: letters, digits, <code>.</code>, <code>_</code>, <code>:</code> and <code>-</code>, for example <code>gpt-4.1-mini</code> or <code>gemini-2.5-flash</code>). <strong>Test connection</strong> sends one tiny request with the provider, model and key on screen to check them, before or after you save (up to 5 tests in 10 minutes). Testing never saves anything.</li>
 </ul>
 <p>Your questions then go from this server to the provider you chose, with your key, so that provider&#39;s terms for your account apply. The assistant asks you to accept the disclosure for that provider before your next message. Your key is stored on the server, never shown again, never sent to your browser and never in backups or exports. Going back to <strong>The server&#39;s assistant</strong> deletes the key you stored for your provider.</p>
 <p>A compatible endpoint (a model server address) is never offered here: only the server owner decides which other machines the server connects to.</p>
@@ -208,7 +208,7 @@
 <li>Tick <strong>Allow this provider</strong> for one or more providers and enter the model and key.</li>
 <li>Choose the <strong>Provider everyone uses</strong>.</li>
 <li>Tick <strong>Turn on the assistant for this server</strong> and select <strong>Save assistant settings</strong>. The dialog closes and the section shows the new state.</li>
-<li>In <strong>Configure</strong>, select <strong>Test connection</strong> under a provider: it sends one tiny request and reports success or the provider&#39;s error. It is the only request the server makes outside someone&#39;s turn.</li>
+<li>In <strong>Configure</strong>, select <strong>Test connection</strong> under a provider: it sends one tiny request with the model, base URL and key you see on screen, saved or not, and reports success or the provider&#39;s error. Testing never saves anything; a passing test of unsaved values says so, and you still select <strong>Save</strong>. It is the only request the server makes outside someone&#39;s turn.</li>
 </ol>
 <div class="table-wrap" tabindex="0"><table>
 <thead>
