@@ -2,7 +2,7 @@
 
 OpenTodo set out to replace commercial task managers for people who want to own their data, then go further with what a self-hosted, local-first platform makes possible. **The original roadmap is complete**: every capability below has shipped (see the [changelog](CHANGELOG.md)). Each one was built as an [OpenSpec](https://github.com/Fission-AI/OpenSpec) change; the change names are the folders under `openspec/changes/archive/`, and the resulting behaviour contracts live in `openspec/specs/`.
 
-New work starts the same way: `openspec new change <name>` or `/opsx:propose "<idea>"`. See [Future ideas](#future-ideas) for candidates.
+New work starts the same way: `openspec new change <name>` or `/opsx:propose "<idea>"`. See [Parity and depth](#next-parity-and-depth) for the next ten candidates and [Future ideas](#future-ideas) for smaller ones.
 
 ## Shipped
 
@@ -118,6 +118,25 @@ One visual language, built in a workbench: friendly and roomy like TickTick, Tod
 
 Related usability fixes, independent of the refresh: your own date and time format (`date-time-preferences`), a test notification that proves delivery (`push-test-delivery`) and restoring a backup from the web app (`backup-restore-web`).
 
+## Next: Parity and depth
+
+Ten candidates for after the design refresh, in a suggested order. They come from four sources: what the named importers must drop today with a warning (`named-importers` waits for `deadlines` and `someday-and-evening`), the gaps the comparison pages on open-todo.app concede to Todoist, Things and Linear, the open issues, and what the code does not have yet (no search, no multi-select, no attachments, no outgoing mail, English only). Parity with the apps people switch from comes first because the hosted offering (`multi-tenant-host`, proposal only) is explicitly scheduled after it. Each starts as an OpenSpec change; none is a commitment.
+
+| # | Capability | Change name | Notes |
+| --- | --- | --- | --- |
+| 1 | **Deadlines**, separate from the scheduled day: a task can be planned for Tuesday and due by Friday | `deadlines` | Additive `deadline` field (floating date), shown as a countdown in rows, Today and Upcoming; filters (`deadline <= 3d`), reminders and CalDAV `DUE` versus `DTSTART` follow. The Things and Todoist importers map their deadlines instead of dropping them |
+| 2 | **Start dates, Someday and This Evening**: defer a task until a date, park it without a date, or plan it for tonight | `someday-and-evening` | Additive `start` (date or `someday`) and `evening` fields; deferred tasks stay out of Today and Upcoming until their day, with Someday and Anytime views. Matches Things' "when" model and the GTD someday list; the Things importer maps `start` and `startBucket` |
+| 3 | **Search and command palette** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>): find any task, project, label or setting and run any command from one box | `search-and-command-palette` | Local index over IndexedDB, so it works offline and on end-to-end encrypted accounts without the server seeing anything; filter-query syntax accepted inline; every menu action reachable by name. Keyboard-first principle, no new route |
+| 4 | **Multi-select and bulk actions**: select several tasks and complete, reschedule, move, label, prioritise or trash them at once | `bulk-edit` | <kbd>x</kbd> toggles selection, <kbd>Shift</kbd>+<kbd>j</kbd>/<kbd>k</kbd> extends it, actions apply to the selection; one batch of ops, undone in one step. Checkbox selection on touch. Reuses the assistant's proposal review for "n changes" |
+| 5 | **Attachments**: files and images on tasks and comments, shared from the phone's share sheet or the extension | `attachments` | Blobs under the data directory (one volume), per-file and per-account limits, in backups and the export, served with authentication; encrypted on the device for end-to-end encrypted accounts; refused on the demo instance. Completes the share target (text and links only today) and lets importers keep attachment references |
+| 6 | **Task dependencies**: "blocked by" and "waiting for" between tasks | `task-dependencies` | Additive `blocked_by` list; blocked tasks dimmed in lists and on the board, unblocked ones surface in Today when their blocker is completed; filter `blocked` / `unblocked`. The Linear importer maps relations; GTD's waiting-for list stops needing a label |
+| 7 | **Project templates and duplication**: duplicate a project or task tree, save one as a template, start a project from a template | `project-templates` | Templates are plain JSON in the existing import format, so the website's templates install in one click and a household can reuse its "trip" checklist; recurring checklists ("new client onboarding") duplicate with dates shifted relative to a start day |
+| 8 | **Calendar feeds, both ways**: show your other calendars in Day and Week, and subscribe to your tasks from Google Calendar or Outlook | `calendar-feeds` | Operator-allowed, user-configured iCalendar URLs fetched by the server on a schedule (same policy as webhooks, refused on the demo), events drawn read-only in the time-blocking grid so free slots are real; a private read-only `.ics` URL per user with revocation. CalDAV keeps the two-way sync for clients that speak it |
+| 9 | **Outgoing email** (optional SMTP): password reset, verified sign-up, invitations and project invites by mail, and an optional daily digest | `outgoing-email` | Phase 2 of `multi-tenant-host`, split out because it helps self-hosters now. `OPENTODO_SMTP_*` optional, nothing changes without it; sending limits, templates in the six quick-add languages, never sends task content for end-to-end encrypted accounts |
+| 10 | **The app in your language**: translated interface, with the quick-add languages first (English, German, French, Spanish, Italian, Portuguese) and community catalogs after | `app-localization` | Message catalogs lazy-loaded per language (no runtime dependency beyond a small formatter), language chosen in Preferences and synced like the date format; docs stay English for now. Todoist ships about twenty languages; this is the most visible parity gap for non-English households |
+
+Worth considering next, not placed: a **focus timer and time tracking** against the duration estimate (TickTick's Pomodoro, actual versus planned hours in the Week view); **rules** ("when a task in Inbox gets `@errand`, move it to Errands") built on the same tool registry as the assistant; **Apple Shortcuts and a URL scheme** (`opentodo://add?title=`) as the nearest thing to the native integrations the comparisons concede; and **Hosted OpenTodo** once the parity work above is done (see the `multi-tenant-host` proposal).
+
 ## Future ideas
 
 Not commitments, just honest next steps. Each would start as an OpenSpec change.
@@ -127,7 +146,7 @@ Not commitments, just honest next steps. Each would start as an OpenSpec change.
 - **Rich text for comments.** Comments are Markdown today; reuse the notes editor where it helps without losing the plain-text API.
 - **Built-in SMTP receiver** for email to task, for operators who own an MX record (`email-smtp-receiver`).
 - **Quick add for recurrence and reminders** ("every Monday", "remind me at 9") and quick-add parsing in `ot`.
-- **Published browser extension** in the Chromium and Firefox stores, and file and image sharing through the share target.
+- **Published browser extension** in the Chromium and Firefox stores. (File and image sharing through the share target is part of `attachments` above.)
 - **Shell completion** for `ot` (`ot schema` already describes every command and flag).
 - **In-app assistant for end-to-end encrypted accounts.** The first in-app assistant runs its loop on the server, which cannot read encrypted content. A direct-from-device mode (the browser holds the key and calls the model provider itself) could serve encrypted accounts, at the cost of exposing the model key to the browser and depending on provider CORS rules.
 - **Keep a shared project away from AI assistants.** A per-project switch so that one member's assistant cannot read or change a shared project the others want kept out of assistants.
