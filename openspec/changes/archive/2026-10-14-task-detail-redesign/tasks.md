@@ -66,7 +66,7 @@ Prerequisites: `design-language`, `ui-primitives` and `date-time-preferences` ar
 ## 10. Docs and integration
 
 - [x] 10.1 Update the user guide pages for the task panel, comments and history in `docs/` (keeping help ids) and regenerate screenshots with `make docs-screenshots`. Verify that `make docs-check` passes and that the new screenshots show the redesigned panel in light and dark.
-- [ ] 10.2 Update the panel selectors in `scripts/e2e-views.mjs` and `scripts/e2e-smoke.mjs`. Verify that both scripts pass against `./bin/opentodo`.
+- [x] 10.2 Update the panel selectors in `scripts/e2e-views.mjs` and `scripts/e2e-smoke.mjs`. Verify that both scripts pass against `./bin/opentodo`.
 - [x] 10.3 Measure the bundle impact (gzipped entry and the lazy History chunk before and after `npm run build`) and record it in design.md "Size and runtime". Verify that the numbers are committed and the entry grows by less than 15 KB gzipped.
 - [x] 10.4 Run `make check` and `make ui-check`. Verify that both pass.
 

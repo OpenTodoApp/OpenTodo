@@ -28,6 +28,8 @@ On iPhone or iPad, the same article lists a diagnostics code (Settings → Gener
 2. Choose `main.sqlite` (or the ZIP). The preview shows **Things 3 database**.
 3. Check the warnings and select **Import**.
 
+<picture><source srcset="../images/import-things-dark.webp" media="(prefers-color-scheme: dark)"><img src="../images/import-things-light.webp" alt="The import preview of a Things 3 database: the detected format, how many projects, sections and tasks will be created, and the first to-dos with their area and dates."></picture>
+
 The file is read on your server from a private copy, read-only, and deleted right after the preview or import.
 
 ## What carries over

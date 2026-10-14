@@ -21,6 +21,8 @@ Linear exports a workspace's issues as one CSV file from its workspace settings 
 2. Choose the CSV file. The preview shows **Linear export (CSV)**.
 3. Check the warnings and select **Import**.
 
+<picture><source srcset="../images/import-linear-dark.webp" media="(prefers-color-scheme: dark)"><img src="../images/import-linear-light.webp" alt="The import preview of a Linear CSV export: the detected format, how many projects, sections and tasks will be created, and the first issues with their project and status."></picture>
+
 Each project opens as a board on this device, with one column per status.
 
 ## What carries over

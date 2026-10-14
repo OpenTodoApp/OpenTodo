@@ -26,6 +26,8 @@ A single project can also be exported as CSV from the project's menu, but a lone
 2. Choose the ZIP file. The preview shows **Todoist backup (ZIP)** and lists every project, section and task.
 3. Check the warnings, choose a time zone if your tasks have times, and select **Import**.
 
+<picture><source srcset="../images/import-todoist-dark.webp" media="(prefers-color-scheme: dark)"><img src="../images/import-todoist-light.webp" alt="The import preview of a Todoist backup: the detected format, how many projects, sections and tasks will be created, and the first tasks with their project and labels."></picture>
+
 Projects that were boards in Todoist open as boards on this device. Your other devices receive everything on their next sync.
 
 ## What carries over

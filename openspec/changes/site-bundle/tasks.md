@@ -13,9 +13,9 @@
 
 ## 3. CI
 
-- [ ] 3.1 Add a `site-bundle` job on pushes to main that uploads the bundle as an artefact named with the short commit. Verify on a branch run that the artefact downloads and unpacks to the D1 layout.
+- [x] 3.1 Add a `site-bundle` job on pushes to main that uploads the bundle as an artefact named with the short commit. Verify on a branch run that the artefact downloads and unpacks to the D1 layout.
 - [ ] 3.2 Make the `release` job depend on the bundle and upload `opentodo-site-bundle-<tag>.tar.gz` with the other assets (and in `SHA256SUMS`). Verify with a pre-release tag (`v0.x.y-rc.1`) on a branch that the asset is attached.
-- [ ] 3.3 Add path filters (D7) with a `git diff` step. Verify a docs-only PR skips the Go, cross-compile and layout jobs, and a Go change runs them.
+- [x] 3.3 Add path filters (D7) with a `git diff` step. Verify a docs-only PR skips the Go, cross-compile and layout jobs, and a Go change runs them.
 
 ## 4. Switch-over (after the website repository serves the site)
 

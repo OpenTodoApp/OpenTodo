@@ -162,7 +162,7 @@ assert((await pageB.getByLabel('Group by').inputValue()) === 'due', 'B sees grou
 
 step('Unpin "Waiting": leaves the sidebar, still in the g v overview')
 await sidebarViews.getByLabel('Menu for view Waiting').click()
-await pageA.locator('[data-overlay]').getByRole('menuitemcheckbox', { name: 'Pin to sidebar' }).click()
+await pageA.locator('[data-overlay]').getByRole('menuitemcheckbox', { name: 'Pinned to sidebar' }).click()
 await sidebarViews.getByText('Waiting').waitFor({ state: 'detached' })
 await pageA.locator('body').click({ position: { x: 900, y: 700 } })
 await pageA.keyboard.press('g'); await pageA.keyboard.press('v')
@@ -250,7 +250,9 @@ await pageA.waitForURL(`**/view/${workId}`)
 
 step('Deleted start view: B deletes "Work tomorrow"; A syncs, relaunches on the Inbox with a notice')
 await pageB.getByRole('navigation', { name: 'Views' }).getByLabel('Menu for view Work tomorrow').click()
-await pageB.getByRole('menuitem', { name: 'Delete view' }).click()
+await pageB.getByRole('menuitem', { name: 'Delete view…' }).click()
+// Deleting asks first (labels-and-menus): confirm in the alert dialog.
+await pageB.getByRole('alertdialog').getByRole('button', { name: 'Delete view' }).click()
 await pageA.getByText('This view does not exist').waitFor({ timeout: 15000 })
 await pageA.goto(base)
 await pageA.getByRole('status').filter({ hasText: 'start view was deleted' }).waitFor()
