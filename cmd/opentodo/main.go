@@ -56,6 +56,14 @@ func main() {
 			return
 		case "healthcheck":
 			os.Exit(healthcheck())
+		case "--print-formats":
+			// Hidden: the import formats as JSON, for the site bundle manifest
+			// (OpenSpec site-bundle D5).
+			if err := printFormats(os.Stdout); err != nil {
+				fmt.Fprintln(os.Stderr, "opentodo:", err)
+				os.Exit(1)
+			}
+			return
 		case "restore":
 			os.Exit(restore(os.Args[2:]))
 		case "mfa-reset":
