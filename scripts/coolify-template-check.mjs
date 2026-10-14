@@ -257,9 +257,15 @@ export function checkTemplate(input) {
     for (const [n, v] of names) {
       if (!n.startsWith('OPENTODO_')) continue
       if (!input.configVars.has(n)) err(`${n} is not read by internal/config`)
+      // The one variable Coolify fills itself (owner-bootstrap): a generated secret guards the first account.
+      if (n === 'OPENTODO_SETUP_TOKEN') {
+        if (v !== '${SERVICE_PASSWORD_SETUP}') err('OPENTODO_SETUP_TOKEN must be ${SERVICE_PASSWORD_SETUP} so every deploy gets a generated setup token')
+        continue
+      }
       const own = new RegExp(`^\\$\\{${n}:-`)
       if (v === null || !own.test(v)) err(`${n} must be written as ${n}=\${${n}:-default} so it is optional and shown in Coolify's UI`)
     }
+    if (!names.has('OPENTODO_SETUP_TOKEN')) err('environment must set OPENTODO_SETUP_TOKEN=${SERVICE_PASSWORD_SETUP} so a fresh public deploy cannot be claimed by a stranger')
     for (const want of ['OPENTODO_ALLOW_SIGNUP', 'OPENTODO_TRUSTED_PROXIES']) {
       if (!names.has(want)) err(`environment must reference ${want} (values set in Coolify's UI reach a Compose service only when referenced)`)
     }
@@ -312,6 +318,9 @@ function dockerAvailable() {
     spawnSync('docker', ['compose', 'version'], { stdio: 'ignore' }).status === 0
 }
 
+// Stands in for the secret Coolify generates for ${SERVICE_PASSWORD_SETUP}.
+const SMOKE_SETUP_TOKEN = 'smoke-setup-token-0123456789'
+
 // Values Coolify writes into the service's .env for a domain of https://todo.example.test.
 function coolifyEnv(extra = {}) {
   return {
@@ -320,6 +329,7 @@ function coolifyEnv(extra = {}) {
     SERVICE_FQDN_OPENTODO: 'todo.example.test',
     SERVICE_URL_OPENTODO_8080: 'https://todo.example.test:8080',
     SERVICE_FQDN_OPENTODO_8080: 'todo.example.test:8080',
+    SERVICE_PASSWORD_SETUP: SMOKE_SETUP_TOKEN,
     ...extra,
   }
 }
@@ -398,10 +408,10 @@ export async function smoke(file = join(ROOT, PATHS.template)) {
     await waitFor(() => execFileSync('docker', ['inspect', '-f', '{{.State.Health.Status}}', id], { encoding: 'utf8' }).trim() === 'healthy', 60000, 'the container to become healthy')
     ok(`container healthy after ${((Date.now() - t0) / 1000).toFixed(1)} s (template health check: /opentodo healthcheck)`)
     const cenv = JSON.parse(execFileSync('docker', ['inspect', '-f', '{{json .Config.Env}}', id], { encoding: 'utf8' }))
-    for (const want of ['OPENTODO_BASE_URL=https://todo.example.test', 'OPENTODO_ALLOW_SIGNUP=false', 'OPENTODO_TRUSTED_PROXIES=cloudflare']) {
+    for (const want of ['OPENTODO_BASE_URL=https://todo.example.test', 'OPENTODO_ALLOW_SIGNUP=false', 'OPENTODO_TRUSTED_PROXIES=cloudflare', `OPENTODO_SETUP_TOKEN=${SMOKE_SETUP_TOKEN}`]) {
       if (!cenv.includes(want)) throw new Error(`container environment lacks ${want}`)
     }
-    ok('container environment: OPENTODO_BASE_URL from the service URL, sign-up closed, OPENTODO_TRUSTED_PROXIES passed through')
+    ok('container environment: OPENTODO_BASE_URL from the service URL, sign-up closed, OPENTODO_TRUSTED_PROXIES and the generated setup token passed through')
     const health = await (await fetch(`${base}/healthz`)).json()
     if (health.status !== 'ok') throw new Error(`/healthz: ${JSON.stringify(health)}`)
     ok(`/healthz ok (version ${health.version})`)
@@ -409,12 +419,21 @@ export async function smoke(file = join(ROOT, PATHS.template)) {
     if (!st.setupRequired) throw new Error('fresh deploy does not report setupRequired')
     if (!st.passkeysAvailable || st.passkeyDomain !== 'todo.example.test') throw new Error(`passkeys not bound to the domain: ${JSON.stringify({ a: st.passkeysAvailable, d: st.passkeyDomain })}`)
     ok('fresh deploy: setup required, passkeys available for todo.example.test')
-    const reg = (email) => fetch(`${base}/api/v1/auth/register`, { method: 'POST', headers: { 'content-type': 'application/json', origin }, body: JSON.stringify({ email, name: 'Smoke', password: 'correct horse battery staple' }) })
-    const r1 = await reg('owner@example.test')
+    const reg = (email, setupToken) => fetch(`${base}/api/v1/auth/register`, { method: 'POST', headers: { 'content-type': 'application/json', origin }, body: JSON.stringify({ email, name: 'Smoke', password: 'correct horse battery staple', ...(setupToken ? { setupToken } : {}) }) })
+    // Images older than owner-bootstrap ignore the token: check the guard only where the server announces it.
+    if (st.setupTokenRequired) {
+      const r0 = await reg('stranger@example.test')
+      const body0 = await r0.json().catch(() => ({}))
+      if (r0.status !== 403 || body0?.error?.code !== 'setup_token_invalid') throw new Error(`registration without the setup token: HTTP ${r0.status} ${JSON.stringify(body0)}`)
+      ok('a stranger without the setup token cannot create the owner (setup_token_invalid)')
+    } else {
+      ok('image predates the setup token (no setupTokenRequired in auth status); guard not checked')
+    }
+    const r1 = await reg('owner@example.test', SMOKE_SETUP_TOKEN)
     if (r1.status !== 200 && r1.status !== 201) throw new Error(`owner registration: HTTP ${r1.status} ${await r1.text()}`)
     const cookie = r1.headers.get('set-cookie') ?? ''
     if (!/;\s*Secure/i.test(cookie)) throw new Error(`session cookie is not Secure: ${cookie}`)
-    ok('first visitor becomes the owner; session cookie is Secure')
+    ok('the operator with the setup token becomes the owner; session cookie is Secure')
     const r2 = await reg('someone@example.test')
     const body2 = await r2.json().catch(() => ({}))
     if (r2.status !== 403 || body2?.error?.code !== 'signup_closed') throw new Error(`second registration: HTTP ${r2.status} ${JSON.stringify(body2)}`)

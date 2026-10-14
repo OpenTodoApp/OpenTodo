@@ -744,7 +744,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               <div className="-mt-2 mb-3 flex items-center gap-1 text-xs" role="group" aria-label="Project layout">
                 {(['list', 'board'] as const).map((m) => (
                   <button key={m} type="button" aria-pressed={viewMode === m} onClick={() => { if (viewMode !== m) toggleViewMode() }}
-                    className={`rounded-md px-2 py-0.5 ${viewMode === m ? 'bg-slate-200 font-medium dark:bg-slate-700' : 'text-muted hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                    className={`rounded-md px-2 py-0.5 ${viewMode === m ? 'bg-sunken dark:bg-raised font-medium' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
                     {m === 'list' ? 'List' : 'Board'}
                   </button>
                 ))}
@@ -766,7 +766,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {route.view === 'today' && <TodayAsk role={userRole} />}
 
           {route.view !== 'completed' && (
-            <div className="mb-3 border-b border-slate-200 pb-2 dark:border-slate-800">
+            <div className="mb-3 border-b border-default pb-2">
               {projectReadOnly ? (
                 <>
                   <input className="input" disabled aria-label="Quick add (read-only)" placeholder="You can view this project but not add tasks" />
@@ -799,7 +799,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             />
           ) : groups.map((g, gi) => g.section !== undefined && currentProject ? (
             // Project list grouped by section (board-view): headings are drop targets.
-            <section key={g.key} className="mb-3 rounded-md data-drop-active:ring-2 data-drop-active:ring-emerald-500" data-drop-target={sectionTarget(g.section?.id ?? '')}>
+            <section key={g.key} className="mb-3 rounded-md data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(g.section?.id ?? '')}>
               <SectionHeader
                 section={g.section}
                 count={g.count ?? 0}
@@ -818,7 +818,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             </section>
           ) : (
             <section key={g.key} className="mb-4">
-              {g.heading && <h2 className={`mb-1 px-2 text-xs font-semibold uppercase tracking-wide ${g.key === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-faint'}`}>{g.heading}</h2>}
+              {g.heading && <h2 className={`mb-1 px-2 text-xs font-semibold uppercase tracking-wide ${g.key === 'overdue' ? 'text-danger' : 'text-faint'}`}>{g.heading}</h2>}
               <ul>{g.rows.map((r) => renderRow(r))}</ul>
             </section>
           ))}
@@ -842,9 +842,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       )}
       {prompt && (
         <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-default bg-surface px-4 py-2 text-sm shadow-lg">
             <span className="user-text min-w-0">All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
-            <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <span className="kbd ml-1 border-emerald-500 bg-emerald-800 text-white">Enter</span></button>
+            <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <span className="kbd ml-1 border-on-accent/40 bg-accent-hover text-on-accent">Enter</span></button>
             <button className="btn-ghost text-xs" onClick={() => setPrompt(null)}>Keep open <span className="kbd ml-1">Esc</span></button>
           </div>
         </div>
@@ -882,7 +882,7 @@ function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number;
   }
   return (
     <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
-      <span className="text-emerald-700 dark:text-emerald-400">+</span>
+      <span className="text-accent">+</span>
       <input
         ref={ref}
         className="input py-1"
@@ -921,7 +921,7 @@ function DurationChips({ active, onChange }: { active: DurationFilter | null; on
           title={f.title}
           aria-pressed={active === f.kind}
           onClick={() => onChange(active === f.kind ? null : f.kind)}
-          className={`rounded-full border px-2.5 py-0.5 text-xs ${active === f.kind ? 'border-emerald-500 bg-emerald-50 font-medium text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-slate-200 text-muted hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'}`}
+          className={`rounded-full border px-2.5 py-0.5 text-xs ${active === f.kind ? 'border-accent bg-accent-soft font-medium text-on-accent-soft' : 'border-default text-muted hover:bg-sunken dark:hover:bg-raised'}`}
         >
           {f.label}
         </button>

@@ -44,19 +44,19 @@ export function AssistantSheet({ title, onClose, onEscape, children, footer, hea
   const titleId = useId()
   useOverlay({ panel, onClose: onEscape ?? onClose })
   const tree = (
-    <div className="fixed inset-x-0 top-0 z-50 flex justify-end bg-black/40" data-overlay-root {...isolate}
+    <div className="fixed inset-x-0 top-0 z-50 flex justify-end bg-scrim" data-overlay-root {...isolate}
       style={{ bottom: 'var(--vv-bottom, 0px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
       onKeyDown={(e) => { if (panel.current) trapTab(e, panel.current); e.stopPropagation() }}>
       <div ref={panel} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} data-overlay="dialog" data-assistant-panel
-        className="flex h-full w-full flex-col bg-white shadow-xl outline-none dark:bg-slate-900 sm:max-w-md sm:border-l sm:border-slate-200 sm:dark:border-slate-800">
-        <div className="flex items-center gap-1 border-b border-slate-100 pl-4 pr-1 pt-[env(safe-area-inset-top)] dark:border-slate-800">
+        className="flex h-full w-full flex-col bg-surface shadow-xl outline-none sm:max-w-md sm:border-l sm:border-default">
+        <div className="flex items-center gap-1 border-b border-default pl-4 pr-1 pt-[env(safe-area-inset-top)]">
           <h2 id={titleId} className="min-w-0 flex-1 truncate py-2 text-base font-semibold">{title}</h2>
           {headerExtra}
           <button type="button" className="btn-ghost touch-target my-1 px-2 text-lg leading-none" onClick={onClose} aria-label="Close" title="Close" data-overlay-close><Icon name="x" size="md" /></button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3" data-assistant-scroll>{children}</div>
-        {footer && <div className="border-t border-slate-100 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 dark:border-slate-800">{footer}</div>}
+        {footer && <div className="border-t border-default px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">{footer}</div>}
       </div>
     </div>
   )
@@ -154,7 +154,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
           <ChangeSetReview review={p.review} result={p.result} busy={p.reviewBusy} onToggle={p.onToggle} onApply={p.onApply} onDiscard={p.onDiscard} onUndo={p.onUndo} regionRef={p.reviewRef} />
         </>
       )}
-      {p.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{p.error}</p>}
+      {p.error && <p role="alert" className="text-sm text-danger">{p.error}</p>}
       <div className="sr-only" aria-live="polite" data-assistant-live>{p.announce}</div>
       <div className="sr-only" aria-live="polite" data-assistant-status>{p.statusAnnounce}</div>
     </div>
@@ -164,7 +164,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
 function MessageItem({ m }: { m: AssistantMessage }) {
   if (m.role === 'user') {
     return (
-      <li className="ml-8 rounded-lg bg-slate-100 px-3 py-2 text-sm dark:bg-slate-800">
+      <li className="ml-8 rounded-lg bg-sunken dark:bg-raised px-3 py-2 text-sm">
         {(m.skill || m.pastedLines) && (
           <p className="mb-1 text-xs text-muted">{[m.skill && `Skill: ${m.skill}`, m.pastedLines && `pasted text, ${m.pastedLines} line${m.pastedLines === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</p>
         )}
@@ -176,8 +176,8 @@ function MessageItem({ m }: { m: AssistantMessage }) {
     <li className="space-y-1 text-sm">
       <span className="sr-only">Assistant: </span>
       {m.text && <Markdown source={m.text} />}
-      {m.stop === 'max_tokens' && <p className="text-xs font-medium text-amber-800 dark:text-amber-200">Cut off: the answer reached its length limit.</p>}
-      {m.error && <p className="text-red-700 dark:text-red-300">{m.error}</p>}
+      {m.stop === 'max_tokens' && <p className="text-xs font-medium text-on-warning-soft">Cut off: the answer reached its length limit.</p>}
+      {m.error && <p className="text-danger">{m.error}</p>}
       {m.note && <p className="text-xs text-muted">{m.note}</p>}
       {m.usage && <p className="text-xs text-faint">{usageLine(m.usage)}</p>}
     </li>
@@ -204,13 +204,13 @@ export function Composer({ draft, onDraft, onSend, onStop, streaming, connected,
       {(skill || pasted) && (
         <div className="space-y-1" data-assistant-chosen>
           {skill && (
-            <div className="flex items-start gap-2 rounded-md bg-slate-100 px-2 py-1 text-xs dark:bg-slate-800" role="status">
+            <div className="flex items-start gap-2 rounded-md bg-sunken px-2 py-1 text-xs dark:bg-raised" role="status">
               <span className="min-w-0 flex-1"><span className="font-medium">Skill: {skill.name}.</span> {skill.description} <span className="text-muted">For example: “{skill.example}”</span></span>
               <button type="button" className="btn-ghost touch-target px-1" aria-label={`Remove the skill ${skill.name}`} onClick={() => onSkill?.(null)}><Icon name="x" size="xs" /></button>
             </div>
           )}
           {pasted && (
-            <div className="flex items-center gap-2 rounded-md bg-slate-100 px-2 py-1 text-xs dark:bg-slate-800" data-assistant-pasted>
+            <div className="flex items-center gap-2 rounded-md bg-sunken px-2 py-1 text-xs dark:bg-raised" data-assistant-pasted>
               <span className="min-w-0 flex-1">Pasted text, {lines} line{lines === 1 ? '' : 's'}: used as material, not as instructions.</span>
               <button type="button" className="btn-ghost touch-target px-1" aria-label="Remove pasted text" onClick={() => onPasted?.(null)}><Icon name="x" size="xs" /></button>
             </div>

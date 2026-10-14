@@ -126,16 +126,16 @@ function ActivityList({ project }: { project: Project }) {
           return (
             <li key={e.id} className="flex items-baseline gap-2 text-xs text-muted" data-event={e.kind} data-actor={e.actor}>
               <span className="min-w-0 flex-1">
-                <strong className="font-medium text-slate-700 dark:text-slate-200">{name(e.actor)}</strong>{' '}
+                <strong className="font-medium text-muted">{name(e.actor)}</strong>{' '}
                 {describeEvent(e, name, projectName)}
                 {title && e.entity !== 'project' && (
                   <> {e.entity === 'comment' ? 'on' : '·'}{' '}
-                    <button type="button" className="text-slate-700 underline decoration-dotted dark:text-slate-300" onClick={() => e.taskId && openTask.request(e.taskId)}>
+                    <button type="button" className="text-muted underline decoration-dotted" onClick={() => e.taskId && openTask.request(e.taskId)}>
                       {title}
                     </button>
                   </>
                 )}
-                {isPending(e, pending) && <span className="ml-1 italic text-amber-700 dark:text-amber-400" title="Not yet synced">(pending)</span>}
+                {isPending(e, pending) && <span className="ml-1 italic text-warning" title="Not yet synced">(pending)</span>}
               </span>
               <time className="shrink-0 text-faint" dateTime={new Date(e.ts).toISOString()}>{dt.formatInstant(e.ts, 'datetime')}</time>
             </li>
@@ -147,7 +147,7 @@ function ActivityList({ project }: { project: Project }) {
           {state === 'loading' ? 'Loading…' : 'Load older activity'}
         </button>
       )}
-      {state === 'error' && <p className="text-xs text-red-600 dark:text-red-400">Older activity could not be loaded.</p>}
+      {state === 'error' && <p className="text-xs text-danger">Older activity could not be loaded.</p>}
     </div>
   )
 }

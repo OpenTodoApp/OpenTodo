@@ -16,9 +16,9 @@ function renderBlock(b: Block, i: number): ReactNode {
     case 'p':
       return <p key={i}>{b.c.map(renderInline)}</p>
     case 'pre':
-      return <pre key={i} className="overflow-x-auto rounded bg-slate-100 p-2 font-mono text-xs dark:bg-slate-800" data-scroll-x><code>{b.v}</code></pre>
+      return <pre key={i} className="overflow-x-auto rounded bg-sunken dark:bg-raised p-2 font-mono text-xs" data-scroll-x><code>{b.v}</code></pre>
     case 'quote':
-      return <blockquote key={i} className="space-y-2 border-l-2 border-slate-300 pl-2 text-muted dark:border-slate-600">{b.c.map(renderBlock)}</blockquote>
+      return <blockquote key={i} className="space-y-2 border-l-2 border-input pl-2 text-muted">{b.c.map(renderBlock)}</blockquote>
     case 'list': {
       const items = b.items.map((item, j) => <li key={j}>{item.map(renderBlock)}</li>)
       return b.ordered
@@ -32,10 +32,10 @@ function renderInline(n: Inline, i: number): ReactNode {
   switch (n.t) {
     case 'text': return <Fragment key={i}>{n.v}</Fragment>
     case 'br': return <br key={i} />
-    case 'code': return <code key={i} className="rounded bg-slate-100 px-1 font-mono text-[0.85em] dark:bg-slate-800">{n.v}</code>
+    case 'code': return <code key={i} className="rounded bg-sunken dark:bg-raised px-1 font-mono text-[0.85em]">{n.v}</code>
     case 'em': return <em key={i}>{n.c.map(renderInline)}</em>
     case 'strong': return <strong key={i}>{n.c.map(renderInline)}</strong>
     case 'link':
-      return <a key={i} href={n.href} target="_blank" rel={LINK_REL} className="text-emerald-700 underline dark:text-emerald-300">{n.c.map(renderInline)}</a>
+      return <a key={i} href={n.href} target="_blank" rel={LINK_REL} className="text-accent underline">{n.c.map(renderInline)}</a>
   }
 }

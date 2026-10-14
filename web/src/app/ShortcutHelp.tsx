@@ -19,9 +19,9 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
           <table className="w-full table-fixed text-sm">
             <tbody>
               {rows.map(([k, d]) => (
-                <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
+                <tr key={k} className="border-t border-default">
                   <td className="w-2/5 py-1.5 pr-3 align-top"><span className="kbd inline-block break-words">{k}</span></td>
-                  <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
+                  <td className="py-1.5 text-muted">{d}</td>
                 </tr>
               ))}
             </tbody>
@@ -33,9 +33,9 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
               <table className="w-full table-fixed text-sm">
                 <tbody>
                   {sec.rows.map(([k, d]) => (
-                    <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
+                    <tr key={k} className="border-t border-default">
                       <td className="w-2/5 py-1.5 pr-3 align-top"><span className="kbd inline-block break-words">{k}</span></td>
-                      <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
+                      <td className="py-1.5 text-muted">{d}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -49,17 +49,17 @@ export function ShortcutHelp({ onClose, extraSections = [] }: { onClose: () => v
           <table className="w-full table-fixed text-sm">
             <tbody>
               {quickAdd.map(([k, d]) => (
-                <tr key={k} className="border-t border-slate-100 dark:border-slate-800">
+                <tr key={k} className="border-t border-default">
                   <td className="w-2/5 py-1.5 pr-3 align-top"><code className="break-words text-xs">{k}</code></td>
-                  <td className="py-1.5 text-slate-600 dark:text-slate-300">{d}</td>
+                  <td className="py-1.5 text-muted">{d}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-            <a className="touch-target inline-flex items-center text-slate-600 underline dark:text-slate-300" href="/help/quick-add"
+            <a className="touch-target inline-flex items-center text-muted underline" href="/help/quick-add"
               onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help', page: 'quick-add' }) }}>Full quick add syntax</a>
-            <a className="touch-target inline-flex items-center text-slate-600 underline dark:text-slate-300" href="/help"
+            <a className="touch-target inline-flex items-center text-muted underline" href="/help"
               onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help' }) }}>Open Help (<span className="kbd mx-0.5">g</span> <span className="kbd mx-0.5">?</span>)</a>
           </p>
           <button className="btn-ghost mt-4 w-full" onClick={onClose}>Close</button>

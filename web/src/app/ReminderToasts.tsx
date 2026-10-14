@@ -72,7 +72,7 @@ export function ReminderToasts() {
           key={d.reminder.id}
           role="alertdialog"
           aria-label={`Reminder: ${d.task.title || 'Untitled'}`}
-          className="pointer-events-auto rounded-lg border border-amber-300 bg-white p-3 shadow-lg dark:border-amber-700 dark:bg-slate-900"
+          className="pointer-events-auto rounded-lg border border-warning bg-surface p-3 shadow-lg"
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
               e.stopPropagation()

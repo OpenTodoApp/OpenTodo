@@ -42,10 +42,10 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
   const headingId = useId()
   if (p.result) {
     return (
-      <div className="rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-700" data-assistant-result>
+      <div className="rounded-lg border border-default p-3 text-sm" data-assistant-result>
         <p role="status">{appliedSummary(p.result)}</p>
         {p.result.undoId && !p.result.undone && !p.result.discarded && (
-          <button type="button" className="btn-ghost mt-2 border border-slate-300 dark:border-slate-700" onClick={p.onUndo} aria-busy={p.busy}>Undo</button>
+          <button type="button" className="btn-ghost mt-2 border border-input" onClick={p.onUndo} aria-busy={p.busy}>Undo</button>
         )}
       </div>
     )
@@ -61,7 +61,7 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
   }
   return (
     <div ref={p.regionRef} role="group" aria-labelledby={headingId} onKeyDown={onKeyDown} data-assistant-review
-      className="space-y-2 rounded-lg border border-emerald-300 bg-emerald-50/60 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
+      className="space-y-2 rounded-lg border border-accent/40 bg-accent-soft p-3">
       <h3 id={headingId} className="text-sm font-semibold">
         Proposed changes ({review.items.length})
       </h3>
@@ -72,13 +72,13 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
           const label = `${item.title}${item.lines.length ? ': ' + item.lines.join('; ') : ''}`
           return (
             <li key={item.change.entity + item.change.entityId}>
-              <label className="flex items-start gap-2 rounded-md p-1.5 text-sm hover:bg-white/60 dark:hover:bg-slate-900/60">
+              <label className="flex items-start gap-2 rounded-md p-1.5 text-sm hover:bg-surface/60 dark:hover:bg-raised">
                 <input type="checkbox" className="mt-1 h-4 w-4 shrink-0" checked={item.checked} onChange={(e) => p.onToggle(i, e.target.checked)}
                   aria-label={label + (item.state === 'stale' ? ' (changed since proposed)' : '') + (item.shared ? ' (shared project)' : '')} />
                 <span className="min-w-0 flex-1 user-text">
                   <span className="font-medium">{item.title}</span>
-                  {item.shared && <span className="ml-1.5 rounded border border-sky-400 px-1 text-[11px] font-medium text-sky-800 dark:border-sky-700 dark:text-sky-200">shared</span>}
-                  {item.state === 'stale' && <span className="ml-1.5 rounded border border-amber-500 px-1 text-[11px] font-medium text-amber-900 dark:border-amber-700 dark:text-amber-200">changed since proposed</span>}
+                  {item.shared && <span className="ml-1.5 rounded border border-info px-1 text-[11px] font-medium text-on-info-soft">shared</span>}
+                  {item.state === 'stale' && <span className="ml-1.5 rounded border border-warning px-1 text-[11px] font-medium text-on-warning-soft">changed since proposed</span>}
                   {item.lines.map((l) => <span key={l} className="block text-muted">{l}</span>)}
                 </span>
               </label>
