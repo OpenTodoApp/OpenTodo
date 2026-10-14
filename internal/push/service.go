@@ -199,10 +199,33 @@ func (s *Service) Send(ctx context.Context, sub *Subscription, payload []byte, t
 		s.log.Info("push subscription gone; removed", "subscription", sub.ID, "status", resp.StatusCode)
 		return Gone, s.removeGone(context.WithoutCancel(ctx), sub.ID)
 	default:
-		msg := fmt.Sprintf("push service answered %d", resp.StatusCode)
-		_ = s.RecordFailure(context.WithoutCancel(ctx), sub.ID, msg)
-		return Failed, errors.New(msg)
+		serr := &StatusError{Code: resp.StatusCode}
+		_ = s.RecordFailure(context.WithoutCancel(ctx), sub.ID, serr.Error())
+		return Failed, serr
 	}
+}
+
+// StatusError is a push service's answer other than success or gone.
+type StatusError struct{ Code int }
+
+func (e *StatusError) Error() string { return fmt.Sprintf("push service answered %d", e.Code) }
+
+// TestPayload is the JSON pushed by a test notification (OpenSpec change
+// push-test-delivery, design D1). It carries no task data.
+type TestPayload struct {
+	Type   string `json:"type"`
+	TestID string `json:"testId"`
+	SentAt int64  `json:"sentAt"`
+}
+
+// SendTest sends one test push to sub through Send, so it updates the delivery
+// bookkeeping (last delivery, failures, gone removal) exactly like a reminder.
+// The topic "test" collapses tests still queued for an offline device.
+func (s *Service) SendTest(ctx context.Context, sub *Subscription) (string, SendResult, error) {
+	id := ids.Secret(16)
+	payload, _ := json.Marshal(TestPayload{Type: "test", TestID: id, SentAt: s.now().UnixMilli()})
+	res, err := s.Send(ctx, sub, payload, "test")
+	return id, res, err
 }
 
 // topicFor turns a reminder id into a Topic header value (≤32 base64url chars).

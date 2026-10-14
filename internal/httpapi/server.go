@@ -62,6 +62,9 @@ type Server struct {
 	// account (10/hour) (OpenSpec `user-management` D9).
 	adminLimiter    *rateLimiter
 	passwordLimiter *rateLimiter
+	// pushTestLimiter caps test pushes per account (5 per 10 minutes; OpenSpec
+	// `push-test-delivery` D3), see push.go.
+	pushTestLimiter *rateLimiter
 	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
 	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).

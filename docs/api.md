@@ -108,6 +108,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/push/vapid-key` | yes | `{publicKey}`; with `?device={id}` also `subscription` (that device's status or `null`), see [Reminders and push](#reminders-and-push) |
 | POST | `/api/v1/push/subscriptions` | yes | `{deviceId, endpoint, keys:{p256dh, auth}, includeContent?}` → 201 `{subscription}` (200 when the device's subscription was replaced) |
 | DELETE | `/api/v1/push/subscriptions/{id}` | yes | 204, or 404 `not_found` |
+| POST | `/api/v1/push/test` | yes | `{deviceId}` → 200 `{outcome, testId?, subscription, status?, error?}`: sends one real test push to that device; 5 per account per 10 minutes, see [Reminders and push](#reminders-and-push) |
 
 #### Tasks, projects and other synced data
 
@@ -573,6 +574,17 @@ A reminder belongs to one task and fires at an instant (OpenSpec change `reminde
 ```
 
 It answers 201 `{"subscription": {"id", "deviceId", "includeContent", "createdAt", "lastOkAt", "lastError", "failures", "needsRenewal"}}`; the endpoint and keys are never returned. Posting again for the same device replaces its subscription (200). A body without an `https` endpoint URL, an uncompressed P-256 `p256dh` key or a 16-byte `auth` secret is rejected with 400 `invalid_input`. A subscription created with a browser session is deleted when that session signs out or is revoked; the push service answering 404/410 deletes it as well, and `needsRenewal` turns true after 5 consecutive failed sends. With `OPENTODO_PUSH=off` every `/api/v1/push/` route answers 404 `not_found`.
+
+**Test push.** `POST /api/v1/push/test` with `{"deviceId": "…"}` sends one real push to the caller's subscription for that device, through the same encryption, VAPID signature and push service as a reminder, and records it in the subscription's delivery status (`lastOkAt`, `failures`, removal when gone). The payload is `{"type":"test","testId":"…","sentAt":…}` and carries no task data; the service worker always shows it as a system notification and reports receipt to the open page. A push-service outcome is a successful diagnostic, so it answers 200:
+
+```json
+{"outcome": "sent", "testId": "Zk3q…", "subscription": {"id": "…", "lastOkAt": 1760000000000, "failures": 0, …}}
+{"outcome": "no_subscription", "subscription": null}
+{"outcome": "gone", "subscription": null}
+{"outcome": "failed", "status": 500, "error": "push service answered 500", "subscription": {…, "failures": 1}}
+```
+
+`gone` means the push service reported the subscription expired and the server removed it; enable notifications again on that device. `failed` without `status` means the push service could not be reached. Errors: 400 `bad_request` without `deviceId`, 401 `unauthorized`, 403 `insufficient_scope` for read and agent tokens, 429 `rate_limited` after 5 tests per account in 10 minutes (counted before anything is sent), 404 `not_found` with `OPENTODO_PUSH=off`, 403 `demo_restricted` on a demo instance.
 
 `POST /api/v1/sync` accepts an optional `tzOffset` (minutes east of UTC, −840…840): the device's zone, used for the REST recomputation above.
 

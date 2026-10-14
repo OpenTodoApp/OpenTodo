@@ -82,7 +82,7 @@ Settings → Notifications SHALL show, per device, whether each condition for pu
 
 #### Scenario: Unauthenticated request
 - **WHEN** the request carries no valid session or token
-- **THEN** the response is 401 with the error envelope and code `unauthenticated`
+- **THEN** the response is 401 with the error envelope and code `unauthorized`
 
 #### Scenario: Read-only or agent token
 - **WHEN** the request is authenticated with a read or agent API token
