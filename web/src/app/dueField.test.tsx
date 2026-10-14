@@ -22,7 +22,7 @@ async function task(due: Task['due']): Promise<Task> {
   const id = await createTask({ title: 'Pay rent', due })
   return (await db.tasks.get(id))!
 }
-const inputs = (c: HTMLElement) => [...c.querySelectorAll('input:not([type="checkbox"])')] as HTMLInputElement[]
+const inputs = (c: HTMLElement) => [...c.querySelectorAll('input')] as HTMLInputElement[]
 
 describe('DueField', () => {
   it('a typed day-month date writes the floating {date}', async () => {
@@ -49,7 +49,7 @@ describe('DueField', () => {
     await flush(20)
     const due = (await db.tasks.get(t.id))!.due!
     expect(due.tz).toBe('UTC')
-    expect(container.querySelector('input[type="checkbox"]')).toHaveProperty('checked', true)
+    expect(container.querySelector('button[aria-haspopup="dialog"][aria-label^="Time zone"]')?.getAttribute('aria-label')).toBe('Time zone: UTC')
     await unmount()
   })
 

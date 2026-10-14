@@ -10,7 +10,8 @@ import type { ChangeSet } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
- * Revision history of a task or project (OpenSpec `trash-and-history`): a timeline
+ * Revision history of a project (OpenSpec `trash-and-history`; tasks use the task
+ * panel's History tab, task-detail-redesign): a timeline
  * of change sets read live from the server's op log, newest first, with "restore
  * this value" on each field change. Offline it says so and shows nothing stale.
  */
@@ -54,12 +55,12 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
       setBefore(page.more ? page.before : undefined)
       setState('idle')
     } catch (err) {
-      if (isNetworkError(err)) {
-        setSets([])
-        setState('offline')
-      } else if ((err as { status?: number }).status === 404) {
+      if ((err as { status?: number }).status === 404) {
         setSets([])
         setState('empty')
+      } else if (isNetworkError(err)) {
+        setSets([])
+        setState('offline')
       } else setState('error')
     }
   }, [entity, id])

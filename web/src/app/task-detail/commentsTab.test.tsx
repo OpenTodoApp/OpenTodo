@@ -1,0 +1,160 @@
+// @vitest-environment happy-dom
+// Comments tab (task-detail-redesign 6.2, 6.3): chronological threads, absolute
+// time on focus, actions on touch, the composer (keyboard posting, reply target,
+// per-task draft) and delete through the shared confirm dialog.
+import { act } from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setDateTime } from '../../lib/dates'
+import type { Comment, ProjectMember } from '../../lib/types'
+import { click, flush, key, render } from '../../ui/test-utils'
+import { readDraft, writeDraft } from './Composer'
+import { CommentsView, type CommentsViewProps } from './CommentsTab'
+
+const DAY = 86_400_000
+const MON = new Date(2026, 9, 12, 15, 5).getTime()
+const comment = (id: string, author: string, created_at: number, body: string, parent_id: string | null = null): Comment =>
+  ({ id, task_id: 't1', parent_id, body, author_id: author, mentions: [], created_at, edited_at: null, deleted_at: null, _clock: {} } as Comment)
+const members: ProjectMember[] = [{ userId: 'me', name: 'Me', email: 'me@example.com', role: 'admin' }, { userId: 'ana', name: 'Ana', email: 'ana@example.com', role: 'editor' }]
+const threads = [
+  { root: comment('c1', 'ana', MON, 'Monday thread'), replies: [comment('r1', 'me', MON + 60_000, 'A reply', 'c1')] },
+  { root: comment('c2', 'me', MON + DAY, 'Tuesday thread'), replies: [] },
+  { root: comment('c3', 'ana', MON + 2 * DAY, 'Wednesday thread'), replies: [] },
+]
+
+function props(over: Partial<CommentsViewProps> = {}): CommentsViewProps {
+  return {
+    taskId: 't1', threads, me: 'me', role: 'admin', members, name: (id) => (id === 'me' ? 'You' : 'Ana'),
+    onCreate: vi.fn(async () => true), onEdit: vi.fn(async () => true), onDelete: vi.fn(async () => {}), now: MON + 3 * DAY, ...over,
+  }
+}
+
+async function typeArea(el: HTMLTextAreaElement, text: string) {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(el, text)
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+}
+
+const composer = (c: HTMLElement) => c.querySelector<HTMLTextAreaElement>('#comment-composer')!
+const buttons = (c: HTMLElement, name: string) => [...c.querySelectorAll('button')].filter((b) => b.textContent?.trim() === name || b.getAttribute('aria-label') === name)
+
+beforeEach(() => {
+  sessionStorage.clear()
+  writeDraft('t1', '')
+  writeDraft('t2', '')
+})
+afterEach(() => {
+  setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
+  vi.unstubAllGlobals()
+})
+
+describe('CommentsView', () => {
+  it('lists threads oldest first, directly above the composer', async () => {
+    const v = await render(<CommentsView {...props()} />)
+    const order = [...v.container.querySelectorAll('[data-thread]')].map((el) => el.getAttribute('data-thread'))
+    expect(order).toEqual(['c1', 'c2', 'c3'])
+    const list = v.container.querySelector('ol[aria-label="Comments"]')!
+    expect(list.compareDocumentPosition(composer(v.container)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(v.container.querySelector('[data-reply="r1"]')).not.toBeNull()
+    await v.unmount()
+  })
+
+  it('announces the absolute time in the user format on the relative time', async () => {
+    setDateTime({ date_format: 'iso', time_format: '24h', week_start: 'system' })
+    const v = await render(<CommentsView {...props()} />)
+    const time = v.container.querySelector('[data-thread="c1"] time')!
+    expect(time.textContent).toContain('3 d ago')
+    expect(time.getAttribute('aria-label')).toBe('2026-10-12, 15:05')
+    expect(time.getAttribute('tabindex')).toBe('0')
+    expect(time.getAttribute('title')).toBe('2026-10-12, 15:05')
+    await v.unmount()
+  })
+
+  it('shows Reply always on touch, and Edit and Delete on own comments', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === '(pointer: coarse)', media: q, addEventListener() {}, removeEventListener() {} }))
+    const v = await render(<CommentsView {...props()} />)
+    const actions = v.container.querySelector('[data-thread="c2"] [data-comment-actions]')!
+    expect(actions.className).not.toContain('hover-reveal')
+    const names = [...actions.querySelectorAll('button')].map((b) => b.textContent)
+    expect(names).toEqual(['Reply', 'Edit', 'Delete'])
+    const others = [...v.container.querySelector('[data-thread="c3"] [data-comment-actions]')!.querySelectorAll('button')].map((b) => b.textContent)
+    expect(others).toContain('Reply')
+    expect(others).not.toContain('Edit')
+    await v.unmount()
+  })
+
+  it('hides actions until hover on a mouse device', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} }))
+    const v = await render(<CommentsView {...props()} />)
+    expect(v.container.querySelector('[data-comment-actions]')!.className).toContain('hover-reveal')
+    await v.unmount()
+  })
+
+  it('posts with the keyboard only and clears the composer', async () => {
+    const p = props()
+    const v = await render(<CommentsView {...p} />)
+    const area = composer(v.container)
+    area.focus()
+    await typeArea(area, 'Ship it')
+    await key(area, 'Enter', { ctrlKey: true })
+    await flush()
+    expect(p.onCreate).toHaveBeenCalledWith('Ship it', [], null)
+    expect(composer(v.container).value).toBe('')
+    expect(readDraft('t1')).toBe('')
+    await v.unmount()
+  })
+
+  it('replies through the bottom composer, and a cancelled reply posts top-level', async () => {
+    const p = props()
+    const v = await render(<CommentsView {...p} />)
+    await click(buttons(v.container.querySelector('[data-thread="c3"]') as HTMLElement, 'Reply')[0])
+    expect(v.container.querySelector('[data-reply-target]')?.textContent).toContain('Replying to Ana')
+    expect(composer(v.container).getAttribute('aria-label')).toBe('Write a reply')
+    await click(buttons(v.container, 'Cancel reply')[0])
+    expect(v.container.querySelector('[data-reply-target]')).toBeNull()
+    await typeArea(composer(v.container), 'Top level')
+    await key(composer(v.container), 'Enter', { metaKey: true })
+    await flush()
+    expect(p.onCreate).toHaveBeenLastCalledWith('Top level', [], null)
+
+    await click(buttons(v.container.querySelector('[data-thread="c3"]') as HTMLElement, 'Reply')[0])
+    await typeArea(composer(v.container), 'Answer')
+    await key(composer(v.container), 'Enter', { ctrlKey: true })
+    await flush()
+    expect(p.onCreate).toHaveBeenLastCalledWith('Answer', [], 'c3')
+    await v.unmount()
+  })
+
+  it('keeps an unsent draft per task when the panel closes, in this tab session only', async () => {
+    const v = await render(<CommentsView {...props()} />)
+    await typeArea(composer(v.container), 'Half a thought')
+    await v.unmount()
+    expect(sessionStorage.getItem('ot.draft.t1')).toBe('Half a thought')
+    expect(localStorage.getItem('ot.draft.t1')).toBeNull()
+    const again = await render(<CommentsView {...props()} />)
+    expect(composer(again.container).value).toBe('Half a thought')
+    await again.rerender(<CommentsView {...props({ taskId: 't2' })} />)
+    expect(composer(again.container).value).toBe('')
+    await again.unmount()
+  })
+
+  it('deletes after the shared confirm dialog instead of confirm()', async () => {
+    const confirmSpy = vi.fn()
+    vi.stubGlobal('confirm', confirmSpy)
+    const p = props()
+    const v = await render(<CommentsView {...p} />)
+    await click(buttons(v.container.querySelector('[data-thread="c2"]') as HTMLElement, 'Delete')[0])
+    const dialog = document.querySelector('[data-testid="confirm-dialog"]')!
+    expect(dialog.textContent).toContain('Delete this comment?')
+    await click([...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Delete comment')!)
+    expect(p.onDelete).toHaveBeenCalledWith('c2')
+    expect(confirmSpy).not.toHaveBeenCalled()
+    await v.unmount()
+  })
+
+  it('shows an empty state without comments', async () => {
+    const v = await render(<CommentsView {...props({ threads: [] })} />)
+    expect(v.container.textContent).toContain('No comments yet')
+    await v.unmount()
+  })
+})

@@ -1,4 +1,5 @@
 import { Icon } from '../ui/Icon'
+import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { HelpLink } from './help/HelpLink'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -76,7 +77,7 @@ export interface ImportViewProps {
   fileName: string | null
   format: ImportFormat | ''
   options: typeof DEFAULT_OPTIONS & { targetProject: string }
-  projects: Pick<Project, 'id' | 'name'>[]
+  projects: Project[]
   zones: string[]
   preview: ImportPreview | null
   busy: boolean
@@ -149,13 +150,11 @@ export function ImportView(p: ImportViewProps) {
               {IMPORT_FORMATS.map((f) => <option key={f} value={f}>{FORMAT_LABELS[f]}</option>)}
             </select>
           </label>
-          <label className="text-sm">
-            <span className="mb-1 block text-muted">Tasks without a project go to</span>
-            <select className="input" value={o.targetProject} disabled={disabled} onChange={(e) => p.onOption('targetProject', e.target.value)}>
-              <option value="">Inbox</option>
-              {p.projects.map((pr) => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
-            </select>
-          </label>
+          <div className="text-sm">
+            <span className="mb-1 block text-muted" aria-hidden>Tasks without a project go to</span>
+            <ProjectPickerField label="Tasks without a project go to" projects={p.projects} value={o.targetProject || null} disabled={disabled}
+              onChange={(id) => p.onOption('targetProject', id ?? '')} rankContext="import.target" />
+          </div>
           <label className="text-sm">
             <span className="mb-1 block text-muted">Time zone for date-times with a zone</span>
             <input className="input" list="import-zones" value={o.timeZone} disabled={disabled} onChange={(e) => p.onOption('timeZone', e.target.value)} />

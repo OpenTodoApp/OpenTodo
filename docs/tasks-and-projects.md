@@ -30,16 +30,23 @@ New tasks without a project land in the **Inbox**. Tasks added inside a project 
 
 Click a task, or select it with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd>, to open its panel. Every change is saved as you make it; there is no Save button.
 
-<picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right, showing the title, notes, project, section, parent task, assignee, priority and due date."></picture>
+<picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right: the title and notes, then the properties card with project, section, parent task, assignee, priority and due date."></picture>
 
-In the panel you can change:
+The top of the panel has **Complete**, a **⋯** menu with **Copy link**, **Open parent task**, **Open recurring task** and **Delete**, and the **×** that closes it. Below are the **Title** and **Notes**. Notes can have headings, bold and italic text, links, and bullet, numbered and check lists.
 
-- **Title** and **Notes**. Notes can have headings, bold and italic text, links, and bullet, numbered and check lists.
-- **Project**, **Section** and **Parent task**, to move it somewhere else.
-- **Priority**, from P1 (most important) to P4 (the default).
-- **Due**, a date with an optional time.
-- **Reminders**, **Estimate** and **Repeat**. See [Recurring tasks and reminders](recurring-and-reminders.md) and [Time blocking](time-blocking.md).
-- **Labels**, **Subtasks** and, further down, **Comments** and **History**.
+Then comes the properties card. Each row shows its current value, or a quiet "No due date", "No estimate" and so on when it is empty. Click a row, or <kbd>Tab</kbd> to it and press <kbd>Enter</kbd>, to change it; <kbd>Esc</kbd> closes the editor and leaves you on the row.
+
+- **Project**, **Section** and **Parent task** move the task. Each opens a list you can search: the projects and tasks you pick most often come first, and nested projects show their path ("Work › Clients"), so two projects with the same name are told apart. Type a new name in **Project** and choose **Create** to make a project and move the task into it. A subtask always shows its parent's section.
+- **Assignee**. See [Assign tasks](sharing.md#assign-tasks).
+- **Priority**, from P1 (most important) to P4 (the default). Click one, or press <kbd>1</kbd> to <kbd>4</kbd> anywhere in the panel outside a text field.
+- **Due**, a date with an optional time, and the time zone chip next to it.
+- **Reminders** show as chips. **Add reminder** offers the usual times before the due time, a custom offset or a set date and time; each chip's **⋯** menu edits, snoozes, dismisses or deletes it.
+- **Estimate** and **Repeat**. See [Recurring tasks and reminders](recurring-and-reminders.md) and [Time blocking](time-blocking.md).
+- **Labels**: open the row to add, create or remove labels.
+
+Below the card are the **Subtasks** and the **Comments**, **Activity** and **History** tabs.
+
+If you are a viewer of a shared project, the values read as text and can't be changed, and **Complete** and **Delete** are hidden. You can still comment.
 
 Close the panel with <kbd>Esc</kbd> or the **×** at the top. On a phone the panel covers the list; close it to go back.
 
@@ -72,7 +79,13 @@ Type the date and time in the **Due** fields, or pick them. Dates and times are 
 
 Clear the date to remove the due date, or clear the time to keep only the day.
 
-For things that happen at a fixed moment, like a call with someone in another country, tick **Fixed to time zone** under Due (or press <kbd>z</kbd> with the panel open). The task is then tied to your current time zone, and devices elsewhere show it converted to their local time, with the original time as a hint.
+Under the due date, the **time zone** button shows how the time is meant: **Floating** (the same clock time wherever you are) or a city and its offset, such as **New York · UTC−5** (one moment worldwide). Choose it to:
+
+- **Fix to my zone:** tie the time to your current time zone, for things that happen at a fixed moment. Press <kbd>z</kbd> with the panel open to do the same, and again to release it.
+- **Fix to another time zone:** search any city or zone, for example a call at 15:00 in New York. The panel shows how that reads for you ("15:00 in New York = 21:00 your time (Berlin)") before you choose **Fix to New York**. Your own zone is listed first, then the zones you used recently.
+- **Make floating:** release a fixed time to the clock time you currently see.
+
+Devices elsewhere show a fixed time converted to their local time, with the original time and city as a hint. Without a time the button is off: a due date alone always stays floating.
 
 ## Complete, reopen and delete
 

@@ -4,9 +4,13 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_OPTIONS, ImportView, type ImportViewProps } from './ImportScreen'
 import { parseRoute, routePath } from './router'
-import type { ImportJob, ImportPreview, ImportTotals } from '../lib/types'
+import type { ImportJob, ImportPreview, ImportTotals, Project } from '../lib/types'
 
 const noop = () => {}
+const project = (id: string, name: string, parent_id: string | null = null): Project =>
+  ({ id, name, color: '#16a34a', position: 1, archived: false, parent_id, created_at: 0, deleted_at: null, _clock: {} })
+const work = project('p1', 'Work')
+const client = project('p2', 'Acme', 'p1')
 const totals = (t: Partial<ImportTotals> = {}): ImportTotals => ({
   rows: 0, create: 0, update: 0, skip: 0, error: 0, possibleDuplicates: 0, warnings: 0,
   newProjects: 0, newLabels: 0, entities: 0, written: 0, ops: 0, ...t,
@@ -19,7 +23,7 @@ const job = (j: Partial<ImportJob>): ImportJob => ({
 function render(p: Partial<ImportViewProps> = {}) {
   const props: ImportViewProps = {
     offline: false, fileName: null, format: '', options: { ...DEFAULT_OPTIONS, targetProject: '' },
-    projects: [{ id: 'p1', name: 'Work' }], zones: ['Europe/Rome'], preview: null, busy: false, error: null,
+    projects: [work, client], zones: ['Europe/Rome'], preview: null, busy: false, error: null,
     job: null, jobs: [], onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, onStart: noop, onUndo: noop,
     ...p,
   }
@@ -98,5 +102,11 @@ describe('import route', () => {
     expect(parseRoute('/settings/import')).toEqual({ view: 'import' })
     expect(routePath({ view: 'import' })).toBe('/settings/import')
     expect(parseRoute('/settings')).toEqual({ view: 'settings' })
+  })
+
+  it('picks the target project with the smart picker, showing the chosen project and its path (task-detail-redesign 3.5)', () => {
+    expect(render()).toContain('aria-label="Tasks without a project go to: Inbox"')
+    expect(render({ options: { ...DEFAULT_OPTIONS, targetProject: 'p2' } })).toContain('aria-label="Tasks without a project go to: Work › Acme"')
+    expect(render({ offline: true })).toMatch(/<button type="button" class="input[^"]*" disabled=""[^>]*aria-label="Tasks without a project go to: Inbox"/)
   })
 })

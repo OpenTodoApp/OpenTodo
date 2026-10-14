@@ -1,42 +1,35 @@
-import { Icon } from '../../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, type FormEvent, type KeyboardEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../../lib/db'
-import { removeLabel, resolveLabels } from '../../lib/labels'
-import { createSubtask, deleteTask, setTaskCompleted, setTaskParent, updateTask } from '../../lib/ops'
-import { buildProjectTree } from '../../lib/projects'
-import { progressOf } from '../../lib/subtasks'
-import { descendants, flattenTree } from '../../lib/tree'
-import type { Label, Priority, Project, Section, Task } from '../../lib/types'
-import { byPosition } from '../../lib/ordering'
-import { effectiveSection, moveTaskToSection } from '../../lib/sections'
-import { DueField } from '../DueField'
-import { EstimateField } from '../EstimateField'
-import { LabelChip, LabelPicker } from '../LabelPicker'
-import { RecurrenceField } from '../RecurrenceField'
-import { RemindersField } from '../RemindersField'
-import { AssigneePicker } from '../AssigneePicker'
 import { markTaskNotificationsRead } from '../../lib/notifications'
-import { ConversationTabs } from './ConversationTabs'
-import { Markdown } from '../Markdown'
+import { createSubtask, deleteTask, setTaskCompleted, updateTask } from '../../lib/ops'
+import { progressOf } from '../../lib/subtasks'
+import type { Label, Priority, Project, Task } from '../../lib/types'
+import { IconButton } from '../../ui/Button'
+import { Badge } from '../../ui/Card'
+import { Icon } from '../../ui/Icon'
+import { MenuItem, MenuSeparator } from '../../ui/Menu'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { Markdown } from '../Markdown'
+import { Menu } from '../overlay/Menu'
+import { isTyping } from '../useViews'
+import { ConversationTabs } from './ConversationTabs'
+import { Properties } from './Properties'
 
 // The rich-text editor and its libraries are a separate chunk, fetched when a
 // note is first opened (collaborative-rich-text, task 3.1).
 const NotesEditor = lazy(() => import('../NotesEditor'))
 
-const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
-  { p: 1, label: 'P1', cls: 'text-red-600 dark:text-red-400 border-red-500' },
-  { p: 2, label: 'P2', cls: 'text-orange-700 dark:text-orange-400 border-orange-500' },
-  { p: 3, label: 'P3', cls: 'text-blue-600 dark:text-blue-400 border-blue-500' },
-  { p: 4, label: 'P4', cls: 'text-muted border-slate-400' },
-]
+/** The link that opens a task in the app (the same one notifications use). */
+export function taskLink(id: string, origin = typeof location === 'undefined' ? '' : location.origin): string {
+  return `${origin}/?task=${encodeURIComponent(id)}`
+}
 
 export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen, onToggleComplete, readOnly = false }: {
   taskId: string
-  /** Signed-in account; enables the assignee picker (task-assignment). */
+  /** Signed-in account; enables the assignee row (task-assignment). */
   userId?: string
-  /** Viewer of the task's shared project: every control is disabled. */
+  /** Viewer of the task's shared project: values read as text, no Complete or Delete. */
   readOnly?: boolean
   projects: Project[]
   labelMap: Map<string, Label>
@@ -49,38 +42,20 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   const dt = useDateTimeFormat()
   const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
   const [title, setTitle] = useState('')
-  const [parentError, setParentError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
-  // Open, non-deleted tasks of the same project: the candidates for the parent picker.
-  const projectId = task?.project_id ?? null
-  const candidates = useLiveQuery(
-    () => db.tasks.filter((t) => !t.deleted_at && !t.completed_at && t.project_id === projectId).sortBy('position'),
-    [projectId], [] as Task[],
-  )
   const children = useLiveQuery(
     () => db.tasks.where('parent_id').equals(taskId).filter((t) => !t.deleted_at).sortBy('position'),
     [taskId], [] as Task[],
   )
   const parent = useLiveQuery(() => (task?.parent_id ? db.tasks.get(task.parent_id) : undefined), [task?.parent_id])
   const series = useLiveQuery(() => (task?.series_id ? db.tasks.get(task.series_id) : undefined), [task?.series_id])
-  const excluded = useMemo(() => descendants(taskId, candidates), [taskId, candidates])
-  // Projects in sidebar (tree) order, indented by depth; archived ones are left out.
-  const projectOptions = useMemo(() => flattenTree(buildProjectTree(projects).roots), [projects])
   const progress = useMemo(() => progressOf({ id: taskId }, children), [taskId, children])
-  // Section picker (board-view): live sections of the task's own project only.
-  const sections = useLiveQuery(
-    () => (projectId ? db.sections.where('project_id').equals(projectId).filter((s) => !s.deleted_at).toArray().then((l) => l.sort(byPosition)) : Promise.resolve([] as Section[])),
-    [projectId], [] as Section[],
-  )
-  const sectionMap = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections])
 
   useEffect(() => {
-    if (task) {
-      setTitle(task.title)
-    }
+    if (task) setTitle(task.title)
   }, [task?.id, task?.title]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => setParentError(null), [taskId])
+  useEffect(() => setCopied(false), [taskId])
   // Opening a task reads its notifications (task-assignment); works offline.
   useEffect(() => {
     void markTaskNotificationsRead(taskId)
@@ -93,173 +68,108 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     if (t && t !== task.title) void updateTask(task.id, { title: t })
     else setTitle(task.title)
   }
-  // A move into another sharing scope creates a copy (project-sharing); follow it.
-  const moveTo = async (projectId: string | null) => {
-    const id = await updateTask(task.id, { project_id: projectId })
-    if (id !== task.id) onOpen?.(id)
-  }
   const toggle = (t: Task) => (onToggleComplete ? onToggleComplete(t) : void setTaskCompleted(t.id, !t.completed_at))
-  const changeParent = async (value: string) => {
-    setParentError(null)
-    try {
-      await setTaskParent(task.id, value || null)
-    } catch (err) {
-      setParentError(err instanceof Error ? err.message : String(err))
+  const remove = () => { void deleteTask(task.id); onClose() }
+  const copyLink = () => {
+    void navigator.clipboard?.writeText(taskLink(task.id)).then(() => setCopied(true), () => {})
+  }
+  // 1–4 set the priority while focus is in the panel but not in a text field.
+  const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    if (readOnly || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.nativeEvent)) return
+    if (e.key >= '1' && e.key <= '4') {
+      e.preventDefault()
+      e.stopPropagation()
+      void updateTask(task.id, { priority: Number(e.key) as Priority })
     }
   }
 
   return (
-    <aside data-detail-for={task.id} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-xl dark:border-slate-800 dark:bg-slate-950 md:static md:shadow-none">
-      <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] dark:border-slate-800">
-        <button className="btn-ghost text-xs" onClick={() => toggle(task)} disabled={readOnly}>
-          <Icon name={task.completed_at ? 'undo-2' : 'check'} />{task.completed_at ? 'Reopen' : 'Complete'}
-        </button>
-        {progress.total > 0 && (
-          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-muted dark:bg-slate-800 dark:text-slate-400" title="Completed subtasks">
-            {progress.done}/{progress.total}
-          </span>
+    <aside data-detail-for={task.id} onKeyDown={onKeyDown} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-xl md:static md:shadow-none">
+      <div className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        {!readOnly && (
+          <button type="button" className="btn-secondary px-3 py-1.5 text-sm" onClick={() => toggle(task)}>
+            <Icon name={task.completed_at ? 'undo-2' : 'check'} />{task.completed_at ? 'Reopen' : 'Complete'}
+          </button>
         )}
+        {progress.total > 0 && <Badge hue="slate" title="Completed subtasks">{progress.done}/{progress.total}</Badge>}
         <div className="flex-1" />
-        <button className="btn-danger text-xs" onClick={() => { void deleteTask(task.id); onClose() }} disabled={readOnly}>Delete</button>
-        <button className="btn-ghost touch-target" onClick={onClose} aria-label="Close" title="Close" data-overlay-close><Icon name="x" size="md" /></button>
+        {copied && <span role="status" className="text-meta text-muted">Link copied</span>}
+        <Menu kind="menu" label="Task actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-60">
+          <MenuItem label="Copy link" icon="link" onSelect={copyLink} />
+          {parent && <MenuItem label="Open parent task" icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
+          {series && <MenuItem label="Open recurring task" icon="repeat" onSelect={() => onOpen?.(series.id)} />}
+          {!readOnly && <MenuSeparator />}
+          {!readOnly && <MenuItem label="Delete" icon="trash-2" danger onSelect={remove} />}
+        </Menu>
+        <IconButton icon="x" label="Close" onClick={onClose} data-overlay-close className="touch-target" />
       </div>
       {readOnly && (
-        <p role="note" className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-muted dark:border-slate-800 dark:bg-slate-900">
-          Read-only: you are a viewer of this shared project.
+        <p role="note" className="border-b border-default bg-sunken px-4 py-2 text-meta text-muted">
+          Read-only: you are a viewer of this shared project. You can still comment.
         </p>
       )}
       <div className="min-w-0 flex-1 overflow-y-auto">
-      <fieldset disabled={readOnly} className="min-w-0 space-y-4 p-4">
-        {parent && (
-          <button type="button" className="text-xs text-faint hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(parent.id)} title="Open parent task">
-            ↳ {parent.title || 'Untitled'}
-            {parent.deleted_at ? ' (deleted)' : parent.completed_at && !task.completed_at ? ' (completed)' : ''}
-          </button>
-        )}
-        {series && (
-          <button type="button" className="block text-xs text-faint hover:text-slate-600 dark:hover:text-slate-200" onClick={() => onOpen?.(series.id)} title="Open the recurring task">
-            ↻ {task.completed_at ? 'Completed occurrence' : 'Single occurrence'} of {series.title || 'Untitled'}{series.deleted_at ? ' (deleted)' : ''}
-          </button>
-        )}
-        <input
-          className="w-full bg-transparent text-lg font-medium focus:outline-none"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={commitTitle}
-          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-          aria-label="Title"
-        />
-        <NotesBoundary task={task} readOnly={readOnly}>
-          <Suspense fallback={<NotesPreview text={task.description} />}>
-            <NotesEditor key={task.id} task={task} readOnly={readOnly} />
-          </Suspense>
-        </NotesBoundary>
+        <div className="min-w-0 space-y-4 p-4">
+          {parent && (
+            <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(parent.id)} title="Open parent task">
+              <Icon name="corner-down-right" />{parent.title || 'Untitled'}
+              {parent.deleted_at ? ' (deleted)' : parent.completed_at && !task.completed_at ? ' (completed)' : ''}
+            </button>
+          )}
+          {series && (
+            <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(series.id)} title="Open the recurring task">
+              <Icon name="repeat" />{task.completed_at ? 'Completed occurrence' : 'Single occurrence'} of {series.title || 'Untitled'}{series.deleted_at ? ' (deleted)' : ''}
+            </button>
+          )}
+          <input
+            className="w-full bg-transparent text-lg font-semibold text-default focus:outline-none"
+            value={title}
+            readOnly={readOnly}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={commitTitle}
+            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+            aria-label="Title"
+          />
+          <NotesBoundary task={task} readOnly={readOnly}>
+            <Suspense fallback={<NotesPreview text={task.description} />}>
+              <NotesEditor key={task.id} task={task} readOnly={readOnly} />
+            </Suspense>
+          </NotesBoundary>
 
-        <Field label="Project">
-          <select className="input" aria-label="Project" value={task.project_id ?? ''} onChange={(e) => void moveTo(e.target.value || null)}>
-            <option value="">Inbox</option>
-            {projectOptions.map((n) => (
-              <option key={n.id} value={n.id}>{'  '.repeat(n.depth)}{n.item.name}</option>
-            ))}
-            {/* Keep the current project selectable when it is archived. */}
-            {projects.filter((p) => p.archived && p.id === task.project_id).map((p) => (
-              <option key={p.id} value={p.id}>{p.name} (archived)</option>
-            ))}
-          </select>
-          {children.length > 0 && <p className="mt-1 text-xs text-faint">Moving this task moves its {children.length === 1 ? 'subtask' : 'subtasks'} too.</p>}
-        </Field>
+          <Properties task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
+            parent={parent} childCount={children.length} onOpen={onOpen} />
 
-        {task.project_id && sections.length > 0 && (
-          <Field label="Section">
-            {/* Subtasks are shown under their parent, so only top-level tasks pick a section. */}
-            <select className="input" aria-label="Section" value={effectiveSection(task, sectionMap) ?? ''}
-              disabled={!!parent && !parent.deleted_at}
-              onChange={(e) => void moveTaskToSection(task.id, e.target.value || null).catch(() => undefined)}>
-              <option value="">No section</option>
-              {sections.map((s) => <option key={s.id} value={s.id}>{s.name || 'Untitled section'}</option>)}
-            </select>
-            {parent && !parent.deleted_at && <p className="mt-1 text-xs text-faint">Subtasks are shown in their parent’s section.</p>}
-          </Field>
-        )}
+          <section aria-labelledby={`subtasks-${task.id}`}>
+            <h3 id={`subtasks-${task.id}`} className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted">
+              <Icon name="list" className="text-faint" />Subtasks{progress.total > 0 && <span className="font-normal text-faint">{progress.done}/{progress.total}</span>}
+            </h3>
+            <ul className="mb-2 space-y-0.5 empty:hidden" aria-label="Subtasks">
+              {children.map((c) => (
+                <li key={c.id} className="flex items-center gap-2 rounded-control px-1 py-1 hover:bg-sunken dark:hover:bg-raised">
+                  <button
+                    type="button"
+                    aria-label={c.completed_at ? `Reopen ${c.title}` : `Complete ${c.title}`}
+                    onClick={() => toggle(c)}
+                    disabled={readOnly}
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 text-[10px] ${c.completed_at ? 'border-slate-400 bg-slate-400 text-white' : 'border-slate-300 hover:bg-emerald-100 dark:border-slate-600'}`}
+                  >
+                    {c.completed_at && <Icon name="check" size={10} />}
+                  </button>
+                  <button type="button" className={`min-w-0 flex-1 truncate text-left text-sm ${c.completed_at ? 'text-faint line-through' : 'text-default'}`} onClick={() => onOpen?.(c.id)}>
+                    {c.title || <span className="italic text-faint">Untitled</span>}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {!readOnly && <AddSubtask parent={task} />}
+          </section>
 
-        <Field label="Parent task">
-          <select className="input" aria-label="Parent task" value={task.parent_id ?? ''} onChange={(e) => void changeParent(e.target.value)}>
-            <option value="">No parent</option>
-            {/* Keep the current parent selectable even when it is completed, deleted or elsewhere. */}
-            {task.parent_id && !candidates.some((c) => c.id === task.parent_id && !excluded.has(c.id)) && (
-              <option value={task.parent_id}>{parent?.title || 'Untitled'}{parent?.completed_at ? ' (completed)' : parent?.deleted_at ? ' (deleted)' : ''}</option>
-            )}
-            {candidates.filter((c) => c.id !== task.id && !excluded.has(c.id)).map((c) => (
-              <option key={c.id} value={c.id}>{c.title || 'Untitled'}</option>
-            ))}
-          </select>
-          {parentError && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{parentError}</p>}
-        </Field>
-
-        {userId && (
-          <Field label="Assignee">
-            <AssigneePicker taskId={task.id} userId={userId} inline />
-          </Field>
-        )}
-
-        <Field label="Priority">
-          <div className="flex gap-2">
-            {PRIORITIES.map(({ p, label, cls }) => (
-              <button key={p} aria-pressed={task.priority === p} className={`rounded-md border px-3 py-1 text-sm ${cls} ${task.priority === p ? 'bg-slate-100 font-semibold dark:bg-slate-800' : 'border-dashed hover:bg-slate-50 dark:hover:bg-slate-900'}`}
-                onClick={() => void updateTask(task.id, { priority: p })}>{label}</button>
-            ))}
-          </div>
-        </Field>
-
-        <Field label="Due">
-          <DueField task={task} readOnly={readOnly} />
-        </Field>
-
-        <Field label="Reminders">
-          <RemindersField task={task} />
-        </Field>
-
-        <Field label="Estimate">
-          <EstimateField task={task} />
-        </Field>
-        <Field label="Repeat">
-          <RecurrenceField task={task} onOpen={onOpen} />
-        </Field>
-
-        <Field label="Labels">
-          <div className="mb-2 flex flex-wrap gap-1 empty:hidden">
-            {resolveLabels(task.labels, labelMap).map((l) => <LabelChip key={l.id} label={l} onRemove={() => void removeLabel(task.id, l.id)} />)}
-          </div>
-          <LabelPicker taskId={task.id} inline />
-        </Field>
-
-        <Field label={progress.total > 0 ? `Subtasks · ${progress.done}/${progress.total}` : 'Subtasks'}>
-          <ul className="mb-2 space-y-0.5" aria-label="Subtasks">
-            {children.map((c) => (
-              <li key={c.id} className="flex items-center gap-2 rounded px-1 py-1 hover:bg-slate-50 dark:hover:bg-slate-900">
-                <button
-                  type="button"
-                  aria-label={c.completed_at ? `Reopen ${c.title}` : `Complete ${c.title}`}
-                  onClick={() => toggle(c)}
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 text-[10px] ${c.completed_at ? 'border-slate-400 bg-slate-400 text-white' : 'border-slate-300 hover:bg-emerald-100 dark:border-slate-600'}`}
-                >
-                  {c.completed_at && <Icon name="check" size={10} />}
-                </button>
-                <button type="button" className={`min-w-0 flex-1 truncate text-left text-sm ${c.completed_at ? 'text-faint line-through' : ''}`} onClick={() => onOpen?.(c.id)}>
-                  {c.title || <span className="italic text-faint">Untitled</span>}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <AddSubtask parent={task} />
-        </Field>
-
-        <p className="pt-4 text-xs text-faint">
-          Created {dt.formatInstant(task.created_at, 'datetime')}
-          {task.completed_at && <> · Completed {dt.formatInstant(task.completed_at, 'datetime')}</>}
-        </p>
-      </fieldset>
-      <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} />
+          <p className="text-meta text-faint">
+            Created {dt.formatInstant(task.created_at, 'datetime')}
+            {task.completed_at && <> · Completed {dt.formatInstant(task.completed_at, 'datetime')}</>}
+          </p>
+        </div>
+        <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} />
       </div>
     </aside>
   )
@@ -279,7 +189,7 @@ function AddSubtask({ parent }: { parent: Task }) {
   }
   return (
     <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2">
-      <span className="text-emerald-700 dark:text-emerald-400">+</span>
+      <span className="text-accent"><Icon name="plus" /></span>
       <input
         ref={ref}
         className="input py-1"
@@ -290,15 +200,6 @@ function AddSubtask({ parent }: { parent: Task }) {
         onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLInputElement).blur() }}
       />
     </form>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div role="group" aria-label={label}>
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-faint">{label}</span>
-      {children}
-    </div>
   )
 }
 

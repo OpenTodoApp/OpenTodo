@@ -1,0 +1,177 @@
+// The zone control next to a timed due (OpenSpec task-detail-redesign, design D4):
+// a chip reading "Floating" or "New York · UTC−4" that opens a small panel which
+// explains both modes, fixes the due to the viewer's zone or releases it, and fixes
+// it to any IANA zone with a preview of how it reads in the viewer's zone. Every
+// change is one ordinary due edit through updateTask; `z` toggles as before.
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { dueToInstant, fixDueToZone, isKnownZone, localDueOf, releaseDue, setDueZone, zoneCity } from '../../lib/dates'
+import { updateTask } from '../../lib/ops'
+import type { Due, Task } from '../../lib/types'
+import { Button } from '../../ui/Button'
+import { ComboboxPanel } from '../../ui/Combobox/Combobox'
+import { Icon } from '../../ui/Icon'
+import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { Popover } from '../overlay/Popover'
+import { isTyping, useViewerZone } from '../useViews'
+
+/** `z` with the panel open (not typing) toggles the zone; listed in the shortcut help. */
+export const ZONE_TOGGLE_KEY = 'z'
+/** Pick history context for zones (ui-primitives pickRank), device-local. */
+export const ZONE_RANK_CONTEXT = 'due.zone'
+
+/** "UTC+2", "UTC−4", "UTC+5:30" or "UTC" for `zone` at instant `at`; '' when the platform cannot tell. */
+export function zoneOffset(zone: string, at: number = Date.now()): string {
+  for (const style of ['shortOffset', 'longOffset'] as const) {
+    try {
+      const part = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: style }).formatToParts(at).find((p) => p.type === 'timeZoneName')?.value
+      if (!part || !/^GMT/.test(part)) continue
+      const rest = part.slice(3).replace(/^([+-])0?(\d+)(?::00)?/, '$1$2').replace('-', '−')
+      return rest ? `UTC${rest}` : 'UTC'
+    } catch {
+      // try the next style
+    }
+  }
+  return ''
+}
+
+/** Chip text: "Floating" or "City · UTC+2". */
+export function zoneChipText(due: Due | null | undefined): string {
+  if (!due?.tz) return 'Floating'
+  const offset = zoneOffset(due.tz, due.time ? dueToInstant(due, due.tz) : Date.now())
+  const city = zoneCity(due.tz)
+  return offset && offset !== city ? `${city} · ${offset}` : city
+}
+
+/** Every IANA zone the platform knows, else the viewer's zone plus the given ones. */
+export function allZones(viewer: string, inUse: readonly string[] = []): string[] {
+  const supported = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf
+  let list: string[] = []
+  try { list = supported ? supported('timeZone') : [] } catch { list = [] }
+  if (!list.length) list = [viewer, ...inUse]
+  return [...new Set([viewer, ...list])].filter(isKnownZone)
+}
+
+interface ZoneItem { zone: string; city: string; secondary: string }
+
+export interface ZoneControlProps {
+  task: Task
+  readOnly?: boolean
+  /** The viewer's zone; defaults to the live one (stories and tests pass a fixed zone). */
+  viewerZone?: string
+  /** Opens the panel on mount (stories). */
+  defaultOpen?: boolean
+}
+
+export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = false }: ZoneControlProps) {
+  const liveZone = useViewerZone()
+  const zone = viewerZone ?? liveZone
+  const dt = useDateTimeFormat()
+  const due = task.due
+  const canFix = !!due?.time
+  const zoned = !!due?.tz
+  const [open, setOpen] = useState(defaultOpen && canFix)
+  const [candidate, setCandidate] = useState<string | null>(null)
+  const chip = useRef<HTMLButtonElement>(null)
+
+  const write = (next: Due | null) => { if (next) void updateTask(task.id, { due: next }) }
+  const toggleZone = () => {
+    if (!due?.time) return
+    write(zoned ? releaseDue(due, zone) : fixDueToZone(due, zone))
+  }
+
+  // The `z` shortcut, moved here unchanged from DueField (absolute-datetimes).
+  useEffect(() => {
+    if (readOnly) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== ZONE_TOGGLE_KEY || e.metaKey || e.ctrlKey || e.altKey || isTyping(e)) return
+      if (document.querySelector('[role="dialog"]')) return
+      e.preventDefault()
+      toggleZone()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
+  const items = useMemo<ZoneItem[]>(() => {
+    if (!open) return []
+    const now = Date.now()
+    return allZones(zone, due?.tz ? [due.tz] : []).map((z) => {
+      const region = z.includes('/') ? z.slice(0, z.indexOf('/')).replace(/_/g, ' ') : ''
+      const offset = zoneOffset(z, now)
+      return { zone: z, city: zoneCity(z), secondary: [z === zone ? 'Your zone' : region, offset].filter(Boolean).join(' · ') }
+    })
+  }, [open, zone, due?.tz])
+
+  const close = () => { setOpen(false); setCandidate(null) }
+  const reason = 'Set a time to fix this due to a time zone'
+  const text = zoneChipText(due)
+
+  // "15:00 in New York = 21:00 your time (Berlin)" for a due fixed (or about to be fixed) to `z`.
+  const preview = (z: string) => {
+    if (!due?.time) return ''
+    const fixed = setDueZone(due, z)
+    if (!fixed) return ''
+    const local = localDueOf(fixed, zone)
+    const there = `${dt.formatTime(due.time)} in ${zoneCity(z)}`
+    if (z === zone) return `${there}, your zone`
+    const day = local.date !== due.date ? ` (${dt.formatDate(local.date, 'compact')})` : ''
+    return `${there} = ${dt.formatTime(local.time!)}${day} your time (${zoneCity(zone)})`
+  }
+
+  return (
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <button
+        ref={chip}
+        type="button"
+        className="ui-btn ui-btn--secondary ui-btn--sm"
+        aria-label={`Time zone: ${text}`}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-keyshortcuts={readOnly ? undefined : ZONE_TOGGLE_KEY}
+        aria-describedby={canFix ? undefined : `zone-reason-${task.id}`}
+        disabled={readOnly || !canFix}
+        title={canFix ? `Time zone (${ZONE_TOGGLE_KEY} toggles)` : reason}
+        onClick={() => setOpen(true)}
+      >
+        <Icon name="globe" size="sm" />{text}
+      </button>
+      {!canFix && due && <span id={`zone-reason-${task.id}`} className="text-meta text-faint">{reason}</span>}
+      <Popover open={open} onClose={close} anchor={chip} label="Time zone" align="start" width="sm:w-80" className="space-y-3 p-3">
+        <div className="space-y-2 text-meta">
+          <p className={zoned ? 'text-muted' : 'text-default'} data-testid="zone-mode-floating">
+            <strong className="font-semibold">Floating{!zoned && ' (now)'}:</strong> the same clock time wherever you are.
+          </p>
+          <p className={zoned ? 'text-default' : 'text-muted'} data-testid="zone-mode-fixed">
+            <strong className="font-semibold">Fixed to a time zone{zoned && ' (now)'}:</strong> one moment worldwide, shown in each viewer's own time.
+          </p>
+        </div>
+        {zoned
+          ? <Button size="sm" icon="globe" onClick={() => { write(releaseDue(due!, zone)); close() }}>Make floating</Button>
+          : <Button size="sm" icon="globe" onClick={() => { write(fixDueToZone(due!, zone)); close() }}>Fix to my zone ({zoneCity(zone)})</Button>}
+        {zoned && !candidate && <p className="text-meta text-muted" data-testid="zone-preview">{preview(due!.tz!)}</p>}
+        <ComboboxPanel<ZoneItem>
+          label="Fix to another time zone"
+          placeholder="Search a city or zone"
+          source={items}
+          getKey={(i) => i.zone}
+          getLabel={(i) => i.city}
+          getSecondary={(i) => i.secondary}
+          pinned={[zone]}
+          selected={due?.tz ? [due.tz] : []}
+          rankContext={ZONE_RANK_CONTEXT}
+          onPick={(i) => setCandidate(i.zone)}
+          emptyText="No zone matches"
+        />
+        {candidate && (
+          <div className="space-y-2 rounded-control bg-sunken p-2 dark:bg-raised">
+            <p className="text-meta text-default" role="status" data-testid="zone-preview">{preview(candidate)}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="primary" onClick={() => { write(setDueZone(due!, candidate)); close() }}>Fix to {zoneCity(candidate)}</Button>
+              <Button size="sm" variant="ghost" onClick={() => setCandidate(null)}>Cancel</Button>
+            </div>
+          </div>
+        )}
+      </Popover>
+    </span>
+  )
+}
