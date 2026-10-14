@@ -19,8 +19,8 @@
 
 ## 4. Integration
 
-- [ ] 4.1 Manual check on a production build (`make web && go build -o bin/opentodo ./cmd/opentodo && ./bin/opentodo`, http://localhost:8080) in Chrome and Firefox. Enable notifications, then run the test with the settings page focused: a system notification appears and Settings says "received". Turn off the browser's notifications in the OS: Settings says "accepted, not seen" with the macOS hint. On `make dev` (:5173), the checklist explains there is no service worker. Record the results in the PR description.
-- [ ] 4.2 Run `make check` and verify it passes, including `npx @fission-ai/openspec validate --all --strict`.
+- [x] 4.1 Manual check on a production build (`make web && go build -o bin/opentodo ./cmd/opentodo && ./bin/opentodo`, http://localhost:8080) in Chrome and Firefox. Enable notifications, then run the test with the settings page focused: a system notification appears and Settings says "received". Turn off the browser's notifications in the OS: Settings says "accepted, not seen" with the macOS hint. On `make dev` (:5173), the checklist explains there is no service worker. Record the results in the PR description.
+- [x] 4.2 Run `make check` and verify it passes, including `npx @fission-ai/openspec validate --all --strict`.
 
 ## Workflow follow-up
 
