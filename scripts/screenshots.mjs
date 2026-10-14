@@ -48,6 +48,11 @@ const NOW = at(0, '08:40')
 const mk = async (o = {}, time = NOW) => {
   const c = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1.5, colorScheme: 'light', timezoneId: 'UTC', locale: 'en-GB', ...o })
   await c.clock.setFixedTime(time)
+  // The owner's "Set up the assistant" line on Today (assistant-skills) is off-topic in product shots.
+  await c.addInitScript(() => {
+    const hide = () => { const st = document.createElement('style'); st.textContent = '[data-ask-hint]{display:none!important}'; document.head.append(st) }
+    if (document.head) hide(); else document.addEventListener('DOMContentLoaded', hide)
+  })
   return c
 }
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -87,6 +92,7 @@ async function signIn(page, email) {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByLabel('Add a task').waitFor({ timeout: 15000 })
 }
+
 
 const ctx = await mk(); const page = await ctx.newPage()
 await page.goto(base)
@@ -339,22 +345,31 @@ await page.keyboard.press('Escape')
 await go(page, '/help/tasks-and-projects', () => page.getByRole('heading', { level: 1, name: 'Tasks and projects' }).waitFor())
 await shot(page, 'help')
 
-// Settings
-await go(page, '/settings', () => page.getByRole('heading', { name: 'Settings' }).waitFor())
+// Settings: each section has its own page (settings-navigation)
+await go(page, '/settings/security', () => page.getByRole('heading', { name: 'Two-factor authentication', level: 2 }).first().waitFor())
 await page.getByRole('button', { name: 'Set up two-factor authentication' }).click().catch((e) => console.log('  2fa:', e.message))
 await settle(page, 800)
+await go(page, '/settings/preferences', () => page.getByRole('heading', { name: 'Keyboard', level: 2 }).first().waitFor())
 await page.getByLabel(/Vim keybindings/).check().catch((e) => console.log('  vim:', e.message))
-for (const [heading, name] of [
-  ['Two-factor authentication', 'settings-security'], ['End-to-end encryption', 'settings-encryption'], ['Keyboard', 'settings-keyboard'],
-  ['Users', 'settings-users'], ['Single sign-on', 'settings-sso'], ['Calendar apps (CalDAV)', 'settings-caldav'], ['Webhooks', 'settings-webhooks'],
-  ['Email to task', 'settings-email'], ['Backups', 'settings-backups'], ['AI assistants', 'settings-ai'],
+for (const [section, heading, name] of [
+  ['security', 'Two-factor authentication', 'settings-security'], ['encryption', 'End-to-end encryption', 'settings-encryption'],
+  ['preferences', 'Keyboard', 'settings-keyboard'], ['admin', 'Users', 'settings-users'], ['access', 'Single sign-on', 'settings-sso'],
+  ['integrations', 'Calendar apps (CalDAV)', 'settings-caldav'], ['integrations', 'Webhooks', 'settings-webhooks'],
+  ['capture', 'Email to task', 'settings-email'], ['backups', 'Backups', 'settings-backups'], ['ai', 'AI assistants', 'settings-ai'],
 ]) {
   if (!want(name)) continue
-  await toSection(page, heading).catch((e) => console.log(`  ${name}:`, e.message)); await shot(page, name)
+  try {
+    await go(page, `/settings/${section}`, () => page.getByRole('heading', { level: 2, name: heading, exact: true }).first().waitFor())
+    await toSection(page, heading)
+    await shot(page, name)
+  } catch (e) {
+    console.log(`  ${name}: ${e.message}`)
+  }
 }
 
 // Voice capture asks once, with its privacy statement
 if (want('settings-voice')) {
+  await go(page, '/settings/capture', () => page.getByRole('heading', { level: 2, name: 'Voice capture', exact: true }).first().waitFor())
   await toSection(page, 'Voice capture')
   await page.getByLabel(/Dictate tasks into quick add/).click()
   await page.getByRole('dialog').filter({ hasText: 'Turn on voice capture?' }).waitFor({ timeout: 5000 }).catch((e) => console.log('  voice:', e.message))
