@@ -34,6 +34,66 @@ func (s *Server) registerPushRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /api/v1/push/vapid-key", s.requireAuth(s.handlePushKey))
 	mux.Handle("POST /api/v1/push/subscriptions", s.requireAuth(s.handlePushSubscribe))
 	mux.Handle("DELETE /api/v1/push/subscriptions/{id}", s.requireAuth(s.handlePushUnsubscribe))
+	s.pushTestLimiter = newRateLimiter(pushTestLimit, pushTestWindow)
+	mux.Handle("POST /api/v1/push/test", s.requireAuth(s.handlePushTest))
+}
+
+// Test pushes per account (OpenSpec `push-test-delivery` D3): enough for a
+// troubleshooting session, too few to spam a push endpoint through the server.
+const (
+	pushTestLimit  = 5
+	pushTestWindow = 10 * time.Minute
+)
+
+// handlePushTest sends one real test push to the caller's subscription for
+// deviceId and reports the push service's outcome. Expected push states are a
+// successful diagnostic (200); HTTP errors are for request problems (design D2).
+func (s *Server) handlePushTest(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		DeviceID string `json:"deviceId"`
+	}
+	if err := readJSON(r, &in); err != nil || strings.TrimSpace(in.DeviceID) == "" {
+		writeError(w, http.StatusBadRequest, "bad_request", "deviceId is required")
+		return
+	}
+	uid := userFrom(r.Context()).ID
+	if !s.pushTestLimiter.allow(uid) {
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many test notifications, try again in a few minutes")
+		return
+	}
+	sub, err := s.push.SubscriptionForDevice(r.Context(), uid, in.DeviceID)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	if sub == nil {
+		writeJSON(w, http.StatusOK, map[string]any{"outcome": "no_subscription", "subscription": nil})
+		return
+	}
+	testID, res, err := s.push.SendTest(r.Context(), sub)
+	switch res {
+	case push.Sent:
+		out := map[string]any{"outcome": "sent", "testId": testID}
+		if fresh, err := s.push.SubscriptionForDevice(r.Context(), uid, in.DeviceID); err == nil && fresh != nil {
+			out["subscription"] = fresh.Public()
+		}
+		writeJSON(w, http.StatusOK, out)
+	case push.Gone:
+		writeJSON(w, http.StatusOK, map[string]any{"outcome": "gone", "subscription": nil})
+	default:
+		out := map[string]any{"outcome": "failed", "error": "push service unreachable"}
+		var serr *push.StatusError
+		if errors.As(err, &serr) {
+			out["status"] = serr.Code
+			out["error"] = serr.Error()
+		} else if err != nil {
+			s.log.Warn("test push failed", "subscription", sub.ID, "err", err)
+		}
+		if fresh, err := s.push.SubscriptionForDevice(r.Context(), uid, in.DeviceID); err == nil && fresh != nil {
+			out["subscription"] = fresh.Public()
+		}
+		writeJSON(w, http.StatusOK, out)
+	}
 }
 
 // handlePushKey returns the server's public VAPID key and, when ?device= names

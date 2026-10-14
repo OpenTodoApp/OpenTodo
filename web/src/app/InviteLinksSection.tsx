@@ -3,6 +3,8 @@ import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { grantableRoles } from '../lib/sharing'
 import type { ProjectInvite, ProjectRole } from '../lib/types'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { formatInstant } from '../lib/dates'
 
 // "Invite with a link" in the share dialog (OpenSpec `project-invite-links`):
 // the project's owner and admins create single-use links that add whoever
@@ -47,9 +49,10 @@ export interface InviteLinksViewProps {
   onRevoke: (invite: ProjectInvite) => void
 }
 
-const when = (ms: number) => new Date(ms).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+const when = (ms: number) => formatInstant(ms, 'datetime')
 
 export function InviteLinksView(p: InviteLinksViewProps) {
+  useDateTimeFormat()
   const disabled = p.offline || p.busy
   function submit(e: FormEvent) {
     e.preventDefault()

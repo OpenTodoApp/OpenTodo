@@ -28,6 +28,7 @@ type fakePushService struct {
 	srv    *httptest.Server
 	mu     gosync.Mutex
 	got    []Payload
+	raws   []string
 	auths  []string
 	status int
 	ua     *ecdh.PrivateKey
@@ -57,6 +58,7 @@ func newFakePush(t *testing.T) *fakePushService {
 			t.Errorf("payload %q: %v", plain, err)
 		}
 		f.got = append(f.got, p)
+		f.raws = append(f.raws, string(plain))
 		f.auths = append(f.auths, r.Header.Get("Authorization"))
 		w.WriteHeader(f.status)
 	}))
@@ -470,5 +472,55 @@ func TestSchedulerProjectCycle(t *testing.T) {
 	e.reminder(t, "u1", "r", "t", now-1000)
 	if n, err := s.Tick(ctx); err != nil || n != 1 {
 		t.Fatalf("tick recorded %d, %v", n, err)
+	}
+}
+
+// push-test-delivery D1: a test push goes through Send with no task data and
+// updates the same delivery bookkeeping as a reminder.
+func TestSendTest(t *testing.T) {
+	e := newTestEnv(t)
+	ctx := context.Background()
+	s := e.service()
+	ok := newFakePush(t)
+	sub, _, _ := s.Upsert(ctx, "u1", "", ok.input("laptop", true))
+	id, res, err := s.SendTest(ctx, sub)
+	if err != nil || res != Sent || id == "" {
+		t.Fatalf("SendTest = %q, %v, %v", id, res, err)
+	}
+	raws := ok.raws
+	if len(raws) != 1 {
+		t.Fatalf("pushes = %d", len(raws))
+	}
+	var p map[string]any
+	_ = json.Unmarshal([]byte(raws[0]), &p)
+	if p["type"] != "test" || p["testId"] != id || p["sentAt"] == nil || len(p) != 3 {
+		t.Fatalf("payload = %s", raws[0])
+	}
+	got, _ := s.subscription(ctx, "u1", sub.ID)
+	if got.LastOKAt == nil || *got.LastOKAt != e.clock.UnixMilli() {
+		t.Fatalf("last delivery not recorded: %+v", got)
+	}
+	if id2, _, _ := s.SendTest(ctx, sub); id2 == id {
+		t.Fatal("test ids repeat")
+	}
+
+	gone := newFakePush(t)
+	gone.status = http.StatusGone
+	g, _, _ := s.Upsert(ctx, "u1", "", gone.input("old-phone", false))
+	if _, res, _ := s.SendTest(ctx, g); res != Gone {
+		t.Fatalf("gone result = %v", res)
+	}
+	if _, err := s.subscription(ctx, "u1", g.ID); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("gone subscription kept: %v", err)
+	}
+
+	down := newFakePush(t)
+	down.status = http.StatusInternalServerError
+	d, _, _ := s.Upsert(ctx, "u1", "", down.input("flaky", false))
+	if _, res, err := s.SendTest(ctx, d); res != Failed || err == nil {
+		t.Fatalf("failed result = %v, %v", res, err)
+	}
+	if f, _ := s.subscription(ctx, "u1", d.ID); f.Failures != 1 || f.LastError == "" {
+		t.Fatalf("failure not counted: %+v", f)
 	}
 }

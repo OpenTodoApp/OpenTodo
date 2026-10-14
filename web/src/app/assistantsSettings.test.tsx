@@ -18,27 +18,28 @@ function render(over: Partial<AssistantsViewProps> = {}) {
   return renderToStaticMarkup(<AssistantsView {...props} />)
 }
 
-const buttons = (html: string) => [...html.matchAll(/<button([^>]*)>([^<]*)<\/button>/g)].map((m) => ({ attrs: m[1], label: m[2] }))
+const buttons = (html: string) => [...html.matchAll(/<button([^>]*)>(.*?)<\/button>/g)].map((m) => ({ attrs: m[1], label: m[2].replace(/<[^>]+>/g, '').trim() }))
 const button = (html: string, label: string) => buttons(html).find((b) => b.label === label)
+const switches = (html: string) => [...html.matchAll(/<button([^>]*role="switch"[^>]*)>/g)].map((m) => m[1])
 
 describe('AssistantsView', () => {
   it('gives the owner a toggle with its state, the endpoint and a read-only token shortcut', () => {
     const off = render()
     expect(off).toContain('AI assistants')
-    expect(off).toContain('type="checkbox"')
-    expect(off).not.toContain('checked=""')
+    expect(off).toContain('role="switch"')
+    expect(off).not.toContain('aria-checked="true"')
     expect(off).toContain('answers “not found”')
     expect(off).toContain(endpoint)
     expect(button(off, 'Copy URL')).toBeTruthy()
     expect(button(off, 'Create read-only token')?.attrs).not.toContain('disabled')
     const on = render({ status: { enabled: true, endpoint } })
-    expect(on).toContain('checked=""')
+    expect(on).toContain('aria-checked="true"')
     expect(on).toContain('sees only its own data')
   })
 
   it('shows members the status without a toggle', () => {
     const html = render({ isOwner: false })
-    expect(html).not.toContain('type="checkbox"')
+    expect(html).not.toContain('role="switch"')
     expect(html).toContain('The server owner has not enabled AI assistant access')
     expect(render({ isOwner: false, status: { enabled: true, endpoint } })).toContain('has enabled AI assistant access')
     // Members can still prepare a token.
@@ -49,7 +50,7 @@ describe('AssistantsView', () => {
     const html = render({ connected: false, status: { enabled: true, endpoint } })
     expect(html).toContain('You are offline')
     expect(html).toContain(endpoint)
-    expect(html).toMatch(/type="checkbox"[^>]*disabled=""|disabled=""[^>]*type="checkbox"/)
+    expect(switches(html).every((b) => b.includes('disabled=""'))).toBe(true)
     expect(button(html, 'Create read-only token')?.attrs).toContain('disabled')
     expect(render({ connected: false, status: null })).toContain('Nothing fetched yet.')
     // A request in flight keeps the controls focusable (keyboard focus is not lost).
@@ -62,7 +63,7 @@ describe('AssistantsView', () => {
     const html = render({ secret: 'ot_assistant123' })
     expect(html).toContain('ot_assistant123')
     expect(html).toContain('will not be shown again')
-    expect(button(html, 'Copy token')).toBeTruthy()
+    expect(button(html, 'Copy')).toBeTruthy()
     expect(button(html, 'Done')).toBeTruthy()
     expect(html).toContain('Bearer ot_assistant123')
     const plain = render()
@@ -80,7 +81,6 @@ describe('AssistantsView', () => {
   })
 })
 
-const checkboxes = (html: string) => [...html.matchAll(/<input([^>]*type="checkbox"[^>]*)>/g)].map((m) => m[1])
 const AGENT = 'Create a token for an assistant that can make changes'
 
 describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
@@ -96,7 +96,7 @@ describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
     const member = render({ isOwner: false, status: on })
     expect(member).not.toContain('AI assistants may make changes</span>')
     expect(member).toContain('allows assistants to make changes')
-    expect(checkboxes(member)).toHaveLength(1)
+    expect(switches(member)).toHaveLength(1)
   })
 
   it('shows every user their own switch with what assistants can and cannot do', () => {
@@ -115,16 +115,16 @@ describe('AssistantsView: assistant writes (mcp-write-tools)', () => {
     expect(button(both, AGENT)).toBeTruthy()
     const labels = buttons(both).map((b) => b.label)
     expect(labels.indexOf('Create read-only token')).toBeLessThan(labels.indexOf(AGENT))
-    expect(button(both, 'Create read-only token')?.attrs).toContain('btn-primary')
+    expect(button(both, 'Create read-only token')?.attrs).toContain('ui-btn--primary')
     expect(render({ status: on, secret: 'ot_a', secretScope: 'agent' })).toContain('assistant that can make changes now')
   })
 
   it('disables every switch and action offline, keeping the last state', () => {
     const html = render({ connected: false, status: on, access: { allow_writes: true, owner_allows_writes: true } })
-    const boxes = checkboxes(html)
+    const boxes = switches(html)
     expect(boxes).toHaveLength(3)
     for (const b of boxes) expect(b).toContain('disabled=""')
-    expect(boxes.every((b) => b.includes('checked=""'))).toBe(true)
+    expect(boxes.every((b) => b.includes('aria-checked="true"'))).toBe(true)
     expect(button(html, AGENT)?.attrs).toContain('disabled')
     expect(html).toContain('needs a connection')
   })

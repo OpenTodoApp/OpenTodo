@@ -31,6 +31,8 @@ Choose **Day** or **Week** in the sidebar, or press <kbd>g</kbd> <kbd>d</kbd> or
 
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 
+The Week view starts on your first day of the week, and the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → Preferences → Date and time** and follow you to all your devices. Moving a block still sets the same time; only how it is shown changes.
+
 ## Place a task on the calendar
 
 Drag a task from the Unscheduled lane onto a time slot. Its due date and time become that slot. The grid works in 15-minute steps.
@@ -61,7 +63,7 @@ Completing a task removes its block and lowers the day's total.
 
 ## Adjust the grid
 
-In **Settings → General → Calendar** you can set when the grid starts and ends (6:00 to 22:00 by default; you can still scroll beyond) and how long your working day is (8 hours by default). These settings belong to each device, so your phone and laptop can differ.
+In **Settings → Preferences → Calendar** you can set when the grid starts and ends (6:00 to 22:00 by default; you can still scroll beyond) and how long your working day is (8 hours by default). These settings belong to each device, so your phone and laptop can differ.
 
 ## Tips
 

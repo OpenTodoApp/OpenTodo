@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, View } from './types'
+import type { ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, UserPrefs, View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -53,6 +53,16 @@ interface Meta {
   value: unknown
 }
 
+/** One pick in a picker context on this device (ui-primitives D7). */
+export interface PickHistory {
+  /** `${context}\u0000${key}`: a plain string key (WebKit's IndexedDB is fragile with compound keys). */
+  id: string
+  context: string
+  key: string
+  count: number
+  lastAt: number
+}
+
 class OpenTodoDB extends Dexie {
   projects!: Table<Project, string>
   tasks!: Table<Task, string>
@@ -75,11 +85,15 @@ class OpenTodoDB extends Dexie {
   activity!: Table<ActivityEntry, string>
   /** Personal per-project preferences (activity-feed): the synced `project_prefs` entity, keyed by project id. */
   prefs!: Table<ProjectPrefs, string>
+  /** The user's date and time preferences (date-time-preferences): the synced `user_prefs` entity, one row "me". */
+  userPrefs!: Table<UserPrefs, string>
   outbox!: Table<OutboxOp, number>
   meta!: Table<Meta, string>
   /** In-app assistant conversations and undo batches: device-local, never ops. */
   assistantThreads!: Table<AssistantThread, string>
   assistantUndo!: Table<AssistantUndo, string>
+  /** Device-local pick history for picker ranking (ui-primitives D7): never synced or exported. */
+  pickHistory!: Table<PickHistory, string>
 
   constructor(name = 'opentodo') {
     super(name)
@@ -214,6 +228,47 @@ class OpenTodoDB extends Dexie {
       assistantThreads: 'id, updated_at',
       assistantUndo: 'id, created_at',
     })
+    // v14 (ui-primitives): device-local pick history for picker ranking.
+    // Additive; every store is redeclared. Never synced and never in the outbox.
+    this.version(14).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+      comments: 'id, task_id',
+      activity: 'id, [projectKey+ts], taskId, entityId',
+      prefs: 'id',
+      assistantThreads: 'id, updated_at',
+      assistantUndo: 'id, created_at',
+      pickHistory: 'id, context',
+    })
+    // v15 (date-time-preferences): the synced personal `user_prefs` row.
+    // Additive; every store is redeclared.
+    this.version(15).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+      comments: 'id, task_id',
+      activity: 'id, [projectKey+ts], taskId, entityId',
+      prefs: 'id',
+      assistantThreads: 'id, updated_at',
+      assistantUndo: 'id, created_at',
+      pickHistory: 'id, context',
+      userPrefs: 'id',
+    })
   }
 }
 
@@ -230,7 +285,7 @@ export function useDatabase(name: string): OpenTodoDB {
  * folds ops into (comments-and-activity); applyOps and mutateMany lock all of them.
  */
 export function entityTables() {
-  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.comments, db.prefs, db.activity]
+  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.comments, db.prefs, db.userPrefs, db.activity]
 }
 
 export async function getMeta<T>(key: string, fallback: T): Promise<T> {
@@ -244,10 +299,10 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
-  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo], async () => {
+  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory], async () => {
     await Promise.all([
       ...entityTables().map((t) => t.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(),
-      db.notifications.clear(), db.assistantThreads.clear(), db.assistantUndo.clear(),
+      db.notifications.clear(), db.assistantThreads.clear(), db.assistantUndo.clear(), db.pickHistory.clear(),
     ])
   })
 }

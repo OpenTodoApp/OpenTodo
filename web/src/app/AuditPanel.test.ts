@@ -74,6 +74,22 @@ describe('ActivityView', () => {
   })
 })
 
+describe('ActivityView states', () => {
+  it('marks failed sign-ins and shows relative times', () => {
+    const html = renderToStaticMarkup(createElement(ActivityView, { status: 'ready', events: [ev({ ts: 1_000_000 - 120_000 })], now: 1_000_000 }))
+    expect(html).toContain('data-testid="activity-panel"')
+    expect(html).toContain('id="activity-heading"')
+    expect(html).toContain('2 min ago')
+    expect(html).toContain('Failed')
+    expect(html).toContain('text-danger')
+  })
+
+  it('shows an empty state and an error notice', () => {
+    expect(renderToStaticMarkup(createElement(ActivityView, { status: 'ready', events: [] }))).toContain('No recent activity.')
+    expect(renderToStaticMarkup(createElement(ActivityView, { status: 'error', events: [], error: 'boom' }))).toMatch(/role="alert".*boom/)
+  })
+})
+
 describe('audit filters', () => {
   it('turns the last-day preset into a from bound and keeps the event filter', () => {
     const now = 1_760_000_000_000

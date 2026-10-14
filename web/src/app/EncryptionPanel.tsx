@@ -1,5 +1,12 @@
-import { type FormEvent, useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react'
+import { Button } from '../ui/Button'
+import { Badge } from '../ui/Card'
+import { Field, Input } from '../ui/Field'
+import { Checkbox } from '../ui/Switch'
+import { ConfirmDialog } from '../ui/patterns/ConfirmDialog'
+import { Notice } from '../ui/patterns/Notice'
+import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Dialog } from './overlay/Dialog'
 import { ApiError, isNetworkError } from '../lib/api'
 import { MIN_PASSPHRASE_LENGTH, RecoveryKeyFormatError, WrongSecretError } from '../lib/crypto'
 import {
@@ -59,14 +66,14 @@ export interface EncryptionViewProps {
 
 function PassphraseFields({ prefix }: { prefix: string }) {
   return (
-    <>
-      <label className="block text-sm">New passphrase (at least {MIN_PASSPHRASE_LENGTH} characters)
-        <input className="input mt-1" type="password" name={`${prefix}-new`} autoComplete="new-password" minLength={MIN_PASSPHRASE_LENGTH} required />
-      </label>
-      <label className="block text-sm">Repeat it
-        <input className="input mt-1" type="password" name={`${prefix}-confirm`} autoComplete="new-password" minLength={MIN_PASSPHRASE_LENGTH} required />
-      </label>
-    </>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <Field label="New passphrase" description={`At least ${MIN_PASSPHRASE_LENGTH} characters.`}>
+        <Input type="password" name={`${prefix}-new`} autoComplete="new-password" minLength={MIN_PASSPHRASE_LENGTH} required />
+      </Field>
+      <Field label="Repeat it">
+        <Input type="password" name={`${prefix}-confirm`} autoComplete="new-password" minLength={MIN_PASSPHRASE_LENGTH} required />
+      </Field>
+    </div>
   )
 }
 
@@ -75,148 +82,162 @@ const field = (e: FormEvent<HTMLFormElement>, name: string) => (e.currentTarget.
 function RecoveryKeyBox(p: { recoveryKey: string; copied: boolean; onCopy: () => void; onDownload: () => void }) {
   return (
     <div className="space-y-2">
-      <p className="text-sm">Your recovery key. It is shown once; store it somewhere safe and separate from this device (a password manager or paper):</p>
-      <code className="block select-all rounded border border-slate-300 bg-slate-50 p-3 font-mono text-sm break-all dark:border-slate-700 dark:bg-slate-900" data-recovery-key>{p.recoveryKey}</code>
+      <p className="text-sm text-default">Your recovery key. It is shown once; store it somewhere safe and separate from this device (a password manager or paper):</p>
+      <code className="block select-all rounded-control border border-input bg-sunken p-3 font-mono text-sm break-all text-default" data-recovery-key>{p.recoveryKey}</code>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy recovery key'}</button>
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onDownload}>Download as text</button>
+        <Button variant="secondary" icon={p.copied ? 'check' : 'copy'} onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy recovery key'}</Button>
+        <Button variant="secondary" icon="download" onClick={p.onDownload}>Download as text</Button>
       </div>
     </div>
+  )
+}
+
+/** Closes an inline form on Escape and moves focus into its first field when it opens. */
+function InlineForm({ onCancel, onSubmit, children }: { onCancel: () => void; onSubmit: (e: FormEvent<HTMLFormElement>) => void; children: ReactNode }) {
+  const ref = useRef<HTMLFormElement>(null)
+  useEffect(() => { ref.current?.querySelector<HTMLInputElement>('input:not([type="hidden"])')?.focus() }, [])
+  return (
+    <form ref={ref} className="space-y-3 py-3" onSubmit={(e) => { e.preventDefault(); onSubmit(e) }}
+      onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}>
+      {children}
+    </form>
   )
 }
 
 export function EncryptionView(p: EncryptionViewProps) {
   const { state, mode } = p
   const progress = state.migration
+  const idle = () => p.onMode({ kind: 'idle' })
+  const status = state.enabled ? (state.unlocked ? 'on' : 'locked') : 'off'
   return (
-    <section className="space-y-3" aria-labelledby="e2ee-heading">
-      <HelpHeading screen="settings/encryption" id="e2ee-heading" className="font-semibold">End-to-end encryption</HelpHeading>
-      {p.error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{p.error}</p>}
-      {p.notice && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">{p.notice}</p>}
+    <SettingsSection title="End-to-end encryption" helpId="settings/encryption" headingId="e2ee-heading"
+      description={`Encrypts ${ENCRYPTED_FIELDS} on your devices before they are synced, so your server, its backups and integrations only see ciphertext.`}>
+      {p.error && <Notice tone="danger">{p.error}</Notice>}
+      {p.notice && <Notice tone="success">{p.notice}</Notice>}
       {progress && (
-        <div role="status" className="text-sm">
+        <Notice>
           {progress.mode === 'encrypt' ? 'Encrypting' : 'Decrypting'} your data: {progress.done} of {progress.total}…
           <progress className="ml-2 align-middle" max={Math.max(progress.total, 1)} value={progress.done} />
-        </div>
+        </Notice>
       )}
 
+      <SettingRow label="Status" status={
+        <span className="flex flex-wrap items-center gap-2" data-testid="e2ee-status">
+          <Badge hue={status === 'on' ? 'green' : status === 'locked' ? 'orange' : 'slate'}>
+            {status === 'on' ? 'On' : status === 'locked' ? 'Locked on this device' : 'Off'}
+          </Badge>
+          {state.enabled && <span className="text-muted">{state.unlocked ? 'Unlocked on this device' : 'This device is locked'} · key version {state.keyVersion}</span>}
+        </span>
+      } control={!state.enabled && mode.kind === 'idle' && (
+        <Button variant="primary" onClick={() => p.onMode({ kind: 'passphrase' })}>Set up encryption…</Button>
+      )} />
+
       {!state.enabled && mode.kind === 'idle' && (
-        <>
-          <p className="text-sm text-muted">
-            Off. With encryption on, {ENCRYPTED_FIELDS} are encrypted on your devices before they are synced, so your server, its backups
-            and integrations (CalDAV, MCP, webhooks) only see ciphertext. Still visible to the server: {PLAINTEXT_FIELDS}.
-            Shared projects are not encrypted, and new projects cannot be shared while encryption is on.
-          </p>
-          <button type="button" className="btn-primary" onClick={() => p.onMode({ kind: 'passphrase' })}>Set up encryption…</button>
-        </>
+        <p className="py-3 text-meta text-muted">
+          Still visible to the server: {PLAINTEXT_FIELDS}. Shared projects are not encrypted, and new projects cannot be shared while
+          encryption is on.
+        </p>
       )}
 
       {mode.kind === 'passphrase' && (
-        <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); p.onSubmitPassphrase(field(e, 'enable-new'), field(e, 'enable-confirm')) }}>
-          <p className="text-sm text-muted">Choose a passphrase you will enter once on each device. Long and memorable beats short and complex.</p>
+        <InlineForm onCancel={idle} onSubmit={(e) => p.onSubmitPassphrase(field(e, 'enable-new'), field(e, 'enable-confirm'))}>
+          <p className="text-meta text-muted">Choose a passphrase you will enter once on each device. Long and memorable beats short and complex.</p>
           <PassphraseFields prefix="enable" />
-          <div className="flex gap-2">
-            <button className="btn-primary" disabled={p.busy}>{p.busy ? 'Deriving keys…' : 'Next'}</button>
-            <button type="button" className="btn-ghost" onClick={() => p.onMode({ kind: 'idle' })}>Cancel</button>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={idle}>Cancel</Button>
+            <Button variant="primary" type="submit" busy={p.busy}>{p.busy ? 'Deriving keys…' : 'Next'}</Button>
           </div>
-        </form>
+        </InlineForm>
       )}
 
       {mode.kind === 'recovery' && (
-        <div className="space-y-3">
+        <div className="space-y-3 py-3">
           <RecoveryKeyBox recoveryKey={mode.recoveryKey} copied={mode.copied} onCopy={p.onCopy} onDownload={p.onDownload} />
-          <label className="flex items-start gap-2 text-sm">
-            <input type="checkbox" className="mt-1" checked={mode.acknowledged} onChange={(e) => p.onAcknowledge(e.target.checked)} />
-            <span>I saved the recovery key. I understand that if I lose both my passphrase and the recovery key, my encrypted content cannot be recovered by anyone, including the server owner.</span>
-          </label>
-          <div className="flex gap-2">
-            <button type="button" className="btn-primary" disabled={!mode.acknowledged || p.busy} onClick={p.onEnable}>{p.busy ? 'Turning on…' : 'Turn on encryption'}</button>
-            <button type="button" className="btn-ghost" onClick={() => p.onMode({ kind: 'idle' })}>Cancel</button>
+          <Checkbox checked={mode.acknowledged} onChange={(e) => p.onAcknowledge(e.target.checked)}
+            label="I saved the recovery key. I understand that if I lose both my passphrase and the recovery key, my encrypted content cannot be recovered by anyone, including the server owner." />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={idle}>Cancel</Button>
+            <Button variant="primary" disabled={!mode.acknowledged || p.busy} onClick={p.onEnable}>{p.busy ? 'Turning on…' : 'Turn on encryption'}</Button>
           </div>
         </div>
       )}
 
-      {state.enabled && mode.kind === 'idle' && (
+      {state.enabled && (mode.kind === 'idle' || mode.kind === 'confirmPurge' || mode.kind === 'confirmDisable' || mode.kind === 'confirmLost') && (
         <>
-          <p className="text-sm text-muted">
-            On{state.unlocked ? ' and unlocked on this device' : ', but this device is locked'} (key version {state.keyVersion}).
-            Encrypted: {ENCRYPTED_FIELDS}. Visible to the server: {PLAINTEXT_FIELDS}.
-            Keep your recovery key safe: without it and your passphrase, encrypted content is lost.
+          <p className="py-3 text-meta text-muted">
+            Encrypted: {ENCRYPTED_FIELDS}. Visible to the server: {PLAINTEXT_FIELDS}. Keep your recovery key safe: without it and your
+            passphrase, encrypted content is lost.
           </p>
-          <div className="flex flex-wrap gap-2">
-            {state.unlocked && <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={() => p.onMode({ kind: 'change' })}>Change passphrase…</button>}
-            <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={() => p.onMode({ kind: 'reset' })}>Reset passphrase with recovery key…</button>
-            <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={() => p.onMode({ kind: 'confirmPurge' })}>Purge plaintext history…</button>
-            {state.unlocked && <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onLock}>Lock this device</button>}
-            {state.unlocked
-              ? <button type="button" className="btn-danger" onClick={() => p.onMode({ kind: 'confirmDisable' })}>Turn off encryption…</button>
-              : <button type="button" className="btn-danger" onClick={() => p.onMode({ kind: 'confirmLost' })}>I lost my passphrase and recovery key…</button>}
-          </div>
+          {state.unlocked && (
+            <SettingRow label="Passphrase" description="Your content is not re-encrypted; other devices keep working."
+              control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'change' })}>Change passphrase…</Button>} />
+          )}
+          <SettingRow label="Forgot your passphrase?" description="Your recovery key sets a new one and is then replaced."
+            control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'reset' })}>Reset passphrase with recovery key…</Button>} />
+          <SettingRow label="Plaintext history" description="Removes earlier versions of encrypted fields from the server's history."
+            control={<Button variant="secondary" onClick={() => p.onMode({ kind: 'confirmPurge' })}>Purge plaintext history…</Button>} />
+          {state.unlocked && (
+            <SettingRow label="This device" description="Asks for your passphrase again before showing your tasks."
+              control={<Button variant="secondary" icon="lock" onClick={p.onLock}>Lock this device</Button>} />
+          )}
+          {state.unlocked ? (
+            <SettingRow label="Turn off encryption" description="Your content is synced in plaintext again."
+              control={<Button variant="danger" onClick={() => p.onMode({ kind: 'confirmDisable' })}>Turn off encryption…</Button>} />
+          ) : (
+            <SettingRow label="Lost both keys?" description="Without your passphrase or recovery key, encrypted content cannot be recovered."
+              control={<Button variant="danger" onClick={() => p.onMode({ kind: 'confirmLost' })}>I lost my passphrase and recovery key…</Button>} />
+          )}
         </>
       )}
 
       {mode.kind === 'change' && (
-        <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); p.onChange(field(e, 'current'), field(e, 'change-new'), field(e, 'change-confirm')) }}>
-          <p className="text-sm text-muted">Your content is not re-encrypted; other devices keep working. New devices use the new passphrase.</p>
-          <label className="block text-sm">Current passphrase
-            <input className="input mt-1" type="password" name="current" autoComplete="current-password" required />
-          </label>
+        <InlineForm onCancel={idle} onSubmit={(e) => p.onChange(field(e, 'current'), field(e, 'change-new'), field(e, 'change-confirm'))}>
+          <p className="text-meta text-muted">Your content is not re-encrypted; other devices keep working. New devices use the new passphrase.</p>
+          <Field label="Current passphrase"><Input type="password" name="current" autoComplete="current-password" required /></Field>
           <PassphraseFields prefix="change" />
-          <div className="flex gap-2">
-            <button className="btn-primary" disabled={p.busy}>{p.busy ? 'Saving…' : 'Change passphrase'}</button>
-            <button type="button" className="btn-ghost" onClick={() => p.onMode({ kind: 'idle' })}>Cancel</button>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={idle}>Cancel</Button>
+            <Button variant="primary" type="submit" busy={p.busy}>{p.busy ? 'Saving…' : 'Change passphrase'}</Button>
           </div>
-        </form>
+        </InlineForm>
       )}
 
       {mode.kind === 'reset' && (
-        <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); p.onReset(field(e, 'recovery'), field(e, 'reset-new'), field(e, 'reset-confirm')) }}>
-          <p className="text-sm text-muted">Forgot the passphrase? Your recovery key sets a new one and is then replaced by a new recovery key.</p>
-          <label className="block text-sm">Recovery key
-            <input className="input mt-1 font-mono" name="recovery" autoComplete="off" spellCheck={false} required />
-          </label>
+        <InlineForm onCancel={idle} onSubmit={(e) => p.onReset(field(e, 'recovery'), field(e, 'reset-new'), field(e, 'reset-confirm'))}>
+          <p className="text-meta text-muted">Forgot the passphrase? Your recovery key sets a new one and is then replaced by a new recovery key.</p>
+          <Field label="Recovery key"><Input className="font-mono" name="recovery" autoComplete="off" spellCheck={false} required /></Field>
           <PassphraseFields prefix="reset" />
-          <div className="flex gap-2">
-            <button className="btn-primary" disabled={p.busy}>{p.busy ? 'Checking…' : 'Reset passphrase'}</button>
-            <button type="button" className="btn-ghost" onClick={() => p.onMode({ kind: 'idle' })}>Cancel</button>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={idle}>Cancel</Button>
+            <Button variant="primary" type="submit" busy={p.busy}>{p.busy ? 'Checking…' : 'Reset passphrase'}</Button>
           </div>
-        </form>
+        </InlineForm>
       )}
 
       {mode.kind === 'newRecovery' && (
-        <div className="space-y-3">
-          <p className="text-sm">Passphrase reset. Your old recovery key no longer works.</p>
+        <div className="space-y-3 py-3">
+          <Notice tone="success">Passphrase reset. Your old recovery key no longer works.</Notice>
           <RecoveryKeyBox recoveryKey={mode.recoveryKey} copied={mode.copied} onCopy={p.onCopy} onDownload={p.onDownload} />
-          <button type="button" className="btn-primary" onClick={() => p.onMode({ kind: 'idle' })}>I saved it</button>
+          <div className="flex justify-end"><Button variant="primary" onClick={idle}>I saved it</Button></div>
         </div>
       )}
 
       {mode.kind === 'confirmPurge' && (
-        <div className="space-y-2">
-          <p className="text-sm">
-            Deletes earlier (superseded) versions of your titles, descriptions and names from the server's history, including any
-            plaintext from before encryption was on. Revision history for those fields is gone afterwards. Backups made before now,
-            and copies of the database, may still contain plaintext: delete them if that matters to you.
-          </p>
-          <div className="flex gap-2">
-            <button type="button" className="btn-danger" disabled={p.busy} onClick={p.onPurge}>{p.busy ? 'Purging…' : 'Purge history'}</button>
-            <button type="button" className="btn-ghost" onClick={() => p.onMode({ kind: 'idle' })}>Cancel</button>
-          </div>
-        </div>
+        <ConfirmDialog title="Purge plaintext history?" confirmLabel={p.busy ? 'Purging…' : 'Purge history'} onCancel={idle} onConfirm={p.onPurge}
+          consequence="Deletes earlier (superseded) versions of your titles, descriptions and names from the server's history, including any plaintext from before encryption was on. Revision history for those fields is gone afterwards. Backups made before now, and copies of the database, may still contain plaintext: delete them if that matters to you." />
       )}
 
       {mode.kind === 'confirmDisable' && (
-        <div className="space-y-2">
-          <p className="text-sm">Your content is decrypted on this device and synced in plaintext again; the key record is deleted from the server. You will be asked to confirm your password.</p>
-          <div className="flex gap-2">
-            <button type="button" className="btn-danger" disabled={p.busy} onClick={p.onDisable}>{p.busy ? 'Turning off…' : 'Turn off encryption'}</button>
-            <button type="button" className="btn-ghost" onClick={() => p.onMode({ kind: 'idle' })}>Cancel</button>
-          </div>
-        </div>
+        <ConfirmDialog title="Turn off encryption?" confirmLabel={p.busy ? 'Turning off…' : 'Turn off encryption'} onCancel={idle} onConfirm={p.onDisable}
+          consequence="Your content is decrypted on this device and synced in plaintext again; the key record is deleted from the server. You will be asked to confirm your password." />
       )}
 
-      {mode.kind === 'confirmLost' && <LostKeysConfirm busy={p.busy} onConfirm={p.onLost} onCancel={() => p.onMode({ kind: 'idle' })} />}
-    </section>
+      {mode.kind === 'confirmLost' && (
+        <Dialog title="Lost both keys" onClose={idle} dismissable={false} role="alertdialog">
+          <LostKeysConfirm busy={p.busy} onConfirm={p.onLost} onCancel={idle} />
+        </Dialog>
+      )}
+    </SettingsSection>
   )
 }
 

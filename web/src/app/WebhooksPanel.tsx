@@ -1,6 +1,20 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { HelpHeading } from './help/HelpLink'
-import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { Button } from '../ui/Button'
+import { Badge } from '../ui/Card'
+import { Field, Input, Select } from '../ui/Field'
+import { Icon } from '../ui/Icon'
+import { MenuGroup, MenuItem, MenuSeparator } from '../ui/Menu'
+import { ConfirmDialog } from '../ui/patterns/ConfirmDialog'
+import { EmptyState } from '../ui/patterns/EmptyState'
+import { ListRow } from '../ui/patterns/ListRow'
+import { Notice } from '../ui/patterns/Notice'
+import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Checkbox, Switch } from '../ui/Switch'
+import type { HueName } from '../ui/tokens/palette'
+import { Dialog } from './overlay/Dialog'
+import { Menu } from './overlay/Menu'
+import { SecretReveal } from './TokensSection'
 import { api, isNetworkError } from '../lib/api'
 import { db } from '../lib/db'
 import { useOnline } from '../lib/online'
@@ -9,6 +23,7 @@ import {
   cacheWebhooks, deliveryOutcome, describeWebhookError, insecureTarget, loadCachedWebhooks,
   toggleEvent, WEBHOOK_EVENTS, webhookStatus, type WebhookTone,
 } from '../lib/webhooks'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 export interface WebhookDraft {
   /** null when creating a new webhook. */
@@ -31,14 +46,12 @@ export interface WebhooksViewProps {
   busy: boolean
   error: string | null
   draft: WebhookDraft | null
-  /** Secret of the webhook just created; shown once, until dismissed. */
+  /** Secret of the webhook just created; shown once in the dialog's success step. */
   secret: { webhookId: string; value: string } | null
-  copied: boolean
   testResults: Record<string, { ok: boolean; text: string }>
   log: { webhookId: string; deliveries: WebhookDelivery[] | null } | null
   onDraftChange: (d: WebhookDraft | null) => void
   onSave: () => void
-  onCopySecret: () => void
   onDismissSecret: () => void
   onToggleEnabled: (h: Webhook) => void
   onTest: (h: Webhook) => void
@@ -49,215 +62,80 @@ export interface WebhooksViewProps {
   onPolicyChange: (allow: boolean) => void
 }
 
-const TONE: Record<WebhookTone, string> = {
-  ok: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
-  warn: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
-  off: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-}
-
-const DELIVERY_TONE: Record<WebhookDelivery['status'], string> = {
-  delivered: TONE.ok,
-  pending: TONE.off,
-  retry: TONE.warn,
-  failed: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200',
-}
+const TONE: Record<WebhookTone, HueName> = { ok: 'green', warn: 'orange', off: 'slate' }
+const DELIVERY_TONE: Record<WebhookDelivery['status'], HueName> = { delivered: 'green', pending: 'slate', retry: 'orange', failed: 'red' }
 
 /** Pure rendering of the Webhooks section; all state lives in WebhooksPanel. */
 export function WebhooksView(p: WebhooksViewProps) {
+  const dt = useDateTimeFormat()
   const disabled = !p.connected || p.busy
   const projectName = (id: string | null) => (id ? p.projects.find((x) => x.id === id)?.name ?? 'Unknown project' : 'All projects')
-
-  function onDialogKey(e: KeyboardEvent<HTMLElement>, close: () => void) {
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      close()
-    }
-  }
-
-  function submit(e: FormEvent) {
-    e.preventDefault()
-    p.onSave()
-  }
-
   const draft = p.draft
+  const close = () => (p.secret ? p.onDismissSecret() : p.onDraftChange(null))
+  const add = <Button variant="primary" size="sm" icon="plus" disabled={disabled} onClick={() => p.onDraftChange(emptyDraft())}>Add webhook</Button>
   return (
-    <section className="space-y-3" aria-labelledby="webhooks-heading">
-      <HelpHeading screen="settings/webhooks" id="webhooks-heading" className="font-semibold">Webhooks</HelpHeading>
-      <p className="text-sm text-muted">
-        Notify Home Assistant, n8n or any HTTP endpoint when your tasks and projects change. Each request is signed with the
-        webhook's secret; see docs/webhooks.md for how to verify it.
-      </p>
-
+    <SettingsSection title="Webhooks" helpId="settings/webhooks" headingId="webhooks-heading" testId="webhooks-panel"
+      description="Notify Home Assistant, n8n or any HTTP endpoint when your tasks and projects change. Each request is signed with the webhook's secret."
+      actions={add}>
       {!p.connected && (
-        <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200" role="status">
-          You are offline. Webhooks are delivered by the server, so changing or testing them requires a connection. The list below is the last one fetched.
-        </p>
+        <Notice>You are offline. Webhooks are delivered by the server, so changing or testing them requires a connection. The list below is the last one fetched.</Notice>
       )}
-
       {p.isOwner && (
-        <label className="flex items-start gap-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
-          <input
-            type="checkbox"
-            className="mt-0.5"
-            checked={p.allowPrivate === true}
-            disabled={disabled || p.allowPrivate === null}
-            onChange={(e) => p.onPolicyChange(e.target.checked)}
-          />
-          <span>
-            <span className="font-medium">Allow private network targets</span>
-            <span className="block text-muted">
-              Owner setting for everyone on this server. Needed when a receiver runs on your LAN or this machine (for example Home Assistant at 192.168.x.x). Leave off on a public server.
-            </span>
-          </span>
-        </label>
+        <SettingRow label="Allow private network targets"
+          description="For everyone on this server. Needed when a receiver runs on your LAN or this machine, for example Home Assistant at 192.168.x.x. Leave off on a public server."
+          control={<Switch checked={p.allowPrivate === true} disabled={disabled || p.allowPrivate === null} onChange={p.onPolicyChange} label="Allow private network targets" hideLabel />} />
       )}
+      {p.error && !draft && !p.secret && <Notice tone="danger">{p.error}</Notice>}
 
-      {p.secret && (
-        <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm dark:border-emerald-800 dark:bg-emerald-950" role="status">
-          <p className="mb-1 font-medium">Copy this signing secret now. It will not be shown again.</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <code className="break-all" tabIndex={0} data-testid="webhook-secret">{p.secret.value}</code>
-            <button type="button" className="btn-ghost border border-emerald-300 text-xs dark:border-emerald-700" onClick={p.onCopySecret}>
-              {p.copied ? 'Copied' : 'Copy secret'}
-            </button>
-            <button type="button" className="btn-ghost text-xs" onClick={p.onDismissSecret}>Done</button>
-          </div>
-        </div>
-      )}
-      {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
-
-      {draft ? (
-        <form
-          role="dialog"
-          aria-labelledby="webhook-form-heading"
-          onSubmit={submit}
-          onKeyDown={(e) => onDialogKey(e, () => p.onDraftChange(null))}
-          className="space-y-3 rounded-md border border-slate-200 p-3 dark:border-slate-800"
-        >
-          <h3 id="webhook-form-heading" className="text-sm font-semibold">{draft.id ? 'Edit webhook' : 'New webhook'}</h3>
-          <label className="block text-sm">
-            <span className="mb-1 block text-slate-600 dark:text-slate-300">Target URL</span>
-            <input
-              className="input"
-              type="url"
-              required
-              autoFocus
-              placeholder="https://n8n.example.com/webhook/…"
-              value={draft.url}
-              onChange={(e) => p.onDraftChange({ ...draft, url: e.target.value })}
-              disabled={disabled}
-            />
-          </label>
-          {insecureTarget(draft.url) && (
-            <p className="text-xs text-amber-700 dark:text-amber-300" role="note">
-              This is a plain http:// address: task content will travel unencrypted. Prefer https:// unless the receiver is on a network you trust.
-            </p>
-          )}
-          <fieldset className="text-sm">
-            <legend className="mb-1 text-slate-600 dark:text-slate-300">Events</legend>
-            <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-              {WEBHOOK_EVENTS.map(({ event, label }) => (
-                <label key={event} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={draft.events.includes(event)}
-                    onChange={() => p.onDraftChange({ ...draft, events: toggleEvent(draft.events, event) })}
-                    disabled={disabled}
-                  />
-                  {label} <code className="text-xs text-faint">{event}</code>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <label className="block text-sm">
-            <span className="mb-1 block text-slate-600 dark:text-slate-300">Only for project</span>
-            <select
-              className="input max-w-xs"
-              value={draft.projectId ?? ''}
-              onChange={(e) => p.onDraftChange({ ...draft, projectId: e.target.value || null })}
-              disabled={disabled}
-            >
-              <option value="">All projects</option>
-              {p.projects.map((pr) => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
-            </select>
-          </label>
-          {draft.id && (
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={draft.enabled} onChange={(e) => p.onDraftChange({ ...draft, enabled: e.target.checked })} disabled={disabled} />
-              Enabled
-            </label>
-          )}
-          <div className="flex gap-2">
-            <button className="btn-primary" disabled={disabled || draft.events.length === 0 || !draft.url.trim()}>
-              {p.busy ? 'Saving…' : draft.id ? 'Save' : 'Create webhook'}
-            </button>
-            <button type="button" className="btn-ghost" onClick={() => p.onDraftChange(null)}>Cancel</button>
-          </div>
-        </form>
-      ) : (
-        <button type="button" className="btn-primary" disabled={disabled} onClick={() => p.onDraftChange(emptyDraft())}>Add webhook</button>
-      )}
-
-      <ul className="divide-y divide-slate-200 dark:divide-slate-800" aria-label="Webhooks">
+      <div className="py-2">
+        {p.webhooks && p.webhooks.length === 0 && (
+          <EmptyState icon="link" title="No webhooks yet" body="Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change." />
+        )}
+        {p.webhooks === null && <p className="py-2 text-meta text-faint">{p.connected ? 'Loading…' : 'Nothing fetched yet.'}</p>}
         {p.webhooks?.map((h) => {
           const st = webhookStatus(h)
           const result = p.testResults[h.id]
+          const logOpen = p.log?.webhookId === h.id
           return (
-            <li key={h.id} className="space-y-1 py-2 text-sm">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${TONE[st.tone]}`}>{st.label}</span>
-                <span className="min-w-0 flex-1 truncate font-mono text-xs" title={h.url}>{h.url}</span>
-              </div>
-              <p className="text-xs text-muted">
-                {h.events.join(', ')} · {projectName(h.projectId)}
-              </p>
-              <div className="flex flex-wrap gap-1">
-                <button type="button" className="btn-ghost text-xs" disabled={disabled} onClick={() => p.onTest(h)}>Send test</button>
-                <button type="button" className="btn-ghost text-xs" onClick={() => p.onOpenLog(p.log?.webhookId === h.id ? null : h)} aria-expanded={p.log?.webhookId === h.id}>
-                  Delivery log
-                </button>
-                <button
-                  type="button"
-                  className="btn-ghost text-xs"
-                  disabled={disabled}
-                  onClick={() => p.onDraftChange({ id: h.id, url: h.url, events: h.events, projectId: h.projectId, enabled: h.enabled })}
-                >
-                  Edit
-                </button>
-                <button type="button" className="btn-ghost text-xs" disabled={disabled} onClick={() => p.onToggleEnabled(h)}>
-                  {h.enabled ? 'Disable' : 'Enable'}
-                </button>
-                <button type="button" className="btn-danger text-xs" disabled={disabled} onClick={() => p.onDelete(h)}>Delete</button>
-              </div>
-              {result && (
-                <p className={`text-xs ${result.ok ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-600 dark:text-red-400'}`} role="status">
-                  {result.text}
-                </p>
-              )}
-              {p.log?.webhookId === h.id && (
-                <div
-                  className="rounded-md border border-slate-200 p-2 dark:border-slate-800"
-                  role="region"
-                  aria-label="Delivery log"
-                  onKeyDown={(e) => onDialogKey(e, () => p.onOpenLog(null))}
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted">Last 100 deliveries</span>
-                    <button type="button" className="btn-ghost text-xs" disabled={!p.connected} onClick={p.onRefreshLog}>Refresh</button>
+            <div key={h.id} className="-mx-3 space-y-1">
+              <ListRow leading={<Icon name="link" size="md" />} ariaLabel={h.url}
+                label={<span className="block truncate font-mono text-meta" title={h.url}>{h.url}</span>}
+                meta={`${h.events.join(', ')} · ${projectName(h.projectId)}`}
+                badges={<Badge hue={TONE[st.tone]}>{st.label}</Badge>}
+                menu={(
+                  <Menu label={`Actions for webhook ${h.url}`} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
+                    <MenuGroup>
+                      <MenuItem label="Send test" icon="send" disabled={disabled} onSelect={() => p.onTest(h)} />
+                      <MenuItem label={logOpen ? 'Hide delivery log' : 'Delivery log'} icon="history" onSelect={() => p.onOpenLog(logOpen ? null : h)} />
+                      <MenuItem label="Edit" icon="pencil" disabled={disabled}
+                        onSelect={() => p.onDraftChange({ id: h.id, url: h.url, events: h.events, projectId: h.projectId, enabled: h.enabled })} />
+                      <MenuItem label={h.enabled ? 'Disable' : 'Enable'} icon={h.enabled ? 'eye-off' : 'eye'} disabled={disabled} onSelect={() => p.onToggleEnabled(h)} />
+                    </MenuGroup>
+                    <MenuSeparator />
+                    <MenuItem label="Delete" icon="trash-2" danger disabled={disabled} onSelect={() => p.onDelete(h)} />
+                  </Menu>
+                )} />
+              {result && <div className="px-3"><Notice tone={result.ok ? 'success' : 'danger'}>{result.text}</Notice></div>}
+              {logOpen && p.log && (
+                <div className="mx-3 rounded-control border border-default p-3" role="region" aria-label="Delivery log"
+                  onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); p.onOpenLog(null) } }}>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-meta font-medium text-muted">Last 100 deliveries</span>
+                    <Button size="sm" variant="ghost" icon="rotate-ccw" disabled={!p.connected} onClick={p.onRefreshLog}>Refresh</Button>
                   </div>
-                  {p.log.deliveries === null && <p className="text-xs text-faint">Loading…</p>}
-                  {p.log.deliveries?.length === 0 && <p className="text-xs text-faint">No deliveries yet.</p>}
-                  <ul className="space-y-1">
+                  {p.log.deliveries === null && <p className="text-meta text-faint">Loading…</p>}
+                  {p.log.deliveries?.length === 0 && <p className="text-meta text-faint">No deliveries yet.</p>}
+                  <ul className="space-y-2">
                     {p.log.deliveries?.map((d) => (
-                      <li key={d.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-                        <span className={`rounded px-1 py-0.5 font-medium ${DELIVERY_TONE[d.status]}`}>{d.status}</span>
-                        <code>{d.event}</code>
-                        <span className="text-faint">{new Date(d.createdAt).toLocaleString()}</span>
+                      <li key={d.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta">
+                        <Badge hue={DELIVERY_TONE[d.status]}>{d.status}</Badge>
+                        <code className="text-default">{d.event}</code>
+                        <span className="text-faint">{dt.formatInstant(d.createdAt, 'datetime')}</span>
                         <span className="text-muted">
                           {d.attempts} attempt{d.attempts === 1 ? '' : 's'}{deliveryOutcome(d) ? ` · ${deliveryOutcome(d)}` : ''}
                         </span>
                         {(d.status === 'delivered' || d.status === 'failed') && (
-                          <button type="button" className="btn-ghost px-2 py-0.5 text-xs" disabled={disabled} onClick={() => p.onRedeliver(d)}>Redeliver</button>
+                          <Button size="sm" variant="ghost" disabled={disabled} onClick={() => p.onRedeliver(d)}>Redeliver</Button>
                         )}
                         {d.responseExcerpt && (
                           <details className="w-full">
@@ -270,14 +148,59 @@ export function WebhooksView(p: WebhooksViewProps) {
                   </ul>
                 </div>
               )}
-            </li>
+            </div>
           )
         })}
-        {p.webhooks && p.webhooks.length === 0 && <li className="py-2 text-sm text-faint">No webhooks yet. Nothing is sent until you add one.</li>}
-        {p.webhooks === null && <li className="py-2 text-sm text-faint">{p.connected ? 'Loading…' : 'Nothing fetched yet.'}</li>}
-      </ul>
-      <p className="text-xs text-faint">Keyboard: <span className="kbd">Tab</span> reaches every action, <span className="kbd">Esc</span> closes the form or the delivery log.</p>
-    </section>
+      </div>
+
+      {(draft || p.secret) && (
+        <Dialog title={p.secret ? 'Webhook created' : draft?.id ? 'Edit webhook' : 'New webhook'} onClose={close} size="lg">
+          {p.secret ? (
+            <div className="space-y-4">
+              <SecretReveal what="signing secret" secret={p.secret.value} testId="webhook-secret" />
+              <p className="text-meta text-muted">Your receiver uses it to check that requests come from your server; see the webhooks guide.</p>
+              <div className="flex justify-end"><Button variant="primary" onClick={p.onDismissSecret}>Done</Button></div>
+            </div>
+          ) : draft && (
+            <form className="space-y-4" onSubmit={(e: FormEvent) => { e.preventDefault(); p.onSave() }}>
+              <Field label="Target URL">
+                <Input type="url" required data-autofocus placeholder="https://n8n.example.com/webhook/…" value={draft.url}
+                  onChange={(e) => p.onDraftChange({ ...draft, url: e.target.value })} disabled={disabled} />
+              </Field>
+              {insecureTarget(draft.url) && (
+                <Notice tone="warning">This is a plain http:// address: task content will travel unencrypted. Prefer https:// unless the receiver is on a network you trust.</Notice>
+              )}
+              <fieldset>
+                <legend className="mb-2 text-sm font-medium text-default">Events</legend>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {WEBHOOK_EVENTS.map(({ event, label }) => (
+                    <Checkbox key={event} checked={draft.events.includes(event)} disabled={disabled}
+                      onChange={() => p.onDraftChange({ ...draft, events: toggleEvent(draft.events, event) })}
+                      label={label} description={event} />
+                  ))}
+                </div>
+              </fieldset>
+              <Field label="Only for project">
+                <Select value={draft.projectId ?? ''} onChange={(e) => p.onDraftChange({ ...draft, projectId: e.target.value || null })} disabled={disabled}>
+                  <option value="">All projects</option>
+                  {p.projects.map((pr) => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
+                </Select>
+              </Field>
+              {draft.id && (
+                <Checkbox checked={draft.enabled} onChange={(e) => p.onDraftChange({ ...draft, enabled: e.target.checked })} disabled={disabled} label="Enabled" />
+              )}
+              {p.error && <Notice tone="danger">{p.error}</Notice>}
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => p.onDraftChange(null)}>Cancel</Button>
+                <Button variant="primary" type="submit" busy={p.busy} disabled={disabled || draft.events.length === 0 || !draft.url.trim()}>
+                  {draft.id ? 'Save' : 'Create webhook'}
+                </Button>
+              </div>
+            </form>
+          )}
+        </Dialog>
+      )}
+    </SettingsSection>
   )
 }
 
@@ -291,7 +214,7 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
   const [error, setError] = useState<string | null>(null)
   const [draft, setDraft] = useState<WebhookDraft | null>(null)
   const [secret, setSecret] = useState<{ webhookId: string; value: string } | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [deleting, setDeleting] = useState<Webhook | null>(null)
   const [testResults, setTestResults] = useState<Record<string, { ok: boolean; text: string }>>({})
   const [log, setLog] = useState<{ webhookId: string; deliveries: WebhookDelivery[] | null } | null>(null)
   const projects = useLiveQuery(
@@ -351,7 +274,7 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
 
   const props: WebhooksViewProps = {
     isOwner, connected, webhooks, projects: projects.map((pr) => ({ id: pr.id, name: pr.name })), allowPrivate, busy, error,
-    draft, secret, copied, testResults, log,
+    draft, secret, testResults, log,
     onDraftChange: (d) => {
       setDraft(d)
       if (d) setError(null)
@@ -364,22 +287,11 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
       } else {
         const res = await api.createWebhook(input)
         if (res.webhook.secret) setSecret({ webhookId: res.webhook.id, value: res.webhook.secret })
-        setCopied(false)
       }
       setDraft(null)
       await load()
     }),
-    onCopySecret: () => {
-      if (!secret) return
-      navigator.clipboard.writeText(secret.value).then(
-        () => setCopied(true),
-        () => setError('Could not access the clipboard; select the secret and copy it manually.'),
-      )
-    },
-    onDismissSecret: () => {
-      setSecret(null)
-      setCopied(false)
-    },
+    onDismissSecret: () => setSecret(null),
     onToggleEnabled: (h) => void run(async () => {
       await api.updateWebhook(h.id, { enabled: !h.enabled })
       await load()
@@ -391,14 +303,7 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
       setTestResults((r) => ({ ...r, [h.id]: { ok: res.ok, text: res.ok ? `Ping delivered: ${outcome}` : `Ping failed: ${outcome}` } }))
       if (log?.webhookId === h.id) await loadLog(h.id)
     }),
-    onDelete: (h) => {
-      if (!window.confirm(`Delete the webhook to ${h.url}? Its delivery log is deleted too.`)) return
-      void run(async () => {
-        await api.deleteWebhook(h.id)
-        if (log?.webhookId === h.id) setLog(null)
-        await load()
-      })
-    },
+    onDelete: setDeleting,
     onOpenLog: (h) => {
       if (!h) setLog(null)
       else void loadLog(h.id)
@@ -414,5 +319,19 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
       setAllowPrivate((await api.setWebhookPolicy(allow)).allowPrivate)
     }),
   }
-  return <WebhooksView {...props} />
+  return (
+    <>
+      <WebhooksView {...props} />
+      {deleting && (
+        <ConfirmDialog title="Delete this webhook?" confirmLabel="Delete webhook"
+          consequence={<>Nothing more is sent to <span className="user-text font-mono text-meta">{deleting.url}</span>, and its delivery log is deleted too.</>}
+          onConfirm={async () => {
+            await api.deleteWebhook(deleting.id)
+            if (log?.webhookId === deleting.id) setLog(null)
+            await load()
+          }}
+          onCancel={() => setDeleting(null)} />
+      )}
+    </>
+  )
 }

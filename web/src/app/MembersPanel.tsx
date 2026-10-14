@@ -1,8 +1,21 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import type { Invitation, InvitationStatus } from '../lib/types'
+import { Badge } from '../ui/Card'
+import { Button } from '../ui/Button'
+import { Field, Input, Select } from '../ui/Field'
+import { Icon } from '../ui/Icon'
+import { MenuItem, MenuSeparator } from '../ui/Menu'
+import { ConfirmDialog } from '../ui/patterns/ConfirmDialog'
+import { EmptyState } from '../ui/patterns/EmptyState'
+import { ListRow } from '../ui/patterns/ListRow'
+import { Notice } from '../ui/patterns/Notice'
+import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import type { HueName } from '../ui/tokens/palette'
+import { Dialog } from './overlay/Dialog'
+import { Menu } from './overlay/Menu'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 const EXPIRY_OPTIONS: [number, string][] = [
   [1, '1 hour'],
@@ -12,11 +25,11 @@ const EXPIRY_OPTIONS: [number, string][] = [
   [720, '30 days'],
 ]
 
-const BADGE: Record<InvitationStatus, string> = {
-  pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
-  accepted: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
-  expired: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  revoked: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200',
+const STATUS: Record<InvitationStatus, { label: string; hue: HueName }> = {
+  pending: { label: 'Pending', hue: 'yellow' },
+  accepted: { label: 'Accepted', hue: 'green' },
+  expired: { label: 'Expired', hue: 'slate' },
+  revoked: { label: 'Revoked', hue: 'red' },
 }
 
 /**
@@ -29,13 +42,13 @@ export function MembersPanel() {
   const [invitations, setInvitations] = useState<Invitation[] | null>(null)
   const [unreachable, setUnreachable] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [email, setEmail] = useState('')
-  const [hours, setHours] = useState(168)
+  const [dialogError, setDialogError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   // Links are only ever known in the session that created them (the server keeps a hash).
   const [links, setLinks] = useState<Record<string, string>>({})
-  const [latest, setLatest] = useState<string | null>(null)
+  const [creating, setCreating] = useState<{ id: string | null } | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
+  const [revoking, setRevoking] = useState<Invitation | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -51,22 +64,18 @@ export function MembersPanel() {
     if (online) void load()
   }, [online, load])
 
-  const disabled = !online || unreachable || busy
-
-  async function create(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
+  async function create({ email, hours }: { email: string; hours: number }) {
+    setDialogError(null)
     setBusy(true)
     try {
       const input: { email?: string; expiresInHours: number } = { expiresInHours: hours }
       if (email.trim()) input.email = email.trim()
       const res = await api.createInvitation(input)
       setLinks((prev) => ({ ...prev, [res.invitation.id]: res.link }))
-      setLatest(res.invitation.id)
-      setEmail('')
+      setCreating({ id: res.invitation.id })
       await load()
     } catch (err) {
-      setError(describe(err))
+      setDialogError(describe(err))
     } finally {
       setBusy(false)
     }
@@ -85,7 +94,6 @@ export function MembersPanel() {
   }
 
   async function revoke(inv: Invitation) {
-    if (!window.confirm(`Revoke the invitation${inv.email ? ` for ${inv.email}` : ''}? The link will stop working.`)) return
     setError(null)
     try {
       await api.revokeInvitation(inv.id)
@@ -95,94 +103,150 @@ export function MembersPanel() {
     }
   }
 
-  function onRowKey(e: KeyboardEvent<HTMLLIElement>, inv: Invitation) {
+  const offline = !online || unreachable
+  return (
+    <>
+      <MembersView invitations={invitations} offline={offline} busy={busy} error={error} links={links} copied={copied}
+        onNew={() => { setDialogError(null); setCreating({ id: null }) }} onCopy={(id) => void copy(id)} onRevoke={setRevoking} />
+      {creating && (
+        <NewInvitationDialog busy={busy} offline={offline} error={dialogError}
+          link={creating.id ? links[creating.id] ?? null : null} copied={!!creating.id && copied === creating.id}
+          onCreate={(input) => void create(input)} onCopy={() => { if (creating.id) void copy(creating.id) }} onClose={() => setCreating(null)} />
+      )}
+      {revoking && (
+        <ConfirmDialog title={`Revoke the invitation${revoking.email ? ` for ${revoking.email}` : ''}?`} confirmLabel="Revoke"
+          consequence="The link stops working. Nobody can create an account with it." onConfirm={() => revoke(revoking)} onCancel={() => setRevoking(null)} />
+      )}
+    </>
+  )
+}
+
+export interface MembersViewProps {
+  invitations: Invitation[] | null
+  /** No connection or the server unreachable. */
+  offline: boolean
+  busy: boolean
+  error: string | null
+  /** Links created in this session, by invitation id (the server keeps only a hash). */
+  links: Record<string, string>
+  copied: string | null
+  onNew: () => void
+  onCopy: (id: string) => void
+  onRevoke: (inv: Invitation) => void
+}
+
+/** Pure rendering of the Members section. */
+export function MembersView(p: MembersViewProps) {
+  const dt = useDateTimeFormat()
+  const disabled = p.offline || p.busy
+  const pending = p.invitations?.filter((i) => i.status === 'pending').length ?? 0
+
+  function onRowKey(e: KeyboardEvent<HTMLElement>, inv: Invitation) {
     if (e.target !== e.currentTarget) return
-    if (e.key === 'Enter' && links[inv.id] && inv.status === 'pending') {
+    if (e.key === 'Enter' && p.links[inv.id] && inv.status === 'pending') {
       e.preventDefault()
-      void copy(inv.id)
+      p.onCopy(inv.id)
     }
     if ((e.key === 'Delete' || e.key === 'Backspace') && inv.status === 'pending' && !disabled) {
       e.preventDefault()
-      void revoke(inv)
+      p.onRevoke(inv)
     }
   }
 
-  const latestLink = latest ? links[latest] : null
-
   return (
-    <section className="space-y-3" aria-labelledby="members-heading">
-      <HelpHeading screen="settings/members" id="members-heading" className="font-semibold">Members</HelpHeading>
-      <p className="text-sm text-muted">
-        Invite someone with a single-use link. Sign-up stays closed for everyone else. Optionally bind the link to their email so only they can use it.
-      </p>
+    <SettingsSection title="Members" helpId="settings/members" headingId="members-heading"
+      description="Invite someone with a single-use link. Sign-up stays closed for everyone else.">
+      {p.offline && <Notice>You are offline. Invitations live on the server, so creating and revoking need a connection. The list below is the last one fetched.</Notice>}
+      <SettingRow label="Invitations" status={p.invitations ? <span data-testid="invitations-summary">{pending} pending</span> : undefined}
+        description="Optionally bind a link to someone's email so only they can use it."
+        control={<Button variant="primary" icon="plus" disabled={disabled} onClick={p.onNew}>New invitation</Button>} />
+      {p.error && <Notice tone="danger">{p.error}</Notice>}
 
-      {(!online || unreachable) && (
-        <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200" role="status">
-          You are offline. Invitations live on the server, so creating and revoking need a connection. The list below is the last one fetched.
-        </p>
+      {p.invitations && p.invitations.length > 0 && (
+        <ul className="-mx-3 py-2" aria-label="Invitations">
+          {p.invitations.map((inv) => {
+            const who = inv.email ?? 'Anyone with the link'
+            const canCopy = !!p.links[inv.id] && inv.status === 'pending'
+            return (
+              <li key={inv.id} data-invitation={inv.id}>
+                <ListRow
+                  leading={<Icon name={inv.status === 'accepted' ? 'user-check' : 'link'} size="md" />}
+                  label={<>{who}{inv.acceptedBy && <span className="text-muted"> · joined as {inv.acceptedBy.name || inv.acceptedBy.email}</span>}</>}
+                  ariaLabel={`Invitation ${inv.email ?? 'open'}, ${inv.status}`}
+                  meta={`${inv.status === 'pending' ? `Expires ${dt.formatInstant(inv.expiresAt, 'datetime')}` : `Created ${dt.formatInstant(inv.createdAt, 'date')}`}${inv.createdByName ? ` · by ${inv.createdByName}` : ''}`}
+                  badges={<Badge hue={STATUS[inv.status].hue}>{STATUS[inv.status].label}</Badge>}
+                  onKeyDown={(e) => onRowKey(e, inv)}
+                  menu={inv.status === 'pending' && (
+                    <Menu label={`Actions for the invitation ${who}`} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
+                      {canCopy && <MenuItem label={p.copied === inv.id ? 'Copied' : 'Copy link'} icon="copy" shortcut="Enter" onSelect={() => p.onCopy(inv.id)} />}
+                      {canCopy && <MenuSeparator />}
+                      <MenuItem label="Revoke" icon="x" shortcut="Del" danger disabled={disabled} onSelect={() => p.onRevoke(inv)} />
+                    </Menu>
+                  )}
+                />
+              </li>
+            )
+          })}
+        </ul>
       )}
+      {p.invitations && p.invitations.length === 0 && (
+        <EmptyState icon="link" title="No invitations yet" body="An invitation is a single-use link that lets one person create an account here."
+          action={<Button variant="secondary" icon="plus" disabled={disabled} onClick={p.onNew}>New invitation</Button>} />
+      )}
+      {p.invitations === null && <p className="py-2 text-meta text-faint">{p.offline ? 'Nothing fetched yet.' : 'Loading…'}</p>}
+      <p className="pt-2 text-meta text-faint">Keyboard: focus a row, <span className="kbd">Enter</span> copies a link created in this session, <span className="kbd">Delete</span> revokes a pending invitation.</p>
+    </SettingsSection>
+  )
+}
 
-      <form onSubmit={(e) => void create(e)} className="flex flex-wrap items-end gap-2">
-        <label className="block text-sm">
-          <span className="mb-1 block text-slate-600 dark:text-slate-300">Email <span className="text-faint">(optional)</span></span>
-          <input className="input w-64" type="email" placeholder="friend@example.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={disabled} autoComplete="off" />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block text-slate-600 dark:text-slate-300">Expires in</span>
-          <select className="input w-36" value={hours} onChange={(e) => setHours(Number(e.target.value))} disabled={disabled}>
-            {EXPIRY_OPTIONS.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
-          </select>
-        </label>
-        <button className="btn-primary" disabled={disabled}>{busy ? 'Creating…' : 'Create invitation'}</button>
-      </form>
-
-      {latestLink && latest && (
-        <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm dark:border-emerald-800 dark:bg-emerald-950" role="status">
-          <p className="mb-1 font-medium">Copy this link now. It will not be shown again.</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <code className="break-all" onFocus={(e) => window.getSelection()?.selectAllChildren(e.currentTarget)} tabIndex={0}>{latestLink}</code>
-            <button type="button" className="btn-ghost border border-emerald-300 text-xs dark:border-emerald-700" onClick={() => void copy(latest)}>
-              {copied === latest ? 'Copied' : 'Copy link'}
-            </button>
+/** The "New invitation" dialog: the form, then the one-time link with a copy action. */
+export function NewInvitationDialog({ busy, offline, error, link, copied, onCreate, onCopy, onClose }: {
+  busy: boolean
+  offline: boolean
+  error: string | null
+  /** Set once created: shown in the same dialog, once. */
+  link: string | null
+  copied: boolean
+  onCreate: (input: { email: string; hours: number }) => void
+  onCopy: () => void
+  onClose: () => void
+}) {
+  const [email, setEmail] = useState('')
+  const [hours, setHours] = useState(168)
+  function submit(e: FormEvent) {
+    e.preventDefault()
+    onCreate({ email, hours })
+  }
+  return (
+    <Dialog title={link ? 'Invitation created' : 'New invitation'} onClose={onClose} size="md" dismissable={!link}>
+      {link ? (
+        <div className="space-y-4">
+          <Notice tone="success">Copy this link now. It will not be shown again.</Notice>
+          <code className="block break-all rounded-control bg-sunken p-3 text-meta text-default" tabIndex={0}
+            onFocus={(e) => window.getSelection()?.selectAllChildren(e.currentTarget)}>{link}</code>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" icon="copy" onClick={onCopy}>{copied ? 'Copied' : 'Copy link'}</Button>
+            <Button variant="primary" onClick={onClose}>Done</Button>
           </div>
         </div>
+      ) : (
+        <form onSubmit={submit} className="space-y-4">
+          <Field label="Email (optional)" description="Only this person can use the link. Leave empty for anyone with the link.">
+            <Input type="email" placeholder="friend@example.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={offline || busy} autoComplete="off" data-autofocus />
+          </Field>
+          <Field label="Expires in">
+            <Select value={hours} onChange={(e) => setHours(Number(e.target.value))} disabled={offline || busy}>
+              {EXPIRY_OPTIONS.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
+            </Select>
+          </Field>
+          {error && <Notice tone="danger">{error}</Notice>}
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={onClose}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={offline} busy={busy}>Create invitation</Button>
+          </div>
+        </form>
       )}
-      {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
-
-      <ul className="divide-y divide-slate-200 dark:divide-slate-800" aria-label="Invitations">
-        {invitations?.map((inv) => (
-          <li
-            key={inv.id}
-            tabIndex={0}
-            onKeyDown={(e) => onRowKey(e, inv)}
-            aria-label={`Invitation ${inv.email ?? 'open'}, ${inv.status}`}
-            className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
-          >
-            <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${BADGE[inv.status]}`}>{inv.status}</span>
-            <span className="min-w-0 flex-1 truncate">
-              {inv.email ?? <span className="text-faint">Anyone with the link</span>}
-              {inv.acceptedBy && (
-                <span className="text-muted"> · joined as {inv.acceptedBy.name || inv.acceptedBy.email}</span>
-              )}
-            </span>
-            <span className="text-xs text-faint">
-              {inv.status === 'pending' ? `expires ${new Date(inv.expiresAt).toLocaleString()}` : `created ${new Date(inv.createdAt).toLocaleDateString()}`}
-              {inv.createdByName ? ` · by ${inv.createdByName}` : ''}
-            </span>
-            {links[inv.id] && inv.status === 'pending' && (
-              <button type="button" className="btn-ghost text-xs" onClick={() => void copy(inv.id)}>{copied === inv.id ? 'Copied' : 'Copy link'}</button>
-            )}
-            {inv.status === 'pending' && (
-              <button type="button" className="btn-danger text-xs" disabled={disabled} onClick={() => void revoke(inv)}>Revoke</button>
-            )}
-          </li>
-        ))}
-        {invitations && invitations.length === 0 && <li className="py-2 text-sm text-faint">No invitations yet.</li>}
-        {invitations === null && !unreachable && online && <li className="py-2 text-sm text-faint">Loading…</li>}
-        {invitations === null && (unreachable || !online) && <li className="py-2 text-sm text-faint">Nothing fetched yet.</li>}
-      </ul>
-      <p className="text-xs text-faint">Keyboard: focus a row, <span className="kbd">Enter</span> copies a link created in this session, <span className="kbd">Delete</span> revokes a pending invitation.</p>
-    </section>
+    </Dialog>
   )
 }
 

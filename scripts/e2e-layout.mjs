@@ -51,7 +51,7 @@ async function axeProblems(p, include) {
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const outDir = process.argv[2] ?? 'layout-report'
 const ENGINES = (process.env.ENGINES ?? 'chromium,webkit').split(',').filter(Boolean)
-const HEIGHTS = { 360: 740, 390: 844, 768: 1024 }
+const HEIGHTS = { 320: 640, 360: 740, 390: 844, 768: 1024, 1280: 900 }
 const WIDTHS = (process.env.WIDTHS ?? '360,390,768').split(',').map(Number)
 const THEMES = (process.env.THEMES ?? 'light,dark').split(',')
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
@@ -172,8 +172,10 @@ function screens(ids) {
     // the section that holds its control (the owner sees all of them).
     { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications'] },
     ...[
-      ['account', 'Account'], ['general', 'General', ['voice-consent']], ['notifications', 'Notifications'], ['data', 'Data'],
-      ['capture', 'Capture'], ['integrations', 'Integrations'], ['ai', 'AI'], ['admin', 'Administration', ['delete-user']],
+      ['account', 'Account'], ['security', 'Security'], ['encryption', 'Encryption'], ['activity', 'Activity'],
+      ['preferences', 'Preferences'], ['notifications', 'Notifications'], ['capture', 'Capture', ['voice-consent']], ['projects', 'Projects'],
+      ['data', 'Data'], ['integrations', 'Integrations'], ['ai', 'AI'],
+      ['admin', 'Administration', ['delete-user']], ['backups', 'Backups'], ['access', 'Access policies'],
     ].map(([id, title, overlays]) => ({ name: `settings-${id}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
     // In-app Help (user-documentation): also checked offline.
@@ -293,7 +295,7 @@ const OVERLAYS = {
   },
   async 'rename-view'(p) {
     await p.locator('main').getByRole('button', { name: /^Menu for view/ }).first().click()
-    await overlayLoc(p).getByRole('button', { name: 'Rename' }).click()
+    await overlayLoc(p).getByRole('menuitem', { name: 'Rename' }).click()
     return { overlay: p.getByRole('dialog', { name: 'Rename view' }), kind: 'dialog' }
   },
   async 'new-dashboard'(p) {
@@ -302,7 +304,7 @@ const OVERLAYS = {
     return { overlay: p.getByRole('dialog', { name: 'New dashboard' }), trigger, kind: 'dialog' }
   },
   async 'voice-consent'(p) {
-    const box = p.getByRole('checkbox', { name: /Dictate tasks into quick add/ })
+    const box = p.getByRole('switch', { name: /Dictate tasks into quick add/ })
     if (!(await box.count()) || await box.isDisabled()) return null
     if (await box.isChecked()) return null
     await box.scrollIntoViewIfNeeded()
@@ -384,10 +386,20 @@ function pageOverflow() {
     const cs = getComputedStyle(el)
     if (!/(auto|scroll)/.test(cs.overflowX)) continue
     if (el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0) {
-      out.push(`${describe(el)} scrolls sideways (${el.scrollWidth}px in ${el.clientWidth}px)`)
+      out.push(`${describe(el)} scrolls sideways (${el.scrollWidth}px in ${el.clientWidth}px)${culprits(el)}`)
     }
   }
   return out
+  // The descendants that stick out of a sideways-scrolling box (deepest first), so
+  // a failure names the element to fix instead of only its scroll container.
+  function culprits(box) {
+    const right = box.getBoundingClientRect().right
+    const wide = [...box.querySelectorAll('*')]
+      .filter((c) => c.getBoundingClientRect().width > 0 && (c.getBoundingClientRect().right > right + 1 || c.scrollWidth > c.clientWidth + 1))
+      .filter((c, _, all) => !all.some((o) => o !== c && c.contains(o)))
+      .slice(0, 3)
+    return wide.length ? `; widest: ${wide.map((c) => `${describe(c)} (${Math.round(c.getBoundingClientRect().width)}px, scroll ${c.scrollWidth}px)`).join(', ')}` : ''
+  }
   function describe(el) {
     const label = el.getAttribute('aria-label') || el.getAttribute('role') || ''
     return `<${el.tagName.toLowerCase()}${label ? ` "${label}"` : ''}${el.className && typeof el.className === 'string' ? ` .${el.className.split(' ').slice(0, 3).join('.')}` : ''}>`

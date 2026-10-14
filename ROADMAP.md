@@ -102,6 +102,20 @@ In this order. Each starts as an OpenSpec change under `openspec/changes/`. The 
 | 2 | **Shipped.** `ot` as a dependable tool for agent harnesses | `agent-ready-cli` | Versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` required without a terminal, read-only mode, a shipped agent skill file. The CLI stays in this repository; no Homebrew or Scoop repositories for now |
 | 3 | **Shipped.** Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. Not available for end-to-end encrypted accounts in the first version |
 
+## Next: Design refresh
+
+One visual language, built in a workbench: friendly and roomy like TickTick, Todoist and Any.do, keeping OpenTodo's emerald and slate identity. Each step is an OpenSpec change.
+
+| # | Step | Change | Notes |
+| --- | --- | --- | --- |
+| 1 | **In progress.** Design tokens, bundled typeface, refreshed buttons and inputs, and a Storybook workbench with accessibility and visual-regression checks | `design-language` | Dev-only workbench; the app gains only the font (54 KB). No op, API or data change |
+| 2 | Shared building blocks: icons, buttons, menus, the smart picker, cards and settings rows | `ui-primitives` | Lucide icons vendored, no new runtime dependency |
+| 3 | Settings regrouped into smaller sections with state-first cards | `settings-redesign` | Old settings links keep working |
+| 4 | Task detail: smart pickers, comments, activity and history tabs, a usable time-zone control | `task-detail-redesign` | Uses `date-time-preferences` |
+| 5 | One menu language everywhere and a redesigned labels page | `labels-and-menus` | |
+
+Related usability fixes, independent of the refresh: your own date and time format (`date-time-preferences`), a test notification that proves delivery (`push-test-delivery`) and restoring a backup from the web app (`backup-restore-web`).
+
 ## Future ideas
 
 Not commitments, just honest next steps. Each would start as an OpenSpec change.

@@ -1,6 +1,8 @@
 // Section headings, per-section quick add and "Add section" (OpenSpec `board-view`).
 // Shared by the grouped list and the board columns. Every write goes through
 // lib/sections, so all of it works offline and converges like any other edit.
+import { Icon } from '../ui/Icon'
+import { MenuItem, MenuSeparator } from '../ui/Menu'
 import { type FormEvent, type KeyboardEvent, useState } from 'react'
 import { createTask } from '../lib/ops'
 import { createSection, deleteSection, renameSection, reorderSection } from '../lib/sections'
@@ -44,7 +46,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
       {onToggleCollapse && (
         <button type="button" className="flex h-5 w-5 items-center justify-center rounded text-xs text-faint hover:bg-slate-200 dark:hover:bg-slate-700"
           aria-label={collapsed ? `Expand ${title}` : `Collapse ${title}`} aria-expanded={!collapsed} onClick={onToggleCollapse}>
-          {collapsed ? '▸' : '▾'}
+          <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
         </button>
       )}
       {renaming && section ? (
@@ -63,15 +65,12 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
         <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" onClick={onAdd} aria-label={`Add a task to ${title}`} title="Add a task here">+</button>
       )}
       {editable && section && (
-        <Menu label={`Section menu for ${title}`} title={title} trigger="⋯" triggerClassName="btn-ghost touch-target px-1.5 py-0.5 text-xs" width="sm:w-48">
-          {(close) => (
-            <>
-              <button type="button" className="btn-ghost w-full justify-start" onClick={() => { close(); setName(section.name); setRenaming(true) }}>Rename</button>
-              <button type="button" className="btn-ghost w-full justify-start" disabled={first} onClick={() => { close(); void reorderSection(section.id, -1) }}>Move {before}</button>
-              <button type="button" className="btn-ghost w-full justify-start" disabled={last} onClick={() => { close(); void reorderSection(section.id, 1) }}>Move {after}</button>
-              <button type="button" className="btn-danger w-full justify-start" onClick={() => { close(); void remove() }}>Delete section</button>
-            </>
-          )}
+        <Menu label={`Section menu for ${title}`} title={title} trigger={<Icon name="ellipsis" />} triggerClassName="btn-ghost touch-target px-1.5 py-0.5 text-xs" width="sm:w-56" kind="menu">
+          <MenuItem label="Rename" icon="pencil" onSelect={() => { setName(section.name); setRenaming(true) }} />
+          <MenuItem label={`Move ${before}`} icon="arrow-up" disabled={first} onSelect={() => void reorderSection(section.id, -1)} />
+          <MenuItem label={`Move ${after}`} icon="arrow-down" disabled={last} onSelect={() => void reorderSection(section.id, 1)} />
+          <MenuSeparator />
+          <MenuItem label="Delete section" icon="trash-2" danger onSelect={() => void remove()} />
         </Menu>
       )}
     </div>

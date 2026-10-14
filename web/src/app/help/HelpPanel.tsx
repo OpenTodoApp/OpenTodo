@@ -1,3 +1,4 @@
+import { Icon } from '../../ui/Icon'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { loadHelp, type HelpBundle } from '../../lib/help'
@@ -41,7 +42,7 @@ export function HelpPanel({ screen, trigger, onClose }: { screen: string; trigge
               Open in Help
             </button>
           )}
-          <button type="button" className="btn-ghost touch-target my-1 px-2 text-lg leading-none" onClick={onClose} aria-label="Close" data-overlay-close>×</button>
+          <button type="button" className="btn-ghost touch-target my-1 px-2 text-lg leading-none" onClick={onClose} aria-label="Close" title="Close" data-overlay-close><Icon name="x" size="md" /></button>
         </div>
         <div className="px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
           {failed && <p className="text-sm text-slate-600 dark:text-slate-400">Help could not be loaded. Reload the app and try again.</p>}

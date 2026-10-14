@@ -41,7 +41,7 @@ describe('voice capture UI', () => {
 
   it('disables the switch with an explanation when the browser has no recognition', () => {
     const html = renderToStaticMarkup(<VoiceSettingsSection />)
-    expect(html).toMatch(/<input[^>]*type="checkbox"[^>]*disabled=""/)
+    expect(html).toMatch(/<button[^>]*role="switch"[^>]*disabled=""/)
     expect(html).toContain('This browser does not provide speech recognition')
   })
 

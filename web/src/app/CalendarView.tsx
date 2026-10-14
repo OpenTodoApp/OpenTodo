@@ -2,13 +2,14 @@
 // local tasks: a task with a due time is a block at that time, as long as its
 // estimate; date-only tasks sit in each day's unscheduled lane. Every placement,
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op).
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
-  blockFor, calendarTasks, clamp, DAY_MINUTES, dayLoad, DEFAULT_GRID_PREFS, formatLoad, formatTime, GRID_PREFS_META_KEY, LAST_SLOT,
+  blockFor, calendarTasks, clamp, DAY_MINUTES, dayLoad, DEFAULT_GRID_PREFS, formatLoad, formatTime as toHHMM, GRID_PREFS_META_KEY, LAST_SLOT,
   normalizeGridPrefs, nudgeDue, placementStart, SLOT_MINUTES, stepEstimate, weekDates, type Block, type GridPrefs,
 } from '../lib/calendar'
-import { addDaysISO, dueFromView, formatShort, localDueOf, viewedTask } from '../lib/dates'
+import { addDaysISO, dueFromView, formatDate, formatHour, formatShort, formatTime as formatWallTime, localDueOf, viewedTask } from '../lib/dates'
 import { db, getMeta } from '../lib/db'
 import { formatMinutes } from '../lib/duration'
 import { layoutDay, type DayLayout } from '../lib/layout'
@@ -16,6 +17,7 @@ import { compareByPosition, compareDueThenPriority } from '../lib/ordering'
 import { setTaskCompleted, updateTask } from '../lib/ops'
 import type { Label, Project, Task } from '../lib/types'
 import { useCalendarDrag, type DropTarget } from './calendarDrag'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
 import { estimateFocus, isGPending, placement as placementSignal } from './signals'
 import { TaskDetail } from './TaskDetail'
@@ -43,6 +45,9 @@ interface DayData {
 }
 
 /** Live preferences of this device (Dexie meta, never synced). */
+/** Minutes from midnight as shown to the user, in their time format (date-time-preferences D2). */
+const formatTime = (minutes: number) => formatWallTime(toHHMM(minutes))
+
 export function useGridPrefs(): GridPrefs {
   return useLiveQuery(() => getMeta<unknown>(GRID_PREFS_META_KEY, null).then(normalizeGridPrefs), [], DEFAULT_GRID_PREFS)
 }
@@ -72,7 +77,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const today = useToday()
   const nowMinutes = useNowMinutes()
   const anchor = date ?? today
-  const dates = useMemo(() => (mode === 'day' ? [anchor] : weekDates(anchor)), [mode, anchor])
+  // The Week view starts on the preferred first day (date-time-preferences D5).
+  const { resolved } = useDateTimeFormat()
+  const dates = useMemo(() => (mode === 'day' ? [anchor] : weekDates(anchor, resolved.weekStart)), [mode, anchor, resolved.weekStart])
   const prefs = useGridPrefs()
 
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
@@ -145,7 +152,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     if (!t) return
     const stored = rawMap.get(taskId)?.due
     if (target.type === 'slot') {
-      const time = formatTime(target.start)
+      const time = toHHMM(target.start)
       if (t.due?.date !== target.date || t.due?.time !== time) void updateTask(taskId, { due: dueFromView(stored, { date: target.date, time }) })
     } else if (target.type === 'lane') {
       if (t.due?.date !== target.date || t.due?.time) void updateTask(taskId, { due: dueFromView(stored, { date: target.date }) })
@@ -313,7 +320,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   }, [selectedId, days])
 
   const title = mode === 'day'
-    ? new Date(`${anchor}T00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+    ? formatDate(anchor, 'heading', resolved)
     : `${formatShort(dates[0])} – ${formatShort(dates[6])}`
   const dragTask = drag ? taskMap.get(drag.taskId) : undefined
   const placingTask = placing ? taskMap.get(placing.taskId) : undefined
@@ -333,9 +340,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-3 py-2 dark:border-slate-800 md:px-6">
           <h1 className="mr-2 text-lg font-semibold">{title}</h1>
           <div className="flex items-center gap-1">
-            <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} aria-label={mode === 'day' ? 'Previous day' : 'Previous week'} title="Previous ([)">‹</button>
+            <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} aria-label={mode === 'day' ? 'Previous day' : 'Previous week'} title="Previous ([)"><Icon name="chevron-left" /></button>
             <button className="btn-ghost px-2 py-1 text-xs" onClick={() => goTo(today)} title="Today (t)">Today</button>
-            <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))} aria-label={mode === 'day' ? 'Next day' : 'Next week'} title="Next (])">›</button>
+            <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))} aria-label={mode === 'day' ? 'Next day' : 'Next week'} title="Next (])"><Icon name="chevron-right" /></button>
           </div>
           <div className="flex rounded-md border border-slate-200 text-xs dark:border-slate-700" role="group" aria-label="Calendar range">
             <button className={`px-2 py-1 ${mode === 'day' ? 'bg-slate-100 font-medium dark:bg-slate-800' : ''}`} aria-pressed={mode === 'day'} onClick={() => navigate({ view: 'day', date: date })} title="Day (g d)">Day</button>
@@ -452,7 +459,7 @@ function HourGutter() {
     <div className="relative w-12 shrink-0" style={{ height: GRID_HEIGHT }} aria-hidden>
       {Array.from({ length: 24 }, (_, h) => (
         <div key={h} className="absolute right-1 -translate-y-1/2 text-[10px] text-faint" style={{ top: h * 60 * PX_PER_MIN }}>
-          {h === 0 ? '' : `${String(h).padStart(2, '0')}:00`}
+          {h === 0 ? '' : formatHour(h)}
         </div>
       ))}
     </div>
@@ -474,13 +481,13 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, laneTarget,
 }) {
   const load = dayLoad(tasks, day.date, prefs.dayLength)
   const [y, m, d] = day.date.split('-').map(Number)
-  const dt = new Date(y, m - 1, d)
+  const weekdayName = new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(new Date(y, m - 1, d))
   return (
     <div className="min-w-0 flex-1 border-l border-slate-200 px-1 pb-1 pt-1 dark:border-slate-800" data-day-header={day.date}>
       <div className="flex items-baseline justify-between gap-1 px-1">
         {showName ? (
           <span className={`truncate text-xs font-medium ${day.date === today ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>
-            {dt.toLocaleDateString(undefined, { weekday: 'short' })} {d}
+            {weekdayName} {d}
           </span>
         ) : <span />}
         <span

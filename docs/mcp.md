@@ -20,11 +20,11 @@ OpenTodo can let an AI assistant read your projects and tasks through the [Model
 
 **Settings → AI → AI assistants → Allow AI assistants (MCP endpoint)**. The change applies at once, without a restart, and is recorded in the audit log as `settings.changed` (`mcp.enabled`).
 
-For deployments managed as code, the optional `OPENTODO_MCP=true` presets the toggle on the **first** start. After that the value in Settings wins, so the owner can still turn it off. Members see the status in the same section but no toggle.
+For deployments managed as code, the optional `OPENTODO_MCP=true` presets the toggle on the **first** start. After that the value in Settings wins, so the owner can still turn it off. Members see the status in the same section but no switch.
 
 ## 2. Create a read-only token
 
-In **Settings → AI → AI assistants**, choose **Create read-only token**, or in **Settings → Integrations → API tokens** pick the **Read-only** scope. Copy the token: it is shown once. A read-only token is refused on every route that writes (see [API → Authentication](api.md#authentication)), so even if it leaks from an assistant's configuration it cannot change your data. Revoke it in **Settings → Integrations → API tokens** at any time.
+In **Settings → AI → AI assistants**, choose **Create read-only token**, or in **Settings → Integrations → API tokens** pick the **Read-only** scope. Copy the token: it is shown once. A read-only token is refused on every route that writes (see [API → Authentication](api.md#authentication)), so even if it leaks from an assistant's configuration it cannot change your data. Revoke it in **Settings → Integrations → API tokens** at any time, from the token's **⋯** menu.
 
 Full-access tokens also work with `/mcp`, but only with the read tools: they never get write tools, so a full token pasted into an assistant long ago does not gain write power when someone turns assistant changes on. There is no reason to give one to an assistant.
 

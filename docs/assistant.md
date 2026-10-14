@@ -33,7 +33,7 @@ In a shared project that includes text other members wrote. Select **Accept and 
 
 ## Use your own provider and key
 
-When the server owner ticks **Let members bring their own key**, **Settings → AI → Assistant** shows **Which assistant you use**:
+When the server owner turns on **Let members bring their own key**, **Settings → AI → Assistant** shows **Which assistant you use**:
 
 - **The server's assistant**: the provider and model the owner set up. This is the default.
 - **My own provider and key**: choose **Anthropic (Claude)**, **OpenAI** or **Google Gemini**, a model, and paste an API key from your own account, then select **Save my provider**. For Anthropic you pick one of the offered models; for OpenAI and Gemini you type the model id (up to 100 characters: letters, digits, `.`, `_`, `:` and `-`, for example `gpt-4.1-mini` or `gemini-2.5-flash`). **Test connection** sends one tiny request with your key to check it (up to 5 tests in 10 minutes).
@@ -73,11 +73,11 @@ After applying, **Undo** appears in the panel and in a short notice at the botto
 
 ## Apply small changes without review
 
-**Settings → AI → Assistant → Apply small changes without review (this device)** is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for review.
+The switch **Settings → AI → Assistant → Apply small changes without review (this device)** is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for review.
 
 ## Conversations stay on this device
 
-Conversations are stored only in this browser: never synced, never sent to other people, not in exports or backups. The panel keeps the last 50 conversations for up to 30 days. **History** lists them (also offline), **New** starts another, and **Clear conversations** deletes them. Signing out deletes them too. The server keeps nothing of a conversation after it has answered.
+Conversations are stored only in this browser: never synced, never sent to other people, not in exports or backups. The panel keeps the last 50 conversations for up to 30 days. **History** lists them (also offline), **New** starts another, and **Clear conversations** deletes them (also **Settings → AI → Assistant → Clear conversations on this device**, which asks you to confirm). Signing out deletes them too. The server keeps nothing of a conversation after it has answered.
 
 Offline you can read earlier conversations and apply or undo a proposal that already arrived; asking needs a connection.
 
@@ -106,12 +106,12 @@ The assistant is switched off on the public demo.
 
 ### Turn it on
 
-**Settings → AI → Assistant** (owner only):
+**Settings → AI → Assistant** shows the owner whether the assistant is on, the provider and model everyone uses, the providers allowed (flagging one without a key), the monthly limit and whether members may bring their own key. Select **Configure** (owner only) to change them:
 
 1. Tick **Allow this provider** for one or more providers and enter the model and key.
 2. Choose the **Provider everyone uses**.
-3. Tick **Turn on the assistant for this server** and select **Save assistant settings**.
-4. Select **Test connection**: it sends one tiny request and reports success or the provider's error. It is the only request the server makes outside someone's turn.
+3. Tick **Turn on the assistant for this server** and select **Save assistant settings**. The dialog closes and the section shows the new state.
+4. In **Configure**, select **Test connection** under a provider: it sends one tiny request and reports success or the provider's error. It is the only request the server makes outside someone's turn.
 
 | Provider | Model | Key | Notes |
 | --- | --- | --- | --- |

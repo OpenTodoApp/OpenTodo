@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
@@ -19,6 +20,7 @@ import { markTaskNotificationsRead } from '../lib/notifications'
 import { HistoryPanel } from './HistoryPanel'
 import { TaskConversation } from './TaskConversation'
 import { Markdown } from './Markdown'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 // The rich-text editor and its libraries are a separate chunk, fetched when a
 // note is first opened (collaborative-rich-text, task 3.1).
@@ -45,6 +47,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   /** Complete / reopen through the list so the "complete parent too" prompt can follow. */
   onToggleComplete?: (task: Task) => void
 }) {
+  const dt = useDateTimeFormat()
   const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
   const [title, setTitle] = useState('')
   const [parentError, setParentError] = useState<string | null>(null)
@@ -110,7 +113,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     <aside data-detail-for={task.id} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-xl dark:border-slate-800 dark:bg-slate-950 md:static md:shadow-none">
       <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] dark:border-slate-800">
         <button className="btn-ghost text-xs" onClick={() => toggle(task)} disabled={readOnly}>
-          {task.completed_at ? '↶ Reopen' : '✓ Complete'}
+          <Icon name={task.completed_at ? 'undo-2' : 'check'} />{task.completed_at ? 'Reopen' : 'Complete'}
         </button>
         {progress.total > 0 && (
           <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-muted dark:bg-slate-800 dark:text-slate-400" title="Completed subtasks">
@@ -119,7 +122,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         )}
         <div className="flex-1" />
         <button className="btn-danger text-xs" onClick={() => { void deleteTask(task.id); onClose() }} disabled={readOnly}>Delete</button>
-        <button className="btn-ghost touch-target" onClick={onClose} aria-label="Close" data-overlay-close>✕</button>
+        <button className="btn-ghost touch-target" onClick={onClose} aria-label="Close" title="Close" data-overlay-close><Icon name="x" size="md" /></button>
       </div>
       {readOnly && (
         <p role="note" className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-muted dark:border-slate-800 dark:bg-slate-900">
@@ -241,7 +244,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
                   onClick={() => toggle(c)}
                   className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 text-[10px] ${c.completed_at ? 'border-slate-400 bg-slate-400 text-white' : 'border-slate-300 hover:bg-emerald-100 dark:border-slate-600'}`}
                 >
-                  {c.completed_at ? '✓' : ''}
+                  {c.completed_at && <Icon name="check" size={10} />}
                 </button>
                 <button type="button" className={`min-w-0 flex-1 truncate text-left text-sm ${c.completed_at ? 'text-faint line-through' : ''}`} onClick={() => onOpen?.(c.id)}>
                   {c.title || <span className="italic text-faint">Untitled</span>}
@@ -253,8 +256,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         </Field>
 
         <p className="pt-4 text-xs text-faint">
-          Created {new Date(task.created_at).toLocaleString()}
-          {task.completed_at && <> · Completed {new Date(task.completed_at).toLocaleString()}</>}
+          Created {dt.formatInstant(task.created_at, 'datetime')}
+          {task.completed_at && <> · Completed {dt.formatInstant(task.completed_at, 'datetime')}</>}
         </p>
       </fieldset>
       <div className="border-t border-slate-200 px-4 pb-4 dark:border-slate-800">

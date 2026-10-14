@@ -1,35 +1,35 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { db } from '../lib/db'
-import { localDueOf } from '../lib/dates'
+import { addDaysISO, localDueOf, todayISO } from '../lib/dates'
 import { addReminder, deleteReminder, dismissReminder, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'
 import { DEFAULT_REMINDER_TIME, isDelivered, isDismissed, offsetLabel, RELATIVE_PRESETS } from '../lib/reminderTime'
 import type { Reminder, Task } from '../lib/types'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { DateField } from './datetime/DateField'
+import { TimeField } from './datetime/TimeField'
 
-/** Local "YYYY-MM-DDTHH:MM" for a datetime-local input. */
-function toLocalInput(ms: number): string {
+/** A local date and wall-clock time for an instant (the date and time fields edit these). */
+function toLocalParts(ms: number): { date: string; time: string } {
   const d = new Date(ms)
   const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+  return { date: todayISO(d), time: `${p(d.getHours())}:${p(d.getMinutes())}` }
 }
 
-function fromLocalInput(v: string): number | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(v)
-  if (!m) return null
-  return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]).getTime()
-}
-
-function formatWhen(ms: number): string {
-  return new Date(ms).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+/** The instant of a local date and wall-clock time. */
+export function fromLocalParts(date: string, time: string): number | null {
+  const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+  const tm = /^(\d{2}):(\d{2})$/.exec(time)
+  if (!dm || !tm) return null
+  return new Date(+dm[1], +dm[2] - 1, +dm[3], +tm[1], +tm[2]).getTime()
 }
 
 /** A sensible default moment for a new absolute reminder: the due time, else tomorrow 09:00. */
-function defaultMoment(task: Task): string {
+function defaultMoment(task: Task): { date: string; time: string } {
   const due = localDueOf(task.due)
-  if (due) return `${due.date}T${due.time ?? DEFAULT_REMINDER_TIME}`
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  return toLocalInput(new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 0).getTime())
+  if (due) return { date: due.date, time: due.time ?? DEFAULT_REMINDER_TIME }
+  return { date: addDaysISO(todayISO(), 1), time: '09:00' }
 }
 
 /**
@@ -46,6 +46,7 @@ export function RemindersField({ task }: { task: Task }) {
   const [adding, setAdding] = useState<'menu' | 'custom' | 'absolute' | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { formatInstant } = useDateTimeFormat()
 
   const run = async (fn: () => Promise<unknown>) => {
     setError(null)
@@ -71,9 +72,9 @@ export function RemindersField({ task }: { task: Task }) {
                 <ReminderEditor task={task} initial={r} onCancel={() => setEditing(null)} onSave={(input) => void run(() => updateReminder(r.id, input))} />
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span aria-hidden>⏰</span>
+                  <span className="text-muted"><Icon name="alarm-clock" /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="font-medium" data-testid="reminder-time">{r.fire_at !== null ? formatWhen(r.fire_at) : 'Not scheduled'}</span>
+                    <span className="font-medium" data-testid="reminder-time">{r.fire_at !== null ? formatInstant(r.fire_at, 'long') : 'Not scheduled'}</span>
                     <span className="ml-1 text-xs text-muted">
                       {r.kind === 'relative' ? offsetLabel(r.offset_minutes) : 'at a set time'}{state ? ` · ${state}` : ''}
                     </span>
@@ -85,7 +86,7 @@ export function RemindersField({ task }: { task: Task }) {
                     </>
                   )}
                   <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" aria-label="Edit reminder" onClick={() => setEditing(r.id)}>Edit</button>
-                  <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" aria-label="Delete reminder" onClick={() => void run(() => deleteReminder(r.id))}>✕</button>
+                  <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" aria-label="Delete reminder" title="Delete reminder" onClick={() => void run(() => deleteReminder(r.id))}><Icon name="x" /></button>
                 </div>
               )}
             </li>
@@ -148,7 +149,7 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
   const [amount, setAmount] = useState(String(Math.abs(startOffset)))
   const [unit, setUnit] = useState<'1' | '60' | '1440'>(Math.abs(startOffset) % 1440 === 0 && startOffset !== 0 ? '1440' : Math.abs(startOffset) % 60 === 0 && startOffset !== 0 ? '60' : '1')
   const [direction, setDirection] = useState<'before' | 'after'>(startOffset > 0 ? 'after' : 'before')
-  const [moment, setMoment] = useState(initial?.fire_at ? toLocalInput(initial.fire_at) : defaultMoment(task))
+  const [moment, setMoment] = useState(initial?.fire_at ? toLocalParts(initial.fire_at) : defaultMoment(task))
   const [error, setError] = useState<string | null>(null)
 
   const save = () => {
@@ -158,7 +159,7 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
       const minutes = n * Number(unit)
       onSave({ kind: 'relative', offset_minutes: direction === 'before' ? -minutes : minutes })
     } else {
-      const at = fromLocalInput(moment)
+      const at = fromLocalParts(moment.date, moment.time)
       if (at === null) return setError('Pick a date and time.')
       onSave({ kind: 'absolute', fire_at: at })
     }
@@ -190,7 +191,11 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
           </select>
         </>
       ) : (
-        <input className="input w-auto py-1" type="datetime-local" aria-label="Reminder date and time" value={moment} autoFocus onChange={(e) => setMoment(e.target.value)} />
+        <>
+          {/* The same controls as the due field, in the user's formats (date-time-preferences D4). */}
+          <DateField label="Reminder date" hideLabel autoFocus className="min-w-44 flex-1" value={moment.date} onChange={(date) => date && setMoment((m) => ({ ...m, date }))} />
+          <TimeField label="Reminder time" hideLabel value={moment.time} onChange={(time) => time && setMoment((m) => ({ ...m, time }))} />
+        </>
       )}
       <button type="submit" className="btn-primary px-2 py-1 text-xs">Save</button>
       <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={onCancel}>Cancel</button>

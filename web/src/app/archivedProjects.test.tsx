@@ -33,7 +33,7 @@ describe('ArchivedProjectsList', () => {
 
   it('disables Restore when the role cannot archive', () => {
     const html = renderToStaticMarkup(<ArchivedProjectsList onRestore={() => {}} rows={[row({ project: project('c', 'Club'), canRestore: false })]} />)
-    expect(html).toMatch(/<button[^>]*disabled[^>]*>Restore<\/button>/)
+    expect(html).toMatch(/<button[^>]*disabled[^>]*>.*Restore<\/button>/)
     expect(html).toContain('Only the owner or an admin can restore it')
   })
 })

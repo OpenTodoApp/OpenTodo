@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs']
 
 export interface Op {
   id: string
@@ -216,6 +216,20 @@ export interface ProjectPrefs {
   _clock: Clock
 }
 
+/** Date and time preference values (OpenSpec `date-time-preferences`); unknown values read as 'system'. */
+export type DateFormatPref = 'system' | 'day-month' | 'month-day' | 'iso'
+export type TimeFormatPref = 'system' | '12h' | '24h'
+export type WeekStartPref = 'system' | 'mon' | 'sun' | 'sat'
+
+/** The user's date and time preferences: the synced `user_prefs` entity, one row with id "me" in the personal scope. */
+export interface UserPrefs {
+  id: string
+  date_format: DateFormatPref
+  time_format: TimeFormatPref
+  week_start: WeekStartPref
+  _clock: Clock
+}
+
 export type ActivityKind =
   | 'created' | 'completed' | 'reopened' | 'deleted' | 'restored' | 'rescheduled' | 'assigned' | 'unassigned'
   | 'moved' | 'archived' | 'unarchived' | 'edited' | 'commented' | 'comment_edited' | 'comment_deleted'
@@ -288,6 +302,16 @@ export interface PushSubscriptionStatus {
   failures: number
   /** The push service failed repeatedly: the device should re-enable notifications. */
   needsRenewal: boolean
+}
+
+/** Answer of POST /api/v1/push/test (OpenSpec `push-test-delivery`). */
+export interface PushTestResponse {
+  outcome: 'sent' | 'no_subscription' | 'gone' | 'failed'
+  testId?: string
+  subscription?: PushSubscriptionStatus | null
+  /** The push service's HTTP status, for `failed` (absent when it could not be reached). */
+  status?: number
+  error?: string
 }
 
 /** Account role on the server (OpenSpec `user-management`). */

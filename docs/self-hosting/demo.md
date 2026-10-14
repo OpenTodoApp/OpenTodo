@@ -70,7 +70,7 @@ Earlier versions gave every visitor the same account (`demo@example.com` / `open
 
 ## What is switched off
 
-Every request below is refused with `403 {"error":{"code":"demo_restricted","message":"<feature> is disabled on this demo instance."}}` before authentication, whoever sends it. The web app hides these sections in Settings (or disables the control) with a short note.
+Every request below is refused with `403 {"error":{"code":"demo_restricted","message":"<feature> is disabled on this demo instance."}}` before authentication, whoever sends it. The web app shows a short note in their place in Settings: **Administration**, **Backups** and **Access policies** show only the note, and the other sections keep their remaining panels.
 
 - Sign-up, invitations, user administration and owner transfer, password change and password-reset links, linked accounts, single sign-on (`/api/v1/auth/oidc/*`)
 - API tokens, app passwords and CalDAV (`/dav/`, `/.well-known/caldav`), passkeys, two-factor enrolment, end-to-end encryption

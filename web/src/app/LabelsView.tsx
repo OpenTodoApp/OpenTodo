@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, useState } from 'react'
 import { db } from '../lib/db'
@@ -105,7 +106,7 @@ function LabelMenu({ label, labels, count, onRename }: { label: Label; labels: L
     navigate({ view: 'label', id: target.id })
   }
   return (
-    <Menu label={`Menu for label ${label.name}`} title={label.name} trigger="⋯" className="p-2"
+    <Menu label={`Menu for label ${label.name}`} title={label.name} trigger={<Icon name="ellipsis" />} className="p-2"
       triggerClassName="hover-reveal touch-target rounded px-1.5 py-0.5 text-faint hover:bg-slate-300/60 dark:hover:bg-slate-700">
       {(close) => (
         <>

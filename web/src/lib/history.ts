@@ -7,6 +7,7 @@ import { api } from './api'
 import { decryptChanges } from './e2ee'
 import { updateProject, updateTask } from './ops'
 import type { ChangeSet, HistoryPage, Membership, Project, Task } from './types'
+import { formatInstant } from './dates'
 
 /** One page of history; ciphertext values (OpenSpec e2ee) are decrypted for display. */
 export async function fetchHistory(entity: 'task' | 'project', id: string, before?: number): Promise<HistoryPage> {
@@ -80,7 +81,7 @@ export function fieldLabel(field: string): string {
 export function formatValue(field: string, value: unknown, names?: (field: string, id: string) => string | undefined): string {
   if (value === null || value === undefined || value === '') return '—'
   if (field in REF_LABELS && typeof value === 'string' && names) return names(field, value) ?? 'unknown'
-  if (field.endsWith('_at') && typeof value === 'number') return new Date(value).toLocaleString()
+  if (field.endsWith('_at') && typeof value === 'number') return formatInstant(value, 'datetime')
   if (field === 'due' && typeof value === 'object') {
     const d = value as { date?: string; time?: string }
     return [d.date, d.time].filter(Boolean).join(' ')

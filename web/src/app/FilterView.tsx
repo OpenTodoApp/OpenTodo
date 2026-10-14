@@ -190,7 +190,7 @@ export function FilterView() {
             {result && <span className="text-sm font-normal text-faint">{rows.length}</span>}
             <span className="flex-1" />
             <HelpLink screen="filter" topic="Filter queries" />
-            <button className="btn-ghost border border-slate-300 text-xs font-normal dark:border-slate-700" disabled={!canSave}
+            <button className="btn-secondary text-xs font-normal" disabled={!canSave}
               onClick={() => setSaving(true)} title="Save this query as a view (s in the results)">
               Save view
             </button>

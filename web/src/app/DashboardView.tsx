@@ -2,6 +2,7 @@
 // `panels` are other saved list views. Each panel shows the view's open-task count and
 // first tasks; all panels are evaluated in one pass. Tab / Shift+Tab move between
 // panels, j / k move inside one.
+import { Icon } from '../ui/Icon'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
@@ -90,7 +91,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
     <div className="flex h-full">
       <div className="min-w-0 flex-1 px-4 py-5 md:px-8">
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-faint" aria-hidden>▦</span>
+          <span className="text-faint"><Icon name="kanban" /></span>
           <h1 className="truncate text-xl font-semibold">{dashboard.name}</h1>
           <span className="text-sm text-faint">{panels.length}/{MAX_PANELS}</span>
           <span className="flex-1" />
@@ -110,8 +111,8 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
               <li key={id} className="flex items-center gap-2">
                 <span className="w-5 text-right text-xs text-faint">{i + 1}</span>
                 <span className="flex-1 truncate">{nameOf(id)}</span>
-                <button className="btn-ghost px-2 py-0.5 text-xs" disabled={i === 0} aria-label={`Move ${nameOf(id)} earlier`} onClick={() => run(() => movePanel(dashboard.id, id, -1))}>↑</button>
-                <button className="btn-ghost px-2 py-0.5 text-xs" disabled={i === dashboard.panels.length - 1} aria-label={`Move ${nameOf(id)} later`} onClick={() => run(() => movePanel(dashboard.id, id, 1))}>↓</button>
+                <button className="btn-ghost px-2 py-0.5 text-xs" disabled={i === 0} aria-label={`Move ${nameOf(id)} earlier`} onClick={() => run(() => movePanel(dashboard.id, id, -1))}><Icon name="arrow-up" /></button>
+                <button className="btn-ghost px-2 py-0.5 text-xs" disabled={i === dashboard.panels.length - 1} aria-label={`Move ${nameOf(id)} later`} onClick={() => run(() => movePanel(dashboard.id, id, 1))}><Icon name="arrow-down" /></button>
                 <button className="btn-danger px-2 py-0.5 text-xs" aria-label={`Remove ${nameOf(id)} from the dashboard`} onClick={() => run(() => removePanel(dashboard.id, id))}>Remove</button>
               </li>
             ))}

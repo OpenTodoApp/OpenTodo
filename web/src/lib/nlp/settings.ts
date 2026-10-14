@@ -59,13 +59,33 @@ export function resolveLanguages(s: QuickAddSettings, browser: readonly string[]
   return activeLanguages(s.languages !== null ? s.languages : browser)
 }
 
+/** Where the numeric date order came from, for the quick-add settings panel. */
+export type DayMonthOrderSource = 'device' | 'date-format' | 'language'
+
 /**
- * Numeric date order: explicit setting, else M/D only when the first preference is
- * US-style English ("en", "en-US"), D/M for every other bundled language and for
- * English outside the US (design D2).
+ * Numeric date order and what decided it (date-time-preferences D6): the
+ * explicit per-device setting, else the user's date format when it is day-month
+ * or month-day, else the language rule (design D2 of natural-language-capture).
  */
-export function resolveDayMonthOrder(s: QuickAddSettings, browser: readonly string[]): DayMonthOrder {
-  if (s.dayMonthOrder !== 'auto') return s.dayMonthOrder
+export function dayMonthOrderSource(
+  s: QuickAddSettings, browser: readonly string[], prefs?: { date_format?: string } | null,
+): { order: DayMonthOrder; source: DayMonthOrderSource } {
+  if (s.dayMonthOrder !== 'auto') return { order: s.dayMonthOrder, source: 'device' }
+  if (prefs?.date_format === 'day-month') return { order: 'DM', source: 'date-format' }
+  if (prefs?.date_format === 'month-day') return { order: 'MD', source: 'date-format' }
+  return { order: languageDayMonthOrder(s, browser), source: 'language' }
+}
+
+/**
+ * Numeric date order: explicit setting, else the date format preference, else M/D
+ * only when the first preference is US-style English ("en", "en-US"), D/M for
+ * every other bundled language and for English outside the US (design D2).
+ */
+export function resolveDayMonthOrder(s: QuickAddSettings, browser: readonly string[], prefs?: { date_format?: string } | null): DayMonthOrder {
+  return dayMonthOrderSource(s, browser, prefs).order
+}
+
+function languageDayMonthOrder(s: QuickAddSettings, browser: readonly string[]): DayMonthOrder {
   const first = (s.languages !== null ? s.languages[0] : browser.find((t) => t.toLowerCase().split(/[-_]/)[0] in VOCABULARIES)) ?? 'en'
   const [lang, region] = first.toLowerCase().split(/[-_]/)
   if (lang === 'en') return !region || region === 'us' ? 'MD' : 'DM'

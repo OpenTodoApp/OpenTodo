@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
+import { Button } from '../ui/Button'
+import { Select } from '../ui/Field'
+import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Switch } from '../ui/Switch'
 import { BUNDLED_LANGUAGES, loadQuickAddSettings, resolveLanguages } from '../lib/nlp'
 import { loadVoiceSettings, onVoiceSettingsChange, saveVoiceSettings, type VoiceSettings } from '../lib/voice/settings'
 import { isSupported } from '../lib/voice/support'
@@ -12,7 +15,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 /** The privacy statement shown before voice capture can be switched on (spec "Privacy contract"). */
 export function VoicePrivacyStatement() {
   return (
-    <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+    <ul className="list-disc space-y-1 pl-5 text-body text-default">
       <li>Speech is recognised by your browser, not by OpenTodo.</li>
       <li>Depending on the browser, your audio may be sent to the browser vendor’s speech service (for example Google for Chrome, Apple for Safari) and handled under their privacy policy.</li>
       <li>OpenTodo asks the browser to recognise speech on this device when it offers that choice.</li>
@@ -48,46 +51,35 @@ export function VoiceSettingsSection() {
   }, [confirming])
 
   return (
-    <section className="space-y-3" aria-labelledby="voice-settings-heading">
-      <HelpHeading screen="settings/voice" id="voice-settings-heading" className="font-semibold">Voice capture</HelpHeading>
-      <label className={`flex items-start gap-2 text-sm ${supported ? '' : 'opacity-60'}`}>
-        <input
-          type="checkbox"
-          className="mt-0.5"
-          checked={supported && s.enabled}
-          disabled={!supported}
-          aria-describedby="voice-settings-note"
-          onChange={(e) => (e.target.checked ? setConfirming(true) : update({ ...s, enabled: false }))}
-        />
-        <span>
-          Dictate tasks into quick add
-          <span id="voice-settings-note" className="block text-xs text-muted">
-            {supported
-              ? <>A microphone button appears in quick add, and <span className="kbd">Shift+V</span> starts dictation. Spoken words become quick-add text (“hashtag home priority two” → <code>#home p2</code>); nothing is saved until you press Enter. Applies to this device only.</>
-              : 'This browser does not provide speech recognition, so voice capture is not available here. Typing works as usual.'}
-          </span>
+    <SettingsSection title="Voice capture" helpId="settings/voice" headingId="voice-settings-heading"
+      description="Speak a task instead of typing it. Applies to this device only.">
+      <SettingRow label="Dictate tasks into quick add" description={
+        <span id="voice-settings-note">
+          {supported
+            ? <>A microphone button appears in quick add, and <span className="kbd">Shift+V</span> starts dictation. Spoken words become quick-add text (“hashtag home priority two” → <code>#home p2</code>); nothing is saved until you press Enter.</>
+            : 'This browser does not provide speech recognition, so voice capture is not available here. Typing works as usual.'}
         </span>
-      </label>
+      } control={
+        <Switch checked={supported && s.enabled} disabled={!supported} label="Dictate tasks into quick add" hideLabel
+          onChange={(on) => (on ? setConfirming(true) : update({ ...s, enabled: false }))} />
+      } />
       {supported && s.enabled && (
-        <label className="flex items-center gap-2 pl-6 text-sm">
-          Recognition language
-          <select className="input w-auto py-1" value={s.lang ?? ''} onChange={(e) => update({ ...s, lang: e.target.value || null })}>
+        <SettingRow label="Recognition language" htmlFor="voice-lang" control={
+          <Select id="voice-lang" className="sm:w-56" value={s.lang ?? ''} onChange={(e) => update({ ...s, lang: e.target.value || null })}>
             <option value="">Follow quick add ({LANGUAGE_NAMES[followed] ?? followed})</option>
             {BUNDLED_LANGUAGES.map((code) => <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>)}
-          </select>
-        </label>
+          </Select>
+        } />
       )}
       {confirming && (
         <Dialog title="Turn on voice capture?" onClose={() => setConfirming(false)} size="md">
           <VoicePrivacyStatement />
           <div className="mt-4 flex justify-end gap-2">
-            <button type="button" className="btn-ghost text-sm" onClick={() => setConfirming(false)}>Cancel</button>
-            <button type="button" className="btn-primary text-sm" autoFocus onClick={() => { update({ ...s, enabled: true }); setConfirming(false) }}>
-              Turn on
-            </button>
+            <Button variant="ghost" onClick={() => setConfirming(false)}>Cancel</Button>
+            <Button variant="primary" data-autofocus onClick={() => { update({ ...s, enabled: true }); setConfirming(false) }}>Turn on</Button>
           </div>
         </Dialog>
       )}
-    </section>
+    </SettingsSection>
   )
 }

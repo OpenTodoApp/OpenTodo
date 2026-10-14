@@ -14,7 +14,7 @@ optionally encrypt them with a passphrase, and restore them with nothing but the
 `opentodo` binary.
 
 Nothing runs until the owner turns it on. Every setting is optional and managed
-from **Settings → Data → Backups** (owner only); operators who prefer environment
+from **Settings → Backups** (owner only); operators who prefer environment
 variables can preset them (see [Environment presets](#environment-presets)).
 
 - [Quick start](#quick-start)
@@ -27,15 +27,18 @@ variables can preset them (see [Environment presets](#environment-presets)).
 
 ## Quick start
 
-1. Sign in as the owner and open **Settings → Data → Backups**.
-2. Pick a destination. **Folder on the server** writes to `<data>/backups`
+1. Sign in as the owner and open **Settings → Backups**. The top of the page
+   shows the schedule, the next run and the last run with its outcome; below it
+   are the destination, schedule, retention and encryption, then the recent runs.
+2. Select **Change settings** and pick a destination. **Folder on the server** writes to `<data>/backups`
    (`/data/backups` in the container), which is inside the same volume: good
    against mistakes, not against losing the disk. For that, use S3 or WebDAV.
 3. Choose a schedule (for example daily at 03:00, server time) and how many
    backups to keep (default 7).
 4. Optionally set a passphrase to encrypt the archives.
-5. **Save**, then **Test destination** and **Back up now**. The status shows the
-   run in progress, then its outcome and size.
+5. **Save backup settings**, then **Test destination** and **Back up now**. The
+   status shows the run in progress, then its outcome (**Succeeded** or
+   **Failed**, with the error) and size. Each run is listed under **Recent runs**.
 
 The same is available over the API ([docs/api.md](api.md#backups)).
 

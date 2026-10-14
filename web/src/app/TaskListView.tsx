@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
@@ -30,6 +31,7 @@ import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
 import { Dialog } from './overlay'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'help' }>
 
@@ -75,6 +77,7 @@ function saveCollapsed(set: Set<string>) {
 }
 
 export function TaskListView({ route, userId }: { route: ListRoute; userId?: string }) {
+  const dt = useDateTimeFormat()
   const today = todayISO()
   // Zoned dues (absolute-datetimes) are grouped in the viewer zone; re-group when it changes.
   const zone = useViewerZone()
@@ -230,7 +233,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
         list.push(t)
         byDate.set(date, list)
       }
-      return [...byDate.entries()].map(([date, list]) => ({ key: date, heading: formatDateHeading(date, today), rows: list.map(flatRow) }))
+      return [...byDate.entries()].map(([date, list]) => ({ key: date, heading: formatDateHeading(date, today, dt.resolved), rows: list.map(flatRow) }))
     }
     if (route.view === 'label' || route.view === 'assigned') {
       // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
@@ -242,7 +245,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
       }))
     }
     return [{ key: 'all', heading: null, rows: tasks.map(flatRow) }]
-  }, [tree, tasks, route.view, today, zone, collapsed, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections])
+  }, [dt.resolved, tree, tasks, route.view, today, zone, collapsed, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections])
 
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
 
@@ -751,7 +754,7 @@ export function TaskListView({ route, userId }: { route: ListRoute; userId?: str
             <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
               {currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
               {title}
-              {route.view === 'today' && <span className="ml-2 text-sm font-normal text-faint">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span>}
+              {route.view === 'today' && <span className="ml-2 text-sm font-normal text-faint">{dt.formatDate(today, 'heading')}</span>}
               {route.view === 'label' && <span className="text-sm font-normal text-faint">{rows.length}</span>}
               {(route.view === 'today' || route.view === 'upcoming' || route.view === 'assigned') && (
                 <span className="ml-auto text-xs font-normal text-faint" title="This view is sorted by date: drag and Alt+↑/↓ are off here" data-sort-note>sorted by date</span>
@@ -922,7 +925,7 @@ function DurationChips({ active, onChange }: { active: DurationFilter | null; on
       ))}
       {active && (
         <button type="button" className="btn-ghost px-2 py-0.5 text-xs" onClick={() => onChange(null)} data-clear-duration>
-          ✕ Clear filter
+          <Icon name="x" size="xs" />Clear filter
         </button>
       )}
     </div>

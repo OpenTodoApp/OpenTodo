@@ -40,6 +40,8 @@ type State struct {
 	// Sections, Reminders and Views (including tombstoned ones) let own-export
 	// rows detect existing ids and foreign rows reuse sections by name.
 	Sections, Reminders, Views []opsync.Entity
+	// UserPrefs holds the account's own date and time preferences row, if any.
+	UserPrefs []opsync.Entity
 	// UserID is the importing account (own-export assignees are kept only for it).
 	UserID string
 	// Remembered maps source ids recorded by earlier, not undone imports of the
@@ -218,7 +220,7 @@ func sectionKey(projectID, name string) string {
 func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID func() string) *Plan {
 	pl := &planner{opts: opts, st: st, now: now.UnixMilli(), newID: newID, position: now.UnixMilli(),
 		byKind: map[string]map[string]opsync.Entity{KindProject: {}, KindLabel: {}, KindTask: {},
-			KindSection: {}, KindReminder: {}, KindView: {}},
+			KindSection: {}, KindReminder: {}, KindView: {}, KindUserPrefs: {}},
 		projectByName: map[string]string{}, labelByName: map[string]string{}, fingerprints: map[string]string{},
 		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
 		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}}
@@ -226,7 +228,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		st.Remembered = map[string]string{}
 	}
 	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks,
-		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views} {
+		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindUserPrefs: st.UserPrefs} {
 		for _, e := range list {
 			id := str(e, "id")
 			pl.byKind[kind][id] = e

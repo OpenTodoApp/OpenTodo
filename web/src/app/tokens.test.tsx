@@ -19,30 +19,37 @@ function render(over: Partial<TokensViewProps> = {}) {
 const token = (over: Partial<ApiToken> = {}): ApiToken => ({ id: 't1', name: 'laptop CLI', scope: 'full', createdAt: 1, lastUsedAt: null, ...over })
 
 describe('TokensView', () => {
-  it('offers a scope choice with full access preselected', () => {
-    const html = render()
+  it('offers a scope choice in the New token dialog, with full access preselected', () => {
+    expect(render()).not.toContain('aria-label="Token scope"')
+    const html = render({ creating: true })
     expect(html).toContain('aria-label="Token scope"')
     expect(html).toMatch(/<option value="full" selected="">Full access<\/option>/)
     expect(html).toContain('<option value="read">Read-only</option>')
     expect(html).toContain('<option value="agent">AI assistant, can make changes</option>')
     expect(html).toContain('only while the server owner and you allow assistant changes')
-    expect(render({ scope: 'read' })).toMatch(/<option value="read" selected="">Read-only<\/option>/)
+    expect(render({ creating: true, scope: 'read' })).toMatch(/<option value="read" selected="">Read-only<\/option>/)
   })
 
   it('labels each token with its scope; tokens from before scopes read as full', () => {
     const html = render({ tokens: [token(), token({ id: 't2', name: 'assistant', scope: 'read' }), token({ id: 't3', name: 'old', scope: undefined }),
       token({ id: 't4', name: 'desk', scope: 'agent' })] })
     expect((html.match(/>assistant, can make changes</g) ?? []).length).toBe(1)
-    expect(html).toContain('assistant')
     expect((html.match(/>read-only</g) ?? []).length).toBe(1)
     expect((html.match(/>full access</g) ?? []).length).toBe(2)
-    expect(html).toContain('aria-label="Revoke assistant"')
+    expect(html).toContain('aria-label="Actions for assistant"')
+    expect(html).toContain('New token')
   })
 
-  it('shows the secret once and the empty state', () => {
-    expect(render({ secret: 'ot_secret123' })).toContain('ot_secret123')
+  it('shows the secret once in the dialog, with copy, and the empty state', () => {
+    const shown = render({ creating: true, secret: 'ot_secret123' })
+    expect(shown).toContain('ot_secret123')
+    expect(shown).toContain('will not be shown again')
+    expect(shown).toContain('>Copy<')
     expect(render()).not.toContain('ot_')
-    expect(render()).toContain('No tokens yet.')
+    const empty = render()
+    expect(empty).toContain('No API tokens yet')
+    expect(empty).toContain('without your password')
+    expect(empty).toContain('New token')
   })
 
   it('maps scopes to labels', () => {

@@ -1,0 +1,30 @@
+name: UI baselines
+
+# Regenerates the visual-regression baselines of the design workbench (OpenSpec
+# design-language) inside the pinned Playwright image and uploads them as an
+# artifact. Download it and commit the PNGs under web/src/ui/__screenshots__/.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baselines:
+    name: Generate UI baselines
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.56.1-noble
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm i -g --no-audit --no-fund @playwright/test@1.56.1
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm run build-storybook
+        working-directory: web
+      - name: Write baselines
+        working-directory: scripts/ui-check
+        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --update-snapshots=all
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ui-baselines
+          path: web/src/ui/__screenshots__

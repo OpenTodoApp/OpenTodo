@@ -27,7 +27,7 @@ As you type, each thing OpenTodo recognises shows up as a chip under the input, 
 | --- | --- |
 | Keep a word literally ("may" is not May 1st) | Click the `×` on its chip, **or** press Backspace at the end of the line: the first press highlights the last chip, the second dismisses it. The text itself is not changed. |
 | Never parse some text | Put it in double quotes: `Watch "Next Friday" tomorrow` → title *Watch Next Friday*, due tomorrow. The quotes are removed from the title. |
-| Turn parsing off on this device | Settings → General → Quick add → *Parse natural language in quick add*. Quick add then saves the line exactly as typed. |
+| Turn parsing off on this device | Settings → Capture → Quick add → *Parse natural language in quick add*. Quick add then saves the line exactly as typed. |
 
 A dismissed chip stays dismissed while you keep typing; it comes back only if you edit that word. Backspace only highlights a chip when that chip's text ends the line; otherwise Backspace deletes text as usual.
 
@@ -49,9 +49,9 @@ Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when
 | `today`, `tonight`, `tomorrow`, `day after tomorrow` | that day |
 | `Monday` … `Sunday`, `mon`, `wed.` | the next one **after** today (on a Friday, `fri` means next Friday) |
 | `this sat` | same as the bare weekday |
-| `next Monday` | same as the bare weekday, unless that day is still in the current Monday–Sunday week; then the one a week later. On Friday 9 Oct, `next Wed` is 14 Oct and `next Sat` is 17 Oct (not tomorrow). |
+| `next Monday` | same as the bare weekday, unless that day is still in the current week; then the one a week later. Weeks start on your first day of the week (Monday unless you change it). On Friday 9 Oct, `next Wed` is 14 Oct and `next Sat` is 17 Oct (not tomorrow). |
 | `in 3 days`, `in 2 weeks`, `in a month` | today plus that much (months keep the day, clamped to the month's end) |
-| `next week`, `next month` | Monday of next week; the 1st of next month |
+| `next week`, `next month` | the first day of next week (Monday unless you start your week on Sunday or Saturday); the 1st of next month |
 | `3 Feb`, `Feb 3`, `3rd of February`, `December 25th 2027` | that date; without a year, the next time it comes round (today counts) |
 | `May`, `December` (full name alone) | the 1st of that month. Abbreviations (`mar`, `jan`) need a day number next to them. |
 | `12/11`, `12-11`, `12/11/2027`, `2026-11-03` | numeric dates; see day/month order below |
@@ -62,11 +62,13 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, project, priority or estimate.
 
-**Day/month order.** `12/11` is 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month. Change it under Settings → General → Quick add.
+**Day/month order.** While **Numeric dates like 12/11** is on **Automatic**, the order follows your date format in **Settings → Preferences → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, it follows your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The Automatic option says which one decided. Choosing day/month or month/day under **Settings → Capture → Quick add** fixes the order on this device and wins over your date format. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
+
+**First day of the week.** `next week` and `next <weekday>` use the first day of the week you chose in **Settings → Preferences → Date and time**, so they give the same result on all your devices.
 
 ## Languages
 
-Vocabulary is bundled for **English, German, French, Italian, Spanish and Portuguese**. The active languages are your browser's preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. Settings → General → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish `mar` alone is Tuesday; `mar 3` is March 3rd).
+Vocabulary is bundled for **English, German, French, Italian, Spanish and Portuguese**. The active languages are your browser's preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. Settings → Capture → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish `mar` alone is Tuesday; `mar 3` is March 3rd).
 
 | | Examples |
 | --- | --- |
@@ -84,7 +86,7 @@ Quick add still takes the view's context for anything the line does not set: tod
 
 ## Voice
 
-Quick add can also be dictated. Voice capture is **off by default** and is switched on per device in **Settings → General → Voice capture**; it is not synced, so turning it on for your phone leaves your laptop as it is. Browsers without speech recognition (Firefox, for example) show the switch disabled with an explanation, and quick add has no microphone button there.
+Quick add can also be dictated. Voice capture is **off by default** and is switched on per device in **Settings → Capture → Voice capture**; it is not synced, so turning it on for your phone leaves your laptop as it is. Browsers without speech recognition (Firefox, for example) show the switch disabled with an explanation, and quick add has no microphone button there.
 
 With voice capture on, press the microphone button in quick add or `Shift+V` anywhere outside a text field (plain `v` already toggles list and board in a project). Words appear in the box as they are recognised; when you stop talking, press the button again or press `Esc`, the final transcript is inserted at the caret and parsed exactly like typed text, chips included. **Nothing is saved until you press Enter**, so you can correct the line by hand first.
 

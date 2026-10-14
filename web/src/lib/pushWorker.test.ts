@@ -6,6 +6,8 @@ import { db, getMeta, useDatabase } from './db'
 import { createTask, getDeviceId, resetDeviceId } from './ops'
 import { addReminder } from './reminders'
 import { checkReminders, SHOWN_KEY, type ShownSet } from './reminderWatcher'
+import { formatDate, formatTime, resolveDateTime } from './dates'
+import { setUserPref, type DateTimePrefs } from './userPrefs'
 import source from '../../public/push-sw.js?raw'
 
 interface Scope {
@@ -13,10 +15,11 @@ interface Scope {
   shown: { title: string; options: Record<string, unknown> }[]
   messages: unknown[]
   fetches: { url: string; body: unknown }[]
+  opened: string[]
 }
 
 function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean } = {}): Scope {
-  const scope: Scope = { listeners: {}, shown: [], messages: [], fetches: [] }
+  const scope: Scope = { listeners: {}, shown: [], messages: [], fetches: [], opened: [] }
   const windows = (opts.windows ?? []).map((w) => ({
     focused: w.focused, visibilityState: w.focused ? 'visible' : 'hidden',
     postMessage: (m: unknown) => scope.messages.push(m), focus: async () => undefined,
@@ -24,7 +27,7 @@ function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean 
   const self = {
     crypto: globalThis.crypto,
     addEventListener: (type: string, fn: (ev: unknown) => void) => (scope.listeners[type] = fn),
-    clients: { matchAll: async () => windows, openWindow: vi.fn() },
+    clients: { matchAll: async () => windows, openWindow: vi.fn(async (url: string) => scope.opened.push(url)) },
     registration: { showNotification: async (title: string, options: Record<string, unknown>) => scope.shown.push({ title, options }) },
   }
   const fetchStub = async (url: string, init: { body: string }) => {
@@ -128,5 +131,83 @@ describe('service worker reminder handlers', () => {
     expect(sw.fetches).toEqual([])
     expect(sw.messages).toMatchObject([{ type: 'reminders:changed', reminderIds: [reminderId] }])
     expect(await db.outbox.count()).toBe(1)
+  })
+})
+
+describe('service worker test pushes (push-test-delivery)', () => {
+  it('shows a system notification even with the app focused, with a unique tag, and reports receipt', async () => {
+    const scope = loadWorker({ windows: [{ focused: true }, { focused: false }] })
+    await dispatch(scope, 'push', pushEvent({ type: 'test', testId: 'abc', sentAt: 1 }))
+    await dispatch(scope, 'push', pushEvent({ type: 'test', testId: 'def', sentAt: 2 }))
+    expect(scope.shown.map((s) => s.options.tag)).toEqual(['opentodo-test:abc', 'opentodo-test:def'])
+    expect(scope.shown[0].options.body).toMatch(/push works on this device/)
+    const receipts = scope.messages.filter((m) => (m as { type: string }).type === 'push:test-received')
+    expect(receipts.map((m) => (m as { testId: string }).testId)).toEqual(['abc', 'abc', 'def', 'def'])
+    expect(scope.messages.some((m) => (m as { type: string }).type === 'reminders:push')).toBe(false)
+  })
+
+  it('writes nothing to the database', async () => {
+    const before = { outbox: await db.outbox.count(), meta: await getMeta(SHOWN_KEY, null) }
+    const scope = loadWorker()
+    await dispatch(scope, 'push', pushEvent({ type: 'test', testId: 'abc', sentAt: 1 }))
+    expect({ outbox: await db.outbox.count(), meta: await getMeta(SHOWN_KEY, null) }).toEqual(before)
+  })
+
+  it('a click opens notification settings', async () => {
+    const scope = loadWorker()
+    await dispatch(scope, 'notificationclick', { notification: { data: { test: true, testId: 'abc' }, close: () => undefined }, action: '' })
+    expect(scope.opened).toEqual(['/settings/notifications'])
+    expect(scope.fetches).toEqual([])
+  })
+})
+
+type DueFormatter = (due: { date: string; time?: string }, prefs: Partial<DateTimePrefs> | undefined, today: string) => string
+
+/** Loads push-sw.js into a bare scope and returns its inline due formatter. */
+function workerFormatter(): DueFormatter {
+  const self: { addEventListener: () => void; __opentodoFormatDue?: DueFormatter } = { addEventListener: () => undefined }
+  new Function('self', 'fetch', 'indexedDB', source)(self, undefined, undefined)
+  return self.__opentodoFormatDue!
+}
+
+describe('service worker due text (date-time-preferences D7)', () => {
+  const TODAY = '2026-10-14'
+  const P = (p: Partial<DateTimePrefs>): DateTimePrefs => ({ date_format: 'system', time_format: 'system', week_start: 'system', ...p })
+  // One table for both formatters: the inline copy in push-sw.js and lib/dates.ts.
+  const FIXTURE: [Partial<DateTimePrefs>, { date: string; time?: string }][] = [
+    [{}, { date: '2026-11-03', time: '15:00' }],
+    [{}, { date: '2027-02-03' }],
+    [{ date_format: 'day-month', time_format: '24h' }, { date: '2026-11-03', time: '9:05' }],
+    [{ date_format: 'day-month' }, { date: '2027-02-03', time: '15:00' }],
+    [{ date_format: 'month-day', time_format: '12h' }, { date: '2026-11-03', time: '15:00' }],
+    [{ date_format: 'month-day', time_format: '12h' }, { date: '2027-02-03', time: '00:30' }],
+    [{ date_format: 'iso', time_format: '12h' }, { date: '2026-11-03', time: '12:00' }],
+    [{ date_format: 'unknown' as never, time_format: '36h' as never }, { date: '2026-11-03', time: '15:00' }],
+  ]
+  it.each(FIXTURE)('%o %o matches lib/dates.ts', (prefs, due) => {
+    const fmt = workerFormatter()
+    const r = resolveDateTime(P(prefs), { order: 'MD', hour12: false, weekStart: 1 })
+    const want = due.time ? `${formatDate(due.date, 'compact', r, TODAY)}, ${formatTime(due.time, r)}` : formatDate(due.date, 'compact', r, TODAY)
+    expect(fmt(due, prefs, TODAY)).toBe(want)
+  })
+
+  it('a pushed reminder reads Due Nov 3, 3:00 PM with month-day and 12h stored on the device', async () => {
+    const taskId = await createTask({ title: 'Pay rent', due: { date: `${new Date().getFullYear()}-11-03`, time: '15:00' } })
+    const reminderId = await addReminder(taskId, { kind: 'absolute', fire_at: Date.now() - 1000 })
+    await setUserPref('date_format', 'month-day')
+    await setUserPref('time_format', '12h')
+    db.close()
+    await db.open()
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: Date.now() - 1000 }))
+    expect(sw.shown[0].options.body).toBe('Due Nov 3, 3:00 PM')
+  })
+
+  it('falls back to the locale date and the stored time without preferences', async () => {
+    const { taskId, reminderId, now } = await setup()
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
+    const date = new Date(2026, 9, 11).toLocaleDateString(undefined, new Date().getFullYear() === 2026 ? { month: 'short', day: 'numeric' } : { year: 'numeric', month: 'short', day: 'numeric' })
+    expect(sw.shown[0].options.body).toBe(`Due ${date}, 10:00`)
   })
 })

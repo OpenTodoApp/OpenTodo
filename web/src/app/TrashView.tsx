@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/db'
@@ -5,6 +6,7 @@ import { restoreProject, restoreTask } from '../lib/ops'
 import { canDeleteProject, canEditTasks, roleOf } from '../lib/sharing'
 import { emptyTrash, PENDING_PURGES_KEY, purgeItems, remainingDays, RETENTION_KEY, trashItems, type PurgeRequest, type TrashItem } from '../lib/trash'
 import type { Membership } from '../lib/types'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
  * The Trash (OpenSpec `trash-and-history`): deleted tasks and projects from local
@@ -12,6 +14,7 @@ import type { Membership } from '../lib/types'
  * and shows as pending while offline. Keys: j/k select, r restore, Delete purge.
  */
 export function TrashView() {
+  const dt = useDateTimeFormat()
   const tasks = useLiveQuery(() => db.tasks.filter((t) => !!t.deleted_at).toArray(), [], [])
   const projects = useLiveQuery(() => db.projects.toArray(), [], [])
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
@@ -109,11 +112,11 @@ export function TrashView() {
             return (
               <li key={`${it.entity}:${it.id}`} data-trash-id={it.id} onClick={() => setSelected(i)}
                 className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-2 py-2 text-sm ${i === selected ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}`}>
-                <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : '○'}</span>
+                <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : <Icon name="circle" size="xs" />}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{it.title}</span>
                   <span className="block text-xs text-faint">
-                    {it.entity === 'project' ? 'Project' : it.projectName} · deleted {new Date(it.deletedAt).toLocaleString()}
+                    {it.entity === 'project' ? 'Project' : it.projectName} · deleted {dt.formatInstant(it.deletedAt, 'datetime')}
                     {isPending ? ' · pending permanent deletion' : days !== null ? ` · ${days} day${days === 1 ? '' : 's'} left` : ''}
                   </span>
                 </span>

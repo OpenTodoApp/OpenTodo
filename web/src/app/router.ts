@@ -27,8 +27,16 @@ export type Route =
   | { view: 'help'; page?: string; q?: string }
 
 /** Settings sections, each at /settings/<id> (settings-navigation); order is the overview's. */
-export const SETTINGS_SECTION_IDS = ['account', 'general', 'notifications', 'data', 'capture', 'integrations', 'ai', 'admin'] as const
+export const SETTINGS_SECTION_IDS = [
+  'account', 'security', 'encryption', 'activity',
+  'preferences', 'notifications', 'capture', 'projects',
+  'data', 'integrations', 'ai',
+  'admin', 'backups', 'access',
+] as const
 export type SettingsSectionId = (typeof SETTINGS_SECTION_IDS)[number]
+
+/** Section ids of an earlier layout, opened as their new section (settings-redesign D2). */
+export const LEGACY_SETTINGS_IDS: Readonly<Record<string, SettingsSectionId>> = { general: 'preferences' }
 
 function isSettingsSection(s: string | undefined): s is SettingsSectionId {
   return (SETTINGS_SECTION_IDS as readonly string[]).includes(s ?? '')
@@ -56,6 +64,7 @@ export function parseRoute(pathname: string): Route {
     case 'settings':
       // /settings/import is the import screen; an unknown section shows the overview.
       if (parts[1] === 'import') return { view: 'import' }
+      if (parts[1] && parts[1] in LEGACY_SETTINGS_IDS) return { view: 'settings', section: LEGACY_SETTINGS_IDS[parts[1]] }
       return isSettingsSection(parts[1]) ? { view: 'settings', section: parts[1] } : { view: 'settings' }
     case 'labels':
       return { view: 'labels' }

@@ -9,7 +9,7 @@ order: 30
 ---
 # Webhooks
 
-OpenTodo can notify other systems when your tasks and projects change: switch on a light when "Water plants" is completed, post to a chat when a task is created, start an n8n flow when a project is archived. Webhooks are configured per account in **Settings → Integrations → Webhooks** or through the [API](api.md#webhooks). Nothing is sent until you create one, and requests only ever go to the URLs you configured.
+OpenTodo can notify other systems when your tasks and projects change: switch on a light when "Water plants" is completed, post to a chat when a task is created, start an n8n flow when a project is archived. Webhooks are configured per account in **Settings → Integrations → Webhooks** (choose **Add webhook**, then pick the target URL, events and an optional project) or through the [API](api.md#webhooks). Each webhook's **⋯** menu has **Send test**, **Delivery log**, **Edit**, **Disable** or **Enable**, and **Delete**, which asks you to confirm. Nothing is sent until you create one, and requests only ever go to the URLs you configured.
 
 ## Events
 
@@ -228,7 +228,7 @@ For deployments managed as code, the optional `OPENTODO_WEBHOOKS_ALLOW_PRIVATE=t
 
 ### Secrets
 
-The secret (`whsec_…`) is shown once, when the webhook is created. It is stored in the server database in plaintext because the server needs it to sign each request; the database file is the trust boundary, just as for sessions and API tokens. If a secret leaks, delete the webhook and create a new one. Webhooks are server configuration: they are not part of the JSON export and not synced to devices.
+The secret (`whsec_…`) is shown once, in the dialog right after the webhook is created, with a **Copy** button. It is stored in the server database in plaintext because the server needs it to sign each request; the database file is the trust boundary, just as for sessions and API tokens. If a secret leaks, delete the webhook and create a new one. Webhooks are server configuration: they are not part of the JSON export and not synced to devices.
 
 Settings warns when a target uses plain `http://` outside this machine: the payload contains task content and would cross the network unencrypted.
 

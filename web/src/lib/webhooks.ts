@@ -1,6 +1,7 @@
 import { ApiError } from './api'
 import { getMeta, setMeta } from './db'
 import type { Webhook, WebhookDelivery, WebhookEvent } from './types'
+import { formatInstant } from './dates'
 
 /** Subscribable events in display order, with labels for the Settings screen. */
 export const WEBHOOK_EVENTS: { event: WebhookEvent; label: string }[] = [
@@ -63,7 +64,7 @@ export function deliveryOutcome(d: WebhookDelivery): string {
     parts.push(d.error === 'private_target' ? 'refused: private network target' : d.error)
   }
   if (d.durationMs !== null) parts.push(`${d.durationMs} ms`)
-  if (d.status === 'retry' && d.nextAttemptAt) parts.push(`next try ${new Date(d.nextAttemptAt).toLocaleString()}`)
+  if (d.status === 'retry' && d.nextAttemptAt) parts.push(`next try ${formatInstant(d.nextAttemptAt, 'datetime')}`)
   return parts.join(' · ')
 }
 

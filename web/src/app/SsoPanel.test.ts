@@ -13,18 +13,30 @@ const settings: OidcSettings = {
   managedBy: { issuer: 'settings', clientId: 'settings', clientSecret: 'settings', displayName: 'settings', ssoOnly: 'settings' },
 }
 
-function panel(overrides: Partial<SsoPanelViewProps> = {}): string {
+function panel(overrides: Partial<SsoPanelViewProps> & { configuring?: boolean } = {}): string {
   const s = overrides.settings ?? settings
   const props: SsoPanelViewProps = {
     settings: s, form: formFrom(s), online: true, busy: false, error: null, notice: null, test: null,
     onChange: () => {}, onSave: () => {}, onTest: () => {}, onRemoveSecret: () => {}, ...overrides,
   }
-  return renderToStaticMarkup(createElement(SsoPanelView, props))
+  return renderToStaticMarkup(createElement(SsoPanelView, { configuring: true, ...props, ...('configuring' in overrides ? { configuring: overrides.configuring } : {}) }))
 }
 
 const disabledCount = (html: string) => (html.match(/disabled=""/g) ?? []).length
 
 describe('SsoPanelView', () => {
+  it('leads with the provider and its status; the configuration stays closed until Configure', () => {
+    const html = panel({ configuring: false })
+    expect(html).toContain('>Single sign-on</h2>')
+    expect(html).toMatch(/data-hue="green"[^>]*><span[^>]*>On<\/span>/)
+    expect(html).toContain('Sign in with Home SSO')
+    expect(html).toContain('sso.example.com')
+    expect(html).toContain('>Configure</button>')
+    expect(html).not.toContain('Issuer URL')
+    const off = panel({ configuring: false, settings: { ...settings, enabled: false } })
+    expect(off).toContain('Off until you save an issuer and client id')
+  })
+
   it('shows the redirect URI, masked secret and the three switches', () => {
     const html = panel()
     expect(html).toContain('https://todo.example.com/api/v1/auth/oidc/callback')
@@ -89,7 +101,7 @@ describe('LinkedAccountsView', () => {
     expect(html).toContain('me@example.com')
     expect(html).toContain('sso.example.com')
     expect(html).toContain('used just now')
-    expect(html).toContain('aria-label="Unlink me@example.com"')
+    expect(html).toContain('aria-label="Actions for me@example.com"')
     expect(html).toContain('href="/api/v1/auth/oidc/start"')
     expect(html).toContain('Link Home SSO')
   })
@@ -103,7 +115,13 @@ describe('LinkedAccountsView', () => {
     const html = linked({ online: false })
     expect(html).toContain('Offline')
     expect(html).not.toContain('href="/api/v1/auth/oidc/start"')
-    expect(disabledCount(html)).toBe(2)
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Link Home SSO/)
+  })
+
+  it('shows an empty state with the link action when nothing is linked', () => {
+    const html = linked({ identities: [] })
+    expect(html).toContain('Nothing linked yet')
+    expect(html).toContain('href="/api/v1/auth/oidc/start"')
   })
 
   it('shows notices and errors from the link flow', () => {

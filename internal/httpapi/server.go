@@ -62,6 +62,9 @@ type Server struct {
 	// account (10/hour) (OpenSpec `user-management` D9).
 	adminLimiter    *rateLimiter
 	passwordLimiter *rateLimiter
+	// pushTestLimiter caps test pushes per account (5 per 10 minutes; OpenSpec
+	// `push-test-delivery` D3), see push.go.
+	pushTestLimiter *rateLimiter
 	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
 	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
@@ -1576,6 +1579,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["comments"] = comments
+	// The caller's date and time preferences (date-time-preferences D1): personal,
+	// no REST collection, but part of what the user owns, so the export carries them.
+	prefs, err := s.sync.List(r.Context(), uid, "user_prefs", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["user_prefs"] = prefs
 	// End-to-end encryption (OpenSpec `e2ee`): content fields above are ciphertext
 	// for an encrypted account; the wrapped key record makes the document
 	// restorable and decryptable elsewhere with the passphrase. null otherwise.

@@ -1,3 +1,4 @@
+import { Icon } from '../../ui/Icon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { api, ApiError } from '../../lib/api'
@@ -14,6 +15,7 @@ import { trapTab } from '../overlay/stack'
 import { isolate, useOverlay } from '../overlay/useOverlay'
 import { AssistantConsent } from './AssistantConsent'
 import { ChangeSetReview, type ReviewResult } from './ChangeSetReview'
+import { useDateTimeFormat } from '../DateTimePrefsProvider'
 
 export const ENCRYPTED_MESSAGE = 'The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.'
 export const OFFLINE_MESSAGE = 'The assistant needs a connection.'
@@ -48,7 +50,7 @@ export function AssistantSheet({ title, onClose, onEscape, children, footer, hea
         <div className="flex items-center gap-1 border-b border-slate-100 pl-4 pr-1 pt-[env(safe-area-inset-top)] dark:border-slate-800">
           <h2 id={titleId} className="min-w-0 flex-1 truncate py-2 text-base font-semibold">{title}</h2>
           {headerExtra}
-          <button type="button" className="btn-ghost touch-target my-1 px-2 text-lg leading-none" onClick={onClose} aria-label="Close" data-overlay-close>×</button>
+          <button type="button" className="btn-ghost touch-target my-1 px-2 text-lg leading-none" onClick={onClose} aria-label="Close" title="Close" data-overlay-close><Icon name="x" size="md" /></button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3" data-assistant-scroll>{children}</div>
         {footer && <div className="border-t border-slate-100 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 dark:border-slate-800">{footer}</div>}
@@ -90,6 +92,7 @@ export interface PanelViewProps {
 
 /** The panel's content without state (rendered to markup in tests). */
 export function AssistantPanelBody(p: PanelViewProps) {
+  const dt = useDateTimeFormat()
   const s = p.status
   if (!s) return <p className="text-sm text-muted" role="status">Loading…</p>
   if (s.reason === 'encryption_enabled') {
@@ -113,7 +116,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
                 <li key={t.id}>
                   <button type="button" className="btn-ghost w-full justify-start text-left" onClick={() => p.onPickThread(t.id)}>
                     <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                    <span className="text-xs text-faint">{new Date(t.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-xs text-faint">{dt.formatInstant(t.updated_at, 'date')}</span>
                   </button>
                 </li>
               ))}
@@ -193,7 +196,7 @@ export function Composer({ draft, onDraft, onSend, onStop, streaming, connected,
           placeholder={!connected ? OFFLINE_MESSAGE : 'Ask about your tasks…'} onChange={(e) => onDraft(e.target.value)} onKeyDown={onKeyDown} />
       </label>
       {streaming
-        ? <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={onStop}>Stop</button>
+        ? <button type="button" className="btn-secondary" onClick={onStop}>Stop</button>
         : <button type="submit" className="btn-primary" disabled={off || !draft.trim()}>Send</button>}
     </form>
   )

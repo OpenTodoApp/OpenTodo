@@ -116,6 +116,39 @@ jobs:
           name: layout-report
           path: layout-report
 
+  # Design workbench gates (OpenSpec design-language): every Storybook story in light
+  # and dark is checked with axe-core (WCAG 2.2 AA, serious and critical fail) and
+  # compared with the committed baselines in web/src/ui/__screenshots__ (375 and
+  # 1280 px). Baselines come from the pinned Playwright image: `make ui-baselines`
+  # or the "UI baselines" workflow. Diffs are uploaded as the ui-check-report artifact.
+  ui-check:
+    name: UI check (workbench a11y, visual regression)
+    runs-on: ubuntu-latest
+    # The same image `make ui-baselines` uses, so screenshots match the baselines
+    # pixel for pixel. A missing baseline is written and the job fails; the
+    # ui-check-report artifact then carries it (web/src/ui/__screenshots__) to commit.
+    container: mcr.microsoft.com/playwright:v1.56.1-noble
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm i -g --no-audit --no-fund playwright@1.56.1 @playwright/test@1.56.1
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm run build-storybook
+        working-directory: web
+      - name: Accessibility (axe-core on every story, light and dark)
+        run: node scripts/ui-check/a11y.mjs
+      - name: Visual regression
+        working-directory: scripts/ui-check
+        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: ui-check-report
+          path: |
+            web/test-results/ui-visual
+            web/playwright-report/ui-visual
+            web/src/ui/__screenshots__
+
   cli:
     name: Binaries (${{ matrix.goos }}/${{ matrix.goarch }})
     runs-on: ubuntu-latest

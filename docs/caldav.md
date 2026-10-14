@@ -16,7 +16,7 @@ Implemented by the OpenSpec change `caldav`. The endpoint lives under `/dav/` an
 
 CalDAV is **off by default**: until the owner enables it, every path under `/dav/` and `/.well-known/caldav` answers 404 without asking for credentials.
 
-1. As the owner, open **Settings → Integrations → Calendar apps (CalDAV)** and tick *Allow calendar apps to sync with this server*. It takes effect immediately, no restart.
+1. As the owner, open **Settings → Integrations → Calendar apps (CalDAV)** and switch on *Allow calendar apps to sync with this server*. The section shows **On** or **Off** beside it; members see the same status without the switch. It takes effect immediately, no restart.
 2. Deployments managed as code can set `OPENTODO_CALDAV=true` instead: it presets the toggle on the **first start only**; afterwards the Settings toggle decides.
 
 Use HTTPS. Calendar apps send the app password with every request (HTTP Basic); on plain `http://` it travels unencrypted. Settings warns when the server address is not https. Set `OPENTODO_BASE_URL` to your public https URL so Settings shows the right address.
@@ -25,13 +25,13 @@ Use HTTPS. Calendar apps send the app password with every request (HTTP Basic); 
 
 Calendar apps sign in with **your account email and an app password**, never your account password, an API token or a single sign-on login (all of those are refused at `/dav/`). App passwords work only for CalDAV: they cannot call the REST API or change the account.
 
-In **Settings → Integrations → Calendar apps** enter a name (for example "iPhone") and choose *Create app password*. The password (`otap_…`) is shown **once**; copy it into the calendar app. Create one per device so you can revoke a lost phone without touching the others. The list shows when each was created and last used. Revoking takes effect on the next request. Deactivating an account revokes its app passwords; deleting it removes them.
+In **Settings → Integrations → Calendar apps** choose **New app password**, enter a name (for example "iPhone") and choose **Create app password**. The password (`otap_…`) is shown **once** in the same dialog; use **Copy** and paste it into the calendar app. Create one per device so you can revoke a lost phone without touching the others. The list shows when each was created and last used. To revoke one, open its **⋯** menu and choose **Revoke**, then confirm. Revoking takes effect on the next request. Deactivating an account revokes its app passwords; deleting it removes them.
 
 Accounts with two-factor authentication or in SSO-only mode use app passwords like everyone else: creating one requires a recent sign-in (the same step-up check as API tokens). Failed sign-ins are limited to 10 a minute per address; after that the endpoint answers 429 for a minute.
 
 ## Client setup
 
-The server address is `https://<your server>/dav/` (Settings shows it). The user name is your account email.
+The server address is `https://<your server>/dav/` (Settings shows it with a copy button). The user name is your account email.
 
 ### Apple Reminders (iPhone, iPad, Mac)
 

@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { describeDue, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
@@ -8,12 +9,14 @@ import { useCommentCount } from './useCommentCounts'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
+// Priority tokens (design-system): ring in the priority colour, soft fill behind it.
 const PRIORITY_RING: Record<number, string> = {
-  1: 'border-red-500 bg-red-50 dark:bg-red-950/40',
-  2: 'border-orange-500 bg-orange-50 dark:bg-orange-950/40',
-  3: 'border-blue-500 bg-blue-50 dark:bg-blue-950/40',
-  4: 'border-slate-300 dark:border-slate-600',
+  1: 'border-p1 bg-p1-soft',
+  2: 'border-p2 bg-p2-soft',
+  3: 'border-p3 bg-p3-soft',
+  4: 'border-p4 bg-p4-soft',
 }
 
 const DUE_TONE = {
@@ -56,7 +59,8 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   /** Where the dragged task would land relative to this row (manual-ordering). */
   dropIndicator?: 'before' | 'after' | 'inside' | null
 }) {
-  const due = describeDue(task.due)
+  const dt = useDateTimeFormat()
+  const due = describeDue(task.due, undefined, undefined, dt.resolved)
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
   const hint = zoneHint(task.due)
   const done = !!task.completed_at
@@ -93,7 +97,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
               onClick={onToggleCollapse}
               className="flex h-5 w-4 items-center justify-center rounded text-xs text-faint hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700"
             >
-              {collapsed ? '▸' : '▾'}
+              <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
             </button>
           )}
         </span>
@@ -106,7 +110,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         className="group/check touch-target inline-flex items-center justify-center mt-0.5 shrink-0 self-start rounded-full pointer-coarse:-my-2.5 pointer-coarse:-ml-3 pointer-coarse:-mr-1"
       >
         <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${PRIORITY_RING[task.priority]} ${done ? 'bg-slate-400 border-slate-400 text-white' : 'group-hover/check:bg-emerald-100'}`}>
-          {done && <span className="text-xs leading-none">✓</span>}
+          {done && <Icon name="check" size="xs" />}
         </span>
       </button>
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
@@ -125,23 +129,23 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           )}
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
-          {breadcrumb && <span className="truncate text-faint" title="Parent task">↳ {breadcrumb}</span>}
+          {breadcrumb && <span className="inline-flex min-w-0 items-center gap-1 text-faint" title="Parent task"><Icon name="corner-down-right" size="xs" /><span className="truncate">{breadcrumb}</span></span>}
           {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-faint" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
           {task.recurrence ? (
-            <span className="text-muted" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring>↻</span>
+            <span className="text-muted" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring><Icon name="repeat" size="xs" /></span>
           ) : task.series_id ? (
-            <span className="text-slate-300 dark:text-slate-600" title="Occurrence of a recurring task" aria-label="Occurrence of a recurring task">↻</span>
+            <span className="text-slate-300 dark:text-slate-600" title="Occurrence of a recurring task" aria-label="Occurrence of a recurring task"><Icon name="repeat" size="xs" /></span>
           ) : null}
           {task.estimate_minutes ? (
             <span className="rounded bg-slate-100 px-1.5 font-mono text-[11px] text-muted dark:bg-slate-800 dark:text-slate-400" title="Estimate" data-estimate>
               {formatMinutes(task.estimate_minutes)}
             </span>
           ) : null}
-          {assignee && <AssigneeChip name={assignee} me={assignedToMe} />}
-          {task.description && <span className="text-faint">≡</span>}
+          {assignee && task.assignee_id && <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} />}
+          {task.description && <span className="text-faint" title="Has notes" aria-label="Has notes"><Icon name="list" size="xs" /></span>}
           {comments > 0 && (
             <span className="text-faint" title={`${comments} comment${comments === 1 ? '' : 's'}`} aria-label={`${comments} comment${comments === 1 ? '' : 's'}`} data-comments>
-              💬 {comments}
+              <span className="inline-flex items-center gap-0.5"><Icon name="message-circle" size="xs" />{comments}</span>
             </span>
           )}
           {labels.length > 0 && (

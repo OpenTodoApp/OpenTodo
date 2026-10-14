@@ -4,6 +4,19 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **Settings: grouped into fourteen sections with a clearer layout.** Settings opens on your profile card and the sections grouped under **You**, **App**, **Data and connections** and, for the owner and admins, **Server**. Security, Encryption, Activity, Preferences, Projects, Backups and Access policies now have their own pages. Every panel is a card that leads with its state (for example whether two-factor authentication is on and how many recovery codes are left), with settings as rows, forms that open from a button, and confirmations that say what will be lost. Old links such as `/settings/general` still work. ([Settings](docs/settings.md))
+
+### Added
+
+- **Icons, menus and a smart picker.** Every emoji and symbol that stood in for an icon is now a line icon from one consistent set (Lucide, bundled, no new download). Menus have icons, groups and shortcut hints and work fully with the keyboard (arrow keys, Home and End, typing a letter). The label and assignee pickers show the labels and people you use most on this device first, and find them by the start of any word or by letters in order, ignoring case and accents (“cafe” finds “Café”). Your pick history stays on the device and is cleared when you sign out. ([Design system](docs/design-system.md#building-blocks))
+- **New visual foundation.** Design tokens for colour, type, spacing, radius, elevation and motion in light and dark, the bundled Inter typeface (54 KB, served by your own server, never a font CDN), and refreshed buttons and inputs, keeping OpenTodo's emerald and slate look. Every text colour meets WCAG AA contrast in both themes, checked automatically. Contributors get a component workbench (Storybook, development only) with accessibility and visual-regression checks. ([Design system](docs/design-system.md))
+
+### Fixed
+
+- **Test notifications prove delivery.** **Settings → Notifications → Send test notification** used to show a notification from the page and always say "sent", even when reminders could never reach the device. It now sends a real push through your server and the push service, shows it even while the app is open, and says **Received on this device** only when the device confirms it, otherwise **accepted, not seen** with the operating-system settings to check. A new **Delivery check** lists each step push needs on the device (permission, service worker, subscription, push service, last test) with a fix for each problem. New route `POST /api/v1/push/test` (session or full token, 5 per 10 minutes). ([Notifications](docs/notifications.md#check-that-it-works), [API](docs/api.md#reminders-and-push))
+
 ## [0.3.0] - 2026-10-12
 
 OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat assistant inside the app that answers questions about your tasks and proposes changes you review and undo in one step, with Anthropic, OpenAI, Gemini or a model on your own network. An assistant you already use can now make changes over MCP, and the `ot` command is ready to be driven by coding agents. All of it is off until the owner turns it on; nothing is sent anywhere before that. [Use AI with OpenTodo](docs/ai-and-agents.md) compares the three options. Settings is also split into sections with their own pages, and a project can be shared with a single invite link.

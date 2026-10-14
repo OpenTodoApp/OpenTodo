@@ -1,11 +1,24 @@
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { hasAnyAction, isAdministrator, rowActions, type RowActions } from '../lib/roles'
 import { MembersPanel } from './MembersPanel'
 import type { AdminUser, User } from '../lib/types'
 import { Dialog as OverlayDialog } from './overlay'
+import { Menu } from './overlay/Menu'
+import { Avatar } from '../ui/Avatar'
+import { Badge } from '../ui/Card'
+import { Button } from '../ui/Button'
+import { Field, Input } from '../ui/Field'
+import { Icon } from '../ui/Icon'
+import { MenuGroup, MenuItem, MenuSeparator } from '../ui/Menu'
+import { ConfirmDialog } from '../ui/patterns/ConfirmDialog'
+import { EmptyState } from '../ui/patterns/EmptyState'
+import { ListRow } from '../ui/patterns/ListRow'
+import { Notice } from '../ui/patterns/Notice'
+import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import type { HueName } from '../ui/tokens/palette'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /** Dispatched after the viewer's own role changed (ownership transfer): the app re-reads its profile. */
 export const ACCOUNT_CHANGED_EVENT = 'opentodo:account-changed'
@@ -91,60 +104,91 @@ export function UsersPanel({ user }: { user: User }) {
   }
 
   const name = (u: AdminUser) => u.name || u.email
+  const [confirming, setConfirming] = useState<PendingAction>(null)
 
   return (
-    <UsersView
-      viewer={user}
-      users={online ? users : null}
-      offline={!online || unreachable}
-      busy={busy}
-      error={error}
-      notice={notice}
-      resetLink={resetLink}
-      copied={copied}
-      dialog={dialog}
-      onDeactivate={(u) => {
-        if (!window.confirm(`Deactivate ${name(u)}? They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their data is kept.`)) return
-        void run(() => api.deactivateUser(u.id), `${name(u)} is deactivated.`)
-      }}
-      onReactivate={(u) => {
-        if (!window.confirm(`Reactivate ${name(u)}? They can sign in again with their existing password. Revoked tokens are not restored.`)) return
-        void run(() => api.reactivateUser(u.id), `${name(u)} can sign in again.`)
-      }}
-      onReset={(u) => {
-        if (!window.confirm(`Create a password reset link for ${name(u)}? It works once and expires in 24 hours; any earlier link stops working.`)) return
-        void run(async () => {
-          const res = await api.issuePasswordReset(u.id)
-          setCopied(false)
-          setResetLink({ email: u.email, link: res.link, expiresAt: res.expiresAt })
-        }, `Reset link created for ${name(u)}.`)
-      }}
-      onRole={(u, role) => {
-        if (!window.confirm(role === 'admin' ? `Make ${name(u)} an admin? Admins can invite people and manage members.` : `Make ${name(u)} a member again?`)) return
-        void run(() => api.setUserRole(u.id, role), `${name(u)} is now ${role === 'admin' ? 'an admin' : 'a member'}.`)
-      }}
-      onMfaReset={(u) => {
-        if (!window.confirm(`Reset two-factor authentication for ${name(u)}? Their authenticator, recovery codes and remembered browsers stop working; they sign in with their password alone.`)) return
-        void run(() => api.resetMemberMfa(u.id), `Two-factor authentication reset for ${name(u)}.`)
-      }}
-      onOpenDialog={setDialog}
-      onDelete={(u, confirmEmail) => {
-        void run(() => api.deleteUser(u.id, confirmEmail), `${u.email} and their data were deleted.`).then((ok) => ok && setDialog(null))
-      }}
-      onTransfer={(u, password) => {
-        void run(() => api.transferOwnership(u.id, password), `${name(u)} is now the owner. You are an admin.`).then((ok) => {
-          if (!ok) return
-          setDialog(null)
-          window.dispatchEvent(new Event(ACCOUNT_CHANGED_EVENT))
-        })
-      }}
-      onCopy={() => {
-        if (!resetLink) return
-        navigator.clipboard.writeText(resetLink.link).then(() => setCopied(true), () => setError('Could not access the clipboard; select the link and copy it manually.'))
-      }}
-      onDismissLink={() => setResetLink(null)}
-    />
+    <>
+      <UsersView
+        viewer={user}
+        users={online ? users : null}
+        offline={!online || unreachable}
+        busy={busy}
+        error={error}
+        notice={notice}
+        resetLink={resetLink}
+        copied={copied}
+        dialog={dialog}
+        onDeactivate={(u) => setConfirming({ kind: 'deactivate', user: u })}
+        onReactivate={(u) => setConfirming({ kind: 'reactivate', user: u })}
+        onReset={(u) => setConfirming({ kind: 'reset', user: u })}
+        onRole={(u, role) => setConfirming({ kind: 'role', user: u, role })}
+        onMfaReset={(u) => setConfirming({ kind: 'mfa', user: u })}
+        onOpenDialog={setDialog}
+        onDelete={(u, confirmEmail) => {
+          void run(() => api.deleteUser(u.id, confirmEmail), `${u.email} and their data were deleted.`).then((ok) => ok && setDialog(null))
+        }}
+        onTransfer={(u, password) => {
+          void run(() => api.transferOwnership(u.id, password), `${name(u)} is now the owner. You are an admin.`).then((ok) => {
+            if (!ok) return
+            setDialog(null)
+            window.dispatchEvent(new Event(ACCOUNT_CHANGED_EVENT))
+          })
+        }}
+        onCopy={() => {
+          if (!resetLink) return
+          navigator.clipboard.writeText(resetLink.link).then(() => setCopied(true), () => setError('Could not access the clipboard; select the link and copy it manually.'))
+        }}
+        onDismissLink={() => setResetLink(null)}
+      />
+      {confirming && (
+        <ConfirmDialog {...confirmCopy(confirming, name(confirming.user))}
+          onCancel={() => setConfirming(null)}
+          onConfirm={() => {
+            const { user: u } = confirming
+            switch (confirming.kind) {
+              case 'deactivate': return run(() => api.deactivateUser(u.id), `${name(u)} is deactivated.`)
+              case 'reactivate': return run(() => api.reactivateUser(u.id), `${name(u)} can sign in again.`)
+              case 'reset':
+                return run(async () => {
+                  const res = await api.issuePasswordReset(u.id)
+                  setCopied(false)
+                  setResetLink({ email: u.email, link: res.link, expiresAt: res.expiresAt })
+                }, `Reset link created for ${name(u)}.`)
+              case 'role': return run(() => api.setUserRole(u.id, confirming.role), `${name(u)} is now ${confirming.role === 'admin' ? 'an admin' : 'a member'}.`)
+              case 'mfa': return run(() => api.resetMemberMfa(u.id), `Two-factor authentication reset for ${name(u)}.`)
+            }
+          }} />
+      )}
+    </>
   )
+}
+
+/** An account action waiting for confirmation in the dialog. */
+export type PendingAction =
+  | { kind: 'deactivate' | 'reactivate' | 'reset' | 'mfa'; user: AdminUser }
+  | { kind: 'role'; user: AdminUser; role: 'admin' | 'member' }
+  | null
+
+/** Title, consequence and button of each confirmation, naming what changes. */
+export function confirmCopy(a: NonNullable<PendingAction>, name: string): { title: string; consequence: string; confirmLabel: string; tone: 'danger' | 'default' } {
+  switch (a.kind) {
+    case 'deactivate':
+      return { title: `Deactivate ${name}?`, tone: 'danger', confirmLabel: 'Deactivate',
+        consequence: 'They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their data is kept.' }
+    case 'reactivate':
+      return { title: `Reactivate ${name}?`, tone: 'default', confirmLabel: 'Reactivate',
+        consequence: 'They can sign in again with their existing password. Revoked tokens are not restored.' }
+    case 'reset':
+      return { title: `Create a password reset link for ${name}?`, tone: 'default', confirmLabel: 'Create link',
+        consequence: 'It works once and expires in 24 hours; any earlier link stops working. You deliver it yourself; nothing is emailed.' }
+    case 'role':
+      return a.role === 'admin'
+        ? { title: `Make ${name} an admin?`, tone: 'default', confirmLabel: 'Make admin', consequence: 'Admins can invite people and manage members.' }
+        : { title: `Make ${name} a member again?`, tone: 'default', confirmLabel: 'Make member', consequence: 'They can no longer invite people or manage members.' }
+    case 'mfa':
+      return { title: `Reset two-factor authentication for ${name}?`, tone: 'danger', confirmLabel: 'Reset two-factor',
+        consequence: 'Their authenticator, recovery codes and remembered browsers stop working; they sign in with their password alone.' }
+  }
 }
 
 /** The Users and Members sections, shown to the owner and admins only. */
@@ -158,17 +202,18 @@ export function AdministrationSections({ user }: { user: User }) {
   )
 }
 
-const STATUS_BADGE: Record<AdminUser['status'], string> = {
-  active: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
-  deactivated: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200',
-}
+const ROLE_HUE: Record<AdminUser['role'], HueName> = { owner: 'green', admin: 'indigo', member: 'slate' }
+const ROLE_LABEL: Record<AdminUser['role'], string> = { owner: 'Owner', admin: 'Admin', member: 'Member' }
 
 /** Pure rendering of the Users section; free of effects so tests can render it to markup. */
 export function UsersView(p: UsersViewProps) {
+  const dt = useDateTimeFormat()
   const disabled = p.offline || p.busy
   const isOwner = p.viewer.role === 'owner'
+  const deactivated = p.users?.filter((u) => u.status === 'deactivated').length ?? 0
+  const admins = p.users?.filter((u) => u.role === 'admin').length ?? 0
 
-  function onRowKey(e: KeyboardEvent<HTMLLIElement>, u: AdminUser, a: RowActions) {
+  function onRowKey(e: KeyboardEvent<HTMLElement>, u: AdminUser, a: RowActions) {
     if (e.target !== e.currentTarget || disabled) return
     if (e.key === 'd' && (a.deactivate || a.reactivate)) {
       e.preventDefault()
@@ -184,75 +229,84 @@ export function UsersView(p: UsersViewProps) {
   }
 
   return (
-    <section className="space-y-3" aria-labelledby="users-heading">
-      <HelpHeading screen="settings/users" id="users-heading" className="font-semibold">Users</HelpHeading>
-      <p className="text-sm text-muted">
-        Everyone with an account on this server. {isOwner
-          ? 'You can manage every account and choose admins; admins manage members.'
-          : 'As an admin you can deactivate, reset and delete members.'}
-      </p>
-      {p.offline && (
-        <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200" role="status">
-          You are offline. User administration needs a connection to the server; nothing about other accounts is kept on this device.
-        </p>
+    <SettingsSection title="Users" helpId="settings/users" headingId="users-heading"
+      description={`Everyone with an account on this server. ${isOwner
+        ? 'You can manage every account and choose admins; admins manage members.'
+        : 'As an admin you can deactivate, reset and delete members.'}`}>
+      {p.offline && <Notice>You are offline. User administration needs a connection to the server; nothing about other accounts is kept on this device.</Notice>}
+      {p.users && (
+        <SettingRow label="Accounts" status={
+          <span data-testid="users-summary">
+            {p.users.length} {p.users.length === 1 ? 'account' : 'accounts'}
+            {admins > 0 && ` · ${admins} ${admins === 1 ? 'admin' : 'admins'}`}
+            {deactivated > 0 && ` · ${deactivated} deactivated`}
+          </span>
+        } />
       )}
       {p.resetLink && (
-        <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm dark:border-emerald-800 dark:bg-emerald-950" role="status">
-          <p className="mb-1 font-medium">Reset link for {p.resetLink.email}. Copy it now: it will not be shown again.</p>
-          <p className="mb-1 text-xs text-slate-600 dark:text-slate-300">
-            Deliver it yourself; nothing is emailed. It works once until {new Date(p.resetLink.expiresAt).toLocaleString()}.
-            API tokens keep working after a reset; deactivate the account instead if it may be compromised.
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <code className="break-all" tabIndex={0}>{p.resetLink.link}</code>
-            <button type="button" className="btn-ghost border border-emerald-300 text-xs dark:border-emerald-700" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy link'}</button>
-            <button type="button" className="btn-ghost text-xs" onClick={p.onDismissLink}>Done</button>
-          </div>
+        <div className="py-3">
+          <Notice tone="success" action={(
+            <span className="flex gap-1">
+              <Button size="sm" variant="secondary" icon="copy" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy link'}</Button>
+              <Button size="sm" variant="ghost" onClick={p.onDismissLink}>Done</Button>
+            </span>
+          )}>
+            <p className="font-medium">Reset link for {p.resetLink.email}. Copy it now: it will not be shown again.</p>
+            <code className="block break-all py-1" tabIndex={0}>{p.resetLink.link}</code>
+            <p>
+              Deliver it yourself; nothing is emailed. It works once until {dt.formatInstant(p.resetLink.expiresAt, 'datetime')}.
+              API tokens keep working after a reset; deactivate the account instead if it may be compromised.
+            </p>
+          </Notice>
         </div>
       )}
-      {p.notice && <p className="text-sm text-emerald-700 dark:text-emerald-400" role="status">{p.notice}</p>}
-      {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
+      {p.notice && <Notice tone="success">{p.notice}</Notice>}
+      {p.error && <Notice tone="danger">{p.error}</Notice>}
 
-      <ul className="divide-y divide-slate-200 dark:divide-slate-800" aria-label="Users">
+      <ul className="-mx-3 py-2" aria-label="Users">
         {p.users?.map((u) => {
           const a = rowActions(p.viewer, u)
+          const label = u.name || u.email
           return (
-            <li
-              key={u.id}
-              tabIndex={0}
-              onKeyDown={(e) => onRowKey(e, u, a)}
-              aria-label={`${u.name || u.email}, ${u.role}, ${u.status}`}
-              data-user={u.email}
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
-            >
-              <span className="min-w-0 flex-1">
-                <span className="font-medium">{u.name || u.email}</span>
-                {u.name && <span className="text-muted"> · {u.email}</span>}
-                {u.id === p.viewer.id && <span className="text-faint"> (you)</span>}
-                <span className="block text-xs text-faint">
-                  joined {new Date(u.createdAt).toLocaleDateString()} · {u.lastLoginAt ? `last sign-in ${new Date(u.lastLoginAt).toLocaleString()}` : 'no sign-in since the upgrade'}
-                </span>
-              </span>
-              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">{u.role}</span>
-              <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_BADGE[u.status]}`}>{u.status}</span>
-              {hasAnyAction(a) && (
-                <span className="flex flex-wrap gap-1">
-                  {a.role && <button type="button" className="btn-ghost text-xs" disabled={disabled} onClick={() => p.onRole(u, a.role!)}>{a.role === 'admin' ? 'Make admin' : 'Make member'}</button>}
-                  {a.deactivate && <button type="button" className="btn-ghost text-xs" disabled={disabled} onClick={() => p.onDeactivate(u)}>Deactivate</button>}
-                  {a.reactivate && <button type="button" className="btn-ghost text-xs" disabled={disabled} onClick={() => p.onReactivate(u)}>Reactivate</button>}
-                  {a.reset && <button type="button" className="btn-ghost text-xs" disabled={disabled} onClick={() => p.onReset(u)}>Reset password</button>}
-                  {a.mfaReset && <button type="button" className="btn-ghost text-xs" disabled={disabled} onClick={() => p.onMfaReset(u)}>Reset 2FA</button>}
-                  {a.transfer && <button type="button" className="btn-ghost text-xs" disabled={disabled} onClick={() => p.onOpenDialog({ kind: 'transfer', user: u })}>Transfer ownership</button>}
-                  {a.remove && <button type="button" className="btn-danger text-xs" disabled={disabled} onClick={() => p.onOpenDialog({ kind: 'delete', user: u })}>Delete</button>}
-                </span>
-              )}
+            <li key={u.id} data-user={u.email}>
+              <ListRow
+                leading={<Avatar id={u.id} name={label} size="md" />}
+                label={<>{label}{u.id === p.viewer.id && <span className="text-faint"> (you)</span>}</>}
+                ariaLabel={`${label}, ${u.role}, ${u.status}`}
+                meta={`${u.name ? `${u.email} · ` : ''}joined ${dt.formatInstant(u.createdAt, 'date')} · ${u.lastLoginAt ? `last sign-in ${dt.formatInstant(u.lastLoginAt, 'datetime')}` : 'no sign-in since the upgrade'}`}
+                badges={(
+                  <>
+                    <Badge hue={ROLE_HUE[u.role]}>{ROLE_LABEL[u.role]}</Badge>
+                    <Badge hue={u.status === 'active' ? 'green' : 'red'} tone="solid">{u.status === 'active' ? 'Active' : 'Deactivated'}</Badge>
+                  </>
+                )}
+                onKeyDown={(e) => onRowKey(e, u, a)}
+                menu={hasAnyAction(a) && (
+                  <Menu label={`Actions for ${label}`} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
+                    <MenuGroup>
+                      {a.role && <MenuItem label={a.role === 'admin' ? 'Make admin' : 'Make member'} icon="shield-check" disabled={disabled} onSelect={() => p.onRole(u, a.role!)} />}
+                      {a.deactivate && <MenuItem label="Deactivate" icon="lock" shortcut="D" disabled={disabled} onSelect={() => p.onDeactivate(u)} />}
+                      {a.reactivate && <MenuItem label="Reactivate" icon="rotate-ccw" shortcut="D" disabled={disabled} onSelect={() => p.onReactivate(u)} />}
+                      {a.reset && <MenuItem label="Reset password" icon="key-round" shortcut="R" disabled={disabled} onSelect={() => p.onReset(u)} />}
+                      {a.mfaReset && <MenuItem label="Reset two-factor authentication" icon="shield-check" disabled={disabled} onSelect={() => p.onMfaReset(u)} />}
+                      {a.transfer && <MenuItem label="Transfer ownership" icon="users" disabled={disabled} onSelect={() => p.onOpenDialog({ kind: 'transfer', user: u })} />}
+                    </MenuGroup>
+                    {a.remove && (
+                      <>
+                        <MenuSeparator />
+                        <MenuItem label="Delete account" icon="trash-2" shortcut="Del" danger disabled={disabled} onSelect={() => p.onOpenDialog({ kind: 'delete', user: u })} />
+                      </>
+                    )}
+                  </Menu>
+                )}
+              />
             </li>
           )
         })}
-        {p.users && p.users.length === 0 && <li className="py-2 text-sm text-faint">No accounts.</li>}
-        {p.users === null && !p.offline && <li className="py-2 text-sm text-faint">Loading…</li>}
       </ul>
-      <p className="text-xs text-faint">
+      {p.users && p.users.length === 0 && <EmptyState icon="users" title="No accounts" body="Invite someone below to give them an account on this server." />}
+      {p.users === null && !p.offline && <p className="py-2 text-meta text-faint">Loading…</p>}
+      <p className="pt-2 text-meta text-faint">
         Keyboard: focus a row, <span className="kbd">d</span> deactivates or reactivates, <span className="kbd">r</span> creates a reset link, <span className="kbd">Delete</span> deletes; each asks for confirmation.
       </p>
 
@@ -262,13 +316,13 @@ export function UsersView(p: UsersViewProps) {
       {p.dialog?.kind === 'transfer' && (
         <TransferDialog user={p.dialog.user} busy={p.busy} offline={p.offline} onCancel={() => p.onOpenDialog(null)} onConfirm={p.onTransfer} />
       )}
-    </section>
+    </SettingsSection>
   )
 }
 
 /** Destructive confirmations: a tap outside does not close them (Escape and Close do). */
 function Dialog({ title, children, onCancel }: { title: string; children: ReactNode; onCancel: () => void }) {
-  return <OverlayDialog title={title} onClose={onCancel} size="md" dismissable={false} className="space-y-3">{children}</OverlayDialog>
+  return <OverlayDialog title={title} onClose={onCancel} size="md" dismissable={false} role="alertdialog">{children}</OverlayDialog>
 }
 
 export function DeleteDialog({ user, busy, offline, onCancel, onConfirm }: {
@@ -282,18 +336,17 @@ export function DeleteDialog({ user, busy, offline, onCancel, onConfirm }: {
   }
   return (
     <Dialog title={`Delete ${user.email}?`} onCancel={onCancel}>
-      <form onSubmit={submit} className="space-y-3">
-        <p className="text-sm text-slate-600 dark:text-slate-300">
+      <form onSubmit={submit} className="space-y-4">
+        <p className="text-body text-default">
           This permanently deletes the account and all of its data on the server: tasks, projects (including projects it shared with others), sessions and tokens.
           It cannot be undone; only a backup can bring it back. Copies on their own devices are not wiped.
         </p>
-        <label className="block text-sm">
-          <span className="mb-1 block text-slate-600 dark:text-slate-300">Type <strong>{user.email}</strong> to confirm</span>
-          <input className="input" autoFocus autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} aria-label="Email to confirm deletion" />
-        </label>
+        <Field label={<>Type <strong>{user.email}</strong> to confirm</>}>
+          <Input data-autofocus autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} aria-label="Email to confirm deletion" />
+        </Field>
         <div className="flex justify-end gap-2">
-          <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
-          <button className="btn-danger" disabled={!matches || busy || offline}>Delete account</button>
+          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" variant="danger" className="border border-current" disabled={!matches || busy || offline}>Delete account</Button>
         </div>
       </form>
     </Dialog>
@@ -310,17 +363,16 @@ export function TransferDialog({ user, busy, offline, onCancel, onConfirm }: {
   }
   return (
     <Dialog title={`Transfer ownership to ${user.name || user.email}?`} onCancel={onCancel}>
-      <form onSubmit={submit} className="space-y-3">
-        <p className="text-sm text-slate-600 dark:text-slate-300">
+      <form onSubmit={submit} className="space-y-4">
+        <p className="text-body text-default">
           {user.email} becomes the owner of this server with every right, including transferring it back. You become an admin. There is always exactly one owner.
         </p>
-        <label className="block text-sm">
-          <span className="mb-1 block text-slate-600 dark:text-slate-300">Your password</span>
-          <input className="input" type="password" autoFocus autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-label="Your password" />
-        </label>
+        <Field label="Your password">
+          <Input type="password" data-autofocus autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        </Field>
         <div className="flex justify-end gap-2">
-          <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
-          <button className="btn-primary" disabled={!password || busy || offline}>Transfer ownership</button>
+          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" variant="primary" disabled={!password || busy || offline}>Transfer ownership</Button>
         </div>
       </form>
     </Dialog>

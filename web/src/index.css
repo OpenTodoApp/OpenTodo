@@ -1,24 +1,286 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* Secondary text that switches with the colour scheme, so `text-muted` and
-     `text-faint` meet WCAG AA (4.5:1) on every surface the app uses (white, slate-50
-     and slate-100 in light; slate-950, slate-900 and slate-800 in dark). `muted` is
-     for descriptions and metadata, `faint` for the quietest labels (section names,
-     counts, timestamps). Light: 6.4:1 and 5.2:1 on white; dark: 7.9:1 and 6.6:1 on slate-950. */
-  --color-muted: var(--ot-muted);
-  --color-faint: var(--ot-faint);
+/* OpenSpec design-language: design tokens (docs/design-system.md).
+   Raw values live in --ot-* custom properties: light on :root, dark under the system
+   preference and under [data-theme="dark"] (the workbench and any subtree). The two
+   dark blocks must stay identical; src/ui/tokens/contrast.test.ts checks that and
+   every contrast pair. `@theme inline` maps them to semantic utilities (bg-surface,
+   text-muted, border-input, rounded-card, shadow-2, text-body ...) that resolve per
+   element, so a [data-theme] subtree switches too. Text tokens meet WCAG AA on every
+   surface they are allowed on (see pairs.ts). */
+/* Interface typeface (design-system "Bundled typeface without network access"):
+   Inter 4.1, weight axis only, Latin subset (docs/design-system.md has the subset
+   command). Served from the app's own origin, hashed by Vite, precached by the
+   service worker. A unique family name keeps a locally installed Inter from being
+   used instead; swap shows the system font until it loads. */
+@font-face {
+  font-family: "OpenTodo Inter";
+  src: url("./assets/fonts/InterVariable-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0100-017F, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+2000-206F, U+20A0-20CF, U+2122, U+2190-21FF, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-:root {
+/* `dark:` follows the same two conditions as the tokens: the system preference
+   (unless a [data-theme="light"] ancestor opts out) or a [data-theme="dark"] ancestor. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"], [data-theme="light"] *)) {
+      @slot;
+    }
+  }
+}
+
+@theme inline {
+  --font-sans: "OpenTodo Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-canvas: var(--ot-canvas);
+  --color-surface: var(--ot-surface);
+  --color-raised: var(--ot-raised);
+  --color-sunken: var(--ot-sunken);
+  --color-accent: var(--ot-accent);
+  --color-accent-hover: var(--ot-accent-hover);
+  --color-accent-soft: var(--ot-accent-soft);
+  --color-focus: var(--ot-focus);
+  --color-p1: var(--ot-p1);
+  --color-p2: var(--ot-p2);
+  --color-p3: var(--ot-p3);
+  --color-p4: var(--ot-p4);
+  --color-p1-soft: var(--ot-p1-soft);
+  --color-p2-soft: var(--ot-p2-soft);
+  --color-p3-soft: var(--ot-p3-soft);
+  --color-p4-soft: var(--ot-p4-soft);
+  --color-success: var(--ot-success);
+  --color-success-soft: var(--ot-success-soft);
+  --color-warning: var(--ot-warning);
+  --color-warning-soft: var(--ot-warning-soft);
+  --color-danger: var(--ot-danger);
+  --color-danger-soft: var(--ot-danger-soft);
+  --color-info: var(--ot-info);
+  --color-info-soft: var(--ot-info-soft);
+  --color-muted: var(--ot-muted);
+  --color-faint: var(--ot-faint);
+  --color-on-accent: var(--ot-on-accent);
+  --text-color-strong: var(--ot-text-strong);
+  --text-color-default: var(--ot-text);
+  --text-color-accent: var(--ot-accent-text);
+  --text-color-on-accent-soft: var(--ot-accent-soft-text);
+  --text-color-on-success-soft: var(--ot-success-soft-text);
+  --text-color-on-warning-soft: var(--ot-warning-soft-text);
+  --text-color-on-danger-soft: var(--ot-danger-soft-text);
+  --text-color-on-info-soft: var(--ot-info-soft-text);
+  --color-hue-solid: var(--hue-solid);
+  --color-hue-soft: var(--hue-soft);
+  --text-color-hue: var(--hue-text);
+  --border-color-default: var(--ot-border);
+  --border-color-input: var(--ot-border-input);
+  --text-hint: 0.6875rem; --text-hint--line-height: 0.875rem;
+  --text-meta: 0.8125rem; --text-meta--line-height: 1.125rem;
+  --text-body: 0.9375rem; --text-body--line-height: 1.375rem;
+  --text-h3: 1.0625rem; --text-h3--line-height: 1.5rem;
+  --text-h2: 1.25rem; --text-h2--line-height: 1.75rem;
+  --text-h1: 1.5rem; --text-h1--line-height: 2rem;
+  --radius-chip: 6px;
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --shadow-1: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-2: 0 4px 12px rgb(15 23 42 / 0.10);
+  --shadow-3: 0 12px 32px rgb(15 23 42 / 0.16);
+  --ease-calm: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root, [data-theme="light"] {
+  --ot-canvas: #f8fafc;
+  --ot-surface: #ffffff;
+  --ot-raised: #ffffff;
+  --ot-sunken: #f1f5f9;
+  --ot-text-strong: #020617;
+  --ot-text: #0f172a;
   --ot-muted: #526075;
   --ot-faint: #5f6e82;
+  --ot-border: #e2e8f0;
+  --ot-border-input: #7c8aa0;
+  --ot-accent: #047857;
+  --ot-accent-hover: #065f46;
+  --ot-on-accent: #ffffff;
+  --ot-accent-text: #047857;
+  --ot-accent-soft: #ecfdf5;
+  --ot-accent-soft-text: #065f46;
+  --ot-focus: #059669;
+  --ot-p1: #dc2626;
+  --ot-p2: #ea580c;
+  --ot-p3: #2563eb;
+  --ot-p4: #64748b;
+  --ot-p1-soft: #fef2f2;
+  --ot-p2-soft: #fff7ed;
+  --ot-p3-soft: #eff6ff;
+  --ot-p4-soft: #f8fafc;
+  --ot-success: #047857;
+  --ot-success-soft: #ecfdf5;
+  --ot-success-soft-text: #065f46;
+  --ot-warning: #b45309;
+  --ot-warning-soft: #fffbeb;
+  --ot-warning-soft-text: #92400e;
+  --ot-danger: #dc2626;
+  --ot-danger-soft: #fef2f2;
+  --ot-danger-soft-text: #991b1b;
+  --ot-info: #0369a1;
+  --ot-info-soft: #f0f9ff;
+  --ot-info-soft-text: #075985;
+  --ot-hue-red-solid: #dc2626; --ot-hue-red-soft: #fee2e2; --ot-hue-red-text: #991b1b;
+  --ot-hue-orange-solid: #ea580c; --ot-hue-orange-soft: #ffedd5; --ot-hue-orange-text: #9a3412;
+  --ot-hue-yellow-solid: #d97706; --ot-hue-yellow-soft: #fef3c7; --ot-hue-yellow-text: #92400e;
+  --ot-hue-lime-solid: #4d7c0f; --ot-hue-lime-soft: #ecfccb; --ot-hue-lime-text: #3f6212;
+  --ot-hue-green-solid: #16a34a; --ot-hue-green-soft: #dcfce7; --ot-hue-green-text: #166534;
+  --ot-hue-teal-solid: #0d9488; --ot-hue-teal-soft: #ccfbf1; --ot-hue-teal-text: #115e59;
+  --ot-hue-cyan-solid: #0891b2; --ot-hue-cyan-soft: #cffafe; --ot-hue-cyan-text: #155e75;
+  --ot-hue-blue-solid: #2563eb; --ot-hue-blue-soft: #dbeafe; --ot-hue-blue-text: #1e40af;
+  --ot-hue-indigo-solid: #4f46e5; --ot-hue-indigo-soft: #e0e7ff; --ot-hue-indigo-text: #3730a3;
+  --ot-hue-violet-solid: #7c3aed; --ot-hue-violet-soft: #ede9fe; --ot-hue-violet-text: #5b21b6;
+  --ot-hue-pink-solid: #db2777; --ot-hue-pink-soft: #fce7f3; --ot-hue-pink-text: #9d174d;
+  --ot-hue-slate-solid: #64748b; --ot-hue-slate-soft: #f1f5f9; --ot-hue-slate-text: #334155;
+}
+:root {
+  --duration-ui: 120ms;
+  --duration-emphasis: 250ms;
+  --size-row: 44px;
+}
+@media (pointer: coarse) {
+  :root { --size-row: 48px; }
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    --ot-canvas: #020617;
+    --ot-surface: #0f172a;
+    --ot-raised: #1e293b;
+    --ot-sunken: #020617;
+    --ot-text-strong: #ffffff;
+    --ot-text: #f1f5f9;
     --ot-muted: #94a3b8;
     --ot-faint: #8695aa;
+    --ot-border: #1e293b;
+    --ot-border-input: #64748b;
+    --ot-accent: #047857;
+    --ot-accent-hover: #065f46;
+    --ot-on-accent: #ffffff;
+    --ot-accent-text: #34d399;
+    --ot-accent-soft: #022c22;
+    --ot-accent-soft-text: #6ee7b7;
+    --ot-focus: #34d399;
+    --ot-p1: #f87171;
+    --ot-p2: #fb923c;
+    --ot-p3: #60a5fa;
+    --ot-p4: #64748b;
+    --ot-p1-soft: rgb(69 10 10 / 0.4);
+    --ot-p2-soft: rgb(67 20 7 / 0.4);
+    --ot-p3-soft: rgb(23 37 84 / 0.4);
+    --ot-p4-soft: rgb(30 41 59 / 0.4);
+    --ot-success: #34d399;
+    --ot-success-soft: #022c22;
+    --ot-success-soft-text: #6ee7b7;
+    --ot-warning: #fbbf24;
+    --ot-warning-soft: #451a03;
+    --ot-warning-soft-text: #fcd34d;
+    --ot-danger: #f87171;
+    --ot-danger-soft: #450a0a;
+    --ot-danger-soft-text: #fca5a5;
+    --ot-info: #38bdf8;
+    --ot-info-soft: #082f49;
+    --ot-info-soft-text: #7dd3fc;
+    --ot-hue-red-solid: #f87171; --ot-hue-red-soft: #450a0a; --ot-hue-red-text: #fca5a5;
+    --ot-hue-orange-solid: #fb923c; --ot-hue-orange-soft: #431407; --ot-hue-orange-text: #fdba74;
+    --ot-hue-yellow-solid: #fbbf24; --ot-hue-yellow-soft: #451a03; --ot-hue-yellow-text: #fcd34d;
+    --ot-hue-lime-solid: #a3e635; --ot-hue-lime-soft: #1a2e05; --ot-hue-lime-text: #bef264;
+    --ot-hue-green-solid: #4ade80; --ot-hue-green-soft: #052e16; --ot-hue-green-text: #86efac;
+    --ot-hue-teal-solid: #2dd4bf; --ot-hue-teal-soft: #042f2e; --ot-hue-teal-text: #5eead4;
+    --ot-hue-cyan-solid: #22d3ee; --ot-hue-cyan-soft: #083344; --ot-hue-cyan-text: #67e8f9;
+    --ot-hue-blue-solid: #60a5fa; --ot-hue-blue-soft: #172554; --ot-hue-blue-text: #93c5fd;
+    --ot-hue-indigo-solid: #818cf8; --ot-hue-indigo-soft: #1e1b4b; --ot-hue-indigo-text: #a5b4fc;
+    --ot-hue-violet-solid: #a78bfa; --ot-hue-violet-soft: #2e1065; --ot-hue-violet-text: #c4b5fd;
+    --ot-hue-pink-solid: #f472b6; --ot-hue-pink-soft: #500724; --ot-hue-pink-text: #f9a8d4;
+    --ot-hue-slate-solid: #94a3b8; --ot-hue-slate-soft: #1e293b; --ot-hue-slate-text: #cbd5e1;
+  }
+}
+:root[data-theme="dark"], [data-theme="dark"] {
+  --ot-canvas: #020617;
+  --ot-surface: #0f172a;
+  --ot-raised: #1e293b;
+  --ot-sunken: #020617;
+  --ot-text-strong: #ffffff;
+  --ot-text: #f1f5f9;
+  --ot-muted: #94a3b8;
+  --ot-faint: #8695aa;
+  --ot-border: #1e293b;
+  --ot-border-input: #64748b;
+  --ot-accent: #047857;
+  --ot-accent-hover: #065f46;
+  --ot-on-accent: #ffffff;
+  --ot-accent-text: #34d399;
+  --ot-accent-soft: #022c22;
+  --ot-accent-soft-text: #6ee7b7;
+  --ot-focus: #34d399;
+  --ot-p1: #f87171;
+  --ot-p2: #fb923c;
+  --ot-p3: #60a5fa;
+  --ot-p4: #64748b;
+  --ot-p1-soft: rgb(69 10 10 / 0.4);
+  --ot-p2-soft: rgb(67 20 7 / 0.4);
+  --ot-p3-soft: rgb(23 37 84 / 0.4);
+  --ot-p4-soft: rgb(30 41 59 / 0.4);
+  --ot-success: #34d399;
+  --ot-success-soft: #022c22;
+  --ot-success-soft-text: #6ee7b7;
+  --ot-warning: #fbbf24;
+  --ot-warning-soft: #451a03;
+  --ot-warning-soft-text: #fcd34d;
+  --ot-danger: #f87171;
+  --ot-danger-soft: #450a0a;
+  --ot-danger-soft-text: #fca5a5;
+  --ot-info: #38bdf8;
+  --ot-info-soft: #082f49;
+  --ot-info-soft-text: #7dd3fc;
+  --ot-hue-red-solid: #f87171; --ot-hue-red-soft: #450a0a; --ot-hue-red-text: #fca5a5;
+  --ot-hue-orange-solid: #fb923c; --ot-hue-orange-soft: #431407; --ot-hue-orange-text: #fdba74;
+  --ot-hue-yellow-solid: #fbbf24; --ot-hue-yellow-soft: #451a03; --ot-hue-yellow-text: #fcd34d;
+  --ot-hue-lime-solid: #a3e635; --ot-hue-lime-soft: #1a2e05; --ot-hue-lime-text: #bef264;
+  --ot-hue-green-solid: #4ade80; --ot-hue-green-soft: #052e16; --ot-hue-green-text: #86efac;
+  --ot-hue-teal-solid: #2dd4bf; --ot-hue-teal-soft: #042f2e; --ot-hue-teal-text: #5eead4;
+  --ot-hue-cyan-solid: #22d3ee; --ot-hue-cyan-soft: #083344; --ot-hue-cyan-text: #67e8f9;
+  --ot-hue-blue-solid: #60a5fa; --ot-hue-blue-soft: #172554; --ot-hue-blue-text: #93c5fd;
+  --ot-hue-indigo-solid: #818cf8; --ot-hue-indigo-soft: #1e1b4b; --ot-hue-indigo-text: #a5b4fc;
+  --ot-hue-violet-solid: #a78bfa; --ot-hue-violet-soft: #2e1065; --ot-hue-violet-text: #c4b5fd;
+  --ot-hue-pink-solid: #f472b6; --ot-hue-pink-soft: #500724; --ot-hue-pink-text: #f9a8d4;
+  --ot-hue-slate-solid: #94a3b8; --ot-hue-slate-soft: #1e293b; --ot-hue-slate-text: #cbd5e1;
+}
+
+/* Stored project/label/view colours render through the nearest palette hue
+   (src/ui/tokens/palette.ts hueFor): data-hue sets --hue-*, read by bg-hue-solid,
+   bg-hue-soft and text-hue. The --ot-hue-* values follow the theme. */
+[data-hue="red"] { --hue-solid: var(--ot-hue-red-solid); --hue-soft: var(--ot-hue-red-soft); --hue-text: var(--ot-hue-red-text); }
+[data-hue="orange"] { --hue-solid: var(--ot-hue-orange-solid); --hue-soft: var(--ot-hue-orange-soft); --hue-text: var(--ot-hue-orange-text); }
+[data-hue="yellow"] { --hue-solid: var(--ot-hue-yellow-solid); --hue-soft: var(--ot-hue-yellow-soft); --hue-text: var(--ot-hue-yellow-text); }
+[data-hue="lime"] { --hue-solid: var(--ot-hue-lime-solid); --hue-soft: var(--ot-hue-lime-soft); --hue-text: var(--ot-hue-lime-text); }
+[data-hue="green"] { --hue-solid: var(--ot-hue-green-solid); --hue-soft: var(--ot-hue-green-soft); --hue-text: var(--ot-hue-green-text); }
+[data-hue="teal"] { --hue-solid: var(--ot-hue-teal-solid); --hue-soft: var(--ot-hue-teal-soft); --hue-text: var(--ot-hue-teal-text); }
+[data-hue="cyan"] { --hue-solid: var(--ot-hue-cyan-solid); --hue-soft: var(--ot-hue-cyan-soft); --hue-text: var(--ot-hue-cyan-text); }
+[data-hue="blue"] { --hue-solid: var(--ot-hue-blue-solid); --hue-soft: var(--ot-hue-blue-soft); --hue-text: var(--ot-hue-blue-text); }
+[data-hue="indigo"] { --hue-solid: var(--ot-hue-indigo-solid); --hue-soft: var(--ot-hue-indigo-soft); --hue-text: var(--ot-hue-indigo-text); }
+[data-hue="violet"] { --hue-solid: var(--ot-hue-violet-solid); --hue-soft: var(--ot-hue-violet-soft); --hue-text: var(--ot-hue-violet-text); }
+[data-hue="pink"] { --hue-solid: var(--ot-hue-pink-solid); --hue-soft: var(--ot-hue-pink-soft); --hue-text: var(--ot-hue-pink-text); }
+[data-hue="slate"] { --hue-solid: var(--ot-hue-slate-solid); --hue-soft: var(--ot-hue-slate-soft); --hue-text: var(--ot-hue-slate-text); }
+
+/* Reduced motion (design-system "Reduced motion"): movement and scaling become
+   instant; only colour and opacity may still fade. Animations run once, instantly. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-property: opacity, color, background-color, border-color, outline-color !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -30,33 +292,54 @@ html, body, #root {
   #root { height: 100dvh; }
 }
 
-body {
-  @apply bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+html {
+  font-synthesis: style;
 }
 
-.btn {
-  @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition
-    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:opacity-50;
+body {
+  @apply bg-canvas text-default antialiased;
 }
+
 @layer components {
-.btn-primary {
-  @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:opacity-50 bg-emerald-700 text-white hover:bg-emerald-800;
+/* Legacy component classes on tokens (design-system "Legacy component classes
+   follow the tokens"). The base is shared by selector instead of repeated per
+   variant; height comes from padding (40 px buttons and inputs, so they line up in a row) so the many
+   compact buttons that override padding or text size keep working. Dark hovers use
+   `raised` because `sunken` equals the dark canvas. */
+.btn, .btn-primary, .btn-secondary, .btn-ghost, .btn-danger {
+  @apply inline-flex items-center justify-center gap-2 rounded-control px-3.5 py-2.5 text-sm font-medium transition duration-(--duration-ui) ease-calm
+    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:opacity-50;
 }
-.btn-ghost {
-  @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:opacity-50 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800;
-}
-.btn-danger {
-  @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:opacity-50 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950;
-}
+.btn-primary { @apply bg-accent text-on-accent shadow-1 hover:bg-accent-hover; }
+.btn-secondary { @apply border border-input bg-surface text-default hover:bg-sunken dark:hover:bg-raised; }
+.btn-ghost { @apply text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised; }
+.btn-danger { @apply text-danger hover:bg-danger-soft; }
 .input {
-  @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400
-    focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30
-    dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
+  @apply w-full min-w-0 rounded-control border border-input bg-surface px-3 py-2 text-body text-default placeholder:text-faint
+    focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/30;
 }
-.kbd {
-  @apply rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 font-mono text-[11px] text-muted
-    dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400;
+/* Shared Button (src/ui/Button.tsx, OpenSpec change ui-primitives D3): the same
+   tokens as the legacy classes, plus sizes, icon-only and busy states. */
+/* Labels may wrap on narrow screens instead of pushing the page sideways; heights are minimums. */
+.ui-btn {
+  @apply relative inline-flex max-w-full items-center justify-center gap-2 rounded-control text-center font-medium transition duration-(--duration-ui) ease-calm
+    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus
+    disabled:cursor-not-allowed disabled:opacity-50 aria-busy:cursor-progress;
 }
+.ui-btn--sm { @apply min-h-8 px-2.5 py-1 text-meta; }
+.ui-btn--md { @apply min-h-10 px-3.5 py-2 text-sm; }
+.ui-btn--lg { @apply min-h-12 px-4 py-2.5 text-body; }
+.ui-btn--icon.ui-btn--sm { @apply h-8 w-8 p-0; }
+.ui-btn--icon.ui-btn--md { @apply h-10 w-10 p-0; }
+.ui-btn--icon.ui-btn--lg { @apply h-12 w-12 p-0; }
+.ui-btn--primary { @apply bg-accent text-on-accent shadow-1 hover:bg-accent-hover active:translate-y-px; }
+.ui-btn--secondary { @apply border border-input bg-surface text-default hover:bg-sunken active:bg-sunken dark:hover:bg-raised; }
+.ui-btn--ghost { @apply text-muted hover:bg-sunken hover:text-default active:bg-sunken dark:hover:bg-raised; }
+.ui-btn--danger { @apply text-danger hover:bg-danger-soft active:bg-danger-soft; }
+/* WebKit lets a long option label in a native select paint past the box, and the
+   GTK port (Linux) ignores overflow on it; paint containment keeps it inside. */
+select.input { @apply truncate; contain: layout paint; }
+.kbd { @apply rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
 /* Rich-text notes (collaborative-rich-text). ProseMirror's required base rules
    are inlined instead of importing its stylesheet. */
 .notes-editor {
@@ -119,7 +402,7 @@ body {
 }
 }
 @media (pointer: coarse) {
-  :where(button, [role="button"], summary, select, a.btn-primary, a.btn-ghost, a.btn-danger) { min-height: 44px; min-width: 44px; }
+  :where(button, [role="button"], summary, select, a.btn-primary, a.btn-secondary, a.btn-ghost, a.btn-danger, a.ui-btn) { min-height: 44px; min-width: 44px; }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"]), textarea) { min-height: 44px; }
   :where(label:has(> input[type="checkbox"], > input[type="radio"])) { min-height: 44px; }
 }

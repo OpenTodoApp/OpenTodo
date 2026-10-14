@@ -11,7 +11,7 @@ order: 70
 
 Optional, per account, off by default (OpenSpec change `e2ee`). When it is on, your devices encrypt the *content* of your tasks before it is synced, so the server, its backups and every server-side integration hold only ciphertext for it. Sync, offline use and conflict-free merging keep working because ciphertext travels through the unchanged operation log as an ordinary string value.
 
-Turn it on in **Settings → Account → End-to-end encryption**.
+Turn it on in **Settings → Encryption**.
 
 ## What is encrypted, what is not
 

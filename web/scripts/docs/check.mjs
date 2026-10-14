@@ -12,7 +12,7 @@ import { buildAll, staleFiles } from './build.mjs'
 import { headingsOf, parseFrontMatter, repoRootFrom, specNames } from './lib.mjs'
 import { END, START, loadShortcuts, shortcutsMarkdown } from './shortcuts.mjs'
 
-/** Help screen ids the app links to: <HelpLink screen="id">, <HelpHeading screen="id">, data-help-screen="id" or helpScreen('id'). */
+/** Help screen ids the app links to: <HelpLink screen="id">, <HelpHeading screen="id">, <SettingsSection helpId="id">, data-help-screen="id" or helpScreen('id'). */
 export function appScreenIds(repoRoot) {
   const ids = new Map()
   const walk = (dir) => {
@@ -24,6 +24,8 @@ export function appScreenIds(repoRoot) {
       const src = readFileSync(p, 'utf8')
       for (const m of src.matchAll(/(?:data-help-screen|helpScreen)\s*[=:(]\s*\{?\s*["'`]([^"'`]+)["'`]/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
       for (const m of src.matchAll(/<Help(?:Link|Heading)\b[^>]*?\bscreen=["']([^"']+)["']/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
+      // Stories render panels with fixture data; only the app's own components count.
+      if (!/\.stories\./.test(name)) for (const m of src.matchAll(/\bhelpId=["']([^"']+)["']/g)) ids.set(m[1], p.slice(repoRoot.length + 1))
     }
   }
   walk(join(repoRoot, 'web/src'))

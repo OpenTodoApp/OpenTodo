@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { HelpLink } from './help/HelpLink'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -9,6 +10,7 @@ import {
   IMPORT_FORMATS, type ImportFormat, type ImportJob, type ImportOptions, type ImportPreview, type ImportRow, type Project,
 } from '../lib/types'
 import { navigate } from './router'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /** Last fetched job list, kept per device so past summaries stay readable offline. */
 const JOBS_CACHE_KEY = 'opentodo.importJobs'
@@ -110,6 +112,7 @@ function jobSummary(j: ImportJob): string {
 
 /** Pure view: every state of the Import screen renders from props (tested without a DOM). */
 export function ImportView(p: ImportViewProps) {
+  const dt = useDateTimeFormat()
   const { options: o } = p
   const disabled = p.offline || p.busy
   const isOwn = (p.format || p.preview?.format) === 'opentodo'
@@ -117,7 +120,7 @@ export function ImportView(p: ImportViewProps) {
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 md:px-8">
       <section>
-        <button className="btn-ghost -ml-3 text-xs" onClick={() => navigate({ view: 'settings', section: 'data' })}>← Data settings</button>
+        <button className="btn-ghost -ml-3 text-xs" onClick={() => navigate({ view: 'settings', section: 'data' })}><Icon name="arrow-left" />Data settings</button>
         <div className="flex items-center justify-between gap-2"><h1 className="text-xl font-semibold">Import data</h1><HelpLink screen="import" topic="Importing data" /></div>
         <p className="mt-1 text-sm text-muted">
           Bring in tasks from an OpenTodo export, a CSV file or another task manager's JSON export. You see a preview first;
@@ -192,7 +195,7 @@ export function ImportView(p: ImportViewProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={disabled || !p.fileName} onClick={p.onPreview}>
+          <button className="btn-secondary" disabled={disabled || !p.fileName} onClick={p.onPreview}>
             {p.preview ? 'Refresh preview' : 'Preview'}
           </button>
           <button className="btn-primary" disabled={disabled || !p.preview || actionable === 0 || p.job?.status === 'running'} onClick={p.onStart}>
@@ -266,7 +269,7 @@ export function ImportView(p: ImportViewProps) {
               <div className="min-w-0 flex-1">
                 <p>
                   <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">{j.status}</span>
-                  {new Date(j.createdAt).toLocaleString()}
+                  {dt.formatInstant(j.createdAt, 'datetime')}
                 </p>
                 <p className="truncate text-xs text-muted">{jobSummary(j)}{j.message ? ` · ${j.message}` : ''}</p>
               </div>

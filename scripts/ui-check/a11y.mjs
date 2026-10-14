@@ -1,0 +1,49 @@
+// Accessibility gate (OpenSpec design-system "Accessibility gate on stories"): opens
+// every workbench story from the static build in Chromium, in light and dark, runs
+// axe-core with the WCAG 2.2 AA rules and fails on any serious or critical violation,
+// naming the story, theme and rule.
+//
+//   cd web && npm run build-storybook && node ../scripts/ui-check/a11y.mjs
+//
+// Env: STORYBOOK_DIR (default web/storybook-static), ONLY (comma-separated story ids).
+import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
+import { loadPlaywright, serveStatic, storyIds } from './serve.mjs'
+
+const repo = fileURLToPath(new URL('../../', import.meta.url))
+const root = process.env.STORYBOOK_DIR ?? `${repo}web/storybook-static`
+const AXE = readFileSync(createRequire(`${repo}web/package.json`).resolve('axe-core/axe.min.js'), 'utf8')
+const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
+
+const { chromium } = await loadPlaywright()
+const server = await serveStatic(root)
+const only = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
+const ids = (await storyIds(root)).filter((id) => !only || only.has(id))
+const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
+const failures = []
+
+for (const id of ids) {
+  for (const theme of ['light', 'dark']) {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } })
+    await page.goto(`${server.url}/iframe.html?id=${id}&viewMode=story&globals=theme:${theme}`)
+    await page.waitForFunction(() => document.querySelector('#storybook-root')?.childElementCount > 0, null, { timeout: 15000 })
+    await page.addScriptTag({ content: AXE })
+    const violations = await page.evaluate(async (tags) => {
+      // eslint-disable-next-line no-undef
+      const r = await axe.run('#storybook-root', { runOnly: { type: 'tag', values: tags }, resultTypes: ['violations'] })
+      return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
+        .map((v) => `${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')})`)
+    }, TAGS)
+    for (const v of violations) failures.push(`${id} [${theme}]: ${v}`)
+    await page.close()
+  }
+}
+
+await browser.close()
+server.close()
+if (failures.length) {
+  console.error(`UI a11y check: ${failures.length} problem(s)\n${failures.map((f) => `  - ${f}`).join('\n')}`)
+  process.exit(1)
+}
+console.log(`UI a11y check: ${ids.length} stories × 2 themes, no serious or critical violations`)

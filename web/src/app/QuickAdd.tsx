@@ -1,6 +1,9 @@
 import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import type { HueName } from '../ui/tokens/palette'
+import { Icon } from '../ui/Icon'
 import { HelpLink } from './help/HelpLink'
-import { describeDue, todayISO } from '../lib/dates'
+import { describeDue, formatDate, todayISO } from '../lib/dates'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { createLabel, LabelExistsError } from '../lib/labels'
 import {
   chipAtCaret, type Chip, dismissChip, findLabel, formatMinutes, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, parse,
@@ -11,12 +14,13 @@ import { useDictation } from './useDictation'
 
 export type { QuickAddInput }
 
-const CHIP_TONE: Record<Chip['kind'], string> = {
-  due: 'border-violet-300 bg-violet-50 text-violet-800 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-300',
-  project: 'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200',
-  label: 'border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/50 dark:text-sky-300',
-  priority: 'border-orange-300 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-300',
-  estimate: 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300',
+// Chip colours come from palette hues (design-system tokens), so both themes follow.
+const CHIP_HUE: Record<Chip['kind'], HueName> = {
+  due: 'violet',
+  project: 'slate',
+  label: 'cyan',
+  priority: 'orange',
+  estimate: 'green',
 }
 
 function nowHHMM(d = new Date()): string {
@@ -30,8 +34,7 @@ function browserLanguages(): readonly string[] {
 
 function dueInWords(due: Due): string {
   const words = describeDue(due)?.label ?? due.date
-  const [y, m, d] = due.date.split('-').map(Number)
-  const full = new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+  const full = formatDate(due.date, 'long')
   return words.startsWith('Today') || words.startsWith('Tomorrow') ? `${words} · ${full}` : words
 }
 
@@ -106,6 +109,9 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const [highlight, setHighlight] = useState<number | null>(null)
   const [settings, setSettings] = useState(loadQuickAddSettings)
   useEffect(() => onQuickAddSettingsChange(() => setSettings(loadQuickAddSettings())), [])
+  // The user's date format fills the automatic numeric order, and their first day of
+  // the week decides "next week" (date-time-preferences D5, D6).
+  const { prefs: dtPrefs, resolved } = useDateTimeFormat()
 
   const parsed = useMemo(() => {
     if (!settings.enabled || !value.trim()) return null
@@ -114,11 +120,12 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
       today: todayISO(),
       now: nowHHMM(),
       languages: resolveLanguages(settings, langs),
-      dayMonthOrder: resolveDayMonthOrder(settings, langs),
+      dayMonthOrder: resolveDayMonthOrder(settings, langs, dtPrefs),
+      weekStart: resolved.weekStart,
       projects,
       dismissed,
     })
-  }, [value, dismissed, projects, settings])
+  }, [value, dismissed, projects, settings, dtPrefs, resolved])
   const chips = parsed?.chips ?? []
   const emptyTitle = parsed !== null && parsed.title === ''
 
@@ -207,10 +214,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
             onClick={voice.toggle}
           >
             {voice.listening && <span className="absolute inset-0 animate-ping rounded-full bg-red-400/40 motion-reduce:hidden" aria-hidden="true" />}
-            <svg viewBox="0 0 24 24" className="relative h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="9" y="3" width="6" height="11" rx="3" />
-              <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-            </svg>
+            <Icon name="mic" className="relative" />
           </button>
         )}
         {!hideHint && <span className="kbd hidden sm:inline">q</span>}
@@ -238,7 +242,8 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                   key={c.key}
                   data-chip={c.kind}
                   title={`${KIND_NAME[c.kind]} from “${source}”`}
-                  className={`inline-flex items-center gap-1 rounded-full border py-0.5 pl-2 pr-1 ${CHIP_TONE[c.kind]} ${highlight === i ? 'ring-2 ring-emerald-500' : ''}`}
+                  data-hue={CHIP_HUE[c.kind]}
+                  className={`inline-flex items-center gap-1 rounded-full border border-hue-solid/40 bg-hue-soft py-0.5 pl-2 pr-1 text-hue ${highlight === i ? 'ring-2 ring-focus' : ''}`}
                 >
                   <span className="sr-only">{KIND_NAME[c.kind]}: </span>
                   {label?.color && <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: label.color }} aria-hidden="true" />}
@@ -257,7 +262,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
             })}
             <span className="text-muted" data-testid="quick-add-title">
               <span className="sr-only">Title: </span>
-              {emptyTitle ? <em>Type a title</em> : <>→ {parsed?.title}</>}
+              {emptyTitle ? <em>Type a title</em> : <span className="inline-flex items-center gap-1"><Icon name="arrow-right" size="xs" />{parsed?.title}</span>}
             </span>
           </div>
         )}

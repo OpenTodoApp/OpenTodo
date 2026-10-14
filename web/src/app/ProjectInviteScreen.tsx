@@ -5,6 +5,8 @@ import { requestSync } from '../lib/sync'
 import type { AuthStatus, ProjectInvitePreview, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { navigate } from './router'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { formatInstant } from '../lib/dates'
 
 // Screen behind /invite/p/<token> (OpenSpec `project-invite-links`): previews a
 // project invite link, lets a signed-in person join, and offers a visitor
@@ -127,7 +129,7 @@ export function ProjectInviteScreen({ token, user, status, onAuthenticated, onLo
   )
 }
 
-const when = (ms: number) => new Date(ms).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+const when = (ms: number) => formatInstant(ms, 'datetime')
 
 /** Pure rendering of every state; kept free of effects so tests can render it to markup. */
 export function ProjectInviteView({ state, user, join, step, form, onRetry, onJoin, onSignIn, onRegister, onLogout }: {
@@ -142,6 +144,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
   onRegister: () => void
   onLogout: () => void
 }) {
+  useDateTimeFormat()
   switch (state.kind) {
     case 'loading':
       return <Card title="Checking your invite link…"><p className="text-sm text-muted">One moment.</p></Card>
@@ -156,7 +159,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
       return (
         <Card title="This invite link is no longer valid">
           <p className="text-sm text-slate-600 dark:text-slate-300">It may have expired, been revoked or already been used, or the project is gone. Ask the person who invited you for a new link.</p>
-          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/">{user ? 'Back to my tasks' : 'Go to sign-in'}</a>
+          <a className="btn-secondary" href="/">{user ? 'Back to my tasks' : 'Go to sign-in'}</a>
         </Card>
       )
     case 'rate-limited':
@@ -200,7 +203,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
             <p className="text-sm text-amber-700 dark:text-amber-300" role="alert">This link was issued for {p.email}, but you are signed in as {user.email}. Sign out and sign in with that address to join.</p>
             <div className="flex flex-wrap gap-2">
               <button className="btn-primary" onClick={onLogout}>Sign out</button>
-              <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/">Back to my tasks</a>
+              <a className="btn-secondary" href="/">Back to my tasks</a>
             </div>
           </>
         ) : (
@@ -208,7 +211,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
             {join.kind === 'error' && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{join.message}</p>}
             <div className="flex flex-wrap gap-2">
               <button className="btn-primary" autoFocus disabled={join.kind === 'busy'} onClick={onJoin}>{join.kind === 'busy' ? 'Joining…' : 'Join project'}</button>
-              <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/">Not now</a>
+              <a className="btn-secondary" href="/">Not now</a>
             </div>
             <p className="text-xs text-muted">Not you? <button type="button" className="underline" onClick={onLogout}>Sign out</button> and use another account.</p>
           </>

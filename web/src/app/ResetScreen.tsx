@@ -112,7 +112,7 @@ export function ResetView({ state, user, form, onRetry, onLogout }: {
         </p>
         <div className="flex gap-2">
           <button className="btn-primary" onClick={onLogout}>Sign out and continue</button>
-          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/">Back to my tasks</a>
+          <a className="btn-secondary" href="/">Back to my tasks</a>
         </div>
       </Card>
     )
@@ -131,7 +131,7 @@ export function ResetView({ state, user, form, onRetry, onLogout }: {
       return (
         <Card title="This reset link is no longer valid">
           <p className="text-sm text-slate-600 dark:text-slate-300">It may have expired, been replaced by a newer link, or already been used. Ask the server owner or an admin for a new one.</p>
-          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/">Go to sign-in</a>
+          <a className="btn-secondary" href="/">Go to sign-in</a>
         </Card>
       )
     case 'rate-limited':

@@ -64,7 +64,9 @@ step('task detail: priority + due date')
 await row(page, 'Get three quotes for the kitchen').click()
 await detail(page).getByRole('button', { name: 'P1' }).click()
 const today = new Date(); const iso = today.toISOString().slice(0, 10)
+// The due date is a text field in the user's format; ISO is always accepted and Enter commits it.
 await detail(page).getByLabel('Due date').fill(iso)
+await detail(page).getByLabel('Due date').press('Enter')
 // Notes are a rich-text editor (contenteditable, role textbox) that saves after a short pause.
 const notes = detail(page).getByRole('textbox', { name: 'Notes' })
 await notes.click(); await notes.fill('Ask about lead times and payment schedule.')
@@ -74,6 +76,7 @@ await page.waitForFunction((t) => document.querySelector('aside[data-detail-for]
 await detail(page).getByRole('button', { name: 'P2' }).click()
 const tomorrow = new Date(today.getTime() + 86400000).toISOString().slice(0, 10)
 await detail(page).getByLabel('Due date').fill(tomorrow)
+await detail(page).getByLabel('Due date').press('Enter')
 await page.keyboard.press('Escape')
 
 step('keyboard: j, c completes')

@@ -139,6 +139,7 @@ function tableOf(entity: Entity) {
     case 'reminder': return db.reminders
     case 'view': return db.views
     case 'project_prefs': return db.prefs
+    case 'user_prefs': return db.userPrefs
     default: return db.tasks
   }
 }
