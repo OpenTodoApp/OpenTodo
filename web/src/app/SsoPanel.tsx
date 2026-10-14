@@ -225,7 +225,7 @@ export function LinkedAccountsPanel() {
   const [provider, setProvider] = useState<OidcStatus | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // The link flow returns to /settings/account (this panel's section) with ?linked=1, ?reauthenticated=1 or ?error=<code>.
+  // The link flow returns to /settings/security (this panel's section) with ?linked=1, ?reauthenticated=1 or ?error=<code>.
   const [notice] = useState<string | null>(() => {
     if (takeQueryParam('linked')) return 'Linked. You can now sign in with the provider.'
     if (takeQueryParam('reauthenticated')) return 'Identity confirmed with the provider.'

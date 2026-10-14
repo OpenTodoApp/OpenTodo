@@ -140,11 +140,15 @@ describe('Settings visibility', () => {
 
   it('hides both from members, who still get the Password section', () => {
     expect(renderToStaticMarkup(createElement(AdministrationSections, { user: member }))).toBe('')
-    const pw = renderToStaticMarkup(createElement(PasswordView, {
+    const closed = renderToStaticMarkup(createElement(PasswordView, {
       online: true, current: '', next: '', busy: false, error: null, done: false, onCurrent: noop, onNext: noop, onSubmit: noop,
     }))
-    expect(pw).toContain('Change password')
-    expect(pw).toContain('autoComplete="current-password"')
+    expect(closed).toContain('Change password')
+    expect(closed).not.toContain('autoComplete="current-password"')
+    const open = renderToStaticMarkup(createElement(PasswordView, {
+      online: true, current: '', next: '', busy: false, error: null, done: false, onCurrent: noop, onNext: noop, onSubmit: noop, open: true,
+    }))
+    expect(open).toContain('autoComplete="current-password"')
   })
 
   it('disables the password form offline', () => {

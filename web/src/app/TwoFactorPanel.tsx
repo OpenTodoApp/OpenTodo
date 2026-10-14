@@ -1,4 +1,15 @@
-import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { Badge } from '../ui/Card'
+import { Button } from '../ui/Button'
+import { Icon } from '../ui/Icon'
+import { MenuItem } from '../ui/Menu'
+import { ConfirmDialog } from '../ui/patterns/ConfirmDialog'
+import { ListRow } from '../ui/patterns/ListRow'
+import { Notice } from '../ui/patterns/Notice'
+import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Dialog } from './overlay/Dialog'
+import { Menu } from './overlay/Menu'
+import { navigate } from './router'
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
@@ -245,18 +256,15 @@ export interface TwoFactorPanelViewProps {
   error: string | null
   devices: TrustedDevice[] | null
   policy: MfaPolicy | null
-  /** Rendered in place of the actions while enrolling or showing fresh codes. */
-  wizard: ReactNode | null
   onStart: () => void
   onDisable: () => void
   onRegenerate: () => void
   onForgetDevice: (id: string) => void
   onForgetAll: () => void
-  onPolicy: (p: MfaPolicy) => void
   now?: number
 }
 
-const POLICY_LABEL: Record<MfaPolicy, string> = {
+export const POLICY_LABEL: Record<MfaPolicy, string> = {
   none: 'Optional for everyone',
   owner: 'Required for the owner',
   all: 'Required for every account',
@@ -265,85 +273,62 @@ const POLICY_LABEL: Record<MfaPolicy, string> = {
 /** Presentational part of the Settings section, rendered without effects for tests. */
 export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
   const disabled = !p.online || p.busy
-  const st = p.status
+  const st = p.online ? p.status : null
+  const few = !!st?.enrolled && st.recoveryCodesRemaining <= 3
   return (
-    <section className="space-y-3" aria-labelledby="mfa-heading" data-testid="mfa-panel">
-      <HelpHeading screen="settings/two-factor" id="mfa-heading" className="font-semibold">Two-factor authentication</HelpHeading>
-      <p className="text-sm text-muted">
-        After your password, sign-in asks for a six-digit code from an authenticator app on your phone. Signing in with a passkey that
-        checks your fingerprint, face or PIN skips the code. Your server makes and checks the codes itself and sends nothing anywhere.
-      </p>
-      {!p.online && (
-        <p role="status" className="rounded-md bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          You are offline. Two-factor settings need a connection to your server; the status below is the last one seen.
-        </p>
-      )}
+    <SettingsSection title="Two-factor authentication" helpId="settings/two-factor" headingId="mfa-heading" testId="mfa-panel"
+      description="After your password, sign-in asks for a six-digit code from an authenticator app. A passkey that checks your fingerprint, face or PIN skips the code. Your server makes and checks the codes itself.">
+      {!p.online && <Notice>You are offline. Two-factor authentication needs a connection to your server.</Notice>}
       {st && (
-        <p className="text-sm" data-testid="mfa-status">
-          Status: <strong>{st.enrolled ? 'On' : 'Off'}</strong>
-          {st.enrolled && <> · {st.recoveryCodesRemaining} of 10 recovery codes left</>}
-          {st.required && <> · required by the server owner</>}
-        </p>
+        <SettingRow label="Status" status={
+          <span className="flex flex-wrap items-center gap-2" data-testid="mfa-status">
+            <Badge hue={st.enrolled ? (few ? 'orange' : 'green') : 'slate'}>{st.enrolled ? 'On' : 'Off'}</Badge>
+            {st.enrolled && <span>{st.recoveryCodesRemaining} of 10 recovery codes left</span>}
+            {st.required && <span className="text-muted">Required by the server owner</span>}
+          </span>
+        } control={!st.enrolled && <Button variant="primary" disabled={disabled} onClick={p.onStart}>Set up two-factor authentication</Button>} />
       )}
-      {st?.enrolled && st.recoveryCodesRemaining <= 3 && (
-        <p className="text-sm text-amber-700 dark:text-amber-300">Few recovery codes left. Generate a new set and store it safely.</p>
+      {few && <Notice tone="warning">Few recovery codes left. Generate a new set and store it safely.</Notice>}
+      {st?.enrolled && (
+        <SettingRow label="Recovery codes" description="Use one to sign in if you lose your phone. Each works once."
+          control={<Button variant={few ? 'primary' : 'secondary'} disabled={disabled} onClick={p.onRegenerate}>New recovery codes</Button>} />
       )}
-
-      {p.wizard ?? (
-        <div className="flex flex-wrap gap-2">
-          {st && !st.enrolled && <button className="btn-primary" disabled={disabled} onClick={p.onStart}>Set up two-factor authentication</button>}
-          {st?.enrolled && (
-            <>
-              <button className="btn-secondary" disabled={disabled} onClick={p.onRegenerate}>New recovery codes</button>
-              <button className="btn-danger" disabled={disabled || st.required} onClick={p.onDisable}
-                title={st.required ? 'Required by the server owner' : undefined}>
-                Turn off
-              </button>
-            </>
-          )}
-        </div>
-      )}
-      {st?.enrolled && st.required && !p.wizard && (
-        <p className="text-xs text-muted">The server owner requires two-factor authentication for your account, so it cannot be turned off.</p>
-      )}
-      {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
+      {p.error && <Notice tone="danger">{p.error}</Notice>}
 
       {st?.enrolled && (
-        <div className="space-y-1">
-          <h3 className="text-sm font-medium">Remembered browsers</h3>
-          <p className="text-xs text-muted">These browsers skip the code for 30 days after you chose "Remember this device".</p>
-          <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+        <div className="space-y-1 py-3">
+          <h3 className="text-sm font-medium text-default">Remembered browsers</h3>
+          <p className="text-meta text-muted">These browsers skip the code for 30 days after you chose "Remember this device".</p>
+          {p.devices && p.devices.length === 0 && <p className="py-2 text-meta text-faint">No remembered browsers.</p>}
+          <div className="-mx-3">
             {p.devices?.map((d) => (
-              <li key={d.id} className="flex flex-wrap items-center gap-3 py-2 text-sm">
-                <span className="min-w-0 flex-1 truncate" title={d.userAgent}>{browserName(d.userAgent)}</span>
-                <span className="text-xs text-faint">
-                  used {relativeTime(d.lastUsedAt ?? d.createdAt, p.now)} · until {new Date(d.expiresAt).toLocaleDateString()}
-                </span>
-                <button className="btn-ghost text-xs" disabled={disabled} aria-label={`Forget ${browserName(d.userAgent)}`} onClick={() => p.onForgetDevice(d.id)}>Forget</button>
-              </li>
+              <ListRow key={d.id} leading={<Icon name="globe" size="md" />} label={browserName(d.userAgent)}
+                meta={`Used ${relativeTime(d.lastUsedAt ?? d.createdAt, p.now)} · until ${new Date(d.expiresAt).toLocaleDateString()}`}
+                menu={(
+                  <Menu label={`Actions for ${browserName(d.userAgent)}`} trigger={<Icon name="ellipsis" />} kind="menu"
+                    triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
+                    <MenuItem label="Forget this browser" icon="x" danger disabled={disabled} onSelect={() => p.onForgetDevice(d.id)} />
+                  </Menu>
+                )} />
             ))}
-            {p.devices && p.devices.length === 0 && <li className="py-2 text-sm text-faint">No remembered browsers.</li>}
-          </ul>
+          </div>
           {p.devices && p.devices.length > 0 && (
-            <button className="btn-ghost text-xs border border-slate-300 dark:border-slate-700" disabled={disabled} onClick={p.onForgetAll}>Forget all browsers</button>
+            <Button variant="secondary" size="sm" disabled={disabled} onClick={p.onForgetAll}>Forget all browsers</Button>
           )}
         </div>
       )}
 
-      {p.isOwner && (
-        <label className="block space-y-1 text-sm">
-          <span className="font-medium">Policy for this server</span>
-          <select className="input max-w-xs" value={p.policy ?? st?.policy ?? 'none'} disabled={disabled || p.policy === null}
-            onChange={(e) => p.onPolicy(e.target.value as MfaPolicy)} aria-label="Two-factor policy for this server">
-            {(Object.keys(POLICY_LABEL) as MfaPolicy[]).map((k) => <option key={k} value={k}>{POLICY_LABEL[k]}</option>)}
-          </select>
-          <span className="block text-xs text-muted">
-            Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until
-            they do. API tokens are never affected.
-          </span>
-        </label>
+      {st?.enrolled && (
+        <SettingRow label="Turn off" description={st.required ? 'The server owner requires two-factor authentication for your account, so it cannot be turned off.' : 'Sign-in will need only your password, and remembered browsers are forgotten.'}
+          control={<Button variant="danger" disabled={disabled || st.required} onClick={p.onDisable}>Turn off</Button>} />
       )}
-    </section>
+      {p.isOwner && (
+        <p className="pt-3 text-meta text-muted" data-testid="mfa-policy-link">
+          Server policy: {POLICY_LABEL[p.policy ?? p.status?.policy ?? 'none'].toLowerCase()}.{' '}
+          <a className="text-accent underline" href="/settings/access" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'access' }) }}>Access policies</a>
+        </p>
+      )}
+    </SettingsSection>
   )
 }
 
@@ -418,34 +403,96 @@ export function TwoFactorPanel({ user }: { user: User }) {
     }
   }, [load])
 
-  let wizard: ReactNode | null = null
-  if (mode === 'enrol') {
-    wizard = <EnrolmentWizard online={online} onCancel={() => setMode('idle')} onEnrolled={() => { setMode('idle'); void load() }} />
-  } else if (typeof mode === 'object') {
-    wizard = <RecoveryCodes codes={mode.codes} onDone={() => setMode('idle')} />
-  }
-
+  const [confirming, setConfirming] = useState<'disable' | 'regenerate' | null>(null)
   return (
-    <TwoFactorPanelView
-      status={status} online={online} isOwner={isOwner} busy={busy} error={error} devices={devices} policy={policy} wizard={wizard}
-      onStart={() => setMode('enrol')}
-      onDisable={() => {
-        if (window.confirm('Turn off two-factor authentication? Sign-in will need only your password, and remembered browsers are forgotten.')) {
-          void run(() => api.disableTotp())
-        }
-      }}
-      onRegenerate={() => {
-        if (window.confirm('Create new recovery codes? Your current codes stop working.')) {
-          void run(async () => setMode({ codes: (await api.regenerateRecoveryCodes()).recoveryCodes }))
-        }
-      }}
-      onForgetDevice={(id) => void run(() => api.forgetTrustedDevice(id))}
-      onForgetAll={() => void run(() => api.forgetTrustedDevices())}
+    <>
+      <TwoFactorPanelView
+        status={status} online={online} isOwner={isOwner} busy={busy} error={error} devices={devices} policy={policy}
+        onStart={() => setMode('enrol')}
+        onDisable={() => setConfirming('disable')}
+        onRegenerate={() => setConfirming('regenerate')}
+        onForgetDevice={(id) => void run(() => api.forgetTrustedDevice(id))}
+        onForgetAll={() => void run(() => api.forgetTrustedDevices())}
+      />
+      {mode === 'enrol' && (
+        <Dialog title="Set up two-factor authentication" onClose={() => setMode('idle')} size="md" dismissable={false}>
+          <EnrolmentWizard online={online} onCancel={() => setMode('idle')} onEnrolled={() => { setMode('idle'); void load() }} />
+        </Dialog>
+      )}
+      {typeof mode === 'object' && (
+        <Dialog title="Your new recovery codes" onClose={() => setMode('idle')} size="md" dismissable={false}>
+          <RecoveryCodes codes={mode.codes} onDone={() => setMode('idle')} />
+        </Dialog>
+      )}
+      {confirming === 'disable' && (
+        <ConfirmDialog title="Turn off two-factor authentication?" confirmLabel="Turn off"
+          consequence="Sign-in will need only your password, and remembered browsers are forgotten."
+          onConfirm={() => run(() => api.disableTotp())} onCancel={() => setConfirming(null)} />
+      )}
+      {confirming === 'regenerate' && (
+        <ConfirmDialog title="Create new recovery codes?" confirmLabel="Create new codes"
+          consequence="Your current recovery codes stop working. Store the new set somewhere safe."
+          onConfirm={() => run(async () => setMode({ codes: (await api.regenerateRecoveryCodes()).recoveryCodes }))} onCancel={() => setConfirming(null)} />
+      )}
+    </>
+  )
+}
+
+/** Owner: the server's two-factor policy (Settings → Access policies; same guide section as the panel). */
+export function MfaPolicyPanelView({ policy, online, busy, error, onPolicy }: {
+  policy: MfaPolicy | null
+  online: boolean
+  busy: boolean
+  error: string | null
+  onPolicy: (p: MfaPolicy) => void
+}) {
+  return (
+    <section className="space-y-2" aria-labelledby="mfa-policy-heading" data-testid="mfa-policy-panel">
+      <HelpHeading screen="settings/two-factor" id="mfa-policy-heading" className="font-semibold">Two-factor policy</HelpHeading>
+      <label className="block space-y-1 text-sm">
+        <span className="font-medium">Policy for this server</span>
+        <select className="input max-w-xs" value={policy ?? 'none'} disabled={!online || busy || policy === null}
+          onChange={(e) => onPolicy(e.target.value as MfaPolicy)} aria-label="Two-factor policy for this server">
+          {(Object.keys(POLICY_LABEL) as MfaPolicy[]).map((k) => <option key={k} value={k}>{POLICY_LABEL[k]}</option>)}
+        </select>
+        <span className="block text-xs text-muted">
+          Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until
+          they do. API tokens are never affected.
+        </span>
+      </label>
+      {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+    </section>
+  )
+}
+
+/** Container for the owner's two-factor policy. */
+export function MfaPolicyPanel() {
+  const online = useOnline()
+  const [policy, setPolicy] = useState<MfaPolicy | null>(null)
+  const [enrolled, setEnrolled] = useState<boolean | null>(readCachedMfa()?.enrolled ?? null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => {
+    if (!online) return
+    void (async () => {
+      try {
+        setPolicy((await api.getMfaPolicy()).required)
+        setEnrolled((await api.mfaStatus()).mfa.enrolled)
+      } catch (err) {
+        if (!isNetworkError(err)) setError(mfaMessage(err))
+      }
+    })()
+  }, [online])
+  return (
+    <MfaPolicyPanelView policy={policy} online={online} busy={busy} error={error}
       onPolicy={(p) => {
-        if (p !== 'none' && status && !status.enrolled &&
+        if (p !== 'none' && enrolled === false &&
           !window.confirm('You have not set up two-factor authentication yourself. After this change you must set it up before you can continue. Continue?')) return
-        void run(async () => setPolicy((await api.setMfaPolicy(p)).required))
-      }}
-    />
+        setBusy(true)
+        setError(null)
+        void api.setMfaPolicy(p).then((r) => setPolicy(r.required), (err) => {
+          if (!(err instanceof ApiError && err.code === 'reauth_required')) setError(mfaMessage(err))
+        }).finally(() => setBusy(false))
+      }} />
   )
 }
