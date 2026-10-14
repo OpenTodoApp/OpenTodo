@@ -364,7 +364,7 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
         )}
         {d.mode === 'own' && p.onTestOwn && !d.model.trim() && !off && <span className="text-meta text-muted" data-test-needs-model>Enter a model id to test</span>}
       </div>
-      {d.mode === 'own' && testedSig === ownSig && (
+      {d.mode === 'own' && (testedSig === null || testedSig === ownSig) && (
         <TestResult test={p.ownTest && p.ownTest !== 'running' && p.ownTest.ok && dirty ? { ...p.ownTest, message: SAVE_TO_USE } : p.ownTest} />
       )}
       {p.ownMessage && <Notice tone="success">{p.ownMessage}</Notice>}

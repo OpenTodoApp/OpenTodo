@@ -181,6 +181,10 @@ describe('Which assistant you use', () => {
     expect(html).toContain('Test connection')
     expect(html).not.toMatch(/type="password"[^>]*value="[^"]+"/)
   })
+  it('shows a test result until the tested values change, and offers Test before saving', () => {
+    expect(render(ownStatus, { ownTest: { ok: true, message: 'Connected.' } })).toContain('Connected.')
+    expect(render(ownStatus)).not.toContain('data-test-needs-model')
+  })
   it('offers only the listed Anthropic models', () => {
     const html = render({ ...ownStatus, provider: 'anthropic', provider_label: 'Anthropic (Claude)', model: 'claude-haiku-5-5',
       own_provider: { provider: 'anthropic', provider_label: 'Anthropic (Claude)', model: 'claude-haiku-5-5', key_set: true } })
