@@ -10,7 +10,7 @@ import { COLLAPSED_PROJECTS_KEY, buildProjectTree, expandAncestorsOf, openCounts
 import { flattenTree } from '../lib/tree'
 import type { User } from '../lib/types'
 import { evaluateViews, isDashboard } from '../lib/views'
-import { LabelRow, NewLabelForm, useLabelData } from './LabelsView'
+import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMenu, viewIcon } from './ViewsView'
 import { useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
@@ -81,6 +81,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
   const { labels, counts: labelCounts, duplicates } = useLabelData()
+  const labelDrag = useLabelDrag()
 
   // Pinned saved views with live open-task counts: every pinned list view's compiled
   // query runs over the open tasks this sidebar already observes, in one pass.
@@ -318,7 +319,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         </div>
         {labelsOpen && (
           <div className="space-y-0.5">
-            {labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} />)}
+            {labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} />)}
             {addingLabel && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
             {labels.length === 0 && !addingLabel && <p className="px-2 py-1 text-xs text-faint">No labels yet.</p>}
           </div>

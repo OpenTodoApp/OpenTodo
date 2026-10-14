@@ -2,13 +2,34 @@
 // Shared by the grouped list and the board columns. Every write goes through
 // lib/sections, so all of it works offline and converges like any other edit.
 import { Icon } from '../ui/Icon'
-import { MenuItem, MenuSeparator } from '../ui/Menu'
+import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { type FormEvent, type KeyboardEvent, useState } from 'react'
 import { createTask } from '../lib/ops'
 import { createSection, deleteSection, renameSection, reorderSection } from '../lib/sections'
 import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
-import { Menu } from './overlay'
+
+/** The section menu as data (labels-and-menus 3.1). */
+export function sectionMenuGroups(title: string, o: { first: boolean; last: boolean; layout: 'list' | 'board'; count: number },
+  a: { rename: () => void; move: (delta: -1 | 1) => unknown; remove: () => unknown }): ActionGroup[] {
+  const before = o.layout === 'board' ? 'left' : 'up'
+  const after = o.layout === 'board' ? 'right' : 'down'
+  const moves = o.count === 1 ? 'Its open task moves' : `Its ${o.count} open tasks move`
+  return [
+    { items: [{ kind: 'action', id: 'rename', label: 'Rename', icon: 'pencil', shortcut: 'F2', onSelect: a.rename }] },
+    { items: [
+      { kind: 'action', id: 'before', label: `Move ${before}`, icon: 'arrow-up', disabled: o.first, reason: 'Already first', onSelect: () => a.move(-1) },
+      { kind: 'action', id: 'after', label: `Move ${after}`, icon: 'arrow-down', disabled: o.last, reason: 'Already last', onSelect: () => a.move(1) },
+    ] },
+    { items: [{ kind: 'confirm', id: 'delete', label: 'Delete section', icon: 'trash-2', tone: 'danger', confirm: {
+      title: `Delete section “${title}”?`,
+      body: o.count ? `${moves} to “No section” in this project.` : 'It has no open tasks.',
+      confirmLabel: 'Delete section',
+      onConfirm: a.remove,
+    } }] },
+  ]
+}
 
 export function SectionHeader({ section, count, layout, editable, first, last, collapsed, onToggleCollapse, onAdd }: {
   /** null: the "No section" heading. */
@@ -32,19 +53,24 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
     if (section && name.trim() && name.trim() !== section.name) await renameSection(section.id, name)
     else setName(section?.name ?? '')
   }
-  async function remove() {
-    if (!section) return
-    const what = count ? ` Its ${count === 1 ? 'open task moves' : `${count} open tasks move`} to “No section”.` : ''
-    if (!confirm(`Delete section “${title}”?${what}`)) return
-    await deleteSection(section.id)
-  }
-  const before = layout === 'board' ? 'left' : 'up'
-  const after = layout === 'board' ? 'right' : 'down'
+  const [menuOpen, setMenuOpen] = useState(false)
+  const startRename = () => { if (section) { setName(section.name); setRenaming(true) } }
+  const groups = section ? sectionMenuGroups(title, { first, last, layout, count }, {
+    rename: startRename,
+    move: (d) => reorderSection(section.id, d),
+    remove: () => deleteSection(section.id),
+  }) : []
+  const onRowKey = useRowMenuShortcut({
+    openMenu: () => setMenuOpen(true),
+    rename: startRename,
+    move: (to) => { if (section && (to === -1 || to === 1)) void reorderSection(section.id, to) },
+  })
 
   return (
-    <div className="group/section flex items-center gap-1 px-1 py-1" data-section-heading={section?.id ?? ''}>
+    <div className="group/section flex items-center gap-1 px-1 py-1" data-section-heading={section?.id ?? ''}
+      onKeyDown={editable && section && !renaming ? onRowKey : undefined}>
       {onToggleCollapse && (
-        <button type="button" className="flex h-5 w-5 items-center justify-center rounded text-xs text-faint hover:bg-slate-200 dark:hover:bg-slate-700"
+        <button type="button" className="flex h-5 w-5 items-center justify-center rounded text-xs text-faint hover:bg-sunken dark:hover:bg-raised"
           aria-label={collapsed ? `Expand ${title}` : `Collapse ${title}`} aria-expanded={!collapsed} onClick={onToggleCollapse}>
           <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
         </button>
@@ -65,13 +91,8 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
         <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" onClick={onAdd} aria-label={`Add a task to ${title}`} title="Add a task here">+</button>
       )}
       {editable && section && (
-        <Menu label={`Section menu for ${title}`} title={title} trigger={<Icon name="ellipsis" />} triggerClassName="btn-ghost touch-target px-1.5 py-0.5 text-xs" width="sm:w-56" kind="menu">
-          <MenuItem label="Rename" icon="pencil" onSelect={() => { setName(section.name); setRenaming(true) }} />
-          <MenuItem label={`Move ${before}`} icon="arrow-up" disabled={first} onSelect={() => void reorderSection(section.id, -1)} />
-          <MenuItem label={`Move ${after}`} icon="arrow-down" disabled={last} onSelect={() => void reorderSection(section.id, 1)} />
-          <MenuSeparator />
-          <MenuItem label="Delete section" icon="trash-2" danger onSelect={() => void remove()} />
-        </Menu>
+        <ActionMenu label={`Section menu for ${title}`} title={title} groups={groups} width="sm:w-60" open={menuOpen} onOpenChange={setMenuOpen}
+          triggerClassName="btn-ghost touch-target px-1.5 py-0.5 text-xs" />
       )}
     </div>
   )

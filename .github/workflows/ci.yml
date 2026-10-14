@@ -13,6 +13,35 @@ env:
   OPENSPEC_TELEMETRY: "0"
 
 jobs:
+  # Path filters (OpenSpec site-bundle D7): which inputs a pull request touches,
+  # from a plain `git diff`, no third-party action. Pushes to main and tags run
+  # everything. `code` gates the Go, cross-compile, layout, UI and image jobs;
+  # docs-only changes still run the web job (docs check), the docs website check
+  # and the site bundle preview.
+  changes:
+    name: Changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --name-only "$BASE"...HEAD > changed.txt
+          cat changed.txt
+          ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
+
   web:
     name: Web (typecheck, test, build)
     runs-on: ubuntu-latest
@@ -43,7 +72,8 @@ jobs:
   server:
     name: Server (vet, test, build)
     runs-on: ubuntu-latest
-    needs: web
+    needs: [changes, web]
+    if: needs.changes.outputs.code == 'true'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -78,7 +108,8 @@ jobs:
   layout:
     name: Layout check (Chromium, WebKit)
     runs-on: ubuntu-latest
-    needs: server
+    needs: [changes, server]
+    if: needs.changes.outputs.code == 'true'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -106,15 +137,87 @@ jobs:
           OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
           for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
           node scripts/e2e-layout.mjs layout-report
-      # The docs website (user-documentation): no sideways scrolling at 360/390/1280 px,
-      # axe-core without serious or critical issues, search, and pages without JavaScript.
-      - name: Check the docs website
-        run: node scripts/e2e-docs.mjs layout-report/docs
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: layout-report
           path: layout-report
+
+  # The docs website (user-documentation): no sideways scrolling at 360/390/1280 px,
+  # axe-core without serious or critical issues, search, and pages without JavaScript.
+  # Its own job so docs-only changes run it without the server and layout jobs.
+  docs-site:
+    name: Docs website (browser check)
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.docs == 'true'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      # axe-core for the accessibility checks (web devDependency).
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - name: Install Playwright with Chromium
+        run: |
+          npm i -g playwright@1.56.1
+          playwright install --with-deps chromium
+      - run: node scripts/e2e-docs.mjs docs-report
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: docs-report
+          path: docs-report
+
+  # The site bundle (OpenSpec site-bundle): docs site, screenshots, tokens, icons,
+  # changelog and manifest for the website repository. Every run uploads it as an
+  # artefact (a preview of unreleased docs); a v* tag names it after the tag and the
+  # release job attaches it. The manifest's import formats come from the linux/amd64
+  # server binary when the binaries were built, otherwise from `go run`.
+  site-bundle:
+    name: Site bundle
+    runs-on: ubuntu-latest
+    needs: [changes, cli]
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.cli.result != 'failure' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - uses: actions/download-artifact@v8
+        if: needs.cli.result == 'success'
+        with:
+          name: bin-linux-amd64
+          path: bin-linux
+      - name: Build the bundle
+        id: bundle
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/v*) version="$GITHUB_REF_NAME" ;;
+            *) version="main-$(git rev-parse --short HEAD)" ;;
+          esac
+          [ "$GITHUB_EVENT_NAME" = pull_request ] && version="pr${{ github.event.pull_request.number }}-$(git rev-parse --short ${{ github.event.pull_request.head.sha }})"
+          bin=""
+          if [ -f bin-linux/opentodo-linux-amd64 ]; then chmod +x bin-linux/opentodo-linux-amd64; bin="--bin bin-linux/opentodo-linux-amd64"; fi
+          node scripts/site-bundle.mjs --version "$version" $bin
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: opentodo-site-bundle-${{ steps.bundle.outputs.version }}
+          path: dist/opentodo-site-bundle-${{ steps.bundle.outputs.version }}.tar.gz
+          retention-days: ${{ startsWith(github.ref, 'refs/tags/v') && 90 || 14 }}
 
   # Design workbench gates (OpenSpec design-language): every Storybook story in light
   # and dark is checked with axe-core (WCAG 2.2 AA, serious and critical fail) and
@@ -124,6 +227,8 @@ jobs:
   ui-check:
     name: UI check (workbench a11y, visual regression)
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     # The same image `make ui-baselines` uses, so screenshots match the baselines
     # pixel for pixel. A missing baseline is written and the job fails; the
     # ui-check-report artifact then carries it (web/src/ui/__screenshots__) to commit.
@@ -152,7 +257,8 @@ jobs:
   cli:
     name: Binaries (${{ matrix.goos }}/${{ matrix.goarch }})
     runs-on: ubuntu-latest
-    needs: server
+    needs: [changes, server]
+    if: needs.changes.outputs.code == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -282,12 +388,13 @@ jobs:
 
   # One job publishes the GitHub release for a v* tag, after everything it ships
   # has built: server and `ot` binaries for every platform, the extension zip,
-  # the agent skill zip and SHA256SUMS. Notes come from the tag's section in CHANGELOG.md.
+  # the agent skill zip, the site bundle and SHA256SUMS. Notes come from the tag's
+  # section in CHANGELOG.md. A failed site bundle keeps the release unpublished.
   release:
     name: GitHub release
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    needs: [cli, extension, skill, docker]
+    needs: [cli, extension, skill, docker, site-bundle]
     permissions:
       contents: write
     steps:

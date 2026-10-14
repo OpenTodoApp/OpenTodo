@@ -233,6 +233,19 @@ const shots = [
   { name: 'labels', server: D, card: true, async run(p) {
     await go(p, demoBase, '/today'); await sidebar(p).getByRole('button', { name: /^errand/ }).click(); await settle(p, 800)
   } },
+  // labels-and-menus: the shared object menus.
+  { name: 'label-menu', server: D, async run(p) {
+    await go(p, demoBase, '/labels', () => p.getByRole('heading', { name: 'Labels' }).waitFor())
+    await p.locator('main').getByRole('button', { name: 'Menu for label errand' }).click(); await settle(p, 500)
+  }, async after(p) { await p.keyboard.press('Escape') } },
+  { name: 'view-menu', server: D, async run(p) {
+    await go(p, demoBase, '/views', () => p.getByRole('heading', { name: 'Views' }).waitFor())
+    await p.locator('main').getByRole('button', { name: /^Menu for view Deep work/ }).first().click(); await settle(p, 500)
+  }, async after(p) { await p.keyboard.press('Escape') } },
+  { name: 'project-move', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Side project')
+    await p.keyboard.press('m'); await p.locator('[data-picker-step]').waitFor(); await settle(p, 500)
+  }, async after(p) { await p.keyboard.press('Escape'); await p.keyboard.press('Escape') } },
   { name: 'filter', server: D, card: true, async run(p) {
     await go(p, demoBase, '/filter', () => p.getByLabel('Filter query').waitFor())
     await p.getByLabel('Filter query').fill('(@call | @errand) & due <= 7 days'); await p.getByLabel('Filter query').press('Enter'); await settle(p, 800)
