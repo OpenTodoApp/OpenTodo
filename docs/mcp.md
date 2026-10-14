@@ -88,7 +88,9 @@ through its environment instead:
 The bridge reads newline-delimited JSON-RPC from stdin, forwards each message to
 `/mcp`, and writes only JSON-RPC responses to stdout. It refuses a full-access
 token by default so an assistant is not accidentally given write credentials;
-`--allow-full-token` is available for an intentional exception.
+`--allow-full-token` is available for an intentional exception. Global read-only
+mode (`--read-only` or `OPENTODO_READ_ONLY=1`) always requires a read-only token
+and cannot be weakened by that exception.
 
 To try the endpoint by hand:
 

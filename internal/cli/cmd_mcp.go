@@ -32,15 +32,21 @@ func cmdMCP(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err != nil {
 		return err
 	}
-	if !*allowFullToken {
+	if g.readOnly || !*allowFullToken {
 		_, cred, err := c.meAuth(ctx)
 		if err != nil {
 			return err
 		}
 		if cred.Scope == "" {
+			if g.readOnly {
+				return authErr("read-only mode requires a verified read-only token; --allow-full-token cannot override --read-only or OPENTODO_READ_ONLY")
+			}
 			return authErr("could not verify the configured token scope; use a read-only token or pass --allow-full-token")
 		}
 		if cred.Scope != "read" {
+			if g.readOnly {
+				return authErr("read-only mode requires a read-only token, but the configured token has %q scope; --allow-full-token cannot override --read-only or OPENTODO_READ_ONLY", cred.Scope)
+			}
 			return authErr("the configured token has %q scope; create a read-only token for MCP or pass --allow-full-token", cred.Scope)
 		}
 	}

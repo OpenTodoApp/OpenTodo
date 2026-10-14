@@ -14,7 +14,9 @@ Authentication failures and failed notifications still stop the bridge.
 The bridge uses normal profile/environment resolution. Before serving, it asks
 `GET /api/v1/me` for the scope of the credential that authenticated that exact
 request. Scope `read` is accepted; other scopes require `--allow-full-token`.
-This is a local safety default, not a server authorization change.
+This is a local safety default, not a server authorization change. When global
+read-only mode is active, a read-scoped token is mandatory and
+`--allow-full-token` does not override that mode.
 
 ## Data, offline, and convergence
 

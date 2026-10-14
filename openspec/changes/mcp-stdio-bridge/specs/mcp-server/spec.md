@@ -18,6 +18,12 @@ an explicit command-line override.
 - **WHEN** the configured token has full scope and no override is present
 - **THEN** the CLI refuses to start the bridge without forwarding protocol data
 
+#### Scenario: Read-only mode cannot be weakened
+
+- **WHEN** `--read-only` or `OPENTODO_READ_ONLY=1` is active with a full-scoped token
+- **AND** `--allow-full-token` is also present
+- **THEN** the CLI refuses to start the bridge without forwarding protocol data
+
 #### Scenario: Protocol error recovery
 
 - **WHEN** the server returns a JSON-RPC parse error for a malformed input line

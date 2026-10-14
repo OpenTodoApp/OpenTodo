@@ -160,6 +160,58 @@ func TestMCPBridgeAllowsFullTokenWithFlag(t *testing.T) {
 	}
 }
 
+func TestMCPBridgeReadOnlyModeRejectsFullTokenOverride(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		env  bool
+	}{
+		{name: "flag", args: []string{"mcp", "--read-only", "--allow-full-token"}},
+		{name: "environment", args: []string{"mcp", "--allow-full-token"}, env: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mcpCalls := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/api/v1/me" {
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = io.WriteString(w, `{"user":{},"auth":{"method":"token","scope":"full"}}`)
+					return
+				}
+				mcpCalls++
+				http.Error(w, "MCP request must not be forwarded", http.StatusInternalServerError)
+			}))
+			defer srv.Close()
+
+			var stdout, stderr bytes.Buffer
+			a := &App{
+				Stdin:  strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"ping"}` + "\n"),
+				Stdout: &stdout,
+				Stderr: &stderr,
+				Getenv: func(key string) string {
+					switch key {
+					case "OPENTODO_URL":
+						return srv.URL
+					case "OPENTODO_TOKEN":
+						return "full-token"
+					case "OPENTODO_READ_ONLY":
+						if tt.env {
+							return "1"
+						}
+					}
+					return ""
+				},
+			}
+			if code := a.Main(tt.args); code != ExitAuth {
+				t.Fatalf("exit %d, stdout %q, stderr %q", code, stdout.String(), stderr.String())
+			}
+			if stdout.Len() != 0 || mcpCalls != 0 || !strings.Contains(stderr.String(), "read-only mode requires a read-only token") {
+				t.Fatalf("MCP calls %d, stdout %q, stderr %q", mcpCalls, stdout.String(), stderr.String())
+			}
+		})
+	}
+}
+
 func TestMCPBridgeRejectsOversizedMessage(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	a := &App{
