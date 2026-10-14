@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { useDatabase } from './db'
 import {
   LABEL_PALETTE, LabelExistsError, activeLabels, addLabel, countOpenByLabel, createLabel, deleteLabel, duplicateLabelIds,
-  mergeLabels, removeLabel, reorderLabel, resolveLabels, updateLabel,
+  labelUsage, mergeLabels, moveLabelTo, removeLabel, reorderLabel, resolveLabels, updateLabel,
 } from './labels'
+import { hueFor } from '../ui/tokens/palette'
+import { compareByPosition } from './ordering'
 import { applyOps, createTask, resetDeviceId } from './ops'
 import type { Label, Op } from './types'
 
@@ -58,6 +60,37 @@ describe('createLabel / updateLabel / reorderLabel', () => {
     await expect(updateLabel(id, { name: '' })).rejects.toThrow()
     const other = await createLabel({ name: 'call' })
     await expect(updateLabel(other, { name: 'Errands' })).rejects.toBeInstanceOf(LabelExistsError)
+  })
+
+  it('an ordinary step writes exactly one label op (labels-and-menus 4.1)', async () => {
+    const db = useDatabase(`one-op-${Date.now()}`)
+    const ids = []
+    for (const name of ['a', 'b', 'c', 'd']) { ids.push(await createLabel({ name })); await new Promise((r) => setTimeout(r, 2)) }
+    await db.outbox.clear()
+    await reorderLabel(ids[3], -1)
+    const ops = (await db.outbox.toArray()).filter((o) => o.entity === 'label')
+    expect(ops).toHaveLength(1)
+    expect(ops[0]).toMatchObject({ entityId: ids[3], field: 'position' })
+    expect(activeLabels(await db.labels.toArray()).map((l) => l.name)).toEqual(['a', 'b', 'd', 'c'])
+    await db.outbox.clear()
+    await reorderLabel(ids[3], 'top')
+    expect((await db.outbox.toArray()).filter((o) => o.entity === 'label')).toHaveLength(1)
+    expect(activeLabels(await db.labels.toArray()).map((l) => l.name)).toEqual(['d', 'a', 'b', 'c'])
+  })
+
+  it('equal positions trigger a minimal renumber, ordered by the shared position-then-id rule', async () => {
+    const db = useDatabase(`renumber-${Date.now()}`)
+    const now = Date.now()
+    for (const id of ['l1', 'l2', 'l3']) await db.labels.put({ id, name: id, color: '#ef4444', position: now, created_at: now, deleted_at: null, _clock: {} } as Label)
+    const before = activeLabels(await db.labels.toArray())
+    expect(before.map((l) => l.id)).toEqual([...before].sort(compareByPosition).map((l) => l.id))
+    expect(before.map((l) => l.id)).toEqual(['l1', 'l2', 'l3'])
+    await db.outbox.clear()
+    await moveLabelTo('l3', { before: 'l2' })
+    expect(activeLabels(await db.labels.toArray()).map((l) => l.id)).toEqual(['l1', 'l3', 'l2'])
+    const changed = new Set((await db.outbox.toArray()).filter((o) => o.entity === 'label').map((o) => o.entityId))
+    expect(changed.size).toBeGreaterThan(1) // no gap between equal positions: neighbours renumbered
+    expect(changed.size).toBeLessThanOrEqual(3)
   })
 
   it('reorders by swapping positions with the neighbour', async () => {
@@ -204,5 +237,29 @@ describe('display helpers', () => {
     expect(counts.get('a')).toBe(2)
     expect(counts.get('b')).toBe(1)
     expect(counts.get('c')).toBeUndefined()
+  })
+})
+
+describe('labelUsage and palette (labels-and-menus 4.2, 4.3)', () => {
+  it('counts the tasks deleteLabel rewrites: completed included, trashed excluded', async () => {
+    const db = useDatabase(`usage-${Date.now()}`)
+    const l = await createLabel({ name: 'errand' })
+    const open = await createTask({ title: 'open' })
+    const done = await createTask({ title: 'done' })
+    const trashed = await createTask({ title: 'trashed' })
+    for (const t of [open, done, trashed]) await addLabel(t, l)
+    await db.tasks.update(done, { completed_at: Date.now() })
+    await db.tasks.update(trashed, { deleted_at: Date.now() })
+    expect(await labelUsage(l)).toBe(2)
+  })
+
+  it('the palette is the design-system hues, and an unknown stored hex maps to its nearest hue without a write', async () => {
+    const db = useDatabase(`palette-${Date.now()}`)
+    expect(LABEL_PALETTE).toHaveLength(12)
+    await db.labels.put({ id: 'x', name: 'odd', color: '#a0522d', position: 1, created_at: 1, deleted_at: null, _clock: {} } as Label)
+    await db.outbox.clear()
+    expect(hueFor('#a0522d')).toBeTruthy()
+    expect((await db.labels.get('x'))?.color).toBe('#a0522d')
+    expect(await db.outbox.count()).toBe(0)
   })
 })

@@ -48,6 +48,8 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: 'Shift+← / Shift+→ (board)', description: 'Move the selected task to the previous / next column (it stays selected)', section: 'board' },
   { keys: 'a (board)', description: 'Add a task to the selected task’s column', section: 'board' },
   { keys: 'Shift+S', description: 'Share the current project: add members by email, change roles, remove, leave, transfer', section: 'tasks' },
+  { keys: '. / Shift+F10 / Menu key', description: 'Open the menu of the focused row: a label, view, section heading or project', section: 'everywhere' },
+  { keys: 'F2 (focused label)', description: 'Rename the label in place; Alt+↑ / Alt+↓ move it, Alt+Shift+↑ / ↓ to the top / bottom', section: 'everywhere' },
   { keys: '1 – 4', description: 'Set priority of selected task', section: 'tasks' },
   { keys: 'L', description: 'Labels of selected task (type to find, Enter adds or creates)', section: 'tasks' },
   { keys: 'e', description: 'Edit the estimate of the selected task (type 20, 45m, 1h30; Enter)', section: 'tasks' },
