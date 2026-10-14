@@ -9,7 +9,7 @@ Start with the [README](../README.md) for the feature overview, quick start and 
 
 ## Using OpenTodo
 
-The same guides are published, with screenshots and search, at [opentodo.pixari.dev/docs](https://opentodo.pixari.dev/docs/).
+The same guides are published, with screenshots and search, at [open-todo.app/docs](https://open-todo.app/docs/).
 
 | Guide | What it covers |
 | --- | --- |
