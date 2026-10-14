@@ -25,5 +25,5 @@
 ## 5. Docs and integration
 
 - [x] 5.1 Document skills, the composer, the Ask screen and pasted text in `docs/assistant.md`, prompts in `docs/mcp.md`, and the shortcut through the generated keyboard guide. Verify `make docs` and `make docs-check` pass.
-- [ ] 5.2 Manually review each skill with the default Anthropic model and one small local model on the demo data, and adjust the instructions. Verify each skill produces a proposal or answer of the defined shape on the demo account. (Needs a provider key and a local model; not run in the implementing session.)
+- [ ] 5.2 Manually review each skill with the default Anthropic model and one small local model on the demo data, and adjust the instructions. Verify each skill produces a proposal or answer of the defined shape on the demo account. (Local half done with qwen2.5:3b, see design "Skill review"; the default Anthropic model still needs a key.)
 - [x] 5.3 Add a CHANGELOG entry under Unreleased and run `make check`. Verify it passes, including `openspec validate --all --strict`.

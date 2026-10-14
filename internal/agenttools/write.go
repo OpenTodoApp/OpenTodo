@@ -58,7 +58,7 @@ func init() {
 			"title": titleProp, "description": descProp,
 			"project_id":       map[string]any{"type": "string", "description": "Project id (see list_projects); omit for the inbox."},
 			"section_id":       map[string]any{"type": "string", "description": "Section id inside that project."},
-			"parent_id":        map[string]any{"type": "string", "description": "Parent task id (same project) to create a subtask."},
+			"parent_id":        map[string]any{"type": "string", "description": "Parent task id to create a subtask; without project_id the subtask goes in the parent's project."},
 			"priority":         priorityProp,
 			"due":              dueProp,
 			"labels":           labelsProp,
@@ -598,6 +598,15 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 			pt := snap.task(parent)
 			if pt == nil {
 				return Plan{}, notFound("task", []string{parent})
+			}
+			// A subtask without project_id goes where its parent is (assistant-skills:
+			// models often name only the parent).
+			if pp := rawStr(pt, "project_id"); pid == "" && !it.present("project_id") && pp != "" {
+				pid = pp
+				patch["project_id"] = raw(pid)
+				if role := snap.role(pid); !opsync.CanWrite(role, "task", "title") {
+					refused = append(refused, map[string]any{"item": i, "project_id": pid, "reason": "forbidden", "role": role})
+				}
 			}
 			if rawStr(pt, "project_id") != pid {
 				return Plan{}, argErr(p + "parent_id: the parent task must be in the same project")
