@@ -56,7 +56,7 @@ Both need your server to be on a secure `https://` address. If the browser offer
 
 ## Quick add got it wrong
 
-If a word was read as a date, project or priority by mistake, select the **×** on its chip before you press <kbd>Enter</kbd>, or press <kbd>Backspace</kbd> twice at the end of the line. Text in double quotes is never interpreted: `Read "Next Friday"`. You can also switch parsing off in **Settings → General → Quick add**. See [Quick add syntax](quick-add.md#preview-chips).
+If a word was read as a date, project or priority by mistake, select the **×** on its chip before you press <kbd>Enter</kbd>, or press <kbd>Backspace</kbd> twice at the end of the line. Text in double quotes is never interpreted: `Read "Next Friday"`. You can also switch parsing off in **Settings → Capture → Quick add**. See [Quick add syntax](quick-add.md#preview-chips).
 
 ## I can't edit a shared project
 

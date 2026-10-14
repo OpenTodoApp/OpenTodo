@@ -7,6 +7,7 @@ import { Icon } from '../Icon'
 import { Switch } from '../Switch'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ListRow } from './ListRow'
+import { Notice } from './Notice'
 import { SettingRow, SettingsSection } from './SettingsSection'
 
 function Section() {
@@ -42,3 +43,13 @@ const meta: Meta = { title: 'UI/Patterns/Settings' }
 export default meta
 export const SectionAndRows: StoryObj = { render: () => <Section /> }
 export const ConfirmDanger: StoryObj = { render: () => <Confirm /> }
+export const Notices: StoryObj = {
+  render: () => (
+    <div className="max-w-xl space-y-2">
+      <Notice>You are offline. These settings need a connection to your server.</Notice>
+      <Notice tone="success">Password changed. Your other sessions were signed out.</Notice>
+      <Notice tone="warning">Only 2 recovery codes left. Generate a new set and store it safely.</Notice>
+      <Notice tone="danger">Your current password is not correct.</Notice>
+    </div>
+  ),
+}

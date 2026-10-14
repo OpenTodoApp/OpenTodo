@@ -14,7 +14,7 @@ Your tasks are yours. You can download all of them at any time, and bring tasks 
 
 ## Download everything
 
-Open **Settings → Data → Your data** and select **Download export (JSON)**. You get one file with all your projects, sections, tasks and subtasks, labels, reminders and saved views, including completed tasks and items in the Trash. Shared projects you're a member of are included too.
+Open **Settings → Data** and select **Download export (JSON)** in the **Export** row. You get one file with all your projects, sections, tasks and subtasks, labels, reminders and saved views, including completed tasks and items in the Trash. Shared projects you're a member of are included too.
 
 The file is plain JSON, so you can open it in any text editor, keep it as a backup, or load it into another OpenTodo server.
 
@@ -22,7 +22,7 @@ The person who runs your server can also set up automatic [backups](backups.md) 
 
 ## Import from another app
 
-Open **Settings → Data → Import data** (or press <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>I</kbd>) and choose a file. OpenTodo accepts:
+Open **Settings → Data**, select **Import data…** (or press <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>I</kbd>) and choose a file. OpenTodo accepts:
 
 - an **OpenTodo export**, for moving to another server or restoring,
 - a **CSV file**, from a spreadsheet or a script, with a `title` column and optional columns for project, due date, priority, labels and more,

@@ -11,14 +11,18 @@ export interface SettingsSectionProps {
   level?: 2 | 3
   actions?: ReactNode
   id?: string
+  /** A stable heading id (kept from the earlier layout for links and tests); generated when absent. */
+  headingId?: string
+  testId?: string
   children: ReactNode
 }
 
-export function SettingsSection({ title, description, helpId, level = 2, actions, id, children }: SettingsSectionProps) {
-  const headingId = useId()
+export function SettingsSection({ title, description, helpId, level = 2, actions, id, headingId: fixedId, testId, children }: SettingsSectionProps) {
+  const generated = useId()
+  const headingId = fixedId ?? generated
   const H = level === 2 ? 'h2' : 'h3'
   return (
-    <section id={id} aria-labelledby={headingId} className="rounded-card border border-default bg-surface p-4 shadow-1 sm:p-6">
+    <section id={id} aria-labelledby={headingId} data-testid={testId} className="rounded-card border border-default bg-surface p-4 shadow-1 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1">
           <H id={headingId} className="text-h3 font-semibold text-default">{title}</H>

@@ -79,7 +79,7 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: 'Enter (on an invitation)', description: 'Settings → Administration → Members: copy the invite link created in this session', section: 'settings' },
   { keys: 'Delete (on an invitation)', description: 'Settings → Administration → Members: revoke a pending invitation', section: 'settings' },
   { keys: 'd / r / Delete (on a user)', description: 'Settings → Administration → Users: deactivate or reactivate, create a reset link, delete (each confirms)', section: 'settings' },
-  { keys: 'Tab (in Settings → Account)', description: 'Security: add, rename (Enter saves, Esc cancels) or delete passkeys', section: 'settings' },
+  { keys: 'Tab (in Settings → Security)', description: 'Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys', section: 'settings' },
   { keys: 'Shift+C', description: 'Comment on the open task: focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)', section: 'comments' },
   { keys: 'Ctrl+Enter / ⌘+Enter (in a comment)', description: 'Post the comment, reply or edit; Esc cancels or leaves the field', section: 'comments' },
   { keys: 'Tab, Enter (in the comment thread)', description: 'Reach Reply, Edit and Delete on a comment; Load older activity at the end', section: 'comments' },

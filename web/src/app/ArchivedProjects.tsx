@@ -5,6 +5,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useRef } from 'react'
 import { archivedProjects, unarchiveProject, type ArchivedProject } from '../lib/archive'
 import { db } from '../lib/db'
+import { Button } from '../ui/Button'
+import { EmptyState } from '../ui/patterns/EmptyState'
+import { ListRow } from '../ui/patterns/ListRow'
 
 export function ArchivedProjectsSection() {
   const projects = useLiveQuery(() => db.projects.toArray(), [], [])
@@ -41,25 +44,21 @@ export interface ArchivedProjectsListProps {
 export function ArchivedProjectsList({ rows, onRestore, listRef, headingRef }: ArchivedProjectsListProps) {
   return (
     <div className="space-y-2" data-testid="archived-projects">
-      <h3 id="archived-projects" ref={headingRef} tabIndex={-1} className="text-sm font-semibold">Archived projects</h3>
+      <h3 id="archived-projects" ref={headingRef} tabIndex={-1} className="text-sm font-medium text-default outline-none">Archived projects</h3>
       {rows.length === 0 ? (
-        <p className="text-sm text-slate-600 dark:text-slate-400">No archived projects. Archive one from its Project menu; it comes back here with one click.</p>
+        <EmptyState icon="folder" title="No archived projects" body="Archive one from its Project menu; it comes back here with one click." />
       ) : (
-        <ul ref={listRef} className="divide-y divide-slate-200 rounded-md border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+        <ul ref={listRef} className="-mx-3">
           {rows.map((r, i) => (
-            <li key={r.project.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
-              <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.project.color }} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm">{r.project.name}</span>
-                <span className="block text-xs text-slate-600 dark:text-slate-400">
-                  {r.parentName ? `In ${r.parentName} · ` : ''}{r.open === 1 ? '1 open task' : `${r.open} open tasks`}
-                  {!r.canRestore && ' · Only the owner or an admin can restore it'}
-                </span>
-              </span>
-              <button type="button" data-restore className="btn-ghost touch-target border border-slate-300 text-sm dark:border-slate-700"
-                aria-label={`Restore ${r.project.name}`} disabled={!r.canRestore} onClick={() => onRestore(r.project.id, i)}>
-                Restore
-              </button>
+            <li key={r.project.id}>
+              <ListRow
+                leading={<span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.project.color }} />}
+                label={r.project.name}
+                meta={<>{r.parentName ? `In ${r.parentName} · ` : ''}{r.open === 1 ? '1 open task' : `${r.open} open tasks`}{!r.canRestore && ' · Only the owner or an admin can restore it'}</>}
+                menu={(
+                  <Button size="sm" icon="rotate-ccw" data-restore aria-label={`Restore ${r.project.name}`} disabled={!r.canRestore} onClick={() => onRestore(r.project.id, i)}>Restore</Button>
+                )}
+              />
             </li>
           ))}
         </ul>

@@ -21,21 +21,23 @@ function render(overrides: Partial<SecurityPanelViewProps>): string {
 }
 
 const disabledButtons = (html: string) => (html.match(/<button[^>]*disabled=""/g) ?? []).length
-// The Help link (user-documentation) stays usable offline: help ships with the app.
-const allButtons = (html: string) => (html.match(/<button(?![^>]*data-help-screen)/g) ?? []).length
 
 describe('SecurityPanelView', () => {
   it('is hidden when passkeys are unavailable on the server', () => {
     expect(render({ available: false })).toBe('')
   })
 
-  it('lists passkeys with last use and a suspicious badge', () => {
+  it('leads with the count, then a row per passkey with created, last use, a suspicious badge and a menu', () => {
     const html = render({})
-    expect(html).toContain('Security')
+    expect(html).toContain('>Passkeys</h2>')
+    expect(html).toContain('data-help-screen="settings/security"')
+    expect(html).toContain('2 passkeys')
     expect(html).toContain('Phone')
     expect(html).toContain('used just now')
     expect(html).toContain('used never')
-    expect(html.match(/Suspicious/g)?.length).toBe(1)
+    expect(html.match(/>Suspicious</g)?.length).toBe(1)
+    expect(html).toContain('aria-label="Actions for Phone"')
+    expect(html).toContain('aria-label="Actions for Old key"')
     expect(html).toContain('Add passkey')
     expect(disabledButtons(html)).toBe(0)
   })
@@ -44,9 +46,8 @@ describe('SecurityPanelView', () => {
     const html = render({ online: false })
     expect(html).toContain('Managing passkeys needs a connection')
     expect(html).toContain('Phone')
-    // Add, and Rename + Delete for each of the two passkeys: all disabled.
-    expect(allButtons(html)).toBe(5)
-    expect(disabledButtons(html)).toBe(5)
+    // Add passkey is disabled; the row menus stay openable, their items are disabled.
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>.*Add passkey/)
   })
 
   it('shows the offline message even before anything was fetched', () => {
@@ -55,14 +56,17 @@ describe('SecurityPanelView', () => {
     expect(disabledButtons(html)).toBe(1)
   })
 
-  it('disables actions in a browser without passkey support', () => {
+  it('disables adding in a browser without passkey support', () => {
     const html = render({ supported: false })
     expect(html).toContain('does not support passkeys')
-    expect(disabledButtons(html)).toBe(5)
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>.*Add passkey/)
   })
 
-  it('shows an empty state', () => {
-    expect(render({ passkeys: [] })).toContain('No passkeys yet.')
+  it('shows an empty state with what passkeys are for and the primary action', () => {
+    const html = render({ passkeys: [] })
+    expect(html).toContain('No passkeys yet')
+    expect(html).toContain('cannot be phished')
+    expect(html).toContain('Add passkey')
   })
 })
 

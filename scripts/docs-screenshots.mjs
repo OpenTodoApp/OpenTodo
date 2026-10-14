@@ -147,7 +147,7 @@ async function plainSetup() {
   const home = await api('POST', '/api/v1/projects', { name: 'Home renovation', color: '#f59e0b' })
   await api('POST', `/api/v1/projects/${home.id}/members`, { email: 'bob@example.com', role: 'editor' })
   for (const title of ['Get three quotes for the kitchen', 'Pick paint colours', 'Order new taps']) await api('POST', '/api/v1/tasks', { title, project_id: home.id })
-  // Archived projects for Settings → General → Projects (unarchive-projects).
+  // Archived projects for Settings → Projects (unarchive-projects).
   const trip = await api('POST', '/api/v1/projects', { name: 'Trip to Lisbon', color: '#0ea5e9' })
   for (const title of ['Book flights', 'Reserve the guesthouse']) {
     const t = await api('POST', '/api/v1/tasks', { title, project_id: trip.id })
@@ -306,15 +306,15 @@ const shots = [
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'settings', server: P, card: true, async run(p) { await go(p, plainBase, '/settings', () => p.getByRole('heading', { name: 'Settings', level: 1 }).waitFor()) } },
   { name: 'settings-security', card: true, server: P, async run(p) {
-    await go(p, plainBase, '/settings/account', () => p.getByRole('heading', { name: 'Account', level: 1 }).waitFor())
+    await go(p, plainBase, '/settings/security', () => p.getByRole('heading', { name: 'Security', level: 1 }).waitFor())
     const h = p.getByRole('heading', { level: 2, name: 'Two-factor authentication' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 350 }
   } },
   { name: 'settings-passkeys', server: P, async run(p) {
-    await go(p, plainBase, '/settings/account', () => p.getByRole('heading', { name: 'Account', level: 1 }).waitFor())
-    const h = p.getByRole('heading', { level: 2, name: 'Security' }); await h.waitFor()
+    await go(p, plainBase, '/settings/security', () => p.getByRole('heading', { name: 'Security', level: 1 }).waitFor())
+    const h = p.getByRole('heading', { level: 2, name: 'Passkeys' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 270 }
@@ -327,7 +327,7 @@ const shots = [
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 240 }
   } },
   { name: 'archived-projects', server: P, async run(p) {
-    await go(p, plainBase, '/settings/general', () => p.getByRole('heading', { name: 'General', level: 1 }).waitFor())
+    await go(p, plainBase, '/settings/projects', () => p.getByRole('heading', { name: 'Projects', level: 1 }).waitFor())
     const h = p.getByRole('heading', { level: 2, name: 'Projects' }); await h.waitFor()
     await p.getByRole('heading', { name: 'Archived projects' }).waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)

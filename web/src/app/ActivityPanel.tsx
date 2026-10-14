@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
+import { Badge } from '../ui/Card'
+import { Icon, type IconName } from '../ui/Icon'
+import { EmptyState } from '../ui/patterns/EmptyState'
+import { ListRow } from '../ui/patterns/ListRow'
+import { Notice } from '../ui/patterns/Notice'
+import { SettingsSection } from '../ui/patterns/SettingsSection'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import type { AuditEvent, User } from '../lib/types'
 import { AuditPanel, type LogStatus, NeedsConnection } from './AuditPanel'
 import { AUDIT_LABELS, eventSummary, shortAgent } from './auditFormat'
+import { relativeTime } from './SecurityPanel'
 
 /**
  * Every user's own recent access events (sign-ins, failed sign-ins against the
@@ -44,44 +50,70 @@ export function ActivityPanel() {
   return <ActivityView status={online ? status : 'offline'} events={events} error={error} />
 }
 
+/** The icon for an event kind: sign-ins, sign-outs, credentials, linked identities. */
+export function activityIcon(ev: AuditEvent): IconName {
+  if (ev.outcome === 'failure') return 'x'
+  if (ev.name === 'logout') return 'log-out'
+  if (ev.name.startsWith('login.')) return 'user-check'
+  if (ev.name.startsWith('token.') || ev.name.startsWith('app_password.')) return 'key-round'
+  if (ev.name.startsWith('mfa.') || ev.name.startsWith('passkey.')) return 'shield-check'
+  if (ev.name.startsWith('identity.')) return 'link'
+  return 'history'
+}
+
 /** Pure view of the activity list, so tests can render every state. */
-export function ActivityView({ status, events, error }: { status: LogStatus; events: AuditEvent[]; error?: string | null }) {
+export function ActivityView({ status, events, error, now = Date.now() }: { status: LogStatus; events: AuditEvent[]; error?: string | null; now?: number }) {
   return (
-    <div className="space-y-2">
-      <HelpHeading screen="settings/sessions" level={3} id="activity-heading" className="font-medium">Recent activity</HelpHeading>
-      <p className="text-sm text-muted">Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server.</p>
+    <SettingsSection
+      title="Recent activity"
+      helpId="settings/sessions"
+      headingId="activity-heading"
+      testId="activity-panel"
+      description="Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server."
+    >
       {status === 'offline' ? (
         <NeedsConnection what="activity log" />
       ) : (
-        <ul className="divide-y divide-slate-200 dark:divide-slate-800" aria-label="Recent activity">
-          {events.map((ev) => (
-            <li key={ev.id} tabIndex={0} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
-              <span className={`min-w-0 flex-1 ${ev.outcome === 'failure' ? 'text-red-700 dark:text-red-400' : ''}`}>
-                {AUDIT_LABELS[ev.name] ?? ev.name}
-                {eventSummary(ev) && <span className="text-muted"> · {eventSummary(ev)}</span>}
-              </span>
-              <span className="text-xs text-faint" title={ev.userAgent}>
-                {new Date(ev.ts).toLocaleString()} · {shortAgent(ev.userAgent)}{ev.ip ? ` · ${ev.ip}` : ''}
-              </span>
-            </li>
-          ))}
-          {status === 'ready' && events.length === 0 && <li className="py-2 text-sm text-faint">No recent activity.</li>}
-          {status === 'loading' && events.length === 0 && <li className="py-2 text-sm text-faint">Loading…</li>}
-          {status === 'error' && <li className="py-2 text-sm text-red-600 dark:text-red-400" role="alert">{error}</li>}
-        </ul>
+        <>
+          {status === 'error' && <Notice tone="danger">{error}</Notice>}
+          {status === 'loading' && events.length === 0 && <p className="text-sm text-muted" role="status">Loading…</p>}
+          {status === 'ready' && events.length === 0 && (
+            <EmptyState icon="history" title="No recent activity." body="Sign-ins and token changes on your account will show up here." />
+          )}
+          {events.length > 0 && (
+            <div className="-mx-3 space-y-0.5" role="list" aria-label="Recent activity">
+              {events.map((ev) => {
+                const failed = ev.outcome === 'failure'
+                const summary = eventSummary(ev)
+                return (
+                  <div key={ev.id} role="listitem" data-event={ev.name}>
+                    <ListRow
+                      leading={<Icon name={activityIcon(ev)} className={failed ? 'text-danger' : undefined} />}
+                      label={<span className={failed ? 'text-danger' : undefined}>{AUDIT_LABELS[ev.name] ?? ev.name}{summary && <span className="text-muted"> · {summary}</span>}</span>}
+                      meta={
+                        <span title={ev.userAgent}>
+                          <time dateTime={new Date(ev.ts).toISOString()} title={new Date(ev.ts).toLocaleString()}>{relativeTime(ev.ts, now)}</time>
+                          {' · '}{shortAgent(ev.userAgent)}{ev.ip ? ` · ${ev.ip}` : ''}
+                        </span>
+                      }
+                      badges={failed ? <Badge hue="red">Failed</Badge> : undefined}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
-    </div>
+    </SettingsSection>
   )
 }
 
-/** Recent activity for everyone and the audit log for the owner (below Settings → Security). */
+/** Recent activity for everyone and the audit log for the owner (Settings → Activity). */
 export function SecuritySettings({ user }: { user: User }) {
   return (
     <>
-      {/* Sits right after the passkeys SecurityPanel, which owns the "Security" heading. */}
-      <section className="space-y-2" aria-label="Recent activity">
-        <ActivityPanel />
-      </section>
+      <ActivityPanel />
       {user.role === 'owner' && <AuditPanel />}
     </>
   )

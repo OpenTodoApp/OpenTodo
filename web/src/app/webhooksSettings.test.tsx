@@ -25,15 +25,15 @@ const delivery = (over: Partial<WebhookDelivery> = {}): WebhookDelivery => ({
 function render(over: Partial<WebhooksViewProps> = {}) {
   const props: WebhooksViewProps = {
     isOwner: false, connected: true, webhooks: [], projects: [{ id: 'p1', name: 'Garden' }], allowPrivate: null,
-    busy: false, error: null, draft: null, secret: null, copied: false, testResults: {}, log: null,
-    onDraftChange: noop, onSave: noop, onCopySecret: noop, onDismissSecret: noop, onToggleEnabled: noop, onTest: noop,
+    busy: false, error: null, draft: null, secret: null, testResults: {}, log: null,
+    onDraftChange: noop, onSave: noop, onDismissSecret: noop, onToggleEnabled: noop, onTest: noop,
     onDelete: noop, onOpenLog: noop, onRefreshLog: noop, onRedeliver: noop, onPolicyChange: noop,
     ...over,
   }
   return renderToStaticMarkup(<WebhooksView {...props} />)
 }
 
-const buttons = (html: string) => [...html.matchAll(/<button[^>]*>([^<]*)<\/button>/g)].map((m) => ({ tag: m[0], label: m[1] }))
+const buttons = (html: string) => [...html.matchAll(/<button[^>]*>(.*?)<\/button>/g)].map((m) => ({ tag: m[0], label: m[1].replace(/<[^>]+>/g, '') }))
 const button = (html: string, label: string) => buttons(html).find((b) => b.label === label)
 
 describe('WebhooksView', () => {
@@ -62,8 +62,9 @@ describe('WebhooksView', () => {
     const html = render({ secret: { webhookId: 'w1', value: 'whsec_abc123' }, webhooks: [hook()] })
     expect(html).toContain('whsec_abc123')
     expect(html).toContain('will not be shown again')
-    expect(button(html, 'Copy secret')).toBeTruthy()
+    expect(button(html, 'Copy')).toBeTruthy()
     expect(button(html, 'Done')).toBeTruthy()
+    expect(html).toContain('data-testid="webhook-secret"')
     // Without the one-time state the secret is nowhere on the page.
     expect(render({ webhooks: [hook()] })).not.toContain('whsec_')
   })
@@ -93,13 +94,10 @@ describe('WebhooksView', () => {
     const html = render({ connected: false, webhooks: [hook()], isOwner: true, allowPrivate: true })
     expect(html).toContain('https://n8n.example.com/webhook/plants')
     expect(html).toContain('requires a connection')
-    for (const label of ['Add webhook', 'Send test', 'Edit', 'Disable', 'Delete']) {
-      expect(button(html, label)?.tag, label).toContain('disabled')
-    }
-    expect(html).toMatch(/type="checkbox"[^>]*checked=""[^>]*disabled=""|type="checkbox"[^>]*disabled=""[^>]*checked=""/)
-    // Online, the same buttons are enabled.
-    const live = render({ webhooks: [hook()] })
-    expect(button(live, 'Send test')?.tag).not.toContain('disabled')
+    expect(button(html, 'Add webhook')?.tag).toContain('disabled')
+    expect(html).toMatch(/role="switch"[^>]*aria-checked="true"[^>]*disabled=""|role="switch"[^>]*disabled=""[^>]*aria-checked="true"/)
+    // Online, Add webhook is enabled; the row actions are checked with the menu open (webhooksView.test.tsx).
+    expect(button(render({ webhooks: [hook()] }), 'Add webhook')?.tag).not.toContain('disabled')
   })
 
   it('renders the delivery log with outcome and redeliver', () => {
@@ -129,7 +127,7 @@ describe('WebhooksView', () => {
   it('every action is a native button or form control (keyboard reachable)', () => {
     const html = render({ webhooks: [hook()], isOwner: true, allowPrivate: false, log: { webhookId: 'w1', deliveries: [delivery()] } })
     expect(html).not.toMatch(/onclick=|<div[^>]*role="button"/i)
-    expect(html).toContain('Esc')
+    expect(html).toContain('aria-label="Actions for webhook https://n8n.example.com/webhook/plants"')
   })
 })
 

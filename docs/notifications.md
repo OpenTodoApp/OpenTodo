@@ -36,7 +36,7 @@ How to add reminders is covered in [Recurring tasks and reminders](recurring-and
 Push notifications deliver reminders even when OpenTodo isn't open. Each device decides for itself.
 
 1. Open **Settings → Notifications** on the device.
-2. Tick **Enable notifications on this device** and allow notifications when the browser asks.
+2. Turn on **Enable notifications on this device** and allow notifications when the browser asks.
 3. Select **Send test notification**. Your server sends a real push to this device, the same way it sends reminders, and a notification appears even while OpenTodo is open.
 
 <picture><source srcset="images/settings-notifications-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-notifications-light.webp" alt="Settings, Notifications section with the options Enable notifications on this device and Include task titles."></picture>
@@ -62,7 +62,7 @@ After **Send test notification** you see one of these:
 
 - **Received on this device**: the push arrived and the notification was handed to your system. Reminders will reach this device while the app is closed. If you still saw no banner, your operating system hid it (see below).
 - **Accepted, but this device has not reported receiving it**: your server delivered the push to the browser's push service, but nothing reached this device within a few seconds. Check the operating system's notification settings for your browser or the app, focus and do-not-disturb modes, and on iPhone and iPad use the installed app. If it arrives late, the result updates to received.
-- **This device is not subscribed**: nothing was sent. Tick **Enable notifications on this device** first.
+- **This device is not subscribed**: nothing was sent. Turn on **Enable notifications on this device** first.
 - **The subscription expired**: the push service no longer accepts it and your server removed it. Select **Enable** to subscribe again.
 - **The push service rejected the test**: the message shows its answer. Try **Re-enable**; if it keeps failing, the push service may be unreachable from your server.
 

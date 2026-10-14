@@ -1,7 +1,48 @@
-import { useCallback, useEffect, useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import { scopeLabel, type ApiToken, type TokenScope } from '../lib/assistants'
+import { Button } from '../ui/Button'
+import { Badge } from '../ui/Card'
+import { Field, Input, Select } from '../ui/Field'
+import { Icon } from '../ui/Icon'
+import { MenuItem } from '../ui/Menu'
+import { ConfirmDialog } from '../ui/patterns/ConfirmDialog'
+import { EmptyState } from '../ui/patterns/EmptyState'
+import { ListRow } from '../ui/patterns/ListRow'
+import { Notice } from '../ui/patterns/Notice'
+import { SettingsSection } from '../ui/patterns/SettingsSection'
+import type { HueName } from '../ui/tokens/palette'
+import { Dialog } from './overlay/Dialog'
+import { Menu } from './overlay/Menu'
+
+/**
+ * A secret shown once, with a copy action (API tokens, app passwords). The parent
+ * keeps it until the user is done; it is never shown again (web-app "Token shown once").
+ */
+export function SecretReveal({ what, secret, testId }: { what: string; secret: string; testId?: string }) {
+  const [copied, setCopied] = useState<'yes' | 'failed' | null>(null)
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(secret)
+      setCopied('yes')
+    } catch {
+      setCopied('failed')
+    }
+  }
+  return (
+    <div className="space-y-2" data-testid="secret-reveal">
+      <Notice tone="success">Copy this {what} now. It will not be shown again.</Notice>
+      <div className="flex items-center gap-2">
+        <code tabIndex={0} data-testid={testId} className="min-w-0 flex-1 break-all rounded-control border border-default bg-sunken px-3 py-2 font-mono text-meta text-default">{secret}</code>
+        <Button size="sm" icon="copy" onClick={() => void copy()}>{copied === 'yes' ? 'Copied' : 'Copy'}</Button>
+      </div>
+      {copied === 'failed' && <p className="text-meta text-muted">Copying is blocked here; select the text above and copy it.</p>}
+    </div>
+  )
+}
+
+const SCOPE_HUE: Record<TokenScope, HueName> = { full: 'slate', read: 'blue', agent: 'violet' }
+const day = (ms: number) => new Date(ms).toLocaleDateString()
 
 export interface TokensViewProps {
   tokens: ApiToken[] | null
@@ -9,57 +50,75 @@ export interface TokensViewProps {
   scope: TokenScope
   secret: string | null
   error: string | null
+  /** The "New token" dialog is open (form, then the one-time secret). */
+  creating?: boolean
+  busy?: boolean
   onNameChange: (name: string) => void
   onScopeChange: (scope: TokenScope) => void
   onCreate: () => void
   onRevoke: (token: ApiToken) => void
+  onNew?: () => void
+  onCloseNew?: () => void
 }
 
-/** Pure rendering of Settings → API tokens; state lives in TokensSection. */
+/** Pure rendering of Settings → Integrations → API tokens; state lives in TokensSection. */
 export function TokensView(p: TokensViewProps) {
+  const newButton = <Button variant="primary" size="sm" icon="plus" onClick={p.onNew}>New token</Button>
   return (
-    <section className="space-y-2" aria-labelledby="tokens-heading">
-      <HelpHeading screen="settings/tokens" id="tokens-heading" className="font-semibold">API tokens</HelpHeading>
-      <p className="text-sm text-muted">
-        Use a token from scripts or a CLI: <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">Authorization: Bearer &lt;token&gt;</code>.
-        A read-only token can read everything you can but is refused on every change. A token for an AI assistant
-        that can make changes reads like a read-only token and can change tasks only through the assistant (MCP) write
-        tools, and only while the server owner and you allow assistant changes in Settings → AI → AI assistants; it can never
-        create tokens or change settings. See docs/api.md and docs/mcp.md.
-      </p>
-      <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); p.onCreate() }}>
-        <input className="input max-w-xs" aria-label="Token name" placeholder="Token name (e.g. laptop CLI)" value={p.name}
-          onChange={(e) => p.onNameChange(e.target.value)} />
-        <select className="input w-auto" aria-label="Token scope" value={p.scope} onChange={(e) => p.onScopeChange(e.target.value as TokenScope)}>
-          <option value="full">Full access</option>
-          <option value="read">Read-only</option>
-          <option value="agent">AI assistant, can make changes</option>
-        </select>
-        <button type="submit" className="btn-primary">Create</button>
-      </form>
-      {p.secret && (
-        <div className="rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm dark:border-emerald-800 dark:bg-emerald-950" role="status">
-          <p className="mb-1 font-medium">Copy this token now. It will not be shown again.</p>
-          <code className="break-all">{p.secret}</code>
+    <SettingsSection title="API tokens" helpId="settings/tokens" headingId="tokens-heading" testId="tokens-panel"
+      description="For scripts, the ot command and AI assistants. Send it as Authorization: Bearer <token>."
+      actions={p.tokens && p.tokens.length > 0 ? newButton : undefined}>
+      {p.error && <Notice tone="danger">{p.error}</Notice>}
+      {p.tokens && p.tokens.length === 0 && (
+        <EmptyState icon="key-round" title="No API tokens yet"
+          body="A token lets a script, the ot command or an AI assistant use your tasks without your password. You can revoke it any time."
+          action={newButton} />
+      )}
+      {p.tokens && p.tokens.length > 0 && (
+        <div className="-mx-3">
+          {p.tokens.map((t) => (
+            <ListRow key={t.id} leading={<Icon name="key-round" size="md" />} label={t.name}
+              meta={`Created ${day(t.createdAt)} · ${t.lastUsedAt ? `used ${day(t.lastUsedAt)}` : 'never used'}`}
+              badges={<Badge hue={SCOPE_HUE[t.scope ?? 'full']}>{scopeLabel(t.scope)}</Badge>}
+              menu={(
+                <Menu label={`Actions for ${t.name}`} trigger={<Icon name="ellipsis" />} kind="menu"
+                  triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
+                  <MenuItem label={`Revoke ${t.name}`} icon="trash-2" danger onSelect={() => p.onRevoke(t)} />
+                </Menu>
+              )} />
+          ))}
         </div>
       )}
-      {p.error && <p className="text-sm text-red-600 dark:text-red-400">{p.error}</p>}
-      <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-        {p.tokens?.map((t) => (
-          <li key={t.id} className="flex items-center gap-3 py-2 text-sm">
-            <span className="flex-1">{t.name}</span>
-            <span className={`rounded px-1.5 py-0.5 text-xs ${t.scope === 'read' ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200' : t.scope === 'agent' ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
-              {scopeLabel(t.scope)}
-            </span>
-            <span className="text-xs text-faint">
-              created {new Date(t.createdAt).toLocaleDateString()}{t.lastUsedAt ? ` · used ${new Date(t.lastUsedAt).toLocaleDateString()}` : ' · never used'}
-            </span>
-            <button type="button" className="btn-danger text-xs" aria-label={`Revoke ${t.name}`} onClick={() => p.onRevoke(t)}>Revoke</button>
-          </li>
-        ))}
-        {p.tokens && p.tokens.length === 0 && <li className="py-2 text-sm text-faint">No tokens yet.</li>}
-      </ul>
-    </section>
+      {p.creating && (
+        <Dialog title={p.secret ? 'Token created' : 'New API token'} onClose={() => p.onCloseNew?.()} size="md">
+          {p.secret ? (
+            <div className="space-y-4">
+              <SecretReveal what="token" secret={p.secret} />
+              <div className="flex justify-end"><Button variant="primary" onClick={p.onCloseNew}>Done</Button></div>
+            </div>
+          ) : (
+            <form className="space-y-4" onSubmit={(e: FormEvent) => { e.preventDefault(); p.onCreate() }}>
+              <Field label="Name" description="Something you will recognise later, such as the device or script.">
+                <Input aria-label="Token name" placeholder="e.g. laptop CLI" value={p.name} onChange={(e) => p.onNameChange(e.target.value)} data-autofocus />
+              </Field>
+              <Field label="Access"
+                description="Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.">
+                <Select aria-label="Token scope" value={p.scope} onChange={(e) => p.onScopeChange(e.target.value as TokenScope)}>
+                  <option value="full">Full access</option>
+                  <option value="read">Read-only</option>
+                  <option value="agent">AI assistant, can make changes</option>
+                </Select>
+              </Field>
+              {p.error && <Notice tone="danger">{p.error}</Notice>}
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={p.onCloseNew}>Cancel</Button>
+                <Button variant="primary" type="submit" busy={p.busy}>Create token</Button>
+              </div>
+            </form>
+          )}
+        </Dialog>
+      )}
+    </SettingsSection>
   )
 }
 
@@ -70,12 +129,15 @@ export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
   const [scope, setScope] = useState<TokenScope>('full')
   const [secret, setSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [revoking, setRevoking] = useState<ApiToken | null>(null)
 
   const load = useCallback(async () => {
     try {
       setTokens((await api.listTokens()).tokens)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Offline: tokens are managed on the server.')
+      setError(err instanceof ApiError ? err.message : 'You are offline. Tokens are managed on your server.')
     }
   }, [])
   useEffect(() => {
@@ -83,21 +145,33 @@ export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
   }, [load, reloadKey])
 
   return (
-    <TokensView
-      tokens={tokens} name={name} scope={scope} secret={secret} error={error}
-      onNameChange={setName} onScopeChange={setScope}
-      onCreate={() => void (async () => {
-        setError(null)
-        try {
-          const res = await api.createToken(name || 'API token', scope)
-          setSecret(res.secret)
-          setName('')
-          await load()
-        } catch (err) {
-          setError(err instanceof Error ? err.message : String(err))
-        }
-      })()}
-      onRevoke={(t) => void api.deleteToken(t.id).then(load, (err: unknown) => setError(err instanceof Error ? err.message : String(err)))}
-    />
+    <>
+      <TokensView
+        tokens={tokens} name={name} scope={scope} secret={secret} error={error} creating={creating} busy={busy}
+        onNameChange={setName} onScopeChange={setScope}
+        onNew={() => { setError(null); setSecret(null); setCreating(true) }}
+        onCloseNew={() => { setCreating(false); setSecret(null); setName(''); setScope('full') }}
+        onCreate={() => void (async () => {
+          setError(null)
+          setBusy(true)
+          try {
+            const res = await api.createToken(name || 'API token', scope)
+            setSecret(res.secret)
+            setName('')
+            await load()
+          } catch (err) {
+            setError(err instanceof Error ? err.message : String(err))
+          } finally {
+            setBusy(false)
+          }
+        })()}
+        onRevoke={setRevoking}
+      />
+      {revoking && (
+        <ConfirmDialog title={`Revoke “${revoking.name}”?`} confirmLabel="Revoke token"
+          consequence="Scripts, apps and assistants using this token stop working at once. You cannot undo this."
+          onConfirm={() => api.deleteToken(revoking.id).then(load)} onCancel={() => setRevoking(null)} />
+      )}
+    </>
   )
 }

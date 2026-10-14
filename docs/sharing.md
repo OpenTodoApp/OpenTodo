@@ -49,7 +49,7 @@ New accounts are created through a project link only when one of these is true:
 
 - the link was created by the **owner or an admin of the server**;
 - open sign-up is on for the server;
-- the server owner switched on **Members can invite new people with project links** in **Settings → Administration**. It is off by default.
+- the server owner switched on **Members can invite new people with project links** in **Settings → Access policies → Project invite links**. It is off by default.
 
 When none applies, the Share dialog says so under the new link: it then works only for people who already have an account. The switch is checked when a link is used, so turning it on or off also affects links that were already sent.
 

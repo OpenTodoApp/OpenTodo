@@ -109,7 +109,7 @@ Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more
 
 ### When a project is done
 
-When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → General → Projects** (each device has its own setting). To bring an archived project back, open **Settings → General → Projects** and select **Restore** next to it under **Archived projects**; see [Trash and history](trash-and-history.md#bring-back-an-archived-project).
+When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → Projects** (each device has its own setting). To bring an archived project back, open **Settings → Projects** and select **Restore** next to it under **Archived projects**; see [Trash and history](trash-and-history.md#bring-back-an-archived-project).
 
 ## Put things in order
 

@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import type { ConfigWarning, User } from '../lib/types'
+import { Icon } from '../ui/Icon'
 
 /** The owner's configuration warnings from /api/v1/me; empty for everyone else, offline or on older servers. */
 export async function loadConfigWarnings(user: User): Promise<ConfigWarning[]> {
@@ -30,18 +31,19 @@ export function ConfigWarningList({ warnings }: { warnings: ConfigWarning[] }) {
   if (warnings.length === 0) return null
   return (
     <section aria-labelledby="config-warnings-heading" data-testid="config-warnings"
-      className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
-      <h2 id="config-warnings-heading" className="font-semibold">
+      className="space-y-2 rounded-card border border-default bg-warning-soft p-4 text-sm text-on-warning-soft shadow-1">
+      <h2 id="config-warnings-heading" className="flex items-center gap-2 font-semibold">
+        <Icon name="alarm-clock" />
         {warnings.length === 1 ? 'Server configuration warning' : 'Server configuration warnings'}
       </h2>
-      <ul className="space-y-1">
+      <ul className="space-y-1.5">
         {warnings.map((w) => (
           <li key={w.variable} className="break-words">
-            <code className="font-mono text-xs">{w.variable}</code>: {w.message}
+            <code className="rounded-chip bg-surface px-1 font-mono text-meta text-default">{w.variable}</code>: {w.message}
           </li>
         ))}
       </ul>
-      <p className="text-xs">Only you, the owner, see this. It goes away after the server restarts with a corrected value.</p>
+      <p className="text-meta">Only you, the owner, see this. It goes away after the server restarts with a corrected value.</p>
     </section>
   )
 }

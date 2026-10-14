@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 import type { MfaStatus, TrustedDevice } from '../lib/types'
 import { ReauthDialogView, type ReauthDialogViewProps } from './ReauthDialog'
 import {
+  MfaPolicyPanelView,
   browserName, EnrolmentStepView, groupKey, RecoveryCodesView, TwoFactorPanelView, type TwoFactorPanelViewProps,
 } from './TwoFactorPanel'
 
@@ -21,8 +22,8 @@ const devices: TrustedDevice[] = [{
 
 function panel(overrides: Partial<TwoFactorPanelViewProps>): string {
   const props: TwoFactorPanelViewProps = {
-    status: off, online: true, isOwner: false, busy: false, error: null, devices: [], policy: null, wizard: null,
-    onStart: noop, onDisable: noop, onRegenerate: noop, onForgetDevice: noop, onForgetAll: noop, onPolicy: noop, now, ...overrides,
+    status: off, online: true, isOwner: false, busy: false, error: null, devices: [], policy: null,
+    onStart: noop, onDisable: noop, onRegenerate: noop, onForgetDevice: noop, onForgetAll: noop, now, ...overrides,
   }
   return renderToStaticMarkup(createElement(TwoFactorPanelView, props))
 }
@@ -34,7 +35,7 @@ describe('TwoFactorPanelView', () => {
   it('offers setup when off', () => {
     const html = panel({})
     expect(html).toContain('Two-factor authentication')
-    expect(html).toContain('Status: <strong>Off</strong>')
+    expect(html).toMatch(/data-hue="slate"[^>]*><span[^>]*>Off<\/span>/)
     expect(html).toContain('Set up two-factor authentication')
     expect(disabledButtons(html)).toBe(0)
     expect(html).not.toContain('Remembered browsers')
@@ -42,46 +43,56 @@ describe('TwoFactorPanelView', () => {
 
   it('shows remaining codes, remembered browsers and actions when on', () => {
     const html = panel({ status: on, devices })
-    expect(html).toContain('Status: <strong>On</strong>')
+    expect(html).toMatch(/data-hue="green"[^>]*><span[^>]*>On<\/span>/)
     expect(html).toContain('9 of 10 recovery codes left')
     expect(html).toContain('New recovery codes')
     expect(html).toContain('Turn off')
     expect(html).toContain('Safari on macOS')
-    expect(html).toContain('used just now')
+    expect(html).toContain('Used just now')
+    expect(html).toContain('aria-label="Actions for Safari on macOS"')
     expect(html).toContain('Forget all browsers')
     expect(disabledButtons(html)).toBe(0)
   })
 
   it('warns when few recovery codes are left', () => {
-    expect(panel({ status: { ...on, recoveryCodesRemaining: 2 } })).toContain('Few recovery codes left')
+    const few = panel({ status: { ...on, recoveryCodesRemaining: 2 } })
+    expect(few).toContain('Few recovery codes left')
+    expect(few).toContain('data-hue="orange"')
+    expect(few).toMatch(/ui-btn--primary[^"]*"[^>]*>New recovery codes/)
   })
 
   it('cannot be turned off when the policy requires it', () => {
     const html = panel({ status: { ...on, required: true, policy: 'all' } })
-    expect(html).toContain('required by the server owner')
+    expect(html).toContain('Required by the server owner')
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Turn off/)
   })
 
-  it('is read-only offline, showing the cached status', () => {
+  it('offline, says it needs a connection and shows no on or off state', () => {
     const html = panel({ status: on, devices, online: false, isOwner: true, policy: 'owner' })
-    expect(html).toContain('You are offline')
-    expect(html).toContain('Status: <strong>On</strong>')
+    expect(html).toContain('needs a connection')
+    expect(html).not.toContain('data-testid="mfa-status"')
+    expect(html).not.toContain('Turn off')
     expect(disabledButtons(html)).toBe(allButtons(html))
-    expect(html).toMatch(/<select[^>]*disabled=""/)
   })
 
-  it('shows the policy select to the owner only', () => {
+  it('links the owner to the server policy in Access policies, and only the owner', () => {
     const owner = panel({ isOwner: true, policy: 'all' })
-    expect(owner).toContain('Policy for this server')
-    expect(owner).toContain('<option value="all" selected="">Required for every account</option>')
-    expect(panel({ isOwner: false })).not.toContain('Policy for this server')
+    expect(owner).toContain('data-testid="mfa-policy-link"')
+    expect(owner).toContain('required for every account')
+    expect(owner).toContain('href="/settings/access"')
+    expect(owner).not.toContain('Policy for this server')
+    expect(panel({ isOwner: false })).not.toContain('mfa-policy-link')
   })
 
-  it('renders the wizard in place of the actions', () => {
-    const html = panel({ wizard: createElement('div', { id: 'wiz' }) })
-    expect(html).toContain('id="wiz"')
-    expect(html).not.toContain('Set up two-factor authentication</button>')
+  it('the policy panel shows the select with the current policy, read-only offline', () => {
+    const view = (p: Partial<Parameters<typeof MfaPolicyPanelView>[0]>) => renderToStaticMarkup(createElement(MfaPolicyPanelView, { policy: 'all', online: true, busy: false, error: null, onPolicy: () => {}, ...p }))
+    const html = view({})
+    expect(html).toContain('Policy for this server')
+    expect(html).toContain('data-help-screen="settings/two-factor"')
+    expect(html).toContain('<option value="all" selected="">Required for every account</option>')
+    expect(view({ online: false })).toMatch(/<select[^>]*disabled=""/)
   })
+
 })
 
 describe('EnrolmentStepView', () => {

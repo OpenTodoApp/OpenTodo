@@ -20,7 +20,7 @@ Base path: `/api/v1`. All requests and responses are JSON. Errors look like:
 Two options:
 
 - **Session cookie** (the web app). Obtained from `auth/register` or `auth/login`. State-changing requests must come from the app's own origin.
-- **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → Integrations → API tokens** or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
+- **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → Integrations → API tokens** (**New token**, then a name and the access) or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
 
 A token has a **scope**: `full` (the default), `read` or `agent`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 

@@ -320,17 +320,18 @@ body {
 }
 /* Shared Button (src/ui/Button.tsx, OpenSpec change ui-primitives D3): the same
    tokens as the legacy classes, plus sizes, icon-only and busy states. */
+/* Labels may wrap on narrow screens instead of pushing the page sideways; heights are minimums. */
 .ui-btn {
-  @apply relative inline-flex items-center justify-center gap-2 rounded-control font-medium whitespace-nowrap transition duration-(--duration-ui) ease-calm
+  @apply relative inline-flex max-w-full items-center justify-center gap-2 rounded-control text-center font-medium transition duration-(--duration-ui) ease-calm
     focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus
     disabled:cursor-not-allowed disabled:opacity-50 aria-busy:cursor-progress;
 }
-.ui-btn--sm { @apply h-8 px-2.5 text-meta; }
-.ui-btn--md { @apply h-10 px-3.5 text-sm; }
-.ui-btn--lg { @apply h-12 px-4 text-body; }
-.ui-btn--icon.ui-btn--sm { @apply w-8 px-0; }
-.ui-btn--icon.ui-btn--md { @apply w-10 px-0; }
-.ui-btn--icon.ui-btn--lg { @apply w-12 px-0; }
+.ui-btn--sm { @apply min-h-8 px-2.5 py-1 text-meta; }
+.ui-btn--md { @apply min-h-10 px-3.5 py-2 text-sm; }
+.ui-btn--lg { @apply min-h-12 px-4 py-2.5 text-body; }
+.ui-btn--icon.ui-btn--sm { @apply h-8 w-8 p-0; }
+.ui-btn--icon.ui-btn--md { @apply h-10 w-10 p-0; }
+.ui-btn--icon.ui-btn--lg { @apply h-12 w-12 p-0; }
 .ui-btn--primary { @apply bg-accent text-on-accent shadow-1 hover:bg-accent-hover active:translate-y-px; }
 .ui-btn--secondary { @apply border border-input bg-surface text-default hover:bg-sunken active:bg-sunken dark:hover:bg-raised; }
 .ui-btn--ghost { @apply text-muted hover:bg-sunken hover:text-default active:bg-sunken dark:hover:bg-raised; }
@@ -401,7 +402,7 @@ select.input { @apply truncate; contain: layout paint; }
 }
 }
 @media (pointer: coarse) {
-  :where(button, [role="button"], summary, select, a.btn-primary, a.btn-secondary, a.btn-ghost, a.btn-danger) { min-height: 44px; min-width: 44px; }
+  :where(button, [role="button"], summary, select, a.btn-primary, a.btn-secondary, a.btn-ghost, a.btn-danger, a.ui-btn) { min-height: 44px; min-width: 44px; }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"]), textarea) { min-height: 44px; }
   :where(label:has(> input[type="checkbox"], > input[type="radio"])) { min-height: 44px; }
 }
