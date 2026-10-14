@@ -31,10 +31,12 @@ import { PropertyRow } from './PropertyRow'
 import { ZoneControl } from './ZoneControl'
 
 export const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
-  { p: 1, label: 'P1', cls: 'text-red-600 dark:text-red-400 border-red-500' },
-  { p: 2, label: 'P2', cls: 'text-orange-700 dark:text-orange-400 border-orange-500' },
-  { p: 3, label: 'P3', cls: 'text-blue-600 dark:text-blue-400 border-blue-500' },
-  { p: 4, label: 'P4', cls: 'text-muted border-slate-400' },
+  // Priority colours come from the p1–p4 tokens (borders, 3:1); the labels use the
+  // matching palette hue's text step so they stay readable (4.5:1) in both themes.
+  { p: 1, label: 'P1', cls: 'text-(--ot-hue-red-text) border-p1' },
+  { p: 2, label: 'P2', cls: 'text-(--ot-hue-orange-text) border-p2' },
+  { p: 3, label: 'P3', cls: 'text-(--ot-hue-blue-text) border-p3' },
+  { p: 4, label: 'P4', cls: 'text-muted border-p4' },
 ]
 
 const itemKey = (i: PickerItem) => i.key

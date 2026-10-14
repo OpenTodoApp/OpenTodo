@@ -195,7 +195,7 @@ export function FilterView() {
               Save view
             </button>
           </h1>
-          <div className="mb-3 border-b border-slate-200 pb-2 dark:border-slate-800">
+          <div className="mb-3 border-b border-default pb-2">
             <input
               ref={inputRef}
               className="input font-mono"
@@ -216,9 +216,9 @@ export function FilterView() {
             />
             <div id="filter-message" className="min-h-5 px-1 pt-1 text-xs" aria-live="polite">
               {error ? (
-                <p role="alert" className="text-red-600 dark:text-red-400">{error}</p>
+                <p role="alert" className="text-danger">{error}</p>
               ) : warnings.length > 0 ? (
-                <p className="text-amber-700 dark:text-amber-400">{warnings.join(' · ')}</p>
+                <p className="text-warning">{warnings.join(' · ')}</p>
               ) : null}
             </div>
           </div>
@@ -298,13 +298,13 @@ const HINT: [string[], string][] = [
 
 function UsageHint() {
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-muted dark:border-slate-700">
+    <div className="rounded-lg border border-dashed border-input p-4 text-sm text-muted">
       <p className="mb-2">Type a query to list matching tasks. Enter jumps to the results, Esc comes back, ↑ / ↓ recall recent queries.</p>
       <dl className="text-xs">
         {HINT.map(([terms, d]) => (
-          <div key={terms[0]} className="flex flex-col gap-1 border-t border-slate-100 py-1.5 sm:flex-row sm:gap-3 dark:border-slate-800">
+          <div key={terms[0]} className="flex flex-col gap-1 border-t border-default py-1.5 sm:flex-row sm:gap-3">
             <dt className="flex flex-wrap gap-1 sm:w-64 sm:shrink-0">
-              {terms.map((t) => <code key={t} className="kbd text-slate-700 dark:text-slate-300">{t}</code>)}
+              {terms.map((t) => <code key={t} className="kbd text-muted">{t}</code>)}
             </dt>
             <dd>{d}</dd>
           </div>

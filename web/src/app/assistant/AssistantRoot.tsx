@@ -22,10 +22,10 @@ export default function AssistantRoot({ context }: { context: () => { view?: str
       {open && <AssistantPanel onClose={closeAssistant} context={context} onApplied={(r) => setToast(r)} />}
       <ToastRegion label="Assistant">
         {toast && (
-          <div role="status" className="pointer-events-auto flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm text-white shadow-lg dark:bg-slate-100 dark:text-slate-900" data-assistant-toast>
+          <div role="status" className="pointer-events-auto flex items-center gap-2 rounded-lg bg-(--ot-text-strong) px-3 py-2 text-sm text-(--ot-surface) shadow-lg" data-assistant-toast>
             <span className="min-w-0 flex-1">{toast.text}</span>
             {toast.undoId && (
-              <button type="button" className="rounded-md px-2 py-1 font-medium underline focus-visible:outline-2 focus-visible:outline-emerald-400"
+              <button type="button" className="rounded-md px-2 py-1 font-medium underline focus-visible:outline-2 focus-visible:outline-focus"
                 onClick={() => { const id = toast.undoId!; setToast({ text: 'Undoing…', undoId: null }); void undoChanges(id).then((u) => setToast({ text: u.skipped.length ? `Undone, except: ${u.skipped.join(', ')}.` : 'Undone.', undoId: null })) }}>
                 Undo
               </button>

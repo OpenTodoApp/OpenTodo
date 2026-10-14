@@ -20,9 +20,9 @@ const PRIORITY_RING: Record<number, string> = {
 }
 
 const DUE_TONE = {
-  overdue: 'text-red-600 dark:text-red-400',
-  today: 'text-emerald-700 dark:text-emerald-400',
-  soon: 'text-violet-700 dark:text-violet-400',
+  overdue: 'text-danger',
+  today: 'text-success',
+  soon: 'text-(--ot-hue-violet-text)',
   later: 'text-muted',
 }
 
@@ -79,12 +79,12 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
       data-draggable={onPointerDown ? '' : undefined}
       onPointerDown={onPointerDown}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group relative flex items-start gap-2 rounded-md px-2 py-2 ${dropIndicator === 'inside' ? 'ring-2 ring-emerald-500' : ''} ${card ? `border border-slate-200 shadow-sm dark:border-slate-700 ${selected ? '' : 'bg-white dark:bg-slate-950'}` : ''} ${selected ? 'bg-slate-100 ring-1 ring-emerald-500/50 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
+      className={`group relative flex items-start gap-2 rounded-md px-2 py-2 ${dropIndicator === 'inside' ? 'ring-2 ring-accent' : ''} ${card ? `border border-default shadow-sm ${selected ? '' : 'bg-surface'}` : ''} ${selected ? 'bg-sunken dark:bg-raised ring-1 ring-accent/50' : 'hover:bg-canvas dark:hover:bg-raised'}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // 2 px drop indicator between rows (manual-ordering design D5).
         <span aria-hidden="true" data-drop-indicator={dropIndicator}
-          className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-emerald-500 ${dropIndicator === 'before' ? '-top-px' : '-bottom-px'}`} />
+          className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-accent ${dropIndicator === 'before' ? '-top-px' : '-bottom-px'}`} />
       )}
       {onToggleCollapse && (
         // Tree views reserve a fixed slot so circles line up whether or not a row has children.
@@ -95,7 +95,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
               aria-label={collapsed ? 'Expand subtasks' : 'Collapse subtasks'}
               aria-expanded={!collapsed}
               onClick={onToggleCollapse}
-              className="flex h-5 w-4 items-center justify-center rounded text-xs text-faint hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700"
+              className="flex h-5 w-4 items-center justify-center rounded text-xs text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised"
             >
               <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
             </button>
@@ -109,7 +109,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         disabled={readOnly}
         className="group/check touch-target inline-flex items-center justify-center mt-0.5 shrink-0 self-start rounded-full pointer-coarse:-my-2.5 pointer-coarse:-ml-3 pointer-coarse:-mr-1"
       >
-        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${PRIORITY_RING[task.priority]} ${done ? 'bg-slate-400 border-slate-400 text-white' : 'group-hover/check:bg-emerald-100'}`}>
+        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${PRIORITY_RING[task.priority]} ${done ? 'bg-faint border-input text-on-accent' : 'group-hover/check:bg-success-soft'}`}>
           {done && <Icon name="check" size="xs" />}
         </span>
       </button>
@@ -118,12 +118,12 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           {undecryptable ? <span className="italic text-faint" title="This title could not be decrypted with this device's key">{task.title}</span>
             : task.title || <span className="italic text-faint">Untitled</span>}
           {unencrypted && (
-            <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[11px] text-amber-800 dark:bg-amber-900/40 dark:text-amber-200" title="The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.">
+            <span className="ml-2 rounded bg-warning-soft px-1.5 py-0.5 align-middle text-[11px] text-on-warning-soft" title="The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.">
               not yet encrypted
             </span>
           )}
           {progress && progress.total > 0 && (
-            <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 align-middle font-mono text-[11px] text-muted dark:bg-slate-800 dark:text-slate-400" title="Completed subtasks">
+            <span className="ml-2 rounded bg-sunken dark:bg-raised px-1.5 py-0.5 align-middle font-mono text-[11px] text-muted" title="Completed subtasks">
               {progress.done}/{progress.total}
             </span>
           )}
@@ -134,10 +134,10 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           {task.recurrence ? (
             <span className="text-muted" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring><Icon name="repeat" size="xs" /></span>
           ) : task.series_id ? (
-            <span className="text-slate-300 dark:text-slate-600" title="Occurrence of a recurring task" aria-label="Occurrence of a recurring task"><Icon name="repeat" size="xs" /></span>
+            <span className="text-faint" title="Occurrence of a recurring task" aria-label="Occurrence of a recurring task"><Icon name="repeat" size="xs" /></span>
           ) : null}
           {task.estimate_minutes ? (
-            <span className="rounded bg-slate-100 px-1.5 font-mono text-[11px] text-muted dark:bg-slate-800 dark:text-slate-400" title="Estimate" data-estimate>
+            <span className="rounded bg-sunken dark:bg-raised px-1.5 font-mono text-[11px] text-muted" title="Estimate" data-estimate>
               {formatMinutes(task.estimate_minutes)}
             </span>
           ) : null}

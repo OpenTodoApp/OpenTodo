@@ -127,7 +127,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
             <ViewMenu view={view} />
           </div>
 
-          <div className="mb-3 border-b border-slate-200 pb-2 dark:border-slate-800">
+          <div className="mb-3 border-b border-default pb-2">
             <div className="flex gap-2">
               <input ref={inputRef} className="input font-mono" aria-label="View query" aria-invalid={!!message} aria-describedby="view-message"
                 autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false}
@@ -136,11 +136,11 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
             </div>
             <div id="view-message" className="min-h-5 px-1 pt-1 text-xs" aria-live="polite">
               {message ? (
-                <p role="alert" className="text-red-600 dark:text-red-400">{message}</p>
+                <p role="alert" className="text-danger">{message}</p>
               ) : dirty ? (
                 <p className="text-faint">Enter saves the query for every device · Esc discards the change</p>
               ) : result.ok && result.warnings.length > 0 ? (
-                <p className="text-amber-700 dark:text-amber-400">{result.warnings.join(' · ')}</p>
+                <p className="text-warning">{result.warnings.join(' · ')}</p>
               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">

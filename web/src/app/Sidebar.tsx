@@ -21,8 +21,8 @@ import { canEditProject, roleOf } from '../lib/sharing'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
 import { formatUnread, unreadCounts, type UnreadCounts } from '../lib/feed'
 
-const ACTIVE = 'bg-emerald-100 font-medium text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100'
-const IDLE = 'text-slate-700 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-slate-800'
+const ACTIVE = 'bg-accent-soft font-medium text-on-accent-soft'
+const IDLE = 'text-muted hover:bg-sunken dark:hover:bg-raised'
 
 /** Indentation per level in the sidebar; capped so a deep tree still fits a 360 px screen. */
 const INDENT_REM = 0.75
@@ -218,7 +218,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
       </nav>
       <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
         Views
-        <button className={`rounded px-1 text-[10px] normal-case hover:bg-slate-200 dark:hover:bg-slate-800 ${route.view === 'views' ? 'text-emerald-700 dark:text-emerald-300' : ''}`}
+        <button className={`rounded px-1 text-[10px] normal-case hover:bg-sunken dark:hover:bg-raised ${route.view === 'views' ? 'text-accent' : ''}`}
           onClick={() => navigate({ view: 'views' })} title="All views (g v)">All</button>
       </div>
       <nav className="space-y-0.5" aria-label="Views">
@@ -230,7 +230,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
               <button data-view-id={v.id} onClick={() => navigate({ view: 'view', id: v.id })} className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm">
                 <span className="flex w-5 justify-center" style={{ color: v.color }}><Icon name={viewIcon(v)} /></span>
                 <span className="flex-1 truncate">{v.name}</span>
-                {!isDashboard(v) && c && (c.ok ? (c.count ? <span className="text-xs text-faint">{c.count}</span> : null) : <span className="text-xs text-red-600 dark:text-red-400" title={c.error}>!</span>)}
+                {!isDashboard(v) && c && (c.ok ? (c.count ? <span className="text-xs text-faint">{c.count}</span> : null) : <span className="text-xs text-danger" title={c.error}>!</span>)}
               </button>
               <ViewMenu view={v} className="hover-reveal" />
             </div>
@@ -242,7 +242,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
       </nav>
       <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
         Projects
-        <button className="rounded px-1 text-base leading-none hover:bg-slate-200 dark:hover:bg-slate-800" onClick={startAdding} title="New project">+</button>
+        <button className="rounded px-1 text-base leading-none hover:bg-sunken dark:hover:bg-raised" onClick={startAdding} title="New project">+</button>
       </div>
       <nav className="min-h-48 flex-1 space-y-0.5 overflow-y-auto" aria-label="Projects">
         <ul role="tree">
@@ -256,16 +256,16 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
               <li key={n.id} role="treeitem" aria-level={n.depth + 1} aria-expanded={has ? !isCollapsed : undefined}
                 data-project-row={n.id} data-drop-target={`project:${n.id}`}
                 onPointerDown={movable(n.id) ? (e) => startDrag(e, n) : undefined}
-                className={`relative flex items-center rounded-md ${drop === 'inside' ? 'ring-2 ring-emerald-500' : ''}`} style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
+                className={`relative flex items-center rounded-md ${drop === 'inside' ? 'ring-2 ring-accent' : ''}`} style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
                 {(drop === 'before' || drop === 'after') && (
                   <span aria-hidden="true" data-drop-indicator={drop}
-                    className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-emerald-500 ${drop === 'before' ? '-top-px' : '-bottom-px'}`} />
+                    className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-accent ${drop === 'before' ? '-top-px' : '-bottom-px'}`} />
                 )}
                 <span className="flex h-6 w-4 shrink-0 items-center justify-center">
                   {has && (
                     <button type="button" tabIndex={-1} aria-label={isCollapsed ? `Expand ${p.name}` : `Collapse ${p.name}`}
                       onClick={() => void toggleCollapsedProject(n.id)}
-                      className="flex h-5 w-4 items-center justify-center rounded text-xs text-faint hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700">
+                      className="flex h-5 w-4 items-center justify-center rounded text-xs text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised">
                       <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${isCollapsed ? '' : 'rotate-90'}`} />
                     </button>
                   )}
@@ -305,12 +305,12 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         {projects.length === 0 && !adding && <p className="px-2 py-1 text-xs text-faint">No projects yet.</p>}
 
         <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
-          <button className="flex items-center gap-1 uppercase hover:text-slate-600 dark:hover:text-slate-200" onClick={() => setLabelsOpen((v) => !v)} aria-expanded={labelsOpen}>
+          <button className="flex items-center gap-1 uppercase hover:text-muted" onClick={() => setLabelsOpen((v) => !v)} aria-expanded={labelsOpen}>
             <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${labelsOpen ? 'rotate-90' : ''}`} />Labels
           </button>
           <span className="flex items-center gap-1">
-            <button className={`rounded px-1 text-[10px] normal-case hover:bg-slate-200 dark:hover:bg-slate-800 ${route.view === 'labels' ? 'text-emerald-700 dark:text-emerald-300' : ''}`} onClick={() => navigate({ view: 'labels' })} title="All labels (g l)">All</button>
-            <button className="rounded px-1 text-base leading-none hover:bg-slate-200 dark:hover:bg-slate-800" onClick={() => { setLabelsOpen(true); setAddingLabel(true) }} title="New label" aria-label="New label"><Icon name="plus" size="xs" /></button>
+            <button className={`rounded px-1 text-[10px] normal-case hover:bg-sunken dark:hover:bg-raised ${route.view === 'labels' ? 'text-accent' : ''}`} onClick={() => navigate({ view: 'labels' })} title="All labels (g l)">All</button>
+            <button className="rounded px-1 text-base leading-none hover:bg-sunken dark:hover:bg-raised" onClick={() => { setLabelsOpen(true); setAddingLabel(true) }} title="New label" aria-label="New label"><Icon name="plus" size="xs" /></button>
           </span>
         </div>
         {labelsOpen && (
@@ -322,16 +322,16 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         )}
       </nav>
       <button onClick={() => navigate({ view: 'help' })} title="Help and guides (g then ?)"
-        className={`mt-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'help' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}>
+        className={`mt-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'help' ? 'bg-accent-soft text-on-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}>
         <span className="flex h-6 w-6 items-center justify-center text-muted"><Icon name="circle-help" /></span>
-        <span className="flex-1 text-slate-700 dark:text-slate-300">Help</span>
+        <span className="flex-1 text-muted">Help</span>
       </button>
       <button onClick={() => navigate({ view: 'settings' })}
-        className={`mt-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'settings' || route.view === 'import' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}>
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-xs font-semibold text-white">
+        className={`mt-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'settings' || route.view === 'import' ? 'bg-accent-soft text-on-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}>
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-xs font-semibold text-on-accent">
           {(user.name || user.email).slice(0, 1).toUpperCase()}
         </span>
-        <span className="flex-1 truncate text-slate-700 dark:text-slate-300">{user.name || user.email}</span>
+        <span className="flex-1 truncate text-muted">{user.name || user.email}</span>
         <span className="text-faint"><Icon name="settings" /></span>
       </button>
     </div>
@@ -343,6 +343,6 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
   const text = formatUnread(n)
   return (
     <span data-unread-count={n} title={`${text} ${label}`} aria-label={`${text} ${label}`}
-      className="rounded-full bg-emerald-700 px-1.5 text-[10px] font-semibold leading-4 text-white">{text}</span>
+      className="rounded-full bg-accent px-1.5 text-[10px] font-semibold leading-4 text-on-accent">{text}</span>
   )
 }

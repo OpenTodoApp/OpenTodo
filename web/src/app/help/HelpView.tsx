@@ -31,8 +31,8 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
   const page = data && slug ? data.bundle.pages.find((p) => p.slug === slug) : undefined
   const open = (s: string, a?: string) => { setQuery(''); setAnchor(a); navigate({ view: 'help', page: s }) }
 
-  if (failed) return <div className="mx-auto max-w-2xl px-4 py-6"><h1 className="text-xl font-semibold">Help</h1><p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Help could not be loaded. Reload the app and try again.</p></div>
-  if (!data) return <div className="mx-auto max-w-2xl px-4 py-6"><h1 className="text-xl font-semibold">Help</h1><p className="mt-2 text-sm text-slate-600 dark:text-slate-400" role="status">Loading…</p></div>
+  if (failed) return <div className="mx-auto max-w-2xl px-4 py-6"><h1 className="text-xl font-semibold">Help</h1><p className="mt-2 text-sm text-muted">Help could not be loaded. Reload the app and try again.</p></div>
+  if (!data) return <div className="mx-auto max-w-2xl px-4 py-6"><h1 className="text-xl font-semibold">Help</h1><p className="mt-2 text-sm text-muted" role="status">Loading…</p></div>
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 md:px-8" data-help-scroll data-help-view>
@@ -42,7 +42,7 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
         ) : (
           <h1 className="text-xl font-semibold">Help</h1>
         )}
-        <span className="text-xs text-slate-600 dark:text-slate-400">OpenTodo {data.bundle.version} · works offline</span>
+        <span className="text-xs text-muted">OpenTodo {data.bundle.version} · works offline</span>
       </div>
       <div role="search" className="relative mt-3 max-w-xl">
         <label className="sr-only" htmlFor="help-search">Search help</label>
@@ -56,13 +56,13 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
       <p className="sr-only" aria-live="polite">{query.trim() ? `${results.length} result${results.length === 1 ? '' : 's'}` : ''}</p>
       {query.trim() ? (
         <section aria-label="Search results" className="mt-4 max-w-2xl">
-          {results.length === 0 && <p className="text-sm text-slate-600 dark:text-slate-400">No matches. Try a shorter or different word.</p>}
+          {results.length === 0 && <p className="text-sm text-muted">No matches. Try a shorter or different word.</p>}
           <ul className="space-y-1">
             {results.map((r) => {
               const [s, a] = r.url.split('#')
               return (
                 <li key={r.url}>
-                  <a href={`/help/${s}${a ? `#${a}` : ''}`} data-help-result className="block rounded-md px-3 py-2 hover:bg-slate-100 focus-visible:bg-slate-100 dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800"
+                  <a href={`/help/${s}${a ? `#${a}` : ''}`} data-help-result className="block rounded-md px-3 py-2 hover:bg-sunken focus-visible:bg-sunken dark:hover:bg-raised"
                     onClick={(e) => { e.preventDefault(); open(s, a) }}
                     onKeyDown={(e) => {
                       const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-help-result]')]
@@ -71,7 +71,7 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
                       if (e.key === 'ArrowUp') { e.preventDefault(); (links[i - 1] ?? searchRef.current)?.focus() }
                     }}>
                     <span className="block text-sm font-medium">{r.page}{r.heading ? ` › ${r.heading}` : ''}</span>
-                    <span className="help-snippet block text-xs text-slate-600 dark:text-slate-400" dangerouslySetInnerHTML={{ __html: r.snippet }} />
+                    <span className="help-snippet block text-xs text-muted" dangerouslySetInnerHTML={{ __html: r.snippet }} />
                   </a>
                 </li>
               )
@@ -85,10 +85,10 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
           </article>
           {page.toc.length > 1 && (
             <nav aria-label="On this page" className="order-first mb-6 text-sm lg:order-none lg:sticky lg:top-4 lg:self-start">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">On this page</p>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">On this page</p>
               <ul className="space-y-0.5">
                 {page.toc.map((t) => (
-                  <li key={t.id}><a className="touch-target block py-1 text-slate-600 hover:underline dark:text-slate-300" href={`#${t.id}`}
+                  <li key={t.id}><a className="touch-target block py-1 text-muted hover:underline" href={`#${t.id}`}
                     onClick={(e) => { e.preventDefault(); setAnchor(undefined); requestAnimationFrame(() => setAnchor(t.id)) }}>{t.text}</a></li>
                 ))}
               </ul>
@@ -99,21 +99,21 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
         <div className="mt-6 space-y-6">
           {helpSections(data.bundle).map((s) => (
             <section key={s.title} aria-labelledby={`help-sec-${s.title}`}>
-              <h2 id={`help-sec-${s.title}`} className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{s.title}</h2>
+              <h2 id={`help-sec-${s.title}`} className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{s.title}</h2>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {s.pages.map((p) => (
                   <li key={p.slug}>
-                    <a href={`/help/${p.slug}`} className="block h-full rounded-lg border border-slate-200 p-3 hover:border-emerald-400 dark:border-slate-800"
+                    <a href={`/help/${p.slug}`} className="block h-full rounded-lg border border-default p-3 hover:border-accent"
                       onClick={(e) => { e.preventDefault(); open(p.slug) }}>
                       <span className="block font-medium">{p.title}</span>
-                      <span className="mt-0.5 block text-sm text-slate-600 dark:text-slate-400">{p.summary}</span>
+                      <span className="mt-0.5 block text-sm text-muted">{p.summary}</span>
                     </a>
                   </li>
                 ))}
               </ul>
             </section>
           ))}
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-muted">
             Running the server, integrations and screenshots of every guide are on the <a className="underline" href={SITE} target="_blank" rel="noopener">documentation website</a>.
           </p>
         </div>
