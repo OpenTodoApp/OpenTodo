@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Test notifications prove delivery.** **Settings → Notifications → Send test notification** used to show a notification from the page and always say "sent", even when reminders could never reach the device. It now sends a real push through your server and the push service, shows it even while the app is open, and says **Received on this device** only when the device confirms it, otherwise **accepted, not seen** with the operating-system settings to check. A new **Delivery check** lists each step push needs on the device (permission, service worker, subscription, push service, last test) with a fix for each problem. New route `POST /api/v1/push/test` (session or full token, 5 per 10 minutes). ([Notifications](docs/notifications.md#check-that-it-works), [API](docs/api.md#reminders-and-push))
+
 ## [0.3.0] - 2026-10-12
 
 OpenTodo 0.3.0 is about bringing your own AI, if you want one. There is a chat assistant inside the app that answers questions about your tasks and proposes changes you review and undo in one step, with Anthropic, OpenAI, Gemini or a model on your own network. An assistant you already use can now make changes over MCP, and the `ot` command is ready to be driven by coding agents. All of it is off until the owner turns it on; nothing is sent anywhere before that. [Use AI with OpenTodo](docs/ai-and-agents.md) compares the three options. Settings is also split into sections with their own pages, and a project can be shared with a single invite link.
