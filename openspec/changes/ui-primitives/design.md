@@ -72,6 +72,7 @@ Input, Textarea and Select style the native elements, and a `Field` wrapper wire
 - **Ordering**: query empty → `pickRank` order (D7) with groups preserved; query present → tier, then rank score, then natural order.
 - **Hierarchy**: `getPath(item)` returns ancestor labels; options render indented when the query is empty (tree) and flattened with a muted path when filtering (spec: "Nested project match shows its path").
 - **Create row**: shown last when `onCreate` is set, the query is non-empty and there is no exact match.
+- **Folding once**: each option's folded label, folded secondary text and word starts are computed once per source (`prepare`), and the query once per keystroke. Measured in Chromium on the 10,000-option story: 35–43 ms per keystroke before, 2.4–7.0 ms after (budget 16 ms).
 - **Windowing**: when there are more than 200 options, fixed-height rows (44 px touch, 36 px fine pointer) are rendered in a window with ±8 overscan, and `aria-setsize`/`aria-posinset` stay correct. This meets the 10,000-option requirement without a library.
 - **ARIA**: input `role="combobox"`, `aria-expanded`, `aria-controls`, `aria-activedescendant`; listbox `role="listbox"` (`aria-multiselectable` when multiple); options `role="option"` with `aria-selected`; a polite live region announces "N results" after 300 ms of idle typing.
 - `AssigneePicker` and `LabelPicker` become thin adapters (source = members or labels, `onPick` = the existing `updateTask` op) with their current props, so TaskDetail, TaskListView, FilterView and SavedViewView call sites are unchanged.
@@ -100,6 +101,10 @@ A new Dexie table, `pickHistory: '[context+key], context, lastAt'`, at the next 
 The axe and visual gates come from `design-language` and automatically include the new stories.
 
 ### D11. Bundle and size accounting
+**Measured (baseline, before this change, `npm run build` on main at 5e41856):** entry `index.js` 940.92 kB (275.02 kB gzipped), CSS 104.39 kB (16.00 kB gzipped); lazy chunks unchanged by this change (NotesEditor 68.86 kB, HelpBundle 131.73 kB, richtext 28.26 kB gzipped and smaller ones).
+
+**Measured (after):** entry `index.js` 963.44 kB (283.39 kB gzipped, **+8.37 kB gzipped**), CSS 111.90 kB (16.88 kB gzipped, +0.88 kB). Net +9.25 kB gzipped against the ≤ +20 kB budget: about 50 vendored icons, the primitives and the Combobox, partly offset by the two hand-built pickers they replace. Lazy chunks are unchanged. The Go binary grows by the same embedded bytes.
+
 Before/after is measured with `npm run build` (the gzipped JS of the entry and lazy chunks), and the delta is written into this design's "Measured" note during apply. The budget is ≤ +20 KB gzipped net. Expected: icons ≈ 7 KB, primitives ≈ 8–10 KB, minus about 3 KB from deleted picker/menu duplication. The Go binary grows only by the same embedded bytes; runtime memory is unchanged, and windowing caps DOM size for large pickers.
 
 ## Data model impact

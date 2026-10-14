@@ -79,6 +79,50 @@ curl -LO https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip && u
 
 Keep the `unicode-range` of the `@font-face` rule in `index.css` in step with `--unicodes`.
 
+## Building blocks
+
+Screens import shared UI from `web/src/ui/` (re-exported from `web/src/ui/index.ts`); they don't hand-build buttons, menus or pickers.
+
+### Icons
+
+One line-icon set, vendored from [Lucide](https://lucide.dev) (ISC licence in `web/src/ui/icons/LICENSE-lucide.txt`); there is no icon dependency at runtime. Use `<Icon name="bell" />`: it draws in the current text colour and is hidden from assistive technology. Give it a `label` only when the icon itself carries meaning; an icon-only control gets its name from the control (see `IconButton`).
+
+Emoji and Unicode symbols are not icons: `make check` runs `scripts/ui-check.mjs`, which fails on a glyph used as an icon in `web/src/app` (typography inside copy, such as "Settings → Integrations", is fine).
+
+To add an icon, add its Lucide name to `web/src/ui/icons/names.json` and regenerate:
+
+```sh
+npm pack lucide-static@1.48.0 && tar xzf lucide-static-1.48.0.tgz
+node scripts/icons-sync.mjs ./package
+```
+
+The script is idempotent. A unit test fails when a vendored icon is used nowhere (or listed as reserved for a planned screen change), so the set doesn't grow unnoticed.
+
+### Buttons
+
+`<Button variant size icon iconEnd>` with `primary`, `secondary`, `ghost` and `danger`, sizes `sm` (32 px), `md` (40 px) and `lg` (48 px). When `onClick` returns a promise, the button shows a spinner, sets `aria-busy` and ignores further clicks until it settles. `<IconButton icon label>` is the icon-only form; `label` is required and becomes the accessible name and the tooltip.
+
+### Form controls
+
+Wrap a control in `<Field label description error>`: the label, the description and the error are wired to the control (`aria-describedby`, `aria-invalid`). `Input`, `Textarea` and `Select` are styled native elements; use `Select` for small fixed sets (role, sort order) and the Combobox for choosing an entity. A setting that applies immediately is a `Switch` (`role="switch"`); a choice submitted with a form is a `Checkbox` (with an indeterminate state).
+
+### Menus
+
+Action menus use the overlay `Menu` with `kind="menu"` and contain `MenuItem`, `MenuGroup` and `MenuSeparator`. Items take an `icon`, a `shortcut` hint (shown and announced), a `description` (for example why an item is unavailable), `danger` (placed last, in its own group), `disabled` and `checked` for toggles. The menu opens on its first item; ↑/↓ wrap, Home/End jump, typing a letter moves to the next item starting with it, and choosing an item closes the menu and returns focus to its button. Panels that contain form controls keep `kind="dialog"`.
+
+### Smart picker (Combobox)
+
+`<Combobox>` is a field whose list opens anchored to it from 640 px up and as a bottom sheet below; `<ComboboxPanel>` keeps field and list together inside a dialog. Both follow the ARIA combobox pattern: focus stays in the field, ↑/↓ move the active option, Enter picks, Escape closes, and the number of results is announced.
+
+- **Ranking:** with an empty query, `pinned` keys come first (for example "Unassigned" and "You"), then the options picked most often and most recently in that `rankContext` on this device (each pick halves in weight every 14 days), then the source order. A tree (`getPath`) keeps its shape and shows recent picks in a "Recent" group on top. Pick history lives in the device-local `pickHistory` table: it is never synced or exported and is cleared on sign-out.
+- **Matching:** case- and accent-insensitive. An exact label beats every query word being a word prefix (in the label or `getSecondary`, such as an email), which beats letters in order (fuzzy, two characters or more). Matches are highlighted; a nested match shows its path.
+- **Sources:** an array, or `(query, signal) => Promise<{ items }>` for large or remote sources (debounced 120 ms, aborted per keystroke, stale answers ignored, with loading and empty states). Above 200 options the list is windowed; 10,000 options stay under 16 ms per keystroke.
+- **Creating:** with `onCreate`, a "Create “query”" option comes last when nothing matches exactly. `multiple` keeps the picker open and clears the query after each pick.
+
+### Surfaces and patterns
+
+`Card`, `Badge` (soft or solid, any palette hue or stored colour), `Avatar` (initials on a colour derived from the account id, the same on every device), `Tabs` (arrow keys, Home/End), `EmptyState` and `Timeline` (events and comment threads). For settings: `SettingsSection` (a titled card with an optional Help link) and `SettingRow` (label and state beside the control, stacked on phones). `ConfirmDialog` replaces `window.confirm` (focus starts on Cancel; a destructive one ignores taps outside), and `ListRow` is the focusable row for lists with a trailing menu.
+
 ## The workbench
 
 Storybook is a development tool only: it adds nothing to `internal/web/dist`, the Go binary or the container image, and a unit test fails if the production build contains Storybook code.
@@ -89,7 +133,7 @@ Storybook is a development tool only: it adds nothing to `internal/web/dist`, th
 
 ### Adding a story
 
-Put a `*.stories.tsx` file next to the component, in Component Story Format. Stories render with fixture data only, never Dexie or the network. Cover the states that matter (default, disabled, error, long text) and check them in both themes and at 375 px.
+Put a `*.stories.tsx` file next to the component, in Component Story Format; `make check` fails when a component in `web/src/ui` has no stories file importing it. Interaction tests opt into a DOM with `// @vitest-environment happy-dom` and use the helpers in `web/src/ui/test-utils.tsx`. Stories render with fixture data only, never Dexie or the network. Cover the states that matter (default, disabled, error, long text) and check them in both themes and at 375 px.
 
 ## Checks
 
