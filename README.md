@@ -15,6 +15,7 @@ Plan your day, keep projects in order, set reminders and share lists with your f
   <img alt="Docker image size" src="https://img.shields.io/badge/image-%3C%2025%20MB-success">
   <img alt="Spec-driven with OpenSpec" src="https://img.shields.io/badge/specs-OpenSpec-8A2BE2">
   <a href="https://www.opensourcealternatives.to"><img src="https://www.opensourcealternatives.to/badge-osa.svg" alt="Listed on Open Source Alternatives"></a>
+  <a href="https://buymeacoffee.com/pixari"><img alt="Buy me a coffee" src="https://img.shields.io/badge/Buy%20me%20a%20coffee-pixari-FFDD00?logo=buymeacoffee&logoColor=black"></a>
 </p>
 
 <p align="center">
@@ -24,7 +25,7 @@ Plan your day, keep projects in order, set reminders and share lists with your f
   <a href="https://open-todo.app"><strong>Website</strong></a>
 </p>
 
-<p align="center">If OpenTodo looks useful, a star on GitHub helps other people find it.</p>
+<p align="center">If OpenTodo looks useful, a star on GitHub helps other people find it, and <a href="https://buymeacoffee.com/pixari">a coffee</a> helps me keep building it.</p>
 
 ---
 
