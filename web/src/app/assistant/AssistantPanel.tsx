@@ -193,7 +193,7 @@ export function Composer({ draft, onDraft, onSend, onStop, streaming, connected,
           placeholder={!connected ? OFFLINE_MESSAGE : 'Ask about your tasks…'} onChange={(e) => onDraft(e.target.value)} onKeyDown={onKeyDown} />
       </label>
       {streaming
-        ? <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={onStop}>Stop</button>
+        ? <button type="button" className="btn-secondary" onClick={onStop}>Stop</button>
         : <button type="submit" className="btn-primary" disabled={off || !draft.trim()}>Send</button>}
     </form>
   )

@@ -207,7 +207,7 @@ export function SsoPanelView(p: SsoPanelViewProps) {
       )}
       <div className="flex flex-wrap gap-2">
         <button type="button" className="btn-primary" disabled={disabled} onClick={p.onSave}>Save</button>
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={disabled || !f.issuer.trim()} onClick={p.onTest}>
+        <button type="button" className="btn-secondary" disabled={disabled || !f.issuer.trim()} onClick={p.onTest}>
           Test connection
         </button>
       </div>
@@ -308,7 +308,7 @@ export function LinkedAccountsView(p: LinkedAccountsViewProps) {
       {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
       {p.notice && <p className="text-sm text-emerald-700 dark:text-emerald-400" role="status">{p.notice}</p>}
       {p.provider.enabled && (disabled
-        ? <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled>Link {name}</button>
+        ? <button type="button" className="btn-secondary" disabled>Link {name}</button>
         : <a className="btn-ghost inline-block border border-slate-300 dark:border-slate-700" href={OIDC_START_URL}>Link {name}</a>)}
     </section>
   )

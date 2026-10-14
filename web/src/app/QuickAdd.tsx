@@ -1,4 +1,5 @@
 import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import type { HueName } from '../ui/tokens/palette'
 import { HelpLink } from './help/HelpLink'
 import { describeDue, todayISO } from '../lib/dates'
 import { createLabel, LabelExistsError } from '../lib/labels'
@@ -11,12 +12,13 @@ import { useDictation } from './useDictation'
 
 export type { QuickAddInput }
 
-const CHIP_TONE: Record<Chip['kind'], string> = {
-  due: 'border-violet-300 bg-violet-50 text-violet-800 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-300',
-  project: 'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200',
-  label: 'border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/50 dark:text-sky-300',
-  priority: 'border-orange-300 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-300',
-  estimate: 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300',
+// Chip colours come from palette hues (design-system tokens), so both themes follow.
+const CHIP_HUE: Record<Chip['kind'], HueName> = {
+  due: 'violet',
+  project: 'slate',
+  label: 'cyan',
+  priority: 'orange',
+  estimate: 'green',
 }
 
 function nowHHMM(d = new Date()): string {
@@ -238,7 +240,8 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                   key={c.key}
                   data-chip={c.kind}
                   title={`${KIND_NAME[c.kind]} from “${source}”`}
-                  className={`inline-flex items-center gap-1 rounded-full border py-0.5 pl-2 pr-1 ${CHIP_TONE[c.kind]} ${highlight === i ? 'ring-2 ring-emerald-500' : ''}`}
+                  data-hue={CHIP_HUE[c.kind]}
+                  className={`inline-flex items-center gap-1 rounded-full border border-hue-solid/40 bg-hue-soft py-0.5 pl-2 pr-1 text-hue ${highlight === i ? 'ring-2 ring-focus' : ''}`}
                 >
                   <span className="sr-only">{KIND_NAME[c.kind]}: </span>
                   {label?.color && <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: label.color }} aria-hidden="true" />}

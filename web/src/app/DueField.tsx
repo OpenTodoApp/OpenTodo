@@ -38,10 +38,11 @@ export function DueField({ task, readOnly = false }: { task: Task; readOnly?: bo
 
   return (
     <div className="space-y-1">
-      <div className="flex gap-2">
-        <input type="date" className="input" aria-label="Due date" value={view?.date ?? ''}
+      {/* Wraps on narrow panels: WebKit's date field does not shrink below its own minimum. */}
+      <div className="flex flex-wrap gap-2">
+        <input type="date" className="input min-w-40 flex-1" aria-label="Due date" value={view?.date ?? ''}
           onChange={(e) => setView(e.target.value ? { date: e.target.value, ...(view?.time ? { time: view.time } : {}) } : null)} />
-        <input type="time" className="input w-32" aria-label="Due time" value={view?.time ?? ''} disabled={!view}
+        <input type="time" className="input w-36" aria-label="Due time" value={view?.time ?? ''} disabled={!view}
           onChange={(e) => view && setView(e.target.value ? { date: view.date, time: e.target.value } : { date: view.date })} />
         {task.due && <button className="btn-ghost" onClick={() => void updateTask(task.id, { due: null })} aria-label="Clear due date">✕</button>}
       </div>

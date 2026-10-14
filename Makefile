@@ -7,7 +7,7 @@ EXT_ZIP := dist/opentodo-browser-extension.zip
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png
 
-.PHONY: all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check coolify-check coolify-smoke
+.PHONY: all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check coolify-check coolify-smoke storybook ui-check ui-baselines
 
 all: build
 
@@ -60,6 +60,32 @@ layout-check: build
 	@d=$$(mktemp -d); OPENTODO_DATA_DIR=$$d OPENTODO_ADDR=127.0.0.1:18080 ./bin/opentodo >$$d/server.log 2>&1 & pid=$$!; \
 	  for i in $$(seq 1 30); do curl -fsS 127.0.0.1:18080/healthz >/dev/null 2>&1 && break; sleep 0.3; done; \
 	  OPENTODO_URL=http://127.0.0.1:18080 node scripts/e2e-layout.mjs layout-report; s=$$?; kill $$pid; rm -rf $$d; exit $$s
+
+## Design workbench (design-language): Storybook on http://localhost:6006.
+storybook:
+	cd web && npm run storybook
+
+## UI gates over the static workbench: axe-core (WCAG 2.2 AA) on every story in light
+## and dark, then visual regression against web/src/ui/__screenshots__. Needs Playwright
+## and @playwright/test $(PLAYWRIGHT_VERSION) installed globally (as CI does); override
+## PLAYWRIGHT_NODE_PATH to use another install.
+PLAYWRIGHT_VERSION := 1.56.1
+PLAYWRIGHT_NODE_PATH ?= $(shell npm root -g)
+ui-check:
+	cd web && npm run build-storybook
+	node scripts/ui-check/a11y.mjs
+	cd scripts/ui-check && NODE_PATH=$(PLAYWRIGHT_NODE_PATH) node $(PLAYWRIGHT_NODE_PATH)/@playwright/test/cli.js test -c playwright.config.ts
+
+## Regenerate the visual baselines inside the pinned Playwright image, because font
+## rendering differs per OS. web/node_modules stays the host's (anonymous volume).
+## Without Docker, run the "UI baselines" workflow and commit its artifact instead.
+ui-baselines:
+	docker run --rm -v "$(CURDIR)":/work -v /work/web/node_modules -w /work \
+	  mcr.microsoft.com/playwright:v$(PLAYWRIGHT_VERSION)-noble bash -euc '\
+	    npm i -g --no-audit --no-fund @playwright/test@$(PLAYWRIGHT_VERSION) >/dev/null; \
+	    cd web && npm ci --no-audit --no-fund >/dev/null && npm run build-storybook; \
+	    cd ../scripts/ui-check && NODE_PATH=$$(npm root -g) playwright test -c playwright.config.ts --update-snapshots=all; \
+	    chown -R $(shell id -u):$(shell id -g) /work/web/src/ui/__screenshots__'
 
 ## Run the production binary locally on :8080 with ./data.
 run: build

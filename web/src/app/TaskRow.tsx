@@ -9,11 +9,12 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 
+// Priority tokens (design-system): ring in the priority colour, soft fill behind it.
 const PRIORITY_RING: Record<number, string> = {
-  1: 'border-red-500 bg-red-50 dark:bg-red-950/40',
-  2: 'border-orange-500 bg-orange-50 dark:bg-orange-950/40',
-  3: 'border-blue-500 bg-blue-50 dark:bg-blue-950/40',
-  4: 'border-slate-300 dark:border-slate-600',
+  1: 'border-p1 bg-p1-soft',
+  2: 'border-p2 bg-p2-soft',
+  3: 'border-p3 bg-p3-soft',
+  4: 'border-p4 bg-p4-soft',
 }
 
 const DUE_TONE = {

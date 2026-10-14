@@ -197,7 +197,7 @@ export function AuditPanel() {
                 </label>
               </>
             )}
-            <a ref={exportLink} className="btn-ghost border border-slate-300 dark:border-slate-700" href={exportHref} download>
+            <a ref={exportLink} className="btn-secondary" href={exportHref} download>
               Export (NDJSON)
             </a>
           </div>
@@ -205,7 +205,7 @@ export function AuditPanel() {
           {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
           <AuditTable status={status} events={events} onKeyDown={onTableKey} />
           {cursor && status === 'ready' && (
-            <button type="button" className="btn-ghost border border-slate-300 text-sm dark:border-slate-700" onClick={() => void loadMore()} disabled={loadingMore}>
+            <button type="button" className="btn-secondary text-sm" onClick={() => void loadMore()} disabled={loadingMore}>
               {loadingMore ? 'Loading…' : 'Load more'}
             </button>
           )}

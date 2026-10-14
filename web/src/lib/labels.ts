@@ -6,7 +6,10 @@ import { db } from './db'
 import { getDeviceId, mutate, mutationTables } from './ops'
 import type { Label, Task } from './types'
 
-export const LABEL_PALETTE = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b']
+// The canonical hexes of the design-system palette (src/ui/tokens/palette.ts). The
+// original nine keep their order so older clients and stored colours stay valid;
+// lime, cyan and indigo were appended by design-language.
+export const LABEL_PALETTE = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b', '#84cc16', '#06b6d4', '#6366f1']
 
 /** Thrown by createLabel when a non-deleted label with the same name (ignoring case) exists. */
 export class LabelExistsError extends Error {

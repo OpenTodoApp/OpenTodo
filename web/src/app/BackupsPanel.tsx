@@ -96,7 +96,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
         <button type="button" className="btn-primary" disabled={disabled || running !== null} onClick={p.onRun}>
           {busy === 'starting' || running ? 'Backing up…' : 'Back up now'}
         </button>
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={disabled || needsAck} onClick={p.onTest}>
+        <button type="button" className="btn-secondary" disabled={disabled || needsAck} onClick={p.onTest}>
           {busy === 'testing' ? 'Testing…' : 'Test destination'}
         </button>
       </div>

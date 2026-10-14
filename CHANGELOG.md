@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **New visual foundation.** Design tokens for colour, type, spacing, radius, elevation and motion in light and dark, the bundled Inter typeface (54 KB, served by your own server, never a font CDN), and refreshed buttons and inputs, keeping OpenTodo's emerald and slate look. Every text colour meets WCAG AA contrast in both themes, checked automatically. Contributors get a component workbench (Storybook, development only) with accessibility and visual-regression checks. ([Design system](docs/design-system.md))
+
 ### Fixed
 
 - **Test notifications prove delivery.** **Settings → Notifications → Send test notification** used to show a notification from the page and always say "sent", even when reminders could never reach the device. It now sends a real push through your server and the push service, shows it even while the app is open, and says **Received on this device** only when the device confirms it, otherwise **accepted, not seen** with the operating-system settings to check. A new **Delivery check** lists each step push needs on the device (permission, service worker, subscription, push service, last test) with a fix for each problem. New route `POST /api/v1/push/test` (session or full token, 5 per 10 minutes). ([Notifications](docs/notifications.md#check-that-it-works), [API](docs/api.md#reminders-and-push))

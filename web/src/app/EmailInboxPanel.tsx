@@ -53,10 +53,10 @@ export function EmailInboxView(p: EmailInboxViewProps) {
                 className={'break-all rounded bg-slate-100 px-1 text-sm dark:bg-slate-800' + (inbox.enabled ? '' : ' text-faint line-through')}>
                 {inbox.address}
               </code>
-              <button className="btn-ghost border border-slate-300 text-xs dark:border-slate-700" onClick={p.onCopy}>
+              <button className="btn-secondary text-xs" onClick={p.onCopy}>
                 Copy address
               </button>
-              <button className="btn-ghost border border-slate-300 text-xs dark:border-slate-700" aria-disabled={p.busy} onClick={p.onRotate}>
+              <button className="btn-secondary text-xs" aria-disabled={p.busy} onClick={p.onRotate}>
                 New address…
               </button>
               {p.copied && <span className="text-xs text-emerald-700 dark:text-emerald-400" role="status">Copied.</span>}

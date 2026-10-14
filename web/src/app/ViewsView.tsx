@@ -82,7 +82,7 @@ export function ViewsView() {
         <h1 className="text-xl font-semibold">Views</h1>
         <span className="text-sm text-faint">{views.length}</span>
         <div className="flex-1" />
-        <button className="btn-ghost border border-slate-300 text-xs dark:border-slate-700" onClick={() => navigate({ view: 'filter' })}>+ New view from a filter</button>
+        <button className="btn-secondary text-xs" onClick={() => navigate({ view: 'filter' })}>+ New view from a filter</button>
         <button className="btn-primary text-xs" onClick={() => setCreating(true)}>+ New dashboard</button>
       </div>
       <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-faint">Pinned to the sidebar</h2>

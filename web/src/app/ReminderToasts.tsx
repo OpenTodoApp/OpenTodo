@@ -85,9 +85,9 @@ export function ReminderToasts() {
             </button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
-            <button ref={i === 0 ? firstButton : undefined} type="button" className="btn-ghost border border-slate-300 px-2 py-0.5 text-xs dark:border-slate-700" onClick={() => void act(d, '10m')}>Snooze 10 min</button>
-            <button type="button" className="btn-ghost border border-slate-300 px-2 py-0.5 text-xs dark:border-slate-700" onClick={() => void act(d, '1h')}>1 hour</button>
-            <button type="button" className="btn-ghost border border-slate-300 px-2 py-0.5 text-xs dark:border-slate-700" onClick={() => void act(d, 'tomorrow')}>Tomorrow 09:00</button>
+            <button ref={i === 0 ? firstButton : undefined} type="button" className="btn-secondary px-2 py-0.5 text-xs" onClick={() => void act(d, '10m')}>Snooze 10 min</button>
+            <button type="button" className="btn-secondary px-2 py-0.5 text-xs" onClick={() => void act(d, '1h')}>1 hour</button>
+            <button type="button" className="btn-secondary px-2 py-0.5 text-xs" onClick={() => void act(d, 'tomorrow')}>Tomorrow 09:00</button>
             <div className="flex-1" />
             <button type="button" className="btn-primary px-2 py-0.5 text-xs" onClick={() => void act(d, 'dismiss')}>Dismiss</button>
           </div>

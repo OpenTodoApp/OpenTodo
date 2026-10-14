@@ -32,3 +32,4 @@ coverage.out
 /.claude/worktrees/
 /.playwright-mcp/
 /docs-report/
+/web/storybook-static/

@@ -192,7 +192,7 @@ export function PushDelivery(props: {
                 <div className="text-xs text-muted user-text">{step.detail}</div>
               </div>
               {step.action && (
-                <button type="button" className="btn-ghost border border-slate-300 px-2 py-0.5 text-xs dark:border-slate-700" disabled={busy || phase !== 'idle'} onClick={() => props.onAction(step.action!)}>
+                <button type="button" className="btn-secondary px-2 py-0.5 text-xs" disabled={busy || phase !== 'idle'} onClick={() => props.onAction(step.action!)}>
                   {ACTION_LABEL[step.action]}
                 </button>
               )}
@@ -201,7 +201,7 @@ export function PushDelivery(props: {
         })}
       </ul>
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={!canTest || busy || phase !== 'idle'} onClick={props.onTest}>
+        <button type="button" className="btn-secondary" disabled={!canTest || busy || phase !== 'idle'} onClick={props.onTest}>
           {phase === 'idle' ? 'Send test notification' : 'Testing…'}
         </button>
         {(!s.subscription || lastTest?.kind === 'server_too_old') && s.permission === 'granted' && (

@@ -157,7 +157,7 @@ function SectionContent({ id, user, onLogout }: { id: SettingsSectionId; user: U
           <section className="space-y-2">
             <HelpHeading screen="settings/session" className="font-semibold">Session</HelpHeading>
             <p className="text-sm text-muted">Signing out clears the local copy of your tasks on this device. Unsynced changes are uploaded first when online.</p>
-            <button className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={onLogout}>Sign out</button>
+            <button className="btn-secondary" onClick={onLogout}>Sign out</button>
           </section>
         </>
       )
@@ -229,11 +229,11 @@ function YourDataSection({ demo }: { demo: boolean }) {
         a CSV file or another task manager's JSON export (<span className="kbd">g</span> <span className="kbd">Shift+I</span>).
       </p>
       <div className="flex flex-wrap gap-2">
-        <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/api/v1/export" download="opentodo-export.json">Download export (JSON)</a>
+        <a className="btn-secondary" href="/api/v1/export" download="opentodo-export.json">Download export (JSON)</a>
         {demo ? (
-          <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled aria-describedby="demo-import-note">Import data…</button>
+          <button type="button" className="btn-secondary" disabled aria-describedby="demo-import-note">Import data…</button>
         ) : (
-          <a className="btn-ghost border border-slate-300 dark:border-slate-700" href="/settings/import"
+          <a className="btn-secondary" href="/settings/import"
             onClick={(e) => followLink(e, { view: 'import' })}>Import data…</a>
         )}
       </div>
@@ -366,7 +366,7 @@ function CaptureSection() {
         >
           Add to OpenTodo
         </a>
-        <button className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={() => void copy()}>Copy bookmarklet</button>
+        <button className="btn-secondary" onClick={() => void copy()}>Copy bookmarklet</button>
         {copied === 'yes' && <span className="text-xs text-emerald-700 dark:text-emerald-400">Copied. Create a bookmark and paste it as the address.</span>}
       </div>
       {copied === 'failed' && (

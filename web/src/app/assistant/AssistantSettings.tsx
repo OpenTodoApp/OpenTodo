@@ -115,8 +115,8 @@ export function OwnerAssistantSettings(p: OwnerViewProps) {
               <span className="mt-1 block text-xs text-muted">Stored in the server’s secrets file, never shown again, never in backups or exports.</span>
             </label>
             <div className="flex flex-wrap items-center gap-2">
-              {keySet && <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={off} onClick={() => set({ keys: { ...d.keys, [n]: '' } })}>Remove saved key</button>}
-              <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={off || test === 'running'} onClick={() => p.onTest(n)}>Test connection</button>
+              {keySet && <button type="button" className="btn-secondary" disabled={off} onClick={() => set({ keys: { ...d.keys, [n]: '' } })}>Remove saved key</button>}
+              <button type="button" className="btn-secondary" disabled={off || test === 'running'} onClick={() => p.onTest(n)}>Test connection</button>
               {test && test !== 'running' && <span role="status" className={test.ok ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}>{test.ok ? test.message : `${test.message}${test.code ? ` (${test.code})` : ''}`}</span>}
               {test === 'running' && <span role="status" className="text-muted">Testing…</span>}
             </div>
@@ -295,11 +295,11 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
       )}
       {problem && <p role="alert" className="text-red-700 dark:text-red-300">{problem}</p>}
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={off || p.busy || !dirty} aria-busy={p.busy} onClick={() => void save()}>
+        <button type="button" className="btn-secondary" disabled={off || p.busy || !dirty} aria-busy={p.busy} onClick={() => void save()}>
           {d.mode === 'server' ? 'Use the server’s assistant' : 'Save my provider'}
         </button>
         {ownActive && d.mode === 'own' && p.onTestOwn && (
-          <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={off || testing} onClick={p.onTestOwn}>Test connection</button>
+          <button type="button" className="btn-secondary" disabled={off || testing} onClick={p.onTestOwn}>Test connection</button>
         )}
         {testing && <span role="status" className="text-muted">Testing…</span>}
         {test && <span role="status" className={test.ok ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}>{test.ok ? test.message : `${test.message}${test.code ? ` (${test.code})` : ''}`}</span>}
@@ -308,7 +308,7 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
       {d.mode === 'server' && !ownActive && (s.server_own_key_set ?? s.own_key_set) && (
         <div className="space-y-1" data-legacy-key>
           <p className="text-muted">Your key is saved for {s.server_provider_label ?? s.provider_label}; the server’s assistant uses it instead of the server owner’s key.</p>
-          <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={off} onClick={() => p.onOwnKey('')}>Remove my key</button>
+          <button type="button" className="btn-secondary" disabled={off} onClick={() => p.onOwnKey('')}>Remove my key</button>
         </div>
       )}
     </fieldset>
@@ -327,8 +327,8 @@ function LegacyOwnKey(p: UserViewProps & { status: AssistantStatus }) {
           placeholder={s.own_key_set ? 'Your key is saved; type to replace it' : 'Optional'} />
       </label>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={!p.connected || !key.trim()} onClick={() => { p.onOwnKey(key.trim()); setKey('') }}>Save my key</button>
-        {s.own_key_set && <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={!p.connected} onClick={() => p.onOwnKey('')}>Remove my key</button>}
+        <button type="button" className="btn-secondary" disabled={!p.connected || !key.trim()} onClick={() => { p.onOwnKey(key.trim()); setKey('') }}>Save my key</button>
+        {s.own_key_set && <button type="button" className="btn-secondary" disabled={!p.connected} onClick={() => p.onOwnKey('')}>Remove my key</button>}
       </div>
     </div>
   )
@@ -348,13 +348,13 @@ export function UserAssistantSettings(p: UserViewProps) {
         Provider: <strong>{s.provider_label}</strong>{s.model ? ` (${s.model})` : ''}{s.source === 'own' ? ', with your own key' : ''}.{' '}
         {s.consented ? 'You accepted what is sent.' : 'You have not accepted yet; the assistant asks before your first message.'} Open it with <span className="kbd">Shift+I</span>.
       </p>
-      {s.consented && <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={!p.connected} onClick={p.onWithdraw}>Withdraw consent</button>}
+      {s.consented && <button type="button" className="btn-secondary" disabled={!p.connected} onClick={p.onWithdraw}>Withdraw consent</button>}
       {p.usage && <p className="text-muted">{usageText(p.usage)}</p>}
       {s.allow_member_keys && (ownSupported ? <OwnProviderForm key={`${s.own_provider?.provider ?? ''}:${s.own_provider?.model ?? ''}`} {...p} status={s} /> : <LegacyOwnKey {...p} status={s} />)}
       {keptChoice && (
         <div className="space-y-1 rounded-md border border-slate-200 p-3 dark:border-slate-800" data-own-provider-kept>
           <p>Your own provider ({keptChoice.provider_label}) is kept but not used: the server owner does not allow members’ own keys right now, so the server’s assistant answers.</p>
-          <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" disabled={!p.connected} onClick={() => void p.onSaveOwn?.({ own_provider: '' })}>Forget my provider and key</button>
+          <button type="button" className="btn-secondary" disabled={!p.connected} onClick={() => void p.onSaveOwn?.({ own_provider: '' })}>Forget my provider and key</button>
         </div>
       )}
       <label className="flex items-start gap-2">
@@ -362,7 +362,7 @@ export function UserAssistantSettings(p: UserViewProps) {
         <span>Apply small changes without review (this device) <span className="block text-muted">Up to 3 existing tasks: completing, dates, priority or labels. Creating, moving, deleting or editing text always asks you. An Undo button always appears.</span></span>
       </label>
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className="btn-ghost border border-slate-300 dark:border-slate-700" onClick={p.onClear}>Clear conversations on this device</button>
+        <button type="button" className="btn-secondary" onClick={p.onClear}>Clear conversations on this device</button>
         {p.cleared && <span role="status" className="text-muted">Cleared.</span>}
       </div>
       {p.error && <p role="alert" className="text-red-700 dark:text-red-300">{p.error}</p>}
