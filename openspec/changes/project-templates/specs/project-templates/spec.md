@@ -7,7 +7,7 @@ Lets a user duplicate a project or a task tree, save a project as a template fil
 ## ADDED Requirements
 
 ### Requirement: What a copy carries
-A duplicate or a project started from a template SHALL contain the source's projects (the project, its note, colour and sub-projects), sections, open tasks and their open subtasks with title, description, note, priority, estimate, labels, recurrence rule and due date, and section placement, under new ids and in the same relative order. Completed tasks, occurrence records, deleted items, assignees, comments and reminders SHALL NOT be copied. Labels SHALL be matched by name ignoring case and created when missing.
+A copy (a duplicate, or a project started from a template) SHALL contain the source's projects with note, colour and sub-projects, its sections, and its open tasks and open subtasks with every task field except assignee, under new ids and in the same relative order. Completed tasks, occurrence records, deleted items, assignees, comments and reminders SHALL NOT be copied. Labels SHALL be matched by name ignoring case and created when missing.
 
 #### Scenario: Open tasks and structure
 - **WHEN** a project with sections "Before" and "During", a completed task, an open task with two subtasks (one completed) and a recurring task is duplicated
