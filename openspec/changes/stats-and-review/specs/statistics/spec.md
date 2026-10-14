@@ -48,8 +48,8 @@ For a period the device SHALL count: completed (live tasks, including recurring 
 - **THEN** it no longer counts as completed for that week, and counts again if restored
 
 #### Scenario: Shared project tasks
-- **WHEN** a member completed tasks in a project shared with the user
-- **THEN** those completions count for the member, not for the user: only tasks the user completed or, when no completer is known, tasks in the user's own projects count
+- **WHEN** a shared project holds completed tasks assigned to another member, tasks assigned to the user and unassigned tasks
+- **THEN** the tasks assigned to another member are excluded and the other two kinds count, because local rows record the assignee but not who completed a task
 
 ### Requirement: Breakdowns and charts
 The Statistics screen SHALL show completions per day of the period, per weekday (for 4 and 12 weeks) and per project (the five projects with most completions and "other"), each as a chart with an accessible text alternative (a table or list carrying the same values) and no library-rendered image. The charts SHALL respect light and dark themes and SHALL use no colour alone to convey a value.

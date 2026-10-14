@@ -7,7 +7,7 @@ A guided weekly review built into the app: four steps with live data (get clear,
 ## ADDED Requirements
 
 ### Requirement: Review steps
-The Review screen SHALL offer four steps in order, each with its live data and its done condition: Get clear (open tasks without a project; done when the Inbox is empty), Look back (completed this week, and overdue tasks with the row actions complete, reschedule and trash; done when nothing is overdue), Next actions (every live, unarchived project the user can edit that has no open task; done when none remains), Look ahead (open tasks due in the next seven days with the priority keys; always done). Steps SHALL be computed from local rows and work offline.
+The Review screen SHALL offer four steps in order, each showing live data and whether it is done: Get clear (the Inbox; done when empty), Look back (this week's completions and the overdue tasks; done when nothing is overdue), Next actions (live, unarchived projects the user can edit that have no open task; done when none remains) and Look ahead (the next seven days; always done). Steps SHALL be computed from local rows and work offline.
 
 #### Scenario: Inbox step
 - **WHEN** the Inbox holds three open tasks
