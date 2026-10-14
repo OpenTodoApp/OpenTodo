@@ -46,6 +46,17 @@ The client SHALL provide Day and Week views, reachable by `g d` and `g w`, showi
 - **WHEN** a task shown as a block is completed
 - **THEN** it leaves the grid and the day's planned total decreases accordingly
 
+### Requirement: Calendar follows the date and time preferences
+The Week view SHALL start on the user's preferred first day of the week (OpenSpec `date-time-preferences`), and grid hours and block times SHALL follow the user's time format.
+
+#### Scenario: Week starts on the preferred day
+- **WHEN** the first day of the week is `sun`, today is Wednesday 2026-10-14 and the user presses `g w`
+- **THEN** the week shown runs from Sunday 2026-10-11 to Saturday 2026-10-17
+
+#### Scenario: Grid hours in 12-hour format
+- **WHEN** the time format is `12h`
+- **THEN** the grid's hour labels read `9 AM`, `10 AM` and so on, and moving a block still sets the same stored `HH:MM` due time
+
 ### Requirement: Place and resize blocks
 Dragging a task from the unscheduled lane, from any list or from an existing block onto a grid slot SHALL set its due date and time to that slot; dragging a block's lower edge SHALL set its estimate in 15-minute steps. Dropping on the unscheduled lane SHALL keep the date and clear the time. Each action SHALL be an ordinary field edit: applied locally first, queued offline, converging by last-writer-wins.
 
