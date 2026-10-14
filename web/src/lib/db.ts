@@ -53,6 +53,14 @@ interface Meta {
   value: unknown
 }
 
+/** One pick in a picker context on this device (ui-primitives D7). */
+export interface PickHistory {
+  context: string
+  key: string
+  count: number
+  lastAt: number
+}
+
 class OpenTodoDB extends Dexie {
   projects!: Table<Project, string>
   tasks!: Table<Task, string>
@@ -80,6 +88,8 @@ class OpenTodoDB extends Dexie {
   /** In-app assistant conversations and undo batches: device-local, never ops. */
   assistantThreads!: Table<AssistantThread, string>
   assistantUndo!: Table<AssistantUndo, string>
+  /** Device-local pick history for picker ranking (ui-primitives D7): never synced or exported. */
+  pickHistory!: Table<PickHistory, [string, string]>
 
   constructor(name = 'opentodo') {
     super(name)
@@ -214,6 +224,26 @@ class OpenTodoDB extends Dexie {
       assistantThreads: 'id, updated_at',
       assistantUndo: 'id, created_at',
     })
+    // v14 (ui-primitives): device-local pick history for picker ranking.
+    // Additive; every store is redeclared. Never synced and never in the outbox.
+    this.version(14).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+      comments: 'id, task_id',
+      activity: 'id, [projectKey+ts], taskId, entityId',
+      prefs: 'id',
+      assistantThreads: 'id, updated_at',
+      assistantUndo: 'id, created_at',
+      pickHistory: '[context+key], context, lastAt',
+    })
   }
 }
 
@@ -244,10 +274,10 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
-  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo], async () => {
+  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory], async () => {
     await Promise.all([
       ...entityTables().map((t) => t.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(),
-      db.notifications.clear(), db.assistantThreads.clear(), db.assistantUndo.clear(),
+      db.notifications.clear(), db.assistantThreads.clear(), db.assistantUndo.clear(), db.pickHistory.clear(),
     ])
   })
 }
