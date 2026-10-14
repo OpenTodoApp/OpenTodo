@@ -61,8 +61,9 @@ export function QrCode({ text, size = 192 }: { text: string; size?: number }) {
       role="img" aria-label="QR code to scan with your authenticator app" width={size} height={size}
       viewBox={`${-quiet} ${-quiet} ${n + 2 * quiet} ${n + 2 * quiet}`} shapeRendering="crispEdges" className="rounded"
     >
-      <rect x={-quiet} y={-quiet} width={n + 2 * quiet} height={n + 2 * quiet} fill="#fff" />
-      <path d={d} fill="#000" />
+      {/* A QR code stays black on white in every theme so authenticator apps can scan it. */}
+      <rect x={-quiet} y={-quiet} width={n + 2 * quiet} height={n + 2 * quiet} fill="#fff" /> {/* token-lint-allow */}
+      <path d={d} fill="#000" /> {/* token-lint-allow */}
     </svg>
   )
 }
@@ -97,9 +98,9 @@ export interface RecoveryCodesViewProps {
 /** The recovery codes, shown once, with copy, download and an acknowledgement. */
 export function RecoveryCodesView(p: RecoveryCodesViewProps) {
   return (
-    <div className="space-y-3 rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm dark:border-emerald-800 dark:bg-emerald-950" data-testid="recovery-codes">
+    <div className="space-y-3 rounded-md border border-success/40 bg-success-soft p-3 text-sm" data-testid="recovery-codes">
       <p className="font-medium">Save these recovery codes now. They will not be shown again.</p>
-      <p className="text-slate-600 dark:text-slate-300">
+      <p className="text-muted">
         Each code signs you in once if you lose your phone. Keep them somewhere safe, away from this device.
       </p>
       <ol className="grid grid-cols-2 gap-x-6 gap-y-1 font-mono">
@@ -161,7 +162,7 @@ export function EnrolmentStepView(p: EnrolmentStepViewProps) {
   }
   return (
     <div className="space-y-3" data-testid="enrolment-wizard">
-      <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+      <ol className="list-decimal space-y-1 pl-5 text-sm text-muted">
         <li>Open an authenticator app on your phone (any app that supports time-based codes).</li>
         <li>Scan this QR code, or enter the key by hand.</li>
         <li>Type the six-digit code the app shows.</li>
@@ -175,7 +176,7 @@ export function EnrolmentStepView(p: EnrolmentStepViewProps) {
       </div>
       <form className="flex flex-wrap items-end gap-2" onSubmit={submit}>
         <label className="text-sm">
-          <span className="mb-1 block text-slate-600 dark:text-slate-300">Code from the app</span>
+          <span className="mb-1 block text-muted">Code from the app</span>
           <input
             className="input w-36 font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={7}
             required autoFocus value={p.code} onChange={(e) => p.onCode(e.target.value)} disabled={p.disabled} aria-label="Code from the app"
@@ -184,7 +185,7 @@ export function EnrolmentStepView(p: EnrolmentStepViewProps) {
         <button className="btn-primary" disabled={p.disabled || p.busy}>{p.busy ? 'Checking…' : 'Turn on'}</button>
         {p.onCancel && <button type="button" className="btn-ghost" onClick={p.onCancel}>Cancel</button>}
       </form>
-      {p.error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{p.error}</p>}
+      {p.error && <p className="text-sm text-danger" role="alert">{p.error}</p>}
     </div>
   )
 }
@@ -231,7 +232,7 @@ export function EnrolmentWizard({ online, onEnrolled, onCancel }: { online: bool
   if (!enrollment) {
     return (
       <div className="space-y-2 text-sm">
-        {error ? <p className="text-red-600 dark:text-red-400" role="alert">{error}</p> : <p className="text-muted">{online ? 'Preparing…' : 'Setting up two-factor authentication needs a connection.'}</p>}
+        {error ? <p className="text-danger" role="alert">{error}</p> : <p className="text-muted">{online ? 'Preparing…' : 'Setting up two-factor authentication needs a connection.'}</p>}
         <div className="flex gap-2">
           {error && <button type="button" className="btn-primary" disabled={!online} onClick={() => void start()}>Try again</button>}
           {onCancel && <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>}
@@ -342,8 +343,8 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
 export function EnrolmentGate({ user, onEnrolled, onLogout }: { user: User; onEnrolled: () => void; onLogout: () => void }) {
   const online = useOnline()
   return (
-    <div className="flex min-h-full items-center justify-center bg-slate-50 p-6 dark:bg-slate-950">
-      <div className="w-full max-w-lg space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900" data-testid="enrolment-gate">
+    <div className="flex min-h-full items-center justify-center bg-canvas p-6">
+      <div className="w-full max-w-lg space-y-4 rounded-xl border border-default bg-surface p-6 shadow-sm" data-testid="enrolment-gate">
         <div>
           <h1 className="text-lg font-semibold">Set up two-factor authentication</h1>
           <p className="mt-1 text-sm text-muted">
@@ -462,7 +463,7 @@ export function MfaPolicyPanelView({ policy, online, busy, error, onPolicy }: {
           they do. API tokens are never affected.
         </span>
       </label>
-      {error && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+      {error && <p className="text-sm text-danger" role="alert">{error}</p>}
     </section>
   )
 }

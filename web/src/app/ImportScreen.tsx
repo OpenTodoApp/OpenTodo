@@ -28,10 +28,10 @@ const FORMAT_LABELS: Record<ImportFormat, string> = {
 }
 
 const OUTCOME_STYLE: Record<ImportRow['outcome'], string> = {
-  create: 'text-emerald-700 dark:text-emerald-300',
-  update: 'text-sky-700 dark:text-sky-300',
+  create: 'text-success',
+  update: 'text-info',
   skip: 'text-muted',
-  error: 'text-red-600 dark:text-red-400',
+  error: 'text-danger',
 }
 
 function browserTimeZone(): string {
@@ -100,7 +100,7 @@ function Totals({ t }: { t: ImportPreview['totals'] }) {
     t.newSections ? `${t.newSections} new sections` : '', t.recurring ? `${t.recurring} recurring` : '',
     t.reminders ? `${t.reminders} reminders` : '',
   ].filter(Boolean)
-  return <p className="text-sm text-slate-600 dark:text-slate-300">{t.rows} rows: {parts.join(' · ')}</p>
+  return <p className="text-sm text-muted">{t.rows} rows: {parts.join(' · ')}</p>
 }
 
 function jobSummary(j: ImportJob): string {
@@ -131,7 +131,7 @@ export function ImportView(p: ImportViewProps) {
       </section>
 
       {p.offline && (
-        <p role="status" className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        <p role="status" className="rounded-md border border-warning bg-warning-soft p-3 text-sm text-on-warning-soft">
           You are offline. Import needs a connection to your server; the file picker is disabled until you are back online.
         </p>
       )}
@@ -139,7 +139,7 @@ export function ImportView(p: ImportViewProps) {
       <section className="space-y-3">
         <label className="block text-sm font-medium" htmlFor="import-file">File</label>
         <input id="import-file" type="file" accept=".json,.csv,.txt,application/json,text/csv" disabled={disabled}
-          className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm dark:file:bg-slate-800"
+          className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-sunken file:px-3 file:py-1.5 file:text-sm"
           onChange={(e) => p.onPickFile(e.target.files?.[0] ?? null)} />
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -202,11 +202,11 @@ export function ImportView(p: ImportViewProps) {
           </button>
           {p.busy && <span className="text-xs text-faint">Working…</span>}
         </div>
-        {p.error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{p.error}</p>}
+        {p.error && <p role="alert" className="text-sm text-danger">{p.error}</p>}
       </section>
 
       {p.job && (
-        <section aria-live="polite" className="rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
+        <section aria-live="polite" className="rounded-md border border-default p-3 text-sm">
           <p className="font-medium">
             {p.job.status === 'running' ? 'Importing…' : p.job.status === 'done' ? 'Import finished' : p.job.status === 'failed' ? 'Import failed' : 'Import undone'}
           </p>
@@ -214,7 +214,7 @@ export function ImportView(p: ImportViewProps) {
           {p.job.status === 'running' && p.job.totals.entities > 0 && (
             <progress className="mt-2 w-full" max={p.job.totals.entities} value={p.job.totals.written} />
           )}
-          {p.job.message && <p className="mt-1 text-red-600 dark:text-red-400">{p.job.message}</p>}
+          {p.job.message && <p className="mt-1 text-danger">{p.job.message}</p>}
         </section>
       )}
 
@@ -224,28 +224,28 @@ export function ImportView(p: ImportViewProps) {
             Preview · {FORMAT_LABELS[p.preview.format]}{p.preview.version ? ` v${p.preview.version}` : ''}
           </h2>
           <Totals t={p.preview.totals} />
-          {p.preview.notes?.map((n) => <p key={n} className="text-sm text-amber-700 dark:text-amber-300">{n}</p>)}
+          {p.preview.notes?.map((n) => <p key={n} className="text-sm text-warning">{n}</p>)}
           {p.preview.columns && (
             <p className="text-xs text-muted">
               Columns used: {p.preview.columns.recognised.join(', ') || 'none'}
               {p.preview.columns.ignored.length > 0 && <> · ignored: {p.preview.columns.ignored.join(', ')}</>}
             </p>
           )}
-          <div className="max-h-[50dvh] overflow-auto rounded-md border border-slate-200 dark:border-slate-800" data-scroll-x>
+          <div className="max-h-[50dvh] overflow-auto rounded-md border border-default" data-scroll-x>
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-slate-50 text-xs text-muted dark:bg-slate-900">
+              <thead className="sticky top-0 bg-canvas text-xs text-muted">
                 <tr><th className="px-2 py-1">Row</th><th className="px-2 py-1">Title</th><th className="px-2 py-1">Project</th><th className="px-2 py-1">Outcome</th><th className="px-2 py-1">Details</th></tr>
               </thead>
               <tbody>
                 {p.preview.rows.slice(0, TABLE_LIMIT).map((r, i) => (
-                  <tr key={`${r.sourceId ?? ''}-${i}`} className="border-t border-slate-100 align-top dark:border-slate-800">
+                  <tr key={`${r.sourceId ?? ''}-${i}`} className="border-t border-default align-top">
                     <td className="px-2 py-1 text-xs text-faint">{r.row ?? r.sourceId}</td>
                     <td className="px-2 py-1">{r.kind !== 'task' && <span className="mr-1 text-xs text-faint">{r.kind}</span>}{r.title || <em className="text-faint">untitled</em>}</td>
                     <td className="px-2 py-1 text-muted">{r.project}</td>
                     <td className={`px-2 py-1 font-medium ${OUTCOME_STYLE[r.outcome]}`}>{r.outcome}</td>
                     <td className="px-2 py-1 text-xs text-muted">
-                      {r.reason && <div className={r.outcome === 'error' ? 'text-red-600 dark:text-red-400' : ''}>{r.reason.replace(/_/g, ' ')}</div>}
-                      {r.warnings?.map((w) => <div key={w} className="text-amber-700 dark:text-amber-300">{w}</div>)}
+                      {r.reason && <div className={r.outcome === 'error' ? 'text-danger' : ''}>{r.reason.replace(/_/g, ' ')}</div>}
+                      {r.warnings?.map((w) => <div key={w} className="text-warning">{w}</div>)}
                     </td>
                   </tr>
                 ))}
@@ -262,12 +262,12 @@ export function ImportView(p: ImportViewProps) {
         <h2 className="font-semibold">Past imports</h2>
         {p.jobs === null && <p className="text-sm text-faint">{p.offline ? 'No imports loaded yet.' : 'Loading…'}</p>}
         {p.jobs && p.jobs.length === 0 && <p className="text-sm text-faint">No imports yet.</p>}
-        <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+        <ul className="divide-y divide-(--ot-border)">
           {p.jobs?.map((j) => (
             <li key={j.id} className="flex items-center gap-3 py-2 text-sm">
               <div className="min-w-0 flex-1">
                 <p>
-                  <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">{j.status}</span>
+                  <span className="mr-2 rounded bg-sunken dark:bg-raised px-1.5 py-0.5 text-xs">{j.status}</span>
                   {dt.formatInstant(j.createdAt, 'datetime')}
                 </p>
                 <p className="truncate text-xs text-muted">{jobSummary(j)}{j.message ? ` · ${j.message}` : ''}</p>

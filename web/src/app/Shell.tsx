@@ -157,14 +157,14 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
 
   return (
     <div className="flex h-full">
-      {sidebarOpen && <div className="fixed inset-0 z-[45] bg-black/30 md:hidden" onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && <div className="fixed inset-0 z-[45] bg-scrim md:hidden" onClick={() => setSidebarOpen(false)} />}
       <aside data-sidebar
-        className={`fixed inset-y-0 left-0 z-[45] w-64 max-w-[85vw] pl-[env(safe-area-inset-left)] transform border-r border-slate-200 bg-slate-50 transition-transform dark:border-slate-800 dark:bg-slate-900 md:static md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-[45] w-64 max-w-[85vw] pl-[env(safe-area-inset-left)] transform border-r border-default bg-canvas transition-transform md:static md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <Sidebar route={route} user={user} />
       </aside>
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b border-slate-200 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] dark:border-slate-800 md:px-6">
+        <header className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] md:px-6">
           <button className="btn-ghost touch-target md:hidden" aria-label="Open menu" onClick={() => setSidebarOpen(true)}><Icon name="menu" size="md" /></button>
           <div className="flex-1" />
           {showLauncher(assistant) && (
@@ -179,13 +179,13 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           </button>
         </header>
         {notice && (
-          <div role="status" className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100 md:px-6">
+          <div role="status" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-sm text-on-warning-soft md:px-6">
             <p className="flex-1">{notice}</p>
             <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => setNotice(null)}>Dismiss</button>
           </div>
         )}
         {rejected && (
-          <div role="alert" className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100 md:px-6">
+          <div role="alert" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-sm text-on-warning-soft md:px-6">
             <p className="flex-1">{describeRejected(rejected)}. The server's values are shown again.</p>
             <button className="btn-ghost px-2 py-0.5 text-xs" onClick={dismissRejected}>Dismiss</button>
           </div>

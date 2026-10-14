@@ -40,7 +40,7 @@ export function NotificationBell() {
         aria-haspopup="dialog" onClick={() => setOpen((v) => !v)} data-notifications>
         <Icon name="bell" />
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] font-semibold leading-4 text-white" data-unread>{unread}</span>
+          <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-danger px-1 text-center text-[10px] font-semibold leading-4 text-on-accent" data-unread>{unread}</span>
         )}
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label="Notifications" width="sm:w-80" className="py-1">
@@ -49,8 +49,8 @@ export function NotificationBell() {
             {list.map((n) => (
               <li key={n.id}>
                 <button type="button" data-autofocus={n === list[0] ? '' : undefined} onClick={() => void choose(n)}
-                  className={`flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800 ${n.readAt === null ? '' : 'text-faint'}`}>
-                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt === null ? 'bg-emerald-500' : 'bg-transparent'}`} />
+                  className={`flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-canvas dark:hover:bg-raised ${n.readAt === null ? '' : 'text-faint'}`}>
+                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt === null ? 'bg-accent' : 'bg-transparent'}`} />
                   <span className="user-text min-w-0 flex-1">
                     {n.kind === 'mentioned' ? (
                       <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> mentioned you on <strong>{n.payload.taskTitle || 'a task'}</strong>

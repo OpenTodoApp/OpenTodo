@@ -11,6 +11,7 @@ import { navigate } from './router'
 import { isGPending, openTaskInList } from './signals'
 import { isTyping } from './useViews'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { hueFor } from '../ui/tokens/palette'
 
 /**
  * The activity feed (OpenSpec `activity-feed`): every shared project's recent
@@ -171,7 +172,7 @@ export function FeedView() {
         {groups.map((g) => (
           <section key={g.day} aria-label={dayLabel(g.day)}>
             <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-faint">{dayLabel(g.day)}</h2>
-            <ol className="divide-y divide-slate-100 dark:divide-slate-800" aria-label="Activity">
+            <ol className="divide-y divide-(--ot-border)" aria-label="Activity">
               {g.events.map((e) => {
                 const title = e.taskId ? titles.get(e.taskId) || e.taskTitle || 'a task' : null
                 const p = e.projectId ? projectById.get(e.projectId) : undefined
@@ -179,19 +180,19 @@ export function FeedView() {
                 return (
                   <li key={e.id} data-feed-id={e.id} data-event={e.kind} data-actor={e.actor} data-unread={fresh || undefined}
                     onClick={() => setSelected(e.id)} onDoubleClick={() => open(e)}
-                    className={`flex items-baseline gap-2 px-2 py-1.5 text-sm ${e.id === selected ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}`}>
-                    <span className={`h-2 w-2 shrink-0 self-center rounded-full ${fresh ? 'bg-emerald-500' : 'bg-transparent'}`} aria-label={fresh ? 'New' : undefined} />
+                    className={`flex items-baseline gap-2 px-2 py-1.5 text-sm ${e.id === selected ? 'bg-accent-soft' : ''}`}>
+                    <span className={`h-2 w-2 shrink-0 self-center rounded-full ${fresh ? 'bg-accent' : 'bg-transparent'}`} aria-label={fresh ? 'New' : undefined} />
                     <span className="min-w-0 flex-1">
-                      <strong className="font-medium text-slate-800 dark:text-slate-100">{name(e.actor)}</strong>{' '}
-                      <span className="text-slate-600 dark:text-slate-300">{describeEvent(e, name, (id) => projectName(id))}</span>
+                      <strong className="font-medium text-default">{name(e.actor)}</strong>{' '}
+                      <span className="text-muted">{describeEvent(e, name, (id) => projectName(id))}</span>
                       {title && e.entity !== 'project' && (
                         <> {e.entity === 'comment' ? 'on' : '·'}{' '}
-                          <button type="button" className="text-slate-800 underline decoration-dotted dark:text-slate-200" onClick={() => open(e)}>{title}</button>
+                          <button type="button" className="text-default underline decoration-dotted" onClick={() => open(e)}>{title}</button>
                         </>
                       )}
-                      {isPending(e, pending) && <span className="ml-1 text-xs italic text-amber-700 dark:text-amber-400" title="Not yet synced">(pending)</span>}
+                      {isPending(e, pending) && <span className="ml-1 text-xs italic text-warning" title="Not yet synced">(pending)</span>}
                       <span className="mt-0.5 flex items-center gap-1 text-xs text-faint">
-                        <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: p?.color ?? '#94a3b8' }} aria-hidden />
+                        <span className="inline-block h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(p?.color)} aria-hidden />
                         <button type="button" className="hover:underline" onClick={() => e.projectId && navigate({ view: 'project', id: e.projectId })}>
                           {projectName(e.projectId, e.projectName)}
                         </button>
@@ -212,7 +213,7 @@ export function FeedView() {
           {state === 'loading' ? 'Loading…' : 'Load older activity'}
         </button>
       )}
-      {state === 'error' && <p className="mt-2 text-xs text-red-600 dark:text-red-400">Older activity could not be loaded.</p>}
+      {state === 'error' && <p className="mt-2 text-xs text-danger">Older activity could not be loaded.</p>}
     </div>
   )
 }

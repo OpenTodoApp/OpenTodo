@@ -93,14 +93,14 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
   if (!wide) {
     return createPortal(
       <div className="fixed inset-0 z-50" data-overlay-root {...isolate} onKeyDown={onKeyDown} style={modal ? undefined : { pointerEvents: 'none' }}>
-        {modal && <div className="absolute inset-0 bg-black/30" aria-hidden="true" onClick={onClose} data-overlay-backdrop />}
+        {modal && <div className="absolute inset-0 bg-scrim" aria-hidden="true" onClick={onClose} data-overlay-backdrop />}
         {/* A menu sheet is a dialog whose list carries the menu role: the title and the
             close button may not sit inside a menu. */}
         <div ref={panel} role={ariaRole === 'menu' ? 'dialog' : ariaRole} aria-label={label} aria-modal={ariaRole ? true : undefined} tabIndex={-1} data-overlay="sheet"
-          className="pointer-events-auto absolute inset-x-0 flex max-h-[80dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-white text-sm shadow-2xl outline-none dark:border-slate-700 dark:bg-slate-900"
+          className="pointer-events-auto absolute inset-x-0 flex max-h-[80dvh] flex-col rounded-t-2xl border-t border-default bg-surface text-sm shadow-2xl outline-none"
           style={{ bottom: 'var(--vv-bottom, 0px)' }}>
-          <div className="relative flex shrink-0 items-center gap-2 border-b border-slate-100 pl-4 pr-1 pt-2 dark:border-slate-800">
-            <span aria-hidden="true" className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-slate-300 dark:bg-slate-600" />
+          <div className="relative flex shrink-0 items-center gap-2 border-b border-default pl-4 pr-1 pt-2">
+            <span aria-hidden="true" className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-faint" />
             <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{label}</h2>
             <button type="button" className="btn-ghost touch-target px-2 text-lg leading-none" aria-label="Close" data-overlay-close
               onMouseDown={modal ? undefined : (e) => e.preventDefault()} onClick={onClose}><Icon name="x" size="md" /></button>
@@ -114,7 +114,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
   }
   return createPortal(
     <div ref={panel} role={ariaRole} aria-label={label} tabIndex={-1} data-overlay="popover" data-overlay-root {...isolate} onKeyDown={onKeyDown}
-      className={`fixed z-50 overflow-y-auto overscroll-contain rounded-lg border border-slate-200 bg-white text-sm shadow-lg outline-none dark:border-slate-700 dark:bg-slate-900 ${width} ${className}`}
+      className={`fixed z-50 overflow-y-auto overscroll-contain rounded-lg border border-default bg-surface text-sm shadow-lg outline-none ${width} ${className}`}
       style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, maxHeight: pos?.maxHeight, maxWidth: pos?.maxWidth, opacity: pos ? 1 : 0 }}>
       {children}
     </div>,

@@ -31,10 +31,10 @@ import { PropertyRow } from './PropertyRow'
 import { ZoneControl } from './ZoneControl'
 
 export const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
-  { p: 1, label: 'P1', cls: 'text-red-600 dark:text-red-400 border-red-500' },
-  { p: 2, label: 'P2', cls: 'text-orange-700 dark:text-orange-400 border-orange-500' },
-  { p: 3, label: 'P3', cls: 'text-blue-600 dark:text-blue-400 border-blue-500' },
-  { p: 4, label: 'P4', cls: 'text-muted border-slate-400' },
+  { p: 1, label: 'P1', cls: 'text-danger border-danger' },
+  { p: 2, label: 'P2', cls: 'text-warning border-warning' },
+  { p: 3, label: 'P3', cls: 'text-info border-info' },
+  { p: 4, label: 'P4', cls: 'text-muted border-input' },
 ]
 
 const itemKey = (i: PickerItem) => i.key

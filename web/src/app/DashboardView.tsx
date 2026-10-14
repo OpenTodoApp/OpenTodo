@@ -104,9 +104,9 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
           <button className="btn-ghost px-2 py-1 text-xs" onClick={() => void setPinned(dashboard.id, !dashboard.pinned)}>{dashboard.pinned ? 'Unpin' : 'Pin'}</button>
           <ViewMenu view={dashboard} />
         </div>
-        {error && <p role="alert" className="mb-3 text-xs text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p role="alert" className="mb-3 text-xs text-danger">{error}</p>}
         {editing && (
-          <ol className="mb-4 space-y-1 rounded-lg border border-slate-200 p-2 text-sm dark:border-slate-800" aria-label="Arrange panels">
+          <ol className="mb-4 space-y-1 rounded-lg border border-default p-2 text-sm" aria-label="Arrange panels">
             {dashboard.panels.map((id, i) => (
               <li key={id} className="flex items-center gap-2">
                 <span className="w-5 text-right text-xs text-faint">{i + 1}</span>
@@ -120,7 +120,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
           </ol>
         )}
         {panels.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-muted dark:border-slate-700">
+          <p className="rounded-lg border border-dashed border-input p-6 text-center text-sm text-muted">
             Add up to six saved views with “Add panel”.
           </p>
         ) : (
@@ -153,13 +153,13 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, onFocus, onBl
   onOpenTask: (id: string) => void
   onRemove: () => void
 }) {
-  const ring = 'rounded-xl border border-slate-200 p-3 outline-none focus-within:ring-2 focus-within:ring-emerald-500/60 dark:border-slate-800'
+  const ring = 'rounded-xl border border-default p-3 outline-none focus-within:ring-2 focus-within:ring-focus/60'
   if (panel.kind === 'removed') {
     return (
       <section data-panel-index={index} tabIndex={0} onFocus={onFocus} onBlur={onBlur} aria-label="Removed view" className={`${ring} border-dashed`}>
         <p className="text-sm font-medium text-muted">View removed</p>
         <p className="mt-1 text-xs text-faint">The saved view shown here was deleted.</p>
-        <button className="btn-ghost mt-2 border border-slate-300 text-xs dark:border-slate-700" tabIndex={-1} onClick={onRemove}>Remove panel</button>
+        <button className="btn-ghost mt-2 border border-input text-xs" tabIndex={-1} onClick={onRemove}>Remove panel</button>
       </section>
     )
   }
@@ -174,7 +174,7 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, onFocus, onBl
         <button className="btn-ghost px-2 py-0.5 text-xs" tabIndex={-1} onClick={() => navigate({ view: 'view', id: view.id })}>Open view</button>
       </div>
       {!summary.ok ? (
-        <p role="alert" className="text-xs text-red-600 dark:text-red-400">{summary.error}</p>
+        <p role="alert" className="text-xs text-danger">{summary.error}</p>
       ) : summary.tasks.length === 0 ? (
         <p className="px-2 py-3 text-xs text-faint">Nothing here.</p>
       ) : (

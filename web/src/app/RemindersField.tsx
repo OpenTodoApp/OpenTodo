@@ -192,7 +192,7 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
       )}
       <button type="submit" className="btn-primary px-2 py-1 text-xs">Save</button>
       <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={onCancel}>Cancel</button>
-      {error && <p className="w-full text-xs text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="w-full text-xs text-danger">{error}</p>}
     </form>
   )
 }
