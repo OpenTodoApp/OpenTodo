@@ -352,6 +352,26 @@
       }
     },
     {
+      "name": "mcp",
+      "summary": "bridge stdio MCP clients to the configured server",
+      "args": [],
+      "flags": [
+        {
+          "name": "allow-full-token",
+          "type": "bool",
+          "description": "allow a full-access token instead of requiring read scope"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "description": "newline-delimited MCP JSON-RPC responses; notifications produce no output",
+        "type": "object"
+      }
+    },
+    {
       "name": "project add",
       "aliases": [
         "project create"

@@ -156,6 +156,7 @@ func init() {
 		{"rm", "delete one or more tasks (soft delete)", "ot rm <ref>... [--yes]", cmdRm},
 		{"project", "manage projects: list, add, rename, archive, rm", "ot project list [--all]\not project add <name> [--color <#rrggbb>] [--idempotency-key <key>]\not project rename <ref> <new-name>\not project archive <ref> [--undo]\not project rm <ref> [--yes]", cmdProject},
 		{"token", "manage API tokens: list, create, revoke", "ot token list\not token create <name> [--scope full|read|agent]\not token revoke <id-or-name> [--yes]", cmdToken},
+		{"mcp", "bridge stdio MCP clients to the configured server", "ot mcp [--allow-full-token]", cmdMCP},
 		{"export", "download the full JSON export", "ot export [--out <file>]", cmdExport},
 		{"schema", "print commands, flags, exit codes and output schemas as JSON", "ot schema", cmdSchema},
 		{"skill", "print the agent skill file embedded in ot", "ot skill", cmdSkill},
@@ -381,6 +382,7 @@ var commandHelp = map[string]string{
 	"edit": "Clear a value with --due none, --project none or --note \"\". Only the given flags change.",
 	"rm":   "Soft-deletes (tombstone). Asks for confirmation on a terminal unless --yes is given;\noff a terminal or with --json it refuses without --yes (exit 2).",
 	"done": "A task that is already completed is reported as unchanged and nothing is sent.",
+	"mcp":  "Reads newline-delimited JSON-RPC messages from stdin and writes responses to stdout.\nA read-only token is required unless --allow-full-token is given.",
 }
 
 func cmdHelp(a *App, ctx context.Context, g *globalFlags, args []string) error {
