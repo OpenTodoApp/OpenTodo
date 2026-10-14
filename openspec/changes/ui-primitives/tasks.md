@@ -45,7 +45,7 @@ Prerequisite: `design-language` is applied (tokens in `@theme`, Storybook in `we
 - [x] 7.2 Add the next free Dexie version (v14 unless already taken by `date-time-preferences`) with `pickHistory` (redeclare all stores), `web/src/lib/pickRank.ts` (record and rank with 14-day half-life, 200 rows per context), and clear it in `clearLocalData()`; verify with fake-indexeddb tests that the ranking order holds, that the table is not in `entityTables()` or the outbox, and that it is empty after `clearLocalData()`
 - [x] 7.3 Implement `useCombobox` and `<Combobox>`/`<ComboboxSheet>` (sync and async sources, 120 ms debounce, AbortController and request id for stale results, groups, `getPath` hierarchy, create row last, single and multiple, ranking frozen while open, live-region result count); verify with unit tests for "Keyboard picking", "Results are announced", "Stale results ignored", "Create row" and "Empty state"
 - [x] 7.4 Add windowing above 200 options with correct `aria-setsize`/`aria-posinset`; verify with a unit test rendering 10,000 options that renders fewer than 60 rows and keeps the active option mounted, and a story whose typing latency stays under 16 ms per keystroke in the Storybook performance panel
-- [ ] 7.5 Add Combobox stories (people with avatars, labels with colour dots and create row, project tree with paths, async source with loading and empty states, phone sheet at 375 px); verify axe and visual baselines in both themes
+- [x] 7.5 Add Combobox stories (people with avatars, labels with colour dots and create row, project tree with paths, async source with loading and empty states, phone sheet at 375 px); verify axe and visual baselines in both themes
 
 ## 8. Rebuild the existing pickers
 
@@ -66,7 +66,7 @@ Prerequisite: `design-language` is applied (tokens in `@theme`, Storybook in `we
 - [x] 10.1 Write `docs/design-system.md` sections for icons (how to add one via the sync script, licence), buttons, form controls, menus, Combobox (ranking, matching, sources) and patterns, linked from the Storybook intro page; verify `npm run docs:check` passes
 - [x] 10.2 Update AGENTS.md "Layout" and "Conventions" with `web/src/ui/` (primitives only via `ui/`, no emoji icons, entity pickers use Combobox); verify the diff is reviewed alongside the code
 - [x] 10.3 Measure the bundle after the change and record the delta in design.md D11 (budget ≤ +20 KB gzipped); verify the recorded numbers come from `npm run build` output
-- [ ] 10.4 Run `make check` (Go tests, web tests and build, ui-check, Storybook a11y and visual gates, layout check); verify it is green
+- [x] 10.4 Run `make check` (Go tests, web tests and build, ui-check, Storybook a11y and visual gates, layout check); verify it is green
 
 ## Workflow follow-up
 
