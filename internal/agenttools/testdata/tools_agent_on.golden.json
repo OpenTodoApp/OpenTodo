@@ -249,7 +249,7 @@
                   "type": "array"
                 },
                 "parent_id": {
-                  "description": "Parent task id (same project) to create a subtask.",
+                  "description": "Parent task id to create a subtask; without project_id the subtask goes in the parent's project.",
                   "type": "string"
                 },
                 "priority": {

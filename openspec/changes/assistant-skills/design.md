@@ -88,6 +88,24 @@ Additive: a new route, optional request fields, a new MCP capability and new UI.
 - **Skill usage.** Usage is kept per month (`assistant_usage`), so the skill id is counted in a new table `assistant_skill_usage(user_id, month, skill, turns)` (migration 0030) rather than on a per-turn row.
 - **Pasted text** is sent as a user message with `untrusted: true`. The loop wraps it in the `untrusted_text` envelope and folds it into the following user message, so providers that need alternating roles see one message.
 
+## Skill review with a small local model (task 5.2, partial)
+
+Run on 2026-10-15 against `qwen2.5:3b` through Ollama's OpenAI-compatible endpoint (the `compatible` provider, private endpoint allowed), CPU only, with realistic seed data (two projects, overdue and today tasks, five Inbox tasks), through `POST /api/v1/assistant/turn`:
+
+| Skill | First run | After the fixes below |
+|---|---|---|
+| `idea-to-project` | proposed the project, no tasks | no tool call; described a project in words |
+| `plan-week` | proposed clearing a due date | timed out (CPU inference past the turn limit) |
+| `weekly-review` | summary, no proposal | summary, no proposal |
+| `triage-inbox` | summary, no proposal | summary, no proposal |
+| `break-down` | refused: subtask in the wrong project | 7 subtasks with estimates under the selected task |
+
+Fixes made from it:
+- `create_tasks`: a subtask without `project_id` goes in its parent's project (it used to land in the Inbox and be refused). Covered by `TestCreateSubtaskInheritsParentProject`.
+- Instructions now give explicit tool-call steps (`idea-to-project`: create_project, then phases, then work items), forbid clearing dates (`plan-week`), and ask for at least one proposal when anything is overdue (`weekly-review`).
+
+Conclusion: a 3B model follows the shortest skill (`break-down`) but not the multi-step ones; the docs should recommend a model of 7B or more for local use. The review with the default Anthropic model is still to do (it needs a key); the safety properties do not depend on model quality, because every write is a reviewed proposal.
+
 ## Open Questions
 
 - Exact wording of each skill's instructions, refined while testing with the default and a small local model. Doesn't change specs or tasks.
