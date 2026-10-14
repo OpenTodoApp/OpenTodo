@@ -108,6 +108,7 @@ func run() error {
 		cfg.AllowSignup, cfg.PushDisabled = false, true
 	}
 	authSvc := auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
+	authSvc.SetSetupToken(cfg.SetupToken)
 	syncSvc := opsync.NewService(db)
 	// Outbound webhooks: events come from the winning changes of each committed
 	// sync batch; the worker sends queued deliveries until shutdown.

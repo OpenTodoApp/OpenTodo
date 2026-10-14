@@ -19,8 +19,12 @@ type Config struct {
 	DataDir     string
 	BaseURL     *url.URL // nil when not configured
 	AllowSignup bool
-	SessionTTL  time.Duration
-	LogLevel    slog.Level
+	// SetupToken, when set (OPENTODO_SETUP_TOKEN), must accompany the first
+	// registration on a server without accounts (OpenSpec change owner-bootstrap).
+	// It has no effect once an owner exists.
+	SetupToken string
+	SessionTTL time.Duration
+	LogLevel   slog.Level
 	// ImportMaxMB caps the size of an uploaded import file (OPENTODO_IMPORT_MAX_MB).
 	ImportMaxMB int
 	// WebhooksAllowPrivate presets the owner's "allow private network targets"
@@ -121,6 +125,10 @@ const (
 	MaxImportMaxMB     = 200
 )
 
+// MinSetupTokenLen is the shortest accepted OPENTODO_SETUP_TOKEN (owner-bootstrap
+// design D2); Coolify's generated SERVICE_PASSWORD_* values are longer.
+const MinSetupTokenLen = 16
+
 // Load reads OPENTODO_* variables from the environment.
 func Load() (Config, error) {
 	c := Config{
@@ -145,6 +153,12 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_ALLOW_SIGNUP must be true or false, got %q", v)
 		}
 		c.AllowSignup = b
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_SETUP_TOKEN")); v != "" {
+		if len(v) < MinSetupTokenLen {
+			return c, fmt.Errorf("OPENTODO_SETUP_TOKEN must be at least %d characters when set", MinSetupTokenLen)
+		}
+		c.SetupToken = v
 	}
 	if v := os.Getenv("OPENTODO_SESSION_DAYS"); v != "" {
 		d, err := strconv.Atoi(v)
