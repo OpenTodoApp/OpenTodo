@@ -4,8 +4,8 @@
 
 <h1 align="center">OpenTodo</h1>
 
-<p align="center"><strong>Your tasks, your server.</strong><br>
-An open-source, local-first task manager you can host yourself. Everything you expect from a commercial task app, without the subscription or the lock-in.</p>
+<p align="center"><strong>A to-do app that runs on your own server.</strong><br>
+Plan your day, keep projects in order, set reminders and share lists with your family or your team. Works on your phone and your computer, even offline. No monthly plan per person, and your tasks stay with you.</p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg"></a>
@@ -17,10 +17,13 @@ An open-source, local-first task manager you can host yourself. Everything you e
 </p>
 
 <p align="center">
-  <a href="https://opentodo-demo.pixari.dev"><strong>▶ Try the demo</strong></a> (no sign-up) ·
+  <a href="https://demo.open-todo.app"><strong>Try the demo</strong></a> (no sign-up) ·
   <a href="#quick-start"><strong>Install in 2 minutes</strong></a> ·
-  <a href="https://opentodo.pixari.dev/docs/"><strong>Read the docs</strong></a>
+  <a href="https://open-todo.app/docs/"><strong>Read the docs</strong></a> ·
+  <a href="https://open-todo.app"><strong>Website</strong></a>
 </p>
+
+<p align="center">If OpenTodo looks useful, a star on GitHub helps other people find it.</p>
 
 ---
 
@@ -30,7 +33,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 
 ## Try it in 30 seconds
 
-- **No install:** open the [demo](https://opentodo-demo.pixari.dev) and press **Try the demo**. You get a private copy with sample data, deleted after a few hours.
+- **No install:** open the [demo](https://demo.open-todo.app) and press **Try the demo**. You get a private copy with sample data, deleted after a few hours.
 - **On your machine or server:**
 
   ```bash
@@ -39,7 +42,7 @@ An open-source, local-first task manager you can host yourself. Everything you e
 
   Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Compose and plain binaries are in [Quick start](#quick-start).
 
-If OpenTodo looks useful to you, a ⭐ on GitHub helps other people find it.
+Questions, ideas and bug reports are welcome in [issues](https://github.com/pixari/opentodo/issues).
 
 
 <p align="center">
@@ -216,6 +219,7 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_ADDR` | `:8080` | Listen address |
 | `OPENTODO_DATA_DIR` | `./data` (binary), `/data` (image) | Directory for the SQLite database, secrets, the VAPID key and local backups |
 | `OPENTODO_BASE_URL` | unset (inferred from requests) | Public URL. With https: `Secure` cookies, passkeys and web push; also used for strict origin checks and in invitation, reset and CalDAV links |
+| `OPENTODO_SETUP_TOKEN` | unset | When set (16+ characters), creating the first account requires this token, so a fresh public server cannot be claimed by a stranger. No effect once the owner exists. The Coolify template generates one |
 | `OPENTODO_ALLOW_SIGNUP` | `false` | Let anyone create an account after the owner exists. Prefer [invitations](#adding-people) |
 | `OPENTODO_SESSION_DAYS` | `90` | Browser session lifetime in days |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
@@ -265,7 +269,7 @@ More in [docs/architecture.md](docs/architecture.md) and [docs/sync.md](docs/syn
 
 ## Documentation
 
-Read the docs with screenshots and search at **[opentodo.pixari.dev/docs](https://opentodo.pixari.dev/docs/)**, or in the app under **Help** (offline, matching your server's version). The same pages are Markdown in [`docs/`](docs/README.md):
+Read the docs with screenshots and search at **[open-todo.app/docs](https://open-todo.app/docs/)**, or in the app under **Help** (offline, matching your server's version). The same pages are Markdown in [`docs/`](docs/README.md):
 
 - **Start here**: [getting started](docs/getting-started.md) · [installing the app](docs/install-app.md) · [all user guides](docs/README.md#using-opentodo)
 - **Reference**: [quick add](docs/quick-add.md) · [filters and saved views](docs/filters.md) · [recurring tasks](docs/recurrence.md) · [reminders](docs/reminders.md) · [capture](docs/capture.md) · [import](docs/import.md) · [end-to-end encryption](docs/e2ee.md)

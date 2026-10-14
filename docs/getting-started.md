@@ -18,7 +18,7 @@ You have three ways in.
 
 ### Try the demo
 
-Go to [opentodo-demo.pixari.dev](https://opentodo-demo.pixari.dev) and select **Try the demo**. You get a private sandbox filled with sample projects and tasks. Nobody else can see it, and it is deleted after two hours without activity (and every night), so don't keep anything personal there.
+Go to [demo.open-todo.app](https://demo.open-todo.app) and select **Try the demo**. You get a private sandbox filled with sample projects and tasks. Nobody else can see it, and it is deleted after two hours without activity (and every night), so don't keep anything personal there.
 
 <picture><source srcset="images/demo-signin-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/demo-signin-light.webp" alt="The demo sign-in card with a short explanation and a green Try the demo button."></picture>
 

@@ -28,6 +28,9 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
   const [email, setEmail] = useState(invite?.preview.email ?? '')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
+  // First-run setup guarded by OPENTODO_SETUP_TOKEN (OpenSpec `owner-bootstrap`).
+  const needsSetupToken = !!status.setupRequired && !!status.setupTokenRequired && !invite
+  const [setupToken, setSetupToken] = useState('')
   // Single sign-on (OpenSpec `oidc-login`): the provider action on plain sign-in;
   // SSO-only mode hides local sign-in unless the owner uses `?owner=1`.
   const sso = invite ? { provider: null, local: true, breakGlass: false } : ssoLayout(status, typeof location === 'undefined' ? '' : location.search)
@@ -110,7 +113,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
       if (mode === 'register') {
         const res = invite?.project
           ? await api.register(email, name, password, undefined, invite.token)
-          : await api.register(email, name, password, invite?.token)
+          : await api.register(email, name, password, invite?.token, undefined, needsSetupToken ? setupToken.trim() : undefined)
         onAuthenticated({ projectId: res?.projectId })
       } else {
         afterFirstFactor(await api.login(email, password))
@@ -232,6 +235,17 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
             <input className="input" type="password" required minLength={mode === 'register' ? 10 : 1} value={password} onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'} />
           </label>
+          {needsSetupToken && (
+            <label className="block text-sm">
+              <span className="mb-1 block text-muted">Setup token</span>
+              <input className="input font-mono" required value={setupToken} onChange={(e) => setSetupToken(e.target.value)}
+                autoComplete="off" spellCheck={false} aria-describedby="setup-token-help" />
+              <span id="setup-token-help" className="mt-1 block text-xs text-muted">
+                This server asks for the token its operator configured. Find it in your hosting panel, for example
+                Coolify, this service, Environment Variables, <code>OPENTODO_SETUP_TOKEN</code>.
+              </span>
+            </label>
+          )}
           {error && <p className="text-sm text-danger" role="alert">{error}</p>}
           <button className="btn-primary w-full" disabled={busy}>
             {busy ? 'Please wait…' : mode === 'register' ? (status.setupRequired ? 'Create owner account' : invite?.project ? 'Create account and join' : invite ? 'Accept invitation' : 'Create account') : 'Sign in'}
@@ -401,6 +415,8 @@ export function describeAuthError(err: unknown): string {
       return 'An account with this email already exists. Sign in instead.'
     case 'rate_limited':
       return 'Too many attempts. Wait a minute and try again.'
+    case 'setup_token_invalid':
+      return 'That setup token is not right. Copy OPENTODO_SETUP_TOKEN from your hosting panel and try again.'
     case 'signup_closed':
       return 'Sign-up is closed on this server. Ask the owner for an invitation link.'
     case 'account_deactivated':

@@ -7,7 +7,7 @@ import { dirname, join, posix, relative, resolve } from 'node:path'
 import { Marked } from 'marked'
 
 export const REPO_URL = 'https://github.com/pixari/opentodo'
-export const SITE_URL = 'https://opentodo.pixari.dev'
+export const SITE_URL = 'https://open-todo.app'
 export const AUDIENCES = ['user', 'admin', 'developer']
 const KEYS = new Set(['title', 'summary', 'audience', 'specs', 'screens', 'order', 'section', 'card', 'layout'])
 

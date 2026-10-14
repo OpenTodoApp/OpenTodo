@@ -4,6 +4,7 @@ package auth
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/subtle"
 	"database/sql"
 	"encoding/hex"
 	"errors"
@@ -71,8 +72,11 @@ var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
 	ErrEmailTaken         = errors.New("an account with this email already exists")
 	ErrSignupClosed       = errors.New("sign-up is disabled on this server")
-	ErrInvalidEmail       = errors.New("invalid email address")
-	ErrNotFound           = errors.New("not found")
+	// ErrSetupTokenInvalid refuses the first registration when a setup token is
+	// configured and the request lacks it or carries another (owner-bootstrap).
+	ErrSetupTokenInvalid = errors.New("the setup token is missing or wrong")
+	ErrInvalidEmail      = errors.New("invalid email address")
+	ErrNotFound          = errors.New("not found")
 )
 
 // Service implements account operations on top of the database.
@@ -101,6 +105,9 @@ type Service struct {
 	beforeDelete AccountDataHook
 	// ssoOnly reports SSO-only mode (oidc.go); nil means never.
 	ssoOnly func(ctx context.Context) bool
+	// setupToken, when non-empty, must accompany the first registration
+	// (OPENTODO_SETUP_TOKEN, OpenSpec change owner-bootstrap).
+	setupToken string
 }
 
 // NewService wires a Service. It owns the audit recorder for the same database,
@@ -108,6 +115,21 @@ type Service struct {
 func NewService(db *sql.DB, sessionTTL time.Duration, allowSignup bool) *Service {
 	return &Service{db: db, sessionTTL: sessionTTL, allowSignup: allowSignup, audit: audit.New(db, nil),
 		mfaChallenges: newLoginChallenges(), clock: time.Now}
+}
+
+// SetSetupToken configures the token the first registration must carry; empty
+// disables the requirement.
+func (s *Service) SetSetupToken(token string) { s.setupToken = token }
+
+// SetupTokenRequired reports whether a setup token is configured. It matters only
+// while no account exists.
+func (s *Service) SetupTokenRequired() bool { return s.setupToken != "" }
+
+// setupTokenMatches compares in constant time; hashing first hides the length.
+func (s *Service) setupTokenMatches(given string) bool {
+	want := sha256.Sum256([]byte(s.setupToken))
+	got := sha256.Sum256([]byte(given))
+	return subtle.ConstantTimeCompare(want[:], got[:]) == 1
 }
 
 // SetClock replaces the time source of second-factor checks and session
@@ -143,6 +165,12 @@ func (s *Service) SignupAllowed(ctx context.Context) (bool, error) {
 // closed; the invitation is consumed in the same transaction so it can create at
 // most one account. Without an invitation the open sign-up policy applies.
 func (s *Service) Register(ctx context.Context, email, name, password, invitation string) (*User, error) {
+	return s.RegisterWithSetupToken(ctx, email, name, password, invitation, "")
+}
+
+// RegisterWithSetupToken is Register with the setup token a first registration
+// must carry when one is configured. After the first account it is ignored.
+func (s *Service) RegisterWithSetupToken(ctx context.Context, email, name, password, invitation, setupToken string) (*User, error) {
 	email = normalizeEmail(email)
 	if _, err := mail.ParseAddress(email); err != nil || email == "" {
 		return nil, ErrInvalidEmail
@@ -169,6 +197,9 @@ func (s *Service) Register(ctx context.Context, email, name, password, invitatio
 	var invitationID string
 	switch {
 	case n == 0:
+		if s.setupToken != "" && !s.setupTokenMatches(strings.TrimSpace(setupToken)) {
+			return nil, ErrSetupTokenInvalid
+		}
 		u.Role = "owner"
 	case invitation != "":
 		// Validate before inserting so a bad link is reported ahead of email_taken,
