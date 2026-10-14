@@ -151,28 +151,28 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
     case 'offline':
       return (
         <Card title="You seem to be offline">
-          <p className="text-sm text-slate-600 dark:text-slate-300">Joining a project needs a connection to the server. The page will retry when the network returns.</p>
+          <p className="text-sm text-muted">Joining a project needs a connection to the server. The page will retry when the network returns.</p>
           <button className="btn-primary" onClick={onRetry}>Retry now</button>
         </Card>
       )
     case 'invalid':
       return (
         <Card title="This invite link is no longer valid">
-          <p className="text-sm text-slate-600 dark:text-slate-300">It may have expired, been revoked or already been used, or the project is gone. Ask the person who invited you for a new link.</p>
+          <p className="text-sm text-muted">It may have expired, been revoked or already been used, or the project is gone. Ask the person who invited you for a new link.</p>
           <a className="btn-secondary" href="/">{user ? 'Back to my tasks' : 'Go to sign-in'}</a>
         </Card>
       )
     case 'rate-limited':
       return (
         <Card title="Too many attempts">
-          <p className="text-sm text-slate-600 dark:text-slate-300">Wait a minute, then try again.</p>
+          <p className="text-sm text-muted">Wait a minute, then try again.</p>
           <button className="btn-primary" onClick={onRetry}>Retry</button>
         </Card>
       )
     case 'error':
       return (
         <Card title="Something went wrong">
-          <p className="text-sm text-red-600 dark:text-red-400">{state.message}</p>
+          <p className="text-sm text-danger">{state.message}</p>
           <button className="btn-primary" onClick={onRetry}>Retry</button>
         </Card>
       )
@@ -180,7 +180,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
   const p = state.preview
   if (!user && step !== 'choose' && form) return <>{form}</>
   const summary = (
-    <div className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" data-testid="project-invite-summary">
+    <div className="rounded-md bg-accent-soft p-3 text-sm text-on-accent-soft" data-testid="project-invite-summary">
       <p><strong>{p.inviterName}</strong> invited you to the project <strong className="user-text">{p.projectName}</strong> as <strong>{p.role}</strong>.</p>
       {p.email && <p className="mt-1">This link is for <strong>{p.email}</strong>.</p>}
       <p className="mt-1 text-xs opacity-80">It expires {when(p.expiresAt)} and works once.</p>
@@ -192,15 +192,15 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
     return (
       <Card title={already ? 'You are already a member' : <>Join <span className="user-text">{p.projectName}</span></>}>
         {summary}
-        <p className="text-sm text-slate-600 dark:text-slate-300">Signed in as <strong>{user.name || user.email}</strong>.</p>
+        <p className="text-sm text-muted">Signed in as <strong>{user.name || user.email}</strong>.</p>
         {already ? (
           <>
-            <p className="text-sm text-slate-600 dark:text-slate-300" role="status">You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.</p>
+            <p className="text-sm text-muted" role="status">You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.</p>
             <a className="btn-primary" href="/">Back to my tasks</a>
           </>
         ) : mismatch ? (
           <>
-            <p className="text-sm text-amber-700 dark:text-amber-300" role="alert">This link was issued for {p.email}, but you are signed in as {user.email}. Sign out and sign in with that address to join.</p>
+            <p className="text-sm text-warning" role="alert">This link was issued for {p.email}, but you are signed in as {user.email}. Sign out and sign in with that address to join.</p>
             <div className="flex flex-wrap gap-2">
               <button className="btn-primary" onClick={onLogout}>Sign out</button>
               <a className="btn-secondary" href="/">Back to my tasks</a>
@@ -208,7 +208,7 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
           </>
         ) : (
           <>
-            {join.kind === 'error' && <p className="text-sm text-red-600 dark:text-red-400" role="alert">{join.message}</p>}
+            {join.kind === 'error' && <p className="text-sm text-danger" role="alert">{join.message}</p>}
             <div className="flex flex-wrap gap-2">
               <button className="btn-primary" autoFocus disabled={join.kind === 'busy'} onClick={onJoin}>{join.kind === 'busy' ? 'Joining…' : 'Join project'}</button>
               <a className="btn-secondary" href="/">Not now</a>
@@ -225,11 +225,11 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
       <div className="flex flex-col gap-2">
         <button className="btn-primary w-full" autoFocus onClick={onSignIn}>I have an account: sign in to join</button>
         {p.canCreateAccount && (
-          <button className="btn-ghost w-full border border-slate-300 dark:border-slate-700" onClick={onRegister}>Create an account</button>
+          <button className="btn-ghost w-full border border-input" onClick={onRegister}>Create an account</button>
         )}
       </div>
       {!p.canCreateAccount && (
-        <p className="text-sm text-slate-600 dark:text-slate-300" data-testid="account-needed">
+        <p className="text-sm text-muted" data-testid="account-needed">
           You need an account on this server first. Ask {p.inviterName} or the server owner for one, then open this link again and sign in.
         </p>
       )}
@@ -239,8 +239,8 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
 
 function Card({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex min-h-full items-center justify-center bg-slate-50 p-4 sm:p-6 dark:bg-slate-950">
-      <main className="w-full max-w-sm space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex min-h-full items-center justify-center bg-canvas p-4 sm:p-6">
+      <main className="w-full max-w-sm space-y-3 rounded-xl border border-default bg-surface p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
           <p className="text-lg font-semibold">OpenTodo</p>

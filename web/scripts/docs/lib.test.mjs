@@ -53,7 +53,7 @@ describe('link rewriting', () => {
     expect(site).toContain('<a href="https://example.com" rel="noopener">web</a>')
     const app = renderPage(md, ctx, 'app').html
     expect(app).toContain('<a href="/docs/filters/#saved-views" data-doc="filters">Filters</a>')
-    expect(app).toContain('<a href="https://opentodo.pixari.dev/docs/self-hosting/docker/" target="_blank" rel="noopener">Docker</a>')
+    expect(app).toContain('<a href="https://open-todo.app/docs/self-hosting/docker/" target="_blank" rel="noopener">Docker</a>')
   })
   it('adds heading ids, lazy images and table wrappers', () => {
     const { html, headings, images } = renderPage('# Title\n\n## Add a task\n\n![The Today view](images/today-light.webp)\n\n| a | b |\n| - | - |\n| 1 | 2 |\n', ctx)

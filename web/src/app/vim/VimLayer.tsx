@@ -104,9 +104,9 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
   }
 
   return (
-    <div className="border-t border-slate-200 text-xs dark:border-slate-800" data-vim-layer>
+    <div className="border-t border-default text-xs" data-vim-layer>
       {cmdOpen && (
-        <form className="flex items-center gap-1 border-b border-slate-200 px-3 py-1 font-mono dark:border-slate-800"
+        <form className="flex items-center gap-1 border-b border-default px-3 py-1 font-mono"
           onSubmit={(e) => { e.preventDefault(); void run() }}>
           <span aria-hidden>:</span>
           <input
@@ -131,13 +131,13 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
             }}
           />
           {message
-            ? <span role="alert" className="text-red-600 dark:text-red-400">{message}</span>
+            ? <span role="alert" className="text-danger">{message}</span>
             : <span className="truncate text-faint" aria-label="Completions">{completions.slice(0, 6).join('  ')}</span>}
         </form>
       )}
       <div className="flex items-center gap-2 px-3 py-0.5">
         <span role="status" aria-label="Vim mode" data-vim-mode={mode}
-          className={`rounded px-1.5 font-mono font-semibold ${mode === 'insert' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : mode === 'command' ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+          className={`rounded px-1.5 font-mono font-semibold ${mode === 'insert' ? 'bg-accent-soft text-on-accent-soft' : mode === 'command' ? 'bg-warning-soft text-on-warning-soft' : 'bg-sunken dark:bg-raised text-muted'}`}>
           {mode.toUpperCase()}
         </span>
         <span className="font-mono text-muted" data-vim-pending>{pending}</span>

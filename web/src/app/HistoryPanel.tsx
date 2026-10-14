@@ -98,13 +98,13 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
       {open && (
         <div className="mt-2 text-sm">
           {state === 'offline' && <p className="text-xs text-muted">History needs a connection to the server.</p>}
-          {state === 'error' && <p className="text-xs text-red-600 dark:text-red-400">History could not be loaded.</p>}
+          {state === 'error' && <p className="text-xs text-danger">History could not be loaded.</p>}
           {state === 'empty' && <p className="text-xs text-muted">No history on the server yet.</p>}
           {state === 'loading' && sets.length === 0 && <p className="text-xs text-faint">Loading…</p>}
-          {message && <p role="status" className="mb-1 text-xs text-emerald-700 dark:text-emerald-300">{message}</p>}
+          {message && <p role="status" className="mb-1 text-xs text-success">{message}</p>}
           <ol className="space-y-2" aria-label="Changes">
             {sets.map((s) => (
-              <li key={`${s.ts}:${s.device}`} className="border-l-2 border-slate-200 pl-2 dark:border-slate-700">
+              <li key={`${s.ts}:${s.device}`} className="border-l-2 border-default pl-2">
                 <div className="text-xs text-faint">{dt.formatInstant(s.ts, 'datetime')} · {deviceLabel(s, device)}</div>
                 <ul>
                   {s.changes.map((c) => (
@@ -113,7 +113,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
                       <span className="break-all">{fmt(c.field, c.from)} → {fmt(c.field, c.to)}</span>
                       {c.lost && <span className="text-xs italic" title="Arrived after a newer change and was never applied">(lost)</span>}
                       {!readOnly && canRestoreField(entity, c.field) && (
-                        <button type="button" className="ml-auto text-xs text-emerald-700 underline dark:text-emerald-300"
+                        <button type="button" className="ml-auto text-xs text-accent underline"
                           aria-label={`Restore ${fieldLabel(c.field)} to ${fmt(c.field, c.to)}`} onClick={() => void restore(c.field, c.to)}>
                           Restore this value
                         </button>

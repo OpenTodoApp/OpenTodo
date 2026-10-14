@@ -80,7 +80,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
       <datalist id="recurrence-suggestions">
         {RULE_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
       </datalist>
-      {error && <p className="text-xs text-red-600 dark:text-red-400" role="alert">Not a rule I understand: {error}. The previous rule is kept.</p>}
+      {error && <p className="text-xs text-danger" role="alert">Not a rule I understand: {error}. The previous rule is kept.</p>}
       {preview.length > 0 && (
         <p className="text-xs text-muted" data-recurrence-preview>
           Next: {preview.map((d) => `${weekday(d).slice(0, 3)} ${formatShort(d)}`).join(' · ')}

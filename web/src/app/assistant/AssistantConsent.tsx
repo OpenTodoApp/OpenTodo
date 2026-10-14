@@ -22,17 +22,17 @@ export function AssistantConsent({ status, connected, busy, error, onAccept }: C
   return (
     <section className="space-y-3 text-sm" aria-labelledby="assistant-consent-heading" data-assistant-consent>
       <h3 id="assistant-consent-heading" className="text-base font-semibold">Before you start</h3>
-      {changed && <p className="rounded-md bg-amber-50 p-2 text-amber-900 dark:bg-amber-950 dark:text-amber-100">{own ? 'The model provider changed.' : 'The server owner changed the model provider.'} Read what is sent now and accept again.</p>}
+      {changed && <p className="rounded-md bg-warning-soft p-2 text-on-warning-soft">{own ? 'The model provider changed.' : 'The server owner changed the model provider.'} Read what is sent now and accept again.</p>}
       {own ? (
         <p data-consent-own>
           To answer, the assistant sends what you type and the task data it needs from this server to <strong>{status.provider_label}</strong>
-          {status.model ? <> (model <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{status.model}</code>)</> : null}, with your own API key. You chose it in Settings → AI → Assistant.
+          {status.model ? <> (model <code className="rounded bg-sunken dark:bg-raised px-1">{status.model}</code>)</> : null}, with your own API key. You chose it in Settings → AI → Assistant.
           Nothing is sent before you accept.
         </p>
       ) : (
         <p>
           To answer, the assistant sends what you type and the task data it needs to <strong>{status.provider_label}</strong>
-          {status.model ? <> (model <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{status.model}</code>)</> : null}. Your server owner chose it.
+          {status.model ? <> (model <code className="rounded bg-sunken dark:bg-raised px-1">{status.model}</code>)</> : null}. Your server owner chose it.
           Nothing is sent before you accept.
         </p>
       )}
@@ -53,7 +53,7 @@ export function AssistantConsent({ status, connected, busy, error, onAccept }: C
           <input className="input mt-1" type="password" autoComplete="off" value={ownKey} onChange={(e) => setOwnKey(e.target.value)} disabled={!connected} />
         </label>
       )}
-      {error && <p role="alert" className="text-red-700 dark:text-red-300">{error}</p>}
+      {error && <p role="alert" className="text-danger">{error}</p>}
       {!connected && <p className="text-muted">Accepting needs a connection.</p>}
       <button type="button" className="btn-primary" disabled={!connected} aria-busy={busy} onClick={() => { if (!busy) onAccept(ownKey.trim() || undefined) }} data-assistant-accept>
         Accept and continue

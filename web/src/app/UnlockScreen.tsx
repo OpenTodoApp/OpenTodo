@@ -23,7 +23,7 @@ export interface UnlockViewProps {
 export function UnlockView(p: UnlockViewProps) {
   return (
     <div className="flex min-h-full items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-4 rounded-lg border border-slate-200 p-6 dark:border-slate-800">
+      <div className="w-full max-w-md space-y-4 rounded-lg border border-default p-6">
         <h1 className="text-lg font-semibold">Unlock your tasks</h1>
         <p className="text-sm text-muted">
           Your account uses end-to-end encryption. Enter your encryption {p.kind === 'passphrase' ? 'passphrase' : 'recovery key'} to
@@ -37,7 +37,7 @@ export function UnlockView(p: UnlockViewProps) {
             <input className={`input mt-1 ${p.kind === 'recovery' ? 'font-mono' : ''}`} name="secret" type={p.kind === 'passphrase' ? 'password' : 'text'}
               autoComplete={p.kind === 'passphrase' ? 'current-password' : 'off'} spellCheck={false} autoFocus required />
           </label>
-          {p.error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{p.error}</p>}
+          {p.error && <p role="alert" className="text-sm text-danger">{p.error}</p>}
           <button className="btn-primary w-full" disabled={p.busy}>{p.busy ? 'Unlocking…' : 'Unlock'}</button>
         </form>
         <div className="flex flex-wrap justify-between gap-2 text-sm">
