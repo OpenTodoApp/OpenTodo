@@ -342,6 +342,8 @@ export interface ResetPreview {
 
 export interface AuthStatus {
   setupRequired: boolean
+  /** The first account needs OPENTODO_SETUP_TOKEN (owner-bootstrap); absent on older servers. */
+  setupTokenRequired?: boolean
   signupAllowed: boolean
   authenticated: boolean
   user: User | null

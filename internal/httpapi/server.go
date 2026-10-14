@@ -513,12 +513,15 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := map[string]any{
-		"setupRequired":     count == 0,
-		"signupAllowed":     allowed,
-		"authenticated":     u != nil,
-		"user":              u,
-		"version":           s.version,
-		"passkeysAvailable": s.cfg.PasskeysAvailable(),
+		"setupRequired": count == 0,
+		// A configured OPENTODO_SETUP_TOKEN guards the first account (OpenSpec
+		// change owner-bootstrap); false once an owner exists.
+		"setupTokenRequired": count == 0 && s.auth.SetupTokenRequired(),
+		"signupAllowed":      allowed,
+		"authenticated":      u != nil,
+		"user":               u,
+		"version":            s.version,
+		"passkeysAvailable":  s.cfg.PasskeysAvailable(),
 		// The host passkeys are bound to (OPENTODO_BASE_URL's), so a page opened at
 		// another host can say so; public information, empty without a base URL.
 		"passkeyDomain": s.cfg.RPID(),
@@ -553,6 +556,9 @@ type credentials struct {
 	// ProjectInvite is an optional project invite link secret: the new account
 	// joins that project (OpenSpec `project-invite-links`).
 	ProjectInvite string `json:"projectInvite"`
+	// SetupToken must accompany the first registration when OPENTODO_SETUP_TOKEN
+	// is set (OpenSpec `owner-bootstrap`); ignored afterwards.
+	SetupToken string `json:"setupToken"`
 }
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -583,8 +589,11 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		s.registerWithProjectInvite(w, r, c)
 		return
 	}
-	u, err := s.auth.Register(r.Context(), c.Email, c.Name, c.Password, c.Invitation)
+	u, err := s.auth.RegisterWithSetupToken(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken)
 	switch {
+	case errors.Is(err, auth.ErrSetupTokenInvalid):
+		writeError(w, http.StatusForbidden, "setup_token_invalid", err.Error())
+		return
 	case errors.Is(err, auth.ErrSignupClosed):
 		writeError(w, http.StatusForbidden, "signup_closed", err.Error())
 		return

@@ -151,7 +151,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
                     aria-label={c.completed_at ? `Reopen ${c.title}` : `Complete ${c.title}`}
                     onClick={() => toggle(c)}
                     disabled={readOnly}
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 text-[10px] ${c.completed_at ? 'border-slate-400 bg-slate-400 text-white' : 'border-slate-300 hover:bg-emerald-100 dark:border-slate-600'}`}
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 text-[10px] ${c.completed_at ? 'border-input bg-faint text-on-accent' : 'border-input hover:bg-success-soft'}`}
                   >
                     {c.completed_at && <Icon name="check" size={10} />}
                   </button>

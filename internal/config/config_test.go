@@ -277,3 +277,22 @@ func TestTrustedProxiesLenient(t *testing.T) {
 		t.Fatalf("valid: %v %+v", err, c.Warnings)
 	}
 }
+
+func TestSetupTokenValidation(t *testing.T) {
+	t.Setenv("OPENTODO_SETUP_TOKEN", "")
+	c, err := Load()
+	if err != nil || c.SetupToken != "" {
+		t.Fatalf("unset: token %q, err %v", c.SetupToken, err)
+	}
+
+	t.Setenv("OPENTODO_SETUP_TOKEN", "too-short")
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "OPENTODO_SETUP_TOKEN") {
+		t.Fatalf("short token: want an error naming the variable, got %v", err)
+	}
+
+	t.Setenv("OPENTODO_SETUP_TOKEN", "  0123456789abcdef  ")
+	c, err = Load()
+	if err != nil || c.SetupToken != "0123456789abcdef" {
+		t.Fatalf("valid token: got %q, err %v", c.SetupToken, err)
+	}
+}

@@ -86,7 +86,7 @@ export function EstimateField({ task }: { task: Task }) {
             <button
               key={m}
               type="button"
-              className={`rounded-md border px-2 py-1 font-mono text-xs ${task.estimate_minutes === m ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : 'border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+              className={`rounded-md border px-2 py-1 font-mono text-xs ${task.estimate_minutes === m ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-input text-muted hover:bg-sunken dark:hover:bg-raised'}`}
               aria-pressed={task.estimate_minutes === m}
               onClick={() => set(m)}
             >
@@ -98,7 +98,7 @@ export function EstimateField({ task }: { task: Task }) {
           )}
         </div>
       </div>
-      {error && <p id={`estimate-error-${task.id}`} className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p id={`estimate-error-${task.id}`} className="mt-1 text-xs text-danger">{error}</p>}
     </div>
   )
 }

@@ -244,7 +244,7 @@ export function EncryptionView(p: EncryptionViewProps) {
 /** The "both lost" path, shared with the unlock screen: states the loss plainly before acting. */
 export function LostKeysConfirm({ busy, onConfirm, onCancel }: { busy: boolean; onConfirm: () => void; onCancel: () => void }) {
   return (
-    <div className="space-y-2 rounded border border-red-300 p-3 dark:border-red-900">
+    <div className="space-y-2 rounded border border-danger p-3">
       <p className="text-sm">
         Without your passphrase or recovery key, encrypted content cannot be recovered: not by you, not by the server owner. The only way
         forward is to turn encryption off and delete the encrypted content (it moves to the Trash). Plaintext data (due dates, structure)

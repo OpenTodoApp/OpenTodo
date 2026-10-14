@@ -166,7 +166,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   return (
     <form id={formId} onSubmit={(e) => void submit(e)}>
       <div className="flex items-center gap-2">
-        <span className="text-xl leading-none text-emerald-700 dark:text-emerald-400">+</span>
+        <span className="text-xl leading-none text-accent">+</span>
         <input
           ref={inputRef}
           className="input border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent"
@@ -204,7 +204,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
         {voice.enabled && (
           <button
             type="button"
-            className={`relative shrink-0 rounded-full p-1.5 ${voice.listening ? 'bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 'text-faint hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200'}`}
+            className={`relative shrink-0 rounded-full p-1.5 ${voice.listening ? 'bg-danger-soft text-danger' : 'text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised'}`}
             aria-pressed={voice.listening}
             aria-label={voice.listening ? 'Stop dictation' : 'Dictate a task'}
             title={voice.listening ? 'Stop dictation (Esc)' : voiceShortcut ? 'Dictate a task (Shift+V)' : 'Dictate a task'}
@@ -213,7 +213,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
             onMouseDown={(e) => e.preventDefault()}
             onClick={voice.toggle}
           >
-            {voice.listening && <span className="absolute inset-0 animate-ping rounded-full bg-red-400/40 motion-reduce:hidden" aria-hidden="true" />}
+            {voice.listening && <span className="absolute inset-0 animate-ping rounded-full bg-danger/40 motion-reduce:hidden" aria-hidden="true" />}
             <Icon name="mic" className="relative" />
           </button>
         )}
@@ -223,7 +223,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
         <>
           <span className="sr-only" role="status" aria-live="polite" data-voice-status>{voice.view.announcement}</span>
           {voice.view.message && (
-            <p className="mt-1 flex items-start gap-2 pl-6 text-xs text-amber-800 dark:text-amber-300" data-voice-message>
+            <p className="mt-1 flex items-start gap-2 pl-6 text-xs text-on-warning-soft" data-voice-message>
               <span className="flex-1">{voice.view.message}</span>
               <button type="button" className="underline" onClick={voice.dismissMessage}>Dismiss</button>
             </p>
@@ -251,7 +251,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                   {c.kind === 'label' && !label && <span className="opacity-60" data-new-label>new</span>}
                   <button
                     type="button"
-                    className="rounded-full px-1 leading-none opacity-60 hover:bg-black/10 hover:opacity-100 dark:hover:bg-white/10"
+                    className="rounded-full px-1 leading-none opacity-60 hover:bg-sunken hover:opacity-100"
                     aria-label={`Keep “${source}” as text`}
                     onClick={() => dismiss(c)}
                   >

@@ -216,7 +216,7 @@ export function App() {
     return (
       <>
         {enc.updateRequired && (
-          <div role="alert" className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+          <div role="alert" className="border-b border-warning bg-warning-soft px-4 py-2 text-sm text-on-warning-soft">
             A newer version of OpenTodo is required to read your data. <button className="underline" onClick={() => window.location.reload()}>Reload to update</button>
           </div>
         )}
@@ -246,9 +246,9 @@ async function clearDeviceData() {
 /** Shown on every screen of a demo instance (OpenSpec `demo-mode`, `demo-sandboxes`), with the write-limit notice when it applies. */
 export function DemoBanner({ notice }: { notice?: string }) {
   return (
-    <div role="status" data-testid="demo-banner" className="border-b border-sky-200 bg-sky-50 px-4 py-1.5 text-center text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-100">
+    <div role="status" data-testid="demo-banner" className="border-b border-info bg-info-soft px-4 py-1.5 text-center text-sm text-on-info-soft">
       {DEMO_BANNER}
-      {notice && <span className="mt-0.5 block font-medium text-amber-800 dark:text-amber-200" data-testid="demo-limit">{notice}</span>}
+      {notice && <span className="mt-0.5 block font-medium text-on-warning-soft" data-testid="demo-limit">{notice}</span>}
     </div>
   )
 }
@@ -275,7 +275,7 @@ export function DemoExpiredScreen({ onStarted }: { onStarted: () => void }) {
         <p className="font-medium">Your demo sandbox has expired</p>
         <p className="mt-1 text-sm text-muted">Sandboxes are deleted after 2 hours of inactivity, a day after they were created, and every night. Its data is gone from the server and from this browser.</p>
         <button className="btn-primary mt-4" disabled={busy} onClick={() => void start()}>{busy ? 'Please wait…' : 'Start a new sandbox'}</button>
-        {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+        {error && <p className="mt-3 text-sm text-danger" role="alert">{error}</p>}
       </div>
     </Centered>
   )

@@ -20,6 +20,7 @@ export const PAIRS: Pair[] = [
     ...text(s, ['canvas', 'surface', 'raised']),
     ...text(`${s}-soft-text`, [`${s}-soft`]),
   ]),
+  ...text('highlight-text', ['highlight']),
   ...ui('border-input', ['canvas', 'surface', 'sunken']),
   ...ui('focus', ['canvas', 'surface', 'raised']),
   ...['p1', 'p2', 'p3', 'p4'].flatMap((p) => ui(p, ['canvas', 'surface'])),

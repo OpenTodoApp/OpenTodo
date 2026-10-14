@@ -3,6 +3,7 @@
 // estimate; date-only tasks sit in each day's unscheduled lane. Every placement,
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op).
 import { Icon } from '../ui/Icon'
+import { hueFor } from '../ui/tokens/palette'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -337,20 +338,20 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   return (
     <div className="flex h-full select-none">
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-3 py-2 dark:border-slate-800 md:px-6">
+        <div className="flex flex-wrap items-center gap-2 border-b border-default px-3 py-2 md:px-6">
           <h1 className="mr-2 text-lg font-semibold">{title}</h1>
           <div className="flex items-center gap-1">
             <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} aria-label={mode === 'day' ? 'Previous day' : 'Previous week'} title="Previous ([)"><Icon name="chevron-left" /></button>
             <button className="btn-ghost px-2 py-1 text-xs" onClick={() => goTo(today)} title="Today (t)">Today</button>
             <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))} aria-label={mode === 'day' ? 'Next day' : 'Next week'} title="Next (])"><Icon name="chevron-right" /></button>
           </div>
-          <div className="flex rounded-md border border-slate-200 text-xs dark:border-slate-700" role="group" aria-label="Calendar range">
-            <button className={`px-2 py-1 ${mode === 'day' ? 'bg-slate-100 font-medium dark:bg-slate-800' : ''}`} aria-pressed={mode === 'day'} onClick={() => navigate({ view: 'day', date: date })} title="Day (g d)">Day</button>
-            <button className={`px-2 py-1 ${mode === 'week' ? 'bg-slate-100 font-medium dark:bg-slate-800' : ''}`} aria-pressed={mode === 'week'} onClick={() => navigate({ view: 'week', date: date })} title="Week (g w)">Week</button>
+          <div className="flex rounded-md border border-default text-xs" role="group" aria-label="Calendar range">
+            <button className={`px-2 py-1 ${mode === 'day' ? 'bg-sunken dark:bg-raised font-medium' : ''}`} aria-pressed={mode === 'day'} onClick={() => navigate({ view: 'day', date: date })} title="Day (g d)">Day</button>
+            <button className={`px-2 py-1 ${mode === 'week' ? 'bg-sunken dark:bg-raised font-medium' : ''}`} aria-pressed={mode === 'week'} onClick={() => navigate({ view: 'week', date: date })} title="Week (g w)">Week</button>
           </div>
           <div className="flex-1" />
           {placing && (
-            <span role="status" className="rounded bg-emerald-50 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+            <span role="status" className="rounded bg-success-soft px-2 py-1 text-xs text-on-success-soft">
               Placing <strong>{placingTask?.title || 'task'}</strong> at {formatTime(placing.start)} · arrows move · Enter places · Esc cancels
             </span>
           )}
@@ -362,7 +363,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto" data-calendar-scroller data-scroll-x>
           <div className="min-w-full" style={{ width: mode === 'week' ? 'max(100%, 56rem)' : undefined }}>
             {/* Sticky header: day name, capacity and the unscheduled lane of each column. */}
-            <div className="sticky top-0 z-20 flex border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+            <div className="sticky top-0 z-20 flex border-b border-default bg-surface">
               <div className="w-12 shrink-0 pt-1 text-right text-[10px] text-faint" aria-hidden>
                 <span className="pr-1">all day</span>
               </div>
@@ -432,7 +433,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       )}
 
       {drag && dragTask && (
-        <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-md bg-emerald-700 px-2 py-1 text-xs text-white shadow-lg" style={{ left: drag.x + 12, top: drag.y + 12 }}>
+        <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-md bg-accent px-2 py-1 text-xs text-on-accent shadow-lg" style={{ left: drag.x + 12, top: drag.y + 12 }}>
           {dragTask.title || 'Untitled'}
           {drag.target?.type === 'slot' && ` · ${formatTime(drag.target.start)}`}
           {drag.target?.type === 'lane' && ' · unscheduled'}
@@ -483,10 +484,10 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, laneTarget,
   const [y, m, d] = day.date.split('-').map(Number)
   const weekdayName = new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(new Date(y, m - 1, d))
   return (
-    <div className="min-w-0 flex-1 border-l border-slate-200 px-1 pb-1 pt-1 dark:border-slate-800" data-day-header={day.date}>
+    <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
       <div className="flex items-baseline justify-between gap-1 px-1">
         {showName ? (
-          <span className={`truncate text-xs font-medium ${day.date === today ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>
+          <span className={`truncate text-xs font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`}>
             {weekdayName} {d}
           </span>
         ) : <span />}
@@ -494,7 +495,7 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, laneTarget,
           data-capacity
           data-over={load.over || undefined}
           title={`${load.over ? 'Over capacity. ' : ''}Planned estimates against a ${formatMinutes(prefs.dayLength)} day${load.unestimated ? `; ${load.unestimated} unestimated (counted as 0)` : ''}`}
-          className={`whitespace-nowrap rounded px-1 font-mono text-[11px] ${load.over ? 'bg-red-50 font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-300' : 'text-muted'}`}
+          className={`whitespace-nowrap rounded px-1 font-mono text-[11px] ${load.over ? 'bg-danger-soft font-semibold text-danger' : 'text-muted'}`}
         >
           {formatLoad(load, prefs.dayLength)}
           {load.over && <span className="sr-only"> over capacity</span>}
@@ -504,7 +505,7 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, laneTarget,
       <div
         data-drop-lane={day.date}
         aria-label={`Unscheduled on ${day.date}`}
-        className={`mt-1 min-h-8 space-y-0.5 rounded border border-dashed p-0.5 ${laneTarget ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40' : 'border-slate-200 dark:border-slate-800'}`}
+        className={`mt-1 min-h-8 space-y-0.5 rounded border border-dashed p-0.5 ${laneTarget ? 'border-accent bg-accent-soft' : 'border-default'}`}
       >
         {day.lane.length === 0 && <span className="block px-1 py-1 text-[10px] text-faint">Unscheduled</span>}
         {day.lane.map((t) => (
@@ -516,8 +517,8 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, laneTarget,
             onPointerDown={(e) => onPointerDown(e, t.id)}
             onClick={() => onSelect(t.id)}
             onDoubleClick={() => onOpen(t.id)}
-            className={`flex w-full touch-manipulation items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-xs ${selectedId === t.id ? 'bg-emerald-100 ring-1 ring-emerald-500 dark:bg-emerald-900/50' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700'}`}
-            style={{ borderLeft: `3px solid ${t.project_id ? projectMap.get(t.project_id)?.color ?? '#94a3b8' : '#94a3b8'}` }}
+            className={`flex w-full touch-manipulation items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-xs ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
+            data-hue={hueFor(t.project_id ? projectMap.get(t.project_id)?.color : null)}
           >
             <span className="truncate">{t.title || 'Untitled'}</span>
             {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-[10px] text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
@@ -556,7 +557,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
   return (
     <div
       data-drop-day={day.date}
-      className="relative min-w-0 flex-1 border-l border-slate-200 dark:border-slate-800"
+      className="relative min-w-0 flex-1 border-l border-default"
       style={{
         height: GRID_HEIGHT,
         // Hour lines, fainter 15-minute lines.
@@ -565,8 +566,8 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
       }}
     >
       {/* Outside the configured hours: shaded but still usable. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 bg-slate-100/60 dark:bg-slate-900/60" style={{ height: startPx }} />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-slate-100/60 dark:bg-slate-900/60" style={{ top: endPx }} />
+      <div className="pointer-events-none absolute inset-x-0 top-0 bg-sunken" style={{ height: startPx }} />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-sunken" style={{ top: endPx }} />
 
       {day.layout.blocks.filter((b) => !b.hidden).map((b) => {
         const t = taskMap.get(b.id)
@@ -574,7 +575,8 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
         if (!t || !block) return null
         const top = b.start * PX_PER_MIN
         const height = Math.max(SLOT_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN)
-        const color = t.project_id ? projectMap.get(t.project_id)?.color ?? '#10b981' : '#10b981'
+        // Project colours render through the palette hue (design-system "Stored colours render through the palette").
+        const hue = hueFor(t.project_id ? projectMap.get(t.project_id)?.color : null)
         const selected = selectedId === b.id
         return (
           <div
@@ -583,6 +585,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
             data-block={b.id}
             data-overlap={b.overlap || undefined}
             data-estimated={block.estimated || undefined}
+            data-hue={hue}
             role="button"
             tabIndex={-1}
             aria-label={`${t.title || 'Untitled'}, ${formatTime(block.start)}${block.estimated ? ` for ${formatMinutes(t.estimate_minutes!)}` : ', no estimate'}${b.overlap ? ', overlaps another task' : ''}`}
@@ -594,18 +597,17 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
             }}
             onClick={() => onSelect(b.id)}
             onDoubleClick={() => onOpen(b.id)}
-            className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-md border px-1.5 shadow-sm ${height < 20 ? 'py-0 text-[10px] leading-[10px]' : 'py-0.5 text-xs'} ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-emerald-500' : ''} ${draggingId === b.id ? 'opacity-40' : ''} bg-white dark:bg-slate-900`}
+            className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-md border px-1.5 shadow-sm ${height < 20 ? 'py-0 text-[10px] leading-[10px]' : 'py-0.5 text-xs'} ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-accent' : ''} ${draggingId === b.id ? 'opacity-40' : ''} border-hue-solid bg-surface`}
             style={{
               top, height,
               left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,
               width: `calc(${100 / b.lanes}% - 4px)`,
-              borderColor: color,
               borderLeftWidth: 3,
             }}
           >
             <div className="flex items-start gap-1">
               <span className="min-w-0 flex-1 truncate font-medium">{t.title || 'Untitled'}</span>
-              {b.overlap && <span data-overlap-marker title="Overlaps another task" className="shrink-0 text-amber-700 dark:text-amber-400" aria-hidden>⧉</span>}
+              {b.overlap && <span data-overlap-marker title="Overlaps another task" className="shrink-0 text-warning" aria-hidden>⧉</span>}
             </div>
             {height >= 30 && (
               <div className="truncate text-[10px] text-muted">
@@ -616,7 +618,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
             <div
               data-resize-handle
               aria-hidden
-              className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize touch-none hover:bg-emerald-500/30"
+              className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize touch-none hover:bg-accent/30"
             />
           </div>
         )
@@ -630,7 +632,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
             <button
               type="button"
               data-overflow={o.ids.length}
-              className="w-full rounded-md border border-slate-300 bg-slate-50 px-1 py-0.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              className="w-full rounded-md border border-input bg-canvas px-1 dark:bg-raised py-0.5 text-xs font-medium text-muted hover:bg-sunken"
               onClick={() => setExpanded(open ? null : key)}
               aria-expanded={open}
               title={`${o.ids.length} more overlapping tasks`}
@@ -638,7 +640,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
               +{o.ids.length}
             </button>
             {open && (
-              <ul className="mt-1 w-48 space-y-0.5 rounded-md border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              <ul className="mt-1 w-48 space-y-0.5 rounded-md border border-default bg-surface p-1 shadow-lg">
                 {o.ids.map((id) => {
                   const t = taskMap.get(id)
                   const blk = day.blocks.get(id)
@@ -650,7 +652,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
                         onPointerDown={(e) => onDragStart(e, { taskId: id, kind: 'move' })}
                         onClick={() => onSelect(id)}
                         onDoubleClick={() => onOpen(id)}
-                        className={`flex w-full gap-1 truncate rounded px-1 py-0.5 text-left text-xs ${selectedId === id ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                        className={`flex w-full gap-1 truncate rounded px-1 py-0.5 text-left text-xs ${selectedId === id ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}
                       >
                         <span className="font-mono text-[10px] text-muted">{blk ? formatTime(blk.start) : ''}</span>
                         <span className="truncate">{t?.title || 'Untitled'}</span>
@@ -668,7 +670,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
         <div
           data-cal-id={preview.id}
           data-ghost
-          className="pointer-events-none absolute inset-x-0.5 z-30 rounded-md border-2 border-dashed border-emerald-500 bg-emerald-500/15 px-1.5 py-0.5 text-xs text-emerald-900 dark:text-emerald-100"
+          className="pointer-events-none absolute inset-x-0.5 z-30 rounded-md border-2 border-dashed border-accent bg-accent/15 px-1.5 py-0.5 text-xs text-strong"
           style={{ top: preview.start * PX_PER_MIN, height: Math.max(SLOT_MINUTES, Math.min(preview.length, DAY_MINUTES - preview.start)) * PX_PER_MIN }}
         >
           <span className="font-mono text-[10px]">{formatTime(preview.start)}</span> <span className="truncate">{preview.title || 'Untitled'}</span>
@@ -676,8 +678,8 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
       )}
 
       {isToday && (
-        <div data-now-line className="pointer-events-none absolute inset-x-0 z-20 border-t-2 border-red-500" style={{ top: nowMinutes * PX_PER_MIN }}>
-          <span className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-red-500" />
+        <div data-now-line className="pointer-events-none absolute inset-x-0 z-20 border-t-2 border-danger" style={{ top: nowMinutes * PX_PER_MIN }}>
+          <span className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-danger" />
         </div>
       )}
     </div>
@@ -707,8 +709,8 @@ function PlanTray({ source, onSource, tasks, projects, today, onPointerDown, onP
     return out.sort(compareDueThenPriority).slice(0, 200)
   }, [tasks, archived, source, today])
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-l border-slate-200 dark:border-slate-800 md:flex" aria-label="Tasks to plan">
-      <div className="border-b border-slate-200 p-2 dark:border-slate-800">
+    <aside className="hidden w-64 shrink-0 flex-col border-l border-default md:flex" aria-label="Tasks to plan">
+      <div className="border-b border-default p-2">
         <select className="input py-1 text-xs" aria-label="Plan from" value={source} onChange={(e) => onSource(e.target.value)}>
           <option value="inbox">Inbox</option>
           <option value="nodate">No date</option>
@@ -733,7 +735,7 @@ function PlanTray({ source, onSource, tasks, projects, today, onPointerDown, onP
                 }
               }}
               onDoubleClick={() => onOpen(t.id)}
-              className="flex w-full cursor-grab touch-manipulation items-center gap-1 rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="flex w-full cursor-grab touch-manipulation items-center gap-1 rounded px-2 py-1 text-left text-xs hover:bg-sunken dark:hover:bg-raised"
             >
               <span className="truncate">{t.title || 'Untitled'}</span>
               {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-[10px] text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}

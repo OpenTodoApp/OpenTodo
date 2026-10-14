@@ -83,8 +83,8 @@ export function ShareCapture() {
   }
 
   return (
-    <div className="flex min-h-full justify-center bg-slate-50 p-4 dark:bg-slate-950 sm:items-center">
-      <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex min-h-full justify-center bg-canvas p-4 sm:items-center">
+      <div className="w-full max-w-lg rounded-xl border border-default bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <img src="/favicon.svg" alt="" className="h-6 w-6" />
           <h1 className="text-base font-semibold">Add to OpenTodo</h1>
@@ -92,7 +92,7 @@ export function ShareCapture() {
         {isEmptyShare(payload) && (
           <p className="mb-3 text-sm text-muted">Nothing was shared. Type a task to add it anyway.</p>
         )}
-        <div className="rounded-md border border-slate-300 px-2 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/30 dark:border-slate-700">
+        <div className="rounded-md border border-input px-2 focus-within:border-accent focus-within:ring-2 focus-within:ring-focus/30">
           <QuickAdd
             ref={titleRef}
             formId="share-capture"
@@ -106,7 +106,7 @@ export function ShareCapture() {
           />
         </div>
         <label className="mt-3 block text-sm">
-          <span className="mb-1 block text-slate-600 dark:text-slate-300">Description</span>
+          <span className="mb-1 block text-muted">Description</span>
           <textarea
             className="input min-h-28 font-normal"
             value={description}
@@ -120,10 +120,10 @@ export function ShareCapture() {
           />
         </label>
         <div className="mt-3 block text-sm">
-          <span className="mb-1 block text-slate-600 dark:text-slate-300" aria-hidden>Project</span>
+          <span className="mb-1 block text-muted" aria-hidden>Project</span>
           <ProjectPickerField label="Project" projects={projects} value={projectId || null} onChange={(id) => setProjectId(id ?? '')} rankContext="capture.project" />
         </div>
-        {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">{error}</p>}
+        {error && <p className="mt-3 text-sm text-danger" role="alert">{error}</p>}
         <div className="mt-4 flex items-center justify-end gap-2">
           <span className="mr-auto hidden text-xs text-faint sm:inline">
             <span className="kbd">Enter</span> save · <span className="kbd">Esc</span> cancel

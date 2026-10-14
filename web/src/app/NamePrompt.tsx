@@ -27,7 +27,7 @@ export function NamePrompt({ title, label, initial = '', confirm = 'Save', hint,
       <form onSubmit={(e) => void submit(e)}>
         <input className="input" autoFocus aria-label={label} placeholder={label} value={name}
           onChange={(e) => { setName(e.target.value); setError(null) }} />
-        {error && <p role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p role="alert" className="mt-1 text-xs text-danger">{error}</p>}
         {hint && <p className="mt-1 text-xs text-faint">{hint}</p>}
         <div className="mt-3 flex justify-end gap-2">
           <button type="button" className="btn-ghost text-sm" onClick={onCancel}>Cancel</button>
