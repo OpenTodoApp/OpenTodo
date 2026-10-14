@@ -14,6 +14,7 @@ Plan your day, keep projects in order, set reminders and share lists with your f
   <a href="https://github.com/pixari/opentodo/pkgs/container/opentodo"><img alt="Container image" src="https://img.shields.io/badge/ghcr.io-pixari%2Fopentodo-2496ED?logo=docker&logoColor=white"></a>
   <img alt="Docker image size" src="https://img.shields.io/badge/image-%3C%2025%20MB-success">
   <img alt="Spec-driven with OpenSpec" src="https://img.shields.io/badge/specs-OpenSpec-8A2BE2">
+  <a href="https://www.opensourcealternatives.to"><img src="https://www.opensourcealternatives.to/badge-osa.svg" alt="Listed on Open Source Alternatives"></a>
 </p>
 
 <p align="center">
