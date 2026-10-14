@@ -38,22 +38,15 @@ The server SHALL accept a ZIP archive whose entries are files of one supported f
 - **WHEN** a ZIP is posted to the preview route without a session or token
 - **THEN** the server answers 401 and does not read the archive
 
-### Requirement: Todoist mapping
-A Todoist export SHALL map:
-- each project file to a project
-- section rows to sections
-- task rows to tasks, nested by their indent level into subtasks
-- the task priority to the same priority level the user saw in Todoist (Todoist's highest becomes p1)
-- labels written in task content to labels
-- the description to the description
-- date strings, including recurring ones, to due dates and recurrence rules where the rule grammar can express them
-- note rows to the task's description, appended under a "Comments" heading, because their authors cannot be kept
-
-Responsible people other than the importing user SHALL be dropped with a warning.
+### Requirement: Todoist structure
+A Todoist export SHALL map each project file to a project, section rows to sections, and task rows to tasks nested by their indent level into subtasks. Note rows SHALL be appended to their task's description under a "Comments" heading, because their authors cannot be kept.
 
 #### Scenario: Nested tasks and sections
 - **WHEN** a Todoist CSV contains a section row followed by a task at indent 1 and a task at indent 2
 - **THEN** the first task is in that section and the second is its subtask
+
+### Requirement: Todoist attributes
+A Todoist task SHALL keep the priority level the user saw in Todoist (Todoist's highest becomes p1), its labels written in the content, its description, and its date string as a due date, with recurring strings becoming recurrence rules where the rule grammar can express them. Responsible people other than the importing user SHALL be dropped with a warning.
 
 #### Scenario: Priority as the user saw it
 - **WHEN** a task was shown as priority 1 (red) in Todoist
@@ -63,16 +56,8 @@ Responsible people other than the importing user SHALL be dropped with a warning
 - **WHEN** a task's date is `every monday`
 - **THEN** it is imported as a recurring task with the rule `every monday` and its next Monday as due date
 
-### Requirement: TickTick mapping
-A TickTick CSV backup SHALL be recognised despite the metadata lines before its header. It SHALL map:
-- lists to projects, with folders as parent projects
-- the board column name to the section
-- tags to labels
-- the content to the description, and checklist items to subtasks
-- priority (high, medium, low, none) to p1, p2, p3, p4
-- due date and time with the export's time zone to a floating due date
-- repeat rules (RRULE) to recurrence where expressible
-- completed status and time to completion
+### Requirement: TickTick structure
+A TickTick CSV backup SHALL be recognised despite the metadata lines before its header. Lists SHALL become projects with folders as parent projects, the board column name SHALL become the section, and checklist items SHALL become subtasks.
 
 #### Scenario: Checklist becomes subtasks
 - **WHEN** a TickTick task is a checklist with three items, one checked
@@ -82,38 +67,40 @@ A TickTick CSV backup SHALL be recognised despite the metadata lines before its 
 - **WHEN** a list "Groceries" sits in the folder "Home"
 - **THEN** the project "Groceries" is created as a sub-project of "Home"
 
-### Requirement: Linear mapping
-A Linear CSV export SHALL map:
-- issues to tasks, each in its Linear project, or in a project named after its team when it has none
-- the workflow status to a section of that project, so the board shows the same columns
-- completed and canceled issues to completed tasks, with canceled ones labelled `canceled`
-- priority (urgent, high, medium, low, none) to p1, p2, p3, p4, p4
-- labels to labels, the parent issue to the parent task, the due date to the due date
-- the Markdown description to the description, keeping the issue identifier (for example `ENG-123`) at its start
+### Requirement: TickTick attributes
+A TickTick task SHALL keep its tags as labels, its content as the description, its priority (high, medium, low, none) as p1, p2, p3, p4, its due date and time as a floating due date using the export's time zone, its repeat rule as recurrence where expressible, and its completed status and time.
 
-Estimates, cycles and assignees other than the importing user SHALL be dropped with a warning.
+#### Scenario: High priority with a repeat rule
+- **WHEN** a TickTick task has high priority and the repeat rule `FREQ=WEEKLY;BYDAY=MO`
+- **THEN** it is imported with priority p1 and the rule `every monday`
+
+### Requirement: Linear structure
+A Linear CSV export SHALL put each issue in its Linear project, or in a project named after its team when it has none. The workflow status SHALL become a section of that project, so the board shows the same columns, and the parent issue SHALL become the parent task.
 
 #### Scenario: Statuses become board columns
 - **WHEN** a Linear project has issues in `Todo`, `In Progress` and `In Review`
 - **THEN** the imported project has those three sections, each holding its issues, and switching the project to the board shows them as columns
 
+### Requirement: Linear attributes
+A Linear issue SHALL be completed when it was completed or canceled, with canceled ones labelled `canceled`. Its priority (urgent, high, medium, low, none) SHALL map to p1, p2, p3, p4, p4. Labels, the due date and the Markdown description SHALL be kept, the description starting with the issue identifier. Estimates, cycles and assignees other than the importing user SHALL be dropped with a warning.
+
 #### Scenario: Canceled issue
 - **WHEN** an issue's status is canceled
 - **THEN** it is imported completed, with the label `canceled`
 
-### Requirement: Things export shape
-`docs/import.md` SHALL publish the JSON shape that `things-json` accepts and the export recipe that produces it from Things. A `things-json` file SHALL map:
-- areas to parent projects, projects to projects, headings to sections
-- to-dos to tasks, checklist items to subtasks
-- tags to labels, notes to the description
-- the "when" date to the due date, and repeating to-dos to recurrence where expressible
-- logbook items to completed tasks
+#### Scenario: Identifier kept
+- **WHEN** issue `ENG-123` is imported
+- **THEN** its description starts with `ENG-123`
 
-Deadlines, Someday and This Evening SHALL be dropped with a warning until the data model holds them, and the deadline date SHALL be kept as a line in the description.
+### Requirement: Things export shape
+`docs/import.md` SHALL publish the JSON shape that `things-json` accepts and the export recipe that produces it from Things. A `things-json` file SHALL map areas to parent projects, projects to projects, headings to sections, to-dos to tasks, checklist items to subtasks, tags to labels and notes to the description.
 
 #### Scenario: Area with a project and headings
 - **WHEN** a Things area "Work" holds a project "Launch" with headings "Prepare" and "Ship"
 - **THEN** the project "Launch" is a sub-project of "Work" with sections "Prepare" and "Ship"
+
+### Requirement: Things dates
+A Things to-do's "when" date SHALL become its due date, repeating to-dos SHALL become recurring tasks where expressible, and logbook items SHALL be completed tasks. Deadlines, Someday and This Evening SHALL be dropped with a warning until the data model holds them, and a deadline date SHALL be kept as a line in the description.
 
 #### Scenario: Deadline kept as text
 - **WHEN** a to-do has a deadline of 2026-11-30

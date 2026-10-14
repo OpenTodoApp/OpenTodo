@@ -49,16 +49,22 @@ Project, label and view colours already stored as hex strings SHALL render using
 
 ## ADDED Requirements
 
-### Requirement: Colour roles follow meaning
-Screens SHALL choose a colour token by what it means, not by its current hue. Actions, selection, links, focus and the current navigation item SHALL use the accent. Completion and positive confirmation SHALL use the success status. Errors and destructive actions SHALL use danger, cautions SHALL use warning, neutral notices SHALL use info, and task priority SHALL use p1 to p4. While the accent is emerald, the light and dark look of every screen SHALL stay as before apart from shade differences to the nearest token.
+### Requirement: Accent marks interaction
+Screens SHALL use the accent tokens for actions, selection, links, focus and the current navigation item, and SHALL NOT use them for completion or status.
 
 #### Scenario: Completed task and primary action
 - **WHEN** a completed task's check mark and a primary button are shown on the same screen
 - **THEN** the check mark uses the success token and the button uses the accent token, even though both are emerald today
 
+### Requirement: Status and priority colours follow meaning
+Screens SHALL use success for completion and positive confirmation, danger for errors and destructive actions, warning for cautions, info for neutral notices, and p1 to p4 for task priority, choosing each by what it means rather than by its current hue.
+
 #### Scenario: Error message
 - **WHEN** a form shows a validation error
 - **THEN** the message uses the danger text token in light and in dark
+
+### Requirement: Migration keeps the look
+While the accent is emerald, moving a screen onto tokens SHALL keep its light and dark look, apart from shade differences to the nearest token: layout, borders, states and emphasis SHALL stay the same.
 
 #### Scenario: No visible regression
 - **WHEN** a screen is compared before and after the migration in light and in dark
