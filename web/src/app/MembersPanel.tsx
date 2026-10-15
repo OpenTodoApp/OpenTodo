@@ -1,6 +1,7 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
+import { useOutgoingEmail } from '../lib/outgoingEmail'
 import type { Invitation, InvitationStatus } from '../lib/types'
 import { Badge } from '../ui'
 import { Button } from '../ui'
@@ -49,6 +50,8 @@ export function MembersPanel() {
   const [creating, setCreating] = useState<{ id: string | null } | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [revoking, setRevoking] = useState<Invitation | null>(null)
+  const mail = useOutgoingEmail()
+  const [sentTo, setSentTo] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -64,13 +67,15 @@ export function MembersPanel() {
     if (online) void load()
   }, [online, load])
 
-  async function create({ email, hours }: { email: string; hours: number }) {
+  async function create({ email, hours, send }: { email: string; hours: number; send: boolean }) {
     setDialogError(null)
     setBusy(true)
     try {
-      const input: { email?: string; expiresInHours: number } = { expiresInHours: hours }
+      const input: { email?: string; expiresInHours: number; send?: boolean } = { expiresInHours: hours }
       if (email.trim()) input.email = email.trim()
+      if (input.email && send && mail) input.send = true
       const res = await api.createInvitation(input)
+      setSentTo(res.sent ? input.email ?? null : null)
       setLinks((prev) => ({ ...prev, [res.invitation.id]: res.link }))
       setCreating({ id: res.invitation.id })
       await load()
@@ -109,9 +114,9 @@ export function MembersPanel() {
       <MembersView invitations={invitations} offline={offline} busy={busy} error={error} links={links} copied={copied}
         onNew={() => { setDialogError(null); setCreating({ id: null }) }} onCopy={(id) => void copy(id)} onRevoke={setRevoking} />
       {creating && (
-        <NewInvitationDialog busy={busy} offline={offline} error={dialogError}
+        <NewInvitationDialog busy={busy} offline={offline} error={dialogError} mail={mail} sentTo={sentTo}
           link={creating.id ? links[creating.id] ?? null : null} copied={!!creating.id && copied === creating.id}
-          onCreate={(input) => void create(input)} onCopy={() => { if (creating.id) void copy(creating.id) }} onClose={() => setCreating(null)} />
+          onCreate={(input) => void create(input)} onCopy={() => { if (creating.id) void copy(creating.id) }} onClose={() => { setCreating(null); setSentTo(null) }} />
       )}
       {revoking && (
         <ConfirmDialog title={`Revoke the invitation${revoking.email ? ` for ${revoking.email}` : ''}?`} confirmLabel="Revoke"
@@ -200,27 +205,34 @@ export function MembersView(p: MembersViewProps) {
 }
 
 /** The "New invitation" dialog: the form, then the one-time link with a copy action. */
-export function NewInvitationDialog({ busy, offline, error, link, copied, onCreate, onCopy, onClose }: {
+export function NewInvitationDialog({ busy, offline, error, mail = false, sentTo = null, link, copied, onCreate, onCopy, onClose }: {
   busy: boolean
   offline: boolean
   error: string | null
+  /** The server sends email: offer "Send by email" when an address is typed (outgoing-email). */
+  mail?: boolean
+  /** The address the invitation was mailed to. */
+  sentTo?: string | null
   /** Set once created: shown in the same dialog, once. */
   link: string | null
   copied: boolean
-  onCreate: (input: { email: string; hours: number }) => void
+  onCreate: (input: { email: string; hours: number; send: boolean }) => void
   onCopy: () => void
   onClose: () => void
 }) {
   const [email, setEmail] = useState('')
   const [hours, setHours] = useState(168)
+  const [send, setSend] = useState(true)
+  const canSend = mail && email.trim() !== ''
   function submit(e: FormEvent) {
     e.preventDefault()
-    onCreate({ email, hours })
+    onCreate({ email, hours, send: canSend && send })
   }
   return (
     <Dialog title={link ? 'Invitation created' : 'New invitation'} onClose={onClose} size="md" dismissable={!link}>
       {link ? (
         <div className="space-y-4">
+          {sentTo && <Notice tone="success">The invitation was sent to {sentTo}.</Notice>}
           <Notice tone="success">Copy this link now. It will not be shown again.</Notice>
           <code className="block break-all rounded-control bg-sunken p-3 text-meta text-default" tabIndex={0}
             onFocus={(e) => window.getSelection()?.selectAllChildren(e.currentTarget)}>{link}</code>
@@ -234,6 +246,12 @@ export function NewInvitationDialog({ busy, offline, error, link, copied, onCrea
           <Field label="Email (optional)" description="Only this person can use the link. Leave empty for anyone with the link.">
             <Input type="email" placeholder="friend@example.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={offline || busy} autoComplete="off" data-autofocus />
           </Field>
+          {canSend && (
+            <label className="flex items-center gap-2 text-body text-default">
+              <input type="checkbox" checked={send} onChange={(e) => setSend(e.target.checked)} disabled={offline || busy} data-send-by-email />
+              Send by email
+            </label>
+          )}
           <Field label="Expires in">
             <Select value={hours} onChange={(e) => setHours(Number(e.target.value))} disabled={offline || busy}>
               {EXPIRY_OPTIONS.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
@@ -254,6 +272,8 @@ function describe(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.code === 'rate_limited') return 'Too many invitations created recently. Try again later.'
     if (err.code === 'invitation_spent') return 'This invitation was already accepted and cannot be revoked.'
+    if (err.code === 'email_failed') return `The email could not be sent, so no invitation was created (${err.message}). Turn off “Send by email” to create a link to share yourself.`
+    if (err.code === 'smtp_disabled') return 'This server no longer sends email. Turn off “Send by email” to create a link to share yourself.'
     return err.message
   }
   return 'The server is unreachable. Invitations need a connection.'

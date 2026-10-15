@@ -4,7 +4,7 @@ summary: A tour of Settings, what each section does, which choices belong to one
 audience: user
 section: Guides
 specs: [web-app, settings-navigation, date-time-preferences, appearance-preferences]
-screens: [settings/appearance#appearance, settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/attachments#administration, settings/sso#access-policies, settings/backups#backups, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations, settings, settings/account#account, settings/activity#activity, settings/preferences#preferences, settings/integrations#integrations, settings/ai#ai, settings/admin#administration, settings/access#access-policies]
+screens: [settings/appearance#appearance, settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/attachments#administration, settings/sso#access-policies, settings/backups#backups, settings/outgoing-email#administration, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations, settings, settings/account#account, settings/activity#activity, settings/preferences#preferences, settings/integrations#integrations, settings/ai#ai, settings/admin#administration, settings/access#access-policies]
 order: 140
 card: settings
 ---
@@ -115,8 +115,9 @@ Only the owner and admins see this group; **Backups** and **Access policies** ar
 
 ### Administration
 
-- **Users**: everyone with an account, their role and last sign-in. Make someone an admin (owner only), deactivate or reactivate an account, create a password reset link, or delete an account.
-- **Members**: invite people with a single-use link. See [Sharing and comments](sharing.md#invite-someone-new).
+- **Users**: everyone with an account, their role and last sign-in. Make someone an admin (owner only), deactivate or reactivate an account, reset a password, or delete an account. When the server sends email, a reset offers **Send reset email** (the link goes straight to the person, you never see it) beside **Create reset link** (you deliver the link yourself).
+- **Members**: invite people with a single-use link. With outgoing email, **Send by email** mails it to the address you enter. See [Sharing and comments](sharing.md#invite-someone-new).
+- **Outgoing email** (owner only): the SMTP server this server sends mail through, for password resets, sign-up confirmations and invitations. The card shows whether it's configured, the server and From address, and the last test. **Configure** opens the form, where fields set by `OPENTODO_SMTP_*` variables are read-only. **Send test email** sends a message to you and shows the mail server's answer when it fails. See [Outgoing email](self-hosting/outgoing-email.md).
 - **Attachments** (owner only): turn attachments on or off, and set the size per file (25 MB unless changed, up to 2048 MB) and the total per account (1 GB unless changed; 0 means no total). See [Attachments](attachments.md#limits).
 
 ### Backups

@@ -10,6 +10,7 @@ const app = import.meta.glob<string>(['../../app/**/*.tsx', '!../../app/**/*.tes
 /** Full-screen screens that are not pages of the shell. */
 export const OUTSIDE_SHELL: readonly string[] = [
   'src/app/AuthScreen.tsx',
+  'src/app/EmailScreens.tsx',
   'src/app/InviteScreen.tsx',
   'src/app/ProjectInviteScreen.tsx',
   'src/app/ResetScreen.tsx',

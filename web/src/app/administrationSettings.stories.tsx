@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { AdminUser, Invitation, User } from '../lib/types'
+import type { AdminUser, Invitation, SmtpSettings, User } from '../lib/types'
 import { ConfigWarningList } from './ConfigWarnings'
 import { MembersView, type MembersViewProps, NewInvitationDialog } from './MembersPanel'
+import { draftFrom, OutgoingEmailView, type OutgoingEmailViewProps } from './OutgoingEmailPanel'
 import { UsersView, type UsersViewProps } from './UsersPanel'
 
 const noop = () => {}
@@ -50,3 +51,18 @@ export const InvitationCreated: StoryObj = { render: () => <NewInvitationDialog 
 export const ConfigWarning: StoryObj = {
   render: () => <ConfigWarningList warnings={[{ variable: 'OPENTODO_TRUSTED_PROXIES', message: 'Some entries are not valid CIDR ranges and were ignored.', ignored: ['10.0.0.0/33', 'proxy.local'] }]} />,
 }
+
+const smtpOn: SmtpSettings = {
+  configured: true, host: 'smtp.example.com', port: 587, security: 'starttls', username: 'todo@example.com', passwordSet: true,
+  from: 'OpenTodo <todo@example.com>', managedBy: { host: 'env', port: 'env' }, lastTest: { at: now - 3_600_000, outcome: 'sent' },
+}
+const smtpBase: OutgoingEmailViewProps = {
+  settings: smtpOn, offline: false, busy: false, error: null, draft: null, test: null, onConfigure: noop, onDraft: noop, onSave: noop, onTest: noop,
+}
+export const OutgoingEmailNotConfigured: StoryObj = {
+  render: () => <OutgoingEmailView {...smtpBase} settings={{ ...smtpOn, configured: false, host: '', port: 0, security: '', username: '', passwordSet: false, from: '', managedBy: {}, lastTest: null }} />,
+}
+export const OutgoingEmailFailedTest: StoryObj = {
+  render: () => <OutgoingEmailView {...smtpBase} test={{ outcome: 'failed', to: owner.email, stage: 'auth', reply: '535 5.7.8 Username and Password not accepted' }} />,
+}
+export const OutgoingEmailForm: StoryObj = { render: () => <OutgoingEmailView {...smtpBase} draft={draftFrom(smtpOn)} /> }

@@ -32,7 +32,7 @@ An invite link adds one person to the project, whether or not they have an accou
 2. Pick the role they get. Owners can also invite admins; admins can invite viewers and editors.
 3. Optionally enter their email: then only an account with that address can use the link.
 4. Choose how long it stays valid (1 hour to 30 days, 7 days by default) and select **Create link**.
-5. Select **Copy link** and send it however you like. OpenTodo never sends it for you.
+5. Select **Copy link** and send it however you like. If your server sends email and you entered an address, **Send by email** (on by default) mails the link for you; the dialog says where it went and still shows the link once.
 
 The link is shown only once and works once. The dialog lists the links that are still waiting, with their role, email, expiry and who created them; **Revoke** stops one from working. Creating and revoking links need a connection.
 
@@ -68,7 +68,7 @@ For viewers, the project is read-only: the add box and edit controls are switche
 
 ## Invite someone new
 
-Sign-up on an OpenTodo server is closed by default. The quickest way to bring someone into one project is an [invite link](#invite-with-a-link). To invite someone to the server without a project, if you're the owner or an admin of the server, go to **Settings → Administration → Members**, optionally enter their email, choose how long the link stays valid, and select **Create invitation**. Copy the link and send it to them however you like; OpenTodo doesn't send emails. The link works once.
+Sign-up on an OpenTodo server is closed by default. The quickest way to bring someone into one project is an [invite link](#invite-with-a-link). To invite someone to the server without a project, if you're the owner or an admin of the server, go to **Settings → Administration → Members**, optionally enter their email, choose how long the link stays valid, and select **Create invitation**. Copy the link and send it to them however you like. If the server sends email and you entered their address, leave **Send by email** on and OpenTodo mails it for you. The link works once.
 
 <picture><source srcset="images/members-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/members-light.webp" alt="Settings, Members section: an email field, an expiry menu set to 7 days, a Create invitation button, and a list with one pending and one accepted invitation."></picture>
 

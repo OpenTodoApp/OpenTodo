@@ -14,6 +14,8 @@ import { AuthScreen } from './AuthScreen'
 import { InviteScreen } from './InviteScreen'
 import { ProjectInviteScreen, takePendingInvite } from './ProjectInviteScreen'
 import { ResetScreen } from './ResetScreen'
+import { ForgotScreen, VerifyScreen } from './EmailScreens'
+import { setOutgoingEmail } from '../lib/outgoingEmail'
 import { ACCOUNT_CHANGED_EVENT } from './UsersPanel'
 import { ReauthHost } from './ReauthDialog'
 import { ENROLMENT_EVENT } from './SyncStatus'
@@ -47,6 +49,7 @@ export function App() {
     try {
       const status = await api.authStatus()
       setDemo(status.demo)
+      setOutgoingEmail(status.outgoingEmail?.enabled)
       if (status.authenticated && status.user) {
         localStorage.setItem('opentodo.user', JSON.stringify(status.user))
         cacheMfa(status.mfa ?? null)
@@ -104,7 +107,7 @@ export function App() {
   }, [sync.state, phase.kind, refresh])
 
   useEffect(() => {
-    if (phase.kind === 'ready' && route.view !== 'invite' && route.view !== 'reset') startSync()
+    if (phase.kind === 'ready' && route.view !== 'invite' && route.view !== 'reset' && route.view !== 'verify') startSync()
     else stopSync()
   }, [phase.kind, route.view])
 
@@ -154,6 +157,24 @@ export function App() {
           user={phase.kind === 'ready' || phase.kind === 'restricted' ? phase.user : null}
           onDone={() => {
             setSignInNotice('Your password was changed. Sign in with the new one.')
+            navigate({ view: 'inbox' }, { replace: true })
+            void refresh()
+          }}
+          onLogout={() => void logout()}
+        />
+      )
+    }
+    if (route.view === 'forgot') {
+      const user = phase.kind === 'ready' || phase.kind === 'restricted' ? phase.user : null
+      // Unknown while the server is unreachable: show the form, which says it needs a connection.
+      return <ForgotScreen enabled={phase.kind === 'anonymous' ? phase.status.outgoingEmail?.enabled === true : true} user={user} />
+    }
+    if (route.view === 'verify') {
+      return (
+        <VerifyScreen
+          token={route.token}
+          user={phase.kind === 'ready' || phase.kind === 'restricted' ? phase.user : null}
+          onDone={() => {
             navigate({ view: 'inbox' }, { replace: true })
             void refresh()
           }}

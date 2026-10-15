@@ -189,7 +189,7 @@ describe('opening a section', () => {
     const all = ALL_IDS.map((id) => render(owner, id)).join('\n')
     const screens = [
       'settings/assistants', 'settings/attachments', 'settings/caldav', 'settings/calendar', 'settings/calendar-feeds', 'settings/capture', 'settings/data',
-      'settings/email', 'settings/encryption', 'settings/keyboard', 'settings/members', 'settings/notifications',
+      'settings/email', 'settings/encryption', 'settings/keyboard', 'settings/members', 'settings/notifications', 'settings/outgoing-email',
       'settings/password', 'settings/project-invites', 'settings/projects', 'settings/quick-add', 'settings/session',
       'settings/sessions', 'settings/start-view', 'settings/tokens', 'settings/two-factor', 'settings/users', 'settings/voice', 'settings/webhooks',
     ]

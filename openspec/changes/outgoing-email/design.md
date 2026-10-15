@@ -93,6 +93,12 @@ Placing the panel in Administration follows the brief; Access policies (owner-on
 
 **Data model impact:** one new server table (`signup_verifications`); `password_resets`, `invitations` and `project_invites` are unchanged. No op field, no entity, no change to the op log, nothing synced; offline behaviour and convergence are unaffected. Settings rows `smtp.*` and the file `secrets/smtp.json` are additive.
 
+### Interface budget (added after ux-overhaul)
+
+- The Outgoing email card is one more section in Settings → Administration, for the owner only. The forgot-password and verification screens sit outside the shell.
+- "Forgot password?" is one line under the password field. "Send by email" is one checkbox that appears only once an address is typed. The reset choice replaces the existing confirmation dialog.
+- No new scroll region, sidebar destination, task property, chrome row above a list, or shortcut.
+
 ## Risks / Trade-offs
 
 - **[The server becomes a mail relay for abuse]** → Only fixed recipients: the owner (test), an account's own address (reset), the bound address of an invitation created by an owner or admin, or a self-registered address with open sign-up on. Per-recipient and server-wide limits (D7), demo refusal (D10). Open sign-up plus verification mail is the only anonymous-to-arbitrary-address path and is limited per client address and per recipient.

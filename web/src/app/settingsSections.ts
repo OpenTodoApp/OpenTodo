@@ -76,7 +76,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
   {
     id: 'admin', label: 'Administration', group: 'server', icon: 'users',
-    description: () => 'Users, invitations and members',
+    description: (u) => (owner(u) ? 'Users, invitations, members and outgoing email' : 'Users, invitations and members'),
     // The same test as the Users and Members panels (owner and admins).
     visible: (u) => isAdministrator(u),
     demo: () => ['users and invitations'], demoOnly: true,

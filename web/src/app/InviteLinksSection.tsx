@@ -1,6 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
+import { useOutgoingEmail } from '../lib/outgoingEmail'
 import { grantableRoles } from '../lib/sharing'
 import type { ProjectInvite, ProjectRole } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -25,6 +26,8 @@ export const LINK_EXPIRY_OPTIONS: [number, string][] = [
 export interface CreatedLink {
   link: string
   newAccounts: boolean
+  /** The address the link was mailed to (outgoing-email). */
+  sentTo?: string
 }
 
 export interface InviteLinksViewProps {
@@ -34,6 +37,10 @@ export interface InviteLinksViewProps {
   role: ProjectRole
   email: string
   hours: number
+  /** The server sends email: offer "Send by email" when an address is typed (outgoing-email). */
+  mail?: boolean
+  send?: boolean
+  onSend?: (send: boolean) => void
   invites: ProjectInvite[] | null
   created: CreatedLink | null
   copied: boolean
@@ -91,11 +98,18 @@ export function InviteLinksView(p: InviteLinksViewProps) {
               {LINK_EXPIRY_OPTIONS.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
             </select>
           </label>
+          {p.mail && p.email.trim() !== '' && (
+            <label className="col-span-2 flex items-center gap-2 text-xs sm:col-span-3">
+              <input type="checkbox" checked={p.send ?? true} onChange={(e) => p.onSend?.(e.target.checked)} disabled={disabled} data-send-by-email />
+              Send by email
+            </label>
+          )}
           <button className="btn-primary col-span-2 sm:col-span-3 sm:justify-self-start" disabled={disabled}>{p.busy ? 'Creating…' : 'Create link'}</button>
         </form>
       )}
       {p.created && (
         <div role="status" className="mt-2 rounded-md border border-success/40 bg-success-soft p-2 text-xs" data-testid="invite-link-created">
+          {p.created.sentTo && <p className="mb-1 font-medium" data-invite-sent>The link was sent to {p.created.sentTo}.</p>}
           <p className="mb-1 font-medium">Copy this link now. It is shown only once.</p>
           <div className="flex flex-wrap items-center gap-2">
             <input className="input min-w-0 flex-1 font-mono text-xs" readOnly value={p.created.link} aria-label="Invite link"
@@ -139,6 +153,8 @@ export function InviteLinksSection({ projectId, myRole, onError }: { projectId: 
   const [role, setRole] = useState<ProjectRole>('editor')
   const [email, setEmail] = useState('')
   const [hours, setHours] = useState(168)
+  const mail = useOutgoingEmail()
+  const [send, setSend] = useState(true)
   const [invites, setInvites] = useState<ProjectInvite[] | null>(null)
   const [created, setCreated] = useState<CreatedLink | null>(null)
   const [copied, setCopied] = useState(false)
@@ -165,8 +181,9 @@ export function InviteLinksSection({ projectId, myRole, onError }: { projectId: 
     setError(null)
     setBusy(true)
     try {
-      const res = await api.createProjectInvite(projectId, { role, expiresInHours: hours, ...(email.trim() ? { email: email.trim() } : {}) })
-      setCreated({ link: res.link, newAccounts: res.newAccounts })
+      const to = email.trim()
+      const res = await api.createProjectInvite(projectId, { role, expiresInHours: hours, ...(to ? { email: to } : {}), ...(to && mail && send ? { send: true } : {}) })
+      setCreated({ link: res.link, newAccounts: res.newAccounts, ...(res.sent ? { sentTo: to } : {}) })
       setCopied(false)
       setEmail('')
       await load()
@@ -202,7 +219,7 @@ export function InviteLinksSection({ projectId, myRole, onError }: { projectId: 
 
   return (
     <InviteLinksView
-      roles={roles} open={open} role={role} email={email} hours={hours} invites={invites} created={created} copied={copied}
+      roles={roles} open={open} role={role} email={email} hours={hours} mail={mail} send={send} onSend={setSend} invites={invites} created={created} copied={copied}
       offline={!online || unreachable} busy={busy} error={error}
       onToggle={() => setOpen((o) => !o)} onRole={setRole} onEmail={setEmail} onHours={setHours}
       onCreate={() => void create()} onCopy={() => void copy()} onRevoke={(inv) => void revoke(inv)}
@@ -215,6 +232,8 @@ export function describeLinkError(err: unknown): string {
     if (err.code === 'rate_limited') return 'Too many links created recently. Try again later.'
     if (err.code === 'invitation_spent') return 'This link was already used and cannot be revoked.'
     if (err.code === 'reauth_required') return 'Confirm your password, then create the link again.'
+    if (err.code === 'email_failed') return `The email could not be sent, so no link was created (${err.message}). Turn off “Send by email” to create a link to share yourself.`
+    if (err.code === 'smtp_disabled') return 'This server no longer sends email. Turn off “Send by email” to create a link to share yourself.'
     return err.message
   }
   return 'The server could not be reached; invite links need a connection.'
