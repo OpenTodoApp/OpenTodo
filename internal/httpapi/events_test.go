@@ -369,3 +369,24 @@ loop:
 		t.Fatal("stream no longer delivers after the server deadlines elapsed")
 	}
 }
+
+// Subscribed calendars changed (calendar-feeds 3.5): the stream says so with its own event.
+func TestEventsDeliverCalendarSignal(t *testing.T) {
+	e := newEnv(t, false)
+	e.register("o@example.com")
+	laptop := e.connected("laptop")
+	var uid string
+	if err := e.db.QueryRow(`SELECT id FROM users WHERE email = 'o@example.com'`).Scan(&uid); err != nil {
+		t.Fatal(err)
+	}
+	e.sync.Notifier().NotifyCalendar(uid)
+	ev, ok := laptop.next(t, "calendar", 2*time.Second)
+	if !ok || ev.data != "{}" {
+		t.Fatalf("calendar event = %+v %v", ev, ok)
+	}
+	// Ops wake-ups are unchanged.
+	e.pushTitle("phone", "t1", "Milk")
+	if _, ok := laptop.next(t, "ops", 2*time.Second); !ok {
+		t.Fatal("no ops event")
+	}
+}

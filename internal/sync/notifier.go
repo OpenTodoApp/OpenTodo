@@ -20,6 +20,7 @@ type Subscription struct {
 	userID string
 	device string
 	ch     chan int64    // one slot: a slow reader coalesces wake-ups into the newest cursor
+	cal    chan struct{} // one slot: "your calendar events changed" (calendar-feeds D8)
 	done   chan struct{} // closed when the subscription is evicted or the notifier shuts down
 	once   sync.Once
 }
@@ -33,7 +34,7 @@ func NewNotifier() *Notifier {
 // MaxStreamsPerUser subscriptions the oldest one is closed. The caller must
 // Unsubscribe when the stream ends.
 func (n *Notifier) Subscribe(userID, device string) *Subscription {
-	sub := &Subscription{userID: userID, device: device, ch: make(chan int64, 1), done: make(chan struct{})}
+	sub := &Subscription{userID: userID, device: device, ch: make(chan int64, 1), cal: make(chan struct{}, 1), done: make(chan struct{})}
 	n.mu.Lock()
 	list := n.subs[userID]
 	for len(list) >= MaxStreamsPerUser {
@@ -90,6 +91,20 @@ func (n *Notifier) Notify(userID, originDevice string, seq int64) {
 	}
 }
 
+// NotifyCalendar tells every stream of userID that their subscribed calendars
+// changed (OpenSpec change calendar-feeds, design D8). Never blocks; repeated
+// signals coalesce.
+func (n *Notifier) NotifyCalendar(userID string) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	for _, sub := range n.subs[userID] {
+		select {
+		case sub.cal <- struct{}{}:
+		default:
+		}
+	}
+}
+
 // CloseAll closes every subscription, used on graceful shutdown so proxies see a
 // clean end of stream and clients reconnect to the new process.
 func (n *Notifier) CloseAll() {
@@ -124,6 +139,9 @@ func (n *Notifier) Count(userID string) int {
 
 // C delivers the latest cursor each time new ops for the user are recorded by
 // another device.
+// Calendar delivers calendar-changed signals.
+func (s *Subscription) Calendar() <-chan struct{} { return s.cal }
+
 func (s *Subscription) C() <-chan int64 { return s.ch }
 
 // Done is closed when the subscription was evicted or the server is shutting down.

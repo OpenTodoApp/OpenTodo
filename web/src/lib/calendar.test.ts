@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  DAY_MINUTES,
+  allDayEvents,
+  eventBlocks,
   blockFor, calendarTasks, dayLoad, DEFAULT_GRID_PREFS, dropStart, formatLoad, formatTime, normalizeGridPrefs, nudgeDue, parseTime,
   placementStart, resizeEstimate, slotFromOffset, stepEstimate, weekDates,
 } from './calendar'
 import { formatHour, formatTime as formatWallTime, resolveDateTime } from './dates'
-import type { Task } from './types'
+import type { CalendarEvent, Task } from './types'
 
 function task(p: Partial<Task> = {}): Task {
   return {
@@ -197,5 +200,38 @@ describe('grid preferences', () => {
     expect(normalizeGridPrefs({ startHour: 23 })).toEqual({ startHour: 23, endHour: 24, dayLength: 480 })
     expect(normalizeGridPrefs({ endHour: 4 })).toEqual({ startHour: 3, endHour: 4, dayLength: 480 })
     expect(normalizeGridPrefs({ startHour: 18, endHour: 9 })).toEqual(DEFAULT_GRID_PREFS)
+  })
+})
+
+describe('calendar-feeds events on the grid (6.1)', () => {
+  const ev = (id: string, start: CalendarEvent['start'], end: CalendarEvent['end'], allDay = false): CalendarEvent => ({ id, subscriptionId: 's', uid: id, summary: id, location: '', start, end, allDay, free: false })
+
+  it('splits a 22:00 to 02:00 event over two days', () => {
+    const late = [ev('late', { date: '2026-10-20', time: '22:00' }, { date: '2026-10-21', time: '02:00' })]
+    expect(eventBlocks(late, '2026-10-20').map((b) => [b.start, b.end])).toEqual([[22 * 60, DAY_MINUTES]])
+    expect(eventBlocks(late, '2026-10-21').map((b) => [b.start, b.end])).toEqual([[0, 120]])
+    expect(eventBlocks(late, '2026-10-22')).toEqual([])
+  })
+
+  it('shows a UTC 08:00 event at 10:00 in Europe/Berlin, and floating ones as wall time', () => {
+    const events = [ev('z', { date: '2026-07-01', time: '08:00', tz: 'UTC' }, { date: '2026-07-01', time: '09:00', tz: 'UTC' }), ev('f', { date: '2026-07-01', time: '08:00' }, { date: '2026-07-01', time: '08:30' })]
+    const blocks = eventBlocks(events, '2026-07-01', 'Europe/Berlin')
+    expect(blocks.find((b) => b.event.id === 'z')).toMatchObject({ start: 600, end: 660 })
+    expect(blocks.find((b) => b.event.id === 'f')).toMatchObject({ start: 480, end: 510 })
+  })
+
+  it('does not put an event ending at midnight on the next day', () => {
+    const e = [ev('m', { date: '2026-10-20', time: '23:00' }, { date: '2026-10-21', time: '00:00' })]
+    expect(eventBlocks(e, '2026-10-21')).toEqual([])
+    expect(eventBlocks(e, '2026-10-20')).toHaveLength(1)
+  })
+
+  it('puts a two-day all-day event on both days, with an exclusive end', () => {
+    const trip = [ev('trip', { date: '2026-10-20' }, { date: '2026-10-22' }, true)]
+    expect(allDayEvents(trip, '2026-10-19')).toEqual([])
+    expect(allDayEvents(trip, '2026-10-20')).toHaveLength(1)
+    expect(allDayEvents(trip, '2026-10-21')).toHaveLength(1)
+    expect(allDayEvents(trip, '2026-10-22')).toEqual([])
+    expect(eventBlocks(trip, '2026-10-20')).toEqual([])
   })
 })

@@ -131,4 +131,3 @@ func (m Multi) Unblocked(ctx context.Context, e Unblocked) {
 
 // Unblocked implements UnblockedSink.
 func (Nop) Unblocked(context.Context, Unblocked) {}
-

@@ -38,6 +38,10 @@ const (
 	// CalDAV app passwords (OpenSpec `caldav`).
 	AppPasswordCreatedName Name = "app_password.created"
 	AppPasswordRevokedName Name = "app_password.revoked"
+	// The task feed's secret (calendar-feeds D7); never the secret itself.
+	CalendarFeedCreatedName Name = "calendar_feed.created"
+	CalendarFeedRotatedName Name = "calendar_feed.rotated"
+	CalendarFeedRevokedName Name = "calendar_feed.revoked"
 	// Email capture inbox address (OpenSpec `email-to-task`).
 	EmailInboxCreatedName  Name = "email_inbox.created"
 	EmailInboxRotatedName  Name = "email_inbox.rotated"
@@ -82,6 +86,7 @@ var Names = []Name{
 	PasskeyRegisteredName, PasskeyDeletedName,
 	TokenCreatedName, TokenRevokedName,
 	AppPasswordCreatedName, AppPasswordRevokedName,
+	CalendarFeedCreatedName, CalendarFeedRotatedName, CalendarFeedRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
@@ -104,6 +109,7 @@ var PersonalNames = []Name{
 	PasskeyRegisteredName, PasskeyDeletedName,
 	TokenCreatedName, TokenRevokedName,
 	AppPasswordCreatedName, AppPasswordRevokedName,
+	CalendarFeedCreatedName, CalendarFeedRotatedName, CalendarFeedRevokedName,
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	PasswordResetCompletedName, PasswordChangedName,
@@ -295,6 +301,18 @@ func TokenRevoked(userID, tokenID, name string) Event {
 // AppPasswordCreated records a new CalDAV app password (never its secret).
 func AppPasswordCreated(userID, id, name string) Event {
 	return ev(AppPasswordCreatedName, Success, userID, "", "app_password_id", id, "app_password_name", name)
+}
+
+// CalendarFeedCreated, CalendarFeedRotated and CalendarFeedRevoked record the
+// life of the user's task feed URL (no detail: the secret is never recorded).
+func CalendarFeedCreated(userID string) Event {
+	return ev(CalendarFeedCreatedName, Success, userID, "")
+}
+func CalendarFeedRotated(userID string) Event {
+	return ev(CalendarFeedRotatedName, Success, userID, "")
+}
+func CalendarFeedRevoked(userID string) Event {
+	return ev(CalendarFeedRevokedName, Success, userID, "")
 }
 
 // AppPasswordRevoked records a revoked CalDAV app password.
