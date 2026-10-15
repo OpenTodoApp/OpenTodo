@@ -27,7 +27,7 @@ not      := "!" not | "(" or ")" | term
 term     := "@" name                       label
           | "##" name | "#" name           project with / without sub-projects
           | "p1" | "p2" | "p3" | "p4"      priority
-          | ("due" | "created" | "deadline") cmp date
+          | ("due" | "created" | "deadline" | "start") cmp date
           | keyword
           | "search:" text
 cmp      := "<" | "<=" | "=" | ">=" | ">" | "before" | "after"
@@ -35,7 +35,8 @@ date     := "today" | "tomorrow" | "yesterday" | weekday | YYYY-MM-DD
           | INT "days" | INT "days ago"
 weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
-          | "no labels" | "no time" | "no deadline" | "completed" | "open" | "subtask"
+          | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
+          | "someday" | "deferred" | "evening"
 name     := word | '"' chars '"'
 text     := word | '"' chars '"'
 ```
@@ -64,12 +65,17 @@ text     := word | '"' chars '"'
 | `due <cmp> <date>` | tasks whose due date compares as asked; a task without a due date never matches |
 | `created <cmp> <date>` | tasks whose creation day, in your time zone, compares as asked |
 | `deadline <cmp> <date>` | tasks whose [deadline](tasks-and-projects.md#deadlines) compares as asked; a task without a deadline never matches. `deadline <= 3 days` includes deadlines that have passed |
+| `start <cmp> <date>` | tasks whose [start date](tasks-and-projects.md#when-a-task-starts) compares as asked; parked tasks and tasks without a start never match |
 | `overdue` | due before today |
 | `today` | due today |
 | `tomorrow` | due tomorrow |
 | `no date` | no due date |
 | `no time` | a due date without a time of day |
 | `no deadline` | tasks without a deadline |
+| `no start` | tasks with no start date and not parked |
+| `someday` | parked tasks |
+| `deferred` | tasks whose start date is after today |
+| `evening` | tasks marked for This Evening |
 | `no project` | Inbox tasks (no project) |
 | `no labels` | tasks with no label |
 | `subtask` | tasks that have a parent task |
@@ -79,7 +85,7 @@ text     := word | '"' chars '"'
 
 ### Open, completed and deleted tasks
 
-A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it. `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match. Like the other cross-project views, the Filter view leaves out tasks of archived projects.
+A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it. `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match. Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the Filter view leaves out tasks of archived projects.
 
 ### Dates
 
@@ -112,7 +118,7 @@ A query that does not follow the grammar shows a message under the input, and th
 | `p5` | `Priority must be p1, p2, p3 or p4 at position 1` |
 | `due today` | `Expected a comparison (<, <=, =, >=, >, before or after) after "due" at position 1` |
 | `due > 7` | `Expected "days" after "7" at position 7` |
-| `no idea` | `Expected "date", "project", "labels", "time" or "deadline" after "no" at position 1` |
+| `no idea` | `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1` |
 
 An empty query shows a short usage hint and no results.
 
@@ -202,4 +208,10 @@ due before 2026-12-01 & no labels & no time & !today
 
 ```filter
 deadline <= 6 days & no date
+```
+
+### 12. Waiting on others, without the parked ones
+
+```filter
+@waiting & !someday
 ```

@@ -25,9 +25,9 @@
 
 ## 4. Filters (design D2)
 
-- [ ] 4.1 Extend `web/src/lib/filter/parse.ts` (`someday`, `deferred`, `evening` keywords, `no start`, the `start` date field, printing) and `evaluate.ts`. Verify with tests for the four spec scenarios (`npm test`).
-- [ ] 4.2 Extend `internal/filter` with the same tokens and add them to the shared example file from `deadlines`. Verify with `go test ./internal/filter/...` and `npm test`.
-- [ ] 4.3 Update `docs/filters.md` (grammar, term table, the `no` error message, an example "waiting, not parked"). Verify with `npm run docs:check`.
+- [x] 4.1 Extend `web/src/lib/filter/parse.ts` (`someday`, `deferred`, `evening` keywords, `no start`, the `start` date field, printing) and `evaluate.ts`. Verify with tests for the four spec scenarios (`npm test`).
+- [x] 4.2 Extend `internal/filter` with the same tokens and add them to the shared example file from `deadlines`. Verify with `go test ./internal/filter/...` and `npm test`.
+- [x] 4.3 Update `docs/filters.md` (grammar, term table, the `no` error message, an example "waiting, not parked"). Verify with `npm run docs:check`.
 
 ## 5. Quick add (design D6)
 

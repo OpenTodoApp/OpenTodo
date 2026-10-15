@@ -7,7 +7,7 @@
 //   and     := not ( "&" not )*
 //   not     := "!" not | "(" or ")" | term
 //   term    := "@" name | "##" name | "#" name | "p1".."p4"
-//            | ("due" | "created" | "deadline") cmp date | keyword | "search:" text
+//            | ("due" | "created" | "deadline" | "start") cmp date | keyword | "search:" text
 //
 // Positions in messages are 1-based character columns; `FilterSyntaxError.offset`
 // is the matching 0-based offset for editors.
@@ -140,7 +140,7 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'completed' | 'open' | 'subtask'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'completed' | 'open' | 'subtask'
 
 /** today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N. */
 export type DateExpr =
@@ -155,13 +155,13 @@ export type Node =
   | { kind: 'label'; name: string; pos: number }
   | { kind: 'project'; name: string; descendants: boolean; pos: number }
   | { kind: 'priority'; value: Priority }
-  | { kind: 'date'; field: 'due' | 'created' | 'deadline'; op: Cmp; date: DateExpr }
+  | { kind: 'date'; field: 'due' | 'created' | 'deadline' | 'start'; op: Cmp; date: DateExpr }
   | { kind: 'keyword'; keyword: Keyword }
   | { kind: 'search'; text: string }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
-const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask'])
-const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline'] as const
+const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening'])
+const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start'] as const
 const CMP_EXPECTED = ['"<"', '"<="', '"="', '">="', '">"', '"before"', '"after"']
 
 // ---- parser ----
@@ -250,7 +250,7 @@ export function parse(src: string): Node | null {
   function parseWordTerm(t: Extract<Token, { type: 'word' }>): Node {
     const w = t.value.toLowerCase()
     i++
-    if (w === 'due' || w === 'created' || w === 'deadline') {
+    if (w === 'due' || w === 'created' || w === 'deadline' || w === 'start') {
       const c = peek()
       let op: Cmp | null = null
       if (c?.type === 'cmp') op = c.op
@@ -263,7 +263,7 @@ export function parse(src: string): Node | null {
     if (w === 'no') {
       const next = lower(peek())
       if (!(NO_KEYWORDS as readonly string[]).includes(next)) {
-        return fail(`Expected "date", "project", "labels", "time" or "deadline" after "no" at position ${t.pos + 1}`, t.pos, NO_KEYWORDS.map((k) => `"${k}"`))
+        return fail(`Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position ${t.pos + 1}`, t.pos, NO_KEYWORDS.map((k) => `"${k}"`))
       }
       i++
       return { kind: 'keyword', keyword: `no ${next}` as Keyword }
