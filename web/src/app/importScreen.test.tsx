@@ -40,7 +40,7 @@ describe('ImportView', () => {
     expect(html).toContain('3 created')
     expect(html).toContain('undone')
     // Undo needs the server too.
-    expect(html).toMatch(/<button class="btn-danger text-xs" disabled="">Undo<\/button>/)
+    expect(html).toMatch(/<button class="ui-btn ui-btn--danger ui-btn--sm text-meta" disabled="">Undo<\/button>/)
   })
 
   it('enables the picker online and offers undo for finished jobs only', () => {
@@ -107,7 +107,7 @@ describe('import route', () => {
   it('picks the target project with the smart picker, showing the chosen project and its path (task-detail-redesign 3.5)', () => {
     expect(render()).toContain('aria-label="Tasks without a project go to: Inbox"')
     expect(render({ options: { ...DEFAULT_OPTIONS, targetProject: 'p2' } })).toContain('aria-label="Tasks without a project go to: Work › Acme"')
-    expect(render({ offline: true })).toMatch(/<button type="button" class="input[^"]*" disabled=""[^>]*aria-label="Tasks without a project go to: Inbox"/)
+    expect(render({ offline: true })).toMatch(/<button type="button" class="ui-input[^"]*" disabled=""[^>]*aria-label="Tasks without a project go to: Inbox"/)
   })
 
   it('offers the named app formats and shows archive entry names (named-importers)', () => {

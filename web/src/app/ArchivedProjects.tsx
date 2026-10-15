@@ -44,7 +44,7 @@ export interface ArchivedProjectsListProps {
 export function ArchivedProjectsList({ rows, onRestore, listRef, headingRef }: ArchivedProjectsListProps) {
   return (
     <div className="space-y-2" data-testid="archived-projects">
-      <h3 id="archived-projects" ref={headingRef} tabIndex={-1} className="text-sm font-medium text-default outline-none">Archived projects</h3>
+      <h3 id="archived-projects" ref={headingRef} tabIndex={-1} className="text-body font-medium text-default outline-none">Archived projects</h3>
       {rows.length === 0 ? (
         <EmptyState icon="folder" title="No archived projects" body="Archive one from its Project menu; it comes back here with one click." />
       ) : (

@@ -233,7 +233,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
           {actions}
         </>}
         menu={<ActionMenu label="Project menu" title={project.name} groups={groups} header={editable ? <><ColourSwatches project={project} /><IconSwatches project={project} /></> : undefined}
-          trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-72"
+          trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-72"
           open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />} />
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} onClose={() => setSharing(false)} />}
       {dialog === 'duplicate' && <DuplicateProjectDialog project={project} shared={!!membership} onClose={() => setDialog(null)} />}

@@ -75,7 +75,7 @@ Rules for code under `web/src/ui/`:
 A token switches between light and dark by itself, so a screen needs no `dark:` partner for colour.
 - Before using a new foreground and background combination, add it to `src/ui/tokens/pairs.ts`. `contrast.test.ts` recomputes every pair from `index.css` in both themes and fails with the pair, theme and ratio.
 
-The legacy classes `.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.btn-danger`, `.input` and `.kbd` keep their names and draw from the tokens. Use `.btn-secondary` for bordered neutral buttons.
+The legacy classes `.btn-*`, `.input` and `.kbd` are gone: screens use `<Button>`, `<IconButton>`, the field primitives and `<Kbd>` (or the `ui-btn`, `ui-input` and `ui-kbd` classes they render), and `lint.test.ts` fails if a legacy class returns to the stylesheet or a screen.
 
 ## Stored colours
 
@@ -149,7 +149,7 @@ Storybook is a development tool only: it adds nothing to `internal/web/dist`, th
 
 - `make storybook` (or `npm run storybook` in `web/`) opens it on http://localhost:6006. The toolbar switches the theme (light, dark, side by side) and the frame width (375 or 1280 px).
 - `npm run build-storybook` writes the static build to `web/storybook-static/` (not committed).
-- **Foundations** shows the colour tokens with their live contrast ratios, the palette, type, spacing, radius, elevation, motion and the legacy classes.
+- **Foundations** shows the colour tokens with their live contrast ratios, the palette, type, spacing, radius, elevation, motion and the component classes.
 
 ### Adding a story
 

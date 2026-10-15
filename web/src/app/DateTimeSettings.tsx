@@ -79,7 +79,7 @@ export function DateTimeView({ prefs, resolved, onChange, today = todayISO() }: 
             {preview.week.map((iso) => (
               <li key={iso} aria-current={iso === today ? 'date' : undefined}
                 className={`flex w-9 flex-col items-center rounded-control py-1 text-meta ${iso === today ? 'bg-accent text-on-accent' : 'bg-sunken text-default'}`}>
-                <span className="text-[11px] uppercase">{new Intl.DateTimeFormat(undefined, { weekday: 'narrow' }).format(new Date(`${iso}T12:00:00`))}</span>
+                <span className="text-hint uppercase">{new Intl.DateTimeFormat(undefined, { weekday: 'narrow' }).format(new Date(`${iso}T12:00:00`))}</span>
                 <span className="font-medium">{Number(iso.slice(8))}</span>
               </li>
             ))}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Skeleton } from '../ui'
+import { Tooltip } from '../ui'
 import { Badge } from '../ui'
 import { Icon, type IconName } from '../ui'
 import { EmptyState } from '../ui'
@@ -93,9 +94,13 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
                       leading={<Icon name={activityIcon(ev)} className={failed ? 'text-danger' : undefined} />}
                       label={<span className={failed ? 'text-danger' : undefined}>{AUDIT_LABELS[ev.name] ?? ev.name}{summary && <span className="text-muted"> · {summary}</span>}</span>}
                       meta={
-                        <span title={ev.userAgent}>
-                          <time dateTime={new Date(ev.ts).toISOString()} title={dt.formatInstant(ev.ts, 'datetime')}>{relativeTime(ev.ts, now)}</time>
-                          {' · '}{shortAgent(ev.userAgent)}{ev.ip ? ` · ${ev.ip}` : ''}
+                        <span>
+                          <Tooltip label={dt.formatInstant(ev.ts, 'datetime')}>
+                            <time dateTime={new Date(ev.ts).toISOString()} tabIndex={0} className="rounded-chip">{relativeTime(ev.ts, now)}</time>
+                          </Tooltip>
+                          {' · '}
+                          {ev.userAgent ? <Tooltip label={ev.userAgent}><span tabIndex={0} className="rounded-chip">{shortAgent(ev.userAgent)}</span></Tooltip> : shortAgent(ev.userAgent)}
+                          {ev.ip ? ` · ${ev.ip}` : ''}
                         </span>
                       }
                       badges={failed ? <Badge hue="red">Failed</Badge> : undefined}

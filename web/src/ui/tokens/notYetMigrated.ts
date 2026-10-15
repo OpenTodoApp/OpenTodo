@@ -91,39 +91,5 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
 export const STYLE_NOT_YET_MIGRATED_MAX = 81
 
 /** Files with a native `title` attribute on an HTML element (the Tooltip primitive replaces it). */
-export const TITLE_NOT_YET_MIGRATED: readonly string[] = [
-  'src/app/ActivityPanel.tsx',
-  'src/app/AssigneePicker.tsx',
-  'src/app/AuditPanel.tsx',
-  'src/app/CalendarView.tsx',
-  'src/app/CaptureSettings.tsx',
-  'src/app/EstimateField.tsx',
-  'src/app/FeedView.tsx',
-  'src/app/HistoryPanel.tsx',
-  'src/app/InviteLinksSection.tsx',
-  'src/app/LabelsView.tsx',
-  'src/app/ProjectActivity.tsx',
-  'src/app/QuickAdd.tsx',
-  'src/app/RecurrenceField.tsx',
-  'src/app/ReminderToasts.tsx',
-  'src/app/ShareDialog.tsx',
-  'src/app/Sidebar.tsx',
-  'src/app/SsoPanel.tsx',
-  'src/app/TaskListView.tsx',
-  'src/app/ViewsView.tsx',
-  'src/app/WebhooksPanel.tsx',
-  'src/app/assistant/AssistantPanel.tsx',
-  'src/app/assistant/AssistantRoot.tsx',
-  'src/app/bulk/BulkActions.tsx',
-  'src/app/bulk/UndoToast.tsx',
-  'src/app/help/HelpPanel.tsx',
-  'src/app/menus/ActionMenu.tsx',
-  'src/app/overlay/Dialog.tsx',
-  'src/app/task-detail/ActivityTab.tsx',
-  'src/app/task-detail/AttachmentsRow.tsx',
-  'src/app/task-detail/CommentsTab.tsx',
-  'src/app/task-detail/RelativeTime.tsx',
-  'src/app/task-detail/TaskDetail.tsx',
-  'src/app/task-detail/ZoneControl.tsx',
-]
-export const TITLE_NOT_YET_MIGRATED_MAX = 33
+export const TITLE_NOT_YET_MIGRATED: readonly string[] = []
+export const TITLE_NOT_YET_MIGRATED_MAX = 0

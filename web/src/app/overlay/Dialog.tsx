@@ -40,8 +40,8 @@ export function Dialog({ title, onClose, children, size = 'sm', dismissable = tr
       <div ref={panel} role={role} aria-modal="true" aria-labelledby={label ? undefined : titleId} aria-label={label} tabIndex={-1} data-overlay="dialog" data-testid={testId}
         className={`h-fit min-h-full w-full bg-surface outline-none sm:surface-overlay sm:my-auto sm:min-h-0 ${WIDTH[size]}`}>
         <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-inherit pl-4 pr-1 pt-[env(safe-area-inset-top)] sm:-top-4 sm:rounded-t-card">
-          <h2 id={titleId} className="min-w-0 flex-1 py-2 text-base font-semibold">{title}</h2>
-          <button type="button" className="btn-ghost touch-target my-1 px-2 text-lg leading-none" onClick={onClose} aria-label="Close" title="Close" data-overlay-close><Icon name="x" size="md" /></button>
+          <h2 id={titleId} className="min-w-0 flex-1 py-2 text-body font-semibold">{title}</h2>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target my-1 px-2 text-h3 leading-none" onClick={onClose} aria-label="Close" data-overlay-close><Icon name="x" size="md" /></button>
         </div>
         <div className={`p-4 pb-[max(1rem,env(safe-area-inset-bottom))] ${className}`}>{children}</div>
       </div>

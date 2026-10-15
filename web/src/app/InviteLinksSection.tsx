@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Select } from '../ui'
+import { Tooltip } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { grantableRoles } from '../lib/sharing'
@@ -60,48 +61,48 @@ export function InviteLinksView(p: InviteLinksViewProps) {
     if (!disabled) p.onCreate()
   }
   return (
-    <section aria-labelledby="invite-links-heading" className="mb-4 rounded-md border border-default p-3" data-testid="invite-links">
+    <section aria-labelledby="invite-links-heading" className="mb-4 rounded-control border border-default p-3" data-testid="invite-links">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 id="invite-links-heading" className="text-sm font-medium">Invite with a link</h3>
-        <button type="button" className="btn-ghost px-2 py-0.5 text-xs" aria-expanded={p.open} aria-controls="invite-links-form" onClick={p.onToggle}>
+        <h3 id="invite-links-heading" className="text-body font-medium">Invite with a link</h3>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" aria-expanded={p.open} aria-controls="invite-links-form" onClick={p.onToggle}>
           {p.open ? 'Hide' : 'Create a link…'}
         </button>
       </div>
-      <p className="mt-1 text-xs text-muted">One link for one person: whoever opens it joins this project with the role you pick. It works once.</p>
+      <p className="mt-1 text-meta text-muted">One link for one person: whoever opens it joins this project with the role you pick. It works once.</p>
       {p.offline && (
-        <p role="status" className="mt-2 rounded-md bg-warning-soft p-2 text-xs text-on-warning-soft">
+        <p role="status" className="mt-2 rounded-control bg-warning-soft p-2 text-meta text-on-warning-soft">
           You are offline. Invite links live on the server, so creating and revoking them needs a connection.
         </p>
       )}
       {p.open && (
         <form id="invite-links-form" onSubmit={submit} className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-[1fr_auto_auto]">
-          <label className="col-span-2 block text-xs sm:col-span-1">
+          <label className="col-span-2 block text-meta sm:col-span-1">
             <span className="mb-1 block text-muted">Email <span className="text-faint">(optional, only they can use it)</span></span>
-            <input className="input" type="email" autoComplete="off" placeholder="friend@example.com" value={p.email}
+            <input className="ui-input" type="email" autoComplete="off" placeholder="friend@example.com" value={p.email}
               onChange={(e) => p.onEmail(e.target.value)} disabled={disabled} />
           </label>
-          <label className="block text-xs">
+          <label className="block text-meta">
             <span className="mb-1 block text-muted">Role</span>
             <Select value={p.role} onChange={(e) => p.onRole(e.target.value as ProjectRole)} disabled={disabled}>
               {p.roles.map((r) => <option key={r} value={r}>{r}</option>)}
             </Select>
           </label>
-          <label className="block text-xs">
+          <label className="block text-meta">
             <span className="mb-1 block text-muted">Expires in</span>
             <Select value={p.hours} onChange={(e) => p.onHours(Number(e.target.value))} disabled={disabled}>
               {LINK_EXPIRY_OPTIONS.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
             </Select>
           </label>
-          <button className="btn-primary col-span-2 sm:col-span-3 sm:justify-self-start" disabled={disabled}>{p.busy ? 'Creating…' : 'Create link'}</button>
+          <button className="ui-btn ui-btn--primary ui-btn--md col-span-2 sm:col-span-3 sm:justify-self-start" disabled={disabled}>{p.busy ? 'Creating…' : 'Create link'}</button>
         </form>
       )}
       {p.created && (
-        <div role="status" className="mt-2 rounded-md border border-success/40 bg-success-soft p-2 text-xs" data-testid="invite-link-created">
+        <div role="status" className="mt-2 rounded-control border border-success/40 bg-success-soft p-2 text-meta" data-testid="invite-link-created">
           <p className="mb-1 font-medium">Copy this link now. It is shown only once.</p>
           <div className="flex flex-wrap items-center gap-2">
-            <input className="input min-w-0 flex-1 font-mono text-xs" readOnly value={p.created.link} aria-label="Invite link"
+            <input className="ui-input min-w-0 flex-1 font-mono text-meta" readOnly value={p.created.link} aria-label="Invite link"
               onFocus={(e) => e.currentTarget.select()} />
-            <button type="button" className="btn-ghost border border-success/40 text-xs" onClick={p.onCopy}>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm border border-success/40 text-meta" onClick={p.onCopy}>
               {p.copied ? 'Copied' : 'Copy link'}
             </button>
           </div>
@@ -112,15 +113,17 @@ export function InviteLinksView(p: InviteLinksViewProps) {
           </p>
         </div>
       )}
-      {p.error && <p role="alert" className="mt-2 text-xs text-danger">{p.error}</p>}
+      {p.error && <p role="alert" className="mt-2 text-meta text-danger">{p.error}</p>}
       {p.invites && p.invites.length > 0 && (
         <ul aria-label="Pending invite links" className="mt-2 space-y-1">
           {p.invites.map((inv) => (
-            <li key={inv.id} className="text-xs">
+            <li key={inv.id} className="text-meta">
               <div className="flex items-center gap-2">
-                <span className="rounded bg-warning-soft px-1.5 py-0.5 font-medium text-on-warning-soft">{inv.role}</span>
-                <span className="min-w-0 flex-1 truncate" title={inv.email ?? undefined}>{inv.email ?? <span className="text-faint">Anyone with the link</span>}</span>
-                <button type="button" className="btn-ghost px-2 py-0.5 text-xs" disabled={disabled}
+                <span className="rounded-control bg-warning-soft px-1.5 py-0.5 font-medium text-on-warning-soft">{inv.role}</span>
+                {inv.email
+                  ? <Tooltip label={inv.email}><span className="min-w-0 flex-1 truncate">{inv.email}</span></Tooltip>
+                  : <span className="min-w-0 flex-1 truncate"><span className="text-faint">Anyone with the link</span></span>}
+                <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" disabled={disabled}
                   aria-label={`Revoke the ${inv.role} link${inv.email ? ` for ${inv.email}` : ''}`} onClick={() => p.onRevoke(inv)}>Revoke</button>
               </div>
               <p className="text-faint">Expires {when(inv.expiresAt)} · created by {inv.createdByName || 'a member'}</p>

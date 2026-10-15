@@ -161,7 +161,7 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
         id={id}
         ref={area}
         rows={2}
-        className="input min-h-16 resize-none text-sm leading-5"
+        className="ui-input min-h-16 resize-none text-body leading-5"
         placeholder={members.length ? 'Write a comment… (markdown, @ to mention)' : 'Write a comment… (markdown)'}
         aria-label={label}
         aria-describedby={`${id}-hint`}
@@ -203,7 +203,7 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
             <li key={m.userId} id={`${listId}-${i}`} role="option" aria-selected={i === active}
               className={`flex min-h-11 cursor-pointer flex-wrap items-center gap-x-1 px-3 py-1 ${i === active ? 'bg-sunken' : ''}`}
               onMouseDown={(e) => { e.preventDefault(); pick(m) }}>
-              {m.name || m.email} <span className="user-text text-xs text-faint">{m.email}</span>
+              {m.name || m.email} <span className="user-text text-meta text-faint">{m.email}</span>
             </li>
           ))}
         </ul>

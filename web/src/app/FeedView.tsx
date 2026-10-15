@@ -12,6 +12,7 @@ import { openTaskInList } from './signals'
 import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { hueFor, PageBody, PageHeader } from '../ui'
+import { Tooltip } from '../ui'
 
 /**
  * The activity feed (OpenSpec `activity-feed`): every shared project's recent
@@ -120,37 +121,37 @@ export function FeedView() {
   return (
     <PageBody width="list">
       <PageHeader title="Updates" meta="What changed in your shared projects" help="updates">
-        <label className="flex items-center gap-1 text-xs text-muted">
+        <label className="flex items-center gap-1 text-meta text-muted">
           Project
-          <select className="input py-0.5 text-xs" value={project} onChange={(e) => setProject(e.target.value)} aria-label="Filter feed by project">
+          <select className="ui-input py-0.5 text-meta" value={project} onChange={(e) => setProject(e.target.value)} aria-label="Filter feed by project">
             <option value="">All shared projects</option>
             {(shared ?? []).map((id) => <option key={id} value={id}>{projectName(id)}</option>)}
           </select>
         </label>
-        <label className="flex items-center gap-1 text-xs text-muted">
+        <label className="flex items-center gap-1 text-meta text-muted">
           Person
-          <select className="input py-0.5 text-xs" value={actor} onChange={(e) => setActor(e.target.value)} aria-label="Filter feed by person">
+          <select className="ui-input py-0.5 text-meta" value={actor} onChange={(e) => setActor(e.target.value)} aria-label="Filter feed by person">
             <option value="">Everyone</option>
             {actors.map((a) => <option key={a} value={a}>{name(a)}</option>)}
           </select>
         </label>
-        <label className="flex items-center gap-1 text-xs text-muted">
+        <label className="flex items-center gap-1 text-meta text-muted">
           Kind
-          <select className="input py-0.5 text-xs" value={kind} onChange={(e) => setKind(e.target.value as FeedKind | '')} aria-label="Filter feed by kind">
+          <select className="ui-input py-0.5 text-meta" value={kind} onChange={(e) => setKind(e.target.value as FeedKind | '')} aria-label="Filter feed by kind">
             <option value="">All changes</option>
             {FEED_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
           </select>
         </label>
       </PageHeader>
       {shared && shared.length === 0 ? (
-        <p className="py-12 text-center text-sm text-faint">Share a project to see what others change here.</p>
+        <p className="py-12 text-center text-body text-faint">Share a project to see what others change here.</p>
       ) : shown.length === 0 && local ? (
-        <p className="py-12 text-center text-sm text-faint">No activity{project || actor || kind ? ' matches these filters' : ' on this device yet'}.</p>
+        <p className="py-12 text-center text-body text-faint">No activity{project || actor || kind ? ' matches these filters' : ' on this device yet'}.</p>
       ) : null}
       <div className="space-y-4">
         {groups.map((g) => (
           <section key={g.day} aria-label={dayLabel(g.day)}>
-            <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-faint">{dayLabel(g.day)}</h2>
+            <h2 className="mb-1 text-meta font-semibold uppercase tracking-wide text-faint">{dayLabel(g.day)}</h2>
             <ol className="divide-y divide-(--ot-border)" aria-label="Activity">
               {g.events.map((e) => {
                 const title = e.taskId ? titles.get(e.taskId) || e.taskTitle || 'a task' : null
@@ -159,7 +160,7 @@ export function FeedView() {
                 return (
                   <li key={e.id} data-feed-id={e.id} data-event={e.kind} data-actor={e.actor} data-unread={fresh || undefined}
                     onClick={() => setSelected(e.id)} onDoubleClick={() => open(e)}
-                    className={`flex items-baseline gap-2 px-2 py-1.5 text-sm ${e.id === selected ? 'bg-accent-soft' : ''}`}>
+                    className={`flex items-baseline gap-2 px-2 py-1.5 text-body ${e.id === selected ? 'bg-accent-soft' : ''}`}>
                     <span className={`h-2 w-2 shrink-0 self-center rounded-full ${fresh ? 'bg-accent' : 'bg-transparent'}`} aria-label={fresh ? 'New' : undefined} />
                     <span className="min-w-0 flex-1">
                       <strong className="font-medium text-default">{name(e.actor)}</strong>{' '}
@@ -169,15 +170,15 @@ export function FeedView() {
                           <button type="button" className="text-default underline decoration-dotted" onClick={() => open(e)}>{title}</button>
                         </>
                       )}
-                      {isPending(e, pending) && <span className="ml-1 text-xs italic text-warning" title="Not yet synced">(pending)</span>}
-                      <span className="mt-0.5 flex items-center gap-1 text-xs text-faint">
+                      {isPending(e, pending) && <Tooltip label="Not yet synced"><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>(pending)</span></Tooltip>}
+                      <span className="mt-0.5 flex items-center gap-1 text-meta text-faint">
                         <span className="inline-block h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(p?.color)} aria-hidden />
                         <button type="button" className="hover:underline" onClick={() => e.projectId && navigate({ view: 'project', id: e.projectId })}>
                           {projectName(e.projectId, e.projectName)}
                         </button>
                       </span>
                     </span>
-                    <time className="shrink-0 text-xs text-faint" dateTime={new Date(e.ts).toISOString()}>
+                    <time className="shrink-0 text-meta text-faint" dateTime={new Date(e.ts).toISOString()}>
                       {dt.formatInstant(e.ts, 'time')}
                     </time>
                   </li>
@@ -188,11 +189,11 @@ export function FeedView() {
         ))}
       </div>
       {more && online && shared && shared.length > 0 && (
-        <button type="button" className="btn-ghost mt-3 text-xs" disabled={state === 'loading'} onClick={() => void loadOlder()}>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm mt-3 text-meta" disabled={state === 'loading'} onClick={() => void loadOlder()}>
           {state === 'loading' ? 'Fetching older updates…' : 'Load older updates'}
         </button>
       )}
-      {state === 'error' && <p className="mt-2 text-xs text-danger">Older updates could not be loaded.</p>}
+      {state === 'error' && <p className="mt-2 text-meta text-danger">Older updates could not be loaded.</p>}
     </PageBody>
   )
 }

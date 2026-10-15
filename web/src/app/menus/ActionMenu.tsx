@@ -5,6 +5,7 @@
 // menu and opens a confirmation dialog.
 import { useContext, useEffect, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '../../ui'
+import { Tooltip } from '../../ui'
 import { MenuCloseContext, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
 import { ComboboxPanel } from '../../ui'
 import type { ComboboxConfig } from '../../ui'
@@ -112,9 +113,11 @@ function PickerStep({ picker, onBack, onDone, onConfirm }: { picker: PickerSpec<
   return (
     <div className="space-y-1 p-1" data-picker-step>
       <div className="flex items-center gap-1">
-        <button type="button" className="btn-ghost touch-target px-1.5 py-1" aria-label="Back" title="Back (Esc)" onClick={onBack}>
-          <Icon name="arrow-left" />
-        </button>
+        <Tooltip label="Back" shortcut="Esc">
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-1" aria-label="Back" onClick={onBack}>
+            <Icon name="arrow-left" />
+          </button>
+        </Tooltip>
         <span className="text-meta font-semibold text-muted">{title}</span>
       </div>
       <ComboboxPanel {...cfg} label={title} placeholder={placeholder} emptyText={emptyText} renderLeading={renderLeading}
@@ -185,7 +188,7 @@ export function ActionMenu({ label, title, groups, header, trigger, triggerClass
     <>
       <Menu label={label} title={title} kind={current ? 'dialog' : 'menu'} align={align} width={width} className="p-1"
         trigger={trigger ?? <Icon name="ellipsis" />}
-        triggerClassName={triggerClassName ?? 'btn-ghost touch-target px-1.5 py-0.5 text-faint'}
+        triggerClassName={triggerClassName ?? 'ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-0.5 text-faint'}
         open={open}
         onOpenChange={(v) => {
           // The first Escape (or outside tap) in a picker step goes back to the items.

@@ -52,7 +52,7 @@ describe('preference', () => {
     expect(coarse).toMatch(/\.row-pad \{ padding-block: 0\.5rem; \}/)
     expect(coarse).toMatch(/\[data-sidebar-item\] \{ min-height: 2\.75rem; \}/)
     // Task rows take their padding from the density class, not a fixed utility.
-    expect(row).toMatch(/rounded-md px-2 row-pad/)
+    expect(row).toMatch(/rounded-control px-2 [^`]*'row-pad'/)
   })
 })
 

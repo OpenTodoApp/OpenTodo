@@ -158,10 +158,10 @@ export function CalendarGrid({ value, prefs, onPick, today = todayISO() }: {
     <div>
       <div className="mb-2 flex items-center gap-1">
         <IconButton icon="chevron-left" label="Previous month" size="sm" onClick={() => shiftMonth(-1)} />
-        <h3 id={headingId} className="flex-1 text-center text-sm font-semibold text-default" aria-live="polite">{monthName.format(dateOf(month))}</h3>
+        <h3 id={headingId} className="flex-1 text-center text-body font-semibold text-default" aria-live="polite">{monthName.format(dateOf(month))}</h3>
         <IconButton icon="chevron-right" label="Next month" size="sm" onClick={() => shiftMonth(1)} />
       </div>
-      <table ref={grid} role="grid" aria-labelledby={headingId} className="w-full border-collapse text-center text-sm" onKeyDown={onKey}>
+      <table ref={grid} role="grid" aria-labelledby={headingId} className="w-full border-collapse text-center text-body" onKeyDown={onKey}>
         <thead>
           <tr>
             {days.slice(0, 7).map((d) => (

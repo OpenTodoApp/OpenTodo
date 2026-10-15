@@ -43,7 +43,7 @@ export async function createSampleProject(today = todayISO()): Promise<string> {
   const nextWeek = new Date(`${today}T12:00:00`)
   nextWeek.setDate(nextWeek.getDate() + 7)
   const iso = (d: Date) => d.toISOString().slice(0, 10)
-  const project = await createProject({ name: SAMPLE_PROJECT_NAME, color: '#10b981' })
+  const project = await createProject({ name: SAMPLE_PROJECT_NAME })
   await createTask({ title: 'A task due today: press c to complete it', project_id: project, due: { date: today } })
   await createTask({ title: 'A task with a deadline: it turns red when late', project_id: project, due: { date: iso(tomorrow) }, deadline: iso(nextWeek) })
   const label = (await findLabelByName('errand'))?.id ?? await createLabel({ name: 'errand' })

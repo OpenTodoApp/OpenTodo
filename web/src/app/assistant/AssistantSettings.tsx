@@ -119,7 +119,7 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
         const noModel = !v.model.trim()
         return (
           <fieldset key={n} className="space-y-3 rounded-control border border-default p-3" data-provider={n}>
-            <legend className="px-1 text-sm font-medium text-default">{LABEL[n]}</legend>
+            <legend className="px-1 text-body font-medium text-default">{LABEL[n]}</legend>
             <Checkbox checked={v.enabled} disabled={off} onChange={(e) => setProv(n, { enabled: e.target.checked })} label="Allow this provider" />
             <Field label="Model">
               <Input value={v.model} disabled={off} placeholder={MODEL_HINT[n]} list={n === 'anthropic' ? 'assistant-anthropic-models' : undefined}
@@ -312,8 +312,8 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
   }
   const radio = 'mt-0.5 h-4 w-4 shrink-0 accent-(--ot-accent) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus'
   return (
-    <fieldset className="space-y-3 py-3 text-sm" data-assistant-own>
-      <legend className="float-left mb-2 w-full text-sm font-medium text-default">Which assistant you use</legend>
+    <fieldset className="space-y-3 py-3 text-body" data-assistant-own>
+      <legend className="float-left mb-2 w-full text-body font-medium text-default">Which assistant you use</legend>
       <label className="clear-left flex items-start gap-2.5">
         <input type="radio" name="assistant-own-mode" className={radio} checked={d.mode === 'server'} disabled={off} onChange={() => set({ mode: 'server' })} />
         <span className="text-default">The server’s assistant

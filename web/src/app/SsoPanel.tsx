@@ -1,4 +1,5 @@
 import { Icon } from '../ui'
+import { Tooltip } from '../ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '../ui'
 import { Badge } from '../ui'
@@ -134,10 +135,12 @@ export interface SsoPanelViewProps {
 
 function Lock() {
   return (
-    <span className="ml-1 inline-flex items-center gap-1 text-xs text-faint" title="Set by an OPENTODO_OIDC_* environment variable">
-      <Icon name="lock" size="xs" />
-      set by environment
-    </span>
+    <Tooltip label="Set by an OPENTODO_OIDC_* environment variable">
+      <span className="ml-1 inline-flex items-center gap-1 rounded-chip text-meta text-faint" tabIndex={0}>
+        <Icon name="lock" size="xs" />
+        set by environment
+      </span>
+    </Tooltip>
   )
 }
 

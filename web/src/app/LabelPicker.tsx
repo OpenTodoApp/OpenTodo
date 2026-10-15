@@ -47,7 +47,7 @@ export function LabelPicker({ taskId, onClose, inline = false }: { taskId: strin
   return (
     <div>
       {inline ? <Combobox {...props} placeholder="Add label…" /> : <ComboboxPanel {...props} placeholder="Type to find or create a label…" />}
-      {error && <p role="alert" className="mt-1 text-xs text-danger">{error}</p>}
+      {error && <p role="alert" className="mt-1 text-meta text-danger">{error}</p>}
     </div>
   )
 }

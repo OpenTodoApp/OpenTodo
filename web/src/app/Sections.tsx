@@ -100,7 +100,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
             )}
             {editable && section && (
               <ActionMenu label={`Section menu for ${title}`} title={title} groups={groups} width="sm:w-60" open={menuOpen} onOpenChange={setMenuOpen}
-                triggerClassName="btn-ghost touch-target px-1.5 py-0.5 text-xs" />
+                triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1.5 py-0.5 text-meta" />
             )}
           </>
         ) : undefined} />
@@ -145,14 +145,14 @@ export function AddSection({ projectId, layout }: { projectId: string; layout: '
   }
   if (!open) {
     return (
-      <button type="button" className={`btn-ghost text-xs text-muted ${layout === 'board' ? 'w-72 shrink-0 justify-start self-start' : ''}`} onClick={() => setOpen(true)}>
+      <button type="button" className={`ui-btn ui-btn--ghost ui-btn--sm text-meta text-muted ${layout === 'board' ? 'w-72 shrink-0 justify-start self-start' : ''}`} onClick={() => setOpen(true)}>
         + Add section
       </button>
     )
   }
   return (
     <form onSubmit={(e) => void submit(e)} className={layout === 'board' ? 'w-72 shrink-0 self-start' : 'max-w-xs'}>
-      <input className="input py-1 text-sm" autoFocus placeholder="Section name, Enter to add" aria-label="New section name" value={name}
+      <input className="ui-input py-1 text-body" autoFocus placeholder="Section name, Enter to add" aria-label="New section name" value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); setName('') } }}
         onBlur={() => { if (!name.trim()) setOpen(false) }} />

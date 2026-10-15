@@ -3,6 +3,7 @@
 // estimate; date-only tasks sit in each day's unscheduled lane. Every placement,
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op).
 import { Button, hueFor, Icon, MenuGroup, MenuItem, MenuSeparator, PageBody, PageHeader } from '../ui'
+import { Tooltip } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -361,7 +362,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
           <div className="min-w-full" style={{ width: mode === 'week' ? 'max(100%, 56rem)' : undefined }}>
             {/* Sticky header: day name, capacity and the unscheduled lane of each column. */}
             <div className="sticky top-0 z-20 flex border-b border-default bg-surface">
-              <div className="w-12 shrink-0 pt-1 text-right text-[10px] text-faint" aria-hidden>
+              <div className="w-12 shrink-0 pt-1 text-right text-hint text-faint" aria-hidden>
                 <span className="pr-1">all day</span>
               </div>
               {days.map((d) => (
@@ -422,7 +423,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       </div>
 
       {drag && dragTask && (
-        <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-md bg-accent px-2 py-1 text-xs text-on-accent shadow-lg" style={{ left: drag.x + 12, top: drag.y + 12 }}>
+        <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-control bg-accent px-2 py-1 text-meta text-on-accent shadow-2" style={{ left: drag.x + 12, top: drag.y + 12 }}>
           {dragTask.title || 'Untitled'}
           {drag.target?.type === 'slot' && ` · ${formatTime(drag.target.start)}`}
           {drag.target?.type === 'lane' && ' · unscheduled'}
@@ -453,11 +454,11 @@ function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, selectedId
     <li key={t.id}>
       <button type="button" data-cal-id={t.id} data-agenda-task={t.id} onClick={() => onSelect(t.id)} onDoubleClick={() => onOpen(t.id)}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(t.id) } }}
-        className={`flex min-h-11 w-full items-center gap-2 rounded px-2 py-1 text-left text-sm ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
+        className={`flex min-h-11 w-full items-center gap-2 rounded-control px-2 py-1 text-left text-body ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
         data-hue={hueFor(t.project_id ? projectMap.get(t.project_id)?.color : null)}>
-        <span className="w-14 shrink-0 font-mono text-xs text-muted">{time ?? 'all day'}</span>
+        <span className="w-14 shrink-0 font-mono text-meta text-muted">{time ?? 'all day'}</span>
         <span className="min-w-0 flex-1 truncate">{t.title || 'Untitled'}</span>
-        {t.estimate_minutes ? <span className="shrink-0 font-mono text-[11px] text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
+        {t.estimate_minutes ? <span className="shrink-0 font-mono text-hint text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
       </button>
     </li>
   )
@@ -471,11 +472,11 @@ function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, selectedId
         return (
           <section key={d.date} data-agenda-day={d.date} aria-labelledby={`agenda-${d.date}`}>
             <div className="flex items-baseline justify-between gap-2 border-b border-default px-2 pb-1">
-              <h2 id={`agenda-${d.date}`} className={`text-sm font-semibold ${d.date === today ? 'text-accent' : 'text-strong'}`}>{name} {dd}</h2>
-              <span className={`font-mono text-[11px] ${load.over ? 'text-danger' : 'text-muted'}`} data-capacity data-over={load.over || undefined}>{formatLoad(load, prefs.dayLength)}</span>
+              <h2 id={`agenda-${d.date}`} className={`text-body font-semibold ${d.date === today ? 'text-accent' : 'text-strong'}`}>{name} {dd}</h2>
+              <span className={`font-mono text-hint ${load.over ? 'text-danger' : 'text-muted'}`} data-capacity data-over={load.over || undefined}>{formatLoad(load, prefs.dayLength)}</span>
             </div>
             {d.lane.length === 0 && blocks.length === 0
-              ? <p className="px-2 py-2 text-xs text-faint">Nothing planned</p>
+              ? <p className="px-2 py-2 text-meta text-faint">Nothing planned</p>
               : (
                 <ul className="mt-1 space-y-0.5">
                   {d.lane.map((t) => row(t, null))}
@@ -493,7 +494,7 @@ function HourGutter() {
   return (
     <div className="relative w-12 shrink-0" style={{ height: GRID_HEIGHT }} aria-hidden>
       {Array.from({ length: 24 }, (_, h) => (
-        <div key={h} className="absolute right-1 -translate-y-1/2 text-[10px] text-faint" style={{ top: h * 60 * PX_PER_MIN }}>
+        <div key={h} className="absolute right-1 -translate-y-1/2 text-hint text-faint" style={{ top: h * 60 * PX_PER_MIN }}>
           {h === 0 ? '' : formatHour(h)}
         </div>
       ))}
@@ -523,20 +524,22 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zon
     <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
       <div className="flex items-baseline justify-between gap-1 px-1">
         {showName ? (
-          <span className={`truncate text-xs font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`}>
+          <span className={`truncate text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`}>
             {weekdayName} {d}
           </span>
         ) : <span />}
-        <span
-          data-capacity
-          data-over={load.over || undefined}
-          title={`${load.over ? 'Over capacity. ' : ''}Planned estimates against a ${formatMinutes(prefs.dayLength)} day${load.unestimated ? `; ${load.unestimated} unestimated (counted as 0)` : ''}`}
-          className={`whitespace-nowrap rounded px-1 font-mono text-[11px] ${load.over ? 'bg-danger-soft font-semibold text-danger' : 'text-muted'}`}
-        >
-          {formatLoad(load, prefs.dayLength)}
-          {load.over && <span className="sr-only"> over capacity</span>}
-          {load.unestimated > 0 && <span className="ml-1 text-faint">+{load.unestimated}?</span>}
-        </span>
+        <Tooltip label={`${load.over ? 'Over capacity. ' : ''}Planned estimates against a ${formatMinutes(prefs.dayLength)} day${load.unestimated ? `; ${load.unestimated} unestimated (counted as 0)` : ''}`}>
+          <span
+            data-capacity
+            data-over={load.over || undefined}
+            tabIndex={0}
+            className={`whitespace-nowrap rounded-control px-1 font-mono text-hint ${load.over ? 'bg-danger-soft font-semibold text-danger' : 'text-muted'}`}
+          >
+            {formatLoad(load, prefs.dayLength)}
+            {load.over && <span className="sr-only"> over capacity</span>}
+            {load.unestimated > 0 && <span className="ml-1 text-faint">+{load.unestimated}?</span>}
+          </span>
+        </Tooltip>
       </div>
       {day.allDay.length > 0 && (
         <ul className="mt-1 space-y-0.5" aria-label={`All-day events on ${day.date}`} data-all-day={day.date}>
@@ -546,9 +549,9 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zon
       <div
         data-drop-lane={day.date}
         aria-label={`Unscheduled on ${day.date}`}
-        className={`mt-1 min-h-8 space-y-0.5 rounded border border-dashed p-0.5 ${laneTarget ? 'border-accent bg-accent-soft' : 'border-default'}`}
+        className={`mt-1 min-h-8 space-y-0.5 rounded-control border border-dashed p-0.5 ${laneTarget ? 'border-accent bg-accent-soft' : 'border-default'}`}
       >
-        {day.lane.length === 0 && <span className="block px-1 py-1 text-[10px] text-faint">Unscheduled</span>}
+        {day.lane.length === 0 && <span className="block px-1 py-1 text-hint text-faint">Unscheduled</span>}
         {day.lane.map((t) => (
           <button
             key={t.id}
@@ -558,11 +561,11 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zon
             onPointerDown={(e) => onPointerDown(e, t.id)}
             onClick={() => onSelect(t.id)}
             onDoubleClick={() => onOpen(t.id)}
-            className={`flex w-full touch-manipulation items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-xs ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
+            className={`flex w-full touch-manipulation items-center gap-1 truncate rounded-control px-1.5 py-0.5 text-left text-meta ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
             data-hue={hueFor(t.project_id ? projectMap.get(t.project_id)?.color : null)}
           >
             <span className="truncate">{t.title || 'Untitled'}</span>
-            {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-[10px] text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
+            {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-hint text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
           </button>
         ))}
       </div>
@@ -645,7 +648,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
             }}
             onClick={() => onSelect(b.id)}
             onDoubleClick={() => onOpen(b.id)}
-            className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-md border px-1.5 shadow-sm ${height < 20 ? 'py-0 text-[10px] leading-[10px]' : 'py-0.5 text-xs'} ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-accent' : ''} ${draggingId === b.id ? 'opacity-40' : ''} border-hue-solid bg-surface`}
+            className={`absolute z-10 cursor-grab touch-manipulation overflow-hidden rounded-control border px-1.5 shadow-1 ${height < 20 ? 'py-0 text-hint leading-[10px]' : 'py-0.5 text-meta'} ${block.estimated ? 'border-solid' : 'border-dashed'} ${selected ? 'ring-2 ring-accent' : ''} ${draggingId === b.id ? 'opacity-40' : ''} border-hue-solid bg-surface`}
             style={{
               top, height,
               left: `calc(${(b.lane / b.lanes) * 100}% + 2px)`,
@@ -655,10 +658,10 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
           >
             <div className="flex items-start gap-1">
               <span className="min-w-0 flex-1 truncate font-medium">{t.title || 'Untitled'}</span>
-              {b.overlap && <span data-overlap-marker title="Overlaps another item" className="shrink-0 text-warning" aria-hidden>⧉</span>}
+              {b.overlap && <span data-overlap-marker className="shrink-0 text-warning" aria-hidden>⧉</span>}
             </div>
             {height >= 30 && (
-              <div className="truncate text-[10px] text-muted">
+              <div className="truncate text-hint text-muted">
                 {formatTime(block.start)}–{formatTime(block.end === DAY_MINUTES ? DAY_MINUTES - 1 : block.end)}
                 {block.estimated && <span className="ml-1 font-mono">{formatMinutes(t.estimate_minutes!)}</span>}
               </div>
@@ -677,24 +680,25 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
         const open = expanded === key
         return (
           <div key={key} className="absolute z-20" style={{ top: o.start * PX_PER_MIN, left: `calc(${(o.lane / o.lanes) * 100}% + 2px)`, width: `calc(${100 / o.lanes}% - 4px)` }}>
-            <button
-              type="button"
-              data-overflow={o.ids.length}
-              className="w-full rounded-md border border-input bg-canvas px-1 dark:bg-raised py-0.5 text-xs font-medium text-muted hover:bg-sunken"
-              onClick={() => setExpanded(open ? null : key)}
-              aria-expanded={open}
-              title={`${o.ids.length} more overlapping items`}
-            >
-              +{o.ids.length}
-            </button>
+            <Tooltip label={`${o.ids.length} more overlapping items`}>
+              <button
+                type="button"
+                data-overflow={o.ids.length}
+                className="w-full rounded-control border border-input bg-canvas px-1 dark:bg-raised py-0.5 text-meta font-medium text-muted hover:bg-sunken"
+                onClick={() => setExpanded(open ? null : key)}
+                aria-expanded={open}
+              >
+                +{o.ids.length}
+              </button>
+            </Tooltip>
             {open && (
-              <ul className="mt-1 w-48 space-y-0.5 rounded-md border border-default bg-surface p-1 shadow-lg">
+              <ul className="mt-1 w-48 space-y-0.5 rounded-control border border-default bg-surface p-1 shadow-2">
                 {o.ids.map((id) => {
                   const ev = day.events.get(id)
                   if (ev) {
                     return (
-                      <li key={id} data-overflow-event={ev.event.id} className="flex gap-1 truncate px-1 py-0.5 text-xs text-muted">
-                        <span className="font-mono text-[10px]">{formatTime(ev.start)}</span>
+                      <li key={id} data-overflow-event={ev.event.id} className="flex gap-1 truncate px-1 py-0.5 text-meta text-muted">
+                        <span className="font-mono text-hint">{formatTime(ev.start)}</span>
                         <span className="truncate">{ev.event.summary || 'Busy'}</span>
                       </li>
                     )
@@ -709,9 +713,9 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
                         onPointerDown={(e) => onDragStart(e, { taskId: id, kind: 'move' })}
                         onClick={() => onSelect(id)}
                         onDoubleClick={() => onOpen(id)}
-                        className={`flex w-full gap-1 truncate rounded px-1 py-0.5 text-left text-xs ${selectedId === id ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}
+                        className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-left text-meta ${selectedId === id ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}
                       >
-                        <span className="font-mono text-[10px] text-muted">{blk ? formatTime(blk.start) : ''}</span>
+                        <span className="font-mono text-hint text-muted">{blk ? formatTime(blk.start) : ''}</span>
                         <span className="truncate">{t?.title || 'Untitled'}</span>
                       </button>
                     </li>
@@ -727,10 +731,10 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
         <div
           data-cal-id={preview.id}
           data-ghost
-          className="pointer-events-none absolute inset-x-0.5 z-30 rounded-md border-2 border-dashed border-accent bg-accent/15 px-1.5 py-0.5 text-xs text-strong"
+          className="pointer-events-none absolute inset-x-0.5 z-30 rounded-control border-2 border-dashed border-accent bg-accent/15 px-1.5 py-0.5 text-meta text-strong"
           style={{ top: preview.start * PX_PER_MIN, height: Math.max(SLOT_MINUTES, Math.min(preview.length, DAY_MINUTES - preview.start)) * PX_PER_MIN }}
         >
-          <span className="font-mono text-[10px]">{formatTime(preview.start)}</span> <span className="truncate">{preview.title || 'Untitled'}</span>
+          <span className="font-mono text-hint">{formatTime(preview.start)}</span> <span className="truncate">{preview.title || 'Untitled'}</span>
         </div>
       )}
 

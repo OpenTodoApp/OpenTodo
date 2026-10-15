@@ -177,29 +177,29 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
   return (
     <AuthCard version={status.version}>
         {notice && (
-          <p className="mb-4 rounded-md bg-sunken dark:bg-raised p-3 text-sm text-muted">{notice}</p>
+          <p className="mb-4 rounded-control bg-sunken dark:bg-raised p-3 text-body text-muted">{notice}</p>
         )}
         {status.demo && !invite && (
           // A demo instance has no accounts to sign into: every visitor gets a sandbox.
           <DemoPanel hours={status.demo.sandboxHours} busy={busy} error={error} onTry={() => void tryDemo()} />
         )}
         {status.setupRequired && !invite && (
-          <p className="mb-4 rounded-md bg-accent-soft p-3 text-sm text-on-accent-soft">
+          <p className="mb-4 rounded-control bg-accent-soft p-3 text-body text-on-accent-soft">
             Welcome! Create the owner account for this server. Only you can do this; sign-up closes afterwards unless you open it.
           </p>
         )}
         {invite?.project && (
-          <p className="mb-4 rounded-md bg-accent-soft p-3 text-sm text-on-accent-soft" data-testid="project-invite-banner">
+          <p className="mb-4 rounded-control bg-accent-soft p-3 text-body text-on-accent-soft" data-testid="project-invite-banner">
             <strong>{invite.preview.inviterName}</strong> invited you to <strong className="user-text">{invite.project.name}</strong> as {invite.project.role}. Create your account to join.
             {invite.preview.email && <> This link is for <strong>{invite.preview.email}</strong>.</>}
-            <span className="mt-1 block text-xs opacity-80">The link expires {dt.formatInstant(invite.preview.expiresAt, 'datetime')} and works once.</span>
+            <span className="mt-1 block text-meta opacity-80">The link expires {dt.formatInstant(invite.preview.expiresAt, 'datetime')} and works once.</span>
           </p>
         )}
         {invite && !invite.project && (
-          <p className="mb-4 rounded-md bg-accent-soft p-3 text-sm text-on-accent-soft">
+          <p className="mb-4 rounded-control bg-accent-soft p-3 text-body text-on-accent-soft">
             <strong>{invite.preview.inviterName}</strong> invited you to join this server. Create your account below.
             {invite.preview.email && <> This invitation is for <strong>{invite.preview.email}</strong>.</>}
-            <span className="mt-1 block text-xs opacity-80">The link expires {dt.formatInstant(invite.preview.expiresAt, 'datetime')} and works once.</span>
+            <span className="mt-1 block text-meta opacity-80">The link expires {dt.formatInstant(invite.preview.expiresAt, 'datetime')} and works once.</span>
           </p>
         )}
 
@@ -207,47 +207,47 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
           <ProviderSignIn name={sso.provider} primary={!sso.local} />
         )}
         {sso.provider && mode === 'login' && sso.local && <OrDivider />}
-        {!sso.local && error && <p className="mt-3 text-sm text-danger" role="alert">{error}</p>}
-        {!sso.local && <p className="mt-3 text-center text-xs text-muted">This server uses single sign-on for every account.</p>}
+        {!sso.local && error && <p className="mt-3 text-body text-danger" role="alert">{error}</p>}
+        {!sso.local && <p className="mt-3 text-center text-meta text-muted">This server uses single sign-on for every account.</p>}
         {sso.breakGlass && (
-          <p className="mb-3 rounded-md bg-warning-soft p-2 text-xs text-on-warning-soft">
+          <p className="mb-3 rounded-control bg-warning-soft p-2 text-meta text-on-warning-soft">
             Owner sign-in: only the server owner can sign in with a password while single sign-on is required.
           </p>
         )}
 
         {sso.local && !status.demo && <form onSubmit={(e) => void submit(e)} className="space-y-3">
           {mode === 'register' && (
-            <label className="block text-sm">
+            <label className="block text-body">
               <span className="mb-1 block text-muted">Name</span>
-              <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" autoFocus={emailLocked} />
+              <input className="ui-input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" autoFocus={emailLocked} />
             </label>
           )}
-          <label className="block text-sm">
+          <label className="block text-body">
             <span className="mb-1 block text-muted">Email {emailLocked && <span className="text-faint">(set by the invitation)</span>}</span>
             <input
-              className={`input ${emailLocked ? 'bg-sunken dark:bg-raised text-muted' : ''}`}
+              className={`ui-input ${emailLocked ? 'bg-sunken dark:bg-raised text-muted' : ''}`}
               type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete={passkeys ? 'username webauthn' : 'email'}
               readOnly={emailLocked} aria-readonly={emailLocked} autoFocus={!emailLocked}
             />
           </label>
-          <label className="block text-sm">
+          <label className="block text-body">
             <span className="mb-1 block text-muted">Password {mode === 'register' && <span className="text-faint">(10+ characters)</span>}</span>
-            <input className="input" type="password" required minLength={mode === 'register' ? 10 : 1} value={password} onChange={(e) => setPassword(e.target.value)}
+            <input className="ui-input" type="password" required minLength={mode === 'register' ? 10 : 1} value={password} onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'} />
           </label>
           {needsSetupToken && (
-            <label className="block text-sm">
+            <label className="block text-body">
               <span className="mb-1 block text-muted">Setup token</span>
-              <input className="input font-mono" required value={setupToken} onChange={(e) => setSetupToken(e.target.value)}
+              <input className="ui-input font-mono" required value={setupToken} onChange={(e) => setSetupToken(e.target.value)}
                 autoComplete="off" spellCheck={false} aria-describedby="setup-token-help" />
-              <span id="setup-token-help" className="mt-1 block text-xs text-muted">
+              <span id="setup-token-help" className="mt-1 block text-meta text-muted">
                 This server asks for the token its operator configured. Find it in your hosting panel, for example
                 Coolify, this service, Environment Variables, <code>OPENTODO_SETUP_TOKEN</code>.
               </span>
             </label>
           )}
-          {error && <p className="text-sm text-danger" role="alert">{error}</p>}
-          <button className="btn-primary w-full" disabled={busy}>
+          {error && <p className="text-body text-danger" role="alert">{error}</p>}
+          <button className="ui-btn ui-btn--primary ui-btn--md w-full" disabled={busy}>
             {busy ? 'Please wait…' : mode === 'register' ? (status.setupRequired ? 'Create owner account' : invite?.project ? 'Create account and join' : invite ? 'Accept invitation' : 'Create account') : 'Sign in'}
           </button>
         </form>}
@@ -255,7 +255,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
         {passkeys && (
           <>
             <OrDivider />
-            <button type="button" className="btn-ghost w-full border border-input" disabled={busy}
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full border border-input" disabled={busy}
               onClick={() => void signInWithPasskey()}>
               Sign in with a passkey
             </button>
@@ -263,17 +263,17 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
         )}
 
         {sso.local && !status.setupRequired && status.signupAllowed && !invite && (
-          <button className="btn-ghost mt-3 w-full" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
+          <button className="ui-btn ui-btn--ghost ui-btn--md mt-3 w-full" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
             {mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
           </button>
         )}
         {invite && invite.onSignIn && (
-          <p className="mt-3 text-center text-xs text-muted">
+          <p className="mt-3 text-center text-meta text-muted">
             Already have an account here? <button type="button" className="underline" onClick={invite.onSignIn}>Sign in to join</button> instead.
           </p>
         )}
         {invite && !invite.onSignIn && (
-          <p className="mt-3 text-center text-xs text-muted">
+          <p className="mt-3 text-center text-meta text-muted">
             Already have an account here? <a className="underline" href="/">Sign in</a> instead; invitations are for new accounts only.
           </p>
         )}
@@ -286,13 +286,13 @@ export function DemoPanel({ hours, busy, error, onTry }: { hours?: { idle: numbe
   const idle = hours?.idle ?? 2
   const max = hours?.max ?? 24
   return (
-    <div className="mb-4 rounded-md bg-info-soft p-3 text-sm text-on-info-soft" data-testid="demo-panel">
+    <div className="mb-4 rounded-control bg-info-soft p-3 text-body text-on-info-soft" data-testid="demo-panel">
       <p className="font-medium">This is a public demo of OpenTodo.</p>
-      <p className="mt-1 text-xs">
+      <p className="mt-1 text-meta">
         You get a private sandbox with sample data that only you can see. It is deleted after {idle} hours of inactivity, after {max} hours at most, and every night. No sign-up; don't store anything personal.
       </p>
-      <button type="button" className="btn-primary mt-3 w-full" disabled={busy} onClick={onTry}>{busy ? 'Preparing your sandbox…' : 'Try the demo'}</button>
-      {error && <p className="mt-2 text-sm text-danger" role="alert" data-testid="demo-error">{error}</p>}
+      <button type="button" className="ui-btn ui-btn--primary ui-btn--md mt-3 w-full" disabled={busy} onClick={onTry}>{busy ? 'Preparing your sandbox…' : 'Try the demo'}</button>
+      {error && <p className="mt-2 text-body text-danger" role="alert" data-testid="demo-error">{error}</p>}
     </div>
   )
 }
@@ -300,7 +300,7 @@ export function DemoPanel({ hours, busy, error, onTry }: { hours?: { idle: numbe
 /** "Sign in with <provider>": a plain link, so the browser navigates to the provider. */
 export function ProviderSignIn({ name, primary }: { name: string; primary: boolean }) {
   return (
-    <a href={OIDC_START_URL} className={`${primary ? 'btn-primary' : 'btn-secondary'} flex w-full justify-center`}
+    <a href={OIDC_START_URL} className={`${primary ? 'ui-btn ui-btn--primary ui-btn--md' : 'ui-btn ui-btn--secondary ui-btn--md'} flex w-full justify-center`}
       data-testid="sso-sign-in">
       Sign in with {name}
     </a>
@@ -309,7 +309,7 @@ export function ProviderSignIn({ name, primary }: { name: string; primary: boole
 
 function OrDivider() {
   return (
-    <div className="my-4 flex items-center gap-3 text-xs text-faint" aria-hidden="true">
+    <div className="my-4 flex items-center gap-3 text-meta text-faint" aria-hidden="true">
       <span className="h-px flex-1 bg-(--ot-border)" />or<span className="h-px flex-1 bg-(--ot-border)" />
     </div>
   )
@@ -319,16 +319,16 @@ function OrDivider() {
 export function AuthCard({ version, children }: { version: string; children: React.ReactNode }) {
   return (
     <div className="flex min-h-full items-center justify-center bg-canvas p-6">
-      <div className="w-full max-w-sm rounded-xl border border-default bg-surface p-6 shadow-sm">
+      <div className="w-full max-w-sm rounded-card border border-default bg-surface p-6 shadow-1">
         <div className="mb-6 flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
           <div>
-            <h1 className="text-lg font-semibold">OpenTodo</h1>
-            <p className="text-xs text-muted">Your tasks, your server.</p>
+            <h1 className="text-h3 font-semibold">OpenTodo</h1>
+            <p className="text-meta text-muted">Your tasks, your server.</p>
           </div>
         </div>
         {children}
-        <p className="mt-6 text-center text-xs text-faint">OpenTodo {version} · AGPL-3.0 · no tracking, no telemetry</p>
+        <p className="mt-6 text-center text-meta text-faint">OpenTodo {version} · AGPL-3.0 · no tracking, no telemetry</p>
       </div>
     </div>
   )
@@ -355,32 +355,32 @@ export function MfaStepView(p: MfaStepViewProps) {
   }
   return (
     <form onSubmit={submit} className="space-y-3" data-testid="mfa-step">
-      <p className="text-sm text-muted">
+      <p className="text-body text-muted">
         {p.recovery
           ? 'Enter one of your recovery codes. Each code works once.'
           : 'Enter the six-digit code from your authenticator app.'}
       </p>
-      <label className="block text-sm">
+      <label className="block text-body">
         <span className="mb-1 block text-muted">{p.recovery ? 'Recovery code' : 'Code'}</span>
         {p.recovery ? (
-          <input className="input font-mono uppercase tracking-wider" autoComplete="off" autoCapitalize="characters" spellCheck={false}
+          <input className="ui-input font-mono uppercase tracking-wider" autoComplete="off" autoCapitalize="characters" spellCheck={false}
             required autoFocus value={p.code} onChange={(e) => p.onCode(e.target.value)} placeholder="XXXXX-XXXXX" />
         ) : (
-          <input className="input font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={7}
+          <input className="ui-input font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={7}
             required autoFocus value={p.code} onChange={(e) => p.onCode(e.target.value)} />
         )}
       </label>
-      <label className="flex items-center gap-2 text-sm text-muted">
+      <label className="flex items-center gap-2 text-body text-muted">
         <input type="checkbox" checked={p.remember} onChange={(e) => p.onRemember(e.target.checked)} />
         Remember this device for 30 days
       </label>
-      {p.error && <p className="text-sm text-danger" role="alert">{p.error}</p>}
-      <button className="btn-primary w-full" disabled={p.busy}>{p.busy ? 'Please wait…' : 'Verify'}</button>
+      {p.error && <p className="text-body text-danger" role="alert">{p.error}</p>}
+      <button className="ui-btn ui-btn--primary ui-btn--md w-full" disabled={p.busy}>{p.busy ? 'Please wait…' : 'Verify'}</button>
       <div className="flex justify-between gap-2">
-        <button type="button" className="btn-ghost text-xs" onClick={() => p.onRecovery(!p.recovery)}>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => p.onRecovery(!p.recovery)}>
           {p.recovery ? 'Use a code from the app' : 'Use a recovery code'}
         </button>
-        <button type="button" className="btn-ghost text-xs" onClick={p.onBack}>Back</button>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={p.onBack}>Back</button>
       </div>
     </form>
   )

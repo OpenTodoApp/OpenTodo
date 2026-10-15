@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Skeleton } from '../ui'
+import { Tooltip } from '../ui'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Button } from '../ui'
 import { Badge } from '../ui'
@@ -99,7 +100,7 @@ export function WebhooksView(p: WebhooksViewProps) {
           return (
             <div key={h.id} className="-mx-3 space-y-1">
               <ListRow leading={<Icon name="link" size="md" />} ariaLabel={h.url}
-                label={<span className="block truncate font-mono text-meta" title={h.url}>{h.url}</span>}
+                label={<Tooltip label={h.url}><span className="block truncate font-mono text-meta">{h.url}</span></Tooltip>}
                 meta={`${h.events.join(', ')} · ${projectName(h.projectId)}`}
                 badges={<Badge hue={TONE[st.tone]}>{st.label}</Badge>}
                 menu={(
@@ -171,7 +172,7 @@ export function WebhooksView(p: WebhooksViewProps) {
                 <Notice tone="warning">This is a plain http:// address: task content will travel unencrypted. Prefer https:// unless the receiver is on a network you trust.</Notice>
               )}
               <fieldset>
-                <legend className="mb-2 text-sm font-medium text-default">Events</legend>
+                <legend className="mb-2 text-body font-medium text-default">Events</legend>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {WEBHOOK_EVENTS.map(({ event, label }) => (
                     <Checkbox key={event} checked={draft.events.includes(event)} disabled={disabled}

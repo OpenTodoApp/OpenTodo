@@ -777,7 +777,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     <>
       {route.view === 'today' && <TodayAskAction role={userRole} />}
       {route.view !== 'completed' && rows.length > 0 && (
-        <button type="button" className="btn-ghost hidden px-2 py-1 text-sm pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm hidden px-2 py-1 text-body pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
           {selectMode ? 'Done' : 'Select'}
         </button>
       )}
@@ -791,14 +791,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   if (route.view === 'project' && projects.length > 0 && !currentProject) {
     return (
-      <div className="p-6 text-sm text-muted">
+      <div className="p-6 text-body text-muted">
         This project no longer exists. <button className="underline" onClick={() => navigate({ view: 'inbox' })}>Go to Inbox</button>
       </div>
     )
   }
   if (route.view === 'label' && labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) {
     return (
-      <div className="p-6 text-sm text-muted">
+      <div className="p-6 text-body text-muted">
         This label no longer exists. <button className="underline" onClick={() => navigate({ view: 'labels' })}>All labels</button>
       </div>
     )
@@ -833,8 +833,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <div className="mb-3 border-b border-default pb-2">
               {projectReadOnly ? (
                 <>
-                  <input className="input" disabled aria-label="Quick add (read-only)" placeholder="You can view this project but not add tasks" />
-                  <p role="note" className="mt-1 text-xs text-muted">Read-only: you are a viewer of this shared project.</p>
+                  <input className="ui-input" disabled aria-label="Quick add (read-only)" placeholder="You can view this project but not add tasks" />
+                  <p role="note" className="mt-1 text-meta text-muted">Read-only: you are a viewer of this shared project.</p>
                 </>
               ) : (
                 <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} labels={labels} placeholder={placeholderFor(route, currentProject, currentLabel)} voiceShortcut />
@@ -872,7 +872,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             />
           ) : groups.map((g, gi) => g.section !== undefined && currentProject ? (
             // Project list grouped by section (board-view): headings are drop targets.
-            <section key={g.key} className="mb-3 rounded-md data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(g.section?.id ?? '')}>
+            <section key={g.key} className="mb-3 rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(g.section?.id ?? '')}>
               <SectionHeader
                 section={g.section}
                 count={g.count ?? 0}
@@ -912,23 +912,23 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         </div>
       {prompt && (
         <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-default bg-surface px-4 py-2 text-sm shadow-lg">
+          <div className="flex flex-wrap items-center gap-3 rounded-control border border-default bg-surface px-4 py-2 text-body shadow-2">
             <span className="user-text min-w-0">All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
-            <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>
-            <button className="btn-ghost text-xs" onClick={() => setPrompt(null)}>Keep open <Kbd k="Esc" only className="ml-1" /></button>
+            <button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={acceptPrompt}>Complete <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setPrompt(null)}>Keep open <Kbd k="Esc" only className="ml-1" /></button>
           </div>
         </div>
       )}
       {assignFor && userId && (
         <Dialog title="Assign" label="Assign task" onClose={() => setAssignFor(null)}>
           <AssigneePicker taskId={assignFor} userId={userId} onClose={() => setAssignFor(null)} />
-          <p className="mt-2 px-1 text-[11px] text-faint">Type to filter · Enter assigns · Esc closes</p>
+          <p className="mt-2 px-1 text-hint text-faint">Type to filter · Enter assigns · Esc closes</p>
         </Dialog>
       )}
       {pickerFor && (
         <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-          <p className="mt-2 px-1 text-[11px] text-faint">Enter toggles or creates · Esc closes</p>
+          <p className="mt-2 px-1 text-hint text-faint">Enter toggles or creates · Esc closes</p>
         </Dialog>
       )}
     </div>
@@ -955,7 +955,7 @@ function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number;
       <span className="text-accent">+</span>
       <input
         ref={ref}
-        className="input py-1"
+        className="ui-input py-1"
         placeholder={`Add a subtask to ${parent.title || 'this task'}…`}
         aria-label="Add a subtask"
         value={value}
@@ -990,14 +990,14 @@ function DurationFilterControl({ active, onChange }: { active: DurationFilter | 
   return (
     <span className="flex items-center gap-1" data-duration-filter>
       {current && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-xs font-medium text-on-accent-soft" data-duration-active>
+        <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-meta font-medium text-on-accent-soft" data-duration-active>
           {current.label}
-          <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label="Clear filter" title="Clear filter" onClick={() => onChange(null)} data-clear-duration>
+          <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label="Clear filter" onClick={() => onChange(null)} data-clear-duration>
             <Icon name="x" size="xs" />
           </button>
         </span>
       )}
-      <Menu kind="menu" label="Filter" title="Filter by duration" trigger={<Icon name="filter" />} triggerClassName={`btn-ghost touch-target px-2 py-1 ${active ? 'text-accent' : ''}`} width="sm:w-56">
+      <Menu kind="menu" label="Filter" title="Filter by duration" trigger={<Icon name="filter" />} triggerClassName={`ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 ${active ? 'text-accent' : ''}`} width="sm:w-56">
         {DURATION_FILTERS.map((f) => (
           <MenuItem key={f.kind} label={f.label} description={f.title} checked={active === f.kind} onSelect={() => onChange(active === f.kind ? null : f.kind)} />
         ))}

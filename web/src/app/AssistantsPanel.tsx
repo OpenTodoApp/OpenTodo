@@ -130,7 +130,7 @@ export function AssistantsView(p: AssistantsViewProps) {
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 
       {p.status && (
-        <details className="py-3 text-sm">
+        <details className="py-3 text-body">
           <summary className="cursor-pointer font-medium text-default">Connection instructions</summary>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted">
             <li>Create a token above (or under Settings → Integrations → API tokens).</li>

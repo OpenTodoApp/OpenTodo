@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { Tooltip } from '../ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, fetchActivity, isPending, KIND_FILTERS, mergeOlder, pendingOpIds, projectActivity } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
@@ -82,29 +83,29 @@ function ActivityList({ project }: { project: Project }) {
   }
 
   return (
-    <div className="space-y-2 text-sm" data-project-activity>
+    <div className="space-y-2 text-body" data-project-activity>
       <div className="flex flex-wrap gap-2">
-        <label className="flex items-center gap-1 text-xs text-muted">
+        <label className="flex items-center gap-1 text-meta text-muted">
           Person
-          <select className="input py-0.5 text-xs" value={actor} onChange={(e) => setActor(e.target.value)} aria-label="Filter activity by person">
+          <select className="ui-input py-0.5 text-meta" value={actor} onChange={(e) => setActor(e.target.value)} aria-label="Filter activity by person">
             <option value="">Everyone</option>
             {actors.map((a) => <option key={a} value={a}>{name(a)}</option>)}
           </select>
         </label>
-        <label className="flex items-center gap-1 text-xs text-muted">
+        <label className="flex items-center gap-1 text-meta text-muted">
           Kind
-          <select className="input py-0.5 text-xs" value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Filter activity by kind">
+          <select className="ui-input py-0.5 text-meta" value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Filter activity by kind">
             <option value="">All changes</option>
             {KIND_FILTERS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
           </select>
         </label>
       </div>
-      {shown.length === 0 && <p className="text-xs text-faint">No activity{actor || kind ? ' matches these filters' : ' on this device yet'}.</p>}
+      {shown.length === 0 && <p className="text-meta text-faint">No activity{actor || kind ? ' matches these filters' : ' on this device yet'}.</p>}
       <ol className="space-y-1" aria-label="Activity">
         {shown.map((e) => {
           const title = e.taskId ? titles.get(e.taskId) || e.taskTitle || 'a task' : null
           return (
-            <li key={e.id} className="flex items-baseline gap-2 text-xs text-muted" data-event={e.kind} data-actor={e.actor}>
+            <li key={e.id} className="flex items-baseline gap-2 text-meta text-muted" data-event={e.kind} data-actor={e.actor}>
               <span className="min-w-0 flex-1">
                 <strong className="font-medium text-muted">{name(e.actor)}</strong>{' '}
                 {describeEvent(e, name, projectName)}
@@ -115,7 +116,7 @@ function ActivityList({ project }: { project: Project }) {
                     </button>
                   </>
                 )}
-                {isPending(e, pending) && <span className="ml-1 italic text-warning" title="Not yet synced">(pending)</span>}
+                {isPending(e, pending) && <Tooltip label="Not yet synced"><span className="ml-1 rounded-chip italic text-warning" tabIndex={0}>(pending)</span></Tooltip>}
               </span>
               <time className="shrink-0 text-faint" dateTime={new Date(e.ts).toISOString()}>{dt.formatInstant(e.ts, 'datetime')}</time>
             </li>
@@ -123,11 +124,11 @@ function ActivityList({ project }: { project: Project }) {
         })}
       </ol>
       {more && online && (
-        <button type="button" className="btn-ghost text-xs" disabled={state === 'loading'} onClick={() => void loadOlder()}>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" disabled={state === 'loading'} onClick={() => void loadOlder()}>
           {state === 'loading' ? 'Fetching older activity…' : 'Load older activity'}
         </button>
       )}
-      {state === 'error' && <p className="text-xs text-danger">Older activity could not be loaded.</p>}
+      {state === 'error' && <p className="text-meta text-danger">Older activity could not be loaded.</p>}
     </div>
   )
 }

@@ -224,7 +224,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     const active = r.view === 'day' || r.view === 'week' ? route.view === 'day' || route.view === 'week' : JSON.stringify(r) === JSON.stringify(route)
     // With "Show shortcut hints" on, the destination prints its `g` key (keyboard-shortcuts "Hints preference").
     const go = hints && !collapsed && badge === undefined ? GO_KEYS[r.view] : undefined
-    return <SidebarItem key={label} icon={icon} label={label} count={count} badge={go ? <kbd className="kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} />
+    return <SidebarItem key={label} icon={icon} label={label} count={count} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} />
   }
 
   // The More group (app-shell "Sidebar structure"): the less frequent destinations,
@@ -308,7 +308,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
                 className={`relative flex items-center rounded-control ${drop === 'inside' ? 'ring-2 ring-accent' : ''}`} style={{ paddingLeft: collapsed ? 0 : `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
                 {(drop === 'before' || drop === 'after') && (
                   <span aria-hidden="true" data-drop-indicator={drop}
-                    className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-accent ${drop === 'before' ? '-top-px' : '-bottom-px'}`} />
+                    className={`pointer-events-none absolute inset-x-0 h-0.5 rounded-control bg-accent ${drop === 'before' ? '-top-px' : '-bottom-px'}`} />
                 )}
                 {!collapsed && (
                   <span className="flex h-6 w-4 shrink-0 items-center justify-center">
@@ -398,7 +398,7 @@ export function ProjectMark({ project, size = 'sm' }: { project: Pick<Project, '
 function UnreadBadge({ n, label }: { n: number; label: string }) {
   const text = formatUnread(n)
   return (
-    <span data-unread-count={n} title={`${text} ${label}`} aria-label={`${text} ${label}`}
+    <span data-unread-count={n} aria-label={`${text} ${label}`}
       className="rounded-full bg-accent px-1.5 text-hint font-semibold leading-4 text-on-accent">{text}</span>
   )
 }

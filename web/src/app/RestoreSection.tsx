@@ -50,7 +50,7 @@ export function RestoreSectionView(p: RestoreSectionViewProps) {
   return (
     <section className="space-y-3 py-3" aria-labelledby="restore-heading" data-testid="restore-section">
       <div>
-        <h3 id="restore-heading" className="text-sm font-medium text-default">Restore from a backup</h3>
+        <h3 id="restore-heading" className="text-body font-medium text-default">Restore from a backup</h3>
         <p className="text-meta text-muted">
           Puts the whole server back to the state in an archive: every account, project, task and the sync log. The server restarts, and everything is checked before anything changes. On a stopped server you can also use the <a className="underline" href="/help/backups" onClick={(e) => { e.preventDefault(); navigate({ view: 'help', page: 'backups' }) }}>command line</a>.
         </p>
@@ -71,7 +71,7 @@ export function RestoreSectionView(p: RestoreSectionViewProps) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-4 text-sm text-default" role="radiogroup" aria-label="Restore from">
+      <div className="flex flex-wrap gap-4 text-body text-default" role="radiogroup" aria-label="Restore from">
         {(['destination', 'upload'] as RestoreSourceTab[]).map((t) => (
           <label key={t} className="flex items-center gap-1.5">
             <input type="radio" className="accent-(--ot-accent)" name="restore-source" value={t} checked={p.tab === t} disabled={p.offline} onChange={() => p.onTab(t)} />
@@ -163,7 +163,7 @@ export function RestoreDialog(p: RestoreDialogProps) {
   const created = s?.manifest?.createdAt ? Date.parse(s.manifest.createdAt) : null
   return (
     <Dialog title={p.undo ? 'Undo the last restore' : 'Restore from a backup'} onClose={p.onCancel} dismissable={false} size="md" testId="restore-dialog">
-      <div className="space-y-4 text-sm text-default">
+      <div className="space-y-4 text-body text-default">
         {!s && p.askPassphrase && (
           <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); p.onVerify(passphrase) }}>
             <p><span className="user-text font-medium">{p.archive}</span> is encrypted with a passphrase this server does not have.</p>
@@ -220,7 +220,7 @@ export function RestartScreen({ slow }: { slow: boolean }) {
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-canvas p-6" data-testid="restore-restarting">
       <div className="max-w-sm space-y-3 text-center" role="status" aria-live="assertive">
         <Icon name="loader-circle" size="md" className="mx-auto animate-spin motion-reduce:animate-none" />
-        <p className="text-base font-semibold text-default">Restoring and restarting…</p>
+        <p className="text-body font-semibold text-default">Restoring and restarting…</p>
         <p className="text-meta text-muted">{slow
           ? 'The server is still restarting. If this takes more than a few minutes, check the server log. This page reloads when it is back.'
           : 'This page reloads when the server is back, usually within a few seconds.'}</p>

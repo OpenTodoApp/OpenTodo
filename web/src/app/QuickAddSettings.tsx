@@ -54,7 +54,7 @@ export function QuickAddSettingsSection() {
           (<code>+30m</code>). Put text in "double quotes" to keep it literal.</>
       } control={<Switch checked={s.enabled} onChange={(on) => update({ ...s, enabled: on })} label="Parse natural language in quick add" hideLabel />} />
       <fieldset disabled={!s.enabled} className="space-y-2 py-3 disabled:opacity-50">
-        <legend className="text-sm font-medium text-default">Languages for dates and times</legend>
+        <legend className="text-body font-medium text-default">Languages for dates and times</legend>
         <p className="text-meta text-muted">English is always on.</p>
         <Checkbox label={`Follow browser languages (${browser.join(', ')})`} checked={followBrowser}
           onChange={(e) => update({ ...s, languages: e.target.checked ? null : active.filter((c) => c !== 'en') })} />

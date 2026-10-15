@@ -55,11 +55,11 @@ export function NewLabelForm({ onDone, className = '' }: { onDone: () => void; c
   }
   return (
     <form onSubmit={(e) => void submit(e)} className={className}>
-      <input className="input" autoFocus placeholder="Label name" aria-label="New label name" value={name}
+      <input className="ui-input" autoFocus placeholder="Label name" aria-label="New label name" value={name}
         onChange={(e) => { setName(e.target.value); setError(null) }}
         onKeyDown={(e) => e.key === 'Escape' && onDone()} onBlur={() => !name && onDone()} />
       {error && (
-        <p className="mt-1 text-xs text-danger">
+        <p className="mt-1 text-meta text-danger">
           {error.message}{error.id && <>. <button type="button" className="underline" onMouseDown={(e) => e.preventDefault()} onClick={() => navigate({ view: 'label', id: error.id! })}>Open it</button></>}
         </p>
       )}
@@ -161,7 +161,7 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
           <h3 className="text-hint font-semibold uppercase tracking-wide text-faint">Appearance</h3>
           <label className="block text-meta">
             <span className="mb-1 block text-muted">Name</span>
-            <input className="input" value={name} aria-invalid={!!error} aria-describedby={error ? `label-name-error-${label.id}` : undefined}
+            <input className="ui-input" value={name} aria-invalid={!!error} aria-describedby={error ? `label-name-error-${label.id}` : undefined}
               onChange={(e) => { setName(e.target.value); setError(null) }}
               onBlur={() => void saveName()} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void saveName() } }} />
             {error && <span id={`label-name-error-${label.id}`} role="alert" className="mt-1 block text-meta text-danger">{error}. The name stays “{label.name}”.</span>}
@@ -183,24 +183,24 @@ export function LabelEditPanel({ label, labels, anchor, onClose }: { label: Labe
         <section className="space-y-1">
           <h3 className="text-hint font-semibold uppercase tracking-wide text-faint">Organize</h3>
           <div className="grid grid-cols-2 gap-1">
-            <button type="button" className="btn-ghost justify-between text-meta" onClick={() => void reorderLabel(label.id, -1)}>Move up <kbd className="kbd">Alt+↑</kbd></button>
-            <button type="button" className="btn-ghost justify-between text-meta" onClick={() => void reorderLabel(label.id, 1)}>Move down <kbd className="kbd">Alt+↓</kbd></button>
-            <button type="button" className="btn-ghost justify-between text-meta" onClick={() => void reorderLabel(label.id, 'top')}>To the top</button>
-            <button type="button" className="btn-ghost justify-between text-meta" onClick={() => void reorderLabel(label.id, 'bottom')}>To the bottom</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, -1)}>Move up <kbd className="ui-kbd">Alt+↑</kbd></button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 1)}>Move down <kbd className="ui-kbd">Alt+↓</kbd></button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 'top')}>To the top</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm justify-between text-meta" onClick={() => void reorderLabel(label.id, 'bottom')}>To the bottom</button>
           </div>
         </section>
         <section className="space-y-1 border-t border-default pt-3">
           <h3 className="text-hint font-semibold uppercase tracking-wide text-danger">Danger zone</h3>
           {merging ? (
             <div className="space-y-1">
-              <button type="button" className="btn-ghost text-meta" onClick={() => setMerging(false)}><Icon name="arrow-left" /> Back</button>
+              <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setMerging(false)}><Icon name="arrow-left" /> Back</button>
               <ComboboxPanel label="Merge into" placeholder="Find a label…" source={others} getKey={(l) => l.id} getLabel={(l) => l.name} rankContext="label-merge"
                 onPick={(t) => { setMerging(false); onClose(); confirm.ask(mergeConfirm(label, t)) }} />
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <button type="button" className="btn-secondary text-meta" disabled={others.length === 0} onClick={() => setMerging(true)}><Icon name="merge" /> Merge into…</button>
-              <button type="button" className="btn-danger text-meta" onClick={() => { onClose(); confirm.ask(deleteConfirm(label)) }}><Icon name="trash-2" /> Delete label…</button>
+              <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm text-meta" disabled={others.length === 0} onClick={() => setMerging(true)}><Icon name="merge" /> Merge into…</button>
+              <button type="button" className="ui-btn ui-btn--danger ui-btn--sm text-meta" onClick={() => { onClose(); confirm.ask(deleteConfirm(label)) }}><Icon name="trash-2" /> Delete label…</button>
             </div>
           )}
         </section>
@@ -297,31 +297,31 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
 
   return (
     <div ref={row} data-label-row={label.id} data-drop-target={`label:${label.id}`} data-active={active || undefined}
-      className={`group relative rounded-md ${active ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}>
-      {drop?.id === label.id && <span aria-hidden="true" className={`pointer-events-none absolute inset-x-1 h-0.5 rounded bg-accent ${drop.zone === 'before' ? '-top-px' : '-bottom-px'}`} />}
+      className={`group relative rounded-control ${active ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}>
+      {drop?.id === label.id && <span aria-hidden="true" className={`pointer-events-none absolute inset-x-1 h-0.5 rounded-control bg-accent ${drop.zone === 'before' ? '-top-px' : '-bottom-px'}`} />}
       <div className="flex items-center gap-1 pr-1">
         {onDragStart && (
-          <span className="hover-reveal flex cursor-grab touch-none items-center pl-1 text-faint" aria-hidden="true" title="Drag to reorder (or Alt+↑ / Alt+↓)"
+          <span className="hover-reveal flex cursor-grab touch-none items-center pl-1 text-faint" aria-hidden="true"
             onPointerDown={(e) => onDragStart(e, label)} data-label-handle>
             <Icon name="grip-vertical" size="xs" />
           </span>
         )}
         {editing ? (
-          <input className="input my-0.5 ml-1 py-0.5" autoFocus aria-label="Label name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => void save()}
+          <input className="ui-input my-0.5 ml-1 py-0.5" autoFocus aria-label="Label name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => void save()}
             onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { e.stopPropagation(); setName(label.name); setEditing(false) } }} />
         ) : (
           <button data-label-open onClick={() => navigate({ view: 'label', id: label.id })} onDoubleClick={startRename} onKeyDown={onKeyDown}
-            className={`flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1.5 text-left text-sm ${active ? 'font-medium text-on-accent-soft' : 'text-muted'}`}>
+            className={`flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1.5 text-left text-body ${active ? 'font-medium text-on-accent-soft' : 'text-muted'}`}>
             <span data-hue={hueFor(label.color)} className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" />
             <span className="flex-1 truncate">{label.name}</span>
             {duplicate && <Badge hue="yellow" title="Another label has this name. Merge them from the menu or the banner on the labels page.">duplicate</Badge>}
-            {count ? <span className="text-xs text-faint" aria-label={`${count} open ${count === 1 ? 'task' : 'tasks'}`}>{count}</span> : null}
+            {count ? <span className="text-meta text-faint" aria-label={`${count} open ${count === 1 ? 'task' : 'tasks'}`}>{count}</span> : null}
           </button>
         )}
         <ActionMenu label={`Menu for label ${label.name}`} title={label.name} groups={groups} open={menuOpen} onOpenChange={setMenuOpen}
-          triggerClassName="hover-reveal touch-target rounded px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised" />
+          triggerClassName="hover-reveal touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised" />
       </div>
-      {error && <p className="px-2 pb-1 text-xs text-danger">{error}</p>}
+      {error && <p className="px-2 pb-1 text-meta text-danger">{error}</p>}
       <span role="status" aria-live="polite" className="sr-only">{announce}</span>
       {panelOpen && <LabelEditPanel label={label} labels={labels} anchor={row} onClose={() => setPanelOpen(false)} />}
     </div>
@@ -355,12 +355,12 @@ export function LabelsView({ route }: { route: Route }) {
         actions={<Button variant="primary" size="sm" icon="plus" onClick={() => setAdding(true)}>New label</Button>} />
       {adding && <NewLabelForm onDone={() => setAdding(false)} className="mb-3 max-w-xs" />}
       {source && target && (
-        <div role="note" className="mb-3 flex flex-wrap items-center gap-2 rounded-md bg-warning-soft px-3 py-2 text-xs text-on-warning-soft" data-testid="duplicate-banner">
+        <div role="note" className="mb-3 flex flex-wrap items-center gap-2 rounded-control bg-warning-soft px-3 py-2 text-meta text-on-warning-soft" data-testid="duplicate-banner">
           <span className="flex-1">
             {duplicates.size} labels share a name. Merge “{source.name}” into “{target.name}”?
           </span>
-          <button type="button" className="btn-ghost text-xs" onClick={() => setSwapped((v) => !v)} aria-label="Swap which label is kept">Swap</button>
-          <button type="button" className="btn-secondary text-xs" onClick={() => confirm.ask(mergeConfirm(source, target))}><Icon name="merge" /> Merge…</button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setSwapped((v) => !v)} aria-label="Swap which label is kept">Swap</button>
+          <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm text-meta" onClick={() => confirm.ask(mergeConfirm(source, target))}><Icon name="merge" /> Merge…</button>
         </div>
       )}
       <div className="space-y-0.5">
@@ -368,7 +368,7 @@ export function LabelsView({ route }: { route: Route }) {
       </div>
       {labels.length === 0 && !adding && (
         <EmptyState icon="tag" title="No labels yet" body={<>Labels group tasks across projects. Add one to a selected task with <Kbd k={keysOf('list.labels')} />, or create one here.</>}
-          action={<button className="btn-primary text-xs" onClick={() => setAdding(true)}><Icon name="plus" /> New label</button>} />
+          action={<button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={() => setAdding(true)}><Icon name="plus" /> New label</button>} />
       )}
       {confirm.element}
     </PageBody>

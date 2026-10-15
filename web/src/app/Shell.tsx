@@ -179,20 +179,20 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />
         {notice && (
-          <div role="status" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-sm text-on-warning-soft md:px-6">
+          <div role="status" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
             <p className="flex-1">{notice}</p>
-            <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => setNotice(null)}>Dismiss</button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setNotice(null)}>Dismiss</button>
           </div>
         )}
         {rejected && (
-          <div role="alert" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-sm text-on-warning-soft md:px-6">
+          <div role="alert" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
             <p className="flex-1">{describeRejected(rejected)}. The server's values are shown again.</p>
-            <button className="btn-ghost px-2 py-0.5 text-xs" onClick={dismissRejected}>Dismiss</button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={dismissRejected}>Dismiss</button>
           </div>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto">
           {route.view === 'help' ? (
-            <Suspense fallback={<p className="px-4 py-6 text-sm text-muted" role="status">Loading help…</p>}><HelpView page={route.page} q={route.q} /></Suspense>
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">Loading help…</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
             <SettingsView user={user} onLogout={onLogout} section={route.section} anchor={route.anchor} />
           ) : route.view === 'import' ? (

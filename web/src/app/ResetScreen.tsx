@@ -74,14 +74,14 @@ export function ResetScreen({ token, user, onDone, onLogout }: Props) {
       onLogout={onLogout}
       form={state.kind === 'ready' && !user ? (
         <form onSubmit={(e) => void submit(e)} className="space-y-3" id="reset-form">
-          <p className="text-sm text-muted">Choose a new password for <strong>{state.preview.email}</strong>. You will be signed out everywhere and can then sign in with it.</p>
+          <p className="text-body text-muted">Choose a new password for <strong>{state.preview.email}</strong>. You will be signed out everywhere and can then sign in with it.</p>
           <input type="text" name="username" autoComplete="username" value={state.preview.email} hidden readOnly />
-          <label className="block text-sm">
+          <label className="block text-body">
             <span className="mb-1 block text-muted">New password</span>
-            <input className="input" type="password" autoComplete="new-password" autoFocus minLength={10} value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input className="ui-input" type="password" autoComplete="new-password" autoFocus minLength={10} value={password} onChange={(e) => setPassword(e.target.value)} required />
           </label>
-          {error && <p className="text-sm text-danger" role="alert">{error}</p>}
-          <button className="btn-primary w-full" disabled={busy || !online}>{busy ? 'Saving…' : 'Set new password'}</button>
+          {error && <p className="text-body text-danger" role="alert">{error}</p>}
+          <button className="ui-btn ui-btn--primary ui-btn--md w-full" disabled={busy || !online}>{busy ? 'Saving…' : 'Set new password'}</button>
         </form>
       ) : null}
     />
@@ -107,45 +107,45 @@ export function ResetView({ state, user, form, onRetry, onLogout }: {
   if (user) {
     return (
       <Card title="You are already signed in">
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           This device is signed in as <strong>{user.name || user.email}</strong>. Sign out first to use this password reset link.
         </p>
         <div className="flex gap-2">
-          <button className="btn-primary" onClick={onLogout}>Sign out and continue</button>
-          <a className="btn-secondary" href="/">Back to my tasks</a>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onLogout}>Sign out and continue</button>
+          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">Back to my tasks</a>
         </div>
       </Card>
     )
   }
   switch (state.kind) {
     case 'loading':
-      return <Card title="Checking your reset link…"><p className="text-sm text-muted">One moment.</p></Card>
+      return <Card title="Checking your reset link…"><p className="text-body text-muted">One moment.</p></Card>
     case 'offline':
       return (
         <Card title="You seem to be offline">
-          <p className="text-sm text-muted">Setting a new password needs a connection to the server. The page will retry when the network returns.</p>
-          <button className="btn-primary" onClick={onRetry}>Retry now</button>
+          <p className="text-body text-muted">Setting a new password needs a connection to the server. The page will retry when the network returns.</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry now</button>
         </Card>
       )
     case 'invalid':
       return (
         <Card title="This reset link is no longer valid">
-          <p className="text-sm text-muted">It may have expired, been replaced by a newer link, or already been used. Ask the server owner or an admin for a new one.</p>
-          <a className="btn-secondary" href="/">Go to sign-in</a>
+          <p className="text-body text-muted">It may have expired, been replaced by a newer link, or already been used. Ask the server owner or an admin for a new one.</p>
+          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">Go to sign-in</a>
         </Card>
       )
     case 'rate-limited':
       return (
         <Card title="Too many attempts">
-          <p className="text-sm text-muted">Wait a minute, then try again.</p>
-          <button className="btn-primary" onClick={onRetry}>Retry</button>
+          <p className="text-body text-muted">Wait a minute, then try again.</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry</button>
         </Card>
       )
     case 'error':
       return (
         <Card title="Something went wrong">
-          <p className="text-sm text-danger">{state.message}</p>
-          <button className="btn-primary" onClick={onRetry}>Retry</button>
+          <p className="text-body text-danger">{state.message}</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry</button>
         </Card>
       )
     case 'ready':
@@ -156,10 +156,10 @@ export function ResetView({ state, user, form, onRetry, onLogout }: {
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="flex min-h-full items-center justify-center bg-canvas p-6">
-      <div className="w-full max-w-sm space-y-3 rounded-xl border border-default bg-surface p-6 shadow-sm">
+      <div className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-6 shadow-1">
         <div className="flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
-          <h1 className="text-lg font-semibold">OpenTodo</h1>
+          <h1 className="text-h3 font-semibold">OpenTodo</h1>
         </div>
         <h2 className="font-medium">{title}</h2>
         {children}
