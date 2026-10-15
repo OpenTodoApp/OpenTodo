@@ -44,6 +44,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 | Keys | What it does |
 | --- | --- |
+| <kbd>Ctrl+K</kbd> / <kbd>⌘+K</kbd> | Search and commands: find any task, project, label, view or setting, or run a command by name (also while typing, except in notes) |
 | <kbd>q</kbd> | Quick add a task |
 | <kbd>Shift+I</kbd> | Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes |
 | <kbd>Enter</kbd> / <kbd>Esc</kbd> | Proposed changes: assistant: apply the checked changes / discard the proposal; Space toggles an item |

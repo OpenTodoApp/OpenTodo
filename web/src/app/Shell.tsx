@@ -40,6 +40,8 @@ const HelpPanel = lazy(() => import('./help/HelpBundle').then((m) => ({ default:
 // In-app assistant (in-app-assistant D9): its own chunk, fetched on first open;
 // the main bundle carries only the launcher, the shortcut and the status.
 const AssistantRoot = lazy(() => import('./assistant/AssistantRoot'))
+// Command palette (search-and-command-palette D1): its own chunk, fetched on first open.
+const CommandPalette = lazy(() => import('./palette/CommandPalette'))
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -97,6 +99,22 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   useEffect(() => {
     void setCurrentUserId(user.id)
   }, [user.id])
+
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [paletteLoaded, setPaletteLoaded] = useState(false)
+  useEffect(() => {
+    // Ctrl/⌘+K opens the palette from everywhere, also while typing in a field,
+    // except in the notes editor, where it inserts a link (search-and-command-palette D1).
+    function onPaletteKey(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 'k') return
+      if ((e.target as HTMLElement | null)?.closest?.('[data-notes-editor], .ProseMirror')) return
+      e.preventDefault()
+      setPaletteLoaded(true)
+      setPaletteOpen(true)
+    }
+    window.addEventListener('keydown', onPaletteKey)
+    return () => window.removeEventListener('keydown', onPaletteKey)
+  }, [])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -179,6 +197,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           )}
           <NotificationBell />
           <SyncStatus />
+          <button type="button" className="btn-ghost touch-target" onClick={() => { setPaletteLoaded(true); setPaletteOpen(true) }}
+            title="Search and commands (Ctrl+K)" aria-label="Search and commands (Ctrl+K)" aria-haspopup="dialog" data-palette-button>
+            <Icon name="search" size="md" />
+          </button>
           <button className="btn-ghost touch-target text-xs" onClick={() => setShowHelp(true)} title="Keyboard shortcuts" aria-label="Keyboard shortcuts" aria-haspopup="dialog">
             <span className="kbd">?</span>
           </button>
@@ -205,7 +227,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
           ) : route.view === 'filter' ? (
-            <FilterView />
+            <FilterView key={route.q ?? ''} initialQuery={route.q} />
           ) : route.view === 'views' ? (
             <ViewsView />
           ) : route.view === 'view' ? (
@@ -232,6 +254,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} extraSections={vim && vimHelp ? [vimHelp] : []} />}
       {helpRequest && <Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense>}
       {assistantLoaded && <Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense>}
+      {paletteLoaded && paletteOpen && <Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense>}
       <ReminderToasts />
       <ArchivePrompt />
     </div>

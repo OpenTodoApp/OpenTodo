@@ -17,6 +17,7 @@ import type { Label, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
+import { setCurrentFilter } from './listActions'
 import { useListKeys } from './useListKeys'
 import { useToday, useViewerZone } from './useViews'
 import { TaskDetail } from './TaskDetail'
@@ -42,11 +43,13 @@ interface Group {
   tasks: Task[]
 }
 
-export function FilterView() {
+export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}) {
   const today = useToday()
   const zone = useViewerZone()
-  const [query, setQuery] = useState('')
-  const [debounced, setDebounced] = useState('')
+  const [query, setQuery] = useState(initialQuery)
+  const [debounced, setDebounced] = useState(initialQuery)
+  // A query handed over by the command palette is remembered like a typed one.
+  useEffect(() => { if (initialQuery.trim()) void addFilterHistory(initialQuery) }, [initialQuery])
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query), DEBOUNCE_MS)
     return () => clearTimeout(id)
@@ -64,6 +67,8 @@ export function FilterView() {
   const parsed = useMemo(() => tryParse(debounced), [debounced])
   const [good, setGood] = useState<{ src: string; ast: Node | null }>({ src: '', ast: null })
   if (parsed.ok && good.src !== debounced) setGood({ src: debounced, ast: parsed.ast })
+
+  useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
 
   const result = useMemo(() => {
     if (!good.ast) return null

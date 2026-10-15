@@ -44,9 +44,23 @@ export interface ListState {
   focusQuickAdd(after: string | null): boolean
   /** Complete or reopen, with the list's follow-ups (parent prompt, archive offer). */
   toggleComplete(id: string, completed: boolean): Promise<void>
+  /** Open the label picker for a task (`L`), when the list has one (search-and-command-palette D5). */
+  openLabels?(id: string): void
+  /** Open the assignee picker for a task (Shift+A), when the list has one. */
+  openAssignee?(id: string): void
 }
 
 let current: ListState | null = null
+let filterQuery: string | null = null
+
+/** The Filter view publishes its valid query while mounted ("Save filter as view" in the palette). */
+export function setCurrentFilter(q: string | null): void {
+  filterQuery = q
+}
+
+export function currentFilter(): string | null {
+  return filterQuery
+}
 
 /** TaskListView registers its state while mounted; the returned function unregisters. */
 export function registerListState(state: ListState): () => void {

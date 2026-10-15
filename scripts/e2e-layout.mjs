@@ -151,7 +151,7 @@ function screens(ids) {
     // Project invite link (project-invite-links): a visitor's choice, and the creator, who is a member already.
     { name: 'project-invite', path: `/invite/p/${ids.projectInvite}`, anon: true, ready: (p) => p.getByRole('button', { name: /sign in to join/ }).waitFor() },
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
-    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'reminder-toast', 'assistant', 'assistant-review'] },
+    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'command-palette', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'reminder-toast', 'assistant', 'assistant-review'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
     { name: 'upcoming', path: '/upcoming', ready: heading('Upcoming') },
     { name: 'assigned', path: '/assigned', ready: row('Pick paint colours') },
@@ -202,6 +202,14 @@ const OVERLAYS = {
     const trigger = p.locator('[data-notifications]')
     await trigger.click()
     return { overlay: p.getByRole('dialog', { name: 'Notifications' }), trigger, kind: 'popover' }
+  },
+  // Search and commands (search-and-command-palette 1.3), from the header button.
+  async 'command-palette'(p) {
+    const trigger = p.locator('[data-palette-button]')
+    await trigger.click()
+    const overlay = p.getByRole('dialog', { name: 'Search and commands' })
+    await overlay.getByRole('option').first().waitFor()
+    return { overlay, trigger, kind: 'dialog' }
   },
   async help(p) {
     const trigger = p.getByRole('button', { name: 'Keyboard shortcuts' })

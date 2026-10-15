@@ -713,6 +713,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       return true
     },
     toggleComplete: (id, completed) => live.current.toggleComplete(id, completed),
+    openLabels: (id) => setPickerFor(id),
+    openAssignee: (id) => setAssignFor(id),
   }), [])
   useEffect(() => {
     // Leaving the quick-add line ends an `o` insertion; `q` and clicks add at the end as before.

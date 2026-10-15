@@ -7,6 +7,7 @@ import { deleteTask, parkTask, setTaskCompleted, unparkTask, updateTask } from '
 import type { Priority, Task } from '../lib/types'
 import { deadlineFocus, deferFocus, estimateFocus, isGPending } from './signals'
 import { isTyping } from './useViews'
+import { registerListState } from './listActions'
 
 export interface KeyRow {
   key: string
@@ -32,6 +33,21 @@ export interface ListKeys {
 export function useListKeys(opts: ListKeys): void {
   const ref = useRef(opts)
   ref.current = opts
+  // The Filter view and saved views expose their list to the command palette too
+  // (search-and-command-palette D5), as TaskListView does.
+  useEffect(() => registerListState({
+    rows: () => ref.current.rows.map((r) => r.task),
+    columns: () => null,
+    selected: () => ref.current.rows.find((r) => r.key === ref.current.selected)?.task.id ?? null,
+    select: (id) => ref.current.setSelected(id === null ? null : ref.current.rows.find((r) => r.task.id === id)?.key ?? null),
+    openId: () => ref.current.openId,
+    open: (id) => ref.current.setOpenId(id),
+    readOnly: () => false,
+    manual: () => false,
+    focusQuickAdd: () => false,
+    toggleComplete: (id, completed) => setTaskCompleted(id, completed),
+    openLabels: (id) => ref.current.setPickerFor(id),
+  }), [])
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const o = ref.current
