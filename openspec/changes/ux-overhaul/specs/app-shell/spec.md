@@ -7,7 +7,7 @@ Defines the frame every screen of the web app lives in: the fixed three-column l
 ## ADDED Requirements
 
 ### Requirement: Three columns, three scrollers
-From 768 px wide the shell SHALL be three columns that fill the viewport height: the sidebar, the content column and, when open, the panel. Each SHALL scroll vertically on its own and the page itself SHALL never scroll. No other element SHALL scroll vertically, except designated regions inside the content column (board columns, the calendar grid). Scrolling one column SHALL not move another.
+From 768 px wide the shell SHALL fill the viewport height with the sidebar and the content column side by side, and from 1024 px the open panel SHALL be a third column (a sheet over the content column below that). Each SHALL scroll vertically on its own and the page itself SHALL never scroll. No other element SHALL scroll vertically, except designated regions inside the content column (board columns, the calendar grid). Scrolling one column SHALL not move another.
 
 #### Scenario: Task open on a desktop
 - **WHEN** a task is open beside a list longer than the screen on a 1280×800 screen
@@ -84,7 +84,7 @@ The shell SHALL own one panel slot to the right of the content. The open task's 
 - **THEN** the task replaces the activity in the slot, and Close returns to the list, not to the activity
 
 ### Requirement: Panel width and expansion
-From 768 px the panel SHALL be 26 rem wide, 30 rem from 1440 px, and SHALL offer an Expand action that opens the task as a full page at `/task/<id>` with the same content and a Back action. Below 768 px the panel SHALL open as a full-screen sheet over the list with a sticky header.
+From 1024 px the panel SHALL be a 26 rem column, 30 rem from 1440 px, and SHALL offer an Expand action that opens the task as a full page at `/task/<id>` with the same content and a Back action. Between 768 and 1023 px it SHALL be a sheet of at most 28 rem over the content column; below 768 px it SHALL open as a full-screen sheet over the list with a sticky header.
 
 #### Scenario: Expand a long note
 - **WHEN** the user activates Expand on an open task

@@ -96,7 +96,7 @@ export function ShortcutHelp({ onClose, extraSections = [], context }: { onClose
           onChange={(e) => setQuery(e.target.value)} data-shortcut-search />
       </div>
       <p className="sr-only" aria-live="polite">{q ? `${groups.reduce((n, g) => n + g.rows.length, 0) + extras.reduce((n, s) => n + s.rows.length, 0) + quickAdd.length} shortcuts` : ''}</p>
-      <div className="sm:max-h-[calc(80dvh-9rem)] sm:overflow-y-auto sm:overscroll-contain" data-shortcut-sheet>
+      <div className="sm:max-h-[calc(80dvh-9rem)] sm:overflow-y-auto sm:overscroll-contain" data-shortcut-sheet tabIndex={0} role="region" aria-label="Shortcuts">
         {empty && <p className="py-6 text-center text-sm text-muted">No shortcut matches “{q}”.</p>}
         <div className="grid gap-x-6 md:grid-cols-2">
           {groups.map((g, i) => (
