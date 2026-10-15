@@ -177,19 +177,21 @@ function screens(ids) {
     { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'ask', path: '/ask', ready: heading('Ask OpenTodo') },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
-    { name: 'activity', path: '/activity', ready: heading(/Activity/) },
+    { name: 'updates', path: '/updates', ready: heading('Updates') },
+    // The old address still opens Updates (ux-overhaul vocabulary).
+    { name: 'activity-redirect', path: '/activity', ready: heading('Updates') },
     { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history', 'blocked-by-picker'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), board: true },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
     { name: 'labels', path: '/labels', ready: heading('Labels'), overlays: ['label-menu', 'label-edit', 'label-merge-picker', 'confirm-dialog', 'new-label'] },
-    { name: 'views', path: '/views', ready: heading('Views'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
+    { name: 'views', path: '/views', ready: heading('Filters'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
     // Settings (settings-navigation): the overview and every section, each overlay on
     // the section that holds its control (the owner sees all of them).
     { name: 'settings', path: '/settings', ready: heading('Settings'), overlays: ['notifications'] },
     ...[
-      ['account', 'Account'], ['security', 'Security'], ['encryption', 'Encryption'], ['activity', 'Activity'],
+      ['account', 'Account'], ['security', 'Security'], ['encryption', 'Encryption'], ['activity', 'Sessions and audit log'],
       ['preferences', 'Preferences'], ['notifications', 'Notifications'], ['capture', 'Capture', ['voice-consent']], ['projects', 'Projects'],
       ['data', 'Data'], ['integrations', 'Integrations'], ['ai', 'AI'],
       ['admin', 'Administration', ['delete-user']], ['backups', 'Backups'], ['access', 'Access policies'],
@@ -273,20 +275,24 @@ async function openProperty(p, field, label) {
 }
 
 const OVERLAYS = {
-  async notifications(p) {
+  async notifications(p, ctx) {
+    // The bell lives in the sidebar footer (app-shell "No desktop top bar"): the drawer below 768 px.
+    if (ctx.width < 768) await openSidebar(p)
     const trigger = p.locator('[data-notifications]')
     await trigger.click()
     return { overlay: p.getByRole('dialog', { name: 'Notifications' }), trigger, kind: 'popover' }
   },
   // Search and commands (search-and-command-palette 1.3), from the header button.
-  async 'command-palette'(p) {
+  async 'command-palette'(p, ctx) {
+    if (ctx.width < 768) await openSidebar(p)
     const trigger = p.locator('[data-palette-button]')
     await trigger.click()
     const overlay = p.getByRole('dialog', { name: 'Search and commands' })
     await overlay.getByRole('option').first().waitFor()
     return { overlay, trigger, kind: 'dialog' }
   },
-  async help(p) {
+  async help(p, ctx) {
+    if (ctx.width < 768) await openSidebar(p)
     const trigger = p.getByRole('button', { name: 'Keyboard shortcuts' })
     await trigger.click()
     return { overlay: p.getByRole('dialog', { name: 'Keyboard shortcuts' }), trigger, kind: 'dialog' }
@@ -477,9 +483,9 @@ const OVERLAYS = {
     return { overlay: p.getByRole('dialog', { name: 'Rename view' }), kind: 'dialog' }
   },
   async 'new-dashboard'(p) {
-    const trigger = p.getByRole('button', { name: '+ New dashboard' })
+    const trigger = p.getByRole('button', { name: 'New board' })
     await trigger.click()
-    return { overlay: p.getByRole('dialog', { name: 'New dashboard' }), trigger, kind: 'dialog' }
+    return { overlay: p.getByRole('dialog', { name: 'New board' }), trigger, kind: 'dialog' }
   },
   async 'voice-consent'(p) {
     const box = p.getByRole('switch', { name: /Dictate tasks into quick add/ })
@@ -516,7 +522,8 @@ const OVERLAYS = {
   },
   // In-app assistant (in-app-assistant): the panel from the header button, and
   // a proposal to review after a scripted answer.
-  async assistant(p) {
+  async assistant(p, ctx) {
+    if (ctx.width < 768) await openSidebar(p)
     const trigger = p.locator('[data-assistant-launcher]')
     await trigger.click()
     return { overlay: p.locator('[data-assistant-panel]'), trigger, kind: 'dialog' }

@@ -40,11 +40,15 @@ function writeMoreOpen(open: boolean): void {
   try { localStorage.setItem(MORE_KEY, open ? '1' : '0') } catch { /* device state only */ }
 }
 
-export function Sidebar({ route, user, onSearch, collapsed = false, onToggleCollapse }: {
+export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, collapsed = false, onToggleCollapse }: {
   route: Route
   user: User
   /** Opens the search and command palette (the footer's Search item). */
   onSearch?: () => void
+  /** Opens the keyboard cheat sheet (`?`). */
+  onShortcuts?: () => void
+  /** Opens the assistant panel (Shift+I); absent when the assistant is not available. */
+  onAssistant?: () => void
   /** The icon rail (app-shell "Resizable sidebar"). */
   collapsed?: boolean
   onToggleCollapse?: () => void
@@ -351,6 +355,8 @@ export function Sidebar({ route, user, onSearch, collapsed = false, onToggleColl
         {onSearch && <SidebarItem icon="search" label="Search and commands" collapsed={collapsed} onClick={onSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />}
         <div className={`flex items-center gap-0.5 ${collapsed ? 'flex-col' : ''}`}>
           <NotificationBell compact={collapsed} />
+          {onAssistant && <IconButton icon="message-circle" label="Assistant" shortcut="Shift+I" size="sm" onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
+          {onShortcuts && <IconButton icon="keyboard" label="Keyboard shortcuts" shortcut="?" size="sm" onClick={onShortcuts} aria-haspopup="dialog" data-shortcuts-button />}
           <SyncStatus compact={collapsed} />
           {!collapsed && <span className="flex-1" />}
           {onToggleCollapse && (

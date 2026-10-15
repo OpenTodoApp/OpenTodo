@@ -1,4 +1,4 @@
-import { IconButton, PageActions, usePageBar } from '../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, useMediaQuery, usePageBar } from '../ui'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
@@ -97,7 +97,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   }, [route])
 
   // Whether the owner turned the assistant on for this account (cached offline).
-  useAssistantStatus()
+  const assistant = useAssistantStatus()
   const assistantOpen = useAssistantOpen()
   const [assistantLoaded, setAssistantLoaded] = useState(false)
   useEffect(() => { if (assistantOpen) setAssistantLoaded(true) }, [assistantOpen])
@@ -208,7 +208,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         className={`fixed inset-y-0 left-0 z-[45] flex w-64 max-w-[85vw] transform border-r border-default bg-canvas pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
-          <Sidebar route={route} user={user} onSearch={openPalette} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
+          <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
         </div>
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
@@ -304,13 +304,15 @@ function SidebarResizer({ width }: { width: number }) {
 /** Below 768 px: the menu button, the page's title and its actions (app-shell "No desktop top bar"), from the page-bar store. */
 function PhoneBar({ onMenu }: { onMenu: () => void }) {
   const bar = usePageBar()
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  if (desktop) return null
   return (
     <header className="flex min-h-12 items-center gap-1 border-b border-default px-2 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden" data-phone-bar>
       <IconButton icon="menu" label="Open menu" onClick={onMenu} className="touch-target" />
       {bar?.back && <IconButton icon="arrow-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />}
-      <div className="min-w-0 flex-1 truncate text-h3 font-semibold text-strong" data-phone-title>{bar?.title}</div>
+      <PageBarTitle>{bar?.title}</PageBarTitle>
       <div className="flex shrink-0 items-center gap-1" data-page-actions>
-        {bar && <PageActions actions={bar.actions} overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
+        {bar && <PageActions overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
       </div>
     </header>
   )

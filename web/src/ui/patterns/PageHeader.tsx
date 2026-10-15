@@ -9,6 +9,7 @@ import { Menu } from '../../app/overlay/Menu'
 import { IconButton } from '../Button'
 import { Icon, type IconName } from '../Icon'
 import { setPageBar } from './pageBar'
+import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../useMediaQuery'
 
 export type PageWidth = 'list' | 'form' | 'full'
 
@@ -69,16 +70,22 @@ export interface PageHeaderProps {
 export function PageHeader({ title, meta, leading, actions, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex }: PageHeaderProps) {
   const H = level === 1 ? 'h1' : 'h2'
   // The shell's phone bar shows this page's title and actions below 768 px (app-shell
-  // "No desktop top bar"); the header's own row is hidden there.
+  // "No desktop top bar"); the header's own row exists only above it, so the actions
+  // (menus, dialogs, their shortcuts) are mounted once.
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  const ownRow = level !== 1 || desktop
+  // The bar takes the title, Back, the overflow menu, the page menu and Help; the
+  // page's own actions stay in the page as a wrapping row, so nothing is clipped at 360 px.
   useEffect(() => {
-    if (level !== 1) return
-    setPageBar({ title, actions, overflow, menu, help, back })
+    if (ownRow) return
+    setPageBar({ title, overflow, menu, help, back })
     return () => setPageBar(null)
   })
   return (
     <header data-page-header data-testid={testId}
-      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas/95 px-4 backdrop-blur-sm supports-[backdrop-filter]:bg-canvas/80 md:-mx-8 md:px-8' : ''} mb-3 ${level === 1 ? 'pt-3 md:pt-5' : 'pt-5'} pb-3`}>
-      <div className={`${level === 1 ? 'hidden md:flex' : 'flex'} min-h-10 flex-wrap items-center gap-x-2 gap-y-1`} data-page-header-row>
+      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas/95 px-4 backdrop-blur-sm supports-[backdrop-filter]:bg-canvas/80 md:-mx-8 md:px-8' : ''} ${ownRow || actions ? 'mb-3 pb-3' : ''} ${level === 1 ? (ownRow ? 'pt-3 md:pt-5' : '') : 'pt-5'}`}>
+      {!ownRow && actions && <div className="flex flex-wrap items-center gap-1 pt-2" data-page-actions>{actions}</div>}
+      {ownRow && <div className="flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1" data-page-header-row>
         {back && (
           <a href={back.href ?? '#'} className={`ui-btn ui-btn--ghost ui-btn--sm -ml-2${back.hideFrom === 'lg' ? ' lg:hidden' : ''}`} data-page-back
             onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); back.onClick() }}>
@@ -94,10 +101,18 @@ export function PageHeader({ title, meta, leading, actions, overflow, menu, help
         <div className="ml-auto flex shrink-0 items-center gap-1" data-page-actions>
           <PageActions actions={actions} overflow={overflow} menu={menu} help={help} />
         </div>
-      </div>
+      </div>}
       {children && <div className="mt-2 flex flex-wrap items-center gap-2" data-page-secondary>{children}</div>}
     </header>
   )
+}
+
+/**
+ * The page's title in the shell's phone bar (below 768 px): the level-one heading
+ * there, since the header's own title row is hidden at that width.
+ */
+export function PageBarTitle({ children }: { children: ReactNode }) {
+  return <h1 className="min-w-0 flex-1 truncate text-h3 font-semibold text-strong" data-phone-title>{children}</h1>
 }
 
 /** The right side of a page header or of the phone bar: actions, the overflow menu, Help. */
