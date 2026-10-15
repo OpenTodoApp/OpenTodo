@@ -124,6 +124,9 @@ var roleNames = map[string]map[string]string{
 	"pt": {"admin": "administrador", "editor": "editor", "viewer": "leitor"},
 }
 
+// someone stands in for an inviter without a display name (the address is never shown).
+var someone = map[string]string{"en": "Someone", "de": "Jemand", "fr": "Quelqu'un", "es": "Alguien", "it": "Qualcuno", "pt": "Alguém"}
+
 // LangFrom picks the first supported language of an Accept-Language header,
 // honouring q values; English when none matches.
 func LangFrom(header string) string {
@@ -186,8 +189,12 @@ func Render(m Message, origin string) (subject, body string, err error) {
 	if r, ok := roleNames[lang][role]; ok {
 		role = r
 	}
+	inviter := strings.TrimSpace(m.Vars.Inviter)
+	if inviter == "" {
+		inviter = someone[lang]
+	}
 	data := templateData{Origin: origin, Email: m.To, Link: m.Vars.Link, Expiry: formatExpiry(m.Vars.Expiry, lang),
-		Inviter: m.Vars.Inviter, Role: role}
+		Inviter: inviter, Role: role}
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, data); err != nil {
 		return "", "", err

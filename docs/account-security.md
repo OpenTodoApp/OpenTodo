@@ -61,7 +61,7 @@ Your server's owner can also make two-factor authentication required. If so, you
 
 Open **Settings → Security**, select **Change password** in the **Password** card, enter your current password and a new one of at least 10 characters. Changing it signs you out everywhere else; the device you're on stays signed in.
 
-Forgot it? There's no self-service reset by email. Ask the owner or an admin of your server for a reset link. If you're the owner, see [recovering owner access](self-hosting/docker.md#recovering-owner-access).
+Forgot it? If your server can send email, choose **Forgot password?** on the sign-in screen and enter your address: a reset link valid for 24 hours arrives by email (the screen answers the same way whether or not the address has an account). Otherwise ask the owner or an admin of your server for a reset link. If you're the owner and cannot receive mail, see [recovering owner access](self-hosting/docker.md#recovering-owner-access).
 
 ## Check recent sign-ins
 

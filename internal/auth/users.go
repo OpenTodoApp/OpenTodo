@@ -419,6 +419,44 @@ func (s *Service) issueResetTx(ctx context.Context, tx *sql.Tx, actorID string, 
 	return pr, secret, nil
 }
 
+// RequestPasswordReset issues a 24-hour reset link for the active account with
+// email, for the self-service request (OpenSpec `outgoing-email` D5). An
+// unknown or deactivated address returns a nil user and no error, so the caller
+// answers the same way. The event has no actor.
+func (s *Service) RequestPasswordReset(ctx context.Context, email string) (*User, *PasswordReset, string, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, nil, "", err
+	}
+	defer tx.Rollback()
+	a, err := scanAccount(tx.QueryRowContext(ctx, "SELECT "+accountColumns+" WHERE u.email = ?", normalizeEmail(email)))
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil, "", nil
+	}
+	if err != nil {
+		return nil, nil, "", err
+	}
+	if a.deactivated() {
+		return nil, nil, "", nil
+	}
+	pr, secret, err := s.issueResetTx(ctx, tx, "", a, DefaultResetTTL)
+	if err != nil {
+		return nil, nil, "", err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, nil, "", err
+	}
+	return &a.User, pr, secret, nil
+}
+
+// RevokePasswordReset cancels a pending reset link (after its email could not
+// be sent, so no secret stays usable that nobody received).
+func (s *Service) RevokePasswordReset(ctx context.Context, id string) error {
+	_, err := s.db.ExecContext(ctx, "UPDATE password_resets SET revoked_at = ? WHERE id = ? AND used_at IS NULL AND revoked_at IS NULL",
+		s.clock().UnixMilli(), id)
+	return err
+}
+
 // IssueOwnerPasswordReset creates a 24-hour reset link for the owner (the
 // `opentodo reset-owner-password` subcommand, run against the data directory).
 // The owner is never a target of the HTTP reset route.
