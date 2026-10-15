@@ -44,8 +44,8 @@ export interface Vocabulary {
   inWords: string[]
   /** Words meaning one, for "in a week". */
   oneWords: string[]
-  /** Units for "in N <unit>" and "next <unit>". */
-  units: { hour: string[]; day: string[]; week: string[]; month: string[] }
+  /** Units for "in N <unit>" and "next <unit>"; minute and year only in reminder and recurrence phrases. */
+  units: { minute: string[]; hour: string[]; day: string[]; week: string[]; month: string[]; year: string[] }
   /** "of" between day and month ("3 of February", "3 de febrero"). */
   ofWords: string[]
   /** "at" before a time ("at", "um", "à", "alle", "a las", "às"). */
@@ -58,4 +58,27 @@ export interface Vocabulary {
   timeWords: Record<string, string>
   am: string[]
   pm: string[]
+  // ---- recurrence phrases (OpenSpec change quick-add-recurrence, design D2) ----
+  /** Words that start a recurrence phrase ("every", "jeden", "tous les"). */
+  every: string[]
+  /** One-word recurrence forms → the English pattern after "every" ("daily" → "day"). */
+  everyOne: Record<string, string>
+  /** The collective weekday word ("weekday", "werktags", "jours ouvrés"). */
+  weekdayAll: string[]
+  /** Ordinal words → 1–4, or -1 for last. */
+  ordinals: Record<string, number>
+  /** "and" between weekdays. */
+  andWords: string[]
+  /** "after completion". */
+  afterCompletion: string[]
+  /** "until" before a date phrase. */
+  untilWords: string[]
+  /** "for N times": words before and after the count. */
+  timesWords: { before: string[]; after: string[] }
+  // ---- reminder phrases (quick-add-recurrence, design D3) ----
+  /** "remind me", "erinnere mich", "rappelle-moi". */
+  remindWords: string[]
+  /** "before" / "after" after a reminder offset. */
+  beforeWords: string[]
+  afterWords: string[]
 }
