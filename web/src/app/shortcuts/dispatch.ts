@@ -88,6 +88,15 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   return !!t && typeof t.tagName === 'string' && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || !!t.isContentEditable)
 }
 
+/**
+ * A control Enter activates on its own (a button, a link, a tab, a menu item): the
+ * "open the selected item" shortcuts stand back for it, so the native click wins.
+ */
+export function isActivationTarget(target: EventTarget | null): boolean {
+  const t = target as Element | null
+  return !!t && typeof t.matches === 'function' && t.matches('button, a[href], summary, select, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"], [role="checkbox"], [role="switch"], [role="treeitem"], input[type="checkbox"], input[type="radio"]')
+}
+
 function dialogOpen(): boolean {
   return typeof document !== 'undefined' && !!document.querySelector('[role="dialog"]')
 }

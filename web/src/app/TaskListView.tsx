@@ -32,7 +32,7 @@ import { ProjectHeader } from './ProjectHeader'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, openTask, placeInDay } from './signals'
-import { isTypingTarget, useShortcutScope } from './shortcuts'
+import { isActivationTarget, isTypingTarget, useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
 import { keysOf } from '../lib/shortcuts'
 import { visibleTasks } from '../lib/trash'
@@ -572,10 +572,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       if (!row || !treeView) return false
       if (row.hasChildren && row.collapsed) toggleCollapsed(row.task.id, false)
     },
-    'list.open': () => {
-      if (prompt) acceptPrompt()
-      else if (selectedId) setOpenId(selectedId)
-      else return false
+    'list.open': (e) => {
+      if (prompt) { acceptPrompt(); return }
+      // Enter on a focused button or link is that control's own (the panel's tabs, a version's expander).
+      if (!selectedId || isActivationTarget(e.target)) return false
+      setOpenId(selectedId)
     },
     'list.add-subtask': () => {
       if (!row || !writable) return false

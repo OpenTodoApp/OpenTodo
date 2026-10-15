@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react'
 import { deleteTask, parkTask, setTaskCompleted, unparkTask, updateTask } from '../lib/ops'
 import type { Priority, Task } from '../lib/types'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus } from './signals'
-import { isTypingTarget, type ShortcutHandler, useShortcutScope } from './shortcuts'
+import { isActivationTarget, isTypingTarget, type ShortcutHandler, useShortcutScope } from './shortcuts'
 import { registerListState } from './listActions'
 import type { BulkList } from './bulk/useBulkList'
 import { runBulk } from './bulk/BulkActions'
@@ -89,7 +89,7 @@ export function useListKeys(opts: ListKeys): void {
     'list.actions': () => { if (!b || !(b.ticked.length || row)) return false; b.openActions() },
     'list.down': () => o.setSelected(o.rows[Math.min(o.rows.length - 1, idx + 1)]?.key ?? null),
     'list.up': () => o.setSelected(o.rows[Math.max(0, idx - 1)]?.key ?? null),
-    'list.open': () => { if (!row) return false; o.setOpenId(row.id) },
+    'list.open': (e) => { if (!row || isActivationTarget(e.target)) return false; o.setOpenId(row.id) },
     'list.complete': () => {
       if (b?.ticked.length) { void runBulk(b.ticked, { kind: 'complete' }); return }
       if (!row) return false

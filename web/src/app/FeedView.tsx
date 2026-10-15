@@ -9,7 +9,7 @@ import { currentUserId, memberName, membershipMap } from '../lib/sharing'
 import type { ActivityEvent, Membership, Project, Task } from '../lib/types'
 import { navigate } from './router'
 import { openTaskInList } from './signals'
-import { useShortcutScope } from './shortcuts'
+import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { hueFor, PageBody, PageHeader } from '../ui'
 
@@ -93,7 +93,7 @@ export function FeedView() {
   useShortcutScope('view', {
     'feed.down': () => setSelected(shown[Math.min(shown.length - 1, idx + 1)]?.id ?? null),
     'feed.up': () => setSelected(shown[Math.max(0, idx - 1)]?.id ?? null),
-    'feed.open': () => { if (idx < 0) return false; open(shown[idx]) },
+    'feed.open': (e) => { if (idx < 0 || isActivationTarget(e.target)) return false; open(shown[idx]) },
   }, { view: 'feed' })
   useEffect(() => {
     if (selected) document.querySelector(`[data-feed-id="${CSS.escape(selected)}"]`)?.scrollIntoView({ block: 'nearest' })

@@ -6,7 +6,7 @@
 // layer, text fields keep single keys, a handler can fall through.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { chordsOf, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
-import { armGPrefix, clearPrefix, dispatch, installShortcutDispatcher, isPrefixPending, registerShortcutScope, resetShortcutScopes, type ScopeFrame } from './dispatch'
+import { armGPrefix, clearPrefix, dispatch, installShortcutDispatcher, isActivationTarget, isPrefixPending, registerShortcutScope, resetShortcutScopes, type ScopeFrame } from './dispatch'
 
 type Mods = Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean }>
 
@@ -189,6 +189,16 @@ describe('sequences', () => {
     armGPrefix()
     expect(isPrefixPending()).toBe(true)
     clearPrefix()
+  })
+})
+
+describe('activation targets', () => {
+  it('names the controls whose own Enter wins over an "open" shortcut', () => {
+    const button = document.createElement('button')
+    const link = document.createElement('a'); link.href = '/x'
+    const div = document.createElement('div')
+    const tab = document.createElement('div'); tab.setAttribute('role', 'tab')
+    expect([button, link, div, tab, document.body, null].map(isActivationTarget)).toEqual([true, true, false, true, false, false])
   })
 })
 
