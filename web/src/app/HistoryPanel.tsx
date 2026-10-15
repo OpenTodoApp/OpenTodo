@@ -15,15 +15,17 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
  * of change sets read live from the server's op log, newest first, with "restore
  * this value" on each field change. Offline it says so and shows nothing stale.
  */
-export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
+export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedded = false }: {
   entity: 'task' | 'project'
   id: string
   readOnly?: boolean
   /** Called with the entity id after a restore (a task moved across scopes gets a new id). */
   onRestored?: (id: string) => void
+  /** Shown open inside a panel-slot occupant (ux-overhaul): no disclosure button. */
+  embedded?: boolean
 }) {
   const dt = useDateTimeFormat()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(embedded)
   const [sets, setSets] = useState<ChangeSet[]>([])
   const [before, setBefore] = useState<number | undefined>()
   const [state, setState] = useState<'idle' | 'loading' | 'offline' | 'error' | 'empty'>('idle')
@@ -91,10 +93,12 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored }: {
   }
 
   return (
-    <section className="pt-4" aria-label="History">
-      <button type="button" className="btn-ghost px-2 py-0.5 text-xs" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />History
-      </button>
+    <section className={embedded ? '' : 'pt-4'} aria-label="History">
+      {!embedded && (
+        <button type="button" className="btn-ghost px-2 py-0.5 text-xs" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+          <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />History
+        </button>
+      )}
       {open && (
         <div className="mt-2 text-sm">
           {state === 'offline' && <p className="text-xs text-muted">History needs a connection to the server.</p>}

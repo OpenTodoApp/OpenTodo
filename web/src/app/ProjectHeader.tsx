@@ -1,6 +1,6 @@
-import { Icon } from '../ui'
+import { Button, Icon, type IconName, isIconName, PageHeader, Tooltip } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { archiveProject, deleteProject, moveProject, updateProject } from '../lib/ops'
 import { buildProjectTree, descendantIds } from '../lib/projects'
@@ -13,6 +13,9 @@ import { DuplicateProjectDialog, SaveTemplateDialog } from './TemplateDialogs'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import { closePanel, openPanel, usePanelOccupantKey } from './panel'
+import { PanelFrame } from './PanelFrame'
+import { ProjectMark } from './Sidebar'
 import { HUES, hueFor } from '../ui'
 
 /** A "Move to" target: a project, or the top level (id ''). */
@@ -100,7 +103,45 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
 
 }
 
-export function ProjectHeader({ project, userId, actions }: { project: Project; userId?: string; /** Page actions rendered in the title row (the duration filter). */ actions?: ReactNode }) {
+/** Icons a project may carry (project-organization "Project icon"), from the bundled set. */
+export const PROJECT_ICONS: readonly IconName[] = [
+  'briefcase', 'house', 'heart', 'star', 'book-open', 'rocket', 'graduation-cap', 'plane', 'car', 'gift',
+  'music', 'coffee', 'leaf', 'dumbbell', 'wallet', 'shopping-cart', 'camera', 'wrench', 'lightbulb', 'flame', 'anchor', 'globe', 'palette', 'folder',
+]
+
+/** Icon choices with radio semantics, inside the menu (they keep the menu open); "none" is the colour dot. */
+function IconSwatches({ project }: { project: Project }) {
+  const current = project.icon && isIconName(project.icon) ? project.icon : null
+  const pick = (icon: string | null) => void updateProject(project.id, { icon })
+  return (
+    <div role="group" aria-label="Icon" className="flex flex-wrap gap-0.5 border-t border-default px-1.5 py-1.5" data-project-icons>
+      <button type="button" role="menuitemradio" aria-checked={current === null} aria-label="No icon" data-menu-label="No icon"
+        className={`touch-target inline-flex h-8 w-8 items-center justify-center rounded-control outline-none focus-visible:ring-2 focus-visible:ring-focus ${current === null ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}
+        onClick={() => pick(null)}>
+        <span className="block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: project.color }} />
+      </button>
+      {PROJECT_ICONS.map((name) => (
+        <button key={name} type="button" role="menuitemradio" aria-checked={current === name} aria-label={`Icon ${name}`} data-menu-label={`Icon ${name}`}
+          className={`touch-target inline-flex h-8 w-8 items-center justify-center rounded-control outline-none focus-visible:ring-2 focus-visible:ring-focus ${current === name ? 'bg-accent-soft' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}
+          style={current === name ? { color: project.color } : undefined} onClick={() => pick(name)}>
+          <Icon name={name} />
+        </button>
+      ))}
+    </div>
+  )
+}
+
+const ACTIVITY_PANEL = 'project-activity'
+const HISTORY_PANEL = 'project-history'
+
+export function ProjectHeader({ project, userId, actions, layout }: {
+  project: Project
+  userId?: string
+  /** Page actions rendered after Share (the duration filter, touch Select). */
+  actions?: ReactNode
+  /** The List/Board control, first among the actions (app-shell "Page template"). */
+  layout?: ReactNode
+}) {
   const [editing, setEditing] = useState(false)
   const [sharing, setSharing] = useState(false)
   // Cached membership (project-sharing): roles render the same offline.
@@ -110,22 +151,35 @@ export function ProjectHeader({ project, userId, actions }: { project: Project; 
   const [name, setName] = useState(project.name)
   const [menuOpen, setMenuOpen] = useState(false)
   const [startPicker, setStartPicker] = useState<string | null>(null)
+  const occupant = usePanelOccupantKey()
 
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const targets = useMemo(() => moveTargets(project, projects), [projects, project])
   const subCount = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at).length, [projects, project.id])
   const openTasks = useLiveQuery(() => db.tasks.filter((t) => t.project_id === project.id && !t.deleted_at && !t.completed_at).count(), [project.id], 0)
 
+  // Activity and History are occupants of the shell's panel slot (app-shell "The
+  // panel slot has an address"), opened from the overflow menu or Shift+H.
+  const showActivity = () => (occupant === ACTIVITY_PANEL ? closePanel() : openPanel(ACTIVITY_PANEL, () => <PanelFrame title="Activity" testId="project-activity"><ProjectActivity project={project} /></PanelFrame>))
+  const showHistory = () => (occupant === HISTORY_PANEL ? closePanel() : openPanel(HISTORY_PANEL, () => <PanelFrame title="History" testId="project-history"><HistoryPanel entity="project" id={project.id} readOnly={!editable} embedded /></PanelFrame>))
+  const activityRef = useRef(showActivity)
+  activityRef.current = showActivity
+
   // `m` opens the menu on the Move picker, so a move is reachable without a mouse;
-  // Shift+S opens the share dialog (members, roles, leave, transfer).
+  // Shift+S opens the share dialog (members, roles, leave, transfer); Shift+H the activity.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if ((e.key !== 'm' && e.key !== 'S') || e.metaKey || e.ctrlKey || e.altKey) return
+      if ((e.key !== 'm' && e.key !== 'S' && e.key !== 'H') || e.metaKey || e.ctrlKey || e.altKey) return
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
       if (e.key === 'S') {
         e.preventDefault()
         setSharing(true)
+        return
+      }
+      if (e.key === 'H') {
+        e.preventDefault()
+        activityRef.current()
         return
       }
       if (!editable) return
@@ -145,25 +199,31 @@ export function ProjectHeader({ project, userId, actions }: { project: Project; 
   }
 
   const [dialog, setDialog] = useState<'duplicate' | 'template' | null>(null)
-  const groups = projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks },
-    { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template') })
+  const panels: ActionGroup = { items: [
+    { kind: 'action', id: 'activity', label: 'Activity', icon: 'history', shortcut: 'Shift+H', onSelect: showActivity },
+    { kind: 'action', id: 'history', label: 'History', icon: 'rotate-ccw', onSelect: showHistory },
+  ] }
+  // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
+  const groups: ActionGroup[] = [
+    ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks },
+      { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template') }),
+    panels,
+  ]
 
-  return (
-    <div className="mb-4">
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <span className="h-3 w-3 shrink-0 rounded-full bg-hue-solid" data-hue={hueFor(project.color)} />
-      {editing ? (
-        <input className="input max-w-xs text-lg font-semibold" autoFocus value={name} onChange={(e) => setName(e.target.value)}
-          onBlur={() => void save()} onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { setName(project.name); setEditing(false) } }} />
-      ) : (
-        <h1 className={`user-text min-w-0 text-xl font-semibold ${editable ? 'cursor-text' : ''}`} onClick={() => editable && setEditing(true)} title={editable ? 'Click to rename' : undefined}>{project.name}</h1>
-      )}
+  const title = editing ? (
+    <input className="ui-input max-w-xs text-h1 font-semibold" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label="Project name"
+      onBlur={() => void save()} onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { setName(project.name); setEditing(false) } }} />
+  ) : editable ? (
+    <Tooltip label="Rename"><button type="button" className="user-text min-w-0 truncate rounded-control text-left hover:bg-sunken dark:hover:bg-raised" onClick={() => setEditing(true)} data-project-name>{project.name}</button></Tooltip>
+  ) : <span className="user-text min-w-0 truncate" data-project-name>{project.name}</span>
+
+  const meta = (
+    <>
       {membership && (
-        <button className="flex items-center gap-1 text-xs text-muted hover:text-muted" onClick={() => setSharing(true)}
-          title={membership.members.map((m) => `${m.name || m.email} (${m.role})`).join('\n')} aria-label="Members">
+        <button type="button" className="flex items-center gap-1 text-meta text-muted hover:text-default" onClick={() => setSharing(true)} aria-label={`Members: ${membership.members.map((m) => `${m.name || m.email} (${m.role})`).join(', ')}`}>
           <span className="flex -space-x-1">
             {membership.members.slice(0, 4).map((m) => (
-              <span key={m.userId} className="flex h-5 w-5 items-center justify-center rounded-full border border-surface bg-sunken text-[10px] font-semibold uppercase text-muted dark:bg-raised">
+              <span key={m.userId} className="flex h-5 w-5 items-center justify-center rounded-full border border-surface bg-sunken text-hint font-semibold uppercase text-muted dark:bg-raised">
                 {(m.name || m.email).slice(0, 1)}
               </span>
             ))}
@@ -171,21 +231,26 @@ export function ProjectHeader({ project, userId, actions }: { project: Project; 
           <span>{membership.members.length} · {role}</span>
         </button>
       )}
-      {role === 'viewer' && <span role="note" className="rounded bg-sunken px-1.5 py-0.5 text-xs text-muted">Read-only</span>}
-      <div className="flex-1" />
-      {actions}
-      <button className="btn-ghost text-xs" onClick={() => setSharing(true)} title="Share and manage members (Shift+S)" aria-haspopup="dialog">
-        {canManageMembers(role) ? 'Share' : 'Members'} <span className="kbd ml-1">S</span>
-      </button>
+      {role === 'viewer' && <span role="note" className="rounded-chip bg-sunken px-1.5 py-0.5 text-meta text-muted">Read-only</span>}
+    </>
+  )
+
+  return (
+    <>
+      <PageHeader title={title} leading={<ProjectMark project={project} size="md" />} meta={meta} help="project"
+        actions={<>
+          {layout}
+          <Tooltip label={canManageMembers(role) ? 'Share project' : 'Members'} shortcut="Shift+S">
+            <Button variant="ghost" size="sm" icon="users" onClick={() => setSharing(true)} aria-haspopup="dialog" data-project-share>{canManageMembers(role) ? 'Share' : 'Members'}</Button>
+          </Tooltip>
+          {actions}
+        </>}
+        menu={<ActionMenu label="Project menu" title={project.name} groups={groups} header={editable ? <><ColourSwatches project={project} /><IconSwatches project={project} /></> : undefined}
+          trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-72"
+          open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />} />
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} onClose={() => setSharing(false)} />}
       {dialog === 'duplicate' && <DuplicateProjectDialog project={project} shared={!!membership} onClose={() => setDialog(null)} />}
       {dialog === 'template' && <SaveTemplateDialog project={project} onClose={() => setDialog(null)} />}
-      {<ActionMenu label="Project menu" title={project.name} groups={groups} header={editable ? <ColourSwatches project={project} /> : undefined}
-        trigger={<>Project<Icon name="chevron-down" size="xs" /></>} triggerClassName="btn-ghost text-xs" width="sm:w-72"
-        open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />}
-    </div>
-    <HistoryPanel entity="project" id={project.id} readOnly={!editable} />
-    <ProjectActivity project={project} />
-    </div>
+    </>
   )
 }

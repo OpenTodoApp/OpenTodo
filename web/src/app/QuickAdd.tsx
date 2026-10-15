@@ -41,6 +41,18 @@ function dueInWords(due: Due): string {
   return words.startsWith('Today') || words.startsWith('Tomorrow') ? `${words} · ${full}` : words
 }
 
+/** How many times quick add has been used on this device, for the guide link's first three uses. */
+export const QUICK_ADD_HELP_USES = 3
+const USES_KEY = 'ot.quickAdd.uses'
+export function quickAddUses(): number {
+  try { return Number(localStorage.getItem(USES_KEY)) || 0 } catch { return 0 }
+}
+function countQuickAddUse(): number {
+  const n = quickAddUses() + 1
+  try { localStorage.setItem(USES_KEY, String(n)) } catch { /* device state only */ }
+  return n
+}
+
 /** The picker's helper; a label created meanwhile (another tab, a sync) is reused. */
 async function createLabelByName(name: string): Promise<string> {
   try {
@@ -156,11 +168,15 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     setHighlight(null)
   }
 
+  // The first three uses on this device show the guide link (documentation "Contextual help").
+  const [helpOffered, setHelpOffered] = useState(() => quickAddUses() < QUICK_ADD_HELP_USES)
   async function submit(e: FormEvent) {
     e.preventDefault()
     const line = value.trim()
     if (!line) return
     if (parsed && !parsed.title) return // only attributes typed so far; wait for a title
+    // A real add counts as a use; the link leaves after the third one.
+    if (helpOffered && countQuickAddUse() >= QUICK_ADD_HELP_USES) setHelpOffered(false)
     const snapshot = parsed
     // Clear first so the next entry can be typed while labels are being created.
     valueRef.current = ''
@@ -279,8 +295,8 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           </div>
         )}
       </div>
-      {/* Contextual help (user-documentation): shown while the line is being parsed. */}
-      {chips.length > 0 && <div className="-mt-0.5 pl-5"><HelpLink screen="quick-add" topic="Quick add" /></div>}
+      {/* Contextual help (user-documentation; ux-overhaul "Contextual help"): offered on the first three uses on this device. */}
+      {helpOffered && <div className="-mt-0.5 pl-5"><HelpLink screen="quick-add" topic="Quick add" /></div>}
     </form>
   )
 })

@@ -45,8 +45,8 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     demo: () => ['end-to-end encryption'], demoOnly: true,
   },
   {
-    id: 'activity', label: 'Activity', group: 'you', icon: 'history',
-    description: (u) => (owner(u) ? 'Recent sign-ins and token changes, and the audit log' : 'Recent sign-ins and token changes on your account'),
+    id: 'activity', label: 'Sessions and audit log', group: 'you', icon: 'history',
+    description: (u) => (owner(u) ? 'Recent sign-ins and token changes, and the server’s audit log' : 'Recent sign-ins and token changes on your account'),
   },
   { id: 'preferences', label: 'Preferences', group: 'app', icon: 'settings', description: () => 'Start view, date and time, calendar and keyboard' },
   {

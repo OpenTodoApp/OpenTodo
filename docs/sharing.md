@@ -4,7 +4,7 @@ summary: Share a project with people on your server, choose what they can do, as
 audience: user
 section: Guides
 specs: [project-sharing, task-assignment, comments, invitations, activity-feed]
-screens: [share-dialog#share-a-project, settings/members#invite-someone-new, settings/project-invites#who-can-bring-new-people]
+screens: [share-dialog#share-a-project, settings/members#invite-someone-new, settings/project-invites#who-can-bring-new-people, updates#see-what-others-changed]
 order: 70
 card: comments
 ---
@@ -107,11 +107,11 @@ The **Activity** tab shows the task's changes: who created it, completed it or c
 
 ## See what others changed
 
-**Activity** in the sidebar (<kbd>g</kbd> <kbd>h</kbd>) lists the latest changes in all your shared projects, newest first and grouped by day. Each shared project shows a count of unread changes next to its name, and opening the feed marks them as seen. Filter by project, person or kind of change (completed, created, commented, assigned, rescheduled).
+**Updates** (in the sidebar's **More** group, or <kbd>g</kbd> <kbd>h</kbd>) lists the latest changes in all your shared projects, newest first and grouped by day. Each shared project shows a count of unread changes next to its name, and opening the feed marks them as seen. Filter by project, person or kind of change (completed, created, commented, assigned, rescheduled).
 
 <picture><source srcset="images/activity-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/activity-light.webp" alt="The Activity feed listing recent changes by Sam Rivera and you in the Home renovation project."></picture>
 
-Inside a project, **Activity** at the top (<kbd>Shift</kbd>+<kbd>H</kbd>) shows the changes for that project only.
+Inside a project, **Activity** in the header's **⋯** menu (<kbd>Shift</kbd>+<kbd>H</kbd>) opens the changes for that project only beside the list.
 
 ## Things to know
 

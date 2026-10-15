@@ -1,4 +1,4 @@
-import { Icon } from '../../ui'
+import { Icon, type IconName, PageBody, PageHeader } from '../../ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { findTopic, helpSections, loadHelp, searchHelp, type HelpBundle } from '../../lib/help'
 import type { SearchEntry } from '../../../scripts/docs/search-core.mjs'
@@ -8,9 +8,25 @@ import { HelpContent } from './HelpContent'
 const SITE = 'https://open-todo.app/docs/'
 
 /**
- * The Help view (OpenSpec change `user-documentation`, design D5): the user guide
- * of this version, offline, with search. `/help` lists the guides, `/help/<guide>`
- * shows one with its "On this page" list, `/help?q=` starts with a search.
+ * The task-shaped entries of the Help landing (documentation "Help inside the app"):
+ * what people come to do, before the full guide list. Each opens a guide at a section.
+ */
+export const HELP_TASKS: readonly { label: string; icon: IconName; page: string; anchor?: string }[] = [
+  { label: 'Add a task with a date', icon: 'calendar-days', page: 'quick-add' },
+  { label: 'Repeat a task', icon: 'repeat', page: 'recurring-and-reminders' },
+  { label: 'Share a project', icon: 'users', page: 'sharing', anchor: 'share-a-project' },
+  { label: 'Sync a calendar', icon: 'calendar-range', page: 'caldav' },
+  { label: 'Import from another app', icon: 'download', page: 'import-export', anchor: 'import-from-another-app' },
+  { label: 'Install the app', icon: 'house', page: 'install-app' },
+  { label: 'Use the keyboard', icon: 'list', page: 'keyboard' },
+  { label: 'Run your own server', icon: 'globe', page: 'self-hosting/docker' },
+]
+
+/**
+ * The Help view (OpenSpec change `user-documentation`, design D5; ux-overhaul
+ * "Help inside the app"): the user guide of this version, offline, with search
+ * first. `/help` lists the task entries and the guides, `/help/<guide>` shows one
+ * with its "On this page" list, `/help?q=` starts with a search.
  */
 export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
   const [data, setData] = useState<{ bundle: HelpBundle; entries: SearchEntry[] } | null>(null)
@@ -20,6 +36,8 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
   const searchRef = useRef<HTMLInputElement>(null)
   useEffect(() => { loadHelp().then(setData, () => setFailed(true)) }, [])
   useEffect(() => { setQuery(q ?? '') }, [q])
+  // The landing opens on the search field.
+  useEffect(() => { if (data && !slug) searchRef.current?.focus({ preventScroll: true }) }, [data, slug])
   // `:help <topic>` that names a guide opens it directly.
   useEffect(() => {
     if (!data || !q || slug) return
@@ -30,23 +48,36 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
   const results = useMemo(() => (data && query.trim() ? searchHelp(data.entries, query) : []), [data, query])
   const page = data && slug ? data.bundle.pages.find((p) => p.slug === slug) : undefined
   const open = (s: string, a?: string) => { setQuery(''); setAnchor(a); navigate({ view: 'help', page: s }) }
+  const back = { label: 'Help', href: '/help', onClick: () => { setQuery(''); navigate({ view: 'help' }) } }
+  const slugs = useMemo(() => new Set(data?.bundle.pages.map((p) => p.slug) ?? []), [data])
 
-  if (failed) return <div className="mx-auto max-w-2xl px-4 py-6"><h1 className="text-xl font-semibold">Help</h1><p className="mt-2 text-sm text-muted">Help could not be loaded. Reload the app and try again.</p></div>
-  if (!data) return <div className="mx-auto max-w-2xl px-4 py-6"><h1 className="text-xl font-semibold">Help</h1><p className="mt-2 text-sm text-muted" role="status">Loading…</p></div>
+  if (failed) {
+    return (
+      <PageBody width="list">
+        <PageHeader title="Help" />
+        <p className="text-body text-muted">Help could not be loaded. Reload the app and try again.</p>
+      </PageBody>
+    )
+  }
+  if (!data) {
+    return (
+      <PageBody width="list">
+        <PageHeader title="Help" />
+        <p className="text-body text-muted" role="status">Loading…</p>
+      </PageBody>
+    )
+  }
+
+  const version = <span className="whitespace-nowrap">OpenTodo {data.bundle.version} · works offline</span>
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 md:px-8" data-help-scroll data-help-view>
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        {page ? (
-          <p className="text-sm"><a className="underline" href="/help" onClick={(e) => { e.preventDefault(); setQuery(''); navigate({ view: 'help' }) }}>Help</a> <Icon name="chevron-right" size="xs" className="inline align-[-1px]" /> {page.section}</p>
-        ) : (
-          <h1 className="text-xl font-semibold">Help</h1>
-        )}
-        <span className="text-xs text-muted">OpenTodo {data.bundle.version} · works offline</span>
-      </div>
-      <div role="search" className="relative mt-3 max-w-xl">
+    <PageBody width={page ? 'full' : 'list'} className={page ? 'max-w-5xl' : ''} data-help-scroll data-help-view>
+      {page
+        ? <PageHeader title={page.title} meta={version} back={back} />
+        : <PageHeader title="Help" meta={version} />}
+      <div role="search" className="relative max-w-xl">
         <label className="sr-only" htmlFor="help-search">Search help</label>
-        <input id="help-search" ref={searchRef} type="search" className="input w-full" placeholder="Search help, e.g. board, repeat, offline" value={query}
+        <input id="help-search" ref={searchRef} type="search" className="ui-input w-full" placeholder="Search help, e.g. board, repeat, offline" value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') { const first = document.querySelector<HTMLAnchorElement>('[data-help-result]'); if (first) { e.preventDefault(); first.focus() } }
@@ -56,13 +87,13 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
       <p className="sr-only" aria-live="polite">{query.trim() ? `${results.length} result${results.length === 1 ? '' : 's'}` : ''}</p>
       {query.trim() ? (
         <section aria-label="Search results" className="mt-4 max-w-2xl">
-          {results.length === 0 && <p className="text-sm text-muted">No matches. Try a shorter or different word.</p>}
+          {results.length === 0 && <p className="text-body text-muted">No matches. Try a shorter or different word.</p>}
           <ul className="space-y-1">
             {results.map((r) => {
               const [s, a] = r.url.split('#')
               return (
                 <li key={r.url}>
-                  <a href={`/help/${s}${a ? `#${a}` : ''}`} data-help-result className="block rounded-md px-3 py-2 hover:bg-sunken focus-visible:bg-sunken dark:hover:bg-raised"
+                  <a href={`/help/${s}${a ? `#${a}` : ''}`} data-help-result className="block rounded-control px-3 py-2 hover:bg-sunken focus-visible:bg-sunken dark:hover:bg-raised"
                     onClick={(e) => { e.preventDefault(); open(s, a) }}
                     onKeyDown={(e) => {
                       const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-help-result]')]
@@ -70,8 +101,8 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
                       if (e.key === 'ArrowDown' && links[i + 1]) { e.preventDefault(); links[i + 1].focus() }
                       if (e.key === 'ArrowUp') { e.preventDefault(); (links[i - 1] ?? searchRef.current)?.focus() }
                     }}>
-                    <span className="block text-sm font-medium">{r.page}{r.heading ? ` › ${r.heading}` : ''}</span>
-                    <span className="help-snippet block text-xs text-muted" dangerouslySetInnerHTML={{ __html: r.snippet }} />
+                    <span className="block text-body font-medium">{r.page}{r.heading ? ` › ${r.heading}` : ''}</span>
+                    <span className="help-snippet block text-meta text-muted" dangerouslySetInnerHTML={{ __html: r.snippet }} />
                   </a>
                 </li>
               )
@@ -84,8 +115,8 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
             <HelpContent page={page} anchor={anchor} onOpen={open} />
           </article>
           {page.toc.length > 1 && (
-            <nav aria-label="On this page" className="order-first mb-6 text-sm lg:order-none lg:sticky lg:top-4 lg:self-start">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">On this page</p>
+            <nav aria-label="On this page" className="order-first mb-6 text-body lg:order-none lg:sticky lg:top-20 lg:self-start">
+              <p className="mb-1 text-hint font-semibold uppercase tracking-wide text-muted">On this page</p>
               <ul className="space-y-0.5">
                 {page.toc.map((t) => (
                   <li key={t.id}><a className="touch-target block py-1 text-muted hover:underline" href={`#${t.id}`}
@@ -96,28 +127,48 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
           )}
         </div>
       ) : (
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 space-y-8">
+          {/* What people come to do, before the guide list (documentation "Help inside the app"). */}
+          <section aria-label="Common tasks" data-help-tasks>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {HELP_TASKS.map((t) => {
+                const inApp = slugs.has(t.page)
+                const href = inApp ? `/help/${t.page}${t.anchor ? `#${t.anchor}` : ''}` : `${SITE}${t.page}/`
+                return (
+                  <li key={t.label}>
+                    <a href={href} data-help-task={t.page} target={inApp ? undefined : '_blank'} rel={inApp ? undefined : 'noopener'}
+                      className="flex min-h-11 items-center gap-3 rounded-card border border-default px-3 py-2 text-body hover:border-accent hover:bg-sunken dark:hover:bg-raised"
+                      onClick={(e) => { if (!inApp) return; e.preventDefault(); open(t.page, t.anchor) }}>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-control bg-accent-soft text-on-accent-soft"><Icon name={t.icon} /></span>
+                      <span className="min-w-0 flex-1 truncate font-medium">{t.label}</span>
+                      {!inApp && <Icon name="external-link" size="xs" className="text-faint" />}
+                    </a>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
           {helpSections(data.bundle).map((s) => (
             <section key={s.title} aria-labelledby={`help-sec-${s.title}`}>
-              <h2 id={`help-sec-${s.title}`} className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{s.title}</h2>
+              <h2 id={`help-sec-${s.title}`} className="mb-2 text-hint font-semibold uppercase tracking-wide text-muted">{s.title}</h2>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {s.pages.map((p) => (
                   <li key={p.slug}>
-                    <a href={`/help/${p.slug}`} className="block h-full rounded-lg border border-default p-3 hover:border-accent"
+                    <a href={`/help/${p.slug}`} className="block h-full rounded-card border border-default p-3 hover:border-accent"
                       onClick={(e) => { e.preventDefault(); open(p.slug) }}>
                       <span className="block font-medium">{p.title}</span>
-                      <span className="mt-0.5 block text-sm text-muted">{p.summary}</span>
+                      <span className="mt-0.5 block text-meta text-muted">{p.summary}</span>
                     </a>
                   </li>
                 ))}
               </ul>
             </section>
           ))}
-          <p className="text-sm text-muted">
+          <p className="text-body text-muted">
             Running the server, integrations and screenshots of every guide are on the <a className="underline" href={SITE} target="_blank" rel="noopener">documentation website</a>.
           </p>
         </div>
       )}
-    </div>
+    </PageBody>
   )
 }

@@ -43,6 +43,8 @@ export interface Project {
   position: number
   archived: boolean
   parent_id: string | null
+  /** An icon name from the app's set (ux-overhaul "Project icon"); null shows the colour dot. */
+  icon?: string | null
   created_at: number
   deleted_at: number | null
   _clock: Clock
@@ -277,6 +279,8 @@ export interface UserPrefs {
   /** Appearance (theming): unknown values read as the defaults. */
   theme_mode: ThemeModePref
   theme_accent: string
+  /** Promoted sidebar destinations (ux-overhaul): comma-separated view ids; unknown ones are ignored. */
+  sidebar_destinations: string
   _clock: Clock
 }
 

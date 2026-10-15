@@ -24,6 +24,8 @@ export interface Entry {
   marker?: string
   icon?: IconName
   shortcut?: string
+  /** Words the entry also matches on, never shown (the old name of a renamed page). */
+  keywords?: string
   /** Runs the entry. A returned step keeps the palette open on it. */
   run: () => unknown | Promise<unknown>
 }

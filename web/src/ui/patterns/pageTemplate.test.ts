@@ -2,7 +2,7 @@
 // primitives"): a view renders its level-one heading through PageHeader, never on
 // its own. Screens outside the shell (sign-in, invitations, the share target, the
 // unlock and enrolment gates) have no page template. The rest of today's views are
-// on a list that only shrinks and empties when task 4.3 wraps every view.
+// list is empty since task 4.3 wrapped every view; it may only shrink.
 import { describe, expect, it } from 'vitest'
 
 const app = import.meta.glob<string>(['../../app/**/*.tsx', '!../../app/**/*.test.tsx', '!../../app/**/*.stories.tsx'], { query: '?raw', import: 'default', eager: true })
@@ -18,24 +18,9 @@ export const OUTSIDE_SHELL: readonly string[] = [
   'src/app/UnlockScreen.tsx',
 ]
 
-/** Views not yet on the page template (ux-overhaul task 4.3). This list may only shrink. */
-export const PAGE_HEADER_NOT_YET: readonly string[] = [
-  'src/app/CalendarView.tsx',
-  'src/app/DashboardView.tsx',
-  'src/app/FeedView.tsx',
-  'src/app/FilterView.tsx',
-  'src/app/ImportScreen.tsx',
-  'src/app/LabelsView.tsx',
-  'src/app/ProjectHeader.tsx',
-  'src/app/SavedViewView.tsx',
-  'src/app/SettingsView.tsx',
-  'src/app/TaskListView.tsx',
-  'src/app/TrashView.tsx',
-  'src/app/ViewsView.tsx',
-  'src/app/assistant/AskEntry.tsx',
-  'src/app/help/HelpView.tsx',
-]
-const PAGE_HEADER_NOT_YET_MAX = 14
+/** Views not yet on the page template (ux-overhaul task 4.3): none since task 4.3; the list may only shrink. */
+export const PAGE_HEADER_NOT_YET: readonly string[] = []
+const PAGE_HEADER_NOT_YET_MAX = 0
 
 export function ownHeadings(path: string, source: string): string[] {
   return source.split('\n').flatMap((line, i) => (/<h1\b/.test(line) ? [`${path}:${i + 1}`] : []))

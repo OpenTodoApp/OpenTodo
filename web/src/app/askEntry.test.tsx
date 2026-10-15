@@ -97,7 +97,9 @@ describe('Ask screen (3.4)', () => {
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await flush(30)
-    // The sidebar lists Ask while the assistant is available.
+    // The sidebar's More group lists Ask while the assistant is available (ux-overhaul).
+    await click(document.querySelector('[data-testid="sidebar-more"] button[aria-expanded]')!)
+    await flush(10)
     expect([...document.querySelectorAll('aside button')].some((b) => b.textContent?.trim() === 'Ask')).toBe(true)
     await key(document.body, 'g')
     await key(document.body, 'k')

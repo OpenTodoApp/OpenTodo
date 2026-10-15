@@ -3,12 +3,12 @@
 // first tasks; all panels are evaluated in one pass. Tab / Shift+Tab move between
 // panels, j / k move inside one.
 import { blockedMap } from '../lib/dependencies'
-import { Icon } from '../ui'
+import { Button, Icon, PageBody, PageHeader } from '../ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
 import type { Label, Project, View } from '../lib/types'
-import { MAX_PANELS, addPanel, dashboardPanels, evaluateViews, isDashboard, movePanel, removePanel, setPinned, type PanelState } from '../lib/views'
+import { MAX_PANELS, addPanel, dashboardPanels, evaluateViews, isDashboard, movePanel, removePanel, type PanelState } from '../lib/views'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { navigate } from './router'
@@ -91,21 +91,17 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   }, [panels, focusIdx, selected, openId])
 
   return (
-    <div className="min-w-0 px-4 py-5 md:px-8">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="text-faint"><Icon name="kanban" /></span>
-          <h1 className="truncate text-xl font-semibold">{dashboard.name}</h1>
-          <span className="text-sm text-faint">{panels.length}/{MAX_PANELS}</span>
-          <span className="flex-1" />
-          <select className="input w-auto py-1 text-xs" aria-label="Add panel" value="" disabled={panels.length >= MAX_PANELS || candidates.length === 0}
-            onChange={(e) => { const id = e.target.value; if (id) run(() => addPanel(dashboard.id, id)) }}>
-            <option value="">{panels.length >= MAX_PANELS ? 'Six panels at most' : candidates.length === 0 ? 'No view to add' : '+ Add panel…'}</option>
-            {candidates.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
-          </select>
-          <button className="btn-ghost px-2 py-1 text-xs" aria-expanded={editing} onClick={() => setEditing((x) => !x)}>{editing ? 'Done' : 'Arrange'}</button>
-          <button className="btn-ghost px-2 py-1 text-xs" onClick={() => void setPinned(dashboard.id, !dashboard.pinned)}>{dashboard.pinned ? 'Unpin' : 'Pin'}</button>
-          <ViewMenu view={dashboard} />
-        </div>
+    <PageBody width="full">
+        <PageHeader title={dashboard.name} icon="kanban" meta={`${panels.length}/${MAX_PANELS}`} help="dashboard"
+          actions={<>
+            <select className="ui-input w-auto py-1 text-meta" aria-label="Add panel" value="" disabled={panels.length >= MAX_PANELS || candidates.length === 0}
+              onChange={(e) => { const id = e.target.value; if (id) run(() => addPanel(dashboard.id, id)) }}>
+              <option value="">{panels.length >= MAX_PANELS ? 'Six panels at most' : candidates.length === 0 ? 'No filter to add' : '+ Add panel…'}</option>
+              {candidates.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+            </select>
+            <Button variant="ghost" size="sm" aria-expanded={editing} onClick={() => setEditing((x) => !x)}>{editing ? 'Done' : 'Arrange'}</Button>
+          </>}
+          menu={<ViewMenu view={dashboard} />} />
         {error && <p role="alert" className="mb-3 text-xs text-danger">{error}</p>}
         {editing && (
           <ol className="mb-4 space-y-1 rounded-lg border border-default p-2 text-sm" aria-label="Arrange panels">
@@ -123,7 +119,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
         )}
         {panels.length === 0 ? (
           <p className="rounded-lg border border-dashed border-input p-6 text-center text-sm text-muted">
-            Add up to six saved views with “Add panel”.
+            Add up to six saved filters with “Add panel”.
           </p>
         ) : (
           <div ref={gridRef} className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
@@ -135,7 +131,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
             ))}
           </div>
         )}
-    </div>
+    </PageBody>
   )
 }
 

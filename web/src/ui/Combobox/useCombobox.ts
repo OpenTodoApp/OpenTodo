@@ -11,6 +11,8 @@ export interface ComboboxConfig<T> {
   getKey: (item: T) => string
   getLabel: (item: T) => string
   getSecondary?: (item: T) => string | undefined
+  /** Extra words an item matches on without showing them (old names of a command). */
+  getKeywords?: (item: T) => string | undefined
   /** Named group of an item (shown as a heading); groups keep their first-seen order. */
   getGroup?: (item: T) => string | undefined
   /** Ancestor labels (project tree): indented without a query, shown as a path when filtering. */
@@ -91,7 +93,7 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
   const fullItems = isAsync(cfg.source) ? asyncItems : cfg.source
   const items = !query.trim() && cfg.emptySource ? cfg.emptySource : fullItems
   // Fold each option's text once per source, not on every keystroke.
-  const prepared = useMemo(() => items.map((i) => prepare(cfg.getLabel(i), cfg.getSecondary?.(i))),
+  const prepared = useMemo(() => items.map((i) => prepare(cfg.getLabel(i), [cfg.getSecondary?.(i), cfg.getKeywords?.(i)].filter(Boolean).join(' '))),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [items])
 

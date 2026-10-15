@@ -2,7 +2,7 @@
 // local store. Parsing and evaluation are pure (lib/filter); results are a live
 // query, so local edits and synced ops update them without a reload, offline too.
 import { useLiveQuery } from 'dexie-react-hooks'
-import { HelpLink } from './help/HelpLink'
+import { Button, PageBody, PageHeader } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
 import { db } from '../lib/db'
@@ -192,18 +192,9 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const warnings = !error && good.src === debounced ? result?.warnings ?? [] : []
 
   return (
-    <div className="min-w-0 px-4 py-5 md:px-8">
-        <div className="mx-auto max-w-3xl">
-          <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
-            Filter
-            {result && <span className="text-sm font-normal text-faint">{rows.length}</span>}
-            <span className="flex-1" />
-            <HelpLink screen="filter" topic="Filter queries" />
-            <button className="btn-secondary text-xs font-normal" disabled={!canSave}
-              onClick={() => setSaving(true)} title="Save this query as a view (s in the results)">
-              Save view
-            </button>
-          </h1>
+    <PageBody width="list">
+          <PageHeader title="Filter" meta={result ? rows.length : undefined} help="filter"
+            actions={<Button variant="secondary" size="sm" disabled={!canSave} onClick={() => setSaving(true)}>Save filter</Button>} />
           <div className="mb-3 border-b border-default pb-2">
             <input
               ref={inputRef}
@@ -264,9 +255,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
               </section>
             ))}
           </div>
-        </div>
       {saving && (
-        <NamePrompt title="Save view" label="View name" hint="The view is pinned to the sidebar under Views."
+        <NamePrompt title="Save filter" label="Filter name" hint="The filter is pinned to the sidebar under Filters."
           onCancel={() => setSaving(false)}
           onSubmit={async (name) => {
             const id = await createView({ name, query })
@@ -281,7 +271,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
           <p className="mt-2 px-1 text-[11px] text-faint">Enter toggles or creates · Esc closes</p>
         </Dialog>
       )}
-    </div>
+    </PageBody>
   )
 }
 

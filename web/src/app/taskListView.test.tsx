@@ -48,7 +48,7 @@ describe('list chrome', () => {
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     await waitFor(() => r.container.textContent!.includes('Call mum'))
     const chrome = chromeBeforeFirstTask(r.container)
-    expect(chrome.map((c) => c.tagName.toLowerCase())).toEqual(['h1', 'div'])
+    expect(chrome.map((c) => c.tagName.toLowerCase())).toEqual(['header', 'div'])
     expect(chrome[1].querySelector('input[aria-label="Add a task"]')).toBeTruthy()
     expect(r.container.querySelector('[role="group"][aria-label="Duration filter"]')).toBeNull()
     expect(r.container.querySelector('[data-duration-active]')).toBeNull()
@@ -72,7 +72,7 @@ describe('list chrome', () => {
     await createTask({ title: 'Long one', estimate_minutes: 120 })
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     await waitFor(() => r.container.textContent!.includes('Long one'))
-    const trigger = r.container.querySelector<HTMLButtonElement>('h1 [data-duration-filter] button[aria-haspopup]')!
+    const trigger = r.container.querySelector<HTMLButtonElement>('[data-page-header] [data-duration-filter] button[aria-haspopup]')!
     expect(trigger).toBeTruthy()
     await click(trigger)
     await waitFor(() => !!document.querySelector('[role="menu"], [role="dialog"]'))
@@ -80,7 +80,7 @@ describe('list chrome', () => {
     await click(item)
     await waitFor(() => !r.container.textContent!.includes('Long one'))
     expect(r.container.textContent).toContain('Quick one')
-    const active = r.container.querySelector('h1 [data-duration-active]')!
+    const active = r.container.querySelector('[data-page-header] [data-duration-active]')!
     expect(active.textContent).toContain('Quick wins')
     // Still nothing between the quick add and the first row.
     expect(chromeBeforeFirstTask(r.container).length).toBe(2)

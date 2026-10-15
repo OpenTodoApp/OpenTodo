@@ -4,7 +4,7 @@ summary: Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plu
 audience: user
 section: Guides
 specs: [web-app, custom-views]
-screens: [settings/start-view#choose-where-the-app-opens, someday#park-ideas-in-someday, anytime#anytime-for-when-you-have-time]
+screens: [settings/start-view#choose-where-the-app-opens, someday#park-ideas-in-someday, anytime#anytime-for-when-you-have-time, inbox#the-built-in-views, today#plan-your-day-with-today, upcoming#plan-your-week-with-upcoming, completed#the-built-in-views, assigned#the-built-in-views, filters#save-your-own-views, saved-filter#save-your-own-views, dashboard#build-a-dashboard]
 order: 20
 card: upcoming
 ---
@@ -24,13 +24,13 @@ They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then
 | **Anytime** | Open tasks with no date and no start: things to do whenever there is time | <kbd>g</kbd> <kbd>n</kbd> |
 | **Someday** | Tasks you parked for later, by project | <kbd>g</kbd> <kbd>o</kbd> |
 | **Assigned to me** | Open tasks assigned to you, across projects | <kbd>g</kbd> <kbd>a</kbd> |
-| **Day** and **Week** | Your timed tasks on a calendar | <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd> |
+| **Calendar** | Your timed tasks by Day or Week, as you last left it | <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd> |
 | **Completed** | What you finished most recently | <kbd>g</kbd> <kbd>c</kbd> |
 | **Filter** | Any search you can describe | <kbd>g</kbd> <kbd>f</kbd> |
 | **Trash** | Deleted tasks and projects | <kbd>g</kbd> <kbd>x</kbd> |
-| **Activity** | What changed in your shared projects | <kbd>g</kbd> <kbd>h</kbd> |
+| **Updates** | What changed in your shared projects | <kbd>g</kbd> <kbd>h</kbd> |
 
-The numbers next to the names count open tasks. Deferred and parked tasks (see [When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
+The sidebar keeps Inbox, Today, Upcoming and Calendar at the top; the rest wait in **More** (open it once, it stays open on this device). The numbers next to Inbox, Today and the projects count open tasks. Deferred and parked tasks (see [When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
 
 ## Plan your day with Today
 
@@ -72,11 +72,11 @@ The **Filter** action in the header of the Inbox, Today, Upcoming and project li
 
 When the built-in views aren't enough, describe what you want in the **Filter** view, then save it. For example, `blocked` lists every task waiting for another one (save it as **Waiting for**), `@waiting & open` lists everything you labelled as waiting, and `due <= 7 days & p1` shows urgent tasks for the coming week. The filter language is explained in [Labels and filters](labels-and-filters.md).
 
-To save the current filter, press <kbd>s</kbd> in the results (or use the save button), and give it a name. Saved views are pinned to the **Views** group in the sidebar with a live count, and they sync to all your devices.
+To save the current filter, press <kbd>s</kbd> in the results (or use the save button), and give it a name. Saved filters are pinned to the **Views** group in the sidebar with a live count, and they sync to all your devices.
 
 Each saved view can group its tasks (by project, date, priority or label) and sort them (by date, priority, your own order, creation time or title). Change these from the top of the view. To change the query itself, press <kbd>/</kbd>, edit it and press <kbd>Enter</kbd>.
 
-The **All** link next to **Views** (or <kbd>g</kbd> <kbd>v</kbd>) opens the list of all your saved views. From there you can rename, reorder, unpin or delete them.
+The **All** link next to **Filters** (or <kbd>g</kbd> <kbd>v</kbd>) opens the list of all your saved filters and boards. From there you can rename, reorder, unpin or delete them.
 
 Every saved view has the same menu, wherever you open it: the **⋯** button on its row in the sidebar or the views list, its header, or a dashboard. With a row focused, <kbd>.</kbd> (or <kbd>Shift</kbd>+<kbd>F10</kbd>) opens it too.
 

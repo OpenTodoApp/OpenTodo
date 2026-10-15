@@ -402,7 +402,7 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 | `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `blocked_by`, `recurrence` |
 | `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
 | `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
-| `POST /api/v1/projects` | `name`, `color`, `parent_id` (`archived: false` is accepted) |
+| `POST /api/v1/projects` | `name`, `color`, `parent_id`, `icon` (`archived: false` is accepted) |
 | `PATCH /api/v1/projects/{id}` | `name`, `color` |
 | `POST /api/v1/labels` | `name`, `color` (an existing label of that name is returned with 200) |
 | `POST /api/v1/tasks/{id}/comments` | `body`, `parent_id` (`mentions` is accepted and dropped: assistant comments notify nobody) |
@@ -537,6 +537,7 @@ curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"mis
 | --- | --- | --- |
 | `name` | string | required on create, must not be blank; uniqueness is advisory (the app refuses duplicates per device, the API accepts them so merges stay possible) |
 | `color` | string | CSS colour; picked from the palette when omitted on create |
+| `icon` | string or null | an icon name from the app's set, shown in the project's colour; null (the default) shows a colour dot. Clients that do not know the field ignore it |
 | `position` | number | sidebar order; defaults to the creation time |
 | `created_at`, `deleted_at` | unix ms (or null) | |
 
@@ -554,7 +555,7 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `group_by` | `"project"`, `"due"`, `"priority"`, `"label"` or `"none"` | default `project` |
 | `sort_by` | `"due"`, `"priority"`, `"position"`, `"created"` or `"title"` | default `due` (undated tasks last) |
 | `sort_dir` | `"asc"` or `"desc"` | default `asc`; for `priority`, `desc` lists priority 1 first |
-| `pinned` | boolean | shown in the sidebar's Views group; default `false` |
+| `pinned` | boolean | shown in the sidebar's Filters group; default `false` |
 | `position` | number | sidebar order; defaults to the creation time |
 | `color` | string | CSS colour; default `#64748b` |
 | `panels` | string[] | dashboards only: up to 6 ids of existing, non-deleted **list** views, no duplicates, never the dashboard itself; replaced as a whole on PATCH |

@@ -24,6 +24,7 @@ import { LabelChip, LabelPicker } from '../LabelPicker'
 import { Menu } from '../overlay/Menu'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus } from '../signals'
 import { moveWithUndo } from '../undoable'
+import { ProjectMark } from '../Sidebar'
 import { useViewerZone } from '../useViews'
 import { PropertyChip } from './PropertyChip'
 import { WhenControl } from './WhenControl'
@@ -226,7 +227,7 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
       {/* Where the task lives: project › section, as one breadcrumb of chips. */}
       <div className="flex flex-wrap items-center gap-1.5" data-property-breadcrumb>
         <PropertyChip id="project" icon="folder" label="Project" readOnly={readOnly} editing={isEditing('project')} onEditingChange={(on) => setEditing('project', on)}
-          value={<span className="flex min-w-0 items-center gap-1.5">{project ? <Dot color={project.color} /> : <Icon name="inbox" size="xs" className="text-faint" />}<span className="truncate">{project?.name ?? 'Inbox'}</span>{project?.archived && <span className="text-faint">(archived)</span>}</span>}
+          value={<span className="flex min-w-0 items-center gap-1.5">{project ? <ProjectMark project={project} /> : <Icon name="inbox" size="xs" className="text-faint" />}<span className="truncate">{project?.name ?? 'Inbox'}</span>{project?.archived && <span className="text-faint">(archived)</span>}</span>}
           note={childCount > 0 && isEditing('project') ? `Moving this task moves its ${childCount === 1 ? 'subtask' : 'subtasks'} too.` : undefined}
           editor={(close) => (
             <ComboboxPanel<PickerItem> label="Project" placeholder="Find or create a project…" source={projectItems}

@@ -11,7 +11,7 @@ import { navigate } from './router'
 import { isGPending, openTaskInList } from './signals'
 import { isTyping } from './useViews'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { hueFor } from '../ui'
+import { hueFor, PageBody, PageHeader } from '../ui'
 
 /**
  * The activity feed (OpenSpec `activity-feed`): every shared project's recent
@@ -134,13 +134,8 @@ export function FeedView() {
   const isNew = (e: ActivityEvent) => !!seenAtOpen && !!e.projectId && e.actor !== me && e.ts > (seenAtOpen.get(e.projectId) ?? Number.POSITIVE_INFINITY)
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
-      <h1 className="mb-1 text-xl font-semibold">Activity</h1>
-      <p className="mb-4 text-sm text-muted">
-        What changed in your shared projects.{' '}
-        <span className="hidden md:inline"><span className="kbd">j</span> / <span className="kbd">k</span> select, <span className="kbd">Enter</span> opens the task.</span>
-      </p>
-      <div className="mb-4 flex flex-wrap gap-2">
+    <PageBody width="list">
+      <PageHeader title="Updates" meta="What changed in your shared projects" help="updates">
         <label className="flex items-center gap-1 text-xs text-muted">
           Project
           <select className="input py-0.5 text-xs" value={project} onChange={(e) => setProject(e.target.value)} aria-label="Filter feed by project">
@@ -162,7 +157,7 @@ export function FeedView() {
             {FEED_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
           </select>
         </label>
-      </div>
+      </PageHeader>
       {shared && shared.length === 0 ? (
         <p className="py-12 text-center text-sm text-faint">Share a project to see what others change here.</p>
       ) : shown.length === 0 && local ? (
@@ -210,10 +205,10 @@ export function FeedView() {
       </div>
       {more && online && shared && shared.length > 0 && (
         <button type="button" className="btn-ghost mt-3 text-xs" disabled={state === 'loading'} onClick={() => void loadOlder()}>
-          {state === 'loading' ? 'Loading…' : 'Load older activity'}
+          {state === 'loading' ? 'Loading…' : 'Load older updates'}
         </button>
       )}
-      {state === 'error' && <p className="mt-2 text-xs text-danger">Older activity could not be loaded.</p>}
-    </div>
+      {state === 'error' && <p className="mt-2 text-xs text-danger">Older updates could not be loaded.</p>}
+    </PageBody>
   )
 }

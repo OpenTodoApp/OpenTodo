@@ -11,22 +11,40 @@ import { USER_PREFS_ID } from './userPrefs'
 
 export const THEME_MODES: readonly ThemeModePref[] = ['system', 'light', 'dark']
 
+/** Destinations the user may promote from the sidebar's More group to its primary items (app-shell "Sidebar structure"). */
+export const PROMOTABLE = ['anytime', 'someday', 'assigned', 'completed', 'feed', 'trash', 'filter'] as const
+export type Promotable = (typeof PROMOTABLE)[number]
+
 export interface Appearance {
   mode: ThemeModePref
   accent: AccentId
+  /** Promoted sidebar destinations, in the More group's order; unknown stored entries are dropped on read, kept in the row. */
+  sidebar?: Promotable[]
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { mode: 'system', accent: DEFAULT_ACCENT }
+export const DEFAULT_APPEARANCE: Appearance = { mode: 'system', accent: DEFAULT_ACCENT, sidebar: [] }
 
 /** Reads a stored row: a missing row or an unknown value (from a newer client) is the default. The row is not changed. */
 export function readAppearance(row: Partial<UserPrefs> | null | undefined): Appearance {
   const mode = THEME_MODES.includes(row?.theme_mode as ThemeModePref) ? (row!.theme_mode as ThemeModePref) : 'system'
-  return { mode, accent: isAccent(row?.theme_accent) ? row!.theme_accent as AccentId : DEFAULT_ACCENT }
+  const wanted = new Set((row?.sidebar_destinations ?? '').split(',').map((s) => s.trim()).filter(Boolean))
+  return {
+    mode,
+    accent: isAccent(row?.theme_accent) ? row!.theme_accent as AccentId : DEFAULT_ACCENT,
+    sidebar: PROMOTABLE.filter((id) => wanted.has(id)),
+  }
 }
 
 /** Changes the mode or the accent through the op log (offline-safe, synced). */
 export function setAppearance(field: 'theme_mode' | 'theme_accent', value: string): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { [field]: value })
+}
+
+/** Promotes or demotes one destination; the stored list keeps entries this client does not know. */
+export async function setPromoted(row: Partial<UserPrefs> | null | undefined, id: Promotable, on: boolean): Promise<void> {
+  const current = (row?.sidebar_destinations ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+  const next = on ? (current.includes(id) ? current : [...current, id]) : current.filter((x) => x !== id)
+  await mutate('user_prefs', USER_PREFS_ID, { sidebar_destinations: next.join(',') })
 }
 
 /** The light-mode bar colour of an accent. */

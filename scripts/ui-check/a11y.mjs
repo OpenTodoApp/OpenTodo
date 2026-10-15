@@ -30,8 +30,18 @@ for (const id of ids) {
     await page.waitForFunction(() => document.querySelector('#storybook-root')?.childElementCount > 0, null, { timeout: 15000 })
     await page.addScriptTag({ content: AXE })
     const violations = await page.evaluate(async (tags) => {
-      // eslint-disable-next-line no-undef
-      const r = await axe.run('#storybook-root', { runOnly: { type: 'tag', values: tags }, resultTypes: ['violations'] })
+      // The a11y addon may still be running its own pass in the iframe; axe refuses to overlap, so wait for it.
+      let r
+      for (let attempt = 0; ; attempt++) {
+        try {
+          // eslint-disable-next-line no-undef
+          r = await axe.run('#storybook-root', { runOnly: { type: 'tag', values: tags }, resultTypes: ['violations'] })
+          break
+        } catch (err) {
+          if (attempt >= 20 || !String(err).includes('already running')) throw err
+          await new Promise((resolve) => setTimeout(resolve, 250))
+        }
+      }
       return r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
         .map((v) => `${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')})`)
     }, TAGS)

@@ -1,4 +1,3 @@
-import { Icon } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, fetchActivity, isPending, KIND_FILTERS, mergeOlder, pendingOpIds, projectActivity } from '../lib/activity'
@@ -12,33 +11,14 @@ import { openTask } from './signals'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /**
- * A project's activity (OpenSpec `comments-and-activity`): every member's
- * changes to its tasks, comments and the project itself, newest first, built
- * from local storage (works offline) and extended from the server on demand.
- * Shift+H shows or hides it; both filters are ordinary selects, so they are
- * reachable with Tab.
+ * A project's activity (OpenSpec `comments-and-activity`; ux-overhaul): every
+ * member's changes to its tasks, comments and the project itself, newest first,
+ * built from local storage (works offline) and extended from the server on
+ * demand. Shown in the shell's panel slot from the project header's menu or
+ * Shift+H; both filters are ordinary selects, so they are reachable with Tab.
  */
 export function ProjectActivity({ project }: { project: Project }) {
-  const [open, setOpen] = useState(false)
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'H' || e.metaKey || e.ctrlKey || e.altKey) return
-      const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
-      e.preventDefault()
-      setOpen((v) => !v)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-  return (
-    <section className="pt-2" aria-label="Project activity">
-      <button type="button" className="btn-ghost px-2 py-0.5 text-xs" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />Activity <span className="kbd ml-1">H</span>
-      </button>
-      {open && <ActivityList project={project} />}
-    </section>
-  )
+  return <ActivityList project={project} />
 }
 
 function ActivityList({ project }: { project: Project }) {
@@ -102,7 +82,7 @@ function ActivityList({ project }: { project: Project }) {
   }
 
   return (
-    <div className="mt-2 space-y-2 text-sm">
+    <div className="space-y-2 text-sm" data-project-activity>
       <div className="flex flex-wrap gap-2">
         <label className="flex items-center gap-1 text-xs text-muted">
           Person

@@ -103,7 +103,7 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   const keepOpen = useRef(false)
   const state = useCombobox<Entry>({
     source, emptySource, prefix, suffix: trailing, limit: PALETTE_LIMIT, rankContext: 'palette',
-    getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: secondaryOf,
+    getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: secondaryOf, getKeywords: (e) => e.keywords,
     onPick: (e) => {
       // The box closes first, so the action's own focus (quick add, a prompt) wins.
       keepOpen.current = true

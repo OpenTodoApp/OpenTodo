@@ -2,8 +2,7 @@
 // local tasks: a task with a due time is a block at that time, as long as its
 // estimate; date-only tasks sit in each day's unscheduled lane. Every placement,
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op).
-import { Icon } from '../ui'
-import { hueFor } from '../ui'
+import { Button, hueFor, Icon, MenuGroup, MenuItem, MenuSeparator, PageBody, PageHeader } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -22,7 +21,10 @@ import { completeWithUndo, setDueWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
 import { estimateFocus, isGPending, placement as placementSignal } from './signals'
-import { setPanelTaskId, usePanelTaskId } from './panel'
+import { Menu } from './overlay/Menu'
+import { PanelFrame } from './PanelFrame'
+import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTaskId } from './panel'
+import { rememberCalendarMode } from '../lib/calendarMode'
 import { useToday, useViewerZone } from './useViews'
 import { visibleTasks } from '../lib/trash'
 
@@ -116,9 +118,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const setOpenId = setPanelTaskId
   const [placing, setPlacing] = useState<Placement | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [tray, setTray] = useState<string>(readTray)
-  const [trayOpen, setTrayOpen] = useState(true)
   const scroller = useRef<HTMLDivElement>(null)
+  // The Calendar destination remembers Day or Week on this device (ux-overhaul).
+  useEffect(() => rememberCalendarMode(mode), [mode])
 
   const startPlacing = useCallback((t: Task, onDate?: string, gridPrefs: GridPrefs = prefs) => {
     const d = onDate ?? (t.due?.date && dates.includes(t.due.date) ? t.due.date : dates.includes(today) ? today : dates[0])
@@ -164,6 +166,10 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   }, [taskMap, rawMap])
 
   const { drag, start: startDrag } = useCalendarDrag({ pxPerMinute: PX_PER_MIN, scroller, onDrop: commit })
+  // The planning list lives in the shell's panel slot (time-blocking, app-shell): its
+  // actions read the latest handlers through this ref.
+  const planActions = useRef<PlanActions>({ onPointerDown: () => {}, onPlace: () => {}, onOpen: () => {} })
+  const planOpen = usePanelOccupantKey() === PLAN_PANEL
 
   // Keyboard edits run one after another on the freshest row, so two quick presses
   // move a block two slots even before the live query has re-rendered.
@@ -326,39 +332,34 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const dragTask = drag ? taskMap.get(drag.taskId) : undefined
   const placingTask = placing ? taskMap.get(placing.taskId) : undefined
 
-  const chooseTray = (v: string) => {
-    setTray(v)
-    try {
-      localStorage.setItem(TRAY_KEY, v)
-    } catch {
-      // Per-device convenience only.
-    }
+  planActions.current = {
+    onPointerDown: (e, id) => startDrag(e, { taskId: id, kind: 'move' }),
+    onPlace: (id) => { const t = taskMap.get(id); if (t) startPlacing(t) },
+    onOpen: (id) => setOpenId(id),
   }
+  const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel actions={planActions} />))
 
   return (
-    <div className="flex h-full select-none">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex flex-wrap items-center gap-2 border-b border-default px-3 py-2 md:px-6">
-          <h1 className="mr-2 text-lg font-semibold">{title}</h1>
-          <div className="flex items-center gap-1">
-            <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} aria-label={mode === 'day' ? 'Previous day' : 'Previous week'} title="Previous ([)"><Icon name="chevron-left" /></button>
-            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => goTo(today)} title="Today (t)">Today</button>
-            <button className="btn-ghost px-2 py-1" onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))} aria-label={mode === 'day' ? 'Next day' : 'Next week'} title="Next (])"><Icon name="chevron-right" /></button>
-          </div>
-          <div className="flex rounded-md border border-default text-xs" role="group" aria-label="Calendar range">
-            <button className={`px-2 py-1 ${mode === 'day' ? 'bg-sunken dark:bg-raised font-medium' : ''}`} aria-pressed={mode === 'day'} onClick={() => navigate({ view: 'day', date: date })} title="Day (g d)">Day</button>
-            <button className={`px-2 py-1 ${mode === 'week' ? 'bg-sunken dark:bg-raised font-medium' : ''}`} aria-pressed={mode === 'week'} onClick={() => navigate({ view: 'week', date: date })} title="Week (g w)">Week</button>
-          </div>
-          <div className="flex-1" />
-          {placing && (
-            <span role="status" className="rounded bg-success-soft px-2 py-1 text-xs text-on-success-soft">
+    <PageBody width="full" flush className="flex h-full select-none flex-col" data-calendar-page={mode}>
+        <PageHeader title={title} help="calendar"
+          meta={placing && (
+            <span role="status" className="rounded-control bg-success-soft px-2 py-0.5 text-meta text-on-success-soft">
               Placing <strong>{placingTask?.title || 'task'}</strong> at {formatTime(placing.start)} · arrows move · Enter places · Esc cancels
             </span>
           )}
-          <button className="btn-ghost px-2 py-1 text-xs" aria-pressed={trayOpen} onClick={() => setTrayOpen((v) => !v)}>
-            {trayOpen ? 'Hide task list' : 'Plan from a list'}
-          </button>
-        </div>
+          actions={<>
+            <span className="flex items-center" role="group" aria-label="Range">
+              <Button variant="ghost" size="sm" icon="chevron-left" aria-label={mode === 'day' ? 'Previous day' : 'Previous week'} onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} />
+              <Button variant="ghost" size="sm" onClick={() => goTo(today)}>Today</Button>
+              <Button variant="ghost" size="sm" icon="chevron-right" aria-label={mode === 'day' ? 'Next day' : 'Next week'} onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))} />
+            </span>
+            <span className="flex rounded-control border border-default text-meta" role="group" aria-label="Calendar range">
+              <button type="button" className={`rounded-l-control px-2 py-1 ${mode === 'day' ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted'}`} aria-pressed={mode === 'day'} onClick={() => navigate({ view: 'day', date })}>Day</button>
+              <button type="button" className={`rounded-r-control px-2 py-1 ${mode === 'week' ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted'}`} aria-pressed={mode === 'week'} onClick={() => navigate({ view: 'week', date })}>Week</button>
+            </span>
+          </>}
+          overflow={<MenuItem label={planOpen ? 'Hide the planning list' : 'Plan from a list'} icon="list" description="Drag tasks onto a time, or press s on one" onSelect={togglePlan} />} />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
 
         {/* Focusable, so the grid scrolls with the keyboard even when no block is in view (axe scrollable-region-focusable). */}
         <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
@@ -421,19 +422,6 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         </div>
       </div>
 
-      {trayOpen && (
-        <PlanTray
-          source={tray}
-          onSource={chooseTray}
-          tasks={allTasks}
-          projects={projects}
-          today={today}
-          onPointerDown={(e, id) => startDrag(e, { taskId: id, kind: 'move' })}
-          onPlace={(id) => { const t = taskMap.get(id); if (t) startPlacing(t) }}
-          onOpen={(id) => setOpenId(id)}
-        />
-      )}
-
       {drag && dragTask && (
         <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-md bg-accent px-2 py-1 text-xs text-on-accent shadow-lg" style={{ left: drag.x + 12, top: drag.y + 12 }}>
           {dragTask.title || 'Untitled'}
@@ -442,8 +430,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
           {drag.target?.type === 'resize' && ` · ${formatMinutes(drag.target.estimate)}`}
         </div>
       )}
-
-    </div>
+    </PageBody>
   )
 }
 
@@ -678,17 +665,28 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
   )
 }
 
-/** Tasks to drag onto the grid: Inbox, undated, overdue or one project's open tasks. */
-function PlanTray({ source, onSource, tasks, projects, today, onPointerDown, onPlace, onOpen }: {
-  source: string
-  onSource: (v: string) => void
-  tasks: Task[]
-  projects: Project[]
-  today: string
+const PLAN_PANEL = 'calendar-plan'
+
+interface PlanActions {
   onPointerDown: (e: React.PointerEvent, id: string) => void
   onPlace: (id: string) => void
   onOpen: (id: string) => void
-}) {
+}
+
+/**
+ * The planning list in the shell's panel slot (time-blocking "Day and Week calendar
+ * views"): the open tasks of one source (Inbox, no date, overdue or a project),
+ * chosen with a design-system menu, to drag onto a time or place with `s`.
+ */
+function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }) {
+  const today = useToday()
+  const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
+  const tasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  const [source, setSource] = useState<string>(readTray)
+  const choose = (v: string) => {
+    setSource(v)
+    try { localStorage.setItem(TRAY_KEY, v) } catch { /* per-device convenience only */ }
+  }
   const live = projects.filter((p) => !p.archived)
   const archived = useMemo(() => new Set(projects.filter((p) => p.archived).map((p) => p.id)), [projects])
   const list = useMemo(() => {
@@ -700,41 +698,49 @@ function PlanTray({ source, onSource, tasks, projects, today, onPointerDown, onP
     else out = open.filter((t) => t.project_id === null)
     return out.sort(compareDueThenPriority).slice(0, 200)
   }, [tasks, archived, source, today])
+  const sourceLabel = source === 'nodate' ? 'No date' : source === 'overdue' ? 'Overdue' : source.startsWith('project:') ? projects.find((p) => p.id === source.slice(8))?.name ?? 'Project' : 'Inbox'
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-l border-default md:flex" aria-label="Tasks to plan">
-      <div className="border-b border-default p-2">
-        <select className="input py-1 text-xs" aria-label="Plan from" value={source} onChange={(e) => onSource(e.target.value)}>
-          <option value="inbox">Inbox</option>
-          <option value="nodate">No date</option>
-          <option value="overdue">Overdue</option>
-          {live.map((p) => <option key={p.id} value={`project:${p.id}`}>{p.name}</option>)}
-        </select>
-        <p className="mt-1 text-[11px] text-faint">Drag onto a time, or focus a task and press <span className="kbd">s</span>.</p>
-      </div>
-      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2">
-        {list.length === 0 && <li className="px-1 py-2 text-xs text-faint">Nothing here.</li>}
+    <PanelFrame title="Plan" testId="calendar-plan"
+      actions={(
+        <Menu kind="menu" label="Plan from" title="Plan from" width="sm:w-64" align="end"
+          trigger={<span className="inline-flex items-center gap-1 text-meta"><Icon name="filter" size="xs" />{sourceLabel}<Icon name="chevron-down" size="xs" /></span>}
+          triggerClassName="inline-flex min-h-8 items-center rounded-control border border-default px-2.5 py-1 text-muted hover:bg-sunken dark:hover:bg-raised">
+          <MenuItem label="Inbox" icon="inbox" checked={source === 'inbox'} onSelect={() => choose('inbox')} />
+          <MenuItem label="No date" icon="calendar-days" checked={source === 'nodate'} onSelect={() => choose('nodate')} />
+          <MenuItem label="Overdue" icon="hourglass" checked={source === 'overdue'} onSelect={() => choose('overdue')} />
+          {live.length > 0 && <MenuSeparator />}
+          {live.length > 0 && (
+            <MenuGroup label="Projects">
+              {live.map((p) => <MenuItem key={p.id} label={p.name} icon="folder" checked={source === `project:${p.id}`} onSelect={() => choose(`project:${p.id}`)} />)}
+            </MenuGroup>
+          )}
+        </Menu>
+      )}>
+      <p className="mb-2 text-meta text-faint">Drag a task onto a time, or focus one and press <span className="ui-kbd">s</span>.</p>
+      <ul className="space-y-0.5" aria-label="Tasks to plan">
+        {list.length === 0 && <li className="px-1 py-2 text-meta text-faint">Nothing here.</li>}
         {list.map((t) => (
           <li key={t.id}>
             <button
               type="button"
               data-tray-task={t.id}
-              onPointerDown={(e) => onPointerDown(e, t.id)}
+              onPointerDown={(e) => actions.current?.onPointerDown(e, t.id)}
               onKeyDown={(e) => {
                 if (e.key === 's' || e.key === 'Enter') {
                   e.preventDefault()
                   e.stopPropagation()
-                  onPlace(t.id)
+                  actions.current?.onPlace(t.id)
                 }
               }}
-              onDoubleClick={() => onOpen(t.id)}
-              className="flex w-full cursor-grab touch-manipulation items-center gap-1 rounded px-2 py-1 text-left text-xs hover:bg-sunken dark:hover:bg-raised"
+              onDoubleClick={() => actions.current?.onOpen(t.id)}
+              className="flex w-full cursor-grab touch-manipulation items-center gap-1 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised"
             >
               <span className="truncate">{t.title || 'Untitled'}</span>
-              {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-[10px] text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
+              {t.estimate_minutes ? <span className="ml-auto shrink-0 text-meta tabular-nums text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
             </button>
           </li>
         ))}
       </ul>
-    </aside>
+    </PanelFrame>
   )
 }
