@@ -99,7 +99,7 @@ describe('CommentsView', () => {
     await typeArea(area, 'Ship it')
     await key(area, 'Enter', { ctrlKey: true })
     await flush()
-    expect(p.onCreate).toHaveBeenCalledWith('Ship it', [], null)
+    expect(p.onCreate).toHaveBeenCalledWith('Ship it', [], null, [])
     expect(composer(v.container).value).toBe('')
     expect(readDraft('t1')).toBe('')
     await v.unmount()
@@ -116,13 +116,13 @@ describe('CommentsView', () => {
     await typeArea(composer(v.container), 'Top level')
     await key(composer(v.container), 'Enter', { metaKey: true })
     await flush()
-    expect(p.onCreate).toHaveBeenLastCalledWith('Top level', [], null)
+    expect(p.onCreate).toHaveBeenLastCalledWith('Top level', [], null, [])
 
     await click(buttons(v.container.querySelector('[data-thread="c3"]') as HTMLElement, 'Reply')[0])
     await typeArea(composer(v.container), 'Answer')
     await key(composer(v.container), 'Enter', { ctrlKey: true })
     await flush()
-    expect(p.onCreate).toHaveBeenLastCalledWith('Answer', [], 'c3')
+    expect(p.onCreate).toHaveBeenLastCalledWith('Answer', [], 'c3', [])
     await v.unmount()
   })
 
@@ -156,6 +156,33 @@ describe('CommentsView', () => {
   it('shows an empty state without comments', async () => {
     const v = await render(<CommentsView {...props({ threads: [] })} />)
     expect(v.container.textContent).toContain('No comments yet')
+    await v.unmount()
+  })
+
+  it('attaches picked files to a new comment and lists comment attachments under the text', async () => {
+    const p = props({ canAttach: true, attachments: new Map([['c2', [{ id: 'a1', task_id: 't1', comment_id: 'c2', name: 'Venue.pdf', mime: 'application/pdf', size: 2048, sha256: 'ab', url: null, encrypted: false, author_id: 'me', created_at: 1, uploaded_at: 2, deleted_at: null, _clock: {} }]]]) })
+    const v = await render(<CommentsView {...p} />)
+    expect(v.container.querySelector('[data-thread="c2"] [aria-label="Attached files"]')!.textContent).toContain('Venue.pdf')
+    const picker = v.container.querySelector<HTMLInputElement>('[data-testid="comment-file-picker"]')!
+    const shot = new File(['png'], 'shot.png', { type: 'image/png' })
+    Object.defineProperty(picker, 'files', { value: [shot], configurable: true })
+    await act(async () => { picker.dispatchEvent(new Event('change', { bubbles: true })) })
+    expect(v.container.querySelector('[aria-label="Files to attach"]')!.textContent).toContain('shot.png')
+    // A comment with only files can be sent.
+    const send = buttons(v.container, 'Comment')[0] as HTMLButtonElement
+    expect(send.disabled).toBe(false)
+    await click(send)
+    expect(p.onCreate).toHaveBeenCalledWith('', [], null, [shot])
+    await flush()
+    expect(v.container.querySelector('[aria-label="Files to attach"]')).toBeNull()
+    await v.unmount()
+  })
+
+  it('hides the attach button when attachments are unavailable and a deleted comment hides its files', async () => {
+    const deleted = { root: { ...comment('c9', 'me', MON, 'gone'), deleted_at: MON + 1 }, replies: [] }
+    const v = await render(<CommentsView {...props({ threads: [deleted], attachments: new Map([['c9', [{ id: 'a9', task_id: 't1', comment_id: 'c9', name: 'Hidden.pdf', mime: 'application/pdf', size: 1, sha256: 'ab', url: null, encrypted: false, author_id: 'me', created_at: 1, uploaded_at: 2, deleted_at: null, _clock: {} }]]]) })} />)
+    expect(v.container.querySelector('[data-testid="comment-file-picker"]')).toBeNull()
+    expect(v.container.textContent).not.toContain('Hidden.pdf')
     await v.unmount()
   })
 })

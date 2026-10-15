@@ -3,11 +3,13 @@
 // listed at once; its bytes wait in `attachmentBlobs` until the uploader sends
 // them after a sync round, and the server says the file is stored by writing
 // `uploaded_at`, which reaches every device through sync.
+import { useLiveQuery } from 'dexie-react-hooks'
 import { useSyncExternalStore } from 'react'
 import { api, isNetworkError } from './api'
 import { db, getMeta, setMeta, type AttachmentBlob } from './db'
 import { mutateMany, type Change } from './ops'
 import { currentUserId } from './sharing'
+import { applyBatch } from './undo'
 import type { Attachment, AttachmentLimits } from './types'
 
 /** The longest attachment name the server accepts. */
@@ -37,7 +39,6 @@ export async function refreshLimits(): Promise<AttachmentLimits | null> {
       // New limits may let a refused file through: try the waiting ones again.
       if (old && (old.enabled !== me.attachments.enabled || old.max_file_bytes !== me.attachments.max_file_bytes || old.quota_bytes !== me.attachments.quota_bytes)) retryWaiting = true
       await setMeta(LIMITS_KEY, me.attachments)
-      publishLimits(me.attachments)
       return me.attachments
     }
   } catch {
@@ -46,23 +47,9 @@ export async function refreshLimits(): Promise<AttachmentLimits | null> {
   return limits()
 }
 
-let limitsSnapshot: AttachmentLimits | null | undefined
-const limitListeners = new Set<() => void>()
-function publishLimits(l: AttachmentLimits | null) {
-  limitsSnapshot = l
-  limitListeners.forEach((fn) => fn())
-}
-
-/** The cached limits for React; null until known. */
+/** The cached limits for React (live, from this device's store); null until known. */
 export function useAttachmentLimits(): AttachmentLimits | null {
-  return useSyncExternalStore(
-    (fn) => {
-      limitListeners.add(fn)
-      if (limitsSnapshot === undefined) void limits().then((l) => { if (limitsSnapshot === undefined) publishLimits(l) })
-      return () => limitListeners.delete(fn)
-    },
-    () => limitsSnapshot ?? null,
-  )
+  return useLiveQuery(() => limits(), [], null) ?? null
 }
 
 /** "1.5 MB", "820 KB", "12 bytes". */
@@ -197,12 +184,14 @@ export async function renameAttachment(id: string, name: string): Promise<void> 
 }
 
 /**
- * Remove: a tombstone, undone by `restoreAttachment`. A file not uploaded yet
- * keeps its bytes on this device so an undo still has them; the uploader skips
- * removed rows, and the bytes go when the server purges the row.
+ * Remove: a tombstone, undone by `restoreAttachment`. A file not uploaded yet is
+ * never uploaded: its bytes stay only until the removal has synced (so an undo
+ * right away still has them), then the uploader drops them. Returns the undo
+ * entry's id for the undo toast.
  */
-export async function removeAttachment(id: string): Promise<void> {
-  await mutateMany([{ entity: 'attachment', entityId: id, patch: { deleted_at: Date.now() } }])
+export async function removeAttachment(id: string, name?: string): Promise<string | null> {
+  const entry = await applyBatch([{ entity: 'attachment', entityId: id, patch: { deleted_at: Date.now() } }], { source: 'bulk', label: name ? `Removed “${name}”` : 'Attachment removed' })
+  return entry?.id ?? null
 }
 
 export async function restoreAttachment(id: string): Promise<void> {
@@ -345,8 +334,8 @@ async function uploadPass(): Promise<void> {
   retryWaiting = false
   for (const b of queue) {
     const row = rows.get(b.id)!
-    if (row.deleted_at || (b.reason && !retry)) continue
-    if (row.uploaded_at) {
+    if (b.reason && !retry && !row.deleted_at) continue
+    if (row.deleted_at || row.uploaded_at) {
       await db.attachmentBlobs.delete(b.id)
       continue
     }
@@ -376,4 +365,14 @@ async function uploadPass(): Promise<void> {
     return
   }
   if (uploaded) void refreshLimits()
+}
+
+/** Live attachments per task (comment attachments included, a deleted comment's not), for the row paperclip. */
+export async function attachmentCounts(): Promise<Map<string, number>> {
+  const out = new Map<string, number>()
+  const rows = await db.attachments.filter((a) => !a.deleted_at).toArray()
+  const commentIds = [...new Set(rows.map((a) => a.comment_id).filter((c): c is string => !!c))]
+  const deadComments = new Set((await db.comments.bulkGet(commentIds)).filter((c) => !c || c.deleted_at).map((c, i) => c?.id ?? commentIds[i]))
+  for (const a of rows) if (!a.comment_id || !deadComments.has(a.comment_id)) out.set(a.task_id, (out.get(a.task_id) ?? 0) + 1)
+  return out
 }

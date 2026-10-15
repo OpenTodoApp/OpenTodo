@@ -37,4 +37,14 @@ describe('YourDataView', () => {
     expect(html).toContain('Import: Disabled on this demo instance.')
     expect(html).not.toContain('href="/settings/import"')
   })
+  it('shows attachment usage with the per-file limit and offers the ZIP export', () => {
+    const MB = 1 << 20
+    const html = render({ attachments: { enabled: true, used_bytes: 230 * MB, quota_bytes: 1024 * MB, max_file_bytes: 25 * MB } })
+    expect(html).toContain('230 MB of 1 GB used')
+    expect(html).toContain('up to 25 MB each')
+    expect(html).toContain('href="/api/v1/export?format=zip"')
+    expect(render({ attachments: { enabled: true, used_bytes: 0, quota_bytes: 0, max_file_bytes: MB } })).toContain('0 bytes used (no total)')
+    expect(render({ demo: true, attachments: { enabled: false, used_bytes: 0, quota_bytes: 0, max_file_bytes: MB } })).not.toContain('format=zip')
+    expect(render()).not.toContain('attachment-usage')
+  })
 })

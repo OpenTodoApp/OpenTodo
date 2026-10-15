@@ -1,7 +1,9 @@
 // Settings → Data: export, import and sync status (OpenSpec settings-navigation; settings-redesign D3).
+import { useEffect } from 'react'
+import { formatBytes, refreshLimits, useAttachmentLimits } from '../lib/attachments'
 import { useSyncStatus } from '../lib/sync'
 import { DEMO_RESTRICTED_NOTE } from '../lib/demo'
-import type { SyncState } from '../lib/types'
+import type { AttachmentLimits, SyncState } from '../lib/types'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Card'
 import { Icon } from '../ui/Icon'
@@ -33,7 +35,12 @@ export interface SyncSummary {
 const linkButton = 'ui-btn ui-btn--secondary ui-btn--sm'
 
 /** Pure rendering of Settings → Data; `sync` comes from the live sync status. */
-export function YourDataView({ demo, isOwner, sync }: { demo: boolean; isOwner: boolean; sync: SyncSummary }) {
+/** "230 MB of 1 GB used", "12 MB used (no total)". */
+export function usageText(l: AttachmentLimits): string {
+  return l.quota_bytes > 0 ? `${formatBytes(l.used_bytes)} of ${formatBytes(l.quota_bytes)} used` : `${formatBytes(l.used_bytes)} used (no total)`
+}
+
+export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo: boolean; isOwner: boolean; sync: SyncSummary; attachments?: AttachmentLimits | null }) {
   const dt = useDateTimeFormat()
   const s = SYNC[sync.state] ?? { label: sync.state, hue: 'slate' as HueName }
   return (
@@ -41,7 +48,19 @@ export function YourDataView({ demo, isOwner, sync }: { demo: boolean; isOwner: 
       description="Everything you see is stored on this device and on your server.">
       <SettingRow label="Export"
         description="Everything you can see as one JSON file, including the Trash. Keep it as a personal copy or move to another server."
-        control={<a className={linkButton} href="/api/v1/export" download="opentodo-export.json"><Icon name="download" size="sm" />Download export (JSON)</a>} />
+        control={(
+          <>
+            <a className={linkButton} href="/api/v1/export" download="opentodo-export.json"><Icon name="download" size="sm" />Download export (JSON)</a>
+            {!demo && attachments && (attachments.enabled || attachments.used_bytes > 0) && (
+              <a className={linkButton} href="/api/v1/export?format=zip" download="opentodo-export.zip"><Icon name="paperclip" size="sm" />Download export with files (ZIP)</a>
+            )}
+          </>
+        )} />
+      {!demo && attachments && (attachments.enabled || attachments.used_bytes > 0) && (
+        <SettingRow label="Attachments"
+          description={attachments.enabled ? `Files may be up to ${formatBytes(attachments.max_file_bytes)} each.` : 'Adding files is turned off on this server.'}
+          status={<span data-testid="attachment-usage">{usageText(attachments)}</span>} />
+      )}
       <SettingRow label="Import"
         description={<>An OpenTodo export, a CSV file or another task manager’s JSON export (<span className="kbd">g</span> <span className="kbd">Shift+I</span>).</>}
         status={demo ? <span id="demo-import-note" className="text-muted">Import: {DEMO_RESTRICTED_NOTE}</span> : undefined}
@@ -74,5 +93,7 @@ export function YourDataView({ demo, isOwner, sync }: { demo: boolean; isOwner: 
 
 export function YourDataSection({ demo, isOwner }: { demo: boolean; isOwner: boolean }) {
   const sync = useSyncStatus()
-  return <YourDataView demo={demo} isOwner={isOwner} sync={sync} />
+  const attachments = useAttachmentLimits()
+  useEffect(() => { void refreshLimits() }, [])
+  return <YourDataView demo={demo} isOwner={isOwner} sync={sync} attachments={attachments} />
 }

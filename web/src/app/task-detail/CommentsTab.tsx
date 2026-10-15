@@ -5,17 +5,20 @@
 // may comment, so it ignores the panel's read-only mode.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { forwardRef, useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import { useAttachmentLimits } from '../../lib/attachments'
 import {
   canDeleteComment, canEditComment, createComment, deleteComment, editComment, mentionableMembers, type Thread, threadOrder, threadVisible,
 } from '../../lib/comments'
 import { db } from '../../lib/db'
+import { useDemo } from '../../lib/demo'
 import { currentUserId, membershipMap, memberName, roleOf } from '../../lib/sharing'
-import type { Comment, Membership, ProjectMember, ProjectRole, Task } from '../../lib/types'
+import type { Attachment, Comment, Membership, ProjectMember, ProjectRole, Task } from '../../lib/types'
 import { Avatar } from '../../ui/Avatar'
 import { Button, IconButton } from '../../ui/Button'
 import { ConfirmDialog } from '../../ui/patterns/ConfirmDialog'
 import { EmptyState } from '../../ui/patterns/EmptyState'
 import { Markdown } from '../Markdown'
+import { CommentAttachments } from './AttachmentsRow'
 import { Composer } from './Composer'
 import { RelativeTime } from './RelativeTime'
 
@@ -41,7 +44,11 @@ export interface CommentsViewProps {
   members: ProjectMember[]
   name: (id: string) => string
   /** Resolve true when stored. */
-  onCreate: (body: string, mentions: string[], parentId: string | null) => Promise<boolean>
+  onCreate: (body: string, mentions: string[], parentId: string | null, files: File[]) => Promise<boolean>
+  /** Attachments by comment id (OpenSpec attachments), shown under each comment. */
+  attachments?: Map<string, Attachment[]>
+  /** Offer the composer's attach button. */
+  canAttach?: boolean
   onEdit: (id: string, body: string, mentions: string[]) => Promise<boolean>
   onDelete: (id: string) => Promise<unknown>
   error?: string | null
@@ -52,7 +59,7 @@ export interface CommentsViewProps {
 }
 
 export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewProps>(function CommentsView(
-  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, error, focusComment, now }, composerRef,
+  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, error, focusComment, now, attachments, canAttach = false }, composerRef,
 ) {
   const coarse = useCoarsePointer()
   const [replyTo, setReplyTo] = useState<string | null>(null)
@@ -102,7 +109,8 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
             </div>
           ) : (
             <>
-              <Markdown source={c.body} className="user-text mt-0.5 max-w-prose text-sm leading-relaxed text-default" />
+              {c.body && <Markdown source={c.body} className="user-text mt-0.5 max-w-prose text-sm leading-relaxed text-default" />}
+              <CommentAttachments list={attachments?.get(c.id) ?? []} />
               <div className={`mt-1 flex flex-wrap gap-1 ${coarse ? '' : 'hover-reveal'}`} data-comment-actions>
                 {!isReply && <Button variant="ghost" size="sm" onClick={() => startReply(c.id)}>Reply</Button>}
                 {canEditComment(c, me) && <Button variant="ghost" size="sm" onClick={() => setEditing(c.id)}>Edit</Button>}
@@ -146,8 +154,8 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
             </div>
           )}
           <Composer ref={composerRef} id="comment-composer" draftTaskId={taskId} members={members} me={me}
-            submitLabel={replyTarget ? 'Reply' : 'Comment'} label={replyTarget ? 'Write a reply' : 'Write a comment'}
-            onSubmit={(body, mentions) => onCreate(body, mentions, replyTarget?.id ?? null).then((ok) => { if (ok) setReplyTo(null); return ok })} />
+            submitLabel={replyTarget ? 'Reply' : 'Comment'} label={replyTarget ? 'Write a reply' : 'Write a comment'} attach={canAttach}
+            onSubmit={(body, mentions, files) => onCreate(body, mentions, replyTarget?.id ?? null, files).then((ok) => { if (ok) setReplyTo(null); return ok })} />
         </div>
       ) : (
         <p className="text-meta text-faint">Sign in to comment.</p>
@@ -173,6 +181,15 @@ export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabPro
   const me = userId ?? storedMe
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
   const comments = useLiveQuery(() => db.comments.where('task_id').equals(task.id).toArray(), [task.id], [] as Comment[])
+  // Comment attachments (OpenSpec attachments): a deleted comment's are hidden with it.
+  const attachments = useLiveQuery(async () => {
+    const byComment = new Map<string, Attachment[]>()
+    const rows = (await db.attachments.where('task_id').equals(task.id).toArray()).filter((a) => a.comment_id && !a.deleted_at)
+    for (const a of rows.sort((x, y) => x.created_at - y.created_at)) byComment.set(a.comment_id!, [...(byComment.get(a.comment_id!) ?? []), a])
+    return byComment
+  }, [task.id], new Map<string, Attachment[]>())
+  const demo = useDemo()
+  const limits = useAttachmentLimits()
   const [error, setError] = useState<string | null>(null)
   useEffect(() => setError(null), [task.id])
 
@@ -191,8 +208,8 @@ export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabPro
   return (
     <CommentsView ref={composerRef} taskId={task.id} threads={threadOrder(comments).filter(threadVisible)} me={me}
       role={roleOf(task.project_id, memberships)} members={mentionableMembers(task.project_id, memberships)} name={name} error={error}
-      focusComment={focusComment}
-      onCreate={(body, mentions, parentId) => run(() => createComment({ taskId: task.id, body, mentions, parentId }))}
+      focusComment={focusComment} attachments={attachments} canAttach={!demo && limits?.enabled !== false}
+      onCreate={(body, mentions, parentId, files) => run(() => createComment({ taskId: task.id, body, mentions, parentId, files }))}
       onEdit={(id, body, mentions) => run(() => editComment(id, body, mentions))}
       onDelete={(id) => deleteComment(id)} />
   )

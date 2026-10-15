@@ -43,10 +43,10 @@
 
 ## 7. Client surfaces (design D7)
 
-- [ ] 7.1 `app/task-detail/AttachmentsRow.tsx`: list with states and thumbnails, Open, Download, Rename, Remove with undo, Add by picker, paste and drop, keyboard model (listbox, Enter, Delete, F2), the demo and `enabled: false` cases, placed below Subtasks; stories in `attachments.stories.tsx`. Component tests for the four spec scenarios (keyboard add and open, paste, offline open, row count) plus an axe check. Verify with `npm test`, `make ui-check` and `npm run build` in web/.
-- [ ] 7.2 Comments: attach button in `Composer.tsx` creating the comment and its attachments in one batch; attachments rendered under the body in `CommentsTab.tsx`; hidden for a deleted comment. Tests in `commentsTab.test.tsx`. Verify with `npm test`.
-- [ ] 7.3 Task rows: paperclip count beside the comment count, from a live query (`useAttachmentCounts.ts`). Verify with the task list tests (`npm test`).
-- [ ] 7.4 Settings: usage line in Settings → Data and the owner panel Settings → Administration → Attachments (three fields, bounds, offline state), screen id `settings/attachments`, help ids; update `docs/settings.md`. Verify with the `settingsSections` test, a component test for the panel, `npm run docs:check` and `npm run build`.
+- [x] 7.1 `app/task-detail/AttachmentsRow.tsx`: list with states and thumbnails, Open, Download, Rename, Remove with undo, Add by picker, paste and drop, keyboard model (listbox, Enter, Delete, F2), the demo and `enabled: false` cases, placed below Subtasks; stories in `attachments.stories.tsx`. Component tests for the four spec scenarios (keyboard add and open, paste, offline open, row count) plus an axe check. Verify with `npm test`, `make ui-check` and `npm run build` in web/.
+- [x] 7.2 Comments: attach button in `Composer.tsx` creating the comment and its attachments in one batch; attachments rendered under the body in `CommentsTab.tsx`; hidden for a deleted comment. Tests in `commentsTab.test.tsx`. Verify with `npm test`.
+- [x] 7.3 Task rows: paperclip count beside the comment count, from a live query (`useAttachmentCounts.ts`). Verify with the task list tests (`npm test`).
+- [x] 7.4 Settings: usage line in Settings → Data and the owner panel Settings → Administration → Attachments (three fields, bounds, offline state), screen id `settings/attachments`, help ids; update `docs/settings.md`. Verify with the `settingsSections` test, a component test for the panel, `npm run docs:check` and `npm run build`.
 
 ## 8. Encrypted accounts (design D8)
 

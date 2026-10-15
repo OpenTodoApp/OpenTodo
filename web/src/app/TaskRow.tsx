@@ -5,7 +5,7 @@ import type { Progress } from '../lib/subtasks'
 import type { Label, Project, Task } from '../lib/types'
 import { LabelChip } from './LabelPicker'
 import { AssigneeChip } from './AssigneePicker'
-import { useCommentCount } from './useCommentCounts'
+import { useAttachmentCount, useCommentCount } from './useCommentCounts'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
@@ -86,6 +86,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
     : { icon: 'calendar-days' as const, label: `${start > todayISO() ? 'Starts' : 'Started'} ${formatDate(start, 'compact', dt.resolved)}` }
   const deadline = done ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   const comments = useCommentCount(task.id)
+  const attachments = useAttachmentCount(task.id)
   // End-to-end encryption (OpenSpec e2ee): content the server still holds in
   // plaintext is marked until an unlocked device has re-written it.
   const enc = useEncryption()
@@ -195,6 +196,11 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           {comments > 0 && (
             <span className="text-faint" title={`${comments} comment${comments === 1 ? '' : 's'}`} aria-label={`${comments} comment${comments === 1 ? '' : 's'}`} data-comments>
               <span className="inline-flex items-center gap-0.5"><Icon name="message-circle" size="xs" />{comments}</span>
+            </span>
+          )}
+          {attachments > 0 && (
+            <span className="text-faint" title={`${attachments} attachment${attachments === 1 ? '' : 's'}`} aria-label={`${attachments} attachment${attachments === 1 ? '' : 's'}`} data-attachments>
+              <span className="inline-flex items-center gap-0.5"><Icon name="paperclip" size="xs" />{attachments}</span>
             </span>
           )}
           {labels.length > 0 && (

@@ -79,14 +79,22 @@ describe('attachment data layer', () => {
     expect(await db.attachmentBlobs.count()).toBe(0)
   })
 
-  it('never uploads a file removed before upload, and an undo brings it back', async () => {
+  it('never uploads a file removed before upload and drops its bytes once the removal synced', async () => {
     const task = await createTask({ title: 'Report' })
     const [id] = await queueFiles(task, [file('gone.txt')])
     await removeAttachment(id)
+    // An undo before the removal synced still has the bytes.
+    expect(await db.attachmentBlobs.get(id)).toBeDefined()
     await syncRound()
     await runUploader()
     expect(uploads).toEqual([])
-    expect(await db.attachmentBlobs.get(id)).toBeDefined()
+    expect(await db.attachmentBlobs.get(id)).toBeUndefined()
+  })
+
+  it('an undo right after removing keeps the file queued', async () => {
+    const task = await createTask({ title: 'Report' })
+    const [id] = await queueFiles(task, [file('back.txt')])
+    await removeAttachment(id)
     await restoreAttachment(id)
     await syncRound()
     await runUploader()

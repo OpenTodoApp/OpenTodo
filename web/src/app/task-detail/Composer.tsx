@@ -5,9 +5,10 @@
 import { forwardRef, type KeyboardEvent, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { mentionAt, mentionCandidates, mentionsInBody, mentionToken } from '../../lib/comments'
 import type { ProjectMember } from '../../lib/types'
-import { Button } from '../../ui/Button'
+import { Button, IconButton } from '../../ui/Button'
 import { Icon } from '../../ui/Icon'
 import { Popover } from '../overlay'
+import { filesFrom } from './AttachmentsRow'
 
 const MAX_LINES = 10
 const LINE_PX = 20
@@ -49,7 +50,9 @@ export interface ComposerProps {
   members: ProjectMember[]
   me: string | null
   /** Resolves false (or rejects inside) when the comment was not stored; the text is then kept. */
-  onSubmit: (body: string, mentions: string[]) => Promise<unknown>
+  onSubmit: (body: string, mentions: string[], files: File[]) => Promise<unknown>
+  /** Offer an attach button: picked or pasted files go with the comment (OpenSpec attachments). */
+  attach?: boolean
   onCancel?: () => void
   autoFocus?: boolean
   submitLabel: string
@@ -58,8 +61,10 @@ export interface ComposerProps {
 }
 
 export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(function Composer(
-  { id, draftTaskId, initial = '', members, me, onSubmit, onCancel, autoFocus, submitLabel, label }, ref,
+  { id, draftTaskId, initial = '', members, me, onSubmit, onCancel, autoFocus, submitLabel, label, attach = false }, ref,
 ) {
+  const [files, setFiles] = useState<File[]>([])
+  const picker = useRef<HTMLInputElement>(null)
   const [body, setBodyState] = useState(() => (draftTaskId ? readDraft(draftTaskId) || initial : initial))
   const [picked, setPicked] = useState(() => new Map<string, string>(members.filter((m) => initial.includes(`@${mentionToken(m)}`)).map((m) => [m.userId, mentionToken(m)])))
   const [caret, setCaret] = useState(initial.length)
@@ -104,14 +109,16 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
     requestAnimationFrame(() => area.current?.setSelectionRange(pos, pos))
   }
 
+  const canSend = !!body.trim() || files.length > 0
   async function submit() {
-    if (!body.trim() || busy) return
+    if (!canSend || busy) return
     setBusy(true)
-    const ok = await onSubmit(body, mentionsInBody(body, picked))
+    const ok = await onSubmit(body, mentionsInBody(body, picked), files)
     setBusy(false)
     if (ok !== false && !onCancel) {
       setBody('')
       setPicked(new Map())
+      setFiles([])
     }
   }
 
@@ -148,7 +155,7 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
 
   const key = submitKey()
   return (
-    <div className="relative">
+    <div className="relative" data-composer>
       <textarea
         id={id}
         ref={area}
@@ -171,7 +178,23 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
         }}
         onSelect={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart)}
         onKeyDown={onKeyDown}
+        onPaste={attach ? (e) => {
+          const pasted = filesFrom(e.clipboardData)
+          if (pasted.length === 0) return
+          e.preventDefault()
+          setFiles((f) => [...f, ...pasted])
+        } : undefined}
       />
+      {files.length > 0 && (
+        <ul aria-label="Files to attach" className="mt-1 flex flex-wrap gap-1">
+          {files.map((f, i) => (
+            <li key={`${f.name}-${i}`} className="flex max-w-full items-center gap-1 rounded-control bg-sunken py-0.5 pl-2 text-meta text-default">
+              <Icon name="paperclip" size="xs" className="text-faint" /><span className="min-w-0 truncate">{f.name}</span>
+              <IconButton icon="x" size="sm" label={`Remove ${f.name}`} onClick={() => setFiles((list) => list.filter((_, j) => j !== i))} />
+            </li>
+          ))}
+        </ul>
+      )}
       {/* Non-modal: focus stays in the textarea (combobox pattern); a sheet on phones. */}
       <Popover open={options.length > 0} onClose={() => setClosed(true)} anchor={area} label="Mention a member" modal={false} align="start" role={undefined} className="py-1">
         <ul id={listId} role="listbox" aria-label="Mention a member">
@@ -185,9 +208,16 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
         </ul>
       </Popover>
       <div className="mt-1.5 flex flex-wrap items-center gap-2">
-        <Button variant="primary" size="sm" disabled={!body.trim()} busy={busy} onClick={() => void submit()}>
+        <Button variant="primary" size="sm" disabled={!canSend} busy={busy} onClick={() => void submit()}>
           {submitLabel === 'Comment' && <Icon name="send" size="sm" />}{submitLabel}
         </Button>
+        {attach && (
+          <>
+            <input ref={picker} type="file" multiple hidden aria-label="Choose files for the comment" data-testid="comment-file-picker"
+              onChange={(e) => { const picked = Array.from(e.target.files ?? []); e.target.value = ''; setFiles((f) => [...f, ...picked]) }} />
+            <IconButton icon="paperclip" size="sm" label="Attach files" onClick={() => picker.current?.click()} />
+          </>
+        )}
         {onCancel && <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>}
         <span id={`${id}-hint`} className="ml-auto text-hint text-faint"><span className="kbd">{key}</span>+<span className="kbd">Enter</span> to send</span>
       </div>
