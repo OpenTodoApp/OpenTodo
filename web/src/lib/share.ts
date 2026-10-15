@@ -121,3 +121,33 @@ export function bookmarklet(origin: string): string {
     `if(!window.open(u,'opentodo-capture','popup,width=480,height=640'))alert('Allow pop-ups for this site to capture it to OpenTodo.')})()`
   return `javascript:${code}`
 }
+
+// ---- shared files (OpenSpec attachments, design D9) ----
+
+/** At most this many files are taken from one share. */
+export const MAX_SHARED_FILES = 10
+
+/** One shared file on the capture screen; `refused` names why it will not be attached. */
+export interface CapturedFile {
+  key: string
+  name: string
+  type: string
+  size: number
+  blob: Blob
+  refused?: string
+}
+
+/** Apply the share limits: the first ten files, none over the per-file limit (null when unknown). */
+export function captureFiles(files: { name: string; type: string; blob: Blob }[], maxBytes: number | null, format: (n: number) => string): { files: CapturedFile[]; dropped: number } {
+  const out = files.slice(0, MAX_SHARED_FILES).map((f, i): CapturedFile => ({
+    key: `${i}-${f.name}`, name: f.name || 'file', type: f.type || 'application/octet-stream', size: f.blob.size, blob: f.blob,
+    refused: maxBytes !== null && f.blob.size > maxBytes ? `Too large: files may be at most ${format(maxBytes)} on this server.` : undefined,
+  }))
+  return { files: out, dropped: Math.max(0, files.length - MAX_SHARED_FILES) }
+}
+
+/** The title for a share that carried only files: the first file's name without its extension. */
+export function titleFromFiles(files: { name: string }[]): string {
+  const name = files[0]?.name ?? ''
+  return cut(name.replace(/\.[a-z0-9]{1,8}$/i, '').trim(), TITLE_MAX)
+}

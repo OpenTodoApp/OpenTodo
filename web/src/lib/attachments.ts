@@ -91,14 +91,14 @@ export interface PlannedFile {
  * anything, so a caller can put them in one batch with its own changes (a
  * comment and its files, a shared task and its files).
  */
-export async function planFiles(taskId: string, files: File[], opts: { commentId?: string | null } = {}): Promise<PlannedFile[]> {
+export async function planFiles(taskId: string, files: File[], opts: { commentId?: string | null; /** For a task in the same batch, not stored yet. */ projectId?: string | null } = {}): Promise<PlannedFile[]> {
   const author = await currentUserId()
   if (!author) throw new AttachmentError('signed_out', 'Sign in to add files.')
   const l = await limits()
   if (l && !l.enabled) throw new AttachmentError('disabled', 'Attachments are turned off on this server.')
   let room = l && l.quota_bytes > 0 ? l.quota_bytes - l.used_bytes - (await pendingBytes()) : Infinity
   // An encrypted account's personal tasks get encrypted files (design D8).
-  const key = (await encryptsTask(taskId)) ? await currentKey() : undefined
+  const key = (await encryptsTask(taskId, opts.projectId)) ? await currentKey() : undefined
   if (key === null) throw new AttachmentError('locked', 'Unlock encryption on this device to add files.')
   const out: PlannedFile[] = []
   // One millisecond apart, so the uploader keeps the order the files were picked in.
@@ -179,10 +179,10 @@ export async function queueLink(taskId: string, url: string, name?: string, comm
 }
 
 /** True when files on this task are encrypted: an encrypted account's personal task. */
-async function encryptsTask(taskId: string): Promise<boolean> {
+async function encryptsTask(taskId: string, projectId?: string | null): Promise<boolean> {
   if (!(await isEnabled())) return false
-  const task = await db.tasks.get(taskId)
-  return !task?.project_id || !(await membershipMap()).has(task.project_id)
+  const project = projectId !== undefined ? projectId : (await db.tasks.get(taskId))?.project_id
+  return !project || !(await membershipMap()).has(project)
 }
 
 async function pendingBytes(): Promise<number> {

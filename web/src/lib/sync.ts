@@ -14,6 +14,7 @@ import { refreshNotifications } from './notifications'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
 import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
 import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from './attachments'
+import { sweepInbox } from './shareInbox'
 import type { Clock, Entity, Op, RowEncryption, SyncState } from './types'
 import { currentKey, isEnabled } from './e2ee'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
@@ -428,6 +429,8 @@ export function startSync(): void {
   started = true
   onUploadRequest(() => requestSync(0))
   void refreshLimits()
+  // Shares abandoned on the capture screen leave the hand-over store (attachments D9).
+  void sweepInbox().catch(() => undefined)
   onLocalMutation(() => {
     // Reflect the pending edit immediately so the indicator never claims "Synced"
     // while an op is still waiting in the debounce window.

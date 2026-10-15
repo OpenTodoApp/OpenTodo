@@ -302,6 +302,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		writeError(w, http.StatusNotFound, "not_found", "unknown API route")
 	})
 	if web != nil {
+		// The share sheet POSTs here when the service worker is not active yet.
+		mux.HandleFunc("POST /share", s.handleSharePost)
 		mux.Handle("/", web)
 	}
 	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(mux))))

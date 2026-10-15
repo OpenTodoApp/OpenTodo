@@ -506,7 +506,7 @@ export async function archiveProject(id: string): Promise<void> {
   await mutateMany(changes)
 }
 
-export async function createTask(input: {
+export type NewTaskInput = {
   title: string; description?: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
   estimate_minutes?: number | null
   deadline?: string | null
@@ -519,7 +519,10 @@ export async function createTask(input: {
   assignee_id?: string | null
   /** Section of `project_id` (board-view); only sent when set. */
   section_id?: string | null
-}): Promise<string> {
+}
+
+/** The ops of a new task without writing them, for a batch with other changes (a shared file's attachments). */
+export async function planTask(input: NewTaskInput): Promise<{ id: string; change: Change }> {
   const id = crypto.randomUUID()
   const now = Date.now()
   let due = input.due ?? null
@@ -539,11 +542,16 @@ export async function createTask(input: {
   // Only parked, deferred or evening tasks carry these (someday-and-evening).
   if (input.start) extra.start = input.start
   if (input.evening) extra.evening = true
-  await mutate('task', id, {
+  return { id, change: { entity: 'task', entityId: id, patch: {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: await nextTaskPosition(now), created_at: now,
     completed_at: null, deleted_at: null, estimate_minutes: input.estimate_minutes ?? null, ...extra,
-  })
+  } } }
+}
+
+export async function createTask(input: NewTaskInput): Promise<string> {
+  const { id, change } = await planTask(input)
+  await mutateMany([change])
   return id
 }
 
