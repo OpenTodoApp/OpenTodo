@@ -140,6 +140,8 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
         const op = n.op
         // A task without a deadline never matches a `deadline` comparison (deadlines D4).
         if (n.field === 'deadline') return (t) => !!t.deadline && compareISO(t.deadline, op, date)
+        // Only a start date compares; null and Someday never match (someday-and-evening).
+        if (n.field === 'start') return (t) => !!t.start && t.start !== 'someday' && compareISO(t.start, op, date)
         // A task without a due date never matches a `due` comparison.
         return (t) => t.due !== null && compareISO(localDueOf(t.due).date, op, date)
       }
@@ -157,6 +159,10 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
           case 'no project': return (t) => t.project_id === null
           case 'no labels': return (t) => t.labels.length === 0
           case 'no deadline': return (t) => !t.deadline
+          case 'no start': return (t) => !t.start
+          case 'someday': return (t) => t.start === 'someday'
+          case 'deferred': return (t) => !!t.start && t.start !== 'someday' && t.start > today
+          case 'evening': return (t) => !!t.evening
           case 'completed': return (t) => t.completed_at !== null
           case 'open': return (t) => t.completed_at === null
           case 'subtask': return (t) => t.parent_id !== null

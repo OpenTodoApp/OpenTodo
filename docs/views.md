@@ -4,7 +4,7 @@ summary: Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plu
 audience: user
 section: Guides
 specs: [web-app, custom-views]
-screens: [settings/start-view#choose-where-the-app-opens]
+screens: [settings/start-view#choose-where-the-app-opens, someday#park-ideas-in-someday, anytime#anytime-for-when-you-have-time]
 order: 20
 card: upcoming
 ---
@@ -21,6 +21,8 @@ They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then
 | **Inbox** | Tasks that aren't in a project yet | <kbd>g</kbd> <kbd>i</kbd> |
 | **Today** | Tasks due today and tasks whose deadline is today, with overdue ones first | <kbd>g</kbd> <kbd>t</kbd> |
 | **Upcoming** | Tasks due after today, and undated tasks with a deadline ahead, grouped by day | <kbd>g</kbd> <kbd>u</kbd> |
+| **Anytime** | Open tasks with no date and no start: things to do whenever there is time | <kbd>g</kbd> <kbd>n</kbd> |
+| **Someday** | Tasks you parked for later, by project | <kbd>g</kbd> <kbd>o</kbd> |
 | **Assigned to me** | Open tasks assigned to you, across projects | <kbd>g</kbd> <kbd>a</kbd> |
 | **Day** and **Week** | Your timed tasks on a calendar | <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd> |
 | **Completed** | What you finished most recently | <kbd>g</kbd> <kbd>c</kbd> |
@@ -28,13 +30,15 @@ They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then
 | **Trash** | Deleted tasks and projects | <kbd>g</kbd> <kbd>x</kbd> |
 | **Activity** | What changed in your shared projects | <kbd>g</kbd> <kbd>h</kbd> |
 
-The numbers next to the names count open tasks.
+The numbers next to the names count open tasks. Deferred and parked tasks (see [When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
 
 ## Plan your day with Today
 
 Today is where most people start. Overdue tasks sit in their own group at the top, in red, so nothing slips. Below them are today's tasks, sorted by time.
 
 A [deadline](tasks-and-projects.md#deadlines) brings a task into Today too: a task whose deadline is today shows up even if it has no due date or is planned for later. If the deadline has already passed and the task isn't planned for today, it sits under **Overdue**. Each task is listed once, and the Today count in the sidebar counts the same tasks.
+
+A task whose start date has come shows up in Today too, with a **Started** chip, and stays until you complete it, give it a date or defer it again. Deferred and parked tasks stay out of Today, unless their due date or deadline has come: a hard date always wins. Tasks you marked for **This Evening** are listed in their own group below the day's tasks.
 
 <picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view with an Overdue group above today's tasks."></picture>
 
@@ -44,7 +48,15 @@ Anything you add here with quick add is due today, unless you type another date.
 
 Upcoming lists everything that has a date after today, under headings like **Tomorrow** and the weekday names. It's a good place for a short weekly review: scan the next few days, move what won't fit, and spot empty days.
 
-A task with a deadline but no due date is listed under its deadline day, after the tasks due that day, so you see it while there is still time to plan it. A task with both dates is listed under its due date only; its row shows the deadline countdown.
+A task with a deadline but no due date is listed under its deadline day, after the tasks due that day, so you see it while there is still time to plan it. A task with both dates is listed under its due date only; its row shows the deadline countdown. Deferred and parked tasks are left out until they start.
+
+## Anytime, for when you have time
+
+Anytime lists every open task that has no due date, no deadline and no start date, grouped by project: the things you could do whenever there is a moment. A task leaves it as soon as it gets a date, from any device.
+
+## Park ideas in Someday
+
+Someday holds the tasks you parked: ideas and maybes you don't want to see every day. They stay out of Today, Upcoming, Anytime and the counts, and are listed here by project and in their project's **Later** group. Anything you add in this view is parked. Press <kbd>n</kbd> on a task to park it or bring it back.
 
 <picture><source srcset="images/upcoming-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/upcoming-light.webp" alt="The Upcoming view with tasks grouped under Tomorrow and the following weekdays."></picture>
 

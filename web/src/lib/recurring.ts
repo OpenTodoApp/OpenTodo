@@ -52,6 +52,8 @@ function moveDue(due: Due | null, date: string): Due {
 function moveDates(series: Task, next: string, today: string): Record<string, unknown> {
   const out: Record<string, unknown> = { due: moveDue(series.due, next) }
   if (series.deadline) out.deadline = shiftDate(series.deadline, occurrenceDate(series, today), next)
+  // A start date moves the same way; evening stays on the series (someday-and-evening D8).
+  if (series.start && series.start !== 'someday') out.start = shiftDate(series.start, occurrenceDate(series, today), next)
   return out
 }
 
@@ -70,6 +72,8 @@ function copyOf(series: Task, now: number): Record<string, unknown> {
     ...(series.section_id ? { section_id: series.section_id } : {}),
     // The occurrence keeps the deadline it had (deadlines D8); only sent when set.
     ...(series.deadline ? { deadline: series.deadline } : {}),
+    ...(series.start ? { start: series.start } : {}),
+    ...(series.evening ? { evening: true } : {}),
   }
 }
 

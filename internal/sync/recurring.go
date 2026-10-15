@@ -131,6 +131,14 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 	if deadline != "" {
 		record["deadline"] = jsonOf(deadline)
 	}
+	// Start and evening likewise (OpenSpec change someday-and-evening, design D8).
+	start := idValue(merged["start"])
+	if start != "" {
+		record["start"] = jsonOf(start)
+	}
+	if string(merged["evening"]) == "true" {
+		record["evening"] = json.RawMessage("true")
+	}
 	nd := recurringDue{Date: next}
 	if cur != nil {
 		nd.Time, nd.TZ = cur.Time, cur.TZ
@@ -139,6 +147,9 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 	body["due"] = jsonOf(nd)
 	if deadline != "" {
 		body["deadline"] = jsonOf(recurrence.ShiftDate(deadline, date, next))
+	}
+	if start != "" && start != "someday" {
+		body["start"] = jsonOf(recurrence.ShiftDate(start, date, next))
 	}
 	return OccurrenceID(id, date), record, true, nil
 }

@@ -132,7 +132,8 @@ The file is read from a private copy on the server, read-only, using only Things
 | repeating to-do | a recurrence rule, when the grammar can express it |
 | completed / canceled | completed / completed with the label `canceled` |
 | deadline | the task's deadline |
-| Someday, This Evening | dropped with a warning |
+| Someday | the task is [parked](tasks-and-projects.md#when-a-task-starts) (a Someday to-do that also has a date keeps the date, with a warning) |
+| This Evening | the task's evening flag |
 | trashed items | skipped |
 
 ### CSV (`csv`)
@@ -156,6 +157,8 @@ UTF-8, with a header row. Comma, semicolon and tab separators are detected from 
 | `created_at` | `created` | like `completed_at`; defaults to the import time |
 | `recurrence` | `repeat`, `repeats`, `recurring`, `rrule` | a recurrence rule, an RRULE or a common spelling; see [Recurrence](#recurrence) |
 | `reminder` | `reminders` | one or more reminders separated by `;`, `,` or `\|`; see [Reminders](#reminders) |
+| `start` | `start_date` | `someday` parks the task, a date `YYYY-MM-DD` defers it until that day; with a `due_date` too, Someday is dropped with a warning |
+| `evening` | | `true`/`yes`/`x`/`1` marks the task for This Evening |
 | `deadline` | | the day the task must be finished by, `YYYY-MM-DD`; a date-time keeps its date (with a warning); anything else is a row error |
 
 Columns named `attachment(s)`, `comment(s)` or `assignee` are recognised as unsupported: a non-empty value is dropped with a warning on that row. Any other column is listed as ignored in the preview.

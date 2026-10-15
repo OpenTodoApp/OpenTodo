@@ -103,7 +103,7 @@ Mapping:
 - `trashed` → skipped.
 - Packed `startDate` → due date, with `reminderTime` → a reminder when present. `rt1_recurrenceRule` (a plist of frequency, interval and weekdays) → the recurrence grammar where expressible.
 - `deadline` → the task's deadline (changed by `deadlines`, design D9).
-- `start=2` (someday) and `startBucket=1` (evening) → warnings.
+- `start=2` (someday) → the task's start `someday`, and `startBucket=1` (evening) → its evening flag (changed by `someday-and-evening`, design D9).
 
 Alternative considered: an Apple Shortcut writing a published JSON shape. Rejected now that the database can be copied directly. It needed a Shortcut per user, and it lost fields the database has.
 

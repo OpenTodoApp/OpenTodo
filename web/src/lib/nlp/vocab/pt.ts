@@ -29,6 +29,8 @@ export const pt: Vocabulary = {
   ],
   before: ['na', 'no', 'até', 'para'],
   deadlineWords: ['prazo'],
+  somedayWords: ['algum dia'],
+  eveningWords: ['hoje à noite'],
   nextBefore: ['próxima', 'próximo'],
   nextAfter: ['que vem', 'próxima', 'próximo'],
   thisBefore: ['esta', 'este', 'nesta', 'neste'],

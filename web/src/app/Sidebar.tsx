@@ -9,7 +9,7 @@ import { createProject } from '../lib/ops'
 import { COLLAPSED_PROJECTS_KEY, buildProjectTree, expandAncestorsOf, openCountsByProject, toggleCollapsedProject, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { User } from '../lib/types'
-import { evaluateViews, inToday, isDashboard } from '../lib/views'
+import { evaluateViews, inToday, isDashboard, openCount } from '../lib/views'
 import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMenu, viewIcon } from './ViewsView'
 import { useViewerZone, useViews } from './useViews'
@@ -58,12 +58,14 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
     let inbox = 0
     let due = 0
     let assigned = 0
-    for (const t of openTasks) {
+    // Deferred and parked tasks are not counted (someday-and-evening D2).
+    const active = openTasks.filter((t) => openCount(t, today))
+    for (const t of active) {
       if (t.project_id === null) inbox++
-      if (inToday(t, today)) due++
       if (t.assignee_id === user.id) assigned++
     }
-    return { inbox, today: due, assigned, byProject: openCountsByProject(openTasks, tree, collapsed) }
+    for (const t of openTasks) if (inToday(t, today)) due++
+    return { inbox, today: due, assigned, byProject: openCountsByProject(active, tree, collapsed) }
   }, [openTasks, tree, collapsed, user.id, zone])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.
@@ -204,6 +206,8 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         {item({ view: 'inbox' }, 'Inbox', 'inbox', counts.inbox)}
         {item({ view: 'today' }, 'Today', 'calendar-check', counts.today)}
         {item({ view: 'upcoming' }, 'Upcoming', 'calendar-days')}
+        {item({ view: 'anytime' }, 'Anytime', 'layers')}
+        {item({ view: 'someday' }, 'Someday', 'archive')}
         {item({ view: 'assigned' }, 'Assigned to me', 'user-check', counts.assigned)}
         {item({ view: 'day' }, 'Day', 'clock')}
         {item({ view: 'week' }, 'Week', 'calendar-range')}

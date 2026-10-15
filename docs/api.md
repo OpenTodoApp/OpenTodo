@@ -399,7 +399,7 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 
 | Route | What an agent token may send |
 | --- | --- |
-| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `recurrence` |
+| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `recurrence` |
 | `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
 | `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
 | `POST /api/v1/projects` | `name`, `color`, `parent_id` (`archived: false` is accepted) |
@@ -436,6 +436,8 @@ Every other write route (tokens, settings, sync, sharing and members, invitation
 | `labels` | string[] | ids of existing, non-deleted labels; replaced as a whole on PATCH |
 | `estimate_minutes` | integer 1–10080 or null | duration estimate in minutes; `0`, negatives, fractions and strings are rejected. The Day and Week calendar draws a task with a due time as a block of this length |
 | `deadline` | `"YYYY-MM-DD"` or null | the day the task must be finished by, separate from the planned `due` date; a bare date that exists, so `"next friday"`, `"2026-02-30"` or a time are refused with `invalid_input`. Editing `due` never changes it |
+| `start` | `"someday"`, `"YYYY-MM-DD"` or null | `someday` parks the task (out of Today, Upcoming, Anytime and the counts); a date defers it until that day. Anything else is refused with `invalid_input`. The API writes exactly what you send: unlike the app, it does not clear `due` when parking or un-park a task that gets a `due` or a `recurrence`, so a parked task with a rule stays parked (a due or deadline that has come still shows it in Today) |
+| `evening` | boolean | This Evening: the task is grouped below the day's tasks in Today; it says nothing about the time |
 | `recurrence` | string or null | recurrence rule, e.g. `every 3 days after completion` (see [recurrence.md](recurrence.md)); stored in canonical form, `400 invalid_input` when it does not parse or is over 200 characters |
 | `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |

@@ -367,6 +367,8 @@ func (v *davView) encode(t opsync.Entity) ([]byte, string) {
 		ct.Due = &caldav.Due{Date: d.Date, Time: d.Time, TZ: d.TZ}
 	}
 	ct.Deadline = idOf(t["deadline"])
+	ct.Start = idOf(t["start"])
+	ct.Evening = string(t["evening"]) == "true"
 	if !isNullish(t["completed_at"]) {
 		c := int64(numberOf(t["completed_at"]))
 		ct.CompletedAt = &c

@@ -191,8 +191,8 @@ describe('parse: errors', () => {
     expect(errorOf('p5').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('p0 | p1').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('"milk"').message).toBe('Unexpected text "milk" at position 1; quote names after "@" or "#", or use search:')
-    expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time" or "deadline" after "no" at position 1')
-    expect(errorOf('no dates').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"'])
+    expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1')
+    expect(errorOf('no dates').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"'])
   })
 
   it('reports incomplete date terms', () => {
@@ -472,6 +472,38 @@ describe('evaluate: deadlines (OpenSpec deadlines 4.1)', () => {
   })
   it('round-trips through printing', () => {
     expect(show('deadline<=7 days&no deadline')).toBe('(deadline <= 7 days & no deadline)')
+  })
+})
+
+describe('evaluate: start, Someday and evening (OpenSpec someday-and-evening 4.1)', () => {
+  const ctx: FilterContext = { ...CTX, today: '2026-10-14' }
+  const L: Task[] = [
+    task('wait-parked', { labels: ['l-call'], start: 'someday' }),
+    task('wait-deferred', { labels: ['l-call'], start: '2026-10-18' }),
+    task('wait-plain', { labels: ['l-call'] }),
+    task('soon', { start: '2026-10-20' }),
+    task('later', { start: '2026-10-25' }),
+    task('started', { start: '2026-10-10' }),
+    task('home-evening', { project_id: 'p-home', evening: true, due: { date: '2026-10-20' } }),
+    task('home-day', { project_id: 'p-home' }),
+  ]
+  it('@call & !someday keeps deferred tasks', () => {
+    expect(ids('@call & !someday', L, ctx)).toEqual(sorted('wait-deferred', 'wait-plain'))
+  })
+  it('deferred & start <= 6 days', () => {
+    expect(ids('deferred & start <= 6 days', L, ctx)).toEqual(sorted('wait-deferred', 'soon'))
+  })
+  it('#Home & evening, whatever the date', () => {
+    expect(ids('#Home & evening', L, ctx)).toEqual(['home-evening'])
+  })
+  it('someday, no start, and start never matching parked or empty starts', () => {
+    expect(ids('someday', L, ctx)).toEqual(['wait-parked'])
+    expect(ids('no start & @call', L, ctx)).toEqual(['wait-plain'])
+    expect(ids('start < 2100-01-01', L, ctx)).not.toContain('wait-parked')
+    expect(ids('start <= today', L, ctx)).toEqual(['started'])
+  })
+  it('round-trips through printing', () => {
+    expect(show('someday|deferred&start>today')).toBe('(someday | (deferred & start > today))')
   })
 })
 

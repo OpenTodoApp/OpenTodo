@@ -17,14 +17,48 @@ import {
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
 // One definition shared by the list, its grouping and the sidebar count.
 
-type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline'>
+type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline' | 'start'>
 
-/** Today lists open tasks due today or earlier, or whose deadline is today or past. */
-export function inToday(t: DatedTask, today: string): boolean {
-  if (t.completed_at) return false
+// ---- start dates, Someday and This Evening (OpenSpec change `someday-and-evening`, D2) ----
+
+type StartTask = Pick<Task, 'start'>
+
+/** Parked in Someday. */
+export const isSomeday = (t: StartTask): boolean => t.start === 'someday'
+/** Deferred: a start date still in the future. */
+export const isDeferred = (t: StartTask, today: string): boolean => !!t.start && t.start !== 'someday' && t.start > today
+/** Started: a start date that has come (the task stays in Today until handled). */
+export const isStarted = (t: StartTask, today: string): boolean => !!t.start && t.start !== 'someday' && t.start <= today
+/** Neither parked nor deferred: what the planning views and counts consider. */
+export const isActive = (t: StartTask, today: string): boolean => !isSomeday(t) && !isDeferred(t, today)
+
+/** A due date or deadline today or earlier: wins over deferral and parking. */
+function hardDate(t: Pick<Task, 'due' | 'deadline'>, today: string): boolean {
   const deadline = t.deadline ?? null
   return (!!t.due && localDueOf(t.due).date <= today) || (deadline !== null && deadline <= today)
 }
+
+/**
+ * Today lists open tasks due today or earlier, whose deadline is today or past,
+ * or whose start date has come. A hard date wins over deferral and Someday.
+ */
+export function inToday(t: DatedTask, today: string): boolean {
+  if (t.completed_at) return false
+  return hardDate(t, today) || isStarted(t, today)
+}
+
+/** Anytime: open, active tasks with no date of any kind and no start. */
+export function inAnytime(t: DatedTask, today: string): boolean {
+  return !t.completed_at && isActive(t, today) && !t.due && !(t.deadline ?? null) && (t.start ?? null) === null
+}
+
+/** Counted in the sidebar (Inbox, projects): open and active. */
+export function openCount(t: Pick<Task, 'completed_at' | 'start'>, today: string): boolean {
+  return !t.completed_at && isActive(t, today)
+}
+
+/** The Later group of a project or Inbox view: deferred or parked. */
+export const inLater = (t: StartTask, today: string): boolean => isSomeday(t) || isDeferred(t, today)
 
 /** Within Today, the Overdue group: due before today, or deadline passed and not planned for today. */
 export function overdueInToday(t: DatedTask, today: string): boolean {
@@ -35,7 +69,7 @@ export function overdueInToday(t: DatedTask, today: string): boolean {
 
 /** Upcoming lists open tasks due after today, and undated ones whose deadline is ahead. */
 export function inUpcoming(t: DatedTask, today: string): boolean {
-  if (t.completed_at) return false
+  if (t.completed_at || !isActive(t, today)) return false
   if (t.due) return localDueOf(t.due).date > today
   const deadline = t.deadline ?? null
   return deadline !== null && deadline > today

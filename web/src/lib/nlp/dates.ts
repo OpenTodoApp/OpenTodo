@@ -233,6 +233,14 @@ function unitAt(tokens: readonly Token[], i: number, v: Vocabulary): { n: number
  * Longest date phrase starting at token `i`, across every active vocabulary.
  * Ties go to the earlier vocabulary (the user's preferred language).
  */
+/** Tokens at `i` consumed by the longest phrase of a vocabulary word list in any active language, or 0. */
+export function wordsAt(tokens: readonly Token[], i: number, ctx: DateContext, field: 'somedayWords' | 'eveningWords'): number {
+  if (!tokens[i] || tokens[i].quoted) return 0
+  let best = 0
+  for (const v of ctx.vocabs) best = Math.max(best, phraseAt(tokens, i, v[field], `${v.code}:${field}`))
+  return best
+}
+
 /**
  * A deadline phrase at `i`: a deadline word ("deadline", "Frist", "fecha límite")
  * directly followed by a date phrase (OpenSpec change deadlines, design D7).

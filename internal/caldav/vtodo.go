@@ -41,6 +41,8 @@ type Task struct {
 	Priority    int // app priority 1..4
 	Due         *Due
 	Deadline    string // "YYYY-MM-DD" or "" (OpenSpec change deadlines)
+	Start       string // "someday", "YYYY-MM-DD" or "" (OpenSpec change someday-and-evening)
+	Evening     bool
 	Categories  []string
 	ParentUID   string
 	CreatedAt   int64
@@ -61,8 +63,13 @@ type Inbound struct {
 	// from it (design D6); then Due is the DTSTART. DueOnly reports a DUE
 	// without any DTSTART: the caller decides whether it is the due date or,
 	// on a task that has a deadline, the deadline.
-	Deadline    string
-	DueOnly     bool
+	Deadline string
+	DueOnly  bool
+	// Start and Evening come from X-OPENTODO-START and X-OPENTODO-EVENING
+	// (someday-and-evening D7); nil means the client did not send the property,
+	// which leaves the field alone.
+	Start       *string
+	Evening     *bool
 	Completed   bool
 	CompletedAt *int64 // the COMPLETED time when the client sent one
 	Categories  []string
@@ -170,6 +177,16 @@ func Encode(t Task) []byte {
 		if r, err := recurrence.Parse(t.Recurrence); err == nil {
 			add("RRULE", r.RRULE())
 		}
+	}
+	// iCalendar has no deferral or evening bucket: OpenTodo's own properties.
+	switch {
+	case t.Start == "someday":
+		add("X-OPENTODO-START", "SOMEDAY")
+	case t.Start != "":
+		add("X-OPENTODO-START", dateValue(t.Start))
+	}
+	if t.Evening {
+		add("X-OPENTODO-EVENING", "TRUE")
 	}
 	if p := AppToICalPriority(t.Priority); p != 0 {
 		add("PRIORITY", strconv.Itoa(p))
@@ -375,6 +392,27 @@ func Decode(body []byte) (*Inbound, error) {
 		case "CREATED":
 			if ms, err := instantOf(p); err == nil {
 				in.CreatedAt = &ms
+			}
+		case "X-OPENTODO-START":
+			v := strings.ToUpper(strings.TrimSpace(p.Value))
+			if v == "SOMEDAY" {
+				s := "someday"
+				in.Start = &s
+			} else if d, err := isoDate(v); err == nil {
+				in.Start = &d
+			} else {
+				extra = append(extra, p.Line())
+			}
+		case "X-OPENTODO-EVENING":
+			switch strings.ToUpper(strings.TrimSpace(p.Value)) {
+			case "TRUE":
+				b := true
+				in.Evening = &b
+			case "FALSE":
+				b := false
+				in.Evening = &b
+			default:
+				extra = append(extra, p.Line())
 			}
 		default:
 			extra = append(extra, p.Line())

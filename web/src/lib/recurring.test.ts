@@ -368,3 +368,31 @@ describe('deadlines follow the series (OpenSpec deadlines 8.1)', () => {
     expect(await snapshot(a)).toBe(await snapshot(b))
   })
 })
+
+describe('start and evening follow the series (OpenSpec someday-and-evening 7.1)', () => {
+  it('weekly task hidden until its day', async () => {
+    const id = await createTask({ title: 'Plan the week', due: { date: '2026-10-19' }, start: '2026-10-17', recurrence: 'every monday' })
+    await completeTask(id, { today: '2026-10-19' })
+    expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-10-26' }, start: '2026-10-24' })
+    expect((await db.tasks.get(occurrenceId(id, '2026-10-19')))?.start).toBe('2026-10-17')
+  })
+
+  it('evening routine keeps the flag; the record carries it', async () => {
+    const id = await createTask({ title: 'Stretch', due: { date: '2026-10-14' }, evening: true, recurrence: 'every day' })
+    await completeTask(id, { today: '2026-10-14' })
+    expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-10-15' }, evening: true })
+    expect((await db.tasks.get(occurrenceId(id, '2026-10-14')))?.evening).toBe(true)
+  })
+
+  it('two devices completing offline converge on the same start', async () => {
+    const { a, b, id } = await seriesOnTwoDevices({ title: 'Plan', due: { date: '2026-10-19' }, start: '2026-10-17', recurrence: 'every monday' })
+    await use(a)
+    await completeTask(id, { today: '2026-10-19' })
+    await use(b)
+    await completeTask(id, { today: '2026-10-19' })
+    await syncAll([a, b])
+    expect(await snapshot(a)).toBe(await snapshot(b))
+    await use(a)
+    expect((await db.tasks.get(id))?.start).toBe('2026-10-24')
+  })
+})
