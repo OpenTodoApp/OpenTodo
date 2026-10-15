@@ -64,9 +64,9 @@
 
 ## 10. Browser extension (design D10)
 
-- [ ] 10.1 `extension/`: "Add screenshot to OpenTodo" context-menu entry with `captureVisibleTab`, `optional_host_permissions`, the options page requesting the server origin on save with an explanation, the popup opened with `files=1`, and the injected `postMessage` hand-over; the no-permission note path. Bump the extension version; keep "no network requests". Tests in `share-url.test.js` for the URL with `files=1` and a unit test of the hand-over message shape. Verify with `make extension` and a manual load in Chromium and Firefox recorded in the change folder notes.
+- [x] 10.1 `extension/`: "Add screenshot to OpenTodo" context-menu entry with `captureVisibleTab`, `optional_host_permissions`, the options page requesting the server origin on save with an explanation, the popup opened with `files=1`, and the injected `postMessage` hand-over; the no-permission note path. Bump the extension version; keep "no network requests". Tests in `share-url.test.js` for the URL with `files=1` and a unit test of the hand-over message shape. Verify with `make extension` and a manual load in Chromium and Firefox recorded in the change folder notes.
 - [x] 10.2 `ShareCapture.tsx` accepts the `opentodo-files` message once, only with `files=1`, only from `event.source === window` and the page's origin. Test: a message from another source is ignored. Verify with `npm test`.
-- [ ] 10.3 Update `docs/capture.md` (extension section: the screenshot action and the optional permission) and `extension/README.md`. Verify with `npm run docs:check`.
+- [x] 10.3 Update `docs/capture.md` (extension section: the screenshot action and the optional permission) and `extension/README.md`. Verify with `npm run docs:check`.
 
 ## 11. Integration
 

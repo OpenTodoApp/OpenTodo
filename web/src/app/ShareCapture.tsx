@@ -102,6 +102,8 @@ export function ShareCapture() {
       const data = e.data as { type?: unknown; files?: { name?: unknown; type?: unknown; data?: unknown }[] } | null
       if (data?.type !== 'opentodo-files' || !Array.isArray(data.files)) return
       taken = true
+      // Tells the extension's injected script to stop posting.
+      document.documentElement.dataset.opentodoFiles = 'received'
       const list: SharedFile[] = []
       for (const f of data.files) {
         const type = typeof f.type === 'string' ? f.type : ''
