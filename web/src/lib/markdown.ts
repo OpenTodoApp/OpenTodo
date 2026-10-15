@@ -19,7 +19,9 @@ export type Block =
   | { t: 'p'; c: Inline[] }
   | { t: 'pre'; v: string }
   | { t: 'quote'; c: Block[] }
-  | { t: 'list'; ordered: boolean; start: number; items: Block[][] }
+  | { t: 'list'; ordered: boolean; start: number; items: Block[][]; checks?: (boolean | null)[] }
+  /** Only with `rich` (notes): `#` headings. */
+  | { t: 'h'; level: number; c: Inline[] }
 
 const LIST = /^ {0,3}([-*+]|(\d{1,9})[.)])\s+(.*)$/
 const FENCE = /^ {0,3}(```|~~~)/
@@ -37,7 +39,11 @@ export function safeHref(url: string): string | null {
   return /^(https?:\/\/|mailto:)[^\s]+$/i.test(u) ? u : null
 }
 
-export function parseMarkdown(src: string, depth = 0): Block[] {
+/**
+ * `rich` adds what a note's Markdown projection carries beyond the comment subset
+ * (OpenSpec project-notes D4): `#` headings and `[ ]` / `[x]` check items.
+ */
+export function parseMarkdown(src: string, depth = 0, rich = false): Block[] {
   const lines = src.replace(/\r\n?/g, '\n').split('\n')
   const out: Block[] = []
   let i = 0
@@ -59,29 +65,38 @@ export function parseMarkdown(src: string, depth = 0): Block[] {
     if (/^ {0,3}>/.test(line) && depth < 8) {
       const body: string[] = []
       while (i < lines.length && /^ {0,3}>/.test(lines[i])) body.push(lines[i++].replace(/^ {0,3}> ?/, ''))
-      out.push({ t: 'quote', c: parseMarkdown(body.join('\n'), depth + 1) })
+      out.push({ t: 'quote', c: parseMarkdown(body.join('\n'), depth + 1, rich) })
+      continue
+    }
+    const heading = rich ? /^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line) : null
+    if (heading) {
+      out.push({ t: 'h', level: heading[1].length, c: parseInline(heading[2]) })
+      i++
       continue
     }
     const first = LIST.exec(line)
     if (first && depth < 8) {
       const ordered = !!first[2]
       const list: Block[][] = []
+      const checks: (boolean | null)[] = []
       while (i < lines.length) {
         const m = LIST.exec(lines[i])
         if (!m || !!m[2] !== ordered) break
-        const item = [m[3]]
+        const box = rich ? /^\[([ xX])\]\s+(.*)$/.exec(m[3]) : null
+        checks.push(box ? box[1] !== ' ' : null)
+        const item = [box ? box[2] : m[3]]
         i++
         // Indented lines continue the item (and may hold a nested list).
         while (i < lines.length && (/^\s{2,}\S/.test(lines[i]) || (!lines[i].trim() && /^\s{2,}\S/.test(lines[i + 1] ?? '')))) {
           item.push(lines[i++].replace(/^\s{2,4}/, ''))
         }
-        list.push(parseMarkdown(item.join('\n'), depth + 1))
+        list.push(parseMarkdown(item.join('\n'), depth + 1, rich))
       }
-      out.push({ t: 'list', ordered, start: ordered ? Number(first[2]) : 1, items: list })
+      out.push({ t: 'list', ordered, start: ordered ? Number(first[2]) : 1, items: list, ...(checks.some((c) => c !== null) ? { checks } : {}) })
       continue
     }
     const para: string[] = []
-    while (i < lines.length && lines[i].trim() && !FENCE.test(lines[i]) && !/^ {0,3}>/.test(lines[i]) && !LIST.exec(lines[i])) para.push(lines[i++].trim())
+    while (i < lines.length && lines[i].trim() && !FENCE.test(lines[i]) && !/^ {0,3}>/.test(lines[i]) && !LIST.exec(lines[i]) && !(rich && /^ {0,3}#{1,6}\s/.test(lines[i]))) para.push(lines[i++].trim())
     if (para.length === 0) para.push(lines[i++].trim()) // a line no other rule took
     out.push({ t: 'p', c: parseInline(para.join('\n')) })
   }

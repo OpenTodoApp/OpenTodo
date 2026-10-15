@@ -85,6 +85,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>←</kbd> / <kbd>→</kbd> | Collapse / expand subtasks of the selected task, or sub-projects of the focused sidebar project |
 | <kbd>v</kbd> | Cycle the current project through list, board and timeline (remembered per project on this device) |
 | <kbd>Shift+S</kbd> | Share the current project: add members by email, change roles, remove, leave, transfer |
+| <kbd>Shift+P</kbd> | Edit the current project's note (Esc saves and closes it) |
 | <kbd>1</kbd> – <kbd>4</kbd> | Set priority of selected task |
 | <kbd>L</kbd> | Labels of selected task (type to find, Enter adds or creates) |
 | <kbd>e</kbd> | Edit the estimate of the selected task (type 20, 45m, 1h30; Enter) |

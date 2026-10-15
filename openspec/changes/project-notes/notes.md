@@ -11,3 +11,20 @@ Held until the ux-overhaul PRs (now through its group 4) merge: group 4 (`NotesE
 - `foldNote(taskId)` keeps working; `foldNote(entity, id)` is the new form, so the task editor did not have to change before the screen work.
 - The project tests live in `projectNotes.test.ts` (the same scenarios as `notes.test.ts`) instead of parameterising the task file, to keep that file's simulated server unchanged.
 - ux-overhaul group 4 adds `project.icon` to the same schema block; the two additions merge trivially.
+
+## Screens (2026-10-16)
+
+- `NotesEditor` takes a `NoteTarget` (`{entity, id, notes_doc, description, _clock}`), writes through `mutate(entity, …)` and folds with `foldNote(entity, id)`. The task panel passes `{...task, entity: 'task'}`, and the task-notes tests pass unchanged.
+- `ProjectNote` renders below the project's quick add (above the sections, the board and the timeline) rather than between the header and quick add. Chrome stays together above content (ux-overhaul's "Chrome above content, never between"), and the note is still "directly above the tasks".
+- The rendered note uses `Markdown` with a new `rich` flag: `#` headings and `[ ]` / `[x]` check items, which a note's projection carries and the comment subset lacks. Comments are unchanged. Without the flag, a note heading showed as a literal "# Packing".
+- Projects can restore an earlier `description` from History (`RESTORABLE.project`), and `fieldLabel` reads `description` and `notes_doc` as "notes".
+- Until the membership row loads, the note renders nothing, so a viewer never sees "Add a note" flash.
+
+## Smoke test (2026-10-16, task 6.1)
+
+Setup: `./bin/opentodo` on 127.0.0.1:18080, an owner and an editor ("Sam", invited, then given the editor role on "Trip"), two headless Chromium contexts.
+
+- The owner pressed Shift+P on "Trip" and typed a heading, a check item and a line, then Esc. Sam's device showed the note after a sync.
+- Both opened the editor at the same time and typed at the end ("From owner", "From Sam"). After both closed it, `GET /api/v1/projects/{id}` held both lines in `description`.
+- On the board layout the note stayed above the columns.
+- Sam wrote `description` over `PATCH /api/v1/projects/{id}`. The owner's device showed the new text, and opening the editor folded it, so the server then held a `notes_doc` paired with the new Markdown.

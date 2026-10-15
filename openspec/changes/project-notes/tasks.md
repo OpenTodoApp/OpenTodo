@@ -23,11 +23,11 @@
 
 ## 4. Project note in the view (design D4)
 
-- [ ] 4.1 Generalise `web/src/app/NotesEditor.tsx` to `{entity, id, value, clock, readOnly}`, writing through `mutate(entity, id, {notes_doc})` and calling `foldNote(entity, id)`; update `task-detail/TaskDetail.tsx` accordingly. Verify that the existing task-notes component tests pass unchanged (`npm test` in web/).
-- [ ] 4.2 Build `web/src/app/ProjectNote.tsx`: rendered Markdown in a `<section aria-label="Project note">`, "Add a note" for users who may edit, nothing for viewers on an empty note, in-place editor on activation or <kbd>Shift</kbd>+<kbd>P</kbd> (ignored in text fields), <kbd>Esc</kbd> saves and returns to the rendered view, fold after about eight lines remembered in Dexie `meta` per project. Mount it in `TaskListView.tsx` right after `ProjectHeader`. Verify with component tests: viewer sees no control on an empty note; editor presses Shift+P, types, presses Esc, and the project row holds the projection; the note renders above the board; an axe check passes in light and dark.
-- [ ] 4.3 Add `Shift+P` to `web/src/lib/shortcuts.ts` ("Edit the current project's note") and regenerate the keyboard guide with `make docs`. Verify with the `shortcutHelp` test and `npm run docs:check`.
-- [ ] 4.4 Confirm project history and activity label a note change as "notes" (`historyVersions.ts`, `activityRuns.ts`, `HistoryPanel` for `entity="project"`) with a test that restores a project `description` revision and folds it. Verify with `npm test` in web/.
-- [ ] 4.5 Write the "Project notes" section of `docs/tasks-and-projects.md` (what it is for, who can edit it, Shift+P, folding) and add the help id. Verify with `npm run docs:check` in web/.
+- [x] 4.1 Generalise `web/src/app/NotesEditor.tsx` to `{entity, id, value, clock, readOnly}`, writing through `mutate(entity, id, {notes_doc})` and calling `foldNote(entity, id)`; update `task-detail/TaskDetail.tsx` accordingly. Verify that the existing task-notes component tests pass unchanged (`npm test` in web/).
+- [x] 4.2 Build `web/src/app/ProjectNote.tsx`: rendered Markdown in a `<section aria-label="Project note">`, "Add a note" for users who may edit, nothing for viewers on an empty note, in-place editor on activation or <kbd>Shift</kbd>+<kbd>P</kbd> (ignored in text fields), <kbd>Esc</kbd> saves and returns to the rendered view, fold after about eight lines remembered in Dexie `meta` per project. Mount it in `TaskListView.tsx` right after `ProjectHeader`. Verify with component tests: viewer sees no control on an empty note; editor presses Shift+P, types, presses Esc, and the project row holds the projection; the note renders above the board; an axe check passes in light and dark.
+- [x] 4.3 Add `Shift+P` to `web/src/lib/shortcuts.ts` ("Edit the current project's note") and regenerate the keyboard guide with `make docs`. Verify with the `shortcutHelp` test and `npm run docs:check`.
+- [x] 4.4 Confirm project history and activity label a note change as "notes" (`historyVersions.ts`, `activityRuns.ts`, `HistoryPanel` for `entity="project"`) with a test that restores a project `description` revision and folds it. Verify with `npm test` in web/.
+- [x] 4.5 Write the "Project notes" section of `docs/tasks-and-projects.md` (what it is for, who can edit it, Shift+P, folding) and add the help id. Verify with `npm run docs:check` in web/.
 
 ## 5. Server readers and import (design D5, D6)
 
@@ -38,8 +38,8 @@
 
 ## 6. Integration
 
-- [ ] 6.1 Manual smoke on `make dev`: write a note with a heading and a check list on a project, switch to the board, open the same project in a second browser profile as an editor and edit concurrently, confirm both edits survive and `GET /api/v1/projects/{id}` shows the Markdown; PATCH `description` from curl and confirm the device folds it. Record the result in the change folder notes.
-- [ ] 6.2 Run `make check` (go test, web test and build, ui lint, docs check). Verify it passes.
+- [x] 6.1 Manual smoke on `make dev`: write a note with a heading and a check list on a project, switch to the board, open the same project in a second browser profile as an editor and edit concurrently, confirm both edits survive and `GET /api/v1/projects/{id}` shows the Markdown; PATCH `description` from curl and confirm the device folds it. Record the result in the change folder notes.
+- [x] 6.2 Run `make check` (go test, web test and build, ui lint, docs check). Verify it passes.
 
 ## Workflow follow-up
 

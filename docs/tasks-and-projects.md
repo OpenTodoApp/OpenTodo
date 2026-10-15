@@ -195,6 +195,17 @@ To duplicate one task with its open subtasks, select it and press <kbd>Shift</kb
 
 When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → Projects** (each device has its own setting). To bring an archived project back, open **Settings → Projects** and select **Restore** next to it under **Archived projects**; see [Trash and history](trash-and-history.md#bring-back-an-archived-project).
 
+## Project notes
+
+Every project can have a note at the top: the goal, links, a packing list, who to call. It's shown above the tasks in both the list and the board.
+
+- **Add or edit it**: select **Add a note** under the project's header, click the note, or press <kbd>Shift</kbd>+<kbd>P</kbd> anywhere in the project. It uses the same editor as task notes: headings, lists, check lists, links and code, with the same shortcuts.
+- **Finish**: press <kbd>Esc</kbd> or select **Done**. The note is saved as you type, offline too.
+- **Who can edit**: the project's owner, admins and editors. Viewers see the note but can't change it, and see nothing when it's empty.
+- **Long notes** fold after about eight lines. **Show more** opens them, and the choice is remembered on each device.
+
+Two people can edit the note at once, and both sets of changes are kept, as with task notes. The project's **History** shows note changes and can put back an earlier version. Scripts and the API read and write the note as Markdown in the project's `description`.
+
 ## Put things in order
 
 In the Inbox and in projects, you decide the order. Drag a task to a new place (on a touch screen, press and hold first), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd>. <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> sends it to the top. Dropping a task on the middle of another one makes it a subtask. Projects in the sidebar can be reordered the same way.
