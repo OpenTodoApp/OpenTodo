@@ -350,21 +350,43 @@ export interface SystemDateTime {
   weekStart: number
 }
 
+/**
+ * The Intl locale of the interface (OpenSpec `app-localization`, design D4):
+ * undefined means the browser default, as before a language was chosen.
+ */
+let dateLocale: string | undefined
+
+/** Sets the interface locale for every formatter; caches are keyed by it. */
+export function setDateLocale(locale: string | undefined) {
+  if (locale === dateLocale) return
+  dateLocale = locale
+  systemCache = null
+  dateFormatters.clear()
+}
+
+/** Whether a non-English interface locale is set (English keeps the hand-built forms). */
+const localized = () => !!dateLocale && !/^en\b/i.test(dateLocale)
+
+/** The interface locale (undefined for the browser default). */
+export function currentDateLocale(): string | undefined {
+  return dateLocale
+}
+
 let systemCache: SystemDateTime | null = null
 
-/** The browser locale's date order, clock and first day of the week (Monday when the browser cannot tell). */
+/** The interface locale's date order, clock and first day of the week (Monday when the browser cannot tell). */
 export function systemDateTime(): SystemDateTime {
   if (systemCache) return systemCache
   let order: SystemDateTime['order'] = 'MD'
   let hour12 = false
   let weekStart = 1
   try {
-    const parts = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date(2026, 10, 3))
+    const parts = new Intl.DateTimeFormat(dateLocale, { year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date(2026, 10, 3))
     const at = (type: string) => parts.findIndex((x) => x.type === type)
     order = at('year') < at('month') ? 'YMD' : at('day') < at('month') ? 'DM' : 'MD'
-    const cycle = new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hourCycle
+    const cycle = new Intl.DateTimeFormat(dateLocale, { hour: 'numeric' }).resolvedOptions().hourCycle
     hour12 = cycle === 'h12' || cycle === 'h11'
-    const locale = new Intl.DateTimeFormat().resolvedOptions().locale
+    const locale = new Intl.DateTimeFormat(dateLocale).resolvedOptions().locale
     const loc = new Intl.Locale(locale) as Intl.Locale & { getWeekInfo?: () => { firstDay: number }; weekInfo?: { firstDay: number } }
     const first = (loc.getWeekInfo?.() ?? loc.weekInfo)?.firstDay
     if (typeof first === 'number' && first >= 1 && first <= 7) weekStart = first % 7
@@ -409,7 +431,7 @@ function fmt(opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
   const key = JSON.stringify(opts)
   let f = dateFormatters.get(key)
   if (!f) {
-    f = new Intl.DateTimeFormat(undefined, opts)
+    f = new Intl.DateTimeFormat(dateLocale, opts)
     dateFormatters.set(key, f)
   }
   return f
@@ -451,6 +473,8 @@ export function formatDate(iso: string, style: DateStyle, p: ResolvedDateTime = 
   }
   const month = fmt({ month: 'short' }).format(dt)
   const withYear = otherYear && style !== 'heading'
+  // Day before month in the interface language's own way (`3. Nov.`, `3 nov.`); English keeps `3 Nov`.
+  if (p.date === 'DM' && localized()) return `${wd ? `${wd} ` : ''}${fmt(withYear ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }).format(dt)}`
   if (p.date === 'DM') return `${wd ? `${wd} ` : ''}${day} ${month}${withYear ? ` ${year}` : ''}`
   return `${wd ? `${wd}, ` : ''}${month} ${day}${withYear ? `, ${year}` : ''}`
 }
@@ -464,12 +488,17 @@ export function formatTime(hhmm: string, p: ResolvedDateTime = current): string 
   if (!m || p.time === 'system') return hhmm
   const h = Number(m[1])
   if (p.time === '24h') return `${pad(h)}:${m[2]}`
+  // The day period in the interface language (`3:00 p. m.`); English keeps `3:00 PM`.
+  if (localized()) return fmt({ hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(2026, 0, 1, h, Number(m[2])))
   return `${h % 12 === 0 ? 12 : h % 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`
 }
 
 /** An hour of the day (0–23) for grid labels: `9 AM` on a 12-hour clock, else `09:00`. */
 export function formatHour(hour: number, p: ResolvedDateTime = current): string {
-  if (p.time === '12h') return `${hour % 12 === 0 ? 12 : hour % 12} ${hour < 12 ? 'AM' : 'PM'}`
+  if (p.time === '12h') {
+    if (localized()) return fmt({ hour: 'numeric', hour12: true }).format(new Date(2026, 0, 1, hour))
+    return `${hour % 12 === 0 ? 12 : hour % 12} ${hour < 12 ? 'AM' : 'PM'}`
+  }
   return `${pad(hour)}:00`
 }
 

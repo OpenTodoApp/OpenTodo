@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   compareDue, describeDue, dueFromView, dueToInstant, fixDueToZone, instantToLocalDue, localDueOf, onViewerZoneChange,
   refreshViewerZone, releaseDue, viewerZone, watchViewerZone, zonedInstant, zoneHint,
+  formatDate, formatInstant, formatTime, setDateLocale, setDateTime, systemDateTime,
 } from './dates'
 import vectors from './zoned.vectors.json'
 import type { Due } from './types'
@@ -150,5 +151,46 @@ describe('viewer zone resolution', () => {
     expect(seen).toHaveLength(2)
     stop()
     off()
+  })
+})
+
+describe('dates in the interface language (app-localization D4)', () => {
+  const norm = (s: string) => s.replace(/[  ]/g, ' ')
+  afterEach(() => {
+    setDateLocale(undefined)
+    setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
+  })
+
+  it('system follows German on an en-US browser: 14.10.2026, 15:00, Monday', () => {
+    setDateLocale('de')
+    const p = setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
+    expect(formatDate('2026-10-14', 'numeric', p)).toBe('14.10.2026')
+    expect(p.hour12).toBe(false)
+    expect(p.weekStart).toBe(1)
+    expect(formatInstant(new Date(2026, 9, 14, 15, 0).getTime(), 'time', p)).toBe('15:00')
+  })
+
+  it('keeps the browser region (de-CH)', () => {
+    setDateLocale('de-CH')
+    expect(systemDateTime().order).toBe('DM')
+    expect(new Intl.DateTimeFormat('de-CH').resolvedOptions().locale).toBe('de-CH')
+  })
+
+  it('French names: 3 nov. and mardi 3 nov.', () => {
+    setDateLocale('fr')
+    const p = setDateTime({ date_format: 'day-month', time_format: 'system', week_start: 'system' })
+    expect(formatDate('2026-11-03', 'compact', p, '2026-10-15')).toBe('3 nov.')
+    expect(formatDate('2026-11-03', 'heading', p, '2026-10-15')).toBe('mardi 3 nov.')
+  })
+
+  it('Spanish day period: 3:00 p. m.', () => {
+    setDateLocale('es')
+    const p = setDateTime({ date_format: 'system', time_format: '12h', week_start: 'system' })
+    expect(norm(formatTime('15:00', p))).toBe('3:00 p. m.')
+  })
+
+  it('English keeps 3:00 PM', () => {
+    setDateLocale('en-US')
+    expect(formatTime('15:00', setDateTime({ date_format: 'system', time_format: '12h', week_start: 'system' }))).toBe('3:00 PM')
   })
 })

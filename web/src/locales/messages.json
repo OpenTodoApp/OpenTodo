@@ -1,0 +1,255 @@
+{
+  "A change was refused by the server.": [
+    "web/src/lib/i18n/errors.ts:45"
+  ],
+  "Addresses on a private network are not allowed.": [
+    "web/src/lib/i18n/errors.ts:71"
+  ],
+  "An account with this email already exists.": [
+    "web/src/lib/i18n/errors.ts:31"
+  ],
+  "Attachments are not available right now.": [
+    "web/src/lib/i18n/errors.ts:18"
+  ],
+  "Attachments are turned off on this server.": [
+    "web/src/lib/i18n/errors.ts:17"
+  ],
+  "Check the values you entered.": [
+    "web/src/lib/i18n/errors.ts:44"
+  ],
+  "Confirm first to continue.": [
+    "web/src/lib/i18n/errors.ts:23"
+  ],
+  "Confirm it's you to continue.": [
+    "web/src/lib/i18n/errors.ts:76"
+  ],
+  "Email to task is not set up on this server.": [
+    "web/src/lib/i18n/errors.ts:30"
+  ],
+  "Encryption is not turned on for this account.": [
+    "web/src/lib/i18n/errors.ts:33"
+  ],
+  "Encryption was changed on another device. Reload and try again.": [
+    "web/src/lib/i18n/errors.ts:32"
+  ],
+  "Enter your passphrase.": [
+    "web/src/lib/i18n/errors.ts:70"
+  ],
+  "No such account.": [
+    "web/src/lib/i18n/errors.ts:92"
+  ],
+  "Not found.": [
+    "web/src/lib/i18n/errors.ts:63"
+  ],
+  "Passkeys are not available on this server.": [
+    "web/src/lib/i18n/errors.ts:68"
+  ],
+  "Set up two-factor authentication to continue.": [
+    "web/src/lib/i18n/errors.ts:55"
+  ],
+  "Sign in to continue.": [
+    "web/src/lib/i18n/errors.ts:80",
+    "web/src/lib/i18n/errors.ts:86"
+  ],
+  "Sign in with single sign-on.": [
+    "web/src/lib/i18n/errors.ts:83"
+  ],
+  "Sign-up is closed on this server.": [
+    "web/src/lib/i18n/errors.ts:82"
+  ],
+  "Single sign-on is not set up on this server.": [
+    "web/src/lib/i18n/errors.ts:64"
+  ],
+  "Something changed in the meantime. Try again.": [
+    "web/src/lib/i18n/errors.ts:22"
+  ],
+  "Something went wrong on the server.": [
+    "web/src/lib/i18n/errors.ts:41"
+  ],
+  "The assistant doesn't know this skill.": [
+    "web/src/lib/i18n/errors.ts:89"
+  ],
+  "The assistant is busy. Try again in a moment.": [
+    "web/src/lib/i18n/errors.ts:12"
+  ],
+  "The assistant is still answering.": [
+    "web/src/lib/i18n/errors.ts:85"
+  ],
+  "The assistant is turned off on this server.": [
+    "web/src/lib/i18n/errors.ts:13"
+  ],
+  "The backup destination couldn't be reached.": [
+    "web/src/lib/i18n/errors.ts:29"
+  ],
+  "The confirmation doesn't match.": [
+    "web/src/lib/i18n/errors.ts:21"
+  ],
+  "The demo is busy right now. Try again in a few minutes.": [
+    "web/src/lib/i18n/errors.ts:24"
+  ],
+  "The encryption key is missing on this device.": [
+    "web/src/lib/i18n/errors.ts:59"
+  ],
+  "The file doesn't match the attachment.": [
+    "web/src/lib/i18n/errors.ts:15"
+  ],
+  "The file is damaged.": [
+    "web/src/lib/i18n/errors.ts:40"
+  ],
+  "The limit has been reached.": [
+    "web/src/lib/i18n/errors.ts:50"
+  ],
+  "The passkey request expired. Try again.": [
+    "web/src/lib/i18n/errors.ts:67"
+  ],
+  "The request came from another site and was refused.": [
+    "web/src/lib/i18n/errors.ts:19"
+  ],
+  "The request was not understood.": [
+    "web/src/lib/i18n/errors.ts:20"
+  ],
+  "The server is not healthy right now.": [
+    "web/src/lib/i18n/errors.ts:88"
+  ],
+  "The sign-in expired. Enter your password again.": [
+    "web/src/lib/i18n/errors.ts:53"
+  ],
+  "The sign-in expired. Try again.": [
+    "web/src/lib/i18n/errors.ts:65"
+  ],
+  "The sign-in provider changed. Try again.": [
+    "web/src/lib/i18n/errors.ts:73"
+  ],
+  "There is not enough storage space.": [
+    "web/src/lib/i18n/errors.ts:39"
+  ],
+  "This account is already active.": [
+    "web/src/lib/i18n/errors.ts:8"
+  ],
+  "This account is deactivated.": [
+    "web/src/lib/i18n/errors.ts:9"
+  ],
+  "This action isn't supported.": [
+    "web/src/lib/i18n/errors.ts:51"
+  ],
+  "This change isn't allowed for this token.": [
+    "web/src/lib/i18n/errors.ts:78"
+  ],
+  "This demo link is no longer valid. Reload the page.": [
+    "web/src/lib/i18n/errors.ts:28"
+  ],
+  "This demo sandbox has expired.": [
+    "web/src/lib/i18n/errors.ts:25"
+  ],
+  "This demo sandbox is full.": [
+    "web/src/lib/i18n/errors.ts:26"
+  ],
+  "This file can't be read.": [
+    "web/src/lib/i18n/errors.ts:43"
+  ],
+  "This file comes from a newer version of OpenTodo.": [
+    "web/src/lib/i18n/errors.ts:58"
+  ],
+  "This file is too large.": [
+    "web/src/lib/i18n/errors.ts:16"
+  ],
+  "This file was already uploaded.": [
+    "web/src/lib/i18n/errors.ts:11"
+  ],
+  "This format isn't available.": [
+    "web/src/lib/i18n/errors.ts:61"
+  ],
+  "This format isn't supported.": [
+    "web/src/lib/i18n/errors.ts:90"
+  ],
+  "This invitation is for a different email address.": [
+    "web/src/lib/i18n/errors.ts:46"
+  ],
+  "This invitation is no longer valid.": [
+    "web/src/lib/i18n/errors.ts:47"
+  ],
+  "This invitation was already used.": [
+    "web/src/lib/i18n/errors.ts:48"
+  ],
+  "This is not available right now.": [
+    "web/src/lib/i18n/errors.ts:87"
+  ],
+  "This is too large.": [
+    "web/src/lib/i18n/errors.ts:84"
+  ],
+  "This isn't available in the demo.": [
+    "web/src/lib/i18n/errors.ts:27"
+  ],
+  "This isn't available while encryption is on.": [
+    "web/src/lib/i18n/errors.ts:34"
+  ],
+  "This item isn't in the trash.": [
+    "web/src/lib/i18n/errors.ts:62"
+  ],
+  "This link can't create new accounts.": [
+    "web/src/lib/i18n/errors.ts:72"
+  ],
+  "This person is already a member.": [
+    "web/src/lib/i18n/errors.ts:10"
+  ],
+  "This request was already sent with different content.": [
+    "web/src/lib/i18n/errors.ts:36"
+  ],
+  "This reset link is no longer valid.": [
+    "web/src/lib/i18n/errors.ts:77"
+  ],
+  "This sign-in is already linked to another account.": [
+    "web/src/lib/i18n/errors.ts:37"
+  ],
+  "This token doesn't allow that.": [
+    "web/src/lib/i18n/errors.ts:38"
+  ],
+  "Too many attempts. Try again later.": [
+    "web/src/lib/i18n/errors.ts:75"
+  ],
+  "Transfer ownership before doing this.": [
+    "web/src/lib/i18n/errors.ts:66"
+  ],
+  "Two-factor authentication is already set up.": [
+    "web/src/lib/i18n/errors.ts:52"
+  ],
+  "Two-factor authentication is not set up.": [
+    "web/src/lib/i18n/errors.ts:56"
+  ],
+  "Two-factor authentication is required on this server.": [
+    "web/src/lib/i18n/errors.ts:57"
+  ],
+  "Update the app to keep syncing.": [
+    "web/src/lib/i18n/errors.ts:91"
+  ],
+  "Wrong code. Try again.": [
+    "web/src/lib/i18n/errors.ts:54"
+  ],
+  "Wrong email or password.": [
+    "web/src/lib/i18n/errors.ts:42"
+  ],
+  "Wrong passphrase.": [
+    "web/src/lib/i18n/errors.ts:69"
+  ],
+  "Wrong setup token.": [
+    "web/src/lib/i18n/errors.ts:81"
+  ],
+  "You can't do this to your own account.": [
+    "web/src/lib/i18n/errors.ts:79"
+  ],
+  "You can't remove the last way to sign in.": [
+    "web/src/lib/i18n/errors.ts:49"
+  ],
+  "You don't have permission to do this.": [
+    "web/src/lib/i18n/errors.ts:35"
+  ],
+  "You're not a member of this project.": [
+    "web/src/lib/i18n/errors.ts:60"
+  ],
+  "You've used up the assistant's allowance for now.": [
+    "web/src/lib/i18n/errors.ts:14"
+  ],
+  "Your storage is full.": [
+    "web/src/lib/i18n/errors.ts:74"
+  ]
+}

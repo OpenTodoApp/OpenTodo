@@ -6,7 +6,7 @@ import { db, getMeta, useDatabase } from './db'
 import { createTask, getDeviceId, resetDeviceId } from './ops'
 import { addReminder } from './reminders'
 import { checkReminders, SHOWN_KEY, type ShownSet } from './reminderWatcher'
-import { formatDate, formatTime, resolveDateTime } from './dates'
+import { formatDate, formatTime, resolveDateTime, setDateLocale } from './dates'
 import { setUserPref, type DateTimePrefs } from './userPrefs'
 import source from '../../public/push-sw.js?raw'
 
@@ -161,7 +161,7 @@ describe('service worker test pushes (push-test-delivery)', () => {
   })
 })
 
-type DueFormatter = (due: { date: string; time?: string }, prefs: Partial<DateTimePrefs> | undefined, today: string) => string
+type DueFormatter = (due: { date: string; time?: string }, prefs: Partial<DateTimePrefs> | undefined, today: string, locale?: string) => string
 
 /** Loads push-sw.js into a bare scope and returns its inline due formatter. */
 function workerFormatter(): DueFormatter {
@@ -209,5 +209,62 @@ describe('service worker due text (date-time-preferences D7)', () => {
     await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
     const date = new Date(2026, 9, 11).toLocaleDateString(undefined, new Date().getFullYear() === 2026 ? { month: 'short', day: 'numeric' } : { year: 'numeric', month: 'short', day: 'numeric' })
     expect(sw.shown[0].options.body).toBe(`Due ${date}, 10:00`)
+  })
+})
+
+describe('service worker texts in the interface language (app-localization D7)', () => {
+  type Texts = Record<string, Record<string, string>>
+  const workerTexts = (): Texts => {
+    const self: { addEventListener: () => void; __opentodoTexts?: Texts } = { addEventListener: () => undefined }
+    new Function('self', 'fetch', 'indexedDB', source)(self, undefined, undefined)
+    return self.__opentodoTexts!
+  }
+
+  it('covers every language with every text', () => {
+    const texts = workerTexts()
+    expect(Object.keys(texts).sort()).toEqual(['de', 'en', 'es', 'fr', 'it', 'pt'])
+    for (const t of Object.values(texts)) expect(Object.keys(t).sort()).toEqual(Object.keys(texts.en).sort())
+    for (const t of Object.values(texts)) expect(t.due).toContain('{date}')
+  })
+
+  it('German day-month: Fällig 3. Nov., 15:00 with 10 Min. später and Verwerfen', async () => {
+    const taskId = await createTask({ title: 'Zahnarzt anrufen', due: { date: '2099-11-03', time: '15:00' } })
+    const reminderId = await addReminder(taskId, { kind: 'absolute', fire_at: Date.now() - 1000 })
+    await setUserPref('date_format', 'day-month')
+    await setUserPref('time_format', '24h')
+    await setUserPref('language', 'de')
+    db.close()
+    await db.open()
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: Date.now() - 1000 }))
+    expect(sw.shown[0].options.body).toBe('Fällig 3. Nov. 2099, 15:00')
+    expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['10 Min. später', 'Verwerfen'])
+    const format = workerFormatter()
+    expect(format({ date: '2026-11-03', time: '15:00' }, { date_format: 'day-month', time_format: '24h' }, '2026-10-14', 'de' as never)).toBe('3. Nov., 15:00')
+  })
+
+  it('matches lib/dates.ts in German and Spanish', () => {
+    const format = workerFormatter()
+    try {
+      for (const [locale, prefs, due] of [
+        ['de', { date_format: 'day-month', time_format: '24h' }, { date: '2027-02-03', time: '9:05' }],
+        ['es', { date_format: 'day-month', time_format: '12h' }, { date: '2026-11-03', time: '15:00' }],
+        ['fr', { date_format: 'system', time_format: 'system' }, { date: '2026-11-03' }],
+      ] as const) {
+        setDateLocale(locale)
+        const p = resolveDateTime({ week_start: 'system', ...prefs })
+        const lib = `${formatDate(due.date, 'compact', p, '2026-10-14')}${'time' in due ? `, ${formatTime(due.time, p)}` : ''}`
+        expect(format(due, prefs, '2026-10-14', locale)).toBe(lib)
+      }
+    } finally {
+      setDateLocale(undefined)
+    }
+  })
+
+  it('English when the preferences row is missing', async () => {
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId: 'r-z', taskId: 't-z', fireAt: 5 }))
+    expect(sw.shown[0].title).toBe('Reminder')
+    expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['Snooze 10 min', 'Dismiss'])
   })
 })

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { applyOps, resetDeviceId } from './ops'
-import { readUserPrefs, setUserPref } from './userPrefs'
+import { readLanguage, readUserPrefs, setUserPref } from './userPrefs'
 
 let n = 0
 beforeEach(() => {
@@ -40,5 +40,16 @@ describe('user_prefs (date-time-preferences D1)', () => {
     expect((await db.userPrefs.get('me'))?.date_format).toBe('month-day')
     await applyOps([{ id: 'y', entity: 'user_prefs', entityId: 'me', field: 'date_format', value: 'iso', ts: clock.ts - 1, device: 'old' }])
     expect((await db.userPrefs.get('me'))?.date_format).toBe('month-day')
+  })
+
+  it('reads the language: a known code, an unknown code as system, and a queued offline change (app-localization D1)', async () => {
+    expect(readLanguage(undefined)).toBe('system')
+    await applyOps([{ id: 'l1', entity: 'user_prefs', entityId: 'me', field: 'language', value: 'pl', ts: 10, device: 'newer' }])
+    expect((await db.userPrefs.get('me'))?.language).toBe('pl')
+    expect(readLanguage(await db.userPrefs.get('me'))).toBe('system')
+    await setUserPref('language', 'de')
+    expect(readLanguage(await db.userPrefs.get('me'))).toBe('de')
+    const queued = (await db.outbox.toArray()).map(({ field, value }) => ({ field, value }))
+    expect(queued).toEqual([{ field: 'language', value: 'de' }])
   })
 })

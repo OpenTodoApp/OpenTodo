@@ -51,6 +51,7 @@ func TestExportIncludesUserPrefs(t *testing.T) {
 		rop("p1", "user_prefs", "me", "date_format", "iso", 1),
 		rop("p2", "user_prefs", "me", "time_format", "24h", 1),
 		rop("p3", "user_prefs", "me", "theme_accent", "violet", 1),
+		rop("p4", "user_prefs", "me", "language", "de", 1),
 	)
 	resp, out := e.do("GET", "/api/v1/export", nil)
 	e.mustStatus(resp, 200, out)
@@ -59,7 +60,7 @@ func TestExportIncludesUserPrefs(t *testing.T) {
 		t.Fatalf("export user_prefs = %v", out["user_prefs"])
 	}
 	row := list[0].(map[string]any)
-	if row["id"] != "me" || row["date_format"] != "iso" || row["time_format"] != "24h" || row["theme_accent"] != "violet" {
+	if row["id"] != "me" || row["date_format"] != "iso" || row["time_format"] != "24h" || row["theme_accent"] != "violet" || row["language"] != "de" {
 		t.Fatalf("exported row = %v", row)
 	}
 }

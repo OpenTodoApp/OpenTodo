@@ -2,23 +2,23 @@
 
 ## 1. Synced `language` field (design D1)
 
-- [ ] 1.1 Add `language` (`kString`) to the `user_prefs` entry of `internal/sync/ops.go` `Schema` with a comment citing this change and the allowed values. Extend the existing `user_prefs` sync test with a `language` op that lands in the author's personal scope only and converges by `(ts, device)`. Verify with `go test ./internal/sync/...`.
-- [ ] 1.2 Client data layer: `language: LanguagePref` on `UserPrefs` in `web/src/lib/types.ts`, `language: 'system'` in `USER_PREFS_DEFAULTS` (`web/src/lib/ops.ts`), `LANGUAGES`/`readUserPrefs`/`setUserPref('language', …)` in `web/src/lib/userPrefs.ts` with unknown values read as `system`. Verify with `userPrefs.test.ts` cases for a known code, an unknown code and an offline `mutate()` queued in the outbox (`npm test` in web/).
-- [ ] 1.3 Export round trip: extend the `internal/httpapi` export test and the `internal/importer` own-export test so a row with `language: "de"` is exported and restored. Verify with `go test ./...`.
-- [ ] 1.4 Document the field in the `docs/sync.md` entity table and the `user_prefs` paragraph. Verify with `npm run docs:check` in web/.
+- [x] 1.1 Add `language` (`kString`) to the `user_prefs` entry of `internal/sync/ops.go` `Schema` with a comment citing this change and the allowed values. Extend the existing `user_prefs` sync test with a `language` op that lands in the author's personal scope only and converges by `(ts, device)`. Verify with `go test ./internal/sync/...`.
+- [x] 1.2 Client data layer: `language: LanguagePref` on `UserPrefs` in `web/src/lib/types.ts`, `language: 'system'` in `USER_PREFS_DEFAULTS` (`web/src/lib/ops.ts`), `LANGUAGES`/`readUserPrefs`/`setUserPref('language', …)` in `web/src/lib/userPrefs.ts` with unknown values read as `system`. Verify with `userPrefs.test.ts` cases for a known code, an unknown code and an offline `mutate()` queued in the outbox (`npm test` in web/).
+- [x] 1.3 Export round trip: extend the `internal/httpapi` export test and the `internal/importer` own-export test so a row with `language: "de"` is exported and restored. Verify with `go test ./...`.
+- [x] 1.4 Document the field in the `docs/sync.md` entity table and the `user_prefs` paragraph. Verify with `npm run docs:check` in web/.
 
 ## 2. Message layer (design D2, D3, D4, D6)
 
-- [ ] 2.1 `web/src/lib/i18n/format.ts`: parser and formatter for the ICU subset (`{name}`, `plural` with `=0`/`one`/`other`/`#`, `select`), per-message cache, `Intl.PluralRules` categories, `formatNumber`. Verify with unit tests for each construct in English, German and French, malformed input, and a snapshot of `'{n, plural, one {# task} other {# tasks}}'` for 0, 1 and 2.
+- [x] 2.1 `web/src/lib/i18n/format.ts`: parser and formatter for the ICU subset (`{name}`, `plural` with `=0`/`one`/`other`/`#`, `select`), per-message cache, `Intl.PluralRules` categories, `formatNumber`. Verify with unit tests for each construct in English, German and French, malformed input, and a snapshot of `'{n, plural, one {# task} other {# tasks}}'` for 0, 1 and 2.
 - [ ] 2.2 `web/src/lib/i18n/catalog.ts`: `import.meta.glob` loader over `web/src/locales/*.json`, the shipped list in `web/src/locales/index.ts`, `t()`, `t.rich()`, `<T>`, the context suffix, English pass-through and missing-entry fallback, the `localStorage` mirror `opentodo.lang`, and setting `document.documentElement.lang`. Verify with tests for fallback, context keys, rich tags, and `lang` set before resolution; and `npm run build` shows one chunk per catalog.
-- [ ] 2.3 `web/src/lib/i18n/locale.ts`: resolve `system` from `navigator.languages`, keep the browser's region for the chosen language, and `preferredLanguages()` for quick add and voice. Verify with tests for `de-CH` + German → `de-CH`, `en-US` + German → `de`, Japanese + `system` → `en`.
+- [x] 2.3 `web/src/lib/i18n/locale.ts`: resolve `system` from `navigator.languages`, keep the browser's region for the chosen language, and `preferredLanguages()` for quick add and voice. Verify with tests for `de-CH` + German → `de-CH`, `en-US` + German → `de`, Japanese + `system` → `en`.
 - [ ] 2.4 `LanguageProvider` next to `DateTimePrefsProvider` in `App.tsx` (live query on `userPrefs`, catalog load on change, context version) and `useT()`; `main.tsx` awaits the mirrored catalog before the first render. Verify with a component test that a written `language` op re-renders a translated label without a reload, and that a failed catalog load keeps the previous language and exposes the failure.
-- [ ] 2.5 `web/src/lib/i18n/errors.ts`: `errorMessage(code, fallback)` over the 71 server codes, with a test that every code in `internal/httpapi` (`writeError` calls, listed by a small Go test that writes them to a fixture) has an entry, and unknown codes return the fallback. Verify with `go test ./internal/httpapi/...` and `npm test`.
+- [x] 2.5 `web/src/lib/i18n/errors.ts`: `errorMessage(code, fallback)` over the 71 server codes, with a test that every code in `internal/httpapi` (`writeError` calls, listed by a small Go test that writes them to a fixture) has an entry, and unknown codes return the fallback. Verify with `go test ./internal/httpapi/...` and `npm test`.
 
 ## 3. Extraction and checks (design D8)
 
-- [ ] 3.1 `scripts/i18n/extract.mjs` with the TypeScript compiler API: collect messages from `t(`, `t.rich(`, `<T>`, the error table and the lib helpers; `--write` refreshes `web/src/locales/messages.json`. Verify with `scripts/i18n/extract.test.mjs` on a fixture file (plain, context, rich, plural).
-- [ ] 3.2 `scripts/i18n-check.mjs` and `make i18n-check` (added to `check`): missing and unused keys per shipped catalog, parse errors, placeholder and plural-category mismatches, summary lines for work-in-progress catalogs. Verify with `scripts/i18n-check.test.mjs` (a dropped `{name}` fails, an incomplete unlisted catalog only reports) and `make i18n-check`.
+- [x] 3.1 `scripts/i18n/extract.mjs` with the TypeScript compiler API: collect messages from `t(`, `t.rich(`, `<T>`, the error table and the lib helpers; `--write` refreshes `web/src/locales/messages.json`. Verify with `scripts/i18n/extract.test.mjs` on a fixture file (plain, context, rich, plural).
+- [x] 3.2 `scripts/i18n-check.mjs` and `make i18n-check` (added to `check`): missing and unused keys per shipped catalog, parse errors, placeholder and plural-category mismatches, summary lines for work-in-progress catalogs. Verify with `scripts/i18n-check.test.mjs` (a dropped `{name}` fails, an incomplete unlisted catalog only reports) and `make i18n-check`.
 - [ ] 3.3 Untranslated-string pass in `scripts/ui-check.mjs` over `web/src/app` and `web/src/ui` (JSX text with words, the listed string props and `SettingRow`/`SettingsSection` fields) with `scripts/i18n/allow.txt`. Verify with a test that a planted `<button>Save</button>` fails with `file:line`, an allow-listed `OpenTodo` passes, and `t('Save')` passes; `make ui-lint` is red until group 4 completes.
 - [ ] 3.4 Document both checks in `scripts/README.md`. Verify with `npm run docs:check` (links) and that the documented commands run as written.
 
@@ -54,8 +54,8 @@
 
 ## 9. Browser extension (design D10)
 
-- [ ] 9.1 `extension/_locales/{en,de,fr,es,it,pt}/messages.json`, `default_locale` and `__MSG_…__` in `manifest.json`, `getMessage` in `background.js` and `options.js`, `data-i18n` in `options.html`; `EXT_FILES` in `Makefile` adds `_locales`. Verify with `extension/locales.test.js` (every locale has every `en` key, no extra keys) run by `make test-extension`, and `make extension` zips `_locales`.
-- [ ] 9.2 Update `docs/capture.md` (extension languages follow the browser). Verify with `npm run docs:check`.
+- [x] 9.1 `extension/_locales/{en,de,fr,es,it,pt}/messages.json`, `default_locale` and `__MSG_…__` in `manifest.json`, `getMessage` in `background.js` and `options.js`, `data-i18n` in `options.html`; `EXT_FILES` in `Makefile` adds `_locales`. Verify with `extension/locales.test.js` (every locale has every `en` key, no extra keys) run by `make test-extension`, and `make extension` zips `_locales`.
+- [x] 9.2 Update `docs/capture.md` (extension languages follow the browser). Verify with `npm run docs:check`.
 
 ## 10. Workbench (design D11)
 

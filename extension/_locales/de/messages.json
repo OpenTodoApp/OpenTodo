@@ -1,0 +1,77 @@
+{
+  "extName": {
+    "message": "OpenTodo Capture"
+  },
+  "extShortName": {
+    "message": "OpenTodo"
+  },
+  "extDescription": {
+    "message": "Sende die aktuelle Seite, ihren Titel, den markierten Text oder ein Bildschirmfoto an die Erfassungsseite deines eigenen OpenTodo-Servers. Kein Tracking, keine Netzwerkanfragen."
+  },
+  "actionTitle": {
+    "message": "Zu OpenTodo hinzufügen"
+  },
+  "commandDescription": {
+    "message": "Aktuelle Seite zu OpenTodo hinzufügen"
+  },
+  "menuScreenshot": {
+    "message": "Bildschirmfoto zu OpenTodo hinzufügen"
+  },
+  "optionsTitle": {
+    "message": "Einstellungen von OpenTodo Capture"
+  },
+  "optionsIntro": {
+    "message": "Gib die Adresse deines OpenTodo-Servers ein. Die Erweiterung öffnet die Erfassungsseite dieses Servers für die aktuelle Seite. Sie speichert nur diese Adresse, kein Passwort und kein Token, und kontaktiert den Server nie selbst."
+  },
+  "serverLabel": {
+    "message": "Server-URL"
+  },
+  "save": {
+    "message": "Speichern"
+  },
+  "screenshotsHeading": {
+    "message": "Bildschirmfotos"
+  },
+  "screenshotsIntro": {
+    "message": "„Bildschirmfoto zu OpenTodo hinzufügen“ nimmt den sichtbaren Teil einer Seite auf und übergibt das Bild an das Erfassungsfenster deines Servers, wo nichts gespeichert wird, bevor du auf Speichern drückst. Dafür braucht die Erweiterung Zugriff auf die Adresse deines Servers, und nur auf diese; der Browser fragt beim Speichern danach."
+  },
+  "allowScreenshots": {
+    "message": "Bildschirmfotos erlauben"
+  },
+  "pendingNote": {
+    "message": "Lege deinen Server fest, um „$TITLE$“ weiter hinzuzufügen.",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example Domain"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "diese Seite"
+  },
+  "screenshotsAllowed": {
+    "message": "Bildschirmfotos: erlaubt für $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  },
+  "screenshotsNotAllowed": {
+    "message": "Bildschirmfotos: noch nicht erlaubt. Die Erweiterung braucht den Zugriff auf deinen Server nur, um ein Bildschirmfoto an das Erfassungsfenster zu übergeben."
+  },
+  "invalidServer": {
+    "message": "Gib eine http://- oder https://-Adresse ein, zum Beispiel https://todo.example.com"
+  },
+  "saved": {
+    "message": "Gespeichert. Erfasstes geht an $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  }
+}

@@ -83,6 +83,8 @@ Each opens your server's capture screen in a popup window with the current tab's
 
 **Screenshot**: right-click a page and choose **Add screenshot to OpenTodo**. The extension captures the visible part of the tab as a PNG and hands it to the capture popup, where it's listed under **Files** with the page's title and link; nothing is saved until you press Save. Handing the image to the popup needs access to your server's address, which the options page asks for when you save the address (you can also grant it later there). Without it the popup opens with the title and link and explains how to allow it.
 
+**Language**: the menu entries, the toolbar title and the options page follow your browser's language (English, German, French, Spanish, Italian or Portuguese; English otherwise). The capture popup itself is part of the app and follows your interface language.
+
 **Privacy**: the extension stores only the server address (in the browser's extension sync storage). It holds no token or password, has no content scripts, and makes no network requests itself; the only traffic is the capture popup you open, which loads your own server. Permissions: `activeTab` (read the current tab's address, title and selection, and capture it, when you click), `contextMenus`, `scripting` (read the selection, and hand a screenshot to the popup), `storage` (the server address), and, optional, access to your server's address only, for the screenshot.
 
 ## Signed out

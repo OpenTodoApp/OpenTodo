@@ -1,0 +1,77 @@
+{
+  "extName": {
+    "message": "OpenTodo Capture"
+  },
+  "extShortName": {
+    "message": "OpenTodo"
+  },
+  "extDescription": {
+    "message": "Envie a página atual, o título, o texto selecionado ou uma captura de tela para a tela de captura do seu próprio servidor OpenTodo. Sem rastreamento, sem requisições de rede."
+  },
+  "actionTitle": {
+    "message": "Adicionar ao OpenTodo"
+  },
+  "commandDescription": {
+    "message": "Adicionar a página atual ao OpenTodo"
+  },
+  "menuScreenshot": {
+    "message": "Adicionar captura de tela ao OpenTodo"
+  },
+  "optionsTitle": {
+    "message": "Configurações do OpenTodo Capture"
+  },
+  "optionsIntro": {
+    "message": "Digite o endereço do seu servidor OpenTodo. A extensão abre a tela de captura desse servidor para a página atual. Ela guarda só esse endereço, não guarda senha nem token e nunca se conecta ao servidor por conta própria."
+  },
+  "serverLabel": {
+    "message": "URL do servidor"
+  },
+  "save": {
+    "message": "Salvar"
+  },
+  "screenshotsHeading": {
+    "message": "Capturas de tela"
+  },
+  "screenshotsIntro": {
+    "message": "\"Adicionar captura de tela ao OpenTodo\" captura a parte visível de uma página e entrega a imagem à janela de captura do seu servidor, onde nada é salvo até você clicar em Salvar. Para entregá-la é preciso acesso ao endereço do seu servidor, e só a ele; o navegador pergunta quando você o salva."
+  },
+  "allowScreenshots": {
+    "message": "Permitir capturas de tela"
+  },
+  "pendingNote": {
+    "message": "Defina seu servidor para continuar adicionando \"$TITLE$\".",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example Domain"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "esta página"
+  },
+  "screenshotsAllowed": {
+    "message": "Capturas de tela: permitidas para $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  },
+  "screenshotsNotAllowed": {
+    "message": "Capturas de tela: ainda não permitidas. A extensão só precisa de acesso ao seu servidor para entregar uma captura à janela de captura."
+  },
+  "invalidServer": {
+    "message": "Digite um endereço http:// ou https://, por exemplo https://todo.example.com"
+  },
+  "saved": {
+    "message": "Salvo. As capturas vão para $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  }
+}

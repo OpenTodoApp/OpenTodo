@@ -97,6 +97,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | user_prefs | `date_format` | string: `"system"`, `"day-month"`, `"month-day"` or `"iso"` (personal scope only) |
 | user_prefs | `time_format` | string: `"system"`, `"12h"` or `"24h"` |
 | user_prefs | `week_start` | string: `"system"`, `"mon"`, `"sun"` or `"sat"` |
+| user_prefs | `language` | string: `"system"` or a language code (`"en"`, `"de"`, `"fr"`, `"es"`, `"it"`, `"pt"`); an unknown code reads as `"system"` |
 
 `actor` on served ops (OpenSpec `comments-and-activity`) is the account that wrote the op, taken from `ops.user_id`, which the server always sets from the authenticated submitter; a value sent by a client is ignored. It is additive and optional: older clients ignore it, and ops from an older server simply lack it.
 
@@ -187,7 +188,7 @@ Unread counts are computed locally: events of a shared project by another actor 
 
 ### Date and time preferences
 
-`user_prefs` (OpenSpec `date-time-preferences`, design D1) holds one user's date format, time format and first day of the week. Every client writes it with the `entityId` `"me"`; like labels and reminders it resolves to the **author's personal scope**, so each account's `"me"` row is separate, syncs to that account's devices only, and is never shared with project members. Values are enumerations carried as strings: a client reads an unknown value (from a newer client) as `"system"` without rewriting it, so new values stay additive, and an absent row means `"system"` for all three. Concurrent edits converge per field by LWW on `(ts, device)`. The row has no REST collection, derives no activity, and is included in the JSON export as `user_prefs`; importing an own export into an account without preferences restores them. The values are not user-written content, so they stay in plaintext for an encrypted account.
+`user_prefs` (OpenSpec `date-time-preferences`, design D1) holds one user's date format, time format and first day of the week, the appearance and the interface language (`app-localization`). Every client writes it with the `entityId` `"me"`; like labels and reminders it resolves to the **author's personal scope**, so each account's `"me"` row is separate, syncs to that account's devices only, and is never shared with project members. Values are enumerations carried as strings: a client reads an unknown value (from a newer client) as `"system"` without rewriting it, so new values stay additive, and an absent row means `"system"` for every field. Concurrent edits converge per field by LWW on `(ts, device)`. The row has no REST collection, derives no activity, and is included in the JSON export as `user_prefs`; importing an own export into an account without preferences restores them. The values are not user-written content, so they stay in plaintext for an encrypted account.
 
 ### Task labels
 

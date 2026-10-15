@@ -10,8 +10,8 @@ const MENU_ID = 'opentodo-add'
 const SHOT_ID = 'opentodo-screenshot'
 
 ext.runtime.onInstalled.addListener(() => {
-  ext.contextMenus.create({ id: MENU_ID, title: 'Add to OpenTodo', contexts: ['page', 'selection'] })
-  ext.contextMenus.create({ id: SHOT_ID, title: 'Add screenshot to OpenTodo', contexts: ['page'] })
+  ext.contextMenus.create({ id: MENU_ID, title: ext.i18n.getMessage('actionTitle'), contexts: ['page', 'selection'] })
+  ext.contextMenus.create({ id: SHOT_ID, title: ext.i18n.getMessage('menuScreenshot'), contexts: ['page'] })
 })
 
 ext.action.onClicked.addListener((tab) => void capture(tab))

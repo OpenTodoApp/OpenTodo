@@ -1,6 +1,12 @@
 import { buildShareUrl, decodePending, normalizeServer, originPattern } from './share-url.js'
 
 const ext = globalThis.browser ?? globalThis.chrome
+const msg = (key, ...subs) => ext.i18n.getMessage(key, subs)
+
+// Texts follow the browser's language (_locales/); the page starts in English.
+document.documentElement.lang = ext.i18n.getUILanguage()
+document.title = msg('optionsTitle')
+for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = msg(el.dataset.i18n)
 
 const form = document.getElementById('form')
 const input = document.getElementById('server')
@@ -11,7 +17,7 @@ const pendingNote = document.getElementById('pending')
 const pending = decodePending(location.search)
 if (pending) {
   pendingNote.hidden = false
-  pendingNote.textContent = `Set your server to continue adding "${pending.title || pending.url || 'this page'}".`
+  pendingNote.textContent = msg('pendingNote', pending.title || pending.url || msg('thisPage'))
 }
 
 function show(message, error = false) {
@@ -30,9 +36,7 @@ const allow = document.getElementById('allow')
 async function showAccess(origin) {
   if (!origin) return
   const granted = await ext.permissions.contains({ origins: [originPattern(origin)] })
-  shots.textContent = granted
-    ? `Screenshots: allowed for ${origin}.`
-    : 'Screenshots: not allowed yet. The extension needs access to your server only to hand a screenshot to the capture popup.'
+  shots.textContent = granted ? msg('screenshotsAllowed', origin) : msg('screenshotsNotAllowed')
   allow.hidden = granted
 }
 if (server) void showAccess(server)
@@ -53,7 +57,7 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault()
   const origin = normalizeServer(input.value)
   if (!origin) {
-    show('Enter an http:// or https:// address, for example https://todo.example.com', true)
+    show(msg('invalidServer'), true)
     input.focus()
     return
   }
@@ -64,7 +68,7 @@ form.addEventListener('submit', async (e) => {
   await access
   await showAccess(origin)
   if (!pending) {
-    show(`Saved. Captures go to ${origin}.`)
+    show(msg('saved', origin))
     return
   }
   await ext.windows.create({ url: buildShareUrl(origin, pending), type: 'popup', width: 480, height: 640 })

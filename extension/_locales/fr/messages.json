@@ -1,0 +1,77 @@
+{
+  "extName": {
+    "message": "OpenTodo Capture"
+  },
+  "extShortName": {
+    "message": "OpenTodo"
+  },
+  "extDescription": {
+    "message": "Envoyez la page actuelle, son titre, le texte sélectionné ou une capture d'écran à l'écran de capture de votre propre serveur OpenTodo. Aucun pistage, aucune requête réseau."
+  },
+  "actionTitle": {
+    "message": "Ajouter à OpenTodo"
+  },
+  "commandDescription": {
+    "message": "Ajouter la page actuelle à OpenTodo"
+  },
+  "menuScreenshot": {
+    "message": "Ajouter une capture d'écran à OpenTodo"
+  },
+  "optionsTitle": {
+    "message": "Réglages d'OpenTodo Capture"
+  },
+  "optionsIntro": {
+    "message": "Saisissez l'adresse de votre serveur OpenTodo. L'extension ouvre l'écran de capture de ce serveur pour la page actuelle. Elle n'enregistre que cette adresse, ne conserve ni mot de passe ni jeton et ne contacte jamais le serveur elle-même."
+  },
+  "serverLabel": {
+    "message": "URL du serveur"
+  },
+  "save": {
+    "message": "Enregistrer"
+  },
+  "screenshotsHeading": {
+    "message": "Captures d'écran"
+  },
+  "screenshotsIntro": {
+    "message": "« Ajouter une capture d'écran à OpenTodo » capture la partie visible d'une page et transmet l'image à la fenêtre de capture de votre serveur, où rien n'est enregistré avant que vous appuyiez sur Enregistrer. Pour la transmettre, l'extension a besoin d'accéder à l'adresse de votre serveur, et à elle seule ; le navigateur le demande quand vous l'enregistrez."
+  },
+  "allowScreenshots": {
+    "message": "Autoriser les captures d'écran"
+  },
+  "pendingNote": {
+    "message": "Indiquez votre serveur pour continuer l'ajout de « $TITLE$ ».",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example Domain"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "cette page"
+  },
+  "screenshotsAllowed": {
+    "message": "Captures d'écran : autorisées pour $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  },
+  "screenshotsNotAllowed": {
+    "message": "Captures d'écran : pas encore autorisées. L'extension n'a besoin d'accéder à votre serveur que pour transmettre une capture à la fenêtre de capture."
+  },
+  "invalidServer": {
+    "message": "Saisissez une adresse http:// ou https://, par exemple https://todo.example.com"
+  },
+  "saved": {
+    "message": "Enregistré. Les captures vont à $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  }
+}

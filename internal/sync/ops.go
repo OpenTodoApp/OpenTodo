@@ -325,6 +325,11 @@ var Schema = map[string]map[string]kind{
 		// comma-separated list of view ids shown among the primary items; unknown
 		// entries are ignored by clients.
 		"sidebar_destinations": kString,
+		// Interface language (OpenSpec change app-localization, design D1):
+		// system or a primary language subtag (en, de, fr, es, it, pt). Not
+		// restricted here; clients read unknown values as system, so a catalog
+		// added later stays additive.
+		"language": kString,
 	},
 }
 

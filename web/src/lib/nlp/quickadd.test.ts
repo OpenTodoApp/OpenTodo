@@ -163,6 +163,9 @@ describe('quick-add settings', () => {
   it('resolves languages from the override or the browser', () => {
     expect(resolveLanguages(DEFAULT_QUICK_ADD_SETTINGS, ['de-AT', 'en'])).toEqual(['de', 'en'])
     expect(resolveLanguages({ ...DEFAULT_QUICK_ADD_SETTINGS, languages: ['pt'] }, ['de'])).toEqual(['pt', 'en'])
+    // app-localization D5: the interface language comes first; a device list still wins.
+    expect(resolveLanguages(DEFAULT_QUICK_ADD_SETTINGS, ['en-US'], 'es')).toEqual(['es', 'en'])
+    expect(resolveLanguages({ ...DEFAULT_QUICK_ADD_SETTINGS, languages: ['de'] }, ['en-US'], 'es')).toEqual(['de', 'en'])
     expect(resolveLanguages(DEFAULT_QUICK_ADD_SETTINGS, ['ko'])).toEqual(['en'])
     // An explicit empty list means English only, not "follow the browser".
     expect(resolveLanguages({ ...DEFAULT_QUICK_ADD_SETTINGS, languages: [] }, ['de'])).toEqual(['en'])

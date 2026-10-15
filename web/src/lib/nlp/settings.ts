@@ -1,6 +1,8 @@
 // Per-device quick-add preferences. Stored only in this browser's localStorage and
 // never synced (natural-language-capture: "Per-device parsing toggle").
 import { activeLanguages, VOCABULARIES, type DayMonthOrder } from './vocab'
+import { preferredLanguages } from '../i18n/locale'
+import type { LanguagePref } from '../types'
 
 export interface QuickAddSettings {
   /** Parse natural language in quick add. */
@@ -54,9 +56,12 @@ export function onQuickAddSettingsChange(fn: () => void): () => void {
   }
 }
 
-/** The language tags handed to the parser: the explicit list, or the browser's. */
-export function resolveLanguages(s: QuickAddSettings, browser: readonly string[]): string[] {
-  return activeLanguages(s.languages !== null ? s.languages : browser)
+/**
+ * The language tags handed to the parser: the explicit per-device list, or the
+ * interface language followed by the browser's (app-localization D5).
+ */
+export function resolveLanguages(s: QuickAddSettings, browser: readonly string[], language: LanguagePref = 'system'): string[] {
+  return activeLanguages(s.languages !== null ? s.languages : preferredLanguages(language, browser))
 }
 
 /** Where the numeric date order came from, for the quick-add settings panel. */

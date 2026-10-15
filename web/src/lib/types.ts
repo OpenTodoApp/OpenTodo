@@ -281,8 +281,13 @@ export interface UserPrefs {
   theme_accent: string
   /** Promoted sidebar destinations (ux-overhaul): comma-separated view ids; unknown ones are ignored. */
   sidebar_destinations: string
+  /** Interface language (app-localization): 'system' or a shipped language; unknown values read as 'system'. */
+  language: LanguagePref
   _clock: Clock
 }
+
+/** 'system' follows the browser; otherwise a primary language subtag such as 'de'. */
+export type LanguagePref = 'system' | 'en' | 'de' | 'fr' | 'es' | 'it' | 'pt'
 
 export type ThemeModePref = 'system' | 'light' | 'dark'
 
