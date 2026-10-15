@@ -3,7 +3,7 @@ title: Search and commands
 summary: One box on Ctrl+K finds any task, project, label, view or setting, runs any command by name, and understands filter queries.
 audience: user
 section: Guides
-specs: []
+specs: [command-palette]
 screens: [palette#open-the-box]
 order: 25
 ---
