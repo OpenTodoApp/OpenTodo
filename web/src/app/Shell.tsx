@@ -270,7 +270,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       </main>
       <PanelHost user={user} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} extraSections={vim && vimHelp ? [vimHelp] : []}
-        context={{ view: route.view, board: !!listState()?.columns(), panelOpen: !!panelTaskId() }} />}
+        context={{ view: route.view, board: !!listState()?.columns() || !!document.querySelector('[data-timeline]'), panelOpen: !!panelTaskId() }} />}
       {helpRequest && <Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense>}
       {assistantLoaded && <Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense>}
       {paletteLoaded && paletteOpen && <Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense>}

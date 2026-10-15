@@ -29,8 +29,8 @@
 ## 5. Integration
 
 - [x] 5.1 Confirm the sibling contracts once they are archived: `task.deadline`, `task.start` (`someday`) and `task.blocked_by` are read by `timeline.ts` under the names and shapes their specs state; adjust `spanOf` and `edges` and their tests if a name differs. Verify with `npm test` and `npx @fission-ai/openspec validate --all --strict`.
-- [ ] 5.2 Manual smoke on `make dev`: open the month at 360 px and desktop, drag a timed task across days, move one with the keys into the next month, switch a project to its timeline, drag a bar and an edge, check the arrow between a blocked pair and its disappearance on completion. Record the result in the change folder notes.
-- [ ] 5.3 Run `make check` (go test, web test and build, docs check, ui lint). Verify it passes.
+- [x] 5.2 Manual smoke on `make dev`: open the month at 360 px and desktop, drag a timed task across days, move one with the keys into the next month, switch a project to its timeline, drag a bar and an edge, check the arrow between a blocked pair and its disappearance on completion. Record the result in the change folder notes.
+- [x] 5.3 Run `make check` (go test, web test and build, docs check, ui lint). Verify it passes.
 
 ## Workflow follow-up
 
