@@ -83,6 +83,17 @@ func (s *Service) Send(ctx context.Context, m Message) error {
 	return s.send(ctx, m, true)
 }
 
+// Limited reports whether m would be refused by a sending limit and, if so,
+// records the refusal. Callers check it before creating a link they would
+// otherwise have to revoke (a new reset link revokes the earlier ones).
+func (s *Service) Limited(ctx context.Context, m Message) bool {
+	if s == nil || !s.limiter.Full(m.Kind, m.To) {
+		return false
+	}
+	s.record(ctx, audit.EmailFailed(m.ActorID, m.UserID, string(m.Kind), m.To, audit.ReasonRateLimited))
+	return true
+}
+
 // SendTest sends the test message, bypassing the sending limits (the route has
 // its own), and returns the delivery error.
 func (s *Service) SendTest(ctx context.Context, m Message) error {

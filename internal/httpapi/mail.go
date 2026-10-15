@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pixari/opentodo/internal/audit"
@@ -178,4 +179,29 @@ func (s *Server) mailSendError(w http.ResponseWriter, err error) {
 		return
 	}
 	writeError(w, http.StatusBadGateway, "email_failed", "the email could not be sent; nothing was created, try again or create a link to copy")
+}
+
+// inviteMessage validates a `send` flag before anything is created (design D6)
+// and prepares the message: 400 without an email, 409 while unconfigured, 429
+// when a sending limit is full. ok is false when an error was written.
+func (s *Server) inviteMessage(w http.ResponseWriter, r *http.Request, send bool, email string, kind mail.Kind, inviter *auth.User, role string) (mail.Message, bool) {
+	if !send {
+		return mail.Message{}, true
+	}
+	email = strings.ToLower(strings.TrimSpace(email))
+	if email == "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", "email: sending by email needs an address")
+		return mail.Message{}, false
+	}
+	if !s.mailEnabled(r.Context()) {
+		writeError(w, http.StatusConflict, "smtp_disabled", "outgoing email is not configured")
+		return mail.Message{}, false
+	}
+	m := mail.Message{Kind: kind, To: email, Lang: mail.LangFrom(r.Header.Get("Accept-Language")), Origin: s.publicOrigin(r),
+		ActorID: inviter.ID, Vars: mail.Vars{Inviter: inviter.Name, Role: role}}
+	if s.mail.Limited(r.Context(), m) {
+		s.mailSendError(w, mail.ErrRateLimited)
+		return mail.Message{}, false
+	}
+	return m, true
 }

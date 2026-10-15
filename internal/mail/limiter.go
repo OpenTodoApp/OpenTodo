@@ -37,6 +37,16 @@ func prune(ts []time.Time, cutoff time.Time) []time.Time {
 	return ts[i:]
 }
 
+// Full reports whether a message of kind to recipient would be refused now,
+// without reserving anything.
+func (l *Limiter) Full(kind Kind, recipient string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	cutoff := l.now().Add(-LimitWindow)
+	key := string(kind) + "\x00" + strings.ToLower(strings.TrimSpace(recipient))
+	return len(prune(l.per[key], cutoff)) >= PerRecipientLimit || len(prune(l.server, cutoff)) >= ServerLimit
+}
+
 // Allow reserves one message of kind to recipient, or reports false when
 // either window is full.
 func (l *Limiter) Allow(kind Kind, recipient string) bool {

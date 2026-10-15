@@ -73,6 +73,7 @@ None is required. With a Compose resource (the one-click template or Option A), 
 | `OPENTODO_CALDAV` | unset | `true` presets the CalDAV endpoint for calendar apps on first start; afterwards Settings → Integrations → Calendar apps decides. See [caldav](../caldav.md) |
 | `OPENTODO_CALENDAR_FEEDS` | unset | `true` presets calendar feeds (subscribed calendars and task feed URLs) on first start; afterwards Settings → Integrations → Calendar feeds decides. See [calendar feeds](../calendar-feeds.md) |
 | `OPENTODO_EMAIL_*` | unset | Optional [email to task](../email.md): `ADDRESS`, `IMAP_HOST`, `IMAP_USER` and `IMAP_PASSWORD` together (mark the password as a secret, or mount a file and set `IMAP_PASSWORD_FILE`). Partial settings stop the container at startup with the missing name in the log |
+| `OPENTODO_SMTP_*` | unset | Optional [outgoing email](outgoing-email.md) (`HOST`, `SECURITY`, `USER`, `PASSWORD` or `PASSWORD_FILE`, `FROM`; `HOST` and `FROM` together). Mark the password as a secret. Each one set locks its field in Settings → Administration → Outgoing email |
 | `OPENTODO_OIDC_*` | unset | Optional [single sign-on](sso.md) settings (`ISSUER`, `CLIENT_ID`, `CLIENT_SECRET`, `DISPLAY_NAME`, `SSO_ONLY`) that override and lock the fields in Settings → Access policies → Single sign-on |
 | `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](../backups.md#environment-presets), applied once; Settings → Backups wins afterwards |
 

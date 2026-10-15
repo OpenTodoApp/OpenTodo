@@ -249,6 +249,8 @@ func run() error {
 	workerDone := make(chan struct{})
 	jobsStarted, releaseJobs := runJobsWhenLeader(ctx, cfg.DataDir, log, jobsRetry, func() {
 		// Prune audit events past the owner's retention at startup and hourly.
+		// Expired pending sign-ups (outgoing-email) go on the same tick.
+		authSvc.Audit().AlsoPrune(authSvc.PruneSignups)
 		go authSvc.Audit().RunPruner(ctx, audit.PruneInterval)
 		if !cfg.Demo {
 			backups.Start(ctx)

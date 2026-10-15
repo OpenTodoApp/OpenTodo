@@ -56,8 +56,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
-| GET | `/api/v1/auth/status` | none | `{setupRequired, setupTokenRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, mfa?, encryption?, minClientVersion?, demo?}`; `mfa`, `encryption` and `minClientVersion` only when signed in; `demo` (`{token, sandboxHours: {idle, max}, resetsAt}`: a fresh single-use sandbox-creation token valid for 10 minutes, the sandbox lifetimes in hours and the next nightly reset; no credentials) only on a [demo instance](self-hosting/demo.md) (see [Two-factor authentication](#two-factor-authentication), [Single sign-on](#single-sign-on), [End-to-end encryption](#end-to-end-encryption)) |
-| POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?, projectInvite?, setupToken?}` → 201 `{user}` + cookie. The first account becomes owner; when `OPENTODO_SETUP_TOKEN` is set (`setupTokenRequired` in the status), it needs `setupToken` with that value, otherwise 403 `setup_token_invalid`; afterwards an `invitation` secret admits one member while sign-up is closed, and a `projectInvite` secret creates a member who joins that project (201 `{user, projectId, role}`, see [Project invite links](#project-invite-links)) |
+| GET | `/api/v1/auth/status` | none | `{setupRequired, setupTokenRequired, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, outgoingEmail, mfa?, encryption?, minClientVersion?, demo?}`; `outgoingEmail` is `{enabled}`, true when [outgoing email](#outgoing-email) is configured (never on a demo instance); `mfa`, `encryption` and `minClientVersion` only when signed in; `demo` (`{token, sandboxHours: {idle, max}, resetsAt}`: a fresh single-use sandbox-creation token valid for 10 minutes, the sandbox lifetimes in hours and the next nightly reset; no credentials) only on a [demo instance](self-hosting/demo.md) (see [Two-factor authentication](#two-factor-authentication), [Single sign-on](#single-sign-on), [End-to-end encryption](#end-to-end-encryption)) |
+| POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?, projectInvite?, setupToken?}` → 201 `{user}` + cookie. The first account becomes owner; when `OPENTODO_SETUP_TOKEN` is set (`setupTokenRequired` in the status), it needs `setupToken` with that value, otherwise 403 `setup_token_invalid`; afterwards an `invitation` secret admits one member while sign-up is closed, and a `projectInvite` secret creates a member who joins that project (201 `{user, projectId, role}`, see [Project invite links](#project-invite-links)). With open sign-up and [outgoing email](#outgoing-email), a registration without an invitation answers 202 `{verificationRequired: true}` and mails a link instead of creating the account |
 | POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie, or `{mfaRequired:true, challenge, expiresAt}` and no cookie when the account has a second factor |
 | POST | `/api/v1/auth/mfa` | none | `{challenge, code}` or `{challenge, recoveryCode}`, optional `remember` → `{user}` + cookie (+ `ot_trust` cookie when `remember`) |
 | POST | `/api/v1/auth/reauth` | cookie | `{password}` or `{code}` → `{reauthAt, validForMs}`; unlocks *fresh* routes for 10 minutes |
@@ -69,6 +69,9 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid`, see [Invitations](#invitations) |
 | GET | `/api/v1/project-invites/{token}` | none | preview `{inviterName, projectName, role, email, expiresAt, canCreateAccount, alreadyMember?}` or 404 `invitation_invalid`, see [Project invite links](#project-invite-links) |
+| POST | `/api/v1/auth/password-reset` | none | `{email}` → always 202 `{ok: true}`; mails a reset link to an active account's address, see [Outgoing email](#outgoing-email); 404 `smtp_disabled` without outgoing email |
+| GET | `/api/v1/auth/verify/{token}` | none | pending sign-up `{email, expiresAt}` or 404 `verification_invalid` |
+| POST | `/api/v1/auth/verify/{token}` | none | creates the account of a pending sign-up → 201 `{user}` + cookie; 404 `verification_invalid`, 403 `signup_closed`, 409 `email_taken` |
 | GET | `/api/v1/password-resets/{token}` | none | preview `{email, expiresAt}` or 404 `reset_invalid` |
 | POST | `/api/v1/password-resets/{token}` | none | `{password}` → 204 or 404 `reset_invalid` |
 
@@ -139,7 +142,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | DELETE | `/api/v1/projects/{id}/members/{userId}` | member | remove a member, or leave with your own id or `me` → 204 |
 | POST | `/api/v1/projects/{id}/transfer` | owner of the project | `{userId}` → membership; the previous owner becomes an admin |
 | GET | `/api/v1/projects/{id}/invites` | owner, admin of the project | pending invite links `{invites:[…]}`, see [Project invite links](#project-invite-links) |
-| POST | `/api/v1/projects/{id}/invites` | owner, admin of the project, fresh | `{role, email?, expiresInHours?}` → 201 `{invite, link, newAccounts}` (link shown once) |
+| POST | `/api/v1/projects/{id}/invites` | owner, admin of the project, fresh | `{role, email?, expiresInHours?, send?}` → 201 `{invite, link, newAccounts, sent?}` (link shown once; `send` mails it to `email`) |
 | DELETE | `/api/v1/projects/{id}/invites/{inviteId}` | owner, admin of the project | revoke a pending link → 204 |
 | POST | `/api/v1/project-invites/{token}/accept` | yes | join the project as the signed-in account → `{projectId, role}` |
 | GET | `/api/v1/settings/project-invites` | yes | `{membersCanInviteNewPeople}` (the owner switch) |
@@ -179,14 +182,17 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/api/v1/invitations` | owner, admin | `{invitations:[…]}`, see [Invitations](#invitations) |
-| POST | `/api/v1/invitations` | owner, admin, fresh | `{email?, expiresInHours?}` → 201 `{invitation, link}` (link shown once) |
+| POST | `/api/v1/invitations` | owner, admin, fresh | `{email?, expiresInHours?, send?}` → 201 `{invitation, link, sent?}` (link shown once; `send` mails it to `email`) |
 | DELETE | `/api/v1/invitations/{id}` | owner, admin | revoke a pending invitation → 204 |
 | GET | `/api/v1/users` | owner, admin | `{users:[…]}`, see [User administration](#user-administration) |
 | PUT | `/api/v1/users/{id}/role` | owner, fresh | `{role: "admin"\|"member"}` → `{user}` |
 | POST | `/api/v1/users/{id}/deactivate` | owner, admin, fresh | → `{user}`; revokes sessions, tokens, pending invitations and reset links |
 | POST | `/api/v1/users/{id}/reactivate` | owner, admin, fresh | → `{user}` |
 | DELETE | `/api/v1/users/{id}` | owner, admin, fresh | `{confirmEmail}` → 204; deletes the account and its data |
-| POST | `/api/v1/users/{id}/password-reset` | owner, admin, fresh | `{expiresInHours?}` → 201 `{expiresAt, link}` (link shown once) |
+| POST | `/api/v1/users/{id}/password-reset` | owner, admin, fresh | `{expiresInHours?, send?}` → 201 `{expiresAt, link}` (link shown once), or with `send: true` 201 `{expiresAt, sent: true}` and the link mailed to the account |
+| GET | `/api/v1/settings/smtp` | owner (session) | the [outgoing email](#outgoing-email) configuration without the password |
+| PUT | `/api/v1/settings/smtp` | owner (session), fresh | `{host?, port?, security?, username?, password?, from?}` → the same shape |
+| POST | `/api/v1/settings/smtp/test` | owner | sends a test message to the owner → `{outcome: "sent"\|"failed", stage?, reply?}` |
 | POST | `/api/v1/users/{id}/transfer-ownership` | owner, fresh | `{password}` → `{user}` |
 | POST | `/api/v1/members/{id}/mfa/reset` | owner, fresh | remove a member's second factor, recovery codes and remembered browsers → 204 |
 | GET | `/api/v1/settings/mfa` | owner | `{required: "none"\|"owner"\|"all"}` |
@@ -353,6 +359,28 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 | `invalid_input` | 400 | issuer not https, discovery failed or names another issuer, client id missing, scopes without `openid`, changing an environment-managed field |
 | `forbidden` | 403 | `settings/oidc` by a non-owner |
 | `rate_limited` | 429 | more than 20 requests per minute per address to `auth/oidc/start` and `callback` together |
+
+### Outgoing email
+
+Optional SMTP, configured by the owner in **Settings → Administration → Outgoing email** or with the `OPENTODO_SMTP_*` variables ([self-hosting/outgoing-email.md](self-hosting/outgoing-email.md)). Without it nothing is ever sent, `outgoingEmail.enabled` is false in the status, the routes that only send answer 404 `smtp_disabled` and `send` flags 409 `smtp_disabled`.
+
+**Configuration** — `GET /api/v1/settings/smtp` (the owner's session; API tokens get 403) →
+
+```json
+{"configured": true, "host": "smtp.example.com", "port": 587, "security": "starttls", "username": "todo",
+ "passwordSet": true, "from": "OpenTodo <todo@example.com>", "managedBy": {"host": "settings", "from": "env", "…": "…"},
+ "lastTest": {"at": 1760000000000, "outcome": "failed", "stage": "auth", "reply": "535 5.7.8 …"}}
+```
+
+`PUT` takes any of `host`, `port`, `security` (`tls`, `starttls`, `none`), `username`, `password` (`""` removes it) and `from` and answers the same shape. Errors: 400 `invalid_input` naming the field (port outside 1–65535, unknown security, a From that is not one address, a username without a password, `none` with a username), 409 `managed_by_env` for a field set by a variable. The password is never returned and is kept in `<data>/secrets/smtp.json`, outside backups.
+
+**Test** — `POST /api/v1/settings/smtp/test` sends one message to the owner's address and answers 200 `{outcome: "sent", to}` or `{outcome: "failed", stage, reply}` with `stage` one of `connect`, `tls`, `auth`, `send`. 5 per 10 minutes (429 `rate_limited`).
+
+**Messages** — plain text in the language of the request's `Accept-Language` (`en`, `de`, `fr`, `es`, `it`, `pt`, else English), one link each, never task content. At most 5 per kind and address per hour and 100 per hour in total; an authenticated request over a limit gets 429 `rate_limited`, a failed send 502 `email_failed` with nothing left pending. Sends are synchronous (15 seconds at most) and never retried.
+
+**Forgot password** — `POST /api/v1/auth/password-reset` with `{"email": "…"}` always answers 202 after at least 200 ms; for an active account outside SSO-only mode it issues a 24-hour reset link (revoking earlier ones) and mails it. Use the link with the [reset routes](#user-administration).
+
+**Verified sign-up** — with open sign-up and outgoing email, `POST /api/v1/auth/register` without an invitation answers 202 `{verificationRequired: true}` and mails a 24-hour link to `/verify/<token>`; an address that already has an account gets a message saying so, with the same answer. `GET /api/v1/auth/verify/{token}` previews `{email, expiresAt}`; `POST` creates the member account and starts a session (201 `{user}`). Unknown, expired, replaced and used tokens answer the same 404 `verification_invalid`.
 
 ### Idempotency keys
 
@@ -847,7 +875,7 @@ The server records security-relevant events in its own database (never synced to
 | `project_invite.created` | success | actor = creator | `project_invite_id`, `shared_project_id`, `project_role`, `invited_email` (bound email, if any) |
 | `project_invite.revoked` | success | actor = project owner or admin | `project_invite_id`, `shared_project_id` |
 | `project_invite.accepted` | success | actor = the account that joined (new or existing), target = the link's creator | `project_invite_id`, `shared_project_id`, `project_role` |
-| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `project_invites.members_create_accounts`, `oidc.*`, `encryption`, `encryption.keys`), `from`, `to` |
+| `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
 | `mfa.enrolled`, `mfa.disabled` | success | actor = user (or the owner, target = account) | `method` |
@@ -860,6 +888,8 @@ The server records security-relevant events in its own database (never synced to
 | `user.deleted` | success | actor = owner or admin, target = account | `email` (snapshot) |
 | `password.reset_issued` | success | actor = owner or admin (none from the server shell), target = account | `reset_id` |
 | `password.reset_completed` | success | actor = account | `reset_id` |
+| `email.sent` | success | actor = the account that caused it (none for anonymous requests), target = recipient account when known | `email_kind` (`verify_signup`, `password_reset`, `invitation`, `project_invite`, `test`), `email` (recipient); never the link |
+| `email.failed` | failure | as `email.sent` | `email_kind`, `email`, `reason` (`connect`, `tls`, `auth`, `send`, `rate_limited`, `encrypted_account`) |
 | `password.changed` | success | actor = user | |
 | `owner.transferred` | success | actor = previous owner, target = new owner | `from` (`owner`), `to` (`admin`): the previous owner's role change |
 | `backup.created` | success or failure | actor = owner for "Back up now", none for scheduled runs | `backup_id` (the run id), `reason` (`run_failed`) on failure |
@@ -1523,7 +1553,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Writes to unknown fields or with wrong types are rejected as a whole; nothing is partially applied.
 - Deletes are tombstones. Use `include_deleted=true` or the export to see them.
 - Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB).
-- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes and the password-reset routes share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour.
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes, the password-reset routes, `auth/password-reset` and `auth/verify` share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour.
 
 ### Error codes
 
@@ -1583,6 +1613,10 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `oidc_state_invalid` | 400 | provider callback with a missing, forged, expired or reused state |
 | `identity_taken` | 409 | linking a provider identity that belongs to another account |
 | `last_credential` | 409 | unlinking the last way to sign in to the account |
+| `verification_invalid` | 404 | unknown, expired, replaced or used sign-up confirmation link |
+| `smtp_disabled` | 404/409 | 404 on routes that only send (`auth/password-reset`, the SMTP test) and `/settings/smtp` on a server without outgoing email; 409 for a `send` flag while outgoing email is not configured |
+| `email_failed` | 502 | the SMTP server refused or could not be reached while sending an invitation, project invite or reset by email; nothing was left pending |
+| `managed_by_env` | 409 | changing an outgoing email field that an `OPENTODO_SMTP_*` variable sets |
 
 **Data, sharing and features**
 

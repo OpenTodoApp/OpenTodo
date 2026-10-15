@@ -226,6 +226,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// sign-in flow (anonymous, rate limited); settings and identities require auth.
 	s.registerOIDCRoutes(mux)
 	s.registerMailRoutes(mux)
+	s.registerSignupRoutes(mux)
 
 	mux.Handle("GET /api/v1/me", s.requireAuth(s.handleMe))
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
@@ -626,6 +627,14 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		s.registerWithProjectInvite(w, r, c)
 		return
 	}
+	// Open sign-up on a server that can send mail verifies the address first
+	// (OpenSpec `outgoing-email` D4); invitations and the first account never do.
+	if c.Invitation == "" && s.auth.OpenSignup() && s.mailEnabled(r.Context()) {
+		if n, err := s.auth.UserCount(r.Context()); err == nil && n > 0 {
+			s.registerWithVerification(w, r, c)
+			return
+		}
+	}
 	u, err := s.auth.RegisterWithSetupToken(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken)
 	switch {
 	case errors.Is(err, auth.ErrSetupTokenInvalid):
@@ -897,9 +906,14 @@ func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) 
 	var in struct {
 		Email          string   `json:"email"`
 		ExpiresInHours *float64 `json:"expiresInHours"`
+		Send           bool     `json:"send"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		return
+	}
+	msg, ok := s.inviteMessage(w, r, in.Send, in.Email, mail.KindInvitation, u, "")
+	if !ok {
 		return
 	}
 	ttl := auth.DefaultInvitationTTL
@@ -923,7 +937,20 @@ func (s *Server) handleCreateInvitation(w http.ResponseWriter, r *http.Request) 
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{"invitation": inv, "link": s.publicOrigin(r) + "/invite/" + secret})
+	link := s.publicOrigin(r) + "/invite/" + secret
+	out := map[string]any{"invitation": inv, "link": link}
+	if in.Send {
+		msg.Vars.Link, msg.Vars.Expiry = link, ttl
+		if err := s.mail.Send(r.Context(), msg); err != nil {
+			if rerr := s.auth.RevokeInvitation(context.WithoutCancel(r.Context()), u.ID, inv.ID); rerr != nil {
+				s.log.Error("revoke unsent invitation", "err", rerr)
+			}
+			s.mailSendError(w, err)
+			return
+		}
+		out["sent"] = true
+	}
+	writeJSON(w, http.StatusCreated, out)
 }
 
 func (s *Server) handleRevokeInvitation(w http.ResponseWriter, r *http.Request) {
