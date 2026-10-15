@@ -7,6 +7,7 @@ import { dismissRejected, useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { CalendarView } from './CalendarView'
+import { MonthView } from './MonthView'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { SavedViewRoute } from './SavedViewView'
@@ -156,6 +157,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         if (e.key === 'v') navigate({ view: 'views' })
         if (e.key === 'd') navigate({ view: 'day' })
         if (e.key === 'w') navigate({ view: 'week' })
+        if (e.key === 'm') navigate({ view: 'month' })
         if (e.key === 'f') {
           // The Filter view focuses its input on mount; keep this "f" out of it.
           e.preventDefault()
@@ -179,7 +181,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       }
       // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar");
       // the calendar keeps `[` / `]` for its range until the shortcut registry lands.
-      if (e.key === '[' && !/^\/(day|week)/.test(location.pathname) && window.matchMedia?.('(min-width: 1024px)').matches) {
+      if (e.key === '[' && !/^\/(day|week|month)/.test(location.pathname) && !document.querySelector('[data-timeline]') && window.matchMedia?.('(min-width: 1024px)').matches) {
         e.preventDefault()
         toggleSidebarCollapsed()
       }
@@ -253,6 +255,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <AskScreen role={user.role} />
           ) : route.view === 'day' || route.view === 'week' ? (
             <CalendarView mode={route.view} date={route.date} />
+          ) : route.view === 'month' ? (
+            <MonthView date={route.date} />
           ) : (
             // App renders the invite, reset and capture screens itself; a stray /invite, /reset or /share route inside the shell falls back to the Inbox.
             <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'share' ? { view: 'inbox' } : route} />

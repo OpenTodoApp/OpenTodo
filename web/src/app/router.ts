@@ -11,6 +11,7 @@ export type Route =
   | { view: 'anytime' }
   | { view: 'day'; date?: string }
   | { view: 'week'; date?: string }
+  | { view: 'month'; date?: string }
   | { view: 'completed' }
   | { view: 'assigned' }
   | { view: 'project'; id: string }
@@ -68,10 +69,11 @@ export function parseRoute(pathname: string): Route {
       return { view: 'assigned' }
     case 'day':
     case 'week':
+    case 'month':
       // An optional anchor date; anything that is not YYYY-MM-DD means "today".
       return parts[1] && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? { view: parts[0], date: parts[1] } : { view: parts[0] }
     case 'calendar':
-      // One Calendar destination (ux-overhaul): Day or Week as last used on this device.
+      // One Calendar destination (ux-overhaul): Day, Week or Month as last used on this device.
       return { view: readCalendarMode() }
     case 'settings':
       // /settings/import is the import screen; an unknown section shows the overview.
@@ -158,6 +160,7 @@ export function routePath(r: Route): string {
       return `/invite/p/${encodeURIComponent(r.token)}`
     case 'day':
     case 'week':
+    case 'month':
       return r.date ? `/${r.view}/${r.date}` : `/${r.view}`
     case 'inbox':
       return '/'
