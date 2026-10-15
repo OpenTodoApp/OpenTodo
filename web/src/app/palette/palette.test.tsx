@@ -217,3 +217,19 @@ describe('the box (2.2, 2.3, 5.2)', () => {
     await r.unmount()
   })
 })
+
+describe('empty box order (2.2)', () => {
+  it('context commands come before recent picks', async () => {
+    const id = await createTask({ title: 'Picked before' })
+    await recordPick('palette', `task:${id}`)
+    const t = task({ id: 'sel2', title: 'Selected two' })
+    await db.tasks.put(t)
+    const off = registerListState(listFor(t))
+    const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
+    await waitFor(() => options().some((o) => o.includes('Picked before')) && options().some((o) => o.includes('Selected two')))
+    const o = options()
+    expect(o.findIndex((x) => x.includes('Open “Selected two”'))).toBeLessThan(o.findIndex((x) => x.includes('Picked before')))
+    off()
+    await r.unmount()
+  })
+})

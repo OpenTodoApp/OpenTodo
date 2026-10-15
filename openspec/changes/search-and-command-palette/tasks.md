@@ -32,8 +32,8 @@
 
 ## 6. Integration
 
-- [ ] 6.1 Manual smoke on `make dev`: open with `Ctrl+K` from Today, quick add and the notes editor (link, not palette); find a task by notes text; `@errand & p1` lists tasks and opens the Filter view; "Complete <task>" with a selection; "Pin to sidebar" in a saved view; the header button on a 390 px viewport opens a bottom sheet; with Vim keybindings on, `Ctrl+K` works in Normal and Insert mode. Record the result in the change folder notes.
-- [ ] 6.2 Run `make check` (go test, web test and build, docs check, ui lint) and `make layout-check`. Verify both pass.
+- [x] 6.1 Manual smoke on `make dev`: open with `Ctrl+K` from Today, quick add and the notes editor (link, not palette); find a task by notes text; `@errand & p1` lists tasks and opens the Filter view; "Complete <task>" with a selection; "Pin to sidebar" in a saved view; the header button on a 390 px viewport opens a bottom sheet; with Vim keybindings on, `Ctrl+K` works in Normal and Insert mode. Record the result in the change folder notes.
+- [x] 6.2 Run `make check` (go test, web test and build, docs check, ui lint) and `make layout-check`. Verify both pass.
 
 ## Workflow follow-up
 

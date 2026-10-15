@@ -34,6 +34,8 @@ export interface ComboboxConfig<T> {
    * filter-query results). An entry whose key is also a text match is dropped.
    */
   prefix?: readonly T[]
+  /** Listed last while a query is typed, without text matching ("Search Help for …"). */
+  suffix?: readonly T[]
   /** At most this many options; `more` counts the rest. */
   limit?: number
 }
@@ -109,7 +111,10 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
       const empty = { tier: 3, gaps: 0, label: [], secondary: [] } as Match
       const pins = pinned.map((k) => items.find((i) => cfg.getKey(i) === k)).filter((i): i is T => i !== undefined).map((i) => toOption(i, empty, 0))
       const rest = items.filter((i) => pinIndex(cfg.getKey(i)) < 0)
-      if (cfg.getPath && scores.size > 0) {
+      if (cfg.emptySource) {
+        // The caller ordered the empty list itself (context first, then recent picks).
+        out = [...pins, ...rest.map((i) => toOption(i, empty))]
+      } else if (cfg.getPath && scores.size > 0) {
         // A tree keeps its shape; recent picks are offered on top as their own group.
         const recent = rankBy(rest.filter((i) => scores.has(cfg.getKey(i))), cfg.getKey, scores).slice(0, RECENT_IN_TREE)
           .map((i) => ({ ...toOption(i, empty, 0), group: 'Recent', key: `recent:${cfg.getKey(i)}` } as ComboOption<T>))
@@ -131,12 +136,16 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
       const full = { tier: 3, gaps: 0, label: [], secondary: [] } as Match
       out = [...cfg.prefix.filter((i) => !keys.has(cfg.getKey(i))).map((i) => toOption(i, full, 0)), ...out]
     }
+    if (q && cfg.suffix?.length) {
+      const full = { tier: 3, gaps: 0, label: [], secondary: [] } as Match
+      out = [...out, ...cfg.suffix.map((i) => toOption(i, full, 0))]
+    }
     if (q && cfg.onCreate && !out.some((o) => o.kind === 'item' && o.m.tier === 3)) {
       out = [...out, { kind: 'create', key: `create:${q}`, query: q }]
     }
     return out
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, prepared, query, scores, cfg.pinned, cfg.prefix])
+  }, [items, prepared, query, scores, cfg.pinned, cfg.prefix, cfg.suffix])
   const more = cfg.limit !== undefined ? Math.max(0, allOptions.length - cfg.limit) : 0
   const options = more ? allOptions.slice(0, cfg.limit) : allOptions
 

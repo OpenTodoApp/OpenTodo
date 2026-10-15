@@ -24,7 +24,7 @@ import { useVimEnabled } from '../vim/prefs'
 import { isStep, KIND_ICON, secondaryOf, type Entry, type Step } from './entries'
 import { filterEntries } from './filterEntries'
 import { buildEntries, makeTaskEntry } from './index'
-import { commandEntries, contextEntries, type PaletteContext } from './registry'
+import { commandEntries, contextEntries, trailingEntries, type PaletteContext } from './registry'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
@@ -99,9 +99,10 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   }, [ctx, scores, source])
   const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects }, taskEntry), [query, tasks, today, labels, projects, taskEntry])
 
+  const trailing = useMemo(() => trailingEntries(ctx), [ctx])
   const keepOpen = useRef(false)
   const state = useCombobox<Entry>({
-    source, emptySource, prefix, limit: PALETTE_LIMIT, rankContext: 'palette',
+    source, emptySource, prefix, suffix: trailing, limit: PALETTE_LIMIT, rankContext: 'palette',
     getKey: (e) => e.key, getLabel: (e) => e.label, getSecondary: secondaryOf,
     onPick: (e) => {
       // The box closes first, so the action's own focus (quick add, a prompt) wins.

@@ -190,7 +190,16 @@ export function commands(ctx: PaletteContext): Command[] {
 
 /** Commands as palette entries. */
 export function commandEntries(ctx: PaletteContext): Entry[] {
-  return commands(ctx).map((c) => ({ kind: 'command', key: `cmd:${c.id}`, label: c.label, secondary: c.keywords, icon: c.icon, shortcut: c.shortcut, run: c.run }))
+  return commands(ctx).filter((c) => c.id !== 'app:help-search').map(toEntry)
+}
+
+function toEntry(c: Command): Entry {
+  return { kind: 'command', key: `cmd:${c.id}`, label: c.label, icon: c.icon, shortcut: c.shortcut, run: c.run }
+}
+
+/** "Search Help for …", listed after every match. */
+export function trailingEntries(ctx: PaletteContext): Entry[] {
+  return commands(ctx).filter((c) => c.id === 'app:help-search').map(toEntry)
 }
 
 /** Commands that act on the screen (selected task, current project, view, label or filter): listed first in an empty box. */
