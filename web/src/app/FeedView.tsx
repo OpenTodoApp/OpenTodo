@@ -189,7 +189,7 @@ export function FeedView() {
       </div>
       {more && online && shared && shared.length > 0 && (
         <button type="button" className="btn-ghost mt-3 text-xs" disabled={state === 'loading'} onClick={() => void loadOlder()}>
-          {state === 'loading' ? 'Loading…' : 'Load older updates'}
+          {state === 'loading' ? 'Fetching older updates…' : 'Load older updates'}
         </button>
       )}
       {state === 'error' && <p className="mt-2 text-xs text-danger">Older updates could not be loaded.</p>}

@@ -1,4 +1,5 @@
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Skeleton } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, auditExportUrl, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
@@ -212,7 +213,7 @@ export function AuditPanel() {
             <AuditTable status={status} events={events} onKeyDown={onTableKey} />
             {cursor && status === 'ready' && (
               <Button variant="secondary" size="sm" onClick={() => void loadMore()} busy={loadingMore}>
-                {loadingMore ? 'Loading…' : 'Load more'}
+                {loadingMore ? 'Fetching more…' : 'Load more'}
               </Button>
             )}
             <p className="text-meta text-muted">Keyboard: export with the current filters by pressing <Kbd k="e" /> while the table has focus.</p>
@@ -298,7 +299,7 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
             <tr><td colSpan={5} className="px-2 py-3 text-muted">No events match these filters.</td></tr>
           )}
           {status === 'loading' && events.length === 0 && (
-            <tr><td colSpan={5} className="px-2 py-3 text-muted">Loading…</td></tr>
+            <tr><td colSpan={5} className="px-2 py-3"><Skeleton shape="line" count={4} label="Loading events" /></td></tr>
           )}
         </tbody>
       </table>

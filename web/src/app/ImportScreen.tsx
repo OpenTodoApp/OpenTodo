@@ -1,4 +1,5 @@
 import { PageBody, PageHeader } from '../ui'
+import { Skeleton } from '../ui'
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -271,7 +272,7 @@ export function ImportView(p: ImportViewProps) {
 
       <section className="space-y-2">
         <h2 className="font-semibold">Past imports</h2>
-        {p.jobs === null && <p className="text-sm text-faint">{p.offline ? 'No imports loaded yet.' : 'Loading…'}</p>}
+        {p.jobs === null && (p.offline ? <p className="text-sm text-faint">No imports loaded yet.</p> : <Skeleton shape="line" count={3} label="Loading past imports" />)}
         {p.jobs && p.jobs.length === 0 && <p className="text-sm text-faint">No imports yet.</p>}
         <ul className="divide-y divide-(--ot-border)">
           {p.jobs?.map((j) => (

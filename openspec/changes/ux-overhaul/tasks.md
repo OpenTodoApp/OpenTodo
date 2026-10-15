@@ -79,16 +79,16 @@ Each group leaves `make check` green and the app usable. Groups 3 to 6 can proce
 
 ## 8. Rows, cards, motion, stories and baselines
 
-- [ ] 8.1 Rewrite `TaskRow` around `ToneText`, `LabelChip` and `NeutralChip` (date with evening and repeat suffixes, deadline with icon, neutral chips for estimate, progress, comments, attachments, project; tabular figures) and add `TaskCard` for the board; verify with `taskRow.test.tsx` (recurring evening task reads "Today · evening · repeats") and the row and card stories in every state.
-- [ ] 8.2 Add the completion animation within `--duration-emphasis` with the reduced-motion guard and live count updates; verify with `completion.test.tsx` (class applied, skipped under reduced motion).
-- [ ] 8.3 Make the selection checkbox replace the task checkbox on hover, focus and tick without layout shift; verify with `bulk.test.tsx` measuring the title's position before and after hover.
-- [ ] 8.4 Add drag lift and the dotted drop line with reduced-motion handling; verify with `listDrop.test.ts` and the row story's dragging state.
-- [ ] 8.5 Replace every "Loading…" text and spinner for local data with `Skeleton`; verify with a test that no "Loading…" string renders in list, panel or settings components.
+- [x] 8.1 Rewrite `TaskRow` around `ToneText`, `LabelChip` and `NeutralChip` (date with evening and repeat suffixes, deadline with icon, neutral chips for estimate, progress, comments, attachments, project; tabular figures) and add `TaskCard` for the board; verify with `taskRow.test.tsx` (recurring evening task reads "Today · evening · repeats") and the row and card stories in every state.
+- [x] 8.2 Add the completion animation within `--duration-emphasis` with the reduced-motion guard and live count updates; verify with `completion.test.tsx` (class applied, skipped under reduced motion).
+- [x] 8.3 Make the selection checkbox replace the task checkbox on hover, focus and tick without layout shift; verify with `bulk.test.tsx` measuring the title's position before and after hover.
+- [x] 8.4 Add drag lift and the dotted drop line with reduced-motion handling; verify with `listDrop.test.ts` and the row story's dragging state.
+- [x] 8.5 Replace every "Loading…" text and spinner for local data with `Skeleton`; verify with a test that no "Loading…" string renders in list, panel or settings components.
 - [ ] 8.6 Review dark pairs for the three surfaces and the board column (`bg-sunken` plus border in dark), and unify icon sizes (16 in rows, 20 in headers, 12 in chips); verify with `contrast.test.ts` and the token lint.
 - [ ] 8.7 Add the core-screen stories (sidebar, shell with list and panel, task row states, grouped list, board, Day and Week, quick add with chips, page header, settings page) with fixture data and generate their baselines with `make ui-baselines` or the UI baselines workflow; verify with `make ui-check`.
 - [ ] 8.8 Empty the `NOT_YET_MIGRATED` list and remove the legacy `btn-*`, `.input` and `.kbd` classes from `index.css` with the test that fails if they return; verify with `npm test`, `npm run build` and the layout check.
 - [ ] 8.9 Add `make screens`, the seeded-fixture screenshot script from the audit, and the before/after screenshot step to `CONTRIBUTING.md`; verify the target runs against a local server and writes the images.
-- [ ] 8.10 Run the first-run flow: three-step card, Skip all, "Show me around" sample project via ordinary ops, `firstRun` stored with the preferences, empty states with action first and hints on fine pointers only; verify with `firstRun.test.tsx` (no card on a second device after sync, sample deletes like any project) and the getting-started guide updated.
+- [x] 8.10 Run the first-run flow: three-step card, Skip all, "Show me around" sample project via ordinary ops, `firstRun` stored with the preferences, empty states with action first and hints on fine pointers only; verify with `firstRun.test.tsx` (no card on a second device after sync, sample deletes like any project) and the getting-started guide updated.
 - [ ] 8.11 Final integration: run `make check`, the layout check and `make ui-check`, confirm every target in `UX-AUDIT.md` section 6 with the budget test and the screenshot pass, update `CHANGELOG.md` under Unreleased and `README.md` screenshots; verify all commands pass.
 
 ## Workflow follow-up

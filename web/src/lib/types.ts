@@ -283,6 +283,8 @@ export interface UserPrefs {
   sidebar_destinations: string
   /** Row density (ux-overhaul): comfortable (default) or compact; unknown values read as comfortable. */
   density: string
+  /** The first-run card (ux-overhaul, first-run): "done" once finished or skipped on any device. */
+  first_run: string
   _clock: Clock
 }
 

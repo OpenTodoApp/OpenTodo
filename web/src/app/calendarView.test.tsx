@@ -181,6 +181,9 @@ describe('calendar events', () => {
     await waitFor(() => r.container.querySelector('[data-calendars-status]') !== null)
     expect(r.container.querySelector('[data-calendars-status]')!.textContent).toBe('Calendars unavailable offline for these days')
     vi.restoreAllMocks()
+    await r.unmount()
+  })
+})
 
 describe('Week on a phone (ux-overhaul, time-blocking "Week on a phone")', () => {
   const original = window.matchMedia

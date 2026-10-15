@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Skeleton } from '../ui'
 import { Badge } from '../ui'
 import { Icon, type IconName } from '../ui'
 import { EmptyState } from '../ui'
@@ -77,7 +78,7 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
       ) : (
         <>
           {status === 'error' && <Notice tone="danger">{error}</Notice>}
-          {status === 'loading' && events.length === 0 && <p className="text-sm text-muted" role="status">Loading…</p>}
+          {status === 'loading' && events.length === 0 && <Skeleton shape="line" count={4} label="Loading activity" />}
           {status === 'ready' && events.length === 0 && (
             <EmptyState icon="history" title="No recent activity." body="Sign-ins and token changes on your account will show up here." />
           )}

@@ -30,3 +30,13 @@ export const DEFAULT_PREFS: DateTimePrefs = { ...USER_PREFS_DEFAULTS }
 export function setUserPref<K extends keyof DateTimePrefs>(field: K, value: DateTimePrefs[K]): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { [field]: value })
 }
+
+/** The first-run card (OpenSpec change ux-overhaul, first-run): shown until the account marks it done on any device. */
+export function firstRunDone(row: Partial<UserPrefs> | null | undefined): boolean {
+  return row?.first_run === 'done'
+}
+
+/** Marks the first run finished or skipped; an ordinary op, so it syncs to the account's other devices. */
+export function setFirstRunDone(): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { first_run: 'done' })
+}

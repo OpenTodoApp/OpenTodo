@@ -4,6 +4,7 @@
 // readable diffs and restore. Read live from the server; offline it says so and
 // shows nothing stale. Loaded lazily with its tab.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { Skeleton } from '../../ui'
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { isNetworkError } from '../../lib/api'
 import { zoneCity } from '../../lib/dates'
@@ -169,7 +170,7 @@ export function HistoryView(props: HistoryViewProps) {
   return (
     <div className="space-y-3 text-sm">
       {state === 'error' && <p role="alert" className="text-meta text-danger">History could not be loaded.</p>}
-      {state === 'loading' && versions.length === 0 && <p className="text-meta text-faint">Loading…</p>}
+      {state === 'loading' && versions.length === 0 && <Skeleton shape="line" count={4} label="Loading history" />}
       {message && <p role="status" className="text-meta text-success">{message}</p>}
       {versions.length > 0 && (
         <ol className="space-y-4" aria-label="Versions">

@@ -1,4 +1,5 @@
 import { Icon } from '../../ui'
+import { Skeleton } from '../../ui'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { loadHelp, type HelpBundle } from '../../lib/help'
@@ -46,7 +47,7 @@ export function HelpPanel({ screen, trigger, onClose }: { screen: string; trigge
         </div>
         <div className="px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
           {failed && <p className="text-sm text-muted">Help could not be loaded. Reload the app and try again.</p>}
-          {!failed && !page && <p className="text-sm text-muted" role="status">Loading…</p>}
+          {!failed && !page && <Skeleton shape="line" count={6} label="Loading the guide" />}
           {page && <HelpContent page={page} anchor={at?.anchor} onOpen={(slug, anchor) => setAt({ slug, anchor })} />}
         </div>
       </div>

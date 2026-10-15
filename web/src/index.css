@@ -466,6 +466,10 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
    preference"): comfortable rows by default, 36 px rows under compact. Touch
    targets keep 44 px on coarse pointers through the rules further down. */
 .row-pad { padding-block: 0.5rem; }
+/* Completion feedback (task-list-presentation): the check mark pops within the emphasis
+   duration; under reduced motion the animation is instant and only the row's opacity fades. */
+@keyframes row-check-pop { 0% { transform: scale(0.8); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+.row-check-pop { animation: row-check-pop var(--duration-emphasis) var(--ease-calm, ease-out) both; }
 :root[data-density="compact"] .row-pad { padding-block: 0.25rem; }
 :root[data-density="compact"] [data-sidebar-item] { min-height: 2rem; padding-block: 0.25rem; }
 :root[data-density="compact"] [data-group-header] { min-height: 2rem; }

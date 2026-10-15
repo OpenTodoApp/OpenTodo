@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
+import { Skeleton } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
@@ -306,7 +307,7 @@ export function UsersView(p: UsersViewProps) {
         })}
       </ul>
       {p.users && p.users.length === 0 && <EmptyState icon="users" title="No accounts" body="Invite someone below to give them an account on this server." />}
-      {p.users === null && !p.offline && <p className="py-2 text-meta text-faint">Loading…</p>}
+      {p.users === null && !p.offline && <Skeleton shape="row" count={3} label="Loading users" />}
       <p className="pt-2 text-meta text-faint">
         Keyboard, with a row focused: deactivate or reactivate with <Kbd k="d" />, create a reset link with <Kbd k="r" />, delete with <Kbd k="Delete" />; each asks for confirmation.
       </p>

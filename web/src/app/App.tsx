@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Skeleton } from '../ui'
 import { AppearanceProvider } from './AppearanceProvider'
 import { DateTimePrefsProvider } from './DateTimePrefsProvider'
 import { api, onEnrolmentRequired } from '../lib/api'
@@ -145,7 +146,8 @@ export function App() {
   // The screen for the current phase and route; ReauthHost above serves all of them.
   function screen() {
     if (phase.kind === 'loading') {
-      return <Centered>Loading…</Centered>
+      // Cold start (task-list-presentation "Skeleton loading"): rows in the row's shape until the local database answers.
+      return <div className="mx-auto w-full max-w-3xl px-4 py-5 md:px-8"><Skeleton shape="row" count={8} label="Loading your tasks" /></div>
     }
     if (route.view === 'reset') {
       return (

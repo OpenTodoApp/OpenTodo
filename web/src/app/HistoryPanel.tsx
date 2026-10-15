@@ -1,4 +1,5 @@
 import { Icon } from '../ui'
+import { Skeleton } from '../ui'
 import { useCallback, useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
@@ -104,7 +105,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
           {state === 'offline' && <p className="text-xs text-muted">History needs a connection to the server.</p>}
           {state === 'error' && <p className="text-xs text-danger">History could not be loaded.</p>}
           {state === 'empty' && <p className="text-xs text-muted">No history on the server yet.</p>}
-          {state === 'loading' && sets.length === 0 && <p className="text-xs text-faint">Loading…</p>}
+          {state === 'loading' && sets.length === 0 && <Skeleton shape="line" count={4} label="Loading history" />}
           {message && <p role="status" className="mb-1 text-xs text-success">{message}</p>}
           <ol className="space-y-2" aria-label="Changes">
             {sets.map((s) => (

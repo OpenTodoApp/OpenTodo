@@ -59,7 +59,6 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/Sidebar.tsx',
   'src/app/SsoPanel.tsx',
   'src/app/TaskListView.tsx',
-  'src/app/TaskRow.tsx',
   'src/app/TrashView.tsx',
   'src/app/TwoFactorPanel.tsx',
   'src/app/UnlockScreen.tsx',
@@ -89,7 +88,7 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/task-detail/RelativeTime.tsx',
   'src/app/vim/VimLayer.tsx',
 ]
-export const STYLE_NOT_YET_MIGRATED_MAX = 82
+export const STYLE_NOT_YET_MIGRATED_MAX = 81
 
 /** Files with a native `title` attribute on an HTML element (the Tooltip primitive replaces it). */
 export const TITLE_NOT_YET_MIGRATED: readonly string[] = [
@@ -111,7 +110,6 @@ export const TITLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/Sidebar.tsx',
   'src/app/SsoPanel.tsx',
   'src/app/TaskListView.tsx',
-  'src/app/TaskRow.tsx',
   'src/app/ViewsView.tsx',
   'src/app/WebhooksPanel.tsx',
   'src/app/assistant/AssistantPanel.tsx',
@@ -128,4 +126,4 @@ export const TITLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/task-detail/TaskDetail.tsx',
   'src/app/task-detail/ZoneControl.tsx',
 ]
-export const TITLE_NOT_YET_MIGRATED_MAX = 34
+export const TITLE_NOT_YET_MIGRATED_MAX = 33

@@ -1,4 +1,5 @@
 import { Icon } from '../../ui'
+import { Skeleton } from '../../ui'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { api, ApiError } from '../../lib/api'
@@ -110,7 +111,7 @@ export interface PanelViewProps {
 export function AssistantPanelBody(p: PanelViewProps) {
   const dt = useDateTimeFormat()
   const s = p.status
-  if (!s) return <p className="text-sm text-muted" role="status">Loading…</p>
+  if (!s) return <Skeleton shape="line" count={3} label="Loading the assistant" />
   if (s.reason === 'encryption_enabled') {
     return (
       <div className="space-y-2 text-sm" data-assistant-encrypted>

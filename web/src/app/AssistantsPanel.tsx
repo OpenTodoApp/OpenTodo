@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Skeleton } from '../ui'
 import { Button } from '../ui'
 import { Badge } from '../ui'
 import { Notice } from '../ui'
@@ -56,7 +57,7 @@ export function AssistantsView(p: AssistantsViewProps) {
       )}
 
       {p.status === null ? (
-        <p className="py-2 text-meta text-faint">{p.connected ? 'Loading…' : 'Nothing fetched yet.'}</p>
+        p.connected ? <Skeleton shape="line" count={3} label="Loading assistant access" /> : <p className="py-2 text-meta text-faint">Nothing fetched yet.</p>
       ) : p.isOwner ? (
         <>
           <SettingRow label="Allow AI assistants (MCP endpoint)"

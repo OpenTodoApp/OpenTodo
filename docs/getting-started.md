@@ -47,6 +47,12 @@ The sidebar on the left lists your views and projects. On a phone, a bar at the 
 
 The circle to the left of each task completes it. The small line under the title shows the date, labels and project. More on all the views in [Views](views.md).
 
+## Your first visit
+
+The first time an account opens the app, the Inbox shows a short card with three steps instead of an empty list: add your first task, choose light or dark, and install the app. Every step has a **Skip** button, and **Skip all** closes the card at once. It never comes back on that account, on any of your devices.
+
+The card also offers **Show me around**. It creates one project, "Show me around", with six tasks that demonstrate a date, a deadline, a label, a subtask, a repeat and notes. They are ordinary tasks: edit them, complete them, or delete the project when you are done and it goes to the Trash like any other.
+
 ## Add your first task
 
 1. Press <kbd>q</kbd>, or click the **Add a task** box at the top of the list.

@@ -124,7 +124,7 @@ function ActivityList({ project }: { project: Project }) {
       </ol>
       {more && online && (
         <button type="button" className="btn-ghost text-xs" disabled={state === 'loading'} onClick={() => void loadOlder()}>
-          {state === 'loading' ? 'Loading…' : 'Load older activity'}
+          {state === 'loading' ? 'Fetching older activity…' : 'Load older activity'}
         </button>
       )}
       {state === 'error' && <p className="text-xs text-danger">Older activity could not be loaded.</p>}

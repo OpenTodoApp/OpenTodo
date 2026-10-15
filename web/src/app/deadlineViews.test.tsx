@@ -51,7 +51,7 @@ describe('row countdown (2.2)', () => {
     expect(chip.textContent).toBe(label)
     expect(chip.className).toContain(tone)
     expect(chip.querySelector('svg')).not.toBeNull()
-    expect(chip.title).toMatch(/^Deadline /)
+    expect(chip.getAttribute('aria-label')).toMatch(/^Deadline /)
   })
   it('no chip without a deadline or once completed', async () => {
     const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /><TaskRow task={task({ id: 'u', deadline: '2026-10-12', completed_at: 1 })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)

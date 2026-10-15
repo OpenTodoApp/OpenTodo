@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
+import { Skeleton } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
@@ -194,7 +195,7 @@ export function MembersView(p: MembersViewProps) {
         <EmptyState icon="link" title="No invitations yet" body="An invitation is a single-use link that lets one person create an account here."
           action={<Button variant="secondary" icon="plus" disabled={disabled} onClick={p.onNew}>New invitation</Button>} />
       )}
-      {p.invitations === null && <p className="py-2 text-meta text-faint">{p.offline ? 'Nothing fetched yet.' : 'Loading…'}</p>}
+      {p.invitations === null && (p.offline ? <p className="py-2 text-meta text-faint">Nothing fetched yet.</p> : <Skeleton shape="line" count={3} label="Loading invitations" />)}
       <p className="pt-2 text-meta text-faint">Keyboard, with a row focused: copy a link created in this session with <Kbd k="Enter" />, revoke a pending invitation with <Kbd k="Delete" />.</p>
     </SettingsSection>
   )
