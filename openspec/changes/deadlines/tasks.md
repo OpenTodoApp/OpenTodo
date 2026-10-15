@@ -34,9 +34,9 @@
 
 ## 6. CalDAV (design D6)
 
-- [ ] 6.1 Encode: `DUE;VALUE=DATE` from the deadline and `DTSTART` from `due` when a deadline exists (`internal/caldav/vtodo.go`); keep today's output otherwise. Verify with golden tests for the "Deadline served", "Deadline without a due date" and "Due date with time" scenarios and the unchanged recurring anchor.
-- [ ] 6.2 Decode: differing `DTSTART`/`DUE` → due and deadline (date part, time dropped), equal → due only, mapped `DTSTART` no longer stored in `ical_extra`; write the `deadline` op through `ApplyStrict` in `internal/httpapi/caldav_write.go`. Verify with tests for "Start and due from a client", "Timed DUE with a start keeps the day" and a round trip through PUT and GET; `go test ./internal/caldav/... ./internal/httpapi/...`.
-- [ ] 6.3 Update `docs/caldav.md` "What maps to what". Verify with `npm run docs:check`.
+- [x] 6.1 Encode: `DUE;VALUE=DATE` from the deadline and `DTSTART` from `due` when a deadline exists (`internal/caldav/vtodo.go`); keep today's output otherwise. Verify with golden tests for the "Deadline served", "Deadline without a due date" and "Due date with time" scenarios and the unchanged recurring anchor.
+- [x] 6.2 Decode: differing `DTSTART`/`DUE` → due and deadline (date part, time dropped), equal → due only, mapped `DTSTART` no longer stored in `ical_extra`; write the `deadline` op through `ApplyStrict` in `internal/httpapi/caldav_write.go`. Verify with tests for "Start and due from a client", "Timed DUE with a start keeps the day" and a round trip through PUT and GET; `go test ./internal/caldav/... ./internal/httpapi/...`.
+- [x] 6.3 Update `docs/caldav.md` "What maps to what". Verify with `npm run docs:check`.
 
 ## 7. Quick add (design D7)
 

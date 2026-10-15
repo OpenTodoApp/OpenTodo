@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 )
@@ -101,5 +103,53 @@ func TestRestDeadlineMovesDeadlineReminders(t *testing.T) {
 	e.mustStatus(resp, 200, rem)
 	if rem["fire_at"] != nil || rem["deleted_at"] != nil {
 		t.Fatalf("after clearing the deadline: %v", rem)
+	}
+}
+
+// TestCaldavDeadlineRoundTrip: a client's DTSTART and DUE become the due date
+// and the deadline as ops, are served back with DUE as a date, an unchanged
+// round trip writes nothing, and a deadline-only task survives a client edit
+// (OpenSpec change deadlines, design D6).
+func TestCaldavDeadlineRoundTrip(t *testing.T) {
+	e, c := davSetup(t)
+	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Report", "DTSTART:20261013T090000", "DUE:20261017T170000"), 201)
+	task := e.task("t1")
+	if d := task["due"].(map[string]any); d["date"] != "2026-10-13" || d["time"] != "09:00" || task["deadline"] != "2026-10-17" {
+		t.Fatalf("task %v", task)
+	}
+	if strings.Contains(fmt.Sprint(task["ical_extra"]), "DTSTART") {
+		t.Fatalf("mapped DTSTART kept as client data: %v", task["ical_extra"])
+	}
+	if e.caldavOps("t1")["deadline"] != 1 {
+		t.Fatalf("deadline op: %v", e.caldavOps("t1"))
+	}
+	_, ics := c.must("GET", c.cal("inbox")+"t1.ics", "", 200)
+	for _, want := range []string{"DTSTART:20261013T090000\r\n", "DUE;VALUE=DATE:20261017\r\n"} {
+		if !strings.Contains(ics, want) {
+			t.Fatalf("GET lacks %q:\n%s", want, ics)
+		}
+	}
+	before := fmt.Sprint(e.caldavOps("t1"))
+	c.must("PUT", c.cal("inbox")+"t1.ics", ics, 204)
+	if fmt.Sprint(e.caldavOps("t1")) != before {
+		t.Fatal("identical PUT wrote ops")
+	}
+
+	// A deadline-only task is served as DUE alone; the client's edit keeps it a deadline.
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Renew passport", "deadline": "2026-11-20"})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	_, ics = c.must("GET", c.cal("inbox")+id+".ics", "", 200)
+	if !strings.Contains(ics, "DUE;VALUE=DATE:20261120\r\n") || strings.Contains(ics, "DTSTART") {
+		t.Fatalf("deadline only:\n%s", ics)
+	}
+	c.must("PUT", c.cal("inbox")+id+".ics", strings.Replace(ics, "SUMMARY:Renew passport", "SUMMARY:Renew passports", 1), 204)
+	if got := e.task(id); got["deadline"] != "2026-11-20" || got["due"] != nil || got["title"] != "Renew passports" {
+		t.Fatalf("after client edit: %v", got)
+	}
+	// Equal DTSTART and DUE set the due date only and clear the deadline.
+	c.must("PUT", c.cal("inbox")+id+".ics", vtodoBody(id, "SUMMARY:Renew passports", "DTSTART;VALUE=DATE:20261101", "DUE;VALUE=DATE:20261101"), 204)
+	if got := e.task(id); got["deadline"] != nil || got["due"].(map[string]any)["date"] != "2026-11-01" {
+		t.Fatalf("equal pair: %v", got)
 	}
 }

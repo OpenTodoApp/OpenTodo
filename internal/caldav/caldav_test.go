@@ -15,7 +15,7 @@ func strp(s string) *string { return &s }
 // toTask stores an inbound VTODO the way the server does and returns the
 // outbound view of the result.
 func toTask(in *Inbound) Task {
-	t := Task{UID: in.UID, Title: in.Title, Description: in.Description, Priority: in.Priority, Due: in.Due,
+	t := Task{UID: in.UID, Title: in.Title, Description: in.Description, Priority: in.Priority, Due: in.Due, Deadline: in.Deadline,
 		Categories: in.Categories, ParentUID: in.ParentUID, Recurrence: in.Rule, Extra: in.Extra, Modified: 1_760_000_000_000}
 	if in.CreatedAt != nil {
 		t.CreatedAt = *in.CreatedAt

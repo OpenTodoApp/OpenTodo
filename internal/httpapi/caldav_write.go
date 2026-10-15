@@ -200,6 +200,21 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 	} else {
 		f["due"] = json.RawMessage("null")
 	}
+	// Deadlines (design D6): DTSTART and a differing DUE carry both dates. A DUE
+	// alone on a task that has a deadline is the deadline, as it was served;
+	// without DUE the deadline is gone. The field is only written when a
+	// deadline is or was set, so tasks without one keep their op footprint.
+	deadline := json.RawMessage("null")
+	switch {
+	case in.Deadline != "":
+		deadline = mustJSON(in.Deadline)
+	case in.DueOnly && !isNullish(current["deadline"]):
+		deadline = mustJSON(in.Due.Date)
+		f["due"] = json.RawMessage("null")
+	}
+	if !isNullish(deadline) || !isNullish(current["deadline"]) {
+		f["deadline"] = deadline
+	}
 	extra := in.Extra
 	f["parent_id"] = json.RawMessage("null")
 	if in.ParentUID != "" {
