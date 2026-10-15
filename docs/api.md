@@ -486,7 +486,7 @@ curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H '
 
 ### Project fields
 
-`name` (string), `color` (string, CSS colour), `position` (number, sort order among siblings), `archived` (boolean), `parent_id` (string or null, see [Sub-projects](#sub-projects)), `created_at`, `deleted_at`.
+`name` (string), `color` (string, CSS colour), `position` (number, sort order among siblings), `archived` (boolean), `parent_id` (string or null, see [Sub-projects](#sub-projects)), `created_at`, `deleted_at`, and the project's note: `description` (Markdown) and `notes_doc` (its mergeable document), exactly as on tasks (see [Mergeable documents](sync.md#mergeable-documents)). A `PATCH` of `description` alone is folded into the document by the next device that opens the note. Editors of a shared project may write the two note fields; every other project field needs an admin or the owner.
 
 ### Sub-projects
 

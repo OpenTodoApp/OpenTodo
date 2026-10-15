@@ -12,7 +12,7 @@ import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
 import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Section, type Task, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
-import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, type RichText } from './docfields'
+import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
 import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
@@ -57,7 +57,7 @@ function tableFor(entity: Entity) {
 }
 
 const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
-  name: '', color: '#64748b', position: 0, archived: false, parent_id: null, icon: null, created_at: 0, deleted_at: null,
+  name: '', color: '#64748b', position: 0, archived: false, parent_id: null, icon: null, created_at: 0, deleted_at: null, description: '', notes_doc: '',
 }
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
@@ -176,7 +176,7 @@ export async function applyOps(
         row._clock = clock
         await (table as unknown as { put(v: unknown): Promise<unknown> }).put(row)
       }
-      if (rt && merged !== undefined && entity === 'task') {
+      if (rt && merged !== undefined && NOTE_ENTITIES.has(entity)) {
         const patch = reconcileNote(rt, row as unknown as Task, merged)
         if (patch) {
           // The republished pair must beat the values it extends or folds in.
@@ -315,11 +315,14 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
  * notes of plain tasks never load it.
  */
 async function richTextFor(changes: Change[]): Promise<RichText | null> {
-  const notes = changes.filter((c) => c.entity === 'task' && ('notes_doc' in c.patch || 'description' in c.patch))
+  const notes = changes.filter((c) => NOTE_ENTITIES.has(c.entity) && ('notes_doc' in c.patch || 'description' in c.patch))
   if (notes.length === 0) return null
   if (notes.some((c) => 'notes_doc' in c.patch)) return loadRichText()
-  const rows = await db.tasks.bulkGet(notes.map((c) => c.entityId))
-  return rows.some((t) => t?.notes_doc) ? loadRichText() : null
+  for (const c of notes) {
+    const row = (await tableFor(c.entity).get(c.entityId)) as { notes_doc?: string } | undefined
+    if (row?.notes_doc) return loadRichText()
+  }
+  return null
 }
 
 /**
@@ -332,11 +335,11 @@ async function richTextFor(changes: Change[]): Promise<RichText | null> {
 async function withNotePairs(rt: RichText, changes: Change[], ts: number, device: string): Promise<Change[]> {
   const out: Change[] = []
   for (const c of changes) {
-    if (c.entity !== 'task' || !('notes_doc' in c.patch || 'description' in c.patch)) {
+    if (!NOTE_ENTITIES.has(c.entity) || !('notes_doc' in c.patch || 'description' in c.patch)) {
       out.push(c)
       continue
     }
-    const row = await db.tasks.get(c.entityId)
+    const row = (await tableFor(c.entity).get(c.entityId)) as { notes_doc?: string } | undefined
     const stored = row?.notes_doc ?? ''
     const patch = { ...c.patch }
     if ('notes_doc' in patch) {
@@ -364,23 +367,27 @@ async function withNotePairs(rt: RichText, changes: Change[], ts: number, device
  * fold is deterministic, so devices doing this concurrently converge. Returns
  * true when something was written.
  */
-export async function foldNote(taskId: string): Promise<boolean> {
+export async function foldNote(entityOrTaskId: string, id?: string): Promise<boolean> {
+  // foldNote(taskId) is the task form; foldNote(entity, id) works for any note entity (project-notes).
+  const entity = (id === undefined ? 'task' : entityOrTaskId) as Entity
+  const entityId = id ?? entityOrTaskId
+  if (!NOTE_ENTITIES.has(entity)) return false
   const rt = await loadRichText()
-  const task = await db.tasks.get(taskId)
-  if (!task || task.deleted_at) return false
-  if (!task.notes_doc) {
-    if (!task.description) return false
-    const c = task._clock?.description ?? { ts: 0, device: '' }
-    const doc = rt.foldText('', task.description, c.ts, c.device)
+  const row = (await tableFor(entity).get(entityId)) as Pick<Task, 'notes_doc' | 'description' | '_clock' | 'deleted_at'> | undefined
+  if (!row || row.deleted_at) return false
+  if (!row.notes_doc) {
+    if (!row.description) return false
+    const c = row._clock?.description ?? { ts: 0, device: '' }
+    const doc = rt.foldText('', row.description, c.ts, c.device)
     if (doc.length > MAX_DOC_CHARS) return false
     hlcSeed(c.ts)
-    await mutate('task', taskId, { notes_doc: doc })
+    await mutate(entity, entityId, { notes_doc: doc })
     return true
   }
-  const patch = reconcileNote(rt, task)
+  const patch = reconcileNote(rt, row)
   if (!patch) return false
-  hlcSeed(Math.max(task._clock?.description?.ts ?? 0, task._clock?.notes_doc?.ts ?? 0))
-  await mutate('task', taskId, patch)
+  hlcSeed(Math.max(row._clock?.description?.ts ?? 0, row._clock?.notes_doc?.ts ?? 0))
+  await mutate(entity, entityId, patch)
   return true
 }
 

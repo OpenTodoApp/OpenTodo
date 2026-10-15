@@ -39,6 +39,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | project | `archived` | boolean |
 | project | `parent_id` | string or null |
 | project | `deleted_at` | number or null |
+| project | `description` | string: the project's note as Markdown, the projection of `notes_doc` (OpenSpec `project-notes`) |
+| project | `notes_doc` | document: the project's note as a mergeable document, like the task field below |
 | task | `title`, `description` | string |
 | task | `project_id`, `parent_id` | string or null |
 | task | `priority` | integer 1–4 (1 highest) |
@@ -129,7 +131,7 @@ A `reminder` belongs to one task (`task_id`) and fires at `fire_at`, always a re
 
 ### Mergeable documents
 
-A task's note is rich text that merges instead of overwriting (OpenSpec `collaborative-rich-text`). Two fields carry it:
+A task's note, and a project's note (OpenSpec `project-notes`), is rich text that merges instead of overwriting (OpenSpec `collaborative-rich-text`). Two fields carry it on both entities:
 
 - `notes_doc` holds the note as a **full-state document**: `""` (no document yet) or `"ydoc:v1:" + base64(Yjs update, format v1)`. It is an ordinary last-writer-wins register on the server and in every device's store; the server validates only the envelope shape (`^[a-z][a-z0-9]{0,15}:v[0-9]{1,3}:` followed by standard or URL-safe base64, padding optional, at most `MaxDocBytes` = 256 KB characters, every other kind keeps 64 KB) and never decodes it. Any envelope format passes, so an end-to-end encrypted value (`enc:v1:…`, see below) is valid too.
 - `description` stays the **Markdown projection** of the document: `#` headings, `**bold**`, `_italic_` (`*italic*` inside words), `~~strike~~`, `` `code` ``, `[text](url)`, `-` and `1.` lists, `- [ ]` / `- [x]` check items; a single newline is a line break, a blank line separates blocks. Clients write it in the **same batch** (same `ts`) as `notes_doc`, so the REST API, the export, CalDAV, MCP, webhooks, search and older clients keep reading text.

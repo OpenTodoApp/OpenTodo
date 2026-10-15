@@ -91,7 +91,7 @@ var counted = map[string]bool{"task": true, "project": true, "comment": true}
 
 // Opaque lists "entity.field" pairs that never appear in events: encoded
 // documents (internal/sync DocFields). Kept here because sync imports activity.
-var Opaque = map[string]bool{"task.notes_doc": true}
+var Opaque = map[string]bool{"task.notes_doc": true, "project.notes_doc": true}
 
 type group struct {
 	ev      Event

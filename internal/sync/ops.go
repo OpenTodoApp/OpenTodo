@@ -113,7 +113,11 @@ var docEnvelope = regexp.MustCompile(`^[a-z][a-z0-9]{0,15}:v[0-9]{1,3}:`)
 // values to people (history, webhooks; internal/activity keeps its own copy)
 // leave these out: the field's plain-text projection (task.description for
 // task.notes_doc) carries the readable content.
-var DocFields = map[string]bool{"task.notes_doc": true}
+var DocFields = map[string]bool{
+	"task.notes_doc": true,
+	// A project's note (OpenSpec change project-notes): project.description is its projection.
+	"project.notes_doc": true,
+}
 
 // IsDocField reports whether entity.field holds an opaque document.
 func IsDocField(entity, field string) bool { return DocFields[entity+"."+field] }
@@ -163,6 +167,10 @@ var Schema = map[string]map[string]kind{
 		// change ux-overhaul, project-organization "Project icon"). Not user text,
 		// so it is not an encrypted content field.
 		"icon": kNullableString,
+		// The project's note (OpenSpec change project-notes): Markdown in
+		// description, the mergeable document in notes_doc, as on tasks.
+		"description": kString,
+		"notes_doc":   kDoc,
 	},
 	"task": {
 		"title":        kString,

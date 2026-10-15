@@ -58,7 +58,7 @@ When none applies, the Share dialog says so under the new link: it then works on
 | Role | Can |
 | --- | --- |
 | **viewer** | see the project and its tasks, and comment |
-| **editor** | also add, edit, complete and delete tasks, and assign them |
+| **editor** | also add, edit, complete and delete tasks, assign them, and edit the project's note |
 | **admin** | also rename, recolor and archive the project, and manage members |
 | **owner** | everything, including deleting the project and handing it over |
 

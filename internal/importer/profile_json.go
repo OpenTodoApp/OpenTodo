@@ -347,6 +347,8 @@ func (genericProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			row.SourceID = "project:#" + strconv.Itoa(i+1)
 		}
 		row.Title = o.str("name", "title")
+		// A project's note (project-notes): created projects only.
+		row.Description = o.str("description", "notes", "note")
 		row.ParentSourceID = prefixed("project:", o.str("parent_id", "parentId", "parent"))
 		if row.Title == "" {
 			row.fail("project name is required")
@@ -471,6 +473,7 @@ func (itemsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		}
 		row.SourceID = "project:" + o.str("id")
 		row.Title = o.str("name")
+		row.Description = o.str("description", "notes", "note")
 		if pid := o.str("parent_id"); pid != "" {
 			row.ParentSourceID = "project:" + pid
 		}

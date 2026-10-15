@@ -20,7 +20,7 @@ Encrypted, in your personal data (Inbox, your own projects, labels, saved views)
 | Entity | Encrypted fields |
 | --- | --- |
 | task | `title`, `description`, `ical_extra`, `notes_doc` (the rich-text note document, encrypted as one opaque string; its ciphertext must fit the 256 KB document limit, so an encrypted note document is capped at about 196 KB) |
-| project | `name` |
+| project | `name`, `description` and `notes_doc` (the project's note) |
 | label | `name` |
 | section | `name` |
 | saved view | `name`, `query` |

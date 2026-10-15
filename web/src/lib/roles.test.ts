@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { ADMIN_ACTIONS, type AdminAction, authorize, hasAnyAction, isAdministrator, type Refusal, rowActions } from './roles'
 import type { AccountRole, AdminUser, User } from './types'
+import { canEditProjectNote } from './sharing'
 
 const u = (id: string, role: AccountRole): User => ({ id, role, email: `${id}@example.com`, name: id, createdAt: 0 })
 const owner = u('o', 'owner')
@@ -76,3 +77,10 @@ describe('rowActions', () => {
     expect(a).toMatchObject({ deactivate: false, reactivate: true, reset: false, remove: true, role: null, transfer: false })
   })
 })
+
+describe('project note rights (project-notes D2)', () => {
+  it('editors, admins and owners edit; viewers read', () => {
+    expect((['owner', 'admin', 'editor', 'viewer'] as const).map(canEditProjectNote)).toEqual([true, true, true, false])
+  })
+})
+

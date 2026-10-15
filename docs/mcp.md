@@ -113,7 +113,7 @@ The read tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `op
 
 | Tool | Arguments | Result |
 | --- | --- | --- |
-| `list_projects` | `include_archived` (default false) | `{projects:[{id,untrusted_text:{name},color,archived,parent_id?,shared,role?,open_count}], inbox_open_count, server_time, _notice}` |
+| `list_projects` | `include_archived` (default false) | `{projects:[{id,untrusted_text:{name,description},encrypted,color,archived,parent_id?,shared,role?,open_count}], inbox_open_count, server_time, _notice}`; `description` is the project's note in Markdown (the placeholder for an encrypted account, with `encrypted: true`) |
 | `list_tasks` | `view` (`all` default, `inbox`, `today`, `upcoming`), `project_id`, `label` (name or id), `priority` (1–4), `due_from`, `due_to` (YYYY-MM-DD, inclusive), `include_completed` (default false), `timezone`, `limit` (≤200), `cursor` | `{tasks:[…], next_cursor, timezone, today, server_time, _notice}` |
 | `get_task` | `id` (required), `timezone` | `{task, subtasks:[…], comments:[{id,parent_id?,author_id,author_is_you,untrusted_text:{body,author},created_at,edited_at?}], attachments:[{id,untrusted_text:{name,mime?,url?},size?,uploaded,comment_id?,created_at}], timezone, today, server_time, _notice}` |
 | `search_tasks` | `query` (required), `include_completed`, `timezone`, `limit`, `cursor` | like `list_tasks`; matches title or description, case-insensitive |
