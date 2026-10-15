@@ -38,6 +38,11 @@ export const WithChips: StoryObj = {
   ),
 }
 
-// Not covered on purpose: a line with an unknown `@label` and no title. Its "new"
-// marker (opacity-60) fails the AA contrast check and its dismiss button is under
-// 24 px; both live in QuickAdd itself, so they are for a component change, not a story.
+/** A label the account does not have yet: the chip says "new", and × keeps the word as text. */
+export const NewLabel: StoryObj = {
+  render: () => (
+    <Frame>
+      <QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint initialValue="Book the dentist @health" />
+    </Frame>
+  ),
+}

@@ -281,10 +281,10 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                   {c.kind === 'someday' && <Icon name="archive" size="xs" />}
                   {c.kind === 'evening' && <Icon name="moon" size="xs" />}
                   {text}
-                  {c.kind === 'label' && !label && <span className="opacity-60" data-new-label>new</span>}
+                  {c.kind === 'label' && !label && <span className="text-muted" data-new-label>new</span>}
                   <button
                     type="button"
-                    className="rounded-full px-1 leading-none opacity-60 hover:bg-sunken hover:opacity-100"
+                    className="-my-1 inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-muted hover:bg-sunken hover:text-default"
                     aria-label={`Keep “${source}” as text`}
                     onClick={() => dismiss(c)}
                   >
