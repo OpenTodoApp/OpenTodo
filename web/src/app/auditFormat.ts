@@ -55,6 +55,7 @@ const REASONS: Record<string, string> = {
   auth: 'mail server refused the sign-in',
   send: 'mail server refused the message',
   encrypted_account: 'encrypted account',
+  skipped: 'skipped after six hours of failures',
   deactivated: 'account deactivated',
   unknown_passkey: 'unknown passkey',
   passkey_rejected: 'passkey rejected',
@@ -71,6 +72,7 @@ const EMAIL_KINDS: Record<string, string> = {
   invitation: 'Invitation',
   project_invite: 'Project invite',
   test: 'Test message',
+  digest: 'Weekly digest',
 }
 
 const SETTINGS: Record<string, string> = {

@@ -34,6 +34,7 @@ import (
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
+	"github.com/pixari/opentodo/internal/digest"
 	"github.com/pixari/opentodo/internal/e2ee"
 	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/httpapi"
@@ -201,12 +202,13 @@ func run() error {
 	opts = append(opts, httpapi.WithEmail(emailSvc))
 	// Outgoing email (docs/self-hosting/outgoing-email.md): never on a demo
 	// instance; otherwise configured in Settings or by OPENTODO_SMTP_*.
+	var mailSvc *mail.Service
 	if !cfg.Demo {
 		ehlo := ""
 		if cfg.BaseURL != nil {
 			ehlo = cfg.BaseURL.Hostname()
 		}
-		mailSvc := mail.New(settings.New(db), cfg.DataDir, mail.Options{Env: cfg.SMTP, Audit: authSvc.Audit(), Log: log,
+		mailSvc = mail.New(settings.New(db), cfg.DataDir, mail.Options{Env: cfg.SMTP, Audit: authSvc.Audit(), Log: log,
 			E2EE: e2ee.NewStore(db), Transport: &mail.Transport{LocalName: ehlo}})
 		opts = append(opts, httpapi.WithMail(mailSvc))
 	}
@@ -260,6 +262,11 @@ func run() error {
 			go resetOnSignal(ctx, demoSvc, log)
 		} else {
 			go emailSvc.Run(ctx)
+		}
+		if mailSvc != nil {
+			// Weekly email digests (stats-and-review): a pass every 5 minutes; it
+			// sends nothing until outgoing email is configured.
+			go (&digest.Scheduler{Store: digest.NewStore(db), Reader: syncSvc, Mail: mailSvc, Audit: authSvc.Audit(), Origin: cfg.Origin(), Log: log}).Run(ctx)
 		}
 		// Purge items that outlived the Trash retention at startup and daily
 		// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).

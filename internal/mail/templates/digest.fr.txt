@@ -1,0 +1,26 @@
+Votre semaine OpenTodo : {{.Digest.Completed}} terminées
+
+Voici votre récapitulatif hebdomadaire OpenTodo de {{.Origin}}, pour {{.Digest.Period}}.
+
+Terminées : {{.Digest.Completed}}
+Créées : {{.Digest.Created}}
+Terminées en retard : {{.Digest.Late}}
+Reportées : {{.Digest.Slipped}}
+{{if .Digest.Overdue}}
+En retard ({{.Digest.OverdueCount}}) :
+{{range .Digest.Overdue}}- {{.Title}} ({{.Date}}{{if .Project}}, {{.Project}}{{end}})
+{{end}}{{if .Digest.MoreOverdue}}… et {{.Digest.MoreOverdue}} de plus
+{{end}}{{end}}{{if .Digest.Ahead}}
+À faire dans les sept prochains jours ({{.Digest.AheadCount}}) :
+{{range .Digest.Ahead}}- {{.Title}} ({{.Date}}{{if .Project}}, {{.Project}}{{end}})
+{{end}}{{if .Digest.MoreAhead}}… et {{.Digest.MoreAhead}} de plus
+{{end}}{{end}}{{if .Digest.Projects}}
+Projets sans prochaine action :
+{{range .Digest.Projects}}- {{.}}
+{{end}}{{if .Digest.MoreProjects}}… et {{.Digest.MoreProjects}} de plus
+{{end}}{{end}}
+{{if .Digest.LastReview}}Votre dernière revue date du {{.Digest.LastReview}}.{{else}}Vous n'avez pas encore fait de revue hebdomadaire.{{end}} Commencez-en une ici :
+
+{{.Link}}
+
+Pour ne plus recevoir ces messages, désactivez le récapitulatif hebdomadaire dans Réglages → Notifications.

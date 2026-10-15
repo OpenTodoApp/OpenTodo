@@ -1,0 +1,26 @@
+Tu semana en OpenTodo: {{.Digest.Completed}} completadas
+
+Este es tu resumen semanal de OpenTodo de {{.Origin}}, para {{.Digest.Period}}.
+
+Completadas: {{.Digest.Completed}}
+Creadas: {{.Digest.Created}}
+Completadas tarde: {{.Digest.Late}}
+Aplazadas: {{.Digest.Slipped}}
+{{if .Digest.Overdue}}
+Vencidas ({{.Digest.OverdueCount}}):
+{{range .Digest.Overdue}}- {{.Title}} ({{.Date}}{{if .Project}}, {{.Project}}{{end}})
+{{end}}{{if .Digest.MoreOverdue}}… y {{.Digest.MoreOverdue}} más
+{{end}}{{end}}{{if .Digest.Ahead}}
+Para los próximos siete días ({{.Digest.AheadCount}}):
+{{range .Digest.Ahead}}- {{.Title}} ({{.Date}}{{if .Project}}, {{.Project}}{{end}})
+{{end}}{{if .Digest.MoreAhead}}… y {{.Digest.MoreAhead}} más
+{{end}}{{end}}{{if .Digest.Projects}}
+Proyectos sin próxima acción:
+{{range .Digest.Projects}}- {{.}}
+{{end}}{{if .Digest.MoreProjects}}… y {{.Digest.MoreProjects}} más
+{{end}}{{end}}
+{{if .Digest.LastReview}}Tu última revisión fue el {{.Digest.LastReview}}.{{else}}Aún no has hecho ninguna revisión semanal.{{end}} Empieza una aquí:
+
+{{.Link}}
+
+Para dejar de recibir estos mensajes, desactiva el resumen semanal en Ajustes → Notificaciones.

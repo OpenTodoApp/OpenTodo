@@ -1,0 +1,26 @@
+Your OpenTodo week: {{.Digest.Completed}} done
+
+This is your weekly OpenTodo digest from {{.Origin}}, for {{.Digest.Period}}.
+
+Completed: {{.Digest.Completed}}
+Created: {{.Digest.Created}}
+Completed late: {{.Digest.Late}}
+Slipped: {{.Digest.Slipped}}
+{{if .Digest.Overdue}}
+Overdue ({{.Digest.OverdueCount}}):
+{{range .Digest.Overdue}}- {{.Title}} ({{.Date}}{{if .Project}}, {{.Project}}{{end}})
+{{end}}{{if .Digest.MoreOverdue}}… and {{.Digest.MoreOverdue}} more
+{{end}}{{end}}{{if .Digest.Ahead}}
+Due in the next seven days ({{.Digest.AheadCount}}):
+{{range .Digest.Ahead}}- {{.Title}} ({{.Date}}{{if .Project}}, {{.Project}}{{end}})
+{{end}}{{if .Digest.MoreAhead}}… and {{.Digest.MoreAhead}} more
+{{end}}{{end}}{{if .Digest.Projects}}
+Projects without a next action:
+{{range .Digest.Projects}}- {{.}}
+{{end}}{{if .Digest.MoreProjects}}… and {{.Digest.MoreProjects}} more
+{{end}}{{end}}
+{{if .Digest.LastReview}}Your last review was on {{.Digest.LastReview}}.{{else}}You have not done a weekly review yet.{{end}} Start one here:
+
+{{.Link}}
+
+To stop these messages, turn off the weekly digest in Settings → Notifications.

@@ -72,6 +72,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/auth/password-reset` | none | `{email}` → always 202 `{ok: true}`; mails a reset link to an active account's address, see [Outgoing email](#outgoing-email); 404 `smtp_disabled` without outgoing email |
 | GET | `/api/v1/auth/verify/{token}` | none | pending sign-up `{email, expiresAt}` or 404 `verification_invalid` |
 | POST | `/api/v1/auth/verify/{token}` | none | creates the account of a pending sign-up → 201 `{user}` + cookie; 404 `verification_invalid`, 403 `signup_closed`, 409 `email_taken` |
+| GET | `/api/v1/me/email-digest` | session or `full` token | the [weekly digest](#weekly-email-digest) settings `{available, unavailableReason, encrypted, enabled, weekday, hour, timeZone, language, lastOutcome, lastSentFor, nextSendAt}` |
+| PUT | `/api/v1/me/email-digest` | session or `full` token | `{enabled, weekday, hour, timeZone, language}` → the same shape; 404 `smtp_disabled`, 409 `encryption_enabled`, 400 `invalid_input` |
 | GET | `/api/v1/password-resets/{token}` | none | preview `{email, expiresAt}` or 404 `reset_invalid` |
 | POST | `/api/v1/password-resets/{token}` | none | `{password}` → 204 or 404 `reset_invalid` |
 
@@ -381,6 +383,14 @@ Optional SMTP, configured by the owner in **Settings → Administration → Outg
 **Forgot password** — `POST /api/v1/auth/password-reset` with `{"email": "…"}` always answers 202 after at least 200 ms; for an active account outside SSO-only mode it issues a 24-hour reset link (revoking earlier ones) and mails it. Use the link with the [reset routes](#user-administration).
 
 **Verified sign-up** — with open sign-up and outgoing email, `POST /api/v1/auth/register` without an invitation answers 202 `{verificationRequired: true}` and mails a 24-hour link to `/verify/<token>`; an address that already has an account gets a message saying so, with the same answer. `GET /api/v1/auth/verify/{token}` previews `{email, expiresAt}`; `POST` creates the member account and starts a session (201 `{user}`). Unknown, expired, replaced and used tokens answer the same 404 `verification_invalid`.
+
+### Weekly email digest
+
+An opt-in weekly message with last week's numbers (completed, created, completed late, slipped, by the user's first day of the week), up to 15 overdue tasks, up to 15 tasks due in the next seven days, up to 10 projects without an open task, the last review and a link to `/review`. It needs [outgoing email](#outgoing-email) and `OPENTODO_BASE_URL` (for the link); `available` is false with `unavailableReason` `smtp_disabled` or `base_url_missing` otherwise, and on a demo instance.
+
+`PUT /api/v1/me/email-digest` with `{"enabled": true, "weekday": 5, "hour": 7, "timeZone": "Europe/Zurich", "language": "de"}` (weekday 0 = Sunday; language one of `en`, `de`, `fr`, `es`, `it`, `pt`) stores the settings and answers them with `nextSendAt` (Unix ms). Read and agent tokens get 403 `insufficient_scope` on both routes. An account with end-to-end encryption cannot turn it on (409 `encryption_enabled`: the digest lists task titles), and turning encryption on turns the digest off (`digestDisabled: true` in the encryption response).
+
+The server checks every 5 minutes and sends on the chosen weekday at or after the hour in the chosen zone; a failed send is retried by later checks for six hours, then given up for that day (`email.failed` with reason `skipped`). A restart never sends a second digest for the same day.
 
 ### Idempotency keys
 
@@ -886,8 +896,8 @@ The server records security-relevant events in its own database (never synced to
 | `user.deleted` | success | actor = owner or admin, target = account | `email` (snapshot) |
 | `password.reset_issued` | success | actor = owner or admin (none from the server shell), target = account | `reset_id` |
 | `password.reset_completed` | success | actor = account | `reset_id` |
-| `email.sent` | success | actor = the account that caused it (none for anonymous requests), target = recipient account when known | `email_kind` (`verify_signup`, `password_reset`, `invitation`, `project_invite`, `test`), `email` (recipient); never the link |
-| `email.failed` | failure | as `email.sent` | `email_kind`, `email`, `reason` (`connect`, `tls`, `auth`, `send`, `rate_limited`, `encrypted_account`) |
+| `email.sent` | success | actor = the account that caused it (none for anonymous requests), target = recipient account when known | `email_kind` (`verify_signup`, `password_reset`, `invitation`, `project_invite`, `test`, `digest`), `email` (recipient); never the link |
+| `email.failed` | failure | as `email.sent` | `email_kind`, `email`, `reason` (`connect`, `tls`, `auth`, `send`, `rate_limited`, `encrypted_account`, `skipped` for a digest given up after six hours) |
 | `password.changed` | success | actor = user | |
 | `owner.transferred` | success | actor = previous owner, target = new owner | `from` (`owner`), `to` (`admin`): the previous owner's role change |
 | `backup.created` | success or failure | actor = owner for "Back up now", none for scheduled runs | `backup_id` (the run id), `reason` (`run_failed`) on failure |

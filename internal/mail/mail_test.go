@@ -248,6 +248,9 @@ func TestTemplatesEveryKindAndLanguage(t *testing.T) {
 				}
 				m := Message{Kind: kind, To: "bob@example.com", Lang: lang, Origin: "https://todo.example.com",
 					Vars: Vars{Link: link, Expiry: 24 * time.Hour, Inviter: "Alice", Role: "editor", Existing: existing}}
+				if kind == KindDigest {
+					m.Vars.Digest = &DigestVars{Period: "12–18 Oct", Completed: 12, Overdue: []DigestItem{{Title: "Pay rent", Date: "Mon 12 Oct", Project: "Home"}}, OverdueCount: 1}
+				}
 				subj, body, err := Render(m, m.Origin)
 				if err != nil {
 					t.Fatalf("%s %s: %v", kind, lang, err)
@@ -259,7 +262,7 @@ func TestTemplatesEveryKindAndLanguage(t *testing.T) {
 				if strings.Contains(body, "\n"+link+"\n") != withLink {
 					t.Fatalf("%s %s: link on its own line = %v", kind, lang, !withLink)
 				}
-				if withLink && !strings.Contains(body, "24 ") {
+				if withLink && kind != KindDigest && !strings.Contains(body, "24 ") {
 					t.Fatalf("%s %s: no expiry: %q", kind, lang, body)
 				}
 				if kind == KindInvitation && !strings.Contains(body, "Alice") {
@@ -286,12 +289,20 @@ func TestTemplateVariablesCarryNoContent(t *testing.T) {
 	for i := 0; i < ty.NumField(); i++ {
 		got = append(got, ty.Field(i).Name)
 	}
-	if strings.Join(got, ",") != "Origin,Email,Link,Expiry,Inviter,Role" {
+	if strings.Join(got, ",") != "Origin,Email,Link,Expiry,Inviter,Role,Digest" {
 		t.Fatalf("template variables changed: %v", got)
 	}
+	// Only the digest may show content, and only digest templates read it.
 	for _, k := range Kinds {
-		if carriesContent[k] {
-			t.Fatalf("%s carries content", k)
+		if carriesContent[k] != (k == KindDigest) {
+			t.Fatalf("%s carriesContent = %v", k, carriesContent[k])
+		}
+	}
+	entries, _ := templateFS.ReadDir("templates")
+	for _, e := range entries {
+		raw, _ := templateFS.ReadFile("templates/" + e.Name())
+		if strings.Contains(string(raw), ".Digest") != strings.HasPrefix(e.Name(), "digest.") {
+			t.Fatalf("%s and .Digest", e.Name())
 		}
 	}
 }
@@ -425,3 +436,25 @@ func TestServerWideLimit(t *testing.T) {
 		t.Fatal("window did not slide")
 	}
 }
+
+func TestDigestRender(t *testing.T) {
+	d := &DigestVars{Period: "12–18 Oct", Completed: 12, Created: 9, Late: 1, Slipped: 2, OverdueCount: 2,
+		Overdue:  []DigestItem{{Title: "Pay rent", Date: "Mon 12 Oct", Project: "Home"}, {Title: "Call Ana", Date: "Tue 13 Oct"}},
+		Projects: []string{"Garage"}}
+	_, body, err := Render(Message{Kind: KindDigest, To: "a@b.c", Lang: "en", Vars: Vars{Link: "https://todo.example.com/review", Digest: d}}, "https://todo.example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"Completed: 12", "Overdue (2):\n- Pay rent (Mon 12 Oct, Home)\n- Call Ana (Tue 13 Oct)\n", "Projects without a next action:\n- Garage", "not done a weekly review yet", "\nhttps://todo.example.com/review\n"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, "next seven days") {
+		t.Fatal("an empty list is shown")
+	}
+	if _, _, err := Render(Message{Kind: KindDigest, To: "a@b.c"}, ""); err == nil {
+		t.Fatal("digest without content rendered")
+	}
+}
+

@@ -47,6 +47,23 @@ func (l *Limiter) Full(kind Kind, recipient string) bool {
 	return len(prune(l.per[key], cutoff)) >= PerRecipientLimit || len(prune(l.server, cutoff)) >= ServerLimit
 }
 
+// AllowRecipient reserves one message of kind to recipient against the
+// per-recipient window only: the digest is paced by its scheduler and exempt
+// from the server-wide window (stats-and-review D6).
+func (l *Limiter) AllowRecipient(kind Kind, recipient string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	cutoff := l.now().Add(-LimitWindow)
+	key := string(kind) + "\x00" + strings.ToLower(strings.TrimSpace(recipient))
+	per := prune(l.per[key], cutoff)
+	if len(per) >= PerRecipientLimit {
+		l.per[key] = per
+		return false
+	}
+	l.per[key] = append(per, l.now())
+	return true
+}
+
 // Allow reserves one message of kind to recipient, or reports false when
 // either window is full.
 func (l *Limiter) Allow(kind Kind, recipient string) bool {

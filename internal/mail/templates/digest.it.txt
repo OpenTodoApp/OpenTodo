@@ -1,0 +1,26 @@
+La tua settimana su OpenTodo: {{.Digest.Completed}} completate
+
+Questo è il tuo riepilogo settimanale di OpenTodo da {{.Origin}}, per {{.Digest.Period}}.
+
+Completate: {{.Digest.Completed}}
+Create: {{.Digest.Created}}
+Completate in ritardo: {{.Digest.Late}}
+Slittate: {{.Digest.Slipped}}
+{{if .Digest.Overdue}}
+Scadute ({{.Digest.OverdueCount}}):
+{{range .Digest.Overdue}}- {{.Title}} ({{.Date}}{{if .Project}}, {{.Project}}{{end}})
+{{end}}{{if .Digest.MoreOverdue}}… e altre {{.Digest.MoreOverdue}}
+{{end}}{{end}}{{if .Digest.Ahead}}
+In scadenza nei prossimi sette giorni ({{.Digest.AheadCount}}):
+{{range .Digest.Ahead}}- {{.Title}} ({{.Date}}{{if .Project}}, {{.Project}}{{end}})
+{{end}}{{if .Digest.MoreAhead}}… e altre {{.Digest.MoreAhead}}
+{{end}}{{end}}{{if .Digest.Projects}}
+Progetti senza un'azione successiva:
+{{range .Digest.Projects}}- {{.}}
+{{end}}{{if .Digest.MoreProjects}}… e altri {{.Digest.MoreProjects}}
+{{end}}{{end}}
+{{if .Digest.LastReview}}La tua ultima revisione è del {{.Digest.LastReview}}.{{else}}Non hai ancora fatto una revisione settimanale.{{end}} Iniziane una qui:
+
+{{.Link}}
+
+Per non ricevere più questi messaggi, disattiva il riepilogo settimanale in Impostazioni → Notifiche.

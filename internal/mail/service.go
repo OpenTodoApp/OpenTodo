@@ -101,7 +101,22 @@ func (s *Service) SendTest(ctx context.Context, m Message) error {
 	return s.send(ctx, m, false)
 }
 
+// SendDigest sends a weekly digest: refused for an encrypted account, limited
+// per recipient but not by the server-wide window.
+func (s *Service) SendDigest(ctx context.Context, m Message) error {
+	m.Kind = KindDigest
+	return s.sendWith(ctx, m, func() bool { return s.limiter.AllowRecipient(m.Kind, m.To) })
+}
+
 func (s *Service) send(ctx context.Context, m Message, limited bool) error {
+	allow := func() bool { return true }
+	if limited {
+		allow = func() bool { return s.limiter.Allow(m.Kind, m.To) }
+	}
+	return s.sendWith(ctx, m, allow)
+}
+
+func (s *Service) sendWith(ctx context.Context, m Message, allow func() bool) error {
 	if s == nil {
 		return ErrDisabled
 	}
@@ -124,7 +139,7 @@ func (s *Service) send(ctx context.Context, m Message, limited bool) error {
 			return ErrEncrypted
 		}
 	}
-	if limited && !s.limiter.Allow(m.Kind, m.To) {
+	if !allow() {
 		fail(audit.ReasonRateLimited)
 		return ErrRateLimited
 	}

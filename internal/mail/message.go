@@ -26,15 +26,20 @@ const (
 	KindInvitation    Kind = "invitation"
 	KindProjectInvite Kind = "project_invite"
 	KindTest          Kind = "test"
+	// KindDigest is the weekly digest (OpenSpec `stats-and-review`): it lists task
+	// titles, so it is never built for an encrypted account.
+	KindDigest Kind = "digest"
 )
 
 // Kinds lists every kind.
-var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindTest}
+var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindTest, KindDigest}
 
 // carriesContent marks kinds that include entity content and must never be
-// built for an account with end-to-end encryption (design D8). None of the
-// current kinds does; the digest in `stats-and-review` will.
-var carriesContent = map[Kind]bool{}
+// built for an account with end-to-end encryption (design D8): only the digest.
+var carriesContent = map[Kind]bool{KindDigest: true}
+
+// CarriesContent reports whether a kind includes entity content.
+func CarriesContent(k Kind) bool { return carriesContent[k] }
 
 // Languages are the supported message languages, English first.
 var Languages = []string{"en", "de", "fr", "es", "it", "pt"}
@@ -50,7 +55,26 @@ type Vars struct {
 	// Existing selects the verify_signup variant for an address that already
 	// has an account.
 	Existing bool
+	// Digest is the content of a digest message (the only kind with content).
+	Digest *DigestVars
 }
+
+// DigestVars is what the weekly digest shows (stats-and-review D6): numbers,
+// up to 15 overdue and 15 upcoming tasks, up to 10 projects, the last review.
+type DigestVars struct {
+	Period                            string
+	Completed, Created, Late, Slipped int
+	Overdue, Ahead                    []DigestItem
+	OverdueCount, AheadCount          int
+	MoreOverdue, MoreAhead            int
+	Projects                          []string
+	MoreProjects                      int
+	// LastReview is the date of the last finished review, "" for never.
+	LastReview string
+}
+
+// DigestItem is one listed task.
+type DigestItem struct{ Title, Date, Project string }
 
 // Message is one message to render and send.
 type Message struct {
@@ -84,6 +108,7 @@ var templates = func() map[string]*template.Template {
 // templateData is what a template is executed with.
 type templateData struct {
 	Origin, Email, Link, Expiry, Inviter, Role string
+	Digest                                     *DigestVars
 }
 
 var units = map[string][2][2]string{ // lang → {hours {one, many}, days {one, many}}
@@ -178,6 +203,9 @@ func Render(m Message, origin string) (subject, body string, err error) {
 		lang = "en"
 	}
 	name := string(m.Kind)
+	if m.Kind == KindDigest && m.Vars.Digest == nil {
+		return "", "", fmt.Errorf("mail: a digest needs its content")
+	}
 	if m.Kind == KindVerifySignup && m.Vars.Existing {
 		name = "verify_signup_existing"
 	}
@@ -194,7 +222,7 @@ func Render(m Message, origin string) (subject, body string, err error) {
 		inviter = someone[lang]
 	}
 	data := templateData{Origin: origin, Email: m.To, Link: m.Vars.Link, Expiry: formatExpiry(m.Vars.Expiry, lang),
-		Inviter: inviter, Role: role}
+		Inviter: inviter, Role: role, Digest: m.Vars.Digest}
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, data); err != nil {
 		return "", "", err

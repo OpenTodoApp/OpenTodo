@@ -1,0 +1,26 @@
+Deine OpenTodo-Woche: {{.Digest.Completed}} erledigt
+
+Dies ist deine wöchentliche OpenTodo-Zusammenfassung von {{.Origin}} für {{.Digest.Period}}.
+
+Erledigt: {{.Digest.Completed}}
+Angelegt: {{.Digest.Created}}
+Verspätet erledigt: {{.Digest.Late}}
+Verschoben: {{.Digest.Slipped}}
+{{if .Digest.Overdue}}
+Überfällig ({{.Digest.OverdueCount}}):
+{{range .Digest.Overdue}}- {{.Title}} ({{.Date}}{{if .Project}}, {{.Project}}{{end}})
+{{end}}{{if .Digest.MoreOverdue}}… und {{.Digest.MoreOverdue}} weitere
+{{end}}{{end}}{{if .Digest.Ahead}}
+Fällig in den nächsten sieben Tagen ({{.Digest.AheadCount}}):
+{{range .Digest.Ahead}}- {{.Title}} ({{.Date}}{{if .Project}}, {{.Project}}{{end}})
+{{end}}{{if .Digest.MoreAhead}}… und {{.Digest.MoreAhead}} weitere
+{{end}}{{end}}{{if .Digest.Projects}}
+Projekte ohne nächsten Schritt:
+{{range .Digest.Projects}}- {{.}}
+{{end}}{{if .Digest.MoreProjects}}… und {{.Digest.MoreProjects}} weitere
+{{end}}{{end}}
+{{if .Digest.LastReview}}Dein letzter Wochenrückblick war am {{.Digest.LastReview}}.{{else}}Du hast noch keinen Wochenrückblick gemacht.{{end}} Hier kannst du einen beginnen:
+
+{{.Link}}
+
+Um diese Nachrichten abzubestellen, schalte die wöchentliche Zusammenfassung unter Einstellungen → Benachrichtigungen aus.

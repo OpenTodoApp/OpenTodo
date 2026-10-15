@@ -23,6 +23,7 @@ import (
 	"github.com/pixari/opentodo/internal/blobs"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
+	"github.com/pixari/opentodo/internal/digest"
 	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/importer"
@@ -78,6 +79,8 @@ type Server struct {
 	mail *mail.Service
 	// smtpTestLimiter caps test messages per account (5 per 10 minutes).
 	smtpTestLimiter *rateLimiter
+	// digests stores the weekly email digest settings (stats-and-review).
+	digests *digest.Store
 	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
 	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
@@ -221,6 +224,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerOIDCRoutes(mux)
 	s.registerMailRoutes(mux)
 	s.registerSignupRoutes(mux)
+	s.registerDigestRoutes(mux)
 
 	mux.Handle("GET /api/v1/me", s.requireAuth(s.handleMe))
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
