@@ -92,7 +92,7 @@ From the history timeline the user SHALL be able to restore an earlier value of 
 - **THEN** both devices end with the title written with the greater timestamp, and the restored due date is kept
 
 ### Requirement: Permanent purge
-The user SHALL be able to permanently delete one trashed item or empty the Trash, after confirmation. The API SHALL expose `DELETE /api/v1/{tasks|projects}/{id}/purge` and `POST /api/v1/trash/purge`, requiring authentication, accepting only entities whose deletion time is set, removing their operations and current values, and recording a purge marker. Purging a project SHALL purge the tasks referencing it.
+The user SHALL be able to permanently delete one trashed item or empty the Trash, after confirmation. The API SHALL expose `DELETE /api/v1/{tasks|projects}/{id}/purge` and `POST /api/v1/trash/purge`, requiring authentication, accepting only entities whose deletion time is set, removing their operations and current values, and recording a purge marker. Purging a project SHALL purge the tasks referencing it. Purging a task SHALL purge its attachments and delete their stored files.
 
 #### Scenario: Purge one task
 - **WHEN** the user permanently deletes a trashed task and confirms
@@ -106,6 +106,10 @@ The user SHALL be able to permanently delete one trashed item or empty the Trash
 - **WHEN** a request without credentials asks to empty the Trash
 - **THEN** the response is 401 `unauthorized`
 
+#### Scenario: Attachments go with the task
+- **WHEN** a trashed task with three attachments is purged
+- **THEN** the three attachments are purged with markers, their files are deleted from the data directory, the account's usage drops accordingly, and devices drop the attachments on their next sync
+
 ### Requirement: Purged entities never return
 A sync response SHALL include the ids of entities purged since the client's cursor, and clients SHALL delete those entities locally. Operations received for a purged entity SHALL be discarded by the server and reported as duplicates, so a device that edited the entity offline cannot resurrect it. Purge markers SHALL be kept so this holds for any later arrival. The client SHALL request a purge only when online and SHALL show it as pending otherwise.
 
@@ -118,7 +122,7 @@ A sync response SHALL include the ids of entities purged since the client's curs
 - **THEN** the server discards those operations, the task stays purged everywhere and device B's copy is removed
 
 ### Requirement: Automatic purge after retention
-The server SHALL permanently purge trashed tasks and projects whose deletion time is older than the retention period, by default 30 days, configurable with the optional `OPENTODO_TRASH_RETENTION_DAYS` variable where `0` disables automatic purge. The job SHALL run at startup and daily, SHALL use the same purge path and markers, and the Trash view SHALL show each item's remaining days.
+The server SHALL permanently purge trashed tasks and projects, and removed attachments, whose deletion time is older than the retention period, by default 30 days, configurable with the optional `OPENTODO_TRASH_RETENTION_DAYS` variable where `0` disables automatic purge. The job SHALL run at startup and daily, SHALL use the same purge path and markers, SHALL delete the files of purged attachments, and the Trash view SHALL show each item's remaining days.
 
 #### Scenario: Default retention
 - **WHEN** a task has been in the Trash for 31 days with default configuration
@@ -131,6 +135,10 @@ The server SHALL permanently purge trashed tasks and projects whose deletion tim
 #### Scenario: Invalid value
 - **WHEN** `OPENTODO_TRASH_RETENTION_DAYS=soon` is set
 - **THEN** the process exits non-zero with a message naming the variable
+
+#### Scenario: Removed attachment after retention
+- **WHEN** an attachment was removed 31 days ago with default configuration
+- **THEN** the next retention run purges its metadata with a marker and deletes its file, and a device that restores it offline afterwards has its operations discarded like any purged entity
 
 ### Requirement: Assistant writes are labelled in history
 History entries whose device starts with `agent:` SHALL carry a `device_label`: "AI assistant (<token name>)" when the viewer owns the token and it still exists, otherwise "AI assistant". The timeline SHALL show that label. Labels are computed when history is read; no op changes, and history stays online-only as before.

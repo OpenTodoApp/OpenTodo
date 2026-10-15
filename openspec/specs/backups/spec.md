@@ -6,7 +6,7 @@ Defines scheduled, verifiable backups of the server's data directory to local di
 ## Requirements
 
 ### Requirement: Consistent snapshot
-A backup SHALL contain a transactionally consistent copy of the database as of a single point in time, taken without stopping the server or blocking writers for longer than a single checkpoint, together with a manifest stating the application version, schema version, creation time, size, a checksum and whether the content is encrypted. Secrets stored under the data directory SHALL be excluded from the archive.
+A backup SHALL contain a transactionally consistent copy of the database as of one point in time, taken without stopping the server or blocking writers longer than one checkpoint, then every attachment file in the data directory, streamed from disk, with a manifest giving the application and schema versions, creation time, each part's size and checksum, and whether content is encrypted. Secrets under the data directory SHALL be excluded.
 
 #### Scenario: Backup during activity
 - **WHEN** a backup runs while devices are syncing and the API is accepting writes
@@ -15,6 +15,14 @@ A backup SHALL contain a transactionally consistent copy of the database as of a
 #### Scenario: Secrets excluded
 - **WHEN** an archive is inspected
 - **THEN** it contains no destination credentials and no encryption passphrase
+
+#### Scenario: Attachment files included
+- **WHEN** a backup runs on a server holding 3 GB of attachment files
+- **THEN** the archive carries each file under `attachments/` after the database, the manifest lists each with its size and SHA-256, and the run's memory use stays at a few megabytes
+
+#### Scenario: File added during the backup
+- **WHEN** an attachment is uploaded after the database snapshot was taken but before the archive is complete
+- **THEN** the archive is still valid: the file is either absent (its row is absent from the snapshot too) or present as an extra file that a restore keeps and the orphan sweep ignores for seven days
 
 ### Requirement: Destinations
 Backups SHALL be writable to a local directory (default `<data>/backups`), to an S3-compatible bucket (endpoint, region, bucket, prefix, access key, secret key, path-style option) and to a WebDAV collection (URL, username, password). Uploads SHALL stream so that memory use does not grow with the archive size. A "test destination" action SHALL write and delete a small probe object and report the outcome. No network request SHALL be made to any destination until the owner configured it.
@@ -76,11 +84,11 @@ Backup settings SHALL be manageable by the owner from Settings and through `GET`
 - **THEN** the response is a 409 `conflict` error and no second run starts
 
 ### Requirement: Restore procedure
-The binary SHALL offer `restore <archive>`, which verifies the manifest checksum, decrypts when needed, refuses archives from a newer schema version, keeps a timestamped safety copy of the current database, replaces the database and migrates on the next start. It SHALL refuse to run while a server holds the database. The web app restore (`backup-restore`) SHALL use the same verification, safety copy and generation change. `docs/backups.md` SHALL document both.
+The binary SHALL offer `restore <archive>`, which verifies the manifest checksum, decrypts when needed, refuses newer schema versions, keeps a timestamped safety copy of the database, replaces it, writes each attachment file after checking its size and checksum (renamed into place) while keeping files the archive lacks, and migrates on the next start. It SHALL refuse to run while a server holds the database. The web app restore SHALL do the same. `docs/backups.md` SHALL document both.
 
 #### Scenario: Successful restore
 - **WHEN** the operator stops the server, runs `opentodo restore backup.tar` and starts the server
-- **THEN** accounts, tokens, projects, tasks and the operation log match the archive and a safety copy of the previous database exists
+- **THEN** accounts, tokens, projects, tasks, attachments with their files and the operation log match the archive and a safety copy of the previous database exists
 
 #### Scenario: Newer archive
 - **WHEN** an archive produced by a newer schema version is restored with an older binary
@@ -88,7 +96,15 @@ The binary SHALL offer `restore <archive>`, which verifies the manifest checksum
 
 #### Scenario: Same result from the web app and the CLI
 - **WHEN** the same archive is restored once with `opentodo restore` and once from Settings → Backups on identical servers
-- **THEN** both servers end with the same accounts, projects, tasks and operation log, each with a safety copy and a new log generation
+- **THEN** both servers end with the same accounts, projects, tasks, attachments and operation log, each with a safety copy and a new log generation
+
+#### Scenario: Corrupt attachment file
+- **WHEN** an attachment entry's checksum does not match the manifest
+- **THEN** the restore fails with an integrity error before replacing the database and the data directory is unchanged
+
+#### Scenario: Archive without attachments
+- **WHEN** an archive made before attachments existed is restored
+- **THEN** the database is restored as before and the attachment directory is left as it is
 
 ### Requirement: Devices stay convergent after a restore
 The server SHALL carry a log generation identifier that changes on every restore and SHALL include it in sync responses. A client that sees a generation other than the one it stored SHALL reset its cursor, keep its outbox, re-emit every local field with its stored timestamp and device as new operations, then re-pull, so post-backup edits win by the ordinary last-writer-wins rule. Offline clients SHALL do this on their next successful exchange.

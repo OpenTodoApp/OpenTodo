@@ -6,7 +6,7 @@ Defines how content from other apps and web pages becomes a task: the app as a s
 ## Requirements
 
 ### Requirement: Web Share Target registration
-The web app manifest SHALL declare a share target that receives `title`, `text` and `url` as query parameters of the `/share` route using a GET request, so the installed app is offered in the operating system's share sheet. The route SHALL be served by the precached application shell, so it opens with no network.
+The web app manifest SHALL declare a share target on `/share` receiving `title`, `text`, `url` and `files` as a `POST` with `multipart/form-data`, so the installed app is offered in the share sheet for text, links, images and documents. The service worker SHALL answer the `POST` itself, keep the files in a device-local hand-over store and redirect to the capture screen of the precached shell, so a share works offline. `GET /share` with query parameters SHALL keep working.
 
 #### Scenario: Share from a mobile browser
 - **WHEN** the user installs the app, opens a web page in another app and chooses the app from the share sheet
@@ -15,6 +15,10 @@ The web app manifest SHALL declare a share target that receives `title`, `text` 
 #### Scenario: Share while offline
 - **WHEN** the device has no network and the user shares a page to the installed app
 - **THEN** the capture screen opens and saving creates the task locally, to be uploaded when the network returns
+
+#### Scenario: Share an image
+- **WHEN** the user shares an image from another app to the installed app
+- **THEN** the service worker stores the image on the device and the capture screen opens with the image listed
 
 ### Requirement: Capture screen
 `/share` SHALL show a quick-add style title field prefilled with the shared title (or the URL's host), a description prefilled with the shared text followed by the URL, a project picker defaulting to the Inbox, and Save and Cancel actions; Enter saves, Escape cancels, focus starts in the title. Saving SHALL create the task in the local store as one operation set that syncs and converges like any quick-add task; nothing SHALL be saved without the user's confirmation.
@@ -32,11 +36,15 @@ The web app manifest SHALL declare a share target that receives `title`, `text` 
 - **THEN** no task is created and the screen closes or returns to the previous view
 
 ### Requirement: Capture when signed out
-When `/share` is opened on a device that is not signed in, the client SHALL keep the shared payload in memory, show the sign-in screen, and return to the capture screen with the payload intact after sign-in. The payload SHALL not be sent to the server or stored anywhere else before the user saves.
+When `/share` is opened on a device that is not signed in, the client SHALL keep the shared payload in memory, show the sign-in screen, and return to the capture screen with the payload intact after sign-in. The payload SHALL not be sent to the server before the user saves. Shared files SHALL live only in the device-local hand-over store the service worker filled, SHALL be removed from it when the share is saved or cancelled and after ten minutes at the latest, and SHALL be cleared at sign-out.
 
 #### Scenario: Sign in then capture
 - **WHEN** a signed-out device opens `/share?title=Fix&url=https://example.org`
 - **THEN** after successful sign-in the capture screen shows `Fix` and the URL, ready to save
+
+#### Scenario: Shared file is not kept
+- **WHEN** a signed-out device receives a shared image and the user cancels the capture
+- **THEN** the image is removed from the hand-over store and was never sent to the server
 
 ### Requirement: Bookmarklet
 Settings SHALL offer a bookmarklet, generated for the server's own origin, that the user can drag to the bookmarks bar. Activating it on any page SHALL open `/share` in a small popup window with that page's URL, title and current text selection. The bookmarklet SHALL contain no token or credential.
@@ -50,7 +58,7 @@ Settings SHALL offer a bookmarklet, generated for the server's own origin, that 
 - **THEN** the popup shows the sign-in screen and continues to the capture screen afterwards
 
 ### Requirement: Browser extension
-The repository SHALL include a browser extension for Chromium-based browsers and Firefox with a toolbar button, a context-menu entry "Add to OpenTodo" and a keyboard shortcut, each opening `/share` on the configured server with the current tab's URL, title and selection. It SHALL store only the server URL, hold no token, make no network requests itself, and request only the permissions needed to read the active tab and show the menu.
+The repository SHALL include a browser extension for Chromium-based browsers and Firefox with a toolbar button, a context-menu entry "Add to OpenTodo" and a shortcut opening `/share` on the configured server with the tab's URL, title and selection, and an entry "Add screenshot to OpenTodo" handing a capture of the visible tab to that popup. It SHALL store only the server URL, hold no token, make no network requests and ask only for the permissions it needs.
 
 #### Scenario: First use asks for the server
 - **WHEN** the extension is installed and used before a server URL is set
@@ -60,12 +68,20 @@ The repository SHALL include a browser extension for Chromium-based browsers and
 - **WHEN** the user right-clicks a selection and chooses "Add to OpenTodo"
 - **THEN** the capture screen opens with the tab's title, the selection and the URL
 
+#### Scenario: Screenshot capture
+- **WHEN** the user chooses "Add screenshot to OpenTodo" on a page and has granted the extension access to their server
+- **THEN** the capture popup opens with the page's title and URL and a PNG of the visible tab listed as a file, and nothing is saved until the user presses Save
+
+#### Scenario: Screenshot without the host permission
+- **WHEN** the user chooses "Add screenshot to OpenTodo" without having granted access to their server
+- **THEN** the capture popup opens with the title and URL and explains that the screenshot could not be handed over until the permission is granted in the extension's options
+
 #### Scenario: No background traffic
 - **WHEN** the extension is installed and idle
 - **THEN** it opens no connections to any host
 
 ### Requirement: Payload limits and hygiene
-The capture screen SHALL treat shared title and text as plain text, SHALL truncate the title to 500 characters and the text to 16 KB, SHALL keep a shared URL only when its scheme is `http` or `https`, and SHALL ignore anything else. Opening `/share` SHALL never execute shared content or navigate to the shared URL.
+The capture screen SHALL treat shared title and text as plain text, SHALL truncate the title to 500 characters and the text to 16 KB, SHALL keep a shared URL only when its scheme is `http` or `https`, SHALL accept at most 10 shared files and none over the per-file limit, and SHALL ignore anything else. Opening `/share` SHALL never execute shared content, render a shared file as a document, or navigate to the shared URL.
 
 #### Scenario: Unsafe URL dropped
 - **WHEN** the share payload carries `url=javascript:alert(1)`
@@ -74,3 +90,22 @@ The capture screen SHALL treat shared title and text as plain text, SHALL trunca
 #### Scenario: Oversized text
 - **WHEN** the shared text is 40 KB long
 - **THEN** the description holds the first 16 KB followed by a truncation note
+
+#### Scenario: HTML file shared
+- **WHEN** a shared file is an HTML document
+- **THEN** it is listed by name, type and size only, never rendered, and is attached as a file that downloads rather than opens
+
+### Requirement: Shared files on the capture screen
+Files received by the share target SHALL be listed on the capture screen with name, type and size (a thumbnail for images), each removable before saving. Saving SHALL create the task and one attachment per file in one local operation batch and queue the bytes for upload, so a share works offline exactly like a text share. At most 10 files per share SHALL be accepted; files over the last known per-file limit SHALL be refused with the limit named before saving.
+
+#### Scenario: Share a photo offline
+- **WHEN** the device has no network and the user shares a photo from the gallery to the installed app and presses Enter
+- **THEN** a task titled after the file name exists in the Inbox with the photo as an uploading attachment, and the photo uploads on the next sync
+
+#### Scenario: Share text with a file
+- **WHEN** an app shares a title, a text and a PDF
+- **THEN** the capture screen shows the title and text as before and the PDF below them, and saving creates the task with the PDF attached
+
+#### Scenario: Oversized file
+- **WHEN** a shared file is larger than the per-file limit
+- **THEN** the capture screen lists it as refused with the limit named, and saving creates the task without it
