@@ -338,7 +338,7 @@ await shot(page, 'shortcuts')
 await page.keyboard.press('Escape')
 
 // In-app Help: the user guide of this version, searchable and offline
-await go(page, '/help/tasks-and-projects', () => page.getByRole('heading', { level: 1, name: 'Tasks and projects' }).waitFor())
+await go(page, '/help/tasks-and-projects', () => page.getByRole('heading', { level: 1, name: 'Tasks and projects' }).first().waitFor())
 await shot(page, 'help')
 
 // Settings: each section has its own page (settings-navigation)
