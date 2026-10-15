@@ -10,15 +10,22 @@ import type { Label, Project, Task, User } from '../lib/types'
 import { closePanel, openTaskPanel, usePanel, usePanelHandlers } from './panel'
 import { TaskDetail } from './TaskDetail'
 
-export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
-  const occupant = usePanel()
-  const handlers = usePanelHandlers()
-  const taskId = occupant?.kind === 'task' ? occupant.id : null
+/** The data every task detail needs (the panel and the expanded page share it). */
+export function useTaskDetailData() {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const labels = useLiveQuery(() => db.labels.filter((l) => !l.deleted_at).toArray(), [], [] as Label[])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [])
   const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
+  const readOnly = (task: Task) => roleOf(task.project_id, memberMap) === 'viewer'
+  return { projects, labelMap, readOnly }
+}
+
+export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
+  const occupant = usePanel()
+  const handlers = usePanelHandlers()
+  const taskId = occupant?.kind === 'task' ? occupant.id : null
+  const { projects, labelMap, readOnly } = useTaskDetailData()
   // undefined while loading, null when the task does not exist.
   const task = useLiveQuery<Task | null | undefined>(() => (taskId ? db.tasks.get(taskId).then((t) => t ?? null) : Promise.resolve(undefined)), [taskId])
 
@@ -36,7 +43,7 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
       key={occupant.id}
       taskId={occupant.id}
       userId={user?.id}
-      readOnly={roleOf(task.project_id, memberMap) === 'viewer'}
+      readOnly={readOnly(task)}
       projects={projects}
       labelMap={labelMap}
       onClose={closePanel}

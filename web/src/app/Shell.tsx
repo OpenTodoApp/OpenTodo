@@ -24,6 +24,7 @@ import { isGPending, openTaskInList, setGPending } from './signals'
 import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress } from './panel'
 import { listState } from './listActions'
 import { PanelHost } from './PanelHost'
+import { TaskPage } from './TaskPage'
 import { db } from '../lib/db'
 import { watchViewerZone } from '../lib/dates'
 import { NotificationBell } from './NotificationBell'
@@ -245,6 +246,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <SavedViewRoute id={route.id} />
           ) : route.view === 'trash' ? (
             <TrashView />
+          ) : route.view === 'task' ? (
+            <TaskPage id={route.id} user={user} />
           ) : route.view === 'feed' ? (
             <FeedView />
           ) : route.view === 'ask' ? (

@@ -97,13 +97,10 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/task-detail/CommentsTab.tsx',
   'src/app/task-detail/Composer.tsx',
   'src/app/task-detail/HistoryTab.tsx',
-  'src/app/task-detail/Properties.tsx',
-  'src/app/task-detail/PropertyRow.tsx',
   'src/app/task-detail/RelativeTime.tsx',
-  'src/app/task-detail/TaskDetail.tsx',
   'src/app/vim/VimLayer.tsx',
 ]
-export const STYLE_NOT_YET_MIGRATED_MAX = 96
+export const STYLE_NOT_YET_MIGRATED_MAX = 93
 
 /** Files with a native `title` attribute on an HTML element (the Tooltip primitive replaces it). */
 export const TITLE_NOT_YET_MIGRATED: readonly string[] = [
@@ -144,9 +141,8 @@ export const TITLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/task-detail/ActivityTab.tsx',
   'src/app/task-detail/AttachmentsRow.tsx',
   'src/app/task-detail/CommentsTab.tsx',
-  'src/app/task-detail/Properties.tsx',
   'src/app/task-detail/RelativeTime.tsx',
   'src/app/task-detail/TaskDetail.tsx',
   'src/app/task-detail/ZoneControl.tsx',
 ]
-export const TITLE_NOT_YET_MIGRATED_MAX = 41
+export const TITLE_NOT_YET_MIGRATED_MAX = 40

@@ -1,12 +1,12 @@
 // Due date and time in the detail panel, with the zone control (OpenSpec changes
 // absolute-datetimes, task-detail-redesign D4). The fields always show the due in
 // the viewer's zone; edits of a zoned due are converted back into its zone
-// (dueFromView), so it stays fixed. Every change is one `updateTask` due edit.
+// (dueFromView), so it stays fixed. Every change is one due edit, with an Undo offer.
 import { IconButton } from '../ui'
 import { dueFromView, localDueOf, zoneHint } from '../lib/dates'
-import { updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'
 import { DateField } from './datetime/DateField'
+import { setDueWithUndo } from './undoable'
 import { TimeField } from './datetime/TimeField'
 import { ZoneControl } from './task-detail/ZoneControl'
 import { useViewerZone } from './useViews'
@@ -19,7 +19,7 @@ export function DueField({ task, readOnly = false }: { task: Task; readOnly?: bo
   const view = localDueOf(task.due, zone)
   const hint = zoneHint(task.due, zone)
 
-  const setView = (next: { date: string; time?: string } | null) => void updateTask(task.id, { due: dueFromView(task.due, next, zone) })
+  const setView = (next: { date: string; time?: string } | null) => void setDueWithUndo(task.id, dueFromView(task.due, next, zone))
 
   return (
     <div className="space-y-1">
@@ -29,7 +29,7 @@ export function DueField({ task, readOnly = false }: { task: Task; readOnly?: bo
           onChange={(date) => setView(date ? { date, ...(view?.time ? { time: view.time } : {}) } : null)} />
         <TimeField label="Due time" hideLabel value={view?.time ?? null} disabled={!view}
           onChange={(time) => view && setView(time ? { date: view.date, time } : { date: view.date })} />
-        {task.due && <IconButton icon="x" label="Clear due date" onClick={() => void updateTask(task.id, { due: null })} />}
+        {task.due && <IconButton icon="x" label="Clear due date" onClick={() => void setDueWithUndo(task.id, null)} />}
       </div>
       {task.due && <ZoneControl task={task} readOnly={readOnly} viewerZone={zone} />}
       {hint && <p className="text-xs text-muted" data-testid="zone-hint">{hint}</p>}

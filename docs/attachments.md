@@ -13,8 +13,8 @@ A task, or a comment on it, can carry files and links: a receipt, a photo of a w
 
 ## Add a file or a link
 
-- **Pick, paste or drop.** Choose **Add file** to pick files, paste an image or a file into the task panel, or drop files onto it.
-- **Links.** Choose **Add link** and paste an `http` or `https` address. A link is stored as a link: the server never downloads it.
+- **Pick, paste or drop.** Choose **Attach › Choose files…** to pick files, paste an image or a file into the task panel, or drop files onto it (a drop zone appears while you drag).
+- **Links.** Choose **Attach › Add a link…** and paste an `http` or `https` address. A link is stored as a link: the server never downloads it.
 - **Offline.** Adding a file without a connection works: the attachment appears at once, marked "waiting to upload", and uploads after the next sync. Other devices show it as "uploading" until the file has arrived on the server.
 
 Images show a thumbnail; other files show their name, type and size. **Open** shows the file in a new tab when the browser can display it safely (images, PDF, plain text, audio and video); everything else, and every file of an encrypted account, is downloaded instead. You can rename your own attachments and remove them; a removal can be undone from the notice that follows.

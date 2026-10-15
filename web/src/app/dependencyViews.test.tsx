@@ -118,6 +118,10 @@ describe('task panel (3.3)', () => {
     const r = await render(<TaskDetail taskId={trip} userId="me" projects={[]} labelMap={new Map()} onClose={() => {}} onOpen={onOpen} />)
     mounted.push(r)
     await waitFor(() => !!document.querySelector('[data-property="blocks"]'))
+    // The chip counts the dependents; opening it lists them.
+    expect(document.querySelector('[data-property="blocks"]')!.textContent).toContain('Blocks 1')
+    await click(document.querySelector<HTMLButtonElement>('[data-property="blocks"] button[aria-labelledby]')!)
+    await flush(40)
     const link = [...document.querySelectorAll<HTMLElement>('[data-property="blocks"] button')].find((b) => b.textContent === 'Book flights')!
     await click(link)
     expect(onOpen).toHaveBeenCalledWith(flights)

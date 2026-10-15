@@ -153,10 +153,25 @@ describe('CommentsView', () => {
     await v.unmount()
   })
 
-  it('shows an empty state without comments', async () => {
+  it('shows a one-line empty state without comments', async () => {
     const v = await render(<CommentsView {...props({ threads: [] })} />)
-    expect(v.container.textContent).toContain('No comments yet')
+    const empty = v.container.querySelector('[data-comments-empty]')!
+    expect(empty.textContent).toContain('No comments yet')
+    expect(empty.tagName).toBe('P')
     await v.unmount()
+  })
+
+  it('renders the composer into the host it is given, inline otherwise', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const v = await render(<CommentsView {...props({ composerHost: host })} />)
+    expect(host.querySelector('#comment-composer')).toBeTruthy()
+    expect(v.container.querySelector('#comment-composer')).toBeNull()
+    await v.unmount()
+    host.remove()
+    const w = await render(<CommentsView {...props()} />)
+    expect(w.container.querySelector('#comment-composer')).toBeTruthy()
+    await w.unmount()
   })
 
   it('attaches picked files to a new comment and lists comment attachments under the text', async () => {
@@ -184,5 +199,19 @@ describe('CommentsView', () => {
     expect(v.container.querySelector('[data-testid="comment-file-picker"]')).toBeNull()
     expect(v.container.textContent).not.toContain('Hidden.pdf')
     await v.unmount()
+  })
+})
+
+describe('composer pinned to the panel (ux-overhaul "Task panel tabs")', () => {
+  it('is in view without scrolling with thirty comments: outside the scroller, in the panel footer', async () => {
+    const { setupPanelDb, openPanel } = await import('./pinnedComposer.testkit')
+    await setupPanelDb()
+    const { container, unmount } = await openPanel(30)
+    const composer = container.querySelector('#comment-composer')!
+    expect(composer).toBeTruthy()
+    expect(composer.closest('.overflow-y-auto')).toBeNull()
+    expect(composer.closest('[data-panel-footer]')).toBeTruthy()
+    expect(container.querySelectorAll('[data-thread]').length).toBe(30)
+    await unmount()
   })
 })

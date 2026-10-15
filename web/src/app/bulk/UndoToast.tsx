@@ -9,7 +9,7 @@ export const TOAST_MS = 10_000
 
 export async function undoToast(undoId: string): Promise<void> {
   const r = await undoBatch(undoId)
-  const base = `Undone: ${r.restored} restored.`
+  const base = r.restored === 1 && r.skipped.length === 0 ? 'Undone.' : `Undone: ${r.restored} restored.`
   updateBulkToast({ undoId: null, result: r.skipped.length ? `${base} Kept because they were changed again since: ${r.skipped.join(', ')}.` : base })
 }
 
@@ -17,7 +17,7 @@ export function UndoToast() {
   const toast = useBulkToast()
   useEffect(() => {
     if (!toast) return
-    const t = setTimeout(() => hideBulkToast(toast.key), TOAST_MS)
+    const t = setTimeout(() => hideBulkToast(toast.key), toast.ttl ?? TOAST_MS)
     return () => clearTimeout(t)
   }, [toast])
   useEffect(() => {
@@ -35,7 +35,7 @@ export function UndoToast() {
   }, [toast?.undoId])
   if (!toast) return null
   return (
-    <ToastRegion label="Bulk action">
+    <ToastRegion label="Last action">
       <div className="pointer-events-auto flex items-center gap-3 rounded-lg border border-default bg-surface px-3 py-2 text-sm shadow-lg" data-bulk-toast>
         <p role="status" className="min-w-0 flex-1">{toast.result ?? toast.label}</p>
         {toast.undoId && <button type="button" className="btn-ghost px-2 py-1 text-accent" onClick={() => void undoToast(toast.undoId!)} title="Undo (Ctrl+Z)">Undo</button>}

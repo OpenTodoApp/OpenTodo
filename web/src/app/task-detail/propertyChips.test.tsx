@@ -1,0 +1,115 @@
+// @vitest-environment happy-dom
+// Property chips and the Add menu (OpenSpec change ux-overhaul, web-app "Task panel
+// layout", design D4): a chip reads as its value, its editor opens on click or Enter
+// and closes on Escape with focus back on the chip; Add reveals an empty property with
+// its editor open, and cancelling removes it again; an empty task shows few items.
+import 'fake-indexeddb/auto'
+import { describe, expect, it } from 'vitest'
+import { db } from '../../lib/db'
+import { createProject, createTask } from '../../lib/ops'
+import { click, flush, key, type } from '../../ui/test-utils'
+import { open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
+
+setupTaskDetailTests()
+
+/** What the user sees in the chips row: chips plus the Add control. */
+const visibleItems = (root: ParentNode) => root.querySelectorAll('[data-property-chips] [data-property], [data-property-chips] button[aria-label="Add a property"]').length
+
+describe('property chips', () => {
+  it('an empty task shows the breadcrumb, Do on, Priority and Add: at most seven items', async () => {
+    const id = await createTask({ title: 'Blank' })
+    const { container, row, unmount } = await open(id)
+    expect(row('project').textContent).toContain('Inbox')
+    expect(row('due')).toBeTruthy()
+    expect(row('priority')).toBeTruthy()
+    const items = visibleItems(container)
+    expect(items).toBeLessThanOrEqual(7)
+    expect(items).toBe(3)
+    expect(container.querySelector('section[aria-label="Properties"] input')).toBeNull()
+    await unmount()
+  })
+
+  it('the Add menu lists the remaining properties with their shortcuts and hides the ones already shown', async () => {
+    const id = await createTask({ title: 'Report', deadline: '2026-10-20' })
+    const { row, addItems, unmount } = await open(id)
+    const items = await addItems()
+    const labels = items.map((i) => i.textContent ?? '')
+    expect(labels.some((l) => l.includes('Deadline'))).toBe(false)
+    expect(labels.some((l) => l.includes('Estimate') && l.includes('e'))).toBe(true)
+    expect(labels.some((l) => l.includes('Blocked by'))).toBe(true)
+    await key(document.activeElement!, 'Escape')
+    await settle()
+    expect(row('deadline').textContent).toContain('Tue 20 Oct')
+    await unmount()
+  })
+
+  it('Add then Estimate shows the chip with its editor focused; Escape without a value removes it and focus lands on Add', async () => {
+    const id = await createTask({ title: 'Blank' })
+    const { row, add, addButton, unmount } = await open(id)
+    expect(row('estimate')).toBeNull()
+    await add('Estimate')
+    expect(row('estimate')).toBeTruthy()
+    const editor = row('estimate').querySelector('[data-property-editor="estimate"]')!
+    expect(editor.contains(document.activeElement)).toBe(true)
+    await key(document.activeElement!, 'Escape')
+    await flush(80)
+    expect(row('estimate')).toBeNull()
+    expect(document.activeElement).toBe(addButton())
+    await unmount()
+  })
+
+  it('Add then Estimate with a value keeps the chip reading the value, and its clear control removes it', async () => {
+    const id = await createTask({ title: 'Blank' })
+    const { row, add, unmount } = await open(id)
+    await add('Estimate')
+    const input = row('estimate').querySelector('input') as HTMLInputElement
+    await type(input, '45m')
+    await key(input, 'Enter')
+    await waitFor(() => (row('estimate')?.textContent ?? '').includes('45'))
+    // Enter commits and leaves the field; Escape anywhere in the editor closes it.
+    await key(row('estimate').querySelector('[data-property-editor]')!, 'Escape')
+    await flush(80)
+    expect((await db.tasks.get(id))!.estimate_minutes).toBe(45)
+    expect(row('estimate')).toBeTruthy()
+    expect(row('estimate').querySelector('[data-property-editor]')).toBeNull()
+    await click(row('estimate').querySelector('button[aria-label="Clear estimate"]')!)
+    await flush(80)
+    expect((await db.tasks.get(id))!.estimate_minutes).toBeNull()
+    await waitFor(() => !row('estimate'))
+    await unmount()
+  })
+
+  it('a chip opens on Enter with focus in its editor and returns focus on Escape', async () => {
+    const id = await createTask({ title: 'Plan', due: { date: '2026-10-15' } })
+    const { row, valueButton, unmount } = await open(id)
+    const chip = valueButton('due')
+    expect(chip.getAttribute('aria-expanded')).toBe('false')
+    chip.focus()
+    await click(chip) // Enter on a native button activates it
+    await settle()
+    expect(chip.getAttribute('aria-expanded')).toBe('true')
+    const editor = row('due').querySelector('[data-property-editor="due"]')!
+    expect(editor.contains(document.activeElement)).toBe(true)
+    await key(document.activeElement!, 'Escape')
+    await settle()
+    expect(row('due').querySelector('[data-property-editor]')).toBeNull()
+    expect(document.activeElement).toBe(valueButton('due'))
+    await unmount()
+  })
+
+  it('the breadcrumb reads project › section', async () => {
+    const p = await createProject({ name: 'Home' })
+    const { createSection, moveTaskToSection } = await import('../../lib/sections')
+    const doing = await createSection(p, 'Doing')
+    const id = await createTask({ title: 'Paint', project_id: p })
+    await moveTaskToSection(id, doing)
+    const { container, row, unmount } = await open(id)
+    await waitFor(() => !!row('section'))
+    const crumb = container.querySelector('[data-property-breadcrumb]')!
+    expect(crumb.contains(row('project'))).toBe(true)
+    expect(crumb.contains(row('section'))).toBe(true)
+    expect(row('project').textContent).toContain('Home')
+    expect(row('section').textContent).toContain('Doing')
+    await unmount()
+  })
+})

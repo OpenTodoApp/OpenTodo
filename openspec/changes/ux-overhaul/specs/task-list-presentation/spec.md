@@ -65,7 +65,7 @@ Completing a task SHALL animate the check mark and fade the row within the empha
 
 #### Scenario: Undo a completion offline
 - **WHEN** the device is offline, the user completes a task and activates Undo in the toast
-- **THEN** the task is open again at once, no completion is uploaded later for it, and other devices converge on the open state
+- **THEN** the task is open again at once, the reopening is queued right after the completion as an ordinary op, and other devices converge on the open state
 
 ### Requirement: Single-action undo
 Deleting a task, moving it to another project, changing its date or parking it SHALL offer the same Undo toast as bulk actions, replacing the previous offer.

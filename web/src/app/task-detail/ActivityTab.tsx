@@ -15,6 +15,7 @@ import { Avatar } from '../../ui'
 import { Button } from '../../ui'
 import { Icon, type IconName } from '../../ui'
 import { EmptyState } from '../../ui'
+import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { RelativeTime } from './RelativeTime'
 
 const KIND_ICON: Record<ActivityKind, IconName> = {
@@ -36,6 +37,8 @@ export interface ActivityViewProps {
   loadState: 'idle' | 'loading' | 'error'
   onLoadOlder: () => void
   now?: number
+  /** The task's created and completed times: the first entries of Activity (ux-overhaul). */
+  times?: { created: number; completed: number | null }
 }
 
 function RunItem({ run, name, project, task, onOpenComment, now }: { run: ActivityRun } & Pick<ActivityViewProps, 'name' | 'project' | 'task' | 'onOpenComment' | 'now'>) {
@@ -92,9 +95,16 @@ function RunItem({ run, name, project, task, onOpenComment, now }: { run: Activi
   )
 }
 
-export function ActivityView({ runs, name, project, task, onOpenComment, canLoadOlder, loadState, onLoadOlder, now }: ActivityViewProps) {
+export function ActivityView({ runs, name, project, task, onOpenComment, canLoadOlder, loadState, onLoadOlder, now, times }: ActivityViewProps) {
+  const dt = useDateTimeFormat()
   return (
     <div className="space-y-3">
+      {times && (
+        <p className="text-meta text-faint" data-activity-times>
+          Created {dt.formatInstant(times.created, 'datetime')}
+          {times.completed && <> · Completed {dt.formatInstant(times.completed, 'datetime')}</>}
+        </p>
+      )}
       {runs.length === 0 ? (
         <EmptyState icon="history" title="No activity yet" body="Changes to this task show up here, also while offline." />
       ) : (
@@ -158,6 +168,7 @@ export function ActivityTab({ task, userId, onOpenComment }: { task: Task; userI
 
   return (
     <ActivityView runs={runs} name={name} project={project} task={taskTitle} onOpenComment={onOpenComment}
+      times={{ created: task.created_at, completed: task.completed_at }}
       canLoadOlder={more && online} loadState={loadState} onLoadOlder={() => void loadOlder()} />
   )
 }

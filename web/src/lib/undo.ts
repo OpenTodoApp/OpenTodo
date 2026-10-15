@@ -30,7 +30,7 @@ export function tableOf(entity: Entity) {
 const norm = (v: unknown) => (v === undefined ? null : v)
 
 export interface BatchOptions {
-  source: 'assistant' | 'bulk'
+  source: 'assistant' | 'bulk' | 'action'
   /** What the undo toast says ("3 tasks completed"). */
   label?: string
   /** `assistant` writes with device assistant:<device-id>. */
