@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'review'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'review']
 
 export interface Op {
   id: string
@@ -277,6 +277,17 @@ export interface UserPrefs {
   /** Appearance (theming): unknown values read as the defaults. */
   theme_mode: ThemeModePref
   theme_accent: string
+  _clock: Clock
+}
+
+/**
+ * When the user last finished a weekly review (OpenSpec `stats-and-review`, design
+ * D4): the synced `review` entity, one row with id "me" in the personal scope.
+ * `completed_at` is Unix ms; 0 means never.
+ */
+export interface Review {
+  id: string
+  completed_at: number
   _clock: Clock
 }
 

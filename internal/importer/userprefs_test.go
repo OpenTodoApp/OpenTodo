@@ -8,6 +8,7 @@ import (
 const prefsOwnExport = `{"format":"opentodo-export","version":1,
   "projects":[],"tasks":[],"labels":[],"sections":[],"reminders":[],"views":[],"comments":[],
   "user_prefs":[{"id":"me","date_format":"iso","time_format":"24h","week_start":"sun","theme_mode":"dark","theme_accent":"indigo"}],
+  "review":[{"id":"me","completed_at":1760000000000}],
   "encryption":null}`
 
 // TestOwnExportRestoresUserPrefs (date-time-preferences D1): an own export brings
@@ -16,7 +17,7 @@ const prefsOwnExport = `{"format":"opentodo-export","version":1,
 func TestOwnExportRestoresUserPrefs(t *testing.T) {
 	h := newHarness(t)
 	job := h.run(prefsOwnExport, Options{})
-	if job.Status != StatusDone || job.Totals.Written != 1 {
+	if job.Status != StatusDone || job.Totals.Written != 2 {
 		t.Fatalf("job = %+v", job)
 	}
 	row, err := h.sync.Get(context.Background(), h.uid, "user_prefs", "me")
@@ -27,13 +28,17 @@ func TestOwnExportRestoresUserPrefs(t *testing.T) {
 		str(row, "theme_mode") != "dark" || str(row, "theme_accent") != "indigo" {
 		t.Fatalf("restored prefs = %v", row)
 	}
+	review, err := h.sync.Get(context.Background(), h.uid, "review", "me")
+	if err != nil || review == nil || string(review["completed_at"]) != "1760000000000" {
+		t.Fatalf("review = %v %v", review, err)
+	}
 
 	h.write("phone", 1, "user_prefs", "me", map[string]any{"date_format": "day-month"})
 	plan, err := h.svc.Preview(context.Background(), h.uid, []byte(prefsOwnExport), Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(plan.Rows) != 1 || plan.Rows[0].Outcome != OutcomeSkip || plan.Rows[0].Title != "Preferences" {
+	if len(plan.Rows) != 2 || plan.Rows[0].Outcome != OutcomeSkip || plan.Rows[0].Title != "Preferences" || plan.Rows[1].Title != "Weekly review" {
 		t.Fatalf("second import rows = %+v", plan.Rows)
 	}
 }

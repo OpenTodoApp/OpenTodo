@@ -1,0 +1,29 @@
+{
+  "comment": "Shared definitions of the statistics (OpenSpec stats-and-review, design D1), evaluated by web/src/lib/stats.test.ts and by internal/digest. Times are local wall times in `zone`; the week starts on Sunday (0).",
+  "me": "u1",
+  "today": "2026-10-14",
+  "now": "2026-10-14T15:00",
+  "zone": "Europe/Berlin",
+  "weekStart": 0,
+  "projects": [{ "id": "home" }, { "id": "shared" }],
+  "memberships": [{ "projectId": "shared", "role": "editor" }],
+  "tasks": [
+    { "id": "occ-10", "project_id": "home", "due": "2026-10-10", "completed": "2026-10-10T08:00" },
+    { "id": "occ-11", "project_id": "home", "due": "2026-10-11", "completed": "2026-10-11T08:00" },
+    { "id": "occ-12", "project_id": "home", "due": "2026-10-12", "completed": "2026-10-12T08:00" },
+    { "id": "occ-13", "project_id": "home", "due": "2026-10-13", "completed": "2026-10-13T08:00" },
+    { "id": "occ-14", "project_id": "home", "due": "2026-10-14", "completed": "2026-10-14T08:00" },
+    { "id": "slipped", "project_id": null, "due": "2026-10-13" },
+    { "id": "late", "project_id": "home", "due": "2026-10-13", "completed": "2026-10-14T09:00" },
+    { "id": "trashed", "project_id": "home", "completed": "2026-10-12T10:00", "deleted": "2026-10-13T10:00" },
+    { "id": "theirs", "project_id": "shared", "assignee_id": "u2", "completed": "2026-10-12T10:00" },
+    { "id": "mine-shared", "project_id": "shared", "assignee_id": "u1", "completed": "2026-10-12T11:00" },
+    { "id": "unassigned-shared", "project_id": "shared", "completed": "2026-10-13T11:00" },
+    { "id": "new", "project_id": null, "created": "2026-10-12T12:00" },
+    { "id": "slipped-last-week", "project_id": "home", "due": "2026-10-08", "completed": "2026-10-12T09:00" }
+  ],
+  "expected": {
+    "this-week": { "completed": 8, "created": 1, "late": 2, "slipped": 1, "overdue": 1 },
+    "last-week": { "completed": 1, "created": 0, "late": 0, "slipped": 1, "overdue": 1 }
+  }
+}

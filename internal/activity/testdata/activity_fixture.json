@@ -608,6 +608,13 @@
       "events": []
     },
     {
+      "name": "review ops derive no event (stats-and-review)",
+      "ops": [
+        {"id":"rv1","seq":1,"actor":"alice","entity":"review","entityId":"me","field":"completed_at","value":1760000000000,"ts":1000,"device":"da"}
+      ],
+      "events": []
+    },
+    {
       "name": "a deadline edit is an edited event (deadlines)",
       "ops": [
         {"id":"dl1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"deadline","value":"2026-11-20","ts":200000,"device":"da"}

@@ -14,7 +14,7 @@ import { recordActivity, type RecordInput } from './activity'
 import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
 import { encryptionSnapshot, isContentField } from './e2ee'
-import type { RowEncryption } from './types'
+import type { Review, RowEncryption } from './types'
 
 let devicePromise: Promise<string> | null = null
 
@@ -51,6 +51,7 @@ function tableFor(entity: Entity) {
     case 'project_prefs': return db.prefs
     case 'user_prefs': return db.userPrefs
     case 'attachment': return db.attachments
+    case 'review': return db.review
     default: return db.tasks
   }
 }
@@ -90,9 +91,12 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
 export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald' }
+/** review (stats-and-review): 0 until the first finished review. */
+const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0 }
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
   comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS,
+  review: REVIEW_DEFAULTS,
 }
 
 /**
@@ -955,4 +959,9 @@ export async function restoreProject(id: string): Promise<void> {
 const PALETTE = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899']
 function pickColor(): string {
   return PALETTE[Math.floor(Math.random() * PALETTE.length)]
+}
+
+/** Records a finished weekly review (stats-and-review D4): one op on the personal `review` row, offline-safe. */
+export function finishReview(at = Date.now()): Promise<void> {
+  return mutate('review', 'me', { completed_at: at })
 }

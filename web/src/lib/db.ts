@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { Attachment, ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, UserPrefs, View } from './types'
+import type { ActivityEntry, AppNotification, Attachment, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -105,6 +105,8 @@ class OpenTodoDB extends Dexie {
   prefs!: Table<ProjectPrefs, string>
   /** The user's date and time preferences (date-time-preferences): the synced `user_prefs` entity, one row "me". */
   userPrefs!: Table<UserPrefs, string>
+  /** When the user last finished a weekly review (stats-and-review): the synced `review` entity, one row "me". */
+  review!: Table<Review, string>
   outbox!: Table<OutboxOp, number>
   meta!: Table<Meta, string>
   /** In-app assistant conversations and undo batches: device-local, never ops. */
@@ -314,6 +316,29 @@ class OpenTodoDB extends Dexie {
       attachments: 'id, task_id, comment_id',
       attachmentBlobs: 'id',
     })
+    // v18 (stats-and-review): the synced personal `review` row (v17 is calendar-feeds' cache).
+    this.version(18).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+      comments: 'id, task_id',
+      activity: 'id, [projectKey+ts], taskId, entityId',
+      prefs: 'id',
+      assistantThreads: 'id, updated_at',
+      assistantUndo: 'id, created_at',
+      pickHistory: 'id, context',
+      userPrefs: 'id',
+      attachments: 'id, task_id, comment_id',
+      attachmentBlobs: 'id',
+      review: 'id',
+    })
   }
 }
 
@@ -330,7 +355,7 @@ export function useDatabase(name: string): OpenTodoDB {
  * folds ops into (comments-and-activity); applyOps and mutateMany lock all of them.
  */
 export function entityTables() {
-  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.comments, db.prefs, db.userPrefs, db.attachments, db.activity]
+  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.comments, db.prefs, db.userPrefs, db.attachments, db.review, db.activity]
 }
 
 export async function getMeta<T>(key: string, fallback: T): Promise<T> {

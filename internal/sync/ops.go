@@ -307,6 +307,13 @@ var Schema = map[string]map[string]kind{
 	// enumerations carried as strings (date_format: system|day-month|month-day|iso,
 	// time_format: system|12h|24h, week_start: system|mon|sun|sat); clients read
 	// an unknown value as "system", so new values stay additive.
+	// review: when the user last finished a weekly review (OpenSpec change
+	// stats-and-review, design D4). One row with the entityId "me" in the
+	// author's personal scope, like user_prefs; completed_at is Unix ms. Not
+	// content, no REST collection, no activity.
+	"review": {
+		"completed_at": kNumber,
+	},
 	"user_prefs": {
 		"date_format": kString,
 		"time_format": kString,

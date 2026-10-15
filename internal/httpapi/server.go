@@ -1684,6 +1684,13 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["user_prefs"] = prefs
+	// The weekly review marker (stats-and-review D4), personal like the preferences.
+	review, err := s.sync.List(r.Context(), uid, "review", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["review"] = review
 	// End-to-end encryption (OpenSpec `e2ee`): content fields above are ciphertext
 	// for an encrypted account; the wrapped key record makes the document
 	// restorable and decryptable elsewhere with the passphrase. null otherwise.

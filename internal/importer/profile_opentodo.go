@@ -41,6 +41,8 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		// UserPrefs is the exporting account's date and time preferences row
 		// (date-time-preferences D1); it is restored like any other record.
 		UserPrefs []map[string]json.RawMessage `json:"user_prefs"`
+		// Review is the exporting account's weekly review row (stats-and-review).
+		Review []map[string]json.RawMessage `json:"review"`
 	}
 	if err := json.NewDecoder(r).Decode(&doc); err != nil {
 		return nil, &FileError{fmt.Sprintf("not a readable OpenTodo export: %v", err)}
@@ -76,6 +78,9 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			if kind == KindUserPrefs {
 				row.Title = "Preferences"
 			}
+			if kind == KindReview {
+				row.Title = "Weekly review"
+			}
 			out.Rows = append(out.Rows, row)
 		}
 	}
@@ -87,6 +92,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	add(KindReminder, "", doc.Reminders)
 	add(KindView, "name", doc.Views)
 	add(KindUserPrefs, "", doc.UserPrefs)
+	add(KindReview, "", doc.Review)
 	add(KindAttachment, "name", doc.Attachments)
 	if files := countFileAttachments(doc.Attachments); files > 0 && opts.ownFiles == nil {
 		out.Notes = append(out.Notes, fmt.Sprintf("%d file %s not imported: the files are in the ZIP export (Settings → Data → Export with files)", files, plural(files, "attachment is", "attachments are")))

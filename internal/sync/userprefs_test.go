@@ -78,3 +78,22 @@ func TestUserPrefsArePersonalAndConverge(t *testing.T) {
 		t.Fatalf("bob sees alice's accent: %s", got)
 	}
 }
+
+// TestReviewIsPersonalAndConverges (stats-and-review D4): the review marker is a
+// personal row like user_prefs; the later finish wins.
+func TestReviewIsPersonalAndConverges(t *testing.T) {
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor)
+	early := f.op("review", "me", "completed_at", "1760000000000")
+	late := f.op("review", "me", "completed_at", "1760000500000")
+	if res := f.apply("alice", "A2", late); res.Applied != 1 || len(res.Rejected) != 0 {
+		t.Fatalf("review = %+v", res)
+	}
+	f.apply("alice", "A", early)
+	if got := f.field("alice", "review", "me", "completed_at"); got != "1760000500000" {
+		t.Fatalf("alice reads %s, want the later finish", got)
+	}
+	if got := f.field("bob", "review", "me", "completed_at"); got != "" && got != "<none>" {
+		t.Fatalf("bob sees alice's review: %s", got)
+	}
+}
