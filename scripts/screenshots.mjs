@@ -321,7 +321,7 @@ await go(page, `/view/${dash.id}`); await settle(page, 600)
 await shot(page, 'dashboard')
 
 // Activity feed, notifications, trash
-await go(page, '/activity', () => page.getByRole('heading', { name: 'Activity' }).waitFor())
+await go(page, '/updates', () => page.getByRole('heading', { name: 'Updates' }).waitFor())
 await shot(page, 'feed')
 await go(page, '/today', () => page.getByRole('heading', { name: 'Overdue' }).waitFor())
 await page.getByRole('button', { name: /^Notifications/ }).click()
@@ -342,10 +342,11 @@ await go(page, '/help/tasks-and-projects', () => page.getByRole('heading', { lev
 await shot(page, 'help')
 
 // Settings: each section has its own page (settings-navigation)
-await go(page, '/settings/security', () => page.getByRole('heading', { name: 'Two-factor authentication', level: 2 }).first().waitFor())
+// Legacy section ids open their section at the moved rows (settings-navigation).
+await go(page, '/settings/security', () => page.getByRole('heading', { name: 'Two-factor authentication', level: 2 }).first().waitFor()).catch((e) => console.log('  2fa page:', e.message))
 await page.getByRole('button', { name: 'Set up two-factor authentication' }).click().catch((e) => console.log('  2fa:', e.message))
 await settle(page, 800)
-await go(page, '/settings/preferences', () => page.getByRole('heading', { name: 'Keyboard', level: 2 }).first().waitFor())
+await go(page, '/settings/preferences', () => page.getByRole('heading', { name: 'Keyboard', level: 2 }).first().waitFor()).catch((e) => console.log('  keyboard page:', e.message))
 await page.getByLabel(/Vim keybindings/).check().catch((e) => console.log('  vim:', e.message))
 for (const [section, heading, name] of [
   ['security', 'Two-factor authentication', 'settings-security'], ['encryption', 'End-to-end encryption', 'settings-encryption'],
