@@ -4,7 +4,7 @@ summary: Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plu
 audience: user
 section: Guides
 specs: [web-app, custom-views]
-screens: [settings/start-view#choose-where-the-app-opens, someday#park-ideas-in-someday, anytime#anytime-for-when-you-have-time, inbox#the-built-in-views, today#plan-your-day-with-today, upcoming#plan-your-week-with-upcoming, completed#the-built-in-views, assigned#the-built-in-views, filters#save-your-own-views, saved-filter#save-your-own-views, dashboard#build-a-dashboard]
+screens: [inbox/triage#process-the-inbox, settings/start-view#choose-where-the-app-opens, someday#park-ideas-in-someday, anytime#anytime-for-when-you-have-time, inbox#the-built-in-views, today#plan-your-day-with-today, upcoming#plan-your-week-with-upcoming, completed#the-built-in-views, assigned#the-built-in-views, filters#save-your-own-views, saved-filter#save-your-own-views, dashboard#build-a-dashboard]
 order: 20
 card: upcoming
 ---
@@ -18,7 +18,7 @@ They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then
 
 | View | Shows | Shortcut |
 | --- | --- | --- |
-| **Inbox** | Tasks that aren't in a project yet | <kbd>g</kbd> <kbd>i</kbd> |
+| **Inbox** | Tasks that aren't in a project yet; **Process** walks them one at a time | <kbd>g</kbd> <kbd>i</kbd>, <kbd>g</kbd> <kbd>p</kbd> to process |
 | **Today** | Tasks due today and tasks whose deadline is today, with overdue ones first | <kbd>g</kbd> <kbd>t</kbd> |
 | **Upcoming** | Tasks due after today, and undated tasks with a deadline ahead, grouped by day | <kbd>g</kbd> <kbd>u</kbd> |
 | **Anytime** | Open tasks with no date and no start: things to do whenever there is time | <kbd>g</kbd> <kbd>n</kbd> |
@@ -33,6 +33,28 @@ They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then
 The sidebar keeps Inbox, Today, Upcoming and Calendar at the top; the rest wait in **More** (open it once, it stays open on this device). The numbers next to Inbox, Today and the projects count open tasks. Deferred and parked tasks (see [When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
 
 Each project can also be shown three ways: as a **List**, as a **Board** with a column per section, or as a **Timeline** of its dates with arrows between tasks that wait for each other. Press <kbd>v</kbd> to cycle through them; see [Sections and boards](sections-and-boards.md#see-a-project-on-a-timeline).
+
+## Process the Inbox
+
+Capture first, decide later. When the Inbox has piled up, select **Process** in its header (or press <kbd>g</kbd> <kbd>p</kbd>) and decide each task in turn, keyboard only if you like. One task is shown at a time with its notes, date and labels, and "4 of 17" tells you how far you are.
+
+<picture><source srcset="images/triage-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/triage-light.webp" alt="Process the Inbox: one task card, Renew passport, with buttons for Today, Schedule, Move, Delegate, Labels, Someday, Complete, Trash, Skip and Back, each with its key."></picture>
+
+| Key | Decision |
+| --- | --- |
+| <kbd>t</kbd> | Due today |
+| <kbd>s</kbd> | Schedule: type a date (`fri`, `3/11`) and press <kbd>Enter</kbd> |
+| <kbd>m</kbd> | Move to a project |
+| <kbd>a</kbd> | Delegate: move it into a shared project and assign it to someone there, in one step |
+| <kbd>l</kbd> | Labels. This one doesn't move on, so you can add a label and then decide |
+| <kbd>y</kbd> | Park it in [Someday](#park-ideas-in-someday) |
+| <kbd>c</kbd> | Complete |
+| <kbd>Delete</kbd> | Move to the Trash |
+| <kbd>j</kbd> or <kbd>Space</kbd> | Skip it for now |
+| <kbd>k</kbd> | Back to the previous task |
+| <kbd>Enter</kbd> | Open the task's panel to edit anything else; <kbd>Esc</kbd> comes back |
+
+Every decision moves on to the next task and shows **Undo** for a few seconds. <kbd>Esc</kbd> returns to the Inbox with the task you were on selected. Tasks captured meanwhile, on any device, join the end; a task someone moves out of the Inbox elsewhere drops out. Delegating needs a project you share with someone. It all works offline, and with Vim keybindings on, <kbd>x</kbd>, <kbd>dd</kbd>, `:triage` and `:q` work too.
 
 ## Plan your day with Today
 

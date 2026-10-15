@@ -20,6 +20,7 @@ export const VIM_HELP: HelpSection = {
     ['1 – 4', 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)'],
     ['Esc (in a field)', 'Leave the field and return to Normal mode; the text is kept, the panel stays open'],
     ['Esc (Normal mode)', 'Unchanged: close panel, clear selection'],
+    ['j / k, x, dd (triage)', 'In Process the Inbox: skip / back, complete, trash; :q leaves'],
     [':', 'Open the command line (Tab completes, Enter runs, Esc cancels)'],
     ...COMMANDS.map((c): [string, string] => [`:${c.name}${c.arg ? ` ${c.arg}` : ''}`, c.desc]),
   ],

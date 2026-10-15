@@ -86,6 +86,12 @@ The card is `<section role="group" aria-labelledby=…>` with `tabIndex=-1`, foc
 
 The Inbox header shows **Process** with the open count (hidden at zero), placed where the project header shows its actions; `g` `p`; `:triage`; and a `screen="inbox/triage"` HelpLink to the new section of `docs/views.md`. `shortcuts.ts` gains one row in `go` (`g then p`) and one block in a new section `triage` ("Inbox triage": `t / c / s / m / a / l`, `Delete`, `j / Space / k`, `Enter`, `Esc`); `make docs` regenerates `docs/keyboard.md` and the help bundle.
 
+### Interface budget (added after ux-overhaul)
+
+- One button in the Inbox header (**Process** with the count) and one page outside the lists. No sidebar destination: it's reached from the Inbox, `g` `p` and `:triage`.
+- The decision bar wraps at 360 px (checked by the layout check).
+- New keys are scoped to the mode and listed in their own shortcut section.
+
 ## Risks / Trade-offs
 
 - **[Keys collide with list habits (`a` adds a subtask, `s` schedules in Day view)]** → The mode is a separate screen with its own bar that shows every key; the `?` overlay lists the triage section; `a` and `s` keep their list meanings outside the mode.

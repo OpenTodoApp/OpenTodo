@@ -219,6 +219,7 @@ const shots = [
     const h1 = await p.getByRole('heading', { level: 1 }).boundingBox()
     return { x: b.x, y: h1.y - 16, width: b.width, height: 250 }
   } },
+  { name: 'triage', server: D, async run(p) { await go(p, demoBase, '/triage', () => p.locator('[data-triage-card]').waitFor()); await settle(p, 300) } },
   { name: 'upcoming', server: D, card: true, async run(p) { await go(p, demoBase, '/upcoming', () => p.getByRole('heading', { name: 'Tomorrow' }).first().waitFor()) } },
   { name: 'project-list', server: D, card: true, async run(p) { await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation') } },
   { name: 'task-detail', server: D, async run(p) { await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen') } },

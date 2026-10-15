@@ -3,7 +3,7 @@
 // `make docs` writes into docs/keyboard.md, so the two never disagree. Add a
 // shortcut here, run `make docs`, and both list it.
 
-export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'comments' | 'settings'
+export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'comments' | 'settings' | 'triage'
 
 /** One row: the keys as shown (a context such as "(board)" in parentheses), what they do, and the guide section. */
 export interface Shortcut {
@@ -23,6 +23,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'trash', title: 'Trash and projects' },
   { id: 'comments', title: 'Comments and notes' },
   { id: 'settings', title: 'Settings' },
+  { id: 'triage', title: 'Process the Inbox' },
 ]
 
 /** Every shortcut, in the order the overlay lists them. */
@@ -76,6 +77,7 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: 'g then a', description: 'Go to Assigned to me', section: 'go' },
   { keys: 'g then n / o', description: 'Go to Anytime / Someday', section: 'go' },
   { keys: 'g then x', description: 'Go to the Trash', section: 'go' },
+  { keys: 'g then p', description: 'Process the Inbox one task at a time', section: 'go' },
   { keys: 'g then k', description: 'Go to Ask: the assistant’s composer and skills (when the assistant is on)', section: 'go' },
   { keys: 'g then h', description: 'Go to Updates: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters)', section: 'go' },
   { keys: 'j / k, r, Delete (in the Trash)', description: 'Select, restore, delete permanently (Enter confirms, Esc cancels)', section: 'trash' },
@@ -114,6 +116,13 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: '- · 1. · # · [ ] · **x** (typed in the notes)', description: 'Markdown typing becomes formatting; Shift+Enter is a line break, Esc leaves the notes', section: 'comments' },
   { keys: 'Esc', description: 'Close panel, clear selection', section: 'everywhere' },
   { keys: '?', description: 'Toggle this help', section: 'everywhere' },
+  { keys: 't / s (triage)', description: 'Due today / schedule (type a date, Enter), then the next task', section: 'triage' },
+  { keys: 'm / a (triage)', description: 'Move to a project / delegate to someone in a shared project, then the next task', section: 'triage' },
+  { keys: 'l (triage)', description: 'Labels (does not move on, so you can add a decision)', section: 'triage' },
+  { keys: 'y (triage)', description: 'Park in Someday, then the next task', section: 'triage' },
+  { keys: 'c / Delete (triage)', description: 'Complete / move to the Trash, then the next task', section: 'triage' },
+  { keys: 'j or Space / k (triage)', description: 'Skip to the next task / back to the previous one', section: 'triage' },
+  { keys: 'Enter / Esc (triage)', description: 'Open the task\'s panel / back to the Inbox with this task selected', section: 'triage' },
 ]
 
 /** Quick add syntax shown at the end of the overlay and the guide. */

@@ -33,7 +33,7 @@ const project = (id: string, name: string, position: number, extra: Partial<Proj
 describe('vim command line', () => {
   it(':tod completes to today', async () => {
     expect(complete('tod', [])).toEqual(['today'])
-    expect(complete('', []).length).toBe(10)
+    expect(complete('', []).length).toBe(11)
     expect(complete('pro', [])).toEqual(['project '])
     const { c, log } = ctx()
     expect(await runCommand('tod', c)).toEqual({ ok: true })
@@ -87,5 +87,14 @@ describe('vim command line', () => {
     expect(resolveCommand('s')?.name).toBe('settings')
     expect(resolveCommand('sy')?.name).toBe('sync')
     expect(resolveCommand('')).toBeUndefined()
+  })
+})
+
+describe('triage command (inbox-triage)', () => {
+  it(':tri completes to triage and opens the mode', async () => {
+    expect(complete('tri', [])).toEqual(['triage'])
+    const { c, log } = ctx()
+    expect(await runCommand('tri', c)).toEqual({ ok: true })
+    expect(log).toEqual(['nav {"view":"triage"}'])
   })
 })

@@ -26,6 +26,7 @@ export type Route =
   | { view: 'invite'; token: string }
   | { view: 'project-invite'; token: string }
   | { view: 'reset'; token: string }
+  | { view: 'triage' }
   | { view: 'share' }
   | { view: 'trash' }
   | { view: 'feed' }
@@ -119,6 +120,9 @@ export function parseRoute(pathname: string): Route {
     case 'reset':
       // Password reset link from an administrator or `opentodo reset-owner-password`.
       return parts[1] ? { view: 'reset', token: safeDecode(parts[1]) } : { view: 'inbox' }
+    case 'triage':
+      // Process the Inbox one task at a time (inbox-triage).
+      return { view: 'triage' }
     case 'label':
       return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
     default:

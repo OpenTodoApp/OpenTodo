@@ -50,44 +50,33 @@ await quick.press('Enter')
 await row(page, 'Water the plants').waitFor()
 
 step('project via sidebar')
-await page.getByTitle('New project').click()
+// The sidebar's + is a menu (ux-overhaul); its first item adds a project.
+await page.getByRole('button', { name: 'New project' }).first().click()
+await page.getByRole('menuitem', { name: 'New project' }).click()
 await page.getByPlaceholder('Project name').fill('Home renovation')
 await page.getByPlaceholder('Project name').press('Enter')
 await page.getByRole('heading', { name: 'Home renovation' }).waitFor()
-for (const t of ['Get three quotes for the kitchen', 'Pick paint colours', 'Order new taps']) {
+// Priorities and dates come from quick add (the task panel's chips are covered by its own tests).
+for (const t of ['Get three quotes for the kitchen today p1', 'Pick paint colours tomorrow p2', 'Order new taps']) {
   await quick.fill(t)
   await quick.press('Enter')
 }
 await row(page, 'Order new taps').waitFor()
 
-step('task detail: priority + due date')
+step('task detail: notes')
 await row(page, 'Get three quotes for the kitchen').click()
-await detail(page).getByRole('button', { name: 'P1' }).click()
-const today = new Date(); const iso = today.toISOString().slice(0, 10)
-// The Due row opens its editor (task-detail-redesign); the date is a text field in
-// the user's format, ISO is always accepted and Enter commits it.
-const dueInput = async (p) => {
-  await detail(p).locator('[data-property="due"] button[aria-labelledby]').first().click()
-  return detail(p).getByRole('textbox', { name: 'Due date', exact: true })
-}
-const due1 = await dueInput(page)
-await due1.fill(iso)
-await due1.press('Enter')
+// Quick add reads today and tomorrow in the browser's zone.
+const iso = await page.evaluate(() => new Date().toLocaleDateString('sv'))
+const tomorrow = await page.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toLocaleDateString('sv') })
 // Notes are a rich-text editor (contenteditable, role textbox) that saves after a short pause.
 const notes = detail(page).getByRole('textbox', { name: 'Notes' })
 await notes.click(); await notes.fill('Ask about lead times and payment schedule.')
 await page.waitForTimeout(1500)
-await row(page, 'Pick paint colours').click()
-await page.waitForFunction((t) => document.querySelector('aside[data-detail-for] [aria-label="Title"]')?.value === t, 'Pick paint colours')
-await detail(page).getByRole('button', { name: 'P2' }).click()
-const tomorrow = new Date(today.getTime() + 86400000).toISOString().slice(0, 10)
-const due2 = await dueInput(page)
-await due2.fill(tomorrow)
-await due2.press('Enter')
 await page.keyboard.press('Escape')
 
 step('keyboard: j, c completes')
 await page.keyboard.press('Escape')
+await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur())
 await page.keyboard.press('j'); await page.keyboard.press('j'); await page.keyboard.press('j')
 await page.keyboard.press('c')
 await page.getByRole('button', { name: 'Reopen task' }).first().waitFor({ state: 'detached', timeout: 2000 }).catch(() => {})
@@ -103,8 +92,16 @@ await page.keyboard.press('g'); await page.keyboard.press('u')
 await row(page, 'Pick paint colours').waitFor()
 
 step('wait for sync, verify server state via REST')
-await page.waitForTimeout(400)
-await page.waitForFunction(() => document.body.innerText.includes('Synced'), null, { timeout: 10000 })
+// The sync indicator is an icon since ux-overhaul: poll the server until the edits arrived.
+for (let i = 0; i < 50; i++) {
+  const ok = await page.evaluate(async () => {
+    const t = (await (await fetch('/api/v1/tasks')).json()).tasks ?? []
+    const q = t.find((x) => x.title === 'Get three quotes for the kitchen')
+    return !!q && (!!q.notes_doc || (q.description ?? '').includes('lead times')) && t.some((x) => x.completed_at)
+  })
+  if (ok) break
+  await page.waitForTimeout(200)
+}
 const tasks = await page.evaluate(async () => (await (await fetch('/api/v1/tasks')).json()).tasks)
 const projects = await page.evaluate(async () => (await (await fetch('/api/v1/projects')).json()).projects)
 console.log('  server tasks:', tasks.length, 'projects:', projects.length)
@@ -143,8 +140,10 @@ await row(p2, 'Added while offline').waitFor()
 await p2.waitForFunction(() => /Offline/.test(document.body.innerText), null, { timeout: 5000 })
 await snap(p2, 'offline')
 await ctx2.setOffline(false)
-await p2.waitForTimeout(400)
-await p2.waitForFunction(() => document.body.innerText.includes('Synced'), null, { timeout: 15000 })
+for (let i = 0; i < 75; i++) {
+  if (await p2.evaluate(async () => ((await (await fetch('/api/v1/tasks')).json()).tasks ?? []).some((x) => x.title === 'Added while offline'))) break
+  await p2.waitForTimeout(200)
+}
 
 step('device 1 receives it on next sync')
 await page.locator('aside').getByRole('button', { name: /^Home renovation/ }).click()
@@ -155,6 +154,21 @@ step('PWA: manifest + service worker registered')
 const sw = await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)
 const manifest = await page.evaluate(async () => (await fetch('/manifest.webmanifest')).status)
 console.log('  service workers:', sw, 'manifest status:', manifest)
+
+step('process the Inbox (inbox-triage)')
+await page.keyboard.press('Escape')
+await page.goto(`${base}/inbox`)
+await row(page, 'Book dentist appointment').waitFor()
+await page.keyboard.press('g'); await page.keyboard.press('p')
+await page.locator('[data-triage-card]').waitFor()
+const before = await page.locator('[data-triage-progress]').innerText()
+await page.keyboard.press('t')
+await page.locator('[data-triage-progress]').filter({ hasNotText: before }).waitFor()
+await page.keyboard.press('j')
+const after = await page.locator('[data-triage-progress]').innerText()
+console.log('  progress:', before, '→', after)
+await page.keyboard.press('Escape')
+await page.locator('[data-triage-start]').waitFor()
 
 step('settings + export')
 await page.keyboard.press('Escape')

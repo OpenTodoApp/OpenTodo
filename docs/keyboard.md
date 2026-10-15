@@ -62,6 +62,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>a</kbd> | Go to Assigned to me |
 | <kbd>g</kbd> then <kbd>n</kbd> / <kbd>o</kbd> | Go to Anytime / Someday |
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
+| <kbd>g</kbd> then <kbd>p</kbd> | Process the Inbox one task at a time |
 | <kbd>g</kbd> then <kbd>k</kbd> | Go to Ask: the assistant’s composer and skills (when the assistant is on) |
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Updates: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters) |
 | <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Data → Import data |
@@ -171,6 +172,18 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Delete</kbd> | On an invitation: Settings → Administration → Members: revoke a pending invitation |
 | <kbd>d</kbd> / <kbd>r</kbd> / <kbd>Delete</kbd> | On a user: Settings → Administration → Users: deactivate or reactivate, create a reset link, delete (each confirms) |
 | <kbd>Tab</kbd> | In Settings → Security: passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys |
+
+### Process the Inbox
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>t</kbd> / <kbd>s</kbd> | Triage: due today / schedule (type a date, Enter), then the next task |
+| <kbd>m</kbd> / <kbd>a</kbd> | Triage: move to a project / delegate to someone in a shared project, then the next task |
+| <kbd>l</kbd> | Triage: labels (does not move on, so you can add a decision) |
+| <kbd>y</kbd> | Triage: park in Someday, then the next task |
+| <kbd>c</kbd> / <kbd>Delete</kbd> | Triage: complete / move to the Trash, then the next task |
+| <kbd>j or Space</kbd> / <kbd>k</kbd> | Triage: skip to the next task / back to the previous one |
+| <kbd>Enter</kbd> / <kbd>Esc</kbd> | Triage: open the task's panel / back to the Inbox with this task selected |
 
 ### Quick add syntax
 

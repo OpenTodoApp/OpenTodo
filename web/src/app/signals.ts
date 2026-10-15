@@ -79,6 +79,9 @@ export function placeInDay(task: Pick<Task, 'id' | 'due'>, today: string): void 
  */
 export const openTask = channel()
 
+/** Select a task (without opening it) when the list next shows: leaving the triage mode (inbox-triage). */
+export const selectTask = channel()
+
 export function openTaskInList(task: Pick<Task, 'id' | 'project_id'>): void {
   const route = task.project_id ? { view: 'project' as const, id: task.project_id } : { view: 'inbox' as const }
   const path = routePath(route)

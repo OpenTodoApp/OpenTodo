@@ -58,20 +58,22 @@ export function back(state: TriageState): TriageState {
 export function advanceQueue(state: TriageState, live: readonly QueueTask[]): { state: TriageState; left: boolean } {
   const ok = new Set(live.filter(qualifies).map((t) => t.id))
   const cur = current(state)
-  const kept = state.ids.filter((id) => ok.has(id))
-  const removedBefore = state.ids.slice(0, state.index).filter((id) => !ok.has(id)).length
+  // Tasks decided this session keep their place (the count stays stable after a
+  // complete, trash or move); only undecided tasks that stop qualifying leave.
+  const stays = (id: string) => ok.has(id) || state.handled.has(id)
+  const kept = state.ids.filter(stays)
+  const removedBefore = state.ids.slice(0, state.index).filter((id) => !stays(id)).length
   const arrivals = buildQueue(live).filter((id) => !state.ids.includes(id))
   const ids = [...kept, ...arrivals]
-  const handled = new Set([...state.handled].filter((id) => ok.has(id)))
-  const left = cur !== null && !ok.has(cur)
-  return { state: { ids, index: state.index - removedBefore, handled }, left }
+  const left = cur !== null && !stays(cur)
+  return { state: { ids, index: state.index - removedBefore, handled: state.handled }, left }
 }
 
-/** "n of N": n counts decisions and skips plus the task on screen. */
+/** "n of N": n is the position of the task on screen (inbox-triage "Queue and progress"). */
 export function progress(state: TriageState): { n: number; total: number; done: boolean } {
   const total = state.ids.length
   const done = state.index >= total
-  return { n: Math.min(state.handled.size + (done ? 0 : 1), total), total, done }
+  return { n: done ? total : state.index + 1, total, done }
 }
 
 /** What the live region says for the task on screen: "4 of 17: Call the plumber". */

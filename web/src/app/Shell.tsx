@@ -39,6 +39,7 @@ import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, u
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
+const TriageView = lazy(() => import('./TriageView').then((m) => ({ default: m.TriageView })))
 // In-app Help (user-documentation): the view, the panel and the guide text are
 // chunks of their own, fetched when Help first opens (and precached for offline).
 const HelpView = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpView })))
@@ -157,6 +158,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         if (e.key === 'v') navigate({ view: 'views' })
         if (e.key === 'd') navigate({ view: 'day' })
         if (e.key === 'w') navigate({ view: 'week' })
+        if (e.key === 'p') navigate({ view: 'triage' })
         if (e.key === 'm') navigate({ view: 'month' })
         if (e.key === 'f') {
           // The Filter view focuses its input on mount; keep this "f" out of it.
@@ -249,6 +251,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <TrashView />
           ) : route.view === 'task' ? (
             <TaskPage id={route.id} user={user} />
+          ) : route.view === 'triage' ? (
+            <Suspense fallback={null}><TriageView /></Suspense>
           ) : route.view === 'feed' ? (
             <FeedView />
           ) : route.view === 'ask' ? (

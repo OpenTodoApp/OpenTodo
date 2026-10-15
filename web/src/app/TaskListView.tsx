@@ -32,7 +32,7 @@ import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
-import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, isGPending, openTask, placeInDay } from './signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, isGPending, openTask, placeInDay, selectTask } from './signals'
 import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
@@ -41,7 +41,7 @@ import { useVimEnabled } from './vim/prefs'
 import { BulkActionsMenu, runBulk, SelectionBar } from './bulk/BulkActions'
 import { Dialog } from './overlay'
 import { Menu } from './overlay/Menu'
-import { ListGroupHeader, MenuItem, MenuSeparator, PageHeader, Tooltip } from '../ui'
+import { Button, ListGroupHeader, MenuItem, MenuSeparator, PageHeader, Tooltip } from '../ui'
 import { groupKey, setGroupCollapsed, useCollapsedGroups } from './collapsedGroups'
 
 /** The guide section of each list page (user-documentation "Contextual help"); projects use their header's. */
@@ -50,7 +50,7 @@ const HELP_SCREENS: Partial<Record<Route['view'], string>> = {
 }
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
-type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'month' } | { view: 'help' } | { view: 'ask' } | { view: 'task' }>
+type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'triage' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'month' } | { view: 'help' } | { view: 'ask' } | { view: 'task' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 /** The project layouts, in `v` order (month-and-timeline-views). */
@@ -421,7 +421,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   useEffect(() => {
     // A pending "open this task" request (reminder toast, notification click) survives the route change.
     const want = openTask.take()
-    setSelectedId(want)
+    // Leaving the triage mode selects the task it was on (inbox-triage), without opening it.
+    const pick = want ?? selectTask.take()
+    setSelectedId(pick)
     setOpenId(want)
     setAddingUnder(null)
     setPrompt(null)
@@ -897,6 +899,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const pageActions = (
     <>
       {route.view === 'today' && <TodayAskAction role={userRole} />}
+      {route.view === 'inbox' && rows.length > 0 && (
+        // Process the Inbox one task at a time (inbox-triage); g then p.
+        <Tooltip label="Process the Inbox" shortcut="g p">
+          <Button variant="secondary" size="sm" icon="inbox" onClick={() => navigate({ view: 'triage' })} data-triage-start>
+            Process <span className="tabular-nums text-muted">{rows.filter((r) => r.depth === 0).length}</span>
+          </Button>
+        </Tooltip>
+      )}
       {route.view !== 'completed' && rows.length > 0 && (
         <button type="button" className="btn-ghost hidden px-2 py-1 text-sm pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
           {selectMode ? 'Done' : 'Select'}
