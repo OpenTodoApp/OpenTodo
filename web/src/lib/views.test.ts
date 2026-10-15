@@ -5,7 +5,7 @@ import { applyOps, getDeviceId, resetDeviceId } from './ops'
 import type { Label, Op, Project, Task, View } from './types'
 import {
   MAX_PANELS, START_VIEW_KEY, addPanel, compareTasks, createView, dashboardPanels, deleteView, evaluateViews, groupTasks,
-  movePanel, removePanel, reorderView, resolveStartView, runView, setPanels, setPinned, setStartView, updateView, type ViewContext,
+  displayStartPath, movePanel, removePanel, reorderView, resolveStartView, runView, setPanels, setPinned, setStartView, updateView, type ViewContext,
 } from './views'
 
 let n = 0
@@ -308,5 +308,16 @@ describe('start view', () => {
     expect(await resolveStartView()).toEqual({ kind: 'builtin', view: 'inbox', removed: false })
     await setStartView('view:never-existed')
     expect(await resolveStartView()).toMatchObject({ view: 'inbox', removed: true })
+  })
+
+  it('validates display start views (display-mode D6)', async () => {
+    expect(await displayStartPath('display:/display/today?eink=1')).toBe('/display/today?eink=1')
+    expect(await displayStartPath('display:/display')).toBe('/display')
+    expect(await displayStartPath('display:/display/upcoming?days=3&size=xl')).toBe('/display/upcoming?days=3&size=xl')
+    const id = await createView({ name: 'Fridge', query: '@home' })
+    expect(await displayStartPath(`display:/display/view/${id}`)).toBe(`/display/view/${id}`)
+    expect(await displayStartPath('display:/display/project/gone')).toBeNull()
+    expect(await displayStartPath('display:/settings')).toBeNull()
+    expect(await displayStartPath('today')).toBeNull()
   })
 })

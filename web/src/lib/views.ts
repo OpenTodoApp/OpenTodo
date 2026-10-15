@@ -481,7 +481,8 @@ export const START_VIEW_KEY = 'startView'
 /** Built-in views that can be a start view, plus `view:<id>` for a saved view. */
 export const BUILTIN_START_VIEWS = ['inbox', 'today', 'upcoming', 'completed', 'filter'] as const
 export type BuiltinStartView = (typeof BUILTIN_START_VIEWS)[number]
-export type StartView = BuiltinStartView | `view:${string}`
+/** `display:<path>` is a display route with its options, e.g. `display:/display/today?eink=1` (display-mode D6). */
+export type StartView = BuiltinStartView | `view:${string}` | `display:${string}`
 
 export async function getStartView(): Promise<StartView> {
   return getMeta<StartView>(START_VIEW_KEY, 'inbox')
@@ -510,4 +511,22 @@ export async function resolveStartView(): Promise<ResolvedStart> {
     return { kind: 'builtin', view: 'inbox', removed: true }
   }
   return { kind: 'builtin', view: (BUILTIN_START_VIEWS as readonly string[]).includes(v) ? (v as BuiltinStartView) : 'inbox', removed: false }
+}
+
+/**
+ * The display route a `display:` start view opens (display-mode D6), or null
+ * when the value is not a display route or names a project or saved view that
+ * no longer exists, so the caller falls back to the Inbox with the notice.
+ */
+export async function displayStartPath(v: string): Promise<string | null> {
+  if (!v.startsWith('display:')) return null
+  const path = v.slice('display:'.length)
+  const m = /^\/display(?:\/(today|upcoming)|\/(project|view)\/([^/?#]+))?(?:\?[^#]*)?$/.exec(path)
+  if (!m) return null
+  if (m[2]) {
+    const id = decodeURIComponent(m[3])
+    const row = m[2] === 'project' ? await db.projects.get(id) : await db.views.get(id)
+    if (!row || row.deleted_at) return null
+  }
+  return path
 }
