@@ -4,6 +4,11 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+
+- **A calmer frame.** The task panel is now part of the app's frame: it stays put while the list scrolls, keeps its task in the address (reload or share a link and it reopens), and opens the same way from every list, the calendar, filters and dashboards. The sidebar scrolls as one, with Help and your account always at the bottom and Labels as their own group. Task rows line up across every view and show a second line only when there is something to show. The duration filter lives under a **Filter** button in the list's header, with one chip while it's on; the Inbox no longer labels every row "Inbox". Press <kbd>?</kbd> for a searchable cheat sheet that lists the shortcuts for where you are first. ([Views](docs/views.md), [Keyboard shortcuts](docs/keyboard.md))
+- For contributors: a page template, a tooltip and skeleton, sidebar building blocks, a style lint over the screens and an interface budget every screen change states ([Interface guide](docs/interface-guide.md)).
+
 ### Added
 
 - **Change several tasks at once.** Tick tasks with <kbd>x</kbd> or <kbd>Space</kbd>, extend with <kbd>Shift</kbd>+<kbd>↓</kbd>/<kbd>↑</kbd>, tick everything with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>A</kbd>, Shift+click a range, or tap **Select** on a phone. A bar shows how many are ticked; **Actions** (or <kbd>.</kbd>) completes, sets priority, labels, a date, moves, assigns or trashes them all in one batch that works offline and syncs as ordinary changes. Moves and assignments are shown for review first; everything else applies at once with **Undo** (also <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd>). Works in every task list, the Filter view, saved views and from the search box. ([Tasks and projects](docs/tasks-and-projects.md#change-several-tasks-at-once))
