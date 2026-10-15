@@ -353,7 +353,8 @@ export interface KeyLike {
 
 /** Whether a key press is this chord. */
 export function matchesChord(c: Chord, e: KeyLike): boolean {
-  const key = e.key.length === 1 && /[a-z]/i.test(e.key) ? e.key.toLowerCase() : e.key.toLowerCase()
+  const letter = e.key.length === 1 && /[a-z]/i.test(e.key)
+  const key = e.key.toLowerCase()
   if (c.key !== key) return false
   const ctrl = !!e.ctrlKey, meta = !!e.metaKey
   if (c.ctrl === false && (ctrl || meta)) return false
@@ -361,8 +362,14 @@ export function matchesChord(c: Chord, e: KeyLike): boolean {
   if (c.ctrl === 'meta' && !(meta && !ctrl)) return false
   if (c.ctrl === 'either' && !(ctrl || meta)) return false
   if (c.alt !== !!e.altKey) return false
-  if (!c.symbol && c.shift !== !!e.shiftKey) return false
-  return true
+  if (c.symbol) return true
+  // A capital letter is the shifted key whatever the modifier flag says (Caps Lock, a
+  // synthetic press); a lower-case one needs Shift off.
+  if (letter) {
+    const upper = e.key !== key
+    return c.shift ? upper || !!e.shiftKey : !upper && !e.shiftKey
+  }
+  return c.shift === !!e.shiftKey
 }
 
 /** The chord sequences of an entry, parsed once; notes have none. */
