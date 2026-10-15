@@ -20,26 +20,26 @@
 ## 3. Attribution (design D6)
 
 - [x] 3.1 Add the additive `device` field to `internal/activity.Event` and the grouping rule for `public:` devices; add the "public tick next to the creator's edit" case to `internal/activity/testdata/activity_fixture.json`. Verify with `go test ./internal/activity/...`.
-- [ ] 3.2 Mirror both in `web/src/lib/activity.ts` and `ActivityEvent` in `web/src/lib/types.ts`; local derivation shows "Public link" as the actor label for such events in `TaskConversation`, `ProjectActivity` and `FeedView`. Verify with `npm test` in web/ (the shared fixture passes in TypeScript) and `npm run build`.
+- [x] 3.2 Mirror both in `web/src/lib/activity.ts` and `ActivityEvent` in `web/src/lib/types.ts`; local derivation shows "Public link" as the actor label for such events in `TaskConversation`, `ProjectActivity` and `FeedView`. Verify with `npm test` in web/ (the shared fixture passes in TypeScript) and `npm run build`.
 - [x] 3.3 Label history change sets with a `public:` device in `internal/httpapi/trash.go` ("Public link (<name>)" for the project's owner and admins, "Public link" otherwise) and resolve `actorName` the same way on the activity and feed routes. Add the `public:` fallback to `deviceLabel` in `web/src/lib/history.ts`. Verify with `go test ./internal/httpapi/...` (owner, editor and revoked-link labels; unauthenticated 401) and `npm test` in web/.
-- [ ] 3.4 Document the history label in `docs/trash-and-history.md` and the feed wording in `docs/sharing.md`. Verify with `make docs-check`.
+- [x] 3.4 Document the history label in `docs/trash-and-history.md` and the feed wording in `docs/sharing.md`. Verify with `make docs-check`.
 
 ## 4. Public page (design D8)
 
-- [ ] 4.1 Add the `public` route to `web/src/app/router.ts`, render `PublicListScreen` before the auth gate in `App.tsx` with sync kept off, and add `publicApi` (`credentials: 'omit'`) to `web/src/lib/api.ts`. Verify with `npm test` in web/ (route parsing, a test showing no sync starts on the route).
-- [ ] 4.2 Build `PublicListScreen`: warning banner per rights, sections and nested subtasks, due and priority chips, 44 px checkboxes for tick links, refetch after a tick with error recovery, 30 s polling only while visible, "Updated …" line, offline, invalid and rate-limited states, screen id `public/list`. Verify with vitest component tests for the five states and a keyboard tick (Tab, Space), plus an axe check, and `npm run build`.
-- [ ] 4.3 Add the screen to the layout check at 360, 390 and 768 px in light and dark. Verify with `make layout-check`.
+- [x] 4.1 Add the `public` route to `web/src/app/router.ts`, render `PublicListScreen` before the auth gate in `App.tsx` with sync kept off, and add `publicApi` (`credentials: 'omit'`) to `web/src/lib/api.ts`. Verify with `npm test` in web/ (route parsing, a test showing no sync starts on the route).
+- [x] 4.2 Build `PublicListScreen`: warning banner per rights, sections and nested subtasks, due and priority chips, 44 px checkboxes for tick links, refetch after a tick with error recovery, 30 s polling only while visible, "Updated …" line, offline, invalid and rate-limited states, screen id `public/list`. Verify with vitest component tests for the five states and a keyboard tick (Tab, Space), plus an axe check, and `npm run build`.
+- [x] 4.3 Add the screen to the layout check at 360, 390 and 768 px in light and dark. Verify with `make layout-check`.
 
 ## 5. Share dialog and badge (design D8)
 
-- [ ] 5.1 Build `PublicLinksSection` (rights, name, expiry, create, created link shown once with Copy, active list with last-opened and Revoke, offline disabled, hidden on the demo) and mount it in `ShareDialog`. Verify with a vitest `publicLinks.test.tsx` covering create and copy, the list, revoke, the viewer seeing no section and the offline notice.
-- [ ] 5.2 Add the "Public" badge to `ProjectHeader` for owner and admins while online, opening the dialog on the section; refresh it when the dialog closes. Verify with a component test (badge after a created link, gone after revocation, absent offline).
-- [ ] 5.3 Write the "Share with a public link" section of `docs/sharing.md`, add `public-links` to its `specs:` front matter and `share-dialog#share-with-a-public-link` to `screens:`, and regenerate the help bundle. Verify with `make docs` and `make docs-check` (the new capability is covered).
+- [x] 5.1 Build `PublicLinksSection` (rights, name, expiry, create, created link shown once with Copy, active list with last-opened and Revoke, offline disabled, hidden on the demo) and mount it in `ShareDialog`. Verify with a vitest `publicLinks.test.tsx` covering create and copy, the list, revoke, the viewer seeing no section and the offline notice.
+- [x] 5.2 Add the "Public" badge to `ProjectHeader` for owner and admins while online, opening the dialog on the section; refresh it when the dialog closes. Verify with a component test (badge after a created link, gone after revocation, absent offline).
+- [x] 5.3 Write the "Share with a public link" section of `docs/sharing.md`, add `public-links` to its `specs:` front matter and `share-dialog#share-with-a-public-link` to `screens:`, and regenerate the help bundle. Verify with `make docs` and `make docs-check` (the new capability is covered).
 
 ## 6. Integration
 
-- [ ] 6.1 Manual smoke on `make dev`: create a tick link, open it in a private window on a phone-sized viewport, tick and reopen a task, see the change on the signed-in tab within a sync, check the history label and the feed entry, revoke the link and reload the public page. Record the result in the change folder notes.
-- [ ] 6.2 Run `make check` (lint, Go and web tests, UI lint, docs check, OpenSpec validation). Verify it passes.
+- [x] 6.1 Manual smoke on `make dev`: create a tick link, open it in a private window on a phone-sized viewport, tick and reopen a task, see the change on the signed-in tab within a sync, check the history label and the feed entry, revoke the link and reload the public page. Record the result in the change folder notes.
+- [x] 6.2 Run `make check` (lint, Go and web tests, UI lint, docs check, OpenSpec validation). Verify it passes.
 
 ## Workflow follow-up
 

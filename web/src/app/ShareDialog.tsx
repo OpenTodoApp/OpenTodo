@@ -7,6 +7,7 @@ import type { Membership, Project, ProjectRole } from '../lib/types'
 import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
 import { Dialog } from './overlay'
 import { InviteLinksSection } from './InviteLinksSection'
+import { PublicLinksSection } from './PublicLinksSection'
 
 const ROLE_HINT: Record<ProjectRole, string> = {
   owner: 'Owner',
@@ -23,11 +24,15 @@ const ROLE_HINT: Record<ProjectRole, string> = {
  * single-use link (OpenSpec `project-invite-links`, InviteLinksSection). Fully keyboard operable: the email field has
  * focus, Enter shares, Esc closes.
  */
-export function ShareDialog({ project, userId, cached, onClose }: {
+export function ShareDialog({ project, userId, cached, section, onPublicLinks, onClose }: {
   project: Project
   userId: string
   /** The locally cached membership, shown until the server answers (and offline). */
   cached: Membership | undefined
+  /** Opened from the "Public" badge: show the public links section first in view. */
+  section?: 'public'
+  /** The number of active public links, after each load (the project header's badge). */
+  onPublicLinks?: (active: number) => void
   onClose: () => void
 }) {
   const [membership, setMembership] = useState<Membership | undefined>(cached)
@@ -85,6 +90,7 @@ export function ShareDialog({ project, userId, cached, onClose }: {
           </form>
         )}
         {roles.length > 0 && <InviteLinksSection projectId={project.id} myRole={myRole} />}
+        {!locked && (myRole === 'owner' || myRole === 'admin') && <PublicLinksSection projectId={project.id} focus={section === 'public'} onChange={onPublicLinks} />}
         {locked && <p className="mb-3 text-sm text-muted" data-testid="demo-share-note">Sharing changes: {DEMO_RESTRICTED_NOTE}</p>}
         {error && <p role="alert" className="mb-3 text-sm text-danger">{error}</p>}
         <ul aria-label="Members" className="space-y-1">

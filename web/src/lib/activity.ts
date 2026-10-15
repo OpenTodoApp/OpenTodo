@@ -15,6 +15,13 @@ import type { ActivityChange, ActivityEntry, ActivityEvent, ActivityKind, Activi
 
 /** Device prefix of a public link's ops (OpenSpec `public-links`). */
 export const PUBLIC_DEVICE_PREFIX = 'public:'
+/** The actor shown for a public link's ticks: the link, never the member who created it. */
+export const PUBLIC_ACTOR_LABEL = 'Public link'
+
+/** True for an event made through a public link (public-links D6). */
+export function isPublicEvent(ev: Pick<ActivityEvent, 'device'> | undefined): boolean {
+  return !!ev?.device?.startsWith(PUBLIC_DEVICE_PREFIX)
+}
 
 /** Ops by one actor on one entity within this many ms of the group's first op fold into one event. */
 export const WINDOW_MS = 5000

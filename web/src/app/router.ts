@@ -25,6 +25,7 @@ export type Route =
   | { view: 'invite'; token: string }
   | { view: 'project-invite'; token: string }
   | { view: 'reset'; token: string }
+  | { view: 'public'; token: string }
   | { view: 'share' }
   | { view: 'trash' }
   | { view: 'feed' }
@@ -117,6 +118,9 @@ export function parseRoute(pathname: string): Route {
     case 'reset':
       // Password reset link from an administrator or `opentodo reset-owner-password`.
       return parts[1] ? { view: 'reset', token: safeDecode(parts[1]) } : { view: 'inbox' }
+    case 'public':
+      // A public link to a project's list (public-links): no sign-in, no sync.
+      return parts[1] ? { view: 'public', token: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'label':
       return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
     default:
@@ -156,6 +160,8 @@ export function routePath(r: Route): string {
       return `/${r.view}/${encodeURIComponent(r.token)}`
     case 'project-invite':
       return `/invite/p/${encodeURIComponent(r.token)}`
+    case 'public':
+      return `/public/${encodeURIComponent(r.token)}`
     case 'day':
     case 'week':
       return r.date ? `/${r.view}/${r.date}` : `/${r.view}`
