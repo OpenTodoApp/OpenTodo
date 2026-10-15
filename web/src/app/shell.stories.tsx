@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { openTaskPanel } from './panel'
 import { Shell } from './Shell'
+import { openTask } from './signals'
 import { seedInbox, seeded, storyUser, withSeed } from './stories/fixtures'
 
 // Core screen: the shell (OpenSpec change ux-overhaul, task 8.7; app-shell "Three
@@ -28,7 +28,9 @@ export const ListOnly: StoryObj = {
 export const ListWithPanel: StoryObj = {
   ...withSeed(async () => {
     await seedInbox()
-    openTaskPanel(seeded.inboxTask)
+    // A pending "open this task" request, as a notification click leaves it: the list
+    // takes it when it mounts, selects the row and opens the panel (openTaskInList).
+    openTask.set(seeded.inboxTask)
   }),
   render: () => <Viewport><Shell user={storyUser} onLogout={noop} /></Viewport>,
 }
