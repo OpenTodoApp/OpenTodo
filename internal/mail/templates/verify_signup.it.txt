@@ -1,0 +1,9 @@
+Conferma il tuo account OpenTodo
+
+Questa è una conferma di registrazione di OpenTodo.
+
+Qualcuno si è registrato su {{.Origin}} con {{.Email}}. Per creare l'account, apri questo link e premi il pulsante nella pagina:
+
+{{.Link}}
+
+Il link scade tra {{.Expiry}}. Se non ti sei registrato, puoi ignorare questo messaggio: nessun account viene creato.

@@ -1,0 +1,9 @@
+{{.Inviter}} invited you to a shared project
+
+This is an invitation to a shared project in OpenTodo.
+
+{{.Inviter}} invited {{.Email}} to join a project as {{.Role}} on the OpenTodo server at {{.Origin}}. To join, open this link:
+
+{{.Link}}
+
+The link expires in {{.Expiry}}. If you do not know {{.Inviter}}, you can ignore this message.

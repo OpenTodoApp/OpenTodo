@@ -1,0 +1,5 @@
+Mensagem de teste do OpenTodo
+
+Esta é uma mensagem de teste do servidor OpenTodo {{.Origin}}.
+
+O envio de email funciona: redefinições de senha, confirmações de cadastro e convites já podem ser enviados por email. Não é preciso fazer nada.

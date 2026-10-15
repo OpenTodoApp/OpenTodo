@@ -1,0 +1,7 @@
+Seu cadastro no OpenTodo
+
+Esta é uma mensagem de cadastro do OpenTodo.
+
+Alguém tentou se cadastrar em {{.Origin}} com {{.Email}}, mas este endereço já tem uma conta. Para entrar, abra o endereço do servidor acima. Se esqueceu a senha, use "Esqueceu a senha?" na tela de entrada.
+
+Se não foi você, pode ignorar esta mensagem: nada mudou.

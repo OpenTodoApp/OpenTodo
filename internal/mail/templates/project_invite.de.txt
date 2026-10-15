@@ -1,0 +1,9 @@
+{{.Inviter}} hat dich zu einem geteilten Projekt eingeladen
+
+Dies ist eine Einladung zu einem geteilten Projekt in OpenTodo.
+
+{{.Inviter}} hat {{.Email}} eingeladen, einem Projekt als {{.Role}} auf dem OpenTodo-Server {{.Origin}} beizutreten. Um beizutreten, öffne diesen Link:
+
+{{.Link}}
+
+Der Link läuft in {{.Expiry}} ab. Wenn du {{.Inviter}} nicht kennst, kannst du diese Nachricht ignorieren.

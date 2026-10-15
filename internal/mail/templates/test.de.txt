@@ -1,0 +1,5 @@
+OpenTodo-Testnachricht
+
+Dies ist eine Testnachricht vom OpenTodo-Server {{.Origin}}.
+
+Der E-Mail-Versand funktioniert: Passwort-Zurücksetzungen, Anmeldebestätigungen und Einladungen können jetzt per E-Mail verschickt werden. Du musst nichts tun.

@@ -1,0 +1,5 @@
+OpenTodo test message
+
+This is a test message from the OpenTodo server at {{.Origin}}.
+
+Outgoing email works: password resets, sign-up confirmations and invitations can now be sent by email. No action is needed.

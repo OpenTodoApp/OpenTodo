@@ -548,6 +548,13 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 		{"DELETE", "/api/v1/projects/" + shared + "/invites/x"},
 		{"GET", "/api/v1/project-invites/otp_x"},
 		{"POST", "/api/v1/project-invites/otp_x/accept"},
+		// Outgoing email: the anonymous routes and the owner's settings.
+		{"POST", "/api/v1/auth/password-reset"},
+		{"GET", "/api/v1/auth/verify/otv_abc"},
+		{"POST", "/api/v1/auth/verify/otv_abc"},
+		{"GET", "/api/v1/settings/smtp"},
+		{"PUT", "/api/v1/settings/smtp"},
+		{"POST", "/api/v1/settings/smtp/test"},
 		// Attachments (attachments 2.4): every method.
 		{"GET", "/api/v1/settings/attachments"},
 		{"PUT", "/api/v1/settings/attachments"},

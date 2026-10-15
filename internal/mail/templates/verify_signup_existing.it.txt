@@ -1,0 +1,7 @@
+La tua registrazione a OpenTodo
+
+Questo è un messaggio di registrazione di OpenTodo.
+
+Qualcuno ha provato a registrarsi su {{.Origin}} con {{.Email}}, ma questo indirizzo ha già un account. Per accedere, apri l'indirizzo del server qui sopra. Se hai dimenticato la password, usa «Password dimenticata?» nella schermata di accesso.
+
+Se non sei stato tu, puoi ignorare questo messaggio: non è cambiato nulla.

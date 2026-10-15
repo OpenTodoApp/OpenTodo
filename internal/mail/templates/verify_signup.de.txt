@@ -1,0 +1,9 @@
+Bestätige dein OpenTodo-Konto
+
+Dies ist eine Anmeldebestätigung von OpenTodo.
+
+Jemand hat sich auf {{.Origin}} mit {{.Email}} registriert. Um das Konto anzulegen, öffne diesen Link und drücke die Schaltfläche auf der Seite:
+
+{{.Link}}
+
+Der Link läuft in {{.Expiry}} ab. Wenn du dich nicht registriert hast, kannst du diese Nachricht ignorieren: Es wird kein Konto angelegt.
