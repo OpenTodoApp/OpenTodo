@@ -4,6 +4,21 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-15
+
+OpenTodo 0.4.0 makes the app yours to look at and easier to move into. Tasks can have a deadline, separate from the day you plan to work on them, and can wait for a start date, in Someday or for This Evening. Pick light, dark or system mode and one of eight colour themes, and set your own date format, clock and first day of the week. Settings are regrouped into clear sections. Import takes Todoist, Things, TickTick and Linear exports as they are, with a switch guide for each. With the assistant on, an **Ask** box and built-in skills (plan my week, triage my inbox, break this down) do common jobs. A setup token can protect a fresh public server, and the assistant's **Test connection** now checks what is on screen.
+
+### Upgrade notes
+
+- **Migration `0030`** (how often each assistant skill ran, per user and month; no conversation content) is applied automatically at startup. Back up `/data` before upgrading: there are no down-migrations. No new environment variables are required; `OPENTODO_SETUP_TOKEN` is optional.
+- **Sync:** new `user_prefs` fields (`date_format`, `time_format`, `week_start`, `theme_mode`, `theme_accent`), the task fields `deadline`, `start` and `evening`, and the reminder kind `deadline` are additive; older clients ignore them.
+- **Image tags.** The release publishes `ghcr.io/pixari/opentodo:0.4.0` and `:0.4` for `linux/amd64` and `linux/arm64` (`:latest` follows `main`). The Coolify template now follows `:0.4`; if you use `:0.3`, change the tag in **Edit Compose file** and click **Deploy**.
+- **Binary size** stays at about 23 MB.
+
+### Breaking
+
+- **`POST /api/v1/me/assistant/test` no longer answers `409 no_own_provider`.** A member can now test a provider before saving it; with no provider chosen or saved, the route answers `400 invalid_input`. **Migration:** scripts that checked for `no_own_provider` should check for `invalid_input`.
+
 ### Changed
 
 - **New addresses.** The website and the documentation moved to [open-todo.app](https://open-todo.app) (docs at [open-todo.app/docs](https://open-todo.app/docs/)) and the public demo to [demo.open-todo.app](https://demo.open-todo.app). In-app **Help** links, the generated docs' canonical URLs and the Coolify template now point there.
