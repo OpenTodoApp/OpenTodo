@@ -1,4 +1,4 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { describeDeadline, describeDue, formatDate, localDueOf, todayISO, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
@@ -95,6 +95,9 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   const shared = useLiveQuery(async () => (enc.enabled && task.project_id ? !!(await db.memberships.get(task.project_id)) : false), [enc.enabled, task.project_id], false)
   const unencrypted = notYetEncrypted(task as unknown as Record<string, unknown>, 'task', !shared)
   const undecryptable = !!task._e2ee?.raw?.title
+  // The metadata line is rendered only when there is metadata (single-line rows otherwise).
+  const hasMeta = !!(breadcrumb || due || deadline || startChip || (task.evening && !done) || task.recurrence || task.series_id || task.estimate_minutes || (blockedBy > 0 && !done)
+    || (assignee && task.assignee_id) || task.description || comments > 0 || attachments > 0 || labels.length > 0 || (showProject && (project || !task.project_id)))
   return (
     <li
       data-task-id={task.id}
@@ -111,10 +114,12 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         <span aria-hidden="true" data-drop-indicator={dropIndicator}
           className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-accent ${dropIndicator === 'before' ? '-top-px' : '-bottom-px'}`} />
       )}
-      {onToggleCollapse && (
-        // Tree views reserve a fixed slot so circles line up whether or not a row has children.
-        <span className="mt-0.5 flex h-5 w-4 shrink-0 items-center justify-center">
-          {hasChildren && (
+      {!card && (
+        // Every list reserves the same leading slot (ux-overhaul, task-list-presentation
+        // "One row anatomy"), so checkboxes line up across tree and flat views; the
+        // chevron appears only on rows with children.
+        <span className="mt-0.5 flex h-5 w-4 shrink-0 items-center justify-center" data-leading-slot>
+          {onToggleCollapse && hasChildren && (
             <button
               type="button"
               aria-label={collapsed ? 'Expand subtasks' : 'Collapse subtasks'}
@@ -166,7 +171,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
             </span>
           )}
         </div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
+        {hasMeta && <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs" data-row-meta>
           {breadcrumb && <span className="inline-flex min-w-0 items-center gap-1 text-faint" title="Parent task"><Icon name="corner-down-right" size="xs" /><span className="truncate">{breadcrumb}</span></span>}
           {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-faint" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
           {blockedBy > 0 && !done && (
@@ -220,7 +225,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
             </span>
           )}
           {showProject && !project && !task.project_id && <span className="text-faint">Inbox</span>}
-        </div>
+        </div>}
       </button>
     </li>
   )

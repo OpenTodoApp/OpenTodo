@@ -2,8 +2,8 @@
 // local tasks: a task with a due time is a block at that time, as long as its
 // estimate; date-only tasks sit in each day's unscheduled lane. Every placement,
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op).
-import { Icon } from '../ui/Icon'
-import { hueFor } from '../ui/tokens/palette'
+import { Icon } from '../ui'
+import { hueFor } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -16,12 +16,12 @@ import { formatMinutes } from '../lib/duration'
 import { layoutDay, type DayLayout } from '../lib/layout'
 import { compareByPosition, compareDueThenPriority } from '../lib/ordering'
 import { setTaskCompleted, updateTask } from '../lib/ops'
-import type { Label, Project, Task } from '../lib/types'
+import type { Project, Task } from '../lib/types'
 import { useCalendarDrag, type DropTarget } from './calendarDrag'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
 import { estimateFocus, isGPending, placement as placementSignal } from './signals'
-import { TaskDetail } from './TaskDetail'
+import { setPanelTaskId, usePanelTaskId } from './panel'
 import { useToday, useViewerZone } from './useViews'
 import { visibleTasks } from '../lib/trash'
 
@@ -85,8 +85,6 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
-  const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
-  const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const rawTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
   // The grid shows every due in the viewer's zone (absolute-datetimes): zoned dues
   // are converted here and edits are converted back with dueFromView.
@@ -113,7 +111,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const order = useMemo(() => days.flatMap((d) => [...d.lane.map((t) => t.id), ...d.layout.blocks.map((b) => b.id)]), [days])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [openId, setOpenId] = useState<string | null>(null)
+  const openId = usePanelTaskId()
+  const setOpenId = setPanelTaskId
   const [placing, setPlacing] = useState<Placement | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [tray, setTray] = useState<string>(readTray)
@@ -443,16 +442,6 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         </div>
       )}
 
-      {openId && (
-        <TaskDetail
-          key={openId}
-          taskId={openId}
-          projects={projects}
-          labelMap={labelMap}
-          onClose={() => setOpenId(null)}
-          onOpen={(id) => setOpenId(id)}
-        />
-      )}
     </div>
   )
 }

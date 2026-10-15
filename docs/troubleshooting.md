@@ -16,7 +16,7 @@ Most problems have a quick fix. Start with the section that matches what you see
 
 Check these places, in this order:
 
-1. **A filter above the list.** If **Quick wins**, **Under 30 min**, **Over 1 h** or **Unestimated** is switched on, the list shows only matching tasks. Select it again to clear it.
+1. **A duration filter.** If **Quick wins**, **Under 30 min**, **Over 1 h** or **Unestimated** is on, a chip with that name sits in the list's header and the list shows only matching tasks. Clear it with the chip's × or from the **Filter** action.
 2. **Completed.** It may have been ticked off by accident. Open **Completed** and reopen it.
 3. **Trash.** It may have been deleted, or its project was. See [Trash and history](trash-and-history.md).
 4. **An archived project.** Tasks of archived projects don't appear in Today or Upcoming.

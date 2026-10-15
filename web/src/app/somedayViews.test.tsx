@@ -9,6 +9,8 @@ import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import { act } from 'react'
 import { flush, key, render, type } from '../ui/test-utils'
 import { Sidebar } from './Sidebar'
+import { PanelHost } from './PanelHost'
+import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 
 let n = 0
@@ -21,6 +23,7 @@ beforeEach(() => {
 })
 afterEach(() => {
   vi.useRealTimers()
+  resetPanel()
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
   document.body.innerHTML = ''
 })
@@ -131,7 +134,7 @@ describe('keys (3.3)', () => {
   it('Shift+N, a date and Enter defer the selected task; n parks and un-parks', async () => {
     setDateTime({ date_format: 'day-month', time_format: '24h', week_start: 'mon' }, { order: 'DM', hour12: false, weekStart: 1 })
     const id = await createTask({ title: 'Renew passport' })
-    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    const r = await render(<><TaskListView route={{ view: 'inbox' }} /><PanelHost /></>)
     await waitFor(() => text(r.container).includes('Renew passport'))
     await key(document.body, 'j')
     await key(document.body, 'N', { shiftKey: true })

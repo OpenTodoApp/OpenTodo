@@ -3,7 +3,7 @@
 // editor. Escape, or a committed edit, closes the editor and puts focus back on the
 // value. Rows whose control is the value itself (priority, reminders) pass `control`.
 import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react'
-import { Icon, type IconName } from '../../ui/Icon'
+import { Icon, type IconName } from '../../ui'
 
 const FOCUSABLE = 'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 

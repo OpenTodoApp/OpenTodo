@@ -1,8 +1,8 @@
 // Settings → Account: session and a pointer to Security (OpenSpec settings-redesign D1, D3).
 import { useState } from 'react'
-import { Button } from '../ui/Button'
-import { ConfirmDialog } from '../ui/patterns/ConfirmDialog'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Button } from '../ui'
+import { ConfirmDialog } from '../ui'
+import { SettingRow, SettingsSection } from '../ui'
 import { navigate } from './router'
 
 /** Sign out of this device, after confirming what it clears (web-app "Settings"). */

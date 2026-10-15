@@ -9,6 +9,8 @@ import { setDateTime } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
 import { createProject, createTask, resetDeviceId, updateTask } from '../../lib/ops'
 import { flush, key, render } from '../../ui/test-utils'
+import { PanelHost } from '../PanelHost'
+import { resetPanel } from '../panel'
 import { TaskListView } from '../TaskListView'
 import { hideBulkToast } from './toastStore'
 import { UndoToast } from './UndoToast'
@@ -26,6 +28,7 @@ afterEach(async () => {
   for (const r of mounted.splice(0)) await r.unmount()
   vi.useRealTimers()
   hideBulkToast()
+  resetPanel()
   document.body.innerHTML = ''
 })
 
@@ -39,7 +42,7 @@ const bar = () => document.querySelector('[data-selection-bar] [role="status"]')
 async function inbox(...titles: string[]) {
   const ids: string[] = []
   for (const t of titles) ids.push(await createTask({ title: t }))
-  const r = await render(<><TaskListView route={{ view: 'inbox' }} /><UndoToast /></>)
+  const r = await render(<><TaskListView route={{ view: 'inbox' }} /><PanelHost /><UndoToast /></>)
   mounted.push(r)
   await waitFor(() => document.body.textContent!.includes(titles[titles.length - 1]))
   return { r, ids }

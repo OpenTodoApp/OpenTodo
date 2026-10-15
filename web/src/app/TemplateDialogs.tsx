@@ -13,9 +13,7 @@ import {
   treeFromFile, treeFromProject, type TemplateTree,
 } from '../lib/templates'
 import type { Project } from '../lib/types'
-import { Button } from '../ui/Button'
-import { Field, Input } from '../ui/Field'
-import { Notice } from '../ui/patterns/Notice'
+import { Button, Field, Input, Notice } from '../ui'
 import { DateField } from './datetime/DateField'
 import { HelpLink } from './help/HelpLink'
 import { Dialog } from './overlay/Dialog'
@@ -43,7 +41,7 @@ function Summary({ tree }: { tree: TemplateTree }) {
   const s = summarise(tree)
   const n = (k: number, one: string, many: string) => `${k} ${k === 1 ? one : many}`
   return (
-    <p className="text-sm text-muted" data-template-summary>
+    <p className="text-body text-muted" data-template-summary>
       {[n(s.projects, 'project', 'projects'), n(s.sections, 'section', 'sections'), n(s.tasks, 'task', 'tasks'), n(s.labels, 'label', 'labels')].join(', ')}
       {s.tasks > 0 && <>; {s.dated} dated{s.recurring ? `, ${s.recurring} repeating` : ''}</>}
     </p>
@@ -74,17 +72,17 @@ export function DuplicateProjectDialog({ project, shared, onClose }: { project: 
       <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void create() }}>
         {shared && <Notice>A personal copy of this project: nobody else sees it, and assignees are left out.</Notice>}
         <Field label="Name"><Input value={name} autoFocus onChange={(e) => setName(e.target.value)} required /></Field>
-        <div className="text-sm">
+        <div className="text-body">
           <span className="mb-1 block text-muted" aria-hidden>Parent project</span>
           <ProjectPickerField label="Parent project" projects={projects.filter((p) => p.id !== project.id)} value={parentId} inbox={false} noneLabel="Top level"
             onChange={setParentId} rankContext="duplicate.parent" />
         </div>
-        <div className="text-sm">
+        <div className="text-body">
           <span className="mb-1 block text-muted">Start on <span className="text-faint">(optional; dates move so the earliest lands on this day)</span></span>
           <DateField label="Start on" hideLabel value={startDay} onChange={setStartDay} />
         </div>
-        <p className="text-sm text-muted" data-duplicate-count>{count === 1 ? '1 open task' : `${count} open tasks`} and their subtasks are copied; completed work, comments and reminders are not.</p>
-        {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+        <p className="text-body text-muted" data-duplicate-count>{count === 1 ? '1 open task' : `${count} open tasks`} and their subtasks are copied; completed work, comments and reminders are not.</p>
+        {error && <p role="alert" className="text-body text-danger">{error}</p>}
         <div className="flex items-center justify-end gap-2">
           <HelpLink screen="templates" topic="Duplicate a project" />
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -107,7 +105,7 @@ export function SaveTemplateDialog({ project, onClose }: { project: Project; onC
   return (
     <Dialog title="Save as template" onClose={onClose} testId="save-template">
       <div className="space-y-3">
-        <p className="text-sm">A file with “{project.name}”, its sections and open tasks, to start new projects from later or share.</p>
+        <p className="text-body">A file with “{project.name}”, its sections and open tasks, to start new projects from later or share.</p>
         {tree && <Summary tree={tree} />}
         {enc.enabled && <Notice tone="warning">The file is not encrypted: anyone who has it can read your task titles and notes.</Notice>}
         <div className="flex items-center justify-end gap-2">
@@ -164,27 +162,27 @@ export function TemplateDialog({ onClose }: { onClose: () => void }) {
   return (
     <Dialog title="From a template" onClose={onClose} testId="template-dialog">
       <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void create() }}>
-        <p className="text-sm text-muted">Pick a template file: one you saved, or a download from open-todo.app. It becomes a new project with fresh ids; nothing in the file is changed.</p>
-        <label className="block text-sm">
+        <p className="text-body text-muted">Pick a template file: one you saved, or a download from open-todo.app. It becomes a new project with fresh ids; nothing in the file is changed.</p>
+        <label className="block text-body">
           <span className="mb-1 block text-muted">Template file</span>
-          <input type="file" accept=".json,application/json" className="block w-full text-sm" data-testid="template-file"
+          <input type="file" accept=".json,application/json" className="block w-full text-body" data-testid="template-file"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) void read(f) }} />
         </label>
         {tree && (
           <>
-            <p className="text-sm"><strong>{fileName}</strong></p>
+            <p className="text-body"><strong>{fileName}</strong></p>
             <Summary tree={tree} />
-            <div className="text-sm">
+            <div className="text-body">
               <span className="mb-1 block text-muted">Start on</span>
               <DateField label="Start on" hideLabel value={startDay} onChange={setStartDay} />
             </div>
-            <div className="text-sm">
+            <div className="text-body">
               <span className="mb-1 block text-muted" aria-hidden>Parent project</span>
               <ProjectPickerField label="Parent project" projects={projects} value={parentId} inbox={false} noneLabel="Top level" onChange={setParentId} rankContext="template.parent" />
             </div>
           </>
         )}
-        {error && <p role="alert" className="text-sm text-danger" data-template-error>{error}</p>}
+        {error && <p role="alert" className="text-body text-danger" data-template-error>{error}</p>}
         <div className="flex items-center justify-end gap-2">
           <HelpLink screen="templates" topic="Templates" />
           <Button variant="ghost" onClick={onClose}>Cancel</Button>

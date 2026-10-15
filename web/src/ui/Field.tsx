@@ -29,7 +29,7 @@ export function Field({ label, description, error, hideLabel, className, childre
   const describedBy = [descId, errId].filter(Boolean).join(' ') || undefined
   return (
     <div className={`space-y-1.5${className ? ` ${className}` : ''}`}>
-      <label htmlFor={id} className={hideLabel ? 'sr-only' : 'block text-sm font-medium text-default'}>{label}</label>
+      <label htmlFor={id} className={hideLabel ? 'sr-only' : 'block text-body font-medium text-default'}>{label}</label>
       <Ctx.Provider value={{ id, describedBy, invalid: !!error }}>{children}</Ctx.Provider>
       {description && <p id={descId} className="text-meta text-muted">{description}</p>}
       {error && <p id={errId} className="text-meta text-danger">{error}</p>}
@@ -50,14 +50,14 @@ function useFieldProps(props: { id?: string; 'aria-describedby'?: string; 'aria-
 const invalidRing = 'aria-invalid:border-danger aria-invalid:focus:ring-danger/30'
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
-  return <input ref={ref} {...props} {...useFieldProps(props)} className={`input ${invalidRing}${className ? ` ${className}` : ''}`} />
+  return <input ref={ref} {...props} {...useFieldProps(props)} className={`ui-input ${invalidRing}${className ? ` ${className}` : ''}`} />
 })
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea({ className, ...props }, ref) {
-  return <textarea ref={ref} {...props} {...useFieldProps(props)} className={`input min-h-24 ${invalidRing}${className ? ` ${className}` : ''}`} />
+  return <textarea ref={ref} {...props} {...useFieldProps(props)} className={`ui-input min-h-24 ${invalidRing}${className ? ` ${className}` : ''}`} />
 })
 
 /** For small fixed option sets (role, sort, group by). Choosing an entity uses Combobox. */
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(function Select({ className, ...props }, ref) {
-  return <select ref={ref} {...props} {...useFieldProps(props)} className={`input ${invalidRing}${className ? ` ${className}` : ''}`} />
+  return <select ref={ref} {...props} {...useFieldProps(props)} className={`ui-input ${invalidRing}${className ? ` ${className}` : ''}`} />
 })

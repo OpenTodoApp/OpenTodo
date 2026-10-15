@@ -5,10 +5,10 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetSkills } from '../lib/assistantSkills'
 import { resetAssistantStatus, setAssistantStatus, takeAssistantPrefill, type AssistantStatus } from '../lib/assistantStatus'
-import { db, getMeta } from '../lib/db'
+import { db } from '../lib/db'
 import type { User } from '../lib/types'
 import { click, flush, key, render } from '../ui/test-utils'
-import { AskScreen, HINT_DISMISSED_KEY, TodayAsk } from './assistant/AskEntry'
+import { AskScreen, TodayAskAction } from './assistant/AskEntry'
 import { navigate, parseRoute } from './router'
 import { Shell } from './Shell'
 
@@ -32,51 +32,39 @@ beforeEach(async () => {
 })
 afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
 
-describe('Today composer (3.3)', () => {
-  it('shows the composer with example cards when the assistant is available, and Enter opens the panel with the text', async () => {
+describe('Today action (ux-overhaul, in-app-assistant "Ask composer")', () => {
+  it('shows one Ask action in the header when the assistant is available, and it opens the panel', async () => {
     setAssistantStatus(base)
-    const r = await render(<TodayAsk role="member" />)
+    const r = await render(<TodayAskAction role="member" />)
     await flush(10)
-    expect(document.querySelector('[data-today-ask] [data-ask-composer]')).toBeTruthy()
-    expect(document.querySelectorAll('[data-ask-example]')).toHaveLength(3)
-    const input = document.querySelector('[data-ask-input]') as HTMLTextAreaElement
-    const { act } = await import('react')
-    await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(input, 'what is overdue in Work?')
-      input.dispatchEvent(new Event('input', { bubbles: true }))
-    })
-    await key(input, 'Enter')
-    expect(takeAssistantPrefill()).toEqual({ text: 'what is overdue in Work?', send: true })
+    const button = document.querySelector<HTMLButtonElement>('[data-today-ask]')!
+    expect(button.textContent).toBe('Ask')
+    expect(document.querySelector('[data-ask-composer]')).toBeNull()
+    expect(document.querySelectorAll('[data-ask-example]')).toHaveLength(0)
+    await click(button)
+    expect(takeAssistantPrefill()).toBeNull()
     await r.unmount()
   })
 
-  it('off: the owner sees one hint that stays dismissed on this device; a member sees nothing', async () => {
+  it('off: neither the owner nor a member sees a hint or a composer', async () => {
     setAssistantStatus(off)
-    let r = await render(<TodayAsk role="owner" />)
+    let r = await render(<TodayAskAction role="owner" />)
     await flush(20)
-    expect(document.querySelector('[data-ask-hint]')!.textContent).toContain('Set up the assistant')
-    expect(document.querySelector('[data-ask-composer]')).toBeNull()
-    await click([...document.querySelectorAll('[data-ask-hint] button')].find((b) => b.textContent === 'Dismiss')!)
-    await flush(20)
-    expect(document.querySelector('[data-ask-hint]')).toBeNull()
-    expect(await getMeta(HINT_DISMISSED_KEY, false)).toBe(true)
-    await r.unmount()
-    r = await render(<TodayAsk role="owner" />)
-    await flush(20)
+    expect(document.body.textContent).toBe('')
     expect(document.querySelector('[data-ask-hint]')).toBeNull()
     await r.unmount()
-    r = await render(<TodayAsk role="member" />)
+    r = await render(<TodayAskAction role="member" />)
     await flush(20)
     expect(document.body.textContent).toBe('')
     await r.unmount()
   })
 
-  it('an encrypted account gets no composer on Today', async () => {
+  it('an encrypted account gets no Ask action on Today', async () => {
     setAssistantStatus(encrypted)
-    const r = await render(<TodayAsk role="owner" />)
+    const r = await render(<TodayAskAction role="owner" />)
     await flush(20)
+    expect(document.querySelector('[data-today-ask]')).toBeNull()
     expect(document.querySelector('[data-ask-composer]')).toBeNull()
-    expect(document.querySelector('[data-ask-hint]')).toBeNull()
     await r.unmount()
   })
 })

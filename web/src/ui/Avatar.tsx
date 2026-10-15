@@ -19,7 +19,7 @@ export function avatarHue(accountId: string): HueName {
   return HUE_NAMES[h % HUE_NAMES.length]
 }
 
-const SIZES = { xs: 'h-4 w-4 text-[9px]', sm: 'h-6 w-6 text-hint', md: 'h-8 w-8 text-meta', lg: 'h-10 w-10 text-sm' } as const
+const SIZES = { xs: 'h-4 w-4 text-[9px]', sm: 'h-6 w-6 text-hint', md: 'h-8 w-8 text-meta', lg: 'h-10 w-10 text-meta' } as const // style-lint-allow: initials inside a 20 px circle
 
 export interface AvatarProps {
   id: string

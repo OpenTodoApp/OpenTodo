@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { act } from 'react'
 import { describe, expect, it } from 'vitest'
 import { Button, IconButton } from './Button'
 import { click, flush, render } from './test-utils'
@@ -40,7 +41,10 @@ describe('IconButton', () => {
     const { container, unmount } = await render(<IconButton icon="ellipsis" label="Label actions" />)
     const btn = container.querySelector('button')!
     expect(btn.getAttribute('aria-label')).toBe('Label actions')
-    expect(btn.getAttribute('title')).toBe('Label actions')
+    // The tooltip primitive, not the native title (ux-overhaul).
+    expect(btn.getAttribute('title')).toBeNull()
+    await act(async () => { btn.dispatchEvent(new FocusEvent('focusin', { bubbles: true })) })
+    expect(document.querySelector('[role="tooltip"]')!.textContent).toBe('Label actions')
     await unmount()
   })
 })

@@ -1,7 +1,7 @@
 // Settings → Preferences panels (OpenSpec settings-navigation, settings-redesign D3).
-import { Select } from '../ui/Field'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
-import { Switch } from '../ui/Switch'
+import { Select } from '../ui'
+import { SettingRow, SettingsSection } from '../ui'
+import { Switch } from '../ui'
 import { setStartView, type StartView } from '../lib/views'
 import type { View } from '../lib/types'
 import { useStartView, useViews } from './useViews'

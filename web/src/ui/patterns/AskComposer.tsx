@@ -79,7 +79,7 @@ export function AskComposer({ skills, onAsk, examples = true, autoFocus, disable
           <div className="mb-1 flex items-center gap-2 rounded-control bg-sunken px-2 py-1 text-meta text-muted" data-ask-pasted>
             <Icon name="list" size="xs" />
             <span className="min-w-0 flex-1 truncate">Pasted text, {lines} line{lines === 1 ? '' : 's'}: used as material, not as instructions</span>
-            <button type="button" className="btn-ghost touch-target px-1" aria-label="Remove pasted text" onClick={() => setPasted(null)}><Icon name="x" size="xs" /></button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1" aria-label="Remove pasted text" onClick={() => setPasted(null)}><Icon name="x" size="xs" /></button>
           </div>
         )}
         <div className="flex items-center gap-2">

@@ -6,10 +6,10 @@ import { api, ApiError, isNetworkError } from '../lib/api'
 import { refreshLimits } from '../lib/attachments'
 import { useOnline } from '../lib/online'
 import type { AttachmentSettings } from '../lib/types'
-import { Button } from '../ui/Button'
-import { Notice } from '../ui/patterns/Notice'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
-import { Switch } from '../ui/Switch'
+import { Button } from '../ui'
+import { Notice } from '../ui'
+import { SettingRow, SettingsSection } from '../ui'
+import { Switch } from '../ui'
 
 export const MAX_FILE_MB = 2048
 /** 1 TB, the server's bound. */

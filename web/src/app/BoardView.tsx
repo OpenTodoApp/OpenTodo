@@ -39,7 +39,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
             data-drop-target={sectionTarget(col.key)}
             data-column={col.key}
             aria-label={`${name}, ${col.cards.length} open ${col.cards.length === 1 ? 'task' : 'tasks'}`}
-            className="flex max-h-[calc(100dvh-14rem)] w-[85vw] max-w-72 shrink-0 snap-start flex-col rounded-lg bg-canvas p-1.5 data-drop-active:ring-2 data-drop-active:ring-accent sm:w-72"
+            className="flex max-h-[calc(100dvh-14rem)] w-[85vw] max-w-72 shrink-0 snap-start flex-col rounded-card bg-canvas p-1.5 dark:border dark:border-default dark:bg-sunken data-drop-active:ring-2 data-drop-active:ring-accent sm:w-72"
           >
             <SectionHeader
               section={col.section}

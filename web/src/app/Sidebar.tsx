@@ -1,6 +1,5 @@
-import { Icon, type IconName } from '../ui/Icon'
+import { Button, Icon, type IconName, MenuItem, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
 import { Menu } from './overlay/Menu'
-import { MenuItem } from '../ui/Menu'
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -25,8 +24,6 @@ import { canEditProject, roleOf } from '../lib/sharing'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
 import { formatUnread, unreadCounts, type UnreadCounts } from '../lib/feed'
 
-const ACTIVE = 'bg-accent-soft font-medium text-on-accent-soft'
-const IDLE = 'text-muted hover:bg-sunken dark:hover:bg-raised'
 
 /** Indentation per level in the sidebar; capped so a deep tree still fits a 360 px screen. */
 const INDENT_REM = 0.75
@@ -190,17 +187,15 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   const item = (r: Route, label: string, icon: IconName, count?: number) => {
     // Day and Week stay highlighted whatever date they show.
     const active = r.view === 'day' || r.view === 'week' ? route.view === r.view : JSON.stringify(r) === JSON.stringify(route)
-    return (
-      <button key={label} onClick={() => navigate(r)} className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${active ? ACTIVE : IDLE}`}>
-        <span className="flex w-5 justify-center text-muted"><Icon name={icon} /></span>
-        <span className="flex-1 truncate">{label}</span>
-        {count ? <span className="text-xs text-faint">{count}</span> : null}
-      </button>
-    )
+    return <SidebarItem key={label} icon={icon} label={label} count={count} active={active} onClick={() => navigate(r)} />
   }
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto overscroll-contain p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    // One scroller (ux-overhaul, app-shell "Sidebar structure"): the name and the
+    // primary destinations stay at the top, Help and the account at the bottom, and
+    // only the views, projects and labels between them scroll.
+    <div className="flex h-full flex-col">
+      <div className="shrink-0 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
       <div className="mb-4 flex items-center gap-2 px-1">
         <img src="/favicon.svg" alt="" className="h-7 w-7" />
         <span className="font-semibold">OpenTodo</span>
@@ -219,46 +214,37 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         {assistant?.available && item({ view: 'ask' }, 'Ask', 'message-circle')}
         {item({ view: 'trash' }, 'Trash', 'trash-2', trashCount)}
         {sharedIds.size > 0 && (
-          <button onClick={() => navigate({ view: 'feed' })} title='Activity in shared projects (g h)'
-            className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'feed' ? ACTIVE : IDLE}`}>
-            <span className="flex w-5 justify-center text-muted"><Icon name="newspaper" /></span>
-            <span className="flex-1 truncate">Activity</span>
-            {unread.total > 0 && <UnreadBadge n={unread.total} label="unread in shared projects" />}
-          </button>
+          <SidebarItem icon="newspaper" label="Activity" active={route.view === 'feed'} onClick={() => navigate({ view: 'feed' })}
+            badge={unread.total > 0 ? <UnreadBadge n={unread.total} label="unread in shared projects" /> : undefined} />
         )}
       </nav>
-      <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
-        Views
-        <button className={`rounded px-1 text-[10px] normal-case hover:bg-sunken dark:hover:bg-raised ${route.view === 'views' ? 'text-accent' : ''}`}
-          onClick={() => navigate({ view: 'views' })} title="All views (g v)">All</button>
       </div>
-      <nav className="space-y-0.5" aria-label="Views">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-2" data-sidebar-scroll>
+      <SidebarGroup title="Views" actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label="All views">All</SidebarGroupAction>}>
         {pinnedViews.map((v) => {
           const active = route.view === 'view' && route.id === v.id
           const c = viewCounts.get(v.id)
           return (
-            <div key={v.id} className={`group flex items-center rounded-md ${active ? ACTIVE : IDLE}`}>
-              <button data-view-id={v.id} onClick={() => navigate({ view: 'view', id: v.id })} className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left text-sm">
-                <span className="flex w-5 justify-center" style={{ color: v.color }}><Icon name={viewIcon(v)} /></span>
-                <span className="flex-1 truncate">{v.name}</span>
-                {!isDashboard(v) && c && (c.ok ? (c.count ? <span className="text-xs text-faint">{c.count}</span> : null) : <span className="text-xs text-danger" title={c.error}>!</span>)}
-              </button>
+            <div key={v.id} className="group flex items-center">
+              <SidebarItem data-view-id={v.id} active={active} onClick={() => navigate({ view: 'view', id: v.id })} label={v.name}
+                leading={<span style={{ color: v.color }}><Icon name={viewIcon(v)} /></span>}
+                count={!isDashboard(v) && c && c.ok ? c.count : undefined}
+                badge={!isDashboard(v) && c && !c.ok ? <span className="text-meta text-danger" aria-label={c.error}>!</span> : undefined} />
               <ViewMenu view={v} className="hover-reveal" />
             </div>
           )
         })}
         {pinnedViews.length === 0 && (
-          <p className="px-2 py-1 text-xs text-faint">Save a filter with <span className="kbd">s</span> to pin it here.</p>
+          <p className="px-2 py-1 text-meta text-faint">Save a filter with <span className="ui-kbd">s</span> to pin it here.</p>
         )}
-      </nav>
-      <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
-        Projects
-        <Menu kind="menu" label="New project" title="New project" trigger={<Icon name="plus" size="xs" />} triggerClassName="rounded px-1 text-base leading-none hover:bg-sunken dark:hover:bg-raised" width="sm:w-56">
+      </SidebarGroup>
+      <SidebarGroup title="Projects" actions={(
+        <Menu kind="menu" label="New project" title="New project" trigger={<Icon name="plus" size="xs" />}
+          triggerClassName="rounded-chip px-1.5 py-0.5 text-hint font-medium normal-case text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised" width="sm:w-56">
           <MenuItem label="New project" icon="plus" onSelect={startAdding} />
           <MenuItem label="From a template…" icon="copy" onSelect={requestTemplateDialog} />
         </Menu>
-      </div>
-      <nav className="min-h-48 flex-1 space-y-0.5 overflow-y-auto" aria-label="Projects">
+      )}>
         <ul role="tree">
           {rows.map((n) => {
             const p = n.item
@@ -270,7 +256,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
               <li key={n.id} role="treeitem" aria-level={n.depth + 1} aria-expanded={has ? !isCollapsed : undefined}
                 data-project-row={n.id} data-drop-target={`project:${n.id}`}
                 onPointerDown={movable(n.id) ? (e) => startDrag(e, n) : undefined}
-                className={`relative flex items-center rounded-md ${drop === 'inside' ? 'ring-2 ring-accent' : ''}`} style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
+                className={`relative flex items-center rounded-control ${drop === 'inside' ? 'ring-2 ring-accent' : ''}`} style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
                 {(drop === 'before' || drop === 'after') && (
                   <span aria-hidden="true" data-drop-indicator={drop}
                     className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-accent ${drop === 'before' ? '-top-px' : '-bottom-px'}`} />
@@ -279,75 +265,60 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
                   {has && (
                     <button type="button" tabIndex={-1} aria-label={isCollapsed ? `Expand ${p.name}` : `Collapse ${p.name}`}
                       onClick={() => void toggleCollapsedProject(n.id)}
-                      className="flex h-5 w-4 items-center justify-center rounded text-xs text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised">
+                      className="flex h-5 w-4 items-center justify-center rounded-chip text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised">
                       <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${isCollapsed ? '' : 'rotate-90'}`} />
                     </button>
                   )}
                 </span>
-                <button
+                <SidebarItem
                   data-project-id={n.id}
+                  depth={n.depth}
+                  active={route.view === 'project' && route.id === n.id}
                   onClick={() => navigate({ view: 'project', id: n.id })}
-                  onKeyDown={(e) => onRowKey(e, n)}
-                  className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'project' && route.id === n.id ? ACTIVE : IDLE}`}
-                >
-                  <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />
-                  <span className="flex-1 truncate">{p.name}</span>
-                  {sharedIds.has(n.id) && (
-                    <span className="text-faint" title="Shared project" aria-label="Shared">
-                      <Icon name="users" size={14} />
-                    </span>
-                  )}
-                  {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label="unread changes" /> : null}
-                  {count ? <span className="text-xs text-faint" title={isCollapsed && has ? 'Open tasks including sub-projects' : 'Open tasks'}>{count}</span> : null}
-                </button>
+                  onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => onRowKey(e, n)}
+                  label={p.name}
+                  leading={<span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />}
+                  badge={<>
+                    {sharedIds.has(n.id) && <span className="text-faint" aria-label="Shared project"><Icon name="users" size={14} /></span>}
+                    {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label="unread changes" /> : null}
+                  </>}
+                  count={count}
+                  aria-description={count && isCollapsed && has ? 'Open tasks including sub-projects' : undefined}
+                />
               </li>
             )
           })}
         </ul>
         {adding && (
           <form onSubmit={(e) => void submit(e)} className="space-y-1 px-1 pt-1">
-            <input className="input" autoFocus placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)}
+            <input className="ui-input" autoFocus placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Escape' && setAdding(false)} />
             <ProjectPickerField label="Parent project" projects={projects} value={parentId || null} onChange={(id) => setParentId(id ?? '')}
-              rankContext="project.parent" inbox={false} noneLabel="Top level" className="py-1 text-xs" />
+              rankContext="project.parent" inbox={false} noneLabel="Top level" className="py-1 text-meta" />
             <div className="flex gap-1">
-              <button type="submit" className="btn-primary flex-1 text-xs">Create</button>
-              <button type="button" className="btn-ghost text-xs" onClick={() => setAdding(false)}>Cancel</button>
+              <Button type="submit" variant="primary" size="sm" className="flex-1">Create</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>Cancel</Button>
             </div>
           </form>
         )}
-        {projects.length === 0 && !adding && <p className="px-2 py-1 text-xs text-faint">No projects yet.</p>}
-
-        <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
-          <button className="flex items-center gap-1 uppercase hover:text-muted" onClick={() => setLabelsOpen((v) => !v)} aria-expanded={labelsOpen}>
-            <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${labelsOpen ? 'rotate-90' : ''}`} />Labels
-          </button>
-          <span className="flex items-center gap-1">
-            <button className={`rounded px-1 text-[10px] normal-case hover:bg-sunken dark:hover:bg-raised ${route.view === 'labels' ? 'text-accent' : ''}`} onClick={() => navigate({ view: 'labels' })} title="All labels (g l)">All</button>
-            <button className="rounded px-1 text-base leading-none hover:bg-sunken dark:hover:bg-raised" onClick={() => { setLabelsOpen(true); setAddingLabel(true) }} title="New label" aria-label="New label"><Icon name="plus" size="xs" /></button>
-          </span>
-        </div>
-        {labelsOpen && (
-          <div className="space-y-0.5">
-            {labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} />)}
-            {addingLabel && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
-            {labels.length === 0 && !addingLabel && <p className="px-2 py-1 text-xs text-faint">No labels yet.</p>}
-          </div>
-        )}
-      </nav>
-      <button onClick={() => navigate({ view: 'help' })} title="Help and guides (g then ?)"
-        className={`mt-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'help' ? 'bg-accent-soft text-on-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}>
-        <span className="flex h-6 w-6 items-center justify-center text-muted"><Icon name="circle-help" /></span>
-        <span className="flex-1 text-muted">Help</span>
-      </button>
-      <button onClick={() => navigate({ view: 'settings' })}
-        className={`mt-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'settings' || route.view === 'import' ? 'bg-accent-soft text-on-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}>
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-xs font-semibold text-on-accent">
-          {(user.name || user.email).slice(0, 1).toUpperCase()}
-        </span>
-        <span className="flex-1 truncate text-muted">{user.name || user.email}</span>
-        <span className="text-faint"><Icon name="settings" /></span>
-      </button>
+        {projects.length === 0 && !adding && <p className="px-2 py-1 text-meta text-faint">No projects yet.</p>}
+      </SidebarGroup>
+      <SidebarGroup title="Labels" collapsible open={labelsOpen} onToggle={() => setLabelsOpen((v) => !v)}
+        actions={<>
+          <SidebarGroupAction active={route.view === 'labels'} onClick={() => navigate({ view: 'labels' })} aria-label="All labels">All</SidebarGroupAction>
+          <SidebarGroupAction onClick={() => { setLabelsOpen(true); setAddingLabel(true) }} aria-label="New label"><Icon name="plus" size="xs" /></SidebarGroupAction>
+        </>}>
+        {labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} />)}
+        {addingLabel && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
+        {labels.length === 0 && !addingLabel && <p className="px-2 py-1 text-meta text-faint">No labels yet.</p>}
+      </SidebarGroup>
+      </div>
+      <div className="flex shrink-0 flex-col gap-0.5 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2" data-sidebar-footer>
+      <SidebarItem icon="circle-help" label="Help" active={route.view === 'help'} onClick={() => navigate({ view: 'help' })} />
+      <SidebarItem active={route.view === 'settings' || route.view === 'import'} onClick={() => navigate({ view: 'settings' })}
+        leading={<span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-hint font-semibold text-on-accent">{(user.name || user.email).slice(0, 1).toUpperCase()}</span>}
+        label={user.name || user.email} badge={<span className="text-faint" aria-hidden="true"><Icon name="settings" /></span>} />
+      </div>
     </div>
   )
 }
@@ -357,6 +328,6 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
   const text = formatUnread(n)
   return (
     <span data-unread-count={n} title={`${text} ${label}`} aria-label={`${text} ${label}`}
-      className="rounded-full bg-accent px-1.5 text-[10px] font-semibold leading-4 text-on-accent">{text}</span>
+      className="rounded-full bg-accent px-1.5 text-hint font-semibold leading-4 text-on-accent">{text}</span>
   )
 }

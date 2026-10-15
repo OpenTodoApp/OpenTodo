@@ -30,6 +30,7 @@ rules:
   design:
     - Record the data model impact (new fields on existing entities are additive; never rename op fields)
     - State the expected effect on container image size and runtime memory when adding dependencies
+    - For a change that touches a screen (web/src/app or web/src/ui), state how it stays within the interface budget of docs/interface-guide.md: at most 2 rows of chrome above a list's first item, at most 7 task properties visible by default, at most 6 primary sidebar destinations, at most 3 vertical scroll regions per screen, and every new shortcut registered in the registry without a conflict
   tasks:
     - Each task names the test, command, or observable behavior that verifies it
     - Backend tasks run `go test ./...`; frontend tasks run `npm test` and `npm run build` in web/

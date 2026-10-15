@@ -203,4 +203,4 @@ Today, Upcoming, labels and filters sort themselves by date and priority, so dra
 
 - Keep the Inbox as a landing spot: capture fast, then sort into projects once a day.
 - Use priorities sparingly. If everything is P1, nothing is.
-- A task with an estimate shows it on the row, like `30m`, which makes it easy to spot quick wins. The **Quick wins** button above most lists shows only tasks of 15 minutes or less.
+- A task with an estimate shows it on the row, like `30m`, which makes it easy to spot quick wins. The **Filter** action in a list's header can show only tasks of 15 minutes or less (**Quick wins**).

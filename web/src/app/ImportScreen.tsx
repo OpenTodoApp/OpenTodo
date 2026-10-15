@@ -1,5 +1,5 @@
+import { Icon } from '../ui'
 import { requestTemplateDialog } from './TemplateDialogs'
-import { Icon } from '../ui/Icon'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { HelpLink } from './help/HelpLink'

@@ -8,6 +8,8 @@ import { setDateTime } from '../lib/dates'
 import { setBlockedBy } from '../lib/dependencies'
 import { createTask, resetDeviceId, setTaskCompleted } from '../lib/ops'
 import { click, flush, key, render } from '../ui/test-utils'
+import { PanelHost } from './PanelHost'
+import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 import { TaskDetail } from './task-detail/TaskDetail'
 
@@ -24,6 +26,7 @@ const mounted: { unmount: () => Promise<void> }[] = []
 afterEach(async () => {
   for (const r of mounted.splice(0)) await r.unmount()
   vi.useRealTimers()
+  resetPanel()
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
   document.body.innerHTML = ''
 })
@@ -40,7 +43,7 @@ describe('rows (3.1)', () => {
     const b = await createTask({ title: 'Ask the team' })
     const t = await createTask({ title: 'Book flights' })
     await setBlockedBy(t, [a, b])
-    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    const r = await render(<><TaskListView route={{ view: 'inbox' }} /><PanelHost /></>)
     mounted.push(r)
     await waitFor(() => !!row('Book flights')?.querySelector('[data-blocked]'))
     const marker = row('Book flights')!.querySelector('[data-blocked]')!
@@ -86,7 +89,7 @@ describe('task panel (3.3)', () => {
     const hotel = await createTask({ title: 'Book hotel' })
     await createTask({ title: 'Renew passport' })
     await setBlockedBy(flights, [trip])
-    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    const r = await render(<><TaskListView route={{ view: 'inbox' }} /><PanelHost /></>)
     mounted.push(r)
     await waitFor(() => !!row('Plan trip'))
     // Select "Plan trip" and press b.

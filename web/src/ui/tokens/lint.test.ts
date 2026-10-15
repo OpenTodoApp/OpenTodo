@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import css from '../../index.css?raw'
+import { STYLE_NOT_YET_MIGRATED, STYLE_NOT_YET_MIGRATED_MAX, TITLE_NOT_YET_MIGRATED, TITLE_NOT_YET_MIGRATED_MAX } from './notYetMigrated'
+import { format, nativeTitles, rawStyles } from './styleLint'
 
 // OpenSpec design-system "Semantic design tokens": shared UI, screens and the
 // component style classes colour through tokens, never raw Tailwind palette
@@ -97,5 +99,58 @@ describe('token lint', () => {
     expect(rawColours('x.css', '  @apply border border-slate-300 bg-white;')).toEqual(['x.css:1: border-slate-300', 'x.css:1: bg-white'])
     expect(rawColours('x.tsx', '<div className="bg-surface text-muted rounded-card whitespace-nowrap" />')).toEqual([])
     expect(rawColours('x.tsx', '<Badge color="#a0522d">stored</Badge>')).toEqual([])
+  })
+
+  // Style lint over the screens (ux-overhaul, design-system "Token lint covers the
+  // screens"): raw sizes, radii, shadows and legacy classes, and native titles.
+  const appFiles = Object.entries(app).map(([path, src]) => [path.replace(/^\.\.\/\.\.\//, 'src/'), src] as const)
+
+  // Stories are examples (the foundations show the legacy classes on purpose); the rules below skip them.
+  const uiCode = Object.entries(ui).filter(([path]) => !/\.stories\.tsx$/.test(path))
+
+  it('shared UI uses no raw sizes, radii, shadows or legacy classes', () => {
+    const found = uiCode.flatMap(([path, src]) => rawStyles(path.replace(/^\.\.\//, 'src/ui/'), src)).map(format)
+    expect(found).toEqual([])
+  })
+
+  it('screens off the not-yet list use no raw sizes, radii, shadows or legacy classes', () => {
+    const skip = new Set(STYLE_NOT_YET_MIGRATED)
+    const found = appFiles.filter(([path]) => !skip.has(path)).flatMap(([path, src]) => rawStyles(path, src)).map(format)
+    expect(found).toEqual([])
+  })
+
+  it('screens off the not-yet list use the Tooltip primitive, not the native title', () => {
+    const skip = new Set(TITLE_NOT_YET_MIGRATED)
+    const found = [
+      ...uiCode.flatMap(([path, src]) => nativeTitles(path.replace(/^\.\.\//, 'src/ui/'), src)),
+      ...appFiles.filter(([path]) => !skip.has(path)).flatMap(([path, src]) => nativeTitles(path, src)),
+    ].map(format)
+    expect(found).toEqual([])
+  })
+
+  it('the not-yet lists only shrink and name files that still need them', () => {
+    expect(STYLE_NOT_YET_MIGRATED.length).toBeLessThanOrEqual(STYLE_NOT_YET_MIGRATED_MAX)
+    expect(TITLE_NOT_YET_MIGRATED.length).toBeLessThanOrEqual(TITLE_NOT_YET_MIGRATED_MAX)
+    const byPath = new Map(appFiles)
+    for (const f of STYLE_NOT_YET_MIGRATED) {
+      expect(byPath.has(f), f).toBe(true)
+      expect(rawStyles(f, byPath.get(f)!).length, `${f} is clean: remove it from STYLE_NOT_YET_MIGRATED`).toBeGreaterThan(0)
+    }
+    for (const f of TITLE_NOT_YET_MIGRATED) {
+      expect(byPath.has(f), f).toBe(true)
+      expect(nativeTitles(f, byPath.get(f)!).length, `${f} is clean: remove it from TITLE_NOT_YET_MIGRATED`).toBeGreaterThan(0)
+    }
+  })
+
+  it('detects raw sizes, radii, shadows, legacy classes and native titles', () => {
+    expect(rawStyles('x.tsx', '<div className="text-xs rounded-md shadow-lg sm:rounded-t-xl text-[11px] rounded shadow" />').map((f) => f.text))
+      .toEqual(['text-xs', 'text-[11px]', 'rounded-md', 'sm:rounded-t-xl', 'rounded', 'shadow-lg', 'shadow'])
+    expect(rawStyles('x.tsx', '<div className="text-meta rounded-card shadow-1 rounded-full shadow-none text-h1 shadow-(--x)" />')).toEqual([])
+    expect(rawStyles('x.tsx', '<button className="btn-primary">x</button><input className="input" /><span className="kbd">q</span>').map((f) => f.text)).toEqual(['btn-primary', 'input', 'kbd'])
+    expect(rawStyles('x.tsx', '<Button className="ui-btn">x</Button> const input = 1; <input aria-label="Filter query input" className={`a ${b} kbd`} />').map((f) => f.text)).toEqual(['kbd'])
+    expect(rawStyles('x.tsx', '<div className="text-xs" /> // style-lint-allow')).toEqual([])
+    expect(nativeTitles('x.tsx', '<button type="button" onClick={() => go(1)} title="Open">x</button>').map((f) => f.text)).toEqual(['<button title='])
+    expect(nativeTitles('x.tsx', '<Dialog title="Labels" onClose={close}><p>title=</p></Dialog>')).toEqual([])
+    expect(nativeTitles('x.tsx', '<span title="x" /> {/* tooltip-lint-allow */}')).toEqual([])
   })
 })

@@ -1,6 +1,6 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/db'
 import { archiveProject, deleteProject, moveProject, updateProject } from '../lib/ops'
 import { buildProjectTree, descendantIds } from '../lib/projects'
@@ -13,7 +13,7 @@ import { DuplicateProjectDialog, SaveTemplateDialog } from './TemplateDialogs'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
-import { HUES, hueFor } from '../ui/tokens/palette'
+import { HUES, hueFor } from '../ui'
 
 /** A "Move to" target: a project, or the top level (id ''). */
 export interface MoveTarget { id: string; name: string; path: string[] }
@@ -100,7 +100,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
 
 }
 
-export function ProjectHeader({ project, userId }: { project: Project; userId?: string }) {
+export function ProjectHeader({ project, userId, actions }: { project: Project; userId?: string; /** Page actions rendered in the title row (the duration filter). */ actions?: ReactNode }) {
   const [editing, setEditing] = useState(false)
   const [sharing, setSharing] = useState(false)
   // Cached membership (project-sharing): roles render the same offline.
@@ -173,6 +173,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
       )}
       {role === 'viewer' && <span role="note" className="rounded bg-sunken px-1.5 py-0.5 text-xs text-muted">Read-only</span>}
       <div className="flex-1" />
+      {actions}
       <button className="btn-ghost text-xs" onClick={() => setSharing(true)} title="Share and manage members (Shift+S)" aria-haspopup="dialog">
         {canManageMembers(role) ? 'Share' : 'Members'} <span className="kbd ml-1">S</span>
       </button>

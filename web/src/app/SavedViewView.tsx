@@ -11,7 +11,7 @@ import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type GroupBy, type SortBy, type Sort
 import { runView, setPinned, updateView, viewOptions } from '../lib/views'
 import { DashboardView } from './DashboardView'
 import { LabelPicker } from './LabelPicker'
-import { TaskDetail } from './TaskDetail'
+import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { ViewMenu } from './ViewsView'
 import { useListKeys } from './useListKeys'
@@ -89,7 +89,8 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const groups = result.ok ? result.groups : []
   const rows = useMemo(() => groups.flatMap((g) => g.tasks.map((t) => ({ key: `${g.key}:${t.id}`, task: t }))), [groups])
   const [selected, setSelected] = useState<string | null>(null)
-  const [openId, setOpenId] = useState<string | null>(null)
+  const openId = usePanelTaskId()
+  const setOpenId = setPanelTaskId
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const bulkTasks = useMemo(() => rows.map((r) => r.task), [rows])
   const bulk = useBulkList(bulkTasks)
@@ -120,8 +121,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const count = result.ok ? result.tasks.length : null
 
   return (
-    <div className="flex h-full">
-      <div className="min-w-0 flex-1 px-4 py-5 md:px-8">
+    <div className="min-w-0 px-4 py-5 md:px-8">
         <div className="mx-auto max-w-3xl">
           <div className="mb-3 flex items-center gap-2">
             <span className="inline-block h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
@@ -203,11 +203,6 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
             ))}
           </div>
         </div>
-      </div>
-      {openId && (
-        <TaskDetail key={openId} taskId={openId} projects={projects} labelMap={labelMap} onClose={() => setOpenId(null)}
-          onOpen={(id) => setOpenId(id)} onToggleComplete={(t) => void setTaskCompleted(t.id, !t.completed_at)} />
-      )}
       {pickerFor && (
         <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />

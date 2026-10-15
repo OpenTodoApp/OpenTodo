@@ -1,4 +1,4 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/db'

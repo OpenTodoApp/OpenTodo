@@ -1,3 +1,28 @@
-// Shared UI building blocks (OpenSpec change `ui-primitives`). Screens import
-// primitives from here; see docs/design-system.md and the Storybook workbench.
-export {}
+// Shared UI building blocks (OpenSpec change `ui-primitives`; the one import for
+// screens since `ux-overhaul`, design-system "Page template primitives"). Screens
+// import from here, never from the files below: `src/ui/barrel.test.ts` checks it.
+// See docs/design-system.md and the Storybook workbench.
+export * from './Avatar'
+export * from './Button'
+export * from './Card'
+export * from './Combobox/Combobox'
+export * from './Combobox/match'
+export * from './Combobox/useCombobox'
+export * from './Field'
+export * from './Icon'
+export * from './Menu'
+export * from './Skeleton'
+export * from './Switch'
+export * from './Tabs'
+export * from './Tooltip'
+export * from './patterns/AskComposer'
+export * from './patterns/ConfirmDialog'
+export * from './patterns/EmptyState'
+export * from './patterns/ListRow'
+export * from './patterns/Notice'
+export * from './patterns/PageHeader'
+export * from './patterns/SettingsSection'
+export * from './patterns/Sidebar'
+export * from './patterns/Timeline'
+export * from './tokens/accents'
+export * from './tokens/palette'

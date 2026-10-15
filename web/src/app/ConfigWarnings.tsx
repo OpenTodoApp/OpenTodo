@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import type { ConfigWarning, User } from '../lib/types'
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 
 /** The owner's configuration warnings from /api/v1/me; empty for everyone else, offline or on older servers. */
 export async function loadConfigWarnings(user: User): Promise<ConfigWarning[]> {

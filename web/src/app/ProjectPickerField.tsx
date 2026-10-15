@@ -4,8 +4,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { INBOX_KEY, NONE_KEY, projectSource, type PickerItem } from '../lib/pickerSources'
 import type { Project } from '../lib/types'
-import { ComboboxPanel } from '../ui/Combobox/Combobox'
-import { Icon } from '../ui/Icon'
+import { ComboboxPanel } from '../ui'
+import { Icon } from '../ui'
 import { Popover } from './overlay/Popover'
 
 export interface ProjectPickerFieldProps {

@@ -1,8 +1,8 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
-import { Button } from '../ui/Button'
-import { Field, Input } from '../ui/Field'
-import { Notice } from '../ui/patterns/Notice'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Button } from '../ui'
+import { Field, Input } from '../ui'
+import { Notice } from '../ui'
+import { SettingRow, SettingsSection } from '../ui'
 import { api, ApiError } from '../lib/api'
 import { useOnline } from '../lib/online'
 

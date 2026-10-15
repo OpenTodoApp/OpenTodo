@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Select } from '../ui/Field'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
-import { Checkbox, Switch } from '../ui/Switch'
+import { Select } from '../ui'
+import { SettingRow, SettingsSection } from '../ui'
+import { Checkbox, Switch } from '../ui'
 import {
   BUNDLED_LANGUAGES, dayMonthOrderSource, type DayMonthOrderSource, loadQuickAddSettings, type QuickAddSettings, resolveLanguages, saveQuickAddSettings,
 } from '../lib/nlp'

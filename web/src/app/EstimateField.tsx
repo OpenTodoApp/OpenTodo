@@ -1,4 +1,4 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { useEffect, useRef, useState } from 'react'
 import { ESTIMATE_PRESETS, formatMinutes, parseDuration } from '../lib/duration'
 import { updateTask } from '../lib/ops'

@@ -8,10 +8,10 @@ import { membershipMap, roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
 import { duplicateTask } from '../../lib/templates'
 import type { Label, Priority, Project, Task } from '../../lib/types'
-import { IconButton } from '../../ui/Button'
-import { Badge } from '../../ui/Card'
-import { Icon } from '../../ui/Icon'
-import { MenuItem, MenuSeparator } from '../../ui/Menu'
+import { IconButton } from '../../ui'
+import { Badge } from '../../ui'
+import { Icon } from '../../ui'
+import { MenuItem, MenuSeparator } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { Markdown } from '../Markdown'
 import { Menu } from '../overlay/Menu'
@@ -94,7 +94,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   }
 
   return (
-    <aside ref={panel} data-detail-for={task.id} onKeyDown={onKeyDown} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-xl md:static md:shadow-none">
+    <aside ref={panel} data-detail-for={task.id} onKeyDown={onKeyDown} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-xl lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem]">
       <div className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         {!readOnly && (
           <button type="button" className="btn-secondary px-3 py-1.5 text-sm" onClick={() => toggle(task)}>

@@ -1,4 +1,4 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
@@ -21,6 +21,9 @@ import { SyncStatus } from './SyncStatus'
 import { ReminderToasts } from './ReminderToasts'
 import { ArchivePrompt } from './ArchivePrompt'
 import { isGPending, openTaskInList, setGPending } from './signals'
+import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress } from './panel'
+import { listState } from './listActions'
+import { PanelHost } from './PanelHost'
 import { db } from '../lib/db'
 import { watchViewerZone } from '../lib/dates'
 import { NotificationBell } from './NotificationBell'
@@ -59,11 +62,15 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // Start view (per device, OpenSpec `custom-views`): applied once per launch, and only
   // when the app opens at its root, so deep links and reloads keep their page.
   useEffect(() => {
-    // A notification click opens /?task=<id>: show that task instead of the start view.
-    const taskParam = new URLSearchParams(location.search).get('task')
+    // `?task=<id>` (a notification click, a shared link, a reload with the panel
+    // open): at the root, show the task in its own list instead of the start view;
+    // on any other page, reopen it in the panel there (app-shell).
+    const taskParam = taskIdFromAddress()
     if (taskParam) {
-      history.replaceState(null, '', location.pathname)
-      void db.tasks.get(taskParam).then((t) => t && openTaskInList(t))
+      if (location.pathname === '/') {
+        history.replaceState(null, '', location.pathname)
+        void db.tasks.get(taskParam).then((t) => t && openTaskInList(t))
+      } else openTaskPanel(taskParam)
       return
     }
     if (location.pathname !== '/') return
@@ -83,6 +90,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
 
   useEffect(() => {
     setSidebarOpen(false)
+    // The panel belongs to the page that opened it (app-shell D1).
+    closePanelIfStale(location.pathname)
   }, [route])
 
   // Whether the owner turned the assistant on for this account (cached offline).
@@ -253,7 +262,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           </Suspense>
         )}
       </main>
-      {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} extraSections={vim && vimHelp ? [vimHelp] : []} />}
+      <PanelHost user={user} />
+      {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} extraSections={vim && vimHelp ? [vimHelp] : []}
+        context={{ view: route.view, board: !!listState()?.columns(), panelOpen: !!panelTaskId() }} />}
       {helpRequest && <Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense>}
       {assistantLoaded && <Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense>}
       {paletteLoaded && paletteOpen && <Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense>}

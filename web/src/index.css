@@ -376,10 +376,16 @@ body {
 .btn-secondary { @apply border border-input bg-surface text-default hover:bg-sunken dark:hover:bg-raised; }
 .btn-ghost { @apply text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised; }
 .btn-danger { @apply text-danger hover:bg-danger-soft; }
-.input {
+.input, .ui-input {
   @apply w-full min-w-0 rounded-control border border-input bg-surface px-3 py-2 text-body text-default placeholder:text-faint
     focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/30;
 }
+/* The three surfaces (ux-overhaul, design-system "Three surfaces"): a row, a card
+   and an overlay. Dark pairs a border with the elevation, which does not read on a
+   dark canvas on its own. */
+.surface-row { @apply rounded-control hover:bg-sunken dark:hover:bg-raised; }
+.surface-card { @apply rounded-card border border-default bg-surface shadow-1; }
+.surface-overlay { @apply rounded-card border border-default bg-raised shadow-3; }
 /* Shared Button (src/ui/Button.tsx, OpenSpec change ui-primitives D3): the same
    tokens as the legacy classes, plus sizes, icon-only and busy states. */
 /* Labels may wrap on narrow screens instead of pushing the page sideways; heights are minimums. */
@@ -400,8 +406,8 @@ body {
 .ui-btn--danger { @apply text-danger hover:bg-danger-soft active:bg-danger-soft; }
 /* WebKit lets a long option label in a native select paint past the box, and the
    GTK port (Linux) ignores overflow on it; paint containment keeps it inside. */
-select.input { @apply truncate; contain: layout paint; }
-.kbd { @apply rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
+select.input, select.ui-input { @apply truncate; contain: layout paint; }
+.kbd, .ui-kbd { @apply rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
 /* Rich-text notes (collaborative-rich-text). ProseMirror's required base rules
    are inlined instead of importing its stylesheet. */
 .notes-editor {
