@@ -27,7 +27,7 @@ not      := "!" not | "(" or ")" | term
 term     := "@" name                       label
           | "##" name | "#" name           project with / without sub-projects
           | "p1" | "p2" | "p3" | "p4"      priority
-          | ("due" | "created") cmp date
+          | ("due" | "created" | "deadline") cmp date
           | keyword
           | "search:" text
 cmp      := "<" | "<=" | "=" | ">=" | ">" | "before" | "after"
@@ -35,7 +35,7 @@ date     := "today" | "tomorrow" | "yesterday" | weekday | YYYY-MM-DD
           | INT "days" | INT "days ago"
 weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
-          | "no labels" | "no time" | "completed" | "open" | "subtask"
+          | "no labels" | "no time" | "no deadline" | "completed" | "open" | "subtask"
 name     := word | '"' chars '"'
 text     := word | '"' chars '"'
 ```
@@ -63,11 +63,13 @@ text     := word | '"' chars '"'
 | `p1` … `p4` | tasks with that priority (`p1` is the highest, `p4` the default) |
 | `due <cmp> <date>` | tasks whose due date compares as asked; a task without a due date never matches |
 | `created <cmp> <date>` | tasks whose creation day, in your time zone, compares as asked |
+| `deadline <cmp> <date>` | tasks whose [deadline](tasks-and-projects.md#deadlines) compares as asked; a task without a deadline never matches. `deadline <= 3 days` includes deadlines that have passed |
 | `overdue` | due before today |
 | `today` | due today |
 | `tomorrow` | due tomorrow |
 | `no date` | no due date |
 | `no time` | a due date without a time of day |
+| `no deadline` | tasks without a deadline |
 | `no project` | Inbox tasks (no project) |
 | `no labels` | tasks with no label |
 | `subtask` | tasks that have a parent task |
@@ -110,6 +112,7 @@ A query that does not follow the grammar shows a message under the input, and th
 | `p5` | `Priority must be p1, p2, p3 or p4 at position 1` |
 | `due today` | `Expected a comparison (<, <=, =, >=, >, before or after) after "due" at position 1` |
 | `due > 7` | `Expected "days" after "7" at position 7` |
+| `no idea` | `Expected "date", "project", "labels", "time" or "deadline" after "no" at position 1` |
 
 An empty query shows a short usage hint and no results.
 
@@ -193,4 +196,10 @@ search: "oat milk" | search: groceries
 
 ```filter
 due before 2026-12-01 & no labels & no time & !today
+```
+
+### 11. A deadline this week, but no plan yet
+
+```filter
+deadline <= 6 days & no date
 ```

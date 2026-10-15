@@ -23,14 +23,14 @@
 
 ## 4. Filters (design D4)
 
-- [ ] 4.1 Extend `web/src/lib/filter/parse.ts` (`deadline` field, `no deadline`, printing) and `evaluate.ts` (null never matches). Verify with tests for the four spec scenarios and the new error message after `no` (`npm test`).
-- [ ] 4.2 Extend the server-side query parser in `internal/filter` with the same tokens and add a shared example file both test suites parse. Verify with `go test ./internal/filter/...` and `npm test`.
-- [ ] 4.3 Update `docs/filters.md` (grammar, term table, error table, an example "deadline this week, no plan"). Verify with `npm run docs:check`.
+- [x] 4.1 Extend `web/src/lib/filter/parse.ts` (`deadline` field, `no deadline`, printing) and `evaluate.ts` (null never matches). Verify with tests for the four spec scenarios and the new error message after `no` (`npm test`).
+- [x] 4.2 Extend the server-side query parser in `internal/filter` with the same tokens and add a shared example file both test suites parse. Verify with `go test ./internal/filter/...` and `npm test`.
+- [x] 4.3 Update `docs/filters.md` (grammar, term table, error table, an example "deadline this week, no plan"). Verify with `npm run docs:check`.
 
 ## 5. Reminders (design D5)
 
-- [ ] 5.1 Offer deadline presets in `RemindersField.tsx` ("On the deadline", "1 day before the deadline", custom) when the task has a deadline, and render the chip ("1 day before the deadline"). Verify with component tests for creating one with offset −1440 and for the chip text, plus the existing reminder tests.
-- [ ] 5.2 Update `docs/reminders.md` and `docs/recurring-and-reminders.md`. Verify with `npm run docs:check`.
+- [x] 5.1 Offer deadline presets in `RemindersField.tsx` ("On the deadline", "1 day before the deadline", custom) when the task has a deadline, and render the chip ("1 day before the deadline"). Verify with component tests for creating one with offset −1440 and for the chip text, plus the existing reminder tests.
+- [x] 5.2 Update `docs/reminders.md` and `docs/recurring-and-reminders.md`. Verify with `npm run docs:check`.
 
 ## 6. CalDAV (design D6)
 

@@ -99,4 +99,48 @@ describe('RemindersField', () => {
     expect((await live()).map((r) => r.id)).not.toContain(past)
     await unmount()
   })
+
+  it('offers deadline presets once the task has a deadline and shows the chip (OpenSpec deadlines 5.1)', async () => {
+    const plain = await createTask({ title: 'No deadline yet' })
+    let r = await render(<RemindersField task={(await db.tasks.get(plain))!} />)
+    await settle()
+    await click(r.container.querySelector('button[aria-label="Add reminder"]')!)
+    await settle()
+    expect([...document.querySelectorAll('[role="menuitem"]')].some((b) => b.textContent?.includes('the deadline'))).toBe(false)
+    await r.unmount()
+    document.body.innerHTML = ''
+
+    const id = await createTask({ title: 'Tax return', deadline: '2026-11-06' })
+    r = await render(<RemindersField task={(await db.tasks.get(id))!} />)
+    await settle()
+    await click(r.container.querySelector('button[aria-label="Add reminder"]')!)
+    await settle()
+    await click([...document.querySelectorAll('[role="menuitem"]')].find((b) => b.textContent?.includes('1 day before the deadline'))!)
+    await settle()
+    const [rem] = await db.reminders.where('task_id').equals(id).toArray()
+    expect(rem).toMatchObject({ kind: 'deadline', offset_minutes: -1440, fire_at: new Date(2026, 10, 5, 9, 0).getTime() })
+    await settle()
+    expect(r.container.querySelector('[data-reminder-id]')?.textContent).toContain('1 day before the deadline')
+    await r.unmount()
+  })
+
+  it('a custom deadline reminder: 2 hours before the deadline', async () => {
+    const id = await createTask({ title: 'Tax return', deadline: '2026-11-06' })
+    const { container, unmount } = await render(<RemindersField task={(await db.tasks.get(id))!} />)
+    await settle()
+    await click(container.querySelector('button[aria-label="Add reminder"]')!)
+    await settle()
+    await click([...document.querySelectorAll('[role="menuitem"]')].find((b) => b.textContent?.includes('Custom before the deadline'))!)
+    await settle()
+    const amount = container.querySelector('input[aria-label="Offset amount"]') as HTMLInputElement
+    await type(amount, '2')
+    const unit = container.querySelector('select[aria-label="Offset unit"]') as HTMLSelectElement
+    await act(async () => { unit.value = '60'; unit.dispatchEvent(new Event('change', { bubbles: true })) })
+    expect(container.querySelector('form')?.textContent).toContain('the deadline')
+    await act(async () => { (container.querySelector('form') as HTMLFormElement).requestSubmit() })
+    await settle()
+    const [rem] = await db.reminders.where('task_id').equals(id).toArray()
+    expect(rem).toMatchObject({ kind: 'deadline', offset_minutes: -120, fire_at: new Date(2026, 10, 6, 7, 0).getTime() })
+    await unmount()
+  })
 })
