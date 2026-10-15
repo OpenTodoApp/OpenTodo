@@ -45,7 +45,7 @@ Paste meeting notes, an email or a list into the Ask box or the message box and 
 The panel first shows what will be sent and to whom:
 
 - the provider and model the owner chose, or the provider you chose with your own key,
-- what may be sent: task titles and descriptions; project, section and label names; due dates, priorities and completion; comments; names of members of shared projects; your display name, today's date and your time zone; and the messages you type.
+- what may be sent: task titles and descriptions; project, section and label names; due dates, priorities and completion; comments; the names, types and links of attachments (never the files); names of members of shared projects; your display name, today's date and your time zone; and the messages you type.
 
 In a shared project that includes text other members wrote. Select **Accept and continue** to start. Nothing is sent to any provider before you accept. If the provider changes later (the owner switches, you choose your own, or the owner stops allowing members' own keys), the assistant asks you again. You can withdraw consent in **Settings → AI → Assistant**.
 

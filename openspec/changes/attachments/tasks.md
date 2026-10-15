@@ -31,8 +31,8 @@
 
 ## 5. Assistants (design D14)
 
-- [ ] 5.1 `internal/agenttools/read.go` and `resources.go`: `attachments` in `taskDetail` with untrusted name, type and link, size, upload state and comment id; no content. Tests: a task with a file and a link attachment; an encrypted account's attachment shows ciphertext or placeholder; `tools/list` unchanged. Verify with `go test ./internal/agenttools/... ./internal/mcp/...`.
-- [ ] 5.2 Document the field in `docs/mcp.md` and `docs/assistant.md`. Verify with `npm run docs:check`.
+- [x] 5.1 `internal/agenttools/read.go` and `resources.go`: `attachments` in `taskDetail` with untrusted name, type and link, size, upload state and comment id; no content. Tests: a task with a file and a link attachment; an encrypted account's attachment shows ciphertext or placeholder; `tools/list` unchanged. Verify with `go test ./internal/agenttools/... ./internal/mcp/...`.
+- [x] 5.2 Document the field in `docs/mcp.md` and `docs/assistant.md`. Verify with `npm run docs:check`.
 
 ## 6. Client data layer and uploader (design D1, D3, D7)
 
