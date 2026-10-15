@@ -1,0 +1,82 @@
+{
+  "format": "opentodo-export",
+  "version": 1,
+  "exportedAt": "2026-10-14T08:00:00.000Z",
+  "template": {
+    "day": "2026-10-14"
+  },
+  "labels": [
+    {
+      "id": "2263444f-a5e9-857d-abf9-48c335820ec0",
+      "name": "packing",
+      "color": "#22c55e",
+      "position": 1,
+      "created_at": 0,
+      "deleted_at": null
+    }
+  ],
+  "projects": [
+    {
+      "id": "7d47189a-29ea-83da-950a-efc4b20e53b8",
+      "name": "Trip to Rome",
+      "color": "#3b82f6",
+      "position": 1,
+      "archived": false,
+      "parent_id": null,
+      "created_at": 0,
+      "deleted_at": null
+    }
+  ],
+  "sections": [
+    {
+      "id": "debdf7b8-4c9c-8d54-aad5-b43fa7613210",
+      "name": "Before",
+      "project_id": "7d47189a-29ea-83da-950a-efc4b20e53b8",
+      "position": 1,
+      "created_at": 0,
+      "deleted_at": null
+    }
+  ],
+  "tasks": [
+    {
+      "id": "26a710e6-4863-8cc9-b21e-e777cae03002",
+      "title": "Pack",
+      "description": "",
+      "priority": 2,
+      "due": {
+        "date": "2026-10-14"
+      },
+      "labels": [
+        "2263444f-a5e9-857d-abf9-48c335820ec0"
+      ],
+      "position": 1,
+      "created_at": 0,
+      "completed_at": null,
+      "deleted_at": null,
+      "project_id": "7d47189a-29ea-83da-950a-efc4b20e53b8",
+      "section_id": "debdf7b8-4c9c-8d54-aad5-b43fa7613210",
+      "parent_id": null,
+      "estimate_minutes": 30,
+      "recurrence": null
+    },
+    {
+      "id": "10c084db-f102-8a07-90d3-db75d2136ff3",
+      "title": "Socks",
+      "description": "",
+      "priority": 4,
+      "due": null,
+      "labels": [],
+      "position": 1,
+      "created_at": 0,
+      "completed_at": null,
+      "deleted_at": null,
+      "project_id": "7d47189a-29ea-83da-950a-efc4b20e53b8",
+      "section_id": "debdf7b8-4c9c-8d54-aad5-b43fa7613210",
+      "parent_id": "26a710e6-4863-8cc9-b21e-e777cae03002",
+      "estimate_minutes": null,
+      "recurrence": null
+    }
+  ],
+  "reminders": [],
+  "views": []
+}

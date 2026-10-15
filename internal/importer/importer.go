@@ -157,6 +157,14 @@ type Parsed struct {
 	ViewHints []ViewHint
 	// Files are the attachment files of an own ZIP export, by attachment id.
 	Files map[string][]byte
+	// Template is set for an own export that declares itself a template
+	// (OpenSpec change project-templates, design D7).
+	Template *TemplateInfo
+}
+
+// TemplateInfo is the optional `template` object of a template file.
+type TemplateInfo struct {
+	Day string `json:"day,omitempty"`
 }
 
 // ViewHint asks the importing device to show a project in a view ("board").
