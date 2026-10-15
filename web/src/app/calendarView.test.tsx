@@ -5,7 +5,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readCalendarMode } from '../lib/calendarMode'
-import { db } from '../lib/db'
+import { db, setMeta } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { click, flush, key, render } from '../ui/test-utils'
 import { CalendarView } from './CalendarView'
@@ -89,6 +89,98 @@ describe('one Calendar destination', () => {
     await key(document.body, 'Escape')
     await waitFor(() => panelOccupant() === null)
     expect(document.querySelector('[data-panel-frame]')).toBeNull()
+    await r.unmount()
+  })
+})
+
+// Subscribed calendars in Day and Week (OpenSpec change calendar-feeds, tasks 6.2
+// and 6.3): events share lanes and the overlap marker with task blocks, never count
+// toward capacity, are read-only, and hide with a per-device toolbar toggle.
+describe('calendar events', () => {
+  const sub = { id: 'sub1', name: 'Work', color: '#2563eb', enabled: true, lastSuccessAt: Date.now() }
+  const sync = { id: 'ev1', subscriptionId: 'sub1', uid: 'u1', summary: 'Team sync', location: 'Room 4', start: { date: '2026-10-14', time: '10:00' }, end: { date: '2026-10-14', time: '11:00' }, allDay: false, free: false }
+  const offsite = { id: 'ev2', subscriptionId: 'sub1', uid: 'u2', summary: 'Offsite', location: '', start: { date: '2026-10-14' }, end: { date: '2026-10-16' }, allDay: true, free: false }
+
+  async function seed(fetchedAt = Date.now(), window = { from: '2026-09-01', to: '2026-11-30' }) {
+    await db.calendarSubscriptions.put(sub)
+    await db.calendarEvents.bulkPut([sync, offsite])
+    await setMeta('calendar.events.window', { ...window, fetchedAt })
+  }
+
+  it('lays out an event next to a task with the overlap marker, without counting it', async () => {
+    await seed()
+    await createTask({ title: 'Call Ana', due: { date: '2026-10-14', time: '10:30' }, estimate_minutes: 30 })
+    const r = await render(<CalendarView mode="day" />)
+    await waitFor(() => r.container.querySelector('[data-event="ev1"]') !== null && r.container.querySelector('[data-block]') !== null)
+    const ev = r.container.querySelector('[data-event="ev1"]')!
+    expect(ev.hasAttribute('data-overlap')).toBe(true)
+    expect(r.container.querySelector('[data-block]')!.hasAttribute('data-overlap')).toBe(true)
+    expect(ev.getAttribute('aria-label')).toBe('Team sync, 10:00 to 11:00, Room 4, Work')
+    expect(r.container.querySelector('[data-capacity]')!.textContent).toContain('30m / 8h')
+    // The all-day strip shows the two-day event on this day.
+    expect(r.container.querySelector('[data-all-day="2026-10-14"] [data-event-chip="ev2"]')?.textContent).toBe('Offsite')
+    await r.unmount()
+  })
+
+  it('is read-only: dragging writes nothing, Tab reaches it and Enter opens the details', async () => {
+    await seed()
+    const r = await render(<CalendarView mode="day" />)
+    await waitFor(() => r.container.querySelector('[data-event="ev1"]') !== null)
+    const before = await db.outbox.count()
+    const ev = r.container.querySelector<HTMLButtonElement>('[data-event="ev1"]')!
+    ev.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientY: 10 }))
+    window.dispatchEvent(new PointerEvent('pointermove', { clientY: 200 }))
+    window.dispatchEvent(new PointerEvent('pointerup', { clientY: 200 }))
+    await flush(30)
+    expect(await db.outbox.count()).toBe(before)
+    expect(ev.tabIndex).toBe(0)
+    ev.focus()
+    await click(ev)
+    await waitFor(() => document.querySelector('[data-event-details]') !== null)
+    expect(document.querySelector('[data-event-details]')!.textContent).toContain('Room 4')
+    await key(document.activeElement ?? document.body, 'Escape')
+    await waitFor(() => document.querySelector('[data-event-details]') === null)
+
+    const axe = (await import('axe-core')).default
+    for (const theme of ['light', 'dark']) {
+      document.documentElement.dataset.theme = theme
+      const res = await axe.run(r.container, { rules: { 'color-contrast': { enabled: false } } })
+      expect(res.violations.map((v) => v.id)).toEqual([])
+    }
+    delete document.documentElement.dataset.theme
+    await r.unmount()
+  })
+
+  it('the Calendars toggle hides events on this device and survives a reload of the view', async () => {
+    await seed()
+    let r = await render(<CalendarView mode="day" />)
+    await waitFor(() => r.container.querySelector('[data-event="ev1"]') !== null)
+    const toggle = r.container.querySelector('[data-calendars-toggle]')!
+    expect(toggle.getAttribute('aria-pressed')).toBe('true')
+    await click(toggle)
+    await waitFor(() => r.container.querySelector('[data-event="ev1"]') === null)
+    expect(r.container.querySelector('[data-event-chip]')).toBeNull()
+    await r.unmount()
+    r = await render(<CalendarView mode="day" />)
+    await waitFor(() => r.container.querySelector('[data-calendars-toggle]')?.getAttribute('aria-pressed') === 'false')
+    expect(r.container.querySelector('[data-event="ev1"]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('says how old the cache is, and when days are outside it offline', async () => {
+    await seed(Date.now() - 60 * 60 * 1000)
+    let r = await render(<CalendarView mode="day" />)
+    await waitFor(() => r.container.querySelector('[data-calendars-status]') !== null)
+    expect(r.container.querySelector('[data-calendars-status]')!.textContent).toBe('Calendars as of 11:00')
+    expect(r.container.querySelector('[data-event="ev1"]')).toBeTruthy()
+    await r.unmount()
+
+    await setMeta('calendar.events.window', { from: '2026-12-01', to: '2026-12-31', fetchedAt: Date.now() })
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    r = await render(<CalendarView mode="day" />)
+    await waitFor(() => r.container.querySelector('[data-calendars-status]') !== null)
+    expect(r.container.querySelector('[data-calendars-status]')!.textContent).toBe('Calendars unavailable offline for these days')
+    vi.restoreAllMocks()
     await r.unmount()
   })
 })

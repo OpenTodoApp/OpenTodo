@@ -100,6 +100,7 @@ Archive projects automatically after 30 days without open tasks, and bring back 
 These panels connect OpenTodo to other tools. Some appear only when the person running your server has switched the feature on.
 
 - **Calendar apps (CalDAV)**: see your tasks in calendar and reminder apps on your phone or computer, with an app password. See [Calendar apps](caldav.md).
+- **Calendar feeds**: show your Google, Outlook or Apple calendars in Day and Week, and get a private address that lets calendar apps show your tasks. The server owner turns it on here. See [Calendar feeds](calendar-feeds.md).
 - **Webhooks**: send a message to another service when tasks change. See [Webhooks](webhooks.md).
 - **API tokens**: keys for scripts and the `ot` command-line client. A token is shown once, when you create it. Read-only tokens can't change anything; tokens for an AI assistant that can make changes work only through the assistant tools and never on the rest of the API. See [HTTP API](api.md) and [Command-line client](cli.md).
 

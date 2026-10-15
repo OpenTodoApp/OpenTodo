@@ -74,10 +74,10 @@ Every request below is refused with `403 {"error":{"code":"demo_restricted","mes
 
 - Sign-up, invitations, user administration and owner transfer, password change and password-reset links, linked accounts, single sign-on (`/api/v1/auth/oidc/*`)
 - API tokens, app passwords and CalDAV (`/dav/`, `/.well-known/caldav`), passkeys, two-factor enrolment, end-to-end encryption
-- All owner settings writes (`/api/v1/settings/*`), backups, webhooks, email to task, import, the MCP endpoint (`/mcp`)
+- All owner settings writes (`/api/v1/settings/*`), backups, webhooks, calendar feeds (`/api/v1/calendar-feeds/*`), email to task, import, the MCP endpoint (`/mcp`)
 - Web push subscriptions, and any change to a project's members (add, remove, change role, leave, transfer)
 
-The server also makes **no outbound requests** in demo mode: web push is off (as with `OPENTODO_PUSH=off`), the webhook worker, the backup scheduler and the email poller do not run, and `OPENTODO_ALLOW_SIGNUP` is ignored. Sandbox creation is the only unauthenticated write besides sign-in.
+The server also makes **no outbound requests** in demo mode: web push is off (as with `OPENTODO_PUSH=off`), the webhook worker, the calendar fetcher, the backup scheduler and the email poller do not run, and `OPENTODO_ALLOW_SIGNUP` is ignored. Sandbox creation is the only unauthenticated write besides sign-in.
 
 ## Nothing worth posting
 

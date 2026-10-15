@@ -122,6 +122,12 @@ Calendar apps that subscribe to a URL ("From URL" in Google Calendar, "Subscribe
 
 `CalendarFeedsPanel` in Settings → Integrations, after `CaldavPanel` (`SettingsView.tsx:215-223`), hidden on the demo like the webhooks panel. Owner: the switch row (state-first card, "On"/"Off"), with the note that private-network targets follow the webhooks toggle. "Other calendars" card: list rows (colour dot, name, "Refreshed 5 min ago" or "Failed: timed out · last success 2 h ago", warnings as a small note), row menu Edit, Refresh now, Disable/Enable, Delete (confirm dialog), and an "Add calendar" form (URL, name, colour) opened from a button. "Your tasks as a calendar" card: Off state with "Create feed URL"; On state with created and last-used times, Rotate (confirm) and Revoke (confirm); after create or rotate a dialog shows the URL once with Copy, the "shown only once" note and three short setup lines (Google Calendar: Other calendars → From URL; Outlook: Add calendar → Subscribe from web; Apple Calendar: File → New Calendar Subscription). Encrypted accounts see "Titles appear as 'Encrypted item' in calendar apps" and "Events from other calendars are stored unencrypted on the server". Screen id `settings/calendar-feeds`, help link to `docs/calendar-feeds.md`.
 
+### Interface budget (added after ux-overhaul)
+
+- The "Calendars" toggle is one more action in the calendar's page header, shown only when the user has subscriptions. There is no new row: the status text uses the header's `meta` slot, which already holds the placement hint.
+- All-day chips sit inside each day's sticky header cell, above the unscheduled lane, and appear only on days that have such events. They are part of the grid, not chrome above a list.
+- No new scroll region, sidebar destination, task property or shortcut. The settings panel is one more section in Settings → Integrations.
+
 ## Risks / Trade-offs
 
 - **[Recurrence expansion diverges from the source app]** → The grammar covers what the four common sources emit; unsupported parts degrade to one occurrence and a visible warning instead of guessing. Fixtures from Google, Outlook, iCloud and Nextcloud exports live in `internal/calfeed/testdata/` and pin the expansion.
