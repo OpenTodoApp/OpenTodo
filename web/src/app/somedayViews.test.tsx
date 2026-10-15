@@ -105,6 +105,12 @@ describe('Someday and Anytime views (3.1)', () => {
     await waitFor(() => text(r.container).includes('Learn Portuguese'))
     const added = (await db.tasks.toArray()).find((t) => t.title === 'Learn Portuguese')!
     expect(added).toMatchObject({ start: 'someday', project_id: null })
+    await type(quick, 'Read Proust tomorrow')
+    await act(async () => { quick.form!.requestSubmit() })
+    await flush(100)
+    const dated = (await db.tasks.toArray()).find((t) => t.title === 'Read Proust')!
+    expect(dated.due).toEqual({ date: '2026-10-15' })
+    expect(dated.start ?? null).toBeNull()
   })
 
   it('Anytime lists only undated, unstarted, active tasks and follows sync', async () => {

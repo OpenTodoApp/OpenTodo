@@ -397,6 +397,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const onAdd = useCallback(async ({ labels: typed, ...rest }: QuickAddInput) => {
     // In Assigned to me a new task is yours (Inbox unless a #project was typed).
     const { labels: viewLabels, ...defaults } = taskDefaults(route, today, userId)
+    // In Someday a line with a date is scheduled, not parked (someday-and-evening).
+    if (rest.due || rest.deadline) delete defaults.start
     const id = await createTask({
       ...defaults,
       ...rest,

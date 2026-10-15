@@ -31,8 +31,8 @@
 
 ## 5. Quick add (design D6)
 
-- [ ] 5.1 Add `somedayWords` and `eveningWords` to the six vocabularies, move `tonight` out of `dayWords`, match `someday` only when no date phrase matched, add `start` and `evening` to `ParseResult`, `QuickAddInput` and the chips in `QuickAdd.tsx`, and pass them to `createTask`. Verify with tests for the five spec scenarios and that `tonight` still resolves to today's date (`npm test`).
-- [ ] 5.2 Document the words per language in `docs/quick-add.md` and the Someday capture context under "Views and defaults". Verify with `npm run docs:check`.
+- [x] 5.1 Add `somedayWords` and `eveningWords` to the six vocabularies, move `tonight` out of `dayWords`, match `someday` only when no date phrase matched, add `start` and `evening` to `ParseResult`, `QuickAddInput` and the chips in `QuickAdd.tsx`, and pass them to `createTask`. Verify with tests for the five spec scenarios and that `tonight` still resolves to today's date (`npm test`).
+- [x] 5.2 Document the words per language in `docs/quick-add.md` and the Someday capture context under "Views and defaults". Verify with `npm run docs:check`.
 
 ## 6. CalDAV (design D7)
 

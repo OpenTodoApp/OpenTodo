@@ -14,6 +14,9 @@ export interface QuickAddInput {
   estimate_minutes?: number
   /** "YYYY-MM-DD" (deadlines). */
   deadline?: string
+  /** "someday" (someday-and-evening). */
+  start?: string
+  evening?: boolean
 }
 
 /** The slice of a label the resolver needs. */
@@ -64,6 +67,8 @@ export async function toTaskInput(
   const out: QuickAddInput = { title: r.title }
   if (r.due) out.due = r.due
   if (r.deadline) out.deadline = r.deadline
+  if (r.start) out.start = r.start
+  if (r.evening) out.evening = true
   if (r.projectId) out.project_id = r.projectId
   if (r.labels.length) {
     const ids: string[] = []
