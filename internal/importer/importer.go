@@ -86,6 +86,10 @@ type Row struct {
 	// Deadline is the day the task must be finished by, "YYYY-MM-DD" or ""
 	// (OpenSpec change deadlines).
 	Deadline string
+	// Start is "someday", a start date "YYYY-MM-DD" or ""; Evening marks This
+	// Evening (OpenSpec change someday-and-evening).
+	Start   string
+	Evening bool
 	// AssignSelf assigns the task to the importing account (a Linear issue
 	// assigned to the importer's own email address).
 	AssignSelf bool
@@ -231,6 +235,13 @@ func parseOne(p Profile, data []byte, opts Options) (*Parsed, error) {
 	parsed.Format = p.Name()
 	if len(parsed.Rows) > MaxRows {
 		return nil, ErrTooManyRows
+	}
+	// A parked row with a date keeps the date (someday-and-evening D9).
+	for i := range parsed.Rows {
+		if r := &parsed.Rows[i]; r.Start == "someday" && r.Due != nil {
+			r.Start = ""
+			r.warn("Someday dropped (the task has a due date)")
+		}
 	}
 	return parsed, nil
 }

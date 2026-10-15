@@ -46,9 +46,9 @@
 
 ## 8. Import (design D9)
 
-- [ ] 8.1 Add `Start` and `Evening` to the importer row model and the field ops in `internal/importer/plan.go`, the CSV `start` and `evening` columns in `profile_csv.go` (parked-and-dated keeps the date with a warning), and the own-export round trip. Verify with profile tests for the CSV, parked-and-dated and own-export scenarios and the completeness test; `go test ./internal/importer/...`.
-- [ ] 8.2 Coordinate with `named-importers`: Things `start = 2` → parked, `startBucket = 1` → evening in its task 6.1 instead of warnings. Verify with its golden previews once both branches merge; record the archive-order note from design D9 in whichever change archives second.
-- [ ] 8.3 Update `docs/import.md` (CSV table, mapping rules, Things section once `named-importers` lands). Verify with `npm run docs:check`.
+- [x] 8.1 Add `Start` and `Evening` to the importer row model and the field ops in `internal/importer/plan.go`, the CSV `start` and `evening` columns in `profile_csv.go` (parked-and-dated keeps the date with a warning), and the own-export round trip. Verify with profile tests for the CSV, parked-and-dated and own-export scenarios and the completeness test; `go test ./internal/importer/...`.
+- [x] 8.2 Coordinate with `named-importers`: Things `start = 2` → parked, `startBucket = 1` → evening in its task 6.1 instead of warnings. Verify with its golden previews once both branches merge; record the archive-order note from design D9 in whichever change archives second.
+- [x] 8.3 Update `docs/import.md` (CSV table, mapping rules, Things section once `named-importers` lands). Verify with `npm run docs:check`.
 
 ## 9. Integration
 

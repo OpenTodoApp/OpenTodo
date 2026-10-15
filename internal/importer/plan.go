@@ -836,6 +836,12 @@ func (pl *planner) planForeign(rows []Row) []change {
 		if row.Deadline != "" {
 			fields = append(fields, field{"deadline", raw(row.Deadline)})
 		}
+		if row.Start != "" {
+			fields = append(fields, field{"start", raw(row.Start)})
+		}
+		if row.Evening {
+			fields = append(fields, field{"evening", raw(true)})
+		}
 		if row.AssignSelf && pl.st.UserID != "" {
 			fields = append(fields, field{"assignee_id", raw(pl.st.UserID)})
 		}
