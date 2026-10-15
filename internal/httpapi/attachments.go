@@ -652,7 +652,6 @@ func (s *Server) receiveMultipart(w http.ResponseWriter, r *http.Request, id str
 	return name, ctype, comment, size, digest, nil
 }
 
-
 // writeExportZip streams the export document and every readable, uploaded
 // attachment file as a ZIP (design D12): export.json first, then
 // attachments/<id>/<name>. Nothing is buffered: entries use data descriptors.

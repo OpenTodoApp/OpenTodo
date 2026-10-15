@@ -61,6 +61,9 @@ type Config struct {
 	// OPENTODO_CALDAV is unset; OpenSpec `caldav`). Afterwards the value set in
 	// Settings is authoritative.
 	CalDAV *bool
+	// CalendarFeeds presets the owner's calendar feeds switch on first start only
+	// (nil when OPENTODO_CALENDAR_FEEDS is unset; OpenSpec calendar-feeds).
+	CalendarFeeds *bool
 	// Email holds the optional OPENTODO_EMAIL_* settings of email capture
 	// (OpenSpec `email-to-task`, see email.go); off unless fully configured.
 	Email EmailConfig
@@ -206,6 +209,13 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("OPENTODO_CALDAV must be true or false, got %q", v)
 		}
 		c.CalDAV = &b
+	}
+	if v := strings.TrimSpace(os.Getenv("OPENTODO_CALENDAR_FEEDS")); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return c, fmt.Errorf("OPENTODO_CALENDAR_FEEDS must be true or false, got %q", v)
+		}
+		c.CalendarFeeds = &b
 	}
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_TRASH_RETENTION_DAYS")); v != "" {
 		n, err := strconv.Atoi(v)

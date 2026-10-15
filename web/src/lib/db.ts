@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { Attachment, ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, UserPrefs, View } from './types'
+import type { Attachment, CalendarEvent, CalendarSubscription, ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, UserPrefs, View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -116,6 +116,9 @@ class OpenTodoDB extends Dexie {
   attachments!: Table<Attachment, string>
   /** Bytes of files this device added and has not uploaded yet: device-local, never ops (attachments D3). */
   attachmentBlobs!: Table<AttachmentBlob, string>
+  /** Events of subscribed calendars and the subscriptions (calendar-feeds): server data, never ops. */
+  calendarEvents!: Table<CalendarEvent, string>
+  calendarSubscriptions!: Table<CalendarSubscription, string>
 
   constructor(name = 'opentodo') {
     super(name)
@@ -314,6 +317,31 @@ class OpenTodoDB extends Dexie {
       attachments: 'id, task_id, comment_id',
       attachmentBlobs: 'id',
     })
+    // v17 (calendar-feeds): cached events of subscribed calendars and the
+    // subscriptions. Server data adopted on refresh; every store is redeclared.
+    this.version(17).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+      comments: 'id, task_id',
+      activity: 'id, [projectKey+ts], taskId, entityId',
+      prefs: 'id',
+      assistantThreads: 'id, updated_at',
+      assistantUndo: 'id, created_at',
+      pickHistory: 'id, context',
+      userPrefs: 'id',
+      attachments: 'id, task_id, comment_id',
+      attachmentBlobs: 'id',
+      calendarEvents: 'id, subscriptionId, start.date',
+      calendarSubscriptions: 'id',
+    })
   }
 }
 
@@ -344,9 +372,10 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
-  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory, db.attachmentBlobs], async () => {
+  await db.transaction('rw', [...entityTables(), db.outbox, db.meta, db.memberships, db.notifications, db.assistantThreads, db.assistantUndo, db.pickHistory, db.attachmentBlobs, db.calendarEvents, db.calendarSubscriptions], async () => {
     await Promise.all([
       ...entityTables().map((t) => t.clear()), db.outbox.clear(), db.meta.clear(), db.memberships.clear(), db.attachmentBlobs.clear(),
+      db.calendarEvents.clear(), db.calendarSubscriptions.clear(),
       db.notifications.clear(), db.assistantThreads.clear(), db.assistantUndo.clear(), db.pickHistory.clear(),
     ])
   })

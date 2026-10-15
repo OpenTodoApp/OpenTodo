@@ -264,7 +264,7 @@ describe('demo instance', () => {
   it('keeps every card and disables the refused ones under one note', () => {
     const html = render(member, 'integrations')
     expect(html.match(/data-testid="demo-restricted"/g)).toHaveLength(1)
-    expect(html).toContain('calendar apps (CalDAV), webhooks, API tokens, the assistant and AI assistants (MCP) are disabled on this demo instance')
+    expect(html).toContain('calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP) are disabled on this demo instance')
     expect(html).toContain('id="caldav-heading"')
     expect(html).toContain('id="tokens-heading"')
     expect(html).toMatch(/<fieldset disabled=""[^>]*data-demo-disabled/)

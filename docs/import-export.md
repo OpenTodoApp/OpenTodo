@@ -3,7 +3,7 @@ title: Import and export
 summary: Download everything you have as one file, and bring tasks in from a spreadsheet, another OpenTodo server or other task apps.
 audience: user
 section: Guides
-specs: [data-import]
+specs: [data-import, project-templates]
 screens: [import#import-from-another-app, settings/data#download-everything, templates#templates]
 order: 120
 card: import

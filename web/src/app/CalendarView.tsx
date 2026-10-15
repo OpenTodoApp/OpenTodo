@@ -6,16 +6,19 @@ import { Button, hueFor, Icon, MenuGroup, MenuItem, MenuSeparator, PageBody, Pag
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
-  blockFor, calendarTasks, clamp, DAY_MINUTES, dayLoad, DEFAULT_GRID_PREFS, formatLoad, formatTime as toHHMM, GRID_PREFS_META_KEY, LAST_SLOT,
-  normalizeGridPrefs, nudgeDue, placementStart, SLOT_MINUTES, stepEstimate, weekDates, type Block, type GridPrefs,
+  allDayEvents, blockFor, calendarTasks, clamp, DAY_MINUTES, dayLoad, DEFAULT_GRID_PREFS, eventBlocks, formatLoad, formatTime as toHHMM, GRID_PREFS_META_KEY, LAST_SLOT,
+  normalizeGridPrefs, nudgeDue, placementStart, SLOT_MINUTES, stepEstimate, weekDates, type Block, type EventBlock, type GridPrefs,
 } from '../lib/calendar'
+import { useOnline } from '../lib/online'
+import { cachedWindow, ensureEventsFor, eventsStatus, setShowEvents, showEvents } from '../lib/calendarFeeds'
 import { addDaysISO, dueFromView, formatDate, formatHour, formatShort, formatTime as formatWallTime, localDueOf, viewedTask } from '../lib/dates'
 import { db, getMeta } from '../lib/db'
 import { formatMinutes } from '../lib/duration'
 import { layoutDay, type DayLayout } from '../lib/layout'
 import { compareByPosition, compareDueThenPriority } from '../lib/ordering'
 import { updateTask } from '../lib/ops'
-import type { Project, Task } from '../lib/types'
+import type { CalendarEvent, CalendarSubscription, Project, Task } from '../lib/types'
+import { EventBlockView, EventChip } from './CalendarEvents'
 import { useCalendarDrag, type DropTarget } from './calendarDrag'
 import { completeWithUndo, setDueWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -47,8 +50,13 @@ interface DayData {
   date: string
   lane: Task[]
   blocks: Map<string, Block>
+  /** Timed events of subscribed calendars, keyed `event:<id>` like their layout entries. */
+  events: Map<string, EventBlock>
+  allDay: CalendarEvent[]
   layout: DayLayout
 }
+
+const isEventId = (id: string) => id.startsWith('event:')
 
 /** Live preferences of this device (Dexie meta, never synced). */
 /** Minutes from midnight as shown to the user, in their time format (date-time-preferences D2). */
@@ -69,6 +77,11 @@ function useNowMinutes(): number {
     return () => clearInterval(id)
   }, [])
   return now
+}
+
+function minutesOf(ms: number): number {
+  const d = new Date(ms)
+  return d.getHours() * 60 + d.getMinutes()
 }
 
 function readTray(): string {
@@ -99,6 +112,20 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
 
   const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1]), [allTasks, projects, dates])
+
+  // Subscribed calendars (calendar-feeds D8): the device cache, refreshed for the
+  // range on screen; hidden with the toolbar toggle (per device).
+  const from = dates[0], to = dates[dates.length - 1]
+  useEffect(() => { void ensureEventsFor({ from, to }) }, [from, to])
+  const eventsShown = useLiveQuery(showEvents, [], true)
+  const events = useLiveQuery(() => db.calendarEvents.toArray(), [], [] as CalendarEvent[])
+  const subs = useLiveQuery(() => db.calendarSubscriptions.toArray(), [], [] as CalendarSubscription[])
+  const win = useLiveQuery(cachedWindow, [], null)
+  const subMap = useMemo(() => new Map(subs.map((s) => [s.id, s])), [subs])
+  const visibleEvents = useMemo(() => (eventsShown ? events.filter((e) => subMap.get(e.subscriptionId)?.enabled !== false) : []), [eventsShown, events, subMap])
+  const online = useOnline()
+  const status = subs.length === 0 || !eventsShown ? null : eventsStatus(win, { from, to })
+
   const days = useMemo<DayData[]>(() => dates.map((d) => {
     const lane: Task[] = []
     const blocks = new Map<string, Block>()
@@ -109,11 +136,13 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       else lane.push(t)
     }
     lane.sort((a, b) => a.priority - b.priority || compareByPosition(a, b))
-    return { date: d, lane, blocks, layout: layoutDay([...blocks.values()]) }
-  }), [dates, shown])
+    // Events share the lanes and the overlap marker with task blocks; capacity never sees them.
+    const evs = new Map(eventBlocks(visibleEvents, d, zone).map((e) => [e.id, e]))
+    return { date: d, lane, blocks, events: evs, allDay: allDayEvents(visibleEvents, d), layout: layoutDay([...blocks.values(), ...evs.values()]) }
+  }), [dates, shown, visibleEvents, zone])
 
-  /** Keyboard order: each day's lane, then its blocks in time order. */
-  const order = useMemo(() => days.flatMap((d) => [...d.lane.map((t) => t.id), ...d.layout.blocks.map((b) => b.id)]), [days])
+  /** Keyboard order: each day's lane, then its blocks in time order (tasks only: events are read-only). */
+  const order = useMemo(() => days.flatMap((d) => [...d.lane.map((t) => t.id), ...d.layout.blocks.filter((b) => !isEventId(b.id)).map((b) => b.id)]), [days])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const openId = usePanelTaskId()
@@ -293,12 +322,22 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   return (
     <PageBody width="full" flush className="flex h-full select-none flex-col" data-calendar-page={mode}>
         <PageHeader title={title} help="calendar"
-          meta={placing && (
+          meta={placing ? (
             <span role="status" className="rounded-control bg-success-soft px-2 py-0.5 text-meta text-on-success-soft">
               Placing <strong>{placingTask?.title || 'task'}</strong> at {formatTime(placing.start)} · arrows move · Enter places · Esc cancels
             </span>
-          )}
+          ) : status === 'missing' && !online ? (
+            <span data-calendars-status="missing" className="text-meta text-muted">Calendars unavailable offline for these days</span>
+          ) : win && (status === 'stale' || (status === 'fresh' && !online)) ? (
+            <span data-calendars-status="stale" className="text-meta text-muted">Calendars as of {formatWallTime(toHHMM(minutesOf(win.fetchedAt)))}</span>
+          ) : null}
           actions={<>
+            {subs.length > 0 && (
+              <Button variant="ghost" size="sm" icon="calendar-range" aria-pressed={eventsShown} data-calendars-toggle
+                title={eventsShown ? 'Hide other calendars on this device' : 'Show other calendars on this device'}
+                className={eventsShown ? 'bg-sunken dark:bg-raised' : 'text-muted'}
+                onClick={() => void setShowEvents(!eventsShown)}>Calendars</Button>
+            )}
             <span className="flex items-center" role="group" aria-label="Range">
               <Button variant="ghost" size="sm" icon="chevron-left" aria-label={mode === 'day' ? 'Previous day' : 'Previous week'} onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} />
               <Button variant="ghost" size="sm" onClick={() => goTo(today)}>Today</Button>
@@ -334,6 +373,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
                   prefs={prefs}
                   showName={mode === 'week'}
                   selectedId={selectedId}
+                  subMap={subMap}
+                  zone={zone}
                   laneTarget={drag?.target?.type === 'lane' && drag.target.date === d.date}
                   onSelect={(id) => setSelectedId(id)}
                   onOpen={(id) => { setSelectedId(id); setOpenId(id) }}
@@ -354,6 +395,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
                   nowMinutes={nowMinutes}
                   taskMap={taskMap}
                   projectMap={projectMap}
+                  subMap={subMap}
+                  zone={zone}
                   selectedId={selectedId}
                   draggingId={drag?.taskId ?? null}
                   expanded={expanded}
@@ -458,13 +501,15 @@ function HourGutter() {
   )
 }
 
-function DayHeader({ day, today, tasks, prefs, showName, selectedId, laneTarget, onSelect, onOpen, onPointerDown, projectMap }: {
+function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, projectMap }: {
   day: DayData
   today: string
   tasks: Task[]
   prefs: GridPrefs
   showName: boolean
   selectedId: string | null
+  subMap: Map<string, CalendarSubscription>
+  zone?: string
   laneTarget: boolean
   onSelect: (id: string) => void
   onOpen: (id: string) => void
@@ -493,6 +538,11 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, laneTarget,
           {load.unestimated > 0 && <span className="ml-1 text-faint">+{load.unestimated}?</span>}
         </span>
       </div>
+      {day.allDay.length > 0 && (
+        <ul className="mt-1 space-y-0.5" aria-label={`All-day events on ${day.date}`} data-all-day={day.date}>
+          {day.allDay.map((ev) => <li key={ev.id}><EventChip ev={ev} sub={subMap.get(ev.subscriptionId)} zone={zone} /></li>)}
+        </ul>
+      )}
       <div
         data-drop-lane={day.date}
         aria-label={`Unscheduled on ${day.date}`}
@@ -527,13 +577,15 @@ interface Preview {
   title: string
 }
 
-function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selectedId, draggingId, expanded, setExpanded, preview, onSelect, onOpen, onDragStart }: {
+function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMap, zone, selectedId, draggingId, expanded, setExpanded, preview, onSelect, onOpen, onDragStart }: {
   day: DayData
   prefs: GridPrefs
   isToday: boolean
   nowMinutes: number
   taskMap: Map<string, Task>
   projectMap: Map<string, Project>
+  subMap: Map<string, CalendarSubscription>
+  zone?: string
   selectedId: string | null
   draggingId: string | null
   expanded: string | null
@@ -561,6 +613,11 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-sunken" style={{ top: endPx }} />
 
       {day.layout.blocks.filter((b) => !b.hidden).map((b) => {
+        const ev = day.events.get(b.id)
+        if (ev) {
+          return <EventBlockView key={b.id} block={ev} lane={b.lane} lanes={b.lanes} overlap={b.overlap} pxPerMinute={PX_PER_MIN}
+            minHeight={SLOT_MINUTES * PX_PER_MIN} sub={subMap.get(ev.event.subscriptionId)} zone={zone} />
+        }
         const t = taskMap.get(b.id)
         const block = day.blocks.get(b.id)
         if (!t || !block) return null
@@ -579,7 +636,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
             data-hue={hue}
             role="button"
             tabIndex={-1}
-            aria-label={`${t.title || 'Untitled'}, ${formatTime(block.start)}${block.estimated ? ` for ${formatMinutes(t.estimate_minutes!)}` : ', no estimate'}${b.overlap ? ', overlaps another task' : ''}`}
+            aria-label={`${t.title || 'Untitled'}, ${formatTime(block.start)}${block.estimated ? ` for ${formatMinutes(t.estimate_minutes!)}` : ', no estimate'}${b.overlap ? ', overlaps another item' : ''}`}
             onPointerDown={(e) => {
               // The lowest few pixels (handle and border) resize; the rest moves the block.
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -598,7 +655,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
           >
             <div className="flex items-start gap-1">
               <span className="min-w-0 flex-1 truncate font-medium">{t.title || 'Untitled'}</span>
-              {b.overlap && <span data-overlap-marker title="Overlaps another task" className="shrink-0 text-warning" aria-hidden>⧉</span>}
+              {b.overlap && <span data-overlap-marker title="Overlaps another item" className="shrink-0 text-warning" aria-hidden>⧉</span>}
             </div>
             {height >= 30 && (
               <div className="truncate text-[10px] text-muted">
@@ -626,13 +683,22 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, selec
               className="w-full rounded-md border border-input bg-canvas px-1 dark:bg-raised py-0.5 text-xs font-medium text-muted hover:bg-sunken"
               onClick={() => setExpanded(open ? null : key)}
               aria-expanded={open}
-              title={`${o.ids.length} more overlapping tasks`}
+              title={`${o.ids.length} more overlapping items`}
             >
               +{o.ids.length}
             </button>
             {open && (
               <ul className="mt-1 w-48 space-y-0.5 rounded-md border border-default bg-surface p-1 shadow-lg">
                 {o.ids.map((id) => {
+                  const ev = day.events.get(id)
+                  if (ev) {
+                    return (
+                      <li key={id} data-overflow-event={ev.event.id} className="flex gap-1 truncate px-1 py-0.5 text-xs text-muted">
+                        <span className="font-mono text-[10px]">{formatTime(ev.start)}</span>
+                        <span className="truncate">{ev.event.summary || 'Busy'}</span>
+                      </li>
+                    )
+                  }
                   const t = taskMap.get(id)
                   const blk = day.blocks.get(id)
                   return (

@@ -51,8 +51,8 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
   {
     id: 'integrations', label: 'Integrations', group: 'data', icon: 'link',
-    description: () => 'Calendar apps (CalDAV), webhooks, API tokens, the assistant and AI assistants (MCP)',
-    demo: () => ['calendar apps (CalDAV)', 'webhooks', 'API tokens', 'the assistant', 'AI assistants (MCP)'],
+    description: () => 'Calendar apps (CalDAV), calendar feeds, webhooks, API tokens, the assistant and AI assistants (MCP)',
+    demo: () => ['calendar apps (CalDAV)', 'calendar feeds', 'webhooks', 'API tokens', 'the assistant', 'AI assistants (MCP)'],
   },
   { id: 'data', label: 'Data', group: 'data', icon: 'download', description: () => 'Export, import, sync status and archived projects' },
   {

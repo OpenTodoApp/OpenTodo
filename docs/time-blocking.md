@@ -61,6 +61,12 @@ Completing a task removes its block and lowers the day's total.
 
 <picture><source srcset="images/day-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/day-light.webp" alt="The Day calendar with the day's tasks as blocks between morning and evening."></picture>
 
+## See your other calendars
+
+When the server owner has turned on [calendar feeds](calendar-feeds.md), you can subscribe to your Google, Outlook or Apple calendars under **Settings → Integrations → Calendar feeds**. Their events then appear in Day and Week: timed events as blocks in the calendar's colour beside your tasks, and all-day events as chips above the unscheduled lane. An event that overlaps a task gets the same overlap marker, so you can see a clash at a glance. Events never count toward the day's total.
+
+Events are read-only. You can't drag, resize or complete them, but you can tab onto one and press Enter to read its time, location and calendar. The **Calendars** button in the toolbar hides them on this device. Offline, the calendar shows the events from the last refresh.
+
 ## Adjust the grid
 
 On a phone the Week is a list: each day with its unscheduled tasks and its timed tasks in order, so nothing is squeezed into seven columns. Tap a task to select it, tap again (or press Enter) to open it.

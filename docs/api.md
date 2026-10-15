@@ -838,6 +838,7 @@ The server records security-relevant events in its own database (never synced to
 | `token.created`, `token.revoked` | success | actor = user | `token_id`, `token_name`; `token.created` also `token_scope` (`full`, `read` or `agent`) |
 | `agent.write` | success or failure | actor = user | `tool`, `token_id`, `token_name`, `count` (items changed; 0 on failure), `reason` on failure (`writes_disabled_by_owner`, `writes_disabled_by_user`, `rate_limited`, `encryption_enabled`, `not_found`, `forbidden`, `scope_change`, `not_permitted`, `invalid_arguments`, …). One per MCP write tool call of an `agent` token, and one per tool a REST write of an `agent` token runs (`update_project` for a project rename); never content or entity ids |
 | `app_password.created`, `app_password.revoked` | success | actor = user | `app_password_id`, `app_password_name` |
+| `calendar_feed.created`, `calendar_feed.rotated`, `calendar_feed.revoked` | success | actor = user | none (the feed secret is never recorded) |
 | `email_inbox.created`, `email_inbox.rotated` | success | actor = user | (never the secret) |
 | `email_inbox.updated` | success | actor = user | `setting` (`enabled` or `allowlist`), `from`, `to` (true/false, or the number of allowlist entries; never the addresses) |
 | `invitation.created` | success | actor = owner | `invitation_id`, `invited_email` (bound email, if any) |
@@ -1168,6 +1169,26 @@ JOB=$(curl -sS "$OT/api/v1/import" -H "Authorization: Bearer $TOKEN" -F file=@ta
 curl -sS "$OT/api/v1/import/jobs/$JOB" -H "Authorization: Bearer $TOKEN" | jq .job.status
 curl -sS -X POST "$OT/api/v1/import/jobs/$JOB/undo" -H "Authorization: Bearer $TOKEN"
 ```
+
+### Calendar feeds
+
+Other calendars shown in Day and Week, and your tasks as a calendar that calendar apps subscribe to (OpenSpec `calendar-feeds`). Everything here answers `404 feeds_disabled` while the owner's switch is off, and `403 demo_restricted` on the public demo. Read and agent tokens may use the `GET` routes only (`403 insufficient_scope` otherwise).
+
+| Method | Route | Auth | Purpose |
+| --- | --- | --- | --- |
+| `GET` / `PUT` | `/api/v1/settings/calendar-feeds` | signed in / owner | `{enabled}`; off by default, `OPENTODO_CALENDAR_FEEDS=true` presets it on first start; a change is recorded as `settings.changed` |
+| `GET` | `/api/v1/calendar-feeds/subscriptions` | session or token | `{subscriptions: [...]}` with status: `name`, `color`, `enabled`, `eventCount`, `lastSuccessAt`, `lastError` (`timeout`, `http_404`, `too_large`, `invalid_calendar`, `private_target`, …), `stoppedReason`, `warnings` |
+| `POST` | `/api/v1/calendar-feeds/subscriptions` | session or full token | `{url, name?, color?}`; `webcal://` is read as `https://`; the address must not be on a private network unless the owner allows private targets for webhooks (`400 private_target`); at most 10 per account (`400 limit_reached`); fetched once before answering `201 {subscription}` |
+| `PATCH` | `/api/v1/calendar-feeds/subscriptions/{id}` | session or full token | `{url?, name?, color?, enabled?}`; a new URL is checked and fetched; `enabled: true` restarts a subscription stopped for a private target |
+| `DELETE` | `/api/v1/calendar-feeds/subscriptions/{id}` | session or full token | `204`, its events go with it |
+| `POST` | `/api/v1/calendar-feeds/subscriptions/{id}/refresh` | session or full token | fetch now, `200 {subscription}` |
+| `GET` | `/api/v1/calendar-feeds/events?from=YYYY-MM-DD&to=YYYY-MM-DD` | session or token | at most 92 days; `{events: [{id, subscriptionId, uid, summary, location, start, end, allDay, free}], subscriptions: [{id, name, color, enabled, lastSuccessAt}]}`; `start` and `end` are shaped like a task's `due` (`{date, time?, tz?}`; no `tz` means floating) |
+| `GET` | `/api/v1/calendar-feeds/feed` | session or token | `{feed: {createdAt, lastUsedAt} \| null}` |
+| `POST` | `/api/v1/calendar-feeds/feed` | session or full token, fresh sign-in | create or replace the feed URL: `201 {feed, url}`, the only time the URL is shown; recorded as `calendar_feed.created` or `calendar_feed.rotated` |
+| `DELETE` | `/api/v1/calendar-feeds/feed` | session or full token | `204`, `404` when there is none; recorded as `calendar_feed.revoked` |
+| `GET` | `/feeds/{secret}/tasks.ics` | the secret in the path | `text/calendar` with one `VEVENT` per open task due from 30 days ago to a year ahead; `ETag`, `Cache-Control: private, max-age=900` |
+
+Hand-triggered fetches (create, a new URL, refresh) are limited to 12 per account per hour (`429 rate_limited`). The feed answers `404` for an unknown secret, and an address that tries 10 unknown secrets in a minute gets `429`; one feed URL may be fetched 60 times an hour (`429` with `Retry-After`). The secret is no bearer token or app password, and other routes refuse it. Background refreshes follow the calendar's own refresh hint (between 30 minutes and a day, an hour by default), back off from 30 minutes to 6 hours while a calendar fails, and stop for a private target until the subscription is enabled again. A changed calendar sends `event: calendar` on the live updates stream.
 
 ### CalDAV and app passwords
 

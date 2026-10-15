@@ -1,4 +1,4 @@
-package webhook
+package outbound
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestDenyListTable(t *testing.T) {
@@ -117,7 +118,7 @@ func TestRedirectsNotFollowed(t *testing.T) {
 	}))
 	defer redirect.Close()
 
-	c := NewClient(&Dialer{AllowPrivate: func(context.Context) bool { return true }})
+	c := NewClient(&Dialer{AllowPrivate: func(context.Context) bool { return true }}, 10*time.Second)
 	resp, err := c.Post(redirect.URL, "application/json", strings.NewReader("{}"))
 	if err != nil {
 		t.Fatal(err)
@@ -133,7 +134,7 @@ func TestOwnerOverrideAllowsPrivate(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { hits.Add(1) }))
 	defer srv.Close()
 	var allow atomic.Bool
-	c := NewClient(&Dialer{AllowPrivate: func(context.Context) bool { return allow.Load() }})
+	c := NewClient(&Dialer{AllowPrivate: func(context.Context) bool { return allow.Load() }}, 10*time.Second)
 
 	_, err := c.Post(srv.URL, "application/json", strings.NewReader("{}"))
 	if !errors.Is(err, ErrPrivateTarget) || hits.Load() != 0 {
@@ -151,15 +152,8 @@ func TestOwnerOverrideAllowsPrivate(t *testing.T) {
 }
 
 func TestClientIgnoresEnvironmentProxy(t *testing.T) {
-	c := NewClient(&Dialer{})
+	c := NewClient(&Dialer{}, 10*time.Second)
 	if c.Transport.(*http.Transport).Proxy != nil {
 		t.Fatal("an environment proxy would dial on our behalf and bypass the deny list")
-	}
-}
-
-func TestReadExcerptCapsAt1KB(t *testing.T) {
-	got := readExcerpt(strings.NewReader(strings.Repeat("x", 5000)))
-	if len(got) != ExcerptBytes {
-		t.Fatalf("excerpt length %d", len(got))
 	}
 }
