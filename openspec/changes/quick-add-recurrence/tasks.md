@@ -12,8 +12,8 @@
 - [x] 2.2 Implement `nlp/reminders.ts` `matchReminderAt`: reminder word, then an offset (count + unit or `matchDuration`, before/after word) or a moment (`matchTimeAt` with an optional `matchDateAt` before or after it); return `ReminderPhrase`. Verify with unit tests for `at 9`, `tomorrow at 9`, `20 Oct at 9`, `30 min before`, `1 day before`, `2 hours after`, `+30m before`, and a bare reminder word that must not match.
 - [x] 2.3 Wire both into `parse.ts` (longest match with the date and time matchers, first rule wins, reminders accumulate), add `recurrence` and `reminders` to `ParseResult`, the two `AttributeKind`s, and `recurrence`/`reminders` to `QuickAddInput` in `quickadd.ts`. Verify with the full vector file and the existing `nlp.test.ts`, `quickadd.test.ts` and `weekPrefs.test.ts` passing (`npm test`).
 - [x] 2.4 Extend `createTask` in `web/src/lib/ops.ts` to resolve `ReminderPhrase[]` against the final due (D3 rules, wall-clock minute arithmetic, absolute roll-forward) and write task and reminders through `mutateMany` in one transaction. Verify with vitest cases for the four resolution scenarios of the spec, a test that an offline capture queues task and reminder ops with the same `ts`, and a test that completing the recurring task carries the reminder to the next occurrence (`npm test`).
-- [ ] 2.5 Add the `recurrence` and `reminder` chips to `web/src/app/QuickAdd.tsx` (`chipText`, `KIND_NAME`, `CHIP_HUE`, first-occurrence suffix, "needs a due date" suffix) and the new `QUICK_ADD_SYNTAX` row in `web/src/lib/shortcuts.ts`. Verify with a component test showing the two chips for `Water plants every Monday remind me at 8`, Backspace twice dismissing the reminder chip, and `npm run build` in web/.
-- [ ] 2.6 Confirm the section inline add (`Sections.tsx`) and `ShareCapture.tsx` create reminders through the spread input without changes; add one test for the share screen. Verify with `npm test` in web/.
+- [x] 2.5 Add the `recurrence` and `reminder` chips to `web/src/app/QuickAdd.tsx` (`chipText`, `KIND_NAME`, `CHIP_HUE`, first-occurrence suffix, "needs a due date" suffix) and the new `QUICK_ADD_SYNTAX` row in `web/src/lib/shortcuts.ts`. Verify with a component test showing the two chips for `Water plants every Monday remind me at 8`, Backspace twice dismissing the reminder chip, and `npm run build` in web/.
+- [x] 2.6 Confirm the section inline add (`Sections.tsx`) and `ShareCapture.tsx` create reminders through the spread input without changes; add one test for the share screen. Verify with `npm test` in web/.
 - [x] 2.7 Update `docs/quick-add.md` (a "Repeat and remind" section with the six-language table, the chip behaviour, removal of the "Not understood" sentence), `docs/recurring-and-reminders.md` ("Quick add doesn't read them" paragraph), `docs/reminders.md` (one line on reminders typed in quick add), regenerate the keyboard guide and help bundle with `make docs`. Verify with `npm run docs:check` in web/.
 
 ## 3. Go port (design D5)
@@ -30,8 +30,8 @@
 
 ## 5. Integration
 
-- [ ] 5.1 Manual smoke on `make dev`: type `Water plants every Monday remind me at 8 #home` and `Zahnarzt morgen um 15 Uhr erinnere mich 30 Minuten vorher` (German active), check chips, dismissal, the created task's Repeat field and Reminders list; go offline, capture a line with a reminder, reload, reconnect and confirm both synced to a second browser profile; run `ot add --natural` and `ot add --repeat … --remind …` against the same server. Record the result in the change folder notes.
-- [ ] 5.2 Run `make check` (go test, web test and build, docs check, openspec validate). Verify it passes.
+- [x] 5.1 Manual smoke on `make dev`: type `Water plants every Monday remind me at 8 #home` and `Zahnarzt morgen um 15 Uhr erinnere mich 30 Minuten vorher` (German active), check chips, dismissal, the created task's Repeat field and Reminders list; go offline, capture a line with a reminder, reload, reconnect and confirm both synced to a second browser profile; run `ot add --natural` and `ot add --repeat … --remind …` against the same server. Record the result in the change folder notes.
+- [x] 5.2 Run `make check` (go test, web test and build, docs check, openspec validate). Verify it passes.
 
 ## Workflow follow-up
 

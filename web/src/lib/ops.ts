@@ -555,20 +555,23 @@ export async function planTask(input: NewTaskInput): Promise<{ id: string; chang
   } } }
 }
 
-export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
-  const { id, change } = await planTask(input)
-  const changes: Change[] = [change]
-  const due = (change.patch as { due: Task['due'] }).due
+/** The reminder ops for phrases typed in quick add, resolved against the task's due (quick-add-recurrence D3). */
+export function planReminders(taskId: string, due: Task['due'], phrases: readonly ReminderPhrase[] | undefined, now = new Date()): Change[] {
   const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-  for (const phrase of input.reminders ?? []) {
+  return (phrases ?? []).map((phrase) => {
     const r = resolveReminder(phrase, due, todayISO(now), hhmm)
     const relative = r.kind === 'relative'
-    changes.push({ entity: 'reminder', entityId: crypto.randomUUID(), patch: {
-      task_id: id, kind: r.kind, offset_minutes: relative ? r.offsetMinutes : null,
+    return { entity: 'reminder', entityId: crypto.randomUUID(), patch: {
+      task_id: taskId, kind: r.kind, offset_minutes: relative ? r.offsetMinutes : null,
       fire_at: relative ? relativeFireAt(due, r.offsetMinutes) : dueToInstant({ date: r.date, time: r.time }),
       delivered_at: null, dismissed_at: null, created_at: now.getTime(), deleted_at: null,
-    } })
-  }
+    } } satisfies Change
+  })
+}
+
+export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
+  const { id, change } = await planTask(input)
+  const changes: Change[] = [change, ...planReminders(id, (change.patch as { due: Task['due'] }).due, input.reminders, now)]
   // One batch: the task never syncs without its reminders.
   await mutateMany(changes)
   return id
