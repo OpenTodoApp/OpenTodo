@@ -3,7 +3,7 @@ title: Tasks and projects
 summary: Add and edit tasks, write notes, break work into subtasks, set priorities and organise everything into projects and sub-projects.
 audience: user
 section: Guides
-specs: [task-management, project-organization, subtasks, manual-ordering, rich-text-editing, entity-pickers, deadlines, start-dates, bulk-actions]
+specs: [task-management, project-organization, subtasks, manual-ordering, rich-text-editing, entity-pickers, deadlines, start-dates, bulk-actions, task-dependencies]
 screens: [quick-add#add-a-task]
 order: 10
 card: project-list
