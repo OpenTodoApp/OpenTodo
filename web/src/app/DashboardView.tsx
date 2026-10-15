@@ -14,7 +14,7 @@ import { TaskRow } from './TaskRow'
 import { navigate } from './router'
 import { ViewMenu } from './ViewsView'
 import type { ViewData } from './useViews'
-import { useShortcutScope } from './shortcuts'
+import { isActivationTarget, useShortcutScope } from './shortcuts'
 
 export function DashboardView({ dashboard, data }: { dashboard: View; data: ViewData }) {
   const { views, projects, labels, ctx } = data
@@ -62,9 +62,9 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
     },
     'dashboard.down': () => { const f = focused(); if (!f || !f.tasks.length) return false; setSelected({ panel: f.at, task: Math.min(f.tasks.length - 1, f.cur + 1) }) },
     'dashboard.up': () => { const f = focused(); if (!f || !f.tasks.length) return false; setSelected({ panel: f.at, task: Math.max(0, f.cur - 1) }) },
-    'dashboard.open': () => {
+    'dashboard.open': (e) => {
       const f = focused()
-      if (!f) return false
+      if (!f || isActivationTarget(e.target)) return false
       if (f.cur >= 0 && f.tasks[f.cur]) setOpenId(f.tasks[f.cur].id)
       else if (f.panel?.kind === 'view') navigate({ view: 'view', id: f.panel.id })
     },

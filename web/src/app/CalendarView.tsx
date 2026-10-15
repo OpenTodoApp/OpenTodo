@@ -21,7 +21,7 @@ import { completeWithUndo, setDueWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
 import { estimateFocus, placement as placementSignal } from './signals'
-import { isTypingTarget, useShortcutScope } from './shortcuts'
+import { isActivationTarget, isTypingTarget, useShortcutScope } from './shortcuts'
 import { Menu } from './overlay/Menu'
 import { useWide } from './overlay'
 import { PanelFrame } from './PanelFrame'
@@ -225,9 +225,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       else if (openId) setOpenId(null)
       else setSelectedId(null)
     },
-    'calendar.open': () => {
+    'calendar.open': (e) => {
       if (placing) { commit(placing.taskId, { type: 'slot', date: placing.date, start: placing.start }); setPlacing(null); return }
-      if (!task) return false
+      if (!task || isActivationTarget(e.target)) return false
       setOpenId(task.id)
     },
     'calendar.nudge': (e) => {
