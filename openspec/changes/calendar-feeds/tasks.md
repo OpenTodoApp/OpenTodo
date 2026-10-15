@@ -2,8 +2,8 @@
 
 ## 1. Outbound guard shared with webhooks (design D2)
 
-- [ ] 1.1 Move `internal/webhook/ssrf.go` and `ssrf_test.go` to `internal/outbound` with `NewClient(d *Dialer, timeout time.Duration, opts ...)` taking the redirect policy; keep `webhook.ValidateURL`, `IsDenied`, `Dialer`, `NewClient`, `ErrPrivateTarget`, `ErrBadURL` as aliases. Verify `go test ./internal/outbound/... ./internal/webhook/... ./internal/httpapi/...` passes unchanged and `TestSignatureMatchesReferenceVector` still runs.
-- [ ] 1.2 Add the redirect policy test: three hops followed with `ValidateURL` on each, a fourth refused (`too_many_redirects`), a hop to `169.254.169.254` failing with `private_target` before any dial (fake resolver and dialer). Verify `go test ./internal/outbound/...`.
+- [x] 1.1 Move `internal/webhook/ssrf.go` and `ssrf_test.go` to `internal/outbound` with `NewClient(d *Dialer, timeout time.Duration, opts ...)` taking the redirect policy; keep `webhook.ValidateURL`, `IsDenied`, `Dialer`, `NewClient`, `ErrPrivateTarget`, `ErrBadURL` as aliases. Verify `go test ./internal/outbound/... ./internal/webhook/... ./internal/httpapi/...` passes unchanged and `TestSignatureMatchesReferenceVector` still runs.
+- [x] 1.2 Add the redirect policy test: three hops followed with `ValidateURL` on each, a fourth refused (`too_many_redirects`), a hop to `169.254.169.254` failing with `private_target` before any dial (fake resolver and dialer). Verify `go test ./internal/outbound/...`.
 
 ## 2. Parsing, zones and expansion (design D3)
 
