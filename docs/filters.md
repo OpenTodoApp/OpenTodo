@@ -124,6 +124,8 @@ An empty query shows a short usage hint and no results.
 
 ## The Filter view
 
+You can also type a query straight into the [search box](search.md) (<kbd>Ctrl</kbd>+<kbd>K</kbd>): it lists the matching tasks and offers to open them here.
+
 - `g` then `f`, or **Filter** in the sidebar, opens the view with the cursor in the query input. Results update about 150 ms after you stop typing.
 - Results are grouped by project: Inbox first, then projects in sidebar order, each heading showing the project's path (`Work › Client A`). Within a group, tasks are ordered by due date, then priority.
 - **Enter** in the input runs the query at once and moves to the first result; **Esc** returns to the input. In the list, the usual keys work: `j` / `k`, Enter to open, `c` to complete, `1`–`4` for priority, `L` for labels, Delete.

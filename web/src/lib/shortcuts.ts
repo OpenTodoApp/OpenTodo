@@ -27,6 +27,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
 
 /** Every shortcut, in the order the overlay lists them. */
 export const SHORTCUTS: Shortcut[] = [
+  { keys: 'Ctrl+K / ⌘+K', description: 'Search and commands: find any task, project, label, view or setting, or run a command by name (also while typing, except in notes)', section: 'everywhere' },
   { keys: 'q', description: 'Quick add a task', section: 'everywhere' },
   { keys: 'Shift+I', description: 'Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes', section: 'everywhere' },
   { keys: 'Enter / Esc (proposed changes)', description: 'Assistant: apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere' },

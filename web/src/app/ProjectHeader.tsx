@@ -6,7 +6,7 @@ import { archiveProject, deleteProject, moveProject, updateProject } from '../li
 import { buildProjectTree, descendantIds } from '../lib/projects'
 import { canDeleteProject, canEditProject, canManageMembers } from '../lib/sharing'
 import { flattenTree } from '../lib/tree'
-import type { Project } from '../lib/types'
+import type { Project, ProjectRole } from '../lib/types'
 import { navigate } from './router'
 import { ShareDialog } from './ShareDialog'
 import { HistoryPanel } from './HistoryPanel'
@@ -58,6 +58,40 @@ function ColourSwatches({ project }: { project: Project }) {
   )
 }
 
+/**
+ * The project menu as data (labels-and-menus D1), shared by the project header and
+ * the command palette (search-and-command-palette D5) so both run the same handlers.
+ */
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number }, a: { rename: () => unknown }): ActionGroup[] {
+  const { role, targets, subCount, openTasks } = o
+  const tasksText = openTasks === 1 ? '1 open task' : `${openTasks} open tasks`
+  const subsText = subCount ? ` Its ${subCount === 1 ? 'sub-project moves' : `${subCount} sub-projects move`} up one level.` : ''
+  return [
+    { items: [
+      { kind: 'picker', id: 'move', label: 'Move to', icon: 'folder-input', shortcut: 'm', picker: {
+        title: 'Move to', placeholder: 'Find a project…', emptyText: 'No other project can hold this one',
+        source: targets, getKey: (t: MoveTarget) => t.id || '__top__', getLabel: (t: MoveTarget) => t.name, getPath: (t: MoveTarget) => t.path,
+        selected: [project.parent_id ?? '__top__'], rankContext: 'project-move',
+        onPick: (t: MoveTarget) => { void moveProject(project.id, t.id || null) },
+      } },
+      { kind: 'action', id: 'rename', label: 'Rename', icon: 'pencil', onSelect: a.rename },
+      { kind: 'confirm', id: 'archive', label: subCount ? 'Archive with sub-projects' : 'Archive', icon: 'archive', confirm: {
+        title: `Archive “${project.name}”?`, tone: 'default', confirmLabel: 'Archive',
+        body: `It leaves the sidebar with ${tasksText}${subCount ? ` and ${subCount === 1 ? 'its sub-project' : `its ${subCount} sub-projects`}` : ''}. You can unarchive it from Settings → Projects.`,
+        onConfirm: () => archiveProject(project.id).then(() => navigate({ view: 'inbox' })),
+      } },
+    ] },
+    ...(canDeleteProject(role) ? [{ items: [{ kind: 'confirm' as const, id: 'delete', label: 'Delete project', icon: 'trash-2' as const, tone: 'danger' as const, confirm: {
+      title: `Delete “${project.name}”?`, confirmLabel: 'Delete project',
+      body: o.shared
+        ? `It is deleted for every member. Copies of its ${tasksText} go to your Inbox.${subsText}`
+        : `It moves to the Trash with ${tasksText}. You can restore it from the Trash.${subsText}`,
+      onConfirm: () => deleteProject(project.id).then(() => navigate({ view: 'inbox' })),
+    } }] }] : []),
+  ]
+
+}
+
 export function ProjectHeader({ project, userId }: { project: Project; userId?: string }) {
   const [editing, setEditing] = useState(false)
   const [sharing, setSharing] = useState(false)
@@ -102,31 +136,7 @@ export function ProjectHeader({ project, userId }: { project: Project; userId?: 
     else setName(project.name)
   }
 
-  const tasksText = openTasks === 1 ? '1 open task' : `${openTasks} open tasks`
-  const subsText = subCount ? ` Its ${subCount === 1 ? 'sub-project moves' : `${subCount} sub-projects move`} up one level.` : ''
-  const groups: ActionGroup[] = [
-    { items: [
-      { kind: 'picker', id: 'move', label: 'Move to', icon: 'folder-input', shortcut: 'm', picker: {
-        title: 'Move to', placeholder: 'Find a project…', emptyText: 'No other project can hold this one',
-        source: targets, getKey: (t: MoveTarget) => t.id || '__top__', getLabel: (t: MoveTarget) => t.name, getPath: (t: MoveTarget) => t.path,
-        selected: [project.parent_id ?? '__top__'], rankContext: 'project-move',
-        onPick: (t: MoveTarget) => { void moveProject(project.id, t.id || null) },
-      } },
-      { kind: 'action', id: 'rename', label: 'Rename', icon: 'pencil', onSelect: () => setEditing(true) },
-      { kind: 'confirm', id: 'archive', label: subCount ? 'Archive with sub-projects' : 'Archive', icon: 'archive', confirm: {
-        title: `Archive “${project.name}”?`, tone: 'default', confirmLabel: 'Archive',
-        body: `It leaves the sidebar with ${tasksText}${subCount ? ` and ${subCount === 1 ? 'its sub-project' : `its ${subCount} sub-projects`}` : ''}. You can unarchive it from Settings → Projects.`,
-        onConfirm: () => archiveProject(project.id).then(() => navigate({ view: 'inbox' })),
-      } },
-    ] },
-    ...(canDeleteProject(role) ? [{ items: [{ kind: 'confirm' as const, id: 'delete', label: 'Delete project', icon: 'trash-2' as const, tone: 'danger' as const, confirm: {
-      title: `Delete “${project.name}”?`, confirmLabel: 'Delete project',
-      body: membership
-        ? `It is deleted for every member. Copies of its ${tasksText} go to your Inbox.${subsText}`
-        : `It moves to the Trash with ${tasksText}. You can restore it from the Trash.${subsText}`,
-      onConfirm: () => deleteProject(project.id).then(() => navigate({ view: 'inbox' })),
-    } }] }] : []),
-  ]
+  const groups = projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks }, { rename: () => setEditing(true) })
 
   return (
     <div className="mb-4">

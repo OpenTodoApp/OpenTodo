@@ -87,6 +87,7 @@ export function ComboboxList<T>({ state, renderLeading, emptyText, label }: { st
     >
       {windowed && <li role="presentation" aria-hidden="true" style={{ height: options.length * rh }} />}
       {rows}
+      {state.more > 0 && <li role="presentation" className="px-3 py-2 text-meta text-muted" data-more>{state.more} more {state.more === 1 ? 'matches' : 'match'}, keep typing</li>}
     </ul>
   )
 }
@@ -126,6 +127,11 @@ function OptionRow<T>({ state, o, i, renderLeading, windowed, rh }: { state: Com
       )}
     </li>
   )
+}
+
+/** The combobox field on its own, for views that lay out field and list themselves (command palette). */
+export function ComboboxField<T>(props: Parameters<typeof Field<T>>[0]) {
+  return <Field {...props} />
 }
 
 function Field<T>({ state, label, placeholder, inputRef, onFocus, expanded, autoFocus }: {

@@ -15,7 +15,7 @@ export type Route =
   | { view: 'project'; id: string }
   | { view: 'label'; id: string }
   | { view: 'labels' }
-  | { view: 'filter' }
+  | { view: 'filter'; q?: string }
   | { view: 'views' }
   | { view: 'view'; id: string }
   | { view: 'settings'; section?: SettingsSectionId }
@@ -75,8 +75,11 @@ export function parseRoute(pathname: string): Route {
       return isSettingsSection(parts[1]) ? { view: 'settings', section: parts[1] } : { view: 'settings' }
     case 'labels':
       return { view: 'labels' }
-    case 'filter':
-      return { view: 'filter' }
+    case 'filter': {
+      // An initial query from the command palette (search-and-command-palette D4).
+      const q = new URLSearchParams(query).get('q') ?? undefined
+      return q ? { view: 'filter', q } : { view: 'filter' }
+    }
     case 'share':
       return { view: 'share' }
     case 'trash':
@@ -143,6 +146,8 @@ export function routePath(r: Route): string {
       return '/activity'
     case 'ask':
       return '/ask'
+    case 'filter':
+      return r.q ? `/filter?q=${encodeURIComponent(r.q)}` : '/filter'
     case 'help':
       return `/help${r.page ? `/${encodeURIComponent(r.page)}` : ''}${r.q ? `?q=${encodeURIComponent(r.q)}` : ''}`
     default:

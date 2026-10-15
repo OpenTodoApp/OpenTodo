@@ -128,7 +128,8 @@ function PickerStep({ picker, onBack, onDone, onConfirm }: { picker: PickerSpec<
 }
 
 /** The confirmation of a destructive or impactful action, with its consequence computed on open. */
-function Confirmation({ spec, onClose }: { spec: ConfirmSpec; onClose: () => void }) {
+/** A confirm item's dialog, its body computed when it opens (also used by the command palette). */
+export function Confirmation({ spec, onClose }: { spec: ConfirmSpec; onClose: () => void }) {
   const [body, setBody] = useState<ReactNode>(() => (typeof spec.body === 'function' ? null : spec.body))
   useEffect(() => {
     if (typeof spec.body !== 'function') return

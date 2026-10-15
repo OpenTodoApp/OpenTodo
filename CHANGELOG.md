@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Search and commands on Ctrl+K.** One box (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, or the magnifying glass in the header) finds any task by title or notes, any project, label, saved view or Settings section, and runs any command by name: go to a view, act on the selected task, use everything in the current project's, view's, label's or section's menu, create things, sync, toggle Vim keys. Filter queries like `@errand & p1` list their tasks right there. It ranks what you pick often first, works offline, and searches only on your device, also for encrypted accounts. ([Search and commands](docs/search.md))
+
 ## [0.4.0] - 2026-10-15
 
 OpenTodo 0.4.0 makes the app yours to look at and easier to move into. Tasks can have a deadline, separate from the day you plan to work on them, and can wait for a start date, in Someday or for This Evening. Pick light, dark or system mode and one of eight colour themes, and set your own date format, clock and first day of the week. Settings are regrouped into clear sections. Import takes Todoist, Things, TickTick and Linear exports as they are, with a switch guide for each. With the assistant on, an **Ask** box and built-in skills (plan my week, triage my inbox, break this down) do common jobs. A setup token can protect a fresh public server, and the assistant's **Test connection** now checks what is on screen.
