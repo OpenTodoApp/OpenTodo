@@ -39,7 +39,7 @@ Plan your day, keep projects in order, set reminders and share lists with your f
 - **On your machine or server:**
 
   ```bash
-  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:0.3
+  docker run -d -p 8080:8080 -v opentodo-data:/data ghcr.io/pixari/opentodo:0.4
   ```
 
   Open <http://localhost:8080>; the first visit creates your account. No configuration needed. Coolify, Compose and plain binaries are in [Quick start](#quick-start).
@@ -73,7 +73,7 @@ Questions, ideas and bug reports are welcome in [issues](https://github.com/pixa
 
 ## Status
 
-OpenTodo is at **0.3**: every feature on the roadmap is in, covered by automated tests, but some integrations still need real-world testing (CalDAV with specific apps, single sign-on providers, real phones). If you try it, tell us how it went in the [call for testers](https://github.com/pixari/opentodo/issues/9).
+OpenTodo is at **0.4**: every feature on the roadmap is in, covered by automated tests, but some integrations still need real-world testing (CalDAV with specific apps, single sign-on providers, real phones). If you try it, tell us how it went in the [call for testers](https://github.com/pixari/opentodo/issues/9).
 
 **How it's built:** every feature starts as a written spec ([OpenSpec](openspec/)), and much of the code was written with AI coding agents working from those specs. A strict CI checks every change: Go and web tests, spec validation, a phone-layout check in Chromium and WebKit, and accessibility checks. Everything is reviewed before it's merged, and the full history is public.
 
@@ -162,10 +162,10 @@ No environment variable is required. Open the app, create the owner account, and
 
 ```bash
 docker run -d --name opentodo -p 8080:8080 -v opentodo-data:/data \
-  ghcr.io/pixari/opentodo:0.3
+  ghcr.io/pixari/opentodo:0.4
 ```
 
-Open <http://localhost:8080> and create the owner account. Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.2` follows the 0.2 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
+Open <http://localhost:8080> and create the owner account. Behind a reverse proxy, add `-e OPENTODO_BASE_URL=https://todo.example.com` (needed for `Secure` cookies, passkeys and web push). The image is published for `linux/amd64` and `linux/arm64`. `:0.4` follows the 0.4 releases; `:latest` follows the development branch. Details: [docs/self-hosting/docker.md](docs/self-hosting/docker.md).
 
 ### Docker Compose
 

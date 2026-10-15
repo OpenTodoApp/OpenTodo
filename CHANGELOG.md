@@ -4,6 +4,25 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Search and commands on Ctrl+K.** One box (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, or the magnifying glass in the header) finds any task by title or notes, any project, label, saved view or Settings section, and runs any command by name: go to a view, act on the selected task, use everything in the current project's, view's, label's or section's menu, create things, sync, toggle Vim keys. Filter queries like `@errand & p1` list their tasks right there. It ranks what you pick often first, works offline, and searches only on your device, also for encrypted accounts. ([Search and commands](docs/search.md))
+
+## [0.4.0] - 2026-10-15
+
+OpenTodo 0.4.0 makes the app yours to look at and easier to move into. Tasks can have a deadline, separate from the day you plan to work on them, and can wait for a start date, in Someday or for This Evening. Pick light, dark or system mode and one of eight colour themes, and set your own date format, clock and first day of the week. Settings are regrouped into clear sections. Import takes Todoist, Things, TickTick and Linear exports as they are, with a switch guide for each. With the assistant on, an **Ask** box and built-in skills (plan my week, triage my inbox, break this down) do common jobs. A setup token can protect a fresh public server, and the assistant's **Test connection** now checks what is on screen.
+
+### Upgrade notes
+
+- **Migration `0030`** (how often each assistant skill ran, per user and month; no conversation content) is applied automatically at startup. Back up `/data` before upgrading: there are no down-migrations. No new environment variables are required; `OPENTODO_SETUP_TOKEN` is optional.
+- **Sync:** new `user_prefs` fields (`date_format`, `time_format`, `week_start`, `theme_mode`, `theme_accent`), the task fields `deadline`, `start` and `evening`, and the reminder kind `deadline` are additive; older clients ignore them.
+- **Image tags.** The release publishes `ghcr.io/pixari/opentodo:0.4.0` and `:0.4` for `linux/amd64` and `linux/arm64` (`:latest` follows `main`). The Coolify template now follows `:0.4`; if you use `:0.3`, change the tag in **Edit Compose file** and click **Deploy**.
+- **Binary size** stays at about 23 MB.
+
+### Breaking
+
+- **`POST /api/v1/me/assistant/test` no longer answers `409 no_own_provider`.** A member can now test a provider before saving it; with no provider chosen or saved, the route answers `400 invalid_input`. **Migration:** scripts that checked for `no_own_provider` should check for `invalid_input`.
+
 ### Changed
 
 - **New addresses.** The website and the documentation moved to [open-todo.app](https://open-todo.app) (docs at [open-todo.app/docs](https://open-todo.app/docs/)) and the public demo to [demo.open-todo.app](https://demo.open-todo.app). In-app **Help** links, the generated docs' canonical URLs and the Coolify template now point there.
@@ -12,7 +31,6 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
-- **Search and commands on Ctrl+K.** One box (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, or the magnifying glass in the header) finds any task by title or notes, any project, label, saved view or Settings section, and runs any command by name: go to a view, act on the selected task, use everything in the current project's, view's, label's or section's menu, create things, sync, toggle Vim keys. Filter queries like `@errand & p1` list their tasks right there. It ranks what you pick often first, works offline, and searches only on your device, also for encrypted accounts. ([Search and commands](docs/search.md))
 - **Start dates, Someday and This Evening.** A task's new **When** row (and <kbd>Shift</kbd>+<kbd>N</kbd>) defers it until a start date: it leaves Today, Upcoming and the counts, waits in its project's **Later** group, and appears in Today with a **Started** chip on the day. **Someday** (<kbd>n</kbd>, or `someday` in quick add) parks a task in the new Someday view (<kbd>g</kbd> then <kbd>o</kbd>) and clears its due date. **This Evening** (<kbd>Shift</kbd>+<kbd>E</kbd>, or `tonight` in quick add) lists a task below the day's tasks in Today. The new **Anytime** view (<kbd>g</kbd> then <kbd>n</kbd>) lists what has no date at all. A due date or deadline that has come always shows a task in Today. Filters gain `someday`, `deferred`, `evening`, `no start` and `start <cmp> <date>`; recurring tasks move the start date with the due date; CalDAV carries both as `X-OPENTODO-START` and `X-OPENTODO-EVENING`; Things and CSV imports keep them. Sync: two new task fields, `start` and `evening`. ([Tasks and projects](docs/tasks-and-projects.md#when-a-task-starts), [Views](docs/views.md))
 - **Deadlines.** A task can have a deadline, the day it must be finished by, separate from the day you plan to work on it. Set it in the task panel's new **Deadline** row, with <kbd>d</kbd> on a selected task, or in quick add with `deadline friday` (`Frist`, `échéance`, `scadenza`, `fecha límite`, `prazo` in the other languages). Rows show a countdown (`3d`, `Today`, `2d over`) that turns amber in the last week and red on the day, after it, or when the task is planned after its deadline. Today lists tasks whose deadline is today or past; Upcoming lists undated tasks under their deadline day. Filters gain `deadline <= 3 days` and `no deadline`, reminders can fire before the deadline, recurring tasks move the deadline with the due date, CalDAV serves it as `DUE` (with the due date as `DTSTART`), and imports from Todoist, Things, CSV and JSON keep it. Sync: one new task field, `deadline` (`YYYY-MM-DD`), and a reminder kind `deadline`. ([Tasks and projects](docs/tasks-and-projects.md#deadlines), [Filters](docs/filters.md), [Reminders](docs/reminders.md))
 - **Themes and dark mode on demand.** **Settings → Preferences → Appearance** sets the mode (**System**, **Light** or **Dark**) and one of eight colour themes (Emerald, Blue, Indigo, Violet, Rose, Orange, Teal, Graphite) for buttons, links, the focus ring and selection. Both follow your account to every device, also offline, apply at once without a reload, and the app opens in your theme without a flash. Priority, warning and error colours and your project and label colours keep their meaning in every theme, and every theme passes the contrast checks in light and dark. The installed app's title bar follows the theme. Sync: two new `user_prefs` fields, `theme_mode` and `theme_accent`. ([Settings](docs/settings.md#appearance))
