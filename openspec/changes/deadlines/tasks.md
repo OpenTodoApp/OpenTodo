@@ -56,8 +56,8 @@
 
 ## 10. Integration
 
-- [ ] 10.1 Manual smoke on `make dev`: set a deadline from quick add, the list (`d`) and the panel; check the countdown, Today and Upcoming placement and the sidebar count across midnight (change the system date); add a deadline reminder; fetch the task from a CalDAV client and edit its start and due there; import the CSV example. Record the result in the change folder notes.
-- [ ] 10.2 Run `make check` (go test, web test and build, ui-lint, docs check, openspec validate). Verify it passes.
+- [x] 10.1 Manual smoke on `make dev`: set a deadline from quick add, the list (`d`) and the panel; check the countdown, Today and Upcoming placement and the sidebar count across midnight (change the system date); add a deadline reminder; fetch the task from a CalDAV client and edit its start and due there; import the CSV example. Record the result in the change folder notes.
+- [x] 10.2 Run `make check` (go test, web test and build, ui-lint, docs check, openspec validate). Verify it passes.
 
 ## Workflow follow-up
 
