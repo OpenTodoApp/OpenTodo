@@ -12,5 +12,5 @@ Held until the ux-overhaul group 1 and 2 PRs merge (coordination with the ux-ove
 - A self-service reset that hits the per-address limit is refused before a link is issued (`mail.Service.Limited`), because issuing revokes the earlier links: a flood of requests cannot invalidate the link the person already received.
 - The per-email limit of 3 per hour from design D5 is not applied: the spec's "five messages are sent, the sixth is not" scenario is the controlling rule.
 - The last test outcome is kept in the `smtp.last_test` settings row so the panel can lead with it; any configuration change clears it.
-- Migration number 0031 is also used by `calendar-feeds` (unmerged); whichever merges second renumbers (statements are idempotent).
+- Migration 0032: `calendar-feeds` (earlier in the roadmap) holds 0031. Until it merges, main jumps from 0030 to 0032, which the runner accepts; it must not merge after this change.
 - An inviter without a display name is shown as a localized "Someone", never by address.
