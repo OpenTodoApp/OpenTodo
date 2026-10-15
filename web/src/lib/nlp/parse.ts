@@ -3,11 +3,11 @@
 // the dismissed spans. No network, no clock reads, no randomness.
 import type { Due, Priority } from '../types'
 import { matchDuration, matchLabel, matchPriority, matchProject, type ProjectRef } from './attributes'
-import { matchDateAt, matchTimeAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
+import { matchDateAt, matchDeadlineAt, matchTimeAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
 import { stripSpans, tokenize, type Span, type Token } from './tokenize'
 import { vocabulariesFor, type DayMonthOrder } from './vocab'
 
-export type AttributeKind = 'due' | 'project' | 'label' | 'priority' | 'estimate'
+export type AttributeKind = 'due' | 'deadline' | 'project' | 'label' | 'priority' | 'estimate'
 
 /** One recognised attribute; drives a preview chip. `spans` are removed from the title. */
 export interface Chip {
@@ -15,7 +15,7 @@ export interface Chip {
   /** Stable within one parse: kind plus the first span start. */
   key: string
   spans: Span[]
-  /** Resolved value: Due, project id, label name, priority or minutes. */
+  /** Resolved value: Due, deadline date, project id, label name, priority or minutes. */
   value: Due | string | number
 }
 
@@ -38,6 +38,8 @@ export interface ParseContext {
 export interface ParseResult {
   title: string
   due: Due | null
+  /** "YYYY-MM-DD" from a deadline phrase ("deadline friday"), or null. */
+  deadline: string | null
   projectId: string | null
   labels: string[]
   priority: Priority | null
@@ -79,6 +81,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   let project: { id: string; span: Span } | null = null
   let priority: { value: Priority; span: Span } | null = null
   let estimate: { value: number; span: Span } | null = null
+  let deadline: { value: string; span: Span } | null = null
   const labels: { value: string; span: Span }[] = []
 
   let i = 0
@@ -125,6 +128,18 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       }
     }
 
+    // A deadline word directly before a date phrase: the first one wins (deadlines D7).
+    if (!deadline) {
+      const dl = matchDeadlineAt(tokens, i, dctx)
+      const span = dl ? spanOf(line, tokens, dl.from, dl.to) : null
+      if (dl && span && !overlaps(span, dismissed)) {
+        deadline = { value: dl.date, span }
+        // A deadline has no time: a time right after it stays in the title.
+        i = matchTimeAt(tokens, dl.to, dctx)?.to ?? dl.to
+        continue
+      }
+    }
+
     // Date and time phrases: the longest wins, a date on a tie. First of each wins.
     // A match whose range overlaps a live dismissal is ignored.
     let dm: DateMatch | null = date ? null : matchDateAt(tokens, i, dctx)
@@ -154,6 +169,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   const chip = (kind: AttributeKind, spans: Span[], value: Chip['value']) =>
     chips.push({ kind, key: `${kind}:${spans[0].start}`, spans, value })
   if (due) chip('due', [date?.span, time?.span].filter((s): s is Span => !!s).sort((a, b) => a.start - b.start), due)
+  if (deadline) chip('deadline', [deadline.span], deadline.value)
   if (project) chip('project', [project.span], project.id)
   for (const l of labels) chip('label', [l.span], l.value)
   if (priority) chip('priority', [priority.span], priority.value)
@@ -163,6 +179,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   return {
     title: stripSpans(line, chips.flatMap((c) => c.spans), quoteSpans),
     due,
+    deadline: deadline?.value ?? null,
     projectId: project?.id ?? null,
     labels: labels.map((l) => l.value),
     priority: priority?.value ?? null,

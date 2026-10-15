@@ -28,6 +28,7 @@ export const en: Vocabulary = {
     { names: ['december'], abbr: ['dec'] },
   ],
   before: ['on', 'by', 'due'],
+  deadlineWords: ['deadline'],
   nextBefore: ['next'],
   nextAfter: [],
   thisBefore: ['this'],

@@ -28,6 +28,7 @@ export const pt: Vocabulary = {
     { names: ['dezembro'], abbr: ['dez'] },
   ],
   before: ['na', 'no', 'até', 'para'],
+  deadlineWords: ['prazo'],
   nextBefore: ['próxima', 'próximo'],
   nextAfter: ['que vem', 'próxima', 'próximo'],
   thisBefore: ['esta', 'este', 'nesta', 'neste'],

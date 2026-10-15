@@ -184,3 +184,12 @@ describe('quick-add settings', () => {
     expect([formatMinutes(45), formatMinutes(60), formatMinutes(90), formatMinutes(125)]).toEqual(['45m', '1h', '1h30m', '2h5m'])
   })
 })
+
+describe('deadline in the task input (OpenSpec deadlines 7.1)', () => {
+  it('passes the deadline through only when the line set one', async () => {
+    const deps = { labels: [], createLabel: async () => 'x' }
+    const base = { title: 'Report', due: null, projectId: null, labels: [], priority: null, estimateMinutes: null, chips: [] }
+    expect(await toTaskInput({ ...base, deadline: '2026-10-16' }, deps)).toEqual({ title: 'Report', deadline: '2026-10-16' })
+    expect(await toTaskInput({ ...base, deadline: null }, deps)).toEqual({ title: 'Report' })
+  })
+})

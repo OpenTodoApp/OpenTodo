@@ -40,8 +40,8 @@
 
 ## 7. Quick add (design D7)
 
-- [ ] 7.1 Add `deadlineWords` to the six vocabularies and the phrase match in `lib/nlp/dates.ts`/`parse.ts` (first phrase wins, time after it stays in the title, dismissable chip), `deadline` in `ParseResult` and `QuickAddInput`, the chip in `QuickAdd.tsx`, and pass it to `createTask`. Verify with tests for the four spec scenarios and that `Pay rent by friday` still sets the due date (`npm test`).
-- [ ] 7.2 Document the word per language in `docs/quick-add.md`. Verify with `npm run docs:check`.
+- [x] 7.1 Add `deadlineWords` to the six vocabularies and the phrase match in `lib/nlp/dates.ts`/`parse.ts` (first phrase wins, time after it stays in the title, dismissable chip), `deadline` in `ParseResult` and `QuickAddInput`, the chip in `QuickAdd.tsx`, and pass it to `createTask`. Verify with tests for the four spec scenarios and that `Pay rent by friday` still sets the due date (`npm test`).
+- [x] 7.2 Document the word per language in `docs/quick-add.md`. Verify with `npm run docs:check`.
 
 ## 8. Recurrence (design D8)
 
