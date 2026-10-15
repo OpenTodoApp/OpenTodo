@@ -29,7 +29,7 @@
 
 ## 5. Activity events (design D8)
 
-- [ ] 5.1 Add kind `dependencies` to `internal/activity/activity.go` and `web/src/lib/activity.ts` after `project_id`, the `ActivityKind` union, and the wording in the Activity tab (`web/src/app/task-detail/ActivityTab.tsx`, titles resolved from local rows). Add a fixture case to `internal/activity/testdata/activity_fixture.json` with `blocked_by` and `title` in one window. Verify with `go test ./internal/activity/...` and `web/src/lib/activity.test.ts` (`npm test`).
+- [x] 5.1 Add kind `dependencies` to `internal/activity/activity.go` and `web/src/lib/activity.ts` after `project_id`, the `ActivityKind` union, and the wording in the Activity tab (`web/src/app/task-detail/ActivityTab.tsx`, titles resolved from local rows). Add a fixture case to `internal/activity/testdata/activity_fixture.json` with `blocked_by` and `title` in one window. Verify with `go test ./internal/activity/...` and `web/src/lib/activity.test.ts` (`npm test`).
 
 ## 6. Unblocked notification (design D9)
 

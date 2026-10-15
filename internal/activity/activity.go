@@ -77,6 +77,8 @@ const (
 	KindAssigned       = "assigned"
 	KindUnassigned     = "unassigned"
 	KindMoved          = "moved"
+	// KindDependencies: the task's blocked_by list changed (task-dependencies D8).
+	KindDependencies   = "dependencies"
 	KindArchived       = "archived"
 	KindUnarchived     = "unarchived"
 	KindEdited         = "edited"
@@ -203,6 +205,8 @@ func finish(g *group, commentTask map[string]string) (Event, bool) {
 			ev.Kind = pick(isNull("assignee_id"), KindUnassigned, KindAssigned)
 		case has("project_id"):
 			ev.Kind = KindMoved
+		case has("blocked_by"):
+			ev.Kind = KindDependencies
 		case has("archived"):
 			ev.Kind = pick(string(g.changes["archived"].To) == "true", KindArchived, KindUnarchived)
 		default:

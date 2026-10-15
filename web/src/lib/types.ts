@@ -284,7 +284,7 @@ export type ThemeModePref = 'system' | 'light' | 'dark'
 
 export type ActivityKind =
   | 'created' | 'completed' | 'reopened' | 'deleted' | 'restored' | 'rescheduled' | 'assigned' | 'unassigned'
-  | 'moved' | 'archived' | 'unarchived' | 'edited' | 'commented' | 'comment_edited' | 'comment_deleted'
+  | 'moved' | 'dependencies' | 'archived' | 'unarchived' | 'edited' | 'commented' | 'comment_edited' | 'comment_deleted'
 
 /** One field transition inside an activity event. */
 export interface ActivityChange {

@@ -635,6 +635,17 @@
         {"id":"at3","seq":3,"actor":"alice","entity":"attachment","entityId":"a1","field":"uploaded_at","value":400500,"ts":400500,"device":"server"}
       ],
       "events": []
+    },
+    {
+      "name": "blocked_by with a title edit in one window is a dependencies event (task-dependencies)",
+      "ops": [
+        {"id":"bb1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"blocked_by","value":["t2"],"ts":300000,"device":"da"},
+        {"id":"bb2","seq":2,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Book flights","ts":300000,"device":"da"}
+      ],
+      "events": [
+        {"id":"bb1","kind":"dependencies","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":300000,"opIds":["bb1","bb2"],
+         "changes":[{"field":"blocked_by","from":null,"to":["t2"]},{"field":"title","from":null,"to":"Book flights"}]}
+      ]
     }
   ]
 }
