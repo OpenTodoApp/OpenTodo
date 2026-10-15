@@ -81,6 +81,12 @@ export interface Task {
   /** This Evening: grouped below the day's tasks in Today. Read with `?? false`. */
   evening?: boolean
   /**
+   * The tasks this one waits for, in its own sharing scope (OpenSpec change
+   * `task-dependencies`). Blocked while any of them is live and open. Optional on
+   * rows stored before the field; read with `?? []`.
+   */
+  blocked_by?: string[]
+  /**
    * Recurrence rule in canonical form (docs/recurrence.md) or null. A task with a
    * rule is a series: completing it records an occurrence and moves `due` forward.
    */
@@ -688,7 +694,7 @@ export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
-  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening',
+  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'blocked_by',
 ] as const
 export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const

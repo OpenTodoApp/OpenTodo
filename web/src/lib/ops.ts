@@ -60,7 +60,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 }
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
-  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, recurrence: null, series_id: null,
+  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
   assignee_id: null, section_id: null, ical_extra: null, notes_doc: '',
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
@@ -606,6 +606,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * tombstones are new. `section_id` is deliberately absent: every copy lands in a
  * different project, and changing a task's project clears its section (board-view).
  */
+// blocked_by stays behind: blockers live in one sharing scope (task-dependencies D5).
 const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'position', 'created_at'] as const
 
 /**

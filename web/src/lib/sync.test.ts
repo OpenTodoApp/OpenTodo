@@ -556,6 +556,29 @@ describe('notifications', () => {
   })
 })
 
+describe('task-dependencies', () => {
+  it('a blocked_by refused as a cycle takes the server value, or none', async () => {
+    await applyOps([
+      { id: 'd1', entity: 'task', entityId: 'a', field: 'title', value: 'Confirm dates', ts: 1, device: 'other' },
+      { id: 'd2', entity: 'task', entityId: 'b', field: 'title', value: 'Book flights', ts: 1, device: 'other' },
+      { id: 'd3', entity: 'task', entityId: 'c', field: 'title', value: 'Pack', ts: 1, device: 'other' },
+      { id: 'd4', entity: 'task', entityId: 'c', field: 'blocked_by', value: ['b'], ts: 1, device: 'other' },
+    ])
+    // Offline: a waits for b (no server value), c now waits for a too.
+    await mutate('task', 'a', { blocked_by: ['b'] })
+    await mutate('task', 'c', { blocked_by: ['b', 'a'] })
+    syncCalls.mockImplementationOnce((async (...args: unknown[]) => ({
+      applied: 0, cursor: 5, hasMore: false, serverTime: Date.now(),
+      rejected: (args[2] as { id: string }[]).map((o) => ({ id: o.id, reason: 'cycle' })),
+      ops: [{ id: 'd4', entity: 'task', entityId: 'c', field: 'blocked_by', value: ['b'], ts: 1, device: 'other', seq: 4 }],
+    })) as never)
+    await syncNow()
+    expect((await db.tasks.get('a'))?.blocked_by).toEqual([])
+    expect((await db.tasks.get('c'))?.blocked_by).toEqual(['b'])
+    expect(syncSnapshot().rejected?.count).toBe(2)
+  })
+})
+
 describe('trash-and-history', () => {
   it('purged ids are removed locally', async () => {
     await applyOps([

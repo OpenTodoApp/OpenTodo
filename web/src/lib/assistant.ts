@@ -240,6 +240,11 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
       case 'recurrence': lines.push(v ? `Repeats ${v}` : 'Stops repeating'); break
       case 'deleted_at': lines.push(v ? 'Moved to the Trash' : 'Restored'); break
       case 'parent_id': lines.push(v ? `Subtask of “${clip(names.tasks.get(String(v)) ?? 'a task', 50)}”` : 'No longer a subtask'); break
+      case 'blocked_by': {
+        const ids = (v as string[] | null) ?? []
+        lines.push(ids.length ? `Waits for ${ids.map((id) => `“${clip(names.tasks.get(id) ?? 'a task', 40)}”`).join(', ')}` : 'Waits for nothing')
+        break
+      }
       case 'color': lines.push(`Colour ${String(v)}`); break
       case 'position': case 'created_at': case 'notes_doc': break
       default: lines.push(`${f.replace(/_/g, ' ')} changed`)

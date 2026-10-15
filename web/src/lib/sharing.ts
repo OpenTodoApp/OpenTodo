@@ -3,7 +3,7 @@
 // which replaces the local cache, so all devices converge on the server's member
 // list and roles. Everything here reads the cache, so roles render the same offline.
 import { forgetEntities } from './activity'
-import { db, getMeta, setMeta } from './db'
+import { db, entityTables, getMeta, setMeta } from './db'
 import type { Clock, Entity, Membership, Op, ProjectMember, ProjectRole, Rejection, Task } from './types'
 
 /** The local scope label of a project: its own scope when shared, else the user's personal scope. */
@@ -165,7 +165,7 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
   const tasks = new Set<string>()
   let count = 0
   let assignments = 0
-  await db.transaction('rw', [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.comments], async () => {
+  await db.transaction('rw', entityTables(), async () => {
     for (const r of rejected) {
       const op = byId.get(r.id)
       if (!op) continue
@@ -189,8 +189,11 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
       if (op.field in clock) {
         delete clock[op.field]
         // An assignee the server never stored has no server value to restore:
-        // fall back to "unassigned", which is what every other device shows.
-        const reset = op.entity === 'task' && op.field === 'assignee_id' ? { assignee_id: null } : {}
+        // fall back to "unassigned", which is what every other device shows. The
+        // same for blockers refused as a cycle or another scope (task-dependencies):
+        // the restore op, if the server has a value, follows in the same response.
+        const reset = op.entity === 'task' && op.field === 'assignee_id' ? { assignee_id: null }
+          : op.entity === 'task' && op.field === 'blocked_by' ? { blocked_by: [] } : {}
         await table.put({ ...row, ...reset, _clock: clock })
       }
     }

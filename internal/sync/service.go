@@ -162,6 +162,9 @@ const (
 type RejectedError struct {
 	Op     Op
 	Reason string
+	// Detail names what was refused when the reason alone does not (the blocker
+	// id of a cycle or of another scope, task-dependencies).
+	Detail string
 }
 
 func (e *RejectedError) Error() string {
@@ -256,7 +259,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 		}
 		if reason != "" {
 			if strict {
-				return ApplyResult{}, &RejectedError{Op: op, Reason: reason}
+				return ApplyResult{}, &RejectedError{Op: op, Reason: reason, Detail: rs.detail}
 			}
 			res.Rejected = append(res.Rejected, Rejection{ID: op.ID, Reason: reason})
 			refused = append(refused, op)

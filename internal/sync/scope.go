@@ -160,6 +160,8 @@ type resolver struct {
 	batchAttachment map[string]*batchAttachment
 	attachments     map[string]*attachmentState
 	attachmentLimit int64
+	// detail names the id behind the last refusal, when there is one (dependencies.go).
+	detail string
 }
 
 func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolver {
@@ -315,6 +317,11 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 		}
 		if target != scope {
 			return "", ReasonScopeChange, nil
+		}
+	}
+	if op.Entity == "task" && op.Field == "blocked_by" {
+		if reason, err := r.checkBlockedBy(op, scope); err != nil || reason != "" {
+			return "", reason, err
 		}
 	}
 	if op.Entity == "task" && op.Field == "assignee_id" {
