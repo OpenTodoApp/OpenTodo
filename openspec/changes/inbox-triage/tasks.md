@@ -2,7 +2,7 @@
 
 ## 1. Queue, progress and announcements (design D2, D7)
 
-- [ ] 1.1 Create `web/src/lib/triage.ts` with `buildQueue(tasks, order)`, `advanceQueue(state, liveTasks)`, `progress(state)` and the announcement strings (outcome and "n of N: title"). Verify with vitest cases for the spec scenarios: "5 of 17" after three decisions and a skip, a task arriving ("4 of 18"), the current task leaving, subtasks never queued, `k` not double-counting (`npm test` in web/).
+- [x] 1.1 Create `web/src/lib/triage.ts` with `buildQueue(tasks, order)`, `advanceQueue(state, liveTasks)`, `progress(state)` and the announcement strings (outcome and "n of N: title"). Verify with vitest cases for the spec scenarios: "5 of 17" after three decisions and a skip, a task arriving ("4 of 18"), the current task leaving, subtasks never queued, `k` not double-counting (`npm test` in web/).
 
 ## 2. The triage view (design D1, D3, D4, D6, D7)
 
