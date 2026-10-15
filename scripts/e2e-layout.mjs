@@ -66,6 +66,8 @@ const log = (...a) => console.log(...a)
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 // ------------------------------------------------------------------ seed
+// A 2×2 grey PNG for image attachments and shared files.
+const TINY_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGOYs3g9EDFAKAA1yge5YXhuBgAAAABJRU5ErkJggg=='
 const LONG_URL = 'https://example.com/a/very/long/path/that/does/not/fit/on/a/phone/screen/' + 'segment'.repeat(6) + '?ref=layout-check'
 async function seed() {
   const browser = await pw.chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
@@ -112,7 +114,18 @@ async function seed() {
   await A('DELETE', `/api/v1/tasks/${trashed.id}`)
 
   // Notifications for Ada: a mention and an assignment from Bob.
-  await B('POST', `/api/v1/tasks/${quotes.id}/comments`, { body: `@Ada can you check ${LONG_URL} before Thursday? It has the supplier's full price list.`, mentions: [me.id] })
+  const bobComment = await B('POST', `/api/v1/tasks/${quotes.id}/comments`, { body: `@Ada can you check ${LONG_URL} before Thursday? It has the supplier's full price list.`, mentions: [me.id] })
+  // Attachments (OpenSpec attachments): files and a link on the passport task (the
+  // task panel overlay), and a file on Bob's comment (the comments tab).
+  const upload = (c) => async (taskId, name, mimeType, body, extra = {}) => {
+    const r = await c.request.fetch(`${base}/api/v1/tasks/${taskId}/attachments`, { method: 'POST', headers: { Origin: base }, multipart: { file: { name, mimeType, buffer: Buffer.from(body) }, ...extra } })
+    if (!r.ok()) throw new Error(`upload ${name} → ${r.status()} ${await r.text()}`)
+  }
+  const passportTask = (await A('GET', '/api/v1/tasks')).tasks.find((t) => t.title === 'Renew passport')
+  await upload(ctx)(passportTask.id, 'Passport application form with a long file name that has to truncate.pdf', 'application/pdf', '%PDF-1.4 layout check')
+  await upload(ctx)(passportTask.id, 'photo.png', 'image/png', Buffer.from(TINY_PNG, 'base64'))
+  await A('POST', `/api/v1/tasks/${passportTask.id}/attachments`, { url: LONG_URL, name: 'Appointment booking' })
+  await upload(bctx)(quotes.id, 'price-list.pdf', 'application/pdf', '%PDF-1.4 prices', { comment_id: bobComment.id })
   const paint = (await B('GET', '/api/v1/tasks')).tasks.find((t) => t.title === 'Pick paint colours')
   await B('PATCH', `/api/v1/tasks/${paint.id}`, { assignee_id: me.id })
 
@@ -179,6 +192,33 @@ function screens(ids) {
       ['admin', 'Administration', ['delete-user']], ['backups', 'Backups'], ['access', 'Access policies'],
     ].map(([id, title, overlays]) => ({ name: `settings-${id}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
+    // The capture screen with shared files (attachments D9): the service worker's
+    // hand-over store is filled in the page, then /share?inbox=<id> opens.
+    { name: 'share-files', path: '/inbox', ready: async (p) => {
+      await p.locator('[data-task-id]').first().waitFor()
+      const id = await p.evaluate(async (png) => {
+        const db = await new Promise((resolve, reject) => {
+          const r = indexedDB.open('opentodo-share', 1)
+          r.onupgradeneeded = () => r.result.createObjectStore('inbox', { keyPath: 'id' })
+          r.onsuccess = () => resolve(r.result)
+          r.onerror = () => reject(r.error)
+        })
+        const bytes = Uint8Array.from(atob(png), (c) => c.charCodeAt(0))
+        const entry = { id: crypto.randomUUID(), createdAt: Date.now(), title: 'Receipt from the hardware store', text: '', url: '', files: [
+          { name: 'IMG_20261015_143012_receipt_with_a_long_camera_name.png', type: 'image/png', blob: new Blob([bytes], { type: 'image/png' }) },
+          { name: 'warranty.pdf', type: 'application/pdf', blob: new Blob(['%PDF-1.4'], { type: 'application/pdf' }) },
+        ] }
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction('inbox', 'readwrite')
+          tx.objectStore('inbox').put(entry)
+          tx.oncomplete = resolve
+          tx.onerror = () => reject(tx.error)
+        })
+        return entry.id
+      }, TINY_PNG)
+      await p.goto(`${base}/share?inbox=${id}`)
+      await p.locator('[data-shared-file]').first().waitFor()
+    } },
     // In-app Help (user-documentation): also checked offline.
     { name: 'help', path: '/help', ready: heading('Help'), offline: '/help/keyboard' },
     { name: 'help-guide', path: '/help/sections-and-boards', ready: heading('Sections and boards') },

@@ -70,9 +70,9 @@
 
 ## 11. Integration
 
-- [ ] 11.1 Manual smoke on `make dev`: attach a file offline on one browser profile, reconnect, see it become available on a second profile of the same account; share a photo from an installed Android app (or the layout script's share simulation) and save; enable encryption on an account with files and open one on a second device; run a backup, restore it on a fresh data directory and open the files; export ZIP and import it into another account. Record the results in the change folder notes.
-- [ ] 11.2 Layout check covers the Attachments row, the comment attachment list and the capture screen with files at 360 px, light and dark; verify with the layout script on port 18081 with Chromium.
-- [ ] 11.3 Run `make check` (go test, web test and build, ui lint, docs check). Verify it passes.
+- [x] 11.1 Manual smoke on `make dev`: attach a file offline on one browser profile, reconnect, see it become available on a second profile of the same account; share a photo from an installed Android app (or the layout script's share simulation) and save; enable encryption on an account with files and open one on a second device; run a backup, restore it on a fresh data directory and open the files; export ZIP and import it into another account. Record the results in the change folder notes.
+- [x] 11.2 Layout check covers the Attachments row, the comment attachment list and the capture screen with files at 360 px, light and dark; verify with the layout script on port 18081 with Chromium.
+- [x] 11.3 Run `make check` (go test, web test and build, ui lint, docs check). Verify it passes.
 
 ## Workflow follow-up
 

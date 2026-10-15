@@ -261,7 +261,7 @@ describe('file phase of the encryption migration', () => {
       route(served)
       await resumeFileMigration()
       expect((await db.attachments.get(second))!.deleted_at).not.toBeNull()
-      expect((await db.attachments.toArray()).filter((r) => r.encrypted && !r.deleted_at).map((r) => r.name)).toEqual(['1.txt', '2.txt'])
+      expect((await db.attachments.toArray()).filter((r) => r.encrypted && !r.deleted_at).map((r) => r.name).sort()).toEqual(['1.txt', '2.txt'])
     } finally {
       vi.unstubAllGlobals()
       forgetMemoryKeys()
