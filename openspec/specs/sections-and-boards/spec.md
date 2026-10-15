@@ -69,7 +69,7 @@ The user SHALL be able to move a task to another section by dragging it onto a c
 - **THEN** every device shows the task in the column chosen by the move with the greater timestamp
 
 ### Requirement: Section lifecycle
-Sections SHALL be renamable, reorderable among the sections of their project, and deletable from the heading or column menu and from the keyboard. Deleting a section SHALL set its deletion time and SHALL move its open tasks to "No section" by clearing their section reference, one operation per task. Deleted sections SHALL be hidden from all views and list endpoints and included in the export. These actions work offline and converge.
+Sections SHALL be renamable, reorderable among the sections of their project, and deletable from the heading or column menu and from the keyboard. Deleting a section SHALL require confirming a dialog stating how many open tasks move to "No section". It SHALL set its deletion time and clear the section of its open tasks, one operation per task. Deleted sections SHALL be hidden from all views and list endpoints and included in the export. These actions work offline and converge.
 
 #### Scenario: Reorder
 - **WHEN** the user moves "Doing" before "Backlog"
@@ -78,6 +78,10 @@ Sections SHALL be renamable, reorderable among the sections of their project, an
 #### Scenario: Delete with tasks
 - **WHEN** the user confirms deletion of "Doing", which holds two open tasks
 - **THEN** the section disappears and the two tasks are listed under "No section"
+
+#### Scenario: Confirmation states the impact
+- **WHEN** the user chooses "Delete section" in the menu of "Doing", which holds two open tasks
+- **THEN** a dialog says the two open tasks move to "No section", and Cancel leaves the section and its tasks untouched
 
 ### Requirement: Sections API
 The API SHALL expose a `sections` collection under `/api/v1/sections` with list, get, create, patch and delete, following the collection conventions: authentication required, soft delete, write-through to the operation log, unknown fields rejected. Create SHALL require a name and an existing, non-deleted `project_id`. Tasks SHALL accept `section_id` in create and patch.

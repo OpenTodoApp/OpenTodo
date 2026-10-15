@@ -1,5 +1,6 @@
 // Browser check of the documentation website (OpenSpec change `user-documentation`,
-// tasks 3.1, 3.2 and 5.1): serves website/ on a local port and, for a sample of
+// tasks 3.1, 3.2 and 5.1): builds the docs site into dist/docs-root/docs, serves it
+// on a local port and, for a sample of
 // docs pages at 360, 390 and 1280 px in light and dark,
 //   - fails on sideways scrolling of the page,
 //   - runs axe-core and fails on serious or critical issues,
@@ -17,7 +18,7 @@ const pw = await import('playwright').catch(async () => {
   const { execSync } = await import('node:child_process')
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
-import { createReadStream, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs'
+import { copyFileSync, createReadStream, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { createRequire } from 'node:module'
 import { execSync } from 'node:child_process'
@@ -25,7 +26,12 @@ import { extname, join, normalize } from 'node:path'
 
 const outDir = process.argv[2] ?? 'docs-report'
 mkdirSync(outDir, { recursive: true })
-const ROOT = 'website'
+const ROOT = 'dist/docs-root'
+// The site is built, not committed (site-bundle D6): build it where /docs/ resolves,
+// with the two icons the website serves next to it.
+execSync('node web/scripts/docs/build.mjs --site dist/docs-root/docs', { stdio: 'inherit' })
+mkdirSync(join(ROOT, 'assets'), { recursive: true })
+for (const f of ['favicon.svg', 'apple-touch-icon.png']) copyFileSync(join('web/public', f), join(ROOT, 'assets', f))
 const PAGES = (process.env.PAGES ?? '/docs/,/docs/getting-started/,/docs/sections-and-boards/,/docs/keyboard/,/docs/self-hosting/docker/,/docs/api/').split(',')
 const WIDTHS = (process.env.WIDTHS ?? '360,390,1280').split(',').map(Number)
 const THEMES = ['light', 'dark']

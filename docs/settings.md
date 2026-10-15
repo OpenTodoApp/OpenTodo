@@ -3,7 +3,7 @@ title: Settings
 summary: A tour of Settings, what each section does, which choices belong to one device and which follow your account.
 audience: user
 section: Guides
-specs: [web-app, settings-navigation, date-time-preferences]
+specs: [web-app, settings-navigation, date-time-preferences, appearance-preferences]
 screens: [settings/appearance#appearance, settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/sso#access-policies, settings/backups#backups, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations]
 order: 140
 card: settings

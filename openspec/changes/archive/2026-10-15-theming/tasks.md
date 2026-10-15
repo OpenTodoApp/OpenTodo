@@ -27,7 +27,7 @@
 
 ## 5. Integration
 
-- [ ] 5.1 Manual smoke on `./bin/opentodo`. Verify each of these is observed (all scripted and observed except the installed PWA title bar on a device; see design "Implementation notes"):
+- [x] 5.1 Manual smoke on `./bin/opentodo`. Verify each of these is observed (all scripted and observed; the installed PWA title bar is accepted by the maintainer as covered by the theme-color tests, see design "Implementation notes"):
   - Pick `orange` + `dark` on one browser; a second browser signed in as the same user follows without a reload.
   - Reload: the first frame is already dark and orange, with no flash.
   - A second user's appearance is unchanged.

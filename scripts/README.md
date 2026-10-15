@@ -56,7 +56,7 @@ Every screen, and every overlay on its own, is also run through axe-core in ligh
 
 ## `e2e-docs.mjs`
 
-Browser check of the docs website (`website/docs/`, OpenSpec change `user-documentation`), also run by the `layout` CI job: serves `website/` like its nginx does and opens a sample of pages at 360, 390 and 1280 px in light and dark. It fails on sideways scrolling, on serious or critical axe-core issues, when searching "recurring" does not list the recurring guide and the rule or quick add reference, when the result count is not announced or a result does not open with the keyboard, and when a page without JavaScript lacks its heading or working navigation (the search form must be hidden then). Third-party requests (fonts, analytics) are blocked, so the pages must work without them.
+Browser check of the docs website (OpenSpec change `user-documentation`), also run by the `docs-site` CI job: builds it into `dist/docs-root/docs` and serves it like the website's nginx does and opens a sample of pages at 360, 390 and 1280 px in light and dark. It fails on sideways scrolling, on serious or critical axe-core issues, when searching "recurring" does not list the recurring guide and the rule or quick add reference, when the result count is not announced or a result does not open with the keyboard, and when a page without JavaScript lacks its heading or working navigation (the search form must be hidden then). Third-party requests (fonts, analytics) are blocked, so the pages must work without them.
 
 ```bash
 make docs-site-check           # or: node scripts/e2e-docs.mjs [report-dir]
@@ -75,7 +75,7 @@ OPENTODO_BIN=bin/opentodo node scripts/docs-screenshots.mjs [name,name]   # a su
 
 ## `screenshots.mjs`
 
-Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the screenshots used by `README.md` (`docs/screenshots/*.png`) and the website (`docs/screenshots/site/*.webp`, also copied to `website/assets/shots/`). Run it against an **empty** data directory; see [`website/README.md`](../website/README.md#refresh-the-screenshots) for the full recipe.
+Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the screenshots used by `README.md` (`docs/screenshots/*.png`) and the website (`docs/screenshots/site/*.webp`, shipped in the site bundle as `shots/`). Run it against an **empty** data directory; see [`website/README.md`](../website/README.md#refresh-the-screenshots) for the full recipe.
 
 ## `release-notes.sh`
 

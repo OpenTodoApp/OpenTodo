@@ -3,7 +3,7 @@ title: Labels and filters
 summary: Tag tasks across projects with labels, then find exactly what you need with the filter language and save it as a view.
 audience: user
 section: Guides
-specs: [labels, filter-queries]
+specs: [labels, filter-queries, action-menus]
 screens: [filter#find-tasks-with-a-filter]
 order: 40
 card: filter
