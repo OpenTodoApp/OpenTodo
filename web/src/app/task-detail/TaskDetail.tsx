@@ -6,6 +6,7 @@ import { markTaskNotificationsRead } from '../../lib/notifications'
 import { createSubtask, deleteTask, setTaskCompleted, updateTask } from '../../lib/ops'
 import { membershipMap, roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
+import { duplicateTask } from '../../lib/templates'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { IconButton } from '../../ui'
 import { Badge } from '../../ui'
@@ -107,6 +108,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           <MenuItem label="Copy link" icon="link" onSelect={copyLink} />
           {parent && <MenuItem label="Open parent task" icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
           {series && <MenuItem label="Open recurring task" icon="repeat" onSelect={() => onOpen?.(series.id)} />}
+          {!readOnly && <MenuItem label="Duplicate" icon="copy" shortcut="Shift+D" onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
           {!readOnly && assistant?.available && <MenuItem label="Break this down" icon="list" onSelect={breakDown} />}
           {!readOnly && <MenuSeparator />}
           {!readOnly && <MenuItem label="Delete" icon="trash-2" danger onSelect={remove} />}

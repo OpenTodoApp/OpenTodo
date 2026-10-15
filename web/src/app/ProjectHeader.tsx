@@ -9,6 +9,7 @@ import { flattenTree } from '../lib/tree'
 import type { Project, ProjectRole } from '../lib/types'
 import { navigate } from './router'
 import { ShareDialog } from './ShareDialog'
+import { DuplicateProjectDialog, SaveTemplateDialog } from './TemplateDialogs'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
@@ -62,11 +63,18 @@ function ColourSwatches({ project }: { project: Project }) {
  * The project menu as data (labels-and-menus D1), shared by the project header and
  * the command palette (search-and-command-palette D5) so both run the same handlers.
  */
-export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number }, a: { rename: () => unknown }): ActionGroup[] {
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown }): ActionGroup[] {
   const { role, targets, subCount, openTasks } = o
   const tasksText = openTasks === 1 ? '1 open task' : `${openTasks} open tasks`
   const subsText = subCount ? ` Its ${subCount === 1 ? 'sub-project moves' : `${subCount} sub-projects move`} up one level.` : ''
+  // Copies only read the project, so every role may make them (project-templates D6).
+  const copies: ActionGroup[] = a.duplicate || a.saveTemplate ? [{ items: [
+    ...(a.duplicate ? [{ kind: 'action' as const, id: 'duplicate', label: 'Duplicate…', icon: 'copy' as const, onSelect: a.duplicate }] : []),
+    ...(a.saveTemplate ? [{ kind: 'action' as const, id: 'save-template', label: 'Save as template…', icon: 'download' as const, onSelect: a.saveTemplate }] : []),
+  ] }] : []
+  if (!canEditProject(role)) return copies
   return [
+    ...copies,
     { items: [
       { kind: 'picker', id: 'move', label: 'Move to', icon: 'folder-input', shortcut: 'm', picker: {
         title: 'Move to', placeholder: 'Find a project…', emptyText: 'No other project can hold this one',
@@ -136,7 +144,9 @@ export function ProjectHeader({ project, userId, actions }: { project: Project; 
     else setName(project.name)
   }
 
-  const groups = projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks }, { rename: () => setEditing(true) })
+  const [dialog, setDialog] = useState<'duplicate' | 'template' | null>(null)
+  const groups = projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks },
+    { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template') })
 
   return (
     <div className="mb-4">
@@ -168,7 +178,9 @@ export function ProjectHeader({ project, userId, actions }: { project: Project; 
         {canManageMembers(role) ? 'Share' : 'Members'} <span className="kbd ml-1">S</span>
       </button>
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} onClose={() => setSharing(false)} />}
-      {editable && <ActionMenu label="Project menu" title={project.name} groups={groups} header={<ColourSwatches project={project} />}
+      {dialog === 'duplicate' && <DuplicateProjectDialog project={project} shared={!!membership} onClose={() => setDialog(null)} />}
+      {dialog === 'template' && <SaveTemplateDialog project={project} onClose={() => setDialog(null)} />}
+      {<ActionMenu label="Project menu" title={project.name} groups={groups} header={editable ? <ColourSwatches project={project} /> : undefined}
         trigger={<>Project<Icon name="chevron-down" size="xs" /></>} triggerClassName="btn-ghost text-xs" width="sm:w-72"
         open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />}
     </div>

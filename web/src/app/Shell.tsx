@@ -28,6 +28,7 @@ import { db } from '../lib/db'
 import { watchViewerZone } from '../lib/dates'
 import { NotificationBell } from './NotificationBell'
 import { UndoToast } from './bulk/UndoToast'
+import { TemplateDialogHost } from './TemplateDialogs'
 import { setCurrentUserId } from '../lib/sharing'
 import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
 import { useVimEnabled } from './vim/prefs'
@@ -269,6 +270,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {paletteLoaded && paletteOpen && <Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense>}
       <ReminderToasts />
       <UndoToast />
+      <TemplateDialogHost />
       <ArchivePrompt />
     </div>
   )

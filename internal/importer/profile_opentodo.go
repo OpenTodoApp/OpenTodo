@@ -41,6 +41,8 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		// UserPrefs is the exporting account's date and time preferences row
 		// (date-time-preferences D1); it is restored like any other record.
 		UserPrefs []map[string]json.RawMessage `json:"user_prefs"`
+		// Template marks a template file (project-templates D1); import is unchanged.
+		Template *TemplateInfo `json:"template"`
 	}
 	if err := json.NewDecoder(r).Decode(&doc); err != nil {
 		return nil, &FileError{fmt.Sprintf("not a readable OpenTodo export: %v", err)}
@@ -51,7 +53,10 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	if doc.Version < 1 {
 		return nil, &FileError{fmt.Sprintf("unsupported export version %d", doc.Version)}
 	}
-	out := &Parsed{Version: doc.Version}
+	out := &Parsed{Version: doc.Version, Template: doc.Template}
+	if doc.Template != nil {
+		out.Notes = append(out.Notes, "This file is a template. Importing it creates it once, with its own ids and dates; to start a fresh copy with dates moved to a start day, use From a template in the sidebar.")
+	}
 	taskTitles := map[string]string{}
 	for _, e := range doc.Tasks {
 		var id, title string
