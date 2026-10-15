@@ -1,6 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { ActivityEntry, AppNotification, Attachment, Comment, FieldDef, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, UserPrefs, View } from './types'
-import type { Attachment, CalendarEvent, CalendarSubscription, ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, UserPrefs, View } from './types'
+import type { ActivityEntry, AppNotification, Attachment, CalendarEvent, CalendarSubscription, Comment, FieldDef, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, UserPrefs, View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -320,8 +319,6 @@ class OpenTodoDB extends Dexie {
       attachments: 'id, task_id, comment_id',
       attachmentBlobs: 'id',
     })
-    // v19 (custom-fields): field definitions (v17 and v18 are calendar-feeds' cache and stats-and-review's review row).
-    this.version(19).stores({
     // v17 (calendar-feeds): cached events of subscribed calendars and the
     // subscriptions. Server data adopted on refresh; every store is redeclared.
     this.version(17).stores({
@@ -344,9 +341,33 @@ class OpenTodoDB extends Dexie {
       userPrefs: 'id',
       attachments: 'id, task_id, comment_id',
       attachmentBlobs: 'id',
-      fields: 'id, [project_id+position], project_id',
       calendarEvents: 'id, subscriptionId, start.date',
       calendarSubscriptions: 'id',
+    })
+    // v18 (custom-fields): field definitions per project. Additive; every store is redeclared.
+    this.version(18).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+      comments: 'id, task_id',
+      activity: 'id, [projectKey+ts], taskId, entityId',
+      prefs: 'id',
+      assistantThreads: 'id, updated_at',
+      assistantUndo: 'id, created_at',
+      pickHistory: 'id, context',
+      userPrefs: 'id',
+      attachments: 'id, task_id, comment_id',
+      attachmentBlobs: 'id',
+      calendarEvents: 'id, subscriptionId, start.date',
+      calendarSubscriptions: 'id',
+      fields: 'id, [project_id+position], project_id',
     })
   }
 }

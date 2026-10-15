@@ -2,7 +2,7 @@
 
 ## Status (2026-10-15)
 
-Done on `feat/custom-fields`: 1.1–1.6 (the `field` entity and the `fields.<id>` family, scopes, trash, occurrence records, encryption, activity fixture, sync docs), 2.1–2.4 (client types, fold and unfold in `ops.ts`, Dexie v19 `fields` table, `copyOf`, `lib/fields.ts`), 3.1–3.4 (REST folding and validation, `/api/v1/fields`, export, own-export import with undo, API and import docs) and 4.1 and 4.3 (assistant tools and their docs). `make check` passes.
+Done on `feat/custom-fields`: 1.1–1.6 (the `field` entity and the `fields.<id>` family, scopes, trash, occurrence records, encryption, activity fixture, sync docs), 2.1–2.4 (client types, fold and unfold in `ops.ts`, Dexie v18 `fields` table, `copyOf`, `lib/fields.ts`), 3.1–3.4 (REST folding and validation, `/api/v1/fields`, export, own-export import with undo, API and import docs) and 4.1 and 4.3 (assistant tools and their docs). `make check` passes.
 
 Held until the ux-overhaul PRs (through its group 4) merge: 4.2 (change-set review labels), 5.1–5.7 (dialog, panel group, badges, columns layout, filter terms, history labels, user docs) and 6.1 (smoke test).
 
@@ -19,4 +19,4 @@ Held until the ux-overhaul PRs (through its group 4) merge: 4.2 (change-set revi
 
 ## Overlaps
 
-- Migrations: none. Dexie: v19 (after calendar-feeds v17 and stats-and-review v18); whichever merges first renumbers if needed.
+- Migrations: none. Dexie: v18 (after calendar-feeds v17); stats-and-review, which planned v18, takes the next free number when it merges.

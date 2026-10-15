@@ -91,12 +91,10 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 /** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
-export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald' }
 /** field (custom-fields): a definition starts as text with no options. */
 const FIELD_DEFAULTS: Omit<FieldDef, 'id' | '_clock'> = { name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null }
 /** Op field name prefix of a custom field value: "fields.<definition id>". */
 export const FIELD_PREFIX = 'fields.'
-
 export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '' }
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
