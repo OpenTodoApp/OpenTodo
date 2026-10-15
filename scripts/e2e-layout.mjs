@@ -193,8 +193,10 @@ function screens(ids) {
     ].map(([id, title, overlays]) => ({ name: `settings-${id}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
     // The capture screen with shared files (attachments D9): the service worker's
-    // hand-over store is filled in the page, then /share?inbox=<id> opens.
-    { name: 'share-files', path: '/inbox', ready: async (p) => {
+    // hand-over store is filled in the page, then /share?inbox=<id> opens. Chromium
+    // only: WebKit's throwaway contexts are private sessions, which cannot store
+    // Blobs in IndexedDB (and Safari has no share target to receive files anyway).
+    { name: 'share-files', path: '/inbox', engines: ['chromium'], ready: async (p) => {
       await p.locator('[data-task-id]').first().waitFor()
       const id = await p.evaluate(async (png) => {
         const db = await new Promise((resolve, reject) => {
@@ -647,6 +649,7 @@ async function runCombo(engine, width, theme, ids) {
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
     for (const s of screens(ids)) {
       if (ONLY && !ONLY.has(s.name)) continue
+      if (s.engines && !s.engines.includes(engine)) continue
       const p = s.anon ? await anonCtx.newPage() : page
       // A screen that does not load is retried once (a slow CI machine); the second
       // failure is reported with whether the session was still valid.

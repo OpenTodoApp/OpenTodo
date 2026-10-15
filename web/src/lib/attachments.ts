@@ -20,7 +20,7 @@ const LIMITS_KEY = 'attachmentLimits'
 
 /** Why a file could not be added; `message` is ready to show. */
 export class AttachmentError extends Error {
-  constructor(public code: 'disabled' | 'too_large' | 'quota' | 'signed_out' | 'invalid' | 'locked', message: string) {
+  constructor(public code: 'disabled' | 'too_large' | 'quota' | 'signed_out' | 'invalid' | 'locked' | 'unsupported', message: string) {
     super(message)
   }
 }
@@ -133,7 +133,12 @@ export async function planFiles(taskId: string, files: File[], opts: { commentId
  * stored first, so a row never exists on this device without its file.
  */
 export async function commitFiles(planned: PlannedFile[], before: Change[] = []): Promise<string[]> {
-  await db.attachmentBlobs.bulkPut(planned.map((p) => p.blob))
+  try {
+    await db.attachmentBlobs.bulkPut(planned.map((p) => p.blob))
+  } catch {
+    // Safari's private browsing, for one, cannot keep files in IndexedDB.
+    throw new AttachmentError('unsupported', 'This browser cannot keep files on the device (private browsing?), so they cannot be attached here.')
+  }
   try {
     await mutateMany([...before, ...planned.map((p) => p.change)])
   } catch (err) {
