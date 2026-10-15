@@ -86,7 +86,7 @@ async function signIn(page, email) {
   await page.goto(base)
   await page.getByLabel('Email').fill(email); await page.getByLabel(/Password/).fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByLabel('Add a task').waitFor({ timeout: 15000 })
+  await page.getByRole('textbox', { name: 'Add a task' }).waitFor({ timeout: 15000 })
 }
 
 
@@ -94,7 +94,7 @@ const ctx = await mk(); const page = await ctx.newPage()
 await page.goto(base)
 await page.getByLabel('Name').fill('Ada Lovelace'); await page.getByLabel('Email').fill('ada@example.com'); await page.getByLabel(/Password/).fill(PASSWORD)
 await page.getByRole('button', { name: 'Create owner account' }).click()
-await page.getByLabel('Add a task').waitFor()
+await page.getByRole('textbox', { name: 'Add a task' }).waitFor()
 const A = (m, p, b) => api(ctx, m, p, b)
 
 async function member(name, email) {
@@ -265,7 +265,7 @@ await go(page, '/today', () => page.getByRole('heading', { name: 'Overdue' }).wa
 await shot(page, 'today')
 
 // Natural-language quick add: chips under the input as you type
-const qa = page.getByLabel('Add a task')
+const qa = page.getByRole('textbox', { name: 'Add a task' })
 await qa.click(); await qa.pressSequentially('Call Sarah about the offsite next Wed at 3pm #Work @call p1 30m', { delay: 8 })
 await settle(page, 500); await shot(page, 'quick-add')
 await qa.fill(''); await page.keyboard.press('Escape')
