@@ -15,13 +15,16 @@ vi.mock('./api', () => {
         return answer(id)
       }),
       me: vi.fn(async () => ({ attachments: { enabled: true, max_file_bytes: 1000, quota_bytes: 0, used_bytes: 0 } })),
+      putEncryptionKeys: vi.fn(async (r: unknown) => ({ keys: r })),
     },
     ApiError,
     isNetworkError: (err: unknown) => err instanceof TypeError,
   }
 })
 
-import { AttachmentError, cleanName, commitFiles, planFiles, queueFiles, queueLink, removeAttachment, restoreAttachment, runUploader, stateOf } from './attachments'
+import { AttachmentError, cleanName, commitFiles, openAttachment, planFiles, queueFiles, queueLink, removeAttachment, restoreAttachment, resumeFileMigration, runFileMigration, runUploader, stateOf } from './attachments'
+import { decryptFile } from './crypto'
+import { currentKey, enableEncryption, encryptionSnapshot, forgetMemoryKeys, onEncryptionChange } from './e2ee'
 import { db, setMeta, useDatabase } from './db'
 import { applyOps, createTask, resetDeviceId } from './ops'
 import { removeLocally } from './trash'
@@ -165,4 +168,120 @@ describe('attachment data layer', () => {
     expect(cleanName('')).toBe('file')
     expect(cleanName('x'.repeat(300))).toHaveLength(255)
   })
+
+  it('an encrypted account stores and uploads an envelope, and opening decrypts it', async () => {
+    await enableEncryption('correct horse battery staple', { iterations: 1000 })
+    try {
+      const task = await createTask({ title: 'Private' })
+      const [id] = await queueFiles(task, [file('secret.txt', 'the plan')])
+      const row = (await db.attachments.get(id))!
+      const blob = (await db.attachmentBlobs.get(id))!
+      const head = new TextDecoder().decode(new Uint8Array(await blob.blob.slice(0, 5).arrayBuffer()))
+      expect(head).toBe('OTAT1')
+      expect(row.encrypted).toBe(true)
+      expect(row.size).toBe(blob.blob.size)
+      // The digest describes the envelope, never the plaintext.
+      const plainDigest = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('the plan')))].map((b) => b.toString(16).padStart(2, '0')).join('')
+      expect(row.sha256).not.toBe(plainDigest)
+      // Opening from the server: fetch the envelope and decrypt it here.
+      const envelope = blob.blob
+      await db.attachmentBlobs.delete(id)
+      await db.attachments.update(id, { uploaded_at: 5 })
+      let opened: Blob | null = null
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(envelope)))
+      vi.stubGlobal('URL', Object.assign(Object.create(URL), { createObjectURL: (b: Blob) => { opened = b; return 'blob:x' }, revokeObjectURL: () => {} }))
+      vi.stubGlobal('document', { createElement: () => ({ click: () => {} }) })
+      await openAttachment((await db.attachments.get(id))!)
+      expect(await opened!.text()).toBe('the plan')
+      expect(opened!.type).toBe('text/plain')
+    } finally {
+      vi.unstubAllGlobals()
+      forgetMemoryKeys()
+    }
+  })
 })
+
+describe('file phase of the encryption migration', () => {
+  /** Plaintext files already on the server (no local bytes), served by a mocked content route. */
+  async function serverFiles(task: string, names: string[]) {
+    const served = new Map<string, Blob>()
+    for (const [i, name] of names.entries()) {
+      const [id] = await queueFiles(task, [file(name, `body of ${name}`)])
+      served.set(id, (await db.attachmentBlobs.get(id))!.blob)
+      await db.attachmentBlobs.delete(id)
+      await db.attachments.update(id, { uploaded_at: 10 + i })
+    }
+    return served
+  }
+  function route(served: Map<string, Blob>, failFor = new Set<string>()) {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      const id = decodeURIComponent(url.split('/')[4])
+      if (failFor.has(id)) throw new TypeError('network error')
+      const b = served.get(id)
+      return b ? new Response(b) : new Response('', { status: 404 })
+    }))
+  }
+
+  it('enabling re-uploads each file encrypted as a new attachment and removes the plaintext one', async () => {
+    const task = await createTask({ title: 'Inbox task' })
+    const served = await serverFiles(task, ['a.txt', 'b.txt'])
+    await enableEncryption('correct horse battery staple', { iterations: 1000 })
+    route(served)
+    const seen: string[] = []
+    const off = onEncryptionChange(() => { const m = encryptionSnapshot().migration; if (m?.files) seen.push(`${m.done} of ${m.total}`) })
+    try {
+      await runFileMigration('encrypt')
+      const rows = await db.attachments.toArray()
+      const old = rows.filter((r) => served.has(r.id))
+      const fresh = rows.filter((r) => !served.has(r.id)).sort((x, y) => (x.name < y.name ? -1 : 1))
+      expect(old.every((r) => r.deleted_at)).toBe(true)
+      expect(fresh.map((r) => [r.name, r.encrypted, r.deleted_at])).toEqual([['a.txt', true, null], ['b.txt', true, null]])
+      const key = (await currentKey())!
+      const env = (await db.attachmentBlobs.get(fresh[0].id))!.blob
+      expect(await (await decryptFile(key, fresh[0].id, env)).text()).toBe('body of a.txt')
+      expect(seen).toContain('2 of 2')
+    } finally {
+      off()
+      vi.unstubAllGlobals()
+      forgetMemoryKeys()
+    }
+  })
+
+  it('stops when the network goes and resumes where it stopped', async () => {
+    const task = await createTask({ title: 'Inbox task' })
+    const served = await serverFiles(task, ['1.txt', '2.txt'])
+    await enableEncryption('correct horse battery staple', { iterations: 1000 })
+    const [, second] = [...served.keys()]
+    route(served, new Set([second]))
+    try {
+      await expect(runFileMigration('encrypt')).rejects.toThrow()
+      // The first file moved; the second keeps its old form.
+      expect((await db.attachments.get(second))!.deleted_at).toBeNull()
+      expect((await db.attachments.toArray()).filter((r) => r.encrypted && !r.deleted_at)).toHaveLength(1)
+      route(served)
+      await resumeFileMigration()
+      expect((await db.attachments.get(second))!.deleted_at).not.toBeNull()
+      expect((await db.attachments.toArray()).filter((r) => r.encrypted && !r.deleted_at).map((r) => r.name)).toEqual(['1.txt', '2.txt'])
+    } finally {
+      vi.unstubAllGlobals()
+      forgetMemoryKeys()
+    }
+  })
+
+  it('disabling re-uploads encrypted files decrypted', async () => {
+    await enableEncryption('correct horse battery staple', { iterations: 1000 })
+    try {
+      const task = await createTask({ title: 'Inbox task' })
+      const [id] = await queueFiles(task, [file('secret.txt', 'the plan')])
+      await db.attachments.update(id, { uploaded_at: 3 })
+      await runFileMigration('decrypt')
+      const fresh = (await db.attachments.toArray()).find((r) => r.id !== id)!
+      expect(fresh.encrypted).toBe(false)
+      expect(await (await db.attachmentBlobs.get(fresh.id))!.blob.text()).toBe('the plan')
+      expect((await db.attachments.get(id))!.deleted_at).not.toBeNull()
+    } finally {
+      forgetMemoryKeys()
+    }
+  })
+})
+

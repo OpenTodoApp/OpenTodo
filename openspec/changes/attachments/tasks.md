@@ -50,10 +50,10 @@
 
 ## 8. Encrypted accounts (design D8)
 
-- [ ] 8.1 `lib/crypto.ts`: `encryptFile`/`decryptFile` with the OTAT1 chunked format (header, nonces, AAD with the attachment id, final flag), streaming over a `Blob` in 1 MiB chunks into a `Blob` of parts; vectors for a small file in `e2ee.vectors.json`, checked by `internal/e2ee/vectors_test.go` too. Tests: round trip, truncation detected, reordered chunk detected, wrong id detected. Verify with `npm test` in web/ and `go test ./internal/e2ee/...`.
-- [ ] 8.2 `name`, `mime`, `url` in `internal/e2ee.ContentFields` and `CONTENT_FIELDS`; `queueFile` encrypts when the row is personal and the account is encrypted (`encrypted: true`, envelope size and digest); `openAttachment` decrypts to a `blob:` URL; the server serves `encrypted` rows as `application/octet-stream`. Tests: an encrypted account's upload stores the envelope and the server never sees the plaintext digest; opening decrypts. Verify with `npm test` in web/ and `go test ./internal/httpapi/...`.
-- [ ] 8.3 Migration phase in `lib/e2eeSync.ts` `runMigration`: re-upload files in the right form as new rows, tombstone the old ones, progress "n of m files", resumable, offline pause; disabling deletes the key record only after the phase. Tests for the three spec scenarios with a mocked content route. Verify with `npm test`.
-- [ ] 8.4 Update `docs/e2ee.md` (encrypted set, file format, migration, size note). Verify with `npm run docs:check`.
+- [x] 8.1 `lib/crypto.ts`: `encryptFile`/`decryptFile` with the OTAT1 chunked format (header, nonces, AAD with the attachment id, final flag), streaming over a `Blob` in 1 MiB chunks into a `Blob` of parts; vectors for a small file in `e2ee.vectors.json`, checked by `internal/e2ee/vectors_test.go` too. Tests: round trip, truncation detected, reordered chunk detected, wrong id detected. Verify with `npm test` in web/ and `go test ./internal/e2ee/...`.
+- [x] 8.2 `name`, `mime`, `url` in `internal/e2ee.ContentFields` and `CONTENT_FIELDS`; `queueFile` encrypts when the row is personal and the account is encrypted (`encrypted: true`, envelope size and digest); `openAttachment` decrypts to a `blob:` URL; the server serves `encrypted` rows as `application/octet-stream`. Tests: an encrypted account's upload stores the envelope and the server never sees the plaintext digest; opening decrypts. Verify with `npm test` in web/ and `go test ./internal/httpapi/...`.
+- [x] 8.3 Migration phase in `lib/e2eeSync.ts` `runMigration`: re-upload files in the right form as new rows, tombstone the old ones, progress "n of m files", resumable, offline pause; disabling deletes the key record only after the phase. Tests for the three spec scenarios with a mocked content route. Verify with `npm test`.
+- [x] 8.4 Update `docs/e2ee.md` (encrypted set, file format, migration, size note). Verify with `npm run docs:check`.
 
 ## 9. Share target and service worker (design D9)
 

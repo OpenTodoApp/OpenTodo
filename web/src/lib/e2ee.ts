@@ -32,6 +32,8 @@ export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   section: ['name'],
   view: ['name', 'query'],
   comment: ['body'],
+  // Attachments (OpenSpec attachments D8): the file bytes are an OTAT1 envelope too.
+  attachment: ['name', 'mime', 'url'],
 }
 
 export function isContentField(entity: Entity, field: string): boolean {
@@ -76,7 +78,7 @@ export interface EncryptionSnapshot {
   unlocked: boolean
   keyVersion: number
   /** Progress of the re-write job while it runs (e2eeSync.runMigration). */
-  migration: { mode: 'encrypt' | 'decrypt'; done: number; total: number } | null
+  migration: { mode: 'encrypt' | 'decrypt'; done: number; total: number; files?: boolean } | null
   /** The server needs a newer client (design D9). */
   updateRequired: boolean
 }
@@ -93,15 +95,14 @@ export function encryptionSnapshot(): EncryptionSnapshot {
   return snap
 }
 
+/** Call `fn` on every change of the snapshot; returns the unsubscribe. */
+export function onEncryptionChange(fn: () => void): () => void {
+  listeners.add(fn)
+  return () => { listeners.delete(fn) }
+}
+
 export function useEncryption(): EncryptionSnapshot {
-  return useSyncExternalStore(
-    (fn) => {
-      listeners.add(fn)
-      return () => listeners.delete(fn)
-    },
-    () => snap,
-    () => snap,
-  )
+  return useSyncExternalStore(onEncryptionChange, () => snap, () => snap)
 }
 
 // ---- key storage ----

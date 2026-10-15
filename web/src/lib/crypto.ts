@@ -348,3 +348,85 @@ export async function decryptValue(key: CryptoKey, entity: string, entityId: str
 export function byteLength(s: string): number {
   return utf8(s).length
 }
+
+// ---- attachment files (OpenSpec attachments, design D8) ----
+
+/** The attachment envelope's magic and its chunk size (1 MiB, like backups). */
+export const FILE_MAGIC = 'OTAT1'
+export const FILE_CHUNK = 1 << 20
+const FILE_HEADER = 17
+const TAG_BYTES = 16
+
+function fileNonce(prefix: Uint8Array, index: number, final: boolean): Bytes {
+  if (index >= 1 << 24) throw new Error('file too large for the envelope')
+  const n = new Uint8Array(NONCE_BYTES)
+  n.set(prefix)
+  n[8] = (index >> 16) & 0xff
+  n[9] = (index >> 8) & 0xff
+  n[10] = index & 0xff
+  n[11] = final ? 1 : 0
+  return n as Bytes
+}
+
+function fileAad(id: string, header: Uint8Array): Bytes {
+  const label = utf8(`attachment\u0000${id}\u0000`)
+  const aad = new Uint8Array(label.length + header.length)
+  aad.set(label)
+  aad.set(header, label.length)
+  return aad as Bytes
+}
+
+/**
+ * Encrypt a file for an attachment: a header and AES-GCM chunks read one at a
+ * time from the Blob, so the whole plaintext is never in memory at once. The id
+ * is bound into every chunk; the last chunk is marked final. `prefix` and
+ * `chunkSize` are for known-answer tests only.
+ */
+export async function encryptFile(key: CryptoKey, id: string, file: Blob, opts: { prefix?: Uint8Array; chunkSize?: number } = {}): Promise<Blob> {
+  const chunkSize = opts.chunkSize ?? FILE_CHUNK
+  const prefix = opts.prefix ?? random(8)
+  const header = new Uint8Array(FILE_HEADER)
+  header.set(utf8(FILE_MAGIC))
+  new DataView(header.buffer).setUint32(5, chunkSize)
+  header.set(prefix, 9)
+  const aad = fileAad(id, header)
+  const parts: BlobPart[] = [header]
+  for (let i = 0; ; i++) {
+    const end = Math.min((i + 1) * chunkSize, file.size)
+    const final = end === file.size
+    const plain = new Uint8Array(await file.slice(i * chunkSize, end).arrayBuffer())
+    parts.push(new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: fileNonce(prefix, i, final), additionalData: aad, tagLength: 128 }, key, plain as Bytes)))
+    if (final) break
+  }
+  return new Blob(parts, { type: 'application/octet-stream' })
+}
+
+/**
+ * Open an attachment envelope chunk by chunk into a Blob of `type`. Throws
+ * DecryptError for a wrong key or id, a reordered, altered or missing chunk, or
+ * a truncated file.
+ */
+export async function decryptFile(key: CryptoKey, id: string, envelope: Blob, type = 'application/octet-stream'): Promise<Blob> {
+  if (envelope.size < FILE_HEADER + TAG_BYTES) throw new DecryptError()
+  const header = new Uint8Array(await envelope.slice(0, FILE_HEADER).arrayBuffer())
+  if (dec.decode(header.slice(0, 5)) !== FILE_MAGIC) throw new DecryptError('unknown file format; update the app')
+  const chunkSize = new DataView(header.buffer).getUint32(5)
+  if (chunkSize === 0) throw new DecryptError()
+  const prefix = header.slice(9, FILE_HEADER)
+  const aad = fileAad(id, header)
+  const sealed = chunkSize + TAG_BYTES
+  const body = envelope.size - FILE_HEADER
+  const count = Math.max(1, Math.ceil(body / sealed))
+  const parts: BlobPart[] = []
+  for (let i = 0; i < count; i++) {
+    const start = FILE_HEADER + i * sealed
+    const chunk = new Uint8Array(await envelope.slice(start, Math.min(start + sealed, envelope.size)).arrayBuffer())
+    if (chunk.length < TAG_BYTES) throw new DecryptError()
+    try {
+      parts.push(new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fileNonce(prefix, i, i === count - 1), additionalData: aad, tagLength: 128 }, key, chunk as Bytes)))
+    } catch {
+      throw new DecryptError()
+    }
+  }
+  return new Blob(parts, { type })
+}

@@ -152,7 +152,11 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
       }
     }
     setNotes((n) => { const { [a.id]: _, ...rest } = n; return rest })
-    await openAttachment(a, { download })
+    try {
+      await openAttachment(a, { download })
+    } catch (err) {
+      setNotes((n) => ({ ...n, [a.id]: err instanceof AttachmentError ? err.message : 'This file could not be opened.' }))
+    }
   }
 
   async function remove(a: Attachment) {
@@ -328,7 +332,11 @@ export function CommentAttachments({ list }: { list: Attachment[] }) {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) return setNote('Connect to the internet to open this file.')
       if (!a.uploaded_at) return setNote('This file is still uploading.')
     }
-    await openAttachment(a)
+    try {
+      await openAttachment(a)
+    } catch (err) {
+      setNote(err instanceof AttachmentError ? err.message : 'This file could not be opened.')
+    }
   }
   return (
     <div className="mt-1">

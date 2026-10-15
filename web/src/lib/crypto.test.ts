@@ -4,6 +4,7 @@
 // browser code and the documented format agree byte for byte.
 import { describe, expect, it } from 'vitest'
 import {
+  decryptFile, encryptFile,
   b64url, createKeyRecord, decryptValue, DecryptError, derivePassphraseKey, deriveRecoveryKey, encryptValue, formatRecoveryKey, fromB64url,
   isCiphertext, isEnvelope, parseRecoveryKey, RecoveryKeyFormatError, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase,
   unlockWithRecoveryKey, unwrapAccountKey, wrapAccountKey, WrongSecretError, MAX_PLAINTEXT_BYTES, PREFIX_V1,
@@ -22,6 +23,14 @@ describe('known-answer vectors', () => {
       expect(await encryptValue(key, v.entity, v.entityId, v.field, v.plaintext, hex(v.nonce))).toBe(v.value)
       expect(await decryptValue(key, v.entity, v.entityId, v.field, v.value)).toBe(v.plaintext)
     }
+  })
+
+  it('attachment envelopes (OTAT1) match the Go implementation and open again', async () => {
+    const f = vectors.file
+    const key = await gcmKey(hex(f.key))
+    const sealed = await encryptFile(key, f.id, new Blob([f.plaintext]), { prefix: hex(f.prefix), chunkSize: f.chunkSize })
+    expect(toHex(await sealed.arrayBuffer())).toBe(f.envelope)
+    expect(await (await decryptFile(key, f.id, new Blob([hex(f.envelope)]), 'text/plain')).text()).toBe(f.plaintext)
   })
 
   it('AES-KW matches RFC 3394 section 4.6', async () => {
@@ -141,3 +150,36 @@ describe('key record lifecycle', () => {
     expect(await decryptValue(reset.key, 'task', 't1', 'title', value)).toBe('Dentist')
   })
 })
+
+describe('attachment envelopes', () => {
+  const plain = 'x'.repeat(40) + 'tail'
+  async function sealed(chunkSize = 16) {
+    const key = await gcmKey(crypto.getRandomValues(new Uint8Array(32)))
+    return { key, env: new Uint8Array(await (await encryptFile(key, 'a1', new Blob([plain]), { chunkSize })).arrayBuffer()) }
+  }
+  it('round trips, also an empty file and an exact multiple of the chunk size', async () => {
+    const { key, env } = await sealed()
+    expect(await (await decryptFile(key, 'a1', new Blob([env]))).text()).toBe(plain)
+    const empty = await encryptFile(key, 'a2', new Blob([]))
+    expect((await decryptFile(key, 'a2', empty)).size).toBe(0)
+    const exact = await encryptFile(key, 'a3', new Blob(['y'.repeat(32)]), { chunkSize: 16 })
+    expect(await (await decryptFile(key, 'a3', exact)).text()).toBe('y'.repeat(32))
+  })
+  it('detects truncation', async () => {
+    const { key, env } = await sealed()
+    // Drop the final chunk: the new last chunk was not sealed as final.
+    await expect(decryptFile(key, 'a1', new Blob([env.slice(0, 17 + 2 * 32)]))).rejects.toBeInstanceOf(DecryptError)
+  })
+  it('detects a reordered chunk', async () => {
+    const { key, env } = await sealed()
+    const swapped = new Uint8Array(env)
+    swapped.set(env.slice(17 + 32, 17 + 64), 17)
+    swapped.set(env.slice(17, 17 + 32), 17 + 32)
+    await expect(decryptFile(key, 'a1', new Blob([swapped]))).rejects.toBeInstanceOf(DecryptError)
+  })
+  it('detects another attachment id', async () => {
+    const { key, env } = await sealed()
+    await expect(decryptFile(key, 'a9', new Blob([env]))).rejects.toBeInstanceOf(DecryptError)
+  })
+})
+

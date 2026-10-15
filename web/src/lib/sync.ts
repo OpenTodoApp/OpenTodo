@@ -13,7 +13,7 @@ import { followSharedDueChanges } from './reminders'
 import { refreshNotifications } from './notifications'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
 import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
-import { onUploadRequest, refreshLimits, runUploader } from './attachments'
+import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from './attachments'
 import type { Clock, Entity, Op, RowEncryption, SyncState } from './types'
 import { currentKey, isEnabled } from './e2ee'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
@@ -202,6 +202,8 @@ async function runOnce(): Promise<void> {
     publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
     // Files wait for their rows to reach the server (attachments D3): send them now.
     void runUploader().catch(() => undefined)
+    // An encryption change stopped while re-uploading files continues here.
+    void resumeFileMigration().catch(() => undefined)
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
       publish({ state: 'unauthenticated' })

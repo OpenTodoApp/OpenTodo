@@ -42,6 +42,8 @@ var ContentFields = map[string][]string{
 	"section": {"name"},
 	"view":    {"name", "query"},
 	"comment": {"body"},
+	// Attachments (OpenSpec attachments, design D8): the bytes are an envelope too.
+	"attachment": {"name", "mime", "url"},
 }
 
 // IsContentField reports whether entity.field is encrypted for encrypted accounts.

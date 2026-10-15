@@ -42,12 +42,12 @@ func (e *env) raw(method, path string, body []byte, headers ...string) (*http.Re
 }
 
 // queueRow creates an attachment row through sync like a device does.
-func queueRow(e *env, device, id, task, author, name, mime string, content []byte) {
+func queueRow(e *env, device, id, task, author, name, mime string, content []byte, encrypted ...bool) {
 	e.t.Helper()
 	ts := time.Now().UnixMilli()
 	fields := map[string]any{
 		"task_id": task, "author_id": author, "comment_id": nil, "name": name, "mime": mime,
-		"size": len(content), "sha256": digestOf(content), "url": nil, "encrypted": false, "created_at": ts, "uploaded_at": nil, "deleted_at": nil,
+		"size": len(content), "sha256": digestOf(content), "url": nil, "encrypted": len(encrypted) > 0 && encrypted[0], "created_at": ts, "uploaded_at": nil, "deleted_at": nil,
 	}
 	var ops []map[string]any
 	for f, v := range fields {
@@ -337,5 +337,23 @@ func TestAttachmentExport(t *testing.T) {
 	anon := newClientAt(e, "10.9.9.8")
 	if resp, _ := anon.raw("GET", "/api/v1/export?format=zip", nil); resp.StatusCode != 401 {
 		t.Fatalf("anonymous zip export %d", resp.StatusCode)
+	}
+}
+
+// An encrypted file (design D8) is an opaque envelope: always a download, never
+// rendered, whatever its (ciphertext) type says.
+func TestEncryptedAttachmentServedAsOctetStream(t *testing.T) {
+	e, uid, task := attachmentSetup(t)
+	envelope := append([]byte("OTAT1"), bytes.Repeat([]byte{9}, 64)...)
+	queueRow(e, "laptop", "a-enc", task, uid, "enc:v1:bmFtZQ", "enc:v1:bWltZQ", envelope, true)
+	if resp, body := e.raw("PUT", "/api/v1/attachments/a-enc/content", envelope); resp.StatusCode != 204 {
+		t.Fatalf("upload: %d %s", resp.StatusCode, body)
+	}
+	resp, body := e.raw("GET", "/api/v1/attachments/a-enc/content", nil)
+	if resp.StatusCode != 200 || !bytes.Equal(body, envelope) {
+		t.Fatalf("download: %d", resp.StatusCode)
+	}
+	if ct := resp.Header.Get("Content-Type"); ct != "application/octet-stream" || !strings.HasPrefix(resp.Header.Get("Content-Disposition"), "attachment;") {
+		t.Fatalf("headers: %s %s", ct, resp.Header.Get("Content-Disposition"))
 	}
 }

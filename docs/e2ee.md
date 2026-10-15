@@ -25,8 +25,9 @@ Encrypted, in your personal data (Inbox, your own projects, labels, saved views)
 | section | `name` |
 | saved view | `name`, `query` |
 | comment | `body` (your comments on your own tasks) |
+| attachment | `name`, `mime` (the file type), `url` (a link's address), and the file itself, as an encrypted file (see below) |
 
-Everything else stays **plaintext**, because views sort and group by it, reminders and calendars schedule with it, and the server needs it to merge and authorize: `due` (date, time, zone), `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, `labels` (the list of label ids on a task), `recurrence`, `estimate_minutes`, `assignee_id`, project `color` and `archived`, reminder times, and all timestamps and device ids of operations.
+Everything else stays **plaintext**, because views sort and group by it, reminders and calendars schedule with it, and the server needs it to merge and authorize: `due` (date, time, zone), `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, `labels` (the list of label ids on a task), `recurrence`, `estimate_minutes`, `assignee_id`, project `color` and `archived`, reminder times, an attachment's `size` and `sha256` (of the encrypted file) and `encrypted` flag, and all timestamps and device ids of operations.
 
 Empty values (`""`) and `null` are not encrypted. The length of a ciphertext reveals the approximate length of the text.
 
@@ -67,6 +68,17 @@ additional authenticated data = utf8(entity + "\0" + entityId + "\0" + field)
 
 Nonces are 96 random bits per encryption. Known-answer vectors shared by the Go and browser test suites are in [`web/src/lib/e2ee.vectors.json`](../web/src/lib/e2ee.vectors.json).
 
+Attached files are encrypted on the device in 1 MiB chunks, so a large file is never held in memory twice:
+
+```
+header  = "OTAT1" || chunk size (4 bytes, big-endian) || file prefix (8 random bytes)
+chunk i = AES-256-GCM(chunk i of the file) || tag(16 bytes)
+nonce i = file prefix || i (3 bytes, big-endian) || 0x01 on the last chunk, else 0x00
+additional authenticated data = utf8("attachment\0" + attachment id + "\0") || header
+```
+
+The id in every chunk binds the bytes to their attachment, and the marked last chunk means a cut-off file is detected. The server stores and serves the encrypted file as opaque bytes (always as a download), and its `size` and `sha256` describe the encrypted file, never the original. Opening a file downloads it to the device, checks and decrypts every chunk, and only then shows it: a chunk that fails the check means nothing is shown. An encrypted file is about 16 bytes per MiB larger than the original, so a file just under the per-file limit can be refused once encrypted. Thumbnails are not shown for encrypted images.
+
 Where it happens on the device:
 
 - Every edit is applied locally in plaintext and queued. The sync engine encrypts content fields **at the single point where operations leave the device** (just before upload), so nothing reaches the server in plaintext whichever path created the operation (edits, re-seeding after a server restore, the migration, encrypt-on-sight).
@@ -91,10 +103,10 @@ Content larger than 48,000 bytes (UTF-8) in one field is refused before an opera
 
 ## Enabling, plaintext that appears later, purging, disabling
 
-- **Enabling** re-writes every content field of your personal data as ciphertext through ordinary operations, with progress in Settings; the job is resumable after a reload. 500 tasks produce roughly 1,500 operations.
+- **Enabling** re-writes every content field of your personal data as ciphertext through ordinary operations, with progress in Settings; the job is resumable after a reload. 500 tasks produce roughly 1,500 operations. Then each attached file is downloaded, encrypted and uploaded again as a new attachment that replaces the plaintext one ("Encrypting your files: 3 of 40 files"). This part needs a connection: it stops when the network goes and continues after the next sync, and files not done yet keep their old form meanwhile.
 - **Plaintext written later** — through the REST API, the CLI, email-to-task or an import — is accepted by the server and shown with a small "not yet encrypted" marker; the next unlocked device that syncs it re-writes it as ciphertext ("encrypt-on-sight"). Two devices doing that at once produce two ciphertexts of the same text; one wins and nothing is re-written again.
 - **Purge plaintext history** (`POST /api/v1/encryption/purge-history`) deletes the superseded operations of the content fields in your personal data, including the plaintext from before encryption. Winners stay, so every device still converges. The deletion runs with SQLite `secure_delete`, then the database is vacuumed and the write-ahead log truncated. Revision history for those fields is gone afterwards. **Backups made before the purge, and copies of the database, may still contain plaintext**: delete them if that matters to you.
-- **Disabling** (needs an unlocked device and a fresh sign-in confirmation) deletes the key record first, so other devices stop encrypting, then re-writes all content as plaintext. Devices that still hold the key decrypt ciphertext that arrives late and re-write it as plaintext too.
+- **Disabling** (needs an unlocked device and a fresh sign-in confirmation) first re-uploads every encrypted file decrypted, while encryption is still on, and waits until the last one is stored on the server, so no file becomes unreadable. Then it deletes the key record, so other devices stop encrypting, and re-writes all content as plaintext. Devices that still hold the key decrypt ciphertext that arrives late and re-write it as plaintext too.
 
 ## Server-side reads and integrations
 

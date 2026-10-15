@@ -8,7 +8,9 @@ import { useSyncExternalStore } from 'react'
 import { api, isNetworkError } from './api'
 import { db, getMeta, setMeta, type AttachmentBlob } from './db'
 import { mutateMany, type Change } from './ops'
-import { currentUserId } from './sharing'
+import { decryptFile, encryptFile } from './crypto'
+import { currentKey, isEnabled, publishEncryption } from './e2ee'
+import { currentUserId, membershipMap } from './sharing'
 import { applyBatch } from './undo'
 import type { Attachment, AttachmentLimits } from './types'
 
@@ -18,7 +20,7 @@ const LIMITS_KEY = 'attachmentLimits'
 
 /** Why a file could not be added; `message` is ready to show. */
 export class AttachmentError extends Error {
-  constructor(public code: 'disabled' | 'too_large' | 'quota' | 'signed_out' | 'invalid', message: string) {
+  constructor(public code: 'disabled' | 'too_large' | 'quota' | 'signed_out' | 'invalid' | 'locked', message: string) {
     super(message)
   }
 }
@@ -95,6 +97,9 @@ export async function planFiles(taskId: string, files: File[], opts: { commentId
   const l = await limits()
   if (l && !l.enabled) throw new AttachmentError('disabled', 'Attachments are turned off on this server.')
   let room = l && l.quota_bytes > 0 ? l.quota_bytes - l.used_bytes - (await pendingBytes()) : Infinity
+  // An encrypted account's personal tasks get encrypted files (design D8).
+  const key = (await encryptsTask(taskId)) ? await currentKey() : undefined
+  if (key === null) throw new AttachmentError('locked', 'Unlock encryption on this device to add files.')
   const out: PlannedFile[] = []
   // One millisecond apart, so the uploader keeps the order the files were picked in.
   const now = Date.now()
@@ -106,14 +111,18 @@ export async function planFiles(taskId: string, files: File[], opts: { commentId
     room -= file.size
     const id = crypto.randomUUID()
     const name = cleanName(file.name)
-    const sha256 = await sha256Hex(file)
+    const stored = key ? await encryptFile(key, id, file) : file
+    if (l && stored.size > l.max_file_bytes) {
+      throw new AttachmentError('too_large', `“${file.name}” is too large once encrypted; files may be at most ${formatBytes(l.max_file_bytes)} on this server.`)
+    }
+    const sha256 = await sha256Hex(stored)
     out.push({
       // task_id and author_id first: they place and authorize the row.
       change: { entity: 'attachment', entityId: id, patch: {
         task_id: taskId, author_id: author, comment_id: opts.commentId ?? null, name, mime: file.type || 'application/octet-stream',
-        size: file.size, sha256, url: null, encrypted: false, created_at: now + i, uploaded_at: null, deleted_at: null,
+        size: stored.size, sha256, url: null, encrypted: !!key, created_at: now + i, uploaded_at: null, deleted_at: null,
       } },
-      blob: { id, blob: file, name, size: file.size },
+      blob: { id, blob: stored, name, size: stored.size },
     })
   }
   return out
@@ -167,6 +176,13 @@ export async function queueLink(taskId: string, url: string, name?: string, comm
     mime: 'text/uri-list', size: 0, sha256: '', url: u.href, encrypted: false, created_at: Date.now(), uploaded_at: null, deleted_at: null,
   } }])
   return id
+}
+
+/** True when files on this task are encrypted: an encrypted account's personal task. */
+async function encryptsTask(taskId: string): Promise<boolean> {
+  if (!(await isEnabled())) return false
+  const task = await db.tasks.get(taskId)
+  return !task?.project_id || !(await membershipMap()).has(task.project_id)
 }
 
 async function pendingBytes(): Promise<number> {
@@ -232,18 +248,36 @@ export async function openAttachment(a: Attachment, opts: { download?: boolean }
     return
   }
   const local = await db.attachmentBlobs.get(a.id)
+  if (a.encrypted) {
+    // The server holds an envelope only: fetch it (or use the local copy) and decrypt here.
+    const key = await currentKey()
+    if (!key) throw new AttachmentError('locked', 'Unlock encryption on this device to open this file.')
+    let envelope = local?.blob
+    if (!envelope) {
+      const res = await fetch(contentUrl(a.id), { credentials: 'same-origin' })
+      if (!res.ok) throw new AttachmentError('invalid', res.status === 404 ? 'This file is missing on the server.' : `The server answered ${res.status}.`)
+      envelope = await res.blob()
+    }
+    openBlob(await decryptFile(key, a.id, envelope, a.mime), a, opts.download)
+    return
+  }
   if (local) {
-    const href = URL.createObjectURL(new Blob([local.blob], { type: a.mime }))
-    const link = document.createElement('a')
-    link.href = href
-    link.target = '_blank'
-    link.rel = 'noopener'
-    if (opts.download || !isInlineType(a.mime)) link.download = a.name
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(href), 60_000)
+    openBlob(new Blob([local.blob], { type: a.mime }), a, opts.download)
     return
   }
   window.open(contentUrl(a.id, opts.download), '_blank', 'noopener')
+}
+
+/** Open bytes held on this device; types the browser should not render are downloaded. */
+function openBlob(blob: Blob, a: Attachment, download?: boolean) {
+  const href = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = href
+  link.target = '_blank'
+  link.rel = 'noopener'
+  if (download || !isInlineType(a.mime)) link.download = a.name
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(href), 60_000)
 }
 
 /** The types the server shows in the browser (design D6); the rest download. */
@@ -375,4 +409,114 @@ export async function attachmentCounts(): Promise<Map<string, number>> {
   const deadComments = new Set((await db.comments.bulkGet(commentIds)).filter((c) => !c || c.deleted_at).map((c, i) => c?.id ?? commentIds[i]))
   for (const a of rows) if (!a.comment_id || !deadComments.has(a.comment_id)) out.set(a.task_id, (out.get(a.task_id) ?? 0) + 1)
   return out
+}
+
+// ---- encryption migration of files (design D8) ----
+
+const K_FILE_MIGRATION = 'e2ee.fileMigration'
+export type FileMigrationMode = 'encrypt' | 'decrypt'
+
+/** Personal file attachments of this account still in the other form, oldest first. */
+async function filesToMigrate(mode: FileMigrationMode): Promise<Attachment[]> {
+  const me = await currentUserId()
+  const memberships = await membershipMap()
+  const rows = await db.attachments.filter((a) => !a.deleted_at && !a.url && a.author_id === me && a.encrypted !== (mode === 'encrypt')).toArray()
+  const out: Attachment[] = []
+  for (const a of rows) {
+    const task = await db.tasks.get(a.task_id)
+    if (task && (!task.project_id || !memberships.has(task.project_id))) out.push(a)
+  }
+  return out.sort((a, b) => a.created_at - b.created_at || (a.id < b.id ? -1 : 1))
+}
+
+/** Thrown when the file phase cannot go on now (offline, server error); it resumes later. */
+export class FileMigrationPaused extends Error {}
+
+async function storedBytes(a: Attachment): Promise<Blob> {
+  const local = await db.attachmentBlobs.get(a.id)
+  if (local) return local.blob
+  if (!a.uploaded_at) throw new FileMigrationPaused('a file is still uploading from another device')
+  let res: Response
+  try {
+    res = await fetch(contentUrl(a.id), { credentials: 'same-origin' })
+  } catch {
+    throw new FileMigrationPaused('offline')
+  }
+  if (res.status === 404) return new Blob([]) // missing on the server: nothing to carry over
+  if (!res.ok) throw new FileMigrationPaused(`the server answered ${res.status}`)
+  return res.blob()
+}
+
+/**
+ * Re-upload every personal file in the new form (enable: encrypted; disable:
+ * decrypted): a new attachment with the same task, comment, name and creation
+ * time replaces the old one in one batch, so other devices see one change per
+ * file. The rows themselves are the checkpoint, so a stopped run resumes.
+ */
+let fileMigration: Promise<void> | null = null
+export function runFileMigration(mode: FileMigrationMode): Promise<void> {
+  // One run at a time: the panel and the resume after a sync must not both copy a file.
+  fileMigration ??= migrateFiles(mode).finally(() => { fileMigration = null })
+  return fileMigration
+}
+
+async function migrateFiles(mode: FileMigrationMode): Promise<void> {
+  await setMeta(K_FILE_MIGRATION, mode)
+  const key = await currentKey()
+  if (!key) throw new AttachmentError('locked', 'Unlock encryption on this device first.')
+  const list = await filesToMigrate(mode)
+  const total = list.length
+  let done = 0
+  const progress = () => publishEncryption({ migration: total ? { mode, done, total, files: true } : null })
+  progress()
+  try {
+    for (const a of list) {
+      const bytes = await storedBytes(a)
+      const id = crypto.randomUUID()
+      const plain = a.encrypted ? (bytes.size ? await decryptFile(key, a.id, bytes, a.mime) : bytes) : bytes
+      const stored = mode === 'encrypt' ? await encryptFile(key, id, plain) : plain
+      await db.attachmentBlobs.put({ id, blob: stored, name: a.name, size: stored.size })
+      await mutateMany([
+        { entity: 'attachment', entityId: id, patch: {
+          task_id: a.task_id, author_id: a.author_id, comment_id: a.comment_id, name: a.name, mime: a.mime, size: stored.size,
+          sha256: await sha256Hex(stored), url: null, encrypted: mode === 'encrypt', created_at: a.created_at, uploaded_at: null, deleted_at: null,
+        } },
+        { entity: 'attachment', entityId: a.id, patch: { deleted_at: Date.now() } },
+      ])
+      done++
+      progress()
+    }
+  } finally {
+    publishEncryption({ migration: null })
+  }
+  await db.meta.delete(K_FILE_MIGRATION)
+  requestUpload()
+}
+
+/** Resume a file phase that a reload or the network stopped (called after a sync round). */
+export async function resumeFileMigration(): Promise<void> {
+  const mode = await getMeta<FileMigrationMode | null>(K_FILE_MIGRATION, null)
+  if (!mode || (typeof navigator !== 'undefined' && navigator.onLine === false)) return
+  try {
+    await runFileMigration(mode)
+  } catch (err) {
+    if (!(err instanceof FileMigrationPaused)) throw err
+  }
+}
+
+/**
+ * Wait until every file waiting on this device is stored on the server (for
+ * disabling: the key record goes only after the last decrypted file is
+ * confirmed). Resolves false when it did not happen within `ms`.
+ */
+export async function waitForUploads(ms = 120_000): Promise<boolean> {
+  const until = Date.now() + ms
+  for (;;) {
+    await runUploader()
+    const left = await db.attachmentBlobs.filter((b) => !b.reason).count()
+    if (left === 0) return true
+    if (Date.now() > until || (typeof navigator !== 'undefined' && navigator.onLine === false)) return false
+    requestUpload()
+    await new Promise((r) => setTimeout(r, 1000))
+  }
 }

@@ -273,7 +273,7 @@ var Schema = map[string]map[string]kind{
 		"mime":        kString,
 		"size":        kNumber,
 		"sha256":      kString,
-		"url":         kNullableString,
+		"url":         kNullableText,
 		"encrypted":   kBool,
 		"author_id":   kID,
 		"created_at":  kNumber,

@@ -41,5 +41,13 @@
     "text": "QCAY-FA4E-QWDI-PCEJ-RKFY-ZDMO-R6IJ-DEUT-SSKZ-NF4Y-TGNJ-XHE5-T2PQ-QLMG",
     "accountKey": "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f",
     "wrapped": "LCFihcp0aqAZBq7Cl9C3ZQbzk03iDPjbEPS6-nUmlKdywd1DzgriFw"
+  },
+  "file": {
+    "key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "id": "a1",
+    "prefix": "d0d1d2d3d4d5d6d7",
+    "chunkSize": 16,
+    "plaintext": "The quick brown fox jumps over the lazy dog",
+    "envelope": "4f5441543100000010d0d1d2d3d4d5d6d747f531902ce0ec3799864375278d25eb60f9a151acf541cfb02d46a104df903e489160fdca48183430010fe5b6fb940c649c7645e3a056f4ca522a7c5c7fe63d351c12ad88a4977caed97cf9677d19807583ff31ee89466628f2c5"
   }
 }
