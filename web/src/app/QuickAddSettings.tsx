@@ -47,7 +47,7 @@ export function QuickAddSettingsSection() {
   }
 
   return (
-    <SettingsSection title="Quick add" helpId="settings/quick-add" headingId="quick-add-heading"
+    <SettingsSection title="Quick add" headingId="quick-add-heading"
       description="How quick add reads what you type. Applies to this device only.">
       <SettingRow label="Parse natural language" description={
         <>Dates and times (“tomorrow at 3pm”), <code>#project</code>, <code>@label</code>, <code>p1</code>–<code>p4</code> and estimates

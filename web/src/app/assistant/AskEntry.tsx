@@ -9,6 +9,7 @@ import { Button, PageBody, PageHeader } from '../../ui'
 import { Card } from '../../ui'
 import { AskComposer, type AskRequest } from '../../ui'
 import { Notice } from '../../ui'
+import { requestSettingsFocus } from '../settingsIndex'
 import { navigate } from '../router'
 import { EncryptionOffHint } from './AssistantPanel'
 
@@ -76,7 +77,7 @@ export function AskScreen({ role }: { role?: AccountRole }) {
           <span data-ask-unavailable>
             {status?.reason === 'demo' ? 'The assistant is not available on the demo instance.' : 'The assistant is not turned on on this server.'}
             {mode === 'owner-hint' && (
-              <> <a className="underline" href="/settings/ai" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'ai' }) }}>Set it up in the assistant settings.</a></>
+              <> <a className="underline" href="/settings/integrations" onClick={(e) => { e.preventDefault(); requestSettingsFocus('ai'); navigate({ view: 'settings', section: 'integrations' }) }}>Set it up in the assistant settings.</a></>
             )}
           </span>
         </Notice>

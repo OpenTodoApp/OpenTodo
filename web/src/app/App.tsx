@@ -89,7 +89,7 @@ export function App() {
     }
   }, [refresh])
 
-  // Ownership moved (Settings → Users): re-read the profile so the role is current.
+  // Ownership moved (Settings → People → Users): re-read the profile so the role is current.
   useEffect(() => {
     const again = () => void refresh()
     window.addEventListener(ACCOUNT_CHANGED_EVENT, again)

@@ -97,7 +97,7 @@ Open the views list (<kbd>g</kbd> <kbd>v</kbd>), choose **+ New dashboard**, nam
 
 ## Choose where the app opens
 
-Each device can open on a different view: your laptop on a "Work" view, your phone on Today. Pick it in **Settings → Preferences → Start view**, or from a saved view's menu with **Start view on this device**. If that view is deleted later, the device opens on the Inbox and tells you why.
+Each device can open on a different view: your laptop on a "Work" view, your phone on Today. Pick it in **Settings → General → Start view**, or from a saved view's menu with **Start view on this device**. If that view is deleted later, the device opens on the Inbox and tells you why.
 
 ## Tips
 

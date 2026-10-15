@@ -325,6 +325,9 @@ var Schema = map[string]map[string]kind{
 		// comma-separated list of view ids shown among the primary items; unknown
 		// entries are ignored by clients.
 		"sidebar_destinations": kString,
+		// Row density (ux-overhaul, design D8): "comfortable" or "compact"; an
+		// unknown or empty value reads as comfortable.
+		"density": kString,
 	},
 }
 

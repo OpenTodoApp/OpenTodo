@@ -14,8 +14,9 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   const a = row === undefined ? null : readAppearance(row)
   const mode = a?.mode
   const accent = a?.accent
+  const density = a?.density
   useEffect(() => {
-    if (mode && accent) applyAppearance({ mode, accent })
-  }, [mode, accent])
+    if (mode && accent) applyAppearance({ mode, accent, density })
+  }, [mode, accent, density])
   return <>{children}</>
 }

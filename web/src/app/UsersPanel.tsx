@@ -229,7 +229,7 @@ export function UsersView(p: UsersViewProps) {
   }
 
   return (
-    <SettingsSection title="Users" helpId="settings/users" headingId="users-heading"
+    <SettingsSection title="Users" headingId="users-heading"
       description={`Everyone with an account on this server. ${isOwner
         ? 'You can manage every account and choose admins; admins manage members.'
         : 'As an admin you can deactivate, reset and delete members.'}`}>

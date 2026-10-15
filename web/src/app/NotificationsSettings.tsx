@@ -113,7 +113,7 @@ export function NotificationsView({ state: s, busy, message, onEnable, onInclude
 }) {
   const sub = s?.subscription ?? null
   return (
-    <SettingsSection title="Notifications" helpId="settings/notifications" headingId="notifications-heading"
+    <SettingsSection title="Notifications" headingId="notifications-heading"
       description="Reminders always appear inside the app while it is open. Turn on notifications to get them while the app is closed. Each device decides for itself.">
       {!s ? (
         <p className="py-2 text-meta text-faint">Checking…</p>

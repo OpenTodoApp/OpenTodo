@@ -88,7 +88,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
       { kind: 'action', id: 'rename', label: 'Rename', icon: 'pencil', onSelect: a.rename },
       { kind: 'confirm', id: 'archive', label: subCount ? 'Archive with sub-projects' : 'Archive', icon: 'archive', confirm: {
         title: `Archive “${project.name}”?`, tone: 'default', confirmLabel: 'Archive',
-        body: `It leaves the sidebar with ${tasksText}${subCount ? ` and ${subCount === 1 ? 'its sub-project' : `its ${subCount} sub-projects`}` : ''}. You can unarchive it from Settings → Projects.`,
+        body: `It leaves the sidebar with ${tasksText}${subCount ? ` and ${subCount === 1 ? 'its sub-project' : `its ${subCount} sub-projects`}` : ''}. You can unarchive it from Settings → Data.`,
         onConfirm: () => archiveProject(project.id).then(() => navigate({ view: 'inbox' })),
       } },
     ] },

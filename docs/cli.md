@@ -138,7 +138,7 @@ Projects are referenced by name (case-insensitive), full id or unique id prefix.
 
 ## Tokens and export
 
-`--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, labels and comments (through the MCP write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → AI → AI assistants).
+`--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, labels and comments (through the MCP write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → Integrations → AI assistants).
 
 ```bash
 ot token list                           # with each token's scope
@@ -246,7 +246,7 @@ Or add a reminder task every Monday morning:
 
 `ot` is a dependable tool for coding agents and automation harnesses. The short version, which the skill file below spells out for the agent itself:
 
-1. **Give the agent an `agent` token**, not a full one: `ot token create "my assistant" --scope agent`, then on the agent's machine `ot auth set-token <token> --server <url>`. Turn on **AI assistants may make changes** (owner) and **Allow AI assistants to make changes** (you) in Settings → AI → AI assistants. With that token `ot` can list everything and create and edit tasks, projects, labels and comments, complete and reopen tasks, and move to the Trash only tasks the same token created. Writes carry the device `agent:<token-id>`, show in history as "AI assistant (*token name*)", are audited as `agent.write` and share the token's [limits](mcp.md#limits) with MCP. Tokens, settings, sharing, members, encryption, imports and backups stay out of reach (exit 5). `ot auth status` shows the scope and whether writes are allowed right now. A `full` token works too, with everything that implies; a `read` token for an agent that only looks.
+1. **Give the agent an `agent` token**, not a full one: `ot token create "my assistant" --scope agent`, then on the agent's machine `ot auth set-token <token> --server <url>`. Turn on **AI assistants may make changes** (owner) and **Allow AI assistants to make changes** (you) in Settings → Integrations → AI assistants. With that token `ot` can list everything and create and edit tasks, projects, labels and comments, complete and reopen tasks, and move to the Trash only tasks the same token created. Writes carry the device `agent:<token-id>`, show in history as "AI assistant (*token name*)", are audited as `agent.write` and share the token's [limits](mcp.md#limits) with MCP. Tokens, settings, sharing, members, encryption, imports and backups stay out of reach (exit 5). `ot auth status` shows the scope and whether writes are allowed right now. A `full` token works too, with everything that implies; a `read` token for an agent that only looks.
 2. **Use `--json`** everywhere, and `ot schema` to discover commands and output shapes.
 3. **Use `--dry-run`** before a write that touches more than one task, and **`--idempotency-key`** on creates.
 4. **Handle exit codes:** stop and ask on 3, do not retry 5, retry 4 later.

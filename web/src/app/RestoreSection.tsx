@@ -38,7 +38,7 @@ export interface RestoreSectionViewProps {
   onDeleteCopy: (name: string) => void
 }
 
-/** The restore part of Settings → Backups. */
+/** The restore part of Settings → Server. */
 export function RestoreSectionView(p: RestoreSectionViewProps) {
   const dt = useDateTimeFormat()
   const fileInput = useRef<HTMLInputElement>(null)

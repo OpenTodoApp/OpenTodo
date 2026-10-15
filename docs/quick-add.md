@@ -84,9 +84,9 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, deadline, project, priority or estimate.
 
-**Day/month order.** While **Numeric dates like 12/11** is on **Automatic**, the order follows your date format in **Settings → Preferences → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, it follows your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The Automatic option says which one decided. Choosing day/month or month/day under **Settings → Capture → Quick add** fixes the order on this device and wins over your date format. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
+**Day/month order.** While **Numeric dates like 12/11** is on **Automatic**, the order follows your date format in **Settings → General → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, it follows your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The Automatic option says which one decided. Choosing day/month or month/day under **Settings → Capture → Quick add** fixes the order on this device and wins over your date format. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
 
-**First day of the week.** `next week` and `next <weekday>` use the first day of the week you chose in **Settings → Preferences → Date and time**, so they give the same result on all your devices.
+**First day of the week.** `next week` and `next <weekday>` use the first day of the week you chose in **Settings → General → Date and time**, so they give the same result on all your devices.
 
 ## Languages
 

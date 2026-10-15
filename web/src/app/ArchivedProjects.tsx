@@ -1,4 +1,4 @@
-// Settings → Projects → Archived projects (OpenSpec `unarchive-projects`): every
+// Settings → Data → Archived projects (OpenSpec `unarchive-projects`): every
 // archived project with a Restore button. Restore is one op through `mutate()`
 // (archive.ts), so it applies at once offline and converges like any edit.
 import { useLiveQuery } from 'dexie-react-hooks'

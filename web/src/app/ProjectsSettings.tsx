@@ -1,4 +1,4 @@
-// Settings → Projects (OpenSpec trash-and-history, unarchive-projects; settings-redesign D3).
+// Settings → Data (OpenSpec trash-and-history, unarchive-projects; settings-redesign D3).
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getAutoArchive, setAutoArchive } from '../lib/archive'
 import { SettingRow, SettingsSection } from '../ui'
@@ -14,7 +14,7 @@ export function AutoArchiveSection() {
 
 export function AutoArchiveView({ on, onChange, children }: { on: boolean; onChange: (on: boolean) => void; children?: React.ReactNode }) {
   return (
-    <SettingsSection title="Projects" helpId="settings/projects" headingId="projects-heading" description={
+    <SettingsSection title="Projects" headingId="projects-heading" description={
       <>Deleted items stay in the <a className="text-accent underline" href="/trash" onClick={(e) => { e.preventDefault(); navigate({ view: 'trash' }) }}>Trash</a> until restored or purged.</>
     }>
       <SettingRow label="Archive automatically" description="Archive projects after 30 days without open tasks. Each device keeps its own setting."

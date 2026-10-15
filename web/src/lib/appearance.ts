@@ -15,14 +15,20 @@ export const THEME_MODES: readonly ThemeModePref[] = ['system', 'light', 'dark']
 export const PROMOTABLE = ['anytime', 'someday', 'assigned', 'completed', 'feed', 'trash', 'filter'] as const
 export type Promotable = (typeof PROMOTABLE)[number]
 
+/** Row density (appearance-preferences "Density preference"); unknown stored values read as comfortable. */
+export const DENSITIES = ['comfortable', 'compact'] as const
+export type Density = (typeof DENSITIES)[number]
+
 export interface Appearance {
   mode: ThemeModePref
   accent: AccentId
+  /** Row density; comfortable when absent. */
+  density?: Density
   /** Promoted sidebar destinations, in the More group's order; unknown stored entries are dropped on read, kept in the row. */
   sidebar?: Promotable[]
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { mode: 'system', accent: DEFAULT_ACCENT, sidebar: [] }
+export const DEFAULT_APPEARANCE: Appearance = { mode: 'system', accent: DEFAULT_ACCENT, density: 'comfortable', sidebar: [] }
 
 /** Reads a stored row: a missing row or an unknown value (from a newer client) is the default. The row is not changed. */
 export function readAppearance(row: Partial<UserPrefs> | null | undefined): Appearance {
@@ -31,12 +37,13 @@ export function readAppearance(row: Partial<UserPrefs> | null | undefined): Appe
   return {
     mode,
     accent: isAccent(row?.theme_accent) ? row!.theme_accent as AccentId : DEFAULT_ACCENT,
+    density: row?.density === 'compact' ? 'compact' : 'comfortable',
     sidebar: PROMOTABLE.filter((id) => wanted.has(id)),
   }
 }
 
-/** Changes the mode or the accent through the op log (offline-safe, synced). */
-export function setAppearance(field: 'theme_mode' | 'theme_accent', value: string): Promise<void> {
+/** Changes the mode, the accent or the density through the op log (offline-safe, synced). */
+export function setAppearance(field: 'theme_mode' | 'theme_accent' | 'density', value: string): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { [field]: value })
 }
 
@@ -62,6 +69,10 @@ export function applyAppearance(a: Appearance, doc: Document = document): void {
   else root.setAttribute('data-theme', a.mode)
   if (a.accent === DEFAULT_ACCENT) root.removeAttribute('data-accent')
   else root.setAttribute('data-accent', a.accent)
+  // Density (appearance-preferences): CSS tightens rows under data-density="compact";
+  // touch targets keep their size through the coarse-pointer rules.
+  if (a.density === 'compact') root.setAttribute('data-density', 'compact')
+  else root.removeAttribute('data-density')
   setMeta(doc, 'color-scheme', a.mode === 'system' ? 'light dark' : a.mode)
   // The bar: the accent in light mode, the dark canvas in dark mode; under system
   // both, with media queries, so the browser switches on its own (design D8).

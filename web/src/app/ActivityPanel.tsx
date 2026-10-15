@@ -68,7 +68,6 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
   return (
     <SettingsSection
       title="Recent activity"
-      helpId="settings/sessions"
       headingId="activity-heading"
       testId="activity-panel"
       description="Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server."
@@ -111,7 +110,7 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
   )
 }
 
-/** Recent activity for everyone and the audit log for the owner (Settings → Activity). */
+/** Recent activity for everyone and the audit log for the owner (Settings → Account). */
 export function SecuritySettings({ user }: { user: User }) {
   return (
     <>

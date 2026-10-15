@@ -64,11 +64,11 @@ The **Activity** tab of a task shows who created it, completed it, moved it or c
 
 Archiving is different from deleting. An archived project disappears from the sidebar, but it isn't in the Trash and isn't deleted after 30 days: it and its tasks are kept as they are. Archive a project from its **Project** menu.
 
-When you complete the last task of a project, OpenTodo offers to archive it. Projects without open tasks for 30 days are archived automatically, with a notice that has an undo button. To switch automatic archiving off on a device, untick the option under **Settings → Projects**.
+When you complete the last task of a project, OpenTodo offers to archive it. Projects without open tasks for 30 days are archived automatically, with a notice that has an undo button. To switch automatic archiving off on a device, untick the option under **Settings → Data**.
 
 ### Bring back an archived project
 
-Open **Settings → Projects**. Under **Archived projects** you see every archived project, with its parent project and how many open tasks it has. Select **Restore** next to one, and it's back in the sidebar with all its tasks. With the keyboard, <kbd>Tab</kbd> to the button and press <kbd>Enter</kbd>.
+Open **Settings → Data**. Under **Archived projects** you see every archived project, with its parent project and how many open tasks it has. Select **Restore** next to one, and it's back in the sidebar with all its tasks. With the keyboard, <kbd>Tab</kbd> to the button and press <kbd>Enter</kbd>.
 
 <picture><source srcset="images/archived-projects-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/archived-projects-light.webp" alt="Settings, Projects section: the automatic archiving option and an Archived projects list with two projects, each with a Restore button."></picture>
 

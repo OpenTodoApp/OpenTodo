@@ -61,7 +61,7 @@ export function CaldavView(p: CaldavViewProps) {
   const revoked = (p.passwords ?? []).filter((x) => x.revokedAt)
   const newButton = <Button size="sm" icon="plus" disabled={p.busy || p.setting === null} onClick={p.onNew}>New app password</Button>
   return (
-    <SettingsSection title="Calendar apps (CalDAV)" helpId="settings/caldav" headingId="caldav-heading" testId="caldav-panel"
+    <SettingsSection title="Calendar apps (CalDAV)" headingId="caldav-heading" testId="caldav-panel"
       description="Sync your tasks with Apple Reminders, Thunderbird or Nextcloud Tasks. Each project is a list, and the Inbox is its own list.">
       {p.setting === null ? (
         <Notice>CalDAV status is available when you are online.</Notice>

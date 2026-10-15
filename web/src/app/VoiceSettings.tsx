@@ -51,7 +51,7 @@ export function VoiceSettingsSection() {
   }, [confirming])
 
   return (
-    <SettingsSection title="Voice capture" helpId="settings/voice" headingId="voice-settings-heading"
+    <SettingsSection title="Voice capture" headingId="voice-settings-heading"
       description="Speak a task instead of typing it. Applies to this device only.">
       <SettingRow label="Dictate tasks into quick add" description={
         <span id="voice-settings-note">

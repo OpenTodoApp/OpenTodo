@@ -1,4 +1,4 @@
-// Settings → Preferences → Date and time (OpenSpec date-time-preferences, design D8):
+// Settings → General → Date and time (OpenSpec date-time-preferences, design D8):
 // the three synced preferences with a live preview. A change is an op on the
 // user's personal `user_prefs` row, so it applies at once, offline too, and
 // reaches the user's other devices with the next sync.
@@ -50,7 +50,7 @@ export function DateTimeView({ prefs, resolved, onChange, today = todayISO() }: 
   }, [resolved, today])
 
   return (
-    <SettingsSection title="Date and time" helpId="settings/date-time" headingId="date-time-heading"
+    <SettingsSection title="Date and time" headingId="date-time-heading"
       description="How dates and times look and where weeks start, on all your devices. System follows this browser.">
       <SettingRow label="Date format" htmlFor="date-format-select" control={
         <Select id="date-format-select" className="sm:w-56" value={prefs.date_format} onChange={(e) => onChange('date_format', e.target.value as DateFormatPref)}>

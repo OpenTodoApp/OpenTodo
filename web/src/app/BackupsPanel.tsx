@@ -65,7 +65,7 @@ function destinationSummary(d: BackupSettings): string {
 }
 
 /**
- * Presentational part of Settings → Backups: a summary of the schedule and the
+ * Presentational part of Settings → Server: a summary of the schedule and the
  * last run, the settings as rows with an inline form behind "Change settings",
  * and the recent runs. Every control is native, so the page works with the keyboard alone.
  */
@@ -86,7 +86,7 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
   }
 
   return (
-    <SettingsSection title="Backups" helpId="settings/backups" headingId="backups-heading"
+    <SettingsSection title="Backups" headingId="backups-heading"
       description={<>Scheduled copies of the whole server (every account, task and the sync log), written to a folder on the server, an S3-compatible bucket or a WebDAV share, and restored from here.</>}>
       {offline && (
         <div data-testid="backups-offline" className="py-3 first:pt-0">

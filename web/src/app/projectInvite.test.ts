@@ -170,7 +170,7 @@ describe('owner switch', () => {
     const on = renderToStaticMarkup(createElement(ProjectInvitePolicyView, { value: true, busy: false, error: null, onChange: noop }))
     expect(on).toContain('Members can invite new people with project links')
     expect(on).toMatch(/role="switch" aria-checked="true"/)
-    expect(on).toContain('data-help-screen="settings/project-invites"')
+    expect(on).not.toContain('data-help-screen')
     const off = renderToStaticMarkup(createElement(ProjectInvitePolicyView, { value: null, busy: false, error: null, onChange: noop }))
     expect(off).toContain('available when you are online')
   })

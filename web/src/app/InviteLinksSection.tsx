@@ -1,4 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { Select } from '../ui'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { grantableRoles } from '../lib/sharing'
@@ -81,15 +82,15 @@ export function InviteLinksView(p: InviteLinksViewProps) {
           </label>
           <label className="block text-xs">
             <span className="mb-1 block text-muted">Role</span>
-            <select className="input" value={p.role} onChange={(e) => p.onRole(e.target.value as ProjectRole)} disabled={disabled}>
+            <Select value={p.role} onChange={(e) => p.onRole(e.target.value as ProjectRole)} disabled={disabled}>
               {p.roles.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="block text-xs">
             <span className="mb-1 block text-muted">Expires in</span>
-            <select className="input" value={p.hours} onChange={(e) => p.onHours(Number(e.target.value))} disabled={disabled}>
+            <Select value={p.hours} onChange={(e) => p.onHours(Number(e.target.value))} disabled={disabled}>
               {LINK_EXPIRY_OPTIONS.map(([h, label]) => <option key={h} value={h}>{label}</option>)}
-            </select>
+            </Select>
           </label>
           <button className="btn-primary col-span-2 sm:col-span-3 sm:justify-self-start" disabled={disabled}>{p.busy ? 'Creating…' : 'Create link'}</button>
         </form>
@@ -107,7 +108,7 @@ export function InviteLinksView(p: InviteLinksViewProps) {
           <p className="mt-1 text-muted">
             {p.created.newAccounts
               ? 'People without an account can create one with this link.'
-              : 'Only people who already have an account on this server can use it. The server owner can let members invite new people in Settings → Administration.'}
+              : 'Only people who already have an account on this server can use it. The server owner can let members invite new people in Settings → People.'}
           </p>
         </div>
       )}

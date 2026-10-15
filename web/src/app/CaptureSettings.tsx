@@ -37,7 +37,7 @@ export function CaptureView({ code, linkRef, copied, onCopy }: {
   code: string; linkRef?: React.Ref<HTMLAnchorElement>; copied: 'yes' | 'failed' | null; onCopy: () => void
 }) {
   return (
-    <SettingsSection title="Capture" helpId="settings/capture" headingId="capture-heading"
+    <SettingsSection title="Capture" headingId="capture-heading"
       description="Save pages and selected text from your browser as tasks.">
       <SettingRow label="Bookmarklet" description={
         <>Drag <strong>Add to OpenTodo</strong> to your bookmarks bar. On any page, click it to add the page, its title and the selected text in a small window.

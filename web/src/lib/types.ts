@@ -281,6 +281,8 @@ export interface UserPrefs {
   theme_accent: string
   /** Promoted sidebar destinations (ux-overhaul): comma-separated view ids; unknown ones are ignored. */
   sidebar_destinations: string
+  /** Row density (ux-overhaul): comfortable (default) or compact; unknown values read as comfortable. */
+  density: string
   _clock: Clock
 }
 
@@ -440,7 +442,7 @@ export interface AttachmentLimits {
   used_bytes: number
 }
 
-/** The owner's attachment settings (Settings → Administration → Attachments). */
+/** The owner's attachment settings (Settings → People → Attachments). */
 export interface AttachmentSettings {
   enabled: boolean
   max_file_mb: number

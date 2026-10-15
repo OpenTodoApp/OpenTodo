@@ -8,7 +8,6 @@
 export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/ActivityPanel.tsx',
   'src/app/App.tsx',
-  'src/app/AppearanceSection.tsx',
   'src/app/ArchivePrompt.tsx',
   'src/app/ArchivedProjects.tsx',
   'src/app/AssistantsPanel.tsx',
@@ -57,7 +56,6 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/RestoreSection.tsx',
   'src/app/SavedViewView.tsx',
   'src/app/Sections.tsx',
-  'src/app/SettingsView.tsx',
   'src/app/ShareCapture.tsx',
   'src/app/ShareDialog.tsx',
   'src/app/Shell.tsx',
@@ -96,7 +94,7 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/task-detail/RelativeTime.tsx',
   'src/app/vim/VimLayer.tsx',
 ]
-export const STYLE_NOT_YET_MIGRATED_MAX = 89
+export const STYLE_NOT_YET_MIGRATED_MAX = 87
 
 /** Files with a native `title` attribute on an HTML element (the Tooltip primitive replaces it). */
 export const TITLE_NOT_YET_MIGRATED: readonly string[] = [

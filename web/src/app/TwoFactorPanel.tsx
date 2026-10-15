@@ -1,16 +1,15 @@
-import { Badge } from '../ui'
+import { Badge, Select, SettingRow, SettingsSection } from '../ui'
 import { Button } from '../ui'
 import { Icon } from '../ui'
 import { MenuItem } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { ListRow } from '../ui'
 import { Notice } from '../ui'
-import { SettingRow, SettingsSection } from '../ui'
 import { Dialog } from './overlay/Dialog'
 import { Menu } from './overlay/Menu'
+import { requestSettingsFocus } from './settingsIndex'
 import { navigate } from './router'
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { qrMatrix, qrPath } from '../lib/qr'
@@ -279,7 +278,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
   const st = p.online ? p.status : null
   const few = !!st?.enrolled && st.recoveryCodesRemaining <= 3
   return (
-    <SettingsSection title="Two-factor authentication" helpId="settings/two-factor" headingId="mfa-heading" testId="mfa-panel"
+    <SettingsSection title="Two-factor authentication" headingId="mfa-heading" testId="mfa-panel"
       description="After your password, sign-in asks for a six-digit code from an authenticator app. A passkey that checks your fingerprint, face or PIN skips the code. Your server makes and checks the codes itself.">
       {!p.online && <Notice>You are offline. Two-factor authentication needs a connection to your server.</Notice>}
       {st && (
@@ -328,7 +327,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
       {p.isOwner && (
         <p className="pt-3 text-meta text-muted" data-testid="mfa-policy-link">
           Server policy: {POLICY_LABEL[p.policy ?? p.status?.policy ?? 'none'].toLowerCase()}.{' '}
-          <a className="text-accent underline" href="/settings/access" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'access' }) }}>Access policies</a>
+          <a className="text-accent underline" href="/settings/people" onClick={(e) => { e.preventDefault(); requestSettingsFocus('access-policies'); navigate({ view: 'settings', section: 'people' }) }}>People → Access policies</a>
         </p>
       )}
     </SettingsSection>
@@ -441,7 +440,7 @@ export function TwoFactorPanel({ user }: { user: User }) {
   )
 }
 
-/** Owner: the server's two-factor policy (Settings → Access policies; same guide section as the panel). */
+/** Owner: the server's two-factor policy (Settings → People; same guide section as the panel). */
 export function MfaPolicyPanelView({ policy, online, busy, error, onPolicy }: {
   policy: MfaPolicy | null
   online: boolean
@@ -450,21 +449,18 @@ export function MfaPolicyPanelView({ policy, online, busy, error, onPolicy }: {
   onPolicy: (p: MfaPolicy) => void
 }) {
   return (
-    <section className="space-y-2" aria-labelledby="mfa-policy-heading" data-testid="mfa-policy-panel">
-      <HelpHeading screen="settings/two-factor" id="mfa-policy-heading" className="font-semibold">Two-factor policy</HelpHeading>
-      <label className="block space-y-1 text-sm">
-        <span className="font-medium">Policy for this server</span>
-        <select className="input max-w-xs" value={policy ?? 'none'} disabled={!online || busy || policy === null}
-          onChange={(e) => onPolicy(e.target.value as MfaPolicy)} aria-label="Two-factor policy for this server">
-          {(Object.keys(POLICY_LABEL) as MfaPolicy[]).map((k) => <option key={k} value={k}>{POLICY_LABEL[k]}</option>)}
-        </select>
-        <span className="block text-xs text-muted">
-          Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until
-          they do. API tokens are never affected.
-        </span>
-      </label>
-      {error && <p className="text-sm text-danger" role="alert">{error}</p>}
-    </section>
+    <SettingsSection title="Two-factor policy" headingId="mfa-policy-heading" testId="mfa-policy-panel"
+      description="Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until they do. API tokens are never affected.">
+      <SettingRow label="Policy for this server" htmlFor="mfa-policy-select"
+        status={policy ? <Badge hue={policy === 'none' ? 'slate' : 'green'}>{POLICY_LABEL[policy]}</Badge> : undefined}
+        control={
+          <Select id="mfa-policy-select" className="max-w-xs" value={policy ?? 'none'} disabled={!online || busy || policy === null}
+            onChange={(e) => onPolicy(e.target.value as MfaPolicy)} aria-label="Two-factor policy for this server">
+            {(Object.keys(POLICY_LABEL) as MfaPolicy[]).map((k) => <option key={k} value={k}>{POLICY_LABEL[k]}</option>)}
+          </Select>
+        } />
+      {error && <p className="py-2 text-meta text-danger" role="alert">{error}</p>}
+    </SettingsSection>
   )
 }
 
