@@ -11,6 +11,7 @@ import { createLabel } from '../../lib/labels'
 import { createProject, createSubtask, createTask, resetDeviceId, updateTask } from '../../lib/ops'
 import { createSection, saveViewMode } from '../../lib/sections'
 import type { Label, Project, Task, User } from '../../lib/types'
+import { HUES, type HueName } from '../../ui'
 import { resetPanel } from '../panel'
 
 /** The frozen instant: a Wednesday at noon, local time. */
@@ -134,8 +135,9 @@ export const project = (over: Partial<Project> & { id: string; name: string; col
 
 export const label = (id: string, name: string, color: string): Label => ({ id, name, color, position: 0, created_at: 0, deleted_at: null, _clock: {} })
 
-/** Palette hues as stored hex (LABEL_PALETTE), by name. */
-export const HEX = { red: '#dc2626', orange: '#ea580c', green: '#16a34a', teal: '#0d9488', blue: '#2563eb', violet: '#7c3aed', pink: '#db2777', slate: '#64748b' } as const
+/** A palette hue's canonical stored colour (the same table LABEL_PALETTE and the colour pickers use). */
+const hue = (name: HueName): string => HUES.find((h) => h.name === name)!.hex
+export const HEX = { red: hue('red'), orange: hue('orange'), green: hue('green'), teal: hue('teal'), blue: hue('blue'), violet: hue('violet'), pink: hue('pink'), slate: hue('slate') } as const
 
 // ---- seeds ----
 

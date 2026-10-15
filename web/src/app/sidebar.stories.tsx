@@ -13,9 +13,9 @@ export default meta
 
 const noop = () => {}
 
-/** The shell's sidebar column from 768 px: 16 rem wide, full height. */
+/** The shell's sidebar column from 768 px: 16 rem wide, full height (tall enough here to show every group without scrolling). */
 function Column({ children, width = 'w-64' }: { children: ReactNode; width?: string }) {
-  return <div className={`flex h-[44rem] ${width} flex-col border-r border-default bg-canvas`}>{children}</div>
+  return <div className={`flex h-[52rem] ${width} flex-col border-r border-default bg-canvas`}>{children}</div>
 }
 
 /** The Inbox open: the primary destinations with their counts, projects and labels. */
@@ -42,7 +42,7 @@ export const Collapsed: StoryObj = {
 /** Below 768 px the same sidebar is a drawer over a scrim, opened from the menu button or the More tab. */
 export const PhoneDrawer: StoryObj = {
   render: () => (
-    <div className="relative h-[44rem] overflow-hidden rounded-card border border-default bg-canvas" data-overlay>
+    <div className="relative h-[52rem] overflow-hidden rounded-card border border-default bg-canvas" data-overlay>
       <div className="p-4 text-body text-muted">Inbox</div>
       <div className="absolute inset-0 bg-scrim" />
       <aside className="absolute inset-y-0 left-0 flex w-64 max-w-[85vw] border-r border-default bg-canvas" aria-label="Navigation">
