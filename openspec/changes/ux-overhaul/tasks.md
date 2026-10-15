@@ -89,7 +89,7 @@ Each group leaves `make check` green and the app usable. Groups 3 to 6 can proce
 - [x] 8.8 Empty the `NOT_YET_MIGRATED` list and remove the legacy `btn-*`, `.input` and `.kbd` classes from `index.css` with the test that fails if they return; verify with `npm test`, `npm run build` and the layout check.
 - [x] 8.9 Add `make screens`, the seeded-fixture screenshot script from the audit, and the before/after screenshot step to `CONTRIBUTING.md`; verify the target runs against a local server and writes the images.
 - [x] 8.10 Run the first-run flow: three-step card, Skip all, "Show me around" sample project via ordinary ops, `firstRun` stored with the preferences, empty states with action first and hints on fine pointers only; verify with `firstRun.test.tsx` (no card on a second device after sync, sample deletes like any project) and the getting-started guide updated.
-- [ ] 8.11 Final integration: run `make check`, the layout check and `make ui-check`, confirm every target in `UX-AUDIT.md` section 6 with the budget test and the screenshot pass, update `CHANGELOG.md` under Unreleased and `README.md` screenshots; verify all commands pass.
+- [x] 8.11 Final integration: run `make check`, the layout check and `make ui-check`, confirm every target in `UX-AUDIT.md` section 6 with the budget test and the screenshot pass, update `CHANGELOG.md` under Unreleased and `README.md` screenshots; verify all commands pass.
 
 ## Workflow follow-up
 
