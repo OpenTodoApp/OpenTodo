@@ -54,6 +54,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   { section: 'capture', label: 'Email to task', description: 'Your secret address; emails sent there become tasks', anchor: 'email-inbox-heading', keywords: 'mail inbox' },
   // Integrations
   { section: 'integrations', label: 'Calendar apps (CalDAV)', description: 'See your tasks in calendar and reminder apps with an app password', anchor: 'caldav-heading', keywords: 'caldav app password' },
+  { section: 'integrations', label: 'Calendar feeds', description: 'Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app', anchor: 'calendar-feeds-heading', keywords: 'ics subscribe google outlook apple calendar' },
   { section: 'integrations', label: 'Webhooks', description: 'Send a message to another service when tasks change', anchor: 'webhooks-heading' },
   { section: 'integrations', label: 'API tokens', description: 'Keys for scripts and the command-line client', anchor: 'tokens-heading', keywords: 'api key cli' },
   { section: 'integrations', label: 'Assistant', description: 'The in-app assistant: consent, provider, model and usage', anchor: 'ai', keywords: 'ai llm anthropic openai gemini' },

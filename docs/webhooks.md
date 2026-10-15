@@ -222,7 +222,7 @@ How it is enforced:
 
 ### Allowing receivers on your LAN
 
-Home Assistant, n8n or Node-RED often run on the same network as OpenTodo. The **owner** can switch on **Settings → Integrations → Webhooks → Allow private network targets** (or `PUT /api/v1/settings/webhooks` with `{"allowPrivate": true}`). This applies to every account on the server, so leave it off on a public multi-user server. The scheme restriction and the no-redirect rule stay in force.
+Home Assistant, n8n or Node-RED often run on the same network as OpenTodo. The **owner** can switch on **Settings → Integrations → Webhooks → Allow private network targets** (or `PUT /api/v1/settings/webhooks` with `{"allowPrivate": true}`). This applies to every account on the server, and to [calendar subscriptions](api.md#calendar-feeds) too, so leave it off on a public multi-user server. The scheme restriction and the no-redirect rule stay in force.
 
 For deployments managed as code, the optional `OPENTODO_WEBHOOKS_ALLOW_PRIVATE=true` presets the toggle on the first start. After that the value in Settings wins, so the owner can still turn it off.
 

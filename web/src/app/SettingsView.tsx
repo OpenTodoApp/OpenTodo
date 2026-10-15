@@ -24,6 +24,7 @@ import { requestSettingsFocus, searchSettings, takeSettingsFocus, type SettingsH
 import { TokensSection } from './TokensSection'
 import { WebhooksPanel } from './WebhooksPanel'
 import { CaldavPanel } from './CaldavPanel'
+import { CalendarFeedsPanel } from './CalendarFeedsPanel'
 import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
 import { KeyboardSection, StartViewSection } from './PreferencesPanels'
@@ -303,6 +304,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           {note}
           <DemoDisabled on={demo}>
             <CaldavPanel isOwner={isOwner} email={user.email} />
+            <CalendarFeedsPanel isOwner={isOwner} />
             <WebhooksPanel isOwner={isOwner} />
             <TokensSection />
           </DemoDisabled>
@@ -364,7 +366,7 @@ function DemoDisabled({ on, children }: { on: boolean; children: ReactNode }) {
 /** Features a demo instance refuses (OpenSpec `demo-mode`); each section names its own (settingsSections.ts). */
 export const DEMO_RESTRICTED_FEATURES = [
   'password and two-factor authentication', 'passkeys', 'end-to-end encryption', 'push notifications', 'linked accounts',
-  'users and invitations', 'single sign-on', 'calendar apps (CalDAV)', 'webhooks', 'email to task', 'backups',
+  'users and invitations', 'single sign-on', 'calendar apps (CalDAV)', 'calendar feeds', 'webhooks', 'email to task', 'backups',
   'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
 ]
 

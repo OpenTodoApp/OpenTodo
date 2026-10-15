@@ -32,6 +32,7 @@ import (
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
+	"github.com/pixari/opentodo/internal/calfeed"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/email"
@@ -196,6 +197,10 @@ func run() error {
 	// mailbox; then one goroutine polls it over IMAP.
 	emailSvc := email.New(db, syncSvc, cfg.Email, email.Options{Log: log, Audit: authSvc.Audit()})
 	opts = append(opts, httpapi.WithEmail(emailSvc))
+	// Calendar subscriptions (calendar-feeds): fetched under the webhooks'
+	// private-network policy; the server sets the switch and the notifier.
+	calWorker := &calfeed.Worker{Store: calfeed.NewStore(db), Fetcher: calfeed.NewFetcher(hooks.AllowPrivate, version), Log: log}
+	opts = append(opts, httpapi.WithCalendarFeeds(calWorker))
 	var demoSvc *demo.Service
 	if cfg.Demo {
 		// Provision the hidden owner, drop the shared accounts of the first demo
@@ -248,6 +253,10 @@ func run() error {
 		// Purge items that outlived the Trash retention at startup and daily
 		// (OPENTODO_TRASH_RETENTION_DAYS, default 30, 0 disables; docs/sync.md).
 		go syncSvc.RunRetention(ctx, cfg.TrashRetentionDays, log)
+		if !cfg.Demo {
+			// No outbound calendar fetches on a demo instance.
+			go calWorker.Run(ctx)
+		}
 		go func() {
 			defer close(workerDone)
 			if cfg.Demo {

@@ -68,15 +68,15 @@ type Event struct {
 
 // Event kinds.
 const (
-	KindCreated        = "created"
-	KindCompleted      = "completed"
-	KindReopened       = "reopened"
-	KindDeleted        = "deleted"
-	KindRestored       = "restored"
-	KindRescheduled    = "rescheduled"
-	KindAssigned       = "assigned"
-	KindUnassigned     = "unassigned"
-	KindMoved          = "moved"
+	KindCreated     = "created"
+	KindCompleted   = "completed"
+	KindReopened    = "reopened"
+	KindDeleted     = "deleted"
+	KindRestored    = "restored"
+	KindRescheduled = "rescheduled"
+	KindAssigned    = "assigned"
+	KindUnassigned  = "unassigned"
+	KindMoved       = "moved"
 	// KindDependencies: the task's blocked_by list changed (task-dependencies D8).
 	KindDependencies   = "dependencies"
 	KindArchived       = "archived"

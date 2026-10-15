@@ -38,7 +38,7 @@ export const LEGACY_HELP_SCREENS: Readonly<Record<string, string>> = {
   'settings/preferences': 'settings/general', 'settings/start-view': 'settings/general', 'settings/date-time': 'settings/general',
   'settings/calendar': 'settings/general', 'settings/keyboard': 'settings/general',
   'settings/quick-add': 'settings/capture', 'settings/voice': 'settings/capture', 'settings/email': 'settings/capture',
-  'settings/caldav': 'settings/integrations', 'settings/webhooks': 'settings/integrations', 'settings/tokens': 'settings/integrations',
+  'settings/caldav': 'settings/integrations', 'settings/calendar-feeds': 'settings/integrations', 'settings/webhooks': 'settings/integrations', 'settings/tokens': 'settings/integrations',
   'settings/ai': 'settings/integrations', 'settings/assistants': 'settings/integrations', 'settings/assistant': 'settings/integrations',
   'settings/projects': 'settings/data',
   'settings/admin': 'settings/people', 'settings/users': 'settings/people', 'settings/members': 'settings/people',

@@ -15,6 +15,7 @@ import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice 
 import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
 import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from './attachments'
 import { sweepInbox } from './shareInbox'
+import { refreshEvents } from './calendarFeeds'
 import type { Clock, Entity, Op, RowEncryption, SyncState } from './types'
 import { currentKey, isEnabled } from './e2ee'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
@@ -397,6 +398,11 @@ function connectLive(): void {
         if (source !== es) return
         void onWakeUp((ev as MessageEvent<string>).data)
       })
+      // Subscribed calendars changed on the server (calendar-feeds D8).
+      es.addEventListener('calendar', () => {
+        if (source !== es) return
+        void refreshEvents()
+      })
     },
     () => scheduleReconnect(),
   )
@@ -442,6 +448,7 @@ export function startSync(): void {
       requestSync(0)
       attempts = 0
       connectLive()
+      void refreshEvents()
     })
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {

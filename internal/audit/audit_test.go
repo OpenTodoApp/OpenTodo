@@ -41,6 +41,7 @@ func allConstructors() []Event {
 		TokenRevoked("u", "t1", "laptop script"),
 		AppPasswordCreated("u", "a1", "iPhone"),
 		AppPasswordRevoked("u", "a1", "iPhone"),
+		CalendarFeedCreated("u"), CalendarFeedRotated("u"), CalendarFeedRevoked("u"),
 		EmailInboxCreated("u"),
 		EmailInboxRotated("u"),
 		EmailInboxUpdated("u", "enabled", "true", "false"),
