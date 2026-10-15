@@ -2,9 +2,9 @@
 // Week views, the drag layer and the keyboard handlers only turn pixels and keys into
 // minutes through these, and every write they produce is an ordinary `due` or
 // `estimate_minutes` edit (design D1, D5).
-import { addDaysISO } from './dates'
+import { addDaysISO, localDueOf } from './dates'
 import { formatMinutes, MAX_ESTIMATE_MINUTES } from './duration'
-import type { Due, Project, Task } from './types'
+import type { CalendarEvent, CalendarWhen, Due, Project, Task } from './types'
 
 export const SLOT_MINUTES = 15
 export const DAY_MINUTES = 24 * 60
@@ -97,6 +97,54 @@ export function blockFor(task: Pick<Task, 'id' | 'due' | 'estimate_minutes'>): B
   const length = estimated ? task.estimate_minutes! : DEFAULT_BLOCK_MINUTES
   // A block that runs past midnight is drawn to the end of its day.
   return { id: task.id, start, end: Math.min(DAY_MINUTES, start + length), estimated }
+}
+
+export interface EventBlock {
+  id: string
+  start: number
+  end: number
+  event: CalendarEvent
+}
+
+/** A timed event point as a wall date and minutes in `zone`: floating points are wall time already. */
+function wallPoint(p: CalendarWhen, zone?: string): { date: string; minutes: number } | null {
+  if (!p.time) return null
+  const local = p.tz ? localDueOf({ date: p.date, time: p.time, tz: p.tz }, zone) : { date: p.date, time: p.time }
+  const minutes = parseTime(local.time)
+  return minutes === null ? null : { date: local.date, minutes }
+}
+
+/**
+ * Timed events on `date` as grid blocks (OpenSpec calendar-feeds, design D8): zoned
+ * points converted to the viewer's zone, floating ones taken as wall time, and an
+ * event that crosses midnight clipped to the part inside this day.
+ */
+export function eventBlocks(events: readonly CalendarEvent[], date: string, zone?: string): EventBlock[] {
+  const out: EventBlock[] = []
+  for (const ev of events) {
+    if (ev.allDay) continue
+    const start = wallPoint(ev.start, zone)
+    if (!start) continue
+    const end = wallPoint(ev.end, zone) ?? { date: start.date, minutes: start.minutes }
+    if (start.date > date || end.date < date) continue
+    const from = start.date < date ? 0 : start.minutes
+    const to = end.date > date ? DAY_MINUTES : end.minutes
+    // An event ending at 00:00 is not on the next day; a zero-length one still gets a slot-high block.
+    if (to <= from && !(start.date === date && to === from)) continue
+    out.push({ id: `event:${ev.id}`, start: from, end: Math.max(to, Math.min(DAY_MINUTES, from + SLOT_MINUTES)), event: ev })
+  }
+  return out.sort((a, b) => a.start - b.start || b.end - a.end)
+}
+
+/** All-day events covering `date` (the end date is exclusive, as in iCalendar). */
+export function allDayEvents(events: readonly CalendarEvent[], date: string): CalendarEvent[] {
+  return events
+    .filter((ev) => {
+      if (!ev.allDay) return false
+      const end = ev.end.date > ev.start.date ? ev.end.date : addDaysISO(ev.start.date, 1)
+      return ev.start.date <= date && date < end
+    })
+    .sort((a, b) => (a.start.date < b.start.date ? -1 : a.start.date > b.start.date ? 1 : a.summary.localeCompare(b.summary)))
 }
 
 /** Open, live tasks due in [from, to] (inclusive ISO dates), leaving out archived projects. */

@@ -7,7 +7,7 @@ import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptio
 import type {
   ConfigWarning,
   AppPassword, CaldavSetting, EmailInbox,
-  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User,
+  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -342,6 +342,22 @@ export const api = {
   // owner's settings travel over these routes.
   uploadAttachment: (id: string, blob: Blob, onProgress?: (fraction: number) => void) => uploadAttachmentContent(id, blob, onProgress),
   attachmentSettings: () => request<AttachmentSettings>('GET', '/api/v1/settings/attachments'),
+  // Calendar feeds (OpenSpec calendar-feeds).
+  calendarFeedsSetting: () => request<{ enabled: boolean }>('GET', '/api/v1/settings/calendar-feeds'),
+  setCalendarFeedsSetting: (enabled: boolean) => request<{ enabled: boolean }>('PUT', '/api/v1/settings/calendar-feeds', { enabled }),
+  calendarSubscriptions: () => request<{ subscriptions: CalendarSubscription[] }>('GET', '/api/v1/calendar-feeds/subscriptions'),
+  createCalendarSubscription: (body: { url: string; name?: string; color?: string }) =>
+    request<{ subscription: CalendarSubscription }>('POST', '/api/v1/calendar-feeds/subscriptions', body),
+  updateCalendarSubscription: (id: string, body: { url?: string; name?: string; color?: string; enabled?: boolean }) =>
+    request<{ subscription: CalendarSubscription }>('PATCH', `/api/v1/calendar-feeds/subscriptions/${encodeURIComponent(id)}`, body),
+  deleteCalendarSubscription: (id: string) => request<void>('DELETE', `/api/v1/calendar-feeds/subscriptions/${encodeURIComponent(id)}`),
+  refreshCalendarSubscription: (id: string) =>
+    request<{ subscription: CalendarSubscription }>('POST', `/api/v1/calendar-feeds/subscriptions/${encodeURIComponent(id)}/refresh`),
+  calendarEvents: (from: string, to: string) =>
+    request<{ events: CalendarEvent[]; subscriptions: CalendarSubscription[] }>('GET', `/api/v1/calendar-feeds/events?from=${from}&to=${to}`),
+  calendarFeed: () => request<{ feed: CalendarFeed | null }>('GET', '/api/v1/calendar-feeds/feed'),
+  rotateCalendarFeed: () => request<{ feed: CalendarFeed; url: string }>('POST', '/api/v1/calendar-feeds/feed'),
+  revokeCalendarFeed: () => request<void>('DELETE', '/api/v1/calendar-feeds/feed'),
   saveAttachmentSettings: (s: AttachmentSettings) => request<AttachmentSettings>('PUT', '/api/v1/settings/attachments', s),
   // Audit log (owner only, except personal activity). Always fetched live and kept in
   // component state only: audit data is never written to IndexedDB or any cache.

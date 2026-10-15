@@ -102,8 +102,8 @@ func TestExpandGoogleWeeklyWithExdateAndMovedInstance(t *testing.T) {
 func TestExpandRulesInTwoZones(t *testing.T) {
 	type tc struct {
 		name, rule, start string
-		window           Window
-		want             []string // local wall times
+		window            Window
+		want              []string // local wall times
 	}
 	cases := []tc{
 		{"last Friday", "FREQ=MONTHLY;BYDAY=-1FR;UNTIL=20270301T000000Z", "20261030T100000", win("2026-10-01", "2027-04-01"),

@@ -637,3 +637,7 @@ func offsetText(sec int) string {
 	}
 	return fmt.Sprintf("%c%02d%02d", sign, sec/3600, (sec%3600)/60)
 }
+
+// VTimezone is the VTIMEZONE for an IANA zone around a date and time (shared
+// with the task feed, OpenSpec change calendar-feeds); nil for an unknown zone.
+func VTimezone(tz, date, clock string) *Component { return vtimezone(tz, date, clock) }

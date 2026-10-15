@@ -440,6 +440,46 @@ export interface AttachmentLimits {
   used_bytes: number
 }
 
+/** One end of a subscribed calendar event, shaped like a task's due (no `tz`: floating). */
+export interface CalendarWhen {
+  date: string
+  time?: string
+  tz?: string
+}
+
+/** An occurrence from a subscribed calendar (OpenSpec calendar-feeds): server data, cached, never an op. */
+export interface CalendarEvent {
+  id: string
+  subscriptionId: string
+  uid: string
+  summary: string
+  location: string
+  start: CalendarWhen
+  end: CalendarWhen
+  allDay: boolean
+  free: boolean
+}
+
+/** A subscribed calendar and its status. */
+export interface CalendarSubscription {
+  id: string
+  url?: string
+  name: string
+  color: string
+  enabled: boolean
+  lastSuccessAt: number | null
+  lastError?: string
+  stoppedReason?: string
+  warnings?: string[]
+  eventCount?: number
+}
+
+/** The user's task feed URL, without the secret. */
+export interface CalendarFeed {
+  createdAt: number
+  lastUsedAt: number | null
+}
+
 /** The owner's attachment settings (Settings → Administration → Attachments). */
 export interface AttachmentSettings {
   enabled: boolean
@@ -830,6 +870,7 @@ export const AUDIT_EVENT_NAMES = [
   'mfa.enrolled', 'mfa.disabled', 'mfa.reset', 'mfa.challenge_failed',
   'passkey.registered', 'passkey.deleted',
   'token.created', 'token.revoked', 'app_password.created', 'app_password.revoked',
+  'calendar_feed.created', 'calendar_feed.rotated', 'calendar_feed.revoked',
   'email_inbox.created', 'email_inbox.rotated', 'email_inbox.updated',
   'invitation.created', 'invitation.accepted', 'invitation.revoked',
   'project_invite.created', 'project_invite.revoked', 'project_invite.accepted',

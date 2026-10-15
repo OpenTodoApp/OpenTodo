@@ -548,6 +548,11 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 		{"DELETE", "/api/v1/projects/" + shared + "/invites/x"},
 		{"GET", "/api/v1/project-invites/otp_x"},
 		{"POST", "/api/v1/project-invites/otp_x/accept"},
+		// Calendar feeds (calendar-feeds 4.6): every method.
+		{"POST", "/api/v1/calendar-feeds/subscriptions"},
+		{"GET", "/api/v1/calendar-feeds/events?from=2026-10-01&to=2026-10-07"},
+		{"GET", "/feeds/otfeed_x/tasks.ics"},
+		{"PUT", "/api/v1/settings/calendar-feeds"},
 		// Attachments (attachments 2.4): every method.
 		{"GET", "/api/v1/settings/attachments"},
 		{"PUT", "/api/v1/settings/attachments"},
