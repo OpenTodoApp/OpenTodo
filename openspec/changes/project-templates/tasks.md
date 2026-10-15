@@ -28,8 +28,8 @@
 
 ## 5. Integration
 
-- [ ] 5.1 Manual smoke on `make dev`: save "Trip to Rome" as a template, start it on another day in a second account, duplicate it offline on a phone profile and confirm the copy appears on the laptop after sync; drop the same file on the Import screen and confirm the hint and the one-time import; start the website's `gtd-setup` download and confirm two projects and six labels exist once. Record the result in the change folder notes.
-- [ ] 5.2 Run `make check` (go test, web test and build, ui lint, docs check). Verify it passes.
+- [x] 5.1 Manual smoke on `make dev`: save "Trip to Rome" as a template, start it on another day in a second account, duplicate it offline on a phone profile and confirm the copy appears on the laptop after sync; drop the same file on the Import screen and confirm the hint and the one-time import; start the website's `gtd-setup` download and confirm two projects and six labels exist once. Record the result in the change folder notes.
+- [x] 5.2 Run `make check` (go test, web test and build, ui lint, docs check). Verify it passes.
 
 ## Workflow follow-up
 

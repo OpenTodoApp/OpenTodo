@@ -65,6 +65,9 @@ describe('planTree (1.3)', () => {
     expect(task.entityId).not.toBe('src-1')
     expect((task.patch.labels as string[])[0]).toBe(errand)
     expect(plan.changes.filter((c) => c.entity === 'label')).toHaveLength(1)
+    // A declared label nobody uses is created too, once.
+    const extra = planTree({ ...tree, labels: [...tree.labels, { name: 'Unused' }, { name: 'errand' }] }, { labels: await db.labels.toArray() })
+    expect(extra.changes.filter((c) => c.entity === 'label').map((c) => c.patch.name)).toEqual(['new one', 'Unused'])
     expect(task.patch).not.toHaveProperty('assignee_id')
     const big: TTask[] = Array.from({ length: 1001 }, (_, i) => ({ title: `t${i}`, description: '', priority: 4, due: null, labels: [], estimate_minutes: null, recurrence: null, subtasks: [] }))
     expect(() => planTree({ labels: [], projects: [], tasks: big }, { labels: [] })).toThrow(TemplateTooLargeError)

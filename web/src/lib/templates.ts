@@ -230,6 +230,10 @@ export function planTree(tree: TemplateTree, opts: PlanOptions): Plan {
     return id
   }
 
+  // Every label the source declares exists once afterwards, used or not (a
+  // method set-up template brings its contexts).
+  for (const l of tree.labels) if (l.name.trim()) labelId(l.name)
+
   const keyToId = new Map<string, string>()
   const pending: { id: string; blockers: string[] }[] = []
   const addTask = (t: TTask, place: { project_id: string | null; section_id: string | null; parent_id: string | null }, position: number) => {
