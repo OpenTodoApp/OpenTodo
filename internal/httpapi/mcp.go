@@ -38,13 +38,13 @@ func (s *Server) registerMCPRoutes(mux *http.ServeMux) {
 	s.agentTools = agenttools.New(s.sync, agenttools.Options{
 		Audit: s.audit, Log: s.log,
 		LocalToday: func() string { return localToday(time.Now()) },
-		// Relative reminders follow a new due date, as for a REST write.
+		// Relative reminders follow a new due date (deadline reminders a new
+		// deadline), as for a REST write.
 		ExtraOps: func(ctx context.Context, uid string, c agenttools.Change, ts int64, device string) ([]opsync.Op, error) {
-			dueRaw, ok := c.Patch["due"]
-			if c.Entity != "task" || c.Create || !ok {
+			if c.Entity != "task" || c.Create {
 				return nil, nil
 			}
-			return s.reminderOpsForDueAs(ctx, uid, c.EntityID, dueRaw, ts, device)
+			return s.reminderOpsForTaskAs(ctx, uid, c.EntityID, c.Patch, ts, device)
 		},
 	})
 	s.mcp = mcp.New(s.sync, mcp.Options{Version: s.version, Log: s.log, Tools: s.agentTools})

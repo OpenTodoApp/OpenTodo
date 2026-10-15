@@ -37,6 +37,7 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 		"", "   ", "!!p1", "##Work & !(#Home | no project)", "search:milk", `search: "oat milk"`, "SEARCH: x",
 		"created > 7 days ago", "due before monday", "due after 2026-02-28", "P2", `@"a \"quoted\" name"`,
 		"no date | no time | no labels", "@Café & #プロジェクト",
+		"deadline <= 3 days", "#Work & no deadline", "deadline >= today & no date", "deadline before friday",
 	} {
 		if err := Parse(q); err != nil {
 			t.Errorf("%q: %v", q, err)
@@ -71,7 +72,7 @@ func TestFilterParserRejects(t *testing.T) {
 		"!":                  `Expected a term after "!" at position 1`,
 		"()":                 `Expected a term after "(" at position 1`,
 		`"loose text"`:       `Unexpected text "loose text" at position 1; quote names after "@" or "#", or use search:`,
-		"no idea":            `Expected "date", "project", "labels" or "time" after "no" at position 1`,
+		"no idea":            `Expected "date", "project", "labels", "time" or "deadline" after "no" at position 1`,
 		"due < someday":      `Invalid date "someday" at position 7`,
 		"due < 2026-02-30":   `Invalid date "2026-02-30" at position 7`,
 		"due <":              `Expected a date after "<" at position 5`,

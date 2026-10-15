@@ -233,6 +233,22 @@ function unitAt(tokens: readonly Token[], i: number, v: Vocabulary): { n: number
  * Longest date phrase starting at token `i`, across every active vocabulary.
  * Ties go to the earlier vocabulary (the user's preferred language).
  */
+/**
+ * A deadline phrase at `i`: a deadline word ("deadline", "Frist", "fecha límite")
+ * directly followed by a date phrase (OpenSpec change deadlines, design D7).
+ */
+export function matchDeadlineAt(tokens: readonly Token[], i: number, ctx: DateContext): DateMatch | null {
+  if (!tokens[i] || tokens[i].quoted) return null
+  let best: DateMatch | null = null
+  for (const v of ctx.vocabs) {
+    const n = phraseAt(tokens, i, v.deadlineWords, `${v.code}:deadline`)
+    if (!n) continue
+    const dm = matchDateAt(tokens, i + n, ctx)
+    if (dm && (!best || dm.to > best.to)) best = { date: dm.date, from: i, to: dm.to }
+  }
+  return best
+}
+
 export function matchDateAt(tokens: readonly Token[], i: number, ctx: DateContext): DateMatch | null {
   if (!tokens[i] || tokens[i].quoted) return null
   let best: DateMatch | null = null

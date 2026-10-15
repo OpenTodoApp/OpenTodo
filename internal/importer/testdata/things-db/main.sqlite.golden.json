@@ -8,12 +8,13 @@
     "skip": 0,
     "error": 0,
     "possibleDuplicates": 0,
-    "warnings": 4,
+    "warnings": 1,
     "newProjects": 1,
     "newLabels": 1,
     "newSections": 4,
     "recurring": 0,
     "reminders": 0,
+    "deadlines": 3,
     "entities": 67,
     "written": 0,
     "ops": 0
@@ -64,10 +65,7 @@
       "sourceId": "things:Xf9iTByDAUh3pJaDtiqMuu",
       "kind": "task",
       "title": "Item 37",
-      "outcome": "create",
-      "warnings": [
-        "deadline kept in the description (deadlines are not supported yet)"
-      ]
+      "outcome": "create"
     },
     {
       "row": 7,
@@ -471,10 +469,7 @@
       "sourceId": "things:JEN7dgVr15EjfXyuE2DRvp",
       "kind": "task",
       "title": "Item 37",
-      "outcome": "create",
-      "warnings": [
-        "deadline kept in the description (deadlines are not supported yet)"
-      ]
+      "outcome": "create"
     },
     {
       "row": 59,
@@ -510,10 +505,7 @@
       "sourceId": "things:AV6CVVMWGEzatbzrUmC1Qi",
       "kind": "task",
       "title": "Item 37",
-      "outcome": "create",
-      "warnings": [
-        "deadline kept in the description (deadlines are not supported yet)"
-      ]
+      "outcome": "create"
     },
     {
       "row": 64,
@@ -544,7 +536,7 @@
     "section id-0003: name=\"Item 28\" project_id=\"id-0001\" created_at=1791979200000",
     "section id-0004: name=\"Item 8\" project_id=\"id-0001\" created_at=1791979200000",
     "section id-0005: name=\"Item 25\" project_id=\"id-0001\" created_at=1791979200000",
-    "task id-0006: title=\"Item 37\" description=\"Notes 31\\n\\nDeadline: 2026-11-12\" priority=4 created_at=1791990563118 due={\"date\":\"2026-10-14\"} labels=[\"id-0007\"]",
+    "task id-0006: title=\"Item 37\" description=\"Notes 31\" priority=4 created_at=1791990563118 due={\"date\":\"2026-10-14\"} deadline=\"2026-11-12\" labels=[\"id-0007\"]",
     "task id-0008: title=\"Item 51\" description=\"\" priority=4 created_at=1791979200000 parent_id=\"id-0006\" labels=[]",
     "task id-0009: title=\"Item 52\" description=\"\" priority=4 created_at=1791979200000 parent_id=\"id-0006\" labels=[]",
     "task id-0010: title=\"Item 35\" description=\"\" priority=4 created_at=1791990538185 labels=[]",
@@ -596,12 +588,12 @@
     "task id-0056: title=\"Item 18\" description=\"Notes 17\" priority=4 created_at=1791990530209 project_id=\"id-0001\" labels=[] section_id=\"id-0002\"",
     "task id-0057: title=\"Item 34\" description=\"\" priority=4 created_at=1791990536168 labels=[]",
     "task id-0058: title=\"Item 31\" description=\"Notes 27\" priority=4 created_at=1791990530218 project_id=\"id-0001\" labels=[] section_id=\"id-0004\"",
-    "task id-0059: title=\"Item 37\" description=\"Notes 31\\n\\nDeadline: 2026-11-12\" priority=4 created_at=1791990563118 labels=[\"id-0007\"]",
+    "task id-0059: title=\"Item 37\" description=\"Notes 31\" priority=4 created_at=1791990563118 deadline=\"2026-11-12\" labels=[\"id-0007\"]",
     "task id-0060: title=\"Item 51\" description=\"\" priority=4 created_at=1791979200000 parent_id=\"id-0059\" labels=[]",
     "task id-0061: title=\"Item 52\" description=\"\" priority=4 created_at=1791979200000 parent_id=\"id-0059\" labels=[]",
     "task id-0062: title=\"Item 21\" description=\"Notes 20\" priority=4 created_at=1791990530218 project_id=\"id-0001\" labels=[] section_id=\"id-0004\"",
     "task id-0063: title=\"Item 34\" description=\"\" priority=4 created_at=1791990536168 labels=[]",
-    "task id-0064: title=\"Item 37\" description=\"Notes 31\\n\\nDeadline: 2026-11-12\" priority=4 created_at=1791990563118 labels=[\"id-0007\"]",
+    "task id-0064: title=\"Item 37\" description=\"Notes 31\" priority=4 created_at=1791990563118 deadline=\"2026-11-12\" labels=[\"id-0007\"]",
     "task id-0065: title=\"Item 51\" description=\"\" priority=4 created_at=1791979200000 parent_id=\"id-0064\" labels=[]",
     "task id-0066: title=\"Item 52\" description=\"\" priority=4 created_at=1791979200000 parent_id=\"id-0064\" labels=[]",
     "task id-0067: title=\"Item 34\" description=\"\" priority=4 created_at=1791990536168 labels=[]"

@@ -122,11 +122,11 @@ A Things database SHALL map areas to parent projects, projects to projects, head
 - **THEN** the project "Launch" is a sub-project of "Work" with sections "Prepare" and "Ship"
 
 ### Requirement: Things dates
-A Things to-do's start ("when") date SHALL become its due date, repeating to-dos SHALL become recurring tasks where expressible, and completed or canceled items SHALL be completed tasks. Deadlines, Someday and This Evening SHALL be dropped with a warning until the data model holds them, and a deadline date SHALL be kept as a line in the description.
+A Things to-do's start ("when") date SHALL become its due date, repeating to-dos SHALL become recurring tasks where expressible, and completed or canceled items SHALL be completed tasks. A deadline SHALL become the task's deadline (OpenSpec change `deadlines`). Someday and This Evening SHALL be dropped with a warning until the data model holds them.
 
-#### Scenario: Deadline kept as text
+#### Scenario: Deadline imported
 - **WHEN** a to-do has a deadline of 2026-11-30
-- **THEN** it is imported with a warning, and its description contains the line "Deadline: 2026-11-30"
+- **THEN** the task's deadline is 2026-11-30, its description has no "Deadline:" line and the row has no deadline warning
 
 ### Requirement: Named formats are verified against real exports
 Each named app format SHALL be tested against at least one export file produced by that app from a real account, stripped of personal data and kept with the tests. A change to a format's detection or mapping SHALL keep every such file importing with the same rows, warnings and errors unless the change states the difference.

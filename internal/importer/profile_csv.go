@@ -41,6 +41,7 @@ var csvColumns = map[string]string{
 	"created_at": "created_at", "created": "created_at",
 	"recurrence": "recurrence", "recurring": "recurrence", "repeat": "recurrence", "rrule": "recurrence", "repeats": "recurrence",
 	"reminder": "reminder", "reminders": "reminder",
+	"deadline": "deadline",
 }
 
 // csvUnsupported are columns the model cannot hold; a non-empty value is dropped
@@ -197,6 +198,7 @@ func (csvProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		if v := get("recurrence"); v != "" {
 			setRecurrence(&row, v)
 		}
+		setDeadline(&row, get("deadline"), loc)
 		if v := get("reminder"); v != "" {
 			var list []any
 			for _, part := range strings.FieldsFunc(v, func(r rune) bool { return r == ';' || r == ',' || r == '|' }) {

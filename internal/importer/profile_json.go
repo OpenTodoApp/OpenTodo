@@ -206,6 +206,23 @@ var (
 
 // schedule reads the row's recurrence (from the object or its due) and its
 // reminders, after the due date is known.
+// deadline reads a deadline key into the row (OpenSpec change deadlines): a
+// date string, or an object with "date" (the Todoist API form).
+func (o obj) deadline(row *Row, loc *time.Location, keys ...string) {
+	v, ok := o.first(keys...)
+	if !ok || v == nil {
+		return
+	}
+	switch t := v.(type) {
+	case string:
+		setDeadline(row, t, loc)
+	case map[string]any:
+		setDeadline(row, obj(t).str("date"), loc)
+	default:
+		row.fail("invalid deadline value")
+	}
+}
+
 func (o obj) schedule(row *Row, loc *time.Location, fromDue any) {
 	if v, ok := o.first(recurrenceKeys...); ok {
 		setRecurrence(row, v)
@@ -372,7 +389,8 @@ func (genericProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 				row.ParentSourceID = parent
 			}
 			jsonPriority(&row, o, "priority")
-			o.schedule(&row, loc, o.due(&row, loc, "due", "due_date", "dueDate", "deadline"))
+			o.schedule(&row, loc, o.due(&row, loc, "due", "due_date", "dueDate"))
+			o.deadline(&row, loc, "deadline")
 			row.Labels = o.names("labels", "tags")
 			if o.boolean("completed", "done", "checked", "isCompleted", "is_completed") || isDoneStatus(o.str("status")) {
 				row.Completed = true
@@ -542,9 +560,7 @@ func (itemsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		}
 		o.schedule(&row, loc, o.due(&row, loc, "due"))
 		addReminders(&row, reminders[id], loc)
-		if o.present("deadline") {
-			row.warn("deadline dropped (not supported)")
-		}
+		o.deadline(&row, loc, "deadline")
 		if o.present("duration") {
 			row.warn("duration dropped (not supported)")
 		}

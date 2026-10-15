@@ -83,6 +83,9 @@ type Row struct {
 	File string
 	// EstimateMinutes is the task's duration estimate (0 = none).
 	EstimateMinutes int
+	// Deadline is the day the task must be finished by, "YYYY-MM-DD" or ""
+	// (OpenSpec change deadlines).
+	Deadline string
 	// AssignSelf assigns the task to the importing account (a Linear issue
 	// assigned to the importer's own email address).
 	AssignSelf bool

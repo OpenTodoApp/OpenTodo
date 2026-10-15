@@ -28,6 +28,7 @@ export const de: Vocabulary = {
     { names: ['dezember'], abbr: ['dez'] },
   ],
   before: ['am', 'bis'],
+  deadlineWords: ['frist', 'deadline'],
   nextBefore: ['nächsten', 'nächste', 'nächstes', 'kommenden', 'kommende'],
   nextAfter: [],
   thisBefore: ['diesen', 'diese', 'dieses'],

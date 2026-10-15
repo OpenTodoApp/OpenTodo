@@ -546,7 +546,7 @@ describe('parse: escaping and dismissal', () => {
 describe('parse: precedence and passthrough', () => {
   it('no match passes the line through, whitespace collapsed', () => {
     const r = parse('  Buy   oat milk  ', ctx())
-    expect(r).toEqual({ title: 'Buy oat milk', due: null, projectId: null, labels: [], priority: null, estimateMinutes: null, chips: [] })
+    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, projectId: null, labels: [], priority: null, estimateMinutes: null, chips: [] })
   })
 
   it('first match of each attribute wins; later ones stay in the title', () => {
@@ -612,5 +612,58 @@ describe('rebaseDismissed', () => {
 
   it('handles deletions before a span', () => {
     expect(rebaseDismissed('Do Review may', 'Review may', [{ start: 10, end: 13, text: 'may' }])).toEqual(d)
+  })
+})
+
+describe('deadline phrases (OpenSpec deadlines 7.1)', () => {
+  // Wednesday 2026-10-14 in these scenarios.
+  const at = (line: string, over: Partial<ParseContext> = {}) => parse(line, ctx({ today: '2026-10-14', ...over }))
+
+  it('deadline only', () => {
+    const r = at('Send report deadline friday')
+    expect(r).toMatchObject({ title: 'Send report', due: null, deadline: '2026-10-16' })
+    expect(r.chips.map((c) => c.kind)).toEqual(['deadline'])
+  })
+
+  it('plan and deadline', () => {
+    const r = at('Send report tomorrow deadline friday')
+    expect(r).toMatchObject({ title: 'Send report', due: { date: '2026-10-15' }, deadline: '2026-10-16' })
+  })
+
+  it('German phrase', () => {
+    expect(at('Bericht Frist 3. November', { languages: ['de'] })).toMatchObject({ title: 'Bericht', deadline: '2026-11-03' })
+  })
+
+  it('other languages, accents optional', () => {
+    expect(at('Rapport échéance vendredi', { languages: ['fr'] }).deadline).toBe('2026-10-16')
+    expect(at('Rapport echeance vendredi', { languages: ['fr'] }).deadline).toBe('2026-10-16')
+    expect(at('Informe fecha límite viernes', { languages: ['es'] })).toMatchObject({ title: 'Informe', deadline: '2026-10-16' })
+    expect(at('Relazione scadenza venerdì', { languages: ['it'] }).deadline).toBe('2026-10-16')
+    expect(at('Relatório prazo sexta', { languages: ['pt'] }).deadline).toBe('2026-10-16')
+  })
+
+  it('without a date after it, the word stays in the title', () => {
+    expect(at('Review deadline policy tomorrow')).toMatchObject({ title: 'Review deadline policy', due: { date: '2026-10-15' }, deadline: null })
+  })
+
+  it('a time after the deadline stays in the title', () => {
+    expect(at('Call deadline friday 15:00')).toMatchObject({ title: 'Call 15:00', deadline: '2026-10-16', due: null })
+  })
+
+  it('only the first deadline phrase counts', () => {
+    const r = at('Plan deadline friday deadline monday')
+    expect(r.deadline).toBe('2026-10-16')
+    expect(r.title).toContain('deadline')
+  })
+
+  it('a dismissed deadline chip keeps the words as text', () => {
+    const first = at('Send report deadline friday')
+    const dismissed = first.chips.find((c) => c.kind === 'deadline')!.spans
+    expect(at('Send report deadline friday', { dismissed })).toMatchObject({ title: 'Send report deadline friday', deadline: null, due: null })
+  })
+
+  it('by and due keep setting the due date', () => {
+    expect(at('Pay rent by friday')).toMatchObject({ title: 'Pay rent', due: { date: '2026-10-16' }, deadline: null })
+    expect(at('Pay rent due friday')).toMatchObject({ due: { date: '2026-10-16' }, deadline: null })
   })
 })

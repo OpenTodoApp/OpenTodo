@@ -284,3 +284,48 @@ describe('assignee in personal scopes (4.1)', () => {
     await v.unmount()
   })
 })
+
+describe('deadline row (OpenSpec deadlines 3.1)', () => {
+  it('typing fri writes the next Friday and leaves the due date alone; the row shows the date and countdown', async () => {
+    const id = await createTask({ title: 'Report', due: { date: '2026-10-15' } })
+    const { row, valueButton, unmount } = await open(id)
+    expect(row('deadline').textContent).toContain('No deadline')
+    await click(valueButton('deadline'))
+    await settle()
+    const input = row('deadline').querySelector('input') as HTMLInputElement
+    expect(document.activeElement).toBe(input)
+    await type(input, 'fri')
+    await key(input, 'Enter')
+    await settle()
+    const t = (await db.tasks.get(id))!
+    expect(t.deadline).toBe('2026-10-16')
+    expect(t.due).toEqual({ date: '2026-10-15' })
+    await key(row('deadline').querySelector('input') ?? input, 'Escape')
+    await settle()
+    expect(row('deadline').textContent).toContain('Fri 16 Oct')
+    expect(row('deadline').textContent).toContain('in 2 days')
+    await unmount()
+  })
+
+  it('clearing writes null', async () => {
+    const id = await createTask({ title: 'Report', deadline: '2026-10-20' })
+    const { row, valueButton, unmount } = await open(id)
+    await click(valueButton('deadline'))
+    await settle()
+    await click(row('deadline').querySelector('button[aria-label="Clear deadline"]')!)
+    await settle()
+    expect((await db.tasks.get(id))!.deadline).toBeNull()
+    await unmount()
+  })
+
+  it('a viewer sees the deadline as text, and the row passes axe', async () => {
+    const id = await createTask({ title: 'Report', deadline: '2026-10-12' })
+    const { row, unmount } = await open(id, { readOnly: true })
+    expect(row('deadline').querySelector('button, input')).toBeNull()
+    expect(row('deadline').textContent).toContain('2 days over')
+    const axe = (await import('axe-core')).default
+    const res = await axe.run(row('deadline'), { rules: { 'color-contrast': { enabled: false } } })
+    expect(res.violations.map((v) => v.id)).toEqual([])
+    await unmount()
+  })
+})

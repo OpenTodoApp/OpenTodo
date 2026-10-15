@@ -606,6 +606,15 @@
         {"id":"up3","seq":3,"actor":"alice","entity":"user_prefs","entityId":"me","field":"week_start","value":"sun","ts":2000,"device":"db"}
       ],
       "events": []
+    },
+    {
+      "name": "a deadline edit is an edited event (deadlines)",
+      "ops": [
+        {"id":"dl1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"deadline","value":"2026-11-20","ts":200000,"device":"da"}
+      ],
+      "events": [
+        {"id":"dl1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":200000,"opIds":["dl1"],"changes":[{"field":"deadline","from":null,"to":"2026-11-20"}]}
+      ]
     }
   ]
 }

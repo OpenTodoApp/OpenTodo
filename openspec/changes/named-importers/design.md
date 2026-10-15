@@ -68,7 +68,7 @@ Two shapes are recognised:
   - `PRIORITY` uses the numbers the app shows (1 = the red flag, 4 = no priority), unlike Todoist's API where 4 is the highest. The maintainer's backup settles it: 29 of 32 tasks carry 4, which can only be the default. It maps directly (1 = p1 … 4 = p4). A richer sample with a known red-flag task will pin it further.
   - `@label` tokens in `CONTENT` become labels.
   - `DATE` goes through D7, with `TIMEZONE` for timed values.
-  - `DEADLINE` and `DURATION` are kept as warnings until `deadlines` exists; `DURATION` with unit minute maps to `estimate_minutes`.
+  - `DEADLINE` maps to the task's deadline through the same date-language parser as `DATE` (with `DEADLINE_LANG`, else `DATE_LANG`); an unreadable value is kept as a description line with a warning (changed by `deadlines`, design D9). `DURATION` with unit minute maps to `estimate_minutes`.
   - `REMINDER_*` become reminders where expressible.
   - `RESPONSIBLE` is dropped with a warning unless it's the importer. `AUTHOR` is ignored.
   - Note rows are appended to the description under "Comments".
@@ -102,7 +102,7 @@ Mapping:
 - `status` 3 (completed) or 2 (canceled) → completed with `stopDate`, and canceled ones get the label `canceled`.
 - `trashed` → skipped.
 - Packed `startDate` → due date, with `reminderTime` → a reminder when present. `rt1_recurrenceRule` (a plist of frequency, interval and weekdays) → the recurrence grammar where expressible.
-- `deadline` → a description line plus a warning.
+- `deadline` → the task's deadline (changed by `deadlines`, design D9).
 - `start=2` (someday) and `startBucket=1` (evening) → warnings.
 
 Alternative considered: an Apple Shortcut writing a published JSON shape. Rejected now that the database can be copied directly. It needed a Shortcut per user, and it lost fields the database has.

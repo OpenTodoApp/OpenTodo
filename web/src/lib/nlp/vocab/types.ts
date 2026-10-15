@@ -28,6 +28,8 @@ export interface Vocabulary {
   months: MonthVocab[]
   /** Words that may precede a date phrase and are swallowed with it ("on", "am", "le"). */
   before: string[]
+  /** Words directly before a date phrase that make it the deadline (OpenSpec change deadlines, D7). */
+  deadlineWords: string[]
   /** "next" placed before the noun ("next Wed", "nächsten Mittwoch"). */
   nextBefore: string[]
   /** "next" placed after the noun ("mardi prochain", "martes que viene"). */

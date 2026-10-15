@@ -41,6 +41,13 @@ type vectors struct {
 		Done     int      `json:"done"`
 		Expected []string `json:"expected"`
 	} `json:"preview"`
+	Deadline []struct {
+		Name     string `json:"name"`
+		Deadline string `json:"deadline"`
+		From     string `json:"from"`
+		To       string `json:"to"`
+		Expected string `json:"expected"`
+	} `json:"deadline"`
 }
 
 func loadVectors(t *testing.T) vectors {
@@ -213,5 +220,22 @@ func TestDocumentedExamplesAreVectors(t *testing.T) {
 		if !known[m[1]] {
 			t.Errorf("docs/recurrence.md example %q is not in the shared vectors", m[1])
 		}
+	}
+}
+
+// TestShiftDateVectors: a series deadline moves by the same days as its due date
+// (OpenSpec change deadlines, design D8), shared with recurring.test.ts.
+func TestShiftDateVectors(t *testing.T) {
+	v := loadVectors(t)
+	if len(v.Deadline) == 0 {
+		t.Fatal("no deadline vectors")
+	}
+	for _, c := range v.Deadline {
+		if got := ShiftDate(c.Deadline, c.From, c.To); got != c.Expected {
+			t.Errorf("%s: ShiftDate(%s, %s, %s) = %s, want %s", c.Name, c.Deadline, c.From, c.To, got, c.Expected)
+		}
+	}
+	if got := ShiftDate("bad", "2026-10-01", "2026-10-02"); got != "bad" {
+		t.Errorf("invalid input changed: %s", got)
 	}
 }
