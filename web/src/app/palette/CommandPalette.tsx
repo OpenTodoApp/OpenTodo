@@ -54,7 +54,7 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
     const i = sections.findIndex((s) => s.id === task.section_id)
     if (i < 0) return undefined
     const count = await db.tasks.filter((t) => t.section_id === task.section_id && !t.deleted_at && !t.completed_at).count()
-    return { row: sections[i] as Section, first: i === 0, last: i === sections.length - 1, layout: await loadViewMode(task.project_id), count }
+    return { row: sections[i] as Section, first: i === 0, last: i === sections.length - 1, layout: (await loadViewMode(task.project_id)) === 'board' ? 'board' as const : 'list' as const, count }
   }, [task?.section_id, task?.project_id])
 
   // What is typed, debounced, for the filter results and the "Search Help" command.

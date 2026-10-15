@@ -173,6 +173,7 @@ function screens(ids) {
     { name: 'assigned', path: '/assigned', ready: row('Pick paint colours') },
     { name: 'day', path: '/day', ready: (p) => p.locator('[data-now-line], main').first().waitFor() },
     { name: 'week', path: '/week', ready: (p) => p.locator('main').first().waitFor() },
+    { name: 'month', path: '/month', ready: (p) => p.locator('[data-month-grid]').waitFor() },
     { name: 'completed', path: '/completed', ready: row('Submit expense report') },
     { name: 'filter', path: '/filter', ready: (p) => p.getByLabel('Filter query').waitFor() },
     { name: 'ask', path: '/ask', ready: heading('Ask OpenTodo') },
@@ -181,7 +182,8 @@ function screens(ids) {
     // The old address still opens Updates (ux-overhaul vocabulary).
     { name: 'activity-redirect', path: '/activity', ready: heading('Updates') },
     { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
-    { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), board: true },
+    { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Board' },
+    { name: 'timeline', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Timeline' },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
@@ -731,8 +733,8 @@ async function runCombo(engine, width, theme, ids) {
       const load = async () => {
         await p.goto(base + s.path)
         await s.ready(p)
-        if (s.board) {
-          await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'Board' }).click()
+        if (s.layout) {
+          await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: s.layout }).click()
           await p.waitForTimeout(300)
         }
         await p.waitForTimeout(250)
@@ -783,7 +785,7 @@ async function runCombo(engine, width, theme, ids) {
           await fail(p, s.name, o, `could not be checked: ${e.message.split('\n')[0]}`)
         }
       }
-      if (s.board) {
+      if (s.layout) {
         await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).click().catch(() => {})
       }
       if (s.anon) await p.close()

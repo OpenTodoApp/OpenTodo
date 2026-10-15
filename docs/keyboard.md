@@ -65,7 +65,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>k</kbd> | Go to Ask: the assistant’s composer and skills (when the assistant is on) |
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Updates: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters) |
 | <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Data → Import data |
-| <kbd>g</kbd> then <kbd>d</kbd> / <kbd>w</kbd> | Go to the Calendar as Day / Week (the sidebar opens it as last used) |
+| <kbd>g</kbd> then <kbd>d</kbd> / <kbd>w</kbd> / <kbd>m</kbd> | Go to the Calendar as Day / Week / Month (the sidebar opens it as last used) |
 | <kbd>g</kbd> then <kbd>?</kbd> | Open Help: the user guide, offline, with search |
 
 ### Tasks in a list
@@ -83,7 +83,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Drag</kbd> (touch: press and hold) | Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels |
 | Today, Upcoming, Assigned, Completed, labels, filters | Sorted by date (or their own rule): no drag or Alt moves there |
 | <kbd>←</kbd> / <kbd>→</kbd> | Collapse / expand subtasks of the selected task, or sub-projects of the focused sidebar project |
-| <kbd>v</kbd> | Toggle the current project between list and board (remembered per project on this device) |
+| <kbd>v</kbd> | Cycle the current project through list, board and timeline (remembered per project on this device) |
 | <kbd>Shift+S</kbd> | Share the current project: add members by email, change roles, remove, leave, transfer |
 | <kbd>1</kbd> – <kbd>4</kbd> | Set priority of selected task |
 | <kbd>L</kbd> | Labels of selected task (type to find, Enter adds or creates) |
@@ -105,15 +105,18 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Delete</kbd> | Delete selected task (and its subtasks) |
 | <kbd>z</kbd> | Task panel open: fix a timed due to your time zone, or release it to a floating time |
 
-### Board
+### Board and timeline
 
 | Keys | What it does |
 | --- | --- |
+| <kbd>←</kbd> / <kbd>→</kbd> | Timeline: move the selected task’s dates one day |
+| <kbd>Shift+←</kbd> / <kbd>Shift+→</kbd> | Timeline: move the selected task’s deadline one day (from the due date when it has none) |
+| <kbd>[</kbd> / <kbd>]</kbd> / <kbd>t</kbd> | Timeline: move the visible range, back to today |
 | <kbd>h</kbd> / <kbd>l</kbd>, <kbd>←</kbd> / <kbd>→</kbd> | Select the first task of the previous / next column; j / k move within a column |
 | <kbd>Shift+←</kbd> / <kbd>Shift+→</kbd> | Move the selected task to the previous / next column (it stays selected) |
 | <kbd>a</kbd> | Add a task to the selected task’s column |
 
-### Day and Week calendar
+### Day, Week and Month calendar
 
 | Keys | What it does |
 | --- | --- |
@@ -123,7 +126,10 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Shift+↑</kbd> / <kbd>Shift+↓</kbd> | Shorten / lengthen the estimate by 15 minutes |
 | <kbd>u</kbd> / <kbd>p</kbd> | Unschedule (keep the date) / placement mode for the selected task |
 | <kbd>Enter</kbd> / <kbd>Esc</kbd> | Place the task at the ghost / cancel without changes |
-| <kbd>[</kbd> / <kbd>]</kbd> / <kbd>t</kbd> | Previous / next day or week, back to today |
+| <kbd>[</kbd> / <kbd>]</kbd> / <kbd>t</kbd> | Previous / next day, week or month, back to today |
+| <kbd>← → ↑ ↓</kbd> | Month: move the focused day; with a task selected, move it a day or a week (keeps its time) |
+| <kbd>j</kbd> / <kbd>k</kbd>, <kbd>Enter</kbd>, <kbd>Esc</kbd> | Month: select the next / previous task of the month, open it, clear the selection |
+| <kbd>q</kbd> | Month: add a task due on the focused day |
 
 ### Filter, saved filters and boards
 

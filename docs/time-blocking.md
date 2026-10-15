@@ -20,7 +20,7 @@ The estimate shows on the task row, like `45m` or `1h 30m`.
 
 ## Open the calendar
 
-Choose **Day** or **Week** in the sidebar, or press <kbd>g</kbd> <kbd>d</kbd> or <kbd>g</kbd> <kbd>w</kbd>.
+Choose **Calendar** in the sidebar, then **Day**, **Week** or **Month** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd> or <kbd>g</kbd> <kbd>m</kbd>. The sidebar opens the calendar the way you last left it on this device.
 
 <picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, an Unscheduled lane under each day, and planned hours against an 8-hour day in each day's header."></picture>
 
@@ -32,6 +32,21 @@ Choose **Day** or **Week** in the sidebar, or press <kbd>g</kbd> <kbd>d</kbd> or
 Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
 
 The Week view starts on your first day of the week, and the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → Preferences → Date and time** and follow you to all your devices. Moving a block still sets the same time; only how it is shown changes.
+
+## See the month
+
+**Month** shows six weeks at a glance, starting on your first day of the week, with today marked and the days of other months dimmed. Each day lists its open tasks: the timed ones first by time, then the rest by priority. A crowded day shows the first few and **+N more**, which expands the day in place. When a day's tasks have estimates, the day shows the planned total against your day length, in red when it is over.
+
+- Drag a task onto another day to move it. It keeps its time.
+- Select a task with <kbd>j</kbd> and <kbd>k</kbd>, or by clicking it. The arrows then move it a day (<kbd>←</kbd> <kbd>→</kbd>) or a week (<kbd>↑</kbd> <kbd>↓</kbd>), into the next month if needed. <kbd>Enter</kbd> opens it, and <kbd>Esc</kbd> clears the selection.
+- With no task selected, the arrows move between days. <kbd>q</kbd> adds a task due on the day you're on.
+- <kbd>[</kbd> and <kbd>]</kbd> go to the previous and next month, and <kbd>t</kbd> comes back to today.
+
+Switching between **Day**, **Week** and **Month** keeps the date you're looking at. On a phone, each day shows how many tasks it has, and the tasks of the day you tap are listed under the month. Tasks in a project where you're a viewer are shown but can't be moved. Like the rest of the calendar, the month works offline.
+
+## Plan a project on a timeline
+
+For work that spans weeks, such as a move, a launch or a trip, switch the project to **Timeline**. Each task is a bar from its start to its deadline, so overlaps and gaps are easy to see, and you can drag bars to reschedule. See [See a project on a timeline](sections-and-boards.md#see-a-project-on-a-timeline).
 
 ## Place a task on the calendar
 

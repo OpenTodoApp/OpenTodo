@@ -1,13 +1,14 @@
-// The Calendar destination remembers Day or Week per device (OpenSpec change
-// ux-overhaul, time-blocking "Day and Week calendar views"): `/calendar`, the
-// sidebar item and the Day/Week control all go through this.
-export type CalendarMode = 'day' | 'week'
+// The Calendar destination remembers Day, Week or Month per device (OpenSpec
+// changes ux-overhaul and month-and-timeline-views): `/calendar`, the sidebar
+// item and the Day | Week | Month control all go through this.
+export type CalendarMode = 'day' | 'week' | 'month'
 
 const KEY = 'ot.calendar.mode'
 
 export function readCalendarMode(): CalendarMode {
   try {
-    return localStorage.getItem(KEY) === 'week' ? 'week' : 'day'
+    const v = localStorage.getItem(KEY)
+    return v === 'week' || v === 'month' ? v : 'day'
   } catch {
     return 'day'
   }
