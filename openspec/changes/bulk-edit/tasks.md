@@ -40,8 +40,8 @@
 
 ## 7. Integration
 
-- [ ] 7.1 Manual smoke on `make dev`: tick with `x`, Space, `Shift+↓`, Shift+click and the touch Select button at 390 px; `c`, `2`, `L`, Date → Tomorrow and Delete on a selection; Move to a shared project through the review; Undo by button and `Ctrl+Z`; the same flows in the Filter view and on a board; with Vim keybindings on, Space + `Shift+↓` then `x`, and `J` still moving the task. Confirm on a second device that the batch arrived as ordinary ops and the undo converged. Record the result in the change folder notes.
-- [ ] 7.2 Run `make check` (go test, web test and build, docs check, ui lint) and `make layout-check`. Verify both pass.
+- [x] 7.1 Manual smoke on `make dev`: tick with `x`, Space, `Shift+↓`, Shift+click and the touch Select button at 390 px; `c`, `2`, `L`, Date → Tomorrow and Delete on a selection; Move to a shared project through the review; Undo by button and `Ctrl+Z`; the same flows in the Filter view and on a board; with Vim keybindings on, Space + `Shift+↓` then `x`, and `J` still moving the task. Confirm on a second device that the batch arrived as ordinary ops and the undo converged. Record the result in the change folder notes.
+- [x] 7.2 Run `make check` (go test, web test and build, docs check, ui lint) and `make layout-check`. Verify both pass.
 
 ## Workflow follow-up
 
