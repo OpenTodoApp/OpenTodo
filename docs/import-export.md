@@ -4,7 +4,7 @@ summary: Download everything you have as one file, and bring tasks in from a spr
 audience: user
 section: Guides
 specs: [data-import]
-screens: [import#import-from-another-app, settings/data#download-everything]
+screens: [import#import-from-another-app, settings/data#download-everything, templates#templates]
 order: 120
 card: import
 ---
@@ -40,6 +40,16 @@ Nothing is written straight away. OpenTodo first shows a preview:
 4. **Import.** The import runs on the server, and the tasks reach all your devices on their next sync.
 
 Recurring rules, reminders, subtasks, sections and completed tasks come across where the file has them. Anything OpenTodo can't store is listed as a warning on its row, never dropped silently.
+
+## Templates
+
+A template is a project you want to start again and again: a trip checklist, a client onboarding, a weekly review. It's a small file in the same format as an export.
+
+- **Save one**: open a project's menu and choose **Save as template…**. You get a file with the project, its sub-projects, sections, open tasks and the labels they use, with the dates as they are. Completed tasks, assignees, comments and reminders are left out. On an encrypted account the dialog warns you that the file isn't encrypted.
+- **Start a project from one**: select **+** next to **Projects** in the sidebar, then **From a template…**, and pick the file. You see what it holds, choose a **Start on** day (today unless you change it) and an optional parent project, and select **Create**. Dates move together so the template's first day lands on your start day; times stay the same. You can start the same file as often as you like: each time is a new project.
+- **Templates from the website**: the downloads on [open-todo.app/templates](https://open-todo.app/templates) are template files. Open them with **From a template…** to get fresh copies counted from your start day.
+
+**From a template** and **Import** do different things with the same file: Import creates it once, with the ids and dates in the file (importing it again skips everything as existing), while From a template makes a fresh copy on your device, also offline. When you import a template file, the preview points you to From a template.
 
 ## Duplicates
 
