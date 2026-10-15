@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -41,5 +42,27 @@ func TestInAppSweepKeepsUnreadAndRecent(t *testing.T) {
 	}
 	if err := n.MarkRead(ctx, "someone-else", "old-unread"); err != ErrNotFound {
 		t.Fatalf("foreign mark = %v", err)
+	}
+}
+
+// task-dependencies (task 6.1): the unblocked event is stored for the assignee.
+func TestInAppStoresUnblocked(t *testing.T) {
+	ctx := context.Background()
+	db, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if _, err := db.Exec(`INSERT INTO users(id,email,password_hash,created_at) VALUES('bob','b@example.com','h',1)`); err != nil {
+		t.Fatal(err)
+	}
+	n := NewInApp(db, nil)
+	Multi{nil, Nop{}, n}.Unblocked(ctx, Unblocked{AssigneeID: "bob", ActorID: "alice", ActorName: "Alice", TaskID: "t", TaskTitle: "Book flights", BlockerID: "b", BlockerTitle: "Confirm dates"})
+	list, unread, err := n.List(ctx, "bob")
+	if err != nil || len(list) != 1 || unread != 1 || list[0].Kind != KindUnblocked {
+		t.Fatalf("list = %+v unread %d, %v", list, unread, err)
+	}
+	if !strings.Contains(string(list[0].Payload), `"blockerTitle":"Confirm dates"`) {
+		t.Fatalf("payload = %s", list[0].Payload)
 	}
 }

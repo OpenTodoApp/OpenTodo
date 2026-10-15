@@ -19,7 +19,7 @@ import { RelativeTime } from './RelativeTime'
 
 const KIND_ICON: Record<ActivityKind, IconName> = {
   created: 'plus', completed: 'circle-check-big', reopened: 'undo-2', deleted: 'trash-2', restored: 'rotate-ccw', rescheduled: 'calendar-days',
-  assigned: 'user-check', unassigned: 'user-check', moved: 'folder', archived: 'folder', unarchived: 'folder', edited: 'pencil',
+  assigned: 'user-check', unassigned: 'user-check', moved: 'folder', dependencies: 'lock', archived: 'folder', unarchived: 'folder', edited: 'pencil',
   commented: 'message-circle', comment_edited: 'message-circle', comment_deleted: 'message-circle',
 }
 
@@ -27,6 +27,8 @@ export interface ActivityViewProps {
   runs: ActivityRun[]
   name: (id: string, ev?: ActivityEvent) => string
   project: (id: string | null) => string
+  /** Titles of tasks named in events (what a task waits for), when known on this device. */
+  task?: (id: string) => string | undefined
   /** Open the Comments tab at a comment. */
   onOpenComment: (commentId: string) => void
   /** Older events can be fetched (online and the server has more). */
@@ -36,7 +38,7 @@ export interface ActivityViewProps {
   now?: number
 }
 
-function RunItem({ run, name, project, onOpenComment, now }: { run: ActivityRun } & Pick<ActivityViewProps, 'name' | 'project' | 'onOpenComment' | 'now'>) {
+function RunItem({ run, name, project, task, onOpenComment, now }: { run: ActivityRun } & Pick<ActivityViewProps, 'name' | 'project' | 'task' | 'onOpenComment' | 'now'>) {
   const [open, setOpen] = useState(false)
   const first = run.events[0]
   const actor = name(run.actor, first)
@@ -69,7 +71,7 @@ function RunItem({ run, name, project, onOpenComment, now }: { run: ActivityRun 
               <span className="user-text">{summarizeRun(run, actor)}</span>
             </button>
           ) : (
-            <span className="user-text">{actor} {describeEvent(first, (id) => name(id), project)}</span>
+            <span className="user-text">{actor} {describeEvent(first, (id) => name(id), project, task)}</span>
           )}
           {pending}
         </div>
@@ -80,7 +82,7 @@ function RunItem({ run, name, project, onOpenComment, now }: { run: ActivityRun 
           {run.events.map((ev) => (
             <li key={ev.id} className="flex items-baseline gap-2 text-meta text-muted" data-event={ev.kind}>
               <Icon name={KIND_ICON[ev.kind] ?? 'pencil'} size="xs" className="shrink-0 text-faint" />
-              <span className="user-text min-w-0 flex-1">{describeEvent(ev, (id) => name(id), project)}</span>
+              <span className="user-text min-w-0 flex-1">{describeEvent(ev, (id) => name(id), project, task)}</span>
               <RelativeTime ts={ev.ts} now={now} className="shrink-0" />
             </li>
           ))}
@@ -90,14 +92,14 @@ function RunItem({ run, name, project, onOpenComment, now }: { run: ActivityRun 
   )
 }
 
-export function ActivityView({ runs, name, project, onOpenComment, canLoadOlder, loadState, onLoadOlder, now }: ActivityViewProps) {
+export function ActivityView({ runs, name, project, task, onOpenComment, canLoadOlder, loadState, onLoadOlder, now }: ActivityViewProps) {
   return (
     <div className="space-y-3">
       {runs.length === 0 ? (
         <EmptyState icon="history" title="No activity yet" body="Changes to this task show up here, also while offline." />
       ) : (
         <ol className="space-y-3" aria-label="Activity">
-          {runs.map((r) => <li key={r.id}><RunItem run={r} name={name} project={project} onOpenComment={onOpenComment} now={now} /></li>)}
+          {runs.map((r) => <li key={r.id}><RunItem run={r} name={name} project={project} task={task} onOpenComment={onOpenComment} now={now} /></li>)}
         </ol>
       )}
       {canLoadOlder && (
@@ -135,6 +137,10 @@ export function ActivityTab({ task, userId, onOpenComment }: { task: Task; userI
   }, [me, memberships, older])
   const project = useCallback((id: string | null) => (id ? projects.find((p) => p.id === id)?.name ?? 'another project' : 'Inbox'), [projects])
   const runs = useMemo(() => groupRuns(mergeOlder(local, older), { pending }), [local, older, pending])
+  // Titles for the tasks a dependencies event names (task-dependencies D8).
+  const named = useMemo(() => [...new Set([...local, ...older].flatMap((e) => e.changes.filter((c) => c.field === 'blocked_by').flatMap((c) => (Array.isArray(c.to) ? c.to as string[] : []))))], [local, older])
+  const titles = useLiveQuery(async () => new Map((await db.tasks.bulkGet(named)).filter((t): t is Task => !!t).map((t) => [t.id, t.title])), [named], new Map<string, string>())
+  const taskTitle = useCallback((id: string) => titles.get(id), [titles])
 
   async function loadOlder() {
     setLoadState('loading')
@@ -151,7 +157,7 @@ export function ActivityTab({ task, userId, onOpenComment }: { task: Task; userI
   }
 
   return (
-    <ActivityView runs={runs} name={name} project={project} onOpenComment={onOpenComment}
+    <ActivityView runs={runs} name={name} project={project} task={taskTitle} onOpenComment={onOpenComment}
       canLoadOlder={more && online} loadState={loadState} onLoadOlder={() => void loadOlder()} />
   )
 }

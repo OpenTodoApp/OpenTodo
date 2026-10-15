@@ -39,6 +39,6 @@ The full mapping is in [Import formats](../import.md#linear-linear-csv).
 
 ## What does not
 
-- Estimates (points), cycles, milestones, initiatives, SLAs and issue relations are dropped with a warning.
+- **Blocked by** relations between issues in the export become [Blocked by](../tasks-and-projects.md#wait-for-another-task) on the tasks. Estimates (points), cycles, milestones, initiatives, SLAs and the other issue relations (related, duplicate) are dropped with a warning.
 - Issues assigned to other people arrive unassigned; [share the project](../sharing.md) and assign them again.
 - Comments and attachments are not part of the CSV export.

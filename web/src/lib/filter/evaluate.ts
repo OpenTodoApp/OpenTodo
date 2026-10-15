@@ -2,6 +2,7 @@
 // tasks. Pure; names are resolved against the labels and projects passed in on
 // every compile, so renames are picked up and deleted names degrade to a warning
 // plus an empty match instead of an error (design D3).
+import { blockedMap } from '../dependencies'
 import { localDueOf } from '../dates'
 import { descendants } from '../tree'
 import type { Label, Project, Task } from '../types'
@@ -12,6 +13,8 @@ export interface FilterContext {
   today: string
   labels: readonly Label[]
   projects: readonly Project[]
+  /** Every live task, for `blocked` and `unblocked` (task-dependencies D6). */
+  tasks?: readonly Task[]
 }
 
 export interface CompiledFilter {
@@ -91,6 +94,15 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
   for (const p of liveProjects) projectsByName.set(nameKey(p.name), [...(projectsByName.get(nameKey(p.name)) ?? []), p.id])
   const today = ctx.today
   const tomorrow = shiftISO(today, 1)
+  // Open blockers per task, built once when the query asks (task-dependencies D6).
+  let blocked: Map<string, number> | null = null
+  const blockedSet = () => {
+    if (!blocked) {
+      if (!ctx.tasks) warn('Blocked tasks cannot be told apart here')
+      blocked = blockedMap(ctx.tasks ?? [])
+    }
+    return blocked
+  }
 
   const build = (n: Node): Pred => {
     switch (n.kind) {
@@ -166,6 +178,8 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
           case 'completed': return (t) => t.completed_at !== null
           case 'open': return (t) => t.completed_at === null
           case 'subtask': return (t) => t.parent_id !== null
+          case 'blocked': { const b = blockedSet(); return (t) => b.has(t.id) }
+          case 'unblocked': { const b = blockedSet(); return (t) => !b.has(t.id) }
         }
     }
   }
@@ -189,6 +203,6 @@ export function runFilter(source: string, tasks: readonly Task[], ctx: FilterCon
     return { ok: false, error: err.message, offset: err.offset, position: err.offset + 1 }
   }
   if (!ast) return { ok: true, empty: true, tasks: [], warnings: [] }
-  const { test, warnings } = compile(ast, ctx)
+  const { test, warnings } = compile(ast, ctx.tasks ? ctx : { ...ctx, tasks })
   return { ok: true, empty: false, tasks: tasks.filter(test), warnings }
 }

@@ -81,6 +81,12 @@ export interface Task {
   /** This Evening: grouped below the day's tasks in Today. Read with `?? false`. */
   evening?: boolean
   /**
+   * The tasks this one waits for, in its own sharing scope (OpenSpec change
+   * `task-dependencies`). Blocked while any of them is live and open. Optional on
+   * rows stored before the field; read with `?? []`.
+   */
+  blocked_by?: string[]
+  /**
    * Recurrence rule in canonical form (docs/recurrence.md) or null. A task with a
    * rule is a series: completing it records an occurrence and moves `due` forward.
    */
@@ -278,7 +284,7 @@ export type ThemeModePref = 'system' | 'light' | 'dark'
 
 export type ActivityKind =
   | 'created' | 'completed' | 'reopened' | 'deleted' | 'restored' | 'rescheduled' | 'assigned' | 'unassigned'
-  | 'moved' | 'archived' | 'unarchived' | 'edited' | 'commented' | 'comment_edited' | 'comment_deleted'
+  | 'moved' | 'dependencies' | 'archived' | 'unarchived' | 'edited' | 'commented' | 'comment_edited' | 'comment_deleted'
 
 /** One field transition inside an activity event. */
 export interface ActivityChange {
@@ -688,7 +694,7 @@ export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
-  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening',
+  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'blocked_by',
 ] as const
 export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const
@@ -1073,6 +1079,20 @@ export interface AssignedPayload {
   at: number
 }
 
+/** Payload of an `unblocked` notification (task-dependencies): the assignee's task is ready to start. */
+export interface UnblockedPayload {
+  assigneeId: string
+  actorId: string
+  actorName: string
+  taskId: string
+  taskTitle: string
+  projectId?: string
+  projectName?: string
+  blockerId: string
+  blockerTitle: string
+  at: number
+}
+
 /**
  * An in-app notification (GET /api/v1/notifications), cached in the local
  * `notifications` table so it shows offline. Server-side account data, not an op.
@@ -1081,8 +1101,8 @@ export interface AssignedPayload {
 export interface AppNotification {
   id: string
   kind: string
-  /** AssignedPayload for kind `assigned`, MentionedPayload for kind `mentioned`. */
-  payload: AssignedPayload | MentionedPayload
+  /** AssignedPayload for kind `assigned`, MentionedPayload for `mentioned`, UnblockedPayload for `unblocked`. */
+  payload: AssignedPayload | MentionedPayload | UnblockedPayload
   createdAt: number
   readAt: number | null
   readPending?: boolean

@@ -67,6 +67,7 @@ A query combines small pieces:
 | `today`, `tomorrow`, `overdue`, `no date` | due then, or not at all | `overdue` |
 | `due <= 7 days` | due within the next week | `due before friday` |
 | `search: text` | words in the title or notes | `search: invoice` |
+| `blocked`, `unblocked` | waiting for an open task, or not | `unblocked & today` |
 | `completed` | include completed tasks | `#Home & completed` |
 
 Join them with `&` (and), `|` (or) and `!` (not), and use brackets to group:

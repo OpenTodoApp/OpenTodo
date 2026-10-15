@@ -69,6 +69,7 @@ The Nextcloud Tasks web app only shows calendars stored in Nextcloud itself. Use
 | `STATUS`, `COMPLETED`, `PERCENT-COMPLETE` | completed time | `COMPLETED` (or `CANCELLED`) sets it, `NEEDS-ACTION` reopens. `IN-PROCESS` and a partial `PERCENT-COMPLETE` are kept as client data. Completed tasks stay listed. |
 | `CATEGORIES` | labels | By name, case-insensitive; an unknown name creates a label. Labels of other members on a shared task are kept. |
 | `RELATED-TO` (parent) | parent task | Sibling and child relations are kept as client data. A parent not uploaded yet is kept until it exists. |
+| `RELATED-TO;RELTYPE=DEPENDS-ON` | [Blocked by](tasks-and-projects.md#wait-for-another-task) | One line per blocker in the same calendar. A UID that is not in the calendar (yet) is kept as client data. Blockers in other projects of the same sharing are kept when a client sends the task back. A change that would make tasks wait for each other is refused with 403. |
 | `RRULE` | recurrence | See below. |
 | `CREATED` | creation time | Used when a task is created. |
 | `DTSTAMP`, `LAST-MODIFIED` | | Derived from the newest change to the task. `SEQUENCE` is ignored. |

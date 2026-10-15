@@ -1556,6 +1556,12 @@ func (s *Server) writeOps(w http.ResponseWriter, r *http.Request, entity, id str
 		case errors.As(err, &rej) && rej.Reason == opsync.ReasonScopeChange:
 			writeError(w, http.StatusBadRequest, "scope_change",
 				"task.project_id: the target project is shared differently; create a copy there and delete this task instead")
+		case errors.As(err, &rej) && rej.Reason == opsync.ReasonCycle:
+			writeError(w, http.StatusBadRequest, "invalid_input",
+				fmt.Sprintf("task.blocked_by: %q already waits for this task, so this would make it wait for itself", rej.Detail))
+		case errors.As(err, &rej) && rej.Reason == opsync.ReasonNotInScope:
+			writeError(w, http.StatusBadRequest, "invalid_input",
+				fmt.Sprintf("task.blocked_by: %q is not in the same project sharing as this task (blockers must be shared the same way)", rej.Detail))
 		case errors.As(err, &rej) && rej.Reason == opsync.ReasonNotAMember:
 			writeError(w, http.StatusBadRequest, "not_a_member",
 				"task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)")

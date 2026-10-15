@@ -124,6 +124,7 @@ function finish(g: Group, commentTask: Map<string, string>): ActivityEvent | nul
     else if (has('due')) kind = 'rescheduled'
     else if (has('assignee_id')) kind = isNull('assignee_id') ? 'unassigned' : 'assigned'
     else if (has('project_id')) kind = 'moved'
+    else if (has('blocked_by')) kind = 'dependencies'
     else if (has('archived')) kind = g.changes.get('archived')?.to === true ? 'archived' : 'unarchived'
     else kind = 'edited'
   }
@@ -262,7 +263,7 @@ function dueText(v: unknown): string {
  * 2026-10-12", "assigned to Bob". `name` resolves account ids, `project`
  * project ids.
  */
-export function describeEvent(ev: ActivityEvent, name: (id: string) => string, project: (id: string | null) => string): string {
+export function describeEvent(ev: ActivityEvent, name: (id: string) => string, project: (id: string | null) => string, task?: (id: string) => string | undefined): string {
   const to = (f: string) => ev.changes.find((c) => c.field === f)?.to
   const noun = ev.entity === 'project' ? 'the project' : 'the task'
   switch (ev.kind) {
@@ -275,6 +276,12 @@ export function describeEvent(ev: ActivityEvent, name: (id: string) => string, p
     case 'assigned': return `assigned to ${name(String(to('assignee_id')))}`
     case 'unassigned': return 'removed the assignee'
     case 'moved': return `moved to ${project((to('project_id') as string | null) ?? null)}`
+    case 'dependencies': {
+      const ids = (to('blocked_by') as string[] | null) ?? []
+      if (!ids.length) return 'stopped waiting for other tasks'
+      const titles = task ? ids.map((id) => task(id)).filter((t): t is string => !!t) : []
+      return titles.length === ids.length ? `now waits for ${titles.map((t) => `“${t}”`).join(', ')}` : 'changed what this task waits for'
+    }
     case 'archived': return 'archived the project'
     case 'unarchived': return 'unarchived the project'
     case 'commented': return 'commented'
@@ -301,6 +308,7 @@ export const KIND_FILTERS: { value: string; label: string; kinds: ActivityKind[]
   { value: 'rescheduled', label: 'Rescheduled', kinds: ['rescheduled'] },
   { value: 'assigned', label: 'Assigned', kinds: ['assigned', 'unassigned'] },
   { value: 'moved', label: 'Moved', kinds: ['moved'] },
+  { value: 'dependencies', label: 'Waiting for', kinds: ['dependencies'] },
   { value: 'comments', label: 'Comments', kinds: ['commented', 'comment_edited', 'comment_deleted'] },
   { value: 'deleted', label: 'Deleted / restored', kinds: ['deleted', 'restored'] },
   { value: 'edited', label: 'Other edits', kinds: ['edited', 'archived', 'unarchived'] },

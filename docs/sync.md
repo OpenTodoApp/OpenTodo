@@ -50,6 +50,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `deadline` | `"YYYY-MM-DD"` (a date that exists, no time or zone) or null; the day the task must be finished by, separate from the planned `due` (deadlines) |
 | task | `start` | null (anytime), `"someday"` (parked) or `"YYYY-MM-DD"`, the day before which the task is deferred (someday-and-evening) |
 | task | `evening` | boolean, default false: listed under This Evening in Today (someday-and-evening) |
+| task | `blocked_by` | array of at most 50 distinct task ids, default `[]`: the tasks this one waits for, in its own sharing scope; never its own id (task-dependencies, see [Dependencies](#dependencies)) |
 | task | `recurrence` | recurrence rule string (at most 200 characters, must parse under [the grammar](recurrence.md)) or null |
 | task | `series_id` | string (task id) or null |
 | task | `assignee_id` | string (account id) or null; checked against the task's scope at receipt (see "Assignment" under [Sharing scopes](#sharing-scopes)) |
@@ -372,6 +373,17 @@ Everyone who can see the purged entity's scope receives the marker and is woken 
 - **Cycle breaking.** If moves on two devices produce a cycle (`X` under `Y` and `Y` under `X`), every client breaks it identically: among the members of the cycle, the task whose `parent_id` has the newest clock under the winner rule (`ts`, then `device`, then id as a last resort) is treated as a root. The user sees it at the top level and can move it again. The REST API additionally rejects a `parent_id` that would close a cycle or cross projects (`400 invalid_input`), because REST requests are sequential against current state; sync batches are never rejected for tree reasons.
 
 The implementation lives in `web/src/lib/tree.ts` (generic `buildTree`, `descendants`, `isDescendant`, cycle breaking) and `web/src/lib/subtasks.ts` (progress and display state).
+
+## Dependencies
+
+`task.blocked_by` lists the tasks a task waits for. It is one register, like `labels`: the whole list is replaced, and two devices editing it offline end with the newer list. The app rewrites the list from a fresh read in one local transaction, so edits on one device never lose an entry.
+
+- **Blocked is derived.** A task is blocked while at least one task in its list is live and open. A completed, deleted or purged blocker stops blocking, and so does an id the device has not received (it cannot tell "not yet" from "purged"). Nothing is repaired: completing, reopening or deleting a blocker writes nothing on the tasks that wait for it. A recurring task keeps blocking across its completions, because each completion is a separate occurrence record.
+- **No cycles in synced state.** The server refuses a `blocked_by` op that would make a task wait for itself, directly or through others (reason `cycle`), against the graph that holds every op accepted before it, in earlier batches and earlier in the same batch. Completed and deleted tasks count, so reopening one never reveals a cycle. When two offline devices each add one half of a cycle, the half that reaches the server first is kept and the other is refused, whatever their clocks: arrival order decides, not the winner rule. The refused device gets the server's current value back (or an empty list) in the same response.
+- **One sharing scope.** A blocker must live in the task's scope (both in the same shared project, or both personal). An id of a task the server stores in another scope is refused (reason `not_in_scope`); an id it does not know yet is accepted. Moving a task to a project shared differently copies it without its blockers, and tasks that waited for it stop being blocked, since they now point at a tombstone.
+- **Local cycles for a moment.** A device can hold a cycle until the server answers (an edge arrived while the user was choosing). Every device then ignores, inside each cycle, the edges of the member whose `blocked_by` has the newest clock (`ts`, `device`, then id), the rule used for subtree cycles, so no pair blocks each other.
+
+REST answers both refusals with `400 invalid_input` and names the offending id. The implementation lives in `web/src/lib/dependencies.ts` and `internal/sync/dependencies.go`.
 
 ## Trees: sub-projects
 

@@ -41,7 +41,7 @@ var linearPriority = map[string]int{"urgent": 1, "high": 2, "medium": 3, "low": 
 var linearDropped = []struct{ col, what string }{
 	{"Estimate", "estimate (points)"}, {"Cycle Number", "cycle"}, {"Project Milestone", "milestone"},
 	{"Initiatives", "initiatives"}, {"SLA Status", "SLA"}, {"Related to", "relations"},
-	{"Blocked by", "blocking relations"}, {"Duplicate of", "duplicate link"},
+	{"Duplicate of", "duplicate link"},
 }
 
 func (linearProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
@@ -132,6 +132,13 @@ func (linearProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		if p := get("Parent issue"); p != "" {
 			if f := strings.Fields(p); len(f) > 0 {
 				row.ParentSourceID = "linear:" + f[0]
+			}
+		}
+		// "Blocked by" lists issue identifiers (task-dependencies D10); the final
+		// relations pass resolves the ones in this file.
+		for _, ref := range strings.FieldsFunc(get("Blocked by"), func(r rune) bool { return r == ',' || r == ';' || r == ' ' }) {
+			if ref = strings.TrimSpace(ref); ref != "" {
+				row.BlockedBySourceIDs = append(row.BlockedBySourceIDs, "linear:"+ref)
 			}
 		}
 		if ts := get("Completed"); ts != "" {

@@ -56,6 +56,8 @@ export function NotificationBell() {
                       <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> mentioned you on <strong>{n.payload.taskTitle || 'a task'}</strong>
                         {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-xs text-muted">“{n.payload.excerpt}”</span>}
                       </span>
+                    ) : n.kind === 'unblocked' && 'blockerTitle' in n.payload ? (
+                      <span className="block" data-kind="unblocked"><strong>{n.payload.actorName || 'Someone'}</strong> completed <strong>{n.payload.blockerTitle || 'a task'}</strong>: <strong>{n.payload.taskTitle || 'your task'}</strong> is ready to start</span>
                     ) : (
                       <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> assigned you <strong>{n.payload.taskTitle || 'a task'}</strong></span>
                     )}

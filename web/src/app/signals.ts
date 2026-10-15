@@ -58,6 +58,9 @@ export const deadlineFocus = channel()
 /** `Shift+N` on a selected row: the detail panel opens its start date field (someday-and-evening). */
 export const deferFocus = channel()
 
+/** `b` on a selected row: the detail panel opens its Blocked by picker (task-dependencies). */
+export const blockedByFocus = channel()
+
 /** `s` on a selected row: the Day view opens with that task in placement mode. */
 export const placement = channel()
 

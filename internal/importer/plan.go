@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -935,6 +936,7 @@ func (pl *planner) planForeign(rows []Row) []change {
 			pl.results[i].Outcome, pl.results[i].Reason = OutcomeError, "unsupported row kind"
 		}
 	}
+	pl.dependencies(rows, taskIdx, plans, taskChanges)
 
 	var out []change
 	for _, l := range pl.labelOrder {
@@ -983,6 +985,65 @@ func (pl *planner) planForeign(rows []Row) []change {
 		out = append(out, list...)
 	}
 	return out
+}
+
+// dependencies is the final relations pass (task-dependencies D10): once every
+// task of the file has its id, a row's blockers become its blocked_by list. A
+// reference outside the file and one that would close a cycle (checked in row
+// order against the edges kept so far) are dropped with a warning on the row.
+func (pl *planner) dependencies(rows []Row, taskIdx map[string]int, plans []taskPlan, taskChanges []*change) {
+	graph := map[string][]string{}
+	for i, row := range rows {
+		if len(row.BlockedBySourceIDs) == 0 || taskChanges[i] == nil {
+			continue
+		}
+		res := &pl.results[i]
+		self := plans[i].entityID
+		var ids []string
+		for _, src := range row.BlockedBySourceIDs {
+			j, ok := taskIdx[src]
+			if !ok || plans[j].entityID == "" {
+				res.Warnings = append(res.Warnings, fmt.Sprintf("waits for %q, which is not in this file; dependency dropped", displaySource(src)))
+				continue
+			}
+			id := plans[j].entityID
+			if id == self || slices.Contains(ids, id) {
+				continue
+			}
+			if dependsOn(graph, id, self) {
+				res.Warnings = append(res.Warnings, fmt.Sprintf("waiting for %q would make the tasks wait for each other; dependency dropped", displaySource(src)))
+				continue
+			}
+			ids = append(ids, id)
+		}
+		if len(ids) == 0 {
+			continue
+		}
+		if len(ids) > opsync.MaxBlockedBy {
+			ids = ids[:opsync.MaxBlockedBy]
+			res.Warnings = append(res.Warnings, fmt.Sprintf("waits for more than %d tasks; the rest were dropped", opsync.MaxBlockedBy))
+		}
+		graph[self] = ids
+		taskChanges[i].fields = append(taskChanges[i].fields, field{"blocked_by", raw(ids)})
+	}
+}
+
+// dependsOn reports whether to is reachable from from along the graph's edges.
+func dependsOn(graph map[string][]string, from, to string) bool {
+	seen := map[string]bool{}
+	stack := []string{from}
+	for len(stack) > 0 {
+		id := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		if id == to {
+			return true
+		}
+		if !seen[id] {
+			seen[id] = true
+			stack = append(stack, graph[id]...)
+		}
+	}
+	return false
 }
 
 // sectionID returns the id of the live section named name in the project,
