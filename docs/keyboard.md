@@ -59,6 +59,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | --- | --- |
 | <kbd>g</kbd> then <kbd>i</kbd> / <kbd>t</kbd> / <kbd>u</kbd> / <kbd>c</kbd> / <kbd>l</kbd> / <kbd>f</kbd> / <kbd>v</kbd> / <kbd>s</kbd> | Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings |
 | <kbd>g</kbd> then <kbd>a</kbd> | Go to Assigned to me |
+| <kbd>g</kbd> then <kbd>n</kbd> / <kbd>o</kbd> | Go to Anytime / Someday |
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
 | <kbd>g</kbd> then <kbd>k</kbd> | Go to Ask: the assistant’s composer and skills (when the assistant is on) |
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Activity: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters) |
@@ -87,6 +88,9 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>L</kbd> | Labels of selected task (type to find, Enter adds or creates) |
 | <kbd>e</kbd> | Edit the estimate of the selected task (type 20, 45m, 1h30; Enter) |
 | <kbd>d</kbd> | Set the deadline of the selected task (type fri, 2026-11-06; Enter) |
+| <kbd>n</kbd> | Park the selected task in Someday, or bring it back |
+| <kbd>Shift+N</kbd> | Defer the selected task: type its start date, Enter |
+| <kbd>Shift+E</kbd> | Toggle This Evening on the selected task |
 | <kbd>s</kbd> | Schedule the selected task: Day view in placement mode |
 | <kbd>Shift+S</kbd> | Skip the current occurrence of a recurring task |
 | <kbd>Shift+O</kbd> | Recurring task: this occurrence only (standalone copy, series moves on) |

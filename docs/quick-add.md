@@ -71,6 +71,17 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 | Spanish | `fecha límite`, `plazo` |
 | Portuguese | `prazo` |
 
+**Someday and tonight.** `someday` parks the task in [Someday](tasks-and-projects.md#when-a-task-starts): `Learn to sail someday @hobby` → *Learn to sail*, parked. If the line also has a date, the word stays in the title (`Plan someday trip friday` is due Friday). `tonight` and `this evening` make the task due today and mark it for **This Evening**, a group below the day's tasks in Today; a time still sets the due time (`Call Ana tonight at 8pm`). Before this, `tonight` only meant today; the date is the same, the task now also shows the moon. Each gets its own chip.
+
+| Language | Someday | Tonight |
+| --- | --- | --- |
+| English | `someday`, `some day` | `tonight`, `this evening` |
+| German | `irgendwann` | `heute Abend` |
+| French | `un jour` | `ce soir` |
+| Italian | `prima o poi` | `stasera` |
+| Spanish | `algún día` | `esta noche` |
+| Portuguese | `algum dia` | `hoje à noite` |
+
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, deadline, project, priority or estimate.
 
 **Day/month order.** While **Numeric dates like 12/11** is on **Automatic**, the order follows your date format in **Settings → Preferences → Date and time**: day-month reads `12/11` as 12 November, month-day as 11 December. With the date format on System or ISO, it follows your language instead: 11 December when your first language is US English (`en`, `en-US`) and 12 November for every other language, including English outside the US. The Automatic option says which one decided. Choosing day/month or month/day under **Settings → Capture → Quick add** fixes the order on this device and wins over your date format. If one reading is impossible (`25/12`), the other is used. Dotted dates (`12.11.`) are always day.month and only used when the order is day/month.
@@ -93,7 +104,7 @@ Accents are optional (`manana`, `nachsten`, `fevrier` work too). Two-letter Germ
 
 ## Views and defaults
 
-Quick add still takes the view's context for anything the line does not set: today in Today, tomorrow in Upcoming, the current project in a project view, the current label in a label view. Anything the line does set wins, so `Plan trip next Monday #travel` typed in Today goes to *Travel* on Monday. Labels add up instead: `@call` typed in the *errand* label view gives the task both labels, so it stays in the view you added it from.
+Quick add still takes the view's context for anything the line does not set: today in Today, tomorrow in Upcoming, the current project in a project view, the current label in a label view. Anything the line does set wins, so `Plan trip next Monday #travel` typed in Today goes to *Travel* on Monday. Labels add up instead: `@call` typed in the *errand* label view gives the task both labels, so it stays in the view you added it from. A task added in **Someday** is parked, unless the line sets a date (`Read Proust tomorrow` is due tomorrow instead).
 
 ## Voice
 

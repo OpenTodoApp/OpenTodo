@@ -95,7 +95,7 @@
       "title": "Item 36",
       "outcome": "create",
       "warnings": [
-        "Someday dropped (not supported yet)"
+        "Someday dropped (the task has a due date)"
       ]
     },
     {

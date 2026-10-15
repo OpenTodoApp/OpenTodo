@@ -194,6 +194,7 @@
   {"name": "across a month end", "deadline": "2026-10-31", "from": "2026-10-30", "to": "2026-11-30", "expected": "2026-12-01"},
   {"name": "across February in a leap year", "deadline": "2028-02-28", "from": "2028-02-27", "to": "2028-03-27", "expected": "2028-03-28"},
   {"name": "deadline before the due date", "deadline": "2026-10-10", "from": "2026-10-12", "to": "2026-10-13", "expected": "2026-10-11"},
-  {"name": "across a year end", "deadline": "2026-12-31", "from": "2026-12-25", "to": "2027-01-01", "expected": "2027-01-07"}
+  {"name": "across a year end", "deadline": "2026-12-31", "from": "2026-12-25", "to": "2027-01-01", "expected": "2027-01-07"},
+  {"name": "start date of a weekly task (someday-and-evening spec)", "deadline": "2026-10-17", "from": "2026-10-19", "to": "2026-10-26", "expected": "2026-10-24"}
  ]
 }

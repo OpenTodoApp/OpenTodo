@@ -122,7 +122,7 @@ A Things database SHALL map areas to parent projects, projects to projects, head
 - **THEN** the project "Launch" is a sub-project of "Work" with sections "Prepare" and "Ship"
 
 ### Requirement: Things dates
-A Things to-do's start ("when") date SHALL become its due date, repeating to-dos SHALL become recurring tasks where expressible, and completed or canceled items SHALL be completed tasks. A deadline SHALL become the task's deadline (OpenSpec change `deadlines`). Someday and This Evening SHALL be dropped with a warning until the data model holds them.
+A Things to-do's start ("when") date SHALL become its due date, repeating to-dos SHALL become recurring tasks where expressible, and completed or canceled items SHALL be completed tasks. A deadline SHALL become the task's deadline (OpenSpec change `deadlines`). Someday SHALL park the task and This Evening SHALL set its evening flag (OpenSpec change `someday-and-evening`).
 
 #### Scenario: Deadline imported
 - **WHEN** a to-do has a deadline of 2026-11-30

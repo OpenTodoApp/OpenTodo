@@ -1,10 +1,11 @@
 // Keyboard handling shared by the Filter view and saved views: j / k (or arrows) move
 // the selection, Enter opens, c completes, 1–4 set priority, L opens labels, Delete
-// deletes, e edits the estimate, d the deadline, Esc closes the innermost layer. Keys typed into text fields are ignored.
+// deletes, e edits the estimate, d the deadline, n parks, Shift+N defers, Shift+E
+// toggles This Evening, Esc closes the innermost layer. Keys typed into text fields are ignored.
 import { useEffect, useRef } from 'react'
-import { deleteTask, setTaskCompleted, updateTask } from '../lib/ops'
+import { deleteTask, parkTask, setTaskCompleted, unparkTask, updateTask } from '../lib/ops'
 import type { Priority, Task } from '../lib/types'
-import { deadlineFocus, estimateFocus, isGPending } from './signals'
+import { deadlineFocus, deferFocus, estimateFocus, isGPending } from './signals'
 import { isTyping } from './useViews'
 
 export interface KeyRow {
@@ -78,6 +79,26 @@ export function useListKeys(opts: ListKeys): void {
             e.preventDefault()
             estimateFocus.request(row.id)
             o.setOpenId(row.id)
+          }
+          break
+        case 'n':
+          // Park or un-park (someday-and-evening D5).
+          if (row) {
+            e.preventDefault()
+            void (row.start === 'someday' ? unparkTask(row.id) : parkTask(row.id))
+          }
+          break
+        case 'N':
+          if (row) {
+            e.preventDefault()
+            deferFocus.request(row.id)
+            o.setOpenId(row.id)
+          }
+          break
+        case 'E':
+          if (row) {
+            e.preventDefault()
+            void updateTask(row.id, { evening: !row.evening })
           }
           break
         case 'd':

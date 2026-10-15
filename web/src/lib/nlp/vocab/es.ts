@@ -29,6 +29,8 @@ export const es: Vocabulary = {
   ],
   before: ['el', 'para'],
   deadlineWords: ['fecha límite', 'plazo'],
+  somedayWords: ['algún día'],
+  eveningWords: ['esta noche'],
   nextBefore: ['próximo', 'próxima'],
   nextAfter: ['que viene', 'próximo', 'próxima'],
   thisBefore: ['este', 'esta'],

@@ -546,7 +546,7 @@ describe('parse: escaping and dismissal', () => {
 describe('parse: precedence and passthrough', () => {
   it('no match passes the line through, whitespace collapsed', () => {
     const r = parse('  Buy   oat milk  ', ctx())
-    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, projectId: null, labels: [], priority: null, estimateMinutes: null, chips: [] })
+    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, projectId: null, labels: [], priority: null, estimateMinutes: null, chips: [] })
   })
 
   it('first match of each attribute wins; later ones stay in the title', () => {
@@ -665,5 +665,42 @@ describe('deadline phrases (OpenSpec deadlines 7.1)', () => {
   it('by and due keep setting the due date', () => {
     expect(at('Pay rent by friday')).toMatchObject({ title: 'Pay rent', due: { date: '2026-10-16' }, deadline: null })
     expect(at('Pay rent due friday')).toMatchObject({ due: { date: '2026-10-16' }, deadline: null })
+  })
+})
+
+describe('someday and evening phrases (OpenSpec someday-and-evening 5.1)', () => {
+  const at = (line: string, over: Partial<ParseContext> = {}) => parse(line, ctx({ today: '2026-10-14', ...over }))
+
+  it('park from quick add', () => {
+    const r = at('Learn to sail someday @hobby')
+    expect(r).toMatchObject({ title: 'Learn to sail', start: 'someday', due: null, labels: ['hobby'] })
+    expect(r.chips.map((c) => c.kind)).toContain('someday')
+  })
+
+  it('someday with a date stays literal', () => {
+    expect(at('Plan someday trip friday')).toMatchObject({ title: 'Plan someday trip', start: null, due: { date: '2026-10-16' } })
+  })
+
+  it('tonight with a time', () => {
+    const r = at('Call Ana tonight at 8pm')
+    expect(r).toMatchObject({ title: 'Call Ana', due: { date: '2026-10-14', time: '20:00' }, evening: true })
+    expect(r.chips.map((c) => c.kind)).toEqual(expect.arrayContaining(['due', 'evening']))
+  })
+
+  it('tonight alone still resolves to today, and this evening works too', () => {
+    expect(at('Cook tonight')).toMatchObject({ title: 'Cook', due: { date: '2026-10-14' }, evening: true })
+    expect(at('Cook this evening')).toMatchObject({ title: 'Cook', due: { date: '2026-10-14' }, evening: true })
+  })
+
+  it('Italian evening and the other languages', () => {
+    expect(at('Chiama Ana stasera', { languages: ['it'] })).toMatchObject({ title: 'Chiama Ana', due: { date: '2026-10-14' }, evening: true })
+    expect(at('Segeln lernen irgendwann', { languages: ['de'] })).toMatchObject({ title: 'Segeln lernen', start: 'someday' })
+    expect(at('Aprender a navegar algun dia', { languages: ['es'] })).toMatchObject({ title: 'Aprender a navegar', start: 'someday' })
+  })
+
+  it('a dismissed someday chip keeps the word', () => {
+    const first = at('Learn to sail someday')
+    const dismissed = first.chips.find((c) => c.kind === 'someday')!.spans
+    expect(at('Learn to sail someday', { dismissed })).toMatchObject({ title: 'Learn to sail someday', start: null })
   })
 })

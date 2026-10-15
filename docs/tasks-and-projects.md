@@ -3,7 +3,7 @@ title: Tasks and projects
 summary: Add and edit tasks, write notes, break work into subtasks, set priorities and organise everything into projects and sub-projects.
 audience: user
 section: Guides
-specs: [task-management, project-organization, subtasks, manual-ordering, rich-text-editing, entity-pickers, deadlines]
+specs: [task-management, project-organization, subtasks, manual-ordering, rich-text-editing, entity-pickers, deadlines, start-dates]
 screens: [quick-add#add-a-task]
 order: 10
 card: project-list
@@ -40,6 +40,7 @@ Then comes the properties card. Each row shows its current value, or a quiet "No
 - **Assignee**. See [Assign tasks](sharing.md#assign-tasks).
 - **Priority**, from P1 (most important) to P4 (the default). Click one, or press <kbd>1</kbd> to <kbd>4</kbd> anywhere in the panel outside a text field.
 - **Due**, a date with an optional time, and the time zone chip next to it.
+- **When** (Anytime, a start date or Someday) and **Evening**. See [When a task starts](#when-a-task-starts).
 - **Deadline**, the day the task must be finished by, with how many days are left. Type it like a due date (`fri`, `2026-11-06`) or clear it with **×**. See [Deadlines](#deadlines).
 - **Reminders** show as chips. **Add reminder** offers the usual times before the due time, times before the deadline once the task has one, a custom offset or a set date and time; each chip's **⋯** menu edits, snoozes, dismisses or deletes it.
 - **Estimate** and **Repeat**. See [Recurring tasks and reminders](recurring-and-reminders.md) and [Time blocking](time-blocking.md).
@@ -62,6 +63,9 @@ You don't have to open a task to change it. Select it and press:
 | <kbd>L</kbd> | Add labels (type to search, <kbd>Enter</kbd> to add or create) |
 | <kbd>e</kbd> | Set the estimate (`20`, `45m`, `1h30`) |
 | <kbd>d</kbd> | Set the deadline (`fri`, `2026-11-06`) |
+| <kbd>n</kbd> | Park in Someday, or bring back |
+| <kbd>Shift</kbd>+<kbd>N</kbd> | Defer: type the start date |
+| <kbd>Shift</kbd>+<kbd>E</kbd> | Toggle This Evening |
 | <kbd>s</kbd> | Schedule it on the Day calendar |
 | <kbd>Delete</kbd> | Move it to the Trash |
 
@@ -98,6 +102,20 @@ The due date is when you plan to work on a task. A **deadline** is the day it mu
 A task with a deadline shows a countdown on its row, next to an hourglass: `3d` for three days to go, `Today` on the day, and `2d over` once it has passed. It turns amber in the last week and red on the day and after. Hover it to see the full date. The countdown follows the calendar on your device, so it moves on at midnight even offline.
 
 Deadlines also bring tasks into [Today and Upcoming](views.md#plan-your-day-with-today), and you can add a reminder before the deadline (see [Reminders](reminders.md)).
+
+### When a task starts
+
+Not every task is for now. The **When** row in the panel says when a task becomes relevant:
+
+- **Anytime**, the default: the task is in your lists as usual.
+- **A start date** defers the task until that day: it disappears from Today, Upcoming, Anytime and the counts, and its project or Inbox lists it at the end under **Later**, with a **Starts 21 Oct** chip. On its start day it appears in Today with a **Started** chip and stays there until you deal with it. The start date can't be after the due date.
+- **Someday** parks the task: it moves to the [Someday view](views.md#park-ideas-in-someday) and its project's Later group, and its due date is cleared (a repeating task stops repeating). Giving it a due date or a start date brings it back.
+
+A due date or a deadline that has come always shows the task in Today, even if it is deferred or parked.
+
+**This Evening** (the **Evening** switch next to it) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. It says nothing about the time of day.
+
+From the list: <kbd>n</kbd> parks a task or brings it back, <kbd>Shift</kbd>+<kbd>N</kbd> asks for its start date, and <kbd>Shift</kbd>+<kbd>E</kbd> toggles This Evening.
 
 ## Complete, reopen and delete
 

@@ -3,11 +3,11 @@
 // the dismissed spans. No network, no clock reads, no randomness.
 import type { Due, Priority } from '../types'
 import { matchDuration, matchLabel, matchPriority, matchProject, type ProjectRef } from './attributes'
-import { matchDateAt, matchDeadlineAt, matchTimeAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
+import { matchDateAt, matchDeadlineAt, matchTimeAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
 import { stripSpans, tokenize, type Span, type Token } from './tokenize'
 import { vocabulariesFor, type DayMonthOrder } from './vocab'
 
-export type AttributeKind = 'due' | 'deadline' | 'project' | 'label' | 'priority' | 'estimate'
+export type AttributeKind = 'due' | 'deadline' | 'someday' | 'evening' | 'project' | 'label' | 'priority' | 'estimate'
 
 /** One recognised attribute; drives a preview chip. `spans` are removed from the title. */
 export interface Chip {
@@ -15,8 +15,8 @@ export interface Chip {
   /** Stable within one parse: kind plus the first span start. */
   key: string
   spans: Span[]
-  /** Resolved value: Due, deadline date, project id, label name, priority or minutes. */
-  value: Due | string | number
+  /** Resolved value: Due, deadline date, project id, label name, priority, minutes, or true (evening). */
+  value: Due | string | number | boolean
 }
 
 export interface ParseContext {
@@ -40,6 +40,10 @@ export interface ParseResult {
   due: Due | null
   /** "YYYY-MM-DD" from a deadline phrase ("deadline friday"), or null. */
   deadline: string | null
+  /** "someday" from a someday phrase on a line without a date (someday-and-evening), or null. */
+  start: 'someday' | null
+  /** Set by "tonight" / "this evening" (the task is also due today). */
+  evening: boolean
   projectId: string | null
   labels: string[]
   priority: Priority | null
@@ -82,6 +86,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   let priority: { value: Priority; span: Span } | null = null
   let estimate: { value: number; span: Span } | null = null
   let deadline: { value: string; span: Span } | null = null
+  let evening: Span | null = null
+  let someday: Span | null = null
   const labels: { value: string; span: Span }[] = []
 
   let i = 0
@@ -140,6 +146,19 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       }
     }
 
+    // "tonight" / "this evening": due today (unless a date came first) and the
+    // evening flag (someday-and-evening D6). Checked before the day words.
+    if (!evening) {
+      const n = wordsAt(tokens, i, dctx, 'eveningWords')
+      const span = n ? spanOf(line, tokens, i, i + n) : null
+      if (span && !overlaps(span, dismissed)) {
+        evening = span
+        if (!date) date = { value: ctx.today, span }
+        i += n
+        continue
+      }
+    }
+
     // Date and time phrases: the longest wins, a date on a tie. First of each wins.
     // A match whose range overlaps a live dismissal is ignored.
     let dm: DateMatch | null = date ? null : matchDateAt(tokens, i, dctx)
@@ -155,9 +174,18 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       time = { value: tm.time, date: tm.date, span: tSpan }
       i = tm.to
     } else {
-      i++
+      // A someday phrase counts only if the line ends up without a date (below).
+      const n: number = someday ? 0 : wordsAt(tokens, i, dctx, 'somedayWords')
+      const span: Span | null = n ? spanOf(line, tokens, i, i + n) : null
+      if (span && !overlaps(span, dismissed)) {
+        someday = span
+        i += n
+      } else {
+        i++
+      }
     }
   }
+  const parked = !!someday && !date && !time && !deadline
 
   let due: Due | null = null
   if (date || time) {
@@ -168,7 +196,9 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   const chips: Chip[] = []
   const chip = (kind: AttributeKind, spans: Span[], value: Chip['value']) =>
     chips.push({ kind, key: `${kind}:${spans[0].start}`, spans, value })
-  if (due) chip('due', [date?.span, time?.span].filter((s): s is Span => !!s).sort((a, b) => a.start - b.start), due)
+  if (due) chip('due', [...new Set([date?.span, time?.span].filter((s): s is Span => !!s))].sort((a, b) => a.start - b.start), due)
+  if (evening) chip('evening', [evening], true)
+  if (parked && someday) chip('someday', [someday], 'someday')
   if (deadline) chip('deadline', [deadline.span], deadline.value)
   if (project) chip('project', [project.span], project.id)
   for (const l of labels) chip('label', [l.span], l.value)
@@ -180,6 +210,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     title: stripSpans(line, chips.flatMap((c) => c.spans), quoteSpans),
     due,
     deadline: deadline?.value ?? null,
+    start: parked ? 'someday' : null,
+    evening: !!evening,
     projectId: project?.id ?? null,
     labels: labels.map((l) => l.value),
     priority: priority?.value ?? null,

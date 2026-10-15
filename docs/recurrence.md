@@ -68,6 +68,10 @@ number of days as the due date: `every monday` due 12 October with the deadline
 14 October is next due 19 October with the deadline 21 October, also when an
 overdue series catches up. Skipping and "this occurrence only" move it the same
 way. The completed occurrence and a detached copy keep the deadline they had.
+A [start date](tasks-and-projects.md#when-a-task-starts) moves the same way, so
+a task deferred until two days before it is due is deferred again before the
+next occurrence. **This Evening** stays on the series. Parking a repeating task
+in Someday clears its due date and so ends the repetition.
 
 - **Calendar rules**: the next occurrence is the first matching date strictly
   after the current due date. If that date is already in the past (the task was

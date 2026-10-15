@@ -8,7 +8,7 @@ import { db } from '../../lib/db'
 import { describeDeadline, localDueOf, zoneHint } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { removeLabel, resolveLabels } from '../../lib/labels'
-import { createProject, setTaskParent, updateTask } from '../../lib/ops'
+import { createProject, parkTask, setTaskParent, unparkTask, updateTask } from '../../lib/ops'
 import { byPosition } from '../../lib/ordering'
 import { INBOX_KEY, NONE_KEY, parentSource, projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { effectiveSection, moveTaskToSection } from '../../lib/sections'
@@ -27,7 +27,7 @@ import { EstimateField } from '../EstimateField'
 import { LabelChip, LabelPicker } from '../LabelPicker'
 import { RecurrenceField } from '../RecurrenceField'
 import { RemindersField } from '../RemindersField'
-import { deadlineFocus, estimateFocus } from '../signals'
+import { deadlineFocus, deferFocus, estimateFocus } from '../signals'
 import { useViewerZone } from '../useViews'
 import { PropertyRow } from './PropertyRow'
 import { ZoneControl } from './ZoneControl'
@@ -91,7 +91,14 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
   const [parentError, setParentError] = useState<string | null>(null)
   const [estimating, setEstimating] = useState(false)
   const [deadlining, setDeadlining] = useState(false)
-  useEffect(() => { setParentError(null); setEstimating(false); setDeadlining(false) }, [task.id])
+  const [deferring, setDeferring] = useState(false)
+  useEffect(() => { setParentError(null); setEstimating(false); setDeadlining(false); setDeferring(false) }, [task.id])
+
+  // `Shift+N` on a list row opens the panel with the start date field (someday-and-evening 3.3).
+  useEffect(() => {
+    if (deferFocus.take(task.id)) setDeferring(true)
+    return deferFocus.subscribe((id) => { if (id === task.id && deferFocus.take(id)) setDeferring(true) })
+  }, [task.id])
 
   // `d` on a list row opens the panel with the deadline field focused (deadlines 3.2).
   useEffect(() => {
@@ -239,6 +246,30 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
             {task.deadline && <IconButton icon="x" label="Clear deadline" onClick={() => void updateTask(task.id, { deadline: null })} />}
           </div>
         )} />
+
+      {/* When the task becomes relevant, and This Evening (OpenSpec change someday-and-evening, D5). */}
+      <PropertyRow icon="calendar-range" label="When" testId="when" readOnly={readOnly}
+        editing={deferring} onEditingChange={setDeferring}
+        value={task.start === 'someday' ? 'Someday' : task.start ? `Starts ${dt.formatDate(task.start, 'long')}` : 'Anytime'}
+        editor={() => (
+          <div className="flex flex-wrap items-start gap-2">
+            <button type="button" className="btn-ghost px-2 py-1 text-sm" aria-pressed={!task.start} onClick={() => void unparkTask(task.id)}>Anytime</button>
+            <DateField label="Start date" hideLabel autoFocus className="min-w-44 flex-1" value={task.start && task.start !== 'someday' ? task.start : null}
+              validate={(iso) => (local && iso > local.date ? 'The start must be on or before the due date.' : null)}
+              onChange={(start) => void updateTask(task.id, { start })} />
+            <button type="button" className="btn-ghost px-2 py-1 text-sm" aria-pressed={task.start === 'someday'} onClick={() => void parkTask(task.id)}>
+              <Icon name="archive" />Someday
+            </button>
+          </div>
+        )} />
+
+      <PropertyRow icon="moon" label="Evening" testId="evening" control={readOnly ? (
+        <div className="px-2 py-1.5 text-sm text-default">{task.evening ? 'This Evening' : 'Not this evening'}</div>
+      ) : (
+        <div className="px-2 py-1">
+          <Switch label="This Evening" checked={!!task.evening} onChange={(on) => void updateTask(task.id, { evening: on })} />
+        </div>
+      )} />
 
       <PropertyRow icon="alarm-clock" label="Reminders" testId="reminders" control={
         <fieldset disabled={readOnly} className="min-w-0 px-1 py-0.5"><RemindersField task={task} /></fieldset>

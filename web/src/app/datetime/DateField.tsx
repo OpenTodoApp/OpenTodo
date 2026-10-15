@@ -25,6 +25,8 @@ export interface DateFieldProps {
   /** Width of the text field (Tailwind classes). */
   inputClassName?: string
   autoFocus?: boolean
+  /** A message when a parsed date is not allowed here (it is then not saved), else null. */
+  validate?: (iso: string) => string | null
 }
 
 /** The browser's languages for relative words, as quick add reads them. */
@@ -33,7 +35,7 @@ export function inputLanguages(): string[] {
   return resolveLanguages(loadQuickAddSettings(), browser)
 }
 
-export function DateField({ value, onChange, label, hideLabel, disabled, className, inputClassName = 'min-w-0 flex-1', autoFocus }: DateFieldProps) {
+export function DateField({ value, onChange, label, hideLabel, disabled, className, inputClassName = 'min-w-0 flex-1', autoFocus, validate }: DateFieldProps) {
   const { resolved } = useDateTimeFormat()
   const shown = value ? formatDate(value, 'numeric', resolved) : ''
   const [draft, setDraft] = useState(shown)
@@ -57,6 +59,8 @@ export function DateField({ value, onChange, label, hideLabel, disabled, classNa
       setError(`Not a valid date. Try ${formatDate(todayISO(), 'numeric', resolved)}, ${todayISO()} or “tomorrow”.`)
       return
     }
+    const refused = validate?.(iso)
+    if (refused) return setError(refused)
     setError(null)
     setDraft(formatDate(iso, 'numeric', resolved))
     if (iso !== value) onChange(iso)
@@ -89,7 +93,7 @@ export function DateField({ value, onChange, label, hideLabel, disabled, classNa
         </div>
       </Field>
       <Popover open={open} onClose={() => setOpen(false)} anchor={button} label="Choose a date" width="sm:w-72" className="p-3">
-        <CalendarGrid value={value} prefs={resolved} onPick={(iso) => { setOpen(false); setError(null); if (iso !== value) onChange(iso) }} />
+        <CalendarGrid value={value} prefs={resolved} onPick={(iso) => { setOpen(false); const refused = validate?.(iso); setError(refused ?? null); if (!refused && iso !== value) onChange(iso) }} />
       </Popover>
     </div>
   )

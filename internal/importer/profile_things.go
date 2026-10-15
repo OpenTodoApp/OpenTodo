@@ -336,10 +336,10 @@ func (t *thingsReader) read(opts Options) error {
 				}
 			}
 			if k.start == 2 {
-				row.warn("Someday dropped (not supported yet)")
+				row.Start = "someday"
 			}
 			if k.bucket == 1 {
-				row.warn("This Evening dropped (not supported yet)")
+				row.Evening = true
 			}
 			if len(k.rule) > 0 {
 				if rule, ok := thingsRecurrence(k.rule); ok {

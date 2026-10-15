@@ -329,3 +329,52 @@ describe('deadline row (OpenSpec deadlines 3.1)', () => {
     await unmount()
   })
 })
+
+describe('when row and evening switch (OpenSpec someday-and-evening 3.2)', () => {
+  it('a start after the due date is refused in the field', async () => {
+    const id = await createTask({ title: 'Report', due: { date: '2026-10-16' } })
+    const { row, valueButton, unmount } = await open(id)
+    expect(row('when').textContent).toContain('Anytime')
+    await click(valueButton('when'))
+    await settle()
+    const input = row('when').querySelector('input') as HTMLInputElement
+    await type(input, '2026-10-21')
+    await key(input, 'Enter')
+    await settle()
+    expect(row('when').textContent).toContain('on or before the due date')
+    expect((await db.tasks.get(id))!.start ?? null).toBeNull()
+    await type(input, '2026-10-15')
+    await key(input, 'Enter')
+    await settle()
+    expect((await db.tasks.get(id))!.start).toBe('2026-10-15')
+    await unmount()
+  })
+
+  it('parks from the row, toggles evening, and passes axe', async () => {
+    const id = await createTask({ title: 'Idea', due: { date: '2026-10-16' } })
+    const { row, valueButton, unmount } = await open(id)
+    await click(valueButton('when'))
+    await settle()
+    await click([...row('when').querySelectorAll('button')].find((b) => b.textContent?.includes('Someday'))!)
+    await settle()
+    expect(await db.tasks.get(id)).toMatchObject({ start: 'someday', due: null })
+    await click(row('evening').querySelector('[role="switch"]')!)
+    await settle()
+    expect((await db.tasks.get(id))!.evening).toBe(true)
+    const axe = (await import('axe-core')).default
+    for (const name of ['when', 'evening']) {
+      const res = await axe.run(row(name), { rules: { 'color-contrast': { enabled: false } } })
+      expect(res.violations.map((v) => v.id)).toEqual([])
+    }
+    await unmount()
+  })
+
+  it('viewers see text', async () => {
+    const id = await createTask({ title: 'Idea', start: 'someday', evening: true })
+    const { row, unmount } = await open(id, { readOnly: true })
+    expect(row('when').querySelector('button, input')).toBeNull()
+    expect(row('when').textContent).toContain('Someday')
+    expect(row('evening').querySelector('[role="switch"]')).toBeNull()
+    await unmount()
+  })
+})

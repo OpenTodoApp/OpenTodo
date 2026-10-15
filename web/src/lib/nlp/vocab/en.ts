@@ -29,6 +29,8 @@ export const en: Vocabulary = {
   ],
   before: ['on', 'by', 'due'],
   deadlineWords: ['deadline'],
+  somedayWords: ['someday', 'some day'],
+  eveningWords: ['tonight', 'this evening'],
   nextBefore: ['next'],
   nextAfter: [],
   thisBefore: ['this'],

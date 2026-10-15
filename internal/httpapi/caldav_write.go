@@ -215,6 +215,14 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 	if !isNullish(deadline) || !isNullish(current["deadline"]) {
 		f["deadline"] = deadline
 	}
+	// X-OPENTODO-START / -EVENING (someday-and-evening D7): only a property the
+	// client sent changes the field; absence leaves it alone.
+	if in.Start != nil {
+		f["start"] = mustJSON(*in.Start)
+	}
+	if in.Evening != nil && (*in.Evening || string(current["evening"]) == "true") {
+		f["evening"] = mustJSON(*in.Evening)
+	}
 	extra := in.Extra
 	f["parent_id"] = json.RawMessage("null")
 	if in.ParentUID != "" {

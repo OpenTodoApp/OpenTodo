@@ -18,6 +18,8 @@ export type { QuickAddInput }
 const CHIP_HUE: Record<Chip['kind'], HueName> = {
   due: 'violet',
   deadline: 'red',
+  someday: 'slate',
+  evening: 'indigo',
   project: 'slate',
   label: 'cyan',
   priority: 'orange',
@@ -65,6 +67,10 @@ function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly 
   switch (chip.kind) {
     case 'due':
       return dueInWords(chip.value as Due)
+    case 'someday':
+      return 'Someday'
+    case 'evening':
+      return 'This Evening'
     case 'deadline':
       return `Deadline ${dueInWords({ date: chip.value as string })}`
     case 'project':
@@ -78,7 +84,7 @@ function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly 
   }
 }
 
-const KIND_NAME: Record<Chip['kind'], string> = { due: 'Due', deadline: 'Deadline', project: 'Project', label: 'Label', priority: 'Priority', estimate: 'Estimate' }
+const KIND_NAME: Record<Chip['kind'], string> = { due: 'Due', deadline: 'Deadline', someday: 'Someday', evening: 'Evening', project: 'Project', label: 'Label', priority: 'Priority', estimate: 'Estimate' }
 
 /**
  * Single-line capture. With natural-language parsing on (per-device setting), the
@@ -251,6 +257,8 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                   <span className="sr-only">{KIND_NAME[c.kind]}: </span>
                   {label?.color && <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: label.color }} aria-hidden="true" />}
                   {c.kind === 'deadline' && <Icon name="hourglass" size="xs" />}
+                  {c.kind === 'someday' && <Icon name="archive" size="xs" />}
+                  {c.kind === 'evening' && <Icon name="moon" size="xs" />}
                   {text}
                   {c.kind === 'label' && !label && <span className="opacity-60" data-new-label>new</span>}
                   <button

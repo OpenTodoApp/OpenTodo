@@ -30,6 +30,10 @@ export interface Vocabulary {
   before: string[]
   /** Words directly before a date phrase that make it the deadline (OpenSpec change deadlines, D7). */
   deadlineWords: string[]
+  /** Words that park a task when the line has no date (someday-and-evening D6). */
+  somedayWords: string[]
+  /** Words that make a task due today and for This Evening ("tonight"). */
+  eveningWords: string[]
   /** "next" placed before the noun ("next Wed", "nächsten Mittwoch"). */
   nextBefore: string[]
   /** "next" placed after the noun ("mardi prochain", "martes que viene"). */

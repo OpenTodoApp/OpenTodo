@@ -1,5 +1,5 @@
 import { Icon } from '../ui/Icon'
-import { describeDeadline, describeDue, formatDate, localDueOf, zoneHint } from '../lib/dates'
+import { describeDeadline, describeDue, formatDate, localDueOf, todayISO, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import type { Label, Project, Task } from '../lib/types'
@@ -71,6 +71,12 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
   const hint = zoneHint(task.due)
   const done = !!task.completed_at
+  // Start dates, Someday and This Evening (someday-and-evening D2): chips say why a
+  // task is in Later, or in Today without a date.
+  const start = task.start ?? null
+  const startChip = done || !start ? null
+    : start === 'someday' ? { icon: 'archive' as const, label: 'Someday' }
+    : { icon: 'calendar-days' as const, label: `${start > todayISO() ? 'Starts' : 'Started'} ${formatDate(start, 'compact', dt.resolved)}` }
   const deadline = done ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   const comments = useCommentCount(task.id)
   // End-to-end encryption (OpenSpec e2ee): content the server still holds in
@@ -144,6 +150,14 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
               title={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}`} aria-label={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}, ${deadline.label}`}>
               <Icon name="hourglass" size="xs" />{deadline.label}
             </span>
+          )}
+          {startChip && (
+            <span className="inline-flex items-center gap-0.5 text-muted" data-start>
+              <Icon name={startChip.icon} size="xs" />{startChip.label}
+            </span>
+          )}
+          {task.evening && !done && (
+            <span className="text-(--ot-hue-indigo-text)" title="This Evening" aria-label="This Evening" data-evening><Icon name="moon" size="xs" /></span>
           )}
           {task.recurrence ? (
             <span className="text-muted" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring><Icon name="repeat" size="xs" /></span>

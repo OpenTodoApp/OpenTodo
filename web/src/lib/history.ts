@@ -45,7 +45,7 @@ export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_l
 
 /** Fields whose old value can be put back from the timeline. */
 export const RESTORABLE: Record<'task' | 'project', readonly string[]> = {
-  task: ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'recurrence', 'completed_at', 'deleted_at', 'project_id', 'parent_id'],
+  task: ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'completed_at', 'deleted_at', 'project_id', 'parent_id'],
   project: ['name', 'color', 'archived', 'parent_id', 'deleted_at'],
 }
 
@@ -87,6 +87,8 @@ export function formatValue(field: string, value: unknown, names?: (field: strin
     return [d.date, d.time].filter(Boolean).join(' ')
   }
   if (field === 'deadline' && typeof value === 'string') return formatDate(value, 'compact')
+  if (field === 'start' && typeof value === 'string') return value === 'someday' ? 'Someday' : formatDate(value, 'compact')
+  if (field === 'evening' && typeof value === 'boolean') return value ? 'on' : 'off'
   if (field === 'priority') return `P${String(value)}`
   if (field === 'estimate_minutes' && typeof value === 'number') return `${value} min`
   if (Array.isArray(value)) return value.length ? `${value.length} item${value.length === 1 ? '' : 's'}` : '—'
