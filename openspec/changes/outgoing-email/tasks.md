@@ -40,7 +40,7 @@
 
 - [x] 7.1 Run the full existing `internal/httpapi` and web suites with no mailer configured and assert no test changed its expectation (nothing changes without configuration); add one `cli-smoke`-style end-to-end test against `smtptest`: configure through the API, send a test, request a reset, use the mailed link, sign in with the new password. Verify with `go test ./...`.
 - [x] 7.2 Manual smoke on `make dev` with a local SMTP sink (for example `smtptest` run as a binary, or any relay on the LAN): configure in Settings, send a test, invite by email, verify a sign-up in a German browser profile, reset a password. Record the result in the change folder notes.
-- [ ] 7.3 Run `make check` (go test, web test and build, ui lint, docs check, openspec validate). Verify it passes.
+- [x] 7.3 Run `make check` (go test, web test and build, ui lint, docs check, openspec validate). Verify it passes.
 
 ## Workflow follow-up
 
