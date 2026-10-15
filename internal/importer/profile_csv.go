@@ -43,13 +43,13 @@ var csvColumns = map[string]string{
 	"reminder": "reminder", "reminders": "reminder",
 	"deadline": "deadline",
 	"start":    "start", "start_date": "start",
-	"evening": "evening",
+	"evening":    "evening",
+	"attachment": "attachment", "attachments": "attachment", "files": "attachment", "links": "attachment",
 }
 
 // csvUnsupported are columns the model cannot hold; a non-empty value is dropped
 // with a per-row warning naming the column.
 var csvUnsupported = map[string]string{
-	"attachment": "attachment", "attachments": "attachment",
 	"comment": "comment", "comments": "comment",
 	"assignee": "assignee", "assigned_to": "assignee", "collaborator": "assignee",
 }
@@ -201,6 +201,10 @@ func (csvProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			setRecurrence(&row, v)
 		}
 		setDeadline(&row, get("deadline"), loc)
+		// Attachment references become link attachments (attachments D12).
+		for _, ref := range strings.FieldsFunc(get("attachment"), func(r rune) bool { return r == ';' || r == '|' || r == ',' || r == '\n' || r == ' ' }) {
+			row.addLink("", ref)
+		}
 		if v := get("start"); v != "" {
 			if strings.EqualFold(v, "someday") {
 				row.Start = "someday"

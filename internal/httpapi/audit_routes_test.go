@@ -331,7 +331,8 @@ func TestUserExportExcludesAudit(t *testing.T) {
 		switch k {
 		// encryption: the wrapped key record or null (OpenSpec e2ee).
 		// user_prefs: the caller's date and time preferences (date-time-preferences).
-		case "format", "version", "exportedAt", "projects", "tasks", "labels", "views", "reminders", "sections", "comments", "encryption", "user_prefs":
+		// attachments: file and link metadata (attachments).
+		case "format", "version", "exportedAt", "projects", "tasks", "labels", "views", "reminders", "sections", "comments", "encryption", "user_prefs", "attachments":
 		default:
 			t.Fatalf("user export has unexpected key %q", k)
 		}

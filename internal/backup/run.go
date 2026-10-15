@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -147,7 +148,11 @@ func (s *Service) backupTo(ctx context.Context, dest Destination, set Settings, 
 		f.Close()
 		os.Remove(f.Name())
 	}()
-	if err := writeArchive(f, snap, m, archiveOptions{compress: set.Compress, passphrase: pass, extras: s.extraFiles()}); err != nil {
+	attachments, err := attachmentFiles(s.dataDir)
+	if err != nil {
+		return nil, fmt.Errorf("list attachments: %w", err)
+	}
+	if err := writeArchive(f, snap, m, archiveOptions{compress: set.Compress, passphrase: pass, extras: s.extraFiles(), attachments: attachments}); err != nil {
 		return nil, fmt.Errorf("write archive: %w", err)
 	}
 	size, err := f.Seek(0, io.SeekCurrent)
@@ -235,4 +240,33 @@ func (s *Service) extraFiles() []string {
 		}
 	}
 	return out
+}
+
+// attachmentFiles lists the attachment files under <data>/attachments, in a
+// stable order (OpenSpec attachments, design D11).
+func attachmentFiles(dataDir string) ([]archivedFile, error) {
+	root := filepath.Join(dataDir, "attachments")
+	var out []archivedFile
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil
+			}
+			return err
+		}
+		if d.IsDir() || !d.Type().IsRegular() {
+			return nil
+		}
+		rel, err := filepath.Rel(dataDir, path)
+		if err != nil {
+			return err
+		}
+		name := filepath.ToSlash(rel)
+		if validAttachmentEntry(name) {
+			out = append(out, archivedFile{name: name, path: path})
+		}
+		return nil
+	})
+	sort.Slice(out, func(i, j int) bool { return out[i].name < out[j].name })
+	return out, err
 }

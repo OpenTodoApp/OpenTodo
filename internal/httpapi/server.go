@@ -18,6 +18,7 @@ import (
 	"github.com/pixari/opentodo/internal/agenttools"
 	"github.com/pixari/opentodo/internal/assistant"
 	"github.com/pixari/opentodo/internal/audit"
+	"github.com/pixari/opentodo/internal/blobs"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
@@ -45,6 +46,10 @@ type Server struct {
 	web     http.Handler
 	log     *slog.Logger
 	version string
+	// blobs stores attachment files (attachments D2); nil without a data directory.
+	blobs *blobs.Store
+	// attachmentLimiter caps uploads per account (120/hour, attachments D5).
+	attachmentLimiter *rateLimiter
 	// limiter guards the unauthenticated auth routes per client IP (10/min).
 	limiter *rateLimiter
 	// passkeyOptions limits anonymous passkey challenge requests separately, so
@@ -191,6 +196,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// (user-management D4; the project-sharing hook lives in the sync package).
 	authSvc.SetBeforeDelete(opsync.DeleteAccountData)
 	mux := http.NewServeMux()
+	s.registerAttachmentRoutes(mux)
 
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /api/v1/auth/status", s.handleAuthStatus)
@@ -296,6 +302,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		writeError(w, http.StatusNotFound, "not_found", "unknown API route")
 	})
 	if web != nil {
+		// The share sheet POSTs here when the service worker is not active yet.
+		mux.HandleFunc("POST /share", s.handleSharePost)
 		mux.Handle("/", web)
 	}
 	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(mux))))
@@ -756,6 +764,10 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	// `agent-ready-cli` (design D7).
 	out := map[string]any{"user": u, "mfa": st,
 		"encryption": s.encryptionStatus(r.Context(), u.ID), "minClientVersion": MinClientVersion, "auth": authInfo}
+	// Attachment limits and this account's usage (attachments D5), for the device's checks.
+	if info, err := s.attachmentInfo(r.Context(), u.ID); err == nil {
+		out["attachments"] = info
+	}
 	// Configuration problems the server started despite (trusted-proxies-lenient):
 	// for the owner's own session only, never for members, admins or API tokens.
 	if u.Role == auth.RoleOwner && tokenFrom(r.Context()).ID == "" {
@@ -981,12 +993,12 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 	// Devices may not write as an AI assistant or a calendar app: those device
 	// ids are reserved for the server's own writers (mcp-write-tools D4).
 	if opsync.ReservedDevice(in.Device) {
-		writeError(w, http.StatusBadRequest, "invalid_op", "device: ids starting with agent: or caldav: are reserved")
+		writeError(w, http.StatusBadRequest, "invalid_op", "device: server and ids starting with agent: or caldav: are reserved")
 		return
 	}
 	for _, op := range in.Ops {
 		if opsync.ReservedDevice(op.Device) {
-			writeError(w, http.StatusBadRequest, "invalid_op", "op device: ids starting with agent: or caldav: are reserved")
+			writeError(w, http.StatusBadRequest, "invalid_op", "op device: server and ids starting with agent: or caldav: are reserved")
 			return
 		}
 	}
@@ -1589,6 +1601,11 @@ func (s *Server) writeOps(w http.ResponseWriter, r *http.Request, entity, id str
 
 func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	uid := userFrom(r.Context()).ID
+	format := r.URL.Query().Get("format")
+	if format != "" && format != "json" && format != "zip" {
+		writeError(w, http.StatusBadRequest, "invalid_input", `format: must be "json" or "zip"`)
+		return
+	}
 	out := map[string]any{"format": "opentodo-export", "version": 1, "exportedAt": time.Now().UTC().Format(time.RFC3339)}
 	for plural, entity := range opsync.Plural {
 		list, err := s.sync.List(r.Context(), uid, entity, true)
@@ -1610,6 +1627,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["comments"] = comments
+	// Attachment metadata (attachments D12), removed ones included; the files
+	// themselves are in the ZIP export only.
+	attachments, err := s.sync.List(r.Context(), uid, "attachment", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["attachments"] = attachments
 	// The caller's date and time preferences (date-time-preferences D1): personal,
 	// no REST collection, but part of what the user owns, so the export carries them.
 	prefs, err := s.sync.List(r.Context(), uid, "user_prefs", true)
@@ -1627,6 +1652,11 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["encryption"] = rec
+	if format == "zip" {
+		s.writeExportZip(w, r, out, attachments)
+		s.audit.Record(r.Context(), audit.ExportRequested(uid, "zip"))
+		return
+	}
 	w.Header().Set("Content-Disposition", `attachment; filename="opentodo-export.json"`)
 	writeJSON(w, http.StatusOK, out)
 	s.audit.Record(r.Context(), audit.ExportRequested(uid, "json"))

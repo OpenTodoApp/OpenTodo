@@ -10,6 +10,7 @@
     body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: var(--fg); background: var(--bg); }
     main { max-width: 32rem; margin: 3rem auto; padding: 1.5rem; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
     h1 { font-size: 1.1rem; margin: 0 0 .5rem; }
+    h2 { font-size: 1rem; margin: 1.5rem 0 .25rem; }
     p { color: var(--muted); margin: .5rem 0; }
     label { display: block; margin-top: 1rem; font-weight: 500; }
     input { box-sizing: border-box; width: 100%; margin-top: .25rem; padding: .5rem .75rem; font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 6px; }
@@ -31,6 +32,10 @@
       <button type="submit">Save</button>
     </form>
     <p id="status" role="status" hidden></p>
+    <h2>Screenshots</h2>
+    <p>"Add screenshot to OpenTodo" captures the visible part of a page and hands the image to your server's capture popup, where nothing is saved until you press Save. Handing it over needs access to your server's address, and only that address; the browser asks when you save it.</p>
+    <p id="screenshots" role="status"></p>
+    <button type="button" id="allow" hidden>Allow screenshots</button>
   </main>
   <script type="module" src="options.js"></script>
 </body>

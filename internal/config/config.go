@@ -41,6 +41,11 @@ type Config struct {
 	MCPWrites *bool
 	// Backup holds the optional OPENTODO_BACKUP_* presets (see backup.go).
 	Backup BackupPreset
+	// AttachmentsMaxFileMB and AttachmentsQuotaMB are the optional
+	// OPENTODO_ATTACHMENTS_MAX_FILE_MB / _QUOTA_MB presets (attachments D5): they
+	// seed the owner settings once; nil when unset.
+	AttachmentsMaxFileMB *int
+	AttachmentsQuotaMB   *int
 	// PushDisabled turns web push off (OPENTODO_PUSH=off): the /api/v1/push routes
 	// answer 404 and the reminder scheduler does not run. Push is on by default.
 	PushDisabled bool
@@ -279,6 +284,12 @@ func Load() (Config, error) {
 		return c, err
 	}
 	c.Backup = b
+	if c.AttachmentsMaxFileMB, err = optionalInt("OPENTODO_ATTACHMENTS_MAX_FILE_MB", 1, 2048); err != nil {
+		return c, err
+	}
+	if c.AttachmentsQuotaMB, err = optionalInt("OPENTODO_ATTACHMENTS_QUOTA_MB", 0, 1<<20); err != nil {
+		return c, err
+	}
 	if c.Email, err = loadEmail(); err != nil {
 		return c, err
 	}
@@ -342,4 +353,18 @@ func getenv(key, def string) string {
 		return v
 	}
 	return def
+}
+
+// optionalInt reads an optional whole-number variable within [min, max]; an
+// invalid value is an error naming the variable, so startup stops.
+func optionalInt(name string, min, max int) (*int, error) {
+	v := strings.TrimSpace(os.Getenv(name))
+	if v == "" {
+		return nil, nil
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < min || n > max {
+		return nil, fmt.Errorf("%s must be a whole number from %d to %d, got %q", name, min, max, v)
+	}
+	return &n, nil
 }

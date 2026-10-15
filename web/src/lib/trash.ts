@@ -186,7 +186,7 @@ export async function flushPendingPurges(): Promise<void> {
  */
 export async function removeLocally(list: { entity: Entity; entityId: string }[], cascade = false): Promise<void> {
   if (list.length === 0) return
-  await db.transaction('rw', [...entityTables(), db.outbox, db.meta], async () => {
+  await db.transaction('rw', [...entityTables(), db.attachmentBlobs, db.outbox, db.meta], async () => {
     const gone = new Map<string, Entity>()
     // project_prefs share their project's id (activity-feed): they go with a purged
     // project and are tracked apart so they never shadow the project in `gone`.
@@ -227,6 +227,8 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
       }
       // Comments go with their task (comments-and-activity).
       for (const id of await db.comments.where('task_id').anyOf([...taskIds]).primaryKeys()) gone.set(id as string, 'comment')
+      // Attachments too (attachments D13).
+      for (const id of await db.attachments.where('task_id').anyOf([...taskIds]).primaryKeys()) gone.set(id as string, 'attachment')
     }
     const byEntity: Record<string, string[]> = {}
     for (const [id, entity] of gone) (byEntity[entity] ??= []).push(id)
@@ -237,6 +239,10 @@ export async function removeLocally(list: { entity: Entity; entityId: string }[]
     if (byEntity.view) await db.views.bulkDelete(byEntity.view)
     if (byEntity.section) await db.sections.bulkDelete(byEntity.section)
     if (byEntity.comment) await db.comments.bulkDelete(byEntity.comment)
+    if (byEntity.attachment) {
+      await db.attachments.bulkDelete(byEntity.attachment)
+      await db.attachmentBlobs.bulkDelete(byEntity.attachment)
+    }
     // Purged history is gone from the server's log; drop the local activity too.
     await forgetEntities(gone.keys())
     const queued = await db.outbox.filter((o) => gone.get(o.entityId) === o.entity).primaryKeys()

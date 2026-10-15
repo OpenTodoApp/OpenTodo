@@ -96,6 +96,16 @@ func projectMembership(p string) bool {
 	return len(parts) >= 2 && (parts[1] == "members" || parts[1] == "transfer")
 }
 
+// taskAttachments matches /api/v1/tasks/{id}/attachments (OpenSpec `attachments`).
+func taskAttachments(p string) bool {
+	rest, ok := strings.CutPrefix(p, "/api/v1/tasks/")
+	if !ok {
+		return false
+	}
+	parts := strings.Split(rest, "/")
+	return len(parts) >= 2 && parts[1] == "attachments"
+}
+
 // projectInvites matches /api/v1/projects/{id}/invites[/...] (OpenSpec
 // `project-invite-links`).
 func projectInvites(p string) bool {
@@ -122,6 +132,11 @@ var demoRules = []demoRule{
 	{"Passkeys", true, prefix("/api/v1/passkeys")},
 	{"Two-factor authentication", true, prefix("/api/v1/mfa")},
 	{"Two-factor authentication", true, prefix("/api/v1/members")},
+	// Files would let sandboxes store and serve arbitrary content (attachments
+	// D15): every method, so the app hides the controls.
+	{"Attachments", false, prefix("/api/v1/attachments")},
+	{"Attachments", false, taskAttachments},
+	{"Attachments", false, exact("/api/v1/settings/attachments")},
 	{"Server settings", true, prefix("/api/v1/settings")},
 	{"App passwords", true, prefix("/api/v1/app-passwords")},
 	{"CalDAV", false, prefix("/dav")},

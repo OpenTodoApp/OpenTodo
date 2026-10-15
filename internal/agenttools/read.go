@@ -354,6 +354,24 @@ type commentOut struct {
 	EditedAt    *string `json:"edited_at,omitempty"`
 }
 
+type attachmentText struct {
+	Name string  `json:"name"`
+	Mime *string `json:"mime,omitempty"`
+	URL  *string `json:"url,omitempty"`
+}
+
+// attachmentOut is the metadata of a file or link on the task or one of the
+// listed comments (OpenSpec attachments, design D14); the content is never read.
+type attachmentOut struct {
+	ID        string         `json:"id"`
+	Untrusted attachmentText `json:"untrusted_text"`
+	Size      *int64         `json:"size,omitempty"`
+	// Uploaded is false for a file whose bytes have not reached the server yet.
+	Uploaded  bool    `json:"uploaded"`
+	CommentID *string `json:"comment_id,omitempty"`
+	CreatedAt *string `json:"created_at,omitempty"`
+}
+
 // ErrTaskNotFound is get_task's answer for an id that is unknown, deleted or
 // not visible to the user (indistinguishable on purpose).
 var ErrTaskNotFound = &ToolError{Message: "task not found"}
@@ -401,7 +419,35 @@ func (r *Registry) taskDetail(ctx context.Context, userID, id string, loc *time.
 		comments = append(comments, commentOut{ID: str(c, "id"), ParentID: strPtr(c, "parent_id"), AuthorID: aid, AuthorIsYou: aid == userID,
 			Untrusted: commentText{Body: str(c, "body"), Author: name}, CreatedAt: isoTime(num(c, "created_at")), EditedAt: isoTime(num(c, "edited_at"))})
 	}
-	return map[string]any{"task": out, "subtasks": subtasks, "comments": comments, "timezone": loc.String(), "today": today, "server_time": r.serverTime()}, nil
+	shown := map[string]bool{}
+	for _, c := range comments {
+		shown[c.ID] = true
+	}
+	attachments := []attachmentOut{}
+	all, err := r.sync.List(ctx, userID, "attachment", false)
+	if err != nil {
+		return nil, err
+	}
+	for _, a := range all {
+		if str(a, "task_id") != id || len(attachments) == MaxItems {
+			continue
+		}
+		cid := strPtr(a, "comment_id")
+		if cid != nil && !shown[*cid] {
+			continue
+		}
+		o := attachmentOut{ID: str(a, "id"), CommentID: cid, CreatedAt: isoTime(num(a, "created_at")),
+			Untrusted: attachmentText{Name: str(a, "name"), Mime: strPtr(a, "mime"), URL: strPtr(a, "url")}}
+		if o.Untrusted.URL == nil {
+			size := int64(num(a, "size"))
+			o.Size = &size
+			o.Uploaded = num(a, "uploaded_at") > 0
+		} else {
+			o.Uploaded = true
+		}
+		attachments = append(attachments, o)
+	}
+	return map[string]any{"task": out, "subtasks": subtasks, "comments": comments, "attachments": attachments, "timezone": loc.String(), "today": today, "server_time": r.serverTime()}, nil
 }
 
 func (r *Registry) getTask(ctx context.Context, userID string, a args) (map[string]any, error) {

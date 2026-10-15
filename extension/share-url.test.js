@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { MAX_TEXT, MAX_TITLE, buildShareUrl, decodePending, encodePending, isWebUrl, normalizeServer } from './share-url.js'
+import { MAX_TEXT, MAX_TITLE, buildShareUrl, decodePending, encodePending, filesMessage, isWebUrl, normalizeServer, originPattern, screenshotName } from './share-url.js'
 
 test('normalizeServer keeps only http(s) origins', () => {
   assert.equal(normalizeServer('https://todo.example.com'), 'https://todo.example.com')
@@ -53,12 +53,13 @@ test('first run: a pending capture round-trips through the options page URL', ()
   assert.equal(encodePending({}), '')
 })
 
-test('manifest: MV3, minimal permissions, no host access', () => {
+test('manifest: MV3, minimal permissions, no host access by default', () => {
   const m = JSON.parse(readFileSync(new URL('./manifest.json', import.meta.url), 'utf8'))
   assert.equal(m.manifest_version, 3)
   assert.deepEqual([...m.permissions].sort(), ['activeTab', 'contextMenus', 'scripting', 'storage'])
   assert.equal(m.host_permissions, undefined)
-  assert.equal(m.optional_host_permissions, undefined)
+  // Only optional, for the screenshot hand-over, requested for the server origin alone.
+  assert.deepEqual(m.optional_host_permissions, ['https://*/*', 'http://*/*'])
   assert.equal(m.optional_permissions, undefined)
   assert.equal(m.content_scripts, undefined)
   assert.equal(m.externally_connectable, undefined)
@@ -71,3 +72,23 @@ test('sources make no network requests of their own', () => {
     assert.doesNotMatch(src, /\bfetch\s*\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon|<script[^>]+src=["']https?:/i, f)
   }
 })
+
+test('a screenshot capture opens /share with files=1, or files=denied without access', () => {
+  const u = new URL(buildShareUrl('https://t.example', { title: 'Docs', url: 'https://example.org/' }, '1'))
+  assert.equal(u.searchParams.get('files'), '1')
+  assert.equal(new URL(buildShareUrl('https://t.example', { title: 'Docs' }, 'denied')).searchParams.get('files'), 'denied')
+  assert.equal(new URL(buildShareUrl('https://t.example', { title: 'Docs' }, 'other')).searchParams.has('files'), false)
+  assert.equal(new URL(buildShareUrl('https://t.example', { title: 'Docs' })).searchParams.has('files'), false)
+})
+
+test('the hand-over message has the shape the capture screen accepts', () => {
+  const m = filesMessage('data:image/png;base64,AAAA', 'Screenshot.png')
+  assert.deepEqual(m, { type: 'opentodo-files', files: [{ name: 'Screenshot.png', type: 'image/png', data: 'data:image/png;base64,AAAA' }] })
+  assert.equal(screenshotName(new Date(2026, 9, 15, 9, 5, 3)), 'Screenshot 2026-10-15 09.05.03.png')
+})
+
+test('the optional host permission covers only the server origin', () => {
+  assert.equal(originPattern('https://todo.example.com/path'), 'https://todo.example.com/*')
+  assert.throws(() => originPattern('javascript:alert(1)'))
+})
+

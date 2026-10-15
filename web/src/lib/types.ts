@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment']
 
 export interface Op {
   id: string
@@ -219,6 +219,32 @@ export interface Comment {
 }
 
 /**
+ * A file or link on a task or one of its comments (OpenSpec `attachments`, D1).
+ * The metadata syncs as ops; a file's bytes travel separately (D3): the device
+ * keeps them in `attachmentBlobs` until the server stores them and says so with
+ * `uploaded_at`. A non-null `url` makes it a link.
+ */
+export interface Attachment {
+  id: string
+  task_id: string
+  comment_id: string | null
+  name: string
+  mime: string
+  /** Stored byte count (the envelope for an encrypted file); 0 for a link. */
+  size: number
+  /** Hex SHA-256 of the stored bytes; "" for a link. */
+  sha256: string
+  url: string | null
+  encrypted: boolean
+  author_id: string
+  created_at: number
+  /** Written by the server only, once the file is stored. */
+  uploaded_at: number | null
+  deleted_at: number | null
+  _clock: Clock
+}
+
+/**
  * One user's personal preferences for a project (OpenSpec `activity-feed`, D1),
  * keyed by the project id. Always stored in the author's personal scope by the
  * server, also for shared projects, so it follows the user to their own devices
@@ -393,6 +419,23 @@ export interface DemoInfo {
   token: string
   sandboxHours: { idle: number; max: number }
   resetsAt: number
+}
+
+/** The server's attachment limits and this account's usage, from `/me` (OpenSpec attachments D5). */
+export interface AttachmentLimits {
+  enabled: boolean
+  max_file_bytes: number
+  /** 0 = no total. */
+  quota_bytes: number
+  used_bytes: number
+}
+
+/** The owner's attachment settings (Settings → Administration → Attachments). */
+export interface AttachmentSettings {
+  enabled: boolean
+  max_file_mb: number
+  /** 0 = no total. */
+  quota_mb: number
 }
 
 /** The profile's view of end-to-end encryption (OpenSpec `e2ee`). */

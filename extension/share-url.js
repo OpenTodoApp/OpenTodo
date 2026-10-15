@@ -35,8 +35,12 @@ export function isWebUrl(url) {
   }
 }
 
-/** The capture screen URL on `server` for a page: /share?title=…&text=…&url=… */
-export function buildShareUrl(server, page) {
+/**
+ * The capture screen URL on `server` for a page: /share?title=…&text=…&url=…
+ * `files` is "1" when a screenshot follows by message, "denied" when it could
+ * not be handed over (no access to the server's origin).
+ */
+export function buildShareUrl(server, page, files) {
   const origin = normalizeServer(server)
   if (!origin) throw new Error('invalid server URL')
   const q = new URLSearchParams()
@@ -45,6 +49,7 @@ export function buildShareUrl(server, page) {
   if (title) q.set('title', title)
   if (text) q.set('text', text)
   if (page?.url && isWebUrl(page.url)) q.set('url', page.url)
+  if (files === '1' || files === 'denied') q.set('files', files)
   const query = q.toString()
   return `${origin}/share${query ? `?${query}` : ''}`
 }
@@ -61,4 +66,22 @@ export function decodePending(search) {
   const q = new URLSearchParams(search)
   const page = { title: q.get('title') ?? '', text: q.get('text') ?? '', url: q.get('url') ?? '' }
   return page.title || page.text || page.url ? page : null
+}
+
+/** The optional host permission pattern for the server, used to hand a screenshot to the popup. */
+export function originPattern(server) {
+  const origin = normalizeServer(server)
+  if (!origin) throw new Error('invalid server URL')
+  return `${origin}/*`
+}
+
+/** "Screenshot 2026-10-15 14.03.27.png" */
+export function screenshotName(now = new Date()) {
+  const p = (n) => String(n).padStart(2, '0')
+  return `Screenshot ${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}.${p(now.getMinutes())}.${p(now.getSeconds())}.png`
+}
+
+/** The message the capture popup accepts once (web/src/app/ShareCapture.tsx). */
+export function filesMessage(dataUrl, name) {
+  return { type: 'opentodo-files', files: [{ name, type: 'image/png', data: dataUrl }] }
 }

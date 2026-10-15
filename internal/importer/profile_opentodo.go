@@ -25,7 +25,7 @@ func (opentodoProfile) Detect(data []byte) bool {
 	return json.Unmarshal(top["format"], &format) == nil && format == "opentodo-export"
 }
 
-func (opentodoProfile) Read(r io.Reader, _ Options) (*Parsed, error) {
+func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	var doc struct {
 		Format    string                       `json:"format"`
 		Version   int                          `json:"version"`
@@ -36,6 +36,8 @@ func (opentodoProfile) Read(r io.Reader, _ Options) (*Parsed, error) {
 		Reminders []map[string]json.RawMessage `json:"reminders"`
 		Views     []map[string]json.RawMessage `json:"views"`
 		Comments  []json.RawMessage            `json:"comments"`
+		// Attachments are file and link metadata (OpenSpec attachments, design D12).
+		Attachments []map[string]json.RawMessage `json:"attachments"`
 		// UserPrefs is the exporting account's date and time preferences row
 		// (date-time-preferences D1); it is restored like any other record.
 		UserPrefs []map[string]json.RawMessage `json:"user_prefs"`
@@ -85,7 +87,11 @@ func (opentodoProfile) Read(r io.Reader, _ Options) (*Parsed, error) {
 	add(KindReminder, "", doc.Reminders)
 	add(KindView, "name", doc.Views)
 	add(KindUserPrefs, "", doc.UserPrefs)
-	// Comments cannot be imported faithfully (design D3 of import-completeness):
+	add(KindAttachment, "name", doc.Attachments)
+	if files := countFileAttachments(doc.Attachments); files > 0 && opts.ownFiles == nil {
+		out.Notes = append(out.Notes, fmt.Sprintf("%d file %s not imported: the files are in the ZIP export (Settings → Data → Export with files)", files, plural(files, "attachment is", "attachments are")))
+	}
+	out.Files = opts.ownFiles // Comments cannot be imported faithfully (design D3 of import-completeness):
 	// author_id must be the submitting account and creation is rate limited.
 	if n := len(doc.Comments); n > 0 {
 		out.Notes = append(out.Notes, fmt.Sprintf("%d %s not imported: a comment keeps its author, and the authors in this file are accounts of the exporting instance", n, plural(n, "comment is", "comments are")))
@@ -111,4 +117,15 @@ func plural(n int, one, many string) string {
 		return one
 	}
 	return many
+}
+
+// countFileAttachments counts the live attachments that are files (not links).
+func countFileAttachments(list []map[string]json.RawMessage) int {
+	n := 0
+	for _, a := range list {
+		if isNull(a["url"]) && isNull(a["deleted_at"]) {
+			n++
+		}
+	}
+	return n
 }

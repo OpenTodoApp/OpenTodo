@@ -45,7 +45,7 @@ skill:
 
 ## Test the browser extension and zip it into dist/ (not part of the container image).
 extension: test-extension
-	@node -e 'const m = require("./extension/manifest.json"); if (m.host_permissions || m.optional_host_permissions || m.content_scripts) { console.error("extension/manifest.json must not declare host permissions or content scripts"); process.exit(1) }'
+	@node -e 'const m = require("./extension/manifest.json"); const opt = JSON.stringify(m.optional_host_permissions ?? []); if (m.host_permissions || m.content_scripts || (opt !== "[]" && opt !== JSON.stringify(["https://*/*", "http://*/*"]))) { console.error("extension/manifest.json must not declare host permissions or content scripts (only the optional http(s) access asked for the server origin)"); process.exit(1) }'
 	@mkdir -p dist && rm -f $(EXT_ZIP)
 	cd extension && zip -q -X ../$(EXT_ZIP) $(EXT_FILES)
 	@echo "  $(EXT_ZIP) ($$(wc -c < $(EXT_ZIP)) bytes)"

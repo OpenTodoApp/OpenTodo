@@ -11,6 +11,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      // Our own worker (OpenSpec attachments D9): Workbox precaching plus the
+      // share sheet's POST with files, which a generated worker cannot handle.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectRegister: 'script-defer',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
@@ -23,14 +28,17 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/',
         scope: '/',
-        // OpenSpec share-capture: the installed app is offered in the system share
-        // sheet. GET keeps it offline-capable: /share is an SPA route served by the
-        // precached shell, so no service-worker fetch handler is needed (files are
-        // out of scope, which is the only reason to use POST).
+        // OpenSpec share-capture and attachments D9: the installed app is offered in
+        // the system share sheet, files included. The service worker (src/sw.ts)
+        // answers the POST offline and hands the files to /share through IndexedDB.
         share_target: {
           action: '/share',
-          method: 'GET',
-          params: { title: 'title', text: 'text', url: 'url' },
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            title: 'title', text: 'text', url: 'url',
+            files: [{ name: 'files', accept: ['image/*', 'application/pdf', 'text/*', 'audio/*', 'video/*', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip'] }],
+          },
         },
         icons: [
           { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
@@ -38,16 +46,13 @@ export default defineConfig({
           { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: {
-        // Precache only the built assets. There is deliberately no runtimeCaching:
-        // nothing under /api/ (in particular the live event stream
-        // /api/v1/sync/events) may ever be served from or stored in a cache, and the
-        // SPA navigation fallback must not swallow API or health URLs either.
+      injectManifest: {
+        // Precache only the built assets. The worker has deliberately no runtime
+        // caching: nothing under /api/ (in particular the live event stream
+        // /api/v1/sync/events) may ever be served from or stored in a cache.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        navigateFallbackDenylist: [/^\/api\//, /^\/healthz/],
-        cleanupOutdatedCaches: true,
-        // Reminder push, notification actions and the shown set (OpenSpec `reminders`).
-        importScripts: ['push-sw.js'],
+        // A classic worker, so importScripts('push-sw.js') keeps working.
+        rollupFormat: 'iife',
       },
     }),
   ],

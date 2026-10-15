@@ -22,6 +22,7 @@ export function tableOf(entity: Entity) {
     case 'view': return db.views
     case 'project_prefs': return db.prefs
     case 'user_prefs': return db.userPrefs
+    case 'attachment': return db.attachments
     default: return db.tasks
   }
 }

@@ -5,6 +5,7 @@ import { api, onEnrolmentRequired } from '../lib/api'
 import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
 import { clearLocalData } from '../lib/db'
 import { adoptProfile, forgetMemoryKeys, loadEncryptionState, useEncryption } from '../lib/e2ee'
+import { clearInbox } from '../lib/shareInbox'
 import { UnlockScreen } from './UnlockScreen'
 import { unsubscribeOnSignOut } from '../lib/push'
 import { startSync, stopSync, useSyncStatus } from '../lib/sync'
@@ -241,6 +242,8 @@ export function App() {
 async function clearDeviceData() {
   stopSync()
   await clearLocalData()
+  // Files shared to the app and not saved yet (OpenSpec attachments D9).
+  await clearInbox().catch(() => undefined)
   forgetMemoryKeys()
   localStorage.removeItem('opentodo.user')
   cacheMfa(null)

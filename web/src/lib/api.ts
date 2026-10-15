@@ -7,7 +7,7 @@ import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptio
 import type {
   ConfigWarning,
   AppPassword, CaldavSetting, EmailInbox,
-  AccountRole, ActivityPage, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User,
+  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -112,6 +112,31 @@ function uploadArchive(file: Blob, onProgress?: (fraction: number) => void): Pro
   })
 }
 
+/** The answer to an attachment upload: the status and the error code, if any. */
+export interface UploadResult { status: number; code?: string; message?: string }
+
+/**
+ * Sends a file's stored bytes for an attachment row (attachments D3), with
+ * XMLHttpRequest for upload progress. Resolves with the status whatever it is;
+ * rejects only when the network failed.
+ */
+function uploadAttachmentContent(id: string, blob: Blob, onProgress?: (fraction: number) => void): Promise<UploadResult> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', `/api/v1/attachments/${encodeURIComponent(id)}/content`)
+    xhr.withCredentials = true
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream')
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total) }
+    xhr.onerror = () => reject(new TypeError('network error'))
+    xhr.onload = () => {
+      let data: { error?: { code: string; message: string } } = {}
+      try { data = JSON.parse(xhr.responseText || '{}') } catch { /* a proxy's HTML page */ }
+      resolve({ status: xhr.status, code: data.error?.code, message: data.error?.message })
+    }
+    xhr.send(blob)
+  })
+}
+
 async function parse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T
   const data = await res.json().catch(() => ({}))
@@ -147,7 +172,7 @@ export const api = {
   reauth: (input: { password: string } | { code: string }) =>
     request<{ reauthAt: number; validForMs: number }>('POST', '/api/v1/auth/reauth', input, true),
   /** `config_warnings` is present for the owner's session only (trusted-proxies-lenient). */
-  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[] }>('GET', '/api/v1/me'),
+  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[]; attachments?: AttachmentLimits }>('GET', '/api/v1/me'),
   mfaStatus: () => request<{ mfa: MfaStatus }>('GET', '/api/v1/mfa'),
   enrollTotp: () => request<{ secret: string; uri: string; expiresAt: number }>('POST', '/api/v1/mfa/totp/enroll', {}),
   confirmTotp: (code: string) => request<{ recoveryCodes: string[]; mfa: MfaStatus }>('POST', '/api/v1/mfa/totp/confirm', { code }),
@@ -313,6 +338,11 @@ export const api = {
   confirmRestore: (id: string) => request<{ status: string }>('POST', '/api/v1/backups/restore', { id, confirm: 'RESTORE' }),
   deleteSafetyCopy: (name: string) => request<void>('DELETE', `/api/v1/backups/restore/safety-copies/${encodeURIComponent(name)}`),
   uploadRestoreArchive: (file: Blob, onProgress?: (fraction: number) => void) => uploadArchive(file, onProgress),
+  // Attachments (OpenSpec attachments D4). Metadata is ops; only the bytes and the
+  // owner's settings travel over these routes.
+  uploadAttachment: (id: string, blob: Blob, onProgress?: (fraction: number) => void) => uploadAttachmentContent(id, blob, onProgress),
+  attachmentSettings: () => request<AttachmentSettings>('GET', '/api/v1/settings/attachments'),
+  saveAttachmentSettings: (s: AttachmentSettings) => request<AttachmentSettings>('PUT', '/api/v1/settings/attachments', s),
   // Audit log (owner only, except personal activity). Always fetched live and kept in
   // component state only: audit data is never written to IndexedDB or any cache.
   listAudit: (filters: AuditFilters = {}, cursor?: number | null, limit?: number) => {

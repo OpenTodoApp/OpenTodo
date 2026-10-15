@@ -188,7 +188,7 @@ describe('opening a section', () => {
   it('keeps every former Help screen id somewhere for the owner', () => {
     const all = ALL_IDS.map((id) => render(owner, id)).join('\n')
     const screens = [
-      'settings/assistants', 'settings/caldav', 'settings/calendar', 'settings/capture', 'settings/data',
+      'settings/assistants', 'settings/attachments', 'settings/caldav', 'settings/calendar', 'settings/capture', 'settings/data',
       'settings/email', 'settings/encryption', 'settings/keyboard', 'settings/members', 'settings/notifications',
       'settings/password', 'settings/project-invites', 'settings/projects', 'settings/quick-add', 'settings/session',
       'settings/sessions', 'settings/start-view', 'settings/tokens', 'settings/two-factor', 'settings/users', 'settings/voice', 'settings/webhooks',

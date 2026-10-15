@@ -29,6 +29,7 @@ import { EmailInboxPanel } from './EmailInboxPanel'
 import { KeyboardSection, StartViewSection } from './PreferencesPanels'
 import { AutoArchiveSection } from './ProjectsSettings'
 import { CaptureSection } from './CaptureSettings'
+import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
 import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
@@ -236,6 +237,7 @@ function SectionContent({ id, user, onLogout }: { id: SettingsSectionId; user: U
         <>
           <ConfigWarningsNotice user={user} />
           <AdministrationSections user={user} />
+          {isOwner && <AttachmentSettingsPanel />}
         </>
       )
     case 'backups':

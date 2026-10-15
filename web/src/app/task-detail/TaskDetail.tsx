@@ -4,6 +4,7 @@ import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus
 import { db } from '../../lib/db'
 import { markTaskNotificationsRead } from '../../lib/notifications'
 import { createSubtask, deleteTask, setTaskCompleted, updateTask } from '../../lib/ops'
+import { membershipMap, roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { IconButton } from '../../ui/Button'
@@ -14,6 +15,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { Markdown } from '../Markdown'
 import { Menu } from '../overlay/Menu'
 import { isTyping } from '../useViews'
+import { AttachmentsRow } from './AttachmentsRow'
 import { ConversationTabs } from './ConversationTabs'
 import { Properties } from './Properties'
 
@@ -53,6 +55,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   const parent = useLiveQuery(() => (task?.parent_id ? db.tasks.get(task.parent_id) : undefined), [task?.parent_id])
   const series = useLiveQuery(() => (task?.series_id ? db.tasks.get(task.series_id) : undefined), [task?.series_id])
   const progress = useMemo(() => progressOf({ id: taskId }, children), [taskId, children])
+  const memberships = useLiveQuery(() => membershipMap(), [])
+  const panel = useRef<HTMLElement>(null)
 
   useEffect(() => {
     if (task) setTitle(task.title)
@@ -89,7 +93,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   }
 
   return (
-    <aside data-detail-for={task.id} onKeyDown={onKeyDown} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-xl md:static md:shadow-none">
+    <aside ref={panel} data-detail-for={task.id} onKeyDown={onKeyDown} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-xl md:static md:shadow-none">
       <div className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         {!readOnly && (
           <button type="button" className="btn-secondary px-3 py-1.5 text-sm" onClick={() => toggle(task)}>
@@ -169,6 +173,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
             </ul>
             {!readOnly && <AddSubtask parent={task} />}
           </section>
+
+          <AttachmentsRow taskId={task.id} userId={userId} role={roleOf(task.project_id, memberships ?? new Map())} dropTarget={panel} />
 
           <p className="text-meta text-faint">
             Created {dt.formatInstant(task.created_at, 'datetime')}

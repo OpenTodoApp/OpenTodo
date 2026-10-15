@@ -187,6 +187,11 @@ type PurgeResult struct {
 	Sections int `json:"sections"`
 	// Comments of purged tasks (comments-and-activity); additive.
 	Comments int `json:"comments"`
+	// Attachments of purged tasks and removed attachments past retention
+	// (attachments D13); additive. Their files are removed after commit.
+	Attachments int `json:"attachments"`
+	// Orphans counts files without a row removed by the retention sweep.
+	Orphans int `json:"orphans,omitempty"`
 	// Audience is every user who could see a purged entity: their devices must sync.
 	Audience []string `json:"-"`
 }
@@ -284,8 +289,80 @@ func (s *Service) PurgeExpired(ctx context.Context, cutoff time.Time) (PurgeResu
 				out = append(out, t.purgeTarget)
 			}
 		}
-		return out, nil
+		// Removed attachments keep their file for the retention period, so a removal
+		// can be undone from any device (attachments D13).
+		removed, err := removedAttachments(ctx, tx, cutoff.UnixMilli())
+		if err != nil {
+			return nil, err
+		}
+		return append(out, removed...), nil
 	})
+}
+
+// removedAttachments lists attachments tombstoned before cutoff (Unix ms).
+func removedAttachments(ctx context.Context, q querier, cutoff int64) ([]purgeTarget, error) {
+	rows, err := q.QueryContext(ctx, `SELECT scope_id, entity_id, value FROM scope_fields WHERE entity = 'attachment' AND field = 'deleted_at' AND value != 'null'`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []purgeTarget
+	for rows.Next() {
+		var sc, id, value string
+		if err := rows.Scan(&sc, &id, &value); err != nil {
+			return nil, err
+		}
+		var ms float64
+		if json.Unmarshal([]byte(value), &ms) == nil && ms > 0 && int64(ms) < cutoff {
+			out = append(out, purgeTarget{sc, "attachment", id})
+		}
+	}
+	return out, rows.Err()
+}
+
+// BlobStore is what the sync service needs from the attachment file store
+// (internal/blobs): remove a file, and walk files for the orphan sweep.
+type BlobStore interface {
+	Remove(id string) error
+	Walk(fn func(id string, modified time.Time) error) error
+}
+
+// SetBlobStore lets purges remove attachment files after commit (attachments D13).
+func (s *Service) SetBlobStore(b BlobStore) { s.blobs = b }
+
+// OrphanAge is how long a file without a row is kept (an upload whose op has not
+// arrived yet, or a restore in progress) before the sweep removes it.
+const OrphanAge = 7 * 24 * time.Hour
+
+// SweepOrphans removes attachment files older than OrphanAge that no attachment
+// row in any scope refers to. Returns how many it removed.
+func (s *Service) SweepOrphans(ctx context.Context) (int, error) {
+	if s.blobs == nil {
+		return 0, nil
+	}
+	cutoff := s.now().Add(-OrphanAge)
+	var orphans []string
+	err := s.blobs.Walk(func(id string, modified time.Time) error {
+		if modified.After(cutoff) {
+			return nil
+		}
+		var one int
+		err := s.db.QueryRowContext(ctx, `SELECT 1 FROM scope_fields WHERE entity = 'attachment' AND entity_id = ? LIMIT 1`, id).Scan(&one)
+		if errors.Is(err, sql.ErrNoRows) {
+			orphans = append(orphans, id)
+			return nil
+		}
+		return err
+	})
+	if err != nil {
+		return 0, err
+	}
+	for _, id := range orphans {
+		if err := s.blobs.Remove(id); err != nil {
+			return 0, err
+		}
+	}
+	return len(orphans), nil
 }
 
 // RetentionInterval is how often the retention job runs after its startup pass.
@@ -302,6 +379,9 @@ func (s *Service) RetentionPass(ctx context.Context, days int) (PurgeResult, err
 		return res, err
 	}
 	s.NotifyMembership(res.Audience)
+	if res.Orphans, err = s.SweepOrphans(ctx); err != nil {
+		return res, err
+	}
 	return res, nil
 }
 
@@ -319,8 +399,8 @@ func (s *Service) RunRetention(ctx context.Context, days int, log *slog.Logger) 
 			}
 			return
 		}
-		if res.Tasks+res.Projects > 0 {
-			log.Info("trash retention purged items", "tasks", res.Tasks, "projects", res.Projects, "days", days)
+		if res.Tasks+res.Projects+res.Attachments+res.Orphans > 0 {
+			log.Info("trash retention purged items", "tasks", res.Tasks, "projects", res.Projects, "attachments", res.Attachments, "orphan_files", res.Orphans, "days", days)
 		}
 	}
 	pass()
@@ -397,6 +477,7 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 	}
 	now := s.now().UnixMilli()
 	touched := map[string]bool{}
+	var purgedFiles []string
 	for _, t := range all {
 		if err := purgeOne(ctx, tx, actor, t, now); err != nil {
 			return res, err
@@ -413,6 +494,9 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 			res.Sections++
 		case "comment":
 			res.Comments++
+		case "attachment":
+			res.Attachments++
+			purgedFiles = append(purgedFiles, t.id)
 		}
 	}
 	// CalDAV resource names of purged tasks go in the same transaction
@@ -443,6 +527,16 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 	}
 	if err := tx.Commit(); err != nil {
 		return res, err
+	}
+	// Files go only once their rows are gone, unless the id lives on in another scope.
+	if s.blobs != nil {
+		for _, id := range purgedFiles {
+			var one int
+			if err := s.db.QueryRowContext(ctx, `SELECT 1 FROM scope_fields WHERE entity = 'attachment' AND entity_id = ? LIMIT 1`, id).Scan(&one); err == nil {
+				continue
+			}
+			_ = s.blobs.Remove(id)
+		}
 	}
 	return res, nil
 }
@@ -540,6 +634,14 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		}
 		for _, id := range cids {
 			add(purgeTarget{t.scope, "comment", id})
+		}
+		// So do attachments, removed or not (attachments D13).
+		aids, err := childIDsWhere(ctx, tx, t.scope, "attachment", "task_id", t.id, false)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range aids {
+			add(purgeTarget{t.scope, "attachment", id})
 		}
 	}
 	return out, nil

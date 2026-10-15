@@ -4,7 +4,7 @@ summary: A tour of Settings, what each section does, which choices belong to one
 audience: user
 section: Guides
 specs: [web-app, settings-navigation, date-time-preferences, appearance-preferences]
-screens: [settings/appearance#appearance, settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/sso#access-policies, settings/backups#backups, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations]
+screens: [settings/appearance#appearance, settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/attachments#administration, settings/sso#access-policies, settings/backups#backups, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations]
 order: 140
 card: settings
 ---
@@ -93,7 +93,7 @@ Archive projects automatically after 30 days without open tasks, and bring back 
 
 ### Data
 
-**Download export (JSON)** saves everything you have in one file. **Import data…** brings in tasks from a file. See [Import and export](import-export.md). The sync status of this device is shown too.
+**Download export (JSON)** saves everything you have in one file, and **Download export with files (ZIP)** adds your attached files. **Import data…** brings in tasks from a file. See [Import and export](import-export.md). **Attachments** shows how much of your total your files use and how large one file may be (see [Attachments](attachments.md)). The sync status of this device is shown too.
 
 ### Integrations
 
@@ -116,6 +116,7 @@ Only the owner and admins see this group; **Backups** and **Access policies** ar
 
 - **Users**: everyone with an account, their role and last sign-in. Make someone an admin (owner only), deactivate or reactivate an account, create a password reset link, or delete an account.
 - **Members**: invite people with a single-use link. See [Sharing and comments](sharing.md#invite-someone-new).
+- **Attachments** (owner only): turn attachments on or off, and set the size per file (25 MB unless changed, up to 2048 MB) and the total per account (1 GB unless changed; 0 means no total). See [Attachments](attachments.md#limits).
 
 ### Backups
 

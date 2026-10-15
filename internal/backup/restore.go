@@ -30,9 +30,10 @@ type RestoreOptions struct {
 
 // RestoreResult describes a completed restore.
 type RestoreResult struct {
-	Manifest   Manifest
-	SafetyCopy string // "" when there was no previous database
-	Generation string // the new log generation
+	Manifest    Manifest
+	SafetyCopy  string // "" when there was no previous database
+	Generation  string // the new log generation
+	Attachments int    // attachment files put back (OpenSpec attachments)
 }
 
 // ErrNewerSchema is returned for archives made by a newer schema version.
@@ -158,7 +159,7 @@ func Stage(dir string, r io.Reader, passphrase, archiveName string) (Staged, err
 	if err := out.Close(); err != nil {
 		return st, err
 	}
-	extras, err := readExtras(tr, m)
+	extras, err := readExtras(tr, m, dir)
 	if err != nil {
 		return st, err
 	}
@@ -298,6 +299,9 @@ func applyLocked(dataDir string, st Staged, marker string, now func() time.Time)
 		if err := writeFileAtomic(filepath.Join(dataDir, name), raw); err != nil {
 			return res, fmt.Errorf("restore %s: %w", name, err)
 		}
+	}
+	if res.Attachments, err = moveAttachments(st.Dir, dataDir); err != nil {
+		return res, fmt.Errorf("restore attachments: %w", err)
 	}
 	if d, err := os.Open(dataDir); err == nil {
 		_ = d.Sync()
@@ -441,9 +445,10 @@ func (s *Service) recordPendingRestore(ctx context.Context) {
 }
 
 // readExtras reads the ExtraFiles that follow the database in an archive,
-// verifying each against the manifest. Unknown entries are skipped so a newer
-// archive still restores its database.
-func readExtras(tr *tar.Reader, m Manifest) (map[string][]byte, error) {
+// verifying each against the manifest, and streams attachment files into
+// dir/attachments with the same check (OpenSpec attachments, design D11).
+// Unknown entries are skipped so a newer archive still restores its database.
+func readExtras(tr *tar.Reader, m Manifest, dir string) (map[string][]byte, error) {
 	listed := map[string]ManifestFile{}
 	for _, f := range m.Files {
 		listed[f.Name] = f
@@ -462,6 +467,12 @@ func readExtras(tr *tar.Reader, m Manifest) (map[string][]byte, error) {
 			return nil, fmt.Errorf("%w: %v", ErrIntegrity, err)
 		}
 		want, ok := listed[h.Name]
+		if ok && validAttachmentEntry(h.Name) {
+			if err := stageAttachment(tr, filepath.Join(dir, filepath.FromSlash(h.Name)), want); err != nil {
+				return nil, err
+			}
+			continue
+		}
 		if !allowed[h.Name] || !ok {
 			continue
 		}
@@ -475,6 +486,63 @@ func readExtras(tr *tar.Reader, m Manifest) (map[string][]byte, error) {
 		}
 		out[h.Name] = raw
 	}
+}
+
+// stageAttachment streams one attachment entry to path, verifying its size and
+// digest; a mismatch aborts the restore before anything is swapped.
+func stageAttachment(r io.Reader, path string, want ManifestFile) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	out, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o600)
+	if err != nil {
+		return err
+	}
+	sum := sha256.New()
+	n, err := io.Copy(io.MultiWriter(out, sum), r)
+	if cerr := out.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrIntegrity, err)
+	}
+	if n != want.Size || hex.EncodeToString(sum.Sum(nil)) != want.SHA256 {
+		return fmt.Errorf("%w: %s checksum does not match the manifest", ErrIntegrity, want.Name)
+	}
+	return nil
+}
+
+// moveAttachments renames staged attachment files into dataDir/attachments. Files
+// already there that the archive does not list are kept (newer uploads; the
+// orphan sweep handles ones whose rows never return).
+func moveAttachments(stageDir, dataDir string) (int, error) {
+	root := filepath.Join(stageDir, "attachments")
+	moved := 0
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil
+			}
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(stageDir, path)
+		if err != nil || !validAttachmentEntry(filepath.ToSlash(rel)) {
+			return nil
+		}
+		dst := filepath.Join(dataDir, rel)
+		if err := os.MkdirAll(filepath.Dir(dst), 0o700); err != nil {
+			return err
+		}
+		if err := os.Rename(path, dst); err != nil {
+			return err
+		}
+		moved++
+		return nil
+	})
+	return moved, err
 }
 
 // writeFileAtomic replaces path with data (mode 0600) via a temp file and rename.

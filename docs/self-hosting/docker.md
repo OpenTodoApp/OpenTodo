@@ -144,6 +144,10 @@ docker compose start opentodo
 
 Destinations, encryption, the archive format and the full restore procedure (including encrypted and downloaded archives) are in [docs/backups.md](../backups.md). Copying the `/data` volume while the container is stopped still works as a manual backup. A per-user JSON export is available from **Settings** in the app or `GET /api/v1/export` with an API token.
 
+## Attachments
+
+Files attached to tasks are stored under `/data/attachments/`, one file per attachment, owned by the container user like the rest of `/data`. They are part of backups and restores. The owner sets the size limits in **Settings → Administration → Attachments**; `OPENTODO_ATTACHMENTS_MAX_FILE_MB` and `OPENTODO_ATTACHMENTS_QUOTA_MB` can preset them on the first start. See [docs/attachments.md](../attachments.md).
+
 ## Trash retention
 
 Deleted tasks and projects stay in the Trash, restorable, for 30 days; then the server purges them for good (operations and values removed, a small marker kept so devices drop their copies). Set `OPENTODO_TRASH_RETENTION_DAYS` to change the period (`0` keeps the Trash until a user empties it). The job runs at startup and once a day. Purged data is gone from the live database, but older backup archives still contain it; restoring one brings back the items as they were when it was taken. See [docs/sync.md](../sync.md#purge).

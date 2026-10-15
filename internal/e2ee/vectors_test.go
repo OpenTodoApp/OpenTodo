@@ -52,6 +52,40 @@ type vectors struct {
 		AccountKey string `json:"accountKey"`
 		Wrapped    string `json:"wrapped"`
 	} `json:"recovery"`
+	// File is an attachment envelope (OpenSpec attachments, design D8), with a
+	// small chunk size so the vector has several chunks.
+	File struct {
+		Key       string `json:"key"`
+		ID        string `json:"id"`
+		Prefix    string `json:"prefix"`
+		ChunkSize int    `json:"chunkSize"`
+		Plaintext string `json:"plaintext"`
+		Envelope  string `json:"envelope"`
+	} `json:"file"`
+}
+
+// sealFile is the OTAT1 attachment envelope: header, then each chunk sealed with
+// nonce = prefix || index (3 bytes) || final flag, AAD = "attachment\0"+id+"\0" || header.
+func sealFile(key, prefix []byte, id string, chunkSize int, plaintext []byte) []byte {
+	blk, _ := aes.NewCipher(key)
+	gcm, _ := cipher.NewGCM(blk)
+	header := append([]byte("OTAT1"), 0, 0, 0, 0)
+	binary.BigEndian.PutUint32(header[5:], uint32(chunkSize))
+	header = append(header, prefix...)
+	aad := append([]byte("attachment\x00"+id+"\x00"), header...)
+	out := append([]byte(nil), header...)
+	for i := 0; ; i++ {
+		end := min((i+1)*chunkSize, len(plaintext))
+		final := end == len(plaintext)
+		nonce := append(append([]byte(nil), prefix...), byte(i>>16), byte(i>>8), byte(i), 0)
+		if final {
+			nonce[11] = 1
+		}
+		out = gcm.Seal(out, nonce, plaintext[i*chunkSize:end], aad)
+		if final {
+			return out
+		}
+	}
 }
 
 // aesKeyWrap is RFC 3394 key wrap with the default IV.
@@ -151,6 +185,12 @@ func generate(t *testing.T) vectors {
 		t.Fatal(err)
 	}
 	v.Recovery.Wrapped = base64.RawURLEncoding.EncodeToString(aesKeyWrap(rkek, dek))
+	v.File.Key = hex.EncodeToString(key)
+	v.File.ID = "a1"
+	v.File.Prefix = hex.EncodeToString(seq(0xd0, 8))
+	v.File.ChunkSize = 16
+	v.File.Plaintext = "The quick brown fox jumps over the lazy dog"
+	v.File.Envelope = hex.EncodeToString(sealFile(key, seq(0xd0, 8), v.File.ID, v.File.ChunkSize, []byte(v.File.Plaintext)))
 	return v
 }
 

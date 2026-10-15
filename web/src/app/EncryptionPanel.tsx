@@ -14,6 +14,7 @@ import {
   resetPassphrase, UnlockThrottledError, useEncryption, type EncryptionSnapshot, type PreparedEnable,
 } from '../lib/e2ee'
 import { startMigration } from '../lib/e2eeSync'
+import { FileMigrationPaused, runFileMigration, waitForUploads } from '../lib/attachments'
 import { requestSync } from '../lib/sync'
 
 // Settings → End-to-end encryption (OpenSpec `e2ee`, task 4.1). The pure
@@ -116,7 +117,7 @@ export function EncryptionView(p: EncryptionViewProps) {
       {p.notice && <Notice tone="success">{p.notice}</Notice>}
       {progress && (
         <Notice>
-          {progress.mode === 'encrypt' ? 'Encrypting' : 'Decrypting'} your data: {progress.done} of {progress.total}…
+          {progress.mode === 'encrypt' ? 'Encrypting' : 'Decrypting'} your {progress.files ? 'files' : 'data'}: {progress.done} of {progress.total}{progress.files ? ' files' : ''}…
           <progress className="ml-2 align-middle" max={Math.max(progress.total, 1)} value={progress.done} />
         </Notice>
       )}
@@ -316,6 +317,14 @@ export function EncryptionPanel() {
         setMode({ kind: 'idle' })
         await startMigration('encrypt')
         requestSync(0)
+        // Then the files (OpenSpec attachments D8): each is re-uploaded encrypted.
+        try {
+          await runFileMigration('encrypt')
+        } catch (err) {
+          if (!(err instanceof FileMigrationPaused)) throw err
+          setNotice('Encryption is on. Your content was re-written as ciphertext; your files continue encrypting when you are online.')
+          return
+        }
         setNotice('Encryption is on. Your content was re-written as ciphertext and is being uploaded.')
       })}
       onChange={(current, next, confirm) => void run(async () => {
@@ -339,6 +348,15 @@ export function EncryptionPanel() {
         await lock()
       })}
       onDisable={() => void run(async () => {
+        // Files first, while the key record still exists: each is re-uploaded
+        // decrypted, and the record goes only once the last one is stored (D8).
+        try {
+          await runFileMigration('decrypt')
+        } catch (err) {
+          if (err instanceof FileMigrationPaused) throw new Error('Your files need a connection to be decrypted. Encryption stays on; try again when you are online.')
+          throw err
+        }
+        if (!(await waitForUploads())) throw new Error('Some decrypted files have not finished uploading. Encryption stays on until they have; try again in a moment.')
         await disableEncryption()
         setMode({ kind: 'idle' })
         await startMigration('decrypt')

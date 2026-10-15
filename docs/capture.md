@@ -1,6 +1,6 @@
 ---
 title: Capturing pages
-summary: Save pages and selected text from other apps: the share sheet, the bookmarklet and the browser extension.
+summary: Save pages, selected text, files and screenshots from other apps: the share sheet, the bookmarklet and the browser extension.
 audience: user
 section: Reference
 specs: [share-capture]
@@ -22,6 +22,7 @@ The capture screen proposes:
 - **Title**: the page title, or the link's host name when there is no title. The title field is a regular [quick-add](quick-add.md) line, so typing `tomorrow #work p1` into it sets the date, project and priority.
 - **Description**: the selected or shared text, followed by the link.
 - **Project**: the Inbox by default; pick any project.
+- **Files**: anything shared along with the page (photos, PDFs, documents) or a screenshot from the extension, each with its name, type and size and a thumbnail for images. Remove any you don't want; they're saved as [attachments](attachments.md) of the new task. A share that carries only a file proposes the file's name as the title.
 
 Press **Enter** to save or **Esc** to cancel. Nothing is saved until you confirm. Saving creates an ordinary task on the device first and syncs it like any other quick-add task, so it works with no network and reaches your other devices when the network returns.
 
@@ -29,7 +30,7 @@ When the capture screen was opened as a popup (bookmarklet, extension) or in a w
 
 ## Share sheet (installed app)
 
-The web app manifest declares a [Web Share Target](https://developer.mozilla.org/docs/Web/Manifest/share_target) (`GET /share` with `title`, `text` and `url`). The browser adds OpenTodo to the share menu once the app is **installed**:
+The web app manifest declares a [Web Share Target](https://developer.mozilla.org/docs/Web/Manifest/share_target) (`POST /share` with `title`, `text`, `url` and `files`), so the app is offered for links, text, images and documents. The browser adds OpenTodo to the share menu once the app is **installed**:
 
 | Platform | Install | Share |
 | --- | --- | --- |
@@ -41,7 +42,9 @@ The web app manifest declares a [Web Share Target](https://developer.mozilla.org
 
 Some apps put the link inside the shared text instead of the link field. The capture screen then takes the last `http(s)` link from the text and moves it to the end of the description.
 
-After an update that adds or changes the share target, the browser may need the app to be opened once (or reinstalled) before the share menu entry appears.
+After an update that adds or changes the share target, the browser may need the app to be opened once (or reinstalled) before the share menu entry appears. If a share reaches the server before the app has been opened since the update, the title, text and link still arrive, and the capture screen says the files did not: open the app once and share again.
+
+**Shared files never leave the device before you save.** The app's service worker receives the share on the device, also offline, and keeps the files in a separate local store (`opentodo-share`) only until the capture screen is saved or cancelled. Anything left there is removed after ten minutes and at sign-out. Saving creates the task and its attachments in one step, on the device first; the files upload with the next sync.
 
 ## Bookmarklet
 
@@ -78,7 +81,9 @@ Each opens your server's capture screen in a popup window with the current tab's
 
 **First use**: if no server is set, the extension opens its options page and asks for your server's address (for example `https://todo.example.com`). Once it is saved, the capture you started continues. Change it later in the extension's options.
 
-**Privacy**: the extension stores only the server address (in the browser's extension sync storage). It holds no token or password, has no host permissions and no content scripts, and makes no network requests itself; the only traffic is the capture popup you open, which loads your own server. Permissions: `activeTab` (read the current tab's address, title and selection when you click), `contextMenus`, `scripting` (read the selection), `storage` (the server address).
+**Screenshot**: right-click a page and choose **Add screenshot to OpenTodo**. The extension captures the visible part of the tab as a PNG and hands it to the capture popup, where it's listed under **Files** with the page's title and link; nothing is saved until you press Save. Handing the image to the popup needs access to your server's address, which the options page asks for when you save the address (you can also grant it later there). Without it the popup opens with the title and link and explains how to allow it.
+
+**Privacy**: the extension stores only the server address (in the browser's extension sync storage). It holds no token or password, has no content scripts, and makes no network requests itself; the only traffic is the capture popup you open, which loads your own server. Permissions: `activeTab` (read the current tab's address, title and selection, and capture it, when you click), `contextMenus`, `scripting` (read the selection, and hand a screenshot to the popup), `storage` (the server address), and, optional, access to your server's address only, for the screenshot.
 
 ## Signed out
 
@@ -90,4 +95,5 @@ If the device is not signed in, the capture screen first shows the sign-in form 
 - A link is kept only if it starts with `http://` or `https://`; anything else (`javascript:`, `data:`, `file:` …) is dropped and the rest of the share is shown normally.
 - Shared content is shown as plain text, never as HTML, and the capture screen never opens the shared link.
 - There is no auto-save: a link to `/share` cannot create a task without you pressing Save.
-- Files and images cannot be shared yet; the app is offered in the share menu for text and links only.
+- At most 10 files per share, none larger than the server's limit per file (25 MB unless the owner changed it); a larger file is listed as refused and the task is saved without it. On the public demo, files are not attached.
+- Shared files are listed by name, type and size and never shown as web pages; an HTML file is attached as a file that downloads.
