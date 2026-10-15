@@ -824,3 +824,18 @@ func TestCallAllOneBatch(t *testing.T) {
 		t.Fatalf("gate: %v", err)
 	}
 }
+
+// TestHabitInTaskOut (habits 2.3): tasks show habit; update_tasks does not take it.
+func TestHabitInTaskOut(t *testing.T) {
+	f := newFixture(t)
+	c := agent("u1")
+	f.task("u1", "h1", "Run", map[string]any{"recurrence": "every day", "due": map[string]any{"date": "2026-10-12"}, "habit": true})
+	out := f.mustCall(c, "get_task", map[string]any{"id": "h1"})
+	raw, _ := json.Marshal(out)
+	if !strings.Contains(string(raw), `"habit":true`) {
+		t.Fatalf("get_task = %s", raw)
+	}
+	if _, err := f.call(c, "update_tasks", map[string]any{"updates": []map[string]any{{"id": "h1", "habit": false}}}); !isArgErr(err) {
+		t.Fatalf("update_tasks habit = %v", err)
+	}
+}

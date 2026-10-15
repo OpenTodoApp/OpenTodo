@@ -86,6 +86,10 @@ export interface Task {
    * rows stored before the field; read with `?? []`.
    */
   blocked_by?: string[]
+  /** A recurring series whose streak is tracked (OpenSpec change habits). Read with `?? false`. */
+  habit?: boolean
+  /** On an occurrence record: written by a habit's skip, not a completion. Read with `?? false`. */
+  skipped?: boolean
   /**
    * Recurrence rule in canonical form (docs/recurrence.md) or null. A task with a
    * rule is a series: completing it records an occurrence and moves `due` forward.

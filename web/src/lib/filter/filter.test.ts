@@ -653,3 +653,17 @@ describe('blocked and unblocked (task-dependencies)', () => {
     expect(compile(parse('blocked')!, CTX).warnings).toEqual(['Blocked tasks cannot be told apart here'])
   })
 })
+
+describe('habit and skipped records (habits D6)', () => {
+  const tasks: Task[] = [
+    task('run', { title: 'Run', recurrence: 'every day', due: { date: TODAY }, habit: true }),
+    task('water', { title: 'Water', recurrence: 'every day', due: { date: TODAY } }),
+    task('done-day', { title: 'Run', series_id: 'run', completed_at: at('2026-10-09'), due: { date: '2026-10-09' } }),
+    task('skip-day', { title: 'Run', series_id: 'run', completed_at: at('2026-10-08'), due: { date: '2026-10-08' }, skipped: true }),
+  ]
+  const ctx: FilterContext = { ...CTX, tasks }
+  it('habit lists habits; completed leaves out skip records', () => {
+    expect(ids('habit', tasks, ctx)).toEqual(['run'])
+    expect(ids('completed', tasks, ctx)).toEqual(['done-day'])
+  })
+})

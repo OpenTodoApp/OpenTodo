@@ -608,6 +608,17 @@
       "events": []
     },
     {
+      "name": "habit and skipped edits are edited events (habits)",
+      "ops": [
+        {"id":"hb1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"habit","value":true,"ts":600000,"device":"da"},
+        {"id":"hb2","seq":2,"actor":"bob","entity":"task","entityId":"t2","field":"skipped","value":true,"ts":600000,"device":"db"}
+      ],
+      "events": [
+        {"id":"hb1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":600000,"opIds":["hb1"],"changes":[{"field":"habit","from":null,"to":true}]},
+        {"id":"hb2","kind":"edited","actor":"bob","entity":"task","entityId":"t2","taskId":"t2","ts":600000,"opIds":["hb2"],"changes":[{"field":"skipped","from":null,"to":true}]}
+      ]
+    },
+    {
       "name": "a deadline edit is an edited event (deadlines)",
       "ops": [
         {"id":"dl1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"deadline","value":"2026-11-20","ts":200000,"device":"da"}

@@ -58,3 +58,37 @@ func TestInvalidRecurrenceKeepsPreviousRule(t *testing.T) {
 		t.Fatalf("recurrence = %s, want the previous rule", e["recurrence"])
 	}
 }
+
+// TestHabitFieldsAndSkipCount (habits 1.1, 2.2): habit and skipped are
+// booleans, and a skip record does not count toward "for N times".
+func TestHabitFieldsAndSkipCount(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	for _, v := range []string{"true", "false"} {
+		if _, err := s.Apply(ctx, "u1", []Op{op("h"+v, "task", "t0", "habit", v, 1, "A"), op("s"+v, "task", "t0", "skipped", v, 1, "A")}); err != nil {
+			t.Fatalf("%s: %v", v, err)
+		}
+	}
+	if _, err := s.Apply(ctx, "u1", []Op{op("hx", "task", "t0", "habit", `"yes"`, 2, "A")}); !errors.Is(err, ErrInvalidOp) {
+		t.Fatalf("non-boolean habit: %v", err)
+	}
+	rec := OccurrenceID("s1", "2026-10-09")
+	if _, err := s.Apply(ctx, "u1", []Op{
+		op("a1", "task", "s1", "title", `"Run"`, 10, "A"),
+		op("a2", "task", "s1", "recurrence", `"every day for 2 times"`, 10, "A"),
+		op("a3", "task", "s1", "due", `{"date":"2026-10-10"}`, 10, "A"),
+		op("a4", "task", "s1", "habit", `true`, 10, "A"),
+		op("b1", "task", rec, "title", `"Run"`, 10, "A"),
+		op("b2", "task", rec, "series_id", `"s1"`, 10, "A"),
+		op("b3", "task", rec, "due", `{"date":"2026-10-09"}`, 10, "A"),
+		op("b4", "task", rec, "completed_at", `5`, 10, "A"),
+		op("b5", "task", rec, "skipped", `true`, 10, "A"),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	series, _ := s.Get(ctx, "u1", "task", "s1")
+	_, _, ok, err := s.RecurringCompletion(ctx, "u1", "s1", map[string]json.RawMessage{"completed_at": json.RawMessage("100")}, series, "2026-10-10")
+	if err != nil || !ok {
+		t.Fatalf("the skip counted as an occurrence: ok=%v err=%v", ok, err)
+	}
+}

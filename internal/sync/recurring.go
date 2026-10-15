@@ -89,7 +89,8 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 	}
 	done := 0
 	for _, t := range tasks {
-		if idValue(t["series_id"]) != id || nullish(t["completed_at"]) {
+		// A habit's skip record does not count toward "for N times" (habits D2).
+		if idValue(t["series_id"]) != id || nullish(t["completed_at"]) || string(t["skipped"]) == "true" {
 			continue
 		}
 		d := decodeRecurringDue(t["due"])

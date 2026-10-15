@@ -31,7 +31,8 @@ export function occurrenceDate(series: Task, today: string): string {
 export function completedOccurrences(seriesId: string, tasks: Iterable<Task>, exceptDate?: string): number {
   let n = 0
   for (const t of tasks) {
-    if (t.series_id !== seriesId || !t.completed_at || t.deleted_at || !t.due) continue
+    // A habit's skip record does not count toward "for N times" (habits D2).
+    if (t.series_id !== seriesId || !t.completed_at || t.deleted_at || !t.due || t.skipped) continue
     if (t.due.date === exceptDate) continue
     if (t.id === occurrenceId(seriesId, t.due.date)) n++
   }
@@ -95,7 +96,9 @@ export function planCompletion(series: Task, rule: Rule, tasks: Iterable<Task>, 
   return {
     kind: 'roll', recordId, next,
     changes: [
-      { entity: 'task', entityId: recordId, patch: { ...copyOf(series, now), due: series.due ?? { date }, completed_at: now } },
+      // A habit's record says explicitly that the day was done, so a concurrent skip of
+      // the same day converges to one batch wholesale (habits D2).
+      { entity: 'task', entityId: recordId, patch: { ...copyOf(series, now), due: series.due ?? { date }, completed_at: now, ...(series.habit ? { skipped: false } : {}) } },
       { entity: 'task', entityId: series.id, patch: moveDates(series, next, today) },
     ],
   }
@@ -112,9 +115,21 @@ export function nextOnSkip(series: Task, rule: Rule, today: string): string | nu
   return rule.until && next > rule.until ? null : next
 }
 
-export function planSkip(series: Task, rule: Rule, today: string): Change[] | null {
+/**
+ * Skip the current occurrence. For a habit the skip is recorded (habits D2): an
+ * occurrence record marked `skipped`, under the same id a completion of that day
+ * would use, so the streak keeps the day and devices converge on one record.
+ */
+export function planSkip(series: Task, rule: Rule, today: string, now = Date.now()): Change[] | null {
   const next = nextOnSkip(series, rule, today)
-  return next ? [{ entity: 'task', entityId: series.id, patch: moveDates(series, next, today) }] : null
+  if (!next) return null
+  const move: Change = { entity: 'task', entityId: series.id, patch: moveDates(series, next, today) }
+  if (!series.habit) return [move]
+  const date = occurrenceDate(series, today)
+  return [
+    { entity: 'task', entityId: occurrenceId(series.id, date), patch: { ...copyOf(series, now), due: series.due ?? { date }, completed_at: now, skipped: true } },
+    move,
+  ]
 }
 
 /** "This occurrence only": a standalone copy of the current occurrence, and the series moves on. */

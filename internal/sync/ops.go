@@ -186,6 +186,11 @@ var Schema = map[string]map[string]kind{
 		// task-dependencies): one whole-list register; the resolver refuses ids of
 		// other scopes and lists that close a cycle.
 		"blocked_by": kIDList,
+		// Habits (OpenSpec change habits, design D1): habit marks a recurring
+		// series whose streak is tracked; skipped marks an occurrence record
+		// written by a habit's skip. Clients read a missing value as false.
+		"habit":   kBool,
+		"skipped": kBool,
 		// Recurrence rule and the series an occurrence record belongs to
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
 		"recurrence": kRecurrence,

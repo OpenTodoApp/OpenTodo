@@ -51,6 +51,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `start` | null (anytime), `"someday"` (parked) or `"YYYY-MM-DD"`, the day before which the task is deferred (someday-and-evening) |
 | task | `evening` | boolean, default false: listed under This Evening in Today (someday-and-evening) |
 | task | `blocked_by` | array of at most 50 distinct task ids, default `[]`: the tasks this one waits for, in its own sharing scope; never its own id (task-dependencies, see [Dependencies](#dependencies)) |
+| task | `habit` | boolean, default `false`: the recurring series is tracked as a habit (streak, history); clients read a missing value as `false` (OpenSpec `habits`) |
+| task | `skipped` | boolean, default `false`: on an occurrence record, the day was skipped rather than done (written by a habit's skip) |
 | task | `recurrence` | recurrence rule string (at most 200 characters, must parse under [the grammar](recurrence.md)) or null |
 | task | `series_id` | string (task id) or null |
 | task | `assignee_id` | string (account id) or null; checked against the task's scope at receipt (see "Assignment" under [Sharing scopes](#sharing-scopes)) |

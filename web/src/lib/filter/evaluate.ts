@@ -175,7 +175,9 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
           case 'someday': return (t) => t.start === 'someday'
           case 'deferred': return (t) => !!t.start && t.start !== 'someday' && t.start > today
           case 'evening': return (t) => !!t.evening
-          case 'completed': return (t) => t.completed_at !== null
+          // A habit's skip record is a completed row but not a completion (habits D6).
+          case 'completed': return (t) => t.completed_at !== null && !t.skipped
+          case 'habit': return (t) => t.habit === true
           case 'open': return (t) => t.completed_at === null
           case 'subtask': return (t) => t.parent_id !== null
           case 'blocked': { const b = blockedSet(); return (t) => b.has(t.id) }

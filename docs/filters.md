@@ -36,7 +36,7 @@ date     := "today" | "tomorrow" | "yesterday" | weekday | YYYY-MM-DD
 weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
-          | "someday" | "deferred" | "evening" | "blocked" | "unblocked"
+          | "someday" | "deferred" | "evening" | "blocked" | "unblocked" | "habit"
 name     := word | '"' chars '"'
 text     := word | '"' chars '"'
 ```
@@ -81,7 +81,8 @@ text     := word | '"' chars '"'
 | `no project` | Inbox tasks (no project) |
 | `no labels` | tasks with no label |
 | `subtask` | tasks that have a parent task |
-| `completed` | completed tasks |
+| `completed` | completed tasks (a habit's skipped days are not completions and are left out) |
+| `habit` | recurring tasks tracked as habits |
 | `open` | open (not completed) tasks |
 | `search: text` | title or notes contain the text, ignoring case; quote several words: `search: "oat milk"` |
 

@@ -60,7 +60,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 }
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
-  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
+  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], habit: false, skipped: false, recurrence: null, series_id: null,
   assignee_id: null, section_id: null, ical_extra: null, notes_doc: '',
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {

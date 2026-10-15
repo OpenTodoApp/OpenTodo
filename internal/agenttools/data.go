@@ -258,6 +258,8 @@ type taskOut struct {
 	LabelIDs        []string `json:"label_ids"`
 	AssigneeID      *string  `json:"assignee_id,omitempty"`
 	Recurrence      *string  `json:"recurrence,omitempty"`
+	// Habit marks a series whose streak is tracked (OpenSpec habits); read only.
+	Habit bool `json:"habit,omitempty"`
 	EstimateMinutes *int     `json:"estimate_minutes,omitempty"`
 	Completed       bool     `json:"completed"`
 	CompletedAt     *string  `json:"completed_at,omitempty"`
@@ -281,6 +283,7 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		CompletedAt: isoTime(num(t, "completed_at")), CreatedAt: isoTime(num(t, "created_at")),
 	}
 	out.Encrypted = e2ee.IsCiphertext(rawStr(t, "title")) || e2ee.IsCiphertext(rawStr(t, "description"))
+	out.Habit = boolean(t, "habit")
 	pid := str(t, "project_id")
 	out.Untrusted.Project = snap.projectName(pid)
 	_, out.Shared = snap.shared[pid]
