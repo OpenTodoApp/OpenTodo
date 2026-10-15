@@ -24,8 +24,8 @@
 
 ## 4. Filter terms (design D6)
 
-- [ ] 4.1 Add `blocked` and `unblocked` to `Keyword` and `SIMPLE_KEYWORDS` in `web/src/lib/filter/parse.ts`, pass `tasks` on `FilterContext`, and compile both through `blockedMap` in `evaluate.ts` (a one-time warning when no tasks are given). Verify with filter tests for the three spec scenarios and `printQuery` round trips (`npm test`).
-- [ ] 4.2 Document both terms in `docs/filters.md` (grammar, term table, an example "Waiting for") and `docs/labels-and-filters.md`. Verify with `npm run docs:check`.
+- [x] 4.1 Add `blocked` and `unblocked` to `Keyword` and `SIMPLE_KEYWORDS` in `web/src/lib/filter/parse.ts`, pass `tasks` on `FilterContext`, and compile both through `blockedMap` in `evaluate.ts` (a one-time warning when no tasks are given). Verify with filter tests for the three spec scenarios and `printQuery` round trips (`npm test`).
+- [x] 4.2 Document both terms in `docs/filters.md` (grammar, term table, an example "Waiting for") and `docs/labels-and-filters.md`. Verify with `npm run docs:check`.
 
 ## 5. Activity events (design D8)
 

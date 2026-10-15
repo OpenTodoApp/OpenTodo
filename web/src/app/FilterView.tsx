@@ -77,7 +77,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     if (!good.ast) return null
     // Like the other cross-project views, tasks of archived projects stay out.
     const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-    const { test, warnings } = compile(good.ast, { today, labels, projects })
+    const { test, warnings } = compile(good.ast, { today, labels, projects, tasks: allTasks })
     const tasks = allTasks.filter((t) => !(t.project_id && archived.has(t.project_id)) && test(t))
     return { tasks, warnings }
   }, [good, allTasks, labels, projects, today, zone])
