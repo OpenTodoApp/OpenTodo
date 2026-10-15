@@ -937,7 +937,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <p className="px-2 py-8 text-center text-sm text-faint">
               No task matches this duration filter. <button className="underline" onClick={() => chooseDuration(null)}>Clear the filter</button>
             </p>
-          ) : <EmptyState view={route.view} />)}
+          ) : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} />)}
 
           {board && currentProject ? (
             <BoardView
@@ -1116,7 +1116,11 @@ function placeholderFor(route: ListRoute, project?: Project, label?: Label): str
   }
 }
 
-function EmptyState({ view }: { view: ListRoute['view'] }) {
+function EmptyState({ view, waiting = 0 }: { view: ListRoute['view']; waiting?: number }) {
+  // Everything due today waits for other tasks (task-dependencies): say so.
+  if (view === 'today' && waiting > 0) {
+    return <p className="px-2 py-8 text-center text-sm text-faint">Nothing is ready to start today: {waiting === 1 ? 'one task is' : `${waiting} tasks are`} waiting for other tasks below.</p>
+  }
   const text = {
     inbox: 'Your Inbox is empty. Press q to capture something.',
     today: 'Nothing due today. Enjoy the calm, or pull something in from Upcoming.',

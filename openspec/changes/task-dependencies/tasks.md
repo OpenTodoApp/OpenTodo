@@ -44,8 +44,8 @@
 
 ## 8. Integration
 
-- [ ] 8.1 Manual smoke on `make dev` with two browser profiles in one shared project: add a blocker, see the dimmed card on the board and the Today group, complete the blocker on the other profile and watch the notification and the unblocked row; try to close a cycle from both profiles offline and confirm one edge is refused and both converge. Record the result in the change folder notes.
-- [ ] 8.2 Run `make check` (go test, web test and build, docs check, ui lint). Verify it passes.
+- [x] 8.1 Manual smoke on `make dev` with two browser profiles in one shared project: add a blocker, see the dimmed card on the board and the Today group, complete the blocker on the other profile and watch the notification and the unblocked row; try to close a cycle from both profiles offline and confirm one edge is refused and both converge. Record the result in the change folder notes.
+- [x] 8.2 Run `make check` (go test, web test and build, docs check, ui lint). Verify it passes.
 
 ## Workflow follow-up
 
