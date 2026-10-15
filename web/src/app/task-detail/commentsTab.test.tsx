@@ -67,7 +67,12 @@ describe('CommentsView', () => {
     expect(time.getAttribute('aria-label')).toBeNull()
     expect(time.querySelector('.sr-only')?.textContent).toBe('2026-10-12, 15:05')
     expect(time.getAttribute('tabindex')).toBe('0')
-    expect(time.getAttribute('title')).toBe('2026-10-12, 15:05')
+    expect(time.getAttribute('title')).toBeNull()
+    // Focus opens the Tooltip primitive with the absolute time, announced as the description.
+    await act(async () => { time.dispatchEvent(new FocusEvent('focusin', { bubbles: true })) })
+    const tip = document.getElementById(time.getAttribute('aria-describedby')!)
+    expect(tip?.getAttribute('role')).toBe('tooltip')
+    expect(tip?.textContent).toBe('2026-10-12, 15:05')
     await v.unmount()
   })
 
