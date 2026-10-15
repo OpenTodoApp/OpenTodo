@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/pixari/opentodo/internal/recurrence"
 )
 
 // TestTaskDeadlineREST covers the REST side of deadlines (OpenSpec change
@@ -151,5 +153,41 @@ func TestCaldavDeadlineRoundTrip(t *testing.T) {
 	c.must("PUT", c.cal("inbox")+id+".ics", vtodoBody(id, "SUMMARY:Renew passports", "DTSTART;VALUE=DATE:20261101", "DUE;VALUE=DATE:20261101"), 204)
 	if got := e.task(id); got["deadline"] != nil || got["due"].(map[string]any)["date"] != "2026-11-01" {
 		t.Fatalf("equal pair: %v", got)
+	}
+}
+
+// TestRestRecurringCompletionShiftsDeadline: completing a recurring task over
+// REST moves the series' deadline by the due delta and the record keeps the
+// old one (OpenSpec change deadlines, design D8).
+func TestRestRecurringCompletionShiftsDeadline(t *testing.T) {
+	e := newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Weekly report", "due": map[string]any{"date": "2026-10-12"}, "deadline": "2026-10-14", "recurrence": "every monday"})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"completed_at": time.Now().UnixMilli()})
+	e.mustStatus(resp, 200, out)
+	due := out["due"].(map[string]any)["date"].(string)
+	if due == "2026-10-12" {
+		t.Fatalf("series did not move: %v", out)
+	}
+	if want := recurrence.ShiftDate("2026-10-14", "2026-10-12", due); out["deadline"] != want {
+		t.Fatalf("deadline = %v, want %s (due %s)", out["deadline"], want, due)
+	}
+	resp, out = e.do("GET", "/api/v1/export", nil)
+	e.mustStatus(resp, 200, out)
+	found := false
+	for _, x := range out["tasks"].([]any) {
+		r := x.(map[string]any)
+		if r["series_id"] == id {
+			found = true
+			if r["deadline"] != "2026-10-14" {
+				t.Fatalf("record deadline = %v", r["deadline"])
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("no occurrence record in %v", out["tasks"])
 	}
 }

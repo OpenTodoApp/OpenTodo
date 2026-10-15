@@ -321,3 +321,50 @@ describe('convergence across offline devices', () => {
     expect((await db.tasks.get(id))?.recurrence).toBe('every 2 weeks')
   })
 })
+
+describe('deadlines follow the series (OpenSpec deadlines 8.1)', () => {
+  it('weekly report: the series moves its deadline, the record keeps the old one', async () => {
+    const id = await createTask({ title: 'Report', due: { date: '2026-10-12' }, deadline: '2026-10-14', recurrence: 'every monday' })
+    await completeTask(id, { today: '2026-10-12' })
+    expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-10-19' }, deadline: '2026-10-21' })
+    expect((await db.tasks.get(occurrenceId(id, '2026-10-12')))?.deadline).toBe('2026-10-14')
+  })
+
+  it('catch-up keeps the distance', async () => {
+    const id = await createTask({ title: 'Daily', due: { date: '2026-10-09' }, deadline: '2026-10-10', recurrence: 'every day' })
+    await completeTask(id, { today: '2026-10-14' })
+    expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-10-15' }, deadline: '2026-10-16' })
+  })
+
+  it('skip and detach move the deadline too; the copy keeps its own', async () => {
+    const id = await createTask({ title: 'Gym', due: { date: '2026-10-12' }, deadline: '2026-10-13', recurrence: 'every monday' })
+    await skipOccurrence(id, { today: '2026-10-10' })
+    expect((await db.tasks.get(id))?.deadline).toBe('2026-10-20')
+    await detachOccurrence(id, { today: '2026-10-10' })
+    expect((await db.tasks.get(id))?.deadline).toBe('2026-10-27')
+    expect((await db.tasks.get(detachedId(id, '2026-10-19')))?.deadline).toBe('2026-10-20')
+  })
+
+  it('a series without a deadline writes no deadline op', async () => {
+    const id = await createTask({ title: 'Plain', due: { date: '2026-10-12' }, recurrence: 'every day' })
+    await db.outbox.clear()
+    await completeTask(id, { today: '2026-10-12' })
+    expect((await outbox()).some((o) => o.field === 'deadline')).toBe(false)
+    expect((await db.tasks.get(id))?.deadline ?? null).toBeNull()
+  })
+
+  it('two devices completing offline converge on the same deadline', async () => {
+    const { a, b, id } = await seriesOnTwoDevices({ title: 'Report', due: { date: '2026-10-12' }, deadline: '2026-10-14', recurrence: 'every monday' })
+    await use(a)
+    await completeTask(id, { today: '2026-10-12' })
+    await use(b)
+    await completeTask(id, { today: '2026-10-13' })
+    await syncAll([a, b])
+    for (const dev of [a, b]) {
+      await use(dev)
+      expect(await records(id)).toHaveLength(1)
+      expect(await db.tasks.get(id)).toMatchObject({ due: { date: '2026-10-19' }, deadline: '2026-10-21' })
+    }
+    expect(await snapshot(a)).toBe(await snapshot(b))
+  })
+})

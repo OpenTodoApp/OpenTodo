@@ -641,3 +641,16 @@ func (r Rule) Preview(due, today string, done, n int) ([]string, error) {
 	}
 	return out, nil
 }
+
+// ShiftDate moves date by as many calendar days as the series moved from `from`
+// to `to` (OpenSpec change deadlines, design D8: a deadline follows its series).
+// All three are YYYY-MM-DD; an invalid input returns date unchanged.
+func ShiftDate(date, from, to string) string {
+	d, ok1 := parseDate(date)
+	f, ok2 := parseDate(from)
+	n, ok3 := parseDate(to)
+	if !ok1 || !ok2 || !ok3 {
+		return date
+	}
+	return formatDate(d + n - f)
+}

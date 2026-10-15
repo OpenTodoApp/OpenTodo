@@ -45,8 +45,8 @@
 
 ## 8. Recurrence (design D8)
 
-- [ ] 8.1 Replace `moveDue` with `moveDates` in `web/src/lib/recurring.ts` (deadline shifted by the due delta on completion, skip and detach; record and copy keep theirs) and apply the same rule in `internal/httpapi/recurring.go`; add a shared vector to `recurrence.vectors.json`. Verify with tests for the "Weekly report" and "Catch-up keeps the distance" scenarios on both sides (`npm test`, `go test ./internal/httpapi/...`) and the existing convergence test extended with a deadline.
-- [ ] 8.2 Update `docs/recurrence.md` ("How the next occurrence is computed"). Verify with `npm run docs:check`.
+- [x] 8.1 Replace `moveDue` with `moveDates` in `web/src/lib/recurring.ts` (deadline shifted by the due delta on completion, skip and detach; record and copy keep theirs) and apply the same rule in `internal/httpapi/recurring.go`; add a shared vector to `recurrence.vectors.json`. Verify with tests for the "Weekly report" and "Catch-up keeps the distance" scenarios on both sides (`npm test`, `go test ./internal/httpapi/...`) and the existing convergence test extended with a deadline.
+- [x] 8.2 Update `docs/recurrence.md` ("How the next occurrence is computed"). Verify with `npm run docs:check`.
 
 ## 9. Import (design D9)
 

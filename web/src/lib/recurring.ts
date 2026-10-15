@@ -4,6 +4,7 @@
 // function of inputs all devices share (series id, rule, due date, occurrence date),
 // so devices acting on the same occurrence offline write identical entities and
 // converge under last-writer-wins without a coordinator.
+import { addDaysISO, daysBetweenISO } from './dates'
 import { detachedId, occurrenceId } from './ids'
 import type { Change } from './ops'
 import { followingOccurrence, nextAfterCompletion, nextCalendar, parseRule, type Rule } from './recurrence'
@@ -43,6 +44,22 @@ function moveDue(due: Due | null, date: string): Due {
   return due.tz ? { date, time: due.time, tz: due.tz } : { date, time: due.time }
 }
 
+/**
+ * The series' fields on its next occurrence: the due date moves to `next`, and a
+ * deadline moves by the same number of calendar days (OpenSpec change deadlines,
+ * design D8). A series without a deadline writes no deadline field.
+ */
+function moveDates(series: Task, next: string, today: string): Record<string, unknown> {
+  const out: Record<string, unknown> = { due: moveDue(series.due, next) }
+  if (series.deadline) out.deadline = shiftDate(series.deadline, occurrenceDate(series, today), next)
+  return out
+}
+
+/** `date` moved by as many calendar days as from `from` to `to` (Go: recurrence.ShiftDate). */
+export function shiftDate(date: string, from: string, to: string): string {
+  return addDaysISO(date, daysBetweenISO(from, to))
+}
+
 /** Fields an occurrence copy inherits from its series. */
 function copyOf(series: Task, now: number): Record<string, unknown> {
   return {
@@ -51,6 +68,8 @@ function copyOf(series: Task, now: number): Record<string, unknown> {
     created_at: now, deleted_at: null, estimate_minutes: series.estimate_minutes, recurrence: null, series_id: series.id,
     // Same project, same column (board-view); only sent when set.
     ...(series.section_id ? { section_id: series.section_id } : {}),
+    // The occurrence keeps the deadline it had (deadlines D8); only sent when set.
+    ...(series.deadline ? { deadline: series.deadline } : {}),
   }
 }
 
@@ -73,7 +92,7 @@ export function planCompletion(series: Task, rule: Rule, tasks: Iterable<Task>, 
     kind: 'roll', recordId, next,
     changes: [
       { entity: 'task', entityId: recordId, patch: { ...copyOf(series, now), due: series.due ?? { date }, completed_at: now } },
-      { entity: 'task', entityId: series.id, patch: { due: moveDue(series.due, next) } },
+      { entity: 'task', entityId: series.id, patch: moveDates(series, next, today) },
     ],
   }
 }
@@ -91,7 +110,7 @@ export function nextOnSkip(series: Task, rule: Rule, today: string): string | nu
 
 export function planSkip(series: Task, rule: Rule, today: string): Change[] | null {
   const next = nextOnSkip(series, rule, today)
-  return next ? [{ entity: 'task', entityId: series.id, patch: { due: moveDue(series.due, next) } }] : null
+  return next ? [{ entity: 'task', entityId: series.id, patch: moveDates(series, next, today) }] : null
 }
 
 /** "This occurrence only": a standalone copy of the current occurrence, and the series moves on. */
@@ -104,7 +123,7 @@ export function planDetach(series: Task, rule: Rule, now: number, today: string)
     copyId,
     changes: [
       { entity: 'task', entityId: copyId, patch: { ...copyOf(series, now), due: series.due ?? { date }, completed_at: null } },
-      { entity: 'task', entityId: series.id, patch: { due: moveDue(series.due, next) } },
+      { entity: 'task', entityId: series.id, patch: moveDates(series, next, today) },
     ],
   }
 }
