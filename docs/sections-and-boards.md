@@ -3,7 +3,7 @@ title: Sections and boards
 summary: Split a project into stages with sections, and switch it to a board to move cards between columns by drag or keyboard.
 audience: user
 section: Guides
-specs: [sections-and-boards]
+specs: [sections-and-boards, project-timeline]
 screens: []
 order: 30
 card: board
