@@ -24,6 +24,7 @@ import { isGPending, openTaskInList, setGPending } from './signals'
 import { db } from '../lib/db'
 import { watchViewerZone } from '../lib/dates'
 import { NotificationBell } from './NotificationBell'
+import { UndoToast } from './bulk/UndoToast'
 import { setCurrentUserId } from '../lib/sharing'
 import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
 import { useVimEnabled } from './vim/prefs'
@@ -256,6 +257,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {assistantLoaded && <Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense>}
       {paletteLoaded && paletteOpen && <Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense>}
       <ReminderToasts />
+      <UndoToast />
       <ArchivePrompt />
     </div>
   )

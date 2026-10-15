@@ -6,6 +6,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Added
 
+- **Change several tasks at once.** Tick tasks with <kbd>x</kbd> or <kbd>Space</kbd>, extend with <kbd>Shift</kbd>+<kbd>↓</kbd>/<kbd>↑</kbd>, tick everything with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>A</kbd>, Shift+click a range, or tap **Select** on a phone. A bar shows how many are ticked; **Actions** (or <kbd>.</kbd>) completes, sets priority, labels, a date, moves, assigns or trashes them all in one batch that works offline and syncs as ordinary changes. Moves and assignments are shown for review first; everything else applies at once with **Undo** (also <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd>). Works in every task list, the Filter view, saved views and from the search box. ([Tasks and projects](docs/tasks-and-projects.md#change-several-tasks-at-once))
 - **Search and commands on Ctrl+K.** One box (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>, or the magnifying glass in the header) finds any task by title or notes, any project, label, saved view or Settings section, and runs any command by name: go to a view, act on the selected task, use everything in the current project's, view's, label's or section's menu, create things, sync, toggle Vim keys. Filter queries like `@errand & p1` list their tasks right there. It ranks what you pick often first, works offline, and searches only on your device, also for encrypted accounts. ([Search and commands](docs/search.md))
 
 ## [0.4.0] - 2026-10-15

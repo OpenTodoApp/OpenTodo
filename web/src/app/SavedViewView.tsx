@@ -14,6 +14,7 @@ import { TaskDetail } from './TaskDetail'
 import { TaskRow } from './TaskRow'
 import { ViewMenu } from './ViewsView'
 import { useListKeys } from './useListKeys'
+import { useBulkList } from './bulk/useBulkList'
 import { placeInDay } from './signals'
 import { todayISO } from '../lib/dates'
 import { useViewData, type ViewData } from './useViews'
@@ -88,9 +89,11 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
+  const bulkTasks = useMemo(() => rows.map((r) => r.task), [rows])
+  const bulk = useBulkList(bulkTasks)
 
   useListKeys({
-    rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor,
+    rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor, bulk,
     onIdleEscape: () => setSelected(null),
     extra: (e, row) => {
       if (e.key === 's' && row && !row.completed_at) {
@@ -168,6 +171,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
 
           {result.ok && rows.length === 0 && <p className="px-2 py-8 text-center text-sm text-faint">No task matches this view.</p>}
 
+          {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label="View results">
             {groups.map((g) => (
               <section key={g.key} data-group={g.key} className="mb-4">
@@ -187,6 +191,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                           breadcrumb={t.parent_id ? breadcrumbOf(t, taskMap) : null}
                           onToggle={() => void setTaskCompleted(t.id, !t.completed_at)}
                           onOpen={() => { setSelected(key); setOpenId(t.id) }}
+                          {...bulk.rowProps(t.id)}
                         />
                     )
                   })}

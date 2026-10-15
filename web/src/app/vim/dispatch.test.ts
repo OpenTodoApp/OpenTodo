@@ -318,3 +318,11 @@ describe('in-app assistant shortcut', () => {
     expect(defaults).toEqual(['g', 'I'])
   })
 })
+
+describe('bulk selection keys pass through (OpenSpec bulk-edit 2.2)', () => {
+  it('Shift+ArrowDown and Space reach the default layer', () => {
+    const s = setup()
+    expect(s.press('ArrowDown', body, { shiftKey: true } as Partial<KeyLike>).stopped).toBe(false)
+    expect(s.press(' ').stopped).toBe(false)
+  })
+})

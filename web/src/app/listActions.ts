@@ -48,6 +48,12 @@ export interface ListState {
   openLabels?(id: string): void
   /** Open the assignee picker for a task (Shift+A), when the list has one. */
   openAssignee?(id: string): void
+  /** Ticked task ids in list order (bulk-edit D1); empty when nothing is ticked. */
+  ticked?(): string[]
+  /** Replace the ticked set. */
+  tick?(ids: string[]): void
+  /** Open the selection's Actions menu, optionally on a picker ("move", "assign", "labels"). */
+  openActions?(picker?: string | null): void
 }
 
 let current: ListState | null = null

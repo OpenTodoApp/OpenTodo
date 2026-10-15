@@ -233,3 +233,16 @@ describe('empty box order (2.2)', () => {
     await r.unmount()
   })
 })
+
+describe('commands on ticked tasks (bulk-edit 6.3)', () => {
+  it('with three ticked, "Complete 3 tasks" acts on all of them and single-task commands are hidden', async () => {
+    const ids = [await createTask({ title: 'a' }), await createTask({ title: 'b' }), await createTask({ title: 'c' })]
+    const t = (await db.tasks.get(ids[0]))!
+    const list = { ...listFor(t), ticked: () => ids }
+    const cmds = commands(ctxFor({ task: t, list }))
+    expect(cmds.some((c) => c.id.startsWith('task:'))).toBe(false)
+    await cmds.find((c) => c.id === 'sel:complete')!.run()
+    for (const id of ids) expect((await db.tasks.get(id))!.completed_at).not.toBeNull()
+    expect(cmds.find((c) => c.id === 'sel:complete')!.label).toBe('Complete 3 tasks')
+  })
+})

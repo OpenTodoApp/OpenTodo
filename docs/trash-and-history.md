@@ -52,6 +52,10 @@ History is loaded from your server, so it needs a connection. Offline, the tab s
 
 Next to each change in a version is **Restore this value**. Select it to set the field back to that value. To put back everything a version changed at once, select **Restore this version**; a confirmation lists the fields first. Restoring is a change like any other: it syncs to all devices and shows up in the history itself as a new version, so you can always undo the undo. Each field is restored as its own change, so if someone edits the same field on another device at the same time, the later edit wins for that field.
 
+## Undo a bulk action
+
+After you change several tasks at once, a notice with **Undo** stays for ten seconds; <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> undoes too. Tasks moved to the Trash in bulk come back with it, and so do the originals of a move into a shared project (the copies go to the Trash). Undo works offline. See [Change several tasks at once](tasks-and-projects.md#change-several-tasks-at-once).
+
 ## Activity on a task
 
 The **Activity** tab of a task shows who created it, completed it, moved it or changed the date, newest first. Quick changes by one person within ten minutes are grouped into one line, such as "You changed the due date and priority"; select it to see each change. Comments appear as one short line that opens the comment. Activity works offline; your changes that are not synced yet are marked pending. In shared projects this includes everyone's changes. See [Sharing and comments](sharing.md#see-what-others-changed).
