@@ -14,10 +14,17 @@ for (const id of ids) {
     for (const width of [375, 1280]) {
       test(`${id} ${theme} ${width}`, async ({ page }) => {
         await page.setViewportSize({ width, height: 800 })
-        await page.goto(`/iframe.html?id=${id}&viewMode=story&globals=theme:${theme};width:${width}`)
+        const url = `/iframe.html?id=${id}&viewMode=story&globals=theme:${theme};width:${width}`
+        await page.goto(url)
         const story = page.locator('#storybook-root')
         // Rendered, not necessarily with text (an input, an icon-only trigger).
         await page.locator('#storybook-root > *').first().waitFor()
+        // A chunk the static server did not deliver in time renders Storybook's error page
+        // ("Failed to fetch dynamically imported module"); one reload gets the story.
+        if (await page.locator('#storybook-root h1', { hasText: 'Failed to fetch' }).count()) {
+          await page.goto(url)
+          await page.locator('#storybook-root > *').first().waitFor()
+        }
         await page.evaluate(() => document.fonts.ready)
         // An open menu or dialog renders in a portal outside the story root: capture the viewport.
         const overlay = await page.locator('[data-overlay]').count()
