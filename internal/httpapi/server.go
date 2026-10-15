@@ -981,12 +981,12 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 	// Devices may not write as an AI assistant or a calendar app: those device
 	// ids are reserved for the server's own writers (mcp-write-tools D4).
 	if opsync.ReservedDevice(in.Device) {
-		writeError(w, http.StatusBadRequest, "invalid_op", "device: ids starting with agent: or caldav: are reserved")
+		writeError(w, http.StatusBadRequest, "invalid_op", "device: server and ids starting with agent: or caldav: are reserved")
 		return
 	}
 	for _, op := range in.Ops {
 		if opsync.ReservedDevice(op.Device) {
-			writeError(w, http.StatusBadRequest, "invalid_op", "op device: ids starting with agent: or caldav: are reserved")
+			writeError(w, http.StatusBadRequest, "invalid_op", "op device: server and ids starting with agent: or caldav: are reserved")
 			return
 		}
 	}

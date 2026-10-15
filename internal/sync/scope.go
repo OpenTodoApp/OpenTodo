@@ -155,13 +155,20 @@ type resolver struct {
 	// allowComment counts one comment creation against the author's rate limit;
 	// nil means unlimited.
 	allowComment func() bool
+	// Attachments (attachments.go): creation fields per new attachment, what is
+	// known about each attachment id, and the per-file size limit (0 = none).
+	batchAttachment map[string]*batchAttachment
+	attachments     map[string]*attachmentState
+	attachmentLimit func() int64
 }
 
 func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolver {
 	r := &resolver{ctx: ctx, tx: tx, acc: acc, shared: map[string]bool{}, childScope: map[string]string{}, batchProject: map[string]Op{}, assignable: map[string]bool{},
-		batchTasks: map[string]bool{}, batchComment: map[string]*batchComment{}, comments: map[string]*commentState{}}
+		batchTasks: map[string]bool{}, batchComment: map[string]*batchComment{}, comments: map[string]*commentState{},
+		batchAttachment: map[string]*batchAttachment{}, attachments: map[string]*attachmentState{}}
 	for _, op := range ops {
 		r.noteComment(op)
+		r.noteAttachment(op)
 		if op.Entity == "task" {
 			r.batchTasks[op.EntityID] = true
 		}
@@ -288,6 +295,9 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 		// Comments follow their task's scope and have their own authorship rules
 		// (viewers may comment), so the role table below does not apply.
 		return r.resolveComment(op)
+	case "attachment":
+		// Attachments follow the comment rules (attachments.go).
+		return r.resolveAttachment(op)
 	default:
 		// Labels, saved views and reminders are personal: a reminder on a task in a
 		// shared project still belongs to its creator only (OpenSpec `reminders`).
@@ -381,6 +391,12 @@ func (r *resolver) restoreOps(refused []Op) ([]Op, error) {
 		case "comment":
 			// Only a comment that exists can have a server value to restore.
 			st := r.comments[op.EntityID]
+			if st == nil || !st.found || st.scope == "" {
+				continue
+			}
+			scope = st.scope
+		case "attachment":
+			st := r.attachments[op.EntityID]
 			if st == nil || !st.found || st.scope == "" {
 				continue
 			}

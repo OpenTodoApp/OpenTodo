@@ -9,11 +9,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
 
+	"github.com/pixari/opentodo/internal/e2ee"
 	"github.com/pixari/opentodo/internal/recurrence"
 	"github.com/pixari/opentodo/internal/zoned"
 )
@@ -260,6 +262,24 @@ var Schema = map[string]map[string]kind{
 		"edited_at":  kNullableNumber,
 		"deleted_at": kNullableNumber,
 	},
+	// attachment: a file or link on a task or one of its comments (OpenSpec change
+	// attachments, design D1). Metadata only: the bytes live under
+	// <data>/attachments/ (internal/blobs). It lives in its task's scope and follows
+	// the comment authorship rules; uploaded_at is written by the server alone (D3).
+	"attachment": {
+		"task_id":     kID,
+		"comment_id":  kNullableString,
+		"name":        kString,
+		"mime":        kString,
+		"size":        kNumber,
+		"sha256":      kString,
+		"url":         kNullableString,
+		"encrypted":   kBool,
+		"author_id":   kID,
+		"created_at":  kNumber,
+		"uploaded_at": kNullableNumber,
+		"deleted_at":  kNullableNumber,
+	},
 	// project_prefs: one user's personal preferences for a project, keyed by the
 	// project id (OpenSpec change `activity-feed`, design D1). It always resolves
 	// to the author's personal scope, even for a shared project, so it syncs to
@@ -328,6 +348,48 @@ func Validate(op Op) error {
 	}
 	if err := checkKind(k, op.Value); err != nil {
 		return fmt.Errorf("%w: %s.%s %v", ErrInvalidOp, op.Entity, op.Field, err)
+	}
+	if op.Entity == "attachment" {
+		if err := checkAttachment(op.Field, op.Value); err != nil {
+			return fmt.Errorf("%w: attachment.%s %v", ErrInvalidOp, op.Field, err)
+		}
+	}
+	return nil
+}
+
+// MaxAttachmentName is the longest attachment name (characters).
+const MaxAttachmentName = 255
+
+// checkAttachment adds the attachment rules (design D1): a name of 1–255
+// characters without path separators, a link only over http or https, a size
+// that is a non-negative whole number. Ciphertext (encrypted accounts) is
+// opaque and only length-checked by the value limit.
+func checkAttachment(field string, raw json.RawMessage) error {
+	switch field {
+	case "name":
+		var s string
+		_ = json.Unmarshal(raw, &s)
+		if e2ee.IsCiphertext(s) {
+			return nil
+		}
+		if n := utf8.RuneCountInString(s); n < 1 || n > MaxAttachmentName || strings.ContainsAny(s, "/\\\x00") {
+			return errors.New("must be 1–255 characters without / or \\")
+		}
+	case "url":
+		var s string
+		if string(raw) == "null" || json.Unmarshal(raw, &s) != nil || e2ee.IsCiphertext(s) {
+			return nil
+		}
+		u, err := url.Parse(s)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			return errors.New("must be an http or https URL")
+		}
+	case "size":
+		var n float64
+		_ = json.Unmarshal(raw, &n)
+		if n < 0 || n != float64(int64(n)) {
+			return errors.New("must be a whole number of bytes")
+		}
 	}
 	return nil
 }

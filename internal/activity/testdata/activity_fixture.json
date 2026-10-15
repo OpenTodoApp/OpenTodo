@@ -626,6 +626,15 @@
         {"id":"se1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":300000,"opIds":["se1"],"changes":[{"field":"start","from":null,"to":"someday"}]},
         {"id":"se2","kind":"edited","actor":"bob","entity":"task","entityId":"t2","taskId":"t2","ts":300000,"opIds":["se2"],"changes":[{"field":"evening","from":null,"to":true}]}
       ]
+    },
+    {
+      "name": "attachment ops derive no event (attachments)",
+      "ops": [
+        {"id":"at1","seq":1,"actor":"alice","entity":"attachment","entityId":"a1","field":"task_id","value":"t1","ts":400000,"device":"da"},
+        {"id":"at2","seq":2,"actor":"alice","entity":"attachment","entityId":"a1","field":"name","value":"photo.png","ts":400000,"device":"da"},
+        {"id":"at3","seq":3,"actor":"alice","entity":"attachment","entityId":"a1","field":"uploaded_at","value":400500,"ts":400500,"device":"server"}
+      ],
+      "events": []
     }
   ]
 }

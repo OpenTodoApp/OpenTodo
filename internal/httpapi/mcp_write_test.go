@@ -589,6 +589,9 @@ func TestSyncRefusesReservedDevicePrefixes(t *testing.T) {
 		{"laptop", []map[string]any{op("agent:abc")}},
 		{"caldav:xyz", []map[string]any{op("caldav:xyz")}},
 		{"laptop", []map[string]any{op("caldav:xyz")}},
+		// The server's own device writes uploaded_at (attachments D3).
+		{"server", []map[string]any{op("server")}},
+		{"laptop", []map[string]any{op("server")}},
 	} {
 		resp, out := e.do("POST", "/api/v1/sync", map[string]any{"device": tc.device, "cursor": 0, "ops": tc.ops})
 		if resp.StatusCode != 400 || errCode(out) != "invalid_op" {

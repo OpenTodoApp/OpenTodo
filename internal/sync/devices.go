@@ -29,8 +29,10 @@ func AgentDevice(tokenID string) string { return AgentDevicePrefix + tokenID }
 func IsAgentDevice(device string) bool { return strings.HasPrefix(device, AgentDevicePrefix) }
 
 // ReservedDevice reports whether a device id may only be written by the server.
+// The server's own device (REST writes, attachment uploads: uploaded_at is
+// trusted only from it) is reserved too (OpenSpec change attachments, design D3).
 func ReservedDevice(device string) bool {
-	return strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix)
+	return device == ServerDevice || strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix)
 }
 
 // CreatedBy returns the device of the first stored created_at op of an entity

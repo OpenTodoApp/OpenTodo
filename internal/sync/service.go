@@ -23,6 +23,10 @@ type Service struct {
 	sinks notify.Multi
 	// commentLimiter caps comment creation per account (comments-and-activity).
 	commentLimiter *fixedWindow
+	// attachmentLimit is the per-file attachment size limit in bytes (attachments D5).
+	attachmentLimit func() int64
+	// blobs removes attachment files after purges (attachments D13); nil in tests without files.
+	blobs BlobStore
 	// pullBudget overrides MaxPullBytes in tests; 0 means MaxPullBytes.
 	pullBudget int
 	// guard bounds writes on a demo instance (demo-sandboxes D3); nil elsewhere.
@@ -97,6 +101,11 @@ type Observer func(ctx context.Context, changes []Change)
 // SetObserver installs the post-commit observer (nil removes it). Call it during
 // wiring, before the service handles requests.
 func (s *Service) SetObserver(o Observer) { s.observer = o }
+
+// SetAttachmentLimit installs the per-file attachment size limit in bytes, read
+// per batch (owner settings can change it without a restart); nil or 0 means
+// unlimited (OpenSpec change attachments, design D5).
+func (s *Service) SetAttachmentLimit(limit func() int64) { s.attachmentLimit = limit }
 
 // NewService wires a Service.
 func NewService(db *sql.DB) *Service {
@@ -202,6 +211,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	}
 	rs := newResolver(ctx, tx, acc, ops)
 	rs.allowComment = func() bool { return s.commentLimiter.allow(userID) }
+	rs.attachmentLimit = s.attachmentLimit
 	pc := &purgeChecker{ctx: ctx, q: tx, acc: acc, cache: map[string]bool{}}
 	tracker := newChangeTracker(userID)
 	touched := map[string]bool{}

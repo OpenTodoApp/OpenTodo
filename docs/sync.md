@@ -82,6 +82,16 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | comment | `mentions` | array of strings (account ids; filtered to members at receipt) |
 | comment | `created_at` | number |
 | comment | `edited_at`, `deleted_at` | number or null |
+| attachment | `task_id`, `author_id` | string (task id, account id; required, fixed at creation) |
+| attachment | `comment_id` | string (a comment of the same task by the same author) or null; fixed |
+| attachment | `name` | string, 1–255 characters without `/` or `\` (the author may rename) |
+| attachment | `mime`, `sha256` | string (media type; hex digest of the stored bytes, `""` for links); fixed |
+| attachment | `size` | whole number of stored bytes (0 for links); fixed |
+| attachment | `url` | `http`/`https` URL for a link attachment, or null; fixed |
+| attachment | `encrypted` | boolean: the stored bytes are an encrypted envelope; fixed |
+| attachment | `created_at` | number; fixed |
+| attachment | `uploaded_at` | number or null; written only by the server once it stored the bytes |
+| attachment | `deleted_at` | number or null |
 | project_prefs | `feed_seen_at` | number (Unix ms: the activity-feed "seen until" time; personal scope only) |
 | user_prefs | `date_format` | string: `"system"`, `"day-month"`, `"month-day"` or `"iso"` (personal scope only) |
 | user_prefs | `time_format` | string: `"system"`, `"12h"` or `"24h"` |
@@ -146,6 +156,15 @@ A `comment` is a threaded markdown note on a task (OpenSpec `comments-and-activi
 - **Delete** sets `deleted_at`; clients show a "comment deleted" placeholder in its place in the thread and the REST API stops serving it. A delete and a concurrent edit resolve per field: the comment stays deleted, whatever body won.
 - **Threads** are derived from `parent_id`: a reply to a reply belongs to the same thread, a reply whose parent is unknown, on another task or part of a cycle starts its own thread. `sync.ThreadOrder` and `web/src/lib/comments.ts` implement the same order.
 - **Reseeding after a restore** re-sends only the device user's own comments (the server would refuse anyone else's).
+
+### Attachments
+
+An `attachment` is the metadata of a file or a link on a task or one of its comments (OpenSpec `attachments`). The bytes are never in the log: each file is stored once, immutably, under `<data>/attachments/` and moved with its own routes (see [API](api.md#attachments)).
+
+- **Scope and authorship** follow comments: an attachment lives in its task's scope; creating it needs a task the author can read (viewers included) and `author_id` equal to the submitter; a `comment_id` must name a comment of the same task by the same author. Every field except `name`, `uploaded_at` and `deleted_at` is fixed at creation. `name` is the author's alone; `deleted_at` is accepted from the author, a project admin and the owner.
+- **Upload.** A device writes the metadata first (it exists offline and syncs in the ordinary batch) and uploads the bytes after the batch is stored. The server verifies size and digest against the metadata, then writes `uploaded_at` itself with device `server`, so every device learns that the file is available through the normal sync. `uploaded_at` from any other device is refused, and `server` is a reserved device id on `/api/v1/sync`, like `agent:` and `caldav:`.
+- **Size limit.** A creation whose `size` is over the per-file limit set by the owner is refused with reason `too_large`, so an oversized row never reaches other devices.
+- **Lifecycle.** Purging a task purges its attachments and their files. A removed attachment keeps its file for the Trash retention period (so a removal can be undone from any device) and is then purged with it. Files with no row, older than seven days, are swept by the retention job.
 
 ### Activity
 
@@ -328,7 +347,7 @@ Deleting a project writes only the project's tombstone (plus moving its direct s
 
 ## Purge
 
-Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task and section that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's) and their comments are purged too, and so are every member's `project_prefs` of a purged project.
+Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task and section that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's), their comments and their attachments (with the files, after commit) are purged too, and so are every member's `project_prefs` of a purged project.
 
 Three rules keep replicas convergent:
 
@@ -338,7 +357,7 @@ Three rules keep replicas convergent:
 
 Everyone who can see the purged entity's scope receives the marker and is woken over the live channel. Older clients ignore `purged`; the entity stays tombstoned (invisible) on them.
 
-**Retention.** At startup and every 24 hours the server purges tasks and projects whose `deleted_at` is older than `OPENTODO_TRASH_RETENTION_DAYS` (default 30; `0` disables automatic purge), through the same path. The value is reported as `trashRetentionDays` so the Trash can show remaining days. A database restored from a backup is consistent with itself: markers and the log live in the same database.
+**Retention.** At startup and every 24 hours the server purges tasks, projects and removed attachments whose `deleted_at` is older than `OPENTODO_TRASH_RETENTION_DAYS` (default 30; `0` disables automatic purge), through the same path. The value is reported as `trashRetentionDays` so the Trash can show remaining days. A database restored from a backup is consistent with itself: markers and the log live in the same database.
 
 ## History
 
