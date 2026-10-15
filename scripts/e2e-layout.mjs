@@ -250,6 +250,25 @@ async function tickTwo(p) {
   await p.locator('[data-selection-bar]').waitFor()
 }
 
+/** Opens a task panel property's editor: its chip when shown, else Add › `label`. Returns the property's element. */
+async function openProperty(p, field, label) {
+  const panel = p.locator('aside[data-detail-for]')
+  await panel.waitFor()
+  const row = panel.locator(`[data-property="${field}"]`)
+  const chip = row.locator('button[aria-labelledby]').first()
+  if (await chip.count()) {
+    await chip.scrollIntoViewIfNeeded()
+    await chip.click()
+  } else {
+    const add = panel.getByRole('button', { name: 'Add a property' })
+    await add.scrollIntoViewIfNeeded()
+    await add.click()
+    await p.getByRole('menuitem', { name: label }).click()
+  }
+  await row.locator('[data-property-editor]').waitFor()
+  return row
+}
+
 const OVERLAYS = {
   async notifications(p) {
     const trigger = p.locator('[data-notifications]')
@@ -344,13 +363,10 @@ const OVERLAYS = {
     await dialog.getByRole('button', { name: 'Create link' }).waitFor()
     return { overlay: dialog, trigger, kind: 'dialog' }
   },
-  // Blocked by (task-dependencies): b on a selected row opens the panel with the picker.
+  // Blocked by (task-dependencies, ux-overhaul chips): the chip when set, else Add › Blocked by.
   async 'blocked-by-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().getByRole('button').nth(1).click()
-    const row = p.locator('aside[data-detail-for] [data-property="blocked-by"]')
-    const value = row.locator('button[aria-labelledby]').first()
-    await value.scrollIntoViewIfNeeded()
-    await value.click()
+    const row = await openProperty(p, 'blocked-by', 'Blocked by')
     await row.getByRole('combobox').first().waitFor()
     return { overlay: row, kind: 'inline', after: async () => p.keyboard.press('Escape') }
   },
@@ -366,13 +382,11 @@ const OVERLAYS = {
     await box.pressSequentially('@B')
     return { overlay: p.getByRole('listbox', { name: 'Mention a member' }), kind: 'combobox', after: async () => { await box.fill(''); await p.keyboard.press('Escape'); await p.keyboard.press('Escape') } }
   },
-  // Task panel (task-detail-redesign): the property pickers open inline in their row.
-  ...Object.fromEntries(['project', 'parent', 'section'].map((field) => [`${field}-picker`, async (p) => {
+  // Task panel (ux-overhaul "Task panel layout"): a property's picker opens inline under its
+  // chip; a property without a value has no chip yet and is reached through Add.
+  ...Object.fromEntries([['project', 'Project'], ['parent', 'Parent task'], ['section', 'Section']].map(([field, label]) => [`${field}-picker`, async (p) => {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()
-    const row = p.locator(`aside[data-detail-for] [data-property="${field}"]`)
-    const value = row.locator('button[aria-labelledby]').first()
-    await value.scrollIntoViewIfNeeded()
-    await value.click()
+    const row = await openProperty(p, field, label)
     await row.getByRole('combobox').first().waitFor()
     return { overlay: row, kind: 'inline', after: async () => p.keyboard.press('Escape') }
   }])),
