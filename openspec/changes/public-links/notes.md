@@ -2,9 +2,9 @@
 
 ## Status (2026-10-15)
 
-Done on `feat/public-links`: 1.1–1.3 (migration 0034, `internal/auth/publiclinks.go`, audit events and labels), 2.1–2.8 (reserved `public:` device, `sync.Service.PublicProject`, the manager, list and tick routes with use-time checks and limits, redaction and page headers, demo rules, `docs/api.md`), 3.1 (the activity `device` field and grouping, shared fixture case), 3.3 (history and activity labels), the web data layer for 3.2 and 4.1 (`ActivityEvent.device`, the `public:` history fallback, `PublicLink`/`PublicList` types, `api.listPublicLinks`/`createPublicLink`/`revokePublicLink`, the cookie-less `publicApi`), and the history wording of 3.4 in `docs/trash-and-history.md`.
+Done on `feat/public-links`: 1.1–1.3 (migration 0034, `internal/auth/publiclinks.go`, audit events and labels), 2.1–2.8 (reserved `public:` device, `sync.Service.PublicProject`, the manager, list and tick routes with use-time checks and limits, redaction and page headers, demo rules, `docs/api.md`), 3.1 (the activity `device` field and grouping, shared fixture case), 3.3 (history and activity labels), the web data layer for 3.2 and 4.1 (`ActivityEvent.device`, the `public:` history fallback, `PublicLink`/`PublicList` types, `api.listPublicLinks`/`createPublicLink`/`revokePublicLink`, the cookie-less `publicApi`), and 3.4's docs (history wording in `docs/trash-and-history.md`, feed wording in `docs/sharing.md`; 3.4 stays unticked until the screens it describes exist).
 
-Held until the ux-overhaul group 1 and 2 PRs merge: the "Public link" actor label in `TaskConversation`, `ProjectActivity` and `FeedView` (3.2), the feed wording in `docs/sharing.md` (3.4), the router entry and `PublicListScreen` (4.x), the share-dialog section and header badge (5.x), and the smoke test.
+Held until the ux-overhaul group 1 and 2 PRs merge: the "Public link" actor label in `TaskConversation`, `ProjectActivity` and `FeedView` (3.2), the router entry and `PublicListScreen` (4.x), the share-dialog section and header badge (5.x), and the smoke test.
 
 ## Decisions taken while implementing
 

@@ -107,7 +107,7 @@ The **Activity** tab shows the task's changes: who created it, completed it or c
 
 ## See what others changed
 
-**Updates** (in the sidebar's **More** group, or <kbd>g</kbd> <kbd>h</kbd>) lists the latest changes in all your shared projects, newest first and grouped by day. Each shared project shows a count of unread changes next to its name, and opening the feed marks them as seen. Filter by project, person or kind of change (completed, created, commented, assigned, rescheduled).
+**Updates** (in the sidebar's **More** group, or <kbd>g</kbd> <kbd>h</kbd>) lists the latest changes in all your shared projects, newest first and grouped by day. Each shared project shows a count of unread changes next to its name, and opening the feed marks them as seen. Filter by project, person or kind of change (completed, created, commented, assigned, rescheduled). Ticks made through a public link show **Public link** as the person, not the member who created the link, also on a task's Activity tab and in a project's activity.
 
 <picture><source srcset="images/activity-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/activity-light.webp" alt="The Activity feed listing recent changes by Sam Rivera and you in the Home renovation project."></picture>
 
