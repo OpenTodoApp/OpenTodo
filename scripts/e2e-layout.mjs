@@ -706,8 +706,17 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
     const box = await overlay.boundingBox()
     // A full-screen sheet has no outside to tap.
     if (box && box.x <= 1 && box.width >= vs.width - 1 && box.y <= 1) { await p.keyboard.press('Escape'); return }
-    // A point outside the panel: above a bottom sheet, else a top corner.
-    const pt = box && box.y > 40 ? { x: vs.width / 2, y: Math.max(5, box.y / 2) } : { x: 5, y: vs.height - 5 }
+    // A point outside the panel: above a bottom sheet, else a top corner. The
+    // tap must not land on a control, or it would also press it (a chip or a
+    // link under the point) and change the screen for the next overlay.
+    const preferred = box && box.y > 40 ? { x: vs.width / 2, y: Math.max(5, box.y / 2) } : { x: 5, y: vs.height - 5 }
+    const candidates = [preferred, { x: 5, y: vs.height - 5 }, { x: vs.width - 5, y: vs.height - 5 }, { x: vs.width / 2, y: vs.height - 5 }, { x: vs.width - 5, y: 5 }]
+    const outside = (q) => !box || q.x < box.x || q.x > box.x + box.width || q.y < box.y || q.y > box.y + box.height
+    let pt = preferred
+    for (const q of candidates.filter(outside)) {
+      const inert = await p.evaluate(({ x, y }) => !document.elementFromPoint(x, y)?.closest('button, a, input, select, textarea, label, [role="button"], [role="switch"], [tabindex]'), q)
+      if (inert) { pt = q; break }
+    }
     await p.mouse.click(pt.x, pt.y)
     await p.waitForTimeout(200)
     if (await overlay.isVisible().catch(() => false)) { await fail(p, screen, name, 'does not close with a tap outside'); await p.keyboard.press('Escape') }
