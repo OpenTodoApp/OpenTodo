@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Multi-language vocabulary
-Date and time vocabulary SHALL be bundled for English, German, French, Italian, Spanish and Portuguese and SHALL be available with no network. The active set SHALL be the user's interface language (OpenSpec `localization`) when it is not `system`, followed by the browser's preferred languages that are bundled, with English always active, and SHALL be overridable in Settings on the device. Attribute tokens (`#`, `@`, `p1`–`p4`, `+`) SHALL be language-independent.
+Date, time, recurrence and reminder vocabulary SHALL be bundled for English, German, French, Italian, Spanish and Portuguese, available with no network. The active set SHALL be the interface language (OpenSpec `localization`) when not `system`, then the browser's bundled preferred languages, with English always active, overridable in Settings on the device. Attribute tokens (`#`, `@`, `p1`–`p4`, `+`) SHALL be language-independent. The stored rule SHALL always be the canonical English form.
 
 #### Scenario: German phrase
 - **WHEN** the browser language is `de` and the user enters `Zahnarzt nächsten Mittwoch um 15 Uhr`
@@ -24,3 +24,15 @@ Date and time vocabulary SHALL be bundled for English, German, French, Italian, 
 #### Scenario: Device override still wins
 - **WHEN** the interface language is Spanish and the device's quick-add languages are set to German only
 - **THEN** the active languages are German then English
+
+#### Scenario: Recurrence in each language
+- **WHEN** the user enters `jeden Montag`, `tous les lundis`, `ogni lunedì`, `cada lunes` or `toda segunda-feira` after a title, with that language active
+- **THEN** the rule is `every monday` in every case
+
+#### Scenario: French interval with completion
+- **WHEN** the browser language is `fr` and the user enters `Changer le filtre tous les 3 jours après achèvement`
+- **THEN** the rule is `every 3 days after completion` and the title is `Changer le filtre`
+
+#### Scenario: Reminder in each language
+- **WHEN** the user enters `rappelle-moi 30 min avant`, `ricordamelo 30 minuti prima`, `recuérdame 30 minutos antes` or `lembre-me 30 minutos antes` after a timed task, with that language active
+- **THEN** a relative reminder with offset −30 minutes is created in every case
