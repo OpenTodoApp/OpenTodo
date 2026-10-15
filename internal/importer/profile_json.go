@@ -236,8 +236,8 @@ func (o obj) schedule(row *Row, loc *time.Location, fromDue any) {
 
 // commonWarnings records attributes the data model cannot hold.
 func (o obj) commonWarnings(row *Row) {
-	if o.present("attachments", "files", "attachment") {
-		row.warn("attachment dropped (not supported)")
+	if v, ok := o.first("attachments", "files", "attachment"); ok {
+		jsonLinks(row, v)
 	}
 	if o.present("comments") {
 		row.warn("comments dropped (not supported)")
@@ -697,4 +697,22 @@ func (listsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		return nil, ErrTooManyRows
 	}
 	return out, nil
+}
+
+// jsonLinks reads attachment references (a URL string, an object with
+// url/file_url and name/file_name, or a list of either) as link attachments.
+func jsonLinks(row *Row, v any) {
+	switch t := v.(type) {
+	case string:
+		if strings.TrimSpace(t) != "" {
+			row.addLink("", t)
+		}
+	case map[string]any:
+		o := obj(t)
+		row.addLink(o.str("name", "file_name", "fileName", "title"), o.str("url", "file_url", "fileUrl", "href"))
+	case []any:
+		for _, x := range t {
+			jsonLinks(row, x)
+		}
+	}
 }

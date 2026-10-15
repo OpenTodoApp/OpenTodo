@@ -25,9 +25,9 @@
 
 ## 4. Export and import (design D12)
 
-- [ ] 4.1 `handleExport`: `attachments` array in the JSON document; `format=zip` streaming `export.json` plus `attachments/<id>/<name>`; 400 `invalid_input` for other formats; audit with the format. Tests: JSON includes removed attachments; ZIP contains the document and every uploaded file with matching bytes; anonymous 401; encrypted account's ZIP holds the stored envelope. Verify with `go test ./internal/httpapi/...`.
-- [ ] 4.2 `internal/importer`: own-export profile reads `attachments` (rows with original ids; files from a ZIP through `blobs.Write` with limit and quota per row; JSON-only note of file count); generic JSON and CSV profiles map `http(s)` attachment references to link attachments and keep the warning otherwise; undo tombstones attachments; the preview counts attachments. Tests in `profiles_test.go`, `service_test.go` and `completeness_test.go` for each spec scenario. Verify with `go test ./internal/importer/...`.
-- [ ] 4.3 Update `docs/import-export.md` (ZIP export, what the JSON alone restores) and `docs/import.md` (attachment columns and fields now kept as links, the ZIP format). Verify with `npm run docs:check`.
+- [x] 4.1 `handleExport`: `attachments` array in the JSON document; `format=zip` streaming `export.json` plus `attachments/<id>/<name>`; 400 `invalid_input` for other formats; audit with the format. Tests: JSON includes removed attachments; ZIP contains the document and every uploaded file with matching bytes; anonymous 401; encrypted account's ZIP holds the stored envelope. Verify with `go test ./internal/httpapi/...`.
+- [x] 4.2 `internal/importer`: own-export profile reads `attachments` (rows with original ids; files from a ZIP through `blobs.Write` with limit and quota per row; JSON-only note of file count); generic JSON and CSV profiles map `http(s)` attachment references to link attachments and keep the warning otherwise; undo tombstones attachments; the preview counts attachments. Tests in `profiles_test.go`, `service_test.go` and `completeness_test.go` for each spec scenario. Verify with `go test ./internal/importer/...`.
+- [x] 4.3 Update `docs/import-export.md` (ZIP export, what the JSON alone restores) and `docs/import.md` (attachment columns and fields now kept as links, the ZIP format). Verify with `npm run docs:check`.
 
 ## 5. Assistants (design D14)
 

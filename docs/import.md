@@ -50,6 +50,7 @@ What is handled differently, and why:
 - **Comments are not imported.** A comment keeps its author, and the sync engine only accepts comments whose `author_id` is the account writing them; the authors in an export are accounts of the exporting instance (and other members of shared projects). Comment creation is also rate-limited per account. Rewriting every comment to you would misattribute other people's words, so the preview shows a note such as "12 comments are not imported" and nothing is written for them.
 - **Assignees** are kept only when they are you (a restore into the same account). Any other `assignee_id` names an account that is not a member here, so it is dropped with a warning on the task.
 - **Reminders** keep their `delivered_at` and `dismissed_at`, so a reminder that already went off stays quiet. A live reminder whose time has already passed and that was neither delivered nor dismissed for that time is imported **dismissed at import time** (with a warning), so restoring an old export does not push a burst of stale notifications. Future reminders fire normally. A reminder whose task is neither in the file nor in your account is an error row.
+- **Attachments** keep their ids, names and types and become yours: `author_id` is rewritten to you, `comment_id` is cleared (comments are not imported) and `uploaded_at` is set by the server once the file is stored. Links are always imported. A file needs the ZIP export (`GET /api/v1/export?format=zip`): the importer reads `export.json` and the files under `attachments/<id>/<name>`, checks each file against its `size` and `sha256`, and applies the server's per-file limit and your attachments total; a file that does not fit is left out and listed among the job's errors. From the JSON alone, file attachments are skipped and the preview says how many ("3 file attachments are not imported").
 - The read-only `role` and `owner_id` the export adds to shared projects are not data and are skipped silently; the end-to-end encryption key record is not imported.
 
 When an id already exists in the account the row is skipped (`exists`), unless the `existing` option is `overwrite`: then only fields whose value differs are written (`update`), and fields that are unchanged keep their original clock, so a concurrent edit on a device is not clobbered needlessly. An entity that is deleted in the account is never resurrected (`skip`, reason `deleted`). Fields unknown to this server version are dropped with a warning.
@@ -160,8 +161,9 @@ UTF-8, with a header row. Comma, semicolon and tab separators are detected from 
 | `start` | `start_date` | `someday` parks the task, a date `YYYY-MM-DD` defers it until that day; with a `due_date` too, Someday is dropped with a warning |
 | `evening` | | `true`/`yes`/`x`/`1` marks the task for This Evening |
 | `deadline` | | the day the task must be finished by, `YYYY-MM-DD`; a date-time keeps its date (with a warning); anything else is a row error |
+| `attachment` | `attachments`, `files`, `links` | one or more `http(s)` addresses separated by `;`, `,` or `\|`, each kept as a link attachment; anything else is dropped with a warning |
 
-Columns named `attachment(s)`, `comment(s)` or `assignee` are recognised as unsupported: a non-empty value is dropped with a warning on that row. Any other column is listed as ignored in the preview.
+Columns named `comment(s)` or `assignee` are recognised as unsupported: a non-empty value is dropped with a warning on that row. Any other column is listed as ignored in the preview.
 
 Rows are numbered like the file's lines (the header is row 1). A row with an invalid value is an `error` naming the row and the value, for example `row 35: invalid priority "urgent!" (expected 1-4 or p1-p4)`.
 
@@ -192,6 +194,7 @@ A top-level array of task objects, or an object with a `tasks` array and an opti
 | created | `created_at`, `createdAt`, `created` |
 | recurrence | `recurrence`, `rrule`, `repeat`, `recurring`, `recurrence_rule`, `recurrenceRule`, `repeatRule`, or a `due` object with `is_recurring` and its `string`; a string, an array of RRULE strings or a `{frequency, interval, days}` object |
 | reminders | `reminders`, `reminder`, `alarms`, `reminder_at`, `remind_at`, `reminderDateTime`: one value or an array |
+| attachments | `attachments`, `files`, `attachment`: strings or `{name, url}` objects; `http(s)` addresses become link attachments, anything else is dropped with a warning |
 
 ### `json-items`
 
@@ -228,7 +231,7 @@ Items and projects marked `is_deleted` are skipped.
 - **Labels** are matched by name, ignoring case; missing ones are created.
 - **Dates**: plain dates stay dates; date-times without a zone keep their wall clock; date-times with a zone become the wall clock of that instant in the chosen time zone (default: the browser's zone in the web app, UTC through the API). Due dates are always stored floating. A deadline is a date only: a time on it is dropped with a warning, keeping the day as written. The preview counts the tasks that get a deadline.
 - **Completion**: a completed row keeps its source completion time, or the import time when the source has none.
-- **Unsupported attributes** (attachments, comments, assignees, links, location reminders, recurrence rules the grammar cannot express) never block a row: the task is imported and the row carries a warning naming what was dropped.
+- **Unsupported attributes** (attachments that are not web addresses, comments, assignees, links, location reminders, recurrence rules the grammar cannot express) never block a row: the task is imported and the row carries a warning naming what was dropped.
 
 ### Sections
 

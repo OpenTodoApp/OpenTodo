@@ -42,6 +42,8 @@ type State struct {
 	Sections, Reminders, Views []opsync.Entity
 	// UserPrefs holds the account's own date and time preferences row, if any.
 	UserPrefs []opsync.Entity
+	// Attachments (including removed ones) let own-export rows detect existing ids.
+	Attachments []opsync.Entity
 	// UserID is the importing account (own-export assignees are kept only for it).
 	UserID string
 	// Remembered maps source ids recorded by earlier, not undone imports of the
@@ -95,9 +97,11 @@ type Totals struct {
 	Reminders   int `json:"reminders"`
 	// Deadlines counts created or updated tasks with a deadline (deadlines); additive.
 	Deadlines int `json:"deadlines"`
-	Entities  int `json:"entities"`
-	Written   int `json:"written"`
-	Ops       int `json:"ops"`
+	// Attachments counts created attachments, files and links (attachments); additive.
+	Attachments int `json:"attachments"`
+	Entities    int `json:"entities"`
+	Written     int `json:"written"`
+	Ops         int `json:"ops"`
 	// Refused counts ops the sync engine refused for authorization reasons (for
 	// example a shared project whose role changed during the import); additive.
 	Refused int `json:"refused,omitempty"`
@@ -143,6 +147,8 @@ type change struct {
 	fields   []field
 	created  bool
 	sourceID string
+	// file holds the bytes of an own-export attachment from a ZIP (attachments D12).
+	file []byte
 }
 
 // value returns the value written to field name, or nil.
@@ -188,11 +194,13 @@ func validateFields(entity, id string, fields []field) error {
 }
 
 type planner struct {
-	opts    Options
-	st      *State
-	now     int64
-	newID   func() string
-	byKind  map[string]map[string]opsync.Entity
+	opts   Options
+	st     *State
+	now    int64
+	newID  func() string
+	byKind map[string]map[string]opsync.Entity
+	// files are the attachment files of an own ZIP export, by id.
+	files   map[string][]byte
 	results []RowResult
 
 	projectByName map[string]string // lower name → existing, non-deleted project id
@@ -234,9 +242,9 @@ func sectionKey(projectID, name string) string {
 
 // BuildPlan resolves rows against the current state. It never writes anything.
 func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID func() string) *Plan {
-	pl := &planner{opts: opts, st: st, now: now.UnixMilli(), newID: newID, position: now.UnixMilli(),
+	pl := &planner{opts: opts, st: st, now: now.UnixMilli(), newID: newID, position: now.UnixMilli(), files: parsed.Files,
 		byKind: map[string]map[string]opsync.Entity{KindProject: {}, KindLabel: {}, KindTask: {},
-			KindSection: {}, KindReminder: {}, KindView: {}, KindUserPrefs: {}},
+			KindSection: {}, KindReminder: {}, KindView: {}, KindUserPrefs: {}, KindAttachment: {}},
 		projectByName: map[string]string{}, labelByName: map[string]string{}, fingerprints: map[string]string{},
 		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
 		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}, createdBySource: map[string]string{}}
@@ -244,7 +252,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		st.Remembered = map[string]string{}
 	}
 	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks,
-		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindUserPrefs: st.UserPrefs} {
+		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments} {
 		for _, e := range list {
 			id := str(e, "id")
 			pl.byKind[kind][id] = e
@@ -339,6 +347,9 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 		if c.entity == KindTask && live && !isNull(c.value("deadline")) {
 			p.Totals.Deadlines++
+		}
+		if c.created && c.entity == KindAttachment && live {
+			p.Totals.Attachments++
 		}
 	}
 	p.Totals.Entities = len(p.changes)
@@ -449,6 +460,17 @@ func (pl *planner) planOwn(rows []Row) []change {
 				continue
 			}
 			fields = pl.ownReminder(fields, res)
+		case KindAttachment:
+			var task string
+			_ = json.Unmarshal(row.Entity["task_id"], &task)
+			if task != "" && !fileTasks[task] && pl.byKind[KindTask][task] == nil {
+				res.Outcome, res.Reason = OutcomeError, fmt.Sprintf("task %s is neither in the file nor in your account", task)
+				continue
+			}
+			var ok bool
+			if fields, ok = pl.ownAttachment(row, fields, res); !ok {
+				continue
+			}
 		}
 		if err := validateFields(row.Kind, row.SourceID, fields); err != nil {
 			res.Outcome, res.Reason = OutcomeError, err.Error()
@@ -458,7 +480,11 @@ func (pl *planner) planOwn(rows []Row) []change {
 		switch {
 		case existing == nil:
 			res.Outcome = OutcomeCreate
-			out = append(out, change{entity: row.Kind, id: row.SourceID, fields: fields, created: true, sourceID: row.SourceID})
+			c := change{entity: row.Kind, id: row.SourceID, fields: fields, created: true, sourceID: row.SourceID}
+			if row.Kind == KindAttachment {
+				c.file = pl.files[row.SourceID]
+			}
+			out = append(out, c)
 		case existing.Deleted():
 			// Never resurrect: a tombstone wins over anything an import carries.
 			res.Outcome, res.Reason = OutcomeSkip, ReasonDeleted
@@ -480,6 +506,34 @@ func (pl *planner) planOwn(rows []Row) []change {
 		}
 	}
 	return out
+}
+
+// ownAttachment adapts an exported attachment to this account (attachments D12):
+// the importing account becomes its author (comments are not imported, so a
+// comment link is dropped), uploaded_at is the server's to write once the file is
+// stored, and a file attachment needs its file from the ZIP export.
+func (pl *planner) ownAttachment(row Row, fields []field, res *RowResult) ([]field, bool) {
+	isLink := !isNull(row.Entity["url"])
+	if !isLink && len(row.Entity["url"]) == 0 {
+		isLink = false
+	}
+	if !isLink && pl.files[row.SourceID] == nil {
+		res.Outcome, res.Reason = OutcomeSkip, "the file is not in this import (use the ZIP export)"
+		return nil, false
+	}
+	out := fields[:0]
+	for _, f := range fields {
+		switch f.name {
+		case "uploaded_at":
+			continue
+		case "author_id":
+			f.value = raw(pl.st.UserID)
+		case "comment_id":
+			f.value = json.RawMessage("null")
+		}
+		out = append(out, f)
+	}
+	return out, true
 }
 
 // ownTask stores the rule in canonical form and keeps an assignee only when it
@@ -872,7 +926,7 @@ func (pl *planner) planForeign(rows []Row) []change {
 		res.Outcome = OutcomeCreate
 		tp.entityID = id
 		taskChanges[i] = &change{entity: KindTask, id: id, fields: fields, created: true, sourceID: row.SourceID}
-		reminderChanges[i] = pl.reminders(id, due, row.Reminders, res)
+		reminderChanges[i] = append(pl.reminders(id, due, row.Reminders, res), pl.links(id, row.Links, res)...)
 	}
 	for i, row := range rows {
 		if row.Kind == KindTask {
@@ -999,6 +1053,30 @@ func (pl *planner) reminders(taskID string, due *Due, list []Reminder, res *RowR
 			continue
 		}
 		out = append(out, change{entity: KindReminder, id: id, fields: fields, created: true})
+	}
+	return out
+}
+
+// links builds the link attachments of a created task (attachments D12).
+func (pl *planner) links(taskID string, list []Link, res *RowResult) []change {
+	var out []change
+	for _, l := range list {
+		id := pl.newID()
+		name := []rune(strings.NewReplacer("/", "-", "\\", "-").Replace(strings.TrimSpace(l.Name)))
+		if len(name) > opsync.MaxAttachmentName {
+			name = name[:opsync.MaxAttachmentName]
+		}
+		fields := []field{
+			{"task_id", raw(taskID)}, {"author_id", raw(pl.st.UserID)}, {"comment_id", json.RawMessage("null")},
+			{"name", raw(string(name))}, {"mime", raw("text/uri-list")}, {"size", raw(0)}, {"sha256", raw("")},
+			{"url", raw(l.URL)}, {"encrypted", raw(false)}, {"created_at", raw(pl.now)},
+			{"uploaded_at", json.RawMessage("null")}, {"deleted_at", json.RawMessage("null")},
+		}
+		if err := validateFields(KindAttachment, id, fields); err != nil {
+			res.Warnings = append(res.Warnings, "link dropped: "+err.Error())
+			continue
+		}
+		out = append(out, change{entity: KindAttachment, id: id, fields: fields, created: true})
 	}
 	return out
 }

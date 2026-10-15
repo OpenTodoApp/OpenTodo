@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -11,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pixari/opentodo/internal/blobs"
 	"github.com/pixari/opentodo/internal/ids"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -61,6 +63,12 @@ type Service struct {
 	log   *slog.Logger
 	now   func() time.Time
 	newID func() string
+
+	// blobs stores the files of own ZIP exports (attachments D12); nil without one.
+	blobs *blobs.Store
+	// fileRoom reports the per-file limit (0 = attachments off) and the room left
+	// in the account's total (negative = no total) when files are imported.
+	fileRoom func(ctx context.Context, uid string) (maxFile, room int64, err error)
 
 	mu     sync.Mutex
 	active map[string]string // user id → running job id (or "undo")
@@ -196,7 +204,7 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, error) {
 	st := &State{Remembered: map[string]string{}, UserID: uid}
 	for kind, dst := range map[string]*[]opsync.Entity{KindProject: &st.Projects, KindLabel: &st.Labels, KindTask: &st.Tasks,
-		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views, KindUserPrefs: &st.UserPrefs} {
+		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views, KindUserPrefs: &st.UserPrefs, KindAttachment: &st.Attachments} {
 		list, err := s.sync.List(ctx, uid, kind, true)
 		if err != nil {
 			return nil, err
@@ -331,7 +339,74 @@ func (s *Service) run(uid string, job *Job, plan *Plan) {
 	s.finish(ctx, job, StatusDone, "")
 }
 
+// SetBlobs lets own ZIP exports import their attachment files, within the
+// limits room reports (the same per-file limit and total as uploads).
+func (s *Service) SetBlobs(b *blobs.Store, room func(ctx context.Context, uid string) (maxFile, left int64, err error)) {
+	s.blobs, s.fileRoom = b, room
+}
+
+// storeFiles writes the files of the batch's attachment rows before their ops;
+// a row whose file cannot be stored is kept out of the batch and listed among the
+// job's errors with the reason.
+func (s *Service) storeFiles(ctx context.Context, uid string, job *Job, batch []change) ([]change, []string, error) {
+	var stored []string
+	out := batch[:0]
+	maxFile, room, checked := int64(0), int64(-1), false
+	refuse := func(c change, reason string) {
+		job.Errors = append(job.Errors, RowError{SourceID: c.sourceID, Reason: reason})
+		job.Totals.Refused++
+	}
+	for _, c := range batch {
+		if c.entity != KindAttachment || c.file == nil {
+			out = append(out, c)
+			continue
+		}
+		if s.blobs == nil {
+			refuse(c, "attachment file not imported: this server has no file store")
+			continue
+		}
+		if !checked && s.fileRoom != nil {
+			var err error
+			if maxFile, room, err = s.fileRoom(ctx, uid); err != nil {
+				return nil, nil, err
+			}
+			checked = true
+		}
+		var size int64
+		var digest string
+		_ = json.Unmarshal(c.value("size"), &size)
+		_ = json.Unmarshal(c.value("sha256"), &digest)
+		switch {
+		case checked && maxFile == 0:
+			refuse(c, "attachment file not imported: attachments are turned off on this server")
+			continue
+		case checked && size > maxFile:
+			refuse(c, fmt.Sprintf("attachment file not imported: larger than the %d MB limit", maxFile>>20))
+			continue
+		case checked && room >= 0 && size > room:
+			refuse(c, "attachment file not imported: it would go over your attachments total")
+			continue
+		}
+		err := s.blobs.Write(c.id, bytes.NewReader(c.file), blobs.Spec{Size: size, SHA256: digest})
+		if err != nil && !errors.Is(err, blobs.ErrExists) {
+			s.log.Warn("import: attachment file", "id", c.id, "err", err)
+			refuse(c, "attachment file not imported: "+err.Error())
+			continue
+		}
+		if room >= 0 {
+			room -= size
+		}
+		stored = append(stored, c.id)
+		out = append(out, c)
+	}
+	return out, stored, nil
+}
+
 func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []change, tl *tally) error {
+	batch, stored, err := s.storeFiles(ctx, uid, job, batch)
+	if err != nil {
+		return err
+	}
 	ts := s.opTS()
 	var ops []opsync.Op
 	for _, c := range batch {
@@ -375,6 +450,17 @@ func (s *Service) writeBatch(ctx context.Context, uid string, job *Job, batch []
 		// Device "import" belongs to no browser, so every connected device of
 		// everyone who can see the data is woken.
 		s.sync.NotifyApplied(res, Device)
+	}
+	// Files are stored: the server says so (uploaded_at is written by device server only).
+	if len(stored) > 0 {
+		var up []opsync.Op
+		now, _ := json.Marshal(s.now().UnixMilli())
+		for _, id := range stored {
+			up = append(up, opsync.Op{ID: s.newID(), Entity: KindAttachment, EntityID: id, Field: "uploaded_at", Value: now, TS: s.opTS(), Device: opsync.ServerDevice})
+		}
+		if res, err := s.sync.Apply(ctx, uid, up); err == nil && res.Applied > 0 {
+			s.sync.NotifyApplied(res, opsync.ServerDevice)
+		}
 	}
 	return nil
 }
@@ -458,7 +544,7 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	undoKinds := []string{KindReminder, KindTask, KindSection, KindProject, KindLabel, KindView}
+	undoKinds := []string{KindAttachment, KindReminder, KindTask, KindSection, KindProject, KindLabel, KindView}
 	created := map[string]map[string]bool{}
 	for _, k := range undoKinds {
 		created[k] = map[string]bool{}

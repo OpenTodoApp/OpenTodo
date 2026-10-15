@@ -7,6 +7,7 @@ package httpapi
 // uploaded_at itself (device "server") once the file is stored and verified.
 
 import (
+	"archive/zip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -57,6 +58,21 @@ func (s *Server) registerAttachmentRoutes(mux *http.ServeMux) {
 	}
 	if s.blobs != nil {
 		s.sync.SetBlobStore(s.blobs)
+		s.importer.SetBlobs(s.blobs, func(ctx context.Context, uid string) (int64, int64, error) {
+			a, err := s.attachmentSettings(ctx)
+			if err != nil || !a.Enabled {
+				return 0, 0, err
+			}
+			left := int64(-1)
+			if q := a.QuotaBytes(); q > 0 {
+				used, err := s.attachmentUsage(ctx, uid)
+				if err != nil {
+					return 0, 0, err
+				}
+				left = max(0, q-used)
+			}
+			return a.MaxFileBytes(), left, nil
+		})
 	}
 	s.sync.SetAttachmentLimit(func() int64 {
 		a, err := s.attachmentSettings(context.Background())
@@ -636,3 +652,49 @@ func (s *Server) receiveMultipart(w http.ResponseWriter, r *http.Request, id str
 	return name, ctype, comment, size, digest, nil
 }
 
+
+// writeExportZip streams the export document and every readable, uploaded
+// attachment file as a ZIP (design D12): export.json first, then
+// attachments/<id>/<name>. Nothing is buffered: entries use data descriptors.
+func (s *Server) writeExportZip(w http.ResponseWriter, r *http.Request, doc map[string]any, attachments []opsync.Entity) {
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", `attachment; filename="opentodo-export.zip"`)
+	zw := zip.NewWriter(w)
+	defer zw.Close()
+	jw, err := zw.Create("export.json")
+	if err != nil {
+		return
+	}
+	enc := json.NewEncoder(jw)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(doc); err != nil {
+		s.log.Error("export zip: document", "err", err)
+		return
+	}
+	if s.blobs == nil {
+		return
+	}
+	for _, a := range attachments {
+		id := idOf(a["id"])
+		if a.Deleted() || isNullish(a["uploaded_at"]) || !blobs.ValidID(id) {
+			continue
+		}
+		f, _, err := s.blobs.Open(id)
+		if err != nil {
+			continue
+		}
+		name := path.Base(strings.ReplaceAll(idOf(a["name"]), "\\", "/"))
+		if name == "" || name == "." || name == "/" || strings.HasPrefix(name, "enc:") {
+			name = "file"
+		}
+		fw, err := zw.CreateHeader(&zip.FileHeader{Name: "attachments/" + id + "/" + name, Method: zip.Store})
+		if err == nil {
+			_, err = io.Copy(fw, f)
+		}
+		f.Close()
+		if err != nil {
+			s.log.Error("export zip: file", "id", id, "err", err)
+			return
+		}
+	}
+}

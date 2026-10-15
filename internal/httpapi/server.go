@@ -1599,6 +1599,11 @@ func (s *Server) writeOps(w http.ResponseWriter, r *http.Request, entity, id str
 
 func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	uid := userFrom(r.Context()).ID
+	format := r.URL.Query().Get("format")
+	if format != "" && format != "json" && format != "zip" {
+		writeError(w, http.StatusBadRequest, "invalid_input", `format: must be "json" or "zip"`)
+		return
+	}
 	out := map[string]any{"format": "opentodo-export", "version": 1, "exportedAt": time.Now().UTC().Format(time.RFC3339)}
 	for plural, entity := range opsync.Plural {
 		list, err := s.sync.List(r.Context(), uid, entity, true)
@@ -1620,6 +1625,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["comments"] = comments
+	// Attachment metadata (attachments D12), removed ones included; the files
+	// themselves are in the ZIP export only.
+	attachments, err := s.sync.List(r.Context(), uid, "attachment", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["attachments"] = attachments
 	// The caller's date and time preferences (date-time-preferences D1): personal,
 	// no REST collection, but part of what the user owns, so the export carries them.
 	prefs, err := s.sync.List(r.Context(), uid, "user_prefs", true)
@@ -1637,6 +1650,11 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["encryption"] = rec
+	if format == "zip" {
+		s.writeExportZip(w, r, out, attachments)
+		s.audit.Record(r.Context(), audit.ExportRequested(uid, "zip"))
+		return
+	}
 	w.Header().Set("Content-Disposition", `attachment; filename="opentodo-export.json"`)
 	writeJSON(w, http.StatusOK, out)
 	s.audit.Record(r.Context(), audit.ExportRequested(uid, "json"))

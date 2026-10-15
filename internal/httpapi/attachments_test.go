@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"archive/zip"
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
@@ -291,4 +292,50 @@ func TestAttachmentReadTokenAndRateLimit(t *testing.T) {
 	}
 	// The demo instance reports attachments as disabled in /me.
 	_ = uid
+}
+
+func TestAttachmentExport(t *testing.T) {
+	e, uid, task := attachmentSetup(t)
+	content := []byte("export me")
+	queueRow(e, "laptop", "x1", task, uid, "notes.txt", "text/plain", content)
+	if resp, _ := e.raw("PUT", "/api/v1/attachments/x1/content", content); resp.StatusCode != 204 {
+		t.Fatalf("upload %d", resp.StatusCode)
+	}
+	queueRow(e, "laptop", "x2", task, uid, "gone.txt", "text/plain", []byte("x"))
+	resp, out := e.do("DELETE", "/api/v1/attachments/x2", nil)
+	e.mustStatus(resp, 204, out)
+	// JSON: metadata, removed ones included.
+	resp, out = e.do("GET", "/api/v1/export", nil)
+	e.mustStatus(resp, 200, out)
+	if n := len(out["attachments"].([]any)); n != 2 {
+		t.Fatalf("exported attachments %d", n)
+	}
+	resp, out = e.do("GET", "/api/v1/export?format=pdf", nil)
+	e.mustStatus(resp, 400, out)
+	// ZIP: the document first, then the uploaded file with its bytes.
+	resp, body := e.raw("GET", "/api/v1/export?format=zip", nil)
+	if resp.StatusCode != 200 || resp.Header.Get("Content-Type") != "application/zip" {
+		t.Fatalf("zip %d %v", resp.StatusCode, resp.Header)
+	}
+	zr, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if zr.File[0].Name != "export.json" || len(zr.File) != 2 || zr.File[1].Name != "attachments/x1/notes.txt" {
+		names := []string{}
+		for _, f := range zr.File {
+			names = append(names, f.Name)
+		}
+		t.Fatalf("zip entries %v", names)
+	}
+	rc, _ := zr.File[1].Open()
+	got, _ := io.ReadAll(rc)
+	rc.Close()
+	if !bytes.Equal(got, content) {
+		t.Fatalf("zip content %q", got)
+	}
+	anon := newClientAt(e, "10.9.9.8")
+	if resp, _ := anon.raw("GET", "/api/v1/export?format=zip", nil); resp.StatusCode != 401 {
+		t.Fatalf("anonymous zip export %d", resp.StatusCode)
+	}
 }

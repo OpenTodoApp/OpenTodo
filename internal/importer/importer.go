@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"strings"
 	"time"
 
@@ -44,6 +45,8 @@ const (
 	// KindUserPrefs is the date and time preferences row (OpenSpec change
 	// date-time-preferences): restored from an own export, never undone.
 	KindUserPrefs = "user_prefs"
+	// KindAttachment is a file or link attachment (OpenSpec change attachments).
+	KindAttachment = "attachment"
 )
 
 // Due is a floating due date with an optional wall-clock time.
@@ -90,6 +93,9 @@ type Row struct {
 	// Evening (OpenSpec change someday-and-evening).
 	Start   string
 	Evening bool
+	// Links are attachment references the file only gives as URLs; they become
+	// link attachments of the task (OpenSpec change attachments, design D12).
+	Links []Link
 	// AssignSelf assigns the task to the importing account (a Linear issue
 	// assigned to the importer's own email address).
 	AssignSelf bool
@@ -109,6 +115,30 @@ func (r *Row) fail(format string, args ...any) {
 	}
 }
 
+// Link is a link attachment read from a file.
+type Link struct{ Name, URL string }
+
+// addLink keeps an http(s) URL as a link attachment, or warns that the value
+// cannot be kept (a file the export only names, a local path).
+func (r *Row) addLink(name, rawURL string) {
+	u, err := url.Parse(strings.TrimSpace(rawURL))
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		r.warn("attachment %q dropped (only links can be imported; use the original app's export of files)", firstNonEmpty(name, rawURL))
+		return
+	}
+	if strings.TrimSpace(name) == "" {
+		name = u.Host + u.Path
+	}
+	r.Links = append(r.Links, Link{Name: name, URL: u.String()})
+}
+
+func firstNonEmpty(a, b string) string {
+	if strings.TrimSpace(a) != "" {
+		return a
+	}
+	return b
+}
+
 // Parsed is the result of reading a file with a profile.
 type Parsed struct {
 	Format     string
@@ -122,6 +152,8 @@ type Parsed struct {
 	// ViewHints name projects that were boards in the source app; the web app
 	// opens them as boards on the importing device (named-importers D8).
 	ViewHints []ViewHint
+	// Files are the attachment files of an own ZIP export, by attachment id.
+	Files map[string][]byte
 }
 
 // ViewHint asks the importing device to show a project in a view ("board").
@@ -274,6 +306,8 @@ type Options struct {
 	importerEmail string    // the importing account's email (Linear assignees)
 	entryName     string    // archive entry being read
 	thingsWAL     []byte    // a Things database's WAL from the same archive
+	// ownFiles are the attachment files of an own ZIP export, by attachment id.
+	ownFiles map[string][]byte
 }
 
 // DefaultMaxBytes is the upload limit when the Service was not told another.

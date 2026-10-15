@@ -182,7 +182,7 @@ func TestProfile_json_generic(t *testing.T) {
 	}
 	t3 := rowBySource(t, p, "task:t3")
 	if t3.Title != "Call the plumber" || t3.ProjectName != "Home" || t3.Priority != 2 || t3.Due.Date != "2026-10-20" || !t3.Completed ||
-		t3.Recurrence != "every week" || !reflect.DeepEqual(t3.Warnings, []string{"attachment dropped (not supported)"}) {
+		t3.Recurrence != "every week" || !reflect.DeepEqual(t3.Warnings, []string{`attachment "file.pdf" dropped (only links can be imported; use the original app's export of files)`}) {
 		t.Fatalf("t3 = %+v", t3)
 	}
 	t4 := rowBySource(t, p, "task:t4")

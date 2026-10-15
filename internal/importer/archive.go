@@ -106,6 +106,21 @@ func parseArchive(data []byte, opts Options) (*Parsed, error) {
 			opts.exportedAt = e.mod
 		}
 	}
+	// An own ZIP export (attachments D12): export.json plus attachments/<id>/<name>.
+	for _, e := range entries {
+		if e.name != "export.json" || !(opentodoProfile{}).Detect(e.data) {
+			continue
+		}
+		files := map[string][]byte{}
+		for _, f := range entries {
+			parts := strings.Split(f.name, "/")
+			if len(parts) == 3 && parts[0] == "attachments" && parts[1] != "" {
+				files[parts[1]] = f.data
+			}
+		}
+		opts.ownFiles = files
+		return parseOne(opentodoProfile{}, e.data, opts)
+	}
 	// A zipped Things database folder.
 	for _, e := range entries {
 		if path.Base(e.name) == "main.sqlite" {
