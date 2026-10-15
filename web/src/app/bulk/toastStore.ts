@@ -1,5 +1,6 @@
-// The undo toast of the last bulk action (OpenSpec change bulk-edit, design D5):
-// module state so any list can show it and the Shell renders it once.
+// The undo toast of the last action (OpenSpec change bulk-edit, design D5; one
+// task's own actions too since ux-overhaul): module state so any list or panel can
+// show it and the Shell renders it once. A new offer replaces the previous one.
 import { useSyncExternalStore } from 'react'
 
 export interface BulkToast {
@@ -8,6 +9,8 @@ export interface BulkToast {
   undoId: string | null
   /** After Undo: what came back, and what was kept because it changed since. */
   result?: string
+  /** How long the offer stays, in milliseconds (the renderer's default otherwise). */
+  ttl?: number
 }
 
 let current: BulkToast | null = null
@@ -16,10 +19,16 @@ const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((fn) => fn())
 
 /** Show (or replace) the toast for a bulk action. */
-export function showBulkToast(label: string, undoId: string | null): void {
-  current = { key: ++seq, label, undoId }
+export function showBulkToast(label: string, undoId: string | null, opts: { ttl?: number } = {}): void {
+  current = { key: ++seq, label, undoId, ...(opts.ttl ? { ttl: opts.ttl } : {}) }
   emit()
 }
+
+/** Five seconds: the offer after one task's own action (task-list-presentation "Completion feedback"). */
+export const ACTION_TOAST_MS = 5_000
+
+/** Show (or replace) the Undo offer for one task's own action. */
+export const showUndoToast = (label: string, undoId: string | null, ttl = ACTION_TOAST_MS): void => showBulkToast(label, undoId, { ttl })
 
 export function updateBulkToast(patch: Partial<BulkToast>): void {
   if (!current) return

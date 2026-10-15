@@ -1,61 +1,16 @@
 // @vitest-environment happy-dom
-// The redesigned task panel (OpenSpec task-detail-redesign 2.2–2.5, 3.1–3.4, 4.1):
-// header menu, properties rows, entity pickers, priority and the implicit "You".
+// The task panel (OpenSpec task-detail-redesign 2.2–2.5, 3.1–3.4; change ux-overhaul,
+// web-app "Task panel layout"): header menu, property chips and entity pickers.
 import 'fake-indexeddb/auto'
-import { act } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { db, useDatabase } from '../../lib/db'
-import { setDateTime } from '../../lib/dates'
+import { describe, expect, it, vi } from 'vitest'
+import { db } from '../../lib/db'
 import { activeLabels, createLabel } from '../../lib/labels'
-import { archiveProject, createProject, createSubtask, createTask, resetDeviceId, setTaskCompleted, setTaskParent } from '../../lib/ops'
+import { archiveProject, createProject, createSubtask, createTask, setTaskCompleted, setTaskParent } from '../../lib/ops'
 import { createSection, moveTaskToSection } from '../../lib/sections'
-import { setCurrentUserId } from '../../lib/sharing'
-import type { Label, Membership, Project } from '../../lib/types'
-import { click, flush, key, render, type } from '../../ui/test-utils'
-import { TaskDetail } from './TaskDetail'
+import { click, key, type } from '../../ui/test-utils'
+import { ME, membership, open, settle, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
-const ME = 'u-me'
-let n = 0
-beforeEach(() => {
-  vi.useFakeTimers({ toFake: ['Date'] })
-  vi.setSystemTime(new Date(2026, 9, 14, 12, 0))
-  useDatabase(`taskdetail-${Date.now()}-${n++}`)
-  resetDeviceId()
-  setCurrentUserId(ME)
-  setDateTime({ date_format: 'day-month', time_format: '24h', week_start: 'mon' }, { order: 'MD', hour12: true, weekStart: 1 })
-})
-afterEach(() => {
-  vi.useRealTimers()
-  setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
-  document.body.innerHTML = ''
-})
-
-const settle = () => flush(40)
-/** Live queries resolve in steps (task → project → sections); wait for the condition. */
-async function waitFor(ok: () => boolean, ms = 2000) {
-  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
-  expect(ok()).toBe(true)
-}
-
-async function open(taskId: string, opts: { readOnly?: boolean; onClose?: () => void; onOpen?: (id: string) => void } = {}) {
-  const projects = (await db.projects.toArray()) as Project[]
-  const labels = new Map(((await db.labels.toArray()) as Label[]).map((l) => [l.id, l]))
-  const r = await render(<TaskDetail taskId={taskId} userId={ME} projects={projects} labelMap={labels} onClose={opts.onClose ?? (() => {})} onOpen={opts.onOpen} readOnly={opts.readOnly} />)
-  await settle()
-  const row = (name: string) => r.container.querySelector(`[data-property="${name}"]`) as HTMLElement
-  const valueButton = (name: string) => row(name).querySelector('button[aria-labelledby]') as HTMLButtonElement
-  const options = (name: string) => [...row(name).querySelectorAll('[role="option"]')].map((o) => o.textContent ?? '')
-  const pick = async (name: string, text: string) => {
-    await click([...row(name).querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes(text))!)
-    await settle()
-  }
-  return { ...r, row, valueButton, options, pick }
-}
-
-async function membership(projectId: string, ...members: string[]) {
-  const m: Membership = { projectId, role: 'admin', ownerId: members[0], members: members.map((userId) => ({ userId, name: userId === ME ? 'Me' : userId, email: `${userId}@example.com`, role: 'editor' })) }
-  await db.memberships.put(m)
-}
+setupTaskDetailTests()
 
 describe('header (2.2)', () => {
   it('Delete in the header menu trashes the task and closes the panel; the menu works by keyboard', async () => {
@@ -77,20 +32,21 @@ describe('header (2.2)', () => {
   })
 })
 
-describe('properties rows (2.3)', () => {
+describe('property chips (2.3)', () => {
   it('values read as values: project, priority and the due date in the user format, no input boxes', async () => {
     const work = await createProject({ name: 'Work' })
     const id = await createTask({ title: 'Plan', project_id: work, priority: 2, due: { date: '2026-10-15', time: '09:00' } })
     const { container, row, unmount } = await open(id)
     expect(row('project').textContent).toContain('Work')
-    expect(row('priority').querySelector('[aria-pressed="true"]')?.textContent).toBe('P2')
+    expect(row('priority').querySelector('[data-priority-value]')?.textContent).toBe('P2')
     expect(row('due').textContent).toContain('Thu 15 Oct · 09:00')
     expect(container.querySelector('section[aria-label="Properties"] input')).toBeNull()
-    expect(row('estimate').textContent).toContain('No estimate')
+    // An empty property is not a chip; the Add menu offers it.
+    expect(row('estimate')).toBeNull()
     await unmount()
   })
 
-  it('Enter on the Due row opens its editor with focus in it; Escape closes it with focus back on the row', async () => {
+  it('Enter on the Do on chip opens its editor with focus in it; Escape closes it with focus back on the chip', async () => {
     const id = await createTask({ title: 'Plan', due: { date: '2026-10-15' } })
     const { row, valueButton, unmount } = await open(id)
     const button = valueButton('due')
@@ -105,22 +61,6 @@ describe('properties rows (2.3)', () => {
     await settle()
     expect(row('due').querySelector('input')).toBeNull()
     expect(document.activeElement).toBe(valueButton('due'))
-    await unmount()
-  })
-})
-
-describe('priority (2.4)', () => {
-  it('sets the priority with the segmented control and with 1–4 inside the panel', async () => {
-    const id = await createTask({ title: 'Plan' })
-    const { row, valueButton, unmount } = await open(id)
-    await click([...row('priority').querySelectorAll('button')].find((b) => b.textContent === 'P1')!)
-    await settle()
-    expect((await db.tasks.get(id))!.priority).toBe(1)
-    valueButton('project').focus()
-    await key(document.activeElement!, '3')
-    await settle()
-    expect((await db.tasks.get(id))!.priority).toBe(3)
-    expect(row('priority').querySelector('[aria-pressed="true"]')?.textContent).toBe('P3')
     await unmount()
   })
 })
@@ -194,9 +134,9 @@ describe('entity pickers (3.1–3.4)', () => {
 
     const top = await createTask({ title: 'Buy paint', project_id: p })
     const b = await open(top)
-    await waitFor(() => !!b.row('section'))
-    await click(b.valueButton('section'))
-    await settle()
+    await waitFor(() => !!b.addButton())
+    expect(b.row('section')).toBeNull()
+    await b.add('Section')
     await b.pick('section', 'Done')
     const done = (await db.sections.toArray()).find((s) => s.name === 'Done')!
     expect((await db.tasks.get(top))!.section_id).toBe(done.id)
@@ -209,8 +149,8 @@ describe('entity pickers (3.1–3.4)', () => {
     await createSubtask(a, 'Task B')
     await createTask({ title: 'Task C' })
     const v = await open(a)
-    await click(v.valueButton('parent'))
-    await settle()
+    expect(v.row('parent')).toBeNull()
+    await v.add('Parent task')
     const opts = v.options('parent')
     expect(opts.some((o) => o.includes('Task A'))).toBe(false)
     expect(opts.some((o) => o.includes('Task B'))).toBe(false)
@@ -238,11 +178,13 @@ describe('entity pickers (3.1–3.4)', () => {
     const errand = await createLabel({ name: 'errand' })
     const id = await createTask({ title: 'Order parts', project_id: team })
     const v = await open(id)
-    await click(v.valueButton('labels'))
-    await settle()
+    expect(v.row('labels')).toBeNull()
+    await v.add('Labels')
     await v.pick('labels', 'errand')
     expect((await db.tasks.get(id))!.labels).toEqual([errand])
-    await click(v.row('labels').querySelector(`button[aria-label="Remove label errand"]`)!)
+    const remove = () => v.row('labels').querySelector(`button[aria-label="Remove label errand"]`)
+    if (!remove()) { await click(v.valueButton('labels')); await settle() }
+    await click(remove()!)
     await settle()
     expect((await db.tasks.get(id))!.labels).toEqual([])
     expect((await db.labels.toArray().then(activeLabels)).length).toBe(1)
@@ -256,43 +198,13 @@ describe('entity pickers (3.1–3.4)', () => {
   })
 })
 
-describe('assignee in personal scopes (4.1)', () => {
-  it('reads "You" without writing an op; the switch assigns; a second member brings back "Unassigned"', async () => {
-    const p = await createProject({ name: 'Solo' })
-    const id = await createTask({ title: 'Read a book', project_id: p })
-    const before = await db.outbox.count()
-    const v = await open(id)
-    expect(v.row('assignee').textContent).toContain('You')
-    const sw = v.row('assignee').querySelector('[role="switch"]') as HTMLButtonElement
-    expect(sw.getAttribute('aria-checked')).toBe('false')
-    await settle()
-    expect(await db.outbox.count()).toBe(before)
-
-    await click(sw)
-    await settle()
-    expect((await db.tasks.get(id))!.assignee_id).toBe(ME)
-    // Assigned to me lists explicitly assigned tasks.
-    expect((await db.tasks.where('assignee_id').equals(ME).toArray()).map((t) => t.id)).toEqual([id])
-    await click(sw)
-    await settle()
-    expect((await db.tasks.get(id))!.assignee_id).toBeNull()
-
-    await act(async () => { await membership(p, ME, 'u-bob') })
-    await settle()
-    expect(v.row('assignee').textContent).toContain('Unassigned')
-    expect(v.row('assignee').querySelector('[role="switch"]')).toBeNull()
-    await v.unmount()
-  })
-})
-
-describe('deadline row (OpenSpec deadlines 3.1)', () => {
-  it('typing fri writes the next Friday and leaves the due date alone; the row shows the date and countdown', async () => {
+describe('deadline chip (OpenSpec deadlines 3.1)', () => {
+  it('typing fri writes the next Friday and leaves the due date alone; the chip shows the date and countdown', async () => {
     const id = await createTask({ title: 'Report', due: { date: '2026-10-15' } })
-    const { row, valueButton, unmount } = await open(id)
-    expect(row('deadline').textContent).toContain('No deadline')
-    await click(valueButton('deadline'))
-    await settle()
-    const input = row('deadline').querySelector('input') as HTMLInputElement
+    const { row, add, unmount } = await open(id)
+    expect(row('deadline')).toBeNull()
+    await add('Deadline')
+    const input = row('deadline').querySelector('[data-when-segment="deadline"] input') as HTMLInputElement
     expect(document.activeElement).toBe(input)
     await type(input, 'fri')
     await key(input, 'Enter')
@@ -300,7 +212,7 @@ describe('deadline row (OpenSpec deadlines 3.1)', () => {
     const t = (await db.tasks.get(id))!
     expect(t.deadline).toBe('2026-10-16')
     expect(t.due).toEqual({ date: '2026-10-15' })
-    await key(row('deadline').querySelector('input') ?? input, 'Escape')
+    await key(row('deadline').querySelector('[data-when-segment="deadline"] input') ?? input, 'Escape')
     await settle()
     expect(row('deadline').textContent).toContain('Fri 16 Oct')
     expect(row('deadline').textContent).toContain('in 2 days')
@@ -312,13 +224,13 @@ describe('deadline row (OpenSpec deadlines 3.1)', () => {
     const { row, valueButton, unmount } = await open(id)
     await click(valueButton('deadline'))
     await settle()
-    await click(row('deadline').querySelector('button[aria-label="Clear deadline"]')!)
+    await click(row('deadline').querySelector('[data-when-segment="deadline"] button[aria-label="Clear deadline"]')!)
     await settle()
     expect((await db.tasks.get(id))!.deadline).toBeNull()
     await unmount()
   })
 
-  it('a viewer sees the deadline as text, and the row passes axe', async () => {
+  it('a viewer sees the deadline as text, and the chip passes axe', async () => {
     const id = await createTask({ title: 'Report', deadline: '2026-10-12' })
     const { row, unmount } = await open(id, { readOnly: true })
     expect(row('deadline').querySelector('button, input')).toBeNull()
@@ -330,14 +242,15 @@ describe('deadline row (OpenSpec deadlines 3.1)', () => {
   })
 })
 
-describe('when row and evening switch (OpenSpec someday-and-evening 3.2)', () => {
+describe('when chip and evening (OpenSpec someday-and-evening 3.2)', () => {
   it('a start after the due date is refused in the field', async () => {
     const id = await createTask({ title: 'Report', due: { date: '2026-10-16' } })
-    const { row, valueButton, unmount } = await open(id)
+    const { row, add, unmount } = await open(id)
+    expect(row('when')).toBeNull()
+    await add('Start')
     expect(row('when').textContent).toContain('Anytime')
-    await click(valueButton('when'))
-    await settle()
-    const input = row('when').querySelector('input') as HTMLInputElement
+    const input = row('when').querySelector('[data-when-segment="start"] input') as HTMLInputElement
+    expect(document.activeElement).toBe(input)
     await type(input, '2026-10-21')
     await key(input, 'Enter')
     await settle()
@@ -350,17 +263,18 @@ describe('when row and evening switch (OpenSpec someday-and-evening 3.2)', () =>
     await unmount()
   })
 
-  it('parks from the row, toggles evening, and passes axe', async () => {
+  it('parks from the chip, adds This Evening, and passes axe', async () => {
     const id = await createTask({ title: 'Idea', due: { date: '2026-10-16' } })
-    const { row, valueButton, unmount } = await open(id)
-    await click(valueButton('when'))
-    await settle()
+    const { row, add, unmount } = await open(id)
+    await add('Start')
     await click([...row('when').querySelectorAll('button')].find((b) => b.textContent?.includes('Someday'))!)
     await settle()
     expect(await db.tasks.get(id)).toMatchObject({ start: 'someday', due: null })
-    await click(row('evening').querySelector('[role="switch"]')!)
-    await settle()
+    expect(row('evening')).toBeNull()
+    await add('This Evening')
+    await waitFor(() => !!row('evening'))
     expect((await db.tasks.get(id))!.evening).toBe(true)
+    expect(row('evening').textContent).toContain('This Evening')
     const axe = (await import('axe-core')).default
     for (const name of ['when', 'evening']) {
       const res = await axe.run(row(name), { rules: { 'color-contrast': { enabled: false } } })

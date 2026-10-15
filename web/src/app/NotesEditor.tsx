@@ -44,6 +44,9 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
   const [unreadable, setUnreadable] = useState(false)
   const [sizeNote, setSizeNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // While focused the notes read as an editor; at rest they are a quiet block of
+  // text, or one placeholder line when empty (ux-overhaul, "Task panel layout").
+  const [editing, setEditing] = useState(false)
 
   // Lazy upgrade of a legacy note and folding of plain-text writes (REST, older
   // clients) happen when the note is opened, and again whenever its text changes
@@ -83,7 +86,7 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
       askLink: (current) => window.prompt('Link address (empty to remove)', current || 'https://'),
       onEscape: () => view.current?.dom.blur(),
       size: () => size.current,
-      placeholder: readOnly ? '' : 'Notes…',
+      placeholder: readOnly ? '' : 'Add notes…',
     }
     const v = new EditorView(host.current as HTMLDivElement, {
       state: createState(toModel(activeBody(doc)), hooks),
@@ -108,8 +111,13 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
           }
           return false
         },
+        focus: () => {
+          setEditing(true)
+          return false
+        },
         blur: () => {
           flush.current()
+          setEditing(false)
           return false
         },
       },
@@ -191,7 +199,7 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
   }
   return (
     <div className="space-y-1">
-      <div ref={host} className="notes-host" />
+      <div ref={host} className="notes-host" data-notes-editing={editing || undefined} />
       {sizeNote && <p role="status" className="text-xs text-warning">{sizeNote}</p>}
       {error && <p role="alert" className="text-xs text-danger">{error}</p>}
     </div>

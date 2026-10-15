@@ -3,7 +3,7 @@
 // the screens, and nothing under src/ui is reached around the barrel.
 import { describe, expect, it } from 'vitest'
 
-const app = import.meta.glob<string>(['../app/**/*.ts', '../app/**/*.tsx', '!../app/**/*.test.ts', '!../app/**/*.test.tsx', '!../app/**/*.stories.tsx'], { query: '?raw', import: 'default', eager: true })
+const app = import.meta.glob<string>(['../app/**/*.ts', '../app/**/*.tsx', '!../app/**/*.test.ts', '!../app/**/*.test.tsx', '!../app/**/*.testkit.tsx', '!../app/**/*.stories.tsx'], { query: '?raw', import: 'default', eager: true })
 
 /** `from '../ui/<file>'` at any depth, excluding the barrel itself (`'../ui'` or `'../ui/index'`). */
 export function deepUiImports(path: string, source: string): string[] {

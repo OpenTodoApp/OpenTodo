@@ -5,6 +5,7 @@
 // may comment, so it ignores the panel's read-only mode.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { forwardRef, useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import { createPortal } from 'react-dom'
 import { useAttachmentLimits } from '../../lib/attachments'
 import {
   canDeleteComment, canEditComment, createComment, deleteComment, editComment, mentionableMembers, type Thread, threadOrder, threadVisible,
@@ -16,7 +17,6 @@ import type { Attachment, Comment, Membership, ProjectMember, ProjectRole, Task 
 import { Avatar } from '../../ui'
 import { Button, IconButton } from '../../ui'
 import { ConfirmDialog } from '../../ui'
-import { EmptyState } from '../../ui'
 import { Markdown } from '../Markdown'
 import { CommentAttachments } from './AttachmentsRow'
 import { Composer } from './Composer'
@@ -56,10 +56,12 @@ export interface CommentsViewProps {
   focusComment?: string | null
   /** Fixed "now" for stories and tests. */
   now?: number
+  /** Where the composer renders when pinned to the panel's bottom (ux-overhaul); inline when absent. */
+  composerHost?: HTMLElement | null
 }
 
 export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewProps>(function CommentsView(
-  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, error, focusComment, now, attachments, canAttach = false }, composerRef,
+  { taskId, threads, me, role, members, name, onCreate, onEdit, onDelete, error, focusComment, now, attachments, canAttach = false, composerHost }, composerRef,
 ) {
   const coarse = useCoarsePointer()
   const [replyTo, setReplyTo] = useState<string | null>(null)
@@ -123,10 +125,28 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
     )
   }
 
+  // The composer: pinned to the panel's bottom when a host is given, so it is in
+  // view without scrolling past the thread.
+  const composer = me ? (
+    <div className={composerHost ? 'space-y-1.5' : 'space-y-1.5 border-t border-default pt-3'} data-composer-block>
+      {replyTarget && (
+        <div className="flex items-center gap-1 text-meta text-muted" data-reply-target>
+          <span className="min-w-0 truncate">Replying to <strong className="font-medium text-default">{name(replyTarget.author_id)}</strong></span>
+          <IconButton icon="x" size="sm" label="Cancel reply" onClick={() => setReplyTo(null)} />
+        </div>
+      )}
+      <Composer ref={composerRef} id="comment-composer" draftTaskId={taskId} members={members} me={me}
+        submitLabel={replyTarget ? 'Reply' : 'Comment'} label={replyTarget ? 'Write a reply' : 'Write a comment'} attach={canAttach}
+        onSubmit={(body, mentions, files) => onCreate(body, mentions, replyTarget?.id ?? null, files).then((ok) => { if (ok) setReplyTo(null); return ok })} />
+    </div>
+  ) : (
+    <p className="text-meta text-faint">Sign in to comment.</p>
+  )
+
   return (
     <div className="space-y-4">
       {threads.length === 0 ? (
-        <EmptyState icon="message-circle" title="No comments yet" body="Ask a question or leave a note; comments work offline and sync later." />
+        <p className="text-meta text-faint" data-comments-empty>No comments yet. Ask a question or leave a note; comments work offline.</p>
       ) : (
         <ol className="space-y-5" aria-label="Comments">
           {threads.map((t) => (
@@ -145,21 +165,7 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
         </ol>
       )}
       {error && <p role="alert" className="text-meta text-danger">{error}</p>}
-      {me ? (
-        <div className="space-y-1.5 border-t border-default pt-3">
-          {replyTarget && (
-            <div className="flex items-center gap-1 text-meta text-muted" data-reply-target>
-              <span className="min-w-0 truncate">Replying to <strong className="font-medium text-default">{name(replyTarget.author_id)}</strong></span>
-              <IconButton icon="x" size="sm" label="Cancel reply" onClick={() => setReplyTo(null)} />
-            </div>
-          )}
-          <Composer ref={composerRef} id="comment-composer" draftTaskId={taskId} members={members} me={me}
-            submitLabel={replyTarget ? 'Reply' : 'Comment'} label={replyTarget ? 'Write a reply' : 'Write a comment'} attach={canAttach}
-            onSubmit={(body, mentions, files) => onCreate(body, mentions, replyTarget?.id ?? null, files).then((ok) => { if (ok) setReplyTo(null); return ok })} />
-        </div>
-      ) : (
-        <p className="text-meta text-faint">Sign in to comment.</p>
-      )}
+      {composerHost ? createPortal(composer, composerHost) : composer}
       {deleting && (
         <ConfirmDialog title="Delete this comment?" confirmLabel="Delete comment"
           consequence="Everyone on the task sees “Comment deleted” in its place. Replies stay."
@@ -173,10 +179,11 @@ export interface CommentsTabProps {
   task: Task
   userId?: string
   focusComment?: string | null
+  composerHost?: HTMLElement | null
 }
 
 /** Container: reads comments, members and the signed-in user from local storage. */
-export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabProps>(function CommentsTab({ task, userId, focusComment }, composerRef) {
+export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabProps>(function CommentsTab({ task, userId, focusComment, composerHost }, composerRef) {
   const storedMe = useLiveQuery(() => currentUserId(), [], null)
   const me = userId ?? storedMe
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())
@@ -208,7 +215,7 @@ export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabPro
   return (
     <CommentsView ref={composerRef} taskId={task.id} threads={threadOrder(comments).filter(threadVisible)} me={me}
       role={roleOf(task.project_id, memberships)} members={mentionableMembers(task.project_id, memberships)} name={name} error={error}
-      focusComment={focusComment} attachments={attachments} canAttach={!demo && limits?.enabled !== false}
+      focusComment={focusComment} attachments={attachments} canAttach={!demo && limits?.enabled !== false} composerHost={composerHost}
       onCreate={(body, mentions, parentId, files) => run(() => createComment({ taskId: task.id, body, mentions, parentId, files }))}
       onEdit={(id, body, mentions) => run(() => editComment(id, body, mentions))}
       onDelete={(id) => deleteComment(id)} />

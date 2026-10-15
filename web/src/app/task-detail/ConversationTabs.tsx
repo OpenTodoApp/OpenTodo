@@ -40,9 +40,11 @@ export interface ConversationTabsProps {
   readOnly: boolean
   /** Open another task id (a restore may move the task across scopes and return a new id). */
   onOpen?: (id: string) => void
+  /** The panel's pinned bottom, where the comment composer renders while Comments is shown. */
+  composerHost?: HTMLElement | null
 }
 
-export function ConversationTabs({ task, userId, readOnly, onOpen }: ConversationTabsProps) {
+export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost }: ConversationTabsProps) {
   const [tab, setTabState] = useState<TaskTab>(readTaskTab)
   const [focusComment, setFocusComment] = useState<string | null>(null)
   const [focusComposer, setFocusComposer] = useState(0)
@@ -82,7 +84,7 @@ export function ConversationTabs({ task, userId, readOnly, onOpen }: Conversatio
     <section className="border-t border-default px-4 pb-4 pt-1" aria-label="Comments, activity and history">
       <Tabs label="Task conversation" value={tab} onChange={(id) => setTab(id as TaskTab)}
         tabs={[{ id: 'comments', label: 'Comments', count }, { id: 'activity', label: 'Activity' }, { id: 'history', label: 'History' }]}>
-        {tab === 'comments' && <CommentsTab ref={composerRef} task={task} userId={userId} focusComment={focusComment} />}
+        {tab === 'comments' && <CommentsTab ref={composerRef} task={task} userId={userId} focusComment={focusComment} composerHost={composerHost} />}
         {tab === 'activity' && (
           <ActivityTab task={task} userId={userId} onOpenComment={(id) => { setFocusComment(id); setTab('comments') }} />
         )}

@@ -2,8 +2,7 @@
 // The interface budget (OpenSpec change ux-overhaul, design-system "Interface
 // budget", app-shell "Three columns, three scrollers"): measurable limits every
 // screen change must stay inside. Two of them are checked here over seeded
-// fixtures; the others arrive with the work that makes them true (visible
-// properties on a task with task 3.3, primary sidebar items with task 4.1).
+// fixtures; the last one (primary sidebar items) arrives with task 4.1.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
@@ -25,6 +24,8 @@ export const MAX_SCROLLERS = 3
 export const MAX_CHROME_ROWS = 2
 /** The project page keeps its header, layout toggle and quick add until task 4.4 moves the toggle into the header. */
 const PROJECT_CHROME_ALLOWANCE = 3
+/** An empty task's panel: the breadcrumb, Do on, Priority and Add, never a form of empty rows. */
+export const MAX_EMPTY_TASK_ITEMS = 7
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -120,6 +121,20 @@ describe('chrome above the first task', () => {
     banner.textContent = 'Try the new thing'
     page.insertBefore(banner, page.children[2])
     expect(chromeRows(r.container).length).toBeGreaterThan(MAX_CHROME_ROWS)
+    await r.unmount()
+  })
+})
+
+describe('visible properties', () => {
+  it('an empty task shows at most seven items in the panel', async () => {
+    await createTask({ title: 'Blank' })
+    navigate({ view: 'inbox' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => r.container.textContent!.includes('Blank'))
+    r.container.querySelector<HTMLElement>('[data-task-id] button.min-w-0')!.click()
+    await waitFor(() => !!document.querySelector('aside[data-detail-for] [data-property-chips]'))
+    const items = document.querySelectorAll('aside[data-detail-for] [data-property], aside[data-detail-for] button[aria-label="Add a property"]')
+    expect(items.length).toBeLessThanOrEqual(MAX_EMPTY_TASK_ITEMS)
     await r.unmount()
   })
 })

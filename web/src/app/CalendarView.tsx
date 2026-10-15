@@ -15,9 +15,10 @@ import { db, getMeta } from '../lib/db'
 import { formatMinutes } from '../lib/duration'
 import { layoutDay, type DayLayout } from '../lib/layout'
 import { compareByPosition, compareDueThenPriority } from '../lib/ordering'
-import { setTaskCompleted, updateTask } from '../lib/ops'
+import { updateTask } from '../lib/ops'
 import type { Project, Task } from '../lib/types'
 import { useCalendarDrag, type DropTarget } from './calendarDrag'
+import { completeWithUndo, setDueWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
 import { estimateFocus, isGPending, placement as placementSignal } from './signals'
@@ -153,9 +154,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     const stored = rawMap.get(taskId)?.due
     if (target.type === 'slot') {
       const time = toHHMM(target.start)
-      if (t.due?.date !== target.date || t.due?.time !== time) void updateTask(taskId, { due: dueFromView(stored, { date: target.date, time }) })
+      if (t.due?.date !== target.date || t.due?.time !== time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date, time }))
     } else if (target.type === 'lane') {
-      if (t.due?.date !== target.date || t.due?.time) void updateTask(taskId, { due: dueFromView(stored, { date: target.date }) })
+      if (t.due?.date !== target.date || t.due?.time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date }))
     } else if (target.estimate !== t.estimate_minutes) {
       void updateTask(taskId, { estimate_minutes: target.estimate })
     }
@@ -295,7 +296,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
           setOpenId(task.id)
           return
         case 'c':
-          void setTaskCompleted(task.id, true)
+          void completeWithUndo(task.id, true)
           setSelectedId(order[idx + 1] ?? order[idx - 1] ?? null)
           return
       }

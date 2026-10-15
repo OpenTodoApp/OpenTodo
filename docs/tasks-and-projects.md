@@ -30,25 +30,27 @@ New tasks without a project land in the **Inbox**. Tasks added inside a project 
 
 Click a task, or select it with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd>, to open its panel. Every change is saved as you make it; there is no Save button.
 
-<picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right: the title and notes, then the properties card with project, section, parent task, assignee, priority and due date."></picture>
+<picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right: the checkbox and title at the top, the notes, the project breadcrumb, then chips for the due date, priority and the other set properties, with Add beside them."></picture>
 
-The top of the panel has **Complete**, a **⋯** menu with **Copy link**, **Open parent task**, **Open recurring task** and **Delete**, and the **×** that closes it. Below are the **Title** and **Notes**. Notes can have headings, bold and italic text, links, and bullet, numbered and check lists.
+The top of the panel stays in view while you scroll: the task's **checkbox**, its **title** (edit it in place), a **⋯** menu with **Copy link**, **Expand** (the task as a full page), **Open parent task**, **Open recurring task**, **Break this down** and **Delete**, and the **×** that closes it. Below is **Notes**: one quiet line until you click it, then an editor with headings, bold and italic text, links, and bullet, numbered and check lists.
 
-Then comes the properties card. Each row shows its current value, or a quiet "No due date", "No estimate" and so on when it is empty. Click a row, or <kbd>Tab</kbd> to it and press <kbd>Enter</kbd>, to change it; <kbd>Esc</kbd> closes the editor and leaves you on the row.
+Then come the task's properties as chips. A chip reads its value ("Thu 15 Oct · 09:00", "P2", "in 9 days"); only the properties that have a value are shown, plus **Do on** and **Priority**, which are always there. Click a chip, or <kbd>Tab</kbd> to it and press <kbd>Enter</kbd>, to open its editor under the chips; <kbd>Esc</kbd> closes the editor and leaves you on the chip. To set something that isn't shown yet, open **Add** and pick it: the chip appears with its editor open, and leaves again if you close the editor without a value. Each entry in **Add** shows its keyboard shortcut.
 
-- **Project**, **Section** and **Parent task** move the task. Each opens a list you can search: the projects and tasks you pick most often come first, and nested projects show their path ("Work › Clients"), so two projects with the same name are told apart. Type a new name in **Project** and choose **Create** to make a project and move the task into it. A subtask always shows its parent's section.
-- **Assignee**. See [Assign tasks](sharing.md#assign-tasks).
-- **Priority**, from P1 (most important) to P4 (the default). Click one, or press <kbd>1</kbd> to <kbd>4</kbd> anywhere in the panel outside a text field.
-- **Due**, a date with an optional time, and the time zone chip next to it.
-- **When** (Anytime, a start date or Someday) and **Evening**. See [When a task starts](#when-a-task-starts).
-- **Deadline**, the day the task must be finished by, with how many days are left. Type it like a due date (`fri`, `2026-11-06`) or clear it with **×**. See [Deadlines](#deadlines).
-- **Reminders** show as chips. **Add reminder** offers the usual times before the due time, times before the deadline once the task has one, a custom offset or a set date and time; each chip's **⋯** menu edits, snoozes, dismisses or deletes it.
-- **Estimate** and **Repeat**. See [Recurring tasks and reminders](recurring-and-reminders.md) and [Time blocking](time-blocking.md).
-- **Labels**: open the row to add, create or remove labels.
+- The breadcrumb above the chips shows the **Project** and, inside a project with sections, the **Section**, and the **Parent task** when the task is a subtask. Each opens a list you can search: the projects and tasks you pick most often come first, and nested projects show their path ("Work › Clients"), so two projects with the same name are told apart. Type a new name in **Project** and choose **Create** to make a project and move the task into it. A subtask always shows its parent's section.
+- **Do on**, the date with an optional time and the time zone control next to it, opens the **When** editor, which also holds **Start** (Anytime, a date or Someday), **Deadline**, **This Evening**, **Repeat** and **Reminders**. The **Start**, **Deadline**, **Evening**, **Repeat** and **Reminders** chips open the same editor at their own part. See [When a task starts](#when-a-task-starts), [Deadlines](#deadlines) and [Recurring tasks and reminders](recurring-and-reminders.md).
+- **Priority**, from P1 (most important) to P4 (the default). Open the chip and pick one, or press <kbd>1</kbd> to <kbd>4</kbd> anywhere in the panel outside a text field.
+- **Estimate**. See [Time blocking](time-blocking.md).
+- **Labels**: open the chip to add, create or remove labels.
+- **Assignee**, in a shared project. In your own projects the chip is hidden; **Add › Show in Assigned to me** puts the task in that view. See [Assign tasks](sharing.md#assign-tasks).
+- **Blocked by** and **Blocks**. See [Wait for another task](#wait-for-another-task).
 
-Below the card are the **Subtasks** and the **Comments**, **Activity** and **History** tabs.
+A chip with a value has an **×** that clears it without opening the editor.
 
-If you are a viewer of a shared project, the values read as text and can't be changed, and **Complete** and **Delete** are hidden. You can still comment.
+Below the chips are the **Subtasks** as a checklist, with an **Add subtask…** line under them, the **Attach** action (the list of files appears with the first one; you can also paste or drop files on the panel), and the **Comments**, **Activity** and **History** tabs. The comment box stays at the bottom of the panel while Comments is shown. Activity starts with when the task was created and completed.
+
+Completing, deleting, moving, rescheduling or parking a task shows a toast with **Undo** for a few seconds (<kbd>Ctrl</kbd>+<kbd>Z</kbd> outside a text field also undoes). Undo works offline too.
+
+If you are a viewer of a shared project, the values read as text and can't be changed, and the checkbox and **Delete** are disabled. You can still comment.
 
 Close the panel with <kbd>Esc</kbd> or the **×** at the top. On a phone the panel covers the list; close it to go back.
 
@@ -106,7 +108,7 @@ Deadlines also bring tasks into [Today and Upcoming](views.md#plan-your-day-with
 
 ### When a task starts
 
-Not every task is for now. The **When** row in the panel says when a task becomes relevant:
+Not every task is for now. **Start**, in the panel's **When** editor, says when a task becomes relevant:
 
 - **Anytime**, the default: the task is in your lists as usual.
 - **A start date** defers the task until that day: it disappears from Today, Upcoming, Anytime and the counts, and its project or Inbox lists it at the end under **Later**, with a **Starts 21 Oct** chip. On its start day it appears in Today with a **Started** chip and stays there until you deal with it. The start date can't be after the due date.
@@ -114,17 +116,17 @@ Not every task is for now. The **When** row in the panel says when a task become
 
 A due date or a deadline that has come always shows the task in Today, even if it is deferred or parked.
 
-**This Evening** (the **Evening** switch next to it) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. It says nothing about the time of day.
+**This Evening** (the **Evening** switch in the same editor, or **Add › This Evening**) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. It says nothing about the time of day.
 
 From the list: <kbd>n</kbd> parks a task or brings it back, <kbd>Shift</kbd>+<kbd>N</kbd> asks for its start date, and <kbd>Shift</kbd>+<kbd>E</kbd> toggles This Evening.
 
 ### Wait for another task
 
-Some tasks can't start until another is done: you can't book flights before the dates are confirmed. Open the task, choose **Blocked by** (or select it in a list and press <kbd>b</kbd>) and pick the tasks it waits for. The list offers open tasks you can link: the task itself, tasks that already wait for it and tasks shared differently are left out, so you can't make two tasks wait for each other.
+Some tasks can't start until another is done: you can't book flights before the dates are confirmed. Open the task, choose **Add › Blocked by** (or select it in a list and press <kbd>b</kbd>) and pick the tasks it waits for. The list offers open tasks you can link: the task itself, tasks that already wait for it and tasks shared differently are left out, so you can't make two tasks wait for each other.
 
 While at least one of those tasks is open, the task is **blocked**: its row is dimmed and shows a lock with the number it's waiting for, on boards too, and in Today it moves to a folded **Blocked** group at the end. As soon as the last one is completed (or deleted), the task is ready again, on every device. You can still open, edit and complete a blocked task; completing it doesn't touch the tasks it waited for. A repeating task keeps blocking until its series ends, and **Blocked by** says "repeats" next to it.
 
-**Blocks** in the panel lists the open tasks waiting for this one; select one to open it. In a shared project, blockers are tasks of the same project, and the person a blocked task is assigned to gets a notification when it's ready to start. Filter for `blocked` or `unblocked` to list them (see [Labels and filters](labels-and-filters.md)).
+**Blocks** in the panel counts the open tasks waiting for this one; open the chip to see them and select one to open it. In a shared project, blockers are tasks of the same project, and the person a blocked task is assigned to gets a notification when it's ready to start. Filter for `blocked` or `unblocked` to list them (see [Labels and filters](labels-and-filters.md)).
 
 ## Change several tasks at once
 

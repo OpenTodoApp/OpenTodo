@@ -410,20 +410,32 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
 .kbd, .ui-kbd { @apply rounded-chip border border-default bg-sunken px-1.5 py-0.5 font-mono text-hint text-muted; }
 /* Rich-text notes (collaborative-rich-text). ProseMirror's required base rules
    are inlined instead of importing its stylesheet. */
+/* At rest the notes are a quiet block of text (one placeholder line when empty);
+   while focused they grow into a bordered editor (ux-overhaul, "Task panel layout"). */
+.notes-host { @apply -mx-2; }
 .notes-editor {
-  @apply relative min-h-28 w-full space-y-2 rounded-md border border-input bg-surface px-3 py-2 text-sm text-default
-    focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus/30;
+  @apply relative min-h-8 w-full space-y-2 rounded-control border border-transparent px-2 py-1 text-body text-default
+    focus:outline-none;
   word-wrap: break-word;
   white-space: pre-wrap;
   white-space: break-spaces;
   font-variant-ligatures: none;
+  transition: min-height var(--duration-ui) ease-out, background-color var(--duration-ui) ease-out;
+}
+.notes-host[data-notes-editing] .notes-editor,
+.notes-editor:focus {
+  @apply min-h-28 border-input bg-surface ring-2 ring-focus/30 dark:bg-raised;
 }
 .notes-editor[contenteditable="false"] {
-  @apply bg-sunken;
+  @apply border-transparent ring-0;
 }
 .notes-editor.is-empty::before {
   @apply pointer-events-none absolute text-faint;
   content: attr(data-placeholder);
+}
+.notes-plain {
+  @apply -mx-2 min-h-8 w-[calc(100%+1rem)] resize-y rounded-control border border-transparent bg-transparent px-2 py-1 text-body text-default
+    placeholder:text-faint focus:min-h-28 focus:border-input focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus/30 dark:focus:bg-raised;
 }
 .notes-editor h1 { @apply text-lg font-semibold; }
 .notes-editor h2 { @apply text-base font-semibold; }

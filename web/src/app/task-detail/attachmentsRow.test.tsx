@@ -56,12 +56,15 @@ const item = (name: string) => [...document.querySelectorAll<HTMLElement>('[data
 describe('AttachmentsRow', () => {
   it('adds a file from the picker and opens an uploaded one with Enter, by keyboard only', async () => {
     const v = await mount()
-    const add = [...v.container.querySelectorAll('button')].find((b) => b.textContent === 'Add file')!
+    const add = v.container.querySelector<HTMLButtonElement>('button[aria-label="Attach"]')!
     const input = v.container.querySelector<HTMLInputElement>('[data-testid="attachment-picker"]')!
     const pick = vi.spyOn(input, 'click').mockImplementation(() => {})
     add.focus()
     await key(add, 'Enter')
     await click(add)
+    await flush(20)
+    expect(document.activeElement?.textContent).toContain('Choose files')
+    await click(document.activeElement!) // Enter on a native button activates it
     expect(pick).toHaveBeenCalled()
     Object.defineProperty(input, 'files', { value: [new File(['%PDF'], 'Q3 report.pdf', { type: 'application/pdf' })], configurable: true })
     await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })) })
@@ -143,9 +146,37 @@ describe('AttachmentsRow', () => {
     await remoteFile('a-ana', 'Ana.pdf')
     const v = await mount({ role: 'viewer' })
     await waitFor(() => names().includes('Ana.pdf'))
-    expect([...v.container.querySelectorAll('button')].some((b) => b.textContent === 'Add file')).toBe(false)
+    expect(v.container.querySelector('button[aria-label="Attach"]')).toBeNull()
     expect(v.container.querySelector('[aria-label="Remove Ana.pdf"]')).toBeNull()
     expect(v.container.querySelector('[aria-label="Rename Ana.pdf"]')).toBeNull()
+  })
+
+  it('shows no heading at rest, only Attach; the heading and the list come with the first file', async () => {
+    const v = await mount()
+    await flush()
+    expect(v.container.querySelector('h3')).toBeNull()
+    expect(v.container.textContent).not.toContain('Attachments')
+    expect(v.container.querySelector('button[aria-label="Attach"]')).toBeTruthy()
+    expect(v.container.querySelector('[data-drop-zone]')).toBeNull()
+    await remoteFile('a-first', 'First.pdf')
+    await waitFor(() => names().includes('First.pdf'))
+    expect(v.container.querySelector('h3')!.textContent).toContain('Attachments')
+  })
+
+  it('shows the drop zone only while files are dragged over the panel', async () => {
+    const panel = createRef<HTMLDivElement>()
+    const r = await render(<div ref={panel}><AttachmentsRow taskId={task} userId="me" role="owner" dropTarget={panel} /></div>)
+    mounted.push(r)
+    await flush()
+    const drag = (type: string) => {
+      const e = new Event(type, { bubbles: true, cancelable: true })
+      Object.defineProperty(e, 'dataTransfer', { value: { files: [], types: ['Files'] } })
+      return e
+    }
+    await act(async () => { panel.current!.dispatchEvent(drag('dragover')) })
+    expect(r.container.querySelector('[data-drop-zone]')).toBeTruthy()
+    await act(async () => { panel.current!.dispatchEvent(drag('dragleave')) })
+    expect(r.container.querySelector('[data-drop-zone]')).toBeNull()
   })
 
   it('hides itself on the demo when there is nothing to show', async () => {

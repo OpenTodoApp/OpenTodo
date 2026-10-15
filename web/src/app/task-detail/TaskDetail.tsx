@@ -3,7 +3,7 @@ import { Component, type FormEvent, type KeyboardEvent, lazy, type ReactNode, Su
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import { db } from '../../lib/db'
 import { markTaskNotificationsRead } from '../../lib/notifications'
-import { createSubtask, deleteTask, setTaskCompleted, updateTask } from '../../lib/ops'
+import { createSubtask, updateTask } from '../../lib/ops'
 import { membershipMap, roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
 import type { Label, Priority, Project, Task } from '../../lib/types'
@@ -11,10 +11,11 @@ import { IconButton } from '../../ui'
 import { Badge } from '../../ui'
 import { Icon } from '../../ui'
 import { MenuItem, MenuSeparator } from '../../ui'
-import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { Markdown } from '../Markdown'
 import { Menu } from '../overlay/Menu'
 import { isTyping } from '../useViews'
+import { navigate } from '../router'
+import { completeWithUndo, deleteWithUndo } from '../undoable'
 import { AttachmentsRow } from './AttachmentsRow'
 import { ConversationTabs } from './ConversationTabs'
 import { Properties } from './Properties'
@@ -28,8 +29,10 @@ export function taskLink(id: string, origin = typeof location === 'undefined' ? 
   return `${origin}/?task=${encodeURIComponent(id)}`
 }
 
-export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen, onToggleComplete, readOnly = false }: {
+export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen, onToggleComplete, readOnly = false, variant = 'panel' }: {
   taskId: string
+  /** `panel`: the shell's slot. `page`: the expanded task at /task/<id>, where Close is a Back action. */
+  variant?: 'panel' | 'page'
   /** Signed-in account; enables the assignee row (task-assignment). */
   userId?: string
   /** Viewer of the task's shared project: values read as text, no Complete or Delete. */
@@ -42,7 +45,6 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   /** Complete / reopen through the list so the "complete parent too" prompt can follow. */
   onToggleComplete?: (task: Task) => void
 }) {
-  const dt = useDateTimeFormat()
   const assistant = useAssistantStatus()
   const task = useLiveQuery(() => db.tasks.get(taskId), [taskId])
   const [title, setTitle] = useState('')
@@ -57,6 +59,9 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   const progress = useMemo(() => progressOf({ id: taskId }, children), [taskId, children])
   const memberships = useLiveQuery(() => membershipMap(), [])
   const panel = useRef<HTMLElement>(null)
+  // The pinned bottom of the panel: the comment composer renders here while the
+  // Comments tab is shown, so it is in view without scrolling (ux-overhaul).
+  const [footer, setFooter] = useState<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (task) setTitle(task.title)
@@ -77,8 +82,8 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     if (t && t !== task.title) void updateTask(task.id, { title: t })
     else setTitle(task.title)
   }
-  const toggle = (t: Task) => (onToggleComplete ? onToggleComplete(t) : void setTaskCompleted(t.id, !t.completed_at))
-  const remove = () => { void deleteTask(task.id); onClose() }
+  const toggle = (t: Task) => (onToggleComplete ? onToggleComplete(t) : void completeWithUndo(t.id, !t.completed_at))
+  const remove = () => { void deleteWithUndo(task.id); onClose() }
   const copyLink = () => {
     void navigator.clipboard?.writeText(taskLink(task.id)).then(() => setCopied(true), () => {})
   }
@@ -92,33 +97,52 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     }
   }
 
+  const page = variant === 'page'
+  const done = !!task.completed_at
+  const ring = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }[task.priority] ?? 'border-p4'
   return (
-    <aside ref={panel} data-detail-for={task.id} onKeyDown={onKeyDown} className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-xl md:static md:shadow-none">
-      <div className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        {!readOnly && (
-          <button type="button" className="btn-secondary px-3 py-1.5 text-sm" onClick={() => toggle(task)}>
-            <Icon name={task.completed_at ? 'undo-2' : 'check'} />{task.completed_at ? 'Reopen' : 'Complete'}
-          </button>
-        )}
+    <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant} onKeyDown={onKeyDown}
+      className={page
+        ? 'mx-auto flex w-full max-w-3xl min-w-0 flex-col'
+        : 'fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:static md:shadow-none'}>
+      {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
+      <div data-panel-header className={`flex items-center gap-2 border-b border-default px-3 py-2 ${page ? 'sticky top-0 z-10 bg-canvas/95 backdrop-blur-sm' : 'pt-[max(0.5rem,env(safe-area-inset-top))]'}`}>
+        {page && <IconButton icon="arrow-left" label="Back to the list" onClick={onClose} data-task-back className="touch-target" />}
+        <button type="button" aria-label={done ? 'Reopen task' : 'Complete task'} aria-pressed={done} disabled={readOnly} onClick={() => toggle(task)} data-panel-complete
+          className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
+          <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${ring} ${done ? 'bg-faint border-input text-on-accent' : 'hover:bg-success-soft'}`}>
+            {done && <Icon name="check" size="xs" />}
+          </span>
+        </button>
+        <input
+          className={`min-w-0 flex-1 bg-transparent font-semibold text-strong focus:outline-none ${page ? 'text-h2' : 'text-h3'} ${done ? 'text-faint line-through' : ''}`}
+          value={title}
+          readOnly={readOnly}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={commitTitle}
+          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+          aria-label="Title"
+          placeholder="Untitled"
+        />
         {progress.total > 0 && <Badge hue="slate" title="Completed subtasks">{progress.done}/{progress.total}</Badge>}
-        <div className="flex-1" />
         {copied && <span role="status" className="text-meta text-muted">Link copied</span>}
         <Menu kind="menu" label="Task actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-60">
           <MenuItem label="Copy link" icon="link" onSelect={copyLink} />
+          {!page && <MenuItem label="Expand" icon="external-link" description="Open the task as a page" onSelect={() => navigate({ view: 'task', id: task.id })} />}
           {parent && <MenuItem label="Open parent task" icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
           {series && <MenuItem label="Open recurring task" icon="repeat" onSelect={() => onOpen?.(series.id)} />}
           {!readOnly && assistant?.available && <MenuItem label="Break this down" icon="list" onSelect={breakDown} />}
           {!readOnly && <MenuSeparator />}
           {!readOnly && <MenuItem label="Delete" icon="trash-2" danger onSelect={remove} />}
         </Menu>
-        <IconButton icon="x" label="Close" onClick={onClose} data-overlay-close className="touch-target" />
+        {!page && <IconButton icon="x" label="Close" onClick={onClose} data-overlay-close className="touch-target" />}
       </div>
       {readOnly && (
         <p role="note" className="border-b border-default bg-sunken px-4 py-2 text-meta text-muted">
           Read-only: you are a viewer of this shared project. You can still comment.
         </p>
       )}
-      <div className="min-w-0 flex-1 overflow-y-auto">
+      <div className={page ? 'min-w-0' : 'min-w-0 flex-1 overflow-y-auto'}>
         <div className="min-w-0 space-y-4 p-4">
           {parent && (
             <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(parent.id)} title="Open parent task">
@@ -131,15 +155,6 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
               <Icon name="repeat" />{task.completed_at ? 'Completed occurrence' : 'Single occurrence'} of {series.title || 'Untitled'}{series.deleted_at ? ' (deleted)' : ''}
             </button>
           )}
-          <input
-            className="w-full bg-transparent text-lg font-semibold text-default focus:outline-none"
-            value={title}
-            readOnly={readOnly}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={commitTitle}
-            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-            aria-label="Title"
-          />
           <NotesBoundary task={task} readOnly={readOnly}>
             <Suspense fallback={<NotesPreview text={task.description} />}>
               <NotesEditor key={task.id} task={task} readOnly={readOnly} />
@@ -149,23 +164,27 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           <Properties task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
             parent={parent} childCount={children.length} onOpen={onOpen} />
 
-          <section aria-labelledby={`subtasks-${task.id}`}>
-            <h3 id={`subtasks-${task.id}`} className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted">
-              <Icon name="list" className="text-faint" />Subtasks{progress.total > 0 && <span className="font-normal text-faint">{progress.done}/{progress.total}</span>}
-            </h3>
-            <ul className="mb-2 space-y-0.5 empty:hidden" aria-label="Subtasks">
+          {/* Subtasks as a checklist with a quiet add line (ux-overhaul, "Task panel layout"). */}
+          <section aria-label="Subtasks" data-subtasks>
+            {children.length > 0 && (
+              <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted">
+                <Icon name="list" className="text-faint" />Subtasks<span className="font-normal text-faint">{progress.done}/{progress.total}</span>
+              </h3>
+            )}
+            <ul className="space-y-0.5 empty:hidden" aria-label="Subtasks">
               {children.map((c) => (
                 <li key={c.id} className="flex items-center gap-2 rounded-control px-1 py-1 hover:bg-sunken dark:hover:bg-raised">
                   <button
                     type="button"
                     aria-label={c.completed_at ? `Reopen ${c.title}` : `Complete ${c.title}`}
+                    aria-pressed={!!c.completed_at}
                     onClick={() => toggle(c)}
                     disabled={readOnly}
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 text-[10px] ${c.completed_at ? 'border-input bg-faint text-on-accent' : 'border-input hover:bg-success-soft'}`}
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${c.completed_at ? 'border-input bg-faint text-on-accent' : 'border-input hover:bg-success-soft'}`}
                   >
                     {c.completed_at && <Icon name="check" size={10} />}
                   </button>
-                  <button type="button" className={`min-w-0 flex-1 truncate text-left text-sm ${c.completed_at ? 'text-faint line-through' : 'text-default'}`} onClick={() => onOpen?.(c.id)}>
+                  <button type="button" className={`min-w-0 flex-1 truncate text-left text-body ${c.completed_at ? 'text-faint line-through' : 'text-default'}`} onClick={() => onOpen?.(c.id)}>
                     {c.title || <span className="italic text-faint">Untitled</span>}
                   </button>
                 </li>
@@ -175,14 +194,10 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           </section>
 
           <AttachmentsRow taskId={task.id} userId={userId} role={roleOf(task.project_id, memberships ?? new Map())} dropTarget={panel} />
-
-          <p className="text-meta text-faint">
-            Created {dt.formatInstant(task.created_at, 'datetime')}
-            {task.completed_at && <> · Completed {dt.formatInstant(task.completed_at, 'datetime')}</>}
-          </p>
         </div>
-        <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} />
+        <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} composerHost={footer} />
       </div>
+      <div ref={setFooter} data-panel-footer className={`shrink-0 border-t border-default px-4 py-3 empty:hidden ${page ? 'sticky bottom-0 bg-canvas/95 backdrop-blur-sm' : 'bg-surface'}`} />
     </aside>
   )
 }
@@ -200,11 +215,11 @@ function AddSubtask({ parent }: { parent: Task }) {
     ref.current?.focus()
   }
   return (
-    <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2">
-      <span className="text-accent"><Icon name="plus" /></span>
+    <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2 px-1" data-add-subtask>
+      <span className="text-faint"><Icon name="plus" size="xs" /></span>
       <input
         ref={ref}
-        className="input py-1"
+        className="min-w-0 flex-1 bg-transparent py-1 text-body text-default placeholder:text-faint focus:outline-none"
         placeholder="Add subtask…"
         aria-label="Add subtask"
         value={value}
@@ -219,7 +234,7 @@ function AddSubtask({ parent }: { parent: Task }) {
 function NotesPreview({ text }: { text: string }) {
   return (
     <div className="notes-host" aria-busy="true">
-      <div className="notes-editor">{text ? <Markdown source={text} /> : <p className="text-faint">Notes…</p>}</div>
+      <div className="notes-editor">{text ? <Markdown source={text} /> : <p className="text-faint">Add notes…</p>}</div>
     </div>
   )
 }
@@ -230,8 +245,8 @@ function PlainNotes({ task, readOnly }: { task: Task; readOnly: boolean }) {
   useEffect(() => setText(task.description), [task.id, task.description])
   return (
     <textarea
-      className="input min-h-28 resize-y"
-      placeholder="Notes…"
+      className="notes-plain"
+      placeholder="Add notes…"
       value={text}
       disabled={readOnly}
       onChange={(e) => setText(e.target.value)}

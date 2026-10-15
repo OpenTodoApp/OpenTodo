@@ -13,6 +13,7 @@ export type Route =
   | { view: 'completed' }
   | { view: 'assigned' }
   | { view: 'project'; id: string }
+  | { view: 'task'; id: string }
   | { view: 'label'; id: string }
   | { view: 'labels' }
   | { view: 'filter'; q?: string }
@@ -99,6 +100,9 @@ export function parseRoute(pathname: string): Route {
       return parts[1] ? { view: 'view', id: parts[1] } : { view: 'views' }
     case 'project':
       return parts[1] ? { view: 'project', id: parts[1] } : { view: 'inbox' }
+    case 'task':
+      // The expanded task page (ux-overhaul, app-shell "Panel width and expansion").
+      return parts[1] ? { view: 'task', id: parts[1] } : { view: 'inbox' }
     case 'invite':
       // /invite/p/<token> is a project invite link (project-invite-links).
       if (parts[1] === 'p') return parts[2] ? { view: 'project-invite', token: safeDecode(parts[2]) } : { view: 'inbox' }
@@ -127,6 +131,7 @@ export function routePath(r: Route): string {
     case 'project':
     case 'label':
     case 'view':
+    case 'task':
       return `/${r.view}/${r.id}`
     case 'invite':
     case 'reset':

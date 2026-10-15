@@ -8,7 +8,7 @@ import { formatDateHeading, todayISO } from '../lib/dates'
 import { inAnytime, inLater, inToday, inUpcoming, isSomeday, overdueInToday, upcomingDate } from '../lib/views'
 import { byPosition, compareByPosition, compareDueThenPriority } from '../lib/ordering'
 import { resolveLabels } from '../lib/labels'
-import { createSubtask, createTask, deleteTask, detachOccurrence, parkTask, setTaskCompleted, setTaskParent, skipOccurrence, unparkTask, updateTask } from '../lib/ops'
+import { createSubtask, createTask, detachOccurrence, setTaskParent, skipOccurrence, unparkTask, updateTask } from '../lib/ops'
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
 import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
 import { canEditTasks, memberName, roleOf } from '../lib/sharing'
@@ -25,6 +25,7 @@ import { LabelPicker } from './LabelPicker'
 import { AssigneePicker } from './AssigneePicker'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { registerPanelHandlers, setPanelTaskId, usePanelTaskId } from './panel'
+import { completeWithUndo, deleteWithUndo, parkWithUndo } from './undoable'
 import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
@@ -42,7 +43,7 @@ import { Menu } from './overlay/Menu'
 import { MenuItem, MenuSeparator } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
-type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'help' } | { view: 'ask' }>
+type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'help' } | { view: 'ask' } | { view: 'task' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 interface Row {
@@ -448,7 +449,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   /** Complete or reopen; after completing the last open subtask, offer the parent (design D5). */
   const toggleComplete = useCallback(async (id: string, completed: boolean) => {
-    await setTaskCompleted(id, completed)
+    await completeWithUndo(id, completed)
     if (!completed) {
       setPrompt((p) => (p?.id === id ? null : p))
       return
@@ -713,7 +714,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           // Park or un-park (someday-and-evening D5).
           if (row) {
             e.preventDefault()
-            void (row.task.start === 'someday' ? unparkTask(row.task.id) : parkTask(row.task.id))
+            void (row.task.start === 'someday' ? unparkTask(row.task.id) : parkWithUndo(row.task.id))
           }
           break
         case 'N':
@@ -753,7 +754,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         case 'Backspace':
           if (selectedId) {
             e.preventDefault()
-            void deleteTask(selectedId)
+            void deleteWithUndo(selectedId)
             setSelectedId(rows[idx + 1]?.task.id ?? rows[idx - 1]?.task.id ?? null)
           }
           break

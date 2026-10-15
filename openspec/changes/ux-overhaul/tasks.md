@@ -25,15 +25,15 @@ Each group leaves `make check` green and the app usable. Groups 3 to 6 can proce
 
 ## 3. Task panel
 
-- [ ] 3.1 Add the sticky panel header (checkbox, inline title, menu with Delete, Copy link, Expand, Open parent, Open recurring task, Break this down; Close) and the Expand page at `/task/<id>`; verify with `taskDetail.test.tsx` (header visible after scrolling, Expand and Back round trip) and the layout check.
-- [ ] 3.2 Make notes a single placeholder line until focused and borderless when filled; verify with `notes.test.tsx` and a story state.
-- [ ] 3.3 Build `PropertyChip` from `PropertyRow`'s behaviour (open on click or Enter, Escape or commit closes, focus returns) and `AddPropertyMenu` with shortcuts; render the project breadcrumb (project › section) as one picker; verify with `propertyChips.test.tsx` covering focus return, Add then cancel removes the chip, and the empty-task case showing at most seven items.
-- [ ] 3.4 Build `WhenControl` as one popover composing the due date and time, Start (Anytime, date, Someday), Deadline, Evening, Repeat and Reminders segments with a shared header and footer, writing exactly the fields each editor wrote before; verify with `whenControl.test.tsx` (each segment's op payload unchanged against the previous editor tests) and offline tests for start and deadline.
-- [ ] 3.5 Hide the Assignee chip in solo scopes and offer "Show in Assigned to me" from the Add menu; move Priority to a single chip with a four-option menu; verify with `assignee.test.tsx` and `priority.test.tsx`.
-- [ ] 3.6 Make subtasks a checklist under the notes with a quiet add line; make attachments an Attach action plus a list only when files exist and a drop zone only while dragging; move created and completed times into Activity; verify with `subtasks.test.tsx` and `attachmentsRow.test.tsx` (no attachments heading at rest, drop zone on dragenter).
-- [ ] 3.7 Pin the comment composer to the panel's bottom while Comments is shown and shrink the empty state to one line; verify with `commentsTab.test.tsx` (composer in view without scrolling with thirty comments).
-- [ ] 3.8 Add the single-action Undo toast for complete, delete, move, date change and park, generalising `toastStore`; verify with `undo.test.tsx` including the offline completion-then-undo convergence case.
-- [ ] 3.9 Update the task panel stories (empty task, full task, viewer, dark, 375) and the tasks guide; verify with `make ui-check` and `npm run docs:check`.
+- [x] 3.1 Add the sticky panel header (checkbox, inline title, menu with Delete, Copy link, Expand, Open parent, Open recurring task, Break this down; Close) and the Expand page at `/task/<id>`; verify with `taskDetail.test.tsx` (header visible after scrolling, Expand and Back round trip) and the layout check.
+- [x] 3.2 Make notes a single placeholder line until focused and borderless when filled; verify with `notes.test.tsx` and a story state.
+- [x] 3.3 Build `PropertyChip` from `PropertyRow`'s behaviour (open on click or Enter, Escape or commit closes, focus returns) and `AddPropertyMenu` with shortcuts; render the project breadcrumb (project › section) as one picker; verify with `propertyChips.test.tsx` covering focus return, Add then cancel removes the chip, and the empty-task case showing at most seven items.
+- [x] 3.4 Build `WhenControl` as one popover composing the due date and time, Start (Anytime, date, Someday), Deadline, Evening, Repeat and Reminders segments with a shared header and footer, writing exactly the fields each editor wrote before; verify with `whenControl.test.tsx` (each segment's op payload unchanged against the previous editor tests) and offline tests for start and deadline.
+- [x] 3.5 Hide the Assignee chip in solo scopes and offer "Show in Assigned to me" from the Add menu; move Priority to a single chip with a four-option menu; verify with `assignee.test.tsx` and `priority.test.tsx`.
+- [x] 3.6 Make subtasks a checklist under the notes with a quiet add line; make attachments an Attach action plus a list only when files exist and a drop zone only while dragging; move created and completed times into Activity; verify with `subtasks.test.tsx` and `attachmentsRow.test.tsx` (no attachments heading at rest, drop zone on dragenter).
+- [x] 3.7 Pin the comment composer to the panel's bottom while Comments is shown and shrink the empty state to one line; verify with `commentsTab.test.tsx` (composer in view without scrolling with thirty comments).
+- [x] 3.8 Add the single-action Undo toast for complete, delete, move, date change and park, generalising `toastStore`; verify with `undo.test.tsx` including the offline completion-then-undo convergence case.
+- [x] 3.9 Update the task panel stories (empty task, full task, viewer, dark, 375) and the tasks guide; verify with `make ui-check` and `npm run docs:check`.
 
 ## 4. Navigation, naming and the page template everywhere
 

@@ -11,9 +11,8 @@ import {
 import { db, type AttachmentBlob } from '../../lib/db'
 import { useDemo } from '../../lib/demo'
 import type { Attachment, ProjectRole } from '../../lib/types'
-import { Button, IconButton } from '../../ui'
-import { Icon } from '../../ui'
-import { ConfirmDialog } from '../../ui'
+import { Button, ConfirmDialog, Icon, IconButton, MenuItem } from '../../ui'
+import { Menu } from '../overlay/Menu'
 import { showBulkToast } from '../bulk/toastStore'
 
 /** "Pasted image 2026-10-15 14.03.27.png": the name a pasted image gets. */
@@ -180,11 +179,16 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
 
   if (demo && rows.length === 0) return null
 
+  // At rest the row is one Attach action; the heading and list appear with the
+  // first file, the drop zone only while files are dragged over the panel
+  // (ux-overhaul, "Task panel layout").
   return (
-    <section aria-labelledby={`attachments-${taskId}`} data-testid="attachments-row" className={dragging ? 'rounded-control outline-2 outline-dashed outline-accent' : undefined}>
-      <h3 id={`attachments-${taskId}`} className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted">
-        <Icon name="paperclip" className="text-faint" />Attachments{rows.length > 0 && <span className="font-normal text-faint">{rows.length}</span>}
-      </h3>
+    <section aria-label="Attachments" data-testid="attachments-row">
+      {rows.length > 0 && (
+        <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted">
+          <Icon name="paperclip" className="text-faint" />Attachments<span className="font-normal text-faint">{rows.length}</span>
+        </h3>
+      )}
       {rows.length > 0 && (
         <ul ref={listRef} aria-label="Attachments" onKeyDown={onKeyDown} className="mb-2 space-y-0.5">
           {rows.map((a, i) => (
@@ -196,14 +200,23 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
           ))}
         </ul>
       )}
+      {canAdd && dragging && (
+        <p role="status" data-drop-zone className="mb-2 rounded-control border-2 border-dashed border-accent bg-accent-soft px-3 py-4 text-center text-meta text-accent">
+          Drop files to attach them to this task
+        </p>
+      )}
       {canAdd && (
         <div className="flex flex-wrap items-center gap-2">
           <input ref={picker} type="file" multiple hidden aria-label="Choose files to attach" data-testid="attachment-picker"
             onChange={(e) => { const files = Array.from(e.target.files ?? []); e.target.value = ''; void add(files) }} />
-          <Button variant="ghost" size="sm" icon="plus" onClick={() => picker.current?.click()}>Add file</Button>
-          {!linking && <Button variant="ghost" size="sm" icon="link" onClick={() => setLinking(true)}>Add link</Button>}
+          {!linking && (
+            <Menu kind="menu" label="Attach" align="start" width="sm:w-64" trigger={<span className="inline-flex items-center gap-1.5"><Icon name="paperclip" size="sm" />Attach</span>}
+              triggerClassName="ui-btn ui-btn--ghost ui-btn--sm -mx-2 text-muted">
+              <MenuItem label="Choose files…" icon="upload" description="Or paste or drop files on the task" onSelect={() => picker.current?.click()} />
+              <MenuItem label="Add a link…" icon="link" onSelect={() => setLinking(true)} />
+            </Menu>
+          )}
           {linking && <LinkForm onCancel={() => setLinking(false)} onAdd={async (url) => { await queueLink(taskId, url); setLinking(false) }} />}
-          {rows.length === 0 && <span className="text-meta text-faint">or paste or drop files here</span>}
         </div>
       )}
       {error && <p role="alert" className="mt-1 text-meta text-danger">{error}</p>}

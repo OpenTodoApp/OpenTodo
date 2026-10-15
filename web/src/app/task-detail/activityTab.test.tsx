@@ -95,6 +95,22 @@ describe('ActivityTab (local storage)', () => {
   })
   afterEach(() => { vi.unstubAllGlobals() })
 
+  it('starts with the task’s created and completed times', async () => {
+    const id = await createTask({ title: 'Pay rent' })
+    const r = await render(<ActivityTab task={(await db.tasks.get(id))!} userId="me" onOpenComment={() => {}} />)
+    await flush(40)
+    const times = r.container.querySelector('[data-activity-times]')!
+    expect(times.textContent).toContain('Created')
+    expect(times.textContent).not.toContain('Completed')
+    expect(r.container.querySelector('.space-y-3')!.firstElementChild).toBe(times)
+    await r.unmount()
+    await updateTask(id, { completed_at: NOW })
+    const done = await render(<ActivityTab task={(await db.tasks.get(id))!} userId="me" onOpenComment={() => {}} />)
+    await flush(40)
+    expect(done.container.querySelector('[data-activity-times]')!.textContent).toContain('Completed')
+    await done.unmount()
+  })
+
   it('renders offline from the device, with unsent changes pending and no server paging', async () => {
     vi.stubGlobal('navigator', { ...navigator, onLine: false })
     const id = await createTask({ title: 'Milk' })
