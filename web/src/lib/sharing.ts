@@ -146,6 +146,7 @@ function tableFor(entity: Entity) {
     case 'comment': return db.comments
     case 'project_prefs': return db.prefs
     case 'user_prefs': return db.userPrefs
+    case 'attachment': return db.attachments
     default: return db.tasks
   }
 }

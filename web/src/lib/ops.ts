@@ -9,7 +9,7 @@ import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Comment, type Entity, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Section, type Task, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Section, type Task, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -50,6 +50,7 @@ function tableFor(entity: Entity) {
     case 'comment': return db.comments
     case 'project_prefs': return db.prefs
     case 'user_prefs': return db.userPrefs
+    case 'attachment': return db.attachments
     default: return db.tasks
   }
 }
@@ -80,13 +81,18 @@ const SECTION_DEFAULTS: Omit<Section, 'id' | '_clock'> = {
 const COMMENT_DEFAULTS: Omit<Comment, 'id' | '_clock'> = {
   task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null,
 }
+/** attachment (attachments D1): every field but name, uploaded_at and deleted_at is fixed at creation. */
+export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
+  task_id: '', comment_id: null, name: '', mime: 'application/octet-stream', size: 0, sha256: '', url: null, encrypted: false,
+  author_id: '', created_at: 0, uploaded_at: null, deleted_at: null,
+}
 /** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
 export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald' }
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
-  comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS,
+  comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS,
 }
 
 /**

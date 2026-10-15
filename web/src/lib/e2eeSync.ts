@@ -42,7 +42,7 @@ type AnyTable = { get(id: string): Promise<Row | undefined>; put(v: Row): Promis
 function tableOf(entity: Entity): AnyTable {
   const t = {
     project: db.projects, task: db.tasks, label: db.labels, view: db.views, reminder: db.reminders, section: db.sections,
-    comment: db.comments, project_prefs: db.prefs, user_prefs: db.userPrefs,
+    comment: db.comments, project_prefs: db.prefs, user_prefs: db.userPrefs, attachment: db.attachments,
   }[entity]
   return t as unknown as AnyTable
 }
@@ -51,7 +51,7 @@ function tableOf(entity: Entity): AnyTable {
  * Decides whether an op's entity lives in the account's personal scope, the
  * only scope that is ever encrypted. A task's scope follows its project (and
  * never changes: moves across scopes are copies); sections follow their project,
- * comments their task; labels and views are always personal.
+ * comments and attachments their task; labels and views are always personal.
  */
 async function personalResolver(batch: Op[]): Promise<(entity: Entity, id: string) => Promise<boolean>> {
   const memberships = await membershipMap()
@@ -71,8 +71,9 @@ async function personalResolver(batch: Op[]): Promise<(entity: Entity, id: strin
       case 'project': return projectPersonal(id)
       case 'task': return projectPersonal(await ref('task', id, 'project_id'))
       case 'section': return projectPersonal(await ref('section', id, 'project_id'))
-      case 'comment': {
-        const taskId = await ref('comment', id, 'task_id')
+      case 'comment':
+      case 'attachment': {
+        const taskId = await ref(entity, id, 'task_id')
         return taskId ? projectPersonal(await ref('task', taskId, 'project_id')) : true
       }
       default: return true

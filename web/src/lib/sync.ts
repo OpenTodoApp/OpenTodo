@@ -13,6 +13,7 @@ import { followSharedDueChanges } from './reminders'
 import { refreshNotifications } from './notifications'
 import { dropUnconfirmed, forgetRejected, storeMemberships, type RejectedNotice } from './sharing'
 import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
+import { onUploadRequest, refreshLimits, runUploader } from './attachments'
 import type { Clock, Entity, Op, RowEncryption, SyncState } from './types'
 import { currentKey, isEnabled } from './e2ee'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
@@ -199,6 +200,8 @@ async function runOnce(): Promise<void> {
     // so far marked as seen (activity-feed), so an upgrade is not a wall of unread.
     await ensureFeedBaselines()
     publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
+    // Files wait for their rows to reach the server (attachments D3): send them now.
+    void runUploader().catch(() => undefined)
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
       publish({ state: 'unauthenticated' })
@@ -274,6 +277,7 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
       ['comment', db.comments],
       ['project_prefs', db.prefs],
       ['user_prefs', db.userPrefs],
+      ['attachment', db.attachments],
     ]
     const me = (await db.meta.get('userId'))?.value
     for (const [entity, table] of tables) {
@@ -282,12 +286,16 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
         // Only the author may write a comment (comments-and-activity): other
         // members' comments come back from their own devices.
         if (entity === 'comment' && row.author_id !== me) continue
+        // The same for attachments (attachments D1).
+        if (entity === 'attachment' && row.author_id !== me) continue
         const clock = (row._clock ?? {}) as Clock
         // A value this device could not decrypt goes back as its envelope, never
         // as the placeholder (OpenSpec e2ee).
         const raw = (row._e2ee as RowEncryption | undefined)?.raw ?? {}
         for (const [field, c] of Object.entries(clock)) {
           if (!(field in row)) continue
+          // uploaded_at is the server's word (attachments D3); a device never sends it.
+          if (entity === 'attachment' && field === 'uploaded_at') continue
           chunk.push({ id: crypto.randomUUID(), entity, entityId: row.id as string, field, value: raw[field] ?? row[field], ts: c.ts, device: c.device })
           if (chunk.length >= RESEED_CHUNK) await flush()
         }
@@ -416,6 +424,8 @@ export function startSync(): void {
     return
   }
   started = true
+  onUploadRequest(() => requestSync(0))
+  void refreshLimits()
   onLocalMutation(() => {
     // Reflect the pending edit immediately so the indicator never claims "Synced"
     // while an op is still waiting in the debounce window.
