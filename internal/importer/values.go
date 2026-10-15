@@ -52,6 +52,30 @@ func parseDue(s string, loc *time.Location) (*Due, error) {
 	return nil, fmt.Errorf("invalid due date %q (expected YYYY-MM-DD or YYYY-MM-DDTHH:MM)", s)
 }
 
+// setDeadline reads a deadline value into the row (OpenSpec change deadlines,
+// design D9): a date, or a date-time whose time is dropped with a warning. A
+// value that is neither fails the row, naming it.
+func setDeadline(row *Row, s string, loc *time.Location) {
+	d, err := parseDue(s, loc)
+	if err != nil {
+		row.fail("invalid deadline %q (expected YYYY-MM-DD)", strings.TrimSpace(s))
+		return
+	}
+	if d == nil {
+		return
+	}
+	row.Deadline = d.Date
+	if d.Time != "" {
+		// Keep the day as written, not as read in the import's zone.
+		if t := strings.TrimSpace(s); len(t) >= 10 {
+			if _, err := time.Parse("2006-01-02", t[:10]); err == nil {
+				row.Deadline = t[:10]
+			}
+		}
+		row.warn("deadline time dropped (a deadline is a date)")
+	}
+}
+
 // parseClock accepts H:MM, HH:MM or HH:MM:SS and returns HH:MM.
 func parseClock(s string) (string, error) {
 	s = strings.TrimSpace(s)

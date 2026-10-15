@@ -215,9 +215,19 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 					row.Due = due
 				}
 			}
-			if d := get("DEADLINE"); d != "" {
-				row.Description = strings.TrimSpace(row.Description + "\n\nDeadline: " + d)
-				row.warn("deadline kept in the description (deadlines are not supported yet)")
+			// The deadline column uses the same date language as DATE (deadlines D9).
+			if text := get("DEADLINE"); text != "" {
+				lang := get("DEADLINE_LANG")
+				if lang == "" {
+					lang = get("DATE_LANG")
+				}
+				due, rule, err := todoistDate(text, lang, ref)
+				if err != nil || rule != "" || due == nil {
+					row.Description = strings.TrimSpace(row.Description + "\n\nDeadline: " + text)
+					row.warn("deadline %q not understood; kept in the description", text)
+				} else {
+					row.Deadline = due.Date
+				}
 			}
 			if n, err := strconv.Atoi(get("DURATION")); err == nil && n > 0 {
 				switch strings.ToLower(get("DURATION_UNIT")) {

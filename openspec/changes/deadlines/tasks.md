@@ -50,9 +50,9 @@
 
 ## 9. Import (design D9)
 
-- [ ] 9.1 Add `Deadline` to the importer row model and the field op in `internal/importer/plan.go`, the CSV `deadline` column (`profile_csv.go`, recognised list, row error on a bad value), the generic JSON `deadline` key (no longer a due alias; date-time → date plus warning) and the Todoist JSON mapping in `profile_json.go`, the own-export round trip, and the `deadlines` total. Verify with profile tests for the CSV, generic JSON, invalid and own-export scenarios and the completeness test; `go test ./internal/importer/...`.
-- [ ] 9.2 Coordinate with `named-importers`: its Todoist `DEADLINE` and Things `deadline` land in the row field instead of a warning (its tasks 3.3 and 6.1). Verify with its golden previews once both branches merge, and record the archive-order note from design D9 in whichever change archives second.
-- [ ] 9.3 Show the deadlines total on the import screen and update `docs/import.md` (CSV table, `json-generic` keys, mapping rules). Verify with `npm run docs:check` and the import screen test.
+- [x] 9.1 Add `Deadline` to the importer row model and the field op in `internal/importer/plan.go`, the CSV `deadline` column (`profile_csv.go`, recognised list, row error on a bad value), the generic JSON `deadline` key (no longer a due alias; date-time → date plus warning) and the Todoist JSON mapping in `profile_json.go`, the own-export round trip, and the `deadlines` total. Verify with profile tests for the CSV, generic JSON, invalid and own-export scenarios and the completeness test; `go test ./internal/importer/...`.
+- [x] 9.2 Coordinate with `named-importers`: its Todoist `DEADLINE` and Things `deadline` land in the row field instead of a warning (its tasks 3.3 and 6.1). Verify with its golden previews once both branches merge, and record the archive-order note from design D9 in whichever change archives second.
+- [x] 9.3 Show the deadlines total on the import screen and update `docs/import.md` (CSV table, `json-generic` keys, mapping rules). Verify with `npm run docs:check` and the import screen test.
 
 ## 10. Integration
 

@@ -93,9 +93,11 @@ type Totals struct {
 	NewSections int `json:"newSections"`
 	Recurring   int `json:"recurring"`
 	Reminders   int `json:"reminders"`
-	Entities    int `json:"entities"`
-	Written     int `json:"written"`
-	Ops         int `json:"ops"`
+	// Deadlines counts created or updated tasks with a deadline (deadlines); additive.
+	Deadlines int `json:"deadlines"`
+	Entities  int `json:"entities"`
+	Written   int `json:"written"`
+	Ops       int `json:"ops"`
 	// Refused counts ops the sync engine refused for authorization reasons (for
 	// example a shared project whose role changed during the import); additive.
 	Refused int `json:"refused,omitempty"`
@@ -334,6 +336,9 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 			p.Totals.Recurring++
 		case c.created && c.entity == KindReminder && live:
 			p.Totals.Reminders++
+		}
+		if c.entity == KindTask && live && !isNull(c.value("deadline")) {
+			p.Totals.Deadlines++
 		}
 	}
 	p.Totals.Entities = len(p.changes)
@@ -827,6 +832,9 @@ func (pl *planner) planForeign(rows []Row) []change {
 		}
 		if row.EstimateMinutes > 0 {
 			fields = append(fields, field{"estimate_minutes", raw(row.EstimateMinutes)})
+		}
+		if row.Deadline != "" {
+			fields = append(fields, field{"deadline", raw(row.Deadline)})
 		}
 		if row.AssignSelf && pl.st.UserID != "" {
 			fields = append(fields, field{"assignee_id", raw(pl.st.UserID)})

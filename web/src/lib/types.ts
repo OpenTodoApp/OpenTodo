@@ -849,6 +849,8 @@ export interface ImportTotals {
   newSections?: number
   recurring?: number
   reminders?: number
+  /** Tasks with a deadline (deadlines); absent on older jobs. */
+  deadlines?: number
   entities: number
   written: number
   ops: number
