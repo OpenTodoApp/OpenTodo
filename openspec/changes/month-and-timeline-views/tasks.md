@@ -2,7 +2,7 @@
 
 ## 1. Month math and route (design D1, D2)
 
-- [ ] 1.1 Create `web/src/lib/month.ts`: `monthGrid(anchor, weekStart)` (six rows on `weekDates`), `cellTasks` (timed by time, then priority, then position), `visibleRows`. Verify with unit tests for a Sunday and a Monday week start, a month spanning six rows, zoned dues (via `viewedTask`) and the cell order (`npm test` in web/).
+- [x] 1.1 Create `web/src/lib/month.ts`: `monthGrid(anchor, weekStart)` (six rows on `weekDates`), `cellTasks` (timed by time, then priority, then position), `visibleRows`. Verify with unit tests for a Sunday and a Monday week start, a month spanning six rows, zoned dues (via `viewedTask`) and the cell order (`npm test` in web/).
 - [ ] 1.2 Add `{ view: 'month'; date? }` to `web/src/app/router.ts` (path `/month/YYYY-MM-DD`), the sidebar entry after Week (`calendar-days`), `g m` in `web/src/lib/shortcuts.ts` and the Month button in the Day | Week | Month switch extracted into a shared `CalendarHeader`. Verify with router tests for parse and print, and `npm run build`; run `make docs` so `docs/keyboard.md` lists `g m`.
 
 ## 2. Month view (design D2, D3, D4, D8)
@@ -15,7 +15,7 @@
 
 ## 3. Timeline math and layout switch (design D5)
 
-- [ ] 3.1 Create `web/src/lib/timeline.ts`: `spanOf` (earliest to latest of `start`, due date in the viewer's zone and `deadline`; null for no dates or `start === 'someday'`), `axis` (days, or weeks on the preferred first day), `shiftDates`, `edges`. Verify with unit tests for the spec scenarios (all three dates, due only, someday, a past deadline flagged) and for `shiftDates` keeping the due time and zone and touching only present fields (`npm test`).
+- [x] 3.1 Create `web/src/lib/timeline.ts`: `spanOf` (earliest to latest of `start`, due date in the viewer's zone and `deadline`; null for no dates or `start === 'someday'`), `axis` (days, or weeks on the preferred first day), `shiftDates`, `edges`. Verify with unit tests for the spec scenarios (all three dates, due only, someday, a past deadline flagged) and for `shiftDates` keeping the due time and zone and touching only present fields (`npm test`).
 - [ ] 3.2 Extend `ProjectViewMode` in `web/src/lib/sections.ts` to `'timeline'` with unknown values read as `list`, cycle `v` list → board → timeline in `TaskListView.tsx`, and make the `ProjectHeader` toggle three-way. Verify with the existing `sections.test.ts` extended for the new value and a test that `v` twice from the board lands on the list (`npm test`).
 
 ## 4. Timeline view (design D5, D6, D7, D8)
@@ -28,7 +28,7 @@
 
 ## 5. Integration
 
-- [ ] 5.1 Confirm the sibling contracts once they are archived: `task.deadline`, `task.start` (`someday`) and `task.blocked_by` are read by `timeline.ts` under the names and shapes their specs state; adjust `spanOf` and `edges` and their tests if a name differs. Verify with `npm test` and `npx @fission-ai/openspec validate --all --strict`.
+- [x] 5.1 Confirm the sibling contracts once they are archived: `task.deadline`, `task.start` (`someday`) and `task.blocked_by` are read by `timeline.ts` under the names and shapes their specs state; adjust `spanOf` and `edges` and their tests if a name differs. Verify with `npm test` and `npx @fission-ai/openspec validate --all --strict`.
 - [ ] 5.2 Manual smoke on `make dev`: open the month at 360 px and desktop, drag a timed task across days, move one with the keys into the next month, switch a project to its timeline, drag a bar and an edge, check the arrow between a blocked pair and its disappearance on completion. Record the result in the change folder notes.
 - [ ] 5.3 Run `make check` (go test, web test and build, docs check, ui lint). Verify it passes.
 
