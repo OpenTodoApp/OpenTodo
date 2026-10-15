@@ -17,7 +17,7 @@ All documentation SHALL be written once, as Markdown under `docs/` with front ma
 - **THEN** the docs check fails and names the file
 
 ### Requirement: Documentation stays complete and correct
-The docs check SHALL run in CI and fail when generated output is stale, a link between pages or to a heading does not resolve, an image is missing or has no alt text, a capability in `openspec/specs/` is covered by no page, or a help link in the app points to a section that does not exist.
+The docs check SHALL run in CI and fail when generated in-app help is stale, a link between pages or to a heading does not resolve, an image is missing or has no alt text, a capability in `openspec/specs/` is covered by no page, a help link in the app points to a section that does not exist, or the documentation website cannot be built.
 
 #### Scenario: Broken anchor
 - **WHEN** a page links to `filters.md#saved-views` and that heading was renamed
@@ -26,6 +26,10 @@ The docs check SHALL run in CI and fail when generated output is stale, a link b
 #### Scenario: Uncovered capability
 - **WHEN** a change adds `openspec/specs/time-tracking/` and no page lists it
 - **THEN** CI fails until a page covers it
+
+#### Scenario: No committed website output
+- **WHEN** a docs page changes
+- **THEN** the commit contains the Markdown and the regenerated in-app help only, and the documentation website is built by CI rather than committed
 
 ### Requirement: User guide
 The documentation SHALL include a guide for people using the app, written as tasks rather than reference: getting started, tasks and projects, views, sections and boards, labels and filters, recurring tasks and reminders, time blocking, sharing and comments, notifications, offline use and sync, installing the app, keyboard shortcuts, account security, import and export, trash and history, settings, and troubleshooting.
@@ -39,7 +43,7 @@ The documentation SHALL include a guide for people using the app, written as tas
 - **THEN** the `?` overlay and the keyboard guide both list it after the next build, with no separate edit
 
 ### Requirement: Documentation website
-The website SHALL publish the documentation as static pages under `/docs/`, grouped by audience, with navigation, an "on this page" list, search that runs in the browser over a prebuilt index, the version described, and an "Edit this page" link. Pages SHALL be readable without JavaScript, and no search text SHALL be sent anywhere.
+Every release SHALL ship the documentation as a static website in its site bundle, for the public website to serve under `/docs/`, grouped by audience, with navigation, an "on this page" list, search that runs in the browser over a prebuilt index, the version described, and an "Edit this page" link. Pages SHALL be readable without JavaScript, and no search text SHALL be sent anywhere.
 
 #### Scenario: Search
 - **WHEN** a visitor types "recurring" in the docs search
@@ -48,6 +52,10 @@ The website SHALL publish the documentation as static pages under `/docs/`, grou
 #### Scenario: No JavaScript
 - **WHEN** a visitor opens a docs page with JavaScript disabled
 - **THEN** the content, navigation and links work; only search is unavailable
+
+#### Scenario: Released version only
+- **WHEN** the public website serves the docs of the latest release
+- **THEN** a guide changed on the main branch after that release shows its released text until the next release
 
 ### Requirement: Help inside the app
 The app SHALL include a Help view with the user guide of its own version, available offline and searchable, reachable from the sidebar, Settings, the `?` overlay and `g` then `?`. Links between guides SHALL stay in the app; admin and developer pages SHALL open on the website. The help content SHALL load only when Help is opened.

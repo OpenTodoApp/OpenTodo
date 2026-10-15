@@ -6,9 +6,7 @@
 //
 // png-dir  (default docs/screenshots)     PNGs referenced by README.md
 // webp-dir (default docs/screenshots/site) every shot as WebP for the website (site bundle `shots/`)
-//
-// Until the website repository serves the site (OpenSpec site-bundle D6), each WebP
-// is also copied to website/assets/shots, which the landing page in this repo uses.
+
 //
 // Run it against an EMPTY data directory: it creates the owner account.
 // Optional env: OPENTODO_URL (default http://127.0.0.1:8080), CHROMIUM_PATH,
@@ -23,7 +21,6 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const pngDir = process.argv[2] ?? 'docs/screenshots'
 const webpDir = process.argv[3] ?? 'docs/screenshots/site'
-const legacyWebpDir = 'website/assets/shots'
 const only = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
 // Shots also written as PNG (README.md embeds these).
 const PNG = new Set(['today', 'project', 'mobile-dark', 'day'])
@@ -73,7 +70,6 @@ async function save(name, png) {
     return c.toDataURL('image/webp', 0.78).split(',')[1]
   }, png.toString('base64'))
   writeFileSync(`${webpDir}/${name}.webp`, Buffer.from(b64, 'base64'))
-  if (existsSync(legacyWebpDir)) writeFileSync(`${legacyWebpDir}/${name}.webp`, Buffer.from(b64, 'base64'))
   console.log('  shot', name)
 }
 const want = (name) => !only || only.has(name)

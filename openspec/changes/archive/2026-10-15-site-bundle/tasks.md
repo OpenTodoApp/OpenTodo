@@ -21,6 +21,8 @@
 
 ## 4. Switch-over (after the website repository serves the site)
 
-- [ ] 4.1 Confirm the website repository deploys from a bundle and Coolify points at it. Verify the public site and `/docs/` are served from the new repository.
-- [ ] 4.2 Delete `website/` from this repository, drop the committed-site comparison from `docs:check`, point `scripts/e2e-docs.mjs` at `dist/docs-site`, and update `AGENTS.md`, `CONTRIBUTING.md`, the Makefile help and `docs/` references. Verify `make check` and the docs browser check pass.
+- [x] 4.1 Confirm the website repository deploys from a bundle and Coolify points at it. Verify the public site and `/docs/` are served from the new repository.
+  - The maintainer switched Coolify to the website repository; on 2026-10-15 open-todo.app serves the Astro site (`/_astro/` assets, today's footer) and `/docs/` and `/templates/` answer 200.
+- [x] 4.2 Delete `website/` from this repository, drop the committed-site comparison from `docs:check`, point `scripts/e2e-docs.mjs` at `dist/docs-site`, and update `AGENTS.md`, `CONTRIBUTING.md`, the Makefile help and `docs/` references. Verify `make check` and the docs browser check pass.
+  - `website/` deleted; `docs:build` writes `dist/docs-site` (ignored); `docs:check` compares the in-app help only; `e2e-docs.mjs` builds into `dist/docs-root/docs` and serves it; screenshots no longer copy to `website/assets/shots`; CONTRIBUTING, scripts/README, the Makefile help and `.gitattributes` updated. `make check` and `node scripts/e2e-docs.mjs` pass.
 - [x] 4.3 Add a CHANGELOG entry (site bundle, layout v1) and run `make check`. Verify it passes, including `openspec validate --all --strict`.

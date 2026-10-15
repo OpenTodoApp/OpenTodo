@@ -3,7 +3,7 @@ title: AI assistant
 summary: Plan and change your tasks by talking, with a model provider your server owner chooses. Every change is proposed for review and can be undone.
 audience: user
 section: Guides
-specs: [in-app-assistant]
+specs: [in-app-assistant, assistant-skills]
 screens: [settings/assistant]
 order: 75
 card: assistant-chat
