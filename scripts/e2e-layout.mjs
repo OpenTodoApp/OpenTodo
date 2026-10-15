@@ -256,7 +256,10 @@ async function openProperty(p, field, label) {
   await panel.waitFor()
   const row = panel.locator(`[data-property="${field}"]`)
   const chip = row.locator('button[aria-labelledby]').first()
-  if (await chip.count()) {
+  // The chips settle after the panel's live queries (sections, parent) resolve.
+  await panel.locator('[data-property-chips]').waitFor()
+  const shown = await chip.waitFor({ state: 'visible', timeout: 2000 }).then(() => true, () => false)
+  if (shown) {
     await chip.scrollIntoViewIfNeeded()
     await chip.click()
   } else {
