@@ -36,8 +36,8 @@
 
 ## 6. CalDAV (design D7)
 
-- [ ] 6.1 Encode `X-OPENTODO-START` and `X-OPENTODO-EVENING` in `internal/caldav/vtodo.go`; decode valid values into the task input, leave invalid ones in `extra`, and emit `start`/`evening` ops in `internal/httpapi/caldav_write.go`. Verify with tests for the four spec scenarios and a PUT/GET round trip; `go test ./internal/caldav/... ./internal/httpapi/...`.
-- [ ] 6.2 Update `docs/caldav.md` "What maps to what". Verify with `npm run docs:check`.
+- [x] 6.1 Encode `X-OPENTODO-START` and `X-OPENTODO-EVENING` in `internal/caldav/vtodo.go`; decode valid values into the task input, leave invalid ones in `extra`, and emit `start`/`evening` ops in `internal/httpapi/caldav_write.go`. Verify with tests for the four spec scenarios and a PUT/GET round trip; `go test ./internal/caldav/... ./internal/httpapi/...`.
+- [x] 6.2 Update `docs/caldav.md` "What maps to what". Verify with `npm run docs:check`.
 
 ## 7. Recurrence (design D8)
 

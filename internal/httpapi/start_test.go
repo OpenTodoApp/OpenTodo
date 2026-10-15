@@ -1,6 +1,10 @@
 package httpapi
 
-import "testing"
+import (
+	"fmt"
+	"strings"
+	"testing"
+)
 
 // TestTaskStartEveningREST covers the REST side of someday-and-evening (task
 // 1.4): both fields go through the schema path, invalid values are refused
@@ -32,5 +36,37 @@ func TestTaskStartEveningREST(t *testing.T) {
 	tasks, _ := out["tasks"].([]any)
 	if len(tasks) != 1 || tasks[0].(map[string]any)["start"] != "2027-03-01" || tasks[0].(map[string]any)["evening"] != true {
 		t.Fatalf("export tasks = %v", tasks)
+	}
+}
+
+// TestCaldavStartEvening: X-OPENTODO-START and -EVENING become field ops, are
+// served back, invalid values stay client data, and a client that omits the
+// properties leaves a parked task parked (someday-and-evening D7).
+func TestCaldavStartEvening(t *testing.T) {
+	e, c := davSetup(t)
+	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Passport", "X-OPENTODO-START:20261021", "X-OPENTODO-EVENING:TRUE"), 201)
+	if task := e.task("t1"); task["start"] != "2026-10-21" || task["evening"] != true {
+		t.Fatalf("task %v", task)
+	}
+	_, ics := c.must("GET", c.cal("inbox")+"t1.ics", "", 200)
+	if !strings.Contains(ics, "X-OPENTODO-START:20261021\r\n") || !strings.Contains(ics, "X-OPENTODO-EVENING:TRUE\r\n") {
+		t.Fatalf("GET:\n%s", ics)
+	}
+	c.must("PUT", c.cal("inbox")+"t1.ics", vtodoBody("t1", "SUMMARY:Passport", "X-OPENTODO-START:LATER"), 204)
+	task := e.task("t1")
+	if task["start"] != "2026-10-21" || !strings.Contains(fmt.Sprint(task["ical_extra"]), "X-OPENTODO-START:LATER") {
+		t.Fatalf("invalid value: %v", task)
+	}
+
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Learn Italian", "start": "someday"})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	_, ics = c.must("GET", c.cal("inbox")+id+".ics", "", 200)
+	if !strings.Contains(ics, "X-OPENTODO-START:SOMEDAY\r\n") || strings.Contains(ics, "DUE") {
+		t.Fatalf("someday served:\n%s", ics)
+	}
+	c.must("PUT", c.cal("inbox")+id+".ics", vtodoBody(id, "SUMMARY:Learn Italian well"), 204)
+	if got := e.task(id); got["start"] != "someday" || got["title"] != "Learn Italian well" {
+		t.Fatalf("after client without X- properties: %v", got)
 	}
 }

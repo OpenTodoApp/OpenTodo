@@ -75,3 +75,30 @@ func TestDeadlineDecode(t *testing.T) {
 		t.Fatalf("start only: %+v", in)
 	}
 }
+
+// OpenSpec change someday-and-evening, design D7.
+func TestStartEveningProperties(t *testing.T) {
+	out := string(Encode(Task{UID: "u", Priority: 4, Start: "someday"}))
+	if !strings.Contains(out, "\r\nX-OPENTODO-START:SOMEDAY\r\n") || strings.Contains(out, "DUE") || strings.Contains(out, "DTSTART") {
+		t.Fatalf("someday served: %s", out)
+	}
+	out = string(Encode(Task{UID: "u", Priority: 4, Start: "2026-10-21", Evening: true}))
+	if !strings.Contains(out, "\r\nX-OPENTODO-START:20261021\r\n") || !strings.Contains(out, "\r\nX-OPENTODO-EVENING:TRUE\r\n") {
+		t.Fatalf("deferred evening served: %s", out)
+	}
+	if out = string(Encode(Task{UID: "u", Priority: 4})); strings.Contains(out, "X-OPENTODO") {
+		t.Fatalf("unset served: %s", out)
+	}
+	in, _ := Decode(vtodo("X-OPENTODO-START:20261021", "X-OPENTODO-EVENING:TRUE"))
+	if in.Start == nil || *in.Start != "2026-10-21" || in.Evening == nil || !*in.Evening || strings.Contains(in.Extra, "X-OPENTODO") {
+		t.Fatalf("decoded: %+v", in)
+	}
+	in, _ = Decode(vtodo("X-OPENTODO-START:LATER", "X-OPENTODO-EVENING:MAYBE"))
+	if in.Start != nil || in.Evening != nil || !strings.Contains(in.Extra, "X-OPENTODO-START:LATER") || !strings.Contains(in.Extra, "X-OPENTODO-EVENING:MAYBE") {
+		t.Fatalf("invalid kept: %+v", in)
+	}
+	in, _ = Decode(vtodo("SUMMARY:x"))
+	if in.Start != nil || in.Evening != nil {
+		t.Fatalf("absent: %+v", in)
+	}
+}
