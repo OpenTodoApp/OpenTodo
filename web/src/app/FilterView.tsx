@@ -4,6 +4,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { HelpLink } from './help/HelpLink'
 import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { blockedMap } from '../lib/dependencies'
 import { db } from '../lib/db'
 import { compareDueThenPriority } from '../lib/ordering'
 import { addFilterHistory, compile, getFilterHistory, parse, type Node } from '../lib/filter'
@@ -63,6 +64,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
+  const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
 
   // A syntax error keeps the last valid query (and so the previous results) on screen.
   const parsed = useMemo(() => tryParse(debounced), [debounced])
@@ -248,6 +250,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
                       showProject={false}
                       selected={t.id === selectedId}
                       progress={progress.get(t.id)}
+                      blockedBy={blocked.get(t.id)}
                       breadcrumb={t.parent_id ? breadcrumbOf(t, taskMap) : null}
                       onToggle={() => void setTaskCompleted(t.id, !t.completed_at)}
                       onOpen={() => {

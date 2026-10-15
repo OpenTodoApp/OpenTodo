@@ -5,7 +5,7 @@
 import { useEffect, useRef } from 'react'
 import { deleteTask, parkTask, setTaskCompleted, unparkTask, updateTask } from '../lib/ops'
 import type { Priority, Task } from '../lib/types'
-import { deadlineFocus, deferFocus, estimateFocus, isGPending } from './signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, isGPending } from './signals'
 import { isTyping } from './useViews'
 import { registerListState } from './listActions'
 import type { BulkList } from './bulk/useBulkList'
@@ -161,6 +161,13 @@ export function useListKeys(opts: ListKeys): void {
           if (row) {
             e.preventDefault()
             deadlineFocus.request(row.id)
+            o.setOpenId(row.id)
+          }
+          break
+        case 'b':
+          if (row) {
+            e.preventDefault()
+            blockedByFocus.request(row.id)
             o.setOpenId(row.id)
           }
           break

@@ -89,6 +89,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>L</kbd> | Labels of selected task (type to find, Enter adds or creates) |
 | <kbd>e</kbd> | Edit the estimate of the selected task (type 20, 45m, 1h30; Enter) |
 | <kbd>d</kbd> | Set the deadline of the selected task (type fri, 2026-11-06; Enter) |
+| <kbd>b</kbd> | Choose the tasks the selected task waits for (Blocked by) |
 | <kbd>n</kbd> | Park the selected task in Someday, or bring it back |
 | <kbd>x</kbd> / <kbd>Space</kbd> | Tick the selected task for a bulk action (Space with Vim keybindings on) |
 | <kbd>Shift+↓</kbd> / <kbd>Shift+↑</kbd> | Extend the ticked range down / up (also Shift+J / Shift+K without Vim keybindings) |

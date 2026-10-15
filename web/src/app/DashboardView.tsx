@@ -2,6 +2,7 @@
 // `panels` are other saved list views. Each panel shows the view's open-task count and
 // first tasks; all panels are evaluated in one pass. Tab / Shift+Tab move between
 // panels, j / k move inside one.
+import { blockedMap } from '../lib/dependencies'
 import { Icon } from '../ui/Icon'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
@@ -22,6 +23,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   const candidates = views.filter((v) => !isDashboard(v) && !dashboard.panels.includes(v.id))
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
+  const blocked = useMemo(() => blockedMap(ctx.tasks), [ctx.tasks])
   const nameOf = (id: string) => views.find((v) => v.id === id)?.name ?? 'View removed'
 
   const [editing, setEditing] = useState(false)
@@ -126,7 +128,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
         ) : (
           <div ref={gridRef} className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {panels.map((p, i) => (
-              <Panel key={p.id} index={i} panel={p} selectedTask={selected?.panel === i ? selected.task : -1}
+              <Panel key={p.id} index={i} panel={p} blocked={blocked} selectedTask={selected?.panel === i ? selected.task : -1}
                 projectMap={projectMap} labelMap={labelMap}
                 onFocus={() => setFocusIdx(i)} onBlur={() => setFocusIdx((x) => (x === i ? null : x))}
                 onOpenTask={(id) => setOpenId(id)} onRemove={() => run(() => removePanel(dashboard.id, p.id))} />
@@ -142,7 +144,8 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   )
 }
 
-function Panel({ index, panel, selectedTask, projectMap, labelMap, onFocus, onBlur, onOpenTask, onRemove }: {
+function Panel({ index, panel, selectedTask, projectMap, labelMap, blocked, onFocus, onBlur, onOpenTask, onRemove }: {
+  blocked: Map<string, number>
   index: number
   panel: PanelState
   selectedTask: number
@@ -181,7 +184,7 @@ function Panel({ index, panel, selectedTask, projectMap, labelMap, onFocus, onBl
         <ul>
           {summary.tasks.map((t, i) => (
             <TaskRow key={t.id} task={t} project={t.project_id ? projectMap.get(t.project_id) : undefined} labels={resolveLabels(t.labels, labelMap)}
-              showProject selected={i === selectedTask} onToggle={() => void setTaskCompleted(t.id, !t.completed_at)} onOpen={() => onOpenTask(t.id)} />
+              showProject selected={i === selectedTask} blockedBy={blocked.get(t.id)} onToggle={() => void setTaskCompleted(t.id, !t.completed_at)} onOpen={() => onOpenTask(t.id)} />
           ))}
         </ul>
       )}

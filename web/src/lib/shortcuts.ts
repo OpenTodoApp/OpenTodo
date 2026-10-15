@@ -55,6 +55,7 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: 'L', description: 'Labels of selected task (type to find, Enter adds or creates)', section: 'tasks' },
   { keys: 'e', description: 'Edit the estimate of the selected task (type 20, 45m, 1h30; Enter)', section: 'tasks' },
   { keys: 'd', description: 'Set the deadline of the selected task (type fri, 2026-11-06; Enter)', section: 'tasks' },
+  { keys: 'b', description: 'Choose the tasks the selected task waits for (Blocked by)', section: 'tasks' },
   { keys: 'n', description: 'Park the selected task in Someday, or bring it back', section: 'tasks' },
   { keys: 'x / Space', description: 'Tick the selected task for a bulk action (Space with Vim keybindings on)', section: 'tasks' },
   { keys: 'Shift+↓ / Shift+↑', description: 'Extend the ticked range down / up (also Shift+J / Shift+K without Vim keybindings)', section: 'tasks' },

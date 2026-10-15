@@ -19,7 +19,7 @@ import { projectMenuGroups, type MoveTarget } from '../ProjectHeader'
 import { navigate, type Route } from '../router'
 import { sectionMenuGroups } from '../Sections'
 import { visibleSections } from '../settingsSections'
-import { deadlineFocus, deferFocus, estimateFocus, placeInDay } from '../signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, placeInDay } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
@@ -127,6 +127,7 @@ export function commands(ctx: PaletteContext): Command[] {
         ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `task:p${p}`, label: `Set priority ${p} on ${title}`, icon: 'flag', shortcut: String(p), run: () => updateTask(t.id, { priority: p }) })),
         { id: 'task:estimate', label: `Edit the estimate of ${title}`, icon: 'clock', shortcut: 'e', run: () => { estimateFocus.request(t.id); list.open(t.id) } },
         { id: 'task:deadline', label: `Set the deadline of ${title}`, icon: 'hourglass', shortcut: 'd', run: () => { deadlineFocus.request(t.id); list.open(t.id) } },
+        { id: 'task:blocked-by', label: `Choose what ${title} waits for`, icon: 'lock', shortcut: 'b', keywords: 'blocked by depends dependency', run: () => { blockedByFocus.request(t.id); list.open(t.id) } },
         { id: 'task:defer', label: `Defer ${title}`, icon: 'calendar-days', shortcut: 'Shift+N', keywords: 'start later', run: () => { deferFocus.request(t.id); list.open(t.id) } },
         t.start === 'someday'
           ? { id: 'task:unpark', label: `Bring back ${title} from Someday`, icon: 'archive', shortcut: 'n', run: () => unparkTask(t.id) }
