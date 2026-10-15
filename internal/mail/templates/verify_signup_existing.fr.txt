@@ -1,0 +1,7 @@
+Votre inscription à OpenTodo
+
+Ceci est un message d'inscription d'OpenTodo.
+
+Quelqu'un a essayé de s'inscrire sur {{.Origin}} avec {{.Email}}, mais cette adresse a déjà un compte. Pour vous connecter, ouvrez l'adresse du serveur ci-dessus. Si vous avez oublié votre mot de passe, utilisez « Mot de passe oublié ? » sur l'écran de connexion.
+
+Si ce n'était pas vous, ignorez ce message : rien n'a changé.

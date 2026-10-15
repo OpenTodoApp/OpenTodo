@@ -67,6 +67,9 @@ type Config struct {
 	// Email holds the optional OPENTODO_EMAIL_* settings of email capture
 	// (OpenSpec `email-to-task`, see email.go); off unless fully configured.
 	Email EmailConfig
+	// SMTP holds the optional OPENTODO_SMTP_* overrides of outgoing email
+	// (OpenSpec `outgoing-email`, see smtp.go).
+	SMTP SMTPConfig
 	// Demo turns the server into a public demo instance (OPENTODO_DEMO=true;
 	// OpenSpec `demo-mode`): a private, short-lived sandbox per visitor
 	// (`demo-sandboxes`), a nightly reset, sign-up and every abusable feature
@@ -301,6 +304,9 @@ func Load() (Config, error) {
 		return c, err
 	}
 	if c.Email, err = loadEmail(); err != nil {
+		return c, err
+	}
+	if c.SMTP, err = loadSMTP(); err != nil {
 		return c, err
 	}
 	return c, nil

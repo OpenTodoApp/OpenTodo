@@ -27,6 +27,7 @@ import (
 	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/importer"
+	"github.com/pixari/opentodo/internal/mail"
 	"github.com/pixari/opentodo/internal/mcp"
 	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/oidc"
@@ -73,6 +74,11 @@ type Server struct {
 	// pushTestLimiter caps test pushes per account (5 per 10 minutes; OpenSpec
 	// `push-test-delivery` D3), see push.go.
 	pushTestLimiter *rateLimiter
+	// mail sends outgoing email (OpenSpec `outgoing-email`); nil on a demo
+	// instance or when not wired, which means "not configured".
+	mail *mail.Service
+	// smtpTestLimiter caps test messages per account (5 per 10 minutes).
+	smtpTestLimiter *rateLimiter
 	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
 	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
@@ -219,6 +225,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// Single sign-on (OpenSpec `oidc-login`): start and callback are part of the
 	// sign-in flow (anonymous, rate limited); settings and identities require auth.
 	s.registerOIDCRoutes(mux)
+	s.registerMailRoutes(mux)
 
 	mux.Handle("GET /api/v1/me", s.requireAuth(s.handleMe))
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
@@ -555,6 +562,7 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		// another host can say so; public information, empty without a base URL.
 		"passkeyDomain": s.cfg.RPID(),
 		"oidc":          s.oidcStatus(r.Context()),
+		"outgoingEmail": map[string]bool{"enabled": s.mailEnabled(r.Context())},
 	}
 	if s.demo != nil {
 		// Demo instance (OpenSpec `demo-sandboxes`): a sandbox-creation token, the

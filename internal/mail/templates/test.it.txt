@@ -1,0 +1,5 @@
+Messaggio di prova di OpenTodo
+
+Questo è un messaggio di prova dal server OpenTodo {{.Origin}}.
+
+L'invio delle email funziona: reimpostazioni della password, conferme di registrazione e inviti ora possono essere inviati per email. Non devi fare nulla.

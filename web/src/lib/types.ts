@@ -882,6 +882,8 @@ export const AUDIT_EVENT_NAMES = [
   'password.reset_issued', 'password.reset_completed', 'password.changed',
   'owner.transferred',
   'agent.write',
+  'email.sent',
+  'email.failed',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 
