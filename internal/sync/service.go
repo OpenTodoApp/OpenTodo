@@ -200,6 +200,12 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 		}
 	}
 	nowMs := s.now().UnixMilli()
+	// The attachment size limit reads owner settings: before the transaction, since
+	// SQLite has one writer connection (attachments D5).
+	var attachmentLimit int64
+	if s.attachmentLimit != nil {
+		attachmentLimit = s.attachmentLimit()
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return res, err
@@ -211,7 +217,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	}
 	rs := newResolver(ctx, tx, acc, ops)
 	rs.allowComment = func() bool { return s.commentLimiter.allow(userID) }
-	rs.attachmentLimit = s.attachmentLimit
+	rs.attachmentLimit = attachmentLimit
 	pc := &purgeChecker{ctx: ctx, q: tx, acc: acc, cache: map[string]bool{}}
 	tracker := newChangeTracker(userID)
 	touched := map[string]bool{}

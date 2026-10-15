@@ -1029,6 +1029,31 @@ curl -sS -X DELETE "$OT/api/v1/tasks/$ID/purge" -H "Authorization: Bearer $TOKEN
 
 Purging a project also purges every task that references it; purging a task also purges its deleted subtasks. In a shared project the role table applies: editors may purge tasks, only the owner may purge the project (403 `forbidden`); emptying the Trash skips items your role cannot delete. Purge is final and cannot be undone. The server also purges items that have been in the Trash longer than `OPENTODO_TRASH_RETENTION_DAYS` (default 30, `0` disables); see [sync](sync.md#purge).
 
+### Attachments
+
+Attachments (OpenSpec `attachments`) are files or links on a task or one of its comments. Their metadata is an entity in the operation log (`attachment`, fields in [docs/sync.md](sync.md#attachments)); the bytes are files moved with these routes. Every route answers `404 not_found` for an attachment or task you cannot read. Uploads need a session or a full token (`read` tokens get `403`) and are limited to 120 per hour per account (`429 rate_limited`).
+
+| Route | Does |
+| --- | --- |
+| `POST /api/v1/tasks/{id}/attachments` | Multipart `file` (and optional `comment_id`): stores the file and creates the attachment in one request. JSON `{"url": "https://…", "name"?: "…"}`: a link attachment. `201` with the attachment. Honours `Idempotency-Key` (a retry answers `200` with `Idempotent-Replayed: true`) |
+| `GET /api/v1/tasks/{id}/attachments` | The task's attachments that are not removed, oldest first, each with `uploaded` |
+| `PUT /api/v1/attachments/{id}/content` | The raw bytes of an attachment you created (from a device that queued it offline); `204`. The bytes must match the attachment's `size` and `sha256` |
+| `GET /api/v1/attachments/{id}/content` | The file, with ranges and `If-None-Match`. `?download=1` forces a download |
+| `PATCH /api/v1/attachments/{id}` | `{"name": "…"}`: rename (author only) |
+| `DELETE /api/v1/attachments/{id}` | Remove (author, project admin or owner); `204` |
+| `GET` / `PUT /api/v1/settings/attachments` | `{enabled, max_file_mb, quota_mb}`; changing them is for the owner (`max_file_mb` 1–2048, `quota_mb` 0 = unlimited). Changes are audited as `settings.changed` |
+
+`GET /api/v1/me` includes `attachments: {enabled, max_file_bytes, quota_bytes, used_bytes}`.
+
+**Downloads** are served with `Content-Security-Policy: default-src 'none'; sandbox`, `X-Content-Type-Options: nosniff`, `Content-Disposition` with the file name, `Cache-Control: private, max-age=31536000, immutable` and the digest as `ETag`. Only images (PNG, JPEG, GIF, WebP, AVIF), PDF, plain text, audio and video are served inline with their type; everything else (HTML and SVG included) and every encrypted file is `application/octet-stream` with `attachment`.
+
+Errors: `400 attachment_mismatch` (bytes do not match the size or digest), `413 attachment_too_large`, `403 quota_exceeded`, `403 attachments_disabled`, `409 already_uploaded`, `507 insufficient_storage`.
+
+```sh
+curl -sS -X POST "$OT/api/v1/tasks/$TASK/attachments" -H "Authorization: Bearer $TOKEN" -F file=@receipt.pdf
+# 201 {"id":"…","name":"receipt.pdf","mime":"application/pdf","size":48213,"uploaded":true,…}
+```
+
 ### Comments and activity
 
 Comments (OpenSpec `comments-and-activity`) are threaded markdown notes on a task. They are stored in the operation log like tasks, in the task's sharing scope, so every route answers `404 not_found` for a task or comment you cannot read, exactly as for an unknown id. Anyone who can read the task may comment, viewers included. Only the author may edit a comment; the author, project admins and the owner may delete it (`403 forbidden` otherwise). `author_id`, `task_id` and the timestamps are set by the server and cannot be sent. `mentions` lists account ids; the server keeps only current members of the task's shared project (always none on a personal task) and notifies each newly mentioned member (`kind: "mentioned"` in `GET /api/v1/notifications`, payload `{recipientId, actorId, actorName, commentId, taskId, taskTitle, projectId?, projectName?, excerpt, at}`). Each account may create 60 comments a minute (`429 rate_limited`). Bodies are markdown; clients render a safe subset and the server never renders them.

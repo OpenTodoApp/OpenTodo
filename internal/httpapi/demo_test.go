@@ -548,6 +548,15 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 		{"DELETE", "/api/v1/projects/" + shared + "/invites/x"},
 		{"GET", "/api/v1/project-invites/otp_x"},
 		{"POST", "/api/v1/project-invites/otp_x/accept"},
+		// Attachments (attachments 2.4): every method.
+		{"GET", "/api/v1/settings/attachments"},
+		{"PUT", "/api/v1/settings/attachments"},
+		{"GET", "/api/v1/tasks/x/attachments"},
+		{"POST", "/api/v1/tasks/x/attachments"},
+		{"GET", "/api/v1/attachments/x/content"},
+		{"PUT", "/api/v1/attachments/x/content"},
+		{"PATCH", "/api/v1/attachments/x"},
+		{"DELETE", "/api/v1/attachments/x"},
 	}
 	for _, c := range cases {
 		resp, out := e.do(c.method, c.path, map[string]any{})

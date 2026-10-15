@@ -18,6 +18,7 @@ import (
 	"github.com/pixari/opentodo/internal/agenttools"
 	"github.com/pixari/opentodo/internal/assistant"
 	"github.com/pixari/opentodo/internal/audit"
+	"github.com/pixari/opentodo/internal/blobs"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
 	"github.com/pixari/opentodo/internal/config"
@@ -45,6 +46,10 @@ type Server struct {
 	web     http.Handler
 	log     *slog.Logger
 	version string
+	// blobs stores attachment files (attachments D2); nil without a data directory.
+	blobs *blobs.Store
+	// attachmentLimiter caps uploads per account (120/hour, attachments D5).
+	attachmentLimiter *rateLimiter
 	// limiter guards the unauthenticated auth routes per client IP (10/min).
 	limiter *rateLimiter
 	// passkeyOptions limits anonymous passkey challenge requests separately, so
@@ -191,6 +196,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// (user-management D4; the project-sharing hook lives in the sync package).
 	authSvc.SetBeforeDelete(opsync.DeleteAccountData)
 	mux := http.NewServeMux()
+	s.registerAttachmentRoutes(mux)
 
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /api/v1/auth/status", s.handleAuthStatus)
@@ -756,6 +762,10 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	// `agent-ready-cli` (design D7).
 	out := map[string]any{"user": u, "mfa": st,
 		"encryption": s.encryptionStatus(r.Context(), u.ID), "minClientVersion": MinClientVersion, "auth": authInfo}
+	// Attachment limits and this account's usage (attachments D5), for the device's checks.
+	if info, err := s.attachmentInfo(r.Context(), u.ID); err == nil {
+		out["attachments"] = info
+	}
 	// Configuration problems the server started despite (trusted-proxies-lenient):
 	// for the owner's own session only, never for members, admins or API tokens.
 	if u.Role == auth.RoleOwner && tokenFrom(r.Context()).ID == "" {

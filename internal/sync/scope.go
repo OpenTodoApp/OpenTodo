@@ -159,7 +159,7 @@ type resolver struct {
 	// known about each attachment id, and the per-file size limit (0 = none).
 	batchAttachment map[string]*batchAttachment
 	attachments     map[string]*attachmentState
-	attachmentLimit func() int64
+	attachmentLimit int64
 }
 
 func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolver {

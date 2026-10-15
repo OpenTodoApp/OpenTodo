@@ -116,7 +116,8 @@ func (r *resolver) attachment(id string) (*attachmentState, error) {
 // resolveAttachment places an attachment op in its task's scope and applies the
 // rules above.
 func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
-	if op.Field == "uploaded_at" && op.Device != ServerDevice {
+	// Only the server says a file is stored; a device may create the row with null.
+	if op.Field == "uploaded_at" && op.Device != ServerDevice && string(op.Value) != "null" {
 		return "", ReasonForbidden, nil
 	}
 	st, err := r.attachment(op.EntityID)
@@ -154,10 +155,8 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 	if (op.Field == "author_id" && idValue(op.Value) != b.author) || (op.Field == "task_id" && idValue(op.Value) != b.task) {
 		return "", ReasonForbidden, nil
 	}
-	if r.attachmentLimit != nil {
-		if limit := r.attachmentLimit(); limit > 0 && b.size > float64(limit) {
-			return "", ReasonTooLarge, nil
-		}
+	if r.attachmentLimit > 0 && b.size > float64(r.attachmentLimit) {
+		return "", ReasonTooLarge, nil
 	}
 	scope, found, err := r.existingTaskScope(b.task)
 	if err != nil {
