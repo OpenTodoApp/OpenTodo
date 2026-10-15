@@ -43,11 +43,15 @@ A project's list view SHALL group open tasks under section headings ordered by s
 - **THEN** a task with that title appears under "Doing" immediately, with no network round trip
 
 ### Requirement: Board view
-Every project SHALL offer a board view with one column per section ordered by section position, preceded by a "No section" column, each listing the section's open tasks ordered by position with a per-column count and quick-add. The list/board choice SHALL be remembered per project per device and SHALL not be synced. The board SHALL render from local data, scroll horizontally on narrow screens, and SHALL be navigable by keyboard.
+Every project SHALL offer a board view: a "No section" column, then one column per section by position, each listing the section's open tasks by position with a count and quick-add. The board SHALL be one of three project layouts (list, board, timeline per `project-timeline`), chosen with the view toggle or by cycling with `v`, remembered per project per device and not synced. It SHALL render from local data, scroll horizontally on narrow screens and be navigable by keyboard.
 
 #### Scenario: Switch to board
 - **WHEN** the user presses the view toggle or `v` in a project
 - **THEN** the project is shown as columns, and the same project opens as a board on the next visit on that device only
+
+#### Scenario: Cycle through the layouts
+- **WHEN** the project is shown as a board and the user presses `v` twice
+- **THEN** the timeline is shown after the first press and the list after the second, and the last choice is remembered for that project on that device
 
 #### Scenario: Keyboard navigation across columns
 - **WHEN** the board is shown and the user presses `l` or Right

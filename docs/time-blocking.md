@@ -3,7 +3,7 @@ title: Time blocking
 summary: Estimate how long tasks take, then place them on the Day or Week calendar to see whether your plan fits the day.
 audience: user
 section: Guides
-specs: [time-blocking]
+specs: [time-blocking, month-view]
 screens: [settings/calendar#adjust-the-grid, calendar#open-the-calendar]
 order: 60
 card: week
