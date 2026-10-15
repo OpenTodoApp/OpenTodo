@@ -44,7 +44,7 @@ Push notifications deliver reminders even when OpenTodo isn't open. Each device 
 
 Repeat this on every device where you want them: your phone, your laptop, your tablet. Turning it off, or signing out, removes that device.
 
-From a push notification you can **Snooze 10 min** or **Dismiss**, and that applies on all your devices.
+From a push notification you can **Snooze 10 min** or **Dismiss**, and that applies on all your devices. Push notifications are written in the language you chose in **Settings → Preferences → Language**: the title, the due line (its date in your locale) and the buttons. With **System**, or on a device that has not synced the choice yet, they are in English, because the app is closed and can't tell which of the browser's languages it would use.
 
 ### Check that it works
 

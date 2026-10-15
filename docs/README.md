@@ -74,6 +74,7 @@ The full list of environment variables is in the [README](../README.md#configura
 | --- | --- |
 | [Architecture](architecture.md) | Data flow, server packages, tables, client modules, build |
 | [Sync protocol](sync.md) | Operations, schema, winner rule, exchange, sharing scopes, live updates, purge |
+| [Translating OpenTodo](translating.md) | Writing interface text for translation, catalogs, adding a language, the glossary |
 
 ## Project
 

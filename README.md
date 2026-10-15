@@ -105,6 +105,7 @@ The highlights: quick add in plain language, projects with sections and boards, 
 - **Rich-text notes** with headings, lists, check lists, links and Markdown shortcuts; edits from several devices or people merge character by character, offline too. Scripts and integrations keep reading the note as Markdown.
 - **Trash and history**: restore deleted tasks and projects, browse each item's change history with "restore this value", empty the Trash for good; old items are purged after 30 days. Projects whose tasks are all done are archived automatically. [Purge](docs/sync.md#purge)
 - **Vim keybindings** (opt-in per device): modes, counts, `gg`/`G`, `dd` and a `:` command line.
+- **The app in six languages**: English, German, French, Spanish, Italian and Portuguese, chosen per account and synced; notifications and dates follow. New languages are welcome. [Translating](docs/translating.md)
 
 ### Time
 

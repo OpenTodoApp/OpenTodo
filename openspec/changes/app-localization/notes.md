@@ -12,6 +12,9 @@ Done on `feat/app-localization`, all outside `web/src/app`:
 - 5.2 lib part (`resolveLanguages(settings, browser, language)`); switching the five `navigator.languages` readers in `web/src/app` waits.
 - 7.1 service-worker table and locale-aware due line; pinning each entry to the catalogs is added with 6.1.
 - 9.1–9.2 extension `_locales` (version 0.6.0; `zip -r` so the folder is packed).
+- 6.2 `docs/translating.md` (source-text rules, catalog format, adding a language, the checks, glossary for the five languages with the form of address), linked from `CONTRIBUTING.md`, `docs/README.md` and the README feature list. It already describes `scripts/i18n/allow.txt`, which arrives with 3.3.
+- 7.2 notification text in `docs/notifications.md` and `docs/reminders.md`.
+- 3.4, first half: `scripts/README.md` documents the extractor and `i18n-check`; the untranslated-text check is documented with 3.3.
 
 Held until the ux-overhaul group 1 and 2 PRs merge: 2.4 (provider in `App.tsx`, `main.tsx`), 3.3 (untranslated-string lint, red until group 4), group 4 (every screen), 5.3, 6.x (catalogs need the migrated strings), 7.2, group 8, group 10, group 11.
 

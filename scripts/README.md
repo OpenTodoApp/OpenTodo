@@ -94,3 +94,12 @@ make build
 OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
 node scripts/demo-gif.mjs [out.gif]
 ```
+
+## `i18n/extract.mjs` and `i18n-check.mjs`
+
+Interface translations (OpenSpec change `app-localization`). `extract.mjs` reads `web/src` with the TypeScript compiler and collects every message passed to `t()`, `t.rich()`, `<T>` and `msg()`, plus the error table; `--write` refreshes `web/src/locales/messages.json` (the source list with the places each message is used). `i18n-check.mjs` compares each catalog in `web/src/locales/` with that list: for the languages in `SHIPPED_LANGUAGES` it fails on missing or unused keys, messages that do not parse and placeholder or plural mismatches; other catalogs only get a completeness line. `make i18n-check` runs both scripts' tests and the check, and is part of `make check`. See [Translating OpenTodo](../docs/translating.md).
+
+```bash
+node scripts/i18n/extract.mjs --write   # after changing interface text
+make i18n-check
+```

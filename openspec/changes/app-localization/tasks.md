@@ -39,12 +39,12 @@
 ## 6. Catalogs and the translation workflow (design D3, D8)
 
 - [ ] 6.1 Write `web/src/locales/de.json`, `fr.json`, `es.json`, `it.json`, `pt.json` by hand from `messages.json`, reviewed by a speaker of each; list them in `web/src/locales/index.ts`. Verify with `make i18n-check` reporting every shipped catalog complete and `npm run build` emitting five catalog chunks of the sizes recorded in design.md (within 20 %).
-- [ ] 6.2 Write `docs/translating.md` (contributor audience): the source-text convention, `t()`/`<T>`/context/plural examples, the catalog format, adding a language (file, `index.ts`, maintainer, review by a speaker, no machine translation), the two checks and the allow-list, the glossary of product terms per language; link it from `CONTRIBUTING.md`, `docs/README.md` (Internals) and the README feature list. Verify with `npm run docs:build` and `npm run docs:check`.
+- [x] 6.2 Write `docs/translating.md` (contributor audience): the source-text convention, `t()`/`<T>`/context/plural examples, the catalog format, adding a language (file, `index.ts`, maintainer, review by a speaker, no machine translation), the two checks and the allow-list, the glossary of product terms per language; link it from `CONTRIBUTING.md`, `docs/README.md` (Internals) and the README feature list. Verify with `npm run docs:build` and `npm run docs:check`.
 
 ## 7. Push notification text (design D7)
 
 - [ ] 7.1 `web/public/push-sw.js`: read `language` with the preferences row, an inline table for the nine texts in the six languages, `formatDue` with the resolved locale. Verify with `pushWorker.test.ts` extended to pin every table entry to the catalogs and to produce `Fällig 3. Nov., 15:00` with `10 Min. später` / `Verwerfen` for German day-month, and English when the row is missing.
-- [ ] 7.2 Update `docs/notifications.md` and `docs/reminders.md` (notification text follows the language). Verify with `npm run docs:check`.
+- [x] 7.2 Update `docs/notifications.md` and `docs/reminders.md` (notification text follows the language). Verify with `npm run docs:check`.
 
 ## 8. Settings panel and Help note (design D9)
 
