@@ -8,6 +8,9 @@ interface Entry { id: number; onEscape: () => void }
 const stack: Entry[] = []
 let nextId = 1
 let listening = false
+// Who wants to know when a sheet opens or closes (the phone tab bar hides meanwhile).
+const depthListeners = new Set<() => void>()
+const notifyDepth = () => depthListeners.forEach((fn) => fn())
 
 function onKey(e: KeyboardEvent) {
   if (e.key !== 'Escape' || e.isComposing) return
@@ -24,6 +27,7 @@ function onKey(e: KeyboardEvent) {
 export function pushOverlay(onEscape: () => void, target: Pick<Window, 'addEventListener'> | null = typeof window === 'undefined' ? null : window): { id: number; pop: () => void } {
   const entry = { id: nextId++, onEscape }
   stack.push(entry)
+  notifyDepth()
   if (!listening && target) {
     target.addEventListener('keydown', onKey as EventListener, true)
     listening = true
@@ -33,6 +37,7 @@ export function pushOverlay(onEscape: () => void, target: Pick<Window, 'addEvent
     pop: () => {
       const i = stack.indexOf(entry)
       if (i >= 0) stack.splice(i, 1)
+      notifyDepth()
     },
   }
 }
@@ -47,6 +52,11 @@ export function escapeTop(): boolean {
 
 export function overlayDepth(): number {
   return stack.length
+}
+
+/** How many overlays are open, live (app-shell "Phone navigation": the tab bar and the add button hide while a sheet is open). */
+export function useOverlayDepth(): number {
+  return useSyncExternalStore((fn) => { depthListeners.add(fn); return () => { depthListeners.delete(fn) } }, overlayDepth, () => 0)
 }
 
 // ------------------------------------------------------------------ scroll lock

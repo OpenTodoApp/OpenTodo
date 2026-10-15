@@ -69,13 +69,13 @@ Each group leaves `make check` green and the app usable. Groups 3 to 6 can proce
 
 ## 7. Phone patterns
 
-- [ ] 7.1 Add the bottom tab bar (Today, Inbox, Upcoming, Search, More) below 768 px, hidden while a sheet or the panel is open, with safe-area padding; verify with `tabBar.test.tsx` and the layout check at 360 and 390 px.
-- [ ] 7.2 Add the floating add button opening quick add as a bottom sheet with the view's defaults; verify with `quickAddSheet.test.tsx` (field focused, keyboard-safe layout) and the layout check.
-- [ ] 7.3 Make the task panel a full-screen sheet with the sticky header and a swipe-down or Back close; verify with `taskDetail.test.tsx` at 390 px.
-- [ ] 7.4 Board on phones: hide the empty "No section" column, 88 vw columns with snap and a dot pager, current column name in the bar; verify with `boardView.test.tsx` and the board story at 375 px.
-- [ ] 7.5 Week as a vertical agenda below 640 px; verify with `calendarView.test.tsx` and the week story at 375 px.
-- [ ] 7.6 Make the sidebar chevron's row slot the 44 px touch target and ensure non-action chips do not look like buttons; verify with the layout check's touch-target rule and the row story.
-- [ ] 7.7 Update the install and getting-started guides for the tab bar and the add button; verify with `npm run docs:check`.
+- [x] 7.1 Add the bottom tab bar (Today, Inbox, Upcoming, Search, More) below 768 px, hidden while a sheet or the panel is open, with safe-area padding; verify with `tabBar.test.tsx` and the layout check at 360 and 390 px.
+- [x] 7.2 Add the floating add button opening quick add as a bottom sheet with the view's defaults; verify with `quickAddSheet.test.tsx` (field focused, keyboard-safe layout) and the layout check.
+- [x] 7.3 Make the task panel a full-screen sheet with the sticky header and a swipe-down or Back close; verify with `taskDetail.test.tsx` at 390 px.
+- [x] 7.4 Board on phones: hide the empty "No section" column, 88 vw columns with snap and a dot pager, current column name in the bar; verify with `boardView.test.tsx` and the board story at 375 px.
+- [x] 7.5 Week as a vertical agenda below 640 px; verify with `calendarView.test.tsx` and the week story at 375 px.
+- [x] 7.6 Make the sidebar chevron's row slot the 44 px touch target and ensure non-action chips do not look like buttons; verify with the layout check's touch-target rule and the row story.
+- [x] 7.7 Update the install and getting-started guides for the tab bar and the add button; verify with `npm run docs:check`.
 
 ## 8. Rows, cards, motion, stories and baselines
 

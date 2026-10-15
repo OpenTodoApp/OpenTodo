@@ -212,9 +212,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       ...g, roots: g.tasks.map((t) => byId.get(t.id) as TreeNode<Task>),
     }))
   }, [projectId, tree, sections])
+  // "No section" is a column only while it has open tasks (sections-and-boards).
   const columns = useMemo<BoardColumn[]>(
-    () => (sectionGroups ?? []).map((g) => ({ key: g.key, section: g.section, cards: g.tasks })), [sectionGroups],
+    () => (sectionGroups ?? []).filter((g) => g.key !== '' || g.tasks.length > 0).map((g) => ({ key: g.key, section: g.section, cards: g.tasks })), [sectionGroups],
   )
+  const [currentColumn, setCurrentColumn] = useState<string | null>(null)
 
   const groups = useMemo<Group[]>(() => {
     const later: Group[] = laterTasks.length
@@ -664,7 +666,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     'board.column-prev': boardColumn(-1), 'board.column-next': boardColumn(1),
     'board.move-prev': boardMove(-1), 'board.move-next': boardMove(1),
     // On the board, `a` opens the quick add of the selected card's column.
-    'board.add': () => { if (!projectEditable) return false; setAddingTo(col >= 0 ? columns[col].key : '') },
+    'board.add': () => { if (!projectEditable) return false; setAddingTo(col >= 0 ? columns[col].key : columns[0]?.key ?? '') },
     // Cards are not nested: Tab keeps moving focus and never reaches the list's indent.
     'board.indent': () => undefined,
   }, { enabled: board })
@@ -797,7 +799,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     <div className="min-w-0 px-4 py-5 md:px-8">
         <div className={board ? 'mx-auto' : 'mx-auto max-w-3xl'} data-list-page>
           {route.view === 'project' && currentProject ? (
-            <ProjectHeader project={currentProject} userId={userId} actions={pageActions}
+            <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined}
               layout={(
                 <span className="flex rounded-control border border-default text-meta" role="group" aria-label="Project layout">
                   {(['list', 'board'] as const).map((m) => (
@@ -856,6 +858,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               projects={projects}
               labels={labels}
               renderCard={(t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null })}
+              onCurrentColumn={setCurrentColumn}
             />
           ) : groups.map((g, gi) => g.section !== undefined && currentProject ? (
             // Project list grouped by section (board-view): headings are drop targets.

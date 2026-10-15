@@ -14,6 +14,8 @@ OpenTodo is a web app you can install. Once installed it has its own icon, opens
 
 <picture><source srcset="images/mobile-today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/mobile-today-light.webp" alt="OpenTodo on a phone, showing the Today list full screen."></picture>
 
+On a phone the app is built for one hand: the bar at the bottom switches between Today, Inbox, Upcoming, Search and More (the sidebar), the **+** button adds a task from anywhere, a task opens as a full-screen page you close with Back or by swiping its header down, a project's board shows one column at a time (swipe sideways, or tap a dot), and the Week calendar is a day-by-day list.
+
 Before you start, open your OpenTodo address in the browser and sign in once. Installing needs a secure address (one starting with `https://`); if your browser offers no install option at all, ask whoever runs your server to set that up.
 
 ## iPhone and iPad

@@ -41,6 +41,8 @@ export interface PageHeaderProps {
   title: ReactNode
   /** Text beside the title: a date, a count, a read-only note. */
   meta?: ReactNode
+  /** Below 768 px, a line under the title in the shell's bar (the board's current column); not rendered in the header's own row. */
+  subtitle?: ReactNode
   /** Before the title: a colour dot or an icon. */
   leading?: ReactNode
   /** Up to two visible actions; everything else goes in `overflow`. */
@@ -67,7 +69,7 @@ export interface PageHeaderProps {
   testId?: string
 }
 
-export function PageHeader({ title, meta, leading, actions, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, meta, leading, actions, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex }: PageHeaderProps) {
   const H = level === 1 ? 'h1' : 'h2'
   // The shell's phone bar shows this page's title and actions below 768 px (app-shell
   // "No desktop top bar"); the header's own row exists only above it, so the actions
@@ -78,7 +80,7 @@ export function PageHeader({ title, meta, leading, actions, overflow, menu, help
   // page's own actions stay in the page as a wrapping row, so nothing is clipped at 360 px.
   useEffect(() => {
     if (ownRow) return
-    setPageBar({ title, overflow, menu, help, back })
+    setPageBar({ title, subtitle, overflow, menu, help, back })
     return () => setPageBar(null)
   })
   return (

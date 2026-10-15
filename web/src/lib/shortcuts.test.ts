@@ -129,6 +129,9 @@ describe('chords', () => {
   it('matches key presses, ignoring Shift on symbols and requiring it on capitals', () => {
     expect(matchesChord(parseChord('Shift+K')!, ev('K', { shiftKey: true }))).toBe(true)
     expect(matchesChord(parseChord('k')!, ev('K', { shiftKey: true }))).toBe(false)
+    // A capital letter without the Shift flag (Caps Lock, a synthetic press) is still the shifted key.
+    expect(matchesChord(parseChord('Shift+L')!, ev('L'))).toBe(true)
+    expect(matchesChord(parseChord('l')!, ev('L'))).toBe(false)
     expect(matchesChord(parseChord('?')!, ev('?', { shiftKey: true }))).toBe(true)
     expect(matchesChord(parseChord('Ctrl+K')!, ev('k', { ctrlKey: true }))).toBe(true)
     expect(matchesChord(parseChord('Ctrl+K')!, ev('k', { metaKey: true }))).toBe(false)

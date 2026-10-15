@@ -40,7 +40,7 @@ At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each sectio
 
 <picture><source srcset="images/board-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/board-light.webp" alt="The Q4 launch project as a board with the columns No section, Backlog, This week and Review."></picture>
 
-The choice is remembered for each project on each device. Your laptop can show "Q4 launch" as a board while your phone shows it as a list. On a narrow screen the board scrolls sideways.
+The choice is remembered for each project on each device. Your laptop can show "Q4 launch" as a board while your phone shows it as a list. On a phone the board shows one column at a time: swipe sideways to the next, or tap one of the dots above the columns; the column's name is shown under the project's name. "No section" appears as a column only while it has open tasks.
 
 ## Move cards between columns
 

@@ -22,7 +22,10 @@ import { ReminderToasts } from './ReminderToasts'
 import { ArchivePrompt } from './ArchivePrompt'
 import { openTaskInList } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
-import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress } from './panel'
+import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress, usePanel } from './panel'
+import { useOverlayDepth } from './overlay'
+import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
+import { QuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { db } from '../lib/db'
@@ -117,6 +120,12 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [paletteLoaded, setPaletteLoaded] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  // Phone navigation (app-shell): the tab bar and the add button hide while a sheet or the panel is open.
+  const [addOpen, setAddOpen] = useState(false)
+  const addButton = useRef<HTMLButtonElement>(null)
+  const sheetOpen = useOverlayDepth() > 0
+  const panelOpen = !!usePanel()
+  const phoneChrome = !sheetOpen && !panelOpen && !['share', 'invite', 'project-invite', 'reset'].includes(route.view)
   // The one keydown listener (keyboard-shortcuts "One shortcut registry with
   // scopes"); the shell owns the `global` scope: the palette, `g` navigation, the
   // cheat sheet, the sidebar toggle and the assistant.
@@ -165,7 +174,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         </div>
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
-      <main className="flex min-w-0 flex-1 flex-col">
+      <main className="flex min-w-0 flex-1 flex-col md:!pb-0" data-phone-chrome={phoneChrome || undefined}
+        style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + env(safe-area-inset-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />
         {notice && (
@@ -217,6 +227,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         )}
       </main>
       <PanelHost user={user} />
+      {phoneChrome && <TabBar route={route} onSearch={openPalette} onMore={() => setSidebarOpen(true)} moreOpen={sidebarOpen} />}
+      {(phoneChrome || addOpen) && <AddButton ref={addButton} open={addOpen} onClick={() => setAddOpen((v) => !v)} />}
+      <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense>}
@@ -264,7 +277,10 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
     <header className="flex min-h-12 items-center gap-1 border-b border-default px-2 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden" data-phone-bar>
       <IconButton icon="menu" label="Open menu" onClick={onMenu} className="touch-target" />
       {bar?.back && <IconButton icon="arrow-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />}
-      <PageBarTitle>{bar?.title}</PageBarTitle>
+      <div className="min-w-0 flex-1">
+        <PageBarTitle>{bar?.title}</PageBarTitle>
+        {bar?.subtitle && <p className="truncate text-meta text-muted" data-phone-subtitle>{bar.subtitle}</p>}
+      </div>
       <div className="flex shrink-0 items-center gap-1" data-page-actions>
         {bar && <PageActions overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
       </div>
