@@ -6,7 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { db } from '../../lib/db'
 import type { Task } from '../../lib/types'
-import { Tabs } from '../../ui/Tabs'
+import { Tabs } from '../../ui'
 import { ActivityTab } from './ActivityTab'
 import { CommentsTab } from './CommentsTab'
 

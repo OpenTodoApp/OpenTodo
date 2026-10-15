@@ -1,6 +1,7 @@
 // Card and Badge (OpenSpec change ui-primitives, design D9 / "Surfaces and data display").
 import type { HTMLAttributes, ReactNode } from 'react'
 import { hueFor, type HueName } from './tokens/palette'
+import { Tooltip } from './Tooltip'
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   /** Padding: none for lists that bring their own rows. */
@@ -12,7 +13,7 @@ export function Card({ padding = 'md', as: Tag = 'div', className, ...rest }: Ca
   return (
     <Tag
       {...rest}
-      className={`rounded-card border border-default bg-surface shadow-1 ${padding === 'md' ? 'p-4 sm:p-6' : ''}${className ? ` ${className}` : ''}`}
+      className={`surface-card ${padding === 'md' ? 'p-4 sm:p-6' : ''}${className ? ` ${className}` : ''}`}
     />
   )
 }
@@ -30,14 +31,16 @@ export interface BadgeProps {
 
 export function Badge({ children, hue, color, tone = 'soft', className, title }: BadgeProps) {
   const name = hue ?? (color ? hueFor(color) : 'slate')
-  return (
+  const badge = (
     <span
       data-hue={name}
-      title={title}
+      tabIndex={title ? 0 : undefined}
       className={`inline-flex max-w-full items-center gap-1.5 rounded-chip px-2 py-0.5 text-meta font-medium ${tone === 'soft' ? 'bg-hue-soft text-hue' : 'border border-default text-default'}${className ? ` ${className}` : ''}`}
     >
       {tone === 'solid' && <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-hue-solid" />}
       <span className="truncate">{children}</span>
     </span>
   )
+  // An explanation shows as a tooltip (design-system "Tooltip primitive"), reachable by keyboard.
+  return title ? <Tooltip label={title}>{badge}</Tooltip> : badge
 }

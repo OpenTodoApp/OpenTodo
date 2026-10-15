@@ -3,7 +3,7 @@
 // first tasks; all panels are evaluated in one pass. Tab / Shift+Tab move between
 // panels, j / k move inside one.
 import { blockedMap } from '../lib/dependencies'
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'

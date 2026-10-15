@@ -2,7 +2,7 @@
 // overview, the side navigation, the section pages and the tests.
 import { isAdministrator } from '../lib/roles'
 import type { User } from '../lib/types'
-import type { IconName } from '../ui/Icon'
+import type { IconName } from '../ui'
 import type { SettingsSectionId } from './router'
 
 export type SettingsGroupId = 'you' | 'app' | 'data' | 'server'

@@ -2,8 +2,8 @@
 // local tasks: a task with a due time is a block at that time, as long as its
 // estimate; date-only tasks sit in each day's unscheduled lane. Every placement,
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op).
-import { Icon } from '../ui/Icon'
-import { hueFor } from '../ui/tokens/palette'
+import { Icon } from '../ui'
+import { hueFor } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {

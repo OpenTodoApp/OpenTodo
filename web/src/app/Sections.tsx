@@ -1,7 +1,7 @@
 // Section headings, per-section quick add and "Add section" (OpenSpec `board-view`).
 // Shared by the grouped list and the board columns. Every write goes through
 // lib/sections, so all of it works offline and converges like any other edit.
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { type FormEvent, type KeyboardEvent, useState } from 'react'

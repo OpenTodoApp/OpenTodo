@@ -1,9 +1,9 @@
 // Settings → Capture: bookmarklet and extension (OpenSpec share-capture; settings-redesign D3).
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '../ui/Button'
-import { Icon } from '../ui/Icon'
-import { Notice } from '../ui/patterns/Notice'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Button } from '../ui'
+import { Icon } from '../ui'
+import { Notice } from '../ui'
+import { SettingRow, SettingsSection } from '../ui'
 import { bookmarklet } from '../lib/share'
 import { navigate } from './router'
 

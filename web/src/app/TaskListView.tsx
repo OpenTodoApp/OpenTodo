@@ -1,5 +1,5 @@
 import { HelpLink } from './help/HelpLink'
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
@@ -39,7 +39,7 @@ import { useVimEnabled } from './vim/prefs'
 import { BulkActionsMenu, runBulk, SelectionBar } from './bulk/BulkActions'
 import { Dialog } from './overlay'
 import { Menu } from './overlay/Menu'
-import { MenuItem, MenuSeparator } from '../ui/Menu'
+import { MenuItem, MenuSeparator } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'help' } | { view: 'ask' }>

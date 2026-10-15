@@ -1,4 +1,4 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { useEffect, useRef, useState } from 'react'
 import { db, getMeta } from '../lib/db'
 import { hlcSeed } from '../lib/hlc'

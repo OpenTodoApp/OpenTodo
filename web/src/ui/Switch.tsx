@@ -34,7 +34,7 @@ export function Switch({ checked, onChange, label, description, disabled, hideLa
       </button>
       {/* A disabled control fades; its label stays readable (AA) in the muted colour. */}
       <span className={hideLabel ? 'sr-only' : 'min-w-0'}>
-        <span className={`block text-sm ${disabled ? 'text-muted' : 'text-default'}`}>{label}</span>
+        <span className={`block text-body ${disabled ? 'text-muted' : 'text-default'}`}>{label}</span>
         {description && <span className="block text-meta text-muted">{description}</span>}
       </span>
     </label>
@@ -57,7 +57,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
     <label className={`inline-flex items-start gap-2.5 ${rest.disabled ? '' : 'cursor-pointer'}${className ? ` ${className}` : ''}`}>
       <input ref={inner} type="checkbox" {...rest} className="mt-0.5 h-4 w-4 shrink-0 rounded-chip border-input accent-(--ot-accent) disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" />
       <span className="min-w-0">
-        <span className={`block text-sm ${rest.disabled ? 'text-muted' : 'text-default'}`}>{label}</span>
+        <span className={`block text-body ${rest.disabled ? 'text-muted' : 'text-default'}`}>{label}</span>
         {description && <span className="block text-meta text-muted">{description}</span>}
       </span>
     </label>

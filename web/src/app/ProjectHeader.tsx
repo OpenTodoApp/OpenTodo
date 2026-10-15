@@ -1,4 +1,4 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/db'
@@ -12,7 +12,7 @@ import { ShareDialog } from './ShareDialog'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
-import { HUES, hueFor } from '../ui/tokens/palette'
+import { HUES, hueFor } from '../ui'
 
 /** A "Move to" target: a project, or the top level (id ''). */
 export interface MoveTarget { id: string; name: string; path: string[] }

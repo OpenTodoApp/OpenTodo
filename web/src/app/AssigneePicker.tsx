@@ -3,11 +3,11 @@ import { useMemo } from 'react'
 import { db } from '../lib/db'
 import { updateTask } from '../lib/ops'
 import { assigneeOptions, memberName, membershipMap } from '../lib/sharing'
-import { Avatar } from '../ui/Avatar'
-import { Combobox, ComboboxPanel } from '../ui/Combobox/Combobox'
-import { Icon } from '../ui/Icon'
+import { Avatar } from '../ui'
+import { Combobox, ComboboxPanel } from '../ui'
+import { Icon } from '../ui'
 
-export { initials } from '../ui/Avatar'
+export { initials } from '../ui'
 
 /** Compact assignee chip (task rows in shared projects); the avatar colour follows the account id. */
 export function AssigneeChip({ id, name, me }: { id: string; name: string; me?: boolean }) {

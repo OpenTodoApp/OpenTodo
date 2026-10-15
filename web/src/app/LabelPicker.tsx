@@ -1,10 +1,10 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { db } from '../lib/db'
 import { activeLabels, addLabel, createLabel, toggleLabel } from '../lib/labels'
 import type { Label } from '../lib/types'
-import { Combobox, ComboboxPanel } from '../ui/Combobox/Combobox'
+import { Combobox, ComboboxPanel } from '../ui'
 
 export function LabelChip({ label, onRemove }: { label: Label; onRemove?: () => void }) {
   return (

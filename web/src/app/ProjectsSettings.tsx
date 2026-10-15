@@ -1,8 +1,8 @@
 // Settings → Projects (OpenSpec trash-and-history, unarchive-projects; settings-redesign D3).
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getAutoArchive, setAutoArchive } from '../lib/archive'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
-import { Switch } from '../ui/Switch'
+import { SettingRow, SettingsSection } from '../ui'
+import { Switch } from '../ui'
 import { ArchivedProjectsSection } from './ArchivedProjects'
 import { navigate } from './router'
 

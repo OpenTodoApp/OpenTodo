@@ -2,7 +2,7 @@
 // absolute-datetimes, task-detail-redesign D4). The fields always show the due in
 // the viewer's zone; edits of a zoned due are converted back into its zone
 // (dueFromView), so it stays fixed. Every change is one `updateTask` due edit.
-import { IconButton } from '../ui/Button'
+import { IconButton } from '../ui'
 import { dueFromView, localDueOf, zoneHint } from '../lib/dates'
 import { updateTask } from '../lib/ops'
 import type { Task } from '../lib/types'

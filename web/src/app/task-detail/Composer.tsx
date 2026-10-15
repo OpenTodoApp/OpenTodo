@@ -5,8 +5,8 @@
 import { forwardRef, type KeyboardEvent, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { mentionAt, mentionCandidates, mentionsInBody, mentionToken } from '../../lib/comments'
 import type { ProjectMember } from '../../lib/types'
-import { Button, IconButton } from '../../ui/Button'
-import { Icon } from '../../ui/Icon'
+import { Button, IconButton } from '../../ui'
+import { Icon } from '../../ui'
 import { Popover } from '../overlay'
 import { filesFrom } from './AttachmentsRow'
 

@@ -10,7 +10,7 @@ import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
 import { projectMenuGroups } from '../ProjectHeader'
 import { sectionMenuGroups } from '../Sections'
 import { viewMenuGroups } from '../ViewsView'
-import { HUES } from '../../ui/tokens/palette'
+import { HUES } from '../../ui'
 import { commands, type PaletteContext } from './registry'
 
 afterEach(() => { document.body.innerHTML = '' })

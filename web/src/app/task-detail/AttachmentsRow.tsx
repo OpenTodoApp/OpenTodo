@@ -11,9 +11,9 @@ import {
 import { db, type AttachmentBlob } from '../../lib/db'
 import { useDemo } from '../../lib/demo'
 import type { Attachment, ProjectRole } from '../../lib/types'
-import { Button, IconButton } from '../../ui/Button'
-import { Icon } from '../../ui/Icon'
-import { ConfirmDialog } from '../../ui/patterns/ConfirmDialog'
+import { Button, IconButton } from '../../ui'
+import { Icon } from '../../ui'
+import { ConfirmDialog } from '../../ui'
 import { showBulkToast } from '../bulk/toastStore'
 
 /** "Pasted image 2026-10-15 14.03.27.png": the name a pasted image gets. */

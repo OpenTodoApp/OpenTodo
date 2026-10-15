@@ -1,8 +1,8 @@
 import { setMeta } from '../lib/db'
 import { GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from '../lib/calendar'
 import { formatMinutes } from '../lib/duration'
-import { Select } from '../ui/Field'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Select } from '../ui'
+import { SettingRow, SettingsSection } from '../ui'
 import { useGridPrefs } from './CalendarView'
 
 const HOURS = Array.from({ length: 25 }, (_, h) => h)

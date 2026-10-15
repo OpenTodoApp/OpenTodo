@@ -1,4 +1,4 @@
-import { Icon } from '../../ui/Icon'
+import { Icon } from '../../ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { findTopic, helpSections, loadHelp, searchHelp, type HelpBundle } from '../../lib/help'
 import type { SearchEntry } from '../../../scripts/docs/search-core.mjs'

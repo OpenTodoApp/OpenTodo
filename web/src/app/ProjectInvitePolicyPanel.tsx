@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Switch } from '../ui/Switch'
-import { Notice } from '../ui/patterns/Notice'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Switch } from '../ui'
+import { Notice } from '../ui'
+import { SettingRow, SettingsSection } from '../ui'
 import { api, ApiError } from '../lib/api'
 
 // Settings → Access policies, owner only (OpenSpec `project-invite-links`):

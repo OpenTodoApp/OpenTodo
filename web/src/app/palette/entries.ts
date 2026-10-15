@@ -3,7 +3,7 @@
 // Settings sections, commands and filter-query results. Built on the device from
 // the local tables, never persisted and never sent anywhere.
 import type { ConfirmSpec, PickerSpec } from '../menus/ActionMenu'
-import type { IconName } from '../../ui/Icon'
+import type { IconName } from '../../ui'
 
 export type EntryKind = 'command' | 'task' | 'project' | 'label' | 'view' | 'settings' | 'filter'
 

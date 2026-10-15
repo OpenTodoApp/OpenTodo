@@ -106,7 +106,7 @@ function OptionRow<T>({ state, o, i, renderLeading, windowed, rh }: { state: Com
       onMouseDown={(e) => e.preventDefault()}
       onMouseEnter={() => state.setActive(i)}
       onClick={() => void state.pick(o)}
-      className={`flex cursor-pointer items-center gap-2.5 rounded-control px-2.5 text-sm ${active ? 'bg-sunken dark:bg-raised' : ''} ${o.kind === 'create' ? 'text-accent' : 'text-default'}`}
+      className={`flex cursor-pointer items-center gap-2.5 rounded-control px-2.5 text-body ${active ? 'bg-sunken dark:bg-raised' : ''} ${o.kind === 'create' ? 'text-accent' : 'text-default'}`}
       style={windowed ? { position: 'absolute', top: i * rh + 4, left: 4, right: 4, height: rh } : { minHeight: rh, paddingTop: 6, paddingBottom: 6, paddingLeft: o.kind === 'item' ? 10 + o.depth * 16 : undefined }}
     >
       {o.kind === 'create' ? (
@@ -155,7 +155,7 @@ function Field<T>({ state, label, placeholder, inputRef, onFocus, expanded, auto
         onChange={(e) => state.setQuery(e.target.value)}
         onKeyDown={state.onKeyDown}
         onFocus={onFocus}
-        className="input pl-9"
+        className="ui-input pl-9"
         autoFocus={autoFocus}
         data-autofocus
       />
@@ -187,7 +187,7 @@ export function Combobox<T>({ label, placeholder, emptyText, renderLeading, ...c
   if (!wide) {
     return (
       <div ref={anchor} data-combobox>
-        <button type="button" className="input flex items-center gap-2 text-left text-muted" aria-haspopup="dialog" onClick={() => setOpen(true)}>
+        <button type="button" className="ui-input flex items-center gap-2 text-left text-muted" aria-haspopup="dialog" onClick={() => setOpen(true)}>
           <Icon name="search" />{placeholder ?? label}
         </button>
         <Popover open={open} onClose={close} anchor={anchor} label={label} className="p-2">

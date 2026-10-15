@@ -8,8 +8,8 @@ import { readAppearance, setAppearance, THEME_MODES, type Appearance } from '../
 import { db } from '../lib/db'
 import type { ThemeModePref } from '../lib/types'
 import { USER_PREFS_ID } from '../lib/userPrefs'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
-import { ACCENTS, type AccentId } from '../ui/tokens/accents'
+import { SettingRow, SettingsSection } from '../ui'
+import { ACCENTS, type AccentId } from '../ui'
 
 const MODE_LABEL: Record<ThemeModePref, string> = { system: 'System', light: 'Light', dark: 'Dark' }
 

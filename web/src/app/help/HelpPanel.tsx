@@ -1,4 +1,4 @@
-import { Icon } from '../../ui/Icon'
+import { Icon } from '../../ui'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { loadHelp, type HelpBundle } from '../../lib/help'

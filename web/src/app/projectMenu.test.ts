@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Project } from '../lib/types'
 import { moveTargets } from './ProjectHeader'
-import { match } from '../ui/Combobox/match'
+import { match } from '../ui'
 
 const p = (id: string, name: string, parent_id: string | null = null, extra: Partial<Project> = {}): Project =>
   ({ id, name, color: '#22c55e', position: 1, archived: false, parent_id, created_at: 0, deleted_at: null, _clock: {}, ...extra } as Project)

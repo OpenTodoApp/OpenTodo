@@ -22,7 +22,7 @@ function Thread({ item, nested }: { item: Extract<TimelineItem, { kind: 'thread'
       <Avatar id={item.author.id} name={item.author.name} size="md" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2">
-          <span className="text-sm font-semibold text-default">{item.author.name}</span>
+          <span className="text-body font-semibold text-default">{item.author.name}</span>
           <span className="text-meta text-faint">{item.time}</span>
         </div>
         <div className="user-text mt-0.5 text-body text-default">{item.body}</div>

@@ -1,4 +1,4 @@
-import { Icon } from '../../ui/Icon'
+import { Icon } from '../../ui'
 import { useEffect, useState } from 'react'
 import { undoChanges } from '../../lib/assistant'
 import { closeAssistant, useAssistantOpen } from '../../lib/assistantStatus'

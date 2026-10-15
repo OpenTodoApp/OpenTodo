@@ -14,14 +14,14 @@ Each group leaves `make check` green and the app usable. Groups 3 to 6 can proce
 
 ## 2. Primitives, lint and budget
 
-- [ ] 2.1 Add `PageHeader` and `PageBody` to `web/src/ui/patterns` with stories (three widths, light and dark, 375 and 1280) and a test that fails on an `h1` outside `PageHeader` under `web/src/app`; verify with `npm test` and `make ui-check`.
-- [ ] 2.2 Add `Tooltip` (hover 400 ms, focus immediate, shortcut slot, no open on coarse pointers, `aria-describedby`) and make `IconButton` use it; add the `title=` lint over `web/src/app` with a `tooltip-lint-allow` marker; verify with `tooltip.test.tsx` and the lint test.
-- [ ] 2.3 Add `Skeleton` (row, line, card) with reduced-motion handling and stories; verify with the accessibility gate.
-- [ ] 2.4 Add `SidebarItem` and `SidebarGroup` primitives with stories and migrate the sidebar to them; verify with the sidebar story baseline and `sidebar.test.tsx`.
-- [ ] 2.5 Extend `lint.test.ts` to `web/src/app` with `NOT_YET_MIGRATED` seeded from the current files, rules for raw text sizes, pixel sizes, raw radii, raw shadows and legacy classes, and the only-shrinks self-test; verify the test passes with the seeded list and fails when a file is added to it.
-- [ ] 2.6 Fill `web/src/ui/index.ts` as the barrel and add a test that `web/src/app` imports shared UI only from it; verify with `npm test`.
-- [ ] 2.7 Add the interface budget to `openspec/config.yaml` (design rule) and write `docs/interface-guide.md` (page template, panel anatomy, settings anatomy, metadata language, copy rules, budget) linked from `docs/design-system.md`; verify with `npm run docs:check` and `openspec validate --all --strict`.
-- [ ] 2.8 Record the three surfaces in `index.css` component classes (`surface-row`, `surface-card`, `surface-overlay`) and migrate `Dialog`, `Menu`, `Popover`, `Card` and the board column to them; verify with the token lint and the primitive baselines.
+- [x] 2.1 Add `PageHeader` and `PageBody` to `web/src/ui/patterns` with stories (three widths, light and dark, 375 and 1280) and a test that fails on an `h1` outside `PageHeader` under `web/src/app`; verify with `npm test` and `make ui-check`.
+- [x] 2.2 Add `Tooltip` (hover 400 ms, focus immediate, shortcut slot, no open on coarse pointers, `aria-describedby`) and make `IconButton` use it; add the `title=` lint over `web/src/app` with a `tooltip-lint-allow` marker; verify with `tooltip.test.tsx` and the lint test.
+- [x] 2.3 Add `Skeleton` (row, line, card) with reduced-motion handling and stories; verify with the accessibility gate.
+- [x] 2.4 Add `SidebarItem` and `SidebarGroup` primitives with stories and migrate the sidebar to them; verify with the sidebar story baseline and `sidebar.test.tsx`.
+- [x] 2.5 Extend `lint.test.ts` to `web/src/app` with `NOT_YET_MIGRATED` seeded from the current files, rules for raw text sizes, pixel sizes, raw radii, raw shadows and legacy classes, and the only-shrinks self-test; verify the test passes with the seeded list and fails when a file is added to it.
+- [x] 2.6 Fill `web/src/ui/index.ts` as the barrel and add a test that `web/src/app` imports shared UI only from it; verify with `npm test`.
+- [x] 2.7 Add the interface budget to `openspec/config.yaml` (design rule) and write `docs/interface-guide.md` (page template, panel anatomy, settings anatomy, metadata language, copy rules, budget) linked from `docs/design-system.md`; verify with `npm run docs:check` and `openspec validate --all --strict`.
+- [x] 2.8 Record the three surfaces in `index.css` component classes (`surface-row`, `surface-card`, `surface-overlay`) and migrate `Dialog`, `Menu`, `Popover`, `Card` and the board column to them; verify with the token lint and the primitive baselines.
 
 ## 3. Task panel
 

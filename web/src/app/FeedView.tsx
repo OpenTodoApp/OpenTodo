@@ -11,7 +11,7 @@ import { navigate } from './router'
 import { isGPending, openTaskInList } from './signals'
 import { isTyping } from './useViews'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { hueFor } from '../ui/tokens/palette'
+import { hueFor } from '../ui'
 
 /**
  * The activity feed (OpenSpec `activity-feed`): every shared project's recent

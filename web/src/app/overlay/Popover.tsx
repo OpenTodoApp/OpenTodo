@@ -1,4 +1,4 @@
-import { Icon } from '../../ui/Icon'
+import { Icon } from '../../ui'
 import { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { place } from './position'
@@ -97,7 +97,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
         {/* A menu sheet is a dialog whose list carries the menu role: the title and the
             close button may not sit inside a menu. */}
         <div ref={panel} role={ariaRole === 'menu' ? 'dialog' : ariaRole} aria-label={label} aria-modal={ariaRole ? true : undefined} tabIndex={-1} data-overlay="sheet"
-          className="pointer-events-auto absolute inset-x-0 flex max-h-[80dvh] flex-col rounded-t-2xl border-t border-default bg-surface text-sm shadow-2xl outline-none"
+          className="pointer-events-auto absolute inset-x-0 flex max-h-[80dvh] flex-col rounded-t-card border-t border-default bg-raised text-body shadow-3 outline-none"
           style={{ bottom: 'var(--vv-bottom, 0px)' }}>
           <div className="relative flex shrink-0 items-center gap-2 border-b border-default pl-4 pr-1 pt-2">
             <span aria-hidden="true" className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-faint" />
@@ -114,7 +114,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
   }
   return createPortal(
     <div ref={panel} role={ariaRole} aria-label={label} tabIndex={-1} data-overlay="popover" data-overlay-root {...isolate} onKeyDown={onKeyDown}
-      className={`fixed z-50 overflow-y-auto overscroll-contain rounded-lg border border-default bg-surface text-sm shadow-lg outline-none ${width} ${className}`}
+      className={`surface-overlay fixed z-50 overflow-y-auto overscroll-contain text-body outline-none ${width} ${className}`}
       style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, maxHeight: pos?.maxHeight, maxWidth: pos?.maxWidth, opacity: pos ? 1 : 0 }}>
       {children}
     </div>,

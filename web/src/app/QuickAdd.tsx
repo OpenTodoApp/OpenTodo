@@ -1,6 +1,6 @@
 import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import type { HueName } from '../ui/tokens/palette'
-import { Icon } from '../ui/Icon'
+import type { HueName } from '../ui'
+import { Icon } from '../ui'
 import { HelpLink } from './help/HelpLink'
 import { describeDue, formatDate, todayISO } from '../lib/dates'
 import { useDateTimeFormat } from './DateTimePrefsProvider'

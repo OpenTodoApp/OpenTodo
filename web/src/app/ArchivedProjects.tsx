@@ -5,9 +5,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useRef } from 'react'
 import { archivedProjects, unarchiveProject, type ArchivedProject } from '../lib/archive'
 import { db } from '../lib/db'
-import { Button } from '../ui/Button'
-import { EmptyState } from '../ui/patterns/EmptyState'
-import { ListRow } from '../ui/patterns/ListRow'
+import { Button } from '../ui'
+import { EmptyState } from '../ui'
+import { ListRow } from '../ui'
 
 export function ArchivedProjectsSection() {
   const projects = useLiveQuery(() => db.projects.toArray(), [], [])

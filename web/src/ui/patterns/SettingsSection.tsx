@@ -53,7 +53,7 @@ export function SettingRow({ label, description, status, control, htmlFor }: Set
   return (
     <div className="grid gap-3 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6">
       <div className="min-w-0">
-        <Label {...(htmlFor ? { htmlFor } : {})} className="block text-sm font-medium text-default">{label}</Label>
+        <Label {...(htmlFor ? { htmlFor } : {})} className="block text-body font-medium text-default">{label}</Label>
         {description && <p className="mt-0.5 text-meta text-muted">{description}</p>}
         {status && <div className="mt-1 text-meta text-default">{status}</div>}
       </div>

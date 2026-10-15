@@ -9,8 +9,8 @@ import {
 } from '../lib/dates'
 import { DATE_FORMATS, setUserPref, TIME_FORMATS, WEEK_STARTS, type DateTimePrefs } from '../lib/userPrefs'
 import type { DateFormatPref, TimeFormatPref, WeekStartPref } from '../lib/types'
-import { Select } from '../ui/Field'
-import { SettingRow, SettingsSection } from '../ui/patterns/SettingsSection'
+import { Select } from '../ui'
+import { SettingRow, SettingsSection } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 const DATE_NAMES: Record<DateFormatPref, string> = { system: 'System', 'day-month': 'Day-month', 'month-day': 'Month-day', iso: 'ISO' }

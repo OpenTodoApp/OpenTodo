@@ -1,4 +1,4 @@
-import { Icon } from '../ui/Icon'
+import { Icon } from '../ui'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'

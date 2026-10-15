@@ -7,7 +7,7 @@ import { createView, deleteView, evaluateViews, isDashboard, reorderView, setPin
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
 import { useStartView, useViewData, useViews } from './useViews'
-import { Icon, type IconName } from '../ui/Icon'
+import { Icon, type IconName } from '../ui'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 
 export const viewIcon = (v: View): IconName => (isDashboard(v) ? 'kanban' : 'list')

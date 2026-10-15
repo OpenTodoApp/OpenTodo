@@ -2,6 +2,7 @@
 // sizes, icon-only, and a busy state that ignores repeated activation.
 import { forwardRef, useRef, useState, type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
+import { Tooltip } from './Tooltip'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 export type ButtonSize = 'sm' | 'md' | 'lg'
@@ -71,19 +72,23 @@ export interface IconButtonProps extends BaseProps {
   icon: IconName
   /** Required: the action's name, announced and shown as a tooltip. */
   label: string
+  /** The shortcut shown in the tooltip. */
+  shortcut?: string
+  /** Off when the control sits where a tooltip cannot open (inside another tooltip's trigger). */
+  tooltip?: boolean
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { icon, label, variant = 'ghost', size = 'md', busy: busyProp, onClick, className, type = 'button', ...rest },
+  { icon, label, shortcut, tooltip = true, variant = 'ghost', size = 'md', busy: busyProp, onClick, className, type = 'button', ...rest },
   ref,
 ) {
   const { busy, handle } = useBusy(onClick, busyProp)
-  return (
+  // The name is the tooltip (design-system "Tooltip primitive"); no native title.
+  const button = (
     <button
       ref={ref}
       type={type}
       aria-label={label}
-      title={label}
       className={`ui-btn ui-btn--icon ui-btn--${variant} ui-btn--${size}${className ? ` ${className}` : ''}`}
       aria-busy={busy || undefined}
       onClick={handle}
@@ -92,4 +97,5 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       <Icon name={busy ? 'loader-circle' : icon} size={iconSize(size)} className={busy ? SPINNER : undefined} />
     </button>
   )
+  return tooltip ? <Tooltip label={label} shortcut={shortcut}>{button}</Tooltip> : button
 })
