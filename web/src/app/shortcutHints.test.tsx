@@ -21,7 +21,7 @@ afterEach(() => { document.body.innerHTML = ''; localStorage.removeItem(HINTS_KE
 describe('hints off (the default)', () => {
   it('quick add prints no key badge, and Kbd renders plain text or nothing', async () => {
     expect(shortcutHintsOn()).toBe(false)
-    const r = await render(<><QuickAdd onAdd={async () => {}} /><p data-plain><Kbd k="Enter" /></p><p data-only><Kbd k="Esc" only /></p></>)
+    const r = await render(<><QuickAdd placeholder="Add a task" onAdd={async () => {}} /><p data-plain><Kbd k="Enter" /></p><p data-only><Kbd k="Esc" only /></p></>)
     await flush()
     expect(r.container.querySelector('kbd, .kbd')).toBeNull()
     expect(r.container.querySelector('[data-plain]')?.textContent).toBe('Enter')
@@ -41,7 +41,7 @@ describe('hints off (the default)', () => {
 describe('hints on', () => {
   it('quick add shows its q again and the destinations show their g keys', async () => {
     setShortcutHints(true)
-    const r = await render(<><QuickAdd onAdd={async () => {}} /><Sidebar route={{ view: 'inbox' }} user={user} /></>)
+    const r = await render(<><QuickAdd placeholder="Add a task" onAdd={async () => {}} /><Sidebar route={{ view: 'inbox' }} user={user} /></>)
     await flush(50)
     expect(r.container.querySelector('[data-quick-add-hint]')?.textContent).toBe('q')
     const hints = [...r.container.querySelectorAll('[data-go-hint]')].map((k) => k.textContent)
