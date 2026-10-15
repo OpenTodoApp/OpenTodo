@@ -17,6 +17,8 @@ import { IconButton } from '../ui'
 import { Icon } from '../ui'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { navigate, type Route } from './router'
+import { useShortcutDispatcher, useShortcutScope } from './shortcuts'
+import { Kbd } from './shortcuts/Kbd'
 
 /** How files come with this share: the hand-over store, the extension's message, or lost on the way. */
 export type ShareFiles = { inbox?: string | null; mode?: 'extension' | 'denied' | 'lost' | null }
@@ -127,17 +129,10 @@ export function ShareCapture() {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
 
-  useEffect(() => {
-    titleRef.current?.focus()
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        leave({ view: 'inbox' })
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  useEffect(() => { titleRef.current?.focus() }, [])
+  // The capture screen renders outside the shell, so it installs the dispatcher itself; Esc leaves without saving.
+  useShortcutDispatcher()
+  useShortcutScope('view', { 'share.escape': () => leave({ view: 'inbox' }) }, { view: 'share' })
 
   async function save(input: QuickAddInput) {
     if (saving) return
@@ -212,7 +207,7 @@ export function ShareCapture() {
         {error && <p className="mt-3 text-sm text-danger" role="alert">{error}</p>}
         <div className="mt-4 flex items-center justify-end gap-2">
           <span className="mr-auto hidden text-xs text-faint sm:inline">
-            <span className="kbd">Enter</span> save · <span className="kbd">Esc</span> cancel
+            <Kbd k="Enter" /> saves · <Kbd k="Esc" /> cancels
           </span>
           <button type="button" className="btn-ghost" onClick={() => leave({ view: 'inbox' })}>Cancel</button>
           <button type="submit" form="share-capture" className="btn-primary" disabled={saving || !ready}>{saving ? 'Saving…' : 'Save'}</button>

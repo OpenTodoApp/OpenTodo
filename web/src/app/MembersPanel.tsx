@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useState } from 'react'
+import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import type { Invitation, InvitationStatus } from '../lib/types'
@@ -194,7 +195,7 @@ export function MembersView(p: MembersViewProps) {
           action={<Button variant="secondary" icon="plus" disabled={disabled} onClick={p.onNew}>New invitation</Button>} />
       )}
       {p.invitations === null && <p className="py-2 text-meta text-faint">{p.offline ? 'Nothing fetched yet.' : 'Loading…'}</p>}
-      <p className="pt-2 text-meta text-faint">Keyboard: focus a row, <span className="kbd">Enter</span> copies a link created in this session, <span className="kbd">Delete</span> revokes a pending invitation.</p>
+      <p className="pt-2 text-meta text-faint">Keyboard, with a row focused: copy a link created in this session with <Kbd k="Enter" />, revoke a pending invitation with <Kbd k="Delete" />.</p>
     </SettingsSection>
   )
 }

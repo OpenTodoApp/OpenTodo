@@ -1,17 +1,20 @@
 // The cheat sheet (OpenSpec change ux-overhaul, keyboard-shortcuts "Cheat sheet"):
-// the shortcuts of the scopes active right now come first, then "Everywhere" and
-// "Go to", then the other sections, in two columns from 768 px, with a search
-// field, inside a dialog capped at 80 % of the viewport with its own scroller.
+// rendered from the shortcut registry; the shortcuts of the scopes active right now
+// come first, then "Everywhere" and "Go to", then the other sections, in two
+// columns from 768 px, with a search field, inside a dialog capped at 80 % of the
+// viewport with its own scroller.
 import { useMemo, useState } from 'react'
-import { QUICK_ADD_SYNTAX, SHORTCUT_SECTIONS, SHORTCUTS, type Shortcut, type ShortcutSection } from '../lib/shortcuts'
+import { displayKeys, listedShortcuts, QUICK_ADD_SYNTAX, SHORTCUT_SECTIONS, type Shortcut, type ShortcutSection } from '../lib/shortcuts'
 import { Dialog } from './overlay'
 import { navigate } from './router'
 
-/** An extra block of the sheet (the Vim layer supplies one while it is on). */
+/** An extra block of the sheet that is not made of keys (the Vim command line). */
 export interface HelpSection {
   title: string
   note?: string
   rows: [string, string][]
+  /** The first column is code (commands), not keys. */
+  mono?: boolean
 }
 
 /** Where the user is when the sheet opens; decides which groups come first. */
@@ -71,16 +74,27 @@ function Rows({ rows, mono = false }: { rows: [string, string][]; mono?: boolean
   )
 }
 
-export function ShortcutHelp({ onClose, extraSections = [], context }: { onClose: () => void; extraSections?: HelpSection[]; context?: HelpContext }) {
+/** The sheet's rows for a registry entry: the keys as shown and the description. */
+export function sheetRow(s: Shortcut): [string, string] {
+  return [displayKeys(s), s.description]
+}
+
+export function ShortcutHelp({ onClose, extraSections = [], context, vim = extraSections.length > 0 }: {
+  onClose: () => void
+  extraSections?: HelpSection[]
+  context?: HelpContext
+  /** Whether the Vim layer is on: its rows are listed and its command-line block added. */
+  vim?: boolean
+}) {
   const [query, setQuery] = useState('')
   const q = query.trim()
   const groups = useMemo(() => {
     const bySection = new Map<ShortcutSection, Shortcut[]>()
-    for (const s of SHORTCUTS) bySection.set(s.section, [...(bySection.get(s.section) ?? []), s])
+    for (const s of listedShortcuts(vim)) bySection.set(s.section, [...(bySection.get(s.section) ?? []), s])
     return orderedSections(context)
-      .map((sec) => ({ ...sec, rows: (bySection.get(sec.id) ?? []).filter((s) => matches(q, s.keys, s.description)).map((s) => [s.keys, s.description] as [string, string]) }))
+      .map((sec) => ({ ...sec, rows: (bySection.get(sec.id) ?? []).map(sheetRow).filter(([k, d]) => matches(q, k, d)) }))
       .filter((g) => g.rows.length > 0)
-  }, [context, q])
+  }, [context, q, vim])
   const extras = extraSections.map((sec) => ({ ...sec, rows: sec.rows.filter(([k, d]) => matches(q, k, d)) })).filter((s) => s.rows.length > 0)
   const quickAdd = QUICK_ADD_SYNTAX.filter(([k, d]) => matches(q, k, d))
   const contextCount = contextSections(context).length
@@ -109,7 +123,7 @@ export function ShortcutHelp({ onClose, extraSections = [], context }: { onClose
             <section key={sec.title} data-help-section={sec.title} className="mb-2">
               <h3 className="mb-1 mt-3 text-sm font-semibold">{sec.title}</h3>
               {sec.note && <p className="mb-2 text-xs text-muted">{sec.note}</p>}
-              <Rows rows={sec.rows} />
+              <Rows rows={sec.rows} mono={sec.mono} />
             </section>
           ))}
           {quickAdd.length > 0 && (
@@ -120,7 +134,7 @@ export function ShortcutHelp({ onClose, extraSections = [], context }: { onClose
           )}
         </div>
       </div>
-      {extraSections.length === 0 && (
+      {!vim && (
         <p className="mt-3 text-xs text-muted" data-vim-hint>Prefer modal editing? Vim keybindings can be enabled in Settings → General → Keyboard.</p>
       )}
       <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">

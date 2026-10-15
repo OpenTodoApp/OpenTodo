@@ -2,6 +2,8 @@
 // (OpenSpec change labels-and-menus, group 5). Every write goes through lib/labels,
 // so it works offline and converges like any other edit.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { keysOf } from '../lib/shortcuts'
+import { Kbd } from './shortcuts/Kbd'
 import { type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { beginDrag } from '../lib/dnd'
@@ -365,7 +367,7 @@ export function LabelsView({ route }: { route: Route }) {
         {labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={counts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={drop} onDragStart={start} />)}
       </div>
       {labels.length === 0 && !adding && (
-        <EmptyState icon="tag" title="No labels yet" body={<>Labels group tasks across projects. Press <span className="kbd">L</span> on a task to add one, or create one here.</>}
+        <EmptyState icon="tag" title="No labels yet" body={<>Labels group tasks across projects. Add one to a selected task with <Kbd k={keysOf('list.labels')} />, or create one here.</>}
           action={<button className="btn-primary text-xs" onClick={() => setAdding(true)}><Icon name="plus" /> New label</button>} />
       )}
       {confirm.element}

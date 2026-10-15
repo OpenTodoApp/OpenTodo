@@ -5,18 +5,19 @@ import { VIM_HELP } from './vim/help'
 
 describe('ShortcutHelp', () => {
   it('help lists Vim section only when enabled', () => {
-    const on = renderToStaticMarkup(<ShortcutHelp onClose={() => undefined} extraSections={[VIM_HELP]} />)
+    const on = renderToStaticMarkup(<ShortcutHelp onClose={() => undefined} vim extraSections={[VIM_HELP]} />)
     expect(on).toContain('data-help-section="Vim keybindings"')
-    for (const k of ['gg / G', 'dd', '3j, 5k, 2↓', ':project &lt;name&gt;', ':new &lt;title&gt;', ':help']) expect(on).toContain(k)
+    expect(on).toContain('data-help-section="Vim command line"')
+    for (const k of ['g g', 'Shift+G', 'd d', '3j / 5k / 2↓', ':project &lt;name&gt;', ':new &lt;title&gt;', ':help']) expect(on).toContain(k)
     expect(on).not.toContain('data-vim-hint')
 
     const off = renderToStaticMarkup(<ShortcutHelp onClose={() => undefined} />)
     expect(off).not.toContain('Vim keybindings</h3>')
-    expect(off).not.toContain('gg / G')
+    expect(off).not.toContain('>d d<')
     expect(off).toContain('data-vim-hint')
     expect(off).toContain('Vim keybindings can be enabled in Settings')
     // The default list is unchanged.
-    expect(off).toContain('Toggle this help')
+    expect(off).toContain('Toggle this cheat sheet')
   })
 
   it('scrolls the overlay and keeps a close button at the top on small screens', () => {
@@ -35,10 +36,10 @@ describe('ShortcutHelp', () => {
     const { SHORTCUTS } = await import('../lib/shortcuts')
     const html = renderToStaticMarkup(<ShortcutHelp onClose={() => undefined} />)
     expect(html).toContain('Open the assistant')
-    const plain = SHORTCUTS.filter((s) => s.keys === 'Shift+I')
+    const plain = SHORTCUTS.filter((s) => s.keys.includes('Shift+I'))
     expect(plain).toHaveLength(1)
     // `g` then Shift+I (Import) is a different sequence; nothing else binds plain Shift+I.
-    expect(SHORTCUTS.some((s) => s.keys.startsWith('g then Shift+I'))).toBe(true)
-    expect(VIM_HELP.rows.some((r) => /^I\b|Shift\+I/.test(r[0]))).toBe(false)
+    expect(SHORTCUTS.some((s) => s.keys.includes('g Shift+I'))).toBe(true)
+    expect(SHORTCUTS.some((s) => s.scope === 'vim' && s.keys.includes('Shift+I'))).toBe(false)
   })
 })

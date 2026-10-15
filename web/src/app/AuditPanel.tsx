@@ -1,4 +1,5 @@
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, auditExportUrl, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { Button } from '../ui'
@@ -214,7 +215,7 @@ export function AuditPanel() {
                 {loadingMore ? 'Loading…' : 'Load more'}
               </Button>
             )}
-            <p className="text-meta text-muted">Keyboard: focus the table and press <span className="kbd">e</span> to export with the current filters.</p>
+            <p className="text-meta text-muted">Keyboard: export with the current filters by pressing <Kbd k="e" /> while the table has focus.</p>
           </div>
 
           {settings && (

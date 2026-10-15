@@ -21,6 +21,7 @@ import { navigate } from './router'
 import { setCurrentFilter } from './listActions'
 import { useBulkList } from './bulk/useBulkList'
 import { useListKeys } from './useListKeys'
+import { useShortcutScope } from './shortcuts'
 import { useToday, useViewerZone } from './useViews'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
@@ -176,13 +177,9 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
       setSelectedId(null)
       inputRef.current?.focus()
     },
-    extra: (e) => {
-      if (e.key !== 's' || !canSave) return false
-      e.preventDefault()
-      setSaving(true)
-      return true
-    },
   })
+  // `s` saves the query as a view (filter.save); the Filter list has no schedule action, so the key reaches this view scope.
+  useShortcutScope('view', { 'filter.save': () => { if (!canSave) return false; setSaving(true) } }, { view: 'filter' })
 
   useEffect(() => {
     if (selectedId) document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })

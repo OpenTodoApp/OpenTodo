@@ -2,21 +2,19 @@
 // ux-overhaul, app-shell "The panel slot has an address"): project activity and
 // history, the calendar's planning list. Same column as the task panel from
 // 1024 px, a sheet over the content below that; Escape or Close empties the slot.
-import { useEffect, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { IconButton } from '../ui'
 import { closePanel } from './panel'
+import { useShortcutScope } from './shortcuts'
 
 export function PanelFrame({ title, children, actions, testId }: { title: string; children: ReactNode; actions?: ReactNode; testId?: string }) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Escape' || e.defaultPrevented) return
-      const t = e.target as HTMLElement | null
-      if (t?.closest('[data-overlay]')) return
+  // Escape empties the slot (the `panel` scope); an overlay above it keeps its own Escape.
+  useShortcutScope('panel', {
+    'panel.escape': (e) => {
+      if ((e.target as HTMLElement | null)?.closest('[data-overlay]')) return false
       closePanel()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+    },
+  })
   return (
     <aside data-panel-frame={testId ?? title} aria-label={title}
       className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem]">

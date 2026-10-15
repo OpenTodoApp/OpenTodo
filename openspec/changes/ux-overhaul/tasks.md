@@ -60,12 +60,12 @@ Each group leaves `make check` green and the app usable. Groups 3 to 6 can proce
 
 ## 6. Shortcut registry
 
-- [ ] 6.1 Turn `web/src/lib/shortcuts.ts` into the registry (keys, scope, section, description, action, `when`) and write the conflict test (same keys in a scope or ancestor scope without override; sheet or guide entry missing from the registry); verify the test fails on a deliberate duplicate and passes on the resolved table.
-- [ ] 6.2 Add `useShortcutDispatcher` in the shell and `useShortcutScope` for views, panel, board, calendar, editor and vim; migrate every `keydown` listener in `web/src/app` to a scope registration and delete the listeners; verify with table-driven `dispatch.test.ts` per scope and a test that no file under `web/src/app` adds a `keydown` listener on `window` except the dispatcher.
-- [ ] 6.3 Apply the resolved bindings: Share project `Shift+S` (project view), Skip occurrence `Shift+K`, `s` by scope, `.` by state, `a` by list or board; verify with `dispatch.test.ts` and update `docs/keyboard.md` by `make docs`.
-- [ ] 6.4 Make the cheat sheet, the keyboard guide generator and the palette's shortcut column read the registry; add the "Show shortcut hints" preference (device-local) and remove every printed `kbd` badge from the chrome, moving the hint into tooltips and menu items; verify with a test that no `kbd` renders in headers, inputs or subtitles while hints are off, and with `palette.test.tsx` showing `q` beside "Quick add a task".
-- [ ] 6.5 Add palette sections (Recent, Tasks, Projects, Labels, Filters, Commands, Settings) and recents from the pick history; verify with `palette.test.tsx`.
-- [ ] 6.6 Verify the Vim layer registers in the `vim` scope, shares `g`, and its tests still pass (`npm test -- vim`).
+- [x] 6.1 Turn `web/src/lib/shortcuts.ts` into the registry (keys, scope, section, description, action, `when`) and write the conflict test (same keys in a scope or ancestor scope without override; sheet or guide entry missing from the registry); verify the test fails on a deliberate duplicate and passes on the resolved table.
+- [x] 6.2 Add `useShortcutDispatcher` in the shell and `useShortcutScope` for views, panel, board, calendar, editor and vim; migrate every `keydown` listener in `web/src/app` to a scope registration and delete the listeners; verify with table-driven `dispatch.test.ts` per scope and a test that no file under `web/src/app` adds a `keydown` listener on `window` except the dispatcher.
+- [x] 6.3 Apply the resolved bindings: Share project `Shift+S` (project view), Skip occurrence `Shift+K`, `s` by scope, `.` by state, `a` by list or board; verify with `dispatch.test.ts` and update `docs/keyboard.md` by `make docs`.
+- [x] 6.4 Make the cheat sheet, the keyboard guide generator and the palette's shortcut column read the registry; add the "Show shortcut hints" preference (device-local) and remove every printed `kbd` badge from the chrome, moving the hint into tooltips and menu items; verify with a test that no `kbd` renders in headers, inputs or subtitles while hints are off, and with `palette.test.tsx` showing `q` beside "Quick add a task".
+- [x] 6.5 Add palette sections (Recent, Tasks, Projects, Labels, Filters, Commands, Settings) and recents from the pick history; verify with `palette.test.tsx`.
+- [x] 6.6 Verify the Vim layer registers in the `vim` scope, shares `g`, and its tests still pass (`npm test -- vim`).
 
 ## 7. Phone patterns
 

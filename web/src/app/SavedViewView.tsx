@@ -99,16 +99,13 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   useListKeys({
     rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor, bulk,
     onIdleEscape: () => setSelected(null),
-    extra: (e, row) => {
-      if (e.key === 's' && row && !row.completed_at) {
-        e.preventDefault()
+    extra: {
+      'list.schedule': () => {
+        const row = rows.find((r) => r.key === selected)?.task
+        if (!row || row.completed_at) return false
         placeInDay(row, todayISO())
-        return true
-      }
-      if (e.key !== '/') return false
-      e.preventDefault()
-      inputRef.current?.focus()
-      return true
+      },
+      'view.edit-query': () => inputRef.current?.focus(),
     },
   })
 

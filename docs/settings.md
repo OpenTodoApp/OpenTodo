@@ -60,7 +60,7 @@ How the app behaves.
 - **Start view**: the view this device opens on. See [Views](views.md#choose-where-the-app-opens).
 - **Date and time**: how dates and times look and where weeks start, on all your devices (see below).
 - **Calendar**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
-- **Keyboard**: turn on Vim keybindings on this device. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
+- **Keyboard**: **Show shortcut hints** prints the keys in the app itself (next to quick add, beside the sidebar's destinations, in prompts) as well as in tooltips and menus, and **Vim keybindings** turns the Vim layer on; both for this device. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
 
 #### Date and time
 

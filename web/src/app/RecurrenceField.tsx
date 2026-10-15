@@ -1,4 +1,6 @@
 import { Icon } from '../ui'
+import { keysOf } from '../lib/shortcuts'
+import { Tooltip } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/db'
@@ -89,12 +91,12 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
       {parsed?.ok && preview.length === 0 && <p className="text-xs text-muted">No further occurrences: the next completion ends the series.</p>}
       {recurring && (
         <div className="flex flex-wrap gap-2 pt-1">
-          <button className="btn-ghost text-xs" onClick={() => void skip()} title="Move to the next occurrence without completing (Shift+S)">
-            ⤼ Skip <span className="kbd ml-1">⇧S</span>
-          </button>
-          <button className="btn-ghost text-xs" onClick={() => void detach()} title="Make a standalone copy of this occurrence and move the series on (Shift+O)">
-            This occurrence only <span className="kbd ml-1">⇧O</span>
-          </button>
+          <Tooltip label="Move to the next occurrence without completing" shortcut={keysOf('list.skip')}>
+            <button className="btn-ghost text-xs" onClick={() => void skip()}>⤼ Skip</button>
+          </Tooltip>
+          <Tooltip label="Make a standalone copy of this occurrence and move the series on" shortcut={keysOf('list.detach')}>
+            <button className="btn-ghost text-xs" onClick={() => void detach()}>This occurrence only</button>
+          </Tooltip>
         </div>
       )}
       {notice && <p className="text-xs text-muted" role="status">{notice}</p>}

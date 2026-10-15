@@ -67,7 +67,7 @@ describe('Help bundle', () => {
 
 describe('Help entry points', () => {
   it('lists g then ? in the shortcut table', () => {
-    expect(SHORTCUTS.some((s) => s.keys === 'g then ?')).toBe(true)
+    expect(SHORTCUTS.some((s) => s.keys.includes('g ?'))).toBe(true)
   })
   it('renders Help links with the screen id and an accessible name', () => {
     const html = renderToStaticMarkup(<><HelpLink screen="share-dialog" topic="Sharing" /><HelpHeading screen="settings/password">Password</HelpHeading></>)

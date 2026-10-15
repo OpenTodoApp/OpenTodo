@@ -43,6 +43,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   { section: 'general', label: 'Time format', description: '12-hour or 24-hour', anchor: 'date-time-heading', keywords: 'clock' },
   { section: 'general', label: 'First day of the week', description: 'Where the Week view and calendars start', anchor: 'date-time-heading', keywords: 'week start monday sunday' },
   { section: 'general', label: 'Calendar grid', description: 'When the Day and Week grid starts and ends, and your day length', anchor: 'calendar-heading', keywords: 'capacity hours' },
+  { section: 'general', label: 'Show shortcut hints', description: 'Print the keys in the app, next to quick add and in prompts', anchor: 'shortcut-hints', keywords: 'keyboard shortcuts kbd badges' },
   { section: 'general', label: 'Vim keybindings', description: 'Keyboard navigation with hjkl', anchor: 'keyboard-heading', keywords: 'keyboard shortcuts' },
   // Notifications
   { section: 'notifications', label: 'Push notifications', description: 'Reminders delivered to this device, and a test', anchor: 'notifications-heading', keywords: 'reminders' },

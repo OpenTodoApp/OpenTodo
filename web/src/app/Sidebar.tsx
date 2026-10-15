@@ -1,4 +1,9 @@
 import { Button, Icon, IconButton, type IconName, isIconName, MenuItem, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
+import { keysOf, SHORTCUTS } from '../lib/shortcuts'
+import { useShortcutHints } from './shortcuts/hints'
+
+/** The `g` key of each destination, from the registry's `go.*` rows. */
+const GO_KEYS: Record<string, string> = Object.fromEntries(SHORTCUTS.filter((s) => s.id.startsWith('go.')).map((s) => [s.id.slice(3), s.keys[0]]))
 import { Menu } from './overlay/Menu'
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
@@ -55,6 +60,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   collapsed?: boolean
   onToggleCollapse?: () => void
 }) {
+  const hints = useShortcutHints()
   const assistant = useAssistantStatus()
   // Promoted destinations (appearance preferences, synced): read with the rest of the row.
   const prefsRow = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
@@ -216,7 +222,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const item = (r: Route, label: string, icon: IconName, count?: number, badge?: ReactNode) => {
     // Day and Week are one Calendar destination (ux-overhaul).
     const active = r.view === 'day' || r.view === 'week' ? route.view === 'day' || route.view === 'week' : JSON.stringify(r) === JSON.stringify(route)
-    return <SidebarItem key={label} icon={icon} label={label} count={count} badge={badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} />
+    // With "Show shortcut hints" on, the destination prints its `g` key (keyboard-shortcuts "Hints preference").
+    const go = hints && !collapsed && badge === undefined ? GO_KEYS[r.view] : undefined
+    return <SidebarItem key={label} icon={icon} label={label} count={count} badge={go ? <kbd className="kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} />
   }
 
   // The More group (app-shell "Sidebar structure"): the less frequent destinations,
@@ -276,7 +284,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           )
         })}
         {pinnedViews.length === 0 && !collapsed && (
-          <p className="px-2 py-1 text-meta text-faint">Save a filter with <span className="ui-kbd">s</span> to pin it here.</p>
+          <p className="px-2 py-1 text-meta text-faint">Save a filter to pin it here.</p>
         )}
       </SidebarGroup>
       <SidebarGroup title="Projects" collapsed={collapsed} actions={(
@@ -363,12 +371,12 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
         {onSearch && <SidebarItem icon="search" label="Search and commands" collapsed={collapsed} onClick={onSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />}
         <div className={`flex items-center gap-0.5 ${collapsed ? 'flex-col' : ''}`}>
           <NotificationBell compact={collapsed} />
-          {onAssistant && <IconButton icon="message-circle" label="Assistant" shortcut="Shift+I" size="sm" onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
-          {onShortcuts && <IconButton icon="keyboard" label="Keyboard shortcuts" shortcut="?" size="sm" onClick={onShortcuts} aria-haspopup="dialog" data-shortcuts-button />}
+          {onAssistant && <IconButton icon="message-circle" label="Assistant" shortcut={keysOf('global.assistant')} size="sm" onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
+          {onShortcuts && <IconButton icon="keyboard" label="Keyboard shortcuts" shortcut={keysOf('global.help')} size="sm" onClick={onShortcuts} aria-haspopup="dialog" data-shortcuts-button />}
           <SyncStatus compact={collapsed} />
           {!collapsed && <span className="flex-1" />}
           {onToggleCollapse && (
-            <IconButton icon={collapsed ? 'panel-left-open' : 'panel-left-close'} label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} shortcut="[" size="sm"
+            <IconButton icon={collapsed ? 'panel-left-open' : 'panel-left-close'} label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} shortcut={keysOf('global.sidebar')} size="sm"
               className="hidden lg:inline-flex" onClick={onToggleCollapse} data-sidebar-collapse aria-pressed={collapsed} />
           )}
         </div>

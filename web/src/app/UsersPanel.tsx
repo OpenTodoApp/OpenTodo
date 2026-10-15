@@ -1,4 +1,5 @@
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useState } from 'react'
+import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { hasAnyAction, isAdministrator, rowActions, type RowActions } from '../lib/roles'
@@ -307,7 +308,7 @@ export function UsersView(p: UsersViewProps) {
       {p.users && p.users.length === 0 && <EmptyState icon="users" title="No accounts" body="Invite someone below to give them an account on this server." />}
       {p.users === null && !p.offline && <p className="py-2 text-meta text-faint">Loading…</p>}
       <p className="pt-2 text-meta text-faint">
-        Keyboard: focus a row, <span className="kbd">d</span> deactivates or reactivates, <span className="kbd">r</span> creates a reset link, <span className="kbd">Delete</span> deletes; each asks for confirmation.
+        Keyboard, with a row focused: deactivate or reactivate with <Kbd k="d" />, create a reset link with <Kbd k="r" />, delete with <Kbd k="Delete" />; each asks for confirmation.
       </p>
 
       {p.dialog?.kind === 'delete' && (

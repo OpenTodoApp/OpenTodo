@@ -1,4 +1,6 @@
 import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { keysOf } from '../lib/shortcuts'
+import { useShortcutHints } from './shortcuts/hints'
 import type { HueName } from '../ui'
 import { Icon } from '../ui'
 import { HelpLink } from './help/HelpLink'
@@ -122,6 +124,8 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   /** Shift+V outside text fields dictates into this quick add (the view's main one only). */
   voiceShortcut?: boolean
 }>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut }, ref) {
+  // The `q` badge is printed only while "Show shortcut hints" is on (keyboard-shortcuts).
+  const hints = useShortcutHints()
   const [value, setValue] = useState(initialValue ?? '')
   const valueRef = useRef(value)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -232,7 +236,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
             className={`relative shrink-0 rounded-full p-1.5 ${voice.listening ? 'bg-danger-soft text-danger' : 'text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised'}`}
             aria-pressed={voice.listening}
             aria-label={voice.listening ? 'Stop dictation' : 'Dictate a task'}
-            title={voice.listening ? 'Stop dictation (Esc)' : voiceShortcut ? 'Dictate a task (Shift+V)' : 'Dictate a task'}
+            title={voice.listening ? 'Stop dictation (Esc)' : voiceShortcut ? `Dictate a task (${keysOf('list.dictate')})` : 'Dictate a task'}
             data-voice-button
             // Keep focus and caret in the input: the transcript goes where the caret is.
             onMouseDown={(e) => e.preventDefault()}
@@ -242,7 +246,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
             <Icon name="mic" className="relative" />
           </button>
         )}
-        {!hideHint && <span className="kbd hidden sm:inline">q</span>}
+        {!hideHint && hints && <span className="kbd hidden sm:inline" data-quick-add-hint>{keysOf('list.quick-add')}</span>}
       </div>
       {voice.enabled && (
         <>
