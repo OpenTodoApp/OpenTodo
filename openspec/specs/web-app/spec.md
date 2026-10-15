@@ -112,7 +112,7 @@ With Vim keybindings enabled the client SHALL be in exactly one of three modes: 
 - **THEN** focus leaves the field or command line, the indicator shows Normal, and any text already typed into a task field is kept
 
 ### Requirement: Normal-mode motions and counts
-In Normal mode the client SHALL support a count prefix for `j`, `k`, `J` and `K` (`J`/`K` move the selected task in manual order), `gg`/`G` to select the first/last task, `dd` to delete it, `x` to complete or reopen it, `o` to open quick add after the selection and `i` to open its detail panel in Insert mode. Task actions SHALL be applied locally first and recorded as operations, so they work offline and converge.
+In Normal mode the client SHALL support a count prefix for `j`, `k`, `J` and `K` (`J`/`K` move the selected task in manual order), `gg`/`G` to select the first/last task, `dd` to delete it, `x` to complete or reopen it, `o` to open quick add after it and `i` to open its detail panel in Insert mode. With tasks ticked (`bulk-actions`), `x` and `dd` SHALL act on the ticked tasks. Task actions SHALL be applied locally first as operations, so they work offline and converge.
 
 #### Scenario: Count prefix
 - **WHEN** a task is selected and the user types `3j`
@@ -137,6 +137,14 @@ In Normal mode the client SHALL support a count prefix for `j`, `k`, `J` and `K`
 #### Scenario: a keeps its default meaning
 - **WHEN** a task is selected and the user presses `a`
 - **THEN** the inline subtask field opens as without Vim keybindings, which is Insert mode
+
+#### Scenario: x with several tasks ticked
+- **WHEN** Vim keybindings are on, the user ticks three tasks with Space and presses `x`
+- **THEN** the three tasks are completed as one batch and a toast offers Undo
+
+#### Scenario: Extend the selection in Vim mode
+- **WHEN** Vim keybindings are on and the user presses Space on a row, then `Shift+↓`
+- **THEN** that row and the next are ticked, while `J` still moves the cursor task down one place
 
 ### Requirement: Command line
 In Normal mode `:` SHALL open a one-line command input with completion over `inbox`, `today`, `upcoming`, `completed`, `settings`, `project <name>` (prefix match), `new <title>`, `q` (close panel or clear selection), `sync` and `help`. Enter runs the command, Escape cancels, and an unknown command SHALL show a message without side effects. Commands that write data SHALL use the same local-first path as the equivalent interface action, so they work offline and converge like any edit.
