@@ -36,7 +36,7 @@ const DEADLINE_TONE = {
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
 export const MAX_INDENT = 3
 
-export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null }: {
+export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, ticked = false, showCheckbox = false, onTick }: {
   task: Task
   project?: Project
   /** Already resolved: unknown and deleted label ids are not in this list. */
@@ -55,7 +55,14 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   /** Viewer of a shared project: the row can be opened but not completed. */
   readOnly?: boolean
   onToggle: () => void
-  onOpen: () => void
+  /** Opens the task; Shift or Ctrl/⌘ clicks tick instead when `onTick` is set (bulk-edit D3). */
+  onOpen: (e?: React.MouseEvent) => void
+  /** Ticked for a bulk action (bulk-edit). */
+  ticked?: boolean
+  /** Checkboxes always shown: something is ticked, or touch Select mode is on. */
+  showCheckbox?: boolean
+  /** Tick or untick; `range` for Shift (extend from the anchor). */
+  onTick?: (range: boolean) => void
   onToggleCollapse?: () => void
   /** Board card styling (board-view). */
   card?: boolean
@@ -91,9 +98,10 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
       data-depth={depth}
       data-drop-target={dropKey}
       data-draggable={onPointerDown ? '' : undefined}
+      data-ticked={ticked || undefined}
       onPointerDown={onPointerDown}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group relative flex items-start gap-2 rounded-md px-2 py-2 ${dropIndicator === 'inside' ? 'ring-2 ring-accent' : ''} ${card ? `border border-default shadow-sm ${selected ? '' : 'bg-surface'}` : ''} ${selected ? 'bg-sunken dark:bg-raised ring-1 ring-accent/50' : 'hover:bg-canvas dark:hover:bg-raised'}`}
+      className={`group relative flex items-start gap-2 rounded-md px-2 py-2 ${dropIndicator === 'inside' ? 'ring-2 ring-accent' : ''} ${card ? `border border-default shadow-sm ${selected ? '' : 'bg-surface'}` : ''} ${ticked ? 'bg-accent-soft' : selected ? 'bg-sunken dark:bg-raised' : 'hover:bg-canvas dark:hover:bg-raised'} ${selected ? 'ring-1 ring-accent/50' : ''}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // 2 px drop indicator between rows (manual-ordering design D5).
@@ -116,6 +124,14 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           )}
         </span>
       )}
+      {onTick && !readOnly && (
+        // Bulk selection (bulk-edit D3): on hover, on the cursor row, and always while
+        // anything is ticked or touch Select mode is on; 44 px on touch.
+        <label className={`touch-target mt-0.5 inline-flex shrink-0 cursor-pointer items-center justify-center self-start pointer-coarse:-my-2.5 ${showCheckbox || ticked || selected ? '' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 pointer-coarse:hidden'}`}>
+          <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={`Select ${task.title || 'Untitled'}`} data-tick
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
+        </label>
+      )}
       <button
         type="button"
         aria-label={done ? 'Reopen task' : 'Complete task'}
@@ -127,7 +143,12 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           {done && <Icon name="check" size="xs" />}
         </span>
       </button>
-      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
+      <button type="button" className="min-w-0 flex-1 text-left"
+        onClick={(e) => {
+          // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).
+          if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
+          onOpen(e)
+        }}>
         <div className={`truncate text-sm ${done ? 'text-faint line-through' : ''}`}>
           {undecryptable ? <span className="italic text-faint" title="This title could not be decrypted with this device's key">{task.title}</span>
             : task.title || <span className="italic text-faint">Untitled</span>}

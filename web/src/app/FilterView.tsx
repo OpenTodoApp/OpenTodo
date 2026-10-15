@@ -18,6 +18,7 @@ import { LabelPicker } from './LabelPicker'
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
 import { setCurrentFilter } from './listActions'
+import { useBulkList } from './bulk/useBulkList'
 import { useListKeys } from './useListKeys'
 import { useToday, useViewerZone } from './useViews'
 import { TaskDetail } from './TaskDetail'
@@ -164,8 +165,9 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
 
   // ---- list keyboard navigation (only while focus is outside text fields) ----
   const keyRows = useMemo(() => rows.map((t) => ({ key: t.id, task: t })), [rows])
+  const bulk = useBulkList(rows)
   useListKeys({
-    rows: keyRows, selected: selectedId, setSelected: setSelectedId, openId, setOpenId, pickerFor, setPickerFor,
+    rows: keyRows, selected: selectedId, setSelected: setSelectedId, openId, setOpenId, pickerFor, setPickerFor, bulk,
     paused: saving,
     onIdleEscape: () => {
       setSelectedId(null)
@@ -231,6 +233,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
           {!good.ast && <UsageHint />}
           {result && rows.length === 0 && <p className="px-2 py-8 text-center text-sm text-faint">No task matches this filter.</p>}
 
+          {bulk.render(selectedId)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label="Filter results">
             {groups.map((g) => (
               <section key={g.key} className="mb-4">
@@ -251,6 +254,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
                         setSelectedId(t.id)
                         setOpenId(t.id)
                       }}
+                      {...bulk.rowProps(t.id)}
                     />
                   ))}
                 </ul>

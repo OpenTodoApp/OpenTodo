@@ -66,6 +66,7 @@ You don't have to open a task to change it. Select it and press:
 | <kbd>n</kbd> | Park in Someday, or bring back |
 | <kbd>Shift</kbd>+<kbd>N</kbd> | Defer: type the start date |
 | <kbd>Shift</kbd>+<kbd>E</kbd> | Toggle This Evening |
+| <kbd>x</kbd> | Tick for a bulk action (see [Change several tasks at once](#change-several-tasks-at-once)) |
 | <kbd>s</kbd> | Schedule it on the Day calendar |
 | <kbd>Delete</kbd> | Move it to the Trash |
 
@@ -116,6 +117,18 @@ A due date or a deadline that has come always shows the task in Today, even if i
 **This Evening** (the **Evening** switch next to it) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. It says nothing about the time of day.
 
 From the list: <kbd>n</kbd> parks a task or brings it back, <kbd>Shift</kbd>+<kbd>N</kbd> asks for its start date, and <kbd>Shift</kbd>+<kbd>E</kbd> toggles This Evening.
+
+## Change several tasks at once
+
+Tick tasks, then act on all of them in one go.
+
+- **Keyboard:** press <kbd>x</kbd> (or <kbd>Space</kbd>) to tick the selected task, <kbd>Shift</kbd>+<kbd>↓</kbd> or <kbd>Shift</kbd>+<kbd>↑</kbd> to extend the range, and <kbd>Ctrl</kbd>+<kbd>A</kbd> (<kbd>⌘</kbd>+<kbd>A</kbd>) to tick the whole list once something is ticked. <kbd>Esc</kbd> clears the ticks (after closing the panel).
+- **Mouse:** a checkbox appears on each row when you point at it; Shift+click ticks a range, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+click ticks one task without opening it.
+- **Touch:** tap **Select** above the list to show every checkbox, and **Done** when you are finished.
+
+While tasks are ticked, a bar above the list says how many and offers **Actions** (or press <kbd>.</kbd>): complete or reopen, priority, labels (added to all, or removed from all), a date (today, tomorrow, next week, none, or one you pick), move to a project or section, assign, and move to the Trash. The usual keys work on the whole selection too: <kbd>c</kbd>, <kbd>1</kbd> to <kbd>4</kbd>, <kbd>L</kbd>, <kbd>Shift</kbd>+<kbd>A</kbd> and <kbd>Delete</kbd>. With nothing ticked, <kbd>.</kbd> opens the same menu for the selected task. It works in projects, the Inbox, Today, Upcoming, the Filter view and saved views, also offline.
+
+Moving and assigning show the changes first, task by task, because they can change who sees a task or notify someone: <kbd>Enter</kbd> applies the checked ones, <kbd>Esc</kbd> changes nothing. Everything else applies at once, and a notice with **Undo** stays for ten seconds (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> works too). Undo puts every task back in one step, except a task someone changed again since, which keeps the newer value and is named.
 
 ## Complete, reopen and delete
 

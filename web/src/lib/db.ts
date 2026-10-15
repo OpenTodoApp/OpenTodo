@@ -50,6 +50,10 @@ export interface AssistantUndo {
   /** The clock each applied field got, to skip fields changed again since. */
   clocks: { entity: string; entityId: string; field: string; ts: number; device: string }[]
   undone_at?: number
+  /** Who applied it (bulk-edit D5); rows without it come from the assistant. */
+  source?: 'assistant' | 'bulk'
+  /** What the toast says ("3 tasks completed"). */
+  label?: string
 }
 
 interface Meta {

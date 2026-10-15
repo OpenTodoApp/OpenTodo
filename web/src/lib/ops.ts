@@ -634,15 +634,44 @@ function copyTasks(
 export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<string> {
   const task = await db.tasks.get(id)
   if (!task || task.deleted_at) throw new Error('task not found')
-  const all = await liveTasks()
-  const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((t) => t.id === d)).filter((t): t is Task => !!t)]
-  const { project_id: projectId = null, parent_id: _parent, ...rest } = patch
-  const assignable = assignableIn(projectId, await membershipMap(), await currentUserId())
-  const { changes, ids } = copyTasks(subtree, projectId, assignable, { [id]: { ...rest, position: Date.now() } })
-  const now = Date.now()
-  for (const t of subtree) changes.push({ entity: 'task', entityId: t.id, patch: { deleted_at: now } })
-  await mutateMany(changes)
-  return ids.get(id) as string
+  const assignable = assignableIn(patch.project_id ?? null, await membershipMap(), await currentUserId())
+  const plan = planProjectChange(task, await liveTasks(), patch, { assignable })
+  await mutateMany(plan.changes)
+  return plan.id
+}
+
+/**
+ * The changes of a project change (bulk-edit D4, shared by updateTask and bulk
+ * moves). Same scope: the subtree follows, the task leaves a parent that stays
+ * behind, and sections are cleared unless the patch picked one. Another scope
+ * (`cross` set): copies in the destination plus tombstones on the originals.
+ * Returns the task's id afterwards (the copy's id across scopes).
+ */
+export function planProjectChange(task: Task, all: Task[], patch: Partial<Omit<Task, 'id' | '_clock'>>, cross?: { assignable: Set<string> }, now = Date.now()): { changes: Change[]; id: string } {
+  const id = task.id
+  if (cross) {
+    const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((t) => t.id === d)).filter((t): t is Task => !!t)]
+    const { project_id: projectId = null, parent_id: _parent, ...rest } = patch
+    const { changes, ids } = copyTasks(subtree, projectId, cross.assignable, { [id]: { ...rest, position: now } })
+    for (const t of subtree) changes.push({ entity: 'task', entityId: t.id, patch: { deleted_at: now } })
+    return { changes, id: ids.get(id) as string }
+  }
+  const next = { ...patch }
+  if (task.parent_id) {
+    const parent = all.find((t) => t.id === task.parent_id)
+    if (!parent || parent.project_id !== patch.project_id) next.parent_id = null
+  }
+  // A section belongs to one project: a project change clears it in the same
+  // batch (board-view), unless the caller picked a section of the new project.
+  if (!('section_id' in patch) && task.section_id) next.section_id = null
+  const changes: Change[] = [{ entity: 'task', entityId: id, patch: next }]
+  for (const d of descendants(id, all)) {
+    const t = all.find((x) => x.id === d)
+    if (t && t.project_id !== patch.project_id) {
+      changes.push({ entity: 'task', entityId: d, patch: t.section_id ? { project_id: patch.project_id, section_id: null } : { project_id: patch.project_id } })
+    }
+  }
+  return { changes, id }
 }
 
 /**
@@ -669,23 +698,7 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
       if (scopeOf(task.project_id, memberships) !== scopeOf(patch.project_id, memberships)) {
         return moveTaskAcrossScopes(id, patch)
       }
-      const all = await liveTasks()
-      const next = { ...patch }
-      if (task.parent_id) {
-        const parent = all.find((t) => t.id === task.parent_id)
-        if (!parent || parent.project_id !== patch.project_id) next.parent_id = null
-      }
-      // A section belongs to one project: a project change clears it in the same
-      // batch (board-view), unless the caller picked a section of the new project.
-      if (!('section_id' in patch) && task.section_id) next.section_id = null
-      const changes: Change[] = [{ entity: 'task', entityId: id, patch: next }]
-      for (const d of descendants(id, all)) {
-        const t = all.find((x) => x.id === d)
-        if (t && t.project_id !== patch.project_id) {
-          changes.push({ entity: 'task', entityId: d, patch: t.section_id ? { project_id: patch.project_id, section_id: null } : { project_id: patch.project_id } })
-        }
-      }
-      await mutateMany(changes)
+      await mutateMany(planProjectChange(task, await liveTasks(), patch).changes)
       return id
     }
   }
@@ -725,13 +738,17 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
 }
 
 async function completePlain(id: string, now: number): Promise<void> {
-  const all = await liveTasks()
+  await mutateMany(planCompletePlain(id, await liveTasks(), now))
+}
+
+/** Completing a plain task completes its open descendants too (bulk-edit D4 shares it). */
+export function planCompletePlain(id: string, all: Task[], now: number): Change[] {
   const changes: Change[] = [{ entity: 'task', entityId: id, patch: { completed_at: now } }]
   for (const d of descendants(id, all)) {
     const t = all.find((x) => x.id === d)
     if (t && !t.completed_at) changes.push({ entity: 'task', entityId: d, patch: { completed_at: now } })
   }
-  await mutateMany(changes)
+  return changes
 }
 
 /**

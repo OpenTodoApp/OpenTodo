@@ -120,7 +120,8 @@ function PickerStep({ picker, onBack, onDone, onConfirm }: { picker: PickerSpec<
       <ComboboxPanel {...cfg} label={title} placeholder={placeholder} emptyText={emptyText} renderLeading={renderLeading}
         onPick={async (item) => {
           const next = await onPick(item)
-          onDone()
+          // A multiple picker (bulk labels) stays open for more picks.
+          if (!cfg.multiple || next) onDone()
           if (next) onConfirm(next)
         }} />
     </div>

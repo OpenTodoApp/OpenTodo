@@ -4,6 +4,7 @@ import { deleteTask, updateTask } from '../../lib/ops'
 import { moveTaskBy } from '../../lib/move'
 import type { Task } from '../../lib/types'
 import { listState, type ListActions, type ListState } from '../listActions'
+import { runBulk } from '../bulk/BulkActions'
 
 export function makeListActions(s: ListState): ListActions {
   const selectedRow = () => {
@@ -43,10 +44,15 @@ export function makeListActions(s: ListState): ListActions {
       return id
     },
     async toggleCompleteSelected() {
+      // With tasks ticked, `x` acts on the whole selection (bulk-edit D2).
+      const ticked = s.ticked?.() ?? []
+      if (ticked.length) { await runBulk(ticked, { kind: 'complete' }); return }
       const { task } = selectedRow()
       if (writable(task)) await s.toggleComplete(task.id, !task.completed_at)
     },
     async deleteSelected() {
+      const ticked = s.ticked?.() ?? []
+      if (ticked.length) { await runBulk(ticked, { kind: 'trash' }); return }
       const { rows, idx, task } = selectedRow()
       if (!writable(task)) return
       // Same as Delete: the selection moves to the next row (or the previous one).

@@ -151,7 +151,7 @@ function screens(ids) {
     // Project invite link (project-invite-links): a visitor's choice, and the creator, who is a member already.
     { name: 'project-invite', path: `/invite/p/${ids.projectInvite}`, anon: true, ready: (p) => p.getByRole('button', { name: /sign in to join/ }).waitFor() },
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
-    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'command-palette', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'reminder-toast', 'assistant', 'assistant-review'] },
+    { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'command-palette', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
     { name: 'upcoming', path: '/upcoming', ready: heading('Upcoming') },
     { name: 'assigned', path: '/assigned', ready: row('Pick paint colours') },
@@ -197,6 +197,14 @@ async function openSidebar(p) {
 // Serialises assistant turns across parallel viewports (see 'assistant-review').
 let assistantTurnLock = Promise.resolve()
 
+async function tickTwo(p) {
+  await p.locator('main').click({ position: { x: 5, y: 5 } }).catch(() => {})
+  await p.keyboard.press('j')
+  await p.keyboard.press('x')
+  await p.keyboard.press('Shift+ArrowDown')
+  await p.locator('[data-selection-bar]').waitFor()
+}
+
 const OVERLAYS = {
   async notifications(p) {
     const trigger = p.locator('[data-notifications]')
@@ -237,6 +245,30 @@ const OVERLAYS = {
     await p.keyboard.press('Escape')
     await p.keyboard.press('L')
     return { overlay: p.getByRole('dialog', { name: 'Labels for task' }), kind: 'dialog' }
+  },
+  // Bulk actions (bulk-edit 6.2): two rows ticked from the keyboard.
+  async 'bulk-actions-menu'(p) {
+    await tickTwo(p)
+    const trigger = p.getByRole('button', { name: /^Actions for 2 tasks/ })
+    await trigger.click()
+    return { overlay: overlayLoc(p), trigger, kind: 'popover' }
+  },
+  async 'bulk-review'(p) {
+    await tickTwo(p)
+    await p.getByRole('button', { name: /^Actions for 2 tasks/ }).click()
+    await p.getByRole('menuitem', { name: 'Move to project' }).click()
+    await p.locator('[data-picker-step] [role="option"]').filter({ hasNotText: 'Inbox' }).first().click()
+    const overlay = p.getByRole('dialog', { name: /^Move 2 tasks to/ })
+    await overlay.locator('[data-assistant-apply]').waitFor()
+    return { overlay, kind: 'dialog' }
+  },
+  async 'bulk-toast'(p) {
+    await tickTwo(p)
+    // Priority 4 is the seeded default: the toast shows without changing the data.
+    await p.keyboard.press('4')
+    const overlay = p.locator('[data-bulk-toast]')
+    await overlay.waitFor()
+    return { overlay, kind: 'toast' }
   },
   async 'reminder-toast'(p) {
     const toast = p.getByRole('alertdialog', { name: /Reminder/ }).first()

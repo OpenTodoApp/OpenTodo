@@ -23,6 +23,7 @@ import { deadlineFocus, deferFocus, estimateFocus, placeInDay } from '../signals
 import { setVimEnabled } from '../vim/prefs'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
+import { runBulk } from '../bulk/BulkActions'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -94,7 +95,27 @@ function fromMenu(prefix: string, groups: ActionGroup[], idPrefix: string): Comm
 /** Every command available in this context, in registry order. */
 export function commands(ctx: PaletteContext): Command[] {
   const out: Command[] = []
-  const t = ctx.task
+  // With tasks ticked, the task commands act on the selection (bulk-edit 6.3).
+  const ticked = ctx.list?.ticked?.() ?? []
+  if (ticked.length > 0 && ctx.list) {
+    const list = ctx.list
+    const n = `${ticked.length} ${ticked.length === 1 ? 'task' : 'tasks'}`
+    out.push(
+      { id: 'sel:complete', label: `Complete ${n}`, icon: 'check', shortcut: 'c', run: () => runBulk(ticked, { kind: 'complete' }) },
+      ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `sel:p${p}`, label: `Set priority ${p} on ${n}`, icon: 'flag', shortcut: String(p), run: () => runBulk(ticked, { kind: 'priority', priority: p }) })),
+      { id: 'sel:today', label: `Reschedule ${n} to today`, icon: 'calendar-check', run: () => runBulk(ticked, { kind: 'due', pick: 'today' }) },
+      { id: 'sel:tomorrow', label: `Reschedule ${n} to tomorrow`, icon: 'calendar-days', run: () => runBulk(ticked, { kind: 'due', pick: 'tomorrow' }) },
+      { id: 'sel:next-week', label: `Reschedule ${n} to next week`, icon: 'calendar-range', run: () => runBulk(ticked, { kind: 'due', pick: 'next-week' }) },
+      { id: 'sel:no-date', label: `Remove the date from ${n}`, icon: 'x', run: () => runBulk(ticked, { kind: 'due', pick: null }) },
+      ...(list.openActions ? [
+        { id: 'sel:labels', label: `Labels for ${n}`, icon: 'tag' as const, shortcut: 'L', run: () => list.openActions!('labels') },
+        { id: 'sel:move', label: `Move ${n} to a project`, icon: 'folder-input' as const, run: () => list.openActions!('move') },
+        { id: 'sel:assign', label: `Assign ${n}`, icon: 'user-check' as const, shortcut: 'Shift+A', run: () => list.openActions!('assign') },
+      ] : []),
+      { id: 'sel:trash', label: `Move ${n} to the Trash`, icon: 'trash-2', shortcut: 'Delete', run: () => runBulk(ticked, { kind: 'trash' }) },
+    )
+  }
+  const t = ticked.length > 0 ? undefined : ctx.task
   const writable = !!t && !!ctx.list && !ctx.list.readOnly(t)
   if (t && ctx.list) {
     const title = `“${t.title || 'Untitled'}”`
@@ -204,6 +225,6 @@ export function trailingEntries(ctx: PaletteContext): Entry[] {
 
 /** Commands that act on the screen (selected task, current project, view, label or filter): listed first in an empty box. */
 export function contextEntries(ctx: PaletteContext): Entry[] {
-  return commandEntries(ctx).filter((e) => /^cmd:(task|project|view|label|section|filter):/.test(e.key))
+  return commandEntries(ctx).filter((e) => /^cmd:(sel|task|project|view|label|section|filter):/.test(e.key))
 }
 

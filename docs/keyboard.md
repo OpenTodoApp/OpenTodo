@@ -90,6 +90,11 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>e</kbd> | Edit the estimate of the selected task (type 20, 45m, 1h30; Enter) |
 | <kbd>d</kbd> | Set the deadline of the selected task (type fri, 2026-11-06; Enter) |
 | <kbd>n</kbd> | Park the selected task in Someday, or bring it back |
+| <kbd>x</kbd> / <kbd>Space</kbd> | Tick the selected task for a bulk action (Space with Vim keybindings on) |
+| <kbd>Shift+↓</kbd> / <kbd>Shift+↑</kbd> | Extend the ticked range down / up (also Shift+J / Shift+K without Vim keybindings) |
+| <kbd>Ctrl+A</kbd> / <kbd>⌘+A</kbd> | Tick every task in the list, once something is ticked |
+| <kbd>.</kbd> | Actions for the ticked tasks (or the selected one): complete, priority, labels, date, move, assign, Trash |
+| <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | Undo the last bulk action while its notice is shown |
 | <kbd>Shift+N</kbd> | Defer the selected task: type its start date, Enter |
 | <kbd>Shift+E</kbd> | Toggle This Evening on the selected task |
 | <kbd>s</kbd> | Schedule the selected task: Day view in placement mode |

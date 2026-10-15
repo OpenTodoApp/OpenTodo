@@ -6,10 +6,11 @@
 // The server never applies a proposal; this module does, after review.
 import { ApiError } from './api'
 import { db, getMeta, setMeta, type AssistantMessage, type AssistantThread, type AssistantUndo } from './db'
-import { mutateMany, type Change } from './ops'
 import { syncNow } from './sync'
-import type { Entity, Label, Project, Section, Task } from './types'
+import type { Label, Project, Section, Task } from './types'
 import type { ProposedChange, TurnEvent } from './assistantTypes'
+import { applyBatch, tableOf, undoBatch, type UndoResult } from './undo'
+export { UNDO_KEEP } from './undo'
 
 // ------------------------------------------------------------------ stream
 
@@ -137,20 +138,6 @@ export interface Review {
   items: ReviewItem[]
   /** Items dropped because the entity is gone on this device. */
   dropped: string[]
-}
-
-function tableOf(entity: Entity) {
-  switch (entity) {
-    case 'project': return db.projects
-    case 'label': return db.labels
-    case 'section': return db.sections
-    case 'comment': return db.comments
-    case 'reminder': return db.reminders
-    case 'view': return db.views
-    case 'project_prefs': return db.prefs
-    case 'user_prefs': return db.userPrefs
-    default: return db.tasks
-  }
 }
 
 const norm = (v: unknown) => (v === undefined ? null : v)
@@ -311,86 +298,17 @@ export async function refreshReview(r: Review): Promise<Review> {
 
 // ------------------------------------------------------------------ apply and undo
 
-export const UNDO_KEEP = 20
 
-/**
- * Applies the given changes as ONE mutateMany batch with device
- * assistant:<device-id>: locally first, queued for sync, offline-capable. The
- * inverse (previous values; Trash for created entities) is stored first so the
- * batch can be undone in one step.
- */
+/** Applies a proposal as one batch with device assistant:<device-id>, undoable in one step (lib/undo.ts). */
 export async function applyChanges(changes: ProposedChange[]): Promise<AssistantUndo | null> {
-  if (changes.length === 0) return null
-  const inverse: AssistantUndo['inverse'] = []
-  for (const c of changes) {
-    if (c.create) {
-      if (!c.patch.deleted_at) inverse.push({ entity: c.entity, entityId: c.entityId, patch: { deleted_at: Date.now() }, created: true })
-      continue
-    }
-    const local = (await tableOf(c.entity).get(c.entityId)) as Record<string, unknown> | undefined
-    const patch: Record<string, unknown> = {}
-    for (const f of Object.keys(c.patch)) patch[f] = norm(local?.[f] ?? c.base?.[f])
-    inverse.push({ entity: c.entity, entityId: c.entityId, patch })
-  }
-  const batch: Change[] = changes.map((c) => ({ entity: c.entity, entityId: c.entityId, patch: { ...c.patch } }))
-  await mutateMany(batch, { origin: 'assistant' })
-  const clocks: AssistantUndo['clocks'] = []
-  for (const c of changes) {
-    const row = (await tableOf(c.entity).get(c.entityId)) as { _clock?: Record<string, { ts: number; device: string }> } | undefined
-    if (c.create) continue
-    const fields = Object.keys(c.patch)
-    for (const f of fields) {
-      const ck = row?._clock?.[f]
-      if (ck) clocks.push({ entity: c.entity, entityId: c.entityId, field: f, ts: ck.ts, device: ck.device })
-    }
-  }
-  const entry: AssistantUndo = { id: crypto.randomUUID(), created_at: Date.now(), count: changes.length, inverse, clocks }
-  await db.assistantUndo.put(entry)
-  const all = await db.assistantUndo.orderBy('created_at').reverse().primaryKeys()
-  if (all.length > UNDO_KEEP) await db.assistantUndo.bulkDelete(all.slice(UNDO_KEEP))
-  return entry
+  return applyBatch(changes, { source: 'assistant', origin: 'assistant' })
 }
 
-export interface UndoResult {
-  restored: number
-  /** Titles of items whose field was changed again after the assistant's change. */
-  skipped: string[]
-}
+export type { UndoResult }
 
-/**
- * Undoes one applied change set as one new batch: previous values come back,
- * created entities go to the Trash. A field changed again since (its clock is
- * no longer the assistant's) keeps the newer value and is named as skipped.
- */
+/** Undoes one applied change set (lib/undo.ts). */
 export async function undoChanges(id: string): Promise<UndoResult> {
-  const entry = await db.assistantUndo.get(id)
-  if (!entry || entry.undone_at) return { restored: 0, skipped: [] }
-  const batch: Change[] = []
-  const skipped: string[] = []
-  for (const inv of entry.inverse) {
-    const row = (await tableOf(inv.entity as Entity).get(inv.entityId)) as (Record<string, unknown> & { _clock?: Record<string, { ts: number; device: string }> }) | undefined
-    const patch: Record<string, unknown> = {}
-    let skippedHere = false
-    if (inv.created) {
-      // Created by the proposal: undo moves it to the Trash (restorable).
-      if (row && !row.deleted_at) patch.deleted_at = Date.now()
-    } else {
-      for (const [f, v] of Object.entries(inv.patch)) {
-        const applied = entry.clocks.find((c) => c.entityId === inv.entityId && c.entity === inv.entity && c.field === f)
-        const now = row?._clock?.[f]
-        if (!row || !applied || !now || now.ts !== applied.ts || now.device !== applied.device) {
-          skippedHere = true
-          continue
-        }
-        patch[f] = v
-      }
-    }
-    if (skippedHere) skipped.push(String(row?.title ?? row?.name ?? `a ${inv.entity}`))
-    if (Object.keys(patch).length) batch.push({ entity: inv.entity as Entity, entityId: inv.entityId, patch })
-  }
-  if (batch.length) await mutateMany(batch, { origin: 'assistant' })
-  await db.assistantUndo.update(id, { undone_at: Date.now() })
-  return { restored: batch.length, skipped }
+  return undoBatch(id)
 }
 
 // ------------------------------------------------------------------ auto-apply

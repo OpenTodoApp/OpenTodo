@@ -33,6 +33,9 @@ import { deadlineFocus, deferFocus, estimateFocus, isGPending, openTask, placeIn
 import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
+import { useSelection } from './selection'
+import { useVimEnabled } from './vim/prefs'
+import { BulkActionsMenu, runBulk, SelectionBar } from './bulk/BulkActions'
 import { Dialog } from './overlay'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
@@ -273,6 +276,16 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const vimEnabled = useVimEnabled()
+  // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
+  const tickRows = useMemo(() => rows.map((r) => r.task.id), [rows])
+  const readOnlyId = useCallback((id: string) => isReadOnly(taskMap.get(id)), [isReadOnly, taskMap])
+  const selection = useSelection(tickRows, readOnlyId)
+  const ticked = useMemo(() => tickRows.filter((id) => selection.ticked.has(id)), [tickRows, selection.ticked])
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const [actionsPicker, setActionsPicker] = useState<string | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const openActions = useCallback((picker: string | null = null) => { setActionsPicker(picker); setActionsOpen(true) }, [])
   const [openId, setOpenId] = useState<string | null>(null)
   const [addingUnder, setAddingUnder] = useState<string | null>(null)
   /** Parent whose last open subtask was just completed; Enter completes it too. */
@@ -366,6 +379,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     setPickerFor(null)
     setAssignFor(null)
     setAddingTo(null)
+    selection.clear()
+    setSelectMode(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route])
   useEffect(() => openTask.subscribe((id) => {
     openTask.take(id)
@@ -473,6 +489,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         void moveTaskBy(selectedId, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1)
         return
       }
+      // Ctrl/⌘+A selects every row once something is ticked (bulk-edit D2); before
+      // that it keeps selecting the page's text.
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'a' && !typing && selection.ticked.size > 0 && !document.querySelector('[role="dialog"]')) {
+        e.preventDefault()
+        selection.selectAll()
+        return
+      }
       if (e.metaKey || e.ctrlKey || e.altKey) return
       if (e.key === 'Escape') {
         if (typing) (target as HTMLElement).blur()
@@ -481,6 +504,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         else if (prompt) setPrompt(null)
         else if (addingUnder) setAddingUnder(null)
         else if (openId) setOpenId(null)
+        else if (selection.ticked.size) selection.clear()
         else setSelectedId(null)
         return
       }
@@ -495,6 +519,37 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       // A viewer may navigate and open tasks of a shared project, never change them.
       if (row && isReadOnly(row.task) && ['a', 'A', 'Tab', 'c', 'L', '1', '2', '3', '4', 'Delete', 'Backspace', 'n', 'N', 'E', 'd'].includes(e.key)) return
       if (e.key === 'q' && projectReadOnly) return
+      // Bulk selection and actions (bulk-edit D2, D3).
+      if ((e.key === 'x' || e.key === ' ') && row) {
+        e.preventDefault()
+        selection.toggle(row.task.id)
+        return
+      }
+      const extend = e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || (!vimEnabled && (e.key === 'J' || e.key === 'K')))
+      if (extend) {
+        e.preventDefault()
+        const order = board ? (columns.find((c) => c.cards.some((t) => t.id === selectedId))?.cards.map((t) => t.id) ?? tickRows) : tickRows
+        const at = selectedId ? order.indexOf(selectedId) : -1
+        const next = order[Math.max(0, Math.min(order.length - 1, at + (e.key === 'ArrowDown' || e.key === 'J' ? 1 : -1)))]
+        if (!next) return
+        if (selection.ticked.size === 0 && selectedId) selection.toggle(selectedId)
+        selection.extendTo(next, order)
+        setSelectedId(next)
+        return
+      }
+      if (e.key === '.') {
+        if (ticked.length || selectedId) { e.preventDefault(); openActions() }
+        return
+      }
+      if (ticked.length) {
+        switch (e.key) {
+          case 'c': e.preventDefault(); void runBulk(ticked, { kind: 'complete' }); return
+          case '1': case '2': case '3': case '4': e.preventDefault(); void runBulk(ticked, { kind: 'priority', priority: Number(e.key) as Priority }); return
+          case 'L': e.preventDefault(); openActions('labels'); return
+          case 'A': e.preventDefault(); openActions('assign'); return
+          case 'Delete': case 'Backspace': e.preventDefault(); void runBulk(ticked, { kind: 'trash' }); return
+        }
+      }
       if (e.key === 'v' && projectId) {
         // List / board toggle, remembered per project on this device (board-view).
         e.preventDefault()
@@ -690,12 +745,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, assignFor, userId, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent, isReadOnly, projectReadOnly,
-    projectId, board, columns, projectEditable, toggleViewMode, moveToSection, manual])
+    projectId, board, columns, projectEditable, toggleViewMode, moveToSection, manual, selection, ticked, tickRows, vimEnabled, openActions])
 
   // List actions for the optional Vim layer (vim-keybindings, design D3); getters
   // read the latest render through a ref so the registration happens once.
-  const live = useRef({ rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete })
-  live.current = { rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete }
+  const live = useRef({ rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete, ticked, selection, openActions })
+  live.current = { rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete, ticked, selection, openActions }
   useEffect(() => registerListState({
     rows: () => live.current.rows.map((r) => r.task),
     columns: () => (live.current.board ? live.current.columns.map((c) => c.cards) : null),
@@ -715,6 +770,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     toggleComplete: (id, completed) => live.current.toggleComplete(id, completed),
     openLabels: (id) => setPickerFor(id),
     openAssignee: (id) => setAssignFor(id),
+    ticked: () => live.current.ticked,
+    tick: (ids) => live.current.selection.set(ids),
+    openActions: (picker) => live.current.openActions(picker ?? null),
   }), [])
   useEffect(() => {
     // Leaving the quick-add line ends an `o` insertion; `q` and clicks add at the end as before.
@@ -759,6 +817,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           setSelectedId(r.task.id)
           setOpenId(r.task.id)
         }}
+        ticked={selection.ticked.has(r.task.id)}
+        showCheckbox={selectMode || selection.ticked.size > 0}
+        onTick={(range) => { if (range) selection.extendTo(r.task.id); else selection.toggle(r.task.id); setSelectedId(r.task.id) }}
       />
       {addingUnder === r.task.id && !board && (
         <li>
@@ -834,6 +895,21 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
 
           {filterKey && <DurationChips active={duration} onChange={chooseDuration} />}
+          {/* Touch screens have no hover: a Select button shows every checkbox (bulk-edit D3). */}
+          {route.view !== 'completed' && rows.length > 0 && (
+            <div className="mb-2 hidden justify-end pointer-coarse:flex">
+              <button type="button" className="btn-ghost px-2 py-1 text-sm" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
+                {selectMode ? 'Done' : 'Select'}
+              </button>
+            </div>
+          )}
+          <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actionsOpen && ticked.length > 0}
+            onMenuOpenChange={(v) => { setActionsOpen(v); if (!v) setActionsPicker(null) }} startPicker={actionsPicker} />
+          {actionsOpen && ticked.length === 0 && selectedId && (
+            // `.` with nothing ticked: the same menu for the cursor task.
+            <BulkActionsMenu ids={[selectedId]} open onOpenChange={(v) => { setActionsOpen(v); if (!v) setActionsPicker(null) }} startPicker={actionsPicker}
+              trigger={<span className="sr-only">Actions</span>} triggerClassName="sr-only" />
+          )}
 
           {rows.length === 0 && !(board || liveSections.length > 0) && (duration ? (
             <p className="px-2 py-8 text-center text-sm text-faint">
