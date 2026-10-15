@@ -3,7 +3,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Encrypted and plaintext fields
-For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies) before it leaves the device. Scheduling, ordering and structure fields SHALL remain plaintext, and shared project scopes SHALL NOT be encrypted. The split SHALL be documented to users as the boundary of what is hidden.
+For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; view names and queries; comment bodies; attachment names, types and links) and its attachment files before they leave the device. Scheduling, ordering and structure fields SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
 
 #### Scenario: Plaintext fields
 - **WHEN** an encrypted account changes `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, a task's `labels` id list, or a project's `color` or `archived`
@@ -24,3 +24,15 @@ For an encrypted account the device SHALL encrypt the user-written text of its p
 #### Scenario: Project note is ciphertext
 - **WHEN** an encrypted account writes a note on one of its own projects
 - **THEN** the `description` and `notes_doc` operations carry ciphertext strings, the `notes_doc` ciphertext fits the document size limit, and the project's `position` stays plaintext
+
+#### Scenario: Attachment in the personal scope
+- **WHEN** an encrypted account attaches `receipt.pdf` to a task in its Inbox
+- **THEN** the `name`, `mime` and `url` operations carry ciphertext, `size`, `sha256` and `encrypted: true` are plaintext, the uploaded bytes are a chunked authenticated ciphertext bound to the attachment id, and the server serves them as opaque bytes
+
+#### Scenario: Attachment in a shared project
+- **WHEN** an encrypted account attaches a file to a task of a project another account shares with it
+- **THEN** the metadata and the bytes are plaintext, readable by every member
+
+#### Scenario: Attachment opened on another device
+- **WHEN** an unlocked device of the account downloads the encrypted attachment
+- **THEN** it decrypts chunk by chunk with the account key, verifies every chunk, and shows the file; a chunk that fails authentication makes the whole file "undecryptable" and nothing partial is shown

@@ -3,7 +3,7 @@ title: Attachments
 summary: Add files and links to tasks and comments, offline included; limits, who can see and remove them, encryption and where the files live.
 audience: user
 section: Guides
-specs: []
+specs: [attachments]
 screens: []
 order: 35
 ---
