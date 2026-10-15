@@ -41,8 +41,8 @@
 
 ## 7. Recurrence (design D8)
 
-- [ ] 7.1 Extend `moveDates` in `web/src/lib/recurring.ts` and the REST completion path in `internal/httpapi/recurring.go` to shift a date `start`; add a shared vector. Verify with tests for "Weekly task hidden until its day" and "Evening routine" on both sides (`npm test`, `go test ./internal/httpapi/...`) and the existing convergence test with a start date.
-- [ ] 7.2 Update `docs/recurrence.md`. Verify with `npm run docs:check`.
+- [x] 7.1 Extend `moveDates` in `web/src/lib/recurring.ts` and the REST completion path in `internal/httpapi/recurring.go` to shift a date `start`; add a shared vector. Verify with tests for "Weekly task hidden until its day" and "Evening routine" on both sides (`npm test`, `go test ./internal/httpapi/...`) and the existing convergence test with a start date.
+- [x] 7.2 Update `docs/recurrence.md`. Verify with `npm run docs:check`.
 
 ## 8. Import (design D9)
 

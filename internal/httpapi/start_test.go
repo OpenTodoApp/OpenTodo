@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/pixari/opentodo/internal/recurrence"
 )
 
 // TestTaskStartEveningREST covers the REST side of someday-and-evening (task
@@ -68,5 +70,29 @@ func TestCaldavStartEvening(t *testing.T) {
 	c.must("PUT", c.cal("inbox")+id+".ics", vtodoBody(id, "SUMMARY:Learn Italian well"), 204)
 	if got := e.task(id); got["start"] != "someday" || got["title"] != "Learn Italian well" {
 		t.Fatalf("after client without X- properties: %v", got)
+	}
+}
+
+// TestRestRecurringCompletionShiftsStart (someday-and-evening D8).
+func TestRestRecurringCompletionShiftsStart(t *testing.T) {
+	e := newEnv(t, false)
+	resp, out := e.do("POST", "/api/v1/auth/register", map[string]string{"email": "o@example.com", "password": "correct horse battery"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Stretch", "due": map[string]any{"date": "2026-10-19"}, "start": "2026-10-17", "evening": true, "recurrence": "every monday"})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"completed_at": 1_800_000_000_000})
+	e.mustStatus(resp, 200, out)
+	due := out["due"].(map[string]any)["date"].(string)
+	if want := recurrence.ShiftDate("2026-10-17", "2026-10-19", due); out["start"] != want || out["evening"] != true {
+		t.Fatalf("series after completion: %v (want start %s)", out, want)
+	}
+	resp, out = e.do("GET", "/api/v1/export", nil)
+	e.mustStatus(resp, 200, out)
+	for _, x := range out["tasks"].([]any) {
+		r := x.(map[string]any)
+		if r["series_id"] == id && (r["start"] != "2026-10-17" || r["evening"] != true) {
+			t.Fatalf("record = %v", r)
+		}
 	}
 }
