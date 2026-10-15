@@ -33,9 +33,9 @@
 
 ## 6. Unblocked notification (design D9)
 
-- [ ] 6.1 Add `notify.Unblocked`, `UnblockedSink`, the `Multi` fan-out and the in-app storage with kind `unblocked` in `internal/notify`. Verify with a sink test that the row is stored for the assignee (`go test ./internal/notify/...`).
-- [ ] 6.2 Add `emitUnblocked` in `internal/sync` after commit: completed task → dependents in the scope whose remaining blockers are all closed → assignee other than the actor. Verify with sync tests for the three spec scenarios (assignee notified once, one of several blockers, own task) (`go test ./internal/sync/...`).
-- [ ] 6.3 Render the `unblocked` kind in `web/src/app/NotificationBell.tsx` and document it in `docs/notifications.md`. Verify with a component test on a fixture payload (`npm test`) and `npm run docs:check`.
+- [x] 6.1 Add `notify.Unblocked`, `UnblockedSink`, the `Multi` fan-out and the in-app storage with kind `unblocked` in `internal/notify`. Verify with a sink test that the row is stored for the assignee (`go test ./internal/notify/...`).
+- [x] 6.2 Add `emitUnblocked` in `internal/sync` after commit: completed task → dependents in the scope whose remaining blockers are all closed → assignee other than the actor. Verify with sync tests for the three spec scenarios (assignee notified once, one of several blockers, own task) (`go test ./internal/sync/...`).
+- [x] 6.3 Render the `unblocked` kind in `web/src/app/NotificationBell.tsx` and document it in `docs/notifications.md`. Verify with a component test on a fixture payload (`npm test`) and `npm run docs:check`.
 
 ## 7. CalDAV and import (design D10)
 

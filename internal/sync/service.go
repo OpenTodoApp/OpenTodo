@@ -314,6 +314,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	}
 	s.emitAssignments(ctx, userID, nowMs, changes)
 	s.emitMentions(ctx, userID, nowMs, changes)
+	s.emitUnblocked(ctx, userID, nowMs, changes)
 	return res, nil
 }
 

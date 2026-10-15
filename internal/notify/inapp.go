@@ -73,6 +73,18 @@ func (n *InApp) Mentioned(ctx context.Context, e Mentioned) {
 	}
 }
 
+// Unblocked stores an "unblocked" notification for the assignee (task-dependencies).
+func (n *InApp) Unblocked(ctx context.Context, e Unblocked) {
+	payload, err := json.Marshal(e)
+	if err == nil {
+		_, err = n.db.ExecContext(ctx, `INSERT INTO notifications(id,user_id,kind,payload,created_at) VALUES(?,?,?,?,?)`,
+			ids.New(), e.AssigneeID, KindUnblocked, string(payload), n.now().UnixMilli())
+	}
+	if err != nil {
+		n.log.Error("store notification", "kind", KindUnblocked, "err", err)
+	}
+}
+
 // List returns the user's notifications, newest first, and the number unread.
 func (n *InApp) List(ctx context.Context, userID string) ([]Notification, int, error) {
 	rows, err := n.db.QueryContext(ctx, `SELECT id, kind, payload, created_at, read_at FROM notifications

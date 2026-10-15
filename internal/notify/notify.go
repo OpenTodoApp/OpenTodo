@@ -93,3 +93,42 @@ func (m Multi) Mentioned(ctx context.Context, e Mentioned) {
 
 // Mentioned implements MentionSink.
 func (Nop) Mentioned(context.Context, Mentioned) {}
+
+// KindUnblocked: a task assigned to the recipient no longer waits for any open
+// task, because someone else completed its last open blocker (OpenSpec change
+// `task-dependencies`, design D9).
+const KindUnblocked = "unblocked"
+
+// Unblocked is emitted once per task that became ready to start in a committed
+// batch, to its assignee when that is not the account that completed the blocker.
+type Unblocked struct {
+	AssigneeID   string `json:"assigneeId"`
+	ActorID      string `json:"actorId"`
+	ActorName    string `json:"actorName"`
+	TaskID       string `json:"taskId"`
+	TaskTitle    string `json:"taskTitle"`
+	ProjectID    string `json:"projectId,omitempty"`
+	ProjectName  string `json:"projectName,omitempty"`
+	BlockerID    string `json:"blockerId"`
+	BlockerTitle string `json:"blockerTitle"`
+	At           int64  `json:"at"` // Unix ms, server time of the batch
+}
+
+// UnblockedSink is implemented by sinks that also handle unblocked tasks; like
+// MentionSink it is separate from Sink so existing sinks keep compiling.
+type UnblockedSink interface {
+	Unblocked(ctx context.Context, e Unblocked)
+}
+
+// Unblocked fans the event out to every sink that implements UnblockedSink.
+func (m Multi) Unblocked(ctx context.Context, e Unblocked) {
+	for _, s := range m {
+		if us, ok := s.(UnblockedSink); ok {
+			us.Unblocked(ctx, e)
+		}
+	}
+}
+
+// Unblocked implements UnblockedSink.
+func (Nop) Unblocked(context.Context, Unblocked) {}
+

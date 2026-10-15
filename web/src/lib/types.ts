@@ -1079,6 +1079,20 @@ export interface AssignedPayload {
   at: number
 }
 
+/** Payload of an `unblocked` notification (task-dependencies): the assignee's task is ready to start. */
+export interface UnblockedPayload {
+  assigneeId: string
+  actorId: string
+  actorName: string
+  taskId: string
+  taskTitle: string
+  projectId?: string
+  projectName?: string
+  blockerId: string
+  blockerTitle: string
+  at: number
+}
+
 /**
  * An in-app notification (GET /api/v1/notifications), cached in the local
  * `notifications` table so it shows offline. Server-side account data, not an op.
@@ -1087,8 +1101,8 @@ export interface AssignedPayload {
 export interface AppNotification {
   id: string
   kind: string
-  /** AssignedPayload for kind `assigned`, MentionedPayload for kind `mentioned`. */
-  payload: AssignedPayload | MentionedPayload
+  /** AssignedPayload for kind `assigned`, MentionedPayload for `mentioned`, UnblockedPayload for `unblocked`. */
+  payload: AssignedPayload | MentionedPayload | UnblockedPayload
   createdAt: number
   readAt: number | null
   readPending?: boolean
