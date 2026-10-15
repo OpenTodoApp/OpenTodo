@@ -1,4 +1,5 @@
 import { Icon } from '../ui'
+import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { HelpLink } from './help/HelpLink'
@@ -230,7 +231,13 @@ export function ImportView(p: ImportViewProps) {
             Preview · {FORMAT_LABELS[p.preview.format]}{p.preview.version ? ` v${p.preview.version}` : ''}
           </h2>
           <Totals t={p.preview.totals} />
-          {p.preview.notes?.map((n) => <p key={n} className="text-sm text-warning">{n}</p>)}
+          {p.preview.template && (
+            <p className="text-sm text-muted" data-template-hint>
+              This file is a template. Importing it creates it once, with the ids and dates in the file. To start a fresh copy with dates moved to a start day, use{' '}
+              <button type="button" className="text-accent underline" onClick={requestTemplateDialog}>From a template…</button>
+            </p>
+          )}
+          {p.preview.notes?.filter((n) => !(p.preview?.template && n.startsWith('This file is a template'))).map((n) => <p key={n} className="text-sm text-warning">{n}</p>)}
           {p.preview.columns && (
             <p className="text-xs text-muted">
               Columns used: {p.preview.columns.recognised.join(', ') || 'none'}
