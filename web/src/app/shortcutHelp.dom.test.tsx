@@ -12,7 +12,7 @@ const sections = () => [...document.querySelectorAll('[data-help-section]')].map
 describe('context first', () => {
   it('orders a board context as Board, Tasks in a list, Everywhere, Go to, then the rest', () => {
     expect(contextSections({ view: 'project', board: true })).toEqual(['board', 'tasks'])
-    expect(orderedSections({ view: 'project', board: true }).map((s) => s.title).slice(0, 4)).toEqual(['Board', 'Tasks in a list', 'Everywhere', 'Go to a view'])
+    expect(orderedSections({ view: 'project', board: true }).map((s) => s.title).slice(0, 4)).toEqual(['Board and timeline', 'Tasks in a list', 'Everywhere', 'Go to a view'])
     expect(orderedSections({ view: 'day' }).map((s) => s.id).slice(0, 3)).toEqual(['calendar', 'everywhere', 'go'])
     expect(orderedSections(undefined).map((s) => s.id).slice(0, 2)).toEqual(['everywhere', 'go'])
   })
@@ -20,7 +20,7 @@ describe('context first', () => {
   it('renders the context groups first and marks them', async () => {
     const r = await render(<ShortcutHelp onClose={() => {}} context={{ view: 'project', board: true }} />)
     await flush()
-    expect(sections().slice(0, 4)).toEqual(['Board', 'Tasks in a list', 'Everywhere', 'Go to a view'])
+    expect(sections().slice(0, 4)).toEqual(['Board and timeline', 'Tasks in a list', 'Everywhere', 'Go to a view'])
     expect(document.querySelectorAll('[data-context-section]')).toHaveLength(2)
     await r.unmount()
   })

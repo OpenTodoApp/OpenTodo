@@ -24,13 +24,15 @@ They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then
 | **Anytime** | Open tasks with no date and no start: things to do whenever there is time | <kbd>g</kbd> <kbd>n</kbd> |
 | **Someday** | Tasks you parked for later, by project | <kbd>g</kbd> <kbd>o</kbd> |
 | **Assigned to me** | Open tasks assigned to you, across projects | <kbd>g</kbd> <kbd>a</kbd> |
-| **Calendar** | Your timed tasks by Day or Week, as you last left it | <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd> |
+| **Calendar** | Your dated tasks by Day, Week or Month, as you last left it | <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> |
 | **Completed** | What you finished most recently | <kbd>g</kbd> <kbd>c</kbd> |
 | **Filter** | Any search you can describe | <kbd>g</kbd> <kbd>f</kbd> |
 | **Trash** | Deleted tasks and projects | <kbd>g</kbd> <kbd>x</kbd> |
 | **Updates** | What changed in your shared projects | <kbd>g</kbd> <kbd>h</kbd> |
 
 The sidebar keeps Inbox, Today, Upcoming and Calendar at the top; the rest wait in **More** (open it once, it stays open on this device). The numbers next to Inbox, Today and the projects count open tasks. Deferred and parked tasks (see [When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
+
+Each project can also be shown three ways: as a **List**, as a **Board** with a column per section, or as a **Timeline** of its dates with arrows between tasks that wait for each other. Press <kbd>v</kbd> to cycle through them; see [Sections and boards](sections-and-boards.md#see-a-project-on-a-timeline).
 
 ## Plan your day with Today
 
