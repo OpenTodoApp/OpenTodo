@@ -1,12 +1,13 @@
+import { HelpLink } from './help/HelpLink'
 import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { formatDateHeading, todayISO } from '../lib/dates'
-import { inToday, inUpcoming, overdueInToday, upcomingDate } from '../lib/views'
+import { inAnytime, inLater, inToday, inUpcoming, isSomeday, overdueInToday, upcomingDate } from '../lib/views'
 import { byPosition, compareByPosition, compareDueThenPriority } from '../lib/ordering'
 import { resolveLabels } from '../lib/labels'
-import { createSubtask, createTask, deleteTask, detachOccurrence, setTaskCompleted, setTaskParent, skipOccurrence, updateTask } from '../lib/ops'
+import { createSubtask, createTask, deleteTask, detachOccurrence, parkTask, setTaskCompleted, setTaskParent, skipOccurrence, unparkTask, updateTask } from '../lib/ops'
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
 import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
 import { canEditTasks, memberName, roleOf } from '../lib/sharing'
@@ -28,7 +29,7 @@ import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
-import { deadlineFocus, estimateFocus, isGPending, openTask, placeInDay } from './signals'
+import { deadlineFocus, deferFocus, estimateFocus, isGPending, openTask, placeInDay } from './signals'
 import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
@@ -127,6 +128,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         // Undated tasks sort after dated ones, so a deadline-only task follows the
         // tasks due that day within its group (deadlines D3).
         return all.filter((t) => inUpcoming(t, today)).sort(compareDueThenPriority)
+      // Someday and Anytime (someday-and-evening D5), grouped by project below.
+      case 'someday':
+        return all.filter((t) => !t.completed_at && isSomeday(t)).sort(byPosition)
+      case 'anytime':
+        return all.filter((t) => inAnytime(t, today)).sort(byPosition)
       case 'completed':
         return all.filter((t) => t.completed_at).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0)).slice(0, 100)
       case 'project':
@@ -156,7 +162,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     })
   }, [])
 
-  const tree = useMemo<Tree<Task> | null>(() => (treeView ? buildTaskTree(tasks) : null), [treeView, tasks])
+  // Project and Inbox lists keep deferred and parked tasks in a Later group at the
+  // end (someday-and-evening D2); the board keeps every card in its column.
+  const boardMode = useLiveQuery(() => (route.view === 'project' ? loadViewMode(route.id) : Promise.resolve('list' as const)), [route], 'list') === 'board'
+  const laterTasks = useMemo(() => (treeView && !boardMode ? tasks.filter((t) => inLater(t, today)) : []), [treeView, boardMode, tasks, today])
+  const treeTasks = useMemo(() => (laterTasks.length ? tasks.filter((t) => !inLater(t, today)) : tasks), [laterTasks, tasks, today])
+  const tree = useMemo<Tree<Task> | null>(() => (treeView ? buildTaskTree(treeTasks) : null), [treeView, treeTasks])
 
   // Sections and the board (OpenSpec `board-view`). View mode and collapsed sections
   // are per-device preferences in the local meta table, never synced.
@@ -185,6 +196,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   )
 
   const groups = useMemo<Group[]>(() => {
+    const later: Group[] = laterTasks.length
+      ? [{ key: 'later', heading: 'Later', rows: laterTasks.map((t) => ({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: t.parent_id ? breadcrumbOf(t, taskMap) : null })) }]
+      : []
     const toRow = (n: TreeNode<Task>): Row => ({
       task: n.item,
       depth: n.depth,
@@ -203,7 +217,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (sectionGroups && liveSections.length > 0) {
       // Project list with sections: "No section" first, then each section by position.
       const folded = new Set(collapsedSections)
-      return sectionGroups.map((g) => ({
+      const bySection: Group[] = sectionGroups.map((g) => ({
         key: `section:${g.key}`,
         heading: g.section ? g.section.name : 'No section',
         section: g.section,
@@ -211,10 +225,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         count: flattenTree(g.roots).length,
         rows: folded.has(g.key) ? [] : flattenTree(g.roots, (id) => collapsed.has(id)).map(toRow),
       }))
+      return [...bySection, ...later]
     }
     if (tree) {
       // Project and Inbox: one depth-first pass over the built tree (linear in task count).
-      return [{ key: 'all', heading: null, rows: flattenTree(tree.roots, (id) => collapsed.has(id)).map(toRow) }]
+      return [{ key: 'all', heading: null, rows: flattenTree(tree.roots, (id) => collapsed.has(id)).map(toRow) }, ...later]
     }
     // Cross-project and date views: flat, each matching task once, with its parent named.
     const flatRow = (t: Task): Row => ({
@@ -222,10 +237,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     })
     if (route.view === 'today') {
       const overdue = tasks.filter((t) => overdueInToday(t, today))
-      const due = tasks.filter((t) => !overdueInToday(t, today))
+      const rest = tasks.filter((t) => !overdueInToday(t, today))
+      // This Evening below the day's tasks (someday-and-evening).
+      const evening = rest.filter((t) => t.evening)
+      const day = rest.filter((t) => !t.evening)
       const g: Group[] = []
       if (overdue.length) g.push({ key: 'overdue', heading: 'Overdue', rows: overdue.map(flatRow) })
-      g.push({ key: 'today', heading: overdue.length ? 'Today' : null, rows: due.map(flatRow) })
+      g.push({ key: 'today', heading: overdue.length || evening.length ? 'Today' : null, rows: day.map(flatRow) })
+      if (evening.length) g.push({ key: 'evening', heading: 'This Evening', rows: evening.map(flatRow) })
       return g
     }
     if (route.view === 'upcoming') {
@@ -239,7 +258,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       }
       return [...byDate.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([date, list]) => ({ key: date, heading: formatDateHeading(date, today, dt.resolved), rows: list.map(flatRow) }))
     }
-    if (route.view === 'label' || route.view === 'assigned') {
+    if (route.view === 'label' || route.view === 'assigned' || route.view === 'someday' || route.view === 'anytime') {
       // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
       const byProject = new Map<string, Task[]>()
       for (const t of tasks) byProject.set(t.project_id ?? '', [...(byProject.get(t.project_id ?? '') ?? []), t])
@@ -249,7 +268,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       }))
     }
     return [{ key: 'all', heading: null, rows: tasks.map(flatRow) }]
-  }, [dt.resolved, tree, tasks, route.view, today, zone, collapsed, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections])
+  }, [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections])
 
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
 
@@ -472,7 +491,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       const idx = rows.findIndex((r) => r.task.id === selectedId)
       const row = idx >= 0 ? rows[idx] : undefined
       // A viewer may navigate and open tasks of a shared project, never change them.
-      if (row && isReadOnly(row.task) && ['a', 'A', 'Tab', 'c', 'L', '1', '2', '3', '4', 'Delete', 'Backspace'].includes(e.key)) return
+      if (row && isReadOnly(row.task) && ['a', 'A', 'Tab', 'c', 'L', '1', '2', '3', '4', 'Delete', 'Backspace', 'n', 'N', 'E', 'd'].includes(e.key)) return
       if (e.key === 'q' && projectReadOnly) return
       if (e.key === 'v' && projectId) {
         // List / board toggle, remembered per project on this device (board-view).
@@ -623,6 +642,26 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             setOpenId(row.task.id)
           }
           break
+        case 'n':
+          // Park or un-park (someday-and-evening D5).
+          if (row) {
+            e.preventDefault()
+            void (row.task.start === 'someday' ? unparkTask(row.task.id) : parkTask(row.task.id))
+          }
+          break
+        case 'N':
+          if (row) {
+            e.preventDefault()
+            deferFocus.request(row.task.id)
+            setOpenId(row.task.id)
+          }
+          break
+        case 'E':
+          if (row) {
+            e.preventDefault()
+            void updateTask(row.task.id, { evening: !row.task.evening })
+          }
+          break
         case 'd':
           if (row) {
             e.preventDefault()
@@ -726,7 +765,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   )
 
   const title = {
-    inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', completed: 'Completed', assigned: 'Assigned to me', project: currentProject?.name ?? 'Project', label: currentLabel?.name ?? 'Label',
+    inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', someday: 'Someday', anytime: 'Anytime', completed: 'Completed', assigned: 'Assigned to me', project: currentProject?.name ?? 'Project', label: currentLabel?.name ?? 'Label',
   }[route.view]
 
   if (route.view === 'project' && projects.length > 0 && !currentProject) {
@@ -767,6 +806,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               {title}
               {route.view === 'today' && <span className="ml-2 text-sm font-normal text-faint">{dt.formatDate(today, 'heading')}</span>}
               {route.view === 'label' && <span className="text-sm font-normal text-faint">{rows.length}</span>}
+              {route.view === 'someday' && <HelpLink screen="someday" topic="Someday" />}
+              {route.view === 'anytime' && <HelpLink screen="anytime" topic="Anytime" />}
               {(route.view === 'today' || route.view === 'upcoming' || route.view === 'assigned') && (
                 <span className="ml-auto text-xs font-normal text-faint" title="This view is sorted by date: drag and Alt+↑/↓ are off here" data-sort-note>sorted by date</span>
               )}
@@ -951,6 +992,10 @@ function placeholderFor(route: ListRoute, project?: Project, label?: Label): str
       return 'Add a task for today…'
     case 'upcoming':
       return 'Add a task for tomorrow…'
+    case 'someday':
+      return 'Add a someday task…'
+    case 'anytime':
+      return 'Add a task…'
     case 'project':
       return `Add a task to ${project?.name ?? 'this project'}…`
     case 'label':
@@ -967,6 +1012,8 @@ function EmptyState({ view }: { view: ListRoute['view'] }) {
     inbox: 'Your Inbox is empty. Press q to capture something.',
     today: 'Nothing due today. Enjoy the calm, or pull something in from Upcoming.',
     upcoming: 'No scheduled tasks. Add a due date to a task and it will show up here.',
+    someday: 'Nothing parked. Select a task and press n to put it here for later.',
+    anytime: 'Nothing to do whenever. Tasks without a date or a start show up here.',
     completed: 'Nothing completed yet. Completed tasks show up here for a while.',
     project: 'This project has no open tasks.',
     label: 'No open task carries this label. Select a task and press L to add it.',

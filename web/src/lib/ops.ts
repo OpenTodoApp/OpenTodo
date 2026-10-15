@@ -59,7 +59,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 }
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
-  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, recurrence: null, series_id: null,
+  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, recurrence: null, series_id: null,
   assignee_id: null, section_id: null, ical_extra: null, notes_doc: '',
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
@@ -504,6 +504,9 @@ export async function createTask(input: {
   title: string; description?: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
   estimate_minutes?: number | null
   deadline?: string | null
+  /** "someday" or a date (someday-and-evening); only sent when set. */
+  start?: string | null
+  evening?: boolean
   /** A recurrence rule (any spelling the grammar accepts; stored canonical). Throws when invalid. */
   recurrence?: string | null
   /** Assignee account id (task-assignment); only sent when set. */
@@ -527,6 +530,9 @@ export async function createTask(input: {
   if (input.section_id) extra.section_id = input.section_id
   // Only tasks created with a deadline carry the field (deadlines).
   if (input.deadline) extra.deadline = input.deadline
+  // Only parked, deferred or evening tasks carry these (someday-and-evening).
+  if (input.start) extra.start = input.start
+  if (input.evening) extra.evening = true
   await mutate('task', id, {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: await nextTaskPosition(now), created_at: now,
@@ -586,7 +592,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * tombstones are new. `section_id` is deliberately absent: every copy lands in a
  * different project, and changing a task's project clears its section (board-view).
  */
-const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'position', 'created_at'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'position', 'created_at'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
@@ -646,6 +652,11 @@ export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task,
  * sharing scope becomes copy + tombstone and returns the copy's id.
  */
 export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>): Promise<string> {
+  // Scheduling a parked task un-parks it in the same batch (someday-and-evening D3).
+  if (!('start' in patch) && patch.due) {
+    const task = await db.tasks.get(id)
+    if (task?.start === 'someday') patch = { ...patch, start: null }
+  }
   if (patch.due === null && !('recurrence' in patch)) {
     // A recurrence rule needs a due date; clearing the date ends the repetition.
     const task = await db.tasks.get(id)
@@ -680,6 +691,23 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
   }
   await mutate('task', id, patch)
   return id
+}
+
+/**
+ * Park a task in Someday (someday-and-evening D3): one batch that sets the start,
+ * clears the due date (which ends a recurrence) and the evening flag.
+ */
+export async function parkTask(id: string): Promise<void> {
+  const task = await db.tasks.get(id)
+  const patch: Partial<Task> = { start: 'someday' }
+  if (task?.due) patch.due = null
+  if (task?.evening) patch.evening = false
+  await updateTask(id, patch)
+}
+
+/** Return a parked task to the active list, without a date. */
+export async function unparkTask(id: string): Promise<void> {
+  await updateTask(id, { start: null })
 }
 
 /**

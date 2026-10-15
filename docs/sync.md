@@ -48,6 +48,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `completed_at`, `deleted_at` | number or null |
 | task | `estimate_minutes` | integer 1–10080 (minutes) or null; with `due.time` it forms a calendar block (time-blocking) |
 | task | `deadline` | `"YYYY-MM-DD"` (a date that exists, no time or zone) or null; the day the task must be finished by, separate from the planned `due` (deadlines) |
+| task | `start` | null (anytime), `"someday"` (parked) or `"YYYY-MM-DD"`, the day before which the task is deferred (someday-and-evening) |
+| task | `evening` | boolean, default false: listed under This Evening in Today (someday-and-evening) |
 | task | `recurrence` | recurrence rule string (at most 200 characters, must parse under [the grammar](recurrence.md)) or null |
 | task | `series_id` | string (task id) or null |
 | task | `assignee_id` | string (account id) or null; checked against the task's scope at receipt (see "Assignment" under [Sharing scopes](#sharing-scopes)) |

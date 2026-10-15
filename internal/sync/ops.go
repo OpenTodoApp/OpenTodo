@@ -92,6 +92,9 @@ const (
 	// kDate is null or a bare calendar date "YYYY-MM-DD" with no time or zone
 	// (task.deadline, OpenSpec change deadlines).
 	kDate
+	// kStart is null, the word "someday" or a calendar date "YYYY-MM-DD"
+	// (task.start, OpenSpec change someday-and-evening).
+	kStart
 )
 
 // docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
@@ -166,6 +169,11 @@ var Schema = map[string]map[string]kind{
 		// The day the task must be finished by, separate from the planned due
 		// date (OpenSpec change deadlines); additive.
 		"deadline": kDate,
+		// When the task becomes relevant: a start date that defers it, or
+		// "someday" (parked); and the This Evening flag (OpenSpec change
+		// someday-and-evening); additive.
+		"start":   kStart,
+		"evening": kBool,
 		// Recurrence rule and the series an occurrence record belongs to
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
 		"recurrence": kRecurrence,
@@ -362,6 +370,19 @@ func checkKind(k kind, raw json.RawMessage) error {
 		var p int
 		if err := json.Unmarshal(raw, &p); err != nil || p < 1 || p > 4 {
 			return errors.New("must be an integer from 1 (highest) to 4 (lowest)")
+		}
+	case kStart:
+		if isNull {
+			return nil
+		}
+		var d string
+		if err := json.Unmarshal(raw, &d); err != nil || (d != "someday" && !isDate(d)) {
+			return errors.New(`must be null, "someday" or a date "YYYY-MM-DD"`)
+		}
+		if d != "someday" {
+			if _, err := time.Parse("2006-01-02", d); err != nil {
+				return errors.New(`must be null, "someday" or a date "YYYY-MM-DD" that exists`)
+			}
 		}
 	case kDate:
 		if isNull {

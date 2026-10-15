@@ -6,6 +6,8 @@ export type Route =
   | { view: 'inbox' }
   | { view: 'today' }
   | { view: 'upcoming' }
+  | { view: 'someday' }
+  | { view: 'anytime' }
   | { view: 'day'; date?: string }
   | { view: 'week'; date?: string }
   | { view: 'completed' }
@@ -54,6 +56,10 @@ export function parseRoute(pathname: string): Route {
       return { view: 'today' }
     case 'upcoming':
       return { view: 'upcoming' }
+    case 'someday':
+      return { view: 'someday' }
+    case 'anytime':
+      return { view: 'anytime' }
     case 'completed':
       return { view: 'completed' }
     case 'assigned':

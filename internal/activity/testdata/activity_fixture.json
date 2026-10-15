@@ -615,6 +615,17 @@
       "events": [
         {"id":"dl1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":200000,"opIds":["dl1"],"changes":[{"field":"deadline","from":null,"to":"2026-11-20"}]}
       ]
+    },
+    {
+      "name": "start and evening edits are edited events (someday-and-evening)",
+      "ops": [
+        {"id":"se1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"start","value":"someday","ts":300000,"device":"da"},
+        {"id":"se2","seq":2,"actor":"bob","entity":"task","entityId":"t2","field":"evening","value":true,"ts":300000,"device":"db"}
+      ],
+      "events": [
+        {"id":"se1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":300000,"opIds":["se1"],"changes":[{"field":"start","from":null,"to":"someday"}]},
+        {"id":"se2","kind":"edited","actor":"bob","entity":"task","entityId":"t2","taskId":"t2","ts":300000,"opIds":["se2"],"changes":[{"field":"evening","from":null,"to":true}]}
+      ]
     }
   ]
 }
