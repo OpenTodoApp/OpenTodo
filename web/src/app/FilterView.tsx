@@ -22,7 +22,7 @@ import { setCurrentFilter } from './listActions'
 import { useBulkList } from './bulk/useBulkList'
 import { useListKeys } from './useListKeys'
 import { useToday, useViewerZone } from './useViews'
-import { TaskDetail } from './TaskDetail'
+import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { visibleTasks } from '../lib/trash'
 import { Dialog } from './overlay'
@@ -108,7 +108,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const rows = useMemo(() => groups.flatMap((g) => g.tasks), [groups])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [openId, setOpenId] = useState<string | null>(null)
+  const openId = usePanelTaskId()
+  const setOpenId = setPanelTaskId
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   // A view can be saved from any query that parses and is not empty.
@@ -191,8 +192,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const warnings = !error && good.src === debounced ? result?.warnings ?? [] : []
 
   return (
-    <div className="flex h-full">
-      <div className="min-w-0 flex-1 px-4 py-5 md:px-8">
+    <div className="min-w-0 px-4 py-5 md:px-8">
         <div className="mx-auto max-w-3xl">
           <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
             Filter
@@ -265,18 +265,6 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             ))}
           </div>
         </div>
-      </div>
-      {openId && (
-        <TaskDetail
-          key={openId}
-          taskId={openId}
-          projects={projects}
-          labelMap={labelMap}
-          onClose={() => setOpenId(null)}
-          onOpen={(id) => { setSelectedId(id); setOpenId(id) }}
-          onToggleComplete={(t) => void setTaskCompleted(t.id, !t.completed_at)}
-        />
-      )}
       {saving && (
         <NamePrompt title="Save view" label="View name" hint="The view is pinned to the sidebar under Views."
           onCancel={() => setSaving(false)}

@@ -9,7 +9,7 @@ import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
 import type { Label, Project, View } from '../lib/types'
 import { MAX_PANELS, addPanel, dashboardPanels, evaluateViews, isDashboard, movePanel, removePanel, setPinned, type PanelState } from '../lib/views'
-import { TaskDetail } from './TaskDetail'
+import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { navigate } from './router'
 import { ViewMenu } from './ViewsView'
@@ -30,7 +30,8 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   const [error, setError] = useState<string | null>(null)
   const [focusIdx, setFocusIdx] = useState<number | null>(null)
   const [selected, setSelected] = useState<{ panel: number; task: number } | null>(null)
-  const [openId, setOpenId] = useState<string | null>(null)
+  const openId = usePanelTaskId()
+  const setOpenId = setPanelTaskId
   const gridRef = useRef<HTMLDivElement>(null)
 
   const run = (fn: () => Promise<void>) => {
@@ -90,8 +91,7 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   }, [panels, focusIdx, selected, openId])
 
   return (
-    <div className="flex h-full">
-      <div className="min-w-0 flex-1 px-4 py-5 md:px-8">
+    <div className="min-w-0 px-4 py-5 md:px-8">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-faint"><Icon name="kanban" /></span>
           <h1 className="truncate text-xl font-semibold">{dashboard.name}</h1>
@@ -135,11 +135,6 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
             ))}
           </div>
         )}
-      </div>
-      {openId && (
-        <TaskDetail key={openId} taskId={openId} projects={projects} labelMap={labelMap} onClose={() => setOpenId(null)}
-          onOpen={(id) => setOpenId(id)} onToggleComplete={(t) => void setTaskCompleted(t.id, !t.completed_at)} />
-      )}
     </div>
   )
 }

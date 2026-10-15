@@ -8,6 +8,8 @@ import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { Task } from '../lib/types'
 import { flush, key, render, type } from '../ui/test-utils'
+import { PanelHost } from './PanelHost'
+import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
 import { Sidebar } from './Sidebar'
@@ -22,6 +24,7 @@ beforeEach(() => {
 })
 afterEach(() => {
   vi.useRealTimers()
+  resetPanel()
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
   document.body.innerHTML = ''
 })
@@ -103,7 +106,7 @@ describe('Today count (2.3)', () => {
 describe('d on a list row (3.2)', () => {
   it('d, a date and Enter set the deadline of the selected task', async () => {
     const id = await createTask({ title: 'Write report', due: { date: '2026-10-14' } })
-    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    const r = await render(<><TaskListView route={{ view: 'today' }} /><PanelHost /></>)
     await waitFor(() => r.container.textContent!.includes('Write report'))
     await key(document.body, 'j')
     await key(document.body, 'd')

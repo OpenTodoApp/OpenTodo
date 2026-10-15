@@ -69,5 +69,5 @@ In **Settings → Preferences → Calendar** you can set when the grid starts an
 
 - Estimate generously at first. After a week you'll know how long "quick" things really take.
 - Leave gaps. A day planned to the minute falls apart at the first phone call.
-- The **Quick wins** button above your lists shows tasks of 15 minutes or less, good for filling a short gap.
+- **Quick wins**, under the **Filter** action in a list's header, shows tasks of 15 minutes or less, good for filling a short gap.
 - Dates and times you set on the calendar are ordinary due dates, so they show up in Today and Upcoming as well, and in calendar apps connected over [CalDAV](caldav.md).

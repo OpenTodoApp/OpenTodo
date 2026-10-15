@@ -16,7 +16,7 @@ Shortcuts don't fire while you're typing in a field. Press <kbd>Esc</kbd> to lea
 
 ## See them in the app
 
-Press <kbd>?</kbd> at any time for the full list. It's the same list as on this page, generated from the same source, so the two always match.
+Press <kbd>?</kbd> at any time for the cheat sheet. The shortcuts for where you are come first (the list, the board, the calendar, the task panel), then the ones that work everywhere and the **Go to** keys, and a search box at the top finds a shortcut by key or by what it does. It's the same list as on this page, generated from the same source, so the two always match.
 
 <picture><source srcset="images/shortcuts-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/shortcuts-light.webp" alt="The Keyboard shortcuts dialog open over the Today view."></picture>
 

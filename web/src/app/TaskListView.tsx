@@ -14,7 +14,7 @@ import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFi
 import { canEditTasks, memberName, roleOf } from '../lib/sharing'
 import { flattenTree, type Tree, type TreeNode } from '../lib/tree'
 import type { AccountRole, Label, Priority, Project, Section, Task } from '../lib/types'
-import { TodayAsk } from './assistant/AskEntry'
+import { TodayAskAction } from './assistant/AskEntry'
 import { beginDrag } from '../lib/dnd'
 import { moveTask, moveTaskBy } from '../lib/move'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
@@ -24,7 +24,7 @@ import { AddSection, SectionHeader, SectionQuickAdd } from './Sections'
 import { LabelPicker } from './LabelPicker'
 import { AssigneePicker } from './AssigneePicker'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
-import { TaskDetail } from './TaskDetail'
+import { registerPanelHandlers, setPanelTaskId, usePanelTaskId } from './panel'
 import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
@@ -38,6 +38,8 @@ import { useSelection } from './selection'
 import { useVimEnabled } from './vim/prefs'
 import { BulkActionsMenu, runBulk, SelectionBar } from './bulk/BulkActions'
 import { Dialog } from './overlay'
+import { Menu } from './overlay/Menu'
+import { MenuItem, MenuSeparator } from '../ui/Menu'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'help' } | { view: 'ask' }>
@@ -300,7 +302,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const [actionsPicker, setActionsPicker] = useState<string | null>(null)
   const [selectMode, setSelectMode] = useState(false)
   const openActions = useCallback((picker: string | null = null) => { setActionsPicker(picker); setActionsOpen(true) }, [])
-  const [openId, setOpenId] = useState<string | null>(null)
+  // The open task lives in the shell's panel slot (app-shell D1); this view only selects and opens.
+  const openId = usePanelTaskId()
+  const setOpenId = setPanelTaskId
   const [addingUnder, setAddingUnder] = useState<string | null>(null)
   /** Parent whose last open subtask was just completed; Enter completes it too. */
   const [prompt, setPrompt] = useState<Task | null>(null)
@@ -403,14 +407,6 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     setOpenId(id)
   }), [])
 
-  useEffect(() => {
-    if (openId && !rows.some((r) => r.task.id === openId)) {
-      // Task left this view (completed, moved, collapsed); keep the panel if the task still exists.
-      void db.tasks.get(openId).then((t) => {
-        if (!t || t.deleted_at) setOpenId(null)
-      })
-    }
-  }, [rows, openId])
 
   // The prompt only makes sense while the parent is still open.
   useEffect(() => {
@@ -772,6 +768,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // read the latest render through a ref so the registration happens once.
   const live = useRef({ rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete, ticked, selection, openActions })
   live.current = { rows, columns, board, selectedId, openId, manual, isReadOnly, toggleComplete, ticked, selection, openActions }
+  // Complete / reopen from the panel goes through this list, so the "complete parent too?" prompt and the archive offer follow.
+  useEffect(() => registerPanelHandlers({ toggleComplete: (t) => void live.current.toggleComplete(t.id, !t.completed_at) }), [])
+  // Opening another task from the panel (a subtask, the parent) selects it here when it is listed.
+  useEffect(() => {
+    if (openId && live.current.rows.some((r) => r.task.id === openId)) setSelectedId(openId)
+  }, [openId])
   useEffect(() => registerListState({
     rows: () => live.current.rows.map((r) => r.task),
     columns: () => (live.current.board ? live.current.columns.map((c) => c.cards) : null),
@@ -820,7 +822,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         assignee={r.task.assignee_id && r.task.project_id && memberMap.has(r.task.project_id)
           ? (r.task.assignee_id === userId ? 'You' : memberName(r.task.assignee_id, memberMap) ?? 'Former member') : null}
         assignedToMe={!!userId && r.task.assignee_id === userId}
-        showProject={route.view !== 'project' && route.view !== 'label'}
+        showProject={route.view !== 'project' && route.view !== 'label' && route.view !== 'inbox'}
         selected={r.task.id === selectedId}
         depth={r.depth}
         progress={progress.get(r.task.id)}
@@ -851,6 +853,21 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     </Fragment>
   )
 
+  // Page actions (ux-overhaul, task-list-presentation): the header row holds them, so
+  // nothing sits between the quick add and the first task. Touch screens have no
+  // hover: the Select button shows every checkbox (bulk-edit D3).
+  const pageActions = (
+    <>
+      {route.view === 'today' && <TodayAskAction role={userRole} />}
+      {route.view !== 'completed' && rows.length > 0 && (
+        <button type="button" className="btn-ghost hidden px-2 py-1 text-sm pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
+          {selectMode ? 'Done' : 'Select'}
+        </button>
+      )}
+      {filterKey && <DurationFilterControl active={duration} onChange={chooseDuration} />}
+    </>
+  )
+
   const title = {
     inbox: 'Inbox', today: 'Today', upcoming: 'Upcoming', someday: 'Someday', anytime: 'Anytime', completed: 'Completed', assigned: 'Assigned to me', project: currentProject?.name ?? 'Project', label: currentLabel?.name ?? 'Label',
   }[route.view]
@@ -871,12 +888,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   }
 
   return (
-    <div className="flex h-full">
-      <div className="min-w-0 flex-1 px-4 py-5 md:px-8">
-        <div className={board ? 'mx-auto' : 'mx-auto max-w-3xl'}>
+    <div className="min-w-0 px-4 py-5 md:px-8">
+        <div className={board ? 'mx-auto' : 'mx-auto max-w-3xl'} data-list-page>
           {route.view === 'project' && currentProject ? (
             <>
-              <ProjectHeader project={currentProject} userId={userId} />
+              <ProjectHeader project={currentProject} userId={userId} actions={pageActions} />
               <div className="-mt-2 mb-3 flex items-center gap-1 text-xs" role="group" aria-label="Project layout">
                 {(['list', 'board'] as const).map((m) => (
                   <button key={m} type="button" aria-pressed={viewMode === m} onClick={() => { if (viewMode !== m) toggleViewMode() }}
@@ -888,6 +904,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               </div>
             </>
           ) : (
+            // The page header row (ux-overhaul, task-list-presentation "Nothing between the
+            // header and the list"): title, meta, and the actions on the right.
             <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
               {currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
               {title}
@@ -895,13 +913,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               {route.view === 'label' && <span className="text-sm font-normal text-faint">{rows.length}</span>}
               {route.view === 'someday' && <HelpLink screen="someday" topic="Someday" />}
               {route.view === 'anytime' && <HelpLink screen="anytime" topic="Anytime" />}
-              {(route.view === 'today' || route.view === 'upcoming' || route.view === 'assigned') && (
-                <span className="ml-auto text-xs font-normal text-faint" title="This view is sorted by date: drag and Alt+↑/↓ are off here" data-sort-note>sorted by date</span>
-              )}
+              <span className="ml-auto flex items-center gap-1 text-sm font-normal" data-page-actions>{pageActions}</span>
             </h1>
           )}
-
-          {route.view === 'today' && <TodayAsk role={userRole} />}
 
           {route.view !== 'completed' && (
             <div className="mb-3 border-b border-default pb-2">
@@ -916,15 +930,6 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             </div>
           )}
 
-          {filterKey && <DurationChips active={duration} onChange={chooseDuration} />}
-          {/* Touch screens have no hover: a Select button shows every checkbox (bulk-edit D3). */}
-          {route.view !== 'completed' && rows.length > 0 && (
-            <div className="mb-2 hidden justify-end pointer-coarse:flex">
-              <button type="button" className="btn-ghost px-2 py-1 text-sm" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
-                {selectMode ? 'Done' : 'Select'}
-              </button>
-            </div>
-          )}
           <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actionsOpen && ticked.length > 0}
             onMenuOpenChange={(v) => { setActionsOpen(v); if (!v) setActionsPicker(null) }} startPicker={actionsPicker} />
           {actionsOpen && ticked.length === 0 && selectedId && (
@@ -985,21 +990,6 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {route.view === 'project' && !board && projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
           {route.view === 'project' && <SubProjects projectId={route.id} />}
         </div>
-      </div>
-      {openId && (
-        <TaskDetail
-          // Remount per task so the picker and drafts never show the previous task's data.
-          key={openId}
-          taskId={openId}
-          userId={userId}
-          readOnly={isReadOnly(taskMap.get(openId))}
-          projects={projects}
-          labelMap={labelMap}
-          onClose={() => setOpenId(null)}
-          onOpen={(id) => { setSelectedId(id); setOpenId(id) }}
-          onToggleComplete={(t) => void toggleComplete(t.id, !t.completed_at)}
-        />
-      )}
       {prompt && (
         <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-default bg-surface px-4 py-2 text-sm shadow-lg">
@@ -1071,27 +1061,30 @@ function durationFilterKey(route: ListRoute): string | null {
   }
 }
 
-function DurationChips({ active, onChange }: { active: DurationFilter | null; onChange: (kind: DurationFilter | null) => void }) {
+/**
+ * The duration filter as a page action (ux-overhaul, time-blocking "Duration filter"):
+ * a Filter menu in the header, and one chip with a clear control while a filter is on.
+ */
+function DurationFilterControl({ active, onChange }: { active: DurationFilter | null; onChange: (kind: DurationFilter | null) => void }) {
+  const current = DURATION_FILTERS.find((f) => f.kind === active)
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Duration filter">
-      {DURATION_FILTERS.map((f) => (
-        <button
-          key={f.kind}
-          type="button"
-          title={f.title}
-          aria-pressed={active === f.kind}
-          onClick={() => onChange(active === f.kind ? null : f.kind)}
-          className={`rounded-full border px-2.5 py-0.5 text-xs ${active === f.kind ? 'border-accent bg-accent-soft font-medium text-on-accent-soft' : 'border-default text-muted hover:bg-sunken dark:hover:bg-raised'}`}
-        >
-          {f.label}
-        </button>
-      ))}
-      {active && (
-        <button type="button" className="btn-ghost px-2 py-0.5 text-xs" onClick={() => onChange(null)} data-clear-duration>
-          <Icon name="x" size="xs" />Clear filter
-        </button>
+    <span className="flex items-center gap-1" data-duration-filter>
+      {current && (
+        <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-xs font-medium text-on-accent-soft" data-duration-active>
+          {current.label}
+          <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label="Clear filter" title="Clear filter" onClick={() => onChange(null)} data-clear-duration>
+            <Icon name="x" size="xs" />
+          </button>
+        </span>
       )}
-    </div>
+      <Menu kind="menu" label="Filter" title="Filter by duration" trigger={<Icon name="filter" />} triggerClassName={`btn-ghost touch-target px-2 py-1 ${active ? 'text-accent' : ''}`} width="sm:w-56">
+        {DURATION_FILTERS.map((f) => (
+          <MenuItem key={f.kind} label={f.label} description={f.title} checked={active === f.kind} onSelect={() => onChange(active === f.kind ? null : f.kind)} />
+        ))}
+        {active && <MenuSeparator />}
+        {active && <MenuItem label="Clear filter" icon="x" onSelect={() => onChange(null)} />}
+      </Menu>
+    </span>
   )
 }
 

@@ -2,6 +2,7 @@
 // overlay at phone and tablet widths, in light and dark, in Chromium and WebKit,
 // and fails when
 //   - a page scrolls sideways outside a designated scroll region (`data-scroll-x`),
+//   - more than three regions scroll vertically outside designated ones (`data-scroll-y`),
 //   - an overlay or its close control is outside the viewport or not clickable,
 //   - an overlay does not close with Escape, with its close button (sheets and
 //     dialogs) or with a tap outside (popovers),
@@ -566,6 +567,28 @@ function pageOverflow() {
   }
 }
 
+// Vertical scroll regions (OpenSpec ux-overhaul, app-shell "Three columns, three
+// scrollers"): at most the sidebar, the content column and the panel may scroll
+// vertically; everything else scrolls inside them. Designated regions
+// (`data-scroll-y`: board columns, the calendar grid) and anything off screen or
+// inside an overlay are not counted.
+function verticalScrollers() {
+  const vw = window.innerWidth
+  const out = []
+  for (const el of document.querySelectorAll('body *')) {
+    if (el.closest('[data-scroll-y], [data-overlay-root], [data-overlay]')) continue
+    const cs = getComputedStyle(el)
+    if (!/(auto|scroll)/.test(cs.overflowY) || cs.visibility === 'hidden') continue
+    if (el.scrollHeight <= el.clientHeight + 1 || el.clientHeight === 0) continue
+    const r = el.getBoundingClientRect()
+    if (r.right <= 0 || r.left >= vw) continue
+    const label = el.getAttribute('aria-label') || el.getAttribute('role') || ''
+    out.push(`<${el.tagName.toLowerCase()}${label ? ` "${label}"` : ''}${typeof el.className === 'string' ? ` .${el.className.split(' ').slice(0, 3).join('.')}` : ''}> (${el.scrollHeight}px in ${el.clientHeight}px)`)
+  }
+  return out
+}
+const MAX_SCROLLERS = 3
+
 // Touch targets inside `root` (default: the whole page) that are visible in the viewport.
 function smallTargets([rootSel, min]) {
   const root = rootSel ? document.querySelector(rootSel) : document.body
@@ -686,6 +709,8 @@ async function runCombo(engine, width, theme, ids) {
       }
       checked++
       for (const m of await p.evaluate(pageOverflow)) await fail(p, s.name, null, m)
+      const scrollers = await p.evaluate(verticalScrollers)
+      if (scrollers.length > MAX_SCROLLERS) await fail(p, s.name, null, `${scrollers.length} vertical scroll regions (at most ${MAX_SCROLLERS}): ${scrollers.join(', ')}`)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
       // Accessibility of the whole screen (axe-core, serious and critical issues).
       for (const m of await axeProblems(p)) await fail(p, s.name, null, m)

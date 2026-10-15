@@ -66,7 +66,7 @@ When you want to see the hours, switch to **Week**, which shows your timed tasks
 
 ## Narrow a list by duration
 
-Above most lists are four buttons: **Quick wins** (15 minutes or less), **Under 30 min**, **Over 1 h** and **Unestimated**. Turn one on to see only matching tasks; select it again to clear it. Your choice is remembered on that device. Estimates are set with <kbd>e</kbd> or in the task panel.
+The **Filter** action in the header of the Inbox, Today, Upcoming and project lists offers **Quick wins** (15 minutes or less), **Under 30 min**, **Over 1 h** and **Unestimated**. Turn one on to see only matching tasks; a chip with its name appears in the header, and its × clears the filter. Your choice is remembered on that device. Estimates are set with <kbd>e</kbd> or in the task panel.
 
 ## Save your own views
 

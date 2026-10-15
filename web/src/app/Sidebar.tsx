@@ -197,7 +197,11 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto overscroll-contain p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    // One scroller (ux-overhaul, app-shell "Sidebar structure"): the name and the
+    // primary destinations stay at the top, Help and the account at the bottom, and
+    // only the views, projects and labels between them scroll.
+    <div className="flex h-full flex-col">
+      <div className="shrink-0 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
       <div className="mb-4 flex items-center gap-2 px-1">
         <img src="/favicon.svg" alt="" className="h-7 w-7" />
         <span className="font-semibold">OpenTodo</span>
@@ -224,6 +228,8 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
           </button>
         )}
       </nav>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-2" data-sidebar-scroll>
       <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
         Views
         <button className={`rounded px-1 text-[10px] normal-case hover:bg-sunken dark:hover:bg-raised ${route.view === 'views' ? 'text-accent' : ''}`}
@@ -252,7 +258,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         Projects
         <button className="rounded px-1 text-base leading-none hover:bg-sunken dark:hover:bg-raised" onClick={startAdding} title="New project">+</button>
       </div>
-      <nav className="min-h-48 flex-1 space-y-0.5 overflow-y-auto" aria-label="Projects">
+      <nav className="space-y-0.5" aria-label="Projects">
         <ul role="tree">
           {rows.map((n) => {
             const p = n.item
@@ -311,7 +317,8 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
           </form>
         )}
         {projects.length === 0 && !adding && <p className="px-2 py-1 text-xs text-faint">No projects yet.</p>}
-
+      </nav>
+      <nav aria-label="Labels">
         <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
           <button className="flex items-center gap-1 uppercase hover:text-muted" onClick={() => setLabelsOpen((v) => !v)} aria-expanded={labelsOpen}>
             <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${labelsOpen ? 'rotate-90' : ''}`} />Labels
@@ -329,8 +336,10 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
           </div>
         )}
       </nav>
+      </div>
+      <div className="flex shrink-0 flex-col px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2" data-sidebar-footer>
       <button onClick={() => navigate({ view: 'help' })} title="Help and guides (g then ?)"
-        className={`mt-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'help' ? 'bg-accent-soft text-on-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}>
+        className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${route.view === 'help' ? 'bg-accent-soft text-on-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}>
         <span className="flex h-6 w-6 items-center justify-center text-muted"><Icon name="circle-help" /></span>
         <span className="flex-1 text-muted">Help</span>
       </button>
@@ -342,6 +351,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
         <span className="flex-1 truncate text-muted">{user.name || user.email}</span>
         <span className="text-faint"><Icon name="settings" /></span>
       </button>
+      </div>
     </div>
   )
 }
