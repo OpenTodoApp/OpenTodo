@@ -130,7 +130,7 @@ describe('overview', () => {
       expect(html).toContain(`href="/settings/${id}"`)
     }
     for (const id of ['admin', 'backups', 'access']) expect(html).not.toContain(`href="/settings/${id}"`)
-    expect(html).toContain('Calendar apps (CalDAV), webhooks and API tokens')
+    expect(html).toContain('Calendar apps (CalDAV), calendar feeds, webhooks and API tokens')
     expect(html).toContain('No telemetry, no tracking, no subscription.')
     expect(html).toContain('href="https://github.com/pixari/opentodo"')
     // No panel of any section is on the overview.
@@ -188,7 +188,7 @@ describe('opening a section', () => {
   it('keeps every former Help screen id somewhere for the owner', () => {
     const all = ALL_IDS.map((id) => render(owner, id)).join('\n')
     const screens = [
-      'settings/assistants', 'settings/attachments', 'settings/caldav', 'settings/calendar', 'settings/capture', 'settings/data',
+      'settings/assistants', 'settings/attachments', 'settings/caldav', 'settings/calendar', 'settings/calendar-feeds', 'settings/capture', 'settings/data',
       'settings/email', 'settings/encryption', 'settings/keyboard', 'settings/members', 'settings/notifications',
       'settings/password', 'settings/project-invites', 'settings/projects', 'settings/quick-add', 'settings/session',
       'settings/sessions', 'settings/start-view', 'settings/tokens', 'settings/two-factor', 'settings/users', 'settings/voice', 'settings/webhooks',
@@ -238,7 +238,7 @@ describe('demo instance', () => {
   it('shows only the note in a section the demo refuses entirely', () => {
     const html = render(member, 'integrations')
     expect(html).toContain('data-testid="demo-restricted"')
-    expect(html).toContain('calendar apps (CalDAV), webhooks and API tokens are disabled on this demo instance')
+    expect(html).toContain('calendar apps (CalDAV), calendar feeds, webhooks and API tokens are disabled on this demo instance')
     expect(html).not.toContain('id="caldav-heading"')
     expect(html).not.toContain('id="tokens-heading"')
     for (const id of ['security', 'encryption', 'notifications', 'ai'] as const) expect(render(member, id)).toContain('data-testid="demo-restricted"')

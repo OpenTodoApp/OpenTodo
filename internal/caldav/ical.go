@@ -164,15 +164,27 @@ func validName(s string) bool {
 // Parse reads one iCalendar object (a VCALENDAR). It never panics; malformed
 // input yields an error wrapping ErrInvalid.
 func Parse(data []byte) (*Component, error) {
-	if len(data) > MaxBodyBytes {
-		return nil, fmt.Errorf("%w: larger than %d bytes", ErrInvalid, MaxBodyBytes)
+	return ParseWithLimits(data, Limits{Bytes: MaxBodyBytes, Props: maxProps})
+}
+
+// Limits bounds a parse: the body size and the number of content lines.
+type Limits struct {
+	Bytes int
+	Props int
+}
+
+// ParseWithLimits is Parse with other bounds (calendar subscriptions read whole
+// published calendars; OpenSpec change calendar-feeds, design D3).
+func ParseWithLimits(data []byte, lim Limits) (*Component, error) {
+	if len(data) > lim.Bytes {
+		return nil, fmt.Errorf("%w: larger than %d bytes", ErrInvalid, lim.Bytes)
 	}
 	if !utf8.Valid(data) {
 		return nil, fmt.Errorf("%w: not UTF-8", ErrInvalid)
 	}
 	data = bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
 	lines := Unfold(data)
-	if len(lines) > maxProps {
+	if len(lines) > lim.Props {
 		return nil, fmt.Errorf("%w: too many lines", ErrInvalid)
 	}
 	var root *Component

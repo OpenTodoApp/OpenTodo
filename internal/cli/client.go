@@ -467,7 +467,7 @@ func (c *client) me(ctx context.Context) (*user, error) {
 // meAuth returns the user and the credential the request used.
 func (c *client) meAuth(ctx context.Context) (*user, credential, error) {
 	var out struct {
-		User *user     `json:"user"`
+		User *user      `json:"user"`
 		Auth credential `json:"auth"`
 	}
 	if err := c.getJSON(ctx, "/me", &out); err != nil {

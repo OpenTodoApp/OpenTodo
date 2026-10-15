@@ -18,9 +18,10 @@ import (
 	"github.com/pixari/opentodo/internal/agenttools"
 	"github.com/pixari/opentodo/internal/assistant"
 	"github.com/pixari/opentodo/internal/audit"
-	"github.com/pixari/opentodo/internal/blobs"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/backup"
+	"github.com/pixari/opentodo/internal/blobs"
+	"github.com/pixari/opentodo/internal/calfeed"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
 	"github.com/pixari/opentodo/internal/email"
@@ -94,8 +95,13 @@ type Server struct {
 	oidcLimiter *rateLimiter
 	// caldav caches the CalDAV toggle and davLimiter counts failed Basic
 	// authentications per client address (10/min; OpenSpec `caldav`).
-	caldav     caldavState
-	davLimiter *rateLimiter
+	caldav caldavState
+	// Calendar feeds (calendar-feeds): the switch cache, the fetch worker and limiters.
+	calFeeds        caldavState
+	calWorker       *calfeed.Worker
+	calFetchLimiter *rateLimiter
+	feedLimiter     *rateLimiter
+	davLimiter      *rateLimiter
 	// mcpSettings is the owner's AI assistants toggle and mcp the read-only MCP
 	// server behind /mcp (OpenSpec `mcp-server`); see mcp.go.
 	mcpSettings *mcp.Settings
@@ -271,6 +277,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// CalDAV (OpenSpec `caldav`): app passwords, the owner toggle and /dav/.
 	s.seedCaldav(context.Background())
 	s.registerCaldavRoutes(mux)
+	s.registerCalendarFeedRoutes(mux)
 	// Comments and activity (OpenSpec `comments-and-activity`): literal patterns win over {collection}.
 	s.registerCommentRoutes(mux)
 	// End-to-end encryption (OpenSpec `e2ee`): wrapped key record and history purge.

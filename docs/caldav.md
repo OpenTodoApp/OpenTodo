@@ -107,7 +107,7 @@ Alarms set in a calendar app stay in that app's data (`ical_extra`) and fire the
 
 ## Limits
 
-Not supported: events (VEVENT), scheduling and invitations, free/busy, calendar sharing through CalDAV (use project sharing), CardDAV, attachments, per-occurrence overrides, server-side recurrence expansion, and OpenTodo acting as a client of another CalDAV server.
+Not supported: events (VEVENT; to see other calendars' events in Day and Week, or to subscribe to your tasks from a calendar app that has no CalDAV, see [Calendar feeds](calendar-feeds.md)), scheduling and invitations, free/busy, calendar sharing through CalDAV (use project sharing), CardDAV, attachments, per-occurrence overrides, server-side recurrence expansion, and OpenTodo acting as a client of another CalDAV server.
 
 The three target clients were exercised only with recorded-style fixtures and protocol tests in this repository (`internal/caldav/testdata/`, `internal/httpapi/caldav_test.go`); a manual run against real Apple Reminders, Thunderbird and DAVx⁵ installations is still pending.
 

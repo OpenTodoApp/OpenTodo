@@ -10,9 +10,11 @@ const listNotifications = vi.fn(async () => ({ notifications: serverNotification
 const readNotification = vi.fn(async (id: string) => {
   serverNotifications.value = serverNotifications.value.map((n) => (n.id === id ? { ...n, readAt: 99 } : n))
 })
+const calendarEvents = vi.fn(async () => ({ events: [], subscriptions: [] }))
 vi.mock('./api', () => ({
   api: {
     sync: (...args: unknown[]) => syncCalls(...(args as [])),
+    calendarEvents: () => calendarEvents(),
     listNotifications: () => listNotifications(),
     readNotification: (id: string) => readNotification(id),
   },
@@ -599,5 +601,20 @@ describe('trash-and-history', () => {
     expect(await db.tasks.get('kept')).toBeDefined()
     expect(await db.outbox.count()).toBe(0)
     expect(await getMeta('trashRetentionDays', 30)).toBe(7)
+  })
+})
+
+describe('calendar-feeds live signal', () => {
+  it('a calendar event refreshes the cached events once; an ops event does not', async () => {
+    await setMeta('calendar.events.window', { from: '2026-10-01', to: '2026-11-30', fetchedAt: 1 })
+    const es = await startConnected()
+    calendarEvents.mockClear()
+    es.emit('ops', { cursor: 5 })
+    await settle()
+    expect(calendarEvents).not.toHaveBeenCalled()
+    es.emit('calendar', {})
+    await until(() => calendarEvents.mock.calls.length === 1, 'the events refresh')
+    await settle()
+    expect(calendarEvents).toHaveBeenCalledTimes(1)
   })
 })

@@ -66,8 +66,8 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
   {
     id: 'integrations', label: 'Integrations', group: 'data', icon: 'link',
-    description: () => 'Calendar apps (CalDAV), webhooks and API tokens',
-    demo: () => ['calendar apps (CalDAV)', 'webhooks', 'API tokens'], demoOnly: true,
+    description: () => 'Calendar apps (CalDAV), calendar feeds, webhooks and API tokens',
+    demo: () => ['calendar apps (CalDAV)', 'calendar feeds', 'webhooks', 'API tokens'], demoOnly: true,
   },
   {
     id: 'ai', label: 'AI', group: 'data', icon: 'message-circle',
