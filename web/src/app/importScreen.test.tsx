@@ -124,4 +124,15 @@ describe('import route', () => {
     expect(withPreview).toContain('Preview · Todoist backup (ZIP)')
     expect(withPreview).toContain('Home [123].csv:4')
   })
+
+  it('suggests From a template for a template file and hides the duplicate note (project-templates 3.2)', () => {
+    const preview: ImportPreview = { format: 'opentodo', version: 1, options: {}, totals: totals({ rows: 2, create: 2 }), rows: [], truncated: false,
+      notes: ['This file is a template. Importing it creates it once.'], template: { day: '2026-10-14' } }
+    const html = render({ preview })
+    expect(html).toContain('data-template-hint')
+    expect(html).toContain('From a template…')
+    expect(html).not.toContain('Importing it creates it once.</p>')
+    expect(render({ preview: { ...preview, template: undefined } })).not.toContain('data-template-hint')
+  })
 })
+

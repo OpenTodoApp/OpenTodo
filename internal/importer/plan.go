@@ -128,6 +128,9 @@ type Plan struct {
 	// ViewHints are projects this import creates that were boards in the source
 	// app; the web app opens them as boards on the importing device.
 	ViewHints []PlanViewHint `json:"viewHints,omitempty"`
+	// Template is set when the file is a template (project-templates D7): the web
+	// app suggests "From a template" for a fresh copy.
+	Template *TemplateInfo `json:"template,omitempty"`
 
 	changes []change
 	errors  []RowError
@@ -296,7 +299,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 	}
 
-	p := &Plan{Format: parsed.Format, Version: parsed.Version, Options: opts, Notes: nonNil(parsed.Notes)}
+	p := &Plan{Format: parsed.Format, Version: parsed.Version, Options: opts, Notes: nonNil(parsed.Notes), Template: parsed.Template}
 	if parsed.Format == "csv" {
 		p.Columns = &Columns{Recognised: nonNil(parsed.Recognised), Ignored: nonNil(parsed.Ignored)}
 	}

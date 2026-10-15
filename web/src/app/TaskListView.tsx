@@ -2,6 +2,7 @@ import { Icon } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
+import { duplicateTask } from '../lib/templates'
 import { db } from '../lib/db'
 import { formatDateHeading, todayISO } from '../lib/dates'
 import { inAnytime, inLater, inToday, inUpcoming, isSomeday, overdueInToday, upcomingDate } from '../lib/views'
@@ -756,6 +757,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             e.preventDefault()
             deadlineFocus.request(row.task.id)
             setOpenId(row.task.id)
+          }
+          break
+        case 'D':
+          // Duplicate the task and its open subtasks right below it (project-templates D6).
+          if (row && !isReadOnly(row.task)) {
+            e.preventDefault()
+            void duplicateTask(row.task.id).then((id) => setSelectedId(id))
           }
           break
         case 'b':

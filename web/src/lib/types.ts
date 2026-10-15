@@ -942,6 +942,8 @@ export interface ImportPreview {
   truncated: boolean
   /** File-level remarks, e.g. records that are not imported (absent on older servers). */
   notes?: string[]
+  /** Set when the file is a template (project-templates D7). */
+  template?: { day?: string }
 }
 
 export type ImportStatus = 'running' | 'done' | 'failed' | 'undone'

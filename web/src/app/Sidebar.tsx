@@ -1,4 +1,6 @@
-import { Button, Icon, IconButton, type IconName, isIconName, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
+import { Button, Icon, IconButton, type IconName, isIconName, MenuItem, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
+import { Menu } from './overlay/Menu'
+import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
@@ -277,7 +279,13 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           <p className="px-2 py-1 text-meta text-faint">Save a filter with <span className="ui-kbd">s</span> to pin it here.</p>
         )}
       </SidebarGroup>
-      <SidebarGroup title="Projects" collapsed={collapsed} actions={<SidebarGroupAction onClick={startAdding} aria-label="New project"><Icon name="plus" size="xs" /></SidebarGroupAction>}>
+      <SidebarGroup title="Projects" collapsed={collapsed} actions={(
+        <Menu kind="menu" label="New project" title="New project" trigger={<Icon name="plus" size="xs" />}
+          triggerClassName="rounded-chip px-1.5 py-0.5 text-hint font-medium normal-case text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised" width="sm:w-56">
+          <MenuItem label="New project" icon="plus" onSelect={startAdding} />
+          <MenuItem label="From a template…" icon="copy" onSelect={requestTemplateDialog} />
+        </Menu>
+      )}>
         <ul role="tree">
           {rows.map((n) => {
             const p = n.item
