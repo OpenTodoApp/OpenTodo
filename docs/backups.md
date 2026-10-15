@@ -221,11 +221,13 @@ What both paths check, in order, before touching anything:
    integrity error);
 4. refuses an archive made by a newer schema version than the binary knows,
    naming both versions (upgrade the binary first);
-5. runs SQLite's integrity check on the extracted database.
+5. runs SQLite's integrity check on the extracted database;
+6. streams every attachment file into a temporary directory, checking its size
+   and SHA-256 (a corrupt file stops the restore before anything changes).
 
 Only then it saves the current database as
 `opentodo.db.pre-restore-<YYYYMMDD-HHMMSS>` next to it, swaps in the restored
-one and gives it a new [log generation](sync.md#log-generation). Migrations
+one, moves the attachment files into `<data>/attachments/` (files already there that the archive does not list are kept) and gives the database a new [log generation](sync.md#log-generation). Migrations
 run on the next start, so an archive from an older version is upgraded
 automatically.
 
@@ -324,6 +326,16 @@ Inside is a `tar` stream with these entries, in this order:
 3. `push_vapid.pem` (only when it exists): the web push key pair of [reminders](reminders.md).
    Restore puts it back next to the database, so devices that enabled notifications
    keep receiving them on the new host. Archives without it restore as before.
+4. `attachments/<id[:2]>/<id>`: one entry per [attachment](attachments.md) file,
+   each listed in the manifest with its size and SHA-256. Files are written once
+   and never changed, so the entries match the database snapshot taken just
+   before them.
+
+**Size.** The archive grows by the attachment bytes; gzip gains little on
+files that are already compressed (photos, PDFs). With *keep last* 7 the
+destination holds up to seven copies of every file, so plan the space as
+seven times (database plus attachments). Removed attachments stay in archives
+until those archives expire, like the rest of the data.
 
 The database copy is taken with SQLite's `VACUUM INTO` while the server keeps
 running. It contains every account, session, API token, invitation, project,
@@ -332,7 +344,7 @@ is needed to read it.
 
 The archive never contains `<data>/secrets/` (destination credentials and the
 passphrase) or `<data>/backups/` (earlier archives): only the database snapshot
-and the push key are packaged.
+the push key and the attachment files are packaged.
 
 ### `manifest.json`
 
@@ -347,7 +359,8 @@ and the push key are packaged.
   "compression": "gzip",
   "encrypted": true,
   "files": [
-    { "name": "opentodo.db", "size": 1048576, "sha256": "<hex>" }
+    { "name": "opentodo.db", "size": 1048576, "sha256": "<hex>" },
+    { "name": "attachments/9f/9f2c41d0-…", "size": 48213, "sha256": "<hex>" }
   ]
 }
 ```

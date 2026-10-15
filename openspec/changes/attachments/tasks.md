@@ -19,9 +19,9 @@
 
 ## 3. Backups and restore (design D11)
 
-- [ ] 3.1 `internal/backup/archive.go` and `run.go`: walk the blob store after the snapshot, list `attachments/<id[:2]>/<id>` entries with size and digest in the manifest, stream each into the tar. Tests: an archive with 3 files lists and contains them; a file removed between walk and stream fails the run cleanly; memory stays bounded for a 300 MB fixture made of a sparse file. Verify with `go test ./internal/backup/...`.
-- [ ] 3.2 `internal/backup/restore.go`: stream `attachments/…` entries into `tmp/` with verification, rename into place after the database swap, keep unlisted files, abort before the swap on a bad digest. Tests: round trip restores files byte for byte, corrupt entry changes nothing, an old archive without attachments restores as before. Verify with `go test ./internal/backup/...`.
-- [ ] 3.3 Update `docs/backups.md`: the entry list, the manifest example with file entries, the size arithmetic with retention, and the restore note about files. Verify with `npm run docs:check`.
+- [x] 3.1 `internal/backup/archive.go` and `run.go`: walk the blob store after the snapshot, list `attachments/<id[:2]>/<id>` entries with size and digest in the manifest, stream each into the tar. Tests: an archive with 3 files lists and contains them; a file removed between walk and stream fails the run cleanly; memory stays bounded for a 300 MB fixture made of a sparse file. Verify with `go test ./internal/backup/...`.
+- [x] 3.2 `internal/backup/restore.go`: stream `attachments/…` entries into `tmp/` with verification, rename into place after the database swap, keep unlisted files, abort before the swap on a bad digest. Tests: round trip restores files byte for byte, corrupt entry changes nothing, an old archive without attachments restores as before. Verify with `go test ./internal/backup/...`.
+- [x] 3.3 Update `docs/backups.md`: the entry list, the manifest example with file entries, the size arithmetic with retention, and the restore note about files. Verify with `npm run docs:check`.
 
 ## 4. Export and import (design D12)
 

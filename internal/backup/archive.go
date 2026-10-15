@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/pixari/opentodo/internal/settings"
@@ -141,6 +142,21 @@ type archiveOptions struct {
 	chunkSize  int // encryption chunk size; 0 = DefaultChunkSize
 	// extras are paths of extra files (see ExtraFiles), stored under their base name.
 	extras []string
+	// attachments are the attachment files (OpenSpec attachments, design D11),
+	// stored after the extras under their data-directory relative name.
+	attachments []archivedFile
+}
+
+// archivedFile is a file packaged under name ("attachments/ab/abc…") from path.
+type archivedFile struct{ name, path string }
+
+// attachmentEntry matches the archive name of an attachment file.
+var attachmentEntry = regexp.MustCompile(`^attachments/([A-Za-z0-9-]{1,2})/([A-Za-z0-9-]{1,64})$`)
+
+// validAttachmentEntry reports whether name is a well-formed attachment entry.
+func validAttachmentEntry(name string) bool {
+	m := attachmentEntry.FindStringSubmatch(name)
+	return m != nil && strings.HasPrefix(m[2], m[1]) && (len(m[2]) <= 2 || len(m[1]) == 2)
 }
 
 // writeArchive streams tar(manifest.json, opentodo.db) through optional gzip and
@@ -163,6 +179,16 @@ func writeArchive(w io.Writer, snapshotPath string, m Manifest, o archiveOptions
 			return fmt.Errorf("checksum %s: %w", filepath.Base(p), err)
 		}
 		m.Files = append(m.Files, ManifestFile{Name: filepath.Base(p), Size: n, SHA256: sum})
+	}
+	// Attachment files are walked twice: once here for the manifest (the first
+	// entry), once below to stream them. They are immutable, so a size change
+	// cannot happen; one purged in between fails the run, and the next repeats it.
+	for _, a := range o.attachments {
+		n, sum, err := fileDigest(a.path)
+		if err != nil {
+			return fmt.Errorf("checksum %s: %w", a.name, err)
+		}
+		m.Files = append(m.Files, ManifestFile{Name: a.name, Size: n, SHA256: sum})
 	}
 	manifest, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
@@ -217,6 +243,12 @@ func writeArchive(w io.Writer, snapshotPath string, m Manifest, o archiveOptions
 			return err
 		}
 	}
+	for i, a := range o.attachments {
+		want := m.Files[1+len(o.extras)+i]
+		if err := streamFile(tw, a, want.Size, mtime); err != nil {
+			return err
+		}
+	}
 	if err := tw.Close(); err != nil {
 		return err
 	}
@@ -229,6 +261,23 @@ func writeArchive(w io.Writer, snapshotPath string, m Manifest, o archiveOptions
 		return enc.Close()
 	}
 	return nil
+}
+
+// streamFile copies one file into the tar stream without reading it whole.
+func streamFile(tw *tar.Writer, a archivedFile, size int64, mtime time.Time) error {
+	f, err := os.Open(a.path)
+	if err != nil {
+		return fmt.Errorf("%s disappeared while archiving: %w", a.name, err)
+	}
+	defer f.Close()
+	if st, err := f.Stat(); err != nil || st.Size() != size {
+		return fmt.Errorf("%s changed while archiving", a.name)
+	}
+	if err := tw.WriteHeader(&tar.Header{Name: a.name, Mode: 0o600, Size: size, ModTime: mtime, Typeflag: tar.TypeReg}); err != nil {
+		return err
+	}
+	_, err = io.CopyN(tw, f, size)
+	return err
 }
 
 // ErrPassphraseRequired is returned when an encrypted archive is opened without one.
