@@ -74,6 +74,14 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 			if err := rc.Flush(); err != nil {
 				return
 			}
+		case <-sub.Calendar():
+			// Subscribed calendars changed (calendar-feeds D8): devices refresh their cache.
+			if _, err := fmt.Fprint(w, "event: calendar\ndata: {}\n\n"); err != nil {
+				return
+			}
+			if err := rc.Flush(); err != nil {
+				return
+			}
 		case <-ticker.C:
 			// Re-validate on every heartbeat so a revoked session or token is cut
 			// within one interval.

@@ -13,11 +13,11 @@
 
 ## 3. Store, fetcher and worker (design D3, D4)
 
-- [ ] 3.1 Migration `NNNN_calendar_feeds.sql` (the next free number) with the three tables and indices from D4. Verify `go test ./internal/store/...` applies it on a fresh and an existing database.
-- [ ] 3.2 `internal/calfeed/store.go`: subscriptions CRUD with the per-user limit, `Replace`, `Events(userID, from, to)` with the padded range query and exact overlap in Go, feed token create/rotate/revoke/lookup, `Due`, `Backoff`. Verify tests: an eleventh subscription errors, `Replace` leaves no rows of the old content, a floating 23:00 event is returned for the right days, a foreign id is not found.
-- [ ] 3.3 `internal/calfeed/fetch.go`: conditional requests, `webcal` → `https`, body cap, outcome reasons. Verify tests against `httptest` servers: 304 keeps rows, 2 MB + 1 → `too_large`, 500 → `http_500`, timeout → `timeout`, name adopted from `X-WR-CALNAME` when the subscription has none, `X-PUBLISHED-TTL:PT1H` sets `refresh_seconds`.
+- [x] 3.1 Migration `NNNN_calendar_feeds.sql` (the next free number) with the three tables and indices from D4. Verify `go test ./internal/store/...` applies it on a fresh and an existing database.
+- [x] 3.2 `internal/calfeed/store.go`: subscriptions CRUD with the per-user limit, `Replace`, `Events(userID, from, to)` with the padded range query and exact overlap in Go, feed token create/rotate/revoke/lookup, `Due`, `Backoff`. Verify tests: an eleventh subscription errors, `Replace` leaves no rows of the old content, a floating 23:00 event is returned for the right days, a foreign id is not found.
+- [x] 3.3 `internal/calfeed/fetch.go`: conditional requests, `webcal` → `https`, body cap, outcome reasons. Verify tests against `httptest` servers: 304 keeps rows, 2 MB + 1 → `too_large`, 500 → `http_500`, timeout → `timeout`, name adopted from `X-WR-CALNAME` when the subscription has none, `X-PUBLISHED-TTL:PT1H` sets `refresh_seconds`.
 - [ ] 3.4 `internal/calfeed/worker.go`: 30 s poll under the jobs leader, two in flight, backoff doubling to 6 h, stop on `private_target`, `NotifyCalendar` when content changed; wired in `cmd/opentodo/main.go` next to `hooks.Run` and skipped on the demo and while the owner switch is off. Verify worker tests with a fake clock (a failing source is retried at 30 min, 1 h, … 6 h; a success resets; a stopped subscription is never picked), and `go test ./...`.
-- [ ] 3.5 `internal/sync/notifier.go` and `internal/httpapi/events.go`: a `calendar` signal written as `event: calendar`. Verify an events-stream test receives it and that the existing `ops` tests pass.
+- [x] 3.5 `internal/sync/notifier.go` and `internal/httpapi/events.go`: a `calendar` signal written as `event: calendar`. Verify an events-stream test receives it and that the existing `ops` tests pass.
 
 ## 4. Routes, switch, feed and demo (design D5, D6, D7)
 
