@@ -65,7 +65,7 @@ Coolify v4.x.x (fill in), Docker Compose Empty:
 - [ ] Data survives Restart and Redeploy
 - [ ] A variable set in the UI reaches the container
 
-[Repository](https://github.com/pixari/opentodo), [docs](https://open-todo.app/docs/self-hosting/coolify/), [demo](https://demo.open-todo.app). Image ghcr.io/pixari/opentodo:0.3 (amd64, arm64), AGPL-3.0.
+[Repository](https://github.com/pixari/opentodo), [docs](https://open-todo.app/docs/self-hosting/coolify/), [demo](https://demo.open-todo.app). Image ghcr.io/pixari/opentodo:0.4 (amd64, arm64), AGPL-3.0.
 
 ## Contributor Agreement
 
