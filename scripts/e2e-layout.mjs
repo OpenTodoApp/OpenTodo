@@ -104,6 +104,8 @@ async function seed() {
   await T({ title: 'Read ' + LONG_URL, description: 'See ' + LONG_URL })
   const quotes = await T({ title: 'Get three quotes for the kitchen', project_id: home.id, section_id: sections['In progress'], due: { date: today, time: '10:00' }, estimate_minutes: 60 })
   await T({ title: 'Pick paint colours', project_id: home.id, section_id: sections.Planning, labels: [L['deep-work']] })
+  // Waits for the quotes (task-dependencies): dimmed in the project, in Today's Blocked group.
+  await T({ title: 'Book the kitchen fitters', project_id: home.id, section_id: sections.Waiting, due: { date: today }, blocked_by: [quotes.id] })
   await T({ title: 'Call the plumber', project_id: home.id, section_id: sections.Waiting, assignee_id: bob.id })
   await T({ title: 'Plan the team offsite', project_id: work.id, due: { date: today, time: '14:00' }, estimate_minutes: 90 })
   await T({ title: 'Submit expense report', project_id: work.id, completed_at: Date.now() - 3600e3 })
@@ -175,7 +177,7 @@ function screens(ids) {
     { name: 'ask', path: '/ask', ready: heading('Ask OpenTodo') },
     { name: 'trash', path: '/trash', ready: (p) => p.getByText('Old shopping list').first().waitFor() },
     { name: 'activity', path: '/activity', ready: heading(/Activity/) },
-    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history'] },
+    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history', 'blocked-by-picker'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), board: true },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
@@ -340,6 +342,16 @@ const OVERLAYS = {
     await dialog.getByRole('button', { name: 'Create a link…' }).click()
     await dialog.getByRole('button', { name: 'Create link' }).waitFor()
     return { overlay: dialog, trigger, kind: 'dialog' }
+  },
+  // Blocked by (task-dependencies): b on a selected row opens the panel with the picker.
+  async 'blocked-by-picker'(p) {
+    await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().getByRole('button').nth(1).click()
+    const row = p.locator('aside[data-detail-for] [data-property="blocked-by"]')
+    const value = row.locator('button[aria-labelledby]').first()
+    await value.scrollIntoViewIfNeeded()
+    await value.click()
+    await row.getByRole('combobox').first().waitFor()
+    return { overlay: row, kind: 'inline', after: async () => p.keyboard.press('Escape') }
   },
   async 'mention-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().getByRole('button').nth(1).click()

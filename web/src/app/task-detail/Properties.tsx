@@ -6,6 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../../lib/db'
 import { describeDeadline, localDueOf, zoneHint } from '../../lib/dates'
+import { blockerCandidates, dependents, setBlockedBy } from '../../lib/dependencies'
 import { formatMinutes } from '../../lib/duration'
 import { removeLabel, resolveLabels } from '../../lib/labels'
 import { createProject, parkTask, setTaskParent, unparkTask, updateTask } from '../../lib/ops'
@@ -13,6 +14,7 @@ import { byPosition } from '../../lib/ordering'
 import { INBOX_KEY, NONE_KEY, parentSource, projectSource, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { effectiveSection, moveTaskToSection } from '../../lib/sections'
 import { isSoloScope, memberName, membershipMap } from '../../lib/sharing'
+import { visibleTasks } from '../../lib/trash'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
 import { Avatar } from '../../ui/Avatar'
 import { IconButton } from '../../ui/Button'
@@ -27,7 +29,7 @@ import { EstimateField } from '../EstimateField'
 import { LabelChip, LabelPicker } from '../LabelPicker'
 import { RecurrenceField } from '../RecurrenceField'
 import { RemindersField } from '../RemindersField'
-import { deadlineFocus, deferFocus, estimateFocus } from '../signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus } from '../signals'
 import { useViewerZone } from '../useViews'
 import { PropertyRow } from './PropertyRow'
 import { ZoneControl } from './ZoneControl'
@@ -92,7 +94,17 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
   const [estimating, setEstimating] = useState(false)
   const [deadlining, setDeadlining] = useState(false)
   const [deferring, setDeferring] = useState(false)
-  useEffect(() => { setParentError(null); setEstimating(false); setDeadlining(false); setDeferring(false) }, [task.id])
+  const [blocking, setBlocking] = useState(false)
+  const [blockError, setBlockError] = useState<string | null>(null)
+  useEffect(() => { setParentError(null); setEstimating(false); setDeadlining(false); setDeferring(false); setBlocking(false); setBlockError(null) }, [task.id])
+
+  // `b` on a list row opens the panel with the Blocked by picker (task-dependencies 3.3).
+  useEffect(() => {
+    if (blockedByFocus.take(task.id)) setBlocking(true)
+    return blockedByFocus.subscribe((id) => { if (id === task.id && blockedByFocus.take(id)) setBlocking(true) })
+  }, [task.id])
+  // Every live task: blockers may sit in any project of the same sharing scope.
+  const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
 
   // `Shift+N` on a list row opens the panel with the start date field (someday-and-evening 3.3).
   useEffect(() => {
@@ -122,6 +134,22 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
     const list = parent && !projectTasks.some((t) => t.id === parent.id) ? [...projectTasks, parent] : projectTasks
     return parentSource(list, task, sections)
   }, [projectTasks, parent, task, sections])
+
+  const taskById = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
+  const blockers = useMemo(() => (task.blocked_by ?? []).map((id) => taskById.get(id)).filter((t): t is Task => !!t), [task.blocked_by, taskById])
+  const blocks = useMemo(() => dependents(task.id, allTasks).filter((t) => !t.completed_at), [task.id, allTasks])
+  const projectName = (t: Task) => (t.project_id ? projects.find((p) => p.id === t.project_id)?.name ?? 'Project' : 'Inbox')
+  // Candidates, plus the current blockers so they can be unticked in the same list.
+  const blockerItems = useMemo(() => [...blockers, ...blockerCandidates(task, allTasks, memberships)], [blockers, task, allTasks, memberships])
+  const toggleBlocker = async (id: string) => {
+    setBlockError(null)
+    try {
+      const list = task.blocked_by ?? []
+      await setBlockedBy(task.id, list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
+    } catch (err) {
+      setBlockError(err instanceof Error ? err.message : String(err))
+    }
+  }
 
   const project = projectId ? projects.find((p) => p.id === projectId) : undefined
   const currentProject = projectItems.find((i) => i.value === projectId)
@@ -187,6 +215,37 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
             pinned={[...parentItems.filter((i) => i.marker).map((i) => i.key), NONE_KEY]} selected={[task.parent_id ?? NONE_KEY]} rankContext="task.parent"
             emptyText="No open task matches." onPick={async (i) => { await changeParent(i.value); close() }} onClose={close} />
         )} />
+
+      <PropertyRow icon="lock" label="Blocked by" testId="blocked-by" readOnly={readOnly}
+        editing={blocking} onEditingChange={setBlocking}
+        empty={!blockers.length} placeholder="Not waiting"
+        value={(
+          <span className="flex min-w-0 flex-wrap gap-1">
+            {blockers.map((b) => (
+              <span key={b.id} className={`max-w-full truncate rounded-control bg-sunken px-1.5 text-sm dark:bg-raised ${b.completed_at ? 'text-faint line-through' : 'text-default'}`} data-blocker>
+                {b.title || 'Untitled'}{b.recurrence && !b.completed_at ? <span className="text-faint"> · repeats</span> : null}
+              </span>
+            ))}
+          </span>
+        )}
+        note={blockError ? <span role="alert" className="text-danger">{blockError}</span> : undefined}
+        editor={(close) => (
+          <ComboboxPanel<Task> label="Blocked by" placeholder="Find a task this one waits for…" source={blockerItems}
+            getKey={(t) => t.id} getLabel={(t) => t.title || 'Untitled'} getPath={(t) => [projectName(t)]} multiple selected={task.blocked_by ?? []}
+            rankContext="task.blocked-by" emptyText="No open task can block this one." onPick={(t) => toggleBlocker(t.id)} onClose={close} />
+        )} />
+
+      {blocks.length > 0 && (
+        <PropertyRow icon="arrow-right" label="Blocks" testId="blocks" control={(
+          <ul className="flex min-w-0 flex-col gap-0.5 px-2 py-1" aria-label="Tasks waiting for this one">
+            {blocks.map((t) => (
+              <li key={t.id} className="min-w-0">
+                <button type="button" className="max-w-full truncate text-left text-sm text-accent hover:underline" onClick={() => onOpen?.(t.id)}>{t.title || 'Untitled'}</button>
+              </li>
+            ))}
+          </ul>
+        )} />
+      )}
 
       {userId && (solo ? (
         <PropertyRow icon="user-check" label="Assignee" testId="assignee" control={

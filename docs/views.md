@@ -40,6 +40,8 @@ A [deadline](tasks-and-projects.md#deadlines) brings a task into Today too: a ta
 
 A task whose start date has come shows up in Today too, with a **Started** chip, and stays until you complete it, give it a date or defer it again. Deferred and parked tasks stay out of Today, unless their due date or deadline has come: a hard date always wins. Tasks you marked for **This Evening** are listed in their own group below the day's tasks.
 
+Tasks [waiting for another task](tasks-and-projects.md#wait-for-another-task) gather in a **Blocked** group at the end, folded so they don't crowd the day; select the heading to open it (your choice is kept on this device). When the task they wait for is completed, they move up among today's tasks by themselves. In Upcoming and other lists, blocked tasks stay in place, dimmed, with a lock.
+
 <picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view with an Overdue group above today's tasks."></picture>
 
 Anything you add here with quick add is due today, unless you type another date. To push a task to later, open it and change **Due**, or press <kbd>s</kbd> to place it on the Day calendar.
@@ -68,7 +70,7 @@ Above most lists are four buttons: **Quick wins** (15 minutes or less), **Under 
 
 ## Save your own views
 
-When the built-in views aren't enough, describe what you want in the **Filter** view, then save it. For example, `@waiting & open` lists everything you're waiting on, and `due <= 7 days & p1` shows urgent tasks for the coming week. The filter language is explained in [Labels and filters](labels-and-filters.md).
+When the built-in views aren't enough, describe what you want in the **Filter** view, then save it. For example, `blocked` lists every task waiting for another one (save it as **Waiting for**), `@waiting & open` lists everything you labelled as waiting, and `due <= 7 days & p1` shows urgent tasks for the coming week. The filter language is explained in [Labels and filters](labels-and-filters.md).
 
 To save the current filter, press <kbd>s</kbd> in the results (or use the save button), and give it a name. Saved views are pinned to the **Views** group in the sidebar with a live count, and they sync to all your devices.
 

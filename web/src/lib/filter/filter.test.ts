@@ -623,3 +623,33 @@ function countTerms(n: Node): number {
   if (n.kind === 'not') return countTerms(n.item)
   return 1
 }
+
+describe('blocked and unblocked (task-dependencies)', () => {
+  const tasks: Task[] = [
+    task('confirm', { title: 'Confirm dates', due: { date: TODAY } }),
+    task('flights', { title: 'Book flights', due: { date: TODAY }, blocked_by: ['confirm'] }),
+    task('hotel', { title: 'Book hotel', blocked_by: ['done', 'gone', 'unknown'] }),
+    task('done', { title: 'Old step', completed_at: at('2026-10-01') }),
+    task('gone', { title: 'Removed step', deleted_at: at('2026-10-01') }),
+    task('later', { title: 'Later', due: { date: '2026-10-20' } }),
+  ]
+  const ctx: FilterContext = { ...CTX, tasks }
+  it('blocked lists open tasks with an open blocker only', () => {
+    expect(ids('blocked', tasks, ctx)).toEqual(['flights'])
+  })
+  it('unblocked & today lists what can be done today', () => {
+    expect(ids('unblocked & today', tasks, ctx)).toEqual(['confirm'])
+  })
+  it('a blocker completed elsewhere moves the task to unblocked on the next evaluation', () => {
+    const after = tasks.map((t) => (t.id === 'confirm' ? { ...t, completed_at: at('2026-10-10') } : t))
+    expect(ids('unblocked', after, { ...CTX, tasks: after })).toContain('flights')
+    expect(ids('blocked', after, { ...CTX, tasks: after })).toEqual([])
+  })
+  it('round-trips through printQuery and warns without the task set', () => {
+    for (const q of ['blocked & !unblocked', 'unblocked | @errand']) {
+      const ast = parse(q)!
+      expect(stripPos(parse(printQuery(ast))!)).toEqual(stripPos(ast))
+    }
+    expect(compile(parse('blocked')!, CTX).warnings).toEqual(['Blocked tasks cannot be told apart here'])
+  })
+})

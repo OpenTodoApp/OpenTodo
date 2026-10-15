@@ -69,12 +69,15 @@ type Row struct {
 	ProjectSourceID string
 	SectionName     string
 	ParentSourceID  string
-	Priority        int // 0 means "not given" (imported as 4)
-	Due             *Due
-	Labels          []string // label names
-	Completed       bool
-	CompletedAt     int64 // 0 with Completed set means "now"
-	CreatedAt       int64
+	// BlockedBySourceIDs name rows of the same file this task waits for
+	// (task-dependencies D10); resolved in a final pass once every task has an id.
+	BlockedBySourceIDs []string
+	Priority           int // 0 means "not given" (imported as 4)
+	Due                *Due
+	Labels             []string // label names
+	Completed          bool
+	CompletedAt        int64 // 0 with Completed set means "now"
+	CreatedAt          int64
 	// Recurrence is a canonical rule (internal/recurrence) or "".
 	Recurrence string
 	// Reminders of the task, created with it.

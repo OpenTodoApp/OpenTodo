@@ -45,6 +45,9 @@ type Task struct {
 	Evening     bool
 	Categories  []string
 	ParentUID   string
+	// DependsOn are the UIDs of the task's blockers in the same calendar
+	// (OpenSpec change task-dependencies, design D10).
+	DependsOn   []string
 	CreatedAt   int64
 	CompletedAt *int64
 	Recurrence  string // canonical rule or ""
@@ -74,7 +77,9 @@ type Inbound struct {
 	CompletedAt *int64 // the COMPLETED time when the client sent one
 	Categories  []string
 	ParentUID   string
-	CreatedAt   *int64
+	// DependsOn are the UIDs of RELATED-TO;RELTYPE=DEPENDS-ON lines (task-dependencies D10).
+	DependsOn []string
+	CreatedAt *int64
 	// RRULE is the raw rule value ("" when none). Rule is its canonical
 	// OpenTodo form, or "" when the grammar cannot express it; then the RRULE
 	// line is part of Extra and the task keeps no rule of its own.
@@ -209,6 +214,9 @@ func Encode(t Task) []byte {
 	}
 	if t.ParentUID != "" {
 		add("RELATED-TO", EscapeText(t.ParentUID))
+	}
+	for _, uid := range t.DependsOn {
+		todo.Props = append(todo.Props, Prop{Name: "RELATED-TO", Params: []Param{{Name: "RELTYPE", Values: []string{"DEPENDS-ON"}}}, Value: EscapeText(uid)})
 	}
 	lines := cal.Lines()
 	lines = lines[:len(lines)-1] // reopen VCALENDAR to append the VTODO
@@ -386,6 +394,10 @@ func Decode(body []byte) (*Inbound, error) {
 			rt := strings.ToUpper(p.Param("RELTYPE"))
 			if (rt == "" || rt == "PARENT") && in.ParentUID == "" && strings.TrimSpace(p.Value) != "" {
 				in.ParentUID = UnescapeText(strings.TrimSpace(p.Value))
+				continue
+			}
+			if rt == "DEPENDS-ON" && strings.TrimSpace(p.Value) != "" {
+				in.DependsOn = append(in.DependsOn, UnescapeText(strings.TrimSpace(p.Value)))
 				continue
 			}
 			extra = append(extra, p.Line())

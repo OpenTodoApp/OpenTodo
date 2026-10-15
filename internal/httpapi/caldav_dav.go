@@ -385,6 +385,14 @@ func (v *davView) encode(t opsync.Entity) ([]byte, string) {
 			ct.ParentUID = v.uidOf(pid)
 		}
 	}
+	// Blockers in this calendar as RELATED-TO;RELTYPE=DEPENDS-ON (task-dependencies D10).
+	var blockers []string
+	_ = json.Unmarshal(t["blocked_by"], &blockers)
+	for _, b := range blockers {
+		if _, ok := v.byID[b]; ok {
+			ct.DependsOn = append(ct.DependsOn, v.uidOf(b))
+		}
+	}
 	body := caldav.Encode(ct)
 	sum := sha256.Sum256(body)
 	return body, `"` + hex.EncodeToString(sum[:16]) + `"`

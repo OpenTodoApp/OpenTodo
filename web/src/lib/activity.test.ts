@@ -106,3 +106,13 @@ describe('local activity log', () => {
     expect(merged.map((e) => e.id)).toEqual(['c', 'b', 'a'])
   })
 })
+
+describe('dependencies events (task-dependencies)', () => {
+  const ev = (to: string[]) => ({ id: 'e', kind: 'dependencies', actor: 'a', entity: 'task', entityId: 't1', taskId: 't1', ts: 1, opIds: ['e'], changes: [{ field: 'blocked_by', from: null, to }] }) as never
+  it('names the tasks when they are known on this device', () => {
+    const titles = new Map([['t2', 'Confirm dates']])
+    expect(describeEvent(ev(['t2']), () => 'Alice', () => 'Inbox', (id) => titles.get(id))).toBe('now waits for “Confirm dates”')
+    expect(describeEvent(ev(['t9']), () => 'Alice', () => 'Inbox', (id) => titles.get(id))).toBe('changed what this task waits for')
+    expect(describeEvent(ev([]), () => 'Alice', () => 'Inbox')).toBe('stopped waiting for other tasks')
+  })
+})

@@ -43,7 +43,7 @@ A file matching none of these is refused with `400 unsupported_format`, naming t
 
 The file from **Settings → Data → Download export** or `GET /api/v1/export`. Labels, projects (with their sub-project tree), sections, tasks (with subtasks, completion and tombstones), reminders and saved views are recreated with their original ids and field values, so importing an export into an empty account and exporting again gives an equivalent file (comments aside, see below).
 
-Because ids are kept, nothing needs remapping: a task's `section_id`, a recurring series and its occurrence records (`series_id`, whose ids are derived from the series id), a reminder's `task_id` and a dashboard's `panels` all point at the same entities as before. Every task field is carried: `recurrence` (stored in canonical form, for example `Every  Monday` becomes `every monday`), `series_id`, `section_id`, `notes_doc` (rich-text notes), `due` including a zoned `tz`, `estimate_minutes` and `ical_extra`.
+Because ids are kept, nothing needs remapping: a task's `section_id`, a recurring series and its occurrence records (`series_id`, whose ids are derived from the series id), a reminder's `task_id`, a task's `blocked_by` and a dashboard's `panels` all point at the same entities as before. Every task field is carried: `recurrence` (stored in canonical form, for example `Every  Monday` becomes `every monday`), `series_id`, `section_id`, `notes_doc` (rich-text notes), `due` including a zoned `tz`, `estimate_minutes` and `ical_extra`.
 
 What is handled differently, and why:
 
@@ -112,7 +112,8 @@ Linear exports a workspace's issues as CSV from its workspace settings (Import /
 | `Parent issue` | the parent task |
 | `Completed` / `Canceled` | completed / completed with the label `canceled` |
 | `Assignee` | kept when it is your own email address, otherwise dropped with a warning |
-| `Estimate`, cycles, milestones, initiatives, SLA, relations | dropped with a warning |
+| `Blocked by` | the issues it waits for become [Blocked by](tasks-and-projects.md#wait-for-another-task), when they are in the same file; others are dropped with a warning |
+| `Estimate`, cycles, milestones, initiatives, SLA, `Related to`, `Duplicate of` | dropped with a warning |
 
 ### Things database (`things-db`)
 
@@ -162,6 +163,7 @@ UTF-8, with a header row. Comma, semicolon and tab separators are detected from 
 | `evening` | | `true`/`yes`/`x`/`1` marks the task for This Evening |
 | `deadline` | | the day the task must be finished by, `YYYY-MM-DD`; a date-time keeps its date (with a warning); anything else is a row error |
 | `attachment` | `attachments`, `files`, `links` | one or more `http(s)` addresses separated by `;`, `,` or `\|`, each kept as a link attachment; anything else is dropped with a warning |
+| `blocked_by` | `depends_on`, `waits_for` | the rows this task waits for, by `id` or by a unique title, separated by `;`, `,` or `\|`; a row that is not in the file, or one that would make tasks wait for each other, is dropped with a warning |
 
 Columns named `comment(s)` or `assignee` are recognised as unsupported: a non-empty value is dropped with a warning on that row. Any other column is listed as ignored in the preview.
 

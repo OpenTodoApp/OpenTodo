@@ -36,7 +36,7 @@ const DEADLINE_TONE = {
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
 export const MAX_INDENT = 3
 
-export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, ticked = false, showCheckbox = false, onTick }: {
+export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, ticked = false, showCheckbox = false, onTick }: {
   task: Task
   project?: Project
   /** Already resolved: unknown and deleted label ids are not in this list. */
@@ -48,6 +48,8 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   showProject: boolean
   depth?: number
   progress?: Progress
+  /** Open blockers (task-dependencies): above 0 the row is dimmed with a lock marker. */
+  blockedBy?: number
   /** Title of the parent when the task is shown outside its parent's subtree. */
   breadcrumb?: string | null
   hasChildren?: boolean
@@ -150,7 +152,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
           onOpen(e)
         }}>
-        <div className={`truncate text-sm ${done ? 'text-faint line-through' : ''}`}>
+        <div className={`truncate text-sm ${done ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`}>
           {undecryptable ? <span className="italic text-faint" title="This title could not be decrypted with this device's key">{task.title}</span>
             : task.title || <span className="italic text-faint">Untitled</span>}
           {unencrypted && (
@@ -167,6 +169,11 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
           {breadcrumb && <span className="inline-flex min-w-0 items-center gap-1 text-faint" title="Parent task"><Icon name="corner-down-right" size="xs" /><span className="truncate">{breadcrumb}</span></span>}
           {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-faint" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
+          {blockedBy > 0 && !done && (
+            <span className="inline-flex items-center gap-0.5 text-muted" data-blocked title={`Waiting for ${blockedBy} ${blockedBy === 1 ? 'task' : 'tasks'}`} aria-label={`Blocked by ${blockedBy}`}>
+              <Icon name="lock" size="xs" />{blockedBy}
+            </span>
+          )}
           {deadline && (
             <span className={`inline-flex items-center gap-0.5 ${DEADLINE_TONE[deadline.tone]}`} data-deadline
               title={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}`} aria-label={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}, ${deadline.label}`}>

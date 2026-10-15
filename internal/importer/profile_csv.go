@@ -45,6 +45,7 @@ var csvColumns = map[string]string{
 	"start":    "start", "start_date": "start",
 	"evening":    "evening",
 	"attachment": "attachment", "attachments": "attachment", "files": "attachment", "links": "attachment",
+	"blocked_by": "blocked_by", "depends_on": "blocked_by", "waits_for": "blocked_by",
 }
 
 // csvUnsupported are columns the model cannot hold; a non-empty value is dropped
@@ -161,6 +162,11 @@ func (csvProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		row.ProjectName = get("project")
 		row.SectionName = get("section")
 		row.ParentSourceID = get("parent")
+		for _, ref := range strings.FieldsFunc(get("blocked_by"), func(r rune) bool { return r == ';' || r == '|' || r == ',' }) {
+			if ref = strings.TrimSpace(ref); ref != "" {
+				row.BlockedBySourceIDs = append(row.BlockedBySourceIDs, ref)
+			}
+		}
 		if row.Title == "" {
 			row.fail("title is required")
 		}
@@ -302,6 +308,20 @@ func resolveCSVParents(rows []Row) {
 			continue
 		}
 		rows[i].ParentSourceID = "id:" + p
+	}
+	// blocked_by references resolve the same way (task-dependencies D10).
+	for i := range rows {
+		for k, ref := range rows[i].BlockedBySourceIDs {
+			t := strings.ToLower(ref)
+			switch {
+			case byID["id:"+ref]:
+				rows[i].BlockedBySourceIDs[k] = "id:" + ref
+			case !ambiguous[t] && byTitle[t] != "":
+				rows[i].BlockedBySourceIDs[k] = byTitle[t]
+			default:
+				rows[i].BlockedBySourceIDs[k] = "id:" + ref
+			}
+		}
 	}
 }
 

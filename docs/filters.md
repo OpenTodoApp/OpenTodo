@@ -36,7 +36,7 @@ date     := "today" | "tomorrow" | "yesterday" | weekday | YYYY-MM-DD
 weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
-          | "someday" | "deferred" | "evening"
+          | "someday" | "deferred" | "evening" | "blocked" | "unblocked"
 name     := word | '"' chars '"'
 text     := word | '"' chars '"'
 ```
@@ -76,6 +76,8 @@ text     := word | '"' chars '"'
 | `someday` | parked tasks |
 | `deferred` | tasks whose start date is after today |
 | `evening` | tasks marked for This Evening |
+| `blocked` | tasks waiting for another task that is still open ([Blocked by](tasks-and-projects.md#wait-for-another-task)) |
+| `unblocked` | tasks not waiting for any open task |
 | `no project` | Inbox tasks (no project) |
 | `no labels` | tasks with no label |
 | `subtask` | tasks that have a parent task |
@@ -216,4 +218,16 @@ deadline <= 6 days & no date
 
 ```filter
 @waiting & !someday
+```
+
+### 13. Waiting for (save it as a view)
+
+```filter
+blocked
+```
+
+### 14. What can be done today
+
+```filter
+unblocked & today
 ```

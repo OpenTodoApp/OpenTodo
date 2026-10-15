@@ -2,6 +2,7 @@ import { HelpLink } from './help/HelpLink'
 import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { blockedMap } from '../lib/dependencies'
 import { db } from '../lib/db'
 import { formatDateHeading, todayISO } from '../lib/dates'
 import { inAnytime, inLater, inToday, inUpcoming, isSomeday, overdueInToday, upcomingDate } from '../lib/views'
@@ -29,7 +30,7 @@ import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
-import { deadlineFocus, deferFocus, estimateFocus, isGPending, openTask, placeInDay } from './signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, isGPending, openTask, placeInDay } from './signals'
 import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
@@ -61,7 +62,12 @@ interface Group {
   /** Open tasks under the heading, also while it is collapsed. */
   count?: number
   sectionCollapsed?: boolean
+  /** Today's Blocked group (task-dependencies): folded unless opened on this device. */
+  folded?: boolean
 }
+
+/** Set in the per-device collapse set when Today's Blocked group is open (it starts folded). */
+export const BLOCKED_OPEN_KEY = 'today:blocked:open'
 
 const COLLAPSE_KEY = 'opentodo.collapsed'
 
@@ -105,6 +111,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
+  const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
 
   // Duration filter chips (OpenSpec `time-blocking`): per view, per device.
   const filterKey = durationFilterKey(route)
@@ -239,8 +246,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: t.parent_id ? breadcrumbOf(t, taskMap) : null,
     })
     if (route.view === 'today') {
-      const overdue = tasks.filter((t) => overdueInToday(t, today))
-      const rest = tasks.filter((t) => !overdueInToday(t, today))
+      // Blocked tasks wait in their own group at the end (task-dependencies D7).
+      const waiting = tasks.filter((t) => blocked.has(t.id))
+      const ready = waiting.length ? tasks.filter((t) => !blocked.has(t.id)) : tasks
+      const overdue = ready.filter((t) => overdueInToday(t, today))
+      const rest = ready.filter((t) => !overdueInToday(t, today))
       // This Evening below the day's tasks (someday-and-evening).
       const evening = rest.filter((t) => t.evening)
       const day = rest.filter((t) => !t.evening)
@@ -248,6 +258,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       if (overdue.length) g.push({ key: 'overdue', heading: 'Overdue', rows: overdue.map(flatRow) })
       g.push({ key: 'today', heading: overdue.length || evening.length ? 'Today' : null, rows: day.map(flatRow) })
       if (evening.length) g.push({ key: 'evening', heading: 'This Evening', rows: evening.map(flatRow) })
+      if (waiting.length) {
+        const folded = !collapsed.has(BLOCKED_OPEN_KEY)
+        g.push({ key: 'blocked', heading: `Blocked ${waiting.length}`, count: waiting.length, folded, rows: folded ? [] : waiting.map(flatRow) })
+      }
       return g
     }
     if (route.view === 'upcoming') {
@@ -271,7 +285,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       }))
     }
     return [{ key: 'all', heading: null, rows: tasks.map(flatRow) }]
-  }, [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections])
+  }, [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections])
 
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
 
@@ -726,6 +740,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             setOpenId(row.task.id)
           }
           break
+        case 'b':
+          if (row && !isReadOnly(row.task)) {
+            e.preventDefault()
+            blockedByFocus.request(row.task.id)
+            setOpenId(row.task.id)
+          }
+          break
         case '1':
         case '2':
         case '3':
@@ -803,6 +824,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         selected={r.task.id === selectedId}
         depth={r.depth}
         progress={progress.get(r.task.id)}
+        blockedBy={blocked.get(r.task.id)}
         breadcrumb={r.breadcrumb}
         hasChildren={r.hasChildren}
         collapsed={r.collapsed}
@@ -915,7 +937,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <p className="px-2 py-8 text-center text-sm text-faint">
               No task matches this duration filter. <button className="underline" onClick={() => chooseDuration(null)}>Clear the filter</button>
             </p>
-          ) : <EmptyState view={route.view} />)}
+          ) : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} />)}
 
           {board && currentProject ? (
             <BoardView
@@ -948,8 +970,15 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               <ul>{g.rows.map((r) => renderRow(r))}</ul>
             </section>
           ) : (
-            <section key={g.key} className="mb-4">
-              {g.heading && <h2 className={`mb-1 px-2 text-xs font-semibold uppercase tracking-wide ${g.key === 'overdue' ? 'text-danger' : 'text-faint'}`}>{g.heading}</h2>}
+            <section key={g.key} className="mb-4" data-group={g.key}>
+              {g.folded !== undefined ? (
+                <h2 className="mb-1">
+                  <button type="button" aria-expanded={!g.folded} onClick={() => toggleCollapsed(BLOCKED_OPEN_KEY)}
+                    className="touch-target flex items-center gap-1 rounded-control px-2 text-xs font-semibold uppercase tracking-wide text-faint hover:text-default">
+                    <Icon name={g.folded ? 'chevron-right' : 'chevron-down'} size="xs" />{g.heading}
+                  </button>
+                </h2>
+              ) : g.heading && <h2 className={`mb-1 px-2 text-xs font-semibold uppercase tracking-wide ${g.key === 'overdue' ? 'text-danger' : 'text-faint'}`}>{g.heading}</h2>}
               <ul>{g.rows.map((r) => renderRow(r))}</ul>
             </section>
           ))}
@@ -1087,7 +1116,11 @@ function placeholderFor(route: ListRoute, project?: Project, label?: Label): str
   }
 }
 
-function EmptyState({ view }: { view: ListRoute['view'] }) {
+function EmptyState({ view, waiting = 0 }: { view: ListRoute['view']; waiting?: number }) {
+  // Everything due today waits for other tasks (task-dependencies): say so.
+  if (view === 'today' && waiting > 0) {
+    return <p className="px-2 py-8 text-center text-sm text-faint">Nothing is ready to start today: {waiting === 1 ? 'one task is' : `${waiting} tasks are`} waiting for other tasks below.</p>
+  }
   const text = {
     inbox: 'Your Inbox is empty. Press q to capture something.',
     today: 'Nothing due today. Enjoy the calm, or pull something in from Upcoming.',

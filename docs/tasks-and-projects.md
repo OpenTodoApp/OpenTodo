@@ -3,7 +3,7 @@ title: Tasks and projects
 summary: Add and edit tasks, write notes, break work into subtasks, set priorities and organise everything into projects and sub-projects.
 audience: user
 section: Guides
-specs: [task-management, project-organization, subtasks, manual-ordering, rich-text-editing, entity-pickers, deadlines, start-dates, bulk-actions]
+specs: [task-management, project-organization, subtasks, manual-ordering, rich-text-editing, entity-pickers, deadlines, start-dates, bulk-actions, task-dependencies]
 screens: [quick-add#add-a-task]
 order: 10
 card: project-list
@@ -117,6 +117,14 @@ A due date or a deadline that has come always shows the task in Today, even if i
 **This Evening** (the **Evening** switch next to it) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. It says nothing about the time of day.
 
 From the list: <kbd>n</kbd> parks a task or brings it back, <kbd>Shift</kbd>+<kbd>N</kbd> asks for its start date, and <kbd>Shift</kbd>+<kbd>E</kbd> toggles This Evening.
+
+### Wait for another task
+
+Some tasks can't start until another is done: you can't book flights before the dates are confirmed. Open the task, choose **Blocked by** (or select it in a list and press <kbd>b</kbd>) and pick the tasks it waits for. The list offers open tasks you can link: the task itself, tasks that already wait for it and tasks shared differently are left out, so you can't make two tasks wait for each other.
+
+While at least one of those tasks is open, the task is **blocked**: its row is dimmed and shows a lock with the number it's waiting for, on boards too, and in Today it moves to a folded **Blocked** group at the end. As soon as the last one is completed (or deleted), the task is ready again, on every device. You can still open, edit and complete a blocked task; completing it doesn't touch the tasks it waited for. A repeating task keeps blocking until its series ends, and **Blocked by** says "repeats" next to it.
+
+**Blocks** in the panel lists the open tasks waiting for this one; select one to open it. In a shared project, blockers are tasks of the same project, and the person a blocked task is assigned to gets a notification when it's ready to start. Filter for `blocked` or `unblocked` to list them (see [Labels and filters](labels-and-filters.md)).
 
 ## Change several tasks at once
 

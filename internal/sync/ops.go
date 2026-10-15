@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -42,7 +43,9 @@ const (
 	MaxOpsPerRequest = 1000
 	MaxValueBytes    = 64 * 1024
 	MaxIDLen         = 64
-	MaxFutureSkewMs  = 5 * 60 * 1000
+	// MaxBlockedBy caps a task's blockers (OpenSpec change task-dependencies).
+	MaxBlockedBy    = 50
+	MaxFutureSkewMs = 5 * 60 * 1000
 	// MaxDocBytes caps a kDoc value (OpenSpec change collaborative-rich-text): the
 	// length of the envelope string, i.e. 256 KB of base64 text. Every other kind
 	// keeps MaxValueBytes.
@@ -97,6 +100,9 @@ const (
 	// kStart is null, the word "someday" or a calendar date "YYYY-MM-DD"
 	// (task.start, OpenSpec change someday-and-evening).
 	kStart
+	// kIDList is an array of at most MaxBlockedBy distinct, non-empty ids of at
+	// most MaxIDLen characters (task.blocked_by, OpenSpec change task-dependencies).
+	kIDList
 )
 
 // docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
@@ -176,6 +182,10 @@ var Schema = map[string]map[string]kind{
 		// someday-and-evening); additive.
 		"start":   kStart,
 		"evening": kBool,
+		// The tasks this one waits for, in its own sharing scope (OpenSpec change
+		// task-dependencies): one whole-list register; the resolver refuses ids of
+		// other scopes and lists that close a cycle.
+		"blocked_by": kIDList,
 		// Recurrence rule and the series an occurrence record belongs to
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
 		"recurrence": kRecurrence,
@@ -349,6 +359,9 @@ func Validate(op Op) error {
 	if err := checkKind(k, op.Value); err != nil {
 		return fmt.Errorf("%w: %s.%s %v", ErrInvalidOp, op.Entity, op.Field, err)
 	}
+	if k == kIDList && slices.Contains(idList(op.Value), op.EntityID) {
+		return fmt.Errorf("%w: %s.%s cannot name the task itself", ErrInvalidOp, op.Entity, op.Field)
+	}
 	if op.Entity == "attachment" {
 		if err := checkAttachment(op.Field, op.Value); err != nil {
 			return fmt.Errorf("%w: attachment.%s %v", ErrInvalidOp, op.Field, err)
@@ -484,6 +497,24 @@ func checkKind(k kind, raw json.RawMessage) error {
 		if err := json.Unmarshal(raw, &l); err != nil || l == nil {
 			return errors.New("must be an array of strings")
 		}
+	case kIDList:
+		var l []string
+		if err := json.Unmarshal(raw, &l); err != nil || l == nil {
+			return errors.New("must be an array of task ids")
+		}
+		if len(l) > MaxBlockedBy {
+			return fmt.Errorf("may hold at most %d ids", MaxBlockedBy)
+		}
+		seen := make(map[string]bool, len(l))
+		for _, id := range l {
+			if id == "" || len(id) > MaxIDLen {
+				return fmt.Errorf("ids must be 1 to %d characters", MaxIDLen)
+			}
+			if seen[id] {
+				return fmt.Errorf("lists %q twice", id)
+			}
+			seen[id] = true
+		}
 	case kPositiveInt:
 		if isNull {
 			return nil
@@ -581,4 +612,11 @@ func isClock(s string) bool {
 // Ties on timestamp are broken by device id so every replica picks the same winner.
 func Wins(ts int64, device string, ets int64, edevice string) bool {
 	return ts > ets || (ts == ets && device > edevice)
+}
+
+// idList reads a kIDList value (nil when it is not one).
+func idList(raw json.RawMessage) []string {
+	var l []string
+	_ = json.Unmarshal(raw, &l)
+	return l
 }

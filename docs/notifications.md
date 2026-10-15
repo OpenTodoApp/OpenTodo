@@ -1,6 +1,6 @@
 ---
 title: Notifications
-summary: The bell for assignments and mentions, reminder pop-ups inside the app, and push notifications on each device when the app is closed.
+summary: The bell for assignments, mentions and tasks ready to start, reminder pop-ups inside the app, and push notifications on each device when the app is closed.
 audience: user
 section: Guides
 specs: [reminders, task-assignment]
@@ -10,14 +10,15 @@ card: notifications
 ---
 # Notifications
 
-OpenTodo tells you about three things: a task someone assigned to you, a comment that mentions you, and reminders you set. Nothing else, and never anything from outside your server.
+OpenTodo tells you about four things: a task someone assigned to you, a comment that mentions you, a task of yours that is ready to start, and reminders you set. Nothing else, and never anything from outside your server.
 
 ## The bell
 
 The bell at the top right shows a red count when something new arrived from other people:
 
 - **assigned you**: someone assigned you a task in a shared project,
-- **mentioned you**: someone wrote `@your name` in a comment.
+- **mentioned you**: someone wrote `@your name` in a comment,
+- **is ready to start**: someone completed the last task that a task assigned to you was [waiting for](tasks-and-projects.md#wait-for-another-task), for example "Sam completed Confirm dates: Book flights is ready to start". It's in the bell only, not sent as a push notification.
 
 <picture><source srcset="images/notifications-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/notifications-light.webp" alt="The notifications list open under the bell: Sam Rivera mentioned you on a task, and Sam Rivera assigned you a task."></picture>
 
