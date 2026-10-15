@@ -6,7 +6,8 @@
 //     docs/              the generated docs website
 //     shots/             product screenshots (WebP), from docs/screenshots/site
 //     tokens/tokens.css  the --ot-* colour tokens, light and dark, no Tailwind
-//     icons/icons.svg    SVG sprite of the bundled Lucide icons, plus names.json and the licence
+//     icons/icons.svg    SVG sprite of the bundled Lucide icons and the website-only ones
+//                        (web/src/ui/icons/site-icons.json), plus names.json and the licence
 //     changelog.json     CHANGELOG.md as data
 //     README.md          this layout and the stability rule
 //
@@ -86,10 +87,12 @@ ${lines(darkAttr, '  ')}
 // ---- icons (D4) ----
 
 /** An SVG sprite: one <symbol id="icon-NAME"> per bundled Lucide icon. */
-export function iconSprite(lucideTs) {
+export function iconSprite(lucideTs, siteIcons = {}) {
   const json = /export const ICONS = (\{[\s\S]*?\n\})/.exec(lucideTs)?.[1]
   if (!json) throw new Error('ICONS not found in lucide.ts')
-  const icons = JSON.parse(json.replace(/,\s*\}$/, '}'))
+  // The app's icons plus the website-only ones (site-bundle-server-facts D2); an
+  // app icon wins if both name the same icon.
+  const icons = { ...siteIcons, ...JSON.parse(json.replace(/,\s*\}$/, '}')) }
   const symbols = Object.keys(icons).sort().map((name) =>
     `  <symbol id="icon-${name}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icons[name]}</symbol>`)
   return `<svg xmlns="http://www.w3.org/2000/svg">\n<!-- Lucide icons (ISC licence, see LICENSE-lucide.txt). Use: <svg><use href="icons.svg#icon-inbox"/></svg> -->\n${symbols.join('\n')}\n</svg>\n`
@@ -139,6 +142,26 @@ export function importFormats(bin) {
 
 const mb = (bytes) => Math.round((bytes / (1 << 20)) * 10) / 10
 
+/** Reads one fact from a file of the repository; a pattern that no longer matches fails the build naming the file. */
+function factFrom(root, rel, re, pick = (m) => m[1]) {
+  const m = readFileSync(join(root, rel), 'utf8').match(re)
+  if (!m) throw new Error(`site bundle fact: ${rel} no longer matches ${re}`)
+  return pick(m)
+}
+
+/** Server facts the website shows, each from its one source (site-bundle-server-facts D1). */
+export function serverFacts(root = repoRoot) {
+  return {
+    architectures: factFrom(root, '.github/workflows/ci.yml', /^\s*platforms:\s*(\S+)\s*$/m, (m) => m[1].split(',')),
+    port: Number(factFrom(root, 'Dockerfile', /^EXPOSE\s+(\d+)/m)),
+    dataDir: factFrom(root, 'Dockerfile', /^VOLUME\s+\["([^"]+)"\]/m),
+    database: factFrom(root, 'go.mod', /^\s*(?:require\s+)?(modernc\.org\/sqlite|github\.com\/mattn\/go-sqlite3)\s/m, () => 'SQLite'),
+    license: factFrom(root, 'LICENSE', /GNU AFFERO GENERAL PUBLIC LICENSE\s+Version 3/, () => 'AGPL-3.0'),
+    exportFormat: factFrom(root, 'internal/httpapi/server.go', /"format": "(opentodo-export)", "version": \d+/),
+    exportFormatVersion: Number(factFrom(root, 'internal/httpapi/server.go', /"format": "opentodo-export", "version": (\d+)/)),
+  }
+}
+
 export function buildManifest({ version, date, commit, formats, binBytes, dockerMB, docsPages }) {
   const vocab = readdirSync(join(repoRoot, 'web/src/lib/nlp/vocab')).filter((n) => /^[a-z]{2}\.ts$/.test(n)).map((n) => n.slice(0, 2)).sort()
   const specs = readdirSync(join(repoRoot, 'openspec/specs')).filter((n) => statSync(join(repoRoot, 'openspec/specs', n)).isDirectory())
@@ -147,6 +170,7 @@ export function buildManifest({ version, date, commit, formats, binBytes, docker
     specCount: specs.length,
     docsPages,
     importFormatCount: formats.length,
+    ...serverFacts(),
   }
   if (binBytes) facts.binaryMB = mb(binBytes)
   if (dockerMB) facts.dockerImageMB = Number(dockerMB)
@@ -186,7 +210,7 @@ tagged commit. Layout version ${LAYOUT}.
 
 | Path | What it is |
 |---|---|
-| \`manifest.json\` | schema ${MANIFEST_SCHEMA}: \`version\`, \`date\`, \`commit\`, \`importFormats\` (formats this version imports), \`screenshots\`, \`facts\` (named values the website may show: \`quickAddLanguages\`, \`specCount\`, \`docsPages\`, \`importFormatCount\`, and \`binaryMB\` / \`dockerImageMB\` when measured) |
+| \`manifest.json\` | schema ${MANIFEST_SCHEMA}: \`version\`, \`date\`, \`commit\`, \`importFormats\` (formats this version imports), \`screenshots\`, \`facts\` (named values the website may show: \`quickAddLanguages\`, \`specCount\`, \`docsPages\`, \`importFormatCount\`, the server facts \`architectures\`, \`port\`, \`dataDir\`, \`database\`, \`license\`, \`exportFormat\` and \`exportFormatVersion\`, and \`binaryMB\` / \`dockerImageMB\` when measured) |
 | \`docs/\` | the documentation website, served under \`/docs/\` |
 | \`shots/\` | product screenshots, WebP; \`-dark\` names are the dark theme |
 | \`tokens/tokens.css\` | the \`--ot-*\` colour tokens for light and dark, standalone CSS |
@@ -239,8 +263,10 @@ export async function buildBundle({ version, out = 'dist', bin, archive = true }
   writeFileSync(join(dir, 'tokens/tokens.css'), tokensCss(readFileSync(join(repoRoot, 'web/src/index.css'), 'utf8'), version))
   mkdirSync(join(dir, 'icons'))
   const iconsDir = join(repoRoot, 'web/src/ui/icons')
-  writeFileSync(join(dir, 'icons/icons.svg'), iconSprite(readFileSync(join(iconsDir, 'lucide.ts'), 'utf8')))
-  copyFileSync(join(iconsDir, 'names.json'), join(dir, 'icons/names.json'))
+  const siteIcons = JSON.parse(readFileSync(join(iconsDir, 'site-icons.json'), 'utf8'))
+  writeFileSync(join(dir, 'icons/icons.svg'), iconSprite(readFileSync(join(iconsDir, 'lucide.ts'), 'utf8'), siteIcons))
+  const appNames = JSON.parse(readFileSync(join(iconsDir, 'names.json'), 'utf8'))
+  writeFileSync(join(dir, 'icons/names.json'), JSON.stringify([...appNames, ...Object.keys(siteIcons).filter((n) => !appNames.includes(n))], null, 2) + '\n')
   copyFileSync(join(iconsDir, 'LICENSE-lucide.txt'), join(dir, 'icons/LICENSE-lucide.txt'))
 
   // changelog.json, manifest.json, README.md

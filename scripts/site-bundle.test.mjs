@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import {
-  buildManifest, iconSprite, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, tokensCss, validateManifest,
+  buildManifest, iconSprite, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, tokensCss, validateManifest,
 } from './site-bundle.mjs'
 
 const read = (p) => readFileSync(join(repoRoot, p), 'utf8')
@@ -39,6 +39,15 @@ test('the icon sprite has one symbol per bundled icon', () => {
   const sprite = iconSprite(read('web/src/ui/icons/lucide.ts'))
   for (const n of names) assert.ok(sprite.includes(`id="icon-${n}"`), n)
   assert.equal((sprite.match(/<symbol /g) ?? []).length, names.length)
+})
+
+test('the sprite adds the website-only icons once each (site-bundle-server-facts)', () => {
+  const app = JSON.parse(read('web/src/ui/icons/names.json'))
+  const site = JSON.parse(read('web/src/ui/icons/site-icons.json'))
+  for (const n of Object.keys(site)) assert.ok(!app.includes(n), `${n} is already an app icon; drop it from site-icons.json`)
+  const sprite = iconSprite(read('web/src/ui/icons/lucide.ts'), site)
+  for (const n of [...app, ...Object.keys(site)]) assert.ok(sprite.includes(`id="icon-${n}"`), n)
+  assert.equal((sprite.match(/<symbol /g) ?? []).length, app.length + Object.keys(site).length)
 })
 
 test('changelog.json: versions, dates and sections in order', () => {
@@ -79,4 +88,20 @@ test('CI path filters: docs-only changes skip the code jobs (site-bundle D7)', a
   assert.deepEqual(run(['web/src/app/App.tsx', 'web/src/generated/help.json']), { code: 'true', docs: 'true' })
   assert.deepEqual(run(['go.sum']), { code: 'true', docs: 'false' })
   assert.deepEqual(run(['.github/workflows/ci.yml']), { code: 'true', docs: 'false' })
+})
+
+test('server facts come from their sources (site-bundle-server-facts)', () => {
+  assert.deepEqual(serverFacts(), {
+    architectures: ['linux/amd64', 'linux/arm64'], port: 8080, dataDir: '/data', database: 'SQLite',
+    license: 'AGPL-3.0', exportFormat: 'opentodo-export', exportFormatVersion: 1,
+  })
+  // A source that no longer states its fact fails the build, naming the file.
+  const root = mkdtempSync(join(tmpdir(), 'facts-'))
+  for (const f of ['.github/workflows/ci.yml', 'Dockerfile', 'go.mod', 'LICENSE']) {
+    mkdirSync(join(root, f, '..'), { recursive: true })
+    writeFileSync(join(root, f), read(f))
+  }
+  mkdirSync(join(root, 'internal/httpapi'), { recursive: true })
+  writeFileSync(join(root, 'internal/httpapi/server.go'), 'package httpapi\n')
+  assert.throws(() => serverFacts(root), /internal\/httpapi\/server\.go/)
 })
