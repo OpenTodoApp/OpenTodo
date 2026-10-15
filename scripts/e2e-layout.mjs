@@ -163,7 +163,7 @@ function screens(ids) {
   const row = (title) => (p) => p.locator('[data-task-id]').filter({ hasText: title }).first().waitFor()
   const heading = (name) => (p) => p.getByRole('heading', { name, level: 1 }).first().waitFor()
   return [
-    { name: 'sign-in', path: '/', anon: true, ready: (p) => p.getByRole('button', { name: 'Sign in' }).waitFor() },
+    { name: 'sign-in', path: '/', anon: true, ready: (p) => p.getByRole('button', { name: 'Sign in', exact: true }).waitFor() },
     // Project invite link (project-invite-links): a visitor's choice, and the creator, who is a member already.
     { name: 'project-invite', path: `/invite/p/${ids.projectInvite}`, anon: true, ready: (p) => p.getByRole('button', { name: /sign in to join/ }).waitFor() },
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },

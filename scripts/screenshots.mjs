@@ -85,7 +85,7 @@ async function api(ctx, method, path, body) {
 async function signIn(page, email) {
   await page.goto(base)
   await page.getByLabel('Email').fill(email); await page.getByLabel(/Password/).fill(PASSWORD)
-  await page.getByRole('button', { name: 'Sign in' }).click()
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await page.getByRole('textbox', { name: 'Add a task' }).waitFor({ timeout: 15000 })
 }
 
