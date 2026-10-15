@@ -54,7 +54,7 @@ In a shared project that includes text other members wrote. Select **Accept and 
 When the server owner turns on **Let members bring their own key**, **Settings → AI → Assistant** shows **Which assistant you use**:
 
 - **The server's assistant**: the provider and model the owner set up. This is the default.
-- **My own provider and key**: choose **Anthropic (Claude)**, **OpenAI** or **Google Gemini**, a model, and paste an API key from your own account, then select **Save my provider**. For Anthropic you pick one of the offered models; for OpenAI and Gemini you type the model id (up to 100 characters: letters, digits, `.`, `_`, `:` and `-`, for example `gpt-4.1-mini` or `gemini-2.5-flash`). **Test connection** sends one tiny request with your key to check it (up to 5 tests in 10 minutes).
+- **My own provider and key**: choose **Anthropic (Claude)**, **OpenAI** or **Google Gemini**, a model, and paste an API key from your own account, then select **Save my provider**. For Anthropic you pick one of the offered models; for OpenAI and Gemini you type the model id (up to 100 characters: letters, digits, `.`, `_`, `:` and `-`, for example `gpt-4.1-mini` or `gemini-2.5-flash`). **Test connection** sends one tiny request with the provider, model and key on screen to check them, before or after you save (up to 5 tests in 10 minutes). Testing never saves anything.
 
 Your questions then go from this server to the provider you chose, with your key, so that provider's terms for your account apply. The assistant asks you to accept the disclosure for that provider before your next message. Your key is stored on the server, never shown again, never sent to your browser and never in backups or exports. Going back to **The server's assistant** deletes the key you stored for your provider.
 
@@ -129,7 +129,7 @@ The assistant is switched off on the public demo.
 1. Tick **Allow this provider** for one or more providers and enter the model and key.
 2. Choose the **Provider everyone uses**.
 3. Tick **Turn on the assistant for this server** and select **Save assistant settings**. The dialog closes and the section shows the new state.
-4. In **Configure**, select **Test connection** under a provider: it sends one tiny request and reports success or the provider's error. It is the only request the server makes outside someone's turn.
+4. In **Configure**, select **Test connection** under a provider: it sends one tiny request with the model, base URL and key you see on screen, saved or not, and reports success or the provider's error. Testing never saves anything; a passing test of unsaved values says so, and you still select **Save**. It is the only request the server makes outside someone's turn.
 
 | Provider | Model | Key | Notes |
 | --- | --- | --- | --- |

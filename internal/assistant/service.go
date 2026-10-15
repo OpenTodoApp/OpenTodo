@@ -134,33 +134,64 @@ var pingTool = ToolDef{Name: "ping", Description: "Answer the connection test.",
 	"properties": map[string]any{"ok": map[string]any{"type": "boolean"}},
 }}
 
+// Draft is what the owner has on screen for one provider when they select
+// "Test connection" (assistant-test-unsaved-settings). A nil field falls back
+// to the saved value. Key follows the save semantics: nil keeps the saved
+// key, "" means no key, anything else is used for this one request only.
+type Draft struct {
+	Model                *string
+	BaseURL              *string
+	Key                  *string
+	AllowPrivateEndpoint *bool
+}
+
 // TestConnection sends a minimal request with one tool to the named provider
-// (owner only; with TestMember the only requests made outside a user turn).
-// An endpoint that refuses the request with the tool but accepts it without
-// is reported as lacking tool support (design D3).
-func (s *Service) TestConnection(ctx context.Context, name string, set Settings) TestResult {
-	p, ok := set.Providers[name]
-	if !ok {
-		return TestResult{Code: "invalid_input", Message: "unknown provider"}
+// with the on-screen draft merged over the saved settings (owner only; with
+// TestMember the only requests made outside a user turn). The merged values
+// pass the same checks as a save first. An endpoint that refuses the request
+// with the tool but accepts it without is reported as lacking tool support
+// (design D3). Nothing is saved or audited.
+func (s *Service) TestConnection(ctx context.Context, name string, set Settings, d Draft) TestResult {
+	if !known(name) {
+		return TestResult{Code: "invalid_input", Message: "provider: unknown provider (expected anthropic, openai, gemini or compatible)"}
 	}
-	if strings.TrimSpace(p.Model) == "" {
-		return TestResult{Code: "invalid_input", Message: "enter a model id first"}
+	p := set.Providers[name]
+	if d.Model != nil {
+		p.Model = strings.TrimSpace(*d.Model)
+	}
+	if d.BaseURL != nil {
+		p.BaseURL = strings.TrimSpace(*d.BaseURL)
+	}
+	allowPrivate := set.AllowPrivateEndpoint
+	if d.AllowPrivateEndpoint != nil {
+		allowPrivate = *d.AllowPrivateEndpoint
+	}
+	// "Allow this provider" does not matter for a test: check it as enabled.
+	p.Enabled = true
+	if err := validateProvider(name, p, "enter a model id to test"); err != nil {
+		return TestResult{Code: "invalid_input", Message: err.Error()}
 	}
 	if name == Compatible {
-		if err := s.Net.CheckBaseURL(ctx, p.BaseURL, set.AllowPrivateEndpoint); err != nil {
+		if err := s.Net.CheckBaseURL(ctx, p.BaseURL, allowPrivate); err != nil {
 			if errors.Is(err, ErrPrivateTarget) {
 				return TestResult{Code: "private_target", Message: "the base URL resolves to a private network address; allow private endpoints to use a server on your network"}
 			}
-			return TestResult{Code: "invalid_input", Message: err.Error()}
+			return TestResult{Code: "invalid_input", Message: "providers.compatible.base_url: " + err.Error()}
 		}
 	}
-	key, _, err := s.Store.KeyFor("", name, Settings{})
-	if err != nil {
-		return TestResult{Code: "internal", Message: "the key file could not be read"}
+	var key string
+	if d.Key != nil {
+		key = strings.TrimSpace(*d.Key)
+	} else {
+		saved, _, err := s.Store.KeyFor("", name, Settings{})
+		if err != nil {
+			return TestResult{Code: "internal", Message: "the key file could not be read"}
+		}
+		key = saved
 	}
-	prov, err := s.provider(name, p, key, set.AllowPrivateEndpoint)
+	prov, err := s.provider(name, p, key, allowPrivate)
 	if errors.Is(err, ErrNoKey) {
-		return TestResult{Code: "no_key", Message: "save an API key for this provider first"}
+		return TestResult{Code: "no_key", Message: "enter an API key for this provider first"}
 	}
 	if err != nil {
 		return TestResult{Code: "internal", Message: err.Error()}
@@ -177,7 +208,7 @@ func (s *Service) TestMember(ctx context.Context, r Route, set Settings) TestRes
 	}
 	prov, err := s.ProviderFor(r, set)
 	if errors.Is(err, ErrNoKey) {
-		return TestResult{Code: "no_key", Message: "save your API key first"}
+		return TestResult{Code: "no_key", Message: "enter your API key first"}
 	}
 	if err != nil {
 		return TestResult{Code: "internal", Message: err.Error()}

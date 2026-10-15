@@ -4,7 +4,7 @@ import { clearThreads, getAutoApply, setAutoApply } from '../../lib/assistant'
 import { refreshAssistantStatus, setAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
 import {
   isOwnerSettings, MEMBER_MODEL_RE, MEMBER_PROVIDERS, PROVIDERS, type AssistantMemberSettings, type AssistantOwnerSettings, type AssistantSettingsInput,
-  type AssistantTestResult, type AssistantUsage, type MyAssistantInput, type ProviderName,
+  type AssistantTestDraft, type AssistantTestResult, type AssistantUsage, type MyAssistantInput, type MyAssistantTestDraft, type ProviderName,
 } from '../../lib/assistantTypes'
 import { useOnline } from '../../lib/online'
 import { Button } from '../../ui/Button'
@@ -54,6 +54,24 @@ export function inputFrom(d: OwnerDraft): AssistantSettingsInput {
     allow_private_endpoint: d.allow_private_endpoint, monthly_token_cap_per_user: d.monthly_token_cap_per_user, cap_member_keys: d.cap_member_keys }
 }
 
+/** The on-screen values "Test connection" sends for one provider (assistant-test-unsaved-settings). */
+export function testDraft(d: OwnerDraft, n: ProviderName): AssistantTestDraft {
+  const v = d.providers[n]
+  const out: AssistantTestDraft = { model: v.model.trim(), allow_private_endpoint: d.allow_private_endpoint }
+  if (n === 'compatible') out.base_url = v.base_url.trim()
+  if (d.keys[n] !== undefined) out.key = d.keys[n]
+  return out
+}
+
+/** Whether a test of these values covers settings that are not saved yet. */
+export function testIsUnsaved(t: AssistantTestDraft, saved: AssistantOwnerSettings, n: ProviderName): boolean {
+  const sp = saved.providers[n]
+  return t.key !== undefined || t.model !== (sp?.model ?? '') || (n === 'compatible' && t.base_url !== (sp?.base_url ?? ''))
+    || (n === 'compatible' && t.allow_private_endpoint !== saved.allow_private_endpoint)
+}
+
+export const SAVE_TO_USE = 'Connection works. Save to use these settings.'
+
 export interface OwnerViewProps {
   saved: AssistantOwnerSettings
   draft: OwnerDraft
@@ -62,6 +80,8 @@ export interface OwnerViewProps {
   error: string | null
   message: string | null
   tests: Partial<Record<ProviderName, AssistantTestResult | 'running'>>
+  /** The values each shown result was tested with; a result whose values have changed since is hidden. */
+  testedWith?: Partial<Record<ProviderName, string>>
   onChange: (d: OwnerDraft) => void
   onSave: () => void
   onTest: (p: ProviderName) => void
@@ -92,7 +112,9 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
       {PROVIDERS.map((n) => {
         const v = d.providers[n]
         const keySet = p.saved.providers[n]?.key_set
-        const test = p.tests[n]
+        const tested = p.testedWith === undefined || p.testedWith[n] === JSON.stringify(testDraft(d, n))
+        const test = tested ? p.tests[n] : undefined
+        const noModel = !v.model.trim()
         return (
           <fieldset key={n} className="space-y-3 rounded-control border border-default p-3" data-provider={n}>
             <legend className="px-1 text-sm font-medium text-default">{LABEL[n]}</legend>
@@ -118,8 +140,9 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
                 placeholder={keySet ? 'A key is saved; type to replace it' : 'Paste the key'} onChange={(e) => set({ keys: { ...d.keys, [n]: e.target.value } })} />
             </Field>
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" disabled={off} busy={test === 'running'} onClick={() => p.onTest(n)}>Test connection</Button>
+              <Button size="sm" disabled={off || noModel} busy={test === 'running'} onClick={() => p.onTest(n)}>Test connection</Button>
               {keySet && <Button size="sm" variant="ghost" disabled={off} onClick={() => set({ keys: { ...d.keys, [n]: '' } })}>Remove saved key</Button>}
+              {noModel && !off && <span className="text-meta text-muted" data-test-needs-model>Enter a model id to test</span>}
             </div>
             <TestResult test={test} />
           </fieldset>
@@ -246,7 +269,8 @@ export interface UserViewProps {
   cleared: boolean
   /** Saves "Which assistant you use"; resolves true when saved. */
   onSaveOwn?: (input: MyAssistantInput) => Promise<boolean> | void
-  onTestOwn?: () => void
+  /** Tests the provider, model and key on screen (a key left empty uses the one saved for that provider). */
+  onTestOwn?: (draft: MyAssistantTestDraft) => void
   ownTest?: AssistantTestResult | 'running'
   ownMessage?: string | null
 }
@@ -274,6 +298,9 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
   const choices = (s.member_providers ?? MEMBER_PROVIDERS).filter(isMemberProvider)
   const savedSame = own?.provider === d.provider && own.key_set
   const dirty = d.mode === 'server' ? !!own : !own || own.provider !== d.provider || own.model !== d.model.trim() || !!d.key.trim()
+  const ownTestDraft: MyAssistantTestDraft = { provider: d.provider, model: d.model.trim(), ...(d.key.trim() ? { key: d.key.trim() } : {}) }
+  const ownSig = JSON.stringify(ownTestDraft)
+  const [testedSig, setTestedSig] = useState<string | null>(null)
   const capNote = s.cap_member_keys ? 'Your answers still count toward the server’s monthly limit.' : 'Answers on your key do not count toward the server’s monthly limit.'
   const save = async () => {
     const input = ownInputFrom(d, s)
@@ -332,11 +359,14 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
         <Button size="sm" variant={dirty ? 'primary' : 'secondary'} disabled={off || !dirty} busy={p.busy} onClick={() => void save()}>
           {d.mode === 'server' ? 'Use the server’s assistant' : 'Save my provider'}
         </Button>
-        {ownActive && d.mode === 'own' && p.onTestOwn && (
-          <Button size="sm" disabled={off} busy={p.ownTest === 'running'} onClick={p.onTestOwn}>Test connection</Button>
+        {d.mode === 'own' && p.onTestOwn && (
+          <Button size="sm" disabled={off || !d.model.trim()} busy={p.ownTest === 'running'} onClick={() => { setTestedSig(ownSig); p.onTestOwn?.(ownTestDraft) }}>Test connection</Button>
         )}
+        {d.mode === 'own' && p.onTestOwn && !d.model.trim() && !off && <span className="text-meta text-muted" data-test-needs-model>Enter a model id to test</span>}
       </div>
-      <TestResult test={p.ownTest} />
+      {d.mode === 'own' && (testedSig === null || testedSig === ownSig) && (
+        <TestResult test={p.ownTest && p.ownTest !== 'running' && p.ownTest.ok && dirty ? { ...p.ownTest, message: SAVE_TO_USE } : p.ownTest} />
+      )}
       {p.ownMessage && <Notice tone="success">{p.ownMessage}</Notice>}
       {d.mode === 'server' && !ownActive && (s.server_own_key_set ?? s.own_key_set) && (
         <div data-legacy-key>
@@ -427,6 +457,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
   const [userError, setUserError] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const [tests, setTests] = useState<OwnerViewProps['tests']>({})
+  const [testedWith, setTestedWith] = useState<NonNullable<OwnerViewProps['testedWith']>>({})
   const [cleared, setCleared] = useState(false)
   const [ownBusy, setOwnBusy] = useState(false)
   const [ownMessage, setOwnMessage] = useState<string | null>(null)
@@ -470,10 +501,13 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
     }
   }
   const test = async (p: ProviderName) => {
+    if (!draft || !settings || !isOwnerSettings(settings)) return
+    const values = testDraft(draft, p)
+    setTestedWith((w) => ({ ...w, [p]: JSON.stringify(values) }))
     setTests((t) => ({ ...t, [p]: 'running' }))
     try {
-      const r = await api.testAssistant(p)
-      setTests((t) => ({ ...t, [p]: r }))
+      const r = await api.testAssistant(p, values)
+      setTests((t) => ({ ...t, [p]: r.ok && testIsUnsaved(values, settings, p) ? { ...r, message: SAVE_TO_USE } : r }))
     } catch (err) {
       setTests((t) => ({ ...t, [p]: { ok: false, message: message(err) } }))
     }
@@ -499,10 +533,10 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
     if (ok) setOwnMessage(input.own_provider ? 'Saved. Before your next message, the assistant asks you to accept what is sent to your provider.' : 'Saved.')
     return ok
   }
-  const testOwn = async () => {
+  const testOwn = async (values: MyAssistantTestDraft) => {
     setOwnTest('running')
     try {
-      setOwnTest(await api.testMyAssistant())
+      setOwnTest(await api.testMyAssistant(values))
     } catch (err) {
       setOwnTest({ ok: false, message: message(err) })
     }
@@ -524,11 +558,11 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
       {isOwner && settings && isOwnerSettings(settings) && <OwnerAssistantSummary saved={settings} connected={connected} onConfigure={configure} />}
       <UserAssistantSettings status={status} usage={usage} autoApply={autoApply} connected={connected} busy={ownBusy} error={userError} cleared={cleared}
         onWithdraw={() => void updateMine({ consent: false })} onOwnKey={(k) => void updateMine({ own_key: k })}
-        onSaveOwn={saveOwn} onTestOwn={() => void testOwn()} ownTest={ownTest} ownMessage={ownMessage}
+        onSaveOwn={saveOwn} onTestOwn={(v) => void testOwn(v)} ownTest={ownTest} ownMessage={ownMessage}
         onAutoApply={(on) => { setAuto(on); void setAutoApply(on) }} onClear={() => setClearing(true)} />
       {configuring && isOwner && settings && isOwnerSettings(settings) && draft && (
         <Dialog title="Configure the assistant" onClose={() => setConfiguring(false)} size="lg" dismissable={false} testId="assistant-configure">
-          <OwnerAssistantSettings saved={settings} draft={draft} connected={connected} busy={busy} error={error} message={null} tests={tests}
+          <OwnerAssistantSettings saved={settings} draft={draft} connected={connected} busy={busy} error={error} message={null} tests={tests} testedWith={testedWith}
             onChange={setDraft} onSave={() => void save()} onTest={(p) => void test(p)} onCancel={() => setConfiguring(false)} />
         </Dialog>
       )}

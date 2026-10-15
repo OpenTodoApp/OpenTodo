@@ -522,7 +522,7 @@ func TestTestConnectionDetectsNoTools(t *testing.T) {
 	defer noTools.Close()
 	svc := NewService(st, nil)
 	svc.Backoff = time.Millisecond
-	got := svc.TestConnection(context.Background(), Compatible, compatibleSettings(noTools.URL+"/v1", true))
+	got := svc.TestConnection(context.Background(), Compatible, compatibleSettings(noTools.URL+"/v1", true), Draft{})
 	if got.OK || got.Code != CodeNoToolSupport {
 		t.Fatalf("%+v", got)
 	}
@@ -530,16 +530,24 @@ func TestTestConnectionDetectsNoTools(t *testing.T) {
 		_, _ = io.WriteString(w, chatText("OK", "stop"))
 	}))
 	defer withTools.Close()
-	if got := svc.TestConnection(context.Background(), Compatible, compatibleSettings(withTools.URL+"/v1", true)); !got.OK {
+	if got := svc.TestConnection(context.Background(), Compatible, compatibleSettings(withTools.URL+"/v1", true), Draft{}); !got.OK {
 		t.Fatalf("%+v", got)
 	}
 	// Private endpoint without the owner's switch, and a missing key.
-	if got := svc.TestConnection(context.Background(), Compatible, compatibleSettings(withTools.URL+"/v1", false)); got.Code != "private_target" {
+	if got := svc.TestConnection(context.Background(), Compatible, compatibleSettings(withTools.URL+"/v1", false), Draft{}); got.Code != "private_target" {
 		t.Fatalf("%+v", got)
+	}
+	// The on-screen private-endpoint switch counts before it is saved, both ways.
+	on, off := true, false
+	if got := svc.TestConnection(context.Background(), Compatible, compatibleSettings(withTools.URL+"/v1", false), Draft{AllowPrivateEndpoint: &on}); !got.OK {
+		t.Fatalf("switch on, not saved: %+v", got)
+	}
+	if got := svc.TestConnection(context.Background(), Compatible, compatibleSettings(withTools.URL+"/v1", true), Draft{AllowPrivateEndpoint: &off}); got.Code != "private_target" {
+		t.Fatalf("switch off, not saved: %+v", got)
 	}
 	s := Defaults()
 	s.Providers[OpenAI] = ProviderSettings{Enabled: true, Model: "gpt-x"}
-	if got := svc.TestConnection(context.Background(), OpenAI, s); got.Code != "no_key" {
+	if got := svc.TestConnection(context.Background(), OpenAI, s, Draft{}); got.Code != "no_key" {
 		t.Fatalf("%+v", got)
 	}
 }

@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import type { AssistantStatus } from '../lib/assistantStatus'
 import type { AssistantOwnerSettings } from '../lib/assistantTypes'
-import { draftFrom, inputFrom, ownDraftFrom, ownInputFrom, OwnerAssistantSettings, OwnerAssistantSummary, UserAssistantSettings } from './assistant/AssistantSettings'
+import { draftFrom, inputFrom, ownDraftFrom, SAVE_TO_USE, testDraft, testIsUnsaved, ownInputFrom, OwnerAssistantSettings, OwnerAssistantSummary, UserAssistantSettings } from './assistant/AssistantSettings'
 import { formatDate } from '../lib/dates'
 
 const noop = () => {}
@@ -41,6 +41,42 @@ describe('OwnerAssistantSettings', () => {
     expect(inputFrom(d).keys).toEqual({})
     expect(inputFrom({ ...d, keys: { anthropic: '' } }).keys).toEqual({ anthropic: '' })
     expect(inputFrom(d).providers?.compatible).toEqual({ enabled: false, model: '', base_url: '' })
+  })
+})
+
+describe('Test connection uses the values on screen (assistant-test-unsaved-settings)', () => {
+  it('sends the typed model, base URL, private switch and key; no key when untouched, "" after Remove saved key', () => {
+    const d = draftFrom(saved)
+    const typed = { ...d, providers: { ...d.providers, openai: { enabled: false, model: ' gpt-5.4-mini ', base_url: '' } }, keys: { openai: 'sk-typed' } }
+    expect(testDraft(typed, 'openai')).toEqual({ model: 'gpt-5.4-mini', allow_private_endpoint: false, key: 'sk-typed' })
+    expect(testDraft(d, 'anthropic')).toEqual({ model: 'claude-opus-5-5', allow_private_endpoint: false })
+    expect(testDraft({ ...d, keys: { anthropic: '' } }, 'anthropic').key).toBe('')
+    const compat = { ...d, allow_private_endpoint: true, providers: { ...d.providers, compatible: { enabled: false, model: 'llama', base_url: ' http://192.168.1.20:11434/v1 ' } } }
+    expect(testDraft(compat, 'compatible')).toEqual({ model: 'llama', base_url: 'http://192.168.1.20:11434/v1', allow_private_endpoint: true })
+  })
+  it('knows when a test covered unsaved values', () => {
+    const d = draftFrom(saved)
+    expect(testIsUnsaved(testDraft(d, 'anthropic'), saved, 'anthropic')).toBe(false)
+    expect(testIsUnsaved(testDraft({ ...d, keys: { anthropic: 'sk-new' } }, 'anthropic'), saved, 'anthropic')).toBe(true)
+    expect(testIsUnsaved({ model: 'gpt-x', allow_private_endpoint: false }, saved, 'openai')).toBe(true)
+    expect(SAVE_TO_USE).toBe('Connection works. Save to use these settings.')
+  })
+  it('asks for a model id instead of testing an empty one', () => {
+    const html = renderToStaticMarkup(<OwnerAssistantSettings saved={saved} draft={draftFrom(saved)} connected busy={false} error={null} message={null} tests={{}} onChange={noop} onSave={noop} onTest={noop} />)
+    // Anthropic has a model; OpenAI, Gemini and the compatible endpoint do not.
+    expect((html.match(/data-test-needs-model/g) ?? []).length).toBe(3)
+    expect(html).toContain('Enter a model id to test')
+  })
+  it('hides a result once the tested values change', () => {
+    const d = draftFrom(saved)
+    const tests = { anthropic: { ok: false, code: 'provider_auth', message: 'rejected' } }
+    const same = renderToStaticMarkup(<OwnerAssistantSettings saved={saved} draft={d} connected busy={false} error={null} message={null} tests={tests}
+      testedWith={{ anthropic: JSON.stringify(testDraft(d, 'anthropic')) }} onChange={noop} onSave={noop} onTest={noop} />)
+    expect(same).toContain('provider_auth')
+    const edited = { ...d, providers: { ...d.providers, anthropic: { ...d.providers.anthropic, model: 'claude-haiku-5-5' } } }
+    const changed = renderToStaticMarkup(<OwnerAssistantSettings saved={saved} draft={edited} connected busy={false} error={null} message={null} tests={tests}
+      testedWith={{ anthropic: JSON.stringify(testDraft(d, 'anthropic')) }} onChange={noop} onSave={noop} onTest={noop} />)
+    expect(changed).not.toContain('provider_auth')
   })
 })
 
@@ -144,6 +180,10 @@ describe('Which assistant you use', () => {
     expect(html).toContain('Requests go from this server to OpenAI with your key')
     expect(html).toContain('Test connection')
     expect(html).not.toMatch(/type="password"[^>]*value="[^"]+"/)
+  })
+  it('shows a test result until the tested values change, and offers Test before saving', () => {
+    expect(render(ownStatus, { ownTest: { ok: true, message: 'Connected.' } })).toContain('Connected.')
+    expect(render(ownStatus)).not.toContain('data-test-needs-model')
   })
   it('offers only the listed Anthropic models', () => {
     const html = render({ ...ownStatus, provider: 'anthropic', provider_label: 'Anthropic (Claude)', model: 'claude-haiku-5-5',

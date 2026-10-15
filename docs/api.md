@@ -1299,7 +1299,7 @@ curl -sS -X PUT "$OT/api/v1/settings/assistant" -H "Authorization: Bearer $TOKEN
        "providers":{"compatible":{"enabled":true,"model":"llama3.1","base_url":"http://192.168.1.20:11434/v1"}}}'
 ```
 
-**Test connection** — `POST /api/v1/settings/assistant/test` with `{"provider":"compatible"}` (owner only) sends one minimal request with one tool, using the saved settings and key, and answers 200 `{ok, code?, message, status?}`. `code` is `no_tool_support` when the endpoint refuses tool definitions but answers without them, `no_key`, `private_target`, `provider_auth`, `provider_rate_limited` or `provider_error`.
+**Test connection** — `POST /api/v1/settings/assistant/test` with `{"provider":"compatible"}` (owner only) sends one minimal request with one tool and answers 200 `{ok, code?, message, status?}`. It tests the values on screen: the optional `model`, `base_url`, `key` and `allow_private_endpoint` fields are used as given, and absent ones fall back to the saved settings (`key` absent uses the saved key, `""` means no key). The values pass the same checks as a save first (400 `invalid_input` naming the field, before any request); nothing is saved, audited or logged. `code` is `no_tool_support` when the endpoint refuses tool definitions but answers without them, `no_key`, `private_target`, `provider_auth`, `provider_rate_limited` or `provider_error`.
 
 **Your consent, provider and key** — `GET /api/v1/me/assistant`:
 
@@ -1329,7 +1329,7 @@ curl -sS -X PUT "$OT/api/v1/settings/assistant" -H "Authorization: Bearer $TOKEN
 
 Choosing a provider or storing a key needs the owner's "Let members bring their own key" (403 `forbidden` otherwise); removing either never does. Leaving a provider you chose deletes its key. Audited as `settings.changed`: `assistant.own_provider` (`server` or the provider name), `assistant.own_model`, `assistant.own_key.<provider>` (`unset`/`set`, never the key). Errors: 400 `invalid_input` naming `own_provider`, `own_model` or `own_key`; 409 `provider_changed` when `provider` is not the one in effect after the request, 409 `encryption_enabled`, 409 `assistant_disabled`. A refused request stores nothing. Deleting an account deletes its keys and choice.
 
-**Test your own provider** — `POST /api/v1/me/assistant/test` (no body; **signed-in sessions only**) sends one minimal request with one tool to your own provider with your model and key and answers 200 `{ok, code?, message, status?}` like the owner's test (`provider_auth` says your key was rejected). Errors: 403 `session_required` for API tokens, 409 `assistant_disabled`, 403 `forbidden` while member keys are not allowed, 409 `no_own_provider` when your turns do not use your own provider, 429 `rate_limited` with `Retry-After` after 5 tests in 10 minutes.
+**Test your own provider** — `POST /api/v1/me/assistant/test` (optional body `{provider?, model?, key?}`; **signed-in sessions only**) sends one minimal request with one tool to the provider, model and key on screen, falling back to your saved choice for absent fields (a saved key is used only for the provider it was saved for), without saving anything and answers 200 `{ok, code?, message, status?}` like the owner's test (`provider_auth` says your key was rejected). Errors: 403 `session_required` for API tokens, 409 `assistant_disabled`, 403 `forbidden` while member keys are not allowed, 400 `invalid_input` when no provider is chosen or the provider or model is not allowed, 429 `rate_limited` with `Retry-After` after 5 tests in 10 minutes.
 
 **Usage** — `GET /api/v1/me/assistant/usage` → `{month, input_tokens, output_tokens, total_tokens, turns, cap, resets_at, counted_tokens, cap_member_keys, own_key: {input_tokens, output_tokens, total_tokens, turns}}` for the current UTC month, counted from the provider's usage fields. `total_tokens` counts every turn, `own_key` the turns on your own key, and `counted_tokens` what is measured against `cap` (everything but `own_key` unless `cap_member_keys` is on).
 
@@ -1569,7 +1569,6 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `encryption_enabled` | 409 | an assistant turn or consent for an end-to-end encrypted account |
 | `turn_in_progress` | 409 | a second assistant turn while your first is still answering |
 | `no_key` | 409 | an assistant turn when the provider needs a key and none is stored |
-| `no_own_provider` | 409 | testing your own provider while your turns do not use one (choose it and save your key first) |
 | `provider_changed` | 409 | accepting a disclosure that named a provider no longer in effect |
 | `assistant_disabled` | 409 | accepting the disclosure while the assistant is off |
 | `assistant_quota` | 429 | an assistant turn at your monthly token allowance; `resets_at` names the reset date |
