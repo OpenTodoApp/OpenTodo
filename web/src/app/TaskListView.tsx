@@ -2,7 +2,8 @@ import { Icon } from '../ui/Icon'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
-import { formatDateHeading, localDueOf, todayISO } from '../lib/dates'
+import { formatDateHeading, todayISO } from '../lib/dates'
+import { inToday, inUpcoming, overdueInToday, upcomingDate } from '../lib/views'
 import { byPosition, compareByPosition, compareDueThenPriority } from '../lib/ordering'
 import { resolveLabels } from '../lib/labels'
 import { createSubtask, createTask, deleteTask, detachOccurrence, setTaskCompleted, setTaskParent, skipOccurrence, updateTask } from '../lib/ops'
@@ -27,7 +28,7 @@ import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
-import { estimateFocus, isGPending, openTask, placeInDay } from './signals'
+import { deadlineFocus, estimateFocus, isGPending, openTask, placeInDay } from './signals'
 import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
@@ -121,9 +122,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       case 'inbox':
         return all.filter((t) => !t.completed_at && t.project_id === null)
       case 'today':
-        return all.filter((t) => !t.completed_at && t.due && localDueOf(t.due).date <= today).sort(compareDueThenPriority)
+        return all.filter((t) => inToday(t, today)).sort(compareDueThenPriority)
       case 'upcoming':
-        return all.filter((t) => !t.completed_at && t.due && localDueOf(t.due).date > today).sort(compareDueThenPriority)
+        // Undated tasks sort after dated ones, so a deadline-only task follows the
+        // tasks due that day within its group (deadlines D3).
+        return all.filter((t) => inUpcoming(t, today)).sort(compareDueThenPriority)
       case 'completed':
         return all.filter((t) => t.completed_at).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0)).slice(0, 100)
       case 'project':
@@ -218,8 +221,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: t.parent_id ? breadcrumbOf(t, taskMap) : null,
     })
     if (route.view === 'today') {
-      const overdue = tasks.filter((t) => t.due && localDueOf(t.due).date < today)
-      const due = tasks.filter((t) => t.due && localDueOf(t.due).date === today)
+      const overdue = tasks.filter((t) => overdueInToday(t, today))
+      const due = tasks.filter((t) => !overdueInToday(t, today))
       const g: Group[] = []
       if (overdue.length) g.push({ key: 'overdue', heading: 'Overdue', rows: overdue.map(flatRow) })
       g.push({ key: 'today', heading: overdue.length ? 'Today' : null, rows: due.map(flatRow) })
@@ -228,13 +231,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (route.view === 'upcoming') {
       const byDate = new Map<string, Task[]>()
       for (const t of tasks) {
-        if (!t.due) continue
-        const date = localDueOf(t.due).date
+        const date = upcomingDate(t)
+        if (!date) continue
         const list = byDate.get(date) ?? []
         list.push(t)
         byDate.set(date, list)
       }
-      return [...byDate.entries()].map(([date, list]) => ({ key: date, heading: formatDateHeading(date, today, dt.resolved), rows: list.map(flatRow) }))
+      return [...byDate.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([date, list]) => ({ key: date, heading: formatDateHeading(date, today, dt.resolved), rows: list.map(flatRow) }))
     }
     if (route.view === 'label' || route.view === 'assigned') {
       // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
@@ -617,6 +620,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           if (row) {
             e.preventDefault()
             estimateFocus.request(row.task.id)
+            setOpenId(row.task.id)
+          }
+          break
+        case 'd':
+          if (row) {
+            e.preventDefault()
+            deadlineFocus.request(row.task.id)
             setOpenId(row.task.id)
           }
           break

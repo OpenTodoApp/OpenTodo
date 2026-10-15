@@ -5,7 +5,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../../lib/db'
-import { localDueOf, zoneHint } from '../../lib/dates'
+import { describeDeadline, localDueOf, zoneHint } from '../../lib/dates'
 import { formatMinutes } from '../../lib/duration'
 import { removeLabel, resolveLabels } from '../../lib/labels'
 import { createProject, setTaskParent, updateTask } from '../../lib/ops'
@@ -15,17 +15,19 @@ import { effectiveSection, moveTaskToSection } from '../../lib/sections'
 import { isSoloScope, memberName, membershipMap } from '../../lib/sharing'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
 import { Avatar } from '../../ui/Avatar'
+import { IconButton } from '../../ui/Button'
 import { ComboboxPanel } from '../../ui/Combobox/Combobox'
 import { Icon } from '../../ui/Icon'
 import { Switch } from '../../ui/Switch'
 import { AssigneePicker } from '../AssigneePicker'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { DateField } from '../datetime/DateField'
 import { DueField } from '../DueField'
 import { EstimateField } from '../EstimateField'
 import { LabelChip, LabelPicker } from '../LabelPicker'
 import { RecurrenceField } from '../RecurrenceField'
 import { RemindersField } from '../RemindersField'
-import { estimateFocus } from '../signals'
+import { deadlineFocus, estimateFocus } from '../signals'
 import { useViewerZone } from '../useViews'
 import { PropertyRow } from './PropertyRow'
 import { ZoneControl } from './ZoneControl'
@@ -43,6 +45,16 @@ const itemKey = (i: PickerItem) => i.key
 const itemLabel = (i: PickerItem) => i.label
 const itemPath = (i: PickerItem) => i.path
 const itemMeta = (i: PickerItem) => i.meta
+
+/** The countdown in words for the panel row ("in 3 days", "today", "2 days over"). */
+function countdownWords(deadline: string, dueDate: string | null): string {
+  const c = describeDeadline(deadline, undefined, dueDate)!
+  const days = Number.parseInt(c.label, 10)
+  const late = dueDate && dueDate > deadline ? ' · planned after it' : ''
+  if (c.label === 'Today') return `today${late}`
+  const n = `${days} day${days === 1 ? '' : 's'}`
+  return (c.label.endsWith('over') ? `${n} over` : `in ${n}`) + late
+}
 
 function Dot({ color }: { color?: string }) {
   return <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color ?? 'var(--ot-faint)' }} />
@@ -78,7 +90,14 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
   )
   const [parentError, setParentError] = useState<string | null>(null)
   const [estimating, setEstimating] = useState(false)
-  useEffect(() => { setParentError(null); setEstimating(false) }, [task.id])
+  const [deadlining, setDeadlining] = useState(false)
+  useEffect(() => { setParentError(null); setEstimating(false); setDeadlining(false) }, [task.id])
+
+  // `d` on a list row opens the panel with the deadline field focused (deadlines 3.2).
+  useEffect(() => {
+    if (deadlineFocus.take(task.id)) setDeadlining(true)
+    return deadlineFocus.subscribe((id) => { if (id === task.id && deadlineFocus.take(id)) setDeadlining(true) })
+  }, [task.id])
 
   // `e` on a list row opens the panel with the estimate editor (time-blocking). The
   // request is left pending so the EstimateField that mounts focuses its input.
@@ -203,6 +222,23 @@ export function Properties({ task, userId, readOnly, projects, labelMap, parent,
         )}
         aside={task.due ? <ZoneControl task={task} readOnly={readOnly} viewerZone={zone} /> : undefined}
         editor={() => <DueField task={task} readOnly={readOnly} />} />
+
+      {/* The day the task must be finished by, separate from Due (OpenSpec change deadlines, D2). */}
+      <PropertyRow icon="hourglass" label="Deadline" testId="deadline" readOnly={readOnly} empty={!task.deadline} placeholder="No deadline"
+        editing={deadlining} onEditingChange={setDeadlining}
+        value={task.deadline && (
+          <span className="truncate">
+            {dt.formatDate(task.deadline, 'long')}
+            <span className="ml-2 text-meta text-muted">{countdownWords(task.deadline, local?.date ?? null)}</span>
+          </span>
+        )}
+        editor={() => (
+          <div className="flex flex-wrap items-start gap-2">
+            <DateField label="Deadline" hideLabel autoFocus className="min-w-44 flex-1" value={task.deadline ?? null}
+              onChange={(deadline) => void updateTask(task.id, { deadline })} />
+            {task.deadline && <IconButton icon="x" label="Clear deadline" onClick={() => void updateTask(task.id, { deadline: null })} />}
+          </div>
+        )} />
 
       <PropertyRow icon="alarm-clock" label="Reminders" testId="reminders" control={
         <fieldset disabled={readOnly} className="min-w-0 px-1 py-0.5"><RemindersField task={task} /></fieldset>

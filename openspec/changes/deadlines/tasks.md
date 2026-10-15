@@ -10,16 +10,16 @@
 
 ## 2. Countdown, Today and Upcoming (design D2, D3)
 
-- [ ] 2.1 Add `describeDeadline(deadline, today)` to `web/src/lib/dates.ts` and `inToday`/`inUpcoming` predicates to `lib/views.ts`. Verify with table-driven tests for `3d`, `Today`, `2d over` and the three tones, and for the spec scenarios "Scheduled later than a past deadline" and "Deadline still ahead" (`npm test`).
-- [ ] 2.2 Vendor the Lucide `hourglass` icon into `web/src/ui/icons/lucide.ts` and render the countdown chip in `TaskRow.tsx` with it (and the full date as `title`). Verify with a row test for the three labels, `npm test` (including `usage.test.ts`) and `make ui-lint`.
-- [ ] 2.3 Switch Today and Upcoming selection and grouping in `TaskListView.tsx` and the Today count in `Sidebar.tsx` to the shared predicates; deadline-only tasks sort after dated ones within an Upcoming day. Verify with component tests for the four Today/Upcoming spec scenarios and a count test; `npm run build` in web/.
-- [ ] 2.4 Update `docs/views.md` (Today and Upcoming rules) and `docs/tasks-and-projects.md` (the countdown). Verify with `npm run docs:check`.
+- [x] 2.1 Add `describeDeadline(deadline, today)` to `web/src/lib/dates.ts` and `inToday`/`inUpcoming` predicates to `lib/views.ts`. Verify with table-driven tests for `3d`, `Today`, `2d over` and the three tones, and for the spec scenarios "Scheduled later than a past deadline" and "Deadline still ahead" (`npm test`).
+- [x] 2.2 Vendor the Lucide `hourglass` icon into `web/src/ui/icons/lucide.ts` and render the countdown chip in `TaskRow.tsx` with it (and the full date as `title`). Verify with a row test for the three labels, `npm test` (including `usage.test.ts`) and `make ui-lint`.
+- [x] 2.3 Switch Today and Upcoming selection and grouping in `TaskListView.tsx` and the Today count in `Sidebar.tsx` to the shared predicates; deadline-only tasks sort after dated ones within an Upcoming day. Verify with component tests for the four Today/Upcoming spec scenarios and a count test; `npm run build` in web/.
+- [x] 2.4 Update `docs/views.md` (Today and Upcoming rules) and `docs/tasks-and-projects.md` (the countdown). Verify with `npm run docs:check`.
 
 ## 3. Entry in the panel and the list (design D2)
 
-- [ ] 3.1 Add the **Deadline** row to the detail panel's properties card next to Due, using the existing `DateField` (`web/src/app/datetime/`), clearable, read-only text for viewers; show the countdown words and the full date. Verify with component tests: typing `fri` writes the next Friday, clearing writes null, a viewer sees text; an axe check in the test.
-- [ ] 3.2 Add `d` in `useListKeys.ts`/`listActions.ts` opening the inline date field for the selected task (mirroring `e`), and list it in `lib/shortcuts.ts` and the help overlay. Verify with a test that `d`, `2026-11-06`, Enter writes the deadline and that `d` inside a text field types a letter.
-- [ ] 3.3 Document the row and the key in `docs/tasks-and-projects.md` and `docs/keyboard.md`. Verify with `npm run docs:check`.
+- [x] 3.1 Add the **Deadline** row to the detail panel's properties card next to Due, using the existing `DateField` (`web/src/app/datetime/`), clearable, read-only text for viewers; show the countdown words and the full date. Verify with component tests: typing `fri` writes the next Friday, clearing writes null, a viewer sees text; an axe check in the test.
+- [x] 3.2 Add `d` in `useListKeys.ts`/`listActions.ts` opening the inline date field for the selected task (mirroring `e`), and list it in `lib/shortcuts.ts` and the help overlay. Verify with a test that `d`, `2026-11-06`, Enter writes the deadline and that `d` inside a text field types a letter.
+- [x] 3.3 Document the row and the key in `docs/tasks-and-projects.md` and `docs/keyboard.md`. Verify with `npm run docs:check`.
 
 ## 4. Filters (design D4)
 

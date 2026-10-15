@@ -6,6 +6,8 @@ import { applyOps, createTask, resetDeviceId, updateTask } from './ops'
 import { deadlineFireAt, deadlineOffsetLabel, dueInstant } from './reminderTime'
 import { addReminder, followSharedDueChanges } from './reminders'
 import { formatValue } from './history'
+import { daysBetweenISO, describeDeadline } from './dates'
+import { inToday, inUpcoming, overdueInToday, upcomingDate } from './views'
 
 let n = 0
 beforeEach(() => {
@@ -101,5 +103,65 @@ describe('deadline reminders', () => {
     await applyOps([op])
     expect(await followSharedDueChanges([op])).toBe(1)
     expect((await db.reminders.get(dl))?.fire_at).toBe(local('2026-11-09', '09:00'))
+  })
+})
+
+describe('countdown (design D2)', () => {
+  const today = '2026-10-14'
+  it.each([
+    ['2026-10-17', undefined, '3d', 'soon'],
+    ['2026-10-14', undefined, 'Today', 'overdue'],
+    ['2026-10-12', undefined, '2d over', 'overdue'],
+    ['2026-10-30', undefined, '16d', 'later'],
+    ['2026-10-21', undefined, '7d', 'soon'],
+    // Due after the deadline: the countdown turns to the danger tone.
+    ['2026-10-17', '2026-10-19', '3d', 'overdue'],
+  ])('deadline %s (due %s) reads %s, tone %s', (deadline, due, label, tone) => {
+    expect(describeDeadline(deadline, today, due)).toEqual({ label, tone })
+  })
+  it('null without a deadline', () => {
+    expect(describeDeadline(null, today)).toBeNull()
+    expect(describeDeadline(undefined, today)).toBeNull()
+  })
+  it('counts calendar days across a DST change', () => {
+    expect(daysBetweenISO('2026-10-24', '2026-10-26')).toBe(2)
+    expect(daysBetweenISO('2026-03-28', '2026-03-30')).toBe(2)
+  })
+})
+
+describe('Today and Upcoming (design D3)', () => {
+  const today = '2026-10-14'
+  const t = (due: string | null, deadline: string | null, completed_at: number | null = null) => ({ due: due ? { date: due } : null, deadline, completed_at })
+  it('deadline today without a due date is in Today, not overdue', () => {
+    expect(inToday(t(null, today), today)).toBe(true)
+    expect(overdueInToday(t(null, today), today)).toBe(false)
+  })
+  it('scheduled later than a past deadline is in Today once, in Overdue', () => {
+    const x = t('2026-10-16', '2026-10-13')
+    expect(inToday(x, today)).toBe(true)
+    expect(overdueInToday(x, today)).toBe(true)
+    expect(inUpcoming(x, today)).toBe(true) // listed under its due date in Upcoming too, as any task due later
+  })
+  it('a past deadline planned for today stays in the Today group', () => {
+    expect(overdueInToday(t(today, '2026-10-13'), today)).toBe(false)
+  })
+  it('deadline still ahead is not in Today', () => {
+    expect(inToday(t('2026-10-20', '2026-10-24'), today)).toBe(false)
+  })
+  it('deadline only is in Upcoming under its deadline', () => {
+    const x = t(null, '2026-10-17')
+    expect(inUpcoming(x, today)).toBe(true)
+    expect(upcomingDate(x)).toBe('2026-10-17')
+  })
+  it('both dates: Upcoming lists it under the due date only', () => {
+    const x = t('2026-10-15', '2026-10-17')
+    expect(upcomingDate(x)).toBe('2026-10-15')
+  })
+  it('clearing the due date moves it to its deadline day', () => {
+    expect(upcomingDate(t(null, '2026-10-16'))).toBe('2026-10-16')
+  })
+  it('completed tasks are in neither', () => {
+    expect(inToday(t(null, today, 1), today)).toBe(false)
+    expect(inUpcoming(t(null, '2026-10-17', 1), today)).toBe(false)
   })
 })

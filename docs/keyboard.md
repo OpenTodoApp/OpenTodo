@@ -86,6 +86,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>1</kbd> – <kbd>4</kbd> | Set priority of selected task |
 | <kbd>L</kbd> | Labels of selected task (type to find, Enter adds or creates) |
 | <kbd>e</kbd> | Edit the estimate of the selected task (type 20, 45m, 1h30; Enter) |
+| <kbd>d</kbd> | Set the deadline of the selected task (type fri, 2026-11-06; Enter) |
 | <kbd>s</kbd> | Schedule the selected task: Day view in placement mode |
 | <kbd>Shift+S</kbd> | Skip the current occurrence of a recurring task |
 | <kbd>Shift+O</kbd> | Recurring task: this occurrence only (standalone copy, series moves on) |
