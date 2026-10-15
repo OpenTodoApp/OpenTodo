@@ -34,7 +34,10 @@ export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_l
     : set.device === 'server' ? 'API'
     : set.device.startsWith('agent:') ? 'AI assistant'
     : set.device.startsWith('caldav:') ? 'a calendar app (CalDAV)'
+    : set.device.startsWith('public:') ? 'a public link'
     : `another device (${set.device.slice(0, 4)})`
+  // A guest's tick is written as the link's creator; the label names the link, not them (public-links D6).
+  if (set.device.startsWith('public:')) return base
   if (!myUserId || set.userId === myUserId) return base
   for (const m of memberships) {
     const who = m.members.find((x) => x.userId === set.userId)

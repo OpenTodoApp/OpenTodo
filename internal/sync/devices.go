@@ -22,6 +22,17 @@ const (
 // it "Assistant".
 const AssistantDevicePrefix = "assistant:"
 
+// PublicDevicePrefix marks ops a guest wrote through a public link
+// (public-links D4): public:<link-id>, applied by the server as the link's
+// creator. Reserved like agent: and caldav:.
+const PublicDevicePrefix = "public:"
+
+// PublicDevice is the device id of a public link's ticks.
+func PublicDevice(linkID string) string { return PublicDevicePrefix + linkID }
+
+// IsPublicDevice reports whether device is a public link's.
+func IsPublicDevice(device string) bool { return strings.HasPrefix(device, PublicDevicePrefix) }
+
 // AgentDevice is the device id of the ops an AI assistant's token writes.
 func AgentDevice(tokenID string) string { return AgentDevicePrefix + tokenID }
 
@@ -32,7 +43,8 @@ func IsAgentDevice(device string) bool { return strings.HasPrefix(device, AgentD
 // The server's own device (REST writes, attachment uploads: uploaded_at is
 // trusted only from it) is reserved too (OpenSpec change attachments, design D3).
 func ReservedDevice(device string) bool {
-	return device == ServerDevice || strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix)
+	return device == ServerDevice || strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix) ||
+		strings.HasPrefix(device, PublicDevicePrefix)
 }
 
 // CreatedBy returns the device of the first stored created_at op of an entity

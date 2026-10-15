@@ -73,6 +73,8 @@ type Server struct {
 	// pushTestLimiter caps test pushes per account (5 per 10 minutes; OpenSpec
 	// `push-test-delivery` D3), see push.go.
 	pushTestLimiter *rateLimiter
+	// public holds the public-link limiters (OpenSpec `public-links`).
+	public publicLimiters
 	// importer previews, runs and undoes file imports (OpenSpec `data-import`).
 	importer *importer.Service
 	// hooks manages outbound webhooks; nil when not wired (routes answer 503).
@@ -219,6 +221,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// Single sign-on (OpenSpec `oidc-login`): start and callback are part of the
 	// sign-in flow (anonymous, rate limited); settings and identities require auth.
 	s.registerOIDCRoutes(mux)
+	s.registerPublicLinkRoutes(mux)
 
 	mux.Handle("GET /api/v1/me", s.requireAuth(s.handleMe))
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(s.handleListTokens))
@@ -312,6 +315,13 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 		// The share sheet POSTs here when the service worker is not active yet.
 		mux.HandleFunc("POST /share", s.handleSharePost)
 		mux.Handle("/", web)
+		// A public list page (public-links D7): no indexing and no referrer, so
+		// the secret in its address never leaks to a site it links to.
+		mux.Handle("GET /public/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Robots-Tag", "noindex, nofollow")
+			w.Header().Set("Referrer-Policy", "no-referrer")
+			web.ServeHTTP(w, r)
+		}))
 	}
 	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(mux))))
 }
@@ -1000,12 +1010,12 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 	// Devices may not write as an AI assistant or a calendar app: those device
 	// ids are reserved for the server's own writers (mcp-write-tools D4).
 	if opsync.ReservedDevice(in.Device) {
-		writeError(w, http.StatusBadRequest, "invalid_op", "device: server and ids starting with agent: or caldav: are reserved")
+		writeError(w, http.StatusBadRequest, "invalid_op", "device: server and ids starting with agent:, caldav: or public: are reserved")
 		return
 	}
 	for _, op := range in.Ops {
 		if opsync.ReservedDevice(op.Device) {
-			writeError(w, http.StatusBadRequest, "invalid_op", "op device: server and ids starting with agent: or caldav: are reserved")
+			writeError(w, http.StatusBadRequest, "invalid_op", "op device: server and ids starting with agent:, caldav: or public: are reserved")
 			return
 		}
 	}

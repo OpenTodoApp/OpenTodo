@@ -53,6 +53,9 @@ const (
 	ProjectInviteCreatedName  Name = "project_invite.created"
 	ProjectInviteRevokedName  Name = "project_invite.revoked"
 	ProjectInviteAcceptedName Name = "project_invite.accepted"
+	// Public links (OpenSpec `public-links`).
+	PublicLinkCreatedName Name = "public_link.created"
+	PublicLinkRevokedName Name = "public_link.revoked"
 	RoleChangedName           Name = "role.changed"
 	SettingsChangedName       Name = "settings.changed"
 	IdentityLinkedName        Name = "identity.linked"
@@ -90,6 +93,7 @@ var Names = []Name{
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
+	PublicLinkCreatedName, PublicLinkRevokedName,
 	RoleChangedName, SettingsChangedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	ExportRequestedName, AuditExportedName,
@@ -177,6 +181,8 @@ var allowedDetailKeys = map[string]bool{
 	"backup_id":         true,
 	"source":            true, // restore source: archive, upload or safety-copy
 	"reset_id":          true, // id of a password reset link (never its secret)
+	"public_link_id":    true, // id of a public link (never its secret)
+	"link_rights":       true, // view | tick
 }
 
 // Event is one security-relevant occurrence. Build it with a constructor.
@@ -482,4 +488,16 @@ func PasswordChanged(userID string) Event {
 // previous owner becomes an admin.
 func OwnerTransferred(fromID, toID string) Event {
 	return ev(OwnerTransferredName, Success, fromID, toID, "from", "owner", "to", "admin")
+}
+
+// ---- public links (public-links) ----
+
+// PublicLinkCreated records a public link to a project; never the secret or the name.
+func PublicLinkCreated(actorID, linkID, projectID, rights string) Event {
+	return ev(PublicLinkCreatedName, Success, actorID, "", "public_link_id", linkID, "shared_project_id", projectID, "link_rights", rights)
+}
+
+// PublicLinkRevoked records a public link being revoked.
+func PublicLinkRevoked(actorID, linkID, projectID string) Event {
+	return ev(PublicLinkRevokedName, Success, actorID, "", "public_link_id", linkID, "shared_project_id", projectID)
 }

@@ -13,6 +13,9 @@ import { decryptActivityPage } from './e2ee'
 import { db } from './db'
 import type { ActivityChange, ActivityEntry, ActivityEvent, ActivityKind, ActivityPage, Op } from './types'
 
+/** Device prefix of a public link's ops (OpenSpec `public-links`). */
+export const PUBLIC_DEVICE_PREFIX = 'public:'
+
 /** Ops by one actor on one entity within this many ms of the group's first op fold into one event. */
 export const WINDOW_MS = 5000
 /** Local events kept per project (a constant, not a setting). */
@@ -70,11 +73,13 @@ export function deriveActivity(ops: ActivityOp[], prior?: Map<string, unknown>):
     else from = prior?.has(fk) ? prior.get(fk) : null
     last.set(fk, op.value)
     const actor = op.actor ?? ''
-    const gk = `${actor}\u0000${op.entity}\u0000${op.entityId}`
+    // A public link's ticks group apart and carry their device (public-links D6).
+    const pub = op.device?.startsWith(PUBLIC_DEVICE_PREFIX) ? op.device : ''
+    const gk = `${actor}\u0000${op.entity}\u0000${op.entityId}${pub ? `\u0000${pub}` : ''}`
     let g = open.get(gk)
     if (!g || op.ts - g.ev.ts > WINDOW_MS) {
       g = {
-        ev: { id: op.id, kind: 'edited', actor, entity: op.entity as ActivityEvent['entity'], entityId: op.entityId, ts: op.ts, opIds: [], changes: [] },
+        ev: { id: op.id, kind: 'edited', actor, entity: op.entity as ActivityEvent['entity'], entityId: op.entityId, ts: op.ts, opIds: [], changes: [], ...(pub ? { device: pub } : {}) },
         order: [], changes: new Map(),
       }
       open.set(gk, g)
