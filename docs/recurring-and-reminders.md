@@ -18,7 +18,7 @@ Open the task and type a rule into **Repeat**, such as `every week`. A list of s
 
 <picture><source srcset="images/repeat-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/repeat-light.webp" alt="The Repeat field with the rule every monday, the next three dates below it, and the Skip and This occurrence only buttons."></picture>
 
-Rules are set in the task panel. Quick add doesn't read them: typing `every monday` there doesn't make a task repeat. Add the task first, then open it and set **Repeat**.
+Set a rule in the task panel under **Repeat**, or type it straight into quick add: `Water plants every Monday` creates the task with the rule and its first date. See [Repeat and remind](quick-add.md#repeat-and-remind) for the phrases in each language.
 
 Repeating tasks show a ↻ symbol on the row. To stop repeating, select the **×** next to the rule.
 
@@ -40,7 +40,7 @@ Two extras work with any of these:
 - **After completion:** `every 2 weeks after completion` counts from the day you actually finish, not from the due date. Good for things like "change the water filter".
 - **An end:** add `until 2026-12-31` or `for 10 times` to stop the series.
 
-Rules are in English, whichever language you use for dates in quick add. Every detail is in the [recurring task rules](recurrence.md) reference.
+Rules are stored in English, whichever language you typed them in. Every detail is in the [recurring task rules](recurrence.md) reference.
 
 ## Complete, skip or split off one occurrence
 
