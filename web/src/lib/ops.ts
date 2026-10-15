@@ -1,7 +1,8 @@
 // Every local mutation becomes field-level ops that are applied to IndexedDB
 // immediately (optimistic, offline-safe) and queued for the server.
 import { db, entityTables, getMeta, setMeta } from './db'
-import { todayISO } from './dates'
+import { dueToInstant, todayISO } from './dates'
+import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
 import { hlcNow, hlcSeed, wins } from './hlc'
 import { firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
@@ -519,6 +520,11 @@ export type NewTaskInput = {
   assignee_id?: string | null
   /** Section of `project_id` (board-view); only sent when set. */
   section_id?: string | null
+  /**
+   * Reminders typed in quick add (quick-add-recurrence D3), resolved against the
+   * task's final due and written in the same batch as the task.
+   */
+  reminders?: ReminderPhrase[]
 }
 
 /** The ops of a new task without writing them, for a batch with other changes (a shared file's attachments). */
@@ -549,9 +555,25 @@ export async function planTask(input: NewTaskInput): Promise<{ id: string; chang
   } } }
 }
 
-export async function createTask(input: NewTaskInput): Promise<string> {
+/** The reminder ops for phrases typed in quick add, resolved against the task's due (quick-add-recurrence D3). */
+export function planReminders(taskId: string, due: Task['due'], phrases: readonly ReminderPhrase[] | undefined, now = new Date()): Change[] {
+  const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+  return (phrases ?? []).map((phrase) => {
+    const r = resolveReminder(phrase, due, todayISO(now), hhmm)
+    const relative = r.kind === 'relative'
+    return { entity: 'reminder', entityId: crypto.randomUUID(), patch: {
+      task_id: taskId, kind: r.kind, offset_minutes: relative ? r.offsetMinutes : null,
+      fire_at: relative ? relativeFireAt(due, r.offsetMinutes) : dueToInstant({ date: r.date, time: r.time }),
+      delivered_at: null, dismissed_at: null, created_at: now.getTime(), deleted_at: null,
+    } } satisfies Change
+  })
+}
+
+export async function createTask(input: NewTaskInput, now = new Date()): Promise<string> {
   const { id, change } = await planTask(input)
-  await mutateMany([change])
+  const changes: Change[] = [change, ...planReminders(id, (change.patch as { due: Task['due'] }).due, input.reminders, now)]
+  // One batch: the task never syncs without its reminders.
+  await mutateMany(changes)
   return id
 }
 
