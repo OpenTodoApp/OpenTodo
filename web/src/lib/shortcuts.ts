@@ -53,6 +53,7 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: '1 – 4', description: 'Set priority of selected task', section: 'tasks' },
   { keys: 'L', description: 'Labels of selected task (type to find, Enter adds or creates)', section: 'tasks' },
   { keys: 'e', description: 'Edit the estimate of the selected task (type 20, 45m, 1h30; Enter)', section: 'tasks' },
+  { keys: 'd', description: 'Set the deadline of the selected task (type fri, 2026-11-06; Enter)', section: 'tasks' },
   { keys: 's', description: 'Schedule the selected task: Day view in placement mode', section: 'tasks' },
   { keys: 'Shift+S', description: 'Skip the current occurrence of a recurring task', section: 'tasks' },
   { keys: 'Shift+O', description: 'Recurring task: this occurrence only (standalone copy, series moves on)', section: 'tasks' },

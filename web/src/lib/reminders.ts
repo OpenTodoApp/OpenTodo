@@ -1,29 +1,37 @@
 // Reminder writes (OpenSpec change `reminders`). Every helper is an ordinary
 // field-level mutation through mutate(), so reminders work offline and converge by
 // last-writer-wins like tasks. Relative reminders are kept in step with their
-// task's due time by mutateMany (see reminderFollowUps in ops.ts).
+// task's due time, and deadline reminders with its deadline, by mutateMany (see
+// reminderFollowUps in ops.ts).
 import { db } from './db'
 import { mutate, mutateMany, type Change } from './ops'
-import { relativeFireAt, snoozeUntil, type SnoozeChoice } from './reminderTime'
-import type { Op, Reminder } from './types'
+import { deadlineFireAt, relativeFireAt, snoozeUntil, type SnoozeChoice } from './reminderTime'
+import type { Op, Reminder, Task } from './types'
 
 export type ReminderInput =
   | { kind: 'relative'; offset_minutes: number }
   | { kind: 'absolute'; fire_at: number }
+  /** Offset from 09:00 local on the task's deadline (OpenSpec change `deadlines`). */
+  | { kind: 'deadline'; offset_minutes: number }
+
+/** Firing time of an offset reminder: from the due time (relative) or the deadline day (deadline). */
+function offsetFireAt(kind: 'relative' | 'deadline', task: Pick<Task, 'due' | 'deadline'> | undefined, offset: number): number | null {
+  return kind === 'deadline' ? deadlineFireAt(task?.deadline ?? null, offset) : relativeFireAt(task?.due ?? null, offset)
+}
 
 /** Add a reminder to a task; returns its id. A relative reminder on an undated task has no firing time yet. */
 export async function addReminder(taskId: string, input: ReminderInput, now = Date.now()): Promise<string> {
   const task = await db.tasks.get(taskId)
   if (!task || task.deleted_at) throw new Error('task not found')
   const id = crypto.randomUUID()
-  const relative = input.kind === 'relative'
-  if (relative && !Number.isInteger(input.offset_minutes)) throw new Error('offset must be a whole number of minutes')
-  if (!relative && !(input.fire_at > 0)) throw new Error('reminder time is required')
+  const offset = input.kind === 'absolute' ? null : input.offset_minutes
+  if (input.kind !== 'absolute' && !Number.isInteger(offset)) throw new Error('offset must be a whole number of minutes')
+  if (input.kind === 'absolute' && !(input.fire_at > 0)) throw new Error('reminder time is required')
   await mutate('reminder', id, {
     task_id: taskId,
     kind: input.kind,
-    offset_minutes: relative ? input.offset_minutes : null,
-    fire_at: relative ? relativeFireAt(task.due, input.offset_minutes) : input.fire_at,
+    offset_minutes: offset,
+    fire_at: input.kind === 'absolute' ? input.fire_at : offsetFireAt(input.kind, task, input.offset_minutes),
     delivered_at: null,
     dismissed_at: null,
     created_at: now,
@@ -41,10 +49,10 @@ export async function updateReminder(id: string, input: ReminderInput): Promise<
   if (!r || r.deleted_at) throw new Error('reminder not found')
   const task = await db.tasks.get(r.task_id)
   const patch: Partial<Reminder> = { kind: input.kind }
-  if (input.kind === 'relative') {
+  if (input.kind !== 'absolute') {
     if (!Number.isInteger(input.offset_minutes)) throw new Error('offset must be a whole number of minutes')
     patch.offset_minutes = input.offset_minutes
-    patch.fire_at = relativeFireAt(task?.due ?? null, input.offset_minutes)
+    patch.fire_at = offsetFireAt(input.kind, task, input.offset_minutes)
   } else {
     if (!(input.fire_at > 0)) throw new Error('reminder time is required')
     patch.offset_minutes = null
@@ -95,10 +103,11 @@ export function sortReminders(list: Reminder[]): Reminder[] {
  * a task in a shared project, that member's device cannot rewrite our relative
  * reminders. After pulling, this device recomputes them itself for every shared
  * task whose due arrived in `ops`. Personal tasks are left alone: there the device
- * that changed the due wrote the reminders in the same batch.
+ * that changed the due wrote the reminders in the same batch. Deadline reminders
+ * follow an arriving deadline the same way (OpenSpec change `deadlines`).
  */
 export async function followSharedDueChanges(ops: Op[]): Promise<number> {
-  const taskIds = new Set(ops.filter((o) => o.entity === 'task' && o.field === 'due').map((o) => o.entityId))
+  const taskIds = new Set(ops.filter((o) => o.entity === 'task' && (o.field === 'due' || o.field === 'deadline')).map((o) => o.entityId))
   if (taskIds.size === 0) return 0
   const changes: Change[] = []
   for (const id of taskIds) {
@@ -107,8 +116,8 @@ export async function followSharedDueChanges(ops: Op[]): Promise<number> {
     if (!(await db.memberships.get(task.project_id))) continue
     const reminders = await db.reminders.where('task_id').equals(id).toArray()
     for (const r of reminders) {
-      if (r.deleted_at || r.kind !== 'relative') continue
-      const fireAt = relativeFireAt(task.due, r.offset_minutes)
+      if (r.deleted_at || r.kind === 'absolute') continue
+      const fireAt = offsetFireAt(r.kind, task, r.offset_minutes ?? 0)
       if (fireAt === r.fire_at) continue
       changes.push({ entity: 'reminder', entityId: r.id, patch: { fire_at: fireAt, delivered_at: null, dismissed_at: null } })
     }

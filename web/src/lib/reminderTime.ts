@@ -30,6 +30,15 @@ export function relativeFireAt(due: Due | null, offsetMinutes: number | null): n
   return dueInstant(due) + (offsetMinutes ?? 0) * 60_000
 }
 
+/**
+ * Firing instant of a deadline reminder (OpenSpec change `deadlines`, design D5):
+ * 09:00 local on the deadline day plus offset, null without a deadline.
+ */
+export function deadlineFireAt(deadline: string | null | undefined, offsetMinutes: number | null): number | null {
+  if (!deadline) return null
+  return dueInstant({ date: deadline }) + (offsetMinutes ?? 0) * 60_000
+}
+
 /** The firing that `delivered_at` acknowledges is the current one (not an earlier, snoozed or moved one). */
 export function isDelivered(r: Pick<Reminder, 'delivered_at' | 'fire_at'>): boolean {
   return r.delivered_at !== null && r.fire_at !== null && r.delivered_at >= r.fire_at
@@ -69,6 +78,18 @@ export const RELATIVE_PRESETS: { minutes: number; label: string }[] = [
   { minutes: -60, label: '1 hour before' },
   { minutes: -1440, label: '1 day before' },
 ]
+
+/** Deadline reminder presets (OpenSpec change `deadlines`): offsets from 09:00 on the deadline. */
+export const DEADLINE_PRESETS: { minutes: number; label: string }[] = [
+  { minutes: 0, label: 'On the deadline' },
+  { minutes: -1440, label: '1 day before the deadline' },
+]
+
+/** Human label of a deadline reminder offset ("On the deadline", "1 day before the deadline"). */
+export function deadlineOffsetLabel(minutes: number | null): string {
+  if ((minutes ?? 0) === 0) return 'On the deadline'
+  return `${offsetLabel(minutes)} the deadline`
+}
 
 /** Human label of a relative offset ("30 minutes before", "2 hours after"). */
 export function offsetLabel(minutes: number | null): string {

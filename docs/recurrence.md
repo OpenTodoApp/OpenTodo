@@ -63,6 +63,12 @@ All dates are floating calendar dates (`YYYY-MM-DD`), like `due` itself; the
 computation never converts through a time zone, so daylight saving changes have
 no effect. The due time, if any, is kept.
 
+A [deadline](tasks-and-projects.md#deadlines) on the series moves by the same
+number of days as the due date: `every monday` due 12 October with the deadline
+14 October is next due 19 October with the deadline 21 October, also when an
+overdue series catches up. Skipping and "this occurrence only" move it the same
+way. The completed occurrence and a detached copy keep the deadline they had.
+
 - **Calendar rules**: the next occurrence is the first matching date strictly
   after the current due date. If that date is already in the past (the task was
   overdue), it is instead the first matching date after today: overdue tasks catch

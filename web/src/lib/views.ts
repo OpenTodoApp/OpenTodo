@@ -2,7 +2,7 @@
 // and sort options, pinned to the sidebar, composed into dashboards. Every write is
 // an op through mutate(); evaluation reuses the filter compiler from lib/filter, so a
 // saved view behaves exactly like the same query typed into the Filter view.
-import { addDaysISO, compareDue, formatDateHeading, localDate } from './dates'
+import { addDaysISO, compareDue, formatDateHeading, localDate, localDueOf } from './dates'
 import { db, getMeta, setMeta } from './db'
 import { compile, parse, type FilterContext, type Node } from './filter'
 import { activeLabels } from './labels'
@@ -13,6 +13,38 @@ import {
   GROUP_BY_OPTIONS, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_KINDS,
   type GroupBy, type Project, type SortBy, type SortDir, type Task, type View, type ViewKind,
 } from './types'
+
+// ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
+// One definition shared by the list, its grouping and the sidebar count.
+
+type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline'>
+
+/** Today lists open tasks due today or earlier, or whose deadline is today or past. */
+export function inToday(t: DatedTask, today: string): boolean {
+  if (t.completed_at) return false
+  const deadline = t.deadline ?? null
+  return (!!t.due && localDueOf(t.due).date <= today) || (deadline !== null && deadline <= today)
+}
+
+/** Within Today, the Overdue group: due before today, or deadline passed and not planned for today. */
+export function overdueInToday(t: DatedTask, today: string): boolean {
+  const due = t.due ? localDueOf(t.due).date : null
+  const deadline = t.deadline ?? null
+  return (due !== null && due < today) || (deadline !== null && deadline < today && due !== today)
+}
+
+/** Upcoming lists open tasks due after today, and undated ones whose deadline is ahead. */
+export function inUpcoming(t: DatedTask, today: string): boolean {
+  if (t.completed_at) return false
+  if (t.due) return localDueOf(t.due).date > today
+  const deadline = t.deadline ?? null
+  return deadline !== null && deadline > today
+}
+
+/** The Upcoming day a task is listed under: its due date, else its deadline. */
+export function upcomingDate(t: Pick<Task, 'due' | 'deadline'>): string | null {
+  return t.due ? localDueOf(t.due).date : t.deadline ?? null
+}
 
 /** A dashboard shows at most this many panels. */
 export const MAX_PANELS = 6

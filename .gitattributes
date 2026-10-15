@@ -1,3 +1,2 @@
 # Generated from docs/ by `make docs` (OpenSpec change user-documentation); never edit by hand.
-website/docs/** linguist-generated=true
 web/src/generated/help.json linguist-generated=true

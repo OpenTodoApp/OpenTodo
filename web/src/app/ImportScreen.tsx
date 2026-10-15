@@ -104,7 +104,7 @@ function Totals({ t }: { t: ImportPreview['totals'] }) {
     t.possibleDuplicates ? `${t.possibleDuplicates} possible duplicates` : '',
     t.newProjects ? `${t.newProjects} new projects` : '', t.newLabels ? `${t.newLabels} new labels` : '',
     t.newSections ? `${t.newSections} new sections` : '', t.recurring ? `${t.recurring} recurring` : '',
-    t.reminders ? `${t.reminders} reminders` : '',
+    t.reminders ? `${t.reminders} reminders` : '', t.deadlines ? `${t.deadlines} with deadlines` : '',
   ].filter(Boolean)
   return <p className="text-sm text-muted">{t.rows} rows: {parts.join(' · ')}</p>
 }

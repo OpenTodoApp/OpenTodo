@@ -332,8 +332,7 @@ func (t *thingsReader) read(opts Options) error {
 			}
 			if k.deadline.Valid {
 				if d, ok := thingsDate(k.deadline.Int64); ok {
-					row.Description = strings.TrimSpace(row.Description + "\n\nDeadline: " + d)
-					row.warn("deadline kept in the description (deadlines are not supported yet)")
+					row.Deadline = d
 				}
 			}
 			if k.start == 2 {

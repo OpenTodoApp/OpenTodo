@@ -280,6 +280,26 @@ export function describeDue(due: Due | null, today = todayISO(), zone?: string, 
   return { label: `${formatDate(local.date, 'compact', p, today)}${time}`, tone: 'later' }
 }
 
+/** Whole days from calendar date `from` to `to` (both `YYYY-MM-DD`; negative when `to` is earlier). */
+export function daysBetweenISO(from: string, to: string): number {
+  const utc = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d) }
+  return Math.round((utc(to) - utc(from)) / 86_400_000)
+}
+
+/**
+ * The countdown of a deadline (OpenSpec change `deadlines`, design D2): `3d`
+ * ahead, `Today` on the day, `2d over` after it. Tone `later` beyond seven days,
+ * `soon` within seven, `overdue` on the day and after, and also when the task is
+ * planned (`dueDate`, a local date) after its deadline. Null without a deadline.
+ */
+export function describeDeadline(deadline: string | null | undefined, today = todayISO(), dueDate?: string | null): { label: string; tone: 'overdue' | 'soon' | 'later' } | null {
+  if (!deadline) return null
+  const days = daysBetweenISO(today, deadline)
+  const label = days > 0 ? `${days}d` : days === 0 ? 'Today' : `${-days}d over`
+  const late = days <= 0 || (!!dueDate && dueDate > deadline)
+  return { label, tone: late ? 'overdue' : days <= 7 ? 'soon' : 'later' }
+}
+
 export function weekday(iso: string): string {
   return fmt({ weekday: 'long' }).format(dateOf(iso))
 }

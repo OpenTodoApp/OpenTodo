@@ -1,5 +1,5 @@
 import { Icon } from '../ui/Icon'
-import { describeDue, zoneHint } from '../lib/dates'
+import { describeDeadline, describeDue, formatDate, localDueOf, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import type { Label, Project, Task } from '../lib/types'
@@ -23,6 +23,13 @@ const DUE_TONE = {
   overdue: 'text-danger',
   today: 'text-success',
   soon: 'text-(--ot-hue-violet-text)',
+  later: 'text-muted',
+}
+
+// Deadline countdown tones (OpenSpec change deadlines, design D2).
+const DEADLINE_TONE = {
+  overdue: 'text-danger',
+  soon: 'text-warning',
   later: 'text-muted',
 }
 
@@ -64,6 +71,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
   const hint = zoneHint(task.due)
   const done = !!task.completed_at
+  const deadline = done ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   const comments = useCommentCount(task.id)
   // End-to-end encryption (OpenSpec e2ee): content the server still holds in
   // plaintext is marked until an unlocked device has re-written it.
@@ -131,6 +139,12 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
           {breadcrumb && <span className="inline-flex min-w-0 items-center gap-1 text-faint" title="Parent task"><Icon name="corner-down-right" size="xs" /><span className="truncate">{breadcrumb}</span></span>}
           {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-faint" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
+          {deadline && (
+            <span className={`inline-flex items-center gap-0.5 ${DEADLINE_TONE[deadline.tone]}`} data-deadline
+              title={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}`} aria-label={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}, ${deadline.label}`}>
+              <Icon name="hourglass" size="xs" />{deadline.label}
+            </span>
+          )}
           {task.recurrence ? (
             <span className="text-muted" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring><Icon name="repeat" size="xs" /></span>
           ) : task.series_id ? (

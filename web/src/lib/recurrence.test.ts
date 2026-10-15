@@ -4,6 +4,7 @@ import {
 } from './recurrence'
 // Shared with internal/recurrence (Go): both implementations must satisfy every vector.
 import vectors from './recurrence.vectors.json'
+import { shiftDate } from './recurring'
 
 interface NextVector { name: string; rule: string; due: string | null; today: string; completedOn: string | null; done: number; expected: string | null }
 
@@ -37,6 +38,13 @@ describe('shared recurrence vectors', () => {
 
   it.each(vectors.preview.map((v) => [v.name, v] as const))('preview: %s', (_name, v) => {
     expect(previewOccurrences(v.rule, v.due, v.today, v.done, 3)).toEqual(v.expected)
+  })
+})
+
+describe('shared deadline vectors (OpenSpec deadlines D8)', () => {
+  it('shiftDate agrees with every entry', () => {
+    expect(vectors.deadline.length).toBeGreaterThan(0)
+    for (const v of vectors.deadline) expect(shiftDate(v.deadline, v.from, v.to), v.name).toBe(v.expected)
   })
 })
 

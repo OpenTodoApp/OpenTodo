@@ -1,10 +1,10 @@
 // Keyboard handling shared by the Filter view and saved views: j / k (or arrows) move
 // the selection, Enter opens, c completes, 1–4 set priority, L opens labels, Delete
-// deletes, e edits the estimate, Esc closes the innermost layer. Keys typed into text fields are ignored.
+// deletes, e edits the estimate, d the deadline, Esc closes the innermost layer. Keys typed into text fields are ignored.
 import { useEffect, useRef } from 'react'
 import { deleteTask, setTaskCompleted, updateTask } from '../lib/ops'
 import type { Priority, Task } from '../lib/types'
-import { estimateFocus, isGPending } from './signals'
+import { deadlineFocus, estimateFocus, isGPending } from './signals'
 import { isTyping } from './useViews'
 
 export interface KeyRow {
@@ -77,6 +77,13 @@ export function useListKeys(opts: ListKeys): void {
           if (row) {
             e.preventDefault()
             estimateFocus.request(row.id)
+            o.setOpenId(row.id)
+          }
+          break
+        case 'd':
+          if (row) {
+            e.preventDefault()
+            deadlineFocus.request(row.id)
             o.setOpenId(row.id)
           }
           break

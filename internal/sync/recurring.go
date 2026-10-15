@@ -125,11 +125,20 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 	if sid := idValue(merged["section_id"]); sid != "" {
 		record["section_id"] = jsonOf(sid)
 	}
+	// The record keeps the occurrence's deadline and the series' deadline moves
+	// by the same days as its due date (OpenSpec change deadlines, design D8).
+	deadline := idValue(merged["deadline"])
+	if deadline != "" {
+		record["deadline"] = jsonOf(deadline)
+	}
 	nd := recurringDue{Date: next}
 	if cur != nil {
 		nd.Time, nd.TZ = cur.Time, cur.TZ
 	}
 	delete(body, "completed_at")
 	body["due"] = jsonOf(nd)
+	if deadline != "" {
+		body["deadline"] = jsonOf(recurrence.ShiftDate(deadline, date, next))
+	}
 	return OccurrenceID(id, date), record, true, nil
 }

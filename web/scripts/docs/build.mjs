@@ -1,13 +1,13 @@
 // Builds the documentation (OpenSpec change `user-documentation`) from docs/**:
-//   website/docs/**            the docs website (pages, search.json, docs.css, docs.js, images)
+//   dist/docs-site/**          the docs website (pages, search.json, docs.css, docs.js, images), not committed
 //   web/src/generated/help.json the user guide for the in-app Help view
 //   docs/keyboard.md           its shortcut tables, regenerated from the app
 //
 //   node scripts/docs/build.mjs [--site DIR]   (from web/; `make docs` from the root)
 //
 // DIR is the docs website's output, repository-relative (default dist/docs-site).
-// Until the website repository serves the site (OpenSpec site-bundle D6),
-// `npm run docs:build` passes --site website/docs and the result is committed.
+// The site is not committed: the site bundle carries it to the website
+// repository (OpenSpec site-bundle D6). The in-app help and the keyboard guide are.
 //
 // The output is deterministic: running it twice changes nothing.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -21,8 +21,6 @@ const here = fileURLToPath(import.meta.url)
 const ASSETS = join(dirname(here), 'assets')
 /** Where the docs website is written unless a caller says otherwise. */
 export const OUT_SITE = 'dist/docs-site'
-/** The committed copy, checked by docs:check until the switch-over (site-bundle D6). */
-export const COMMITTED_SITE = 'website/docs'
 export const OUT_HELP = 'web/src/generated/help.json'
 const TEXT_CAP = 1500
 

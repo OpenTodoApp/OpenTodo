@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "docs:build": "node scripts/docs/build.mjs --site website/docs",
+    "docs:build": "node scripts/docs/build.mjs",
     "docs:check": "node scripts/docs/check.mjs",
     "storybook": "storybook dev -p 6006 --no-open",
     "build-storybook": "storybook build -o storybook-static --quiet",

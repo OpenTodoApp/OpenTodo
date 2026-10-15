@@ -4,12 +4,12 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { db, getMeta } from '../lib/db'
-import { localDueOf, todayISO } from '../lib/dates'
+import { todayISO } from '../lib/dates'
 import { createProject } from '../lib/ops'
 import { COLLAPSED_PROJECTS_KEY, buildProjectTree, expandAncestorsOf, openCountsByProject, toggleCollapsedProject, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { User } from '../lib/types'
-import { evaluateViews, isDashboard } from '../lib/views'
+import { evaluateViews, inToday, isDashboard } from '../lib/views'
 import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMenu, viewIcon } from './ViewsView'
 import { useViewerZone, useViews } from './useViews'
@@ -60,7 +60,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
     let assigned = 0
     for (const t of openTasks) {
       if (t.project_id === null) inbox++
-      if (t.due && localDueOf(t.due).date <= today) due++
+      if (inToday(t, today)) due++
       if (t.assignee_id === user.id) assigned++
     }
     return { inbox, today: due, assigned, byProject: openCountsByProject(openTasks, tree, collapsed) }

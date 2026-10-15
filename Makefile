@@ -118,7 +118,7 @@ openspec-validate:
 	npx --yes @fission-ai/openspec@latest validate --all --strict
 
 ## Everything CI runs.
-## Documentation (user-documentation): regenerate website/docs/**, the in-app help
+## Documentation (user-documentation): build the docs site into dist/docs-site, regenerate the in-app help
 ## bundle web/src/generated/help.json and the keyboard guide's tables from docs/.
 docs:
 	cd web && npm run docs:build

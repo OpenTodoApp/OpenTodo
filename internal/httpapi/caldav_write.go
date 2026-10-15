@@ -200,6 +200,21 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 	} else {
 		f["due"] = json.RawMessage("null")
 	}
+	// Deadlines (design D6): DTSTART and a differing DUE carry both dates. A DUE
+	// alone on a task that has a deadline is the deadline, as it was served;
+	// without DUE the deadline is gone. The field is only written when a
+	// deadline is or was set, so tasks without one keep their op footprint.
+	deadline := json.RawMessage("null")
+	switch {
+	case in.Deadline != "":
+		deadline = mustJSON(in.Deadline)
+	case in.DueOnly && !isNullish(current["deadline"]):
+		deadline = mustJSON(in.Due.Date)
+		f["due"] = json.RawMessage("null")
+	}
+	if !isNullish(deadline) || !isNullish(current["deadline"]) {
+		f["deadline"] = deadline
+	}
 	extra := in.Extra
 	f["parent_id"] = json.RawMessage("null")
 	if in.ParentUID != "" {
@@ -418,16 +433,11 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 			extra = append(extra, d.op("task", recordID, field, val, ts))
 		}
 	}
-	if dueRaw, has := body["due"]; has {
-		rops, err := d.s.reminderOpsForDue(d.ctx(), d.user.ID, id, dueRaw, ts)
-		if err != nil {
-			return "", err
-		}
-		for _, o := range rops {
-			o.Device = d.device
-			extra = append(extra, o)
-		}
+	rops, err := d.s.reminderOpsForTaskAs(d.ctx(), d.user.ID, id, body, ts, d.device)
+	if err != nil {
+		return "", err
 	}
+	extra = append(extra, rops...)
 	ops := extra
 	for field, val := range body {
 		ops = append(ops, d.op("task", id, field, val, ts))

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/pixari/opentodo/internal/recurrence"
@@ -70,7 +71,8 @@ const (
 	kRecurrence
 	// kID is a non-empty id string of at most MaxIDLen characters (reminder.task_id).
 	kID
-	// kReminderKind is "relative" or "absolute" (OpenSpec change reminders).
+	// kReminderKind is "relative", "absolute" (OpenSpec change reminders) or
+	// "deadline" (OpenSpec change deadlines).
 	kReminderKind
 	// kOffsetMinutes is null or an integer within ±MaxReminderOffset minutes.
 	kOffsetMinutes
@@ -87,6 +89,9 @@ const (
 	// the document, so a client format (or an end-to-end encrypted value) can
 	// change without a server change.
 	kDoc
+	// kDate is null or a bare calendar date "YYYY-MM-DD" with no time or zone
+	// (task.deadline, OpenSpec change deadlines).
+	kDate
 )
 
 // docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
@@ -158,6 +163,9 @@ var Schema = map[string]map[string]kind{
 		"deleted_at":   kNullableNumber,
 		// Duration estimate in minutes (OpenSpec change nlp-quick-add); additive.
 		"estimate_minutes": kPositiveInt,
+		// The day the task must be finished by, separate from the planned due
+		// date (OpenSpec change deadlines); additive.
+		"deadline": kDate,
 		// Recurrence rule and the series an occurrence record belongs to
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
 		"recurrence": kRecurrence,
@@ -355,6 +363,17 @@ func checkKind(k kind, raw json.RawMessage) error {
 		if err := json.Unmarshal(raw, &p); err != nil || p < 1 || p > 4 {
 			return errors.New("must be an integer from 1 (highest) to 4 (lowest)")
 		}
+	case kDate:
+		if isNull {
+			return nil
+		}
+		var d string
+		if err := json.Unmarshal(raw, &d); err != nil || !isDate(d) {
+			return errors.New(`must be null or a date "YYYY-MM-DD"`)
+		}
+		if _, err := time.Parse("2006-01-02", d); err != nil {
+			return errors.New(`must be null or a date "YYYY-MM-DD" that exists`)
+		}
 	case kDue:
 		if isNull {
 			return nil
@@ -409,8 +428,8 @@ func checkKind(k kind, raw json.RawMessage) error {
 		}
 	case kReminderKind:
 		var s string
-		if err := json.Unmarshal(raw, &s); err != nil || (s != "relative" && s != "absolute") {
-			return errors.New(`must be "relative" or "absolute"`)
+		if err := json.Unmarshal(raw, &s); err != nil || (s != "relative" && s != "absolute" && s != "deadline") {
+			return errors.New(`must be "relative", "absolute" or "deadline"`)
 		}
 	case kOffsetMinutes:
 		if isNull {

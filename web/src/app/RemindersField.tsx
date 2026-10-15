@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { db } from '../lib/db'
 import { addDaysISO, localDueOf, todayISO } from '../lib/dates'
 import { addReminder, deleteReminder, dismissReminder, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'
-import { DEFAULT_REMINDER_TIME, isDelivered, isDismissed, offsetLabel, RELATIVE_PRESETS } from '../lib/reminderTime'
+import { DEADLINE_PRESETS, deadlineOffsetLabel, DEFAULT_REMINDER_TIME, isDelivered, isDismissed, offsetLabel, RELATIVE_PRESETS } from '../lib/reminderTime'
 import type { Reminder, Task } from '../lib/types'
 import { MenuGroup, MenuItem, MenuSeparator } from '../ui/Menu'
 import { Menu } from './overlay/Menu'
@@ -39,14 +39,15 @@ function defaultMoment(task: Task): { date: string; time: string } {
  * task-detail-redesign D8): each reminder is a chip with its own actions menu
  * (edit, snooze and dismiss once it has fired, delete), and "Add reminder" is a
  * menu of relative presets plus a custom offset or a set date and time. The
- * date and time editors are the date-time-preferences fields.
+ * date and time editors are the date-time-preferences fields. Once the task has
+ * a deadline the menu also offers deadline reminders (OpenSpec change `deadlines`).
  */
 export function RemindersField({ task }: { task: Task }) {
   const reminders = useLiveQuery(
     () => db.reminders.where('task_id').equals(task.id).filter((r) => !r.deleted_at).toArray().then(sortReminders),
     [task.id], [] as Reminder[],
   )
-  const [adding, setAdding] = useState<'custom' | 'absolute' | null>(null)
+  const [adding, setAdding] = useState<'custom' | 'deadline' | 'absolute' | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const { formatInstant } = useDateTimeFormat()
@@ -68,9 +69,9 @@ export function RemindersField({ task }: { task: Task }) {
       <ul className="flex flex-wrap gap-1.5 empty:hidden" aria-label="Reminders">
         {reminders.map((r) => {
           const fired = r.fire_at !== null && r.fire_at <= now
-          const state = r.fire_at === null ? 'no due date' : isDismissed(r) ? 'dismissed' : fired ? (isDelivered(r) ? 'sent' : 'fired') : ''
+          const state = r.fire_at === null ? (r.kind === 'deadline' ? 'no deadline' : 'no due date') : isDismissed(r) ? 'dismissed' : fired ? (isDelivered(r) ? 'sent' : 'fired') : ''
           const when = r.fire_at !== null ? formatInstant(r.fire_at, 'long') : 'Not scheduled'
-          const name = r.kind === 'relative' ? offsetLabel(r.offset_minutes) : when
+          const name = r.kind === 'relative' ? offsetLabel(r.offset_minutes) : r.kind === 'deadline' ? deadlineOffsetLabel(r.offset_minutes) : when
           if (editing === r.id) {
             return (
               <li key={r.id} className="w-full" data-reminder-id={r.id}>
@@ -83,7 +84,7 @@ export function RemindersField({ task }: { task: Task }) {
               className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 pl-2.5 pr-0.5 text-sm ${isDismissed(r) ? 'text-faint' : 'text-default'}`}>
               <Icon name="bell" className={fired && !isDismissed(r) ? 'text-accent' : 'text-faint'} />
               <span className="min-w-0 truncate">
-                {r.kind === 'relative' ? <>{name} <span className="text-meta text-muted" data-testid="reminder-time">{when}</span></> : <span data-testid="reminder-time">{when}</span>}
+                {r.kind !== 'absolute' ? <>{name} <span className="text-meta text-muted" data-testid="reminder-time">{when}</span></> : <span data-testid="reminder-time">{when}</span>}
                 {state && <span className="text-meta text-muted"> · {state}</span>}
               </span>
               <Menu kind="menu" label={`Actions for reminder ${name}`} trigger={<Icon name="ellipsis" />} triggerClassName="btn-ghost rounded-full px-1.5 py-1" width="sm:w-56">
@@ -106,6 +107,18 @@ export function RemindersField({ task }: { task: Task }) {
                 onSelect={() => void run(() => addReminder(task.id, { kind: 'relative', offset_minutes: p.minutes }))} />
             ))}
           </MenuGroup>
+          {task.deadline && (
+            <>
+              <MenuSeparator />
+              <MenuGroup label="Before the deadline">
+                {DEADLINE_PRESETS.map((p) => (
+                  <MenuItem key={p.minutes} label={p.label} icon="hourglass"
+                    onSelect={() => void run(() => addReminder(task.id, { kind: 'deadline', offset_minutes: p.minutes }))} />
+                ))}
+                <MenuItem label="Custom before the deadline…" icon="pencil" onSelect={() => setAdding('deadline')} />
+              </MenuGroup>
+            </>
+          )}
           <MenuSeparator />
           <MenuItem label="Custom…" icon="pencil" onSelect={() => setAdding('custom')} />
           <MenuItem label="At a time…" icon="calendar-days" onSelect={() => setAdding('absolute')} />
@@ -114,7 +127,7 @@ export function RemindersField({ task }: { task: Task }) {
         <ReminderEditor
           task={task}
           initial={null}
-          mode={adding === 'custom' ? 'relative' : 'absolute'}
+          mode={adding === 'custom' ? 'relative' : adding}
           onCancel={() => setAdding(null)}
           onSave={(input) => void run(() => addReminder(task.id, input))}
         />
@@ -125,6 +138,9 @@ export function RemindersField({ task }: { task: Task }) {
       {task.due && !task.due.time && reminders.some((r) => r.kind === 'relative') && (
         <p className="text-meta text-faint">No due time: relative reminders count from {DEFAULT_REMINDER_TIME}.</p>
       )}
+      {!task.deadline && reminders.some((r) => r.kind === 'deadline') && (
+        <p className="text-meta text-faint">Deadline reminders fire once the task has a deadline.</p>
+      )}
       {error && <p role="alert" className="text-meta text-danger">{error}</p>}
     </div>
   )
@@ -133,11 +149,11 @@ export function RemindersField({ task }: { task: Task }) {
 function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
   task: Task
   initial: Reminder | null
-  mode?: 'relative' | 'absolute'
+  mode?: Reminder['kind']
   onSave: (input: ReminderInput) => void
   onCancel: () => void
 }) {
-  const [kind, setKind] = useState<'relative' | 'absolute'>(initial?.kind ?? mode ?? 'relative')
+  const [kind, setKind] = useState<Reminder['kind']>(initial?.kind ?? mode ?? 'relative')
   const startOffset = initial?.offset_minutes ?? -30
   const [amount, setAmount] = useState(String(Math.abs(startOffset)))
   const [unit, setUnit] = useState<'1' | '60' | '1440'>(Math.abs(startOffset) % 1440 === 0 && startOffset !== 0 ? '1440' : Math.abs(startOffset) % 60 === 0 && startOffset !== 0 ? '60' : '1')
@@ -146,11 +162,11 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
   const [error, setError] = useState<string | null>(null)
 
   const save = () => {
-    if (kind === 'relative') {
+    if (kind !== 'absolute') {
       const n = Number(amount)
       if (!Number.isInteger(n) || n < 0) return setError('Enter a whole number.')
       const minutes = n * Number(unit)
-      onSave({ kind: 'relative', offset_minutes: direction === 'before' ? -minutes : minutes })
+      onSave({ kind, offset_minutes: direction === 'before' ? -minutes : minutes })
     } else {
       const at = fromLocalParts(moment.date, moment.time)
       if (at === null) return setError('Pick a date and time.')
@@ -165,12 +181,13 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
       onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
     >
       {initial && (
-        <select className="input w-auto py-1" aria-label="Reminder kind" value={kind} onChange={(e) => setKind(e.target.value as 'relative' | 'absolute')}>
+        <select className="input w-auto py-1" aria-label="Reminder kind" value={kind} onChange={(e) => setKind(e.target.value as Reminder['kind'])}>
           <option value="relative">Relative</option>
+          {(task.deadline || initial.kind === 'deadline') && <option value="deadline">Before the deadline</option>}
           <option value="absolute">At a time</option>
         </select>
       )}
-      {kind === 'relative' ? (
+      {kind !== 'absolute' ? (
         <>
           <input className="input w-20 py-1" type="number" min={0} aria-label="Offset amount" value={amount} autoFocus onChange={(e) => setAmount(e.target.value)} />
           <select className="input w-auto py-1" aria-label="Offset unit" value={unit} onChange={(e) => setUnit(e.target.value as '1' | '60' | '1440')}>
@@ -182,6 +199,7 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
             <option value="before">before</option>
             <option value="after">after</option>
           </select>
+          {kind === 'deadline' && <span className="text-sm text-muted">the deadline</span>}
         </>
       ) : (
         <>

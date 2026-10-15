@@ -191,8 +191,8 @@ describe('parse: errors', () => {
     expect(errorOf('p5').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('p0 | p1').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('"milk"').message).toBe('Unexpected text "milk" at position 1; quote names after "@" or "#", or use search:')
-    expect(errorOf('no').message).toBe('Expected "date", "project", "labels" or "time" after "no" at position 1')
-    expect(errorOf('no dates').expected).toEqual(['"date"', '"project"', '"labels"', '"time"'])
+    expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time" or "deadline" after "no" at position 1')
+    expect(errorOf('no dates').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"'])
   })
 
   it('reports incomplete date terms', () => {
@@ -440,6 +440,38 @@ describe('evaluate: dates', () => {
   it('today moves with the injected date', () => {
     expect(ids('today', TASKS, { ...CTX, today: '2026-10-11' })).toEqual(['report'])
     expect(ids('overdue', TASKS, { ...CTX, today: '2026-10-11' })).toEqual(sorted('milk', 'call-mom'))
+  })
+})
+
+describe('evaluate: deadlines (OpenSpec deadlines 4.1)', () => {
+  // Today is 2026-10-14 in these scenarios.
+  const ctx: FilterContext = { ...CTX, today: '2026-10-14' }
+  const DL: Task[] = [
+    task('passed', { deadline: '2026-10-12', project_id: 'p-work' }),
+    task('soon', { deadline: '2026-10-17', due: { date: '2026-10-15' } }),
+    task('later', { deadline: '2026-10-30' }),
+    task('unplanned', { deadline: '2026-10-14' }),
+    task('none-work', { project_id: 'p-work' }),
+    task('none-inbox', { due: { date: '2026-10-20' } }),
+  ]
+  it('deadline <= 3 days includes passed deadlines and never undated tasks', () => {
+    expect(ids('deadline <= 3 days', DL, ctx)).toEqual(sorted('passed', 'soon', 'unplanned'))
+    for (const op of ['<', '<=', '=', '>=', '>']) expect(ids(`deadline ${op} 2000-01-01 | deadline ${op} 2100-01-01`, DL, ctx)).not.toContain('none-work')
+  })
+  it('every comparison form works on deadlines', () => {
+    expect(ids('deadline = today', DL, ctx)).toEqual(['unplanned'])
+    expect(ids('deadline before today', DL, ctx)).toEqual(['passed'])
+    expect(ids('deadline after 2026-10-20', DL, ctx)).toEqual(['later'])
+    expect(ids('deadline = saturday', DL, ctx)).toEqual(['soon'])
+  })
+  it('#Work & no deadline', () => {
+    expect(ids('#Work & no deadline', DL, ctx)).toEqual(['none-work'])
+  })
+  it('deadline >= today & no date: a deadline but no plan', () => {
+    expect(ids('deadline >= today & no date', DL, ctx)).toEqual(sorted('later', 'unplanned'))
+  })
+  it('round-trips through printing', () => {
+    expect(show('deadline<=7 days&no deadline')).toBe('(deadline <= 7 days & no deadline)')
   })
 })
 

@@ -67,6 +67,12 @@ export interface Task {
   /** Duration estimate in minutes (positive integer, at most 10080) or null. */
   estimate_minutes: number | null
   /**
+   * The day the task must be finished by, a bare "YYYY-MM-DD" with no time or zone,
+   * separate from the planned `due` date (OpenSpec change `deadlines`). Optional:
+   * rows stored before the field read as undefined; read it with `?? null`.
+   */
+  deadline?: string | null
+  /**
    * Recurrence rule in canonical form (docs/recurrence.md) or null. A task with a
    * rule is a series: completing it records an occurrence and moves `due` forward.
    */
@@ -160,7 +166,8 @@ export interface View {
   _clock: Clock
 }
 
-export type ReminderKind = 'relative' | 'absolute'
+/** 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline. */
+export type ReminderKind = 'relative' | 'absolute' | 'deadline'
 
 /**
  * A reminder on a task (OpenSpec change `reminders`). `fire_at` is always the
@@ -630,7 +637,7 @@ export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
-  'assignee_id', 'section_id', 'notes_doc',
+  'assignee_id', 'section_id', 'notes_doc', 'deadline',
 ] as const
 export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const
@@ -842,6 +849,8 @@ export interface ImportTotals {
   newSections?: number
   recurring?: number
   reminders?: number
+  /** Tasks with a deadline (deadlines); absent on older jobs. */
+  deadlines?: number
   entities: number
   written: number
   ops: number

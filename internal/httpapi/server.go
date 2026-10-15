@@ -1458,15 +1458,14 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		if ok {
 			extra = fieldOps("task", recordID, record, ts)
 		}
-		// Relative reminders follow the due date, stamped like the due op (reminders D2).
-		if dueRaw, has := body["due"]; has {
-			rops, err := s.reminderOpsForDue(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), dueRaw, ts)
-			if err != nil {
-				s.internal(w, err)
-				return
-			}
-			extra = append(extra, rops...)
+		// Relative reminders follow the due date and deadline reminders the
+		// deadline, stamped like the task op (reminders D2, deadlines D5).
+		rops, err := s.reminderOpsForTask(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, ts)
+		if err != nil {
+			s.internal(w, err)
+			return
 		}
+		extra = append(extra, rops...)
 	}
 	s.writeFieldsAt(w, r, entity, r.PathValue("id"), body, http.StatusOK, extra, ts)
 }

@@ -197,7 +197,7 @@ func tokenize(src []rune) ([]token, error) {
 
 var (
 	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true}
-	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true}
+	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true}
 	weekdays       = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
 )
 
@@ -303,7 +303,7 @@ func (p *parser) parseWordTerm(t *token) error {
 	w := strings.ToLower(t.value)
 	p.i++
 	switch {
-	case w == "due" || w == "created":
+	case w == "due" || w == "created" || w == "deadline":
 		c := p.peek()
 		ok := c != nil && (c.typ == tCmp || lower(c) == "before" || lower(c) == "after")
 		if !ok {
@@ -313,7 +313,7 @@ func (p *parser) parseWordTerm(t *token) error {
 		return p.parseDate(c)
 	case w == "no":
 		if !noKeywords[lower(p.peek())] {
-			return fail(t.pos, `Expected "date", "project", "labels" or "time" after "no" at position %d`, t.pos+1)
+			return fail(t.pos, `Expected "date", "project", "labels", "time" or "deadline" after "no" at position %d`, t.pos+1)
 		}
 		p.i++
 		return nil

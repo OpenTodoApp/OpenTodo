@@ -20,7 +20,7 @@
 // image size). No new dependency: Node's standard library and the system `tar`.
 import { execFileSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = fileURLToPath(import.meta.url)
@@ -219,7 +219,8 @@ export async function buildBundle({ version, out = 'dist', bin, archive = true }
 
   // docs/: the docs site, built straight into the bundle (build.mjs --site).
   const { buildAll } = await import('../web/scripts/docs/build.mjs')
-  const siteRel = join(out, name, 'docs').split('\\').join('/')
+  // Repository-relative, also when --out is an absolute path outside the repository.
+  const siteRel = relative(repoRoot, join(outAbs, name, 'docs')).split('\\').join('/')
   const { files, problems, sorted } = await buildAll(repoRoot, { site: siteRel })
   if (problems.length) throw new Error(`docs build failed:\n  ${problems.join('\n  ')}`)
   for (const [path, content] of files) {

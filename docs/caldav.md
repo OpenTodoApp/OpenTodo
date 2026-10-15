@@ -61,6 +61,8 @@ The Nextcloud Tasks web app only shows calendars stored in Nextcloud itself. Use
 | `DUE;VALUE=DATE` | due date without time | |
 | `DUE` (floating) | due date and time | `DUE:20261011T093000` shows 09:30 in every time zone. |
 | `DUE;TZID=…` | due fixed to a time zone | IANA zones and vendor paths ending in one (`/mozilla.org/…/Europe/Berlin`); a UTC time (`…Z`) becomes zone `UTC`; an unknown zone (Windows names) falls back to the floating wall time. Served with a matching `VTIMEZONE`. Seconds are dropped. |
+| `DUE;VALUE=DATE` with a deadline | [deadline](tasks-and-projects.md#deadlines) | A task with a deadline is served with `DUE` = the deadline (always a date: a deadline has no time) and, when it also has a due date, `DTSTART` = the due date in the forms above. A `DUE` alone sent back for such a task changes the deadline. |
+| `DTSTART` with a different `DUE` | due date, and deadline from `DUE` | A client that sends both dates sets the due date from `DTSTART` and the deadline from the day of `DUE` (a time on `DUE` is dropped, and the task is served back with `DUE;VALUE=DATE`). Equal `DTSTART` and `DUE` set the due date only. |
 | `PRIORITY` | priority | Out: 1→1, 2→5, 3→9, 4→none. In: 1–3→1, 4–6→2, 7–9→3, 0 or absent→4. |
 | `STATUS`, `COMPLETED`, `PERCENT-COMPLETE` | completed time | `COMPLETED` (or `CANCELLED`) sets it, `NEEDS-ACTION` reopens. `IN-PROCESS` and a partial `PERCENT-COMPLETE` are kept as client data. Completed tasks stay listed. |
 | `CATEGORIES` | labels | By name, case-insensitive; an unknown name creates a label. Labels of other members on a shared task are kept. |
@@ -68,7 +70,7 @@ The Nextcloud Tasks web app only shows calendars stored in Nextcloud itself. Use
 | `RRULE` | recurrence | See below. |
 | `CREATED` | creation time | Used when a task is created. |
 | `DTSTAMP`, `LAST-MODIFIED` | | Derived from the newest change to the task. `SEQUENCE` is ignored. |
-| everything else | `ical_extra` | Alarms (`VALARM`), `X-` properties, `URL`, `GEO`, `CLASS`, `DTSTART`, unsupported `RRULE`s… are stored verbatim in the task's opaque `ical_extra` field and returned unchanged, so a client never loses them when another device edits the task. |
+| everything else | `ical_extra` | Alarms (`VALARM`), `X-` properties, `URL`, `GEO`, `CLASS`, a `DTSTART` without a `DUE`, unsupported `RRULE`s… are stored verbatim in the task's opaque `ical_extra` field and returned unchanged, so a client never loses them when another device edits the task. |
 
 Fields without a VTODO counterpart (project section, assignee, duration estimate, position, comments, OpenTodo reminders) are left untouched by CalDAV writes. A task moved to another list loses its section, as in the app.
 

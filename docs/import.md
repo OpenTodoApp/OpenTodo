@@ -71,7 +71,7 @@ Todoist exports one project as CSV from the project's menu, and keeps backups of
 | `DURATION` in minutes | the estimate |
 | `REMINDER_OFFSET` / `REMINDER_DATE` | a relative or absolute reminder |
 | `note` row | appended to the task's description under "Comments" (with a warning) |
-| `DEADLINE` | kept as a "Deadline: …" line in the description (with a warning) |
+| `DEADLINE` | the task's [deadline](tasks-and-projects.md#deadlines), read with `DEADLINE_LANG` like `DATE`; a value that cannot be read is kept as a "Deadline: …" line in the description (with a warning) |
 | `RESPONSIBLE` | dropped with a warning |
 
 `DATE` is the text Todoist showed, in the language named by `DATE_LANG` (English, German, French, Italian, Spanish or Portuguese): `Oct 21`, `21 Okt.`, `21 de octubre de 2027 15:00`, `tomorrow`, `every monday`, `jeden Montag`, `alle 2 Wochen`. A date without a year takes the year of the export (the newest file time in the backup, otherwise the day you import). A recurring date becomes a rule whose first date is the next occurrence. A date that cannot be read leaves the task without a due date and adds a warning quoting it.
@@ -131,7 +131,7 @@ The file is read from a private copy on the server, read-only, using only Things
 | start date ("When") | the due date; a reminder time becomes a reminder |
 | repeating to-do | a recurrence rule, when the grammar can express it |
 | completed / canceled | completed / completed with the label `canceled` |
-| deadline | a "Deadline: …" line in the description (with a warning) |
+| deadline | the task's deadline |
 | Someday, This Evening | dropped with a warning |
 | trashed items | skipped |
 
@@ -156,6 +156,7 @@ UTF-8, with a header row. Comma, semicolon and tab separators are detected from 
 | `created_at` | `created` | like `completed_at`; defaults to the import time |
 | `recurrence` | `repeat`, `repeats`, `recurring`, `rrule` | a recurrence rule, an RRULE or a common spelling; see [Recurrence](#recurrence) |
 | `reminder` | `reminders` | one or more reminders separated by `;`, `,` or `\|`; see [Reminders](#reminders) |
+| `deadline` | | the day the task must be finished by, `YYYY-MM-DD`; a date-time keeps its date (with a warning); anything else is a row error |
 
 Columns named `attachment(s)`, `comment(s)` or `assignee` are recognised as unsupported: a non-empty value is dropped with a warning on that row. Any other column is listed as ignored in the preview.
 
@@ -181,7 +182,8 @@ A top-level array of task objects, or an object with a `tasks` array and an opti
 | section | `section`, `section_name`, `column`, `heading` |
 | parent | `parent_id`, `parent`, or nesting under `subtasks` / `children` |
 | priority | `priority`: 1–4, `p1`–`p4`, `high`/`medium`/`low`/`none` |
-| due | `due`, `due_date`, `dueDate`, `deadline`: a string, or `{date, time?}` / `{datetime}` |
+| due | `due`, `due_date`, `dueDate`: a string, or `{date, time?}` / `{datetime}` |
+| deadline | `deadline`: a date string; a date-time keeps its date (with a warning) |
 | labels | `labels`, `tags`: strings, `{name}` objects or a comma-separated string |
 | completion | `completed`, `done`, `checked` (booleans), `status: "completed"`, and `completed_at` / `completedAt` for the time |
 | created | `created_at`, `createdAt`, `created` |
@@ -205,7 +207,8 @@ An object with `projects`, `sections`, `items` and optionally `labels`, `notes` 
 | `reminders[]` (`item_id`) | `type: "relative"` with `minute_offset` → reminder that many minutes before the due time; `type: "absolute"` with `due.date` → reminder at that time; `location` reminders and `is_deleted` ones are dropped (location with a warning) |
 | `items[].labels` | label names |
 | `items[].checked`, `completed_at`, `added_at` | completion, completion time, creation time |
-| `notes[]`, `deadline`, `duration` | dropped with a warning on the item |
+| `deadline` (`{date}`) | the task's deadline |
+| `notes[]`, `duration` | dropped with a warning on the item |
 
 Items and projects marked `is_deleted` are skipped.
 
@@ -220,7 +223,7 @@ Items and projects marked `is_deleted` are skipped.
 - **Recurrence** and **reminders**: see [Recurrence](#recurrence) and [Reminders](#reminders).
 - **Subtasks** are resolved after the whole file is read, so row order does not matter. A subtask joins its parent's project. A parent that is missing, invalid or would form a cycle leaves the task at the top level with a warning.
 - **Labels** are matched by name, ignoring case; missing ones are created.
-- **Dates**: plain dates stay dates; date-times without a zone keep their wall clock; date-times with a zone become the wall clock of that instant in the chosen time zone (default: the browser's zone in the web app, UTC through the API). Due dates are always stored floating.
+- **Dates**: plain dates stay dates; date-times without a zone keep their wall clock; date-times with a zone become the wall clock of that instant in the chosen time zone (default: the browser's zone in the web app, UTC through the API). Due dates are always stored floating. A deadline is a date only: a time on it is dropped with a warning, keeping the day as written. The preview counts the tasks that get a deadline.
 - **Completion**: a completed row keeps its source completion time, or the import time when the source has none.
 - **Unsupported attributes** (attachments, comments, assignees, links, location reminders, recurrence rules the grammar cannot express) never block a row: the task is imported and the row carries a warning naming what was dropped.
 

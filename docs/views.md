@@ -19,8 +19,8 @@ They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then
 | View | Shows | Shortcut |
 | --- | --- | --- |
 | **Inbox** | Tasks that aren't in a project yet | <kbd>g</kbd> <kbd>i</kbd> |
-| **Today** | Tasks due today, with overdue ones first | <kbd>g</kbd> <kbd>t</kbd> |
-| **Upcoming** | Tasks due after today, grouped by day | <kbd>g</kbd> <kbd>u</kbd> |
+| **Today** | Tasks due today and tasks whose deadline is today, with overdue ones first | <kbd>g</kbd> <kbd>t</kbd> |
+| **Upcoming** | Tasks due after today, and undated tasks with a deadline ahead, grouped by day | <kbd>g</kbd> <kbd>u</kbd> |
 | **Assigned to me** | Open tasks assigned to you, across projects | <kbd>g</kbd> <kbd>a</kbd> |
 | **Day** and **Week** | Your timed tasks on a calendar | <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd> |
 | **Completed** | What you finished most recently | <kbd>g</kbd> <kbd>c</kbd> |
@@ -34,6 +34,8 @@ The numbers next to the names count open tasks.
 
 Today is where most people start. Overdue tasks sit in their own group at the top, in red, so nothing slips. Below them are today's tasks, sorted by time.
 
+A [deadline](tasks-and-projects.md#deadlines) brings a task into Today too: a task whose deadline is today shows up even if it has no due date or is planned for later. If the deadline has already passed and the task isn't planned for today, it sits under **Overdue**. Each task is listed once, and the Today count in the sidebar counts the same tasks.
+
 <picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view with an Overdue group above today's tasks."></picture>
 
 Anything you add here with quick add is due today, unless you type another date. To push a task to later, open it and change **Due**, or press <kbd>s</kbd> to place it on the Day calendar.
@@ -41,6 +43,8 @@ Anything you add here with quick add is due today, unless you type another date.
 ## Plan your week with Upcoming
 
 Upcoming lists everything that has a date after today, under headings like **Tomorrow** and the weekday names. It's a good place for a short weekly review: scan the next few days, move what won't fit, and spot empty days.
+
+A task with a deadline but no due date is listed under its deadline day, after the tasks due that day, so you see it while there is still time to plan it. A task with both dates is listed under its due date only; its row shows the deadline countdown.
 
 <picture><source srcset="images/upcoming-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/upcoming-light.webp" alt="The Upcoming view with tasks grouped under Tomorrow and the following weekdays."></picture>
 

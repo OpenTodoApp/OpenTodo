@@ -32,11 +32,11 @@ Every request to `/mcp` SHALL carry `Authorization: Bearer <api token>` and SHAL
 - **THEN** the response is a 403 `bad_origin` error
 
 ### Requirement: Protocol surface
-The endpoint SHALL implement the streamable HTTP transport for JSON-RPC 2.0 requests in stateless mode: `initialize` (negotiating a supported protocol version and advertising `tools` and `resources` capabilities and the server name and version), `ping`, `tools/list`, `tools/call`, `resources/list`, `resources/templates/list` and `resources/read`. Unknown methods SHALL return JSON-RPC error `-32601`; malformed JSON `-32700`; invalid parameters `-32602`. `GET /mcp` SHALL answer 405.
+The endpoint SHALL implement streamable HTTP JSON-RPC 2.0 in stateless mode: `initialize` (negotiating a supported protocol version, advertising `tools`, `resources` and `prompts` and the server's name and version), `ping`, `tools/list`, `tools/call`, `resources/list`, `resources/templates/list`, `resources/read`, `prompts/list` and `prompts/get`. Errors SHALL be `-32601` for unknown methods, `-32700` for malformed JSON and `-32602` for invalid parameters. `GET /mcp` SHALL answer 405.
 
 #### Scenario: Initialize
 - **WHEN** a client sends `initialize` with a protocol version the server supports
-- **THEN** the response echoes that version, lists `tools` and `resources` capabilities and does not list `prompts`
+- **THEN** the response echoes that version and lists `tools`, `resources` and `prompts` capabilities
 
 #### Scenario: Unsupported protocol version
 - **WHEN** a client requests a protocol version the server does not implement
@@ -288,3 +288,18 @@ an explicit command-line override.
 
 - **WHEN** the configured server cannot be reached
 - **THEN** the CLI exits with its unreachable-server status and writes no protocol response to stdout
+
+### Requirement: Skills as prompts
+`prompts/list` SHALL list the built-in skills by id with their name, description and one optional argument for the user's text. `prompts/get` SHALL return the skill's instructions as messages for the client's model. Running them uses the client's own tool calls, so every read and write stays subject to the existing token scope, write switches, limits and audit. An unknown prompt name SHALL return `-32602`, and requests without a valid token SHALL be refused as for every MCP request.
+
+#### Scenario: Weekly review from a desktop client
+- **WHEN** an MCP client with an agent token gets the `weekly-review` prompt and runs it
+- **THEN** its model reads tasks with the read tools and any changes it makes go through the write tools, subject to the owner's and user's write switches
+
+#### Scenario: Read-only token
+- **WHEN** a client with a read-only token runs the `triage-inbox` prompt
+- **THEN** it can read tasks but every write tool call is refused as today
+
+#### Scenario: Unknown prompt
+- **WHEN** a client calls `prompts/get` with the name `delete-all`
+- **THEN** the response is a JSON-RPC error with code `-32602`

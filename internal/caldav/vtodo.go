@@ -40,6 +40,7 @@ type Task struct {
 	Description string
 	Priority    int // app priority 1..4
 	Due         *Due
+	Deadline    string // "YYYY-MM-DD" or "" (OpenSpec change deadlines)
 	Categories  []string
 	ParentUID   string
 	CreatedAt   int64
@@ -56,6 +57,12 @@ type Inbound struct {
 	Description string
 	Priority    int // app priority 1..4
 	Due         *Due
+	// Deadline is the date of DUE when the client sent a DTSTART that differs
+	// from it (design D6); then Due is the DTSTART. DueOnly reports a DUE
+	// without any DTSTART: the caller decides whether it is the due date or,
+	// on a task that has a deadline, the deadline.
+	Deadline    string
+	DueOnly     bool
 	Completed   bool
 	CompletedAt *int64 // the COMPLETED time when the client sent one
 	Categories  []string
@@ -143,7 +150,15 @@ func Encode(t Task) []byte {
 		add("DESCRIPTION", EscapeText(t.Description))
 	}
 	extra := extraLines(t.Extra)
-	if t.Due != nil {
+	if t.Deadline != "" {
+		// With a deadline, DUE is the deadline (a date) and DTSTART the planned
+		// day (OpenSpec change deadlines, design D6).
+		todo.Props = append(todo.Props, Prop{Name: "DUE", Params: []Param{{Name: "VALUE", Values: []string{"DATE"}}}, Value: dateValue(t.Deadline)})
+		if t.Due != nil {
+			todo.Props = append(todo.Props, dueProp("DTSTART", t.Due))
+			extra = dropTopLevel(extra, "DTSTART")
+		}
+	} else if t.Due != nil {
 		todo.Props = append(todo.Props, dueProp("DUE", t.Due))
 		// A recurring VTODO is anchored at DTSTART; restate the due date unless
 		// the client keeps its own DTSTART in the preserved remainder.
@@ -369,6 +384,23 @@ func Decode(body []byte) (*Inbound, error) {
 	if !in.Completed {
 		in.CompletedAt = nil
 	}
+	// DTSTART and DUE (design D6): differing ones are the planned day and the
+	// deadline (the date of DUE, any time dropped). Equal ones set the due date
+	// only; the DTSTART is the anchor this server writes on recurring tasks
+	// (Encode) and is kept as client data only when the rule stays unmapped.
+	// A DTSTART without a DUE, or one that does not parse, is client data.
+	in.DueOnly = in.Due != nil && dtstart == nil
+	startEqual := false
+	if dtstart != nil && in.Due != nil {
+		if d, err := parseDue(*dtstart); err == nil {
+			if sameDue(d, in.Due) {
+				startEqual = true
+			} else {
+				in.Deadline = in.Due.Date
+				in.Due = d
+			}
+		}
+	}
 	if rrule != nil {
 		in.RRULE = strings.TrimSpace(rrule.Value)
 		due := ""
@@ -381,18 +413,8 @@ func Decode(body []byte) (*Inbound, error) {
 			extra = append(extra, rrule.Line())
 		}
 	}
-	// DTSTART equal to DUE on a recurring task is the anchor this server writes
-	// itself (Encode); any other DTSTART is client data and is preserved.
-	if dtstart != nil {
-		derived := false
-		if in.Rule != "" && in.Due != nil {
-			if d, err := parseDue(*dtstart); err == nil && sameDue(d, in.Due) {
-				derived = true
-			}
-		}
-		if !derived {
-			extra = append([]string{dtstart.Line()}, extra...)
-		}
+	if dtstart != nil && in.Deadline == "" && !(startEqual && in.Rule != "") {
+		extra = append([]string{dtstart.Line()}, extra...)
 	}
 	for _, ch := range master.Children {
 		extra = append(extra, ch.Lines()...)

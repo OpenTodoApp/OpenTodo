@@ -236,16 +236,33 @@ func relativeFireAt(d *due, offset json.RawMessage, loc *time.Location) json.Raw
 	return json.RawMessage(fmt.Sprint(at + minutes*60_000))
 }
 
-// reminderOpsForDue recomputes fire_at for every live relative reminder of a task
-// whose due is being set to dueRaw, stamped with the same ts as the due op so
-// last-writer-wins takes both from the same write (as the web client does).
-func (s *Server) reminderOpsForDue(ctx context.Context, uid, taskID string, dueRaw json.RawMessage, ts int64) ([]opsync.Op, error) {
-	return s.reminderOpsForDueAs(ctx, uid, taskID, dueRaw, ts, serverDevice)
+// deadlineFireAt is the firing instant of a deadline reminder (OpenSpec change
+// deadlines, design D5): 09:00 in loc on the deadline day plus the offset, null
+// without a deadline.
+func deadlineFireAt(deadlineRaw, offset json.RawMessage, loc *time.Location) json.RawMessage {
+	var date string
+	if json.Unmarshal(deadlineRaw, &date) != nil || date == "" {
+		return json.RawMessage("null")
+	}
+	return relativeFireAt(&due{Date: date}, offset, loc)
 }
 
-// reminderOpsForDueAs is reminderOpsForDue with the ops' device chosen by the
+// reminderOpsForTask recomputes fire_at for the reminders that follow a task
+// field the patch sets: relative reminders follow `due`, deadline reminders
+// follow `deadline`. The ops are stamped with the same ts as the task ops so
+// last-writer-wins takes both from the same write (as the web client does).
+func (s *Server) reminderOpsForTask(ctx context.Context, uid, taskID string, patch map[string]json.RawMessage, ts int64) ([]opsync.Op, error) {
+	return s.reminderOpsForTaskAs(ctx, uid, taskID, patch, ts, serverDevice)
+}
+
+// reminderOpsForTaskAs is reminderOpsForTask with the ops' device chosen by the
 // caller (agent:<token-id> for AI assistant writes).
-func (s *Server) reminderOpsForDueAs(ctx context.Context, uid, taskID string, dueRaw json.RawMessage, ts int64, device string) ([]opsync.Op, error) {
+func (s *Server) reminderOpsForTaskAs(ctx context.Context, uid, taskID string, patch map[string]json.RawMessage, ts int64, device string) ([]opsync.Op, error) {
+	dueRaw, hasDue := patch["due"]
+	deadlineRaw, hasDeadline := patch["deadline"]
+	if !hasDue && !hasDeadline {
+		return nil, nil
+	}
 	list, err := s.sync.List(ctx, uid, "reminder", false)
 	if err != nil {
 		return nil, err
@@ -254,14 +271,23 @@ func (s *Server) reminderOpsForDueAs(ctx context.Context, uid, taskID string, du
 	var loc *time.Location
 	var ops []opsync.Op
 	for _, rem := range list {
-		if idOf(rem["task_id"]) != taskID || idOf(rem["kind"]) != "relative" {
+		if idOf(rem["task_id"]) != taskID {
+			continue
+		}
+		kind := idOf(rem["kind"])
+		if !(kind == "relative" && hasDue) && !(kind == "deadline" && hasDeadline) {
 			continue
 		}
 		if loc == nil {
 			loc = s.tzLocation(ctx, uid)
 		}
 		id := idOf(rem["id"])
-		fire := relativeFireAt(d, rem["offset_minutes"], loc)
+		var fire json.RawMessage
+		if kind == "deadline" {
+			fire = deadlineFireAt(deadlineRaw, rem["offset_minutes"], loc)
+		} else {
+			fire = relativeFireAt(d, rem["offset_minutes"], loc)
+		}
 		ops = append(ops, opsync.Op{ID: ids.New(), Entity: "reminder", EntityID: id, Field: "fire_at", Value: fire, TS: ts, Device: device})
 		if !opsync.SameJSON(fire, rem["fire_at"]) {
 			for _, f := range []string{"delivered_at", "dismissed_at"} {
@@ -312,16 +338,24 @@ func (s *Server) completeReminderBody(ctx context.Context, uid string, body map[
 	}
 	_, offsetSent := body["offset_minutes"]
 	_, fireSent := body["fire_at"]
-	if idOf(merged["kind"]) == "relative" && !fireSent && (existing == nil || offsetSent || body["kind"] != nil) {
+	kind := idOf(merged["kind"])
+	if (kind == "relative" || kind == "deadline") && !fireSent && (existing == nil || offsetSent || body["kind"] != nil) {
 		t, err := s.sync.Get(ctx, uid, "task", taskID)
 		if err != nil {
 			return "", err
 		}
-		var d *due
-		if t != nil {
-			d = decodeDue(t["due"])
+		switch {
+		case kind == "deadline" && t != nil:
+			body["fire_at"] = deadlineFireAt(t["deadline"], merged["offset_minutes"], s.tzLocation(ctx, uid))
+		case kind == "deadline":
+			body["fire_at"] = json.RawMessage("null")
+		default:
+			var d *due
+			if t != nil {
+				d = decodeDue(t["due"])
+			}
+			body["fire_at"] = relativeFireAt(d, merged["offset_minutes"], s.tzLocation(ctx, uid))
 		}
-		body["fire_at"] = relativeFireAt(d, merged["offset_minutes"], s.tzLocation(ctx, uid))
 	}
 	return "", nil
 }

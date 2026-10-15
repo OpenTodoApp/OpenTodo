@@ -52,6 +52,9 @@ function channel() {
 /** `e` on a selected row: the detail panel for that task focuses its estimate input. */
 export const estimateFocus = channel()
 
+/** `d` on a selected row: the detail panel for that task opens its deadline field (deadlines). */
+export const deadlineFocus = channel()
+
 /** `s` on a selected row: the Day view opens with that task in placement mode. */
 export const placement = channel()
 

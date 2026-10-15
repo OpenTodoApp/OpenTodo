@@ -64,11 +64,15 @@ A settings view SHALL show the signed-in account, let the user download the JSON
 - **THEN** nothing is cleared and the Account section stays open with focus on the Sign out button
 
 ### Requirement: Responsive layout and themes
-The layout SHALL work from 360 px wide phones to desktops, with a collapsible sidebar on small screens, and SHALL follow the system light or dark preference.
+The layout SHALL work from 360 px wide phones to desktops, with a collapsible sidebar on small screens. It SHALL be light or dark according to the user's appearance mode, which follows the system light or dark preference by default.
 
 #### Scenario: Phone layout
 - **WHEN** the viewport is narrower than 768 px
 - **THEN** the sidebar is hidden behind a menu button and the task list uses the full width
+
+#### Scenario: Mode overrides the system
+- **WHEN** the system prefers light and the user's appearance mode is `dark`
+- **THEN** the app renders dark on phones and desktops alike
 
 ### Requirement: Render failure containment
 A rendering error SHALL show a recoverable message with a reload action instead of a blank page, and SHALL not lose local data.
@@ -251,3 +255,14 @@ For a viewer of a shared project every property row SHALL render as read-only te
 #### Scenario: Viewer opens a task
 - **WHEN** a viewer opens a task in a shared project
 - **THEN** the properties cannot be edited, a read-only note is shown, and the comment composer is available
+
+### Requirement: Ask screen
+The app SHALL offer an Ask screen, reachable from the sidebar and with the keyboard sequence `g` then `k`, showing the Ask composer and the full skill list. When the assistant is not available to the user, the screen SHALL explain why (not enabled on this server, or not available for encrypted accounts) and SHALL NOT appear in the sidebar for members.
+
+#### Scenario: Keyboard
+- **WHEN** a user with the assistant available presses `g` then `k`
+- **THEN** the Ask screen opens with focus in the composer
+
+#### Scenario: Encrypted account
+- **WHEN** a user whose account uses end-to-end encryption opens the Ask screen by its address
+- **THEN** it explains that the assistant cannot read encrypted tasks and shows no composer
