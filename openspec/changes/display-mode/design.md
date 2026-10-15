@@ -50,7 +50,7 @@ Rows reuse the task checkbox class and the priority and due chips but not `TaskR
 
 ### D4. Presentation: a type scale factor and two root attributes
 
-- **Size:** the display sets `--display-scale` (1.35, 1.6, 2.1 for m, l, xl) on its own root element and derives its font sizes from the type tokens multiplied by it (`calc(var(--text-body) * var(--display-scale))`), so the scale respects the browser's font-size setting as the design system requires. Body text lands at about 20, 24 and 32 px.
+- **Size:** the display sets `--display-scale` (1.35, 1.6, 2.15 for m, l, xl) on its own root element and derives its font sizes from the type tokens multiplied by it (`calc(var(--text-body) * var(--display-scale))`), so the scale respects the browser's font-size setting as the design system requires. Body text lands at about 20, 24 and 32 px.
 - **High contrast:** a `[data-contrast="high"]` block in `index.css` redefines the `--ot-*` tokens: canvas and surface `#ffffff`, text `#000000`, border `#000000` at 1.5 px, soft tints become the surface with a 2 px outline, priority hues darkened to reach 7:1 as text and 3:1 as marks, focus ring 3 px; and the dark variant (`[data-theme="dark"][data-contrast="high"]` and the system-dark branch) with `#000000` and `#ffffff`. The override pairs go into `web/src/ui/tokens/pairs.ts` under a new override key so `contrast.test.ts` measures them (threshold 7:1 for text in the override).
 - **Motion:** `[data-motion="none"]` sets `--duration-ui` and `--duration-emphasis` to `0ms` and adds the same rules the reduced-motion media query applies.
 
@@ -69,6 +69,13 @@ Menu entries "Display mode" in the Today and Upcoming header area (next to the d
 ### D7. Public link display (depends on `public-links`)
 
 `PublicListScreen` reads the same `DisplayOptions` parser when `display=1` is present and renders through the same `DisplayColumn` and type scale, adding the clock. Its data path stays the public read route with polling; the clock and options are purely presentational. If `public-links` has not landed, this task group is skipped and its requirement archived with that change.
+
+### Interface budget (added after ux-overhaul)
+
+- Display routes sit outside the shell, so the shell's budget does not apply to them.
+- In the app, the change adds one menu entry each to the Today and Upcoming header overflow, the project menu and the saved view menu.
+- It adds two options to the Start view select.
+- No new sidebar destination, scroll region in the shell, list chrome or task property. The display keys are listed in the shortcut registry under their own section.
 
 ## Risks / Trade-offs
 

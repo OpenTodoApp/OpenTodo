@@ -166,6 +166,15 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>d</kbd> / <kbd>r</kbd> / <kbd>Delete</kbd> | On a user: Settings → Administration → Users: deactivate or reactivate, create a reset link, delete (each confirms) |
 | <kbd>Tab</kbd> | In Settings → Security: passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys |
 
+### Display mode
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>↑ ↓ ← →</kbd> / <kbd>j</kbd> / <kbd>k</kbd> | Display: move between the rows of a display, across columns |
+| <kbd>Home</kbd> / <kbd>End</kbd> | Display: first / last row |
+| <kbd>Space</kbd> / <kbd>Enter</kbd> | Display: complete or reopen the focused task (when you may edit it) |
+| <kbd>Esc</kbd> | Display: leave display mode for the same view in the app; other shortcuts are off on a display |
+
 ### Quick add syntax
 
 | Type | What it does |

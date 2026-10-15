@@ -346,6 +346,187 @@
   }
 }
 
+/* High contrast (OpenSpec change display-mode, design D4): set on <html> by a
+   display route only, never stored. Black on white or white on black, no soft
+   tints, borders at full strength; text pairs reach 7:1 (contrast.test.ts). The
+   selectors out-rank the theme and accent blocks above. */
+:root[data-contrast="high"] {
+  --ot-canvas: #ffffff;
+  --ot-surface: #ffffff;
+  --ot-raised: #ffffff;
+  --ot-sunken: #ffffff;
+  --ot-text-strong: #000000;
+  --ot-text: #000000;
+  --ot-muted: #2b2b2b;
+  --ot-faint: #3a3a3a;
+  --ot-border: #000000;
+  --ot-border-input: #000000;
+  --ot-accent: #00563a;
+  --ot-accent-hover: #003d29;
+  --ot-on-accent: #ffffff;
+  --ot-accent-text: #00563a;
+  --ot-accent-soft: #ffffff;
+  --ot-accent-soft-text: #000000;
+  --ot-focus: #000000;
+  --ot-p1: #a30000;
+  --ot-p2: #8a3300;
+  --ot-p3: #0032a8;
+  --ot-p4: #333333;
+  --ot-p1-soft: #ffffff;
+  --ot-p2-soft: #ffffff;
+  --ot-p3-soft: #ffffff;
+  --ot-p4-soft: #ffffff;
+  --ot-success: #00592d;
+  --ot-success-soft: #ffffff;
+  --ot-success-soft-text: #00592d;
+  --ot-warning: #663300;
+  --ot-warning-soft: #ffffff;
+  --ot-warning-soft-text: #663300;
+  --ot-danger: #a30000;
+  --ot-danger-soft: #ffffff;
+  --ot-danger-soft-text: #a30000;
+  --ot-info: #004272;
+  --ot-info-soft: #ffffff;
+  --ot-info-soft-text: #004272;
+  --ot-highlight: #ffff00;
+  --ot-highlight-text: #000000;
+  --ot-hue-red-soft: #ffffff; --ot-hue-red-text: #000000;
+  --ot-hue-orange-soft: #ffffff; --ot-hue-orange-text: #000000;
+  --ot-hue-yellow-soft: #ffffff; --ot-hue-yellow-text: #000000;
+  --ot-hue-lime-soft: #ffffff; --ot-hue-lime-text: #000000;
+  --ot-hue-green-soft: #ffffff; --ot-hue-green-text: #000000;
+  --ot-hue-teal-soft: #ffffff; --ot-hue-teal-text: #000000;
+  --ot-hue-cyan-soft: #ffffff; --ot-hue-cyan-text: #000000;
+  --ot-hue-blue-soft: #ffffff; --ot-hue-blue-text: #000000;
+  --ot-hue-indigo-soft: #ffffff; --ot-hue-indigo-text: #000000;
+  --ot-hue-violet-soft: #ffffff; --ot-hue-violet-text: #000000;
+  --ot-hue-pink-soft: #ffffff; --ot-hue-pink-text: #000000;
+  --ot-hue-slate-soft: #ffffff; --ot-hue-slate-text: #000000;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-contrast="high"]:not([data-theme="light"]) {
+    --ot-canvas: #000000;
+    --ot-surface: #000000;
+    --ot-raised: #000000;
+    --ot-sunken: #000000;
+    --ot-text-strong: #ffffff;
+    --ot-text: #ffffff;
+    --ot-muted: #e6e6e6;
+    --ot-faint: #d4d4d4;
+    --ot-border: #ffffff;
+    --ot-border-input: #ffffff;
+    --ot-accent: #5cffb0;
+    --ot-accent-hover: #8affc8;
+    --ot-on-accent: #000000;
+    --ot-accent-text: #5cffb0;
+    --ot-accent-soft: #000000;
+    --ot-accent-soft-text: #ffffff;
+    --ot-focus: #ffffff;
+    --ot-p1: #ff8080;
+    --ot-p2: #ffad66;
+    --ot-p3: #99bbff;
+    --ot-p4: #d4d4d4;
+    --ot-p1-soft: #000000;
+    --ot-p2-soft: #000000;
+    --ot-p3-soft: #000000;
+    --ot-p4-soft: #000000;
+    --ot-success: #66ffa6;
+    --ot-success-soft: #000000;
+    --ot-success-soft-text: #66ffa6;
+    --ot-warning: #ffd166;
+    --ot-warning-soft: #000000;
+    --ot-warning-soft-text: #ffd166;
+    --ot-danger: #ff8080;
+    --ot-danger-soft: #000000;
+    --ot-danger-soft-text: #ff8080;
+    --ot-info: #80d4ff;
+    --ot-info-soft: #000000;
+    --ot-info-soft-text: #80d4ff;
+    --ot-highlight: #ffff00;
+    --ot-highlight-text: #000000;
+    --ot-hue-red-soft: #000000; --ot-hue-red-text: #ffffff;
+    --ot-hue-orange-soft: #000000; --ot-hue-orange-text: #ffffff;
+    --ot-hue-yellow-soft: #000000; --ot-hue-yellow-text: #ffffff;
+    --ot-hue-lime-soft: #000000; --ot-hue-lime-text: #ffffff;
+    --ot-hue-green-soft: #000000; --ot-hue-green-text: #ffffff;
+    --ot-hue-teal-soft: #000000; --ot-hue-teal-text: #ffffff;
+    --ot-hue-cyan-soft: #000000; --ot-hue-cyan-text: #ffffff;
+    --ot-hue-blue-soft: #000000; --ot-hue-blue-text: #ffffff;
+    --ot-hue-indigo-soft: #000000; --ot-hue-indigo-text: #ffffff;
+    --ot-hue-violet-soft: #000000; --ot-hue-violet-text: #ffffff;
+    --ot-hue-pink-soft: #000000; --ot-hue-pink-text: #ffffff;
+    --ot-hue-slate-soft: #000000; --ot-hue-slate-text: #ffffff;
+  }
+}
+:root[data-contrast="high"][data-theme="dark"] {
+  --ot-canvas: #000000;
+  --ot-surface: #000000;
+  --ot-raised: #000000;
+  --ot-sunken: #000000;
+  --ot-text-strong: #ffffff;
+  --ot-text: #ffffff;
+  --ot-muted: #e6e6e6;
+  --ot-faint: #d4d4d4;
+  --ot-border: #ffffff;
+  --ot-border-input: #ffffff;
+  --ot-accent: #5cffb0;
+  --ot-accent-hover: #8affc8;
+  --ot-on-accent: #000000;
+  --ot-accent-text: #5cffb0;
+  --ot-accent-soft: #000000;
+  --ot-accent-soft-text: #ffffff;
+  --ot-focus: #ffffff;
+  --ot-p1: #ff8080;
+  --ot-p2: #ffad66;
+  --ot-p3: #99bbff;
+  --ot-p4: #d4d4d4;
+  --ot-p1-soft: #000000;
+  --ot-p2-soft: #000000;
+  --ot-p3-soft: #000000;
+  --ot-p4-soft: #000000;
+  --ot-success: #66ffa6;
+  --ot-success-soft: #000000;
+  --ot-success-soft-text: #66ffa6;
+  --ot-warning: #ffd166;
+  --ot-warning-soft: #000000;
+  --ot-warning-soft-text: #ffd166;
+  --ot-danger: #ff8080;
+  --ot-danger-soft: #000000;
+  --ot-danger-soft-text: #ff8080;
+  --ot-info: #80d4ff;
+  --ot-info-soft: #000000;
+  --ot-info-soft-text: #80d4ff;
+  --ot-highlight: #ffff00;
+  --ot-highlight-text: #000000;
+  --ot-hue-red-soft: #000000; --ot-hue-red-text: #ffffff;
+  --ot-hue-orange-soft: #000000; --ot-hue-orange-text: #ffffff;
+  --ot-hue-yellow-soft: #000000; --ot-hue-yellow-text: #ffffff;
+  --ot-hue-lime-soft: #000000; --ot-hue-lime-text: #ffffff;
+  --ot-hue-green-soft: #000000; --ot-hue-green-text: #ffffff;
+  --ot-hue-teal-soft: #000000; --ot-hue-teal-text: #ffffff;
+  --ot-hue-cyan-soft: #000000; --ot-hue-cyan-text: #ffffff;
+  --ot-hue-blue-soft: #000000; --ot-hue-blue-text: #ffffff;
+  --ot-hue-indigo-soft: #000000; --ot-hue-indigo-text: #ffffff;
+  --ot-hue-violet-soft: #000000; --ot-hue-violet-text: #ffffff;
+  --ot-hue-pink-soft: #000000; --ot-hue-pink-text: #ffffff;
+  --ot-hue-slate-soft: #000000; --ot-hue-slate-text: #ffffff;
+}
+:root[data-contrast="high"] :focus-visible {
+  outline-width: 3px !important;
+}
+
+/* No motion (display-mode D4): like reduced motion, and transitions end at once. */
+:root[data-motion="none"] {
+  --duration-ui: 0ms;
+  --duration-emphasis: 0ms;
+}
+:root[data-motion="none"] *, :root[data-motion="none"] *::before, :root[data-motion="none"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
 html, body, #root {
   height: 100%;
 }
@@ -514,4 +695,18 @@ select.input, select.ui-input { @apply truncate; contain: layout paint; }
 .help-prose thead th { @apply border-t-0 bg-sunken font-semibold; }
 .help-prose summary { @apply cursor-pointer font-medium; }
 .help-snippet mark, .help-prose mark { @apply rounded bg-highlight px-0.5 text-on-highlight; }
+}
+
+/* Display mode (OpenSpec change display-mode, design D4): type sizes derive from
+   the tokens times --display-scale (1.35, 1.6, 2.15 for m, l, xl: body text at
+   about 20, 24 and 32 px), so the browser's font size still scales them. */
+@layer components {
+  .display-text { font-size: calc(var(--text-body) * var(--display-scale, 1.6)); line-height: 1.3; }
+  .display-meta { font-size: calc(var(--text-meta) * var(--display-scale, 1.6)); line-height: 1.3; }
+  .display-heading { font-size: calc(var(--text-h2) * var(--display-scale, 1.6)); line-height: 1.25; }
+  .display-title { font-size: calc(var(--text-h1) * var(--display-scale, 1.6)); line-height: 1.2; }
+  .display-clock { font-size: calc(var(--text-h1) * var(--display-scale, 1.6) * 1.25); line-height: 1; }
+  .display-row { min-height: calc(2.5rem * var(--display-scale, 1.6)); }
+  .display-check { width: calc(1.25rem * var(--display-scale, 1.6) * 0.75); height: calc(1.25rem * var(--display-scale, 1.6) * 0.75); }
+  :root[data-contrast="high"] .display-root .rounded-card { border-width: 2px; }
 }

@@ -1,6 +1,7 @@
 // A deliberately tiny history-based router: the app has a handful of views and
 // every extra kilobyte matters on a low-end phone.
 import { useMemo, useSyncExternalStore } from 'react'
+import { displayQuery, parseDisplayOptions, targetPath, type DisplayOptions, type DisplayTarget } from '../lib/display'
 import { readCalendarMode } from '../lib/calendarMode'
 
 export type Route =
@@ -25,6 +26,7 @@ export type Route =
   | { view: 'invite'; token: string }
   | { view: 'project-invite'; token: string }
   | { view: 'reset'; token: string }
+  | { view: 'display'; target: DisplayTarget; options: DisplayOptions }
   | { view: 'share' }
   | { view: 'trash' }
   | { view: 'feed' }
@@ -117,6 +119,13 @@ export function parseRoute(pathname: string): Route {
     case 'reset':
       // Password reset link from an administrator or `opentodo reset-owner-password`.
       return parts[1] ? { view: 'reset', token: safeDecode(parts[1]) } : { view: 'inbox' }
+    case 'display': {
+      // Display mode (display-mode D2): a full-screen view with options in the query.
+      const target: DisplayTarget = parts[1] === 'upcoming' ? { kind: 'upcoming' }
+        : (parts[1] === 'project' || parts[1] === 'view') && parts[2] ? { kind: parts[1], id: safeDecode(parts[2]) }
+          : { kind: 'today' }
+      return { view: 'display', target, options: parseDisplayOptions(query, target) }
+    }
     case 'label':
       return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
     default:
@@ -156,6 +165,8 @@ export function routePath(r: Route): string {
       return `/${r.view}/${encodeURIComponent(r.token)}`
     case 'project-invite':
       return `/invite/p/${encodeURIComponent(r.token)}`
+    case 'display':
+      return `${targetPath(r.target)}${displayQuery(r.options, r.target)}`
     case 'day':
     case 'week':
       return r.date ? `/${r.view}/${r.date}` : `/${r.view}`
@@ -179,11 +190,12 @@ export function routePath(r: Route): string {
 }
 
 const listeners = new Set<() => void>()
-let current = typeof location !== 'undefined' ? location.pathname : '/'
+// The query string is part of the route for the views that read it (help search, display options).
+let current = typeof location !== 'undefined' ? location.pathname + location.search : '/'
 
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
-    current = location.pathname
+    current = location.pathname + location.search
     listeners.forEach((fn) => fn())
   })
 }

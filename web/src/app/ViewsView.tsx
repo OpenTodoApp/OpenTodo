@@ -3,6 +3,7 @@
 // the start view, which is a per-device preference in local meta.
 import { useMemo, useState } from 'react'
 import type { View } from '../lib/types'
+import { displayRoute } from '../lib/display'
 import { createView, deleteView, evaluateViews, isDashboard, reorderView, setPinned, setStartView, updateView } from '../lib/views'
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
@@ -18,6 +19,8 @@ export interface ViewMenuActions {
   pin: (pinned: boolean) => unknown
   startView: () => unknown
   remove: () => unknown
+  /** Opens the view in display mode (display-mode D6); list views only. */
+  display?: () => unknown
 }
 
 /**
@@ -35,6 +38,7 @@ export function viewMenuGroups(view: View, peers: View[], isStart: boolean, a: V
       { kind: 'check', id: 'pin', label: 'Pinned to sidebar', icon: 'pin', checked: view.pinned, onSelect: () => a.pin(!view.pinned) },
       { kind: 'check', id: 'start', label: 'Start view on this device', icon: 'house', checked: isStart, disabled: isStart,
         reason: 'This view opens when the app starts', onSelect: a.startView },
+      ...(a.display && view.kind !== 'dashboard' ? [{ kind: 'action' as const, id: 'display', label: 'Display mode', icon: 'eye' as const, onSelect: a.display }] : []),
     ] },
     { items: [
       { kind: 'action', id: 'up', label: 'Move up', icon: 'arrow-up', disabled: first, reason: 'Already first', onSelect: () => a.move(-1) },
@@ -62,6 +66,7 @@ export function ViewMenu({ view, align = 'end', className = '' }: { view: View; 
     pin: (p) => setPinned(view.id, p),
     startView: () => setStartView(`view:${view.id}`),
     remove: () => deleteView(view.id),
+    display: () => navigate(displayRoute({ kind: 'view', id: view.id })),
   })
   return (
     <>

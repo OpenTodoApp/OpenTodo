@@ -3,7 +3,7 @@
 // `make docs` writes into docs/keyboard.md, so the two never disagree. Add a
 // shortcut here, run `make docs`, and both list it.
 
-export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'comments' | 'settings'
+export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'comments' | 'settings' | 'display'
 
 /** One row: the keys as shown (a context such as "(board)" in parentheses), what they do, and the guide section. */
 export interface Shortcut {
@@ -23,6 +23,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'trash', title: 'Trash and projects' },
   { id: 'comments', title: 'Comments and notes' },
   { id: 'settings', title: 'Settings' },
+  { id: 'display', title: 'Display mode' },
 ]
 
 /** Every shortcut, in the order the overlay lists them. */
@@ -108,6 +109,10 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: '- · 1. · # · [ ] · **x** (typed in the notes)', description: 'Markdown typing becomes formatting; Shift+Enter is a line break, Esc leaves the notes', section: 'comments' },
   { keys: 'Esc', description: 'Close panel, clear selection', section: 'everywhere' },
   { keys: '?', description: 'Toggle this help', section: 'everywhere' },
+  { keys: '↑ ↓ ← → / j / k (display)', description: 'Move between the rows of a display, across columns', section: 'display' },
+  { keys: 'Home / End (display)', description: 'First / last row', section: 'display' },
+  { keys: 'Space / Enter (display)', description: 'Complete or reopen the focused task (when you may edit it)', section: 'display' },
+  { keys: 'Esc (display)', description: 'Leave display mode for the same view in the app; other shortcuts are off on a display', section: 'display' },
 ]
 
 /** Quick add syntax shown at the end of the overlay and the guide. */

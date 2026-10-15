@@ -4,7 +4,7 @@ import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
 import { describeRejected } from '../lib/sharing'
 import { dismissRejected, useSyncStatus } from '../lib/sync'
-import { canonicalPath, navigate, useRoute } from './router'
+import { canonicalPath, navigate, parseRoute, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { CalendarView } from './CalendarView'
 import { FilterView } from './FilterView'
@@ -81,6 +81,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     void resolveStartView().then((start) => {
       if (cancelled || location.pathname !== '/') return
       if (start.kind === 'saved') navigate({ view: 'view', id: start.id }, { replace: true })
+      else if (start.kind === 'display') navigate(parseRoute(start.path), { replace: true })
       else {
         if (start.view !== 'inbox') navigate({ view: start.view }, { replace: true })
         if (start.removed) setNotice('Your start view was deleted, so the Inbox opened instead.')
@@ -255,7 +256,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <CalendarView mode={route.view} date={route.date} />
           ) : (
             // App renders the invite, reset and capture screens itself; a stray /invite, /reset or /share route inside the shell falls back to the Inbox.
-            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'share' ? { view: 'inbox' } : route} />
+            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'display' || route.view === 'share' ? { view: 'inbox' } : route} />
           )}
         </div>
         {vim && (

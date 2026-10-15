@@ -495,6 +495,8 @@ export async function setStartView(v: StartView): Promise<void> {
 export type ResolvedStart =
   | { kind: 'builtin'; view: BuiltinStartView; removed: boolean }
   | { kind: 'saved'; id: string }
+  /** A display route with its options (display-mode D6). */
+  | { kind: 'display'; path: string }
 
 /**
  * The start view to open on launch. A saved view that is missing or deleted (for
@@ -507,6 +509,12 @@ export async function resolveStartView(): Promise<ResolvedStart> {
     const id = v.slice('view:'.length)
     const view = await db.views.get(id)
     if (view && !view.deleted_at) return { kind: 'saved', id }
+    await setStartView('inbox')
+    return { kind: 'builtin', view: 'inbox', removed: true }
+  }
+  if (typeof v === 'string' && v.startsWith('display:')) {
+    const path = await displayStartPath(v)
+    if (path) return { kind: 'display', path }
     await setStartView('inbox')
     return { kind: 'builtin', view: 'inbox', removed: true }
   }

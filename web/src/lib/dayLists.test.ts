@@ -46,10 +46,12 @@ describe('dayLists', () => {
     const all = [a, b, c, far]
     expect(groupUpcoming(upcomingTasks(all, T)).map((g) => [g.date, g.tasks.length])).toEqual([['2026-10-16', 2], ['2026-10-17', 1], ['2026-10-30', 1]])
     const cols = nextDays(all, T, 3)
-    expect(cols.map((c) => c.date)).toEqual(['2026-10-16', '2026-10-17'])
+    // display-mode "Today display": `days` columns after today (Wednesday, 3 → Thu, Fri, Sat).
+    expect(cols.map((c) => c.date)).toEqual(['2026-10-16', '2026-10-17', '2026-10-18'])
     expect(cols[0].tasks).toHaveLength(2)
-    expect(nextDays(all, T, 1)).toEqual([])
-    expect(nextDays(all, T, 99)).toHaveLength(6)
+    expect(cols[2].tasks).toEqual([])
+    expect(nextDays(all, T, 1).map((c) => c.date)).toEqual(['2026-10-16'])
+    expect(nextDays(all, T, 99)).toHaveLength(7)
   })
 
   it('lists tasks completed today, most recent first', () => {

@@ -7,6 +7,7 @@ import { clearLocalData } from '../lib/db'
 import { adoptProfile, forgetMemoryKeys, loadEncryptionState, useEncryption } from '../lib/e2ee'
 import { clearInbox } from '../lib/shareInbox'
 import { UnlockScreen } from './UnlockScreen'
+import { DisplayScreen } from './display/DisplayScreen'
 import { unsubscribeOnSignOut } from '../lib/push'
 import { startSync, stopSync, useSyncStatus } from '../lib/sync'
 import type { AuthStatus, User } from '../lib/types'
@@ -216,6 +217,10 @@ export function App() {
     }
     if (route.view === 'share') {
       return <ShareCapture />
+    }
+    if (route.view === 'display') {
+      // Display mode (display-mode D3): instead of the shell, with sync running.
+      return <DisplayScreen target={route.target} options={route.options} />
     }
     return (
       <>

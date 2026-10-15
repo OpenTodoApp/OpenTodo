@@ -50,6 +50,17 @@ In **Safari on macOS** (Sonoma or later), choose **File → Add to Dock**.
 
 Firefox on the desktop doesn't install web apps. You can still use OpenTodo in a Firefox tab with everything working, including offline use once the page has loaded.
 
+## A screen for the household
+
+An old tablet or an e-ink panel makes a good shared list on the fridge, using [display mode](views.md#display-mode).
+
+1. **Create an account for the screen**, for example "Fridge", with an [invitation](sharing.md#invite-someone-new). Then share the projects it should show with that account as a **viewer**. The server refuses every change from a viewer, so nobody can edit tasks from the screen, and the screen shows no checkboxes. If the screen should tick items off, share as an editor instead.
+2. **Sign in as that account** on the tablet and open the display, for example a project's **⋯ → Display mode**. Add `?eink=1` to the address on an e-ink screen, or `size=xl` to read it from across the room.
+3. **Make it the start view**: on the display, use the **⋯** menu next to **Exit** and choose **Make this the start view on this device**. The display then opens whenever the app starts.
+4. **Lock the device to the app** with its kiosk or guided-access mode (iPad: Guided Access; Android: screen pinning; a desktop browser: kiosk mode). Display mode hides the app's controls, but it does not lock the device, so the rest of the app is still one address away.
+
+The screen stays signed in as long as the server's sessions last (90 days unless the server owner changed `OPENTODO_SESSION_DAYS`). After that, sign in again. Displays work in current versions of Safari, Chrome, Firefox and Edge, including the browsers of most e-ink tablets.
+
 ## Keep using it offline
 
 The installed app keeps a full copy of your tasks on the device. You can open it on a plane, add and complete tasks, and it syncs when you're online again. The status at the top right tells you where things stand. More in [Offline and sync](offline-and-sync.md).

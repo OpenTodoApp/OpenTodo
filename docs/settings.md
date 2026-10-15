@@ -52,7 +52,7 @@ Sign-ins and token changes from the last 90 days. The owner also sees the server
 How the app behaves on this device.
 
 - **Appearance**: light or dark, and a colour theme, on all your devices (see below).
-- **Start view**: the view this device opens on. See [Views](views.md#choose-where-the-app-opens).
+- **Start view**: the view this device opens on, including **Display: Today** and **Display: Upcoming** for a screen in [display mode](views.md#display-mode). See [Views](views.md#choose-where-the-app-opens).
 - **Date and time**: how dates and times look and where weeks start, on all your devices (see below).
 - **Calendar**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
 - **Keyboard**: turn on Vim keybindings. See [Keyboard shortcuts](keyboard.md#vim-keybindings).

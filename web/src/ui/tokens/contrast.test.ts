@@ -38,3 +38,30 @@ describe('token contrast', () => {
     expect(PAIRS.filter((p) => p.kind === 'chip')).toHaveLength(12)
   })
 })
+
+// display-mode D4: the high-contrast override on top of each mode reaches 7:1 for
+// text (3:1 for marks and borders stays the floor).
+function overrideBlock(source: string, selector: string): Record<string, string> {
+  const at = source.indexOf(`${selector} {`)
+  if (at < 0) return {}
+  const body = source.slice(at, source.indexOf('}', at))
+  return Object.fromEntries([...body.matchAll(/--ot-([\w-]+):\s*(#[0-9a-fA-F]{6})/g)].map((m) => [m[1], m[2]]))
+}
+describe('high contrast override', () => {
+  for (const [mode, base, selector] of [
+    ['light', light, ':root[data-contrast="high"]'],
+    ['dark', darkAttr, ':root[data-contrast="high"][data-theme="dark"]'],
+  ] as const) {
+    it(`every pair meets 7:1 for text in ${mode}`, () => {
+      const over = overrideBlock(css, selector)
+      expect(Object.keys(over).length).toBeGreaterThan(40)
+      const tokens = { ...base, ...over }
+      const failures = PAIRS.flatMap(({ fg, bg, min, kind }) => {
+        const need = kind === 'ui' ? Math.max(3, min) : 7
+        const ratio = contrast(tokens[fg], tokens[bg])
+        return ratio + 1e-9 >= need ? [] : [`${fg} on ${bg} (${kind}) high ${mode}: ${ratio.toFixed(2)}:1, needs ${need}:1`]
+      })
+      expect(failures).toEqual([])
+    })
+  }
+})

@@ -7,6 +7,7 @@ import { buildProjectTree, descendantIds } from '../lib/projects'
 import { canDeleteProject, canEditProject, canManageMembers } from '../lib/sharing'
 import { flattenTree } from '../lib/tree'
 import type { Project, ProjectRole } from '../lib/types'
+import { displayRoute } from '../lib/display'
 import { navigate } from './router'
 import { ShareDialog } from './ShareDialog'
 import { DuplicateProjectDialog, SaveTemplateDialog } from './TemplateDialogs'
@@ -202,6 +203,8 @@ export function ProjectHeader({ project, userId, actions, layout }: {
   const panels: ActionGroup = { items: [
     { kind: 'action', id: 'activity', label: 'Activity', icon: 'history', shortcut: 'Shift+H', onSelect: showActivity },
     { kind: 'action', id: 'history', label: 'History', icon: 'rotate-ccw', onSelect: showHistory },
+    // Display mode (display-mode D6): the project full screen, for a tablet or a wall panel.
+    { kind: 'action', id: 'display', label: 'Display mode', icon: 'eye', onSelect: () => navigate(displayRoute({ kind: 'project', id: project.id })) },
   ] }
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [

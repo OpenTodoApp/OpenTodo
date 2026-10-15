@@ -99,6 +99,30 @@ Open the views list (<kbd>g</kbd> <kbd>v</kbd>), choose **+ New dashboard**, nam
 
 Each device can open on a different view: your laptop on a "Work" view, your phone on Today. Pick it in **Settings → Preferences → Start view**, or from a saved view's menu with **Start view on this device**. If that view is deleted later, the device opens on the Inbox and tells you why.
 
+## Display mode
+
+Display mode shows one view full screen in large type, with a clock: Today on a tablet on the fridge, the shopping list on a wall panel, or the week ahead on a spare screen. There's no sidebar, menu or quick add, and the list updates by itself when anyone changes a task.
+
+- **Open it** with **Display mode** in the **⋯** menu of Today or Upcoming, in a project's menu, or in a saved view's menu. The address starts with `/display`, so you can bookmark it.
+- **Today** shows the clock and date, overdue tasks, today's tasks, the tasks done today ticked off, and the next three days as columns. **Upcoming** shows the next seven days. A **project** shows its sections with their tasks, and a **saved view** shows its result with its own grouping.
+- **Tick tasks off** by tapping a checkbox, or with <kbd>Space</kbd> on a row. Move between rows with the arrows or <kbd>j</kbd> and <kbd>k</kbd>. On a project where your account is a viewer, there are no checkboxes.
+- **Leave** with <kbd>Esc</kbd> or the **Exit** button in the corner. That button's **⋯** menu can make this display the view the device opens on.
+
+You can change how it looks by adding options to the address:
+
+| Option | What it does |
+| --- | --- |
+| `size=m`, `size=l`, `size=xl` | Text size: about 20, 24 (the default) or 32 pixels |
+| `contrast=high` | Black on white (or white on black in dark mode), no tints |
+| `motion=none` | Nothing animates or fades |
+| `seconds=0` | The clock shows hours and minutes only |
+| `days=1` … `days=7` | How many days Today and Upcoming show ahead |
+| `eink=1` | For e-ink screens: high contrast, no motion, no seconds |
+
+For example, `/display?eink=1&size=xl` suits an e-ink panel read from across the room. These options belong to the address only: they don't change your theme or settings.
+
+Offline, a display keeps showing what it last synced and says how long ago that was. To set up a tablet for the whole household, see [A screen for the household](install-app.md#a-screen-for-the-household).
+
 ## Tips
 
 - Subtasks show up on their own in Today and Upcoming, with their parent's name next to them, so you see exactly what's due.

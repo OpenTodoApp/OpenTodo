@@ -71,7 +71,7 @@ export function groupUpcoming(tasks: readonly Task[]): { date: string; tasks: Ta
  * days kept so the columns line up with the calendar.
  */
 export function nextDays(all: readonly Task[], today: string, days: number): { date: string; tasks: Task[] }[] {
-  const n = Math.max(1, Math.min(7, Math.floor(days))) - 1
+  const n = Math.max(1, Math.min(7, Math.floor(days)))
   const byDate = new Map(groupUpcoming(upcomingTasks(all, today)).map((g) => [g.date, g.tasks]))
   const out: { date: string; tasks: Task[] }[] = []
   for (let i = 1; i <= n; i++) {

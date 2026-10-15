@@ -75,6 +75,8 @@ Rules for code under `web/src/ui/`:
 A token switches between light and dark by itself, so a screen needs no `dark:` partner for colour.
 - Before using a new foreground and background combination, add it to `src/ui/tokens/pairs.ts`. `contrast.test.ts` recomputes every pair from `index.css` in both themes and fails with the pair, theme and ratio.
 
+**High contrast and no motion.** Display routes (see [Display mode](views.md#display-mode)) can set `data-contrast="high"` and `data-motion="none"` on `<html>` while they are shown. `data-contrast="high"` redefines the `--ot-*` tokens in both modes: black on white or white on black, soft tints the same as the surface, full-strength borders and a 3 px focus ring. `contrast.test.ts` holds the override to 7:1 for text. `data-motion="none"` sets the durations to `0ms` and stops animations, like reduced motion. Neither attribute is stored or synced. The block is written to win over the accent blocks, so the theming settings could later offer it as a "High contrast" choice. The **Foundations/High contrast** story shows it in the workbench.
+
 The legacy classes `.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.btn-danger`, `.input` and `.kbd` keep their names and draw from the tokens. Use `.btn-secondary` for bordered neutral buttons.
 
 ## Stored colours

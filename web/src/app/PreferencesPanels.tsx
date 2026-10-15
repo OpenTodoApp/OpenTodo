@@ -16,6 +16,8 @@ export function StartViewSection() {
 /** Presentational part of the start view setting, rendered without effects for tests and stories. */
 export function StartViewView({ views, startView, onChange }: { views: View[]; startView: StartView; onChange: (v: StartView) => void }) {
   const startIsKnown = !startView.startsWith('view:') || views.some((v) => `view:${v.id}` === startView)
+  // Display mode (display-mode D6): Today and Upcoming here; a project or saved view is pinned from its display.
+  const pinnedDisplay = startView.startsWith('display:') && startView !== 'display:/display' && startView !== 'display:/display/upcoming' ? startView : null
   return (
     <SettingsSection title="Start view" helpId="settings/start-view" headingId="start-view-heading"
       description="The view this device opens on launch. Each device keeps its own choice; it is not synced.">
@@ -28,6 +30,11 @@ export function StartViewView({ views, startView, onChange }: { views: View[]; s
             <option value="upcoming">Upcoming</option>
             <option value="completed">Completed</option>
             <option value="filter">Filter</option>
+          </optgroup>
+          <optgroup label="Display mode">
+            <option value="display:/display">Display: Today</option>
+            <option value="display:/display/upcoming">Display: Upcoming</option>
+            {pinnedDisplay && <option value={pinnedDisplay}>Display: pinned on this device</option>}
           </optgroup>
           {views.length > 0 && (
             <optgroup label="Saved views">
