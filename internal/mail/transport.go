@@ -91,6 +91,14 @@ func (t *Transport) Send(ctx context.Context, c Config, to string, data []byte) 
 	}
 	ctx, cancel := context.WithTimeout(ctx, budget)
 	defer cancel()
+	// Once the budget is spent the connection is closed under the client, so the
+	// error it reports is a closed connection: name it a timeout.
+	fail := func(stage string, err error) error {
+		if ctx.Err() != nil {
+			return &SendError{Stage: stage, Reply: "timed out"}
+		}
+		return stageErr(stage, err)
+	}
 	from, perr := Envelope(c.From)
 	if perr != nil {
 		return &SendError{Stage: StageSend, Reply: "the From address is not valid"}
@@ -102,7 +110,7 @@ func (t *Transport) Send(ctx context.Context, c Config, to string, data []byte) 
 	d := net.Dialer{Timeout: min(ConnectTimeout, budget)}
 	conn, derr := d.DialContext(ctx, "tcp", addr)
 	if derr != nil {
-		return stageErr(StageConnect, derr)
+		return fail(StageConnect, derr)
 	}
 	deadline, _ := ctx.Deadline()
 	_ = conn.SetDeadline(deadline)
@@ -113,13 +121,13 @@ func (t *Transport) Send(ctx context.Context, c Config, to string, data []byte) 
 	if c.Security == config.SMTPSecurityTLS {
 		tc := tls.Client(conn, tlsConf)
 		if herr := tc.HandshakeContext(ctx); herr != nil {
-			return stageErr(StageTLS, herr)
+			return fail(StageTLS, herr)
 		}
 		conn = tc
 	}
 	cl, cerr := smtp.NewClient(conn, c.Host)
 	if cerr != nil {
-		return stageErr(StageConnect, cerr)
+		return fail(StageConnect, cerr)
 	}
 	defer cl.Close()
 	name := t.LocalName
@@ -127,14 +135,14 @@ func (t *Transport) Send(ctx context.Context, c Config, to string, data []byte) 
 		name = "localhost"
 	}
 	if herr := cl.Hello(name); herr != nil {
-		return stageErr(StageConnect, herr)
+		return fail(StageConnect, herr)
 	}
 	if c.Security == config.SMTPSecurityStartTLS {
 		if ok, _ := cl.Extension("STARTTLS"); !ok {
 			return &SendError{Stage: StageTLS, Reply: "the server does not offer STARTTLS"}
 		}
 		if serr := cl.StartTLS(tlsConf); serr != nil {
-			return stageErr(StageTLS, serr)
+			return fail(StageTLS, serr)
 		}
 	}
 	if c.User != "" {
@@ -150,24 +158,24 @@ func (t *Transport) Send(ctx context.Context, c Config, to string, data []byte) 
 			a = smtp.PlainAuth("", c.User, c.Password, c.Host)
 		}
 		if aerr := cl.Auth(a); aerr != nil {
-			return stageErr(StageAuth, aerr)
+			return fail(StageAuth, aerr)
 		}
 	}
 	if merr := cl.Mail(from); merr != nil {
-		return stageErr(StageSend, merr)
+		return fail(StageSend, merr)
 	}
 	if rerr := cl.Rcpt(to); rerr != nil {
-		return stageErr(StageSend, rerr)
+		return fail(StageSend, rerr)
 	}
 	w, werr := cl.Data()
 	if werr != nil {
-		return stageErr(StageSend, werr)
+		return fail(StageSend, werr)
 	}
 	if _, werr := w.Write(data); werr != nil {
-		return stageErr(StageSend, werr)
+		return fail(StageSend, werr)
 	}
 	if werr := w.Close(); werr != nil {
-		return stageErr(StageSend, werr)
+		return fail(StageSend, werr)
 	}
 	_ = cl.Quit()
 	return nil
