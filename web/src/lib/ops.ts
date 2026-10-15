@@ -4,7 +4,7 @@ import { db, entityTables, getMeta, setMeta } from './db'
 import { todayISO } from './dates'
 import { hlcNow, hlcSeed, wins } from './hlc'
 import { firstOccurrence, parseRule } from './recurrence'
-import { relativeFireAt } from './reminderTime'
+import { deadlineFireAt, relativeFireAt } from './reminderTime'
 import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
@@ -59,7 +59,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 }
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
-  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null,
+  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, recurrence: null, series_id: null,
   assignee_id: null, section_id: null, ical_extra: null, notes_doc: '',
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
@@ -386,16 +386,20 @@ export async function foldNote(taskId: string): Promise<boolean> {
  * due op's HLC timestamp and device and last-writer-wins picks the due date and the
  * firing times from the same edit. `fire_at` is always written, even when unchanged,
  * for that reason; a firing that moved also clears delivered/dismissed state.
+ * Deadline reminders (OpenSpec change `deadlines`, design D5) follow `deadline`
+ * the same way and ignore `due`.
  */
 async function reminderFollowUps(changes: Change[]): Promise<Change[]> {
   const out: Change[] = []
   for (const { entity, entityId, patch } of changes) {
-    if (entity !== 'task' || !('due' in patch)) continue
-    const due = (patch.due ?? null) as Task['due']
+    if (entity !== 'task' || !('due' in patch || 'deadline' in patch)) continue
     const reminders = await db.reminders.where('task_id').equals(entityId).toArray()
     for (const r of reminders) {
-      if (r.deleted_at || r.kind !== 'relative') continue
-      const fireAt = relativeFireAt(due, r.offset_minutes)
+      if (r.deleted_at) continue
+      let fireAt: number | null
+      if (r.kind === 'relative' && 'due' in patch) fireAt = relativeFireAt((patch.due ?? null) as Task['due'], r.offset_minutes)
+      else if (r.kind === 'deadline' && 'deadline' in patch) fireAt = deadlineFireAt((patch.deadline ?? null) as string | null, r.offset_minutes)
+      else continue
       const p: Record<string, unknown> = { fire_at: fireAt }
       if (fireAt !== r.fire_at) {
         if (r.delivered_at !== null) p.delivered_at = null
@@ -499,6 +503,7 @@ export async function archiveProject(id: string): Promise<void> {
 export async function createTask(input: {
   title: string; description?: string; project_id?: string | null; parent_id?: string | null; due?: Task['due']; priority?: Task['priority']; labels?: string[]
   estimate_minutes?: number | null
+  deadline?: string | null
   /** A recurrence rule (any spelling the grammar accepts; stored canonical). Throws when invalid. */
   recurrence?: string | null
   /** Assignee account id (task-assignment); only sent when set. */
@@ -520,6 +525,8 @@ export async function createTask(input: {
   if (input.assignee_id) extra.assignee_id = input.assignee_id
   // Only tasks created in a section carry the field (board-view).
   if (input.section_id) extra.section_id = input.section_id
+  // Only tasks created with a deadline carry the field (deadlines).
+  if (input.deadline) extra.deadline = input.deadline
   await mutate('task', id, {
     title: input.title.trim(), description: input.description ?? '', project_id: input.project_id ?? null, parent_id: input.parent_id ?? null,
     priority: input.priority ?? 4, due, labels: input.labels ?? [], position: await nextTaskPosition(now), created_at: now,
@@ -579,7 +586,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * tombstones are new. `section_id` is deliberately absent: every copy lands in a
  * different project, and changing a task's project clears its section (board-view).
  */
-const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'position', 'created_at'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'position', 'created_at'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied

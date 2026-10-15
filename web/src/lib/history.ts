@@ -7,7 +7,7 @@ import { api } from './api'
 import { decryptChanges } from './e2ee'
 import { updateProject, updateTask } from './ops'
 import type { ChangeSet, HistoryPage, Membership, Project, Task } from './types'
-import { formatInstant } from './dates'
+import { formatDate, formatInstant } from './dates'
 
 /** One page of history; ciphertext values (OpenSpec e2ee) are decrypted for display. */
 export async function fetchHistory(entity: 'task' | 'project', id: string, before?: number): Promise<HistoryPage> {
@@ -45,7 +45,7 @@ export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_l
 
 /** Fields whose old value can be put back from the timeline. */
 export const RESTORABLE: Record<'task' | 'project', readonly string[]> = {
-  task: ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'recurrence', 'completed_at', 'deleted_at', 'project_id', 'parent_id'],
+  task: ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'recurrence', 'completed_at', 'deleted_at', 'project_id', 'parent_id'],
   project: ['name', 'color', 'archived', 'parent_id', 'deleted_at'],
 }
 
@@ -86,6 +86,7 @@ export function formatValue(field: string, value: unknown, names?: (field: strin
     const d = value as { date?: string; time?: string }
     return [d.date, d.time].filter(Boolean).join(' ')
   }
+  if (field === 'deadline' && typeof value === 'string') return formatDate(value, 'compact')
   if (field === 'priority') return `P${String(value)}`
   if (field === 'estimate_minutes' && typeof value === 'number') return `${value} min`
   if (Array.isArray(value)) return value.length ? `${value.length} item${value.length === 1 ? '' : 's'}` : '—'

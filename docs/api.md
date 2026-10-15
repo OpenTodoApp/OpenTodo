@@ -399,7 +399,7 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 
 | Route | What an agent token may send |
 | --- | --- |
-| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `recurrence` |
+| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `recurrence` |
 | `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
 | `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
 | `POST /api/v1/projects` | `name`, `color`, `parent_id` (`archived: false` is accepted) |
@@ -435,6 +435,7 @@ Every other write route (tokens, settings, sync, sharing and members, invitation
 | `due` | `{date:"YYYY-MM-DD", time?:"HH:MM", tz?:"Area/City"}` or null | floating date by default; with `tz` (an IANA zone, only together with `time`) a zoned time, the instant at that wall time in that zone. `400 invalid_input` for `tz` without `time` or an unknown zone. See [sync.md](sync.md#zoned-due-values) |
 | `labels` | string[] | ids of existing, non-deleted labels; replaced as a whole on PATCH |
 | `estimate_minutes` | integer 1–10080 or null | duration estimate in minutes; `0`, negatives, fractions and strings are rejected. The Day and Week calendar draws a task with a due time as a block of this length |
+| `deadline` | `"YYYY-MM-DD"` or null | the day the task must be finished by, separate from the planned `due` date; a bare date that exists, so `"next friday"`, `"2026-02-30"` or a time are refused with `invalid_input`. Editing `due` never changes it |
 | `recurrence` | string or null | recurrence rule, e.g. `every 3 days after completion` (see [recurrence.md](recurrence.md)); stored in canonical form, `400 invalid_input` when it does not parse or is over 200 characters |
 | `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
@@ -565,13 +566,13 @@ A reminder belongs to one task and fires at an instant (OpenSpec change `reminde
 | Field | Type | Notes |
 | --- | --- | --- |
 | `task_id` | string | required on create; must name an existing, non-deleted task |
-| `kind` | `"relative"` or `"absolute"` | default `absolute` |
-| `offset_minutes` | integer or null | relative only: minutes from the task's due time, negative = before (−525600…525600) |
-| `fire_at` | unix ms or null | absolute: required. Relative: computed by the server from the task's due date when omitted (09:00 for a date-only due, in the zone offset the user's devices last reported, UTC until then; a zoned due in its own zone); null while the task has no due date |
+| `kind` | `"relative"`, `"absolute"` or `"deadline"` | default `absolute` |
+| `offset_minutes` | integer or null | relative: minutes from the task's due time; deadline: minutes from 09:00 on the task's deadline; negative = before (−525600…525600) |
+| `fire_at` | unix ms or null | absolute: required. Relative: computed by the server from the task's due date when omitted (09:00 for a date-only due, in the zone offset the user's devices last reported, UTC until then; a zoned due in its own zone); null while the task has no due date. Deadline: computed the same way from 09:00 on the task's deadline; null while it has none |
 | `delivered_at` | unix ms or null | written by the server when it pushed the reminder |
 | `dismissed_at`, `created_at`, `deleted_at` | unix ms (or null) | |
 
-`PATCH /api/v1/tasks/{id}` that changes `due` (including completing a recurring task, which moves the series) recomputes `fire_at` of the task's relative reminders in the same batch, with the same timestamp as the due op.
+`PATCH /api/v1/tasks/{id}` that changes `due` (including completing a recurring task, which moves the series) recomputes `fire_at` of the task's relative reminders in the same batch, with the same timestamp as the due op. A change to `deadline` does the same for the task's deadline reminders; `due` edits never move them.
 
 **Push subscriptions** are per device and outside the op log and the export. `POST /api/v1/push/subscriptions` takes the browser's `PushSubscription.toJSON()` plus the device id:
 
