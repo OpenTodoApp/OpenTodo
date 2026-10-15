@@ -240,3 +240,18 @@ func FuzzParseICal(f *testing.F) {
 		}
 	})
 }
+
+// task-dependencies: DEPENDS-ON lines are their own field; an untyped RELATED-TO is the parent.
+func TestDependsOnRoundTrip(t *testing.T) {
+	out := string(Encode(Task{UID: "b", Title: "Book flights", ParentUID: "trip", DependsOn: []string{"a1", "a,2"}, Modified: 1}))
+	if !strings.Contains(out, "RELATED-TO:trip\r\n") || !strings.Contains(out, "RELATED-TO;RELTYPE=DEPENDS-ON:a1\r\n") || !strings.Contains(out, `RELATED-TO;RELTYPE=DEPENDS-ON:a\,2`) {
+		t.Fatalf("encoded:\n%s", out)
+	}
+	in, err := Decode([]byte(out))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if in.ParentUID != "trip" || len(in.DependsOn) != 2 || in.DependsOn[1] != "a,2" || strings.Contains(in.Extra, "DEPENDS-ON") {
+		t.Fatalf("decoded %+v", in)
+	}
+}

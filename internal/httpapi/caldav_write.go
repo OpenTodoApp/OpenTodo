@@ -7,6 +7,7 @@ import (
 	"mime"
 	"net/http"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -238,6 +239,39 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 				extra += "\r\n" + line
 			}
 		}
+	}
+	// DEPENDS-ON lines name blockers by UID (task-dependencies D10): those that
+	// resolve in this calendar become blocked_by; the rest stay client data.
+	// Blockers outside this calendar (other projects of the same sharing) are
+	// kept, since the client never saw them.
+	var currentBlockers []string
+	_ = json.Unmarshal(current["blocked_by"], &currentBlockers)
+	var blockedBy []string
+	for _, b := range currentBlockers {
+		if _, here := v.byID[b]; !here {
+			blockedBy = append(blockedBy, b)
+		}
+	}
+	for _, uid := range in.DependsOn {
+		if uid == in.UID {
+			continue
+		}
+		if b := v.taskByUID(uid); b != nil && !slices.Contains(blockedBy, idOf(b["id"])) {
+			blockedBy = append(blockedBy, idOf(b["id"]))
+			continue
+		}
+		line := caldav.Prop{Name: "RELATED-TO", Params: []caldav.Param{{Name: "RELTYPE", Values: []string{"DEPENDS-ON"}}}, Value: caldav.EscapeText(uid)}.Line()
+		if extra == "" {
+			extra = line
+		} else {
+			extra += "\r\n" + line
+		}
+	}
+	if len(blockedBy) > 0 || len(currentBlockers) > 0 {
+		if blockedBy == nil {
+			blockedBy = []string{}
+		}
+		f["blocked_by"] = mustJSON(blockedBy)
 	}
 	if extra == "" {
 		f["ical_extra"] = json.RawMessage("null")
