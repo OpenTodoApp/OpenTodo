@@ -4,7 +4,7 @@ summary: A tour of Settings, what each section does, which choices belong to one
 audience: user
 section: Guides
 specs: [web-app, settings-navigation, date-time-preferences, appearance-preferences]
-screens: [settings/appearance#appearance, settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/attachments#administration, settings/sso#access-policies, settings/backups#backups, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations]
+screens: [settings/appearance#appearance, settings/date-time#date-and-time, settings/linked-accounts#security, settings/session#account, settings/users#administration, settings/attachments#administration, settings/sso#access-policies, settings/backups#backups, settings/caldav#integrations, settings/webhooks#integrations, settings/email#capture, settings/assistants#ai, settings/tokens#integrations, settings, settings/account#account, settings/activity#activity, settings/preferences#preferences, settings/integrations#integrations, settings/ai#ai, settings/admin#administration, settings/access#access-policies]
 order: 140
 card: settings
 ---

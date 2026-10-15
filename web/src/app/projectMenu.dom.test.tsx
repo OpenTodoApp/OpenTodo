@@ -39,7 +39,7 @@ describe('project menu', () => {
     await flush(40)
     await click(r.container.querySelector('button[aria-label="Project menu"]')!)
     await flush(30)
-    const radios = document.querySelectorAll('[role="menuitemradio"]')
+    const radios = document.querySelectorAll('[role="group"][aria-label="Colour"] [role="menuitemradio"]')
     expect(radios.length).toBe(12)
     expect([...radios].filter((b) => b.getAttribute('aria-checked') === 'true').map((b) => b.getAttribute('aria-label'))).toEqual(['Colour green'])
     await click([...document.querySelectorAll('[data-menu-label]')].find((e) => e.getAttribute('data-menu-label') === 'Delete project…') as HTMLElement)

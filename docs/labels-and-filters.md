@@ -4,7 +4,7 @@ summary: Tag tasks across projects with labels, then find exactly what you need 
 audience: user
 section: Guides
 specs: [labels, filter-queries, action-menus]
-screens: [filter#find-tasks-with-a-filter]
+screens: [filter#find-tasks-with-a-filter, labels#see-everything-with-one-label, label#see-everything-with-one-label]
 order: 40
 card: filter
 ---
@@ -90,7 +90,7 @@ The full language, with ten worked examples, is in [Filter queries](filters.md).
 
 ## Save a filter as a view
 
-When a query is useful, keep it: press <kbd>s</kbd> in the results, give it a name, and it appears under **Views** in the sidebar with a live count. Saved views sync to your other devices. See [Views](views.md#save-your-own-views) for grouping, sorting and dashboards.
+When a query is useful, keep it: press <kbd>s</kbd> in the results, give it a name, and it appears under **Filters** in the sidebar with a live count. Saved views sync to your other devices. See [Views](views.md#save-your-own-views) for grouping, sorting and dashboards.
 
 ## Tips
 

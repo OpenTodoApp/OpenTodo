@@ -58,14 +58,14 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 | Keys | What it does |
 | --- | --- |
-| <kbd>g</kbd> then <kbd>i</kbd> / <kbd>t</kbd> / <kbd>u</kbd> / <kbd>c</kbd> / <kbd>l</kbd> / <kbd>f</kbd> / <kbd>v</kbd> / <kbd>s</kbd> | Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Views / Settings |
+| <kbd>g</kbd> then <kbd>i</kbd> / <kbd>t</kbd> / <kbd>u</kbd> / <kbd>c</kbd> / <kbd>l</kbd> / <kbd>f</kbd> / <kbd>v</kbd> / <kbd>s</kbd> | Go to Inbox / Today / Upcoming / Completed / Labels / Filter / Filters / Settings |
 | <kbd>g</kbd> then <kbd>a</kbd> | Go to Assigned to me |
 | <kbd>g</kbd> then <kbd>n</kbd> / <kbd>o</kbd> | Go to Anytime / Someday |
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
 | <kbd>g</kbd> then <kbd>k</kbd> | Go to Ask: the assistant’s composer and skills (when the assistant is on) |
-| <kbd>g</kbd> then <kbd>h</kbd> | Go to Activity: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters) |
+| <kbd>g</kbd> then <kbd>h</kbd> | Go to Updates: what changed in your shared projects (j / k select, Enter opens the task, Tab reaches the filters) |
 | <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Data → Import data |
-| <kbd>g</kbd> then <kbd>d</kbd> / <kbd>w</kbd> | Go to the Day / Week calendar |
+| <kbd>g</kbd> then <kbd>d</kbd> / <kbd>w</kbd> | Go to the Calendar as Day / Week (the sidebar opens it as last used) |
 | <kbd>g</kbd> then <kbd>?</kbd> | Open Help: the user guide, offline, with search |
 
 ### Tasks in a list
@@ -124,7 +124,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Enter</kbd> / <kbd>Esc</kbd> | Place the task at the ghost / cancel without changes |
 | <kbd>[</kbd> / <kbd>]</kbd> / <kbd>t</kbd> | Previous / next day or week, back to today |
 
-### Filter, saved views and dashboards
+### Filter, saved filters and boards
 
 | Keys | What it does |
 | --- | --- |

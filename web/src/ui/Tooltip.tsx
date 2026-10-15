@@ -12,7 +12,7 @@ export interface TooltipProps {
   /** The keyboard shortcut that runs it, shown beside the label. */
   shortcut?: string
   /** Where the tip opens relative to the control. */
-  side?: 'top' | 'bottom'
+  side?: 'top' | 'bottom' | 'right'
   /** The control: one element that accepts the pointer and focus handlers and `aria-describedby`. */
   children: ReactElement<Record<string, unknown>>
   /** Hover delay in milliseconds (focus opens at once). */
@@ -60,6 +60,14 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
     const r = a.getBoundingClientRect()
     const w = t.offsetWidth, h = t.offsetHeight
     const vw = document.documentElement.clientWidth, vh = window.innerHeight
+    if (side === 'right') {
+      // Beside the control (the collapsed sidebar's icon rail); falls back below it at the viewport's edge.
+      const fits = r.right + GAP + w <= vw - 8
+      const top = fits ? Math.max(8, Math.min(vh - h - 8, r.top + r.height / 2 - h / 2)) : r.bottom + GAP
+      const left = fits ? r.right + GAP : Math.max(8, Math.min(vw - w - 8, r.left))
+      setPos({ top, left })
+      return
+    }
     let top = side === 'bottom' ? r.bottom + GAP : r.top - h - GAP
     if (side === 'bottom' && top + h > vh) top = r.top - h - GAP
     if (side === 'top' && top < 0) top = r.bottom + GAP

@@ -11,7 +11,7 @@ import {
 } from '../lib/labels'
 import { visibleTasks } from '../lib/trash'
 import type { Label } from '../lib/types'
-import { Badge } from '../ui'
+import { Badge, Button, PageBody, PageHeader } from '../ui'
 import { ComboboxPanel } from '../ui'
 import { Icon } from '../ui'
 import { EmptyState } from '../ui'
@@ -348,13 +348,9 @@ export function LabelsView({ route }: { route: Route }) {
   const pair = useMemo(() => duplicatePair(labels), [labels])
   const [source, target] = pair ? (swapped ? [pair[1], pair[0]] : pair) : [null, null]
   return (
-    <div className="mx-auto max-w-2xl px-4 py-5 md:px-8">
-      <div className="mb-4 flex items-center gap-3">
-        <h1 className="text-xl font-semibold">Labels</h1>
-        <span className="text-sm text-faint">{labels.length}</span>
-        <div className="flex-1" />
-        <button className="btn-primary text-xs" onClick={() => setAdding(true)}><Icon name="plus" /> New label</button>
-      </div>
+    <PageBody width="form">
+      <PageHeader title="Labels" meta={labels.length} help="labels"
+        actions={<Button variant="primary" size="sm" icon="plus" onClick={() => setAdding(true)}>New label</Button>} />
       {adding && <NewLabelForm onDone={() => setAdding(false)} className="mb-3 max-w-xs" />}
       {source && target && (
         <div role="note" className="mb-3 flex flex-wrap items-center gap-2 rounded-md bg-warning-soft px-3 py-2 text-xs text-on-warning-soft" data-testid="duplicate-banner">
@@ -373,6 +369,6 @@ export function LabelsView({ route }: { route: Route }) {
           action={<button className="btn-primary text-xs" onClick={() => setAdding(true)}><Icon name="plus" /> New label</button>} />
       )}
       {confirm.element}
-    </div>
+    </PageBody>
   )
 }

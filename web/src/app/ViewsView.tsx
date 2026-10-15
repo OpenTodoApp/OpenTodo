@@ -7,7 +7,7 @@ import { createView, deleteView, evaluateViews, isDashboard, reorderView, setPin
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
 import { useStartView, useViewData, useViews } from './useViews'
-import { Icon, type IconName } from '../ui'
+import { Button, Icon, type IconName, ListGroupHeader, PageBody, PageHeader } from '../ui'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 
 export const viewIcon = (v: View): IconName => (isDashboard(v) ? 'kanban' : 'list')
@@ -79,8 +79,9 @@ export function ViewsView() {
   const { views, ctx } = useViewData()
   const summaries = useMemo(() => evaluateViews(views, ctx, 0), [views, ctx])
   const [creating, setCreating] = useState(false)
-  const pinned = views.filter((v) => v.pinned)
-  const others = views.filter((v) => !v.pinned)
+  const byPin = (a: View, b: View) => Number(b.pinned) - Number(a.pinned)
+  const filters = views.filter((v) => !isDashboard(v)).sort(byPin)
+  const boards = views.filter(isDashboard).sort(byPin)
 
   const row = (v: View) => {
     const s = summaries.get(v.id)
@@ -102,22 +103,21 @@ export function ViewsView() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-5 md:px-8">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold">Views</h1>
-        <span className="text-sm text-faint">{views.length}</span>
-        <div className="flex-1" />
-        <button className="btn-secondary text-xs" onClick={() => navigate({ view: 'filter' })}>+ New view from a filter</button>
-        <button className="btn-primary text-xs" onClick={() => setCreating(true)}>+ New dashboard</button>
-      </div>
-      <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-faint">Pinned to the sidebar</h2>
-      <ul className="mb-5 space-y-0.5">{pinned.map(row)}</ul>
-      {pinned.length === 0 && <p className="mb-5 px-2 text-sm text-faint">None.</p>}
-      <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-faint">Not pinned</h2>
-      <ul className="space-y-0.5">{others.map(row)}</ul>
-      {others.length === 0 && <p className="px-2 text-sm text-faint">None.</p>}
+    <PageBody width="form">
+      <PageHeader title="Filters" meta={views.length} help="filters"
+        actions={<>
+          <Button variant="secondary" size="sm" icon="filter" onClick={() => navigate({ view: 'filter' })}>New filter</Button>
+          <Button variant="primary" size="sm" icon="plus" onClick={() => setCreating(true)}>New board</Button>
+        </>} />
+      {/* Saved filters and boards of filters (custom-views "Pinned views in the sidebar"); pinned ones first in each. */}
+      <ListGroupHeader title="Saved filters" count={filters.length} />
+      <ul className="mb-5 space-y-0.5">{filters.map(row)}</ul>
+      {filters.length === 0 && <p className="mb-5 px-2 text-body text-faint">None yet. Save a query from the Filter view.</p>}
+      <ListGroupHeader title="Boards" count={boards.length} />
+      <ul className="space-y-0.5">{boards.map(row)}</ul>
+      {boards.length === 0 && <p className="px-2 text-body text-faint">None yet.</p>}
       {creating && (
-        <NamePrompt title="New dashboard" label="Dashboard name" confirm="Create" hint="Add up to six saved views as panels."
+        <NamePrompt title="New board" label="Board name" confirm="Create" hint="Add up to six saved filters as panels."
           onCancel={() => setCreating(false)}
           onSubmit={async (name) => {
             const id = await createView({ name, kind: 'dashboard' })
@@ -125,6 +125,6 @@ export function ViewsView() {
             navigate({ view: 'view', id })
           }} />
       )}
-    </div>
+    </PageBody>
   )
 }

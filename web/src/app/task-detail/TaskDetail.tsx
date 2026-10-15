@@ -14,6 +14,7 @@ import { MenuItem, MenuSeparator } from '../../ui'
 import { Markdown } from '../Markdown'
 import { Menu } from '../overlay/Menu'
 import { isTyping } from '../useViews'
+import { openHelp } from '../help/store'
 import { navigate } from '../router'
 import { completeWithUndo, deleteWithUndo } from '../undoable'
 import { AttachmentsRow } from './AttachmentsRow'
@@ -128,6 +129,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         {copied && <span role="status" className="text-meta text-muted">Link copied</span>}
         <Menu kind="menu" label="Task actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-60">
           <MenuItem label="Copy link" icon="link" onSelect={copyLink} />
+          <MenuItem label="Help" icon="circle-help" description="The guide to the task panel" onSelect={() => openHelp('task-panel')} />
           {!page && <MenuItem label="Expand" icon="external-link" description="Open the task as a page" onSelect={() => navigate({ view: 'task', id: task.id })} />}
           {parent && <MenuItem label="Open parent task" icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
           {series && <MenuItem label="Open recurring task" icon="repeat" onSelect={() => onOpen?.(series.id)} />}

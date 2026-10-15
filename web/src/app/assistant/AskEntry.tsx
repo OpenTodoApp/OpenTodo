@@ -5,7 +5,7 @@
 import { useAssistantSkills } from '../../lib/assistantSkills'
 import { openAssistant, openAssistantWith, useAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
 import type { AccountRole } from '../../lib/types'
-import { Button } from '../../ui'
+import { Button, PageBody, PageHeader } from '../../ui'
 import { Card } from '../../ui'
 import { AskComposer, type AskRequest } from '../../ui'
 import { Notice } from '../../ui'
@@ -49,8 +49,8 @@ export function AskScreen({ role }: { role?: AccountRole }) {
   const mode = askMode(status, role)
   const skills = useAssistantSkills(mode === 'composer')
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 md:px-6" data-ask-screen>
-      <h1 className="mb-1 text-xl font-semibold">Ask OpenTodo</h1>
+    <PageBody width="list" data-ask-screen>
+      <PageHeader title="Ask OpenTodo" help="ask" />
       <p className="mb-4 text-meta text-muted">Ask about your tasks, or let a skill do a common job. Changes are proposed for you to review; nothing changes until you apply them.</p>
       {mode === 'composer' && (
         <>
@@ -81,6 +81,6 @@ export function AskScreen({ role }: { role?: AccountRole }) {
           </span>
         </Notice>
       )}
-    </div>
+    </PageBody>
   )
 }

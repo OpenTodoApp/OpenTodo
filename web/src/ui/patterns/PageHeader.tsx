@@ -3,11 +3,12 @@
 // title size, optional meta, at most two visible actions, an overflow menu and the
 // Help action) inside a PageBody whose width is fixed per page type. The header
 // stays visible while the content column scrolls.
-import type { HTMLAttributes, ReactNode } from 'react'
+import { useEffect, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { openHelp } from '../../app/help/store'
 import { Menu } from '../../app/overlay/Menu'
 import { IconButton } from '../Button'
 import { Icon, type IconName } from '../Icon'
+import { setPageBar } from './pageBar'
 
 export type PageWidth = 'list' | 'form' | 'full'
 
@@ -20,13 +21,15 @@ const WIDTH: Record<PageWidth, string> = {
 export interface PageBodyProps extends HTMLAttributes<HTMLDivElement> {
   /** list: 48 rem (lists and feeds); form: 42 rem (settings and forms); full: the whole column (boards, calendars). */
   width?: PageWidth
+  /** No bottom padding: the page's own scroller (a board, the calendar grid) fills the column. */
+  flush?: boolean
   children: ReactNode
 }
 
 /** The content column of a page: horizontal padding and one width per page type. */
-export function PageBody({ width = 'list', className, children, ...rest }: PageBodyProps) {
+export function PageBody({ width = 'list', flush = false, className, children, ...rest }: PageBodyProps) {
   return (
-    <div {...rest} data-page-body={width} className={`mx-auto min-w-0 w-full px-4 pb-6 md:px-8 ${WIDTH[width]}${className ? ` ${className}` : ''}`}>
+    <div {...rest} data-page-body={width} className={`mx-auto min-w-0 w-full px-4 md:px-8 ${flush ? '' : 'pb-6 '}${WIDTH[width]}${className ? ` ${className}` : ''}`}>
       {children}
     </div>
   )
@@ -43,10 +46,16 @@ export interface PageHeaderProps {
   actions?: ReactNode
   /** Menu items (MenuItem, MenuSeparator) of the overflow menu. */
   overflow?: ReactNode
+  /** A complete menu element in place of the default overflow (a menu with picker steps). */
+  menu?: ReactNode
   /** Help screen id (docs front matter `screens`): shows the Help action. */
   help?: string
-  /** A back action, shown before the title (phones, nested pages). */
-  back?: { label: string; href?: string; onClick: () => void }
+  /** A back action, shown before the title (phones, nested pages); `hideFrom: 'lg'` hides it where a side list takes its place. */
+  back?: { label: string; href?: string; onClick: () => void; hideFrom?: 'lg' }
+  /** The heading element, for focus after navigation. */
+  titleRef?: Ref<HTMLHeadingElement>
+  /** -1 lets a view move focus to the heading after navigation. */
+  titleTabIndex?: -1
   /** Below 768 px the shell's bar carries the title; the header then shows only its actions. */
   level?: 1 | 2
   /** Stays visible while the content scrolls (default). */
@@ -57,33 +66,52 @@ export interface PageHeaderProps {
   testId?: string
 }
 
-export function PageHeader({ title, meta, leading, actions, overflow, help, back, level = 1, sticky = true, children, icon, testId }: PageHeaderProps) {
+export function PageHeader({ title, meta, leading, actions, overflow, menu, help, back, level = 1, sticky = true, children, icon, testId, titleRef, titleTabIndex }: PageHeaderProps) {
   const H = level === 1 ? 'h1' : 'h2'
+  // The shell's phone bar shows this page's title and actions below 768 px (app-shell
+  // "No desktop top bar"); the header's own row is hidden there.
+  useEffect(() => {
+    if (level !== 1) return
+    setPageBar({ title, actions, overflow, menu, help, back })
+    return () => setPageBar(null)
+  })
   return (
     <header data-page-header data-testid={testId}
-      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas/95 px-4 backdrop-blur-sm supports-[backdrop-filter]:bg-canvas/80 md:-mx-8 md:px-8' : ''} mb-3 pt-5 pb-3`}>
-      <div className="flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1">
+      className={`${sticky ? 'sticky top-0 z-10 -mx-4 bg-canvas/95 px-4 backdrop-blur-sm supports-[backdrop-filter]:bg-canvas/80 md:-mx-8 md:px-8' : ''} mb-3 ${level === 1 ? 'pt-3 md:pt-5' : 'pt-5'} pb-3`}>
+      <div className={`${level === 1 ? 'hidden md:flex' : 'flex'} min-h-10 flex-wrap items-center gap-x-2 gap-y-1`} data-page-header-row>
         {back && (
-          <a href={back.href ?? '#'} className="ui-btn ui-btn--ghost ui-btn--sm -ml-2" data-page-back
+          <a href={back.href ?? '#'} className={`ui-btn ui-btn--ghost ui-btn--sm -ml-2${back.hideFrom === 'lg' ? ' lg:hidden' : ''}`} data-page-back
             onClick={(e) => { if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); back.onClick() }}>
             <Icon name="arrow-left" />{back.label}
           </a>
         )}
         {icon && <span className="flex h-6 w-6 shrink-0 items-center justify-center text-muted" aria-hidden="true"><Icon name={icon} size="md" /></span>}
         {leading}
-        {typeof title === 'string' ? <H className="min-w-0 truncate text-h1 font-semibold text-strong" data-page-title>{title}</H> : <H className="flex min-w-0 items-center text-h1 font-semibold text-strong" data-page-title>{title}</H>}
+        {typeof title === 'string'
+          ? <H ref={titleRef} tabIndex={titleTabIndex} className="min-w-0 truncate text-h1 font-semibold text-strong outline-none" data-page-title>{title}</H>
+          : <H ref={titleRef} tabIndex={titleTabIndex} className="flex min-w-0 items-center text-h1 font-semibold text-strong outline-none" data-page-title>{title}</H>}
         {meta && <span className="min-w-0 text-meta text-muted" data-page-meta>{meta}</span>}
         <div className="ml-auto flex shrink-0 items-center gap-1" data-page-actions>
-          {actions}
-          {overflow && (
-            <Menu kind="menu" label="More actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-60">
-              {overflow}
-            </Menu>
-          )}
-          {help && <IconButton icon="circle-help" label="Help" size="sm" data-help-screen={help} aria-haspopup="dialog" onClick={(e) => openHelp(help, e.currentTarget)} />}
+          <PageActions actions={actions} overflow={overflow} menu={menu} help={help} />
         </div>
       </div>
       {children && <div className="mt-2 flex flex-wrap items-center gap-2" data-page-secondary>{children}</div>}
     </header>
+  )
+}
+
+/** The right side of a page header or of the phone bar: actions, the overflow menu, Help. */
+export function PageActions({ actions, overflow, menu, help }: Pick<PageHeaderProps, 'actions' | 'overflow' | 'menu' | 'help'>) {
+  return (
+    <>
+      {actions}
+      {menu}
+      {overflow && (
+        <Menu kind="menu" label="More actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-60">
+          {overflow}
+        </Menu>
+      )}
+      {help && <IconButton icon="circle-help" label="Help" size="sm" data-help-screen={help} aria-haspopup="dialog" onClick={(e) => openHelp(help, e.currentTarget)} />}
+    </>
   )
 }

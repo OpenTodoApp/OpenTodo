@@ -71,7 +71,8 @@ describe('Today (3.2)', () => {
     await waitFor(() => !!document.querySelector('[data-group="blocked"]'))
     const group = document.querySelector<HTMLElement>('[data-group="blocked"]')!
     const toggle = group.querySelector('button[aria-expanded]')!
-    expect(toggle.textContent).toContain('Blocked 1')
+    expect(toggle.textContent).toContain('Blocked')
+    expect(toggle.querySelector('[data-group-count]')?.textContent).toBe('1')
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(row('Book flights')).toBeUndefined()
     await click(toggle)

@@ -35,7 +35,7 @@ export const ProjectPage: StoryObj = {
   render: () => (
     <div className="h-[32rem] overflow-y-auto bg-canvas">
       <PageBody width="list">
-        <PageHeader title="Website launch" leading={<span className="h-3 w-3 rounded-full bg-hue-solid" data-hue="violet" />} help="projects"
+        <PageHeader title="Website launch" leading={<span className="h-3 w-3 rounded-full bg-hue-solid" data-hue="violet" />} help="project"
           actions={<><Button variant="ghost" size="sm" icon="users">Share</Button><Button variant="ghost" size="sm" icon="filter">Filter</Button></>}
           overflow={<><MenuItem label="Rename" icon="pencil" onSelect={() => {}} /><MenuItem label="Move to…" icon="folder" onSelect={() => {}} /><MenuItem label="Project activity" icon="history" onSelect={() => {}} /><MenuSeparator /><MenuItem label="Archive project" icon="archive" danger onSelect={() => {}} /></>}>
           <div role="group" aria-label="Project layout" className="inline-flex rounded-control border border-default p-0.5 text-body">
@@ -54,7 +54,7 @@ export const FormPage: StoryObj = {
   render: () => (
     <div className="h-[24rem] overflow-y-auto bg-canvas">
       <PageBody width="form">
-        <PageHeader title="General" back={{ label: 'Settings', onClick: () => {} }} help="settings/general" />
+        <PageHeader title="General" back={{ label: 'Settings', onClick: () => {} }} help="settings/preferences" />
         <div className="rounded-card border border-default bg-surface p-6 shadow-1 text-body text-muted">Sections and rows go here.</div>
       </PageBody>
     </div>
@@ -82,7 +82,7 @@ export const LongTitle: StoryObj = {
   render: () => (
     <PageBody width="list">
       <PageHeader title="A project with a name long enough to be truncated on a phone screen and even on a laptop" leading={<Icon name="folder" className="text-muted" />}
-        meta="12 open" help="projects" actions={<Button variant="ghost" size="sm" icon="filter" aria-label="Filter" />} overflow={<MenuItem label="Rename" onSelect={() => {}} />} />
+        meta="12 open" help="project" actions={<Button variant="ghost" size="sm" icon="filter" aria-label="Filter" />} overflow={<MenuItem label="Rename" onSelect={() => {}} />} />
     </PageBody>
   ),
 }

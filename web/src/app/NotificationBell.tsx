@@ -15,7 +15,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
  * cache so it shows offline. Choosing a notification opens its task, which marks
  * every notification about that task read.
  */
-export function NotificationBell() {
+export function NotificationBell({ compact = false }: { compact?: boolean } = {}) {
   const dt = useDateTimeFormat()
   const list = useLiveQuery(() => db.notifications.orderBy('createdAt').reverse().limit(50).toArray(), [], [] as AppNotification[])
   const unread = list.filter((n) => n.readAt === null).length
@@ -36,7 +36,7 @@ export function NotificationBell() {
 
   return (
     <>
-      <button ref={ref} className="btn-ghost touch-target relative text-sm" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open}
+      <button ref={ref} className={`btn-ghost touch-target relative text-sm ${compact ? 'w-full justify-center px-0' : ''}`} aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open}
         aria-haspopup="dialog" onClick={() => setOpen((v) => !v)} data-notifications>
         <Icon name="bell" />
         {unread > 0 && (

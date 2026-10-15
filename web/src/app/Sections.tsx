@@ -1,7 +1,7 @@
 // Section headings, per-section quick add and "Add section" (OpenSpec `board-view`).
 // Shared by the grouped list and the board columns. Every write goes through
 // lib/sections, so all of it works offline and converges like any other edit.
-import { Icon } from '../ui'
+import { IconButton, ListGroupHeader } from '../ui'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { type FormEvent, type KeyboardEvent, useState } from 'react'
@@ -31,7 +31,7 @@ export function sectionMenuGroups(title: string, o: { first: boolean; last: bool
   ]
 }
 
-export function SectionHeader({ section, count, layout, editable, first, last, collapsed, onToggleCollapse, onAdd }: {
+export function SectionHeader({ section, count, layout, editable, first, last, collapsed, onToggleCollapse, onAdd, completed = 0, revealed = false, onReveal }: {
   /** null: the "No section" heading. */
   section: Section | null
   count: number
@@ -43,6 +43,10 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   collapsed?: boolean
   onToggleCollapse?: () => void
   onAdd?: () => void
+  /** Completed tasks under the section; with no open task the header reads "n completed" and offers to show them. */
+  completed?: number
+  revealed?: boolean
+  onReveal?: () => void
 }) {
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(section?.name ?? '')
@@ -66,39 +70,44 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
     move: (to) => { if (section && (to === -1 || to === 1)) void reorderSection(section.id, to) },
   })
 
+  const titleNode = renaming && section ? (
+    <input className="ui-input max-w-xs py-0.5 text-body font-semibold" autoFocus aria-label="Section name" value={name}
+      onChange={(e) => setName(e.target.value)} onBlur={() => void commit()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') void commit()
+        if (e.key === 'Escape') { e.stopPropagation(); setName(section.name); setRenaming(false) }
+      }} />
+  ) : title
+
+  // One group header for every list (task-list-presentation "Group headers"); a
+  // section with only completed tasks keeps its header with "n completed" and Show.
   return (
-    <div className="group/section flex items-center gap-1 px-1 py-1" data-section-heading={section?.id ?? ''}
-      onKeyDown={editable && section && !renaming ? onRowKey : undefined}>
-      {onToggleCollapse && (
-        <button type="button" className="flex h-5 w-5 items-center justify-center rounded text-xs text-faint hover:bg-sunken dark:hover:bg-raised"
-          aria-label={collapsed ? `Expand ${title}` : `Collapse ${title}`} aria-expanded={!collapsed} onClick={onToggleCollapse}>
-          <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
-        </button>
-      )}
-      {renaming && section ? (
-        <input className="input max-w-xs py-0.5 text-sm font-semibold" autoFocus aria-label="Section name" value={name}
-          onChange={(e) => setName(e.target.value)} onBlur={() => void commit()}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') void commit()
-            if (e.key === 'Escape') { e.stopPropagation(); setName(section.name); setRenaming(false) }
-          }} />
-      ) : (
-        <h2 className={`truncate text-sm font-semibold ${section ? '' : 'text-muted'}`}>{title}</h2>
-      )}
-      <span className="text-xs text-faint" aria-label={`${count} open ${count === 1 ? 'task' : 'tasks'}`}>{count}</span>
-      <div className="flex-1" />
-      {editable && onAdd && (
-        <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" onClick={onAdd} aria-label={`Add a task to ${title}`} title="Add a task here">+</button>
-      )}
-      {editable && section && (
-        <ActionMenu label={`Section menu for ${title}`} title={title} groups={groups} width="sm:w-60" open={menuOpen} onOpenChange={setMenuOpen}
-          triggerClassName="btn-ghost touch-target px-1.5 py-0.5 text-xs" />
-      )}
+    <div data-section-heading={section?.id ?? ''} onKeyDown={editable && section && !renaming ? onRowKey : undefined}>
+      <ListGroupHeader title={titleNode} count={count} tone={section ? 'default' : 'muted'}
+        collapsed={collapsed} onToggle={onToggleCollapse}
+        note={count === 0 && completed > 0 ? (
+          <span className="flex items-center gap-1">
+            {completed} completed
+            <button type="button" className="rounded-chip px-1.5 py-0.5 text-meta text-accent hover:bg-sunken dark:hover:bg-raised" aria-expanded={revealed} onClick={onReveal} data-reveal-completed>
+              {revealed ? 'Hide' : 'Show'}
+            </button>
+          </span>
+        ) : undefined}
+        actions={(editable && (onAdd || section)) ? (
+          <>
+            {editable && onAdd && (
+              <IconButton icon="plus" size="sm" label={`Add a task to ${title}`} onClick={onAdd} />
+            )}
+            {editable && section && (
+              <ActionMenu label={`Section menu for ${title}`} title={title} groups={groups} width="sm:w-60" open={menuOpen} onOpenChange={setMenuOpen}
+                triggerClassName="btn-ghost touch-target px-1.5 py-0.5 text-xs" />
+            )}
+          </>
+        ) : undefined} />
     </div>
   )
 }
 
-/** Quick add under a heading or at the bottom of a column: creates the task in that section. */
 export function SectionQuickAdd({ project, sectionId, sectionName, projects, labels, onClose }: {
   project: Project
   sectionId: string | null

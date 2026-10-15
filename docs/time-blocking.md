@@ -4,7 +4,7 @@ summary: Estimate how long tasks take, then place them on the Day or Week calend
 audience: user
 section: Guides
 specs: [time-blocking]
-screens: [settings/calendar#adjust-the-grid]
+screens: [settings/calendar#adjust-the-grid, calendar#open-the-calendar]
 order: 60
 card: week
 ---

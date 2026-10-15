@@ -180,7 +180,7 @@ describe('opening a section', () => {
     expect(html).toContain('aria-labelledby="nav-group-you"')
     expect(html).not.toContain('nav-group-server')
     expect(html).not.toMatch(/<a href="\/settings\/preferences" aria-current/)
-    expect(html).toMatch(/<a class="[^"]*lg:hidden[^"]*" href="\/settings" data-settings-back/)
+    expect(html).toMatch(/<a href="\/settings" class="[^"]*lg:hidden[^"]*" data-page-back/)
     expect(html).toContain('Download export (JSON)')
     expect(html).toContain('href="/settings/import"')
   })

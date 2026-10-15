@@ -1,7 +1,6 @@
-import { Icon } from '../ui'
+import { PageBody, PageHeader } from '../ui'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { HelpLink } from './help/HelpLink'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { db } from '../lib/db'
@@ -125,11 +124,10 @@ export function ImportView(p: ImportViewProps) {
   const isOwn = (p.format || p.preview?.format) === 'opentodo'
   const actionable = p.preview ? p.preview.totals.create + p.preview.totals.update : 0
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 md:px-8">
+    <PageBody width="list" className="space-y-6">
+      <PageHeader title="Import data" help="import" back={{ label: 'Data', href: '/settings/data', onClick: () => navigate({ view: 'settings', section: 'data' }) }} />
       <section>
-        <button className="btn-ghost -ml-3 text-xs" onClick={() => navigate({ view: 'settings', section: 'data' })}><Icon name="arrow-left" />Data settings</button>
-        <div className="flex items-center justify-between gap-2"><h1 className="text-xl font-semibold">Import data</h1><HelpLink screen="import" topic="Importing data" /></div>
-        <p className="mt-1 text-sm text-muted">
+        <p className="text-sm text-muted">
           Bring in tasks from an OpenTodo export, a CSV file or another task manager's JSON export. You see a preview first;
           nothing is written until you confirm, and every import can be undone. Import runs on your server, so it needs a connection.
           Help explains the formats and options.
@@ -285,7 +283,7 @@ export function ImportView(p: ImportViewProps) {
           ))}
         </ul>
       </section>
-    </div>
+    </PageBody>
   )
 }
 

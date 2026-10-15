@@ -159,6 +159,10 @@ var Schema = map[string]map[string]kind{
 		"parent_id":  kNullableString,
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
+		// An icon name from the app's set, or null for the colour dot (OpenSpec
+		// change ux-overhaul, project-organization "Project icon"). Not user text,
+		// so it is not an encrypted content field.
+		"icon": kNullableString,
 	},
 	"task": {
 		"title":        kString,
@@ -317,6 +321,10 @@ var Schema = map[string]map[string]kind{
 		// are not restricted here; clients read unknown values as the default.
 		"theme_mode":   kString,
 		"theme_accent": kString,
+		// Promoted sidebar destinations (OpenSpec change ux-overhaul, design D8): a
+		// comma-separated list of view ids shown among the primary items; unknown
+		// entries are ignored by clients.
+		"sidebar_destinations": kString,
 	},
 }
 

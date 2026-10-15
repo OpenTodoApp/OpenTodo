@@ -4,7 +4,7 @@ summary: Restore deleted tasks and projects from the Trash, see every change mad
 audience: user
 section: Guides
 specs: [trash-and-history, activity-log]
-screens: [settings/projects#archived-projects]
+screens: [settings/projects#archived-projects, trash#restore-something-from-the-trash]
 order: 130
 card: trash
 ---
@@ -44,7 +44,7 @@ Open a task and select the **History** tab below its details. Changes are groupe
 
 <picture><source srcset="images/history-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/history-light.webp" alt="The History list of a task, showing changes to its description, assignee, title and priority, each with a Restore this value link."></picture>
 
-Projects have a **History** too, at the top of the project.
+Projects have a **History** too: open it from the **⋯** menu in the project's header; it opens beside the list.
 
 History is loaded from your server, so it needs a connection. Offline, the tab says so instead of showing anything out of date.
 

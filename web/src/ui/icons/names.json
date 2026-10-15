@@ -1,10 +1,13 @@
 [
   "inbox", "calendar-check", "calendar-days", "calendar-range", "user-check", "history", "circle-check-big",
-  "search", "filter", "trash-2", "newspaper", "settings", "kanban", "list", "arrow-up", "arrow-down",
-  "mic", "lock", "users", "ellipsis", "x", "chevron-right", "chevron-left", "chevron-down", "arrow-left",
+  "search", "filter", "trash-2", "newspaper", "settings", "kanban", "list", "arrow-up", "arrow-down", "mic",
+  "lock", "users", "ellipsis", "x", "chevron-right", "chevron-left", "chevron-down", "arrow-left",
   "arrow-right", "check", "repeat", "corner-down-right", "alarm-clock", "bell", "message-circle", "menu",
   "undo-2", "circle", "plus", "pencil", "copy", "pin", "pin-off", "tag", "folder", "flag", "link",
   "key-round", "shield-check", "log-out", "download", "upload", "external-link", "circle-help", "sun",
   "moon", "grip-vertical", "eye", "eye-off", "clock", "globe", "hash", "at-sign", "send", "rotate-ccw",
-  "loader-circle", "palette", "folder-input", "merge", "archive", "house", "hourglass", "layers", "paperclip", "file", "image"
+  "loader-circle", "palette", "folder-input", "merge", "archive", "house", "hourglass", "layers",
+  "paperclip", "file", "image", "panel-left-close", "panel-left-open", "briefcase", "heart", "star",
+  "book-open", "rocket", "graduation-cap", "plane", "car", "gift", "music", "coffee", "leaf", "dumbbell",
+  "wallet", "shopping-cart", "camera", "wrench", "lightbulb", "flame", "anchor"
 ]

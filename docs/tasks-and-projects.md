@@ -4,7 +4,7 @@ summary: Add and edit tasks, write notes, break work into subtasks, set prioriti
 audience: user
 section: Guides
 specs: [task-management, project-organization, subtasks, manual-ordering, rich-text-editing, entity-pickers, deadlines, start-dates, bulk-actions, task-dependencies]
-screens: [quick-add#add-a-task]
+screens: [quick-add#add-a-task, project#organise-with-projects, task-panel#edit-a-task]
 order: 10
 card: project-list
 ---

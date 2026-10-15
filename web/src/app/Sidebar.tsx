@@ -1,14 +1,19 @@
-import { Button, Icon, type IconName, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
+import { Button, Icon, IconButton, type IconName, isIconName, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { readAppearance, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
+import { readCalendarMode } from '../lib/calendarMode'
 import { db, getMeta } from '../lib/db'
 import { todayISO } from '../lib/dates'
 import { createProject } from '../lib/ops'
+import { USER_PREFS_ID } from '../lib/userPrefs'
+import { NotificationBell } from './NotificationBell'
+import { SyncStatus } from './SyncStatus'
 import { COLLAPSED_PROJECTS_KEY, buildProjectTree, expandAncestorsOf, openCountsByProject, toggleCollapsedProject, type ProjectNode } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
-import type { User } from '../lib/types'
+import type { Project, User } from '../lib/types'
 import { evaluateViews, inToday, isDashboard, openCount } from '../lib/views'
 import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMenu, viewIcon } from './ViewsView'
@@ -26,8 +31,30 @@ import { formatUnread, unreadCounts, type UnreadCounts } from '../lib/feed'
 /** Indentation per level in the sidebar; capped so a deep tree still fits a 360 px screen. */
 const INDENT_REM = 0.75
 
-export function Sidebar({ route, user }: { route: Route; user: User }) {
+/** Whether the More group is open on this device (closed by default). */
+const MORE_KEY = 'ot.sidebar.more'
+function readMoreOpen(): boolean {
+  try { return localStorage.getItem(MORE_KEY) === '1' } catch { return false }
+}
+function writeMoreOpen(open: boolean): void {
+  try { localStorage.setItem(MORE_KEY, open ? '1' : '0') } catch { /* device state only */ }
+}
+
+export function Sidebar({ route, user, onSearch, collapsed = false, onToggleCollapse }: {
+  route: Route
+  user: User
+  /** Opens the search and command palette (the footer's Search item). */
+  onSearch?: () => void
+  /** The icon rail (app-shell "Resizable sidebar"). */
+  collapsed?: boolean
+  onToggleCollapse?: () => void
+}) {
   const assistant = useAssistantStatus()
+  // Promoted destinations (appearance preferences, synced): read with the rest of the row.
+  const prefsRow = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
+  const appearance = useMemo(() => readAppearance(prefsRow), [prefsRow])
+  const [moreOpen, setMoreOpenState] = useState(() => readMoreOpen())
+  const setMoreOpen = (open: boolean) => { setMoreOpenState(open); writeMoreOpen(open) }
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at && !p.archived).toArray(), [], [])
   // Shared projects carry a badge (project-sharing); read from the cached memberships.
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [])
@@ -39,16 +66,14 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   // Per-device collapse state lives in the local meta table (never synced); reading it
   // through a live query keeps every Sidebar instance in step.
   const collapsedIds = useLiveQuery(() => getMeta<string[]>(COLLAPSED_PROJECTS_KEY, []), [], [] as string[])
-  const collapsed = useMemo(() => new Set(collapsedIds), [collapsedIds])
+  const collapsed_ = useMemo(() => new Set(collapsedIds), [collapsedIds])
   const tree = useMemo(() => buildProjectTree(projects), [projects])
-  const rows = useMemo(() => flattenTree(tree.roots, (id) => collapsed.has(id)), [tree, collapsed])
+  const rows = useMemo(() => flattenTree(tree.roots, (id) => collapsed_.has(id)), [tree, collapsed_])
 
   // Unread activity in shared projects (activity-feed): a live query over the local
   // activity log and the synced seen markers, so it moves with every sync.
   const unread = useLiveQuery(() => unreadCounts(), [], { byProject: new Map(), total: 0 } as UnreadCounts)
 
-  // Trash count (trash-and-history): deleted tasks and projects known locally.
-  const trashCount = useLiveQuery(async () => (await db.tasks.filter((t) => !!t.deleted_at).count()) + (await db.projects.filter((p) => !!p.deleted_at).count()), [], 0)
   const openTasks = useLiveQuery(() => visibleTasks().then((l) => l.filter((t) => !t.completed_at)), [], [])
   const zone = useViewerZone()
   const counts = useMemo(() => {
@@ -63,8 +88,8 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
       if (t.assignee_id === user.id) assigned++
     }
     for (const t of openTasks) if (inToday(t, today)) due++
-    return { inbox, today: due, assigned, byProject: openCountsByProject(active, tree, collapsed) }
-  }, [openTasks, tree, collapsed, user.id, zone])
+    return { inbox, today: due, assigned, byProject: openCountsByProject(active, tree, collapsed_) }
+  }, [openTasks, tree, collapsed_, user.id, zone])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.
   // Only on a real route change, not on mount or on project edits, so a reload (or a
@@ -130,8 +155,8 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
   const [dropAt, setDropAt] = useState<DropAt | null>(null)
   const treeRef = useRef(tree)
   treeRef.current = tree
-  const collapsedRef = useRef(collapsed)
-  collapsedRef.current = collapsed
+  const collapsedRef = useRef(collapsed_)
+  collapsedRef.current = collapsed_
   function startDrag(e: React.PointerEvent, n: ProjectNode) {
     if (!movable(n.id)) return
     const own = new Set(flattenTree([n]).map((x) => x.id))
@@ -176,100 +201,115 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
     e.stopPropagation()
     const has = n.children.length > 0
     if (e.key === 'ArrowLeft') {
-      if (has && !collapsed.has(n.id)) void toggleCollapsedProject(n.id, true)
+      if (has && !collapsed_.has(n.id)) void toggleCollapsedProject(n.id, true)
       else focusRow(n.parent)
-    } else if (has && collapsed.has(n.id)) void toggleCollapsedProject(n.id, false)
+    } else if (has && collapsed_.has(n.id)) void toggleCollapsedProject(n.id, false)
     else if (has) focusRow(n.children[0].id)
   }
 
-  const item = (r: Route, label: string, icon: IconName, count?: number) => {
-    // Day and Week stay highlighted whatever date they show.
-    const active = r.view === 'day' || r.view === 'week' ? route.view === r.view : JSON.stringify(r) === JSON.stringify(route)
-    return <SidebarItem key={label} icon={icon} label={label} count={count} active={active} onClick={() => navigate(r)} />
+  const item = (r: Route, label: string, icon: IconName, count?: number, badge?: ReactNode) => {
+    // Day and Week are one Calendar destination (ux-overhaul).
+    const active = r.view === 'day' || r.view === 'week' ? route.view === 'day' || route.view === 'week' : JSON.stringify(r) === JSON.stringify(route)
+    return <SidebarItem key={label} icon={icon} label={label} count={count} badge={badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} />
   }
+
+  // The More group (app-shell "Sidebar structure"): the less frequent destinations,
+  // collapsed by default on this device; a promoted destination (appearance
+  // preferences, synced) leaves it for the primary items.
+  const promoted = appearance.sidebar ?? []
+  const unreadBadge = unread.total > 0 ? <UnreadBadge n={unread.total} label="unread updates" /> : undefined
+  const more: { id: Promotable | 'ask'; node: ReactNode }[] = [
+    { id: 'anytime', node: item({ view: 'anytime' }, 'Anytime', 'layers') },
+    { id: 'someday', node: item({ view: 'someday' }, 'Someday', 'archive') },
+    // Assigned to me only where tasks can be assigned: when the account shares a project.
+    ...(sharedIds.size > 0 ? [{ id: 'assigned' as const, node: item({ view: 'assigned' }, 'Assigned to me', 'user-check') }] : []),
+    { id: 'completed', node: item({ view: 'completed' }, 'Completed', 'circle-check-big') },
+    ...(sharedIds.size > 0 ? [{ id: 'feed' as const, node: item({ view: 'feed' }, 'Updates', 'newspaper', undefined, unreadBadge) }] : []),
+    { id: 'trash', node: item({ view: 'trash' }, 'Trash', 'trash-2') },
+    { id: 'filter', node: item({ view: 'filter' }, 'Filter', 'filter') },
+    ...(assistant?.available ? [{ id: 'ask' as const, node: item({ view: 'ask' }, 'Ask', 'message-circle') }] : []),
+  ]
+  const primaryExtra = more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
+  const rest = more.filter((m) => !primaryExtra.includes(m))
+  const calendarMode = readCalendarMode()
 
   return (
     // One scroller (ux-overhaul, app-shell "Sidebar structure"): the name and the
     // primary destinations stay at the top, Help and the account at the bottom, and
-    // only the views, projects and labels between them scroll.
-    <div className="flex h-full flex-col">
-      <div className="shrink-0 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-      <div className="mb-4 flex items-center gap-2 px-1">
-        <img src="/favicon.svg" alt="" className="h-7 w-7" />
-        <span className="font-semibold">OpenTodo</span>
+    // only the filters, projects and labels between them scroll.
+    <div className="flex h-full flex-col" data-sidebar-collapsed={collapsed || undefined}>
+      <div className={`shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))] ${collapsed ? 'px-1.5' : 'px-3'}`}>
+        <div className={`mb-4 flex items-center gap-2 ${collapsed ? 'justify-center' : 'px-1'}`}>
+          <img src="/favicon.svg" alt="" className="h-7 w-7" />
+          {!collapsed && <span className="font-semibold">OpenTodo</span>}
+        </div>
+        <nav className="space-y-0.5" aria-label="Primary" data-sidebar-primary>
+          {item({ view: 'inbox' }, 'Inbox', 'inbox', counts.inbox)}
+          {item({ view: 'today' }, 'Today', 'calendar-check', counts.today)}
+          {item({ view: 'upcoming' }, 'Upcoming', 'calendar-days')}
+          {item({ view: calendarMode }, 'Calendar', 'calendar-range')}
+          {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
+        </nav>
+        <SidebarGroup title="More" collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={unreadBadge} collapsed={collapsed} tight testId="sidebar-more">
+          {rest.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
+        </SidebarGroup>
       </div>
-      <nav className="space-y-0.5">
-        {item({ view: 'inbox' }, 'Inbox', 'inbox', counts.inbox)}
-        {item({ view: 'today' }, 'Today', 'calendar-check', counts.today)}
-        {item({ view: 'upcoming' }, 'Upcoming', 'calendar-days')}
-        {item({ view: 'anytime' }, 'Anytime', 'layers')}
-        {item({ view: 'someday' }, 'Someday', 'archive')}
-        {item({ view: 'assigned' }, 'Assigned to me', 'user-check', counts.assigned)}
-        {item({ view: 'day' }, 'Day', 'clock')}
-        {item({ view: 'week' }, 'Week', 'calendar-range')}
-        {item({ view: 'completed' }, 'Completed', 'circle-check-big')}
-        {item({ view: 'filter' }, 'Filter', 'filter')}
-        {assistant?.available && item({ view: 'ask' }, 'Ask', 'message-circle')}
-        {item({ view: 'trash' }, 'Trash', 'trash-2', trashCount)}
-        {sharedIds.size > 0 && (
-          <SidebarItem icon="newspaper" label="Activity" active={route.view === 'feed'} onClick={() => navigate({ view: 'feed' })}
-            badge={unread.total > 0 ? <UnreadBadge n={unread.total} label="unread in shared projects" /> : undefined} />
-        )}
-      </nav>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-2" data-sidebar-scroll>
-      <SidebarGroup title="Views" actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label="All views">All</SidebarGroupAction>}>
+      <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll>
+      <SidebarGroup title="Filters" collapsed={collapsed} actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label="All filters">All</SidebarGroupAction>}>
         {pinnedViews.map((v) => {
           const active = route.view === 'view' && route.id === v.id
           const c = viewCounts.get(v.id)
           return (
             <div key={v.id} className="group flex items-center">
-              <SidebarItem data-view-id={v.id} active={active} onClick={() => navigate({ view: 'view', id: v.id })} label={v.name}
+              <SidebarItem data-view-id={v.id} active={active} collapsed={collapsed} onClick={() => navigate({ view: 'view', id: v.id })} label={v.name}
                 leading={<span style={{ color: v.color }}><Icon name={viewIcon(v)} /></span>}
                 count={!isDashboard(v) && c && c.ok ? c.count : undefined}
                 badge={!isDashboard(v) && c && !c.ok ? <span className="text-meta text-danger" aria-label={c.error}>!</span> : undefined} />
-              <ViewMenu view={v} className="hover-reveal" />
+              {!collapsed && <ViewMenu view={v} className="hover-reveal" />}
             </div>
           )
         })}
-        {pinnedViews.length === 0 && (
+        {pinnedViews.length === 0 && !collapsed && (
           <p className="px-2 py-1 text-meta text-faint">Save a filter with <span className="ui-kbd">s</span> to pin it here.</p>
         )}
       </SidebarGroup>
-      <SidebarGroup title="Projects" actions={<SidebarGroupAction onClick={startAdding} aria-label="New project"><Icon name="plus" size="xs" /></SidebarGroupAction>}>
+      <SidebarGroup title="Projects" collapsed={collapsed} actions={<SidebarGroupAction onClick={startAdding} aria-label="New project"><Icon name="plus" size="xs" /></SidebarGroupAction>}>
         <ul role="tree">
           {rows.map((n) => {
             const p = n.item
             const has = n.children.length > 0
-            const isCollapsed = collapsed.has(n.id)
+            const isCollapsed = collapsed_.has(n.id)
             const count = counts.byProject.get(n.id)
             const drop = dropAt?.id === n.id ? dropAt.zone : null
             return (
               <li key={n.id} role="treeitem" aria-level={n.depth + 1} aria-expanded={has ? !isCollapsed : undefined}
                 data-project-row={n.id} data-drop-target={`project:${n.id}`}
                 onPointerDown={movable(n.id) ? (e) => startDrag(e, n) : undefined}
-                className={`relative flex items-center rounded-control ${drop === 'inside' ? 'ring-2 ring-accent' : ''}`} style={{ paddingLeft: `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
+                className={`relative flex items-center rounded-control ${drop === 'inside' ? 'ring-2 ring-accent' : ''}`} style={{ paddingLeft: collapsed ? 0 : `${Math.min(n.depth, MAX_INDENT) * INDENT_REM}rem` }}>
                 {(drop === 'before' || drop === 'after') && (
                   <span aria-hidden="true" data-drop-indicator={drop}
                     className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-accent ${drop === 'before' ? '-top-px' : '-bottom-px'}`} />
                 )}
-                <span className="flex h-6 w-4 shrink-0 items-center justify-center">
-                  {has && (
-                    <button type="button" tabIndex={-1} aria-label={isCollapsed ? `Expand ${p.name}` : `Collapse ${p.name}`}
-                      onClick={() => void toggleCollapsedProject(n.id)}
-                      className="flex h-5 w-4 items-center justify-center rounded-chip text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised">
-                      <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${isCollapsed ? '' : 'rotate-90'}`} />
-                    </button>
-                  )}
-                </span>
+                {!collapsed && (
+                  <span className="flex h-6 w-4 shrink-0 items-center justify-center">
+                    {has && (
+                      <button type="button" tabIndex={-1} aria-label={isCollapsed ? `Expand ${p.name}` : `Collapse ${p.name}`}
+                        onClick={() => void toggleCollapsedProject(n.id)}
+                        className="flex h-5 w-4 items-center justify-center rounded-chip text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised">
+                        <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${isCollapsed ? '' : 'rotate-90'}`} />
+                      </button>
+                    )}
+                  </span>
+                )}
                 <SidebarItem
                   data-project-id={n.id}
                   depth={n.depth}
                   active={route.view === 'project' && route.id === n.id}
+                  collapsed={collapsed}
                   onClick={() => navigate({ view: 'project', id: n.id })}
                   onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => onRowKey(e, n)}
                   label={p.name}
-                  leading={<span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: p.color }} />}
+                  leading={<ProjectMark project={p} />}
                   badge={<>
                     {sharedIds.has(n.id) && <span className="text-faint" aria-label="Shared project"><Icon name="users" size={14} /></span>}
                     {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label="unread changes" /> : null}
@@ -281,7 +321,7 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
             )
           })}
         </ul>
-        {adding && (
+        {adding && !collapsed && (
           <form onSubmit={(e) => void submit(e)} className="space-y-1 px-1 pt-1">
             <input className="ui-input" autoFocus placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Escape' && setAdding(false)} />
@@ -293,26 +333,43 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
             </div>
           </form>
         )}
-        {projects.length === 0 && !adding && <p className="px-2 py-1 text-meta text-faint">No projects yet.</p>}
+        {projects.length === 0 && !adding && !collapsed && <p className="px-2 py-1 text-meta text-faint">No projects yet.</p>}
       </SidebarGroup>
-      <SidebarGroup title="Labels" collapsible open={labelsOpen} onToggle={() => setLabelsOpen((v) => !v)}
+      <SidebarGroup title="Labels" collapsible open={labelsOpen} onToggle={() => setLabelsOpen((v) => !v)} collapsed={collapsed}
         actions={<>
           <SidebarGroupAction active={route.view === 'labels'} onClick={() => navigate({ view: 'labels' })} aria-label="All labels">All</SidebarGroupAction>
           <SidebarGroupAction onClick={() => { setLabelsOpen(true); setAddingLabel(true) }} aria-label="New label"><Icon name="plus" size="xs" /></SidebarGroupAction>
         </>}>
-        {labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} />)}
-        {addingLabel && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
-        {labels.length === 0 && !addingLabel && <p className="px-2 py-1 text-meta text-faint">No labels yet.</p>}
+        {!collapsed && labels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} />)}
+        {addingLabel && !collapsed && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
+        {labels.length === 0 && !addingLabel && !collapsed && <p className="px-2 py-1 text-meta text-faint">No labels yet.</p>}
       </SidebarGroup>
       </div>
-      <div className="flex shrink-0 flex-col gap-0.5 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2" data-sidebar-footer>
-      <SidebarItem icon="circle-help" label="Help" active={route.view === 'help'} onClick={() => navigate({ view: 'help' })} />
-      <SidebarItem active={route.view === 'settings' || route.view === 'import'} onClick={() => navigate({ view: 'settings' })}
-        leading={<span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-hint font-semibold text-on-accent">{(user.name || user.email).slice(0, 1).toUpperCase()}</span>}
-        label={user.name || user.email} badge={<span className="text-faint" aria-hidden="true"><Icon name="settings" /></span>} />
+      {/* Pinned footer (app-shell "No desktop top bar"): Help, search, notifications, the sync dot, the account, collapse. */}
+      <div className={`flex shrink-0 flex-col gap-0.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-footer>
+        <SidebarItem icon="circle-help" label="Help" active={route.view === 'help'} collapsed={collapsed} onClick={() => navigate({ view: 'help' })} />
+        {onSearch && <SidebarItem icon="search" label="Search and commands" collapsed={collapsed} onClick={onSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />}
+        <div className={`flex items-center gap-0.5 ${collapsed ? 'flex-col' : ''}`}>
+          <NotificationBell compact={collapsed} />
+          <SyncStatus compact={collapsed} />
+          {!collapsed && <span className="flex-1" />}
+          {onToggleCollapse && (
+            <IconButton icon={collapsed ? 'panel-left-open' : 'panel-left-close'} label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} shortcut="[" size="sm"
+              className="hidden lg:inline-flex" onClick={onToggleCollapse} data-sidebar-collapse aria-pressed={collapsed} />
+          )}
+        </div>
+        <SidebarItem active={route.view === 'settings' || route.view === 'import'} collapsed={collapsed} onClick={() => navigate({ view: 'settings' })}
+          leading={<span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-hint font-semibold text-on-accent">{(user.name || user.email).slice(0, 1).toUpperCase()}</span>}
+          label={user.name || user.email} badge={<span className="text-faint" aria-hidden="true"><Icon name="settings" /></span>} />
       </div>
     </div>
   )
+}
+
+/** A project's mark: its icon in its colour, or the colour dot (project-organization "Project icon"). */
+export function ProjectMark({ project, size = 'sm' }: { project: Pick<Project, 'color' | 'icon'>; size?: 'sm' | 'md' }) {
+  if (project.icon && isIconName(project.icon)) return <span style={{ color: project.color }} className="flex items-center"><Icon name={project.icon} size={size === 'md' ? 'md' : 'sm'} /></span>
+  return <span className={`inline-block shrink-0 rounded-full ${size === 'md' ? 'h-3 w-3' : 'h-2.5 w-2.5'}`} style={{ backgroundColor: project.color }} />
 }
 
 /** Unread activity count (activity-feed): others' changes since the project's activity was last seen. */

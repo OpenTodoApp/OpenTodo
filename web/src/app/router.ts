@@ -1,6 +1,7 @@
 // A deliberately tiny history-based router: the app has a handful of views and
 // every extra kilobyte matters on a low-end phone.
 import { useMemo, useSyncExternalStore } from 'react'
+import { readCalendarMode } from '../lib/calendarMode'
 
 export type Route =
   | { view: 'inbox' }
@@ -69,6 +70,9 @@ export function parseRoute(pathname: string): Route {
     case 'week':
       // An optional anchor date; anything that is not YYYY-MM-DD means "today".
       return parts[1] && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? { view: parts[0], date: parts[1] } : { view: parts[0] }
+    case 'calendar':
+      // One Calendar destination (ux-overhaul): Day or Week as last used on this device.
+      return { view: readCalendarMode() }
     case 'settings':
       // /settings/import is the import screen; an unknown section shows the overview.
       if (parts[1] === 'import') return { view: 'import' }
@@ -85,7 +89,9 @@ export function parseRoute(pathname: string): Route {
       return { view: 'share' }
     case 'trash':
       return { view: 'trash' }
+    case 'updates':
     case 'activity':
+      // "Updates" (ux-overhaul vocabulary); /activity is the old address.
       return { view: 'feed' }
     case 'ask':
       return { view: 'ask' }
@@ -118,6 +124,18 @@ export function parseRoute(pathname: string): Route {
   }
 }
 
+/**
+ * Old and alias addresses (`/activity`, `/calendar`, earlier settings ids) open
+ * their page under its current address, replacing the entry (no extra history).
+ */
+export function canonicalPath(pathname: string): string | null {
+  const [path] = pathname.split('?')
+  const parts = path.split('/').filter(Boolean)
+  if (parts[0] === 'activity' || parts[0] === 'calendar') return routePath(parseRoute(path))
+  if (parts[0] === 'settings' && parts[1] && parts[1] in LEGACY_SETTINGS_IDS) return routePath(parseRoute(path))
+  return null
+}
+
 function safeDecode(s: string): string {
   try {
     return decodeURIComponent(s)
@@ -148,7 +166,7 @@ export function routePath(r: Route): string {
     case 'import':
       return '/settings/import'
     case 'feed':
-      return '/activity'
+      return '/updates'
     case 'ask':
       return '/ask'
     case 'filter':

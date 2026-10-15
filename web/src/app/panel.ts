@@ -121,3 +121,9 @@ export function resetPanel(): void {
   handlers = {}
   emit()
 }
+
+/** The key of the custom occupant in the slot, or null (a task or nothing). */
+export function usePanelOccupantKey(): string | null {
+  const o = usePanel()
+  return o?.kind === 'custom' ? o.key : null
+}

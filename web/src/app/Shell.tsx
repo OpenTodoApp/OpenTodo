@@ -1,10 +1,11 @@
-import { Icon } from '../ui'
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { IconButton, PageActions, usePageBar } from '../ui'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
 import { describeRejected } from '../lib/sharing'
 import { dismissRejected, useSyncStatus } from '../lib/sync'
-import { navigate, useRoute } from './router'
+import { canonicalPath, navigate, useRoute } from './router'
+import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { CalendarView } from './CalendarView'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
@@ -17,7 +18,6 @@ import { TrashView } from './TrashView'
 import { FeedView } from './FeedView'
 import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
-import { SyncStatus } from './SyncStatus'
 import { ReminderToasts } from './ReminderToasts'
 import { ArchivePrompt } from './ArchivePrompt'
 import { isGPending, openTaskInList, setGPending } from './signals'
@@ -27,7 +27,6 @@ import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { db } from '../lib/db'
 import { watchViewerZone } from '../lib/dates'
-import { NotificationBell } from './NotificationBell'
 import { UndoToast } from './bulk/UndoToast'
 import { setCurrentUserId } from '../lib/sharing'
 import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
@@ -65,6 +64,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     // `?task=<id>` (a notification click, a shared link, a reload with the panel
     // open): at the root, show the task in its own list instead of the start view;
     // on any other page, reopen it in the panel there (app-shell).
+    // Old and alias addresses (/activity, /calendar, earlier settings ids) are replaced in place.
+    const canonical = canonicalPath(location.pathname)
+    if (canonical && canonical !== location.pathname) history.replaceState(null, '', `${canonical}${location.search}`)
     const taskParam = taskIdFromAddress()
     if (taskParam) {
       if (location.pathname === '/') {
@@ -95,7 +97,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   }, [route])
 
   // Whether the owner turned the assistant on for this account (cached offline).
-  const assistant = useAssistantStatus()
+  useAssistantStatus()
   const assistantOpen = useAssistantOpen()
   const [assistantLoaded, setAssistantLoaded] = useState(false)
   useEffect(() => { if (assistantOpen) setAssistantLoaded(true) }, [assistantOpen])
@@ -174,6 +176,12 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         e.preventDefault()
         setShowHelp((v) => !v)
       }
+      // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar");
+      // the calendar keeps `[` / `]` for its range until the shortcut registry lands.
+      if (e.key === '[' && !/^\/(day|week)/.test(location.pathname) && window.matchMedia?.('(min-width: 1024px)').matches) {
+        e.preventDefault()
+        toggleSidebarCollapsed()
+      }
       // Shift+I opens the assistant (`g` then Shift+I stays Import, handled above).
       if (e.key === 'I' && showLauncher(assistantStatus())) {
         e.preventDefault()
@@ -185,6 +193,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   }, [])
 
   const [showHelp, setShowHelp] = useState(false)
+  const sidebar = useSidebarLayout()
+  const openPalette = () => { setPaletteLoaded(true); setPaletteOpen(true) }
   const vim = useVimEnabled()
   const [vimHelp, setVimHelp] = useState<HelpSection | null>(null)
   const helpRequest = useHelpRequest()
@@ -192,30 +202,19 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   return (
     <div className="flex h-full">
       {sidebarOpen && <div className="fixed inset-0 z-[45] bg-scrim md:hidden" onClick={() => setSidebarOpen(false)} />}
-      <aside data-sidebar
-        className={`fixed inset-y-0 left-0 z-[45] w-64 max-w-[85vw] pl-[env(safe-area-inset-left)] transform border-r border-default bg-canvas transition-transform md:static md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell). */}
+      <aside data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
+        style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
+        className={`fixed inset-y-0 left-0 z-[45] flex w-64 max-w-[85vw] transform border-r border-default bg-canvas pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <Sidebar route={route} user={user} />
+        <div className="min-w-0 flex-1">
+          <Sidebar route={route} user={user} onSearch={openPalette} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
+        </div>
+        {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] md:px-6">
-          <button className="btn-ghost touch-target md:hidden" aria-label="Open menu" onClick={() => setSidebarOpen(true)}><Icon name="menu" size="md" /></button>
-          <div className="flex-1" />
-          {showLauncher(assistant) && (
-            <button type="button" className="btn-ghost touch-target text-sm" onClick={openAssistant} aria-haspopup="dialog" title="Assistant (Shift+I)" data-assistant-launcher>
-              Assistant
-            </button>
-          )}
-          <NotificationBell />
-          <SyncStatus />
-          <button type="button" className="btn-ghost touch-target" onClick={() => { setPaletteLoaded(true); setPaletteOpen(true) }}
-            title="Search and commands (Ctrl+K)" aria-label="Search and commands (Ctrl+K)" aria-haspopup="dialog" data-palette-button>
-            <Icon name="search" size="md" />
-          </button>
-          <button className="btn-ghost touch-target text-xs" onClick={() => setShowHelp(true)} title="Keyboard shortcuts" aria-label="Keyboard shortcuts" aria-haspopup="dialog">
-            <span className="kbd">?</span>
-          </button>
-        </header>
+        {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
+        <PhoneBar onMenu={() => setSidebarOpen(true)} />
         {notice && (
           <div role="status" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-sm text-on-warning-soft md:px-6">
             <p className="flex-1">{notice}</p>
@@ -274,5 +273,45 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <UndoToast />
       <ArchivePrompt />
     </div>
+  )
+}
+
+/** The sidebar's drag edge (app-shell "Resizable sidebar"): 15 to 22.5 rem, per device; arrows resize it from the keyboard. */
+function SidebarResizer({ width }: { width: number }) {
+  const dragging = useRef<{ startX: number; startWidth: number } | null>(null)
+  const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+  return (
+    <div role="separator" aria-orientation="vertical" aria-label="Resize sidebar" aria-valuemin={SIDEBAR_MIN_REM} aria-valuemax={SIDEBAR_MAX_REM} aria-valuenow={width}
+      tabIndex={0} data-sidebar-resizer
+      className="hidden w-1 shrink-0 cursor-col-resize self-stretch hover:bg-accent/40 focus-visible:bg-accent focus-visible:outline-none lg:block"
+      onPointerDown={(e) => {
+        dragging.current = { startX: e.clientX, startWidth: width }
+        e.currentTarget.setPointerCapture(e.pointerId)
+      }}
+      onPointerMove={(e) => {
+        const d = dragging.current
+        if (d) setSidebarWidth(d.startWidth + (e.clientX - d.startX) / rem())
+      }}
+      onPointerUp={() => { dragging.current = null }}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); setSidebarWidth(width + (e.key === 'ArrowRight' ? 0.5 : -0.5)) }
+        if (e.key === 'Home') { e.preventDefault(); setSidebarWidth(SIDEBAR_MIN_REM) }
+        if (e.key === 'End') { e.preventDefault(); setSidebarWidth(SIDEBAR_MAX_REM) }
+      }} />
+  )
+}
+
+/** Below 768 px: the menu button, the page's title and its actions (app-shell "No desktop top bar"), from the page-bar store. */
+function PhoneBar({ onMenu }: { onMenu: () => void }) {
+  const bar = usePageBar()
+  return (
+    <header className="flex min-h-12 items-center gap-1 border-b border-default px-2 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden" data-phone-bar>
+      <IconButton icon="menu" label="Open menu" onClick={onMenu} className="touch-target" />
+      {bar?.back && <IconButton icon="arrow-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />}
+      <div className="min-w-0 flex-1 truncate text-h3 font-semibold text-strong" data-phone-title>{bar?.title}</div>
+      <div className="flex shrink-0 items-center gap-1" data-page-actions>
+        {bar && <PageActions actions={bar.actions} overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
+      </div>
+    </header>
   )
 }

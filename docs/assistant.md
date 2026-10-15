@@ -4,7 +4,7 @@ summary: Plan and change your tasks by talking, with a model provider your serve
 audience: user
 section: Guides
 specs: [in-app-assistant, assistant-skills]
-screens: [settings/assistant]
+screens: [settings/assistant, ask#open-the-assistant]
 order: 75
 card: assistant-chat
 ---

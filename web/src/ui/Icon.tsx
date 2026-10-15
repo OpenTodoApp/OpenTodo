@@ -5,6 +5,11 @@ import { ICONS, type IconName } from './icons/lucide'
 
 export type { IconName }
 
+/** True for a name in the bundled set (a stored project icon may come from a newer client). */
+export function isIconName(name: string | null | undefined): name is IconName {
+  return !!name && Object.prototype.hasOwnProperty.call(ICONS, name)
+}
+
 const SIZES = { xs: 12, sm: 16, md: 20, lg: 24 } as const
 export type IconSize = keyof typeof SIZES | number
 

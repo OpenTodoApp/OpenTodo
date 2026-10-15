@@ -4,6 +4,7 @@
 // moves and live counts stay in the app.
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { Icon, type IconName } from '../Icon'
+import { Tooltip } from '../Tooltip'
 
 const ACTIVE = 'bg-accent-soft font-medium text-on-accent-soft'
 const IDLE = 'text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised'
@@ -20,23 +21,26 @@ export interface SidebarItemProps extends Omit<ButtonHTMLAttributes<HTMLButtonEl
   active?: boolean
   /** Tree depth; indentation is applied by the row that owns the item, this only keeps the slot. */
   depth?: number
+  /** Icon rail (app-shell "Resizable sidebar"): the icon only, the name as a tooltip. */
+  collapsed?: boolean
 }
 
 /** A destination or an entity in the sidebar: icon or leading, label, badge, count. */
 export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(function SidebarItem(
-  { label, icon, leading, count, badge, active = false, depth, className, type = 'button', ...rest },
+  { label, icon, leading, count, badge, active = false, depth, collapsed = false, className, type = 'button', ...rest },
   ref,
 ) {
-  return (
+  const button = (
     <button ref={ref} type={type} aria-current={active ? 'page' : undefined} data-sidebar-item data-depth={depth}
-      className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control px-2 py-1.5 text-left text-body ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
+      className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
       {...rest}>
       {icon ? <span className="flex w-5 shrink-0 justify-center text-muted" aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {badge}
-      {count ? <span className="text-meta tabular-nums text-faint" data-count>{count}</span> : null}
+      <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{label}</span>
+      {!collapsed && badge}
+      {!collapsed && count ? <span className="text-meta tabular-nums text-faint" data-count>{count}</span> : null}
     </button>
   )
+  return collapsed && typeof label === 'string' ? <Tooltip label={label} side="right">{button}</Tooltip> : button
 })
 
 export interface SidebarGroupProps {
@@ -49,24 +53,33 @@ export interface SidebarGroupProps {
   actions?: ReactNode
   /** Accessible name of the group's navigation landmark; defaults to the title. */
   label?: string
+  /** A badge on the heading while the group is closed (unread updates in More). */
+  badge?: ReactNode
+  /** Icon rail: no heading or actions, items only. */
+  collapsed?: boolean
+  /** Primary-level group (More): no top margin, items in the rail. */
+  tight?: boolean
   children: ReactNode
   testId?: string
 }
 
 /** A titled group of items: Filters, Projects, Labels. */
-export function SidebarGroup({ title, collapsible = false, open = true, onToggle, actions, label, children, testId }: SidebarGroupProps) {
+export function SidebarGroup({ title, collapsible = false, open = true, onToggle, actions, label, badge, collapsed = false, tight = false, children, testId }: SidebarGroupProps) {
   const heading = collapsible ? (
     <button type="button" className="flex min-h-6 items-center gap-1 rounded-chip uppercase hover:text-muted" onClick={onToggle} aria-expanded={open}>
       <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />{title}
+      {!open && badge}
     </button>
   ) : <span className="flex min-h-6 items-center">{title}</span>
   return (
     <nav aria-label={label ?? title} data-sidebar-group={title} data-testid={testId}>
-      <div className="mt-5 mb-1 flex items-center justify-between px-2 text-hint font-semibold uppercase tracking-wide text-faint">
-        {heading}
-        {actions && <span className="flex items-center gap-1 normal-case">{actions}</span>}
-      </div>
-      {(!collapsible || open) && <div className="space-y-0.5">{children}</div>}
+      {!collapsed && (
+        <div className={`${tight ? 'mt-2' : 'mt-5'} mb-1 flex items-center justify-between px-2 text-hint font-semibold uppercase tracking-wide text-faint`}>
+          {heading}
+          {actions && <span className="flex items-center gap-1 normal-case">{actions}</span>}
+        </div>
+      )}
+      {(!collapsible || open || collapsed) && <div className="space-y-0.5">{children}</div>}
     </nav>
   )
 }

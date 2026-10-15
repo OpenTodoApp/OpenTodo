@@ -61,21 +61,21 @@ interface Command {
   run: () => unknown
 }
 
-const ROUTES: { label: string; route: Route; icon: IconName; shortcut?: string }[] = [
+const ROUTES: { label: string; route: Route; icon: IconName; shortcut?: string; keywords?: string }[] = [
   { label: 'Go to Inbox', route: { view: 'inbox' }, icon: 'inbox', shortcut: 'g i' },
   { label: 'Go to Today', route: { view: 'today' }, icon: 'calendar-check', shortcut: 'g t' },
   { label: 'Go to Upcoming', route: { view: 'upcoming' }, icon: 'calendar-days', shortcut: 'g u' },
   { label: 'Go to Anytime', route: { view: 'anytime' }, icon: 'layers', shortcut: 'g n' },
   { label: 'Go to Someday', route: { view: 'someday' }, icon: 'archive', shortcut: 'g o' },
   { label: 'Go to Assigned to me', route: { view: 'assigned' }, icon: 'user-check', shortcut: 'g a' },
-  { label: 'Go to Day calendar', route: { view: 'day' }, icon: 'clock', shortcut: 'g d' },
-  { label: 'Go to Week calendar', route: { view: 'week' }, icon: 'calendar-range', shortcut: 'g w' },
+  { label: 'Go to Calendar (Day)', route: { view: 'day' }, icon: 'clock', shortcut: 'g d', keywords: 'day calendar' },
+  { label: 'Go to Calendar (Week)', route: { view: 'week' }, icon: 'calendar-range', shortcut: 'g w', keywords: 'week calendar' },
   { label: 'Go to Completed', route: { view: 'completed' }, icon: 'circle-check-big', shortcut: 'g c' },
   { label: 'Go to Labels', route: { view: 'labels' }, icon: 'tag', shortcut: 'g l' },
   { label: 'Go to Filter', route: { view: 'filter' }, icon: 'filter', shortcut: 'g f' },
-  { label: 'Go to Views', route: { view: 'views' }, icon: 'list', shortcut: 'g v' },
+  { label: 'Go to Filters', route: { view: 'views' }, icon: 'list', shortcut: 'g v', keywords: 'views saved filters boards dashboards' },
   { label: 'Go to Trash', route: { view: 'trash' }, icon: 'trash-2', shortcut: 'g x' },
-  { label: 'Go to Activity', route: { view: 'feed' }, icon: 'history', shortcut: 'g h' },
+  { label: 'Go to Updates', route: { view: 'feed' }, icon: 'newspaper', shortcut: 'g h', keywords: 'activity feed changes' },
   { label: 'Go to Ask', route: { view: 'ask' }, icon: 'message-circle', shortcut: 'g k' },
   { label: 'Open Help', route: { view: 'help' }, icon: 'list', shortcut: 'g ?' },
   { label: 'Import data', route: { view: 'import' }, icon: 'upload', shortcut: 'g Shift+I' },
@@ -197,7 +197,7 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'new:project', label: 'New project', icon: 'plus', keywords: 'add create', run: () => prompt('New project', 'Project name', '', async (name) => navigate({ view: 'project', id: await createProject({ name }) })) },
     { id: 'new:label', label: 'New label', icon: 'tag', keywords: 'add create', run: () => prompt('New label', 'Label name', '', async (name) => navigate({ view: 'label', id: await createLabel({ name }) })) },
     { id: 'new:dashboard', label: 'New dashboard', icon: 'list', keywords: 'add create', run: () => prompt('New dashboard', 'Dashboard name', '', async (name) => navigate({ view: 'view', id: await createView({ name, kind: 'dashboard' }) })) },
-    ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}`, label: r.label, icon: r.icon, shortcut: r.shortcut, run: () => navigate(r.route) })),
+    ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
     ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: `Open Settings: ${s.label}`, icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
     { id: 'app:sync', label: 'Sync now', icon: 'rotate-ccw', run: () => syncNow() },
     { id: 'app:shortcuts', label: 'Keyboard shortcuts', icon: 'list', shortcut: '?', run: () => ctx.showShortcuts() },
@@ -216,7 +216,7 @@ export function commandEntries(ctx: PaletteContext): Entry[] {
 }
 
 function toEntry(c: Command): Entry {
-  return { kind: 'command', key: `cmd:${c.id}`, label: c.label, icon: c.icon, shortcut: c.shortcut, run: c.run }
+  return { kind: 'command', key: `cmd:${c.id}`, label: c.label, icon: c.icon, shortcut: c.shortcut, keywords: c.keywords, run: c.run }
 }
 
 /** "Search Help for …", listed after every match. */

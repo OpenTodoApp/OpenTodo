@@ -45,7 +45,6 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/NotificationsSettings.tsx',
   'src/app/PreferencesPanels.tsx',
   'src/app/ProjectActivity.tsx',
-  'src/app/ProjectHeader.tsx',
   'src/app/ProjectInviteScreen.tsx',
   'src/app/ProjectPickerField.tsx',
   'src/app/QuickAdd.tsx',
@@ -65,8 +64,6 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/ShortcutHelp.tsx',
   'src/app/Sidebar.tsx',
   'src/app/SsoPanel.tsx',
-  'src/app/SubProjects.tsx',
-  'src/app/SyncStatus.tsx',
   'src/app/TaskListView.tsx',
   'src/app/TaskRow.tsx',
   'src/app/TrashView.tsx',
@@ -88,7 +85,6 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/datetime/DateField.tsx',
   'src/app/help/HelpLink.tsx',
   'src/app/help/HelpPanel.tsx',
-  'src/app/help/HelpView.tsx',
   'src/app/menus/ActionMenu.tsx',
   'src/app/overlay/Dialog.tsx',
   'src/app/overlay/Popover.tsx',
@@ -100,7 +96,7 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/task-detail/RelativeTime.tsx',
   'src/app/vim/VimLayer.tsx',
 ]
-export const STYLE_NOT_YET_MIGRATED_MAX = 93
+export const STYLE_NOT_YET_MIGRATED_MAX = 89
 
 /** Files with a native `title` attribute on an HTML element (the Tooltip primitive replaces it). */
 export const TITLE_NOT_YET_MIGRATED: readonly string[] = [
@@ -111,22 +107,16 @@ export const TITLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/CaptureSettings.tsx',
   'src/app/EstimateField.tsx',
   'src/app/FeedView.tsx',
-  'src/app/FilterView.tsx',
   'src/app/HistoryPanel.tsx',
   'src/app/InviteLinksSection.tsx',
   'src/app/LabelsView.tsx',
   'src/app/ProjectActivity.tsx',
-  'src/app/ProjectHeader.tsx',
   'src/app/QuickAdd.tsx',
   'src/app/RecurrenceField.tsx',
   'src/app/ReminderToasts.tsx',
-  'src/app/Sections.tsx',
   'src/app/ShareDialog.tsx',
-  'src/app/Shell.tsx',
   'src/app/Sidebar.tsx',
   'src/app/SsoPanel.tsx',
-  'src/app/SubProjects.tsx',
-  'src/app/SyncStatus.tsx',
   'src/app/TaskListView.tsx',
   'src/app/TaskRow.tsx',
   'src/app/ViewsView.tsx',
@@ -145,4 +135,4 @@ export const TITLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/task-detail/TaskDetail.tsx',
   'src/app/task-detail/ZoneControl.tsx',
 ]
-export const TITLE_NOT_YET_MIGRATED_MAX = 40
+export const TITLE_NOT_YET_MIGRATED_MAX = 34

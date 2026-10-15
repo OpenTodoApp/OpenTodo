@@ -1,4 +1,3 @@
-import { HelpLink } from './help/HelpLink'
 import { Icon } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -40,7 +39,13 @@ import { useVimEnabled } from './vim/prefs'
 import { BulkActionsMenu, runBulk, SelectionBar } from './bulk/BulkActions'
 import { Dialog } from './overlay'
 import { Menu } from './overlay/Menu'
-import { MenuItem, MenuSeparator } from '../ui'
+import { ListGroupHeader, MenuItem, MenuSeparator, PageHeader, Tooltip } from '../ui'
+import { groupKey, setGroupCollapsed, useCollapsedGroups } from './collapsedGroups'
+
+/** The guide section of each list page (user-documentation "Contextual help"); projects use their header's. */
+const HELP_SCREENS: Partial<Record<Route['view'], string>> = {
+  inbox: 'inbox', today: 'today', upcoming: 'upcoming', anytime: 'anytime', someday: 'someday', completed: 'completed', assigned: 'assigned', label: 'label',
+}
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'help' } | { view: 'ask' } | { view: 'task' }>
@@ -230,7 +235,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     if (sectionGroups && liveSections.length > 0) {
       // Project list with sections: "No section" first, then each section by position.
       const folded = new Set(collapsedSections)
-      const bySection: Group[] = sectionGroups.map((g) => ({
+      const bySection: Group[] = sectionGroups.filter((g) => g.section || g.roots.length > 0).map((g) => ({
         key: `section:${g.key}`,
         heading: g.section ? g.section.name : 'No section',
         section: g.section,
@@ -263,7 +268,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       if (evening.length) g.push({ key: 'evening', heading: 'This Evening', rows: evening.map(flatRow) })
       if (waiting.length) {
         const folded = !collapsed.has(BLOCKED_OPEN_KEY)
-        g.push({ key: 'blocked', heading: `Blocked ${waiting.length}`, count: waiting.length, folded, rows: folded ? [] : waiting.map(flatRow) })
+        g.push({ key: 'blocked', heading: 'Blocked', count: waiting.length, folded, rows: folded ? [] : waiting.map(flatRow) })
       }
       return g
     }
@@ -293,6 +298,22 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Sections with only completed tasks keep a header with "n completed" and Show
+  // (task-list-presentation "Empty groups"); date, project and Later groups collapse per device.
+  const doneInProject = useLiveQuery(
+    () => (projectId ? db.tasks.where('project_id').equals(projectId).filter((t) => !!t.completed_at && !t.deleted_at).toArray() : Promise.resolve([] as Task[])),
+    [projectId], [] as Task[],
+  )
+  const doneBySection = useMemo(() => {
+    const m = new Map<string, Task[]>()
+    for (const t of doneInProject) {
+      const key = effectiveSection(t, sectionMap) ?? ''
+      m.set(key, [...(m.get(key) ?? []), t])
+    }
+    return m
+  }, [doneInProject, sectionMap])
+  const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
+  const collapsedGroups = useCollapsedGroups()
   const vimEnabled = useVimEnabled()
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const tickRows = useMemo(() => rows.map((r) => r.task.id), [rows])
@@ -892,30 +913,25 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     <div className="min-w-0 px-4 py-5 md:px-8">
         <div className={board ? 'mx-auto' : 'mx-auto max-w-3xl'} data-list-page>
           {route.view === 'project' && currentProject ? (
-            <>
-              <ProjectHeader project={currentProject} userId={userId} actions={pageActions} />
-              <div className="-mt-2 mb-3 flex items-center gap-1 text-xs" role="group" aria-label="Project layout">
-                {(['list', 'board'] as const).map((m) => (
-                  <button key={m} type="button" aria-pressed={viewMode === m} onClick={() => { if (viewMode !== m) toggleViewMode() }}
-                    className={`rounded-md px-2 py-0.5 ${viewMode === m ? 'bg-sunken dark:bg-raised font-medium' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
-                    {m === 'list' ? 'List' : 'Board'}
-                  </button>
-                ))}
-                <span className="kbd ml-1" title="Toggle list / board">v</span>
-              </div>
-            </>
+            <ProjectHeader project={currentProject} userId={userId} actions={pageActions}
+              layout={(
+                <span className="flex rounded-control border border-default text-meta" role="group" aria-label="Project layout">
+                  {(['list', 'board'] as const).map((m) => (
+                    <Tooltip key={m} label={m === 'list' ? 'List' : 'Board'} shortcut="v">
+                      <button type="button" aria-pressed={viewMode === m} onClick={() => { if (viewMode !== m) toggleViewMode() }}
+                        className={`${m === 'list' ? 'rounded-l-control' : 'rounded-r-control'} px-2 py-1 ${viewMode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
+                        {m === 'list' ? 'List' : 'Board'}
+                      </button>
+                    </Tooltip>
+                  ))}
+                </span>
+              )} />
           ) : (
-            // The page header row (ux-overhaul, task-list-presentation "Nothing between the
-            // header and the list"): title, meta, and the actions on the right.
-            <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold">
-              {currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
-              {title}
-              {route.view === 'today' && <span className="ml-2 text-sm font-normal text-faint">{dt.formatDate(today, 'heading')}</span>}
-              {route.view === 'label' && <span className="text-sm font-normal text-faint">{rows.length}</span>}
-              {route.view === 'someday' && <HelpLink screen="someday" topic="Someday" />}
-              {route.view === 'anytime' && <HelpLink screen="anytime" topic="Anytime" />}
-              <span className="ml-auto flex items-center gap-1 text-sm font-normal" data-page-actions>{pageActions}</span>
-            </h1>
+            // The page header (ux-overhaul, app-shell "Page template"; task-list-presentation
+            // "Nothing between the header and the list"): title, meta, actions, Help.
+            <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={pageActions}
+              leading={currentLabel && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: currentLabel.color }} />}
+              meta={route.view === 'today' ? dt.formatDate(today, 'heading') : route.view === 'label' ? rows.length : undefined} />
           )}
 
           {route.view !== 'completed' && (
@@ -939,6 +955,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               trigger={<span className="sr-only">Actions</span>} triggerClassName="sr-only" />
           )}
 
+          {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
           {rows.length === 0 && !(board || liveSections.length > 0) && (duration ? (
             <p className="px-2 py-8 text-center text-sm text-faint">
               No task matches this duration filter. <button className="underline" onClick={() => chooseDuration(null)}>Clear the filter</button>
@@ -969,27 +986,32 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
                 collapsed={g.sectionCollapsed}
                 onToggleCollapse={() => toggleSection(g.section?.id ?? '')}
                 onAdd={() => setAddingTo(g.section?.id ?? '')}
+                completed={doneBySection.get(g.section?.id ?? '')?.length ?? 0}
+                revealed={revealed.has(g.key)}
+                onReveal={() => setRevealed((s) => { const n = new Set(s); if (n.has(g.key)) n.delete(g.key); else n.add(g.key); return n })}
               />
               {addingTo === (g.section?.id ?? '') && projectEditable && (
                 <SectionQuickAdd project={currentProject} sectionId={g.section?.id ?? null} sectionName={g.heading ?? 'No section'} projects={projects} labels={labels} onClose={() => setAddingTo(null)} />
               )}
               <ul>{g.rows.map((r) => renderRow(r))}</ul>
+              {g.count === 0 && revealed.has(g.key) && (
+                <ul data-revealed-completed>
+                  {(doneBySection.get(g.section?.id ?? '') ?? []).map((t) => renderRow({ task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: null }))}
+                </ul>
+              )}
             </section>
-          ) : (
+          ) : g.rows.length === 0 && g.folded === undefined ? null : (
             <section key={g.key} className="mb-4" data-group={g.key}>
               {g.folded !== undefined ? (
-                <h2 className="mb-1">
-                  <button type="button" aria-expanded={!g.folded} onClick={() => toggleCollapsed(BLOCKED_OPEN_KEY)}
-                    className="touch-target flex items-center gap-1 rounded-control px-2 text-xs font-semibold uppercase tracking-wide text-faint hover:text-default">
-                    <Icon name={g.folded ? 'chevron-right' : 'chevron-down'} size="xs" />{g.heading}
-                  </button>
-                </h2>
-              ) : g.heading && <h2 className={`mb-1 px-2 text-xs font-semibold uppercase tracking-wide ${g.key === 'overdue' ? 'text-danger' : 'text-faint'}`}>{g.heading}</h2>}
-              <ul>{g.rows.map((r) => renderRow(r))}</ul>
+                <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(BLOCKED_OPEN_KEY)} tone="muted" />
+              ) : g.heading && (
+                <ListGroupHeader title={g.heading} count={g.rows.length} tone={g.key === 'overdue' ? 'danger' : 'default'}
+                  collapsed={collapsedGroups.has(groupKey(route.view, g.key))} onToggle={() => setGroupCollapsed(route.view, g.key, !collapsedGroups.has(groupKey(route.view, g.key)))} />
+              )}
+              {!(g.heading && g.folded === undefined && collapsedGroups.has(groupKey(route.view, g.key))) && <ul>{g.rows.map((r) => renderRow(r))}</ul>}
             </section>
           ))}
           {route.view === 'project' && !board && projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
-          {route.view === 'project' && <SubProjects projectId={route.id} />}
         </div>
       {prompt && (
         <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>

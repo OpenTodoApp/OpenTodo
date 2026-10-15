@@ -1,11 +1,22 @@
+// @vitest-environment happy-dom
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { findTopic, helpSections, loadHelp, searchHelp } from '../../lib/help'
 import { SHORTCUTS } from '../../lib/shortcuts'
+import { PageHeader } from '../../ui'
+import { flush, render } from '../../ui/test-utils'
 import { parseRoute, routePath } from '../router'
 import { HelpContent } from './HelpContent'
 import { HelpHeading, HelpLink } from './HelpLink'
+import { HELP_TASKS, HelpView } from './HelpView'
 import { closeHelp, openHelp } from './store'
+
+afterEach(() => { document.body.innerHTML = '' })
+
+async function waitFor(ok: () => boolean, ms = 3000) {
+  for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
+  expect(ok()).toBe(true)
+}
 
 describe('Help routes', () => {
   it('parses and builds /help, /help/<guide> and /help?q=', () => {
@@ -68,5 +79,47 @@ describe('Help entry points', () => {
     openHelp('filter')
     closeHelp()
     closeHelp()
+  })
+})
+
+describe('Help landing (ux-overhaul)', () => {
+  it('opens on the search field with eight task entries before the guides', async () => {
+    const { bundle } = await loadHelp()
+    const slugs = new Set(bundle.pages.map((p) => p.slug))
+    expect(HELP_TASKS).toHaveLength(8)
+    const r = await render(<HelpView />)
+    await waitFor(() => r.container.querySelector('[data-help-tasks]') !== null)
+    const search = r.container.querySelector<HTMLInputElement>('input#help-search')!
+    expect(document.activeElement).toBe(search)
+    const tasks = [...r.container.querySelectorAll<HTMLAnchorElement>('[data-help-task]')]
+    expect(tasks).toHaveLength(8)
+    for (const a of tasks) {
+      const page = a.getAttribute('data-help-task')!
+      if (slugs.has(page)) expect(a.getAttribute('target')).toBeNull()
+      else expect(a.getAttribute('href')).toMatch(/^https:\/\/open-todo\.app\/docs\//)
+    }
+    // Task entries come first, then the guide sections.
+    const firstGuides = r.container.querySelector('section[aria-labelledby]')!
+    expect(r.container.querySelector('[data-help-tasks]')!.compareDocumentPosition(firstGuides) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // Each in-app entry lands on a real section.
+    for (const t of HELP_TASKS) {
+      if (!slugs.has(t.page)) continue
+      if (t.anchor) expect(bundle.pages.find((p) => p.slug === t.page)!.html, `${t.page}#${t.anchor}`).toContain(`id="${t.anchor}"`)
+    }
+    await r.unmount()
+  })
+
+  it('page headers offer Help for their screen, and every page and old settings panel has a screen id', async () => {
+    const html = renderToStaticMarkup(<PageHeader title="Inbox" help="inbox" />)
+    expect(html).toContain('data-help-screen="inbox"')
+    expect(html).toContain('aria-label="Help"')
+    const { bundle } = await loadHelp()
+    for (const id of ['inbox', 'today', 'upcoming', 'anytime', 'someday', 'completed', 'calendar', 'project', 'label', 'labels', 'filters', 'filter', 'saved-filter', 'dashboard', 'trash', 'updates', 'ask', 'task-panel', 'quick-add', 'settings']) {
+      expect(bundle.screens[id], id).toBeDefined()
+    }
+    for (const id of ['settings/account', 'settings/preferences', 'settings/integrations', 'settings/admin', 'settings/session']) {
+      expect(bundle.screens[id]?.page, id).toBe('settings')
+      expect(bundle.screens[id]?.anchor, id).toBeTruthy()
+    }
   })
 })

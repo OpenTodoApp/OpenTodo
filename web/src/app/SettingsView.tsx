@@ -1,4 +1,4 @@
-import { Icon } from '../ui'
+import { Button, Icon, PageBody, PageHeader } from '../ui'
 import { DateTimeSection } from './DateTimeSettings'
 import { lazy, type MouseEvent, type RefObject, Suspense, useEffect, useRef } from 'react'
 import type { User } from '../lib/types'
@@ -49,6 +49,13 @@ export function followLink(e: Pick<MouseEvent<HTMLAnchorElement>, 'button' | 'me
  * sections; `/settings/<section>` opens one. A section this user may not see (or an
  * unknown one) shows the overview.
  */
+/** The guide section each Settings page's Help action opens (documentation "Help links name the same screens"). */
+const HELP_SCREENS: Partial<Record<SettingsSectionId, string>> = {
+  account: 'settings/account', security: 'settings/security', encryption: 'settings/encryption', activity: 'settings/activity',
+  preferences: 'settings/preferences', notifications: 'settings/notifications', capture: 'settings/capture', projects: 'settings/projects',
+  data: 'settings/data', integrations: 'settings/integrations', ai: 'settings/ai', admin: 'settings/admin', backups: 'settings/backups', access: 'settings/access',
+}
+
 export function SettingsView({ user, onLogout, section }: { user: User; onLogout: () => void; section?: SettingsSectionId }) {
   const current = resolveSection(user, section)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -90,11 +97,8 @@ export function SettingsView({ user, onLogout, section }: { user: User; onLogout
         ))}
       </nav>
       <div className="min-w-0 flex-1 space-y-6 lg:max-w-2xl">
-        <div>
-          <a className="btn-ghost touch-target -ml-3 text-sm lg:hidden" href={routePath({ view: 'settings' })} data-settings-back
-            onClick={(e) => followLink(e, { view: 'settings' })}><Icon name="arrow-left" /> Settings</a>
-          <h1 ref={headingRef} tabIndex={-1} className="text-h1 font-semibold outline-none">{current.label}</h1>
-        </div>
+        <PageHeader title={current.label} titleRef={headingRef} titleTabIndex={-1} help={HELP_SCREENS[current.id] ?? 'settings'} sticky={false}
+          back={{ label: 'Settings', href: routePath({ view: 'settings' }), onClick: () => navigate({ view: 'settings' }), hideFrom: 'lg' }} />
         <SectionContent id={current.id} user={user} onLogout={onLogout} />
       </div>
     </div>
@@ -103,11 +107,9 @@ export function SettingsView({ user, onLogout, section }: { user: User; onLogout
 
 function SettingsOverview({ user, headingRef }: { user: User; headingRef: RefObject<HTMLHeadingElement | null> }) {
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 md:px-8" data-settings-overview>
-      <div className="flex items-center justify-between gap-2">
-        <h1 ref={headingRef} tabIndex={-1} className="text-h1 font-semibold outline-none">Settings</h1>
-        <a className="btn-ghost touch-target text-sm" href="/help" onClick={(e) => followLink(e, { view: 'help' })}><Icon name="circle-help" />Help and guides</a>
-      </div>
+    <PageBody width="form" className="space-y-6" data-settings-overview>
+      <PageHeader title="Settings" titleRef={headingRef} titleTabIndex={-1} help="settings" sticky={false}
+        actions={<Button variant="ghost" size="sm" icon="circle-help" onClick={() => navigate({ view: 'help' })}>Help and guides</Button>} />
       <ProfileCard user={user} />
 
       <ConfigWarningsNotice user={user} />
@@ -140,7 +142,7 @@ function SettingsOverview({ user, headingRef }: { user: User; headingRef: RefObj
         OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.
         <a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">Source code</a>
       </p>
-    </div>
+    </PageBody>
   )
 }
 

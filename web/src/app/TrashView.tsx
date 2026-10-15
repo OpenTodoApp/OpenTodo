@@ -1,4 +1,4 @@
-import { Icon } from '../ui'
+import { Button, Icon, PageBody, PageHeader } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../lib/db'
@@ -82,15 +82,10 @@ export function TrashView() {
   })
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
-      <div className="mb-1 flex items-center gap-2">
-        <h1 className="flex-1 text-xl font-semibold">Trash</h1>
-        {items.length > 0 && <button className="btn-ghost text-sm text-danger" onClick={() => setConfirm('all')}>Empty Trash</button>}
-      </div>
-      <p className="mb-4 text-sm text-muted">
-        {retention > 0 ? `Items are deleted permanently after ${retention} days.` : 'Items stay here until you delete them permanently.'}{' '}
-        <span className="hidden md:inline"><span className="kbd">r</span> restores, <span className="kbd">Delete</span> deletes permanently.</span>
-      </p>
+    <PageBody width="list">
+      <PageHeader title="Trash" help="trash"
+        meta={retention > 0 ? `Deleted permanently after ${retention} days` : 'Kept until you delete them permanently'}
+        actions={items.length > 0 ? <Button variant="ghost" size="sm" className="text-danger" onClick={() => setConfirm('all')}>Empty Trash</Button> : undefined} />
       {error && <p role="alert" className="mb-3 text-sm text-danger">{error}</p>}
       {confirm && (
         <div role="alertdialog" aria-label="Confirm permanent deletion" className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-danger bg-danger-soft px-3 py-2 text-sm text-on-danger-soft">
@@ -131,6 +126,6 @@ export function TrashView() {
           })}
         </ul>
       )}
-    </div>
+    </PageBody>
   )
 }

@@ -2,6 +2,7 @@
 // grouping and sort options in the header, and live results from the view runner.
 // A dashboard is rendered by DashboardView instead.
 import { blockedMap } from '../lib/dependencies'
+import { Button, PageBody, PageHeader } from '../ui'
 import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { parse } from '../lib/filter'
 import { resolveLabels } from '../lib/labels'
@@ -121,16 +122,11 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const count = result.ok ? result.tasks.length : null
 
   return (
-    <div className="min-w-0 px-4 py-5 md:px-8">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="inline-block h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
-            <h1 className="truncate text-xl font-semibold">{view.name}</h1>
-            {count !== null && <span className="text-sm text-faint">{count}</span>}
-            <span className="flex-1" />
-            <button className="btn-ghost px-2 py-1 text-xs" onClick={() => void setPinned(view.id, !view.pinned)}>{view.pinned ? 'Unpin' : 'Pin'}</button>
-            <ViewMenu view={view} />
-          </div>
+    <PageBody width="list">
+          <PageHeader title={view.name} meta={count !== null ? count : undefined} help="saved-filter"
+            leading={<span className="inline-block h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />}
+            actions={<Button variant="ghost" size="sm" icon={view.pinned ? 'pin-off' : 'pin'} onClick={() => void setPinned(view.id, !view.pinned)}>{view.pinned ? 'Unpin' : 'Pin'}</Button>}
+            menu={<ViewMenu view={view} />} />
 
           <div className="mb-3 border-b border-default pb-2">
             <div className="flex gap-2">
@@ -202,12 +198,11 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
               </section>
             ))}
           </div>
-        </div>
       {pickerFor && (
         <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
         </Dialog>
       )}
-    </div>
+    </PageBody>
   )
 }

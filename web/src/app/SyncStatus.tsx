@@ -1,10 +1,11 @@
+import { Tooltip } from '../ui'
 import { requestSync, useSyncStatus } from '../lib/sync'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 /** Fired to show the two-factor enrolment wizard (App listens; OpenSpec `mfa-totp`). */
 export const ENROLMENT_EVENT = 'opentodo:mfa-enrolment-required'
 
-export function SyncStatus() {
+export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   const dt = useDateTimeFormat()
   const s = useSyncStatus()
   const map = {
@@ -23,23 +24,25 @@ export function SyncStatus() {
   // Live state is secondary information: shown next to the existing text, and only
   // when it says something (offline and signed out already imply "not live").
   const showLive = s.state !== 'offline' && s.state !== 'unauthenticated' && s.state !== 'restricted' && s.state !== 'locked'
-  const liveText = s.live ? 'Live' : 'Polling'
   const liveTitle = s.live ? 'Live updates connected' : 'Live updates disconnected; checking every 30 s'
   const lastSynced = s.lastSyncedAt ? `Last synced ${dt.formatInstant(s.lastSyncedAt, 'time')}` : 'Click to sync now'
-  return (
+  // Quiet (ux-overhaul, app-shell "Sync status is quiet"): the text is visible only
+  // while something needs attention (offline, error, pending, locked…); when synced
+  // the dot alone shows and the text lives in the tooltip and the accessible name.
+  const quiet = s.state === 'idle' && s.pending === 0
+  const detail = s.state === 'locked' ? 'This device is locked: unlock it with your encryption passphrase to sync.' : s.state === 'restricted' ? 'The server owner requires two-factor authentication for your account. Click to set it up; your changes upload afterwards.' : s.error ?? `${lastSynced} · ${liveTitle}`
+  const name = `${map.text}${showLive ? ` · ${liveTitle}` : ''}`
+  const button = (
     <button
       type="button"
       onClick={() => (s.state === 'restricted' ? window.dispatchEvent(new Event(ENROLMENT_EVENT)) : requestSync(0))}
-      title={s.state === 'locked' ? 'This device is locked: unlock it with your encryption passphrase to sync.' : s.state === 'restricted' ? 'The server owner requires two-factor authentication for your account. Click to set it up; your changes upload afterwards.' : s.error ?? `${lastSynced} · ${liveTitle}`}
-      className="flex items-center gap-2 rounded-md px-2 py-1 text-xs text-muted hover:bg-sunken dark:hover:bg-raised"
+      aria-label={quiet ? name : `${name}. ${detail}`}
+      data-sync-status={s.state}
+      className={`flex min-h-9 items-center gap-2 rounded-control text-meta text-muted hover:bg-sunken dark:hover:bg-raised ${compact ? 'justify-center px-0' : 'px-2 py-1'}`}
     >
-      <span className={`h-2 w-2 rounded-full ${map.dot}`} />
-      {map.text}
-      {showLive && (
-        <span className={`hidden sm:inline ${s.live ? 'text-faint' : 'text-faint'}`} aria-label={liveTitle}>
-          · {liveText}
-        </span>
-      )}
+      <span className={`h-2 w-2 shrink-0 rounded-full ${map.dot}`} />
+      {!quiet && !compact && <span className="min-w-0 truncate">{map.text}</span>}
     </button>
   )
+  return <Tooltip label={quiet ? name : detail} side={compact ? 'right' : 'top'}>{button}</Tooltip>
 }
