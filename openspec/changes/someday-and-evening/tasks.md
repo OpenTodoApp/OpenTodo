@@ -52,8 +52,8 @@
 
 ## 9. Integration
 
-- [ ] 9.1 Manual smoke on `make dev`: park a task with `n` and from quick add, defer one with `Shift+N`, mark one for tonight, check Today (groups, Started chip), Upcoming, Anytime, Someday, the Later group and the counts, then move the system date past a start day and confirm the task appears in Today without a reload; round-trip a parked task through a CalDAV client; import the CSV example. Record the result in the change folder notes.
-- [ ] 9.2 Run `make check` (go test, web test and build, ui-lint, docs check, openspec validate). Verify it passes.
+- [x] 9.1 Manual smoke on `make dev`: park a task with `n` and from quick add, defer one with `Shift+N`, mark one for tonight, check Today (groups, Started chip), Upcoming, Anytime, Someday, the Later group and the counts, then move the system date past a start day and confirm the task appears in Today without a reload; round-trip a parked task through a CalDAV client; import the CSV example. Record the result in the change folder notes.
+- [x] 9.2 Run `make check` (go test, web test and build, ui-lint, docs check, openspec validate). Verify it passes.
 
 ## Workflow follow-up
 

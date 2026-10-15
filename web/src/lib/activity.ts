@@ -291,6 +291,7 @@ const FIELD_LABELS: Record<string, string> = {
   title: 'the title', description: 'the notes', priority: 'the priority', labels: 'the labels', parent_id: 'the parent task',
   position: 'the order', estimate_minutes: 'the estimate', recurrence: 'the repeat rule', name: 'the name', color: 'the colour',
   series_id: 'the series', deadline: 'the deadline',
+  start: 'when it starts', evening: 'This Evening',
 }
 
 /** The event kinds a project activity view can filter by, with labels. */
