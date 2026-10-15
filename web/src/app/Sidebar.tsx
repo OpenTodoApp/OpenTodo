@@ -1,4 +1,7 @@
 import { Icon, type IconName } from '../ui/Icon'
+import { Menu } from './overlay/Menu'
+import { MenuItem } from '../ui/Menu'
+import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
@@ -250,7 +253,10 @@ export function Sidebar({ route, user }: { route: Route; user: User }) {
       </nav>
       <div className="mt-5 mb-1 flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-wide text-faint">
         Projects
-        <button className="rounded px-1 text-base leading-none hover:bg-sunken dark:hover:bg-raised" onClick={startAdding} title="New project">+</button>
+        <Menu kind="menu" label="New project" title="New project" trigger={<Icon name="plus" size="xs" />} triggerClassName="rounded px-1 text-base leading-none hover:bg-sunken dark:hover:bg-raised" width="sm:w-56">
+          <MenuItem label="New project" icon="plus" onSelect={startAdding} />
+          <MenuItem label="From a template…" icon="copy" onSelect={requestTemplateDialog} />
+        </Menu>
       </div>
       <nav className="min-h-48 flex-1 space-y-0.5 overflow-y-auto" aria-label="Projects">
         <ul role="tree">
