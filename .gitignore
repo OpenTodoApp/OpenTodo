@@ -33,3 +33,4 @@ coverage.out
 /.playwright-mcp/
 /docs-report/
 /web/storybook-static/
+/tmp/
