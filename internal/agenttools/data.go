@@ -29,6 +29,8 @@ type snapshot struct {
 	// sectionProject maps a section id onto its project id (write validation).
 	sectionProject map[string]string
 	labelList      []opsync.Entity
+	// fieldDefs are the live custom field definitions (custom-fields D6).
+	fieldDefs []opsync.Entity
 }
 
 func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
@@ -56,6 +58,10 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 		snap.sections[str(sec, "id")] = str(sec, "name")
 		snap.sectionProject[str(sec, "id")] = rawStr(sec, "project_id")
 	}
+	if snap.fieldDefs, err = r.sync.List(ctx, userID, "field", false); err != nil {
+		return nil, err
+	}
+	sort.SliceStable(snap.fieldDefs, func(i, j int) bool { return num(snap.fieldDefs[i], "position") < num(snap.fieldDefs[j], "position") })
 	if snap.tasks, err = r.sync.List(ctx, userID, "task", false); err != nil {
 		return nil, err
 	}
@@ -92,6 +98,30 @@ func (snap *snapshot) visible(t opsync.Entity, includeArchived bool) bool {
 		return false
 	}
 	return includeArchived || !boolean(p, "archived")
+}
+
+// projectFields lists the live custom field definitions of a project in order.
+func (snap *snapshot) projectFields(pid string) []opsync.Entity {
+	var out []opsync.Entity
+	if pid == "" {
+		return out
+	}
+	for _, f := range snap.fieldDefs {
+		if rawStr(f, "project_id") == pid {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// fieldDef returns a live definition of the project by id, or nil.
+func (snap *snapshot) fieldDef(pid, id string) opsync.Entity {
+	for _, f := range snap.projectFields(pid) {
+		if str(f, "id") == id {
+			return f
+		}
+	}
+	return nil
 }
 
 func (snap *snapshot) projectName(pid string) string {
@@ -244,6 +274,8 @@ type taskText struct {
 	Section     string   `json:"section,omitempty"`
 	Labels      []string `json:"labels"`
 	Assignee    string   `json:"assignee,omitempty"`
+	// Fields holds the string custom field values by definition id (user text).
+	Fields map[string]string `json:"fields,omitempty"`
 }
 
 type taskOut struct {
@@ -259,9 +291,13 @@ type taskOut struct {
 	AssigneeID      *string  `json:"assignee_id,omitempty"`
 	Recurrence      *string  `json:"recurrence,omitempty"`
 	EstimateMinutes *int     `json:"estimate_minutes,omitempty"`
-	Completed       bool     `json:"completed"`
-	CompletedAt     *string  `json:"completed_at,omitempty"`
-	CreatedAt       *string  `json:"created_at,omitempty"`
+	// Fields holds the number and boolean custom field values by definition id;
+	// string values are in untrusted_text.fields. Only live definitions of the
+	// task's project are shown, like in the app.
+	Fields      map[string]any `json:"fields,omitempty"`
+	Completed   bool           `json:"completed"`
+	CompletedAt *string        `json:"completed_at,omitempty"`
+	CreatedAt   *string        `json:"created_at,omitempty"`
 	// Shared is true for tasks of a shared project: other members may have
 	// written its text (design D9.6).
 	Shared bool `json:"shared,omitempty"`
@@ -305,6 +341,28 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 	}
 	if m := int(num(t, "estimate_minutes")); m > 0 {
 		out.EstimateMinutes = &m
+	}
+	for _, f := range snap.projectFields(pid) {
+		fid := str(f, "id")
+		v, ok := t[opsync.FieldValuePrefix+fid]
+		if !ok || string(v) == "null" {
+			continue
+		}
+		var s string
+		if json.Unmarshal(v, &s) == nil {
+			if out.Untrusted.Fields == nil {
+				out.Untrusted.Fields = map[string]string{}
+			}
+			out.Untrusted.Fields[fid] = e2ee.Display(s)
+			continue
+		}
+		var scalar any
+		if json.Unmarshal(v, &scalar) == nil {
+			if out.Fields == nil {
+				out.Fields = map[string]any{}
+			}
+			out.Fields[fid] = scalar
+		}
 	}
 	if d := taskDue(t); d != nil {
 		o := &dueOut{due: *d}

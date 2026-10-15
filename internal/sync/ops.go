@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/url"
 	"regexp"
 	"slices"
@@ -103,7 +104,41 @@ const (
 	// kIDList is an array of at most MaxBlockedBy distinct, non-empty ids of at
 	// most MaxIDLen characters (task.blocked_by, OpenSpec change task-dependencies).
 	kIDList
+	// kFieldValue is a custom field's value on a task (task."fields.<id>",
+	// OpenSpec change custom-fields): null, a string, a finite number or a
+	// boolean; objects and arrays are refused. Type conformance with the
+	// definition is checked by clients, REST and the tools, not here.
+	kFieldValue
 )
+
+// FieldValuePrefix starts the op field name of a custom field value: "fields." + definition id.
+const FieldValuePrefix = "fields."
+
+var fieldIDRE = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+
+// IsFieldValue reports whether entity.field is a custom field value (task "fields.<id>").
+func IsFieldValue(entity, field string) bool {
+	id, ok := strings.CutPrefix(field, FieldValuePrefix)
+	return ok && entity == "task" && fieldIDRE.MatchString(id)
+}
+
+// FieldKind returns the kind of entity.field: the schema entry, or kFieldValue
+// for a custom field value. ok is false for an unknown field.
+func FieldKind(entity, field string) (kind, bool) {
+	if k, ok := Schema[entity][field]; ok {
+		return k, true
+	}
+	if IsFieldValue(entity, field) {
+		return kFieldValue, true
+	}
+	return 0, false
+}
+
+// KnownField reports whether entity.field may be written.
+func KnownField(entity, field string) bool {
+	_, ok := FieldKind(entity, field)
+	return ok
+}
 
 // docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
 // version, e.g. "ydoc:v1:" (a Yjs update) or "enc:v1:" (e2ee ciphertext).
@@ -220,6 +255,19 @@ var Schema = map[string]map[string]kind{
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
 	},
+	// field: a custom field definition of a project (OpenSpec change
+	// custom-fields, design D1). A child of the project like a section; type is
+	// text|number|date|choice|link|checkbox carried as a string, options one
+	// choice per line. Task values are "fields.<field id>" ops (kFieldValue).
+	"field": {
+		"name":       kString,
+		"project_id": kID,
+		"type":       kString,
+		"options":    kString,
+		"position":   kNumber,
+		"created_at": kNumber,
+		"deleted_at": kNullableNumber,
+	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {
 		"name":       kString,
@@ -329,7 +377,7 @@ var Schema = map[string]map[string]kind{
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
@@ -345,11 +393,10 @@ func Validate(op Op) error {
 	if op.TS <= 0 {
 		return fmt.Errorf("%w: ts must be a positive unix millisecond timestamp", ErrInvalidOp)
 	}
-	fields, ok := Schema[op.Entity]
-	if !ok {
+	if _, ok := Schema[op.Entity]; !ok {
 		return fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, op.Entity)
 	}
-	k, ok := fields[op.Field]
+	k, ok := FieldKind(op.Entity, op.Field)
 	if !ok {
 		return fmt.Errorf("%w: unknown field %q for %s", ErrInvalidOp, op.Field, op.Entity)
 	}
@@ -418,6 +465,26 @@ func checkAttachment(field string, raw json.RawMessage) error {
 func checkKind(k kind, raw json.RawMessage) error {
 	isNull := string(raw) == "null"
 	switch k {
+	case kFieldValue:
+		var v any
+		if err := json.Unmarshal(raw, &v); err != nil {
+			return errors.New("must be null, a string, a number or a boolean")
+		}
+		switch x := v.(type) {
+		case nil, bool:
+			return nil
+		case string:
+			if !utf8.ValidString(x) {
+				return errors.New("must be valid UTF-8")
+			}
+			return nil
+		case float64:
+			if math.IsInf(x, 0) || math.IsNaN(x) {
+				return errors.New("must be a finite number")
+			}
+			return nil
+		}
+		return errors.New("must be null, a string, a number or a boolean")
 	case kString:
 		var s string
 		if err := json.Unmarshal(raw, &s); err != nil || !utf8.ValidString(s) {

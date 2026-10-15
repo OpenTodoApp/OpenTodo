@@ -582,6 +582,14 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		for _, id := range sections {
 			add(purgeTarget{t.scope, "section", id})
 		}
+		// And its custom field definitions (custom-fields D1).
+		defs, err := childIDsWhere(ctx, tx, t.scope, "field", "project_id", t.id, false)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range defs {
+			add(purgeTarget{t.scope, "field", id})
+		}
 		// Every member's personal preferences for the project (activity-feed D1)
 		// go too; each lives in its owner's personal scope.
 		prefScopes, err := scopesHolding(ctx, tx, "project_prefs", t.id)

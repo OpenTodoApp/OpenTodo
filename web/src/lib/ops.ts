@@ -15,7 +15,7 @@ import { recordActivity, type RecordInput } from './activity'
 import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
 import { encryptionSnapshot, isContentField } from './e2ee'
-import type { RowEncryption } from './types'
+import type { FieldDef, RowEncryption } from './types'
 
 let devicePromise: Promise<string> | null = null
 
@@ -48,6 +48,7 @@ function tableFor(entity: Entity) {
     case 'view': return db.views
     case 'reminder': return db.reminders
     case 'section': return db.sections
+    case 'field': return db.fields
     case 'comment': return db.comments
     case 'project_prefs': return db.prefs
     case 'user_prefs': return db.userPrefs
@@ -61,7 +62,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 }
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
-  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
+  position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], fields: {}, recurrence: null, series_id: null,
   assignee_id: null, section_id: null, ical_extra: null, notes_doc: '',
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
@@ -90,10 +91,17 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 /** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
+export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald' }
+/** field (custom-fields): a definition starts as text with no options. */
+const FIELD_DEFAULTS: Omit<FieldDef, 'id' | '_clock'> = { name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null }
+/** Op field name prefix of a custom field value: "fields.<definition id>". */
+export const FIELD_PREFIX = 'fields.'
+
 export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '' }
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
   comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS,
+  field: FIELD_DEFAULTS,
 }
 
 /**
@@ -146,7 +154,9 @@ export async function applyOps(
         const won = wins(op.ts, op.device, c)
         // A losing op still happened: its old value is unknown here, the activity
         // rule takes it from the op before it in timestamp order.
-        recorded.push({ op, actor: op.actor ?? opts.actor ?? '', from: won ? row[op.field] ?? null : undefined, projectKey: '' })
+        const fieldId = entity === 'task' && op.field.startsWith(FIELD_PREFIX) ? op.field.slice(FIELD_PREFIX.length) : null
+        const before = fieldId !== null ? (row.fields as Record<string, unknown> | undefined)?.[fieldId] : row[op.field]
+        recorded.push({ op, actor: op.actor ?? opts.actor ?? '', from: won ? before ?? null : undefined, projectKey: '' })
         if (rt && isDocField(entity, op.field)) {
           // Winning or not, the received document is merged with the local one.
           merged = rt.mergeDocs(merged ?? String(row[op.field] ?? ''), String(op.value ?? ''))
@@ -154,7 +164,9 @@ export async function applyOps(
         }
         const rewritten = !won && c && c.ts === op.ts && c.device === op.device && SERVER_REWRITTEN.has(`${entity}.${op.field}`)
         if (!won && !rewritten) continue
-        row[op.field] = op.value
+        // A custom field value folds into the row's fields map; its clock stays per key (custom-fields D2).
+        if (fieldId !== null) row.fields = { ...((row.fields as Record<string, unknown> | undefined) ?? {}), [fieldId]: op.value }
+        else row[op.field] = op.value
         clock[op.field] = { ts: op.ts, device: op.device }
         changed = true
         // End-to-end encryption bookkeeping (OpenSpec e2ee), local only: the form
@@ -289,6 +301,11 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
     const ops: Op[] = []
     for (const { entity, entityId, patch } of changes) {
       for (const [field, value] of Object.entries(patch)) {
+        // A partial `fields` map becomes one op per key, so values converge independently (custom-fields D2).
+        if (entity === 'task' && field === 'fields' && value && typeof value === 'object') {
+          for (const [id, v] of Object.entries(value as Record<string, unknown>)) ops.push({ id: crypto.randomUUID(), entity, entityId, field: FIELD_PREFIX + id, value: v, ts, device })
+          continue
+        }
         ops.push({ id: crypto.randomUUID(), entity, entityId, field, value, ts, device })
       }
     }

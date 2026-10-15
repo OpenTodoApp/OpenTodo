@@ -238,3 +238,16 @@ func TestVectors(t *testing.T) {
 		}
 	}
 }
+
+// TestCustomFieldContent (custom-fields 1.4): definitions' names and options
+// and every task "fields.<id>" key are content; other fields are not.
+func TestCustomFieldContent(t *testing.T) {
+	for _, c := range []struct {
+		entity, field string
+		want          bool
+	}{{"field", "name", true}, {"field", "options", true}, {"field", "type", false}, {"task", "fields.f1", true}, {"task", "priority", false}, {"project", "fields.f1", false}} {
+		if got := IsContentField(c.entity, c.field); got != c.want {
+			t.Errorf("%s.%s = %v", c.entity, c.field, got)
+		}
+	}
+}

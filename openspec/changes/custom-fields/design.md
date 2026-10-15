@@ -86,7 +86,7 @@ The export carries `fields` (definitions, tombstones included) beside `sections`
 
 ### D6. Assistant tools
 
-`taskOut` gains `Fields map[string]any` (numbers and booleans) and `Untrusted.Fields map[string]string` (string values, which are user text); `projectOut` gains `Fields []fieldOut{ID, Type, Options []string, Untrusted{Name}}`, also in the project resource. `create_tasks` and `update_tasks` accept `fields` (an object), validated in `planCreateTasks`/`planUpdateTasks` against the snapshot's definitions of the target project (`-32602` naming the id and the expected type), and emit one `fields.<id>` patch entry each; the change-set review in the web app shows them as "Cost → 120" using the local definitions. No tool creates or deletes definitions (spec "Write tools").
+`taskOut` gains `Fields map[string]any` (numbers and booleans) and `Untrusted.Fields map[string]string` (string values, which are user text); `projectOut` gains `Fields []fieldOut{ID, Type, Untrusted{Name, Options}}` (options are user text too), also in the project resource. `create_tasks` and `update_tasks` accept `fields` as a list of `{id, value}` with the value as text (strict tool schemas allow no free-form object keys; numbers and checkboxes are converted by the field's type, and the agent REST route passes the REST object form), validated in `planCreateTasks`/`planUpdateTasks` against the snapshot's definitions of the target project (`-32602` naming the id and the expected type), and emit one `fields.<id>` patch entry each; the change-set review in the web app shows them as "Cost → 120" using the local definitions. No tool creates or deletes definitions (spec "Write tools").
 
 ### D7. Formulas and rollups are refused by design
 

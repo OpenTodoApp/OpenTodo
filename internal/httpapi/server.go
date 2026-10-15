@@ -1182,6 +1182,13 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	if entity == "task" {
 		canonicalizeRecurrence(body)
 	}
+	if msg, err := s.checkFields(r.Context(), uid, entity, id, body, nil); err != nil {
+		s.internal(w, err)
+		return
+	} else if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return
+	}
 	if entity == "reminder" {
 		if msg, err := s.completeReminderBody(r.Context(), userFrom(r.Context()).ID, body, nil); err != nil {
 			s.internal(w, err)
@@ -1439,6 +1446,13 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if msg, err := s.checkSections(r.Context(), userFrom(r.Context()).ID, entity, body, existing); err != nil {
+		s.internal(w, err)
+		return
+	} else if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return
+	}
+	if msg, err := s.checkFields(r.Context(), userFrom(r.Context()).ID, entity, r.PathValue("id"), body, existing); err != nil {
 		s.internal(w, err)
 		return
 	} else if msg != "" {

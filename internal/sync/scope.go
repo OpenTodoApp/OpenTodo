@@ -123,9 +123,9 @@ func CanWrite(role, entity, field string) bool {
 	case RoleOwner:
 		return true
 	case RoleAdmin:
-		return entity == "task" || entity == "section" || (entity == "project" && field != "deleted_at")
+		return entity == "task" || entity == "section" || entity == "field" || (entity == "project" && field != "deleted_at")
 	case RoleEditor:
-		return entity == "task" || entity == "section"
+		return entity == "task" || entity == "section" || entity == "field"
 	}
 	return false
 }
@@ -188,7 +188,8 @@ func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolv
 // projectChild lists the entities whose sharing scope follows their project_id:
 // tasks (project-sharing D2) and sections (board-view: a section of a shared
 // project lives in that project's scope).
-var projectChild = map[string]bool{"task": true, "section": true}
+// Custom field definitions follow it too (custom-fields D1).
+var projectChild = map[string]bool{"task": true, "section": true, "field": true}
 
 func (r *resolver) projectShared(pid string) (bool, error) {
 	if v, ok := r.shared[pid]; ok {
@@ -286,7 +287,7 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 		if shared {
 			scope = ProjectScope(op.EntityID)
 		}
-	case "task", "section":
+	case "task", "section", "field":
 		if scope, err = r.scopeOfChild(op.Entity, op.EntityID); err != nil {
 			return "", "", err
 		}
@@ -374,7 +375,7 @@ func (r *resolver) restoreOps(refused []Op) ([]Op, error) {
 		seen[key] = true
 		var scope string
 		switch op.Entity {
-		case "task", "section":
+		case "task", "section", "field":
 			sc, found, err := r.existingChildScope(op.Entity, op.EntityID)
 			if err != nil {
 				return nil, err

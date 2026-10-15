@@ -30,7 +30,7 @@
 - **THEN** the project carries the two definitions with id, type, options and an untrusted name, and the task carries `fields` keyed by those ids, its Client string marked untrusted
 
 ### Requirement: Write tools
-When allowed, `tools/list` SHALL add `create_tasks`, `update_tasks`, `complete_tasks`, `reopen_tasks`, `move_tasks`, `schedule_tasks`, `create_project`, `create_label`, `add_comment` and `trash_tasks`. `create_tasks` and `update_tasks` SHALL accept a `fields` object keyed by definition id, validated against the task's project definitions (OpenSpec `custom-fields`). No tool SHALL define or delete custom fields, purge, archive or delete projects, assign people, or change sharing, members, tokens, settings, webhooks, backups or imports. `trash_tasks` SHALL accept only tasks created by the same token. Results reflect synced data; changes converge with offline device edits by last-writer-wins.
+When allowed, `tools/list` SHALL add `create_tasks`, `update_tasks`, `complete_tasks`, `reopen_tasks`, `move_tasks`, `schedule_tasks`, `create_project`, `create_label`, `add_comment` and `trash_tasks`. `create_tasks` and `update_tasks` SHALL accept a `fields` list of `{id, value}` entries (the value as text, converted by the field's type, because strict tool schemas have no free-form keys), validated against the task's project definitions (OpenSpec `custom-fields`). No tool SHALL define or delete custom fields, purge, archive or delete projects, assign people, or change sharing, members, tokens, settings, webhooks, backups or imports. `trash_tasks` SHALL accept only tasks created by the same token. Results reflect synced data; changes converge with offline device edits by last-writer-wins.
 
 #### Scenario: Create tasks
 - **WHEN** an allowed assistant calls `create_tasks` with two items for project "Garden", one due tomorrow with priority 2
@@ -57,9 +57,9 @@ When allowed, `tools/list` SHALL add `create_tasks`, `update_tasks`, `complete_t
 - **THEN** the result is a tool error `not_found` that does not distinguish the two and nothing changes
 
 #### Scenario: Set a field value
-- **WHEN** an allowed assistant calls `update_tasks` with `fields: {"<cost-id>": 120}` on a task of the project that defines Cost as a number
+- **WHEN** an allowed assistant calls `update_tasks` with `fields: [{"id": "<cost-id>", "value": "120"}]` on a task of the project that defines Cost as a number
 - **THEN** the task holds Cost 120 after the change set is applied, as one operation for that field
 
 #### Scenario: Value of the wrong type
-- **WHEN** an allowed assistant calls `update_tasks` with `fields: {"<cost-id>": "cheap"}`
+- **WHEN** an allowed assistant calls `update_tasks` with `fields: [{"id": "<cost-id>", "value": "cheap"}]`
 - **THEN** the response is a JSON-RPC `-32602` error naming the field and its type and nothing changes

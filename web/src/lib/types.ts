@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field']
 
 export interface Op {
   id: string
@@ -88,6 +88,12 @@ export interface Task {
    * rows stored before the field; read with `?? []`.
    */
   blocked_by?: string[]
+  /**
+   * Custom field values keyed by definition id (OpenSpec custom-fields): each is
+   * its own "fields.<id>" op on the wire. Rows synced before the change hold
+   * undefined; read with `?? {}`.
+   */
+  fields?: Record<string, FieldValue>
   /**
    * Recurrence rule in canonical form (docs/recurrence.md) or null. A task with a
    * rule is a series: completing it records an occurrence and moves `due` forward.
@@ -1154,3 +1160,25 @@ export interface AppNotification {
   readAt: number | null
   readPending?: boolean
 }
+
+/** A custom field's type (OpenSpec custom-fields); an unknown later type is shown read-only as text. */
+export type FieldType = 'text' | 'number' | 'date' | 'choice' | 'link' | 'checkbox'
+
+/** A custom field value: text, link, date ("YYYY-MM-DD") and choice are strings. */
+export type FieldValue = string | number | boolean | null
+
+/** A custom field definition: a child of its project, like a section. */
+export interface FieldDef {
+  id: string
+  name: string
+  project_id: string
+  /** FieldType, or a type from a newer client. */
+  type: string
+  /** Choice options, one per line, in display order; '' otherwise. */
+  options: string
+  position: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+}
+

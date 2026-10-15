@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -47,6 +49,14 @@ var (
 	timezoneWrite = map[string]any{"type": "string", "description": "IANA time zone that decides which day is today when a recurring task without a due date is completed. Default: the server's zone."}
 )
 
+// fieldsProp is the custom field values argument (custom-fields D6): a list,
+// because strict tool schemas have no free-form keys, with values as text.
+var fieldsProp = map[string]any{"type": "array", "maxItems": 30, "description": "Custom field values to set (see each project's fields in list_projects).",
+	"items": object([]string{"id", "value"}, map[string]any{
+		"id":    map[string]any{"type": "string", "description": "Field id."},
+		"value": map[string]any{"type": []string{"string", "null"}, "maxLength": opsync.MaxFieldText, "description": "The value as text, null to clear: a number like \"120.5\", \"true\" or \"false\" for a checkbox, YYYY-MM-DD for a date, one of the options for a choice, an http(s) URL for a link."},
+	})}
+
 func writeDef(name, title, desc string, schema map[string]any, destructive, idempotent bool, content []string, requires bool) Definition {
 	return Definition{Name: name, Title: title, Description: desc + untrustedHint, InputSchema: schema,
 		Annotations: writeAnnotations(title, destructive, idempotent), Kind: KindWrite, ContentFields: content, RequiresContent: requires}
@@ -64,6 +74,7 @@ func init() {
 			"labels":           labelsProp,
 			"estimate_minutes": estimateProp,
 			"recurrence":       recurProp,
+			"fields":           fieldsProp,
 		})
 		return writeDef("create_tasks", "Create tasks",
 			fmt.Sprintf("Create up to %d tasks in one call. Returns their ids in order.", PerCall),
@@ -80,12 +91,13 @@ func init() {
 			"labels":           labelsProp,
 			"estimate_minutes": map[string]any{"type": []string{"integer", "null"}, "minimum": 1, "maximum": opsync.MaxPositiveInt, "description": "Estimated minutes, or null to clear."},
 			"recurrence":       map[string]any{"type": []string{"string", "null"}, "maxLength": recurrence.MaxLen, "description": "Recurrence rule, or null to stop repeating."},
+			"fields":           fieldsProp,
 		}
-		desc := fmt.Sprintf("Change the priority, labels, estimate or recurrence of up to %d tasks", PerCall)
+		desc := fmt.Sprintf("Change the priority, labels, estimate, recurrence or custom field values of up to %d tasks", PerCall)
 		if !c.Encrypted {
 			props["title"] = titleProp
 			props["description"] = descProp
-			desc = fmt.Sprintf("Change the title, description, priority, labels, estimate or recurrence of up to %d tasks", PerCall)
+			desc = fmt.Sprintf("Change the title, description, priority, labels, estimate, recurrence or custom field values of up to %d tasks", PerCall)
 		}
 		desc += ". Use schedule_tasks for due dates, move_tasks for projects and complete_tasks to complete."
 		return writeDef("update_tasks", "Update tasks", desc,
@@ -384,6 +396,76 @@ func checkPatch(prefix, entity, id string, patch map[string]json.RawMessage) err
 	return nil
 }
 
+// fieldPatch validates a `fields` argument against the live definitions of the
+// task's project (custom-fields D6) and adds one "fields.<id>" entry per value.
+// Tools send a list of {id, value} with the value as text; the agent REST
+// route passes the REST object form keyed by id.
+func (snap *snapshot) fieldPatch(c Caller, prefix, pid string, rawFields json.RawMessage, patch map[string]json.RawMessage) error {
+	values := map[string]json.RawMessage{}
+	textual := map[string]bool{}
+	var list []struct {
+		ID    string  `json:"id"`
+		Value *string `json:"value"`
+	}
+	if json.Unmarshal(rawFields, &list) == nil && list != nil {
+		for _, e := range list {
+			if _, dup := values[e.ID]; dup {
+				return argErr(fmt.Sprintf("%sfields: %q appears twice", prefix, e.ID))
+			}
+			values[e.ID], textual[e.ID] = raw(e.Value), true
+		}
+	} else if json.Unmarshal(rawFields, &values) != nil || values == nil {
+		return argErr(prefix + "fields: must be a list of {id, value}")
+	}
+	ids := make([]string, 0, len(values))
+	for id := range values {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		def := snap.fieldDef(pid, id)
+		if def == nil {
+			return argErr(fmt.Sprintf("%sfields.%s: no field with this id in the task's project (see list_projects)", prefix, id))
+		}
+		value := values[id]
+		if textual[id] {
+			value = typedFieldText(str(def, "type"), value)
+		}
+		v, msg := opsync.CheckFieldValue(def, value)
+		if msg != "" {
+			return argErr(fmt.Sprintf("%sfields.%s: the %s field %q %s", prefix, id, str(def, "type"), str(def, "name"), msg))
+		}
+		// String values are content (e2ee D4): never readable text into an
+		// encrypted account's personal scope. Shared projects stay plaintext.
+		if _, shared := snap.shared[pid]; c.Encrypted && !shared && len(v) > 0 && v[0] == '"' {
+			return encryptionErr()
+		}
+		patch[opsync.FieldValuePrefix+id] = v
+	}
+	return nil
+}
+
+// typedFieldText turns a textual tool value into the JSON its field type
+// stores: a number for number fields, a boolean for checkboxes. Text that does
+// not convert stays a string, which the type check then refuses.
+func typedFieldText(typ string, value json.RawMessage) json.RawMessage {
+	var s string
+	if json.Unmarshal(value, &s) != nil {
+		return value
+	}
+	switch typ {
+	case "number":
+		if f, err := strconv.ParseFloat(strings.TrimSpace(s), 64); err == nil && !math.IsInf(f, 0) && !math.IsNaN(f) {
+			return raw(f)
+		}
+	case "checkbox":
+		if b, err := strconv.ParseBool(strings.TrimSpace(s)); err == nil {
+			return raw(b)
+		}
+	}
+	return value
+}
+
 // labelIDsFor resolves label names (case-insensitive) or ids.
 func (snap *snapshot) labelIDsFor(prefix string, raw json.RawMessage) ([]string, error) {
 	var names []string
@@ -554,7 +636,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	var refused []map[string]any
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
-		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence"); err != nil {
+		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields"); err != nil {
 			return Plan{}, err
 		}
 		title, _, err := it.text("title", true, 500)
@@ -630,6 +712,11 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 				return Plan{}, err
 			}
 		}
+		if it.present("fields") {
+			if err := snap.fieldPatch(c, p, pid, it["fields"], patch); err != nil {
+				return Plan{}, err
+			}
+		}
 		if err := checkPatch(p, "task", id, patch); err != nil {
 			return Plan{}, err
 		}
@@ -663,7 +750,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 	seen := map[string]bool{}
 	for i, it := range list {
 		p := fmt.Sprintf("updates[%d].", i)
-		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence"); err != nil {
+		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "fields"); err != nil {
 			return Plan{}, err
 		}
 		id, err := it.str("id")
@@ -706,13 +793,18 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 				return Plan{}, err
 			}
 		}
-		if len(patch) == 0 {
+		t := snap.task(id)
+		if it.present("fields") && t != nil {
+			if err := snap.fieldPatch(c, p, rawStr(t, "project_id"), it["fields"], patch); err != nil {
+				return Plan{}, err
+			}
+		}
+		if len(patch) == 0 && (t != nil || !it.present("fields")) {
 			return Plan{}, argErr(p + "nothing to change: give at least one field besides id")
 		}
 		if err := checkPatch(p, "task", id, patch); err != nil {
 			return Plan{}, err
 		}
-		t := snap.task(id)
 		if t == nil {
 			missing = append(missing, id)
 			continue

@@ -34,9 +34,12 @@ export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   comment: ['body'],
   // Attachments (OpenSpec attachments D8): the file bytes are an OTAT1 envelope too.
   attachment: ['name', 'mime', 'url'],
+  // Custom fields (custom-fields D4): names and options; a task's string values are content too (isContentField).
+  field: ['name', 'options'],
 }
 
 export function isContentField(entity: Entity, field: string): boolean {
+  if (entity === 'task' && field.startsWith('fields.')) return true
   return CONTENT_FIELDS[entity]?.includes(field) ?? false
 }
 

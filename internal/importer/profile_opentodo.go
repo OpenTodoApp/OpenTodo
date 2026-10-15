@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+
+	opsync "github.com/pixari/opentodo/internal/sync"
 )
 
 // opentodoProfile reads the app's own export (`GET /api/v1/export`). Records are
@@ -27,12 +29,14 @@ func (opentodoProfile) Detect(data []byte) bool {
 
 func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	var doc struct {
-		Format    string                       `json:"format"`
-		Version   int                          `json:"version"`
-		Labels    []map[string]json.RawMessage `json:"labels"`
-		Projects  []map[string]json.RawMessage `json:"projects"`
-		Tasks     []map[string]json.RawMessage `json:"tasks"`
-		Sections  []map[string]json.RawMessage `json:"sections"`
+		Format   string                       `json:"format"`
+		Version  int                          `json:"version"`
+		Labels   []map[string]json.RawMessage `json:"labels"`
+		Projects []map[string]json.RawMessage `json:"projects"`
+		Tasks    []map[string]json.RawMessage `json:"tasks"`
+		Sections []map[string]json.RawMessage `json:"sections"`
+		// Fields are custom field definitions (custom-fields D3).
+		Fields    []map[string]json.RawMessage `json:"fields"`
 		Reminders []map[string]json.RawMessage `json:"reminders"`
 		Views     []map[string]json.RawMessage `json:"views"`
 		Comments  []json.RawMessage            `json:"comments"`
@@ -59,6 +63,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	}
 	taskTitles := map[string]string{}
 	for _, e := range doc.Tasks {
+		unfoldFields(e)
 		var id, title string
 		_ = json.Unmarshal(e["id"], &id)
 		_ = json.Unmarshal(e["title"], &title)
@@ -88,6 +93,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	add(KindLabel, "name", doc.Labels)
 	add(KindProject, "name", doc.Projects)
 	add(KindSection, "name", doc.Sections)
+	add(KindField, "name", doc.Fields)
 	add(KindTask, "title", doc.Tasks)
 	add(KindReminder, "", doc.Reminders)
 	add(KindView, "name", doc.Views)
@@ -133,4 +139,22 @@ func countFileAttachments(list []map[string]json.RawMessage) int {
 		}
 	}
 	return n
+}
+
+// unfoldFields turns an exported task's `fields` object (custom-fields D3) back
+// into one "fields.<id>" key per value, the op fields they are stored as. A
+// malformed object is left in place and dropped as an unknown field.
+func unfoldFields(task map[string]json.RawMessage) {
+	raw, has := task["fields"]
+	if !has {
+		return
+	}
+	var values map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &values); err != nil {
+		return
+	}
+	delete(task, "fields")
+	for id, v := range values {
+		task[opsync.FieldValuePrefix+id] = v
+	}
 }

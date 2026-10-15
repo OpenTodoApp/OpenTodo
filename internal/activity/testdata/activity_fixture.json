@@ -608,6 +608,18 @@
       "events": []
     },
     {
+      "name": "custom field values are edited events; definitions derive none (custom-fields)",
+      "ops": [
+        {"id":"cf1","seq":1,"actor":"alice","entity":"field","entityId":"cost","field":"name","value":"Cost","ts":700000,"device":"da"},
+        {"id":"cf2","seq":2,"actor":"alice","entity":"task","entityId":"t1","field":"fields.cost","value":120,"ts":700000,"device":"da"},
+        {"id":"cf3","seq":3,"actor":"bob","entity":"task","entityId":"rec1","field":"fields.cost","value":90,"ts":700000,"device":"db"}
+      ],
+      "events": [
+        {"id":"cf2","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":700000,"opIds":["cf2"],"changes":[{"field":"fields.cost","from":null,"to":120}]},
+        {"id":"cf3","kind":"edited","actor":"bob","entity":"task","entityId":"rec1","taskId":"rec1","ts":700000,"opIds":["cf3"],"changes":[{"field":"fields.cost","from":null,"to":90}]}
+      ]
+    },
+    {
       "name": "a deadline edit is an edited event (deadlines)",
       "ops": [
         {"id":"dl1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"deadline","value":"2026-11-20","ts":200000,"device":"da"}

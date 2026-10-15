@@ -121,6 +121,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete (to the Trash) → 204 |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects, see [Project fields](#project-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/sections…` | yes | same shape for sections, see [Sections](#sections) |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/fields…` | yes | same shape for custom field definitions, see [Custom fields](#custom-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels, see [Label fields](#label-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
@@ -146,7 +147,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
 | GET | `/api/v1/sync/events?device={id}` | yes | server-sent event stream; wakes the device when other devices or the API record operations, see [sync.md](sync.md#live-updates) |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `encryption`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `fields`, `comments`, `encryption`), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -399,7 +400,7 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 
 | Route | What an agent token may send |
 | --- | --- |
-| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `blocked_by`, `recurrence` |
+| `POST /api/v1/tasks` | `title`, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `deadline`, `start`, `evening`, `blocked_by`, `recurrence`, `fields` (the [custom field](#custom-fields) object) |
 | `PATCH /api/v1/tasks/{id}` | the same edit fields (not `parent_id`), `due`, `project_id`, `section_id`, `completed_at` (complete or reopen) and `deleted_at` (to the Trash, only tasks the same token created) |
 | `DELETE /api/v1/tasks/{id}` | only tasks the same token created (to the Trash) |
 | `POST /api/v1/projects` | `name`, `color`, `parent_id`, `icon` (`archived: false` is accepted) |
@@ -443,6 +444,7 @@ Every other write route (tokens, settings, sync, sharing and members, invitation
 | `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
 | `section_id` | string or null | section of the task's project; see [Sections](#sections). `400 invalid_input` for an unknown or deleted section or one of another project. Changing `project_id` without naming a section clears it |
+| `fields` | object | custom field values keyed by definition id, e.g. `{"<cost-id>":120}`; always present in reads (`{}` when none). On create and PATCH each entry is validated against a live definition of the task's project (after the write) and merged into the existing values; `null` clears one. `400 invalid_input` naming the id for an unknown, deleted or foreign definition or a value of the wrong type. See [Custom fields](#custom-fields) |
 | `ical_extra` | string or null | opaque iCalendar lines a CalDAV client sent that the app does not model (alarms, `X-` properties…); kept so calendar apps do not lose them. See [caldav.md](caldav.md#what-maps-to-what) |
 | `position` | number | sort order inside a list: ascending, ties by id; clients move a task by writing the midpoint between its new neighbours (see [docs/sync.md](sync.md#manual-order)) |
 | `completed_at`, `deleted_at` | unix ms or null | |
@@ -529,6 +531,31 @@ curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":"<section>"}' $BAS
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":null}' $BASE/api/v1/tasks/$TASK
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"missing"}' $BASE/api/v1/sections
 # 400 {"error":{"code":"invalid_input","message":"section.project_id references unknown or deleted project \"missing\""}}
+```
+
+### Custom fields
+
+A custom field is a typed field that one project defines for its tasks (OpenSpec change `custom-fields`). Definitions live in the sharing scope of their project like sections (editors and up may write them, viewers read them) and appear in the export, deleted ones included. A project has at most 30 live definitions.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `name` | string | required, not blank, at most 60 characters, unique within the project ignoring case |
+| `type` | string | required on create: `text`, `number`, `date`, `choice`, `link` or `checkbox`; cannot change afterwards |
+| `project_id` | string | required on create: an existing, non-deleted project; cannot change afterwards |
+| `options` | string | a choice field's options, one per line (at most 50, 100 characters each, no duplicates ignoring case); trimmed and stored without empty lines. Empty for the other types |
+| `position` | number | ascending order within the project; defaults to now (last) |
+| `created_at` | number | set by the server when omitted |
+| `deleted_at` | number or null | set by `DELETE`; the values stay on the tasks, hidden |
+
+Values on tasks travel in the task's `fields` object: a `number` takes a JSON number, a `checkbox` `true` or `false`, a `date` a string `YYYY-MM-DD`, a `choice` one of the options (matched ignoring case, stored with the option's spelling), a `link` an `http` or `https` URL of at most 2,000 characters, and `text` a string of at most 2,000 characters. A PATCH merges the entries it names and records one operation per entry. Raw `fields.<id>` keys are refused; send the object.
+
+```sh
+curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Cost","type":"number","project_id":"<project>"}' $BASE/api/v1/fields
+# 201 {"id":"<cost>","name":"Cost","type":"number","options":"","project_id":"<project>","position":1760000000000,"created_at":1760000000000}
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"fields":{"<cost>":120}}' $BASE/api/v1/tasks/$TASK
+# 200 {…,"fields":{"<cost>":120}}
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"fields":{"<cost>":"abc"}}' $BASE/api/v1/tasks/$TASK
+# 400 {"error":{"code":"invalid_input","message":"task.fields.<cost> (Cost): must be a number"}}
 ```
 
 ### Label fields

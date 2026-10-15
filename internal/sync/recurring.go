@@ -121,6 +121,12 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 			record[f] = v
 		}
 	}
+	// The record keeps the series' custom field values (custom-fields D2), like the client's copyOf.
+	for f, v := range merged {
+		if IsFieldValue("task", f) {
+			record[f] = v
+		}
+	}
 	// The record stays in the series' column (board-view); only sent when set, like the client.
 	if sid := idValue(merged["section_id"]); sid != "" {
 		record["section_id"] = jsonOf(sid)

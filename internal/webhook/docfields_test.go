@@ -39,3 +39,12 @@ func TestDocFieldsLeftOutOfDeliveries(t *testing.T) {
 		t.Fatal("the caller's entity was modified")
 	}
 }
+
+// TestFieldValuesReachDeliveries (custom-fields 1.5): a custom field value is
+// an ordinary change in a delivery.
+func TestFieldValuesReachDeliveries(t *testing.T) {
+	got := withoutDocFields(opsync.Change{Entity: "task", EntityID: "t1", Fields: map[string]opsync.FieldChange{"fields.cost": fc(`100`, `120`)}})
+	if _, ok := got.Fields["fields.cost"]; !ok {
+		t.Fatalf("fields = %v", got.Fields)
+	}
+}

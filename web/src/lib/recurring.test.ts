@@ -396,3 +396,16 @@ describe('start and evening follow the series (OpenSpec someday-and-evening 7.1)
     expect((await db.tasks.get(id))?.start).toBe('2026-10-24')
   })
 })
+
+describe('custom field values on occurrences (custom-fields 2.3)', () => {
+  it('the record and a detached copy keep the series values', async () => {
+    await use(`cfr-${run()}`)
+    const id = await createTask({ title: 'Invoice', recurrence: 'every month', due: { date: '2026-10-10' } })
+    await updateTask(id, { fields: { cost: 120 } } as never)
+    await completeTask(id, { today: '2026-10-10' })
+    const recs = await records(id)
+    expect(recs[0].fields).toEqual({ cost: 120 })
+    const copy = await detachOccurrence(id, { today: '2026-10-11' })
+    expect((await db.tasks.get(copy as string))?.fields).toEqual({ cost: 120 })
+  })
+})

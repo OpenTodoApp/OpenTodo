@@ -111,6 +111,19 @@ type nameText struct {
 	Name string `json:"name"`
 }
 
+// fieldText is the user-written text of a custom field definition.
+type fieldText struct {
+	Name    string   `json:"name"`
+	Options []string `json:"options,omitempty"`
+}
+
+// fieldOut is a custom field definition of a project (custom-fields D6).
+type fieldOut struct {
+	ID        string    `json:"id"`
+	Type      string    `json:"type"`
+	Untrusted fieldText `json:"untrusted_text"`
+}
+
 type projectOut struct {
 	ID        string   `json:"id"`
 	Untrusted nameText `json:"untrusted_text"`
@@ -120,6 +133,8 @@ type projectOut struct {
 	Shared    bool     `json:"shared"`
 	Role      string   `json:"role,omitempty"`
 	OpenCount int      `json:"open_count"`
+	// Fields are the project's live custom field definitions in order.
+	Fields []fieldOut `json:"fields,omitempty"`
 }
 
 func (snap *snapshot) openCounts() map[string]int {
@@ -138,6 +153,13 @@ func (snap *snapshot) renderProject(p opsync.Entity, counts map[string]int) proj
 		ParentID: strPtr(p, "parent_id"), OpenCount: counts[id]}
 	if acc, ok := snap.shared[id]; ok {
 		out.Shared, out.Role = true, acc.Role
+	}
+	for _, f := range snap.projectFields(id) {
+		fo := fieldOut{ID: str(f, "id"), Type: str(f, "type"), Untrusted: fieldText{Name: str(f, "name")}}
+		if fo.Type == "choice" {
+			fo.Untrusted.Options = opsync.FieldOptions(str(f, "options"))
+		}
+		out.Fields = append(out.Fields, fo)
 	}
 	return out
 }

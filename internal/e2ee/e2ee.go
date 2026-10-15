@@ -44,10 +44,17 @@ var ContentFields = map[string][]string{
 	"comment": {"body"},
 	// Attachments (OpenSpec attachments, design D8): the bytes are an envelope too.
 	"attachment": {"name", "mime", "url"},
+	// Custom fields (OpenSpec custom-fields D4): a definition's name and choice
+	// options; string values of a task's "fields.<id>" keys are content too
+	// (see IsContentField), numbers and booleans stay plaintext.
+	"field": {"name", "options"},
 }
 
 // IsContentField reports whether entity.field is encrypted for encrypted accounts.
 func IsContentField(entity, field string) bool {
+	if entity == "task" && strings.HasPrefix(field, "fields.") {
+		return true
+	}
 	for _, f := range ContentFields[entity] {
 		if f == field {
 			return true

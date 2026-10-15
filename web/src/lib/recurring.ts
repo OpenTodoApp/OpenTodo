@@ -74,6 +74,8 @@ function copyOf(series: Task, now: number): Record<string, unknown> {
     ...(series.deadline ? { deadline: series.deadline } : {}),
     ...(series.start ? { start: series.start } : {}),
     ...(series.evening ? { evening: true } : {}),
+    // Custom field values travel with the occurrence, as on the server (custom-fields D2).
+    ...(series.fields && Object.keys(series.fields).length ? { fields: { ...series.fields } } : {}),
   }
 }
 

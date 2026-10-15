@@ -42,7 +42,7 @@ type AnyTable = { get(id: string): Promise<Row | undefined>; put(v: Row): Promis
 function tableOf(entity: Entity): AnyTable {
   const t = {
     project: db.projects, task: db.tasks, label: db.labels, view: db.views, reminder: db.reminders, section: db.sections,
-    comment: db.comments, project_prefs: db.prefs, user_prefs: db.userPrefs, attachment: db.attachments,
+    comment: db.comments, project_prefs: db.prefs, user_prefs: db.userPrefs, attachment: db.attachments, field: db.fields,
   }[entity]
   return t as unknown as AnyTable
 }
@@ -71,6 +71,7 @@ async function personalResolver(batch: Op[]): Promise<(entity: Entity, id: strin
       case 'project': return projectPersonal(id)
       case 'task': return projectPersonal(await ref('task', id, 'project_id'))
       case 'section': return projectPersonal(await ref('section', id, 'project_id'))
+      case 'field': return projectPersonal(await ref('field', id, 'project_id'))
       case 'comment':
       case 'attachment': {
         const taskId = await ref(entity, id, 'task_id')
@@ -252,7 +253,7 @@ export async function normalizeOnSight(inc: Incoming): Promise<number> {
 // ---- migration job (design D7) ----
 
 const K_MIGRATION = 'e2ee.migration'
-const MIGRATION_ORDER: Entity[] = ['project', 'label', 'section', 'view', 'task', 'comment']
+const MIGRATION_ORDER: Entity[] = ['project', 'label', 'section', 'field', 'view', 'task', 'comment']
 /** Entities re-written per batch (one mutateMany each). */
 export const MIGRATION_BATCH = 200
 
@@ -277,8 +278,9 @@ async function pending(entity: Entity, mode: MigrationState['mode'], after: stri
     // Only the author may write a comment.
     if (entity === 'comment' && row.author_id !== me) continue
     const patch: Record<string, unknown> = {}
-    for (const f of fields) {
-      const v = row[f]
+    // A task's custom field values are content keyed "fields.<id>" (custom-fields D4).
+    const values = entity === 'task' ? Object.entries((row.fields as Record<string, unknown> | undefined) ?? {}).map(([id, v]) => [`fields.${id}`, v] as const) : []
+    for (const [f, v] of [...fields.map((f) => [f, row[f]] as const), ...values]) {
       if (typeof v !== 'string' || v === '' || row._e2ee?.raw?.[f]) continue
       if (row._e2ee?.wire?.[f] === target) continue
       patch[f] = v

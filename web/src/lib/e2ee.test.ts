@@ -208,6 +208,19 @@ describe('field split and transport (task 2.1)', () => {
     expect(JSON.stringify(server.log.slice(logMark))).not.toMatch(/Offline idea|secret plan|Health stuff|crown"|Friday/)
   })
 
+  it('custom fields: names, options and string values are ciphertext, numbers stay plaintext (custom-fields 1.4)', async () => {
+    await enableOnA()
+    await mutate('field', 'f1', { name: 'Client', project_id: 'p1', type: 'choice', options: 'Acme\nGlobex', position: 1, created_at: 1, deleted_at: null })
+    await mutate('task', 't1', { fields: { f1: 'Acme', cost: 120 } })
+    await syncNow()
+    expect(isEnvelope(current('field', 'f1', 'name'))).toBe(true)
+    expect(isEnvelope(current('field', 'f1', 'options'))).toBe(true)
+    expect(isEnvelope(current('task', 't1', 'fields.f1'))).toBe(true)
+    expect(current('task', 't1', 'fields.cost')).toBe(120)
+    expect(current('field', 'f1', 'type')).toBe('choice')
+    expect((await db.tasks.get('t1'))!.fields).toEqual({ f1: 'Acme', cost: 120 })
+  })
+
   it('does not encrypt content of shared projects', async () => {
     await enableOnA()
     await db.memberships.put({ projectId: 'shared1', role: 'owner', ownerId: 'u1', members: [] })
