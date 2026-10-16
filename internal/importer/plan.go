@@ -659,6 +659,10 @@ func (pl *planner) planForeign(rows []Row) []change {
 				{"archived", raw(false)},
 				{"created_at", raw(pl.now)},
 			}
+			if d := strings.TrimSpace(row.Description); d != "" {
+				// The note travels with a created project only; an existing one keeps its own.
+				fields = append(fields, field{"description", raw(d)})
+			}
 			if err := validateFields(KindProject, pp.id, fields); err != nil {
 				res.Outcome, res.Reason = OutcomeError, err.Error()
 				continue

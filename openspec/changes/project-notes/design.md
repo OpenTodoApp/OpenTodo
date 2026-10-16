@@ -74,6 +74,12 @@ Folding: a note taller than about eight lines is clipped with a "Show more / Sho
 
 Both fields join `ContentFields["project"]` and `CONTENT_FIELDS.project`. `checkEncryptedSize` already applies the document cap to a content document field by `isDocField`, so the encrypted-document limit (`MAX_DOC_CHARS_ENCRYPTED`) holds for projects without new code. The enable-time migration encrypts existing content fields by iterating `CONTENT_FIELDS`, so existing project descriptions (empty until this change) are covered; an account that enabled encryption before this change encrypts the new fields on first write. `docs/e2ee.md`'s list of hidden fields gains "project descriptions and notes".
 
+### Interface budget (added after ux-overhaul)
+
+- The note is content between the quick add and the first section, not chrome. An empty note costs editors one quiet line and viewers nothing; a long note folds after about eight lines.
+- One new shortcut, Shift+P, registered in the shortcut list.
+- No new scroll region, sidebar destination or task property.
+
 ## Risks / Trade-offs
 
 - **[Older server refuses `project.description`/`notes_doc` ops as `invalid_op`]** → Same as every additive field: client and server ship in one binary, and a device talking to an older server keeps its local note until the server is upgraded. The sync protocol's invalid-op handling applies; no data is lost. Release notes say so.

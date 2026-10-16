@@ -25,6 +25,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Work from the list](work-from-the-list.md) | Add, complete and delete tasks, change them with one key, undo, and put them in the order you want, all without opening a task. |
 | &nbsp;&nbsp;↳ [Change several tasks at once](bulk-actions.md) | Tick tasks with the keyboard, mouse or touch, act on all of them from one menu, preview moves and assignments, and undo the lot in one step. |
 | &nbsp;&nbsp;↳ [Projects and sub-projects](projects.md) | Create projects and nest them, use the Project menu to colour, move, rename, archive or delete, duplicate a project or a task, and what happens when a project is done. |
+| &nbsp;&nbsp;↳ [Project notes](project-notes.md) | The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it. |
 | [Views](views.md) | Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on. |
 | &nbsp;&nbsp;↳ [The built-in views](built-in-views.md) | What Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Calendar, Completed, Filter, Trash and Updates show, their shortcuts, and the duration filter. |
 | &nbsp;&nbsp;↳ [Today and Upcoming](today-and-upcoming.md) | How Today orders overdue, started, evening and blocked tasks, how deadlines and start dates bring tasks in, and how Upcoming lays out the days ahead. |

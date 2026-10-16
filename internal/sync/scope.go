@@ -125,7 +125,9 @@ func CanWrite(role, entity, field string) bool {
 	case RoleAdmin:
 		return entity == "task" || entity == "section" || (entity == "project" && field != "deleted_at")
 	case RoleEditor:
-		return entity == "task" || entity == "section"
+		// Editors may write the project's note but nothing else of the project
+		// (OpenSpec change project-notes, design D2).
+		return entity == "task" || entity == "section" || (entity == "project" && (field == "description" || field == "notes_doc"))
 	}
 	return false
 }

@@ -47,6 +47,10 @@ export interface Project {
   icon?: string | null
   created_at: number
   deleted_at: number | null
+  /** The project's note (OpenSpec project-notes): Markdown projection of notes_doc. Read with `?? ''`. */
+  description?: string
+  /** The mergeable note document (an envelope), or '' / absent. */
+  notes_doc?: string
   _clock: Clock
 }
 

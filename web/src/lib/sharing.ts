@@ -79,6 +79,14 @@ export const canDeleteProject = (role: ProjectRole): boolean => role === 'owner'
 export const canManageMembers = (role: ProjectRole): boolean => role === 'owner' || role === 'admin'
 
 /** Roles an actor may grant or change: the owner any member role, an admin viewer/editor. */
+/**
+ * Whether a role may edit a project's note (OpenSpec project-notes, design D2):
+ * editors, admins and the owner; viewers read it. Mirrors CanWrite on the server.
+ */
+export function canEditProjectNote(role: ProjectRole): boolean {
+  return role === 'owner' || role === 'admin' || role === 'editor'
+}
+
 export function grantableRoles(actor: ProjectRole): Exclude<ProjectRole, 'owner'>[] {
   if (actor === 'owner') return ['viewer', 'editor', 'admin']
   if (actor === 'admin') return ['viewer', 'editor']

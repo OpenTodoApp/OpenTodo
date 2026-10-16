@@ -49,7 +49,8 @@ export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_l
 /** Fields whose old value can be put back from the timeline. */
 export const RESTORABLE: Record<'task' | 'project', readonly string[]> = {
   task: ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'completed_at', 'deleted_at', 'project_id', 'parent_id'],
-  project: ['name', 'color', 'archived', 'parent_id', 'deleted_at'],
+  // A project's note (project-notes): its Markdown projection; the device folds it into notes_doc.
+  project: ['name', 'color', 'archived', 'parent_id', 'deleted_at', 'description'],
 }
 
 export function canRestoreField(entity: 'task' | 'project', field: string): boolean {
@@ -71,7 +72,7 @@ export async function restoreValue(entity: 'task' | 'project', id: string, field
 /** Reference fields whose ids the timeline shows by name, and their labels. */
 const REF_LABELS: Record<string, string> = { assignee_id: 'assignee', project_id: 'project', section_id: 'section', parent_id: 'parent' }
 /** Labels of fields whose name alone reads badly. */
-const FIELD_LABELS: Record<string, string> = { blocked_by: 'waiting for' }
+const FIELD_LABELS: Record<string, string> = { blocked_by: 'waiting for', description: 'notes', notes_doc: 'notes' }
 
 /** The label of a field in the timeline (`assignee_id` reads as "assignee"). */
 export function fieldLabel(field: string): string {

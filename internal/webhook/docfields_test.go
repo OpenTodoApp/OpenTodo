@@ -39,3 +39,12 @@ func TestDocFieldsLeftOutOfDeliveries(t *testing.T) {
 		t.Fatal("the caller's entity was modified")
 	}
 }
+
+// TestProjectNoteDocLeftOut (project-notes 1.5): the same rule for a project's note.
+func TestProjectNoteDocLeftOut(t *testing.T) {
+	got := withoutDocFields(opsync.Change{Entity: "project", EntityID: "p1", Fields: map[string]opsync.FieldChange{
+		"notes_doc": fc(`""`, `"ydoc:v1:AAAA"`), "description": fc(`""`, `"# Plan"`)}})
+	if _, has := got.Fields["notes_doc"]; has || len(got.Fields) != 1 {
+		t.Fatalf("fields = %v", got.Fields)
+	}
+}

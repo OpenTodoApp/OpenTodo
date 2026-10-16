@@ -18,6 +18,7 @@ import { TodayAskAction } from './assistant/AskEntry'
 import { beginDrag } from '../lib/dnd'
 import { moveTask, moveTaskBy, type Step } from '../lib/move'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
+import { ProjectNote } from './ProjectNote'
 import { effectiveSection, groupBySection, loadCollapsedSections, loadViewMode, moveTaskToSection, nextViewMode, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { TimelineView } from './TimelineView'
 import { BoardView, sectionTarget, type BoardColumn } from './BoardView'
@@ -860,6 +861,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               trigger={<span className="sr-only">Actions</span>} triggerClassName="sr-only" />
           )}
 
+          {route.view === 'project' && currentProject && <ProjectNote project={currentProject} />}
           {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
           {rows.length === 0 && !showFirstRun && !(board || liveSections.length > 0) && (duration ? (
             <EmptyStatePattern icon="filter" title="No task matches this duration filter"

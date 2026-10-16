@@ -620,3 +620,30 @@ func TestApplyStrictRefusesWholeBatch(t *testing.T) {
 		t.Fatal("strict apply stored part of a refused batch")
 	}
 }
+
+// TestEditorWritesProjectNote (project-notes D2): an editor may write the
+// project's note and nothing else of the project; a viewer may write neither.
+func TestEditorWritesProjectNote(t *testing.T) {
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor)
+	f.add("alice", "carol", RoleViewer)
+	note := f.op("project", "p", "description", `"# Trip plan"`)
+	doc := f.op("project", "p", "notes_doc", `"ydoc:v1:AAEC"`)
+	rename := f.op("project", "p", "name", `"Mine"`)
+	res := f.apply("bob", "B", note, doc, rename)
+	if !slices.Equal(rejectedIDs(res), []string{rename.ID + ":forbidden"}) || res.Applied != 2 {
+		t.Fatalf("editor = %v applied %d", rejectedIDs(res), res.Applied)
+	}
+	for _, u := range []string{"alice", "bob", "carol"} {
+		if got := f.field(u, "project", "p", "description"); got != `"# Trip plan"` {
+			t.Fatalf("%s reads %s", u, got)
+		}
+	}
+	viewer := f.op("project", "p", "description", `"vandalised"`)
+	if res := f.apply("carol", "C", viewer); !slices.Equal(rejectedIDs(res), []string{viewer.ID + ":forbidden"}) {
+		t.Fatalf("viewer = %v", rejectedIDs(res))
+	}
+	if !CanWrite(RoleEditor, "project", "notes_doc") || CanWrite(RoleEditor, "project", "archived") || CanWrite(RoleViewer, "project", "description") {
+		t.Fatal("CanWrite")
+	}
+}
