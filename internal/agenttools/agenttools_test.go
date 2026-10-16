@@ -695,20 +695,27 @@ func TestCompleteAndReopen(t *testing.T) {
 	if isOpenEntity(f.get("u1", "t1")) {
 		t.Fatal("t1 open")
 	}
+	// Who completed it (completed-date-filters D5): the token's user.
+	if by := string(f.get("u1", "t1")["completed_by"]); by != `"u1"` {
+		t.Fatalf("t1 completed_by = %s", by)
+	}
 	series := f.get("u1", "s1")
 	if !isOpenEntity(series) || string(series["due"]) != `{"date":"2026-10-19"}` {
 		t.Fatalf("series = %v", series)
 	}
 	occ := f.get("u1", opsync.OccurrenceID("s1", "2026-10-12"))
-	if occ == nil || isOpenEntity(occ) || string(occ["series_id"]) != `"s1"` {
+	if occ == nil || isOpenEntity(occ) || string(occ["series_id"]) != `"s1"` || string(occ["completed_by"]) != `"u1"` {
 		t.Fatalf("occurrence = %v", occ)
+	}
+	if by, has := series["completed_by"]; has && string(by) != "null" {
+		t.Fatalf("series completed_by = %s", by)
 	}
 	out = f.mustCall(c, "complete_tasks", map[string]any{"ids": []string{"t1"}})
 	if out["changed"] != 0 {
 		t.Fatalf("second complete = %v", out)
 	}
 	f.mustCall(c, "reopen_tasks", map[string]any{"ids": []string{"t1"}})
-	if !isOpenEntity(f.get("u1", "t1")) {
+	if !isOpenEntity(f.get("u1", "t1")) || string(f.get("u1", "t1")["completed_by"]) != "null" {
 		t.Fatal("not reopened")
 	}
 }

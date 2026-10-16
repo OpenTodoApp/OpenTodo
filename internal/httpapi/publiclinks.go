@@ -292,7 +292,9 @@ func (s *Server) handlePublicTick(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	now := time.Now()
-	body := map[string]json.RawMessage{"completed_at": json.RawMessage("null")}
+	// An anonymous visitor completed it: completed_by stays null
+	// (completed-date-filters D5), instead of naming the link's creator.
+	body := map[string]json.RawMessage{"completed_at": json.RawMessage("null"), "completed_by": json.RawMessage("null")}
 	if *in.Completed {
 		body["completed_at"] = mustJSON(now.UnixMilli())
 	}

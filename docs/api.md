@@ -117,7 +117,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones |
+| GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones; `?completed_after=…&completed_before=…` for [tasks completed in a range](#tasks-completed-in-a-range) |
 | POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create) |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
 | PATCH | `/api/v1/tasks/{id}` | yes | partial update → task |
@@ -479,7 +479,19 @@ Every other write route (tokens, settings, sync, sharing and members, invitation
 | `ical_extra` | string or null | opaque iCalendar lines a CalDAV client sent that the app does not model (alarms, `X-` properties…); kept so calendar apps do not lose them. See [caldav.md](caldav.md#what-maps-to-what) |
 | `position` | number | sort order inside a list: ascending, ties by id; clients move a task by writing the midpoint between its new neighbours (see [docs/sync.md](sync.md#manual-order)) |
 | `completed_at`, `deleted_at` | unix ms or null | |
+| `completed_by` | string or null | account id of whoever completed the task; null when open or unknown (completions made before this field, imports, public links). A write that sets `completed_at` without it records you; one that clears `completed_at` clears it |
 | `created_at` | unix ms | set by the server on create if missing |
+
+### Tasks completed in a range
+
+`GET /api/v1/tasks` takes `completed_after` and `completed_before` to list only tasks completed at or after the first and before the second. Each is a date `YYYY-MM-DD` (midnight at the start of that day in the zone named by `timezone`, UTC by default), an RFC 3339 time, or Unix milliseconds; either may be left out. With either one, open tasks are left out. An unparseable value, an unknown `timezone`, or the parameters on another collection answer `400 invalid_input` naming the parameter.
+
+```sh
+# What I finished last week (Monday to Sunday, Zurich time)
+curl -sS -H "Authorization: Bearer $T" \
+  "$BASE/api/v1/tasks?completed_after=2026-10-05&completed_before=2026-10-12&timezone=Europe/Zurich" \
+  | jq -r '.tasks[] | "\(.completed_at) \(.title)"'
+```
 
 ### Subtasks
 

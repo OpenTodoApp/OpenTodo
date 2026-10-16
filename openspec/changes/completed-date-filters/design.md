@@ -45,7 +45,7 @@ For a one-day range this is exactly today's comparison, so existing queries are 
 
 ### D2. Week start comes from the context, defaulting to the preference snapshot
 
-`FilterContext` gains an optional `weekStart` (0 = Sunday). When absent, `compile` reads `currentDateTime().weekStart`, so the Filter view, saved views, dashboards, the sidebar counts and the command palette follow the user's preference without each caller passing it; tests pass it explicitly. The Filter view adds the snapshot version to its memo key so a changed preference re-evaluates.
+`FilterContext` gains an optional `weekStart` (0 = Sunday). When absent, `compile` reads `currentDateTime().weekStart`, so the Filter view, saved views, dashboards, the sidebar counts and the command palette follow the user's preference without each caller passing it; tests pass it explicitly. The Filter view passes the week start from the preference provider and keys its memo on it, so a changed preference re-evaluates.
 
 ### D3. `completed <cmp> <date>` implies completed tasks
 

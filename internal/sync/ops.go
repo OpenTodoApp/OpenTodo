@@ -216,6 +216,10 @@ var Schema = map[string]map[string]kind{
 		// collaborative-rich-text); additive. description stays its Markdown
 		// projection, written by clients in the same batch. Opaque here.
 		"notes_doc": kDoc,
+		// Account id of whoever completed the task, or null (OpenSpec change
+		// completed-date-filters, design D5); additive. Written beside
+		// completed_at; ApplyStrict fills it in for server-side completions.
+		"completed_by": kNullableString,
 	},
 	// section: a named, ordered container inside one project (OpenSpec change
 	// board-view). It lives in the sharing scope of its project like a task does;

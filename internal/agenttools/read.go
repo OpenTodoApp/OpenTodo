@@ -63,6 +63,8 @@ func init() {
 				"priority":          map[string]any{"type": "integer", "minimum": 1, "maximum": 4, "description": "Only tasks of this priority: 1 is the highest, 4 the default."},
 				"due_from":          map[string]any{"type": "string", "format": "date", "description": "Only tasks due on or after this date (YYYY-MM-DD)."},
 				"due_to":            map[string]any{"type": "string", "format": "date", "description": "Only tasks due on or before this date (YYYY-MM-DD)."},
+				"completed_after":   map[string]any{"type": "string", "description": "Only tasks completed at or after this time: YYYY-MM-DD (start of that day in timezone), an RFC 3339 time or Unix milliseconds. Implies completed tasks only."},
+				"completed_before":  map[string]any{"type": "string", "description": "Only tasks completed before this time, in the same forms as completed_after. Implies completed tasks only."},
 				"include_completed": completedArg,
 				"timezone":          timezoneProp,
 				"limit":             limitProp,
@@ -196,9 +198,12 @@ type taskQuery struct {
 	priority         int
 	dueFrom, dueTo   string
 	includeCompleted bool
-	loc              *time.Location
-	limit            int
-	cursor           string
+	// Completion range [completedAfter, completedBefore) in Unix ms; 0 = open end
+	// (OpenSpec change completed-date-filters, design D6).
+	completedAfter, completedBefore int64
+	loc                             *time.Location
+	limit                           int
+	cursor                          string
 }
 
 func parseTaskQuery(a args) (taskQuery, error) {
@@ -236,6 +241,18 @@ func parseTaskQuery(a args) (taskQuery, error) {
 	}
 	if q.loc, err = a.location(); err != nil {
 		return q, err
+	}
+	for _, b := range []struct {
+		name string
+		dst  *int64
+	}{{"completed_after", &q.completedAfter}, {"completed_before", &q.completedBefore}} {
+		v, err := a.str(b.name)
+		if err != nil {
+			return q, err
+		}
+		if *b.dst, err = ParseCompletionBound(b.name, v, q.loc); err != nil {
+			return q, err
+		}
 	}
 	if q.limit, err = a.limit(); err != nil {
 		return q, err
@@ -299,7 +316,10 @@ func (r *Registry) queryTasks(snap *snapshot, q taskQuery) (map[string]any, erro
 				continue
 			}
 		}
-		if !open && !q.includeCompleted {
+		if !open && !q.includeCompleted && q.completedAfter == 0 && q.completedBefore == 0 {
+			continue
+		}
+		if !InCompletionRange(int64(num(t, "completed_at")), q.completedAfter, q.completedBefore) {
 			continue
 		}
 		if q.priority != 0 && priority(t) != q.priority {

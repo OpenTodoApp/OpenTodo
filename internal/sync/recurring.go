@@ -144,6 +144,11 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 		nd.Time, nd.TZ = cur.Time, cur.TZ
 	}
 	delete(body, "completed_at")
+	// Who completed it belongs to the occurrence (completed-date-filters D5).
+	if by, has := body["completed_by"]; has {
+		record["completed_by"] = by
+		delete(body, "completed_by")
+	}
 	body["due"] = jsonOf(nd)
 	if deadline != "" {
 		body["deadline"] = jsonOf(recurrence.ShiftDate(deadline, date, next))

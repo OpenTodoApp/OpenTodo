@@ -30,6 +30,14 @@
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
+          "completed_after": {
+            "description": "Only tasks completed at or after this time: YYYY-MM-DD (start of that day in timezone), an RFC 3339 time or Unix milliseconds. Implies completed tasks only.",
+            "type": "string"
+          },
+          "completed_before": {
+            "description": "Only tasks completed before this time, in the same forms as completed_after. Implies completed tasks only.",
+            "type": "string"
+          },
           "cursor": {
             "description": "next_cursor from a previous result, to get the following page.",
             "type": "string"

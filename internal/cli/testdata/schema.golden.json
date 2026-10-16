@@ -335,6 +335,16 @@
           "description": "tasks of one project (name or id)"
         },
         {
+          "name": "completed-after",
+          "type": "string",
+          "description": "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"
+        },
+        {
+          "name": "completed-before",
+          "type": "string",
+          "description": "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"
+        },
+        {
           "name": "limit",
           "type": "int",
           "description": "print at most n tasks"
@@ -1413,6 +1423,13 @@
             "number",
             "null"
           ]
+        },
+        "completed_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "account id of whoever completed the task, when known"
         },
         "deleted_at": {
           "type": [
