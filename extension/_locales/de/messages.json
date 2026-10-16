@@ -1,0 +1,74 @@
+{
+  "extName": {
+    "message": "OpenTodo Capture"
+  },
+  "extDescription": {
+    "message": "Schicke die aktuelle Seite, ihren Titel, den markierten Text oder einen Screenshot an die Erfassungsansicht deines eigenen OpenTodo-Servers. Kein Tracking, keine Netzwerkanfragen."
+  },
+  "actionTitle": {
+    "message": "Zu OpenTodo hinzufügen"
+  },
+  "commandDescription": {
+    "message": "Die aktuelle Seite zu OpenTodo hinzufügen"
+  },
+  "menuScreenshot": {
+    "message": "Screenshot zu OpenTodo hinzufügen"
+  },
+  "optionsTitle": {
+    "message": "Einstellungen von OpenTodo Capture"
+  },
+  "optionsIntro": {
+    "message": "Gib die Adresse deines OpenTodo-Servers ein. Die Erweiterung öffnet die Erfassungsansicht dieses Servers für die aktuelle Seite. Sie speichert nur diese Adresse, hält kein Passwort und kein Token und kontaktiert den Server nie selbst."
+  },
+  "pendingNote": {
+    "message": "Lege deinen Server fest, um „$TITLE$“ weiter hinzuzufügen.",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example page"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "diese Seite"
+  },
+  "serverLabel": {
+    "message": "Server-URL"
+  },
+  "save": {
+    "message": "Speichern"
+  },
+  "screenshotsHeading": {
+    "message": "Screenshots"
+  },
+  "screenshotsIntro": {
+    "message": "„Screenshot zu OpenTodo hinzufügen“ erfasst den sichtbaren Teil einer Seite und übergibt das Bild an das Erfassungsfenster deines Servers, wo nichts gespeichert wird, bis du auf Speichern klickst. Für die Übergabe braucht die Erweiterung Zugriff auf die Adresse deines Servers, und nur auf diese; der Browser fragt beim Speichern danach."
+  },
+  "screenshotsAllowed": {
+    "message": "Screenshots: erlaubt für $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  },
+  "screenshotsNotAllowed": {
+    "message": "Screenshots: noch nicht erlaubt. Die Erweiterung braucht Zugriff auf deinen Server nur, um einen Screenshot an das Erfassungsfenster zu übergeben."
+  },
+  "allowScreenshots": {
+    "message": "Screenshots erlauben"
+  },
+  "invalidAddress": {
+    "message": "Gib eine http://- oder https://-Adresse ein, zum Beispiel https://todo.example.com"
+  },
+  "saved": {
+    "message": "Gespeichert. Erfasstes geht an $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  }
+}
