@@ -25,6 +25,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **Clicking a task's circle completes it again.** Since 0.5.0 the circle turned into a selection checkbox while the pointer was over the row, so a click meant to complete a task ticked it for bulk actions instead. The circle now always completes; selection checkboxes appear only once a task is ticked (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+click or Shift+click a row, or <kbd>x</kbd>) or in touch Select mode. ([Bulk actions](docs/bulk-actions.md))
 - **Imports from TickTick and Todoist keep more of what you had.** TickTick tasks keep the time they were created and completed (the backup writes times as `+0000`, which was not read), and a reminder on an all-day TickTick task fires at the time you set (`PT9H` is 09:00 on the day, not 18:00). A Todoist task with several comments lists them under one "Comments" heading, and an absolute Todoist reminder fires at its time in the task's time zone. Each named format now has a second, richer test file covering recurring tasks, reminders, deadlines, checklists, completed and canceled items and boards. ([Import formats](docs/import.md))
 
 ## [0.5.0] - 2026-10-16

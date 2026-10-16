@@ -223,22 +223,24 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         </span>
       )}
       {/* One slot for both boxes ("Bulk selection does not shift rows"): the task's
-          checkbox, replaced by the selection box on hover, focus or tick, in the same
-          20 px square, so the title never moves. */}
+          checkbox, replaced by the selection box only while a selection is in progress
+          (a row is ticked, or touch Select mode), in the same 20 px square, so the title
+          never moves. Hover and focus never swap them: a click on the circle always
+          completes (row-checkbox-completes). */}
       <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center self-start" data-row-controls data-selecting={onTick && !readOnly && (showCheckbox || ticked) ? '' : undefined}>
         <button
           type="button"
           aria-label={done ? t('Reopen task') : t('Complete task')}
           onClick={toggle}
           disabled={readOnly}
-          className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly ? `${showCheckbox || ticked ? 'invisible' : 'group-hover:invisible group-focus-within:invisible'}` : ''}`}
+          className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly && (showCheckbox || ticked) ? 'invisible' : ''}`}
         >
           <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${PRIORITY_RING[task.priority]} ${checked ? 'bg-faint border-input text-on-accent' : 'group-hover/check:bg-success-soft'} ${completing ? 'row-check-pop' : ''}`}>
             {checked && <Icon name="check" size="xs" />}
           </span>
         </button>
         {onTick && !readOnly && (
-          <label className={`absolute inset-0 inline-flex cursor-pointer items-center justify-center ${showCheckbox || ticked ? '' : 'invisible group-hover:visible group-focus-within:visible pointer-coarse:hidden'}`}>
+          <label className={`absolute inset-0 inline-flex cursor-pointer items-center justify-center ${showCheckbox || ticked ? '' : 'hidden'}`}>
             <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={t('Select {title}', { title: task.title || t('Untitled') })} data-tick
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
           </label>

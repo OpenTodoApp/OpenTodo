@@ -164,6 +164,21 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
     } finally { restore() }
   })
 
+  it('without a selection in progress the circle is the only box: hover and focus never swap in the selection box', async () => {
+    let toggled = 0
+    const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => { toggled++ }} onOpen={() => {}} onTick={() => {}} /></ul>)
+    const complete = r.container.querySelector('button[aria-label="Complete task"]')!
+    expect(complete.className).not.toMatch(/invisible/)
+    const tickLabel = r.container.querySelector('[data-tick]')!.closest('label')!
+    expect(tickLabel.className).toMatch(/\bhidden\b/)
+    expect(tickLabel.className).not.toMatch(/group-hover|group-focus-within/)
+    await r.rerender(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => { toggled++ }} onOpen={() => {}} onTick={() => {}} showCheckbox /></ul>)
+    expect(r.container.querySelector('button[aria-label="Complete task"]')!.className).toMatch(/invisible/)
+    expect(r.container.querySelector('[data-tick]')!.closest('label')!.className).not.toMatch(/\bhidden\b/)
+    expect(toggled).toBe(0)
+    await r.unmount()
+  })
+
   it('the selection box lives in the same slot as the task checkbox, so the title keeps its place', async () => {
     const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onTick={() => {}} /></ul>)
     const li = r.container.querySelector('[data-task-id]')!
