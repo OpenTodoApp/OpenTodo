@@ -364,7 +364,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
       {/* Projects stays while finding: its header holds the field's opener. */}
       {(finding || groupShown(shownRows.length)) && <SidebarGroup title="Projects" collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
         <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label="Find in the sidebar" aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
-        <Menu kind="menu" label="Projects menu" title="Projects" trigger={<Icon name="plus" size="xs" />}
+        <Menu kind="menu" label="Add or fold projects" title="Projects" trigger={<Icon name="plus" size="xs" />}
           triggerClassName="rounded-chip px-1.5 py-0.5 text-hint font-medium normal-case text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised" width="sm:w-56">
           <MenuItem label="New project" icon="plus" onSelect={startAdding} />
           <MenuItem label="From a template…" icon="copy" onSelect={requestTemplateDialog} />

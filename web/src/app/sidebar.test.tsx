@@ -271,12 +271,12 @@ describe('tree defaults and bulk toggles (sidebar-groups 2.2)', () => {
     // "Work" counts its whole subtree while collapsed.
     expect(r.container.querySelector(`[data-project-id="${ids.Work}"] [data-count]`)?.textContent).toBe('2')
     // Expand all, then Collapse all, from the Projects header menu.
-    await click(groupOf(r.container, 'Projects').querySelector('button[aria-label="Projects menu"]')!)
+    await click(groupOf(r.container, 'Projects').querySelector('button[aria-label="Add or fold projects"]')!)
     await waitFor(() => !!menuItem('Expand all'))
     await click(menuItem('Expand all'))
     await waitFor(() => r.container.querySelectorAll('[data-project-id]').length === 30)
     expect(r.container.querySelector(`[data-project-id="${ids.Work}"] [data-count]`)?.textContent).toBe('1')
-    await click(groupOf(r.container, 'Projects').querySelector('button[aria-label="Projects menu"]')!)
+    await click(groupOf(r.container, 'Projects').querySelector('button[aria-label="Add or fold projects"]')!)
     await waitFor(() => !!menuItem('Collapse all'))
     await click(menuItem('Collapse all'))
     await waitFor(() => r.container.querySelectorAll('[data-project-id]').length === 9)
