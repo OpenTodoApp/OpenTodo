@@ -107,7 +107,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
   return (
     <div data-version={v.id}>
       <div className="flex items-start gap-3">
-        <Avatar id={who.id || 'unknown'} name={who.name} size="md" />
+        <Avatar id={who.id || 'unknown'} name={who.name || who.device} size="md" />
         <div className="min-w-0 flex-1">
           <button type="button" aria-expanded={open} onClick={() => setOpen((x) => !x)}
             className="inline-flex max-w-full items-start gap-1 rounded-chip text-left text-body font-medium text-default hover:underline focus-visible:outline-2 focus-visible:outline-focus">
@@ -115,7 +115,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
             <span>{summary}</span>
           </button>
           <div className="text-meta text-muted">
-            {who.name} · {who.device} · <RelativeTime ts={v.ts} now={now} />
+            {who.name ? `${who.name} · ` : ''}{who.device} · <RelativeTime ts={v.ts} now={now} />
           </div>
         </div>
       </div>
@@ -239,7 +239,8 @@ export function HistoryTab({ taskId, readOnly, onRestored }: HistoryTabProps) {
   }, [load, online])
 
   const memberMap = new Map(memberships.map((m) => [m.projectId, m]))
-  const author = (v: Version) => ({
+  // A public link's tick is written as the link's creator; it reads as the link alone (public-links D6).
+  const author = (v: Version) => v.device.startsWith('public:') ? { id: v.device, name: '', device: deviceLabel(v, device) } : ({
     id: v.userId,
     name: v.userId && v.userId === me ? 'You' : memberName(v.userId, memberMap) ?? 'Someone',
     // The name is shown on its own; deviceLabel would add it again for someone else's change.

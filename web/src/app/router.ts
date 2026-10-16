@@ -27,6 +27,7 @@ export type Route =
   | { view: 'project-invite'; token: string }
   | { view: 'reset'; token: string }
   | { view: 'triage' }
+  | { view: 'public'; token: string }
   | { view: 'share' }
   | { view: 'trash' }
   | { view: 'feed' }
@@ -137,6 +138,9 @@ export function parseRoute(pathname: string): Route {
     case 'triage':
       // Process the Inbox one task at a time (inbox-triage).
       return { view: 'triage' }
+    case 'public':
+      // A public link to a project's list (public-links): no sign-in, no sync.
+      return parts[1] ? { view: 'public', token: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'label':
       return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
     default:
@@ -176,6 +180,8 @@ export function routePath(r: Route): string {
       return `/${r.view}/${encodeURIComponent(r.token)}`
     case 'project-invite':
       return `/invite/p/${encodeURIComponent(r.token)}`
+    case 'public':
+      return `/public/${encodeURIComponent(r.token)}`
     case 'day':
     case 'week':
     case 'month':

@@ -26,6 +26,8 @@ export const AUDIT_LABELS: Record<AuditEventName, string> = {
   'project_invite.created': 'Project invite link created',
   'project_invite.revoked': 'Project invite link revoked',
   'project_invite.accepted': 'Joined a project with a link',
+  'public_link.created': 'Public link created',
+  'public_link.revoked': 'Public link revoked',
   'role.changed': 'Role changed',
   'settings.changed': 'Setting changed',
   'identity.linked': 'Sign-in provider linked',
@@ -81,6 +83,7 @@ export function eventSummary(ev: AuditEvent): string {
   if (d.token_name) parts.push(`“${d.token_name}”${d.token_scope === 'read' ? ' (read-only)' : d.token_scope === 'agent' ? ' (assistant, can make changes)' : ''}`)
   if (d.passkey_name) parts.push(`“${d.passkey_name}”`)
   if (d.project_role) parts.push(`as ${d.project_role}`)
+  if (d.link_rights) parts.push(d.link_rights === 'tick' ? 'can tick off tasks' : 'view only')
   if (d.invited_email) parts.push(`for ${d.invited_email}`)
   if (d.setting) parts.push(`${SETTINGS[d.setting] ?? d.setting}: ${d.from ?? '?'} → ${d.to ?? '?'}`)
   else if (d.from || d.to) parts.push(`${d.from ?? '?'} → ${d.to ?? '?'}`)

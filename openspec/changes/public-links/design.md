@@ -120,6 +120,13 @@ Deactivating an account revokes its links in the same transaction, as `projectin
 
 Catalogue names `public_link.created` and `public_link.revoked`, detail keys `public_link_id` and `link_rights` added to the allow-list, `shared_project_id` reused. Ticks are not audited: they are task edits, and the audit spec keeps those out. Demo rules: `{"Public links", false, projectPublicLinks}` and `{"Public links", false, prefix("/api/v1/public")}` (every method), and `docs/self-hosting/demo.md` lists it.
 
+### Interface budget (added after ux-overhaul)
+
+- The share dialog gains one section, for owners and admins.
+- The project header gains a "Public" chip in its meta slot, not a new row.
+- The public page sits outside the shell, like the invite and reset screens.
+- No new scroll region, sidebar destination, task property, list chrome or shortcut.
+
 ## Risks / Trade-offs
 
 - **[A link leaks beyond the intended people]** → Revocation is one click in the share dialog, "last opened" shows unexpected use, the badge keeps publication visible, and a tick link can only complete or reopen tasks, never read notes or write content.

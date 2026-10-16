@@ -553,6 +553,12 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 		{"GET", "/api/v1/calendar-feeds/events?from=2026-10-01&to=2026-10-07"},
 		{"GET", "/feeds/otfeed_x/tasks.ics"},
 		{"PUT", "/api/v1/settings/calendar-feeds"},
+		// Public links (public-links 2.7): every method.
+		{"GET", "/api/v1/projects/" + shared + "/public-links"},
+		{"POST", "/api/v1/projects/" + shared + "/public-links"},
+		{"DELETE", "/api/v1/projects/" + shared + "/public-links/x"},
+		{"GET", "/api/v1/public/otl_x"},
+		{"POST", "/api/v1/public/otl_x/tick"},
 		// Attachments (attachments 2.4): every method.
 		{"GET", "/api/v1/settings/attachments"},
 		{"PUT", "/api/v1/settings/attachments"},

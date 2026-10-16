@@ -1,7 +1,10 @@
 import { Button, Icon, type IconName, isIconName, PageHeader, Tooltip } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { type ReactNode, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { api } from '../lib/api'
 import { db } from '../lib/db'
+import { useDemo } from '../lib/demo'
+import { useOnline } from '../lib/online'
 import { archiveProject, deleteProject, moveProject, updateProject } from '../lib/ops'
 import { buildProjectTree, descendantIds } from '../lib/projects'
 import { canDeleteProject, canEditProject, canManageMembers } from '../lib/sharing'
@@ -147,7 +150,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   layout?: ReactNode
 }) {
   const [editing, setEditing] = useState(false)
-  const [sharing, setSharing] = useState(false)
+  const [sharing, setSharing] = useState<false | true | 'public'>(false)
   // Cached membership (project-sharing): roles render the same offline.
   const membership = useLiveQuery(() => db.memberships.get(project.id), [project.id])
   const role = membership?.role ?? 'owner'
@@ -156,6 +159,18 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   const [menuOpen, setMenuOpen] = useState(false)
   const [startPicker, setStartPicker] = useState<string | null>(null)
   const occupant = usePanelOccupantKey()
+  // The "Public" badge (public-links): read from the server while online, for the
+  // owner and admins only; never from synced data, so it is absent offline.
+  const online = useOnline()
+  const demo = useDemo()
+  const [publicLinks, setPublicLinks] = useState(0)
+  const managesLinks = canManageMembers(role) && !demo
+  useEffect(() => {
+    if (!online || !managesLinks) { setPublicLinks(0); return }
+    let cancelled = false
+    api.listPublicLinks(project.id).then((r) => { if (!cancelled) setPublicLinks(r.links.length) }, () => { if (!cancelled) setPublicLinks(0) })
+    return () => { cancelled = true }
+  }, [online, managesLinks, project.id])
 
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const targets = useMemo(() => moveTargets(project, projects), [projects, project])
@@ -219,6 +234,13 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
         </button>
       )}
       {role === 'viewer' && <span role="note" className="rounded-chip bg-sunken px-1.5 py-0.5 text-meta text-muted">Read-only</span>}
+      {online && managesLinks && publicLinks > 0 && (
+        <button type="button" data-public-badge onClick={() => setSharing('public')}
+          aria-label={`Public: ${publicLinks} active ${publicLinks === 1 ? 'link' : 'links'}. Open the public links`}
+          className="inline-flex items-center gap-1 rounded-chip bg-warning-soft px-1.5 py-0.5 text-meta font-medium text-on-warning-soft hover:underline">
+          <Icon name="globe" size="xs" />Public
+        </button>
+      )}
     </>
   )
 
@@ -235,7 +257,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
         menu={<ActionMenu label="Project menu" title={project.name} groups={groups} header={editable ? <><ColourSwatches project={project} /><IconSwatches project={project} /></> : undefined}
           trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-72"
           open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />} />
-      {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} onClose={() => setSharing(false)} />}
+      {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} section={sharing === 'public' ? 'public' : undefined}
+        onPublicLinks={setPublicLinks} onClose={() => setSharing(false)} />}
       {dialog === 'duplicate' && <DuplicateProjectDialog project={project} shared={!!membership} onClose={() => setDialog(null)} />}
       {dialog === 'template' && <SaveTemplateDialog project={project} onClose={() => setDialog(null)} />}
     </>
