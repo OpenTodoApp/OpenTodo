@@ -34,3 +34,7 @@ The layout check (`scripts/e2e-layout.mjs`, new `columns` screen at 768 px with 
 ## Visual baselines
 
 No shared component in `web/src/ui` and no icon changed, so no Storybook story needs a new visual baseline.
+
+## Archive
+
+The spec deltas were written against older versions of a few requirements. On archive, the statements of "Board view" (sections-and-boards), "Encrypted and plaintext fields" (end-to-end-encryption), "Own export completeness" (data-import) and "Write tools" (mcp-server) were restored to their current wording, and every custom-fields addition that pushed a requirement over the 500-character limit of `openspec validate --strict` became its own requirement with its scenarios, keeping the meaning: "Encrypted custom fields", "Own export restores custom fields", "Custom field terms in the grammar", "Custom field values on tasks" (http-api), "Custom field values of a task" (task-management), "Field badges on cards", "Custom fields in tool results" and "Custom field values in write tools". No other in-flight change modifies these specs.

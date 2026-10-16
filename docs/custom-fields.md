@@ -3,7 +3,7 @@ title: Custom fields
 summary: Give the tasks of a project typed columns such as a cost, a client, a stage or a link, see them on rows, cards and columns, and filter by them.
 audience: user
 section: Guides
-specs: []
+specs: [custom-fields]
 screens: [project-fields]
 order: 35
 ---

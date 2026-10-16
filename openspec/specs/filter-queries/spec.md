@@ -20,6 +20,17 @@ A query SHALL be a boolean expression over terms combined with `&` (and), `|` (o
 - **WHEN** the user enters `#"Client A" & @"follow up"`
 - **THEN** the project named "Client A" and the label named "follow up" are matched, ignoring case
 
+### Requirement: Custom field terms in the grammar
+The grammar SHALL include a custom field term `name cmp value` and `no name` (OpenSpec `custom-fields`), where `name` is a bare word that is not a reserved word of the grammar, or any quoted name. Reserved words (`due`, `created`, `deadline`, `start`, `completed`, `no`, the keywords and `p1` to `p4`) SHALL keep their meaning, so a field with such a name is reachable only through its quoted name.
+
+#### Scenario: Field term with a quoted name
+- **WHEN** the user enters `"Order date" <= friday & cost > 100`
+- **THEN** both terms are parsed as field terms and combined with `&`
+
+#### Scenario: Reserved words stay reserved
+- **WHEN** a project defines a field named "due" and the user enters `due <= tomorrow`
+- **THEN** the term is the due-date term, and the field is reachable only through its quoted name
+
 ### Requirement: Label and project terms
 `@name` SHALL match tasks carrying the label with that name. `#name` SHALL match tasks whose project has that name and `##name` SHALL also match tasks in that project's descendants. `no labels` and `no project` SHALL match tasks with an empty label array or no project. When several labels or projects share a name, the term SHALL match any of them.
 

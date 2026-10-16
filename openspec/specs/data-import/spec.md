@@ -152,6 +152,13 @@ Importing an own export SHALL also recreate its sections, reminders, saved views
 - **WHEN** the JSON export of an account with 5 file attachments and 2 link attachments is imported
 - **THEN** the 2 link attachments are recreated, the preview notes that 5 files need the ZIP export, and no file attachment is written
 
+### Requirement: Own export restores custom fields
+Importing an own export SHALL recreate its custom field definitions with their original ids and deletion state and restore every task's `fields` values, values of deleted or foreign definitions included (OpenSpec `custom-fields`). The preview SHALL count the live definitions it creates as "fields". Devices SHALL receive the definitions and values as ordinary operations.
+
+#### Scenario: Round trip keeps fields
+- **WHEN** an export holding two field definitions (one deleted) and tasks with values is imported into an empty account
+- **THEN** a fresh export lists the same definitions with their ids and deletion state and the same `fields` values on the tasks, and the preview counts the definitions as "fields"
+
 ### Requirement: Imported reminders
 Reminders SHALL be imported with their task only. Own-export delivery and dismissal state SHALL be kept. A live reminder whose firing time has passed with no delivery or dismissal for that firing SHALL be imported dismissed at import time, with a warning, so no stale notification is pushed. Other formats SHALL map absolute instants and minutes before the due time; location reminders SHALL be dropped with a warning.
 

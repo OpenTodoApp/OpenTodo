@@ -55,6 +55,17 @@ For an encrypted account the device SHALL encrypt the user-written text of its p
 - **WHEN** an unlocked device of the account downloads the encrypted attachment
 - **THEN** it decrypts chunk by chunk with the account key, verifies every chunk, and shows the file; a chunk that fails authentication makes the whole file "undecryptable" and nothing partial is shown
 
+### Requirement: Encrypted custom fields
+For an encrypted account the device SHALL also encrypt, in its personal scope, custom field names and choice options and every string value of a custom field (text, link, date and choice), like other user-written text (OpenSpec `custom-fields`). Number and checkbox values SHALL stay plaintext, like `priority`.
+
+#### Scenario: Custom field name and values
+- **WHEN** an encrypted account defines a choice field "Client" with options "Acme" and "Globex" and sets a task's Client to "Acme" and its Cost to 120
+- **THEN** the field's `name` and `options` operations and the task's Client value carry ciphertext, the Cost value carries the plaintext number 120, and the API and assistant tools show the string values as the encrypted placeholder
+
+#### Scenario: Number and checkbox values stay plaintext
+- **WHEN** an encrypted account sets a task's number field to 120 and its checkbox field to on
+- **THEN** the two value operations carry the plaintext number 120 and `true`
+
 ### Requirement: Transport through the unchanged operation log
 Ciphertext SHALL be a string value beginning with a version prefix, carrying the nonce, the authenticated ciphertext and a binding to the entity, id and field it belongs to. The server SHALL validate, store and serve such operations exactly as any other string value; the operation schema, limits and sync endpoint SHALL NOT change. A value whose binding does not match where it is found SHALL be shown as undecryptable, never as another field's content.
 
