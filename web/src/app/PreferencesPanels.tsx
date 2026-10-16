@@ -2,7 +2,7 @@
 import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
-import { setStartView, type StartView } from '../lib/views'
+import { DISPLAY_START_VIEWS, setStartView, type StartView } from '../lib/views'
 import type { View } from '../lib/types'
 import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
@@ -18,6 +18,8 @@ export function StartViewSection() {
 /** Presentational part of the start view setting, rendered without effects for tests and stories. */
 export function StartViewView({ views, startView, onChange }: { views: View[]; startView: StartView; onChange: (v: StartView) => void }) {
   const startIsKnown = !startView.startsWith('view:') || views.some((v) => `view:${v.id}` === startView)
+  // A display pinned from the display itself (a project, a saved view, other options) is listed while it is the start view.
+  const pinnedDisplay = startView.startsWith('display:') && !DISPLAY_START_VIEWS.some((d) => d.value === startView) ? startView : null
   return (
     <SettingsSection title="Start view" headingId="start-view-heading"
       description="The view this device opens on launch. Each device keeps its own choice; it is not synced.">
@@ -36,6 +38,11 @@ export function StartViewView({ views, startView, onChange }: { views: View[]; s
               {views.map((v) => <option key={v.id} value={`view:${v.id}`}>{v.name}</option>)}
             </optgroup>
           )}
+          {/* Display mode (display-mode D6): opens full screen in large type. */}
+          <optgroup label="Display mode">
+            {DISPLAY_START_VIEWS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+            {pinnedDisplay && <option value={pinnedDisplay}>Display pinned on this device</option>}
+          </optgroup>
         </Select>
       } />
     </SettingsSection>

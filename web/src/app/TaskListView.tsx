@@ -1,11 +1,12 @@
-import { Button, EmptyState as EmptyStatePattern, Icon, type IconName } from '../ui'
+import { Button, EmptyState as EmptyStatePattern, Icon, IconButton, type IconName } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
 import { duplicateTask } from '../lib/templates'
 import { db } from '../lib/db'
 import { formatDateHeading, todayISO } from '../lib/dates'
-import { inAnytime, inLater, inToday, inUpcoming, isSomeday, overdueInToday, upcomingDate } from '../lib/views'
+import { inAnytime, inLater, isSomeday } from '../lib/views'
+import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, withoutArchived } from '../lib/dayLists'
 import { byPosition, compareByPosition, compareDueThenPriority } from '../lib/ordering'
 import { resolveLabels } from '../lib/labels'
 import { createSubtask, createTask, detachOccurrence, setTaskParent, skipOccurrence, unparkTask, updateTask } from '../lib/ops'
@@ -31,6 +32,7 @@ import { registerPanelHandlers, setPanelTaskId, usePanelTaskId } from './panel'
 import { completeWithUndo, deleteWithUndo, parkWithUndo } from './undoable'
 import { MAX_INDENT, TaskRow } from './TaskRow'
 import { navigate, type Route } from './router'
+import { DEFAULT_DISPLAY_OPTIONS } from './display/displayOptions'
 import { ProjectHeader } from './ProjectHeader'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
@@ -56,7 +58,7 @@ const HELP_SCREENS: Partial<Record<Route['view'], string>> = {
 }
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
-type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'triage' } | { view: 'public' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'month' } | { view: 'help' } | { view: 'ask' } | { view: 'task' } | { view: 'forgot' } | { view: 'verify' }>
+type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: 'settings' } | { view: 'import' } | { view: 'invite' } | { view: 'project-invite' } | { view: 'reset' } | { view: 'triage' } | { view: 'public' } | { view: 'labels' } | { view: 'filter' } | { view: 'share' } | { view: 'views' } | { view: 'view' } | { view: 'day' } | { view: 'week' } | { view: 'month' } | { view: 'help' } | { view: 'ask' } | { view: 'task' } | { view: 'forgot' } | { view: 'verify' } | { view: 'display' }>
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 /** The project layouts, in `v` order (month-and-timeline-views). */
@@ -149,18 +151,15 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   }, [filterKey])
 
   const viewTasks = useMemo(() => {
-    // Tasks of archived projects stay out of the cross-project views.
-    const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-    const all = allTasks.filter((t) => !t.project_id || !hidden.has(t.project_id) || (route.view === 'project' && t.project_id === route.id))
+    // Tasks of archived projects stay out of the cross-project views (lib/dayLists, shared with the display).
+    const all = withoutArchived(allTasks, projects, route.view === 'project' ? route.id : undefined)
     switch (route.view) {
       case 'inbox':
         return all.filter((t) => !t.completed_at && t.project_id === null)
       case 'today':
-        return all.filter((t) => inToday(t, today)).sort(compareDueThenPriority)
+        return todayList(all, today)
       case 'upcoming':
-        // Undated tasks sort after dated ones, so a deadline-only task follows the
-        // tasks due that day within its group (deadlines D3).
-        return all.filter((t) => inUpcoming(t, today)).sort(compareDueThenPriority)
+        return upcomingList(all, today)
       // Someday and Anytime (someday-and-evening D5), grouped by project below.
       case 'someday':
         return all.filter((t) => !t.completed_at && isSomeday(t)).sort(byPosition)
@@ -171,7 +170,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         // a habit's skipped occurrence record is not a completion (habits D6).
         return all.filter((t) => t.completed_at && !t.skipped).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
       case 'project':
-        return all.filter((t) => !t.completed_at && t.project_id === route.id)
+        return projectOpenList(all, route.id)
       case 'label':
         return all.filter((t) => !t.completed_at && t.labels.includes(route.id)).sort(byPosition)
       case 'assigned':
@@ -281,14 +280,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       task: t, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb: t.parent_id ? breadcrumbOf(t, taskMap) : null,
     })
     if (route.view === 'today') {
-      // Blocked tasks wait in their own group at the end (task-dependencies D7).
-      const waiting = tasks.filter((t) => blocked.has(t.id))
-      const ready = waiting.length ? tasks.filter((t) => !blocked.has(t.id)) : tasks
-      const overdue = ready.filter((t) => overdueInToday(t, today))
-      const rest = ready.filter((t) => !overdueInToday(t, today))
+      // Blocked tasks wait in their own group at the end (task-dependencies D7);
       // This Evening below the day's tasks (someday-and-evening).
-      const evening = rest.filter((t) => t.evening)
-      const day = rest.filter((t) => !t.evening)
+      const { overdue, day, evening, blocked: waiting } = groupToday(tasks, today, blocked)
       const g: Group[] = []
       if (overdue.length) g.push({ key: 'overdue', heading: 'Overdue', rows: overdue.map(flatRow) })
       g.push({ key: 'today', heading: overdue.length || evening.length ? 'Today' : null, rows: day.map(flatRow) })
@@ -306,15 +300,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       }))
     }
     if (route.view === 'upcoming') {
-      const byDate = new Map<string, Task[]>()
-      for (const t of tasks) {
-        const date = upcomingDate(t)
-        if (!date) continue
-        const list = byDate.get(date) ?? []
-        list.push(t)
-        byDate.set(date, list)
-      }
-      return [...byDate.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([date, list]) => ({ key: date, heading: formatDateHeading(date, today, dt.resolved), rows: list.map(flatRow) }))
+      return groupUpcoming(tasks).map(({ date, tasks: list }) => ({ key: date, heading: formatDateHeading(date, today, dt.resolved), rows: list.map(flatRow) }))
     }
     if (route.view === 'label' || route.view === 'assigned' || route.view === 'someday' || route.view === 'anytime') {
       // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
@@ -821,6 +807,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         </button>
       )}
       {filterKey && <DurationFilterControl active={duration} onChange={chooseDuration} />}
+      {(route.view === 'today' || route.view === 'upcoming') && (
+        // Display mode (display-mode D6): this view in large type, for a tablet or an e-ink panel.
+        <IconButton size="sm" icon="monitor" label="Display mode" data-display-mode
+          onClick={() => navigate({ view: 'display', target: { kind: route.view as 'today' | 'upcoming' }, options: { ...DEFAULT_DISPLAY_OPTIONS } })} />
+      )}
     </>
   )
 

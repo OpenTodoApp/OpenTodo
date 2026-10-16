@@ -16,7 +16,7 @@ The **App** group of [Settings](settings.md) is about how the app behaves. Setti
 
 ## General
 
-- **Start view**: the view this device opens on. See [Views](views.md#choose-where-the-app-opens).
+- **Start view**: the view this device opens on, including **Display: Today** and **Display: Upcoming** for a tablet or a wall panel; a project or saved view display is pinned from the display's own menu. See [Views](views.md#choose-where-the-app-opens) and [Display mode](display-mode.md).
 - **Date and time**: how dates and times look and where weeks start, on all your devices (see below).
 - **Calendar**: when the Day and Week grid starts and ends, and how long your working day is. See [Time blocking](time-blocking.md#adjust-the-grid).
 - **Keyboard**: **Show shortcut hints** prints the keys in the app itself (next to quick add, beside the sidebar's destinations, in prompts) as well as in tooltips and menus, and **Vim keybindings** turns the Vim layer on; both for this device. See [Keyboard shortcuts](keyboard.md#vim-keybindings).

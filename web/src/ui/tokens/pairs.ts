@@ -44,3 +44,20 @@ export const GLYPH_PAIRS: Pair[] = [
   ...ui('surface', ['success']),
   ...ui('danger', ['danger-soft']),
 ]
+
+/** Minimums inside the high-contrast override: 7:1 for text and chips, 3:1 for everything else. */
+const HIGH_TEXT = 7
+const HIGH_UI = 3
+
+/**
+ * Token overrides measured on top of a mode (OpenSpec display-mode D4,
+ * design-system "High-contrast and no-motion presentation"). In high contrast the
+ * same pairs are checked with raised minimums, and the priority hues are also
+ * text (the display's priority marks), so they need 7:1 on the surfaces too.
+ */
+export const OVERRIDE_PAIRS: Record<'contrast-high', Pair[]> = {
+  'contrast-high': [
+    ...PAIRS.map((p): Pair => ({ ...p, min: p.kind === 'ui' ? Math.max(p.min, HIGH_UI) : Math.max(p.min, HIGH_TEXT) })),
+    ...['p1', 'p2', 'p3', 'p4'].flatMap((p) => ['canvas', 'surface'].map((bg): Pair => ({ fg: p, bg, min: HIGH_TEXT, kind: 'text' }))),
+  ],
+}

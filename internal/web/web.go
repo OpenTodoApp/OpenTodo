@@ -44,9 +44,11 @@ func HandlerWith(o Options) http.Handler {
 			return
 		}
 		p := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
-		// With NoIndex the page is always served from memory, so the noindex copy
-		// is what /index.html returns too.
-		if o.NoIndex && p == "index.html" {
+		// The page is always served from memory: http.FileServer answers
+		// /index.html with a redirect to "/", and the service worker precaches
+		// index.html for navigations, which WebKit refuses to serve when the
+		// cached response was redirected. With NoIndex this is also the noindex copy.
+		if p == "index.html" {
 			p = ""
 		}
 		if p != "" {

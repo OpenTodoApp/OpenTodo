@@ -325,7 +325,7 @@ export function formatDateHeading(iso: string, today = todayISO(), p: ResolvedDa
 // preference on `system` the output is what the app showed before the change:
 // dates as the locale writes them and due times as their stored `HH:MM`.
 
-export type DateStyle = 'compact' | 'numeric' | 'long' | 'heading'
+export type DateStyle = 'compact' | 'numeric' | 'long' | 'heading' | 'full'
 export type InstantStyle = 'time' | 'date' | 'datetime' | 'long'
 
 export interface ResolvedDateTime {
@@ -428,13 +428,14 @@ const pad = (n: number) => String(n).padStart(2, '0')
  * - numeric: `14/10/2026` / `10/14/2026`
  * - long: `Wed 14 Oct` / `Wed, Oct 14` (the reminder list)
  * - heading: `Wednesday 14 Oct` / `Wednesday, Oct 14` (date group headings)
+ * - full: `Wednesday 14 October` / `Wednesday, October 14` (the display's date, display-mode)
  * With `iso` every style shows `2026-10-14`, after the weekday for long and heading.
  */
 export function formatDate(iso: string, style: DateStyle, p: ResolvedDateTime = current, today = todayISO()): string {
   const dt = dateOf(iso)
   if (Number.isNaN(dt.getTime())) return iso
   const otherYear = iso.slice(0, 4) !== today.slice(0, 4)
-  const wd = style === 'long' ? fmt({ weekday: 'short' }).format(dt) : style === 'heading' ? fmt({ weekday: 'long' }).format(dt) : ''
+  const wd = style === 'long' ? fmt({ weekday: 'short' }).format(dt) : style === 'heading' || style === 'full' ? fmt({ weekday: 'long' }).format(dt) : ''
   if (p.date === 'iso') return wd ? `${wd} ${iso}` : iso
   if (p.date === 'system') {
     switch (style) {
@@ -442,6 +443,7 @@ export function formatDate(iso: string, style: DateStyle, p: ResolvedDateTime = 
       case 'compact': return fmt(otherYear ? { year: 'numeric', month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric' }).format(dt)
       case 'long': return fmt(otherYear ? { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' } : { weekday: 'short', month: 'short', day: 'numeric' }).format(dt)
       case 'heading': return fmt({ weekday: 'long', month: 'short', day: 'numeric' }).format(dt)
+      case 'full': return fmt({ weekday: 'long', month: 'long', day: 'numeric' }).format(dt)
     }
   }
   const day = dt.getDate()
@@ -449,8 +451,8 @@ export function formatDate(iso: string, style: DateStyle, p: ResolvedDateTime = 
   if (style === 'numeric') {
     return p.date === 'DM' ? `${pad(day)}/${pad(dt.getMonth() + 1)}/${year}` : `${pad(dt.getMonth() + 1)}/${pad(day)}/${year}`
   }
-  const month = fmt({ month: 'short' }).format(dt)
-  const withYear = otherYear && style !== 'heading'
+  const month = fmt({ month: style === 'full' ? 'long' : 'short' }).format(dt)
+  const withYear = otherYear && style !== 'heading' && style !== 'full'
   if (p.date === 'DM') return `${wd ? `${wd} ` : ''}${day} ${month}${withYear ? ` ${year}` : ''}`
   return `${wd ? `${wd}, ` : ''}${month} ${day}${withYear ? `, ${year}` : ''}`
 }
@@ -465,6 +467,19 @@ export function formatTime(hhmm: string, p: ResolvedDateTime = current): string 
   const h = Number(m[1])
   if (p.time === '24h') return `${pad(h)}:${m[2]}`
   return `${h % 12 === 0 ? 12 : h % 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`
+}
+
+/**
+ * A wall clock (display-mode): hours and minutes, plus seconds when asked, on the
+ * user's clock (`15:04:05`, `3:04:05 PM`; the locale's clock on `system`).
+ */
+export function formatClock(ms: number, seconds: boolean, p: ResolvedDateTime = current): string {
+  const d = new Date(ms)
+  if (p.time === 'system') return fmt(seconds ? { hour: 'numeric', minute: '2-digit', second: '2-digit' } : { hour: 'numeric', minute: '2-digit' }).format(d)
+  const h = d.getHours()
+  const rest = `${pad(d.getMinutes())}${seconds ? `:${pad(d.getSeconds())}` : ''}`
+  if (p.time === '24h') return `${pad(h)}:${rest}`
+  return `${h % 12 === 0 ? 12 : h % 12}:${rest} ${h < 12 ? 'AM' : 'PM'}`
 }
 
 /** An hour of the day (0–23) for grid labels: `9 AM` on a 12-hour clock, else `09:00`. */

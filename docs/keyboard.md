@@ -208,6 +208,17 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Enter</kbd> | Open the task’s panel to edit anything else |
 | <kbd>Esc</kbd> | Close the panel, else back to the Inbox with this task selected |
 
+### Display mode
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>j</kbd> / <kbd>↓</kbd> / <kbd>→</kbd> | Move the focus to the next row, across the day columns |
+| <kbd>k</kbd> / <kbd>↑</kbd> / <kbd>←</kbd> | Move the focus to the previous row |
+| <kbd>Home</kbd> | Focus the first row |
+| <kbd>End</kbd> | Focus the last row |
+| <kbd>Space</kbd> / <kbd>Enter</kbd> | Complete or reopen the focused task (only where you may edit it) |
+| <kbd>Esc</kbd> | Leave display mode for the same view in the app |
+
 ### Comments and notes
 
 | Keys | What it does |

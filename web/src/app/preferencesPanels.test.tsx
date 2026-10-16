@@ -25,6 +25,20 @@ describe('Preferences rows', () => {
     await unmount()
   })
 
+  it('start view: lists Display: Today and Display: Upcoming, and a display pinned from the display itself (display-mode 4.2)', async () => {
+    const onChange = vi.fn()
+    const { container, rerender, unmount } = await render(<StartViewView views={[]} startView="inbox" onChange={onChange} />)
+    const select = () => container.querySelector('select[aria-label="Start view on this device"]') as HTMLSelectElement
+    const labels = () => [...select().querySelectorAll('optgroup[label="Display mode"] option')].map((o) => o.textContent)
+    expect(labels()).toEqual(['Display: Today', 'Display: Upcoming'])
+    await choose(select(), 'display:/display/upcoming')
+    expect(onChange).toHaveBeenCalledWith('display:/display/upcoming')
+    await rerender(<StartViewView views={[]} startView="display:/display/project/p1?eink=1" onChange={onChange} />)
+    expect(labels()).toEqual(['Display: Today', 'Display: Upcoming', 'Display pinned on this device'])
+    expect(select().value).toBe('display:/display/project/p1?eink=1')
+    await unmount()
+  })
+
   it('keyboard: the Vim switch is a switch and toggles the device preference', async () => {
     const onVim = vi.fn()
     const { container, unmount } = await render(<KeyboardView vim={false} onVim={onVim} />)

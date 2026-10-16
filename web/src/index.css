@@ -319,6 +319,203 @@
 }
 
 
+/* High contrast and no motion (OpenSpec change display-mode, design D4;
+   design-system "High-contrast and no-motion presentation"): token overrides on the
+   document root, set only by routes that ask for them (the display) and removed
+   when they leave. Surfaces are pure white or pure black, text reaches 7:1, soft
+   tints become the surface (outlined below), borders and marks reach 3:1. The
+   selectors outrank the mode and accent blocks above (html:root plus attributes),
+   so they combine with any theme mode and accent; like the mode tokens they also
+   reach [data-theme] subtrees (the workbench frame). The two dark blocks must stay
+   identical; contrast.test.ts measures every pair of the override at 7:1 for text. */
+html:root[data-contrast="high"], html[data-contrast="high"] [data-theme="light"] {
+  --ot-canvas: #ffffff;
+  --ot-surface: #ffffff;
+  --ot-raised: #ffffff;
+  --ot-sunken: #ffffff;
+  --ot-text-strong: #000000;
+  --ot-text: #000000;
+  --ot-muted: #262626;
+  --ot-faint: #3d3d3d;
+  --ot-border: #000000;
+  --ot-border-input: #000000;
+  --ot-accent: #000000;
+  --ot-accent-hover: #262626;
+  --ot-on-accent: #ffffff;
+  --ot-accent-text: #000000;
+  --ot-accent-soft: #ffffff;
+  --ot-accent-soft-text: #000000;
+  --ot-focus: #000000;
+  --ot-p1: #991b1b;
+  --ot-p2: #9a3412;
+  --ot-p3: #1e40af;
+  --ot-p4: #334155;
+  --ot-p1-soft: #ffffff;
+  --ot-p2-soft: #ffffff;
+  --ot-p3-soft: #ffffff;
+  --ot-p4-soft: #ffffff;
+  --ot-success: #065f46;
+  --ot-success-soft: #ffffff;
+  --ot-success-soft-text: #065f46;
+  --ot-warning: #78350f;
+  --ot-warning-soft: #ffffff;
+  --ot-warning-soft-text: #78350f;
+  --ot-danger: #991b1b;
+  --ot-danger-soft: #ffffff;
+  --ot-danger-soft-text: #991b1b;
+  --ot-info: #0c4a6e;
+  --ot-info-soft: #ffffff;
+  --ot-info-soft-text: #0c4a6e;
+  --ot-scrim: rgb(0 0 0 / 0.6);
+  --ot-highlight: #fde68a;
+  --ot-highlight-text: #000000;
+  --ot-hue-red-soft: #ffffff; --ot-hue-red-text: #991b1b;
+  --ot-hue-orange-soft: #ffffff; --ot-hue-orange-text: #9a3412;
+  --ot-hue-yellow-soft: #ffffff; --ot-hue-yellow-text: #78350f;
+  --ot-hue-lime-soft: #ffffff; --ot-hue-lime-text: #365314;
+  --ot-hue-green-soft: #ffffff; --ot-hue-green-text: #14532d;
+  --ot-hue-teal-soft: #ffffff; --ot-hue-teal-text: #134e4a;
+  --ot-hue-cyan-soft: #ffffff; --ot-hue-cyan-text: #164e63;
+  --ot-hue-blue-soft: #ffffff; --ot-hue-blue-text: #1e3a8a;
+  --ot-hue-indigo-soft: #ffffff; --ot-hue-indigo-text: #312e81;
+  --ot-hue-violet-soft: #ffffff; --ot-hue-violet-text: #4c1d95;
+  --ot-hue-pink-soft: #ffffff; --ot-hue-pink-text: #831843;
+  --ot-hue-slate-soft: #ffffff; --ot-hue-slate-text: #1e293b;
+}
+@media (prefers-color-scheme: dark) {
+  html:root[data-contrast="high"]:not([data-theme="light"]) {
+    --ot-canvas: #000000;
+    --ot-surface: #000000;
+    --ot-raised: #000000;
+    --ot-sunken: #000000;
+    --ot-text-strong: #ffffff;
+    --ot-text: #ffffff;
+    --ot-muted: #e5e5e5;
+    --ot-faint: #d4d4d4;
+    --ot-border: #ffffff;
+    --ot-border-input: #ffffff;
+    --ot-accent: #ffffff;
+    --ot-accent-hover: #e5e5e5;
+    --ot-on-accent: #000000;
+    --ot-accent-text: #ffffff;
+    --ot-accent-soft: #000000;
+    --ot-accent-soft-text: #ffffff;
+    --ot-focus: #ffffff;
+    --ot-p1: #fca5a5;
+    --ot-p2: #fdba74;
+    --ot-p3: #93c5fd;
+    --ot-p4: #cbd5e1;
+    --ot-p1-soft: #000000;
+    --ot-p2-soft: #000000;
+    --ot-p3-soft: #000000;
+    --ot-p4-soft: #000000;
+    --ot-success: #6ee7b7;
+    --ot-success-soft: #000000;
+    --ot-success-soft-text: #6ee7b7;
+    --ot-warning: #fcd34d;
+    --ot-warning-soft: #000000;
+    --ot-warning-soft-text: #fcd34d;
+    --ot-danger: #fca5a5;
+    --ot-danger-soft: #000000;
+    --ot-danger-soft-text: #fca5a5;
+    --ot-info: #7dd3fc;
+    --ot-info-soft: #000000;
+    --ot-info-soft-text: #7dd3fc;
+    --ot-scrim: rgb(0 0 0 / 0.7);
+    --ot-highlight: #fde68a;
+    --ot-highlight-text: #000000;
+    --ot-hue-red-soft: #000000; --ot-hue-red-text: #fca5a5;
+    --ot-hue-orange-soft: #000000; --ot-hue-orange-text: #fdba74;
+    --ot-hue-yellow-soft: #000000; --ot-hue-yellow-text: #fcd34d;
+    --ot-hue-lime-soft: #000000; --ot-hue-lime-text: #bef264;
+    --ot-hue-green-soft: #000000; --ot-hue-green-text: #86efac;
+    --ot-hue-teal-soft: #000000; --ot-hue-teal-text: #5eead4;
+    --ot-hue-cyan-soft: #000000; --ot-hue-cyan-text: #67e8f9;
+    --ot-hue-blue-soft: #000000; --ot-hue-blue-text: #93c5fd;
+    --ot-hue-indigo-soft: #000000; --ot-hue-indigo-text: #a5b4fc;
+    --ot-hue-violet-soft: #000000; --ot-hue-violet-text: #c4b5fd;
+    --ot-hue-pink-soft: #000000; --ot-hue-pink-text: #f9a8d4;
+    --ot-hue-slate-soft: #000000; --ot-hue-slate-text: #cbd5e1;
+  }
+}
+html:root[data-contrast="high"][data-theme="dark"], html[data-contrast="high"] [data-theme="dark"] {
+  --ot-canvas: #000000;
+  --ot-surface: #000000;
+  --ot-raised: #000000;
+  --ot-sunken: #000000;
+  --ot-text-strong: #ffffff;
+  --ot-text: #ffffff;
+  --ot-muted: #e5e5e5;
+  --ot-faint: #d4d4d4;
+  --ot-border: #ffffff;
+  --ot-border-input: #ffffff;
+  --ot-accent: #ffffff;
+  --ot-accent-hover: #e5e5e5;
+  --ot-on-accent: #000000;
+  --ot-accent-text: #ffffff;
+  --ot-accent-soft: #000000;
+  --ot-accent-soft-text: #ffffff;
+  --ot-focus: #ffffff;
+  --ot-p1: #fca5a5;
+  --ot-p2: #fdba74;
+  --ot-p3: #93c5fd;
+  --ot-p4: #cbd5e1;
+  --ot-p1-soft: #000000;
+  --ot-p2-soft: #000000;
+  --ot-p3-soft: #000000;
+  --ot-p4-soft: #000000;
+  --ot-success: #6ee7b7;
+  --ot-success-soft: #000000;
+  --ot-success-soft-text: #6ee7b7;
+  --ot-warning: #fcd34d;
+  --ot-warning-soft: #000000;
+  --ot-warning-soft-text: #fcd34d;
+  --ot-danger: #fca5a5;
+  --ot-danger-soft: #000000;
+  --ot-danger-soft-text: #fca5a5;
+  --ot-info: #7dd3fc;
+  --ot-info-soft: #000000;
+  --ot-info-soft-text: #7dd3fc;
+  --ot-scrim: rgb(0 0 0 / 0.7);
+  --ot-highlight: #fde68a;
+  --ot-highlight-text: #000000;
+  --ot-hue-red-soft: #000000; --ot-hue-red-text: #fca5a5;
+  --ot-hue-orange-soft: #000000; --ot-hue-orange-text: #fdba74;
+  --ot-hue-yellow-soft: #000000; --ot-hue-yellow-text: #fcd34d;
+  --ot-hue-lime-soft: #000000; --ot-hue-lime-text: #bef264;
+  --ot-hue-green-soft: #000000; --ot-hue-green-text: #86efac;
+  --ot-hue-teal-soft: #000000; --ot-hue-teal-text: #5eead4;
+  --ot-hue-cyan-soft: #000000; --ot-hue-cyan-text: #67e8f9;
+  --ot-hue-blue-soft: #000000; --ot-hue-blue-text: #93c5fd;
+  --ot-hue-indigo-soft: #000000; --ot-hue-indigo-text: #a5b4fc;
+  --ot-hue-violet-soft: #000000; --ot-hue-violet-text: #c4b5fd;
+  --ot-hue-pink-soft: #000000; --ot-hue-pink-text: #f9a8d4;
+  --ot-hue-slate-soft: #000000; --ot-hue-slate-text: #cbd5e1;
+}
+/* Soft tints read as the surface in high contrast; an outline keeps the shape. */
+html:root[data-contrast="high"] :is(.bg-accent-soft, .bg-success-soft, .bg-warning-soft, .bg-danger-soft, .bg-info-soft, .bg-hue-soft, .bg-p1-soft, .bg-p2-soft, .bg-p3-soft, .bg-p4-soft) {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+html:root[data-contrast="high"] :focus-visible {
+  outline: 3px solid var(--ot-focus);
+  outline-offset: 2px;
+}
+/* No motion: every transition and animation is instant, as under the system's
+   reduced-motion setting, and stricter (colour and opacity do not fade either). */
+:root[data-motion="none"] {
+  --duration-ui: 0ms;
+  --duration-emphasis: 0ms;
+}
+:root[data-motion="none"] *, :root[data-motion="none"] *::before, :root[data-motion="none"] *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
 /* Stored project/label/view colours render through the nearest palette hue
    (src/ui/tokens/palette.ts hueFor): data-hue sets --hue-*, read by bg-hue-solid,
    bg-hue-soft and text-hue. The --ot-hue-* values follow the theme. */
@@ -517,4 +714,37 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .help-prose thead th { @apply border-t-0 bg-sunken font-semibold; }
 .help-prose summary { @apply cursor-pointer font-medium; }
 .help-snippet mark, .help-prose mark { @apply rounded-chip bg-highlight px-0.5 text-on-highlight; }
+}
+
+@layer components {
+/* Display mode (OpenSpec change display-mode, design D4): one view at a large type
+   scale for a tablet or an e-ink panel. Sizes derive from the type tokens times
+   --display-scale (set per size on the display's root), so they follow the
+   browser's font-size setting: body text is about 20, 24 and 32 px at m, l, xl.
+   Day columns stack below 768 px and wrap instead of scrolling sideways. */
+.display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; font-size: calc(var(--text-body) * var(--display-scale)); line-height: 1.35; }
+.display-root[data-size="m"] { --display-scale: 1.35; }
+.display-root[data-size="xl"] { --display-scale: 2.15; }
+.display-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-h1) * var(--display-scale) * 1.75), 16vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.display-date { @apply text-muted; font-size: calc(var(--text-h2) * var(--display-scale)); line-height: 1.25; }
+.display-title { @apply font-semibold text-strong; font-size: calc(var(--text-h2) * var(--display-scale)); line-height: 1.2; }
+.display-heading { @apply font-semibold text-strong; font-size: calc(var(--text-h3) * var(--display-scale)); line-height: 1.3; }
+.display-meta { @apply text-muted; font-size: calc(var(--text-meta) * var(--display-scale)); line-height: 1.3; }
+.display-task { font-size: calc(var(--text-body) * var(--display-scale)); line-height: 1.3; }
+/* A row is at least 56 px tall at size l; its checkbox is a 44 px touch target or larger. */
+.display-row { @apply flex items-center gap-3 rounded-control px-2 py-1 outline-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus; min-height: calc(35px * var(--display-scale)); }
+.display-check { @apply flex shrink-0 items-center justify-center rounded-full; width: max(44px, 1.5em); height: max(44px, 1.5em); }
+.display-check-mark { @apply flex items-center justify-center rounded-full border-2; width: 1.1em; height: 1.1em; }
+.display-columns { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+/* Today on a landscape screen: the day's list on the left, the next days beside it. */
+.display-board { display: flex; flex-direction: column; gap: 1.5rem; }
+@media (min-width: 768px) {
+  .display-columns { grid-template-columns: repeat(auto-fit, minmax(min(100%, 11em), 1fr)); }
+  /* Side by side, the day columns use a step smaller type than the day's own list. */
+  .display-columns .display-task { font-size: calc(var(--text-body) * var(--display-scale) * 0.85); }
+  .display-columns .display-heading { font-size: calc(var(--text-body) * var(--display-scale)); }
+}
+@media (min-width: 1024px) {
+  .display-board[data-split] { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 2rem; align-items: start; }
+}
 }

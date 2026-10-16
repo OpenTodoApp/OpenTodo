@@ -40,6 +40,10 @@ In **Safari on macOS** (Sonoma or later), choose **File → Add to Dock**.
 
 Firefox on the desktop doesn't install web apps. You can still use OpenTodo in a Firefox tab with everything working, including offline use once the page has loaded.
 
+## On a tablet or an e-ink display
+
+Open [display mode](display-mode.md) and make it the device's start view. For a shared screen, use a viewer account and kiosk mode; see [Set up a shared screen](display-mode.md#set-up-a-shared-screen).
+
 ## Keep using it offline
 
 The installed app keeps a full copy of your tasks on the device. You can open it on a plane, add and complete tasks, and it syncs when you're online again. The status at the top right tells you where things stand. More in [Offline and sync](offline-and-sync.md).

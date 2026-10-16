@@ -102,6 +102,58 @@ describe('public page', () => {
   })
 })
 
+// OpenSpec display-mode, task 5.1 ("Public link display").
+describe('public page on a display', () => {
+  afterEach(() => {
+    history.replaceState(null, '', '/')
+    document.documentElement.removeAttribute('data-contrast')
+    document.documentElement.removeAttribute('data-motion')
+  })
+
+  it('display=1&eink=1 renders large type in high contrast with a clock without seconds and the public notice; a tick still posts', async () => {
+    history.replaceState(null, '', '/public/otl_abc?display=1&eink=1&size=xl')
+    const r = await render(<PublicListScreen token="otl_abc" />)
+    await waitFor(() => r.container.querySelectorAll('[data-display-row]').length === 4)
+    const screen = r.container.querySelector('[data-screen="public/display"]')!
+    expect(screen.classList.contains('display-root')).toBe(true)
+    expect(screen.getAttribute('data-size')).toBe('xl')
+    expect(document.documentElement.getAttribute('data-contrast')).toBe('high')
+    expect(document.documentElement.getAttribute('data-motion')).toBe('none')
+    expect(r.container.querySelector('[data-clock-time]')!.textContent).toMatch(/^\d{1,2}:\d{2}( [AP]M)?$/)
+    expect(r.container.textContent).toContain('anyone with the link can see it and tick items')
+    expect(r.container.querySelector('h1')!.textContent).toBe('Groceries')
+    await click(r.container.querySelector('[data-display-row$=":t1"] [data-display-check]')!)
+    await waitFor(() => calls.includes('POST /api/v1/public/otl_abc/tick'))
+    await waitFor(() => r.container.querySelector('[data-display-row$=":t1"]')!.hasAttribute('data-done'))
+
+    const axe = (await import('axe-core')).default
+    const res = await axe.run(r.container, { rules: { 'color-contrast': { enabled: false } } })
+    expect(res.violations.map((v) => v.id)).toEqual([])
+    await r.unmount()
+    expect(document.documentElement.hasAttribute('data-contrast')).toBe(false)
+  })
+
+  it('a view link on a display has no checkboxes', async () => {
+    current = list({ rights: 'view' })
+    history.replaceState(null, '', '/public/otl_view?display=1')
+    const r = await render(<PublicListScreen token="otl_view" />)
+    await waitFor(() => r.container.querySelectorAll('[data-display-row]').length === 4)
+    expect(r.container.querySelector('[data-display-check]')).toBeNull()
+    expect(r.container.textContent).toContain('read-only')
+    await r.unmount()
+  })
+
+  it('without display=1 the page renders as before, at its normal size', async () => {
+    history.replaceState(null, '', '/public/otl_abc?eink=1')
+    const r = await render(<PublicListScreen token="otl_abc" />)
+    await waitFor(() => r.container.querySelectorAll('[data-public-task]').length === 4)
+    expect(r.container.querySelector('[data-screen="public/list"]')).toBeTruthy()
+    expect(r.container.querySelector('.display-root, [data-clock-time]')).toBeNull()
+    expect(document.documentElement.hasAttribute('data-contrast')).toBe(false)
+    await r.unmount()
+  })
+})
+
 describe('public route in the app', () => {
   it('renders before sign-in and never starts sync, even for a signed-in visitor', async () => {
     vi.resetModules()

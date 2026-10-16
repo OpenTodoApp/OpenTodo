@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect } from 'react'
 import { ACCENTS } from '../tokens/accents'
 import { PAIRS } from '../tokens/pairs'
 import { ratio, Section, useTokenValues } from './tokens'
@@ -80,8 +81,56 @@ function Accents() {
   )
 }
 
+const HC_NAMES = ['canvas', 'surface', 'text-strong', 'text', 'muted', 'faint', 'border', 'accent', 'on-accent', 'p1', 'p2', 'p3', 'p4', 'focus']
+
+/**
+ * The high-contrast override and the no-motion attribute (OpenSpec display-mode D4,
+ * design-system "High-contrast and no-motion presentation"). They live on the
+ * document root, so the story sets them while it is shown and removes them after,
+ * as the display route does; the Theme toolbar switches between the white and the
+ * black variant.
+ */
+function HighContrast() {
+  useEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-contrast', 'high')
+    root.setAttribute('data-motion', 'none')
+    return () => {
+      root.removeAttribute('data-contrast')
+      root.removeAttribute('data-motion')
+    }
+  }, [])
+  const { ref, values } = useTokenValues(HC_NAMES)
+  return (
+    <div ref={ref} className="space-y-6">
+      <Section title="High contrast (data-contrast=&quot;high&quot;)">
+        <p className="text-body text-muted">Pure white or pure black surfaces; text reaches 7:1 on them, borders and marks 3:1. Soft tints become the surface with an outline.</p>
+        <ul className="divide-y divide-(--ot-border) rounded-card border border-default bg-surface">
+          {['text-strong', 'text', 'muted', 'faint', 'p1', 'p2', 'p3', 'p4'].map((fg) => (
+            <li key={fg} className="flex flex-wrap items-center gap-3 px-4 py-3">
+              <span className="w-28 font-mono text-meta" style={{ color: `var(--ot-${fg})` }}>{fg}</span>
+              <span className="font-mono text-meta text-muted">{values[fg]} on {values.surface} · {ratio(values[fg], values.surface)}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className="ui-btn ui-btn--primary ui-btn--md">Primary</button>
+          <button type="button" className="ui-btn ui-btn--secondary ui-btn--md">Secondary</button>
+          <span className="rounded-chip bg-accent-soft px-2 py-1 text-meta text-on-accent-soft">Soft tint, outlined</span>
+          <span className="rounded-chip bg-warning-soft px-2 py-1 text-meta text-on-warning-soft">Warning</span>
+        </div>
+      </Section>
+      <Section title="No motion (data-motion=&quot;none&quot;)">
+        <p className="text-body text-muted">Every transition and animation duration is zero: hover and completion change state at once, as e-ink panels need.</p>
+      </Section>
+    </div>
+  )
+}
+
 const meta: Meta<typeof Colours> = { title: 'Foundations/Colours', component: Colours }
 export default meta
 export const Default: StoryObj<typeof Colours> = {}
 /** The a11y gate checks it; it has no screenshot baseline (tag no-visual). */
 export const AccentThemes: StoryObj = { render: () => <Accents />, tags: ['no-visual'] }
+/** High contrast and no motion on the root (display-mode); a11y-checked, no screenshot baseline (tag no-visual). */
+export const HighContrastOverride: StoryObj = { render: () => <HighContrast />, tags: ['no-visual'] }
