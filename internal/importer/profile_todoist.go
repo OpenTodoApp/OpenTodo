@@ -124,6 +124,7 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	section := ""
 	seen := map[string]int{}
 	var last *Row
+	lastCommented := false
 	for {
 		rec, err := r.Read()
 		if errors.Is(err, io.EOF) {
@@ -153,6 +154,7 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			}
 		case "section":
 			section = get("CONTENT")
+			last = nil // notes belong to the task right above them
 			stack = stack[:0]
 			if opts.Sections == "section" && projectSource != "" && section != "" {
 				out.Rows = append(out.Rows, Row{Line: line, Kind: KindSection, SourceID: "todoist:section:" + projectID + ":" + section,
@@ -161,9 +163,11 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		case "note":
 			if last != nil {
 				if text := get("CONTENT"); text != "" {
-					if !strings.Contains(last.Description, "\n\nComments\n") {
-						last.Description = strings.TrimSpace(last.Description + "\n\nComments\n")
-						last.Description += "\n"
+					// The heading is added once per task (a description that was empty
+					// starts with it, so its position cannot tell).
+					if !lastCommented {
+						last.Description = strings.TrimSpace(last.Description+"\n\nComments") + "\n"
+						lastCommented = true
 					}
 					last.Description += "\n- " + text
 				}
@@ -237,7 +241,13 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 					row.warn("duration of %d days dropped (estimates are in minutes)", n)
 				}
 			}
-			todoistReminder(&row, get, ref, loc)
+			rowLoc := loc
+			if tz := get("TIMEZONE"); tz != "" {
+				if z, err := time.LoadLocation(tz); err == nil {
+					rowLoc = z
+				}
+			}
+			todoistReminder(&row, get, ref, rowLoc)
 			if get("RESPONSIBLE") != "" {
 				row.warn("assignee dropped (only your own account can be assigned by an import)")
 			}
@@ -246,7 +256,7 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 			seen[key]++
 			row.SourceID = fmt.Sprintf("todoist:%s:%d", hex.EncodeToString(sum[:8]), seen[key])
 			out.Rows = append(out.Rows, row)
-			last = &out.Rows[len(out.Rows)-1]
+			last, lastCommented = &out.Rows[len(out.Rows)-1], false
 			stack = append(stack, row.SourceID)
 		default:
 			out.Rows = append(out.Rows, Row{Line: line, Kind: KindTask, Err: fmt.Sprintf("unknown row type %q", get("TYPE"))})

@@ -27,6 +27,24 @@
     - `ID` looks like `PIX-5`. `Status` holds workspace names (`Backlog`, `In Progress`, `Done`). `Priority` is text (`No priority`, `High`, …).
     - `Labels` are comma-separated. `Creator` and `Assignee` are email addresses. Timestamps are ISO UTC with milliseconds.
     - Doubled quotes escape quotes, and there's a trailing blank line.
+- **Fixtures: real and synthesised** (task 1.1, October 2026). The richer samples from throwaway accounts were not received, so synthesised fixtures stand in for them. Each sits next to the sanitised real one in `internal/importer/testdata/<format>/` with its own golden preview:
+
+  | Format | Real (sanitised, D5) | Synthesised from the documented structure |
+  | --- | --- | --- |
+  | `todoist-backup` | `backup.zip` (10 projects, 52 rows) | `rich.zip`: p1/p2/p3 tasks, `@label`s, recurring `every monday` and `jeden Montag`, a timed date, relative and absolute reminders, a readable and an unreadable deadline, minute and day durations, two note rows, an unknown date phrase, a board project with sections, three indent levels and responsible people |
+  | `ticktick-csv` | `backup.csv` (one list, three columns) | `rich.csv`: Inbox, a folder, tags, priorities 5/3/1/0, a zoned timed due with a reminder, an all-day due with a `PT9H` reminder, a floating due, a weekly RRULE, a checklist (one item checked), `parentId`, completed and abandoned tasks, a `kanban` list |
+  | `linear-csv` | `export.csv` (one project, 13 issues) | `rich.csv`: every priority word, assigned to the importer and to someone else, a parent issue, completed and canceled issues, estimate, cycle, milestone, `Related to` and `Blocked by`, a team issue without a project, an escaped quote |
+  | `things-db` | `main.sqlite` (version 29) | `rich.sqlite` (the real schema, rows replaced): an area, a project with a heading, a completed and a trashed project, inbox and area to-dos, a deadline, checklist items (done, open, canceled), XML-wrapped notes, a reminder, evening, someday, a weekly and an after-completion repeat plist, completed, canceled and trashed to-dos, a nested tag |
+
+  The synthesised fixtures follow the real files' columns, encodings (BOM, CRLF in Todoist, the six-line TickTick preamble, Linear's trailing blank line) and value shapes. Values the real files did not show are assumptions to confirm with a user-reported export: Todoist's `REMINDER_TYPE` words and `note` rows, TickTick's `Reminder` durations, `CHECKLIST` item markers (`▪`/`▫`) and the `kanban` view mode, Things' repeat plist keys, and the priority mapping (the p1 fixture pins the reading in D3; it was not checked against a red flag in the app).
+
+  Quirks found while building them, now fixed and pinned by the goldens:
+  - TickTick's `Created Time` and `Completed Time` use an offset without a colon (`+0000`), which the shared timestamp parser refused, so created and completed times were lost. They are now read in that form.
+  - A TickTick reminder on an all-day task counts from midnight (`PT9H` is 09:00 on the day, as in iCalendar), while ours count from 09:00 for a date-only due. The offset is shifted by nine hours.
+  - Todoist note rows under a task with no description repeated the "Comments" heading for every note. The heading is now written once.
+  - Todoist's absolute reminders (`REMINDER_DATE`) are wall-clock times in the row's `TIMEZONE`, not in the import's chosen zone.
+  - Todoist resolves relative words such as `tomorrow` against the export date, as it does for years.
+  - In the real Things database, to-dos under a heading have no `project`, only `heading`; the synthesised file keeps that shape.
 - **Specs:** `specs/data-import/spec.md` and `specs/documentation/spec.md` in this change.
 
 ## Goals / Non-Goals
@@ -135,7 +153,7 @@ The job result gains `viewHints: [{projectId, view: "board"}]` for Todoist proje
 ## Risks / Trade-offs
 
 - **[Apps change their export format]** → Fixtures pin today's format, and user reports become fixtures plus detection tweaks. The preview always states what was recognised.
-- **[Inverted Todoist priority]** → Confirmed by a fixture with a known UI flag before release (D3).
+- **[Inverted Todoist priority]** → The real backup's distribution (29 of 32 tasks at 4) settles it (D3), and the synthesised p1 fixture pins the mapping. No export with a known red-flag task was received; a user report would correct it.
 - **[A malicious SQLite upload]** → A private temp copy, read-only and query-only connection, fixed queries over known tables, size bounded by the upload limit, and deletion afterwards. SQLite is designed to handle untrusted database files in read-only use, and we add a timeout.
 - **[Things open while copying]** → A stale or locked copy. The guide says to quit Things first (as Cultured Code's article does), and a ZIP of the folder carries the WAL.
 - **[Todoist date phrases we don't recognise]** → The task is kept with a warning quoting the phrase, and a new fixture fixes it.
@@ -148,4 +166,4 @@ Additive: new format values and a new optional job-result field. Rollback is a r
 
 ## Open Questions
 
-- The richer samples (recurrence, reminders, deadlines, completed and abandoned items, checklists, p1) may add cases to D3, D4 and D7 without changing the approach.
+- The richer samples (recurrence, reminders, deadlines, completed and abandoned items, checklists, p1) were not received; synthesised fixtures cover those cases (see "Fixtures: real and synthesised"). A real export that differs becomes a fixture and may add cases to D3, D4 and D7 without changing the approach.

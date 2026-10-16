@@ -74,6 +74,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | --- | --- |
 | JSON export | `bootstrap-core-platform` |
 | JSON / CSV import, including export files from popular commercial task apps | `data-import` |
+| Import Todoist, Things, TickTick and Linear exports as they are, with a switch guide for each | `named-importers` |
 | Scheduled backups to local disk, S3 or WebDAV | `backups` |
 | CalDAV two-way sync (Apple Reminders, Thunderbird, Android via DAVx⁵) | `caldav` |
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
@@ -121,7 +122,7 @@ Related usability fixes, independent of the refresh: your own date and time form
 
 ## Next: Parity and depth
 
-Nineteen candidates for after the design refresh, in a suggested order: the first ten close gaps with the apps people switch from, the next four add views and ways to share for households and small teams, and the last five deepen capture and projects. They come from four sources: what the named importers must drop today with a warning (`named-importers` waits for `deadlines` and `someday-and-evening`), the gaps the comparison pages on open-todo.app concede to Todoist, Things and Linear, the open issues, and what the code does not have yet (no search, no multi-select, no attachments, no outgoing mail, English only). Parity with the apps people switch from comes first because the hosted offering (`multi-tenant-host`, proposal only) is explicitly scheduled after it. Each starts as an OpenSpec change; none is a commitment.
+Nineteen candidates for after the design refresh, in a suggested order: the first ten close gaps with the apps people switch from, the next four add views and ways to share for households and small teams, and the last five deepen capture and projects. They come from four sources: what the named importers must drop today with a warning (`named-importers`, now shipped with `deadlines` and `someday-and-evening` mapped), the gaps the comparison pages on open-todo.app concede to Todoist, Things and Linear, the open issues, and what the code does not have yet (no search, no multi-select, no attachments, no outgoing mail, English only). Parity with the apps people switch from comes first because the hosted offering (`multi-tenant-host`, proposal only) is explicitly scheduled after it. Each starts as an OpenSpec change; none is a commitment.
 
 | # | Capability | Change name | Notes |
 | --- | --- | --- | --- |
