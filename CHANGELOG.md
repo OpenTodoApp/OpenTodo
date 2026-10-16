@@ -4,9 +4,19 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-16
+
+OpenTodo 0.6.0 speaks your language and looks back as well as ahead. The interface comes in **English, German, French, Spanish, Italian and Portuguese**. **Statistics** and a guided **weekly review** show what you finished, what slipped and what has no next action, computed on your device, with an optional weekly **digest** by email. **Filter by completion date** (`completed = last week`) and a day-by-day **Completed** logbook answer "what did I do this month?". **Habits** keep a streak and a month history, **custom fields** add typed values to a project's tasks, and **display mode** puts a view full screen on a wall tablet or an e-ink panel. Importers from Todoist, TickTick, Linear and Things keep more of what you had, and operators can run many OpenTodo servers in one process with **host mode**. Clicking a task's circle completes it again.
+
 ### Upgrade notes
 
-- **One migration, no new required variable.** Migration `0034` adds the weekly digest settings table (stats-and-review) and runs on start; custom fields and host mode need none. Host mode is off unless `OPENTODO_HOST_URL` is set; the optional `OPENTODO_HOST_TOKEN` (required only with it), `OPENTODO_HOST_OPERATOR_ADDR`, `OPENTODO_HOST_IDLE_MINUTES`, `OPENTODO_HOST_MAX_OPEN` and `OPENTODO_HOST_LIMITS` configure it. A self-hosted server behaves exactly as before.
+- **Migration `0034`** (weekly digest settings) is applied automatically at startup. Back up `/data` before upgrading: there are no down-migrations.
+- **No new environment variables are required.** Host mode is off unless `OPENTODO_HOST_URL` is set; `OPENTODO_HOST_TOKEN` (required only with it), `OPENTODO_HOST_OPERATOR_ADDR`, `OPENTODO_HOST_IDLE_MINUTES`, `OPENTODO_HOST_MAX_OPEN` and `OPENTODO_HOST_LIMITS` configure it. A self-hosted server behaves exactly as before.
+- **Sync** is additive: the entities `field` and `review`, the task fields `habit`, `skipped`, `completed_by` and `fields.<id>`, and the `user_prefs` field `language`. Older clients ignore them; upgrade the server before the devices, as for every new field.
+- **New routes:** `/api/v1/fields`, `GET`/`PUT /api/v1/me/email-digest`, `GET /api/v1/export/archive` (owner), and `completed_after`/`completed_before` on `GET /api/v1/tasks`. All require authentication; the digest settings write is refused on the demo.
+- **The installed app downloads the five language catalogs once** (about 100 kB gzipped each) so a language switch works offline; the precache grows from about 2.7 to 4.4 MiB.
+- **Binary size** is about 27 MB (24 MB in 0.5): mostly the language catalogs.
+- **Image tags.** The release publishes `ghcr.io/pixari/opentodo:0.6.0` and `:0.6` for `linux/amd64` and `linux/arm64` (`:latest` follows `main`). The Coolify template now follows `:0.6`; if you use `:0.5`, change the tag in **Edit Compose file** and click **Deploy**.
 
 ### Added
 
@@ -350,7 +360,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/pixari/opentodo/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/pixari/opentodo/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/pixari/opentodo/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/pixari/opentodo/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/pixari/opentodo/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/pixari/opentodo/compare/v0.2.0...v0.3.0
