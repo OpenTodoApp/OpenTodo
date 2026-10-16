@@ -20,7 +20,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 ```json
 {
   "id": "0d1f…",                 // unique per op (UUID v4)
-  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "section" | "field" | "comment" | "attachment" | "project_prefs" | "user_prefs"
+  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "section" | "field" | "comment" | "attachment" | "project_prefs" | "user_prefs" | "review"
   "entityId": "8c2a…",           // UUID of the entity
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
@@ -108,6 +108,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | user_prefs | `date_format` | string: `"system"`, `"day-month"`, `"month-day"` or `"iso"` (personal scope only) |
 | user_prefs | `time_format` | string: `"system"`, `"12h"` or `"24h"` |
 | user_prefs | `week_start` | string: `"system"`, `"mon"`, `"sun"` or `"sat"` |
+| review | `completed_at` | number (Unix ms: when the last weekly review was finished; personal scope only) |
 
 `actor` on served ops (OpenSpec `comments-and-activity`) is the account that wrote the op, taken from `ops.user_id`, which the server always sets from the authenticated submitter; a value sent by a client is ignored. It is additive and optional: older clients ignore it, and ops from an older server simply lack it.
 
@@ -199,6 +200,10 @@ Unread counts are computed locally: events of a shared project by another actor 
 ### Date and time preferences
 
 `user_prefs` (OpenSpec `date-time-preferences`, design D1) holds one user's date format, time format and first day of the week. Every client writes it with the `entityId` `"me"`; like labels and reminders it resolves to the **author's personal scope**, so each account's `"me"` row is separate, syncs to that account's devices only, and is never shared with project members. Values are enumerations carried as strings: a client reads an unknown value (from a newer client) as `"system"` without rewriting it, so new values stay additive, and an absent row means `"system"` for all three. Concurrent edits converge per field by LWW on `(ts, device)`. The row has no REST collection, derives no activity, and is included in the JSON export as `user_prefs`; importing an own export into an account without preferences restores them. The values are not user-written content, so they stay in plaintext for an encrypted account.
+
+### Weekly review
+
+`review` (OpenSpec `stats-and-review`, design D4) records when the user last finished a weekly review. Like `user_prefs` it is one row with the `entityId` `"me"` in the **author's personal scope**: it syncs to the account's own devices only, two finishes converge by LWW on `(ts, device)` so the later one wins, and an offline finish waits in the outbox. An older server rejects its ops as unknown; the device keeps its local value. The row has no REST collection, derives no activity, is not user-written content (plaintext for an encrypted account), and is included in the JSON export as `review`; importing an own export restores it. Statistics themselves are never synced or stored: they are computed on the device from the task rows (see [review-and-statistics.md](review-and-statistics.md)).
 
 ### Task labels
 

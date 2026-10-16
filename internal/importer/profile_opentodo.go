@@ -46,6 +46,9 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		// UserPrefs is the exporting account's date and time preferences row
 		// (date-time-preferences D1); it is restored like any other record.
 		UserPrefs []map[string]json.RawMessage `json:"user_prefs"`
+		// Review is when the exporting account last finished a weekly review
+		// (stats-and-review D4).
+		Review []map[string]json.RawMessage `json:"review"`
 		// Template marks a template file (project-templates D1); import is unchanged.
 		Template *TemplateInfo `json:"template"`
 	}
@@ -87,6 +90,9 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			if kind == KindUserPrefs {
 				row.Title = "Preferences"
 			}
+			if kind == KindReview {
+				row.Title = "Last weekly review"
+			}
 			out.Rows = append(out.Rows, row)
 		}
 	}
@@ -99,6 +105,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	add(KindReminder, "", doc.Reminders)
 	add(KindView, "name", doc.Views)
 	add(KindUserPrefs, "", doc.UserPrefs)
+	add(KindReview, "", doc.Review)
 	add(KindAttachment, "name", doc.Attachments)
 	if files := countFileAttachments(doc.Attachments); files > 0 && opts.ownFiles == nil {
 		out.Notes = append(out.Notes, fmt.Sprintf("%d file %s not imported: the files are in the ZIP export (Settings → Data → Export with files)", files, plural(files, "attachment is", "attachments are")))

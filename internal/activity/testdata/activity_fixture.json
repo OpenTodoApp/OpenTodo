@@ -608,6 +608,14 @@
       "events": []
     },
     {
+      "name": "review ops derive no event (stats-and-review)",
+      "ops": [
+        {"id":"rv1","seq":1,"actor":"alice","entity":"review","entityId":"me","field":"completed_at","value":1760000000000,"ts":1000,"device":"da"},
+        {"id":"rv2","seq":2,"actor":"alice","entity":"review","entityId":"me","field":"completed_at","value":1760600000000,"ts":2000,"device":"db"}
+      ],
+      "events": []
+    },
+    {
       "name": "a project note edit is one edited event naming description only (project-notes)",
       "ops": [
         {"id":"pn1","seq":1,"actor":"alice","entity":"project","entityId":"p1","field":"description","value":"# Trip plan","ts":500000,"device":"da"},

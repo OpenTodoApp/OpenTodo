@@ -28,7 +28,11 @@ Today lists overdue tasks first, in red, then today's tasks by time, with **This
 
 ## Plan your week with Upcoming
 
-Upcoming groups everything due after today by day, from **Tomorrow** on, and lists a task with a deadline on its deadline day: a good place for a short weekly review. See [Today and Upcoming](today-and-upcoming.md#plan-your-week-with-upcoming).
+Upcoming groups everything due after today by day, from **Tomorrow** on, and lists a task with a deadline on its deadline day. See [Today and Upcoming](today-and-upcoming.md#plan-your-week-with-upcoming).
+
+## Review your week
+
+**Review** (<kbd>g</kbd> <kbd>r</kbd>) walks a weekly review in four steps with live data, and **Statistics** (<kbd>g</kbd> <kbd>Shift+S</kbd>) shows what you completed, created and let slip, computed on your device. See [Weekly review and statistics](review-and-statistics.md).
 
 ## Anytime, for when you have time
 

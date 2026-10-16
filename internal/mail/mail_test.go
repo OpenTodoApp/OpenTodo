@@ -259,7 +259,7 @@ func TestTemplatesEveryKindAndLanguage(t *testing.T) {
 				if strings.Contains(body, "\n"+link+"\n") != withLink {
 					t.Fatalf("%s %s: link on its own line = %v", kind, lang, !withLink)
 				}
-				if withLink && !strings.Contains(body, "24 ") {
+				if withLink && kind != KindDigest && !strings.Contains(body, "24 ") {
 					t.Fatalf("%s %s: no expiry: %q", kind, lang, body)
 				}
 				if kind == KindInvitation && !strings.Contains(body, "Alice") {
@@ -279,19 +279,31 @@ func TestTemplatesEveryKindAndLanguage(t *testing.T) {
 }
 
 // The values a template can see are only the ones the design allows: no field
-// could carry a task, project, label or comment.
+// of a transactional message could carry a task, project, label or comment.
+// Only the weekly digest (stats-and-review) carries content, and only it may use
+// the digest placeholders.
 func TestTemplateVariablesCarryNoContent(t *testing.T) {
 	var got []string
 	ty := reflect.TypeOf(templateData{})
 	for i := 0; i < ty.NumField(); i++ {
 		got = append(got, ty.Field(i).Name)
 	}
-	if strings.Join(got, ",") != "Origin,Email,Link,Expiry,Inviter,Role" {
+	if strings.Join(got, ",") != "Origin,Email,Link,Expiry,Inviter,Role,digest" {
 		t.Fatalf("template variables changed: %v", got)
 	}
 	for _, k := range Kinds {
-		if carriesContent[k] {
-			t.Fatalf("%s carries content", k)
+		if carriesContent[k] != (k == KindDigest) {
+			t.Fatalf("%s carries content = %v", k, carriesContent[k])
+		}
+	}
+	for name, text := range templates {
+		if strings.HasPrefix(name, "digest.") {
+			continue
+		}
+		for _, f := range digestPlaceholders {
+			if strings.Contains(text, "{{."+f+"}}") {
+				t.Fatalf("%s uses the digest placeholder %s", name, f)
+			}
 		}
 	}
 }
@@ -423,5 +435,73 @@ func TestServerWideLimit(t *testing.T) {
 	now = now.Add(LimitWindow + time.Second)
 	if !l.Allow(KindInvitation, "new@example.com") {
 		t.Fatal("window did not slide")
+	}
+}
+
+func digestSample() *DigestVars {
+	return &DigestVars{
+		WeekStart: "2026-10-12", WeekEnd: "2026-10-18", Completed: 12, Created: 9, Late: 2, Slipped: 3,
+		Overdue:    []DigestItem{{Title: "Renew passport", Due: "2026-10-20", Project: ""}, {Title: "File taxes\nnow", Due: "2026-10-21", Project: "Taxes"}},
+		Ahead:      []DigestItem{{Title: "Dentist", Due: "2026-10-23", Project: "Health"}},
+		AheadMore:  3,
+		Idle:       []string{"Garage"},
+		LastReview: "2026-10-16",
+	}
+}
+
+// TestDigestGolden (stats-and-review, task 4.2): the digest in each language,
+// compared with testdata/digest.<lang>.golden (UPDATE_GOLDEN=1 rewrites them).
+func TestDigestGolden(t *testing.T) {
+	for _, lang := range Languages {
+		m := Message{Kind: KindDigest, To: "ana@example.com", Lang: lang, Origin: "https://todo.example.com",
+			Vars: Vars{Link: "https://todo.example.com/review", Digest: digestSample()}}
+		subj, body, err := Render(m, m.Origin)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := subj + "\n\n" + body
+		path := "testdata/digest." + lang + ".golden"
+		if os.Getenv("UPDATE_GOLDEN") != "" {
+			if err := os.MkdirAll("testdata", 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(got), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		want, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != string(want) {
+			t.Fatalf("%s digest differs from %s:\n%s", lang, path, got)
+		}
+		if strings.Contains(subj, "Renew") || !strings.Contains(subj, "12") {
+			t.Fatalf("%s subject = %q", lang, subj)
+		}
+	}
+	_, body, _ := Render(Message{Kind: KindDigest, Lang: "de", Vars: Vars{Digest: &DigestVars{WeekStart: "2026-10-23", WeekEnd: "2026-10-23"}}}, "")
+	if !strings.Contains(body, "Fr. 23. Okt.") || !strings.Contains(body, "Nichts.") || !strings.Contains(body, "noch nie") {
+		t.Fatalf("german empty digest: %q", body)
+	}
+}
+
+func TestDigestIsPacedButLimitedPerRecipient(t *testing.T) {
+	now := time.Unix(1_000_000, 0)
+	l := NewLimiter(func() time.Time { return now })
+	for i := 0; i < ServerLimit; i++ {
+		if !l.Allow(KindInvitation, strings.Repeat("a", i+1)+"@example.com") {
+			t.Fatalf("refused at %d", i)
+		}
+	}
+	// The transactional window is full; digests do not wait for it.
+	if !l.Allow(KindDigest, "ana@example.com") || l.Full(KindDigest, "bob@example.com") {
+		t.Fatal("a digest waited for the server-wide window")
+	}
+	for i := 1; i < PerRecipientLimit; i++ {
+		l.Allow(KindDigest, "ana@example.com")
+	}
+	if l.Allow(KindDigest, "ana@example.com") {
+		t.Fatal("the per-recipient limit does not apply to digests")
 	}
 }

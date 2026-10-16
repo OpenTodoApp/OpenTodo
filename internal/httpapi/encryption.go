@@ -106,13 +106,25 @@ func (s *Server) handlePutEncryptionKeys(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	status := http.StatusOK
+	out := map[string]any{"keys": rec}
 	if created {
 		status = http.StatusCreated
 		s.audit.Record(ctx, audit.SettingsChanged(uid, "encryption", "disabled", "enabled"))
+		// The weekly digest would carry task titles (stats-and-review): turning
+		// encryption on turns it off, and the response says so.
+		off, err := s.digestStore().Disable(ctx, uid)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		if off {
+			out["digestDisabled"] = true
+			s.audit.Record(ctx, audit.SettingsChanged(uid, "email_digest", "on", "off"))
+		}
 	} else {
 		s.audit.Record(ctx, audit.SettingsChanged(uid, "encryption.keys", "v"+strconv.Itoa(rec.Version-1), "v"+strconv.Itoa(rec.Version)))
 	}
-	writeJSON(w, status, map[string]any{"keys": rec})
+	writeJSON(w, status, out)
 }
 
 func (s *Server) handleDeleteEncryptionKeys(w http.ResponseWriter, r *http.Request) {

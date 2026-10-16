@@ -1,0 +1,26 @@
+La tua settimana in OpenTodo: {{.Completed}} completate
+
+Questo è il tuo riepilogo settimanale di OpenTodo su {{.Origin}}.
+
+La settimana scorsa ({{.Week}})
+  Completate: {{.Completed}}
+  Create: {{.Created}}
+  Completate in ritardo: {{.Late}}
+  Slittate: {{.Slipped}}
+
+In ritardo
+{{.Overdue}}
+
+In scadenza nei prossimi sette giorni
+{{.Ahead}}
+
+Progetti senza prossima azione
+{{.Idle}}
+
+Ultima revisione: {{.LastReview}}
+
+Inizia la tua revisione settimanale:
+
+{{.Link}}
+
+Ricevi questo messaggio perché hai attivato il riepilogo settimanale per {{.Email}} in Impostazioni, Notifiche. Puoi disattivarlo lì in qualsiasi momento.

@@ -80,6 +80,8 @@ const ROUTES: { label: string; route: Route; icon: IconName; shortcut?: string; 
   { label: 'Go to Updates', route: { view: 'feed' }, icon: 'newspaper', shortcut: keysOf('go.feed'), keywords: 'activity feed changes' },
   { label: 'Go to Ask', route: { view: 'ask' }, icon: 'message-circle', shortcut: keysOf('go.ask') },
   { label: 'Open Help', route: { view: 'help' }, icon: 'list', shortcut: keysOf('go.help') },
+  { label: 'Go to Review', route: { view: 'review' }, icon: 'clipboard-check', shortcut: keysOf('go.review'), keywords: 'weekly review' },
+  { label: 'Go to Statistics', route: { view: 'stats' }, icon: 'chart-column', shortcut: keysOf('go.stats'), keywords: 'stats productivity completed' },
   { label: 'Import data', route: { view: 'import' }, icon: 'upload', shortcut: keysOf('go.import') },
   { label: 'Go to Settings', route: { view: 'settings' }, icon: 'settings', shortcut: keysOf('go.settings') },
 ]

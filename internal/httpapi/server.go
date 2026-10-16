@@ -228,6 +228,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// sign-in flow (anonymous, rate limited); settings and identities require auth.
 	s.registerOIDCRoutes(mux)
 	s.registerMailRoutes(mux)
+	// Weekly email digest settings (stats-and-review).
+	s.registerDigestRoutes(mux)
 	s.registerSignupRoutes(mux)
 	s.registerPublicLinkRoutes(mux)
 
@@ -1761,6 +1763,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["user_prefs"] = prefs
+	// When the caller last finished a weekly review (stats-and-review D4):
+	// personal like user_prefs, restored by an import of an own export.
+	review, err := s.sync.List(r.Context(), uid, "review", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["review"] = review
 	// End-to-end encryption (OpenSpec `e2ee`): content fields above are ciphertext
 	// for an encrypted account; the wrapped key record makes the document
 	// restorable and decryptable elsewhere with the passphrase. null otherwise.

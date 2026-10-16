@@ -10,7 +10,7 @@ import { planCompletion, planDetach, planSkip, seriesRule } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Section, type Task, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Project, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -53,6 +53,7 @@ function tableFor(entity: Entity) {
     case 'project_prefs': return db.prefs
     case 'user_prefs': return db.userPrefs
     case 'attachment': return db.attachments
+    case 'review': return db.review
     default: return db.tasks
   }
 }
@@ -96,9 +97,12 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
 export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', first_run: '' }
+/** review (stats-and-review D4): 0 means "never finished". */
+export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0 }
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
   comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS, field: FIELD_DEFAULTS,
+  review: REVIEW_DEFAULTS,
 }
 
 /**

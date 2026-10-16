@@ -424,6 +424,15 @@ var Schema = map[string]map[string]kind{
 		// finished or skipped it, so a second device does not show it again after sync.
 		"first_run": kString,
 	},
+	// review: when the user last finished a weekly review (OpenSpec change
+	// `stats-and-review`, design D4). One row with the entityId "me"; like
+	// user_prefs it resolves to the author's personal scope (the default branch of
+	// the scope resolver), so it syncs to the user's own devices only and
+	// converges by last-writer-wins. completed_at is Unix ms. Not user-written
+	// content: never encrypted, and it derives no activity event.
+	"review": {
+		"completed_at": kNumber,
+	},
 }
 
 // Plural maps REST collection names to entity names.

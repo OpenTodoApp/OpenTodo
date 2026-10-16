@@ -1,4 +1,4 @@
-import { Button, Icon, IconButton, type IconName, isIconName, MenuItem, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
+import { Badge, Button, Icon, IconButton, type IconName, isIconName, MenuItem, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -16,6 +16,7 @@ import { db, getMeta } from '../lib/db'
 import { todayISO } from '../lib/dates'
 import { createProject } from '../lib/ops'
 import { USER_PREFS_ID } from '../lib/userPrefs'
+import { REVIEW_ID, reviewAgo, reviewDue } from '../lib/review'
 import { NotificationBell } from './NotificationBell'
 import { SyncStatus } from './SyncStatus'
 import { COLLAPSED_PROJECTS_KEY, buildProjectTree, expandAncestorsOf, openCountsByProject, toggleCollapsedProject, type ProjectNode } from '../lib/projects'
@@ -64,6 +65,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const assistant = useAssistantStatus()
   // Promoted destinations (appearance preferences, synced): read with the rest of the row.
   const prefsRow = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
+  const review = useLiveQuery(() => db.review.get(REVIEW_ID), [])
   const appearance = useMemo(() => readAppearance(prefsRow), [prefsRow])
   const [moreOpen, setMoreOpenState] = useState(() => readMoreOpen())
   const setMoreOpen = (open: boolean) => { setMoreOpenState(open); writeMoreOpen(open) }
@@ -233,18 +235,27 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   // preferences, synced) leaves it for the primary items.
   const promoted = appearance.sidebar ?? []
   const unreadBadge = unread.total > 0 ? <UnreadBadge n={unread.total} label="unread updates" /> : undefined
-  const more: { id: Promotable | 'ask'; node: ReactNode }[] = [
+  // The weekly review (stats-and-review): when the last one was, and a marker once it is due.
+  const due = reviewDue(review?.completed_at)
+  const reviewBadge = due
+    ? <span data-review-due><Badge hue="orange">Due</Badge><span className="sr-only">: the last weekly review was {reviewAgo(review?.completed_at)}</span></span>
+    : <span className="text-hint text-faint" data-review-ago>{reviewAgo(review?.completed_at)}</span>
+  const more: { id: Promotable | 'ask' | 'review' | 'stats'; node: ReactNode }[] = [
     { id: 'anytime', node: item({ view: 'anytime' }, 'Anytime', 'layers') },
     { id: 'someday', node: item({ view: 'someday' }, 'Someday', 'archive') },
     // Assigned to me only where tasks can be assigned: when the account shares a project.
     ...(sharedIds.size > 0 ? [{ id: 'assigned' as const, node: item({ view: 'assigned' }, 'Assigned to me', 'user-check') }] : []),
     { id: 'completed', node: item({ view: 'completed' }, 'Completed', 'circle-check-big') },
+    { id: 'review', node: item({ view: 'review' }, 'Review', 'clipboard-check', undefined, reviewBadge) },
+    { id: 'stats', node: item({ view: 'stats' }, 'Statistics', 'chart-column') },
     ...(sharedIds.size > 0 ? [{ id: 'feed' as const, node: item({ view: 'feed' }, 'Updates', 'newspaper', undefined, unreadBadge) }] : []),
     { id: 'trash', node: item({ view: 'trash' }, 'Trash', 'trash-2') },
     { id: 'filter', node: item({ view: 'filter' }, 'Filter', 'filter') },
     ...(assistant?.available ? [{ id: 'ask' as const, node: item({ view: 'ask' }, 'Ask', 'message-circle') }] : []),
   ]
   const primaryExtra = more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
+  // A due review shows on the closed More heading too, so the marker is never hidden.
+  const moreBadge = unreadBadge ?? (due ? <span data-review-due-more><Badge hue="orange">Review due</Badge></span> : undefined)
   const rest = more.filter((m) => !primaryExtra.includes(m))
   const calendarMode = readCalendarMode()
 
@@ -265,7 +276,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           {item({ view: calendarMode }, 'Calendar', 'calendar-range')}
           {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
         </nav>
-        <SidebarGroup title="More" collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={unreadBadge} collapsed={collapsed} tight testId="sidebar-more">
+        <SidebarGroup title="More" collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={moreBadge} collapsed={collapsed} tight testId="sidebar-more">
           {rest.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
         </SidebarGroup>
       </div>
