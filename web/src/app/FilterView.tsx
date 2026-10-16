@@ -12,6 +12,7 @@ import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
 import { buildProjectTree } from '../lib/projects'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
+import { habitStatsMap } from '../lib/habits'
 import { createView } from '../lib/views'
 import { ancestors, flattenTree } from '../lib/tree'
 import type { Label, Project, Task } from '../lib/types'
@@ -27,6 +28,7 @@ import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { visibleTasks } from '../lib/trash'
 import { Dialog } from './overlay'
+import { useDateTimeFormat } from './DateTimePrefsProvider'
 
 const DEBOUNCE_MS = 150
 
@@ -49,6 +51,8 @@ interface Group {
 export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}) {
   const today = useToday()
   const zone = useViewerZone()
+  // `this week` follows the first-day-of-week preference (completed-date-filters D2).
+  const weekStart = useDateTimeFormat().resolved.weekStart
   const [query, setQuery] = useState(initialQuery)
   const [debounced, setDebounced] = useState(initialQuery)
   // A query handed over by the command palette is remembered like a typed one.
@@ -66,6 +70,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
+  const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
 
   // A syntax error keeps the last valid query (and so the previous results) on screen.
   const parsed = useMemo(() => tryParse(debounced), [debounced])
@@ -78,10 +83,10 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     if (!good.ast) return null
     // Like the other cross-project views, tasks of archived projects stay out.
     const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-    const { test, warnings } = compile(good.ast, { today, labels, projects, tasks: allTasks })
+    const { test, warnings } = compile(good.ast, { today, labels, projects, tasks: allTasks, weekStart })
     const tasks = allTasks.filter((t) => !(t.project_id && archived.has(t.project_id)) && test(t))
     return { tasks, warnings }
-  }, [good, allTasks, labels, projects, today, zone])
+  }, [good, allTasks, labels, projects, today, zone, weekStart])
 
   const groups = useMemo<Group[]>(() => {
     if (!result) return []
@@ -239,6 +244,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
                       selected={t.id === selectedId}
                       progress={progress.get(t.id)}
                       blockedBy={blocked.get(t.id)}
+                      habit={habits.get(t.id)}
                       breadcrumb={t.parent_id ? breadcrumbOf(t, taskMap) : null}
                       onToggle={() => void setTaskCompleted(t.id, !t.completed_at)}
                       onOpen={() => {
@@ -276,9 +282,10 @@ const HINT: [string[], string][] = [
   [['@errand', '#Work', '##Work'], 'label, project, project with its sub-projects'],
   [['p1', 'p4'], 'priority'],
   [['due <= tomorrow', 'created > 7 days ago'], '< <= = >= > before after · today, tomorrow, yesterday, monday…, 2026-12-01, 3 days, 3 days ago'],
+  [['due = this week', 'completed >= last month'], 'periods: this, last or next week or month, 2 weeks ago, 3 months ago · = means within'],
   [['overdue', 'today', 'tomorrow', 'no date', 'no time'], 'due date keywords'],
   [['no project', 'no labels', 'subtask'], 'Inbox, unlabelled, has a parent task'],
-  [['completed', 'open'], 'open tasks only unless one of these appears'],
+  [['completed', 'open', 'completed = last week'], 'open tasks only unless one of these, or a completion date, appears'],
   [['search: "oat milk"'], 'title or notes contain the text'],
   [['&', '|', '!', '( )'], 'and, or, not, grouping · quote names with spaces: @"follow up"'],
 ]

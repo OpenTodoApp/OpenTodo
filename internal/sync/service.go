@@ -10,6 +10,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/notify"
 )
 
@@ -181,9 +182,55 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 }
 
 // ApplyStrict is Apply for the REST API: one refused op refuses the whole batch
-// with a *RejectedError and nothing is stored.
+// with a *RejectedError and nothing is stored. A task completion without
+// completed_by gets one for userID (see StampCompletedBy).
 func (s *Service) ApplyStrict(ctx context.Context, userID string, ops []Op) (ApplyResult, error) {
-	return s.apply(ctx, userID, ops, true)
+	return s.apply(ctx, userID, StampCompletedBy(userID, ops), true)
+}
+
+// StampCompletedBy records who completed a task (OpenSpec change
+// completed-date-filters, design D5) for server-side writes: a task completed_at
+// op without a completed_by op for the same task in the batch gains one, set to
+// userID when it completes and to null when it reopens, with the same timestamp
+// and device so both fields resolve to the same winner. A creation that leaves
+// the task open needs nothing. The added op's id derives from the completed_at
+// op's, so a retried batch stays a duplicate. Devices write the field themselves:
+// Apply (the sync path) does not stamp.
+func StampCompletedBy(userID string, ops []Op) []Op {
+	has := map[string]bool{}
+	creates := map[string]bool{}
+	for _, op := range ops {
+		if op.Entity != "task" {
+			continue
+		}
+		switch op.Field {
+		case "completed_by":
+			has[op.EntityID] = true
+		case "created_at":
+			creates[op.EntityID] = true
+		}
+	}
+	var extra []Op
+	for _, op := range ops {
+		if op.Entity != "task" || op.Field != "completed_at" || has[op.EntityID] {
+			continue
+		}
+		done := !nullish(op.Value)
+		if !done && creates[op.EntityID] {
+			continue
+		}
+		value := json.RawMessage("null")
+		if done {
+			value = jsonOf(userID)
+		}
+		has[op.EntityID] = true
+		extra = append(extra, Op{ID: ids.NameID("completed_by", op.ID), Entity: "task", EntityID: op.EntityID,
+			Field: "completed_by", Value: value, TS: op.TS, Device: op.Device})
+	}
+	if len(extra) == 0 {
+		return ops
+	}
+	return append(append(make([]Op, 0, len(ops)+len(extra)), ops...), extra...)
 }
 
 func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict bool) (ApplyResult, error) {

@@ -20,6 +20,21 @@ A task SHALL have a title, description, optional project, priority 1 (highest) t
 - **WHEN** a task carries `ical_extra` and a device edits the task's title while offline, then syncs
 - **THEN** the task keeps its `ical_extra` value and the new title on every device
 
+### Requirement: Habit fields
+A task SHALL also have a boolean `habit` flag, default false, and an occurrence record of a habit SHALL carry a boolean `skipped` marker, default false (OpenSpec `habits`). Both SHALL be stored and synced like every task field, SHALL converge by per-field last-writer-wins, and SHALL be rejected when the value is not a boolean.
+
+#### Scenario: Habit defaults on creation
+- **WHEN** a task is created with only a title
+- **THEN** it is not a habit and is not skipped
+
+#### Scenario: Invalid habit values
+- **WHEN** a client submits a non-boolean `habit` or `skipped`
+- **THEN** the write is rejected as invalid and no field changes
+
+#### Scenario: Older client keeps the flags
+- **WHEN** a device running a build without habits edits the title of a habit and syncs
+- **THEN** the task keeps `habit` true on every device, because each field is its own operation
+
 ### Requirement: Quick capture
 The client SHALL offer a single-line quick-add input in every task view that creates a task on Enter and stays focused for the next entry. The line SHALL be parsed for attributes as defined by the natural-language-capture capability. The new task SHALL inherit the view's context (project, Today's date, Upcoming's tomorrow) for every attribute the line does not set.
 
@@ -214,3 +229,26 @@ Choosing a zone from the zone control SHALL keep the wall-clock date and time cu
 #### Scenario: Recently used zone
 - **WHEN** the user picked "Asia/Tokyo" on a previous task and opens the zone control of another task
 - **THEN** "Tokyo" is listed right after the viewer's own zone
+
+### Requirement: Who completed a task
+A task SHALL record in `completed_by` the account id of whoever completed it, or null when unknown. Every write that completes a task SHALL set it in the same batch as the completion time, and every reopen SHALL clear it. Server writes on a user's behalf SHALL set it to that user; public link ticks SHALL record null. It SHALL be an ordinary, unencrypted task field: written offline, synced, converged by last-writer-wins with the completion time, and exported.
+
+#### Scenario: Completed on a device
+- **WHEN** a signed-in user completes a task while offline and the device later syncs
+- **THEN** the task has `completed_by` set to that user's id on every device and in `GET /api/v1/tasks/{id}`
+
+#### Scenario: Reopen clears it
+- **WHEN** the user reopens a completed task
+- **THEN** `completed_at` and `completed_by` are both null
+
+#### Scenario: Recurring occurrence
+- **WHEN** a user completes a task with `every day`
+- **THEN** the completed occurrence record carries `completed_by` with that user's id and the series stays open without it
+
+#### Scenario: Completed through the API
+- **WHEN** a script PATCHes `{"completed_at": 1760264400000}` with a user's token
+- **THEN** the stored task has `completed_by` set to that user's id
+
+#### Scenario: Concurrent completions converge
+- **WHEN** two members complete the same task on two devices while offline and both sync
+- **THEN** every device shows the same `completed_at` and the `completed_by` written in the same batch as it

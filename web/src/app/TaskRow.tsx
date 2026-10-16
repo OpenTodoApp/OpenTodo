@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react'
 import { describeDeadline, describeDue, formatDate, localDueOf, todayISO, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
+import { streakLabel, type HabitStats } from '../lib/habits'
 import type { Label, Project, Task } from '../lib/types'
 import { AssigneeChip } from './AssigneePicker'
 import { useAttachmentCount, useCommentCount } from './useCommentCounts'
@@ -56,6 +57,8 @@ export interface TaskRowProps {
   progress?: Progress
   /** Open blockers (task-dependencies): above 0 the row is dimmed with a lock marker. */
   blockedBy?: number
+  /** The streak of a habit (OpenSpec habits), computed once by the list: a chip after the repeat indicator. */
+  habit?: HabitStats | null
   /** Title of the parent when the task is shown outside its parent's subtree. */
   breadcrumb?: string | null
   hasChildren?: boolean
@@ -84,7 +87,7 @@ export interface TaskRowProps {
   dragging?: boolean
 }
 
-export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick }: TaskRowProps) {
+export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick }: TaskRowProps) {
   const dt = useDateTimeFormat()
   const due = describeDue(task.due, undefined, undefined, dt.resolved)
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
@@ -108,7 +111,8 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   // Evening and repeat are suffixes of the date text, never separate glyphs; with no
   // date they stand on their own in the date tone.
   const date = dateText(due?.label ?? (task.evening && !done ? 'This evening' : null), !!task.evening && !done && !!due, !!task.recurrence, !!task.series_id)
-  const hasMeta = !!(breadcrumb || date || deadline || startText || (!due && !task.evening && (task.recurrence || task.series_id)) || task.estimate_minutes || (progress && progress.total > 0) || (blockedBy > 0 && !done)
+  const streak = habit && !done ? habit : null
+  const hasMeta = !!(breadcrumb || date || streak || deadline || startText || (!due && !task.evening && (task.recurrence || task.series_id)) || task.estimate_minutes || (progress && progress.total > 0) || (blockedBy > 0 && !done)
     || (assignee && task.assignee_id) || task.description || comments > 0 || attachments > 0 || labels.length > 0 || (showProject && (project || !task.project_id)))
 
   // Completion feedback: the check mark animates and the row fades within the
@@ -140,6 +144,9 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
       )}
       {!date && (task.recurrence || task.series_id) && (
         <ToneText tone="muted" data-recurring={task.recurrence ? '' : undefined}>{task.recurrence ? 'repeats' : 'occurrence'}</ToneText>
+      )}
+      {streak && (
+        <NeutralChip icon="flame" data-streak="" data-at-risk={streak.atRisk ? '' : undefined} label={streakLabel(streak)}>{streak.current}</NeutralChip>
       )}
       {blockedBy > 0 && !done && (
         <NeutralChip icon="lock" data-blocked="" label={`Blocked by ${blockedBy}`}>{blockedBy}</NeutralChip>

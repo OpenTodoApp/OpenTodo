@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,6 +27,8 @@ type listOptions struct {
 	inbox, today, upcoming, completed, all bool
 	project                                string
 	limit                                  int
+	// Completion range (OpenSpec change completed-date-filters, design D6).
+	completedAfter, completedBefore string
 }
 
 func (o *listOptions) bind(fs *flag.FlagSet) {
@@ -36,7 +39,37 @@ func (o *listOptions) bind(fs *flag.FlagSet) {
 	fs.BoolVar(&o.all, "all", false, "open and completed tasks")
 	fs.StringVar(&o.project, "project", "", "tasks of one project (name or id)")
 	fs.IntVar(&o.limit, "limit", 0, "print at most n tasks")
+	fs.StringVar(&o.completedAfter, "completed-after", "", "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
+	fs.StringVar(&o.completedBefore, "completed-before", "", "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
 }
+
+// completionRange parses --completed-after and --completed-before as Unix ms
+// (0 = open end); a date is local midnight in loc.
+func (o *listOptions) completionRange(loc *time.Location) (after, before int64, err error) {
+	parse := func(flagName, v string) (int64, error) {
+		v = strings.TrimSpace(v)
+		if v == "" {
+			return 0, nil
+		}
+		if d, err := time.ParseInLocation("2006-01-02", v, loc); err == nil && d.Format("2006-01-02") == v {
+			return d.UnixMilli(), nil
+		}
+		if t, err := time.Parse(time.RFC3339, v); err == nil {
+			return t.UnixMilli(), nil
+		}
+		if ms, err := strconv.ParseInt(v, 10, 64); err == nil && ms > 0 {
+			return ms, nil
+		}
+		return 0, usageErr("--%s: use a date (YYYY-MM-DD), an RFC 3339 time or Unix milliseconds (got %q)", flagName, v)
+	}
+	if after, err = parse("completed-after", o.completedAfter); err != nil {
+		return 0, 0, err
+	}
+	before, err = parse("completed-before", o.completedBefore)
+	return after, before, err
+}
+
+func (o *listOptions) ranged() bool { return o.completedAfter != "" || o.completedBefore != "" }
 
 func (o *listOptions) view() (string, error) {
 	views := []string{}
@@ -46,6 +79,18 @@ func (o *listOptions) view() (string, error) {
 		}
 	}
 	sort.Strings(views)
+	if o.ranged() {
+		// A completion range lists completed tasks, of one project or of all.
+		for _, v := range views {
+			if v != "--completed" && v != "--project" {
+				return "", usageErr("--completed-after and --completed-before list completed tasks; drop %s", v)
+			}
+		}
+		if o.project != "" {
+			return "project", nil
+		}
+		return "completed", nil
+	}
 	switch len(views) {
 	case 0:
 		return "open", nil
@@ -68,6 +113,9 @@ func cmdList(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	}
 	if o.limit < 0 {
 		return usageErr("--limit must be zero or positive")
+	}
+	if _, _, err := o.completionRange(a.Now().Location()); err != nil {
+		return err
 	}
 	return runList(a, ctx, g, &o)
 }
@@ -125,7 +173,16 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	for i := range all {
 		all[i].Due = all[i].Due.inZone(a.Now().Location())
 	}
-	tasks := filterTasks(all, projects, view, selected, today)
+	var tasks []task
+	if o.ranged() {
+		after, before, err := o.completionRange(a.Now().Location())
+		if err != nil {
+			return err
+		}
+		tasks = completedBetween(all, projects, selected, after, before)
+	} else {
+		tasks = filterTasks(all, projects, view, selected, today)
+	}
 	if o.limit > 0 && len(tasks) > o.limit {
 		tasks = tasks[:o.limit]
 	}
@@ -229,6 +286,35 @@ func filterTasks(all []task, projects []project, view string, selected *project,
 	default:
 		sort.SliceStable(out, func(i, j int) bool { return byDueThenPriority(out[i], out[j]) })
 	}
+	return out
+}
+
+// completedBetween lists the tasks completed in [after, before) (0 = open end),
+// most recent first: of the selected project, or of every visible one.
+func completedBetween(all []task, projects []project, selected *project, after, before int64) []task {
+	visible := map[string]bool{}
+	for _, p := range projects {
+		visible[p.ID] = !p.Archived && p.DeletedAt == nil
+	}
+	out := make([]task, 0)
+	for _, t := range all {
+		if t.DeletedAt != nil || t.CompletedAt == nil {
+			continue
+		}
+		at := int64(*t.CompletedAt)
+		if (after != 0 && at < after) || (before != 0 && at >= before) {
+			continue
+		}
+		if selected != nil {
+			if t.ProjectID == nil || *t.ProjectID != selected.ID {
+				continue
+			}
+		} else if t.ProjectID != nil && !visible[*t.ProjectID] {
+			continue
+		}
+		out = append(out, t)
+	}
+	sort.SliceStable(out, func(i, j int) bool { return *out[i].CompletedAt > *out[j].CompletedAt })
 	return out
 }
 

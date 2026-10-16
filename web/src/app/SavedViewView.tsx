@@ -19,6 +19,7 @@ import { useListKeys } from './useListKeys'
 import { useBulkList } from './bulk/useBulkList'
 import { placeInDay } from './signals'
 import { todayISO } from '../lib/dates'
+import { habitStatsMap } from '../lib/habits'
 import { useViewData, type ViewData } from './useViews'
 import { Dialog } from './overlay'
 
@@ -53,6 +54,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const taskMap = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks])
   const progress = useMemo(() => progressMap(tasks), [tasks])
   const blocked = useMemo(() => blockedMap(tasks), [tasks])
+  const habits = useMemo(() => habitStatsMap(tasks, ctx.today), [tasks, ctx.today])
 
   // ---- query editing: the input holds a draft; Enter (or Save) confirms it ----
   const [draft, setDraft] = useState(view.query)
@@ -184,6 +186,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                           selected={key === selected}
                           progress={progress.get(t.id)}
                           blockedBy={blocked.get(t.id)}
+                          habit={habits.get(t.id)}
                           breadcrumb={t.parent_id ? breadcrumbOf(t, taskMap) : null}
                           onToggle={() => void setTaskCompleted(t.id, !t.completed_at)}
                           onOpen={() => { setSelected(key); setOpenId(t.id) }}

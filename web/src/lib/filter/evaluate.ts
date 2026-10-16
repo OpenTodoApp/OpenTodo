@@ -3,10 +3,10 @@
 // every compile, so renames are picked up and deleted names degrade to a warning
 // plus an empty match instead of an error (design D3).
 import { blockedMap } from '../dependencies'
-import { localDueOf } from '../dates'
+import { currentDateTime, localDueOf } from '../dates'
 import { descendants } from '../tree'
 import type { Label, Project, Task } from '../types'
-import { parse, resolveDate, shiftISO, type Cmp, type Node } from './parse'
+import { parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
 
 export interface FilterContext {
   /** The viewer's local calendar date, YYYY-MM-DD. */
@@ -15,6 +15,11 @@ export interface FilterContext {
   projects: readonly Project[]
   /** Every live task, for `blocked` and `unblocked` (task-dependencies D6). */
   tasks?: readonly Task[]
+  /**
+   * First day of the week for `this week` and friends, 0 = Sunday. Defaults to the
+   * user's date-time preference snapshot (completed-date-filters D2).
+   */
+  weekStart?: number
 }
 
 export interface CompiledFilter {
@@ -35,7 +40,10 @@ function nameKey(name: string): string {
   return name.trim().toLocaleLowerCase()
 }
 
-/** True when the query mentions `completed` or `open`; otherwise only open tasks match (design D5). */
+/**
+ * True when the query mentions `completed` or `open`, or compares the completion
+ * date (completed-date-filters D3); otherwise only open tasks match (design D5).
+ */
 export function mentionsState(n: Node): boolean {
   switch (n.kind) {
     case 'or':
@@ -45,18 +53,21 @@ export function mentionsState(n: Node): boolean {
       return mentionsState(n.item)
     case 'keyword':
       return n.keyword === 'completed' || n.keyword === 'open'
+    case 'date':
+      return n.field === 'completed'
     default:
       return false
   }
 }
 
-function compareISO(a: string, op: Cmp, b: string): boolean {
+/** A day against a range of days (completed-date-filters D1); a one-day range is a plain comparison. */
+function compareISO(d: string, op: Cmp, r: DateRange): boolean {
   switch (op) {
-    case '<': return a < b
-    case '<=': return a <= b
-    case '=': return a === b
-    case '>=': return a >= b
-    case '>': return a > b
+    case '<': return d < r.start
+    case '<=': return d <= r.end
+    case '=': return d >= r.start && d <= r.end
+    case '>=': return d >= r.start
+    case '>': return d > r.end
   }
 }
 
@@ -66,16 +77,25 @@ function startOfDay(iso: string): number {
   return new Date(y, m - 1, d).getTime()
 }
 
-/** `created <op> date` as a millisecond range check on `created_at` in the viewer's zone. */
-function createdPred(op: Cmp, date: string): Pred {
-  const start = startOfDay(date)
-  const next = startOfDay(shiftISO(date, 1))
-  switch (op) {
-    case '<': return (t) => t.created_at < start
-    case '<=': return (t) => t.created_at < next
-    case '=': return (t) => t.created_at >= start && t.created_at < next
-    case '>=': return (t) => t.created_at >= start
-    case '>': return (t) => t.created_at >= next
+/**
+ * `created <op> date` and `completed <op> date` as a millisecond range check on an
+ * instant in the viewer's zone; a null instant never matches.
+ */
+function instantPred(at: (t: Task) => number | null, op: Cmp, r: DateRange): Pred {
+  const start = startOfDay(r.start)
+  const next = startOfDay(shiftISO(r.end, 1))
+  const test = (ms: number): boolean => {
+    switch (op) {
+      case '<': return ms < start
+      case '<=': return ms < next
+      case '=': return ms >= start && ms < next
+      case '>=': return ms >= start
+      case '>': return ms >= next
+    }
+  }
+  return (t) => {
+    const ms = at(t)
+    return ms !== null && ms !== undefined && test(ms)
   }
 }
 
@@ -93,6 +113,7 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
   const projectsByName = new Map<string, string[]>()
   for (const p of liveProjects) projectsByName.set(nameKey(p.name), [...(projectsByName.get(nameKey(p.name)) ?? []), p.id])
   const today = ctx.today
+  const weekStart = ctx.weekStart ?? currentDateTime().weekStart
   const tomorrow = shiftISO(today, 1)
   // Open blockers per task, built once when the query asks (task-dependencies D6).
   let blocked: Map<string, number> | null = null
@@ -147,8 +168,9 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
         return (t) => t.priority === v
       }
       case 'date': {
-        const date = resolveDate(n.date, today)
-        if (n.field === 'created') return createdPred(n.op, date)
+        const date = resolveRange(n.date, today, weekStart)
+        if (n.field === 'created') return instantPred((t) => t.created_at, n.op, date)
+        if (n.field === 'completed') return instantPred((t) => t.completed_at, n.op, date)
         const op = n.op
         // A task without a deadline never matches a `deadline` comparison (deadlines D4).
         if (n.field === 'deadline') return (t) => !!t.deadline && compareISO(t.deadline, op, date)
@@ -175,9 +197,11 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
           case 'someday': return (t) => t.start === 'someday'
           case 'deferred': return (t) => !!t.start && t.start !== 'someday' && t.start > today
           case 'evening': return (t) => !!t.evening
-          case 'completed': return (t) => t.completed_at !== null
+          // A habit's skipped occurrence record is not a completion (OpenSpec habits, D6).
+          case 'completed': return (t) => t.completed_at !== null && !t.skipped
           case 'open': return (t) => t.completed_at === null
           case 'subtask': return (t) => t.parent_id !== null
+          case 'habit': return (t) => t.habit === true
           case 'blocked': { const b = blockedSet(); return (t) => b.has(t.id) }
           case 'unblocked': { const b = blockedSet(); return (t) => !b.has(t.id) }
         }
@@ -186,9 +210,10 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
 
   const pred = build(ast)
   const openOnly = !mentionsState(ast)
+  // Skipped habit records match no query, whatever its terms (habits D6).
   const test: Pred = openOnly
     ? (t) => !t.deleted_at && t.completed_at === null && pred(t)
-    : (t) => !t.deleted_at && pred(t)
+    : (t) => !t.deleted_at && !t.skipped && pred(t)
   return { test, warnings }
 }
 

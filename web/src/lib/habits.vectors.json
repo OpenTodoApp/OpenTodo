@@ -1,0 +1,127 @@
+{
+  "about": "Habit streak and month-grid vectors (OpenSpec change habits, design D3). Each case is a series with a rule and current due date, its occurrence records by date (done or skipped) and the device's today. stats is the expected habitStats (null when the task cannot be measured); grids give the expected monthGrid states, one character per day of the month: '.' blank, D done, S skipped, M missed, P pending, U upcoming.",
+  "cases": [
+    {
+      "name": "daily, three days in a row, current occurrence pending",
+      "rule": "every day", "due": "2026-10-14", "today": "2026-10-14",
+      "records": {"2026-10-11": "done", "2026-10-12": "done", "2026-10-13": "done"},
+      "stats": {"current": 3, "best": 3, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-10", "days": "..........DDDPUUUUUUUUUUUUUUUUU"}]
+    },
+    {
+      "name": "daily, the day is over: at risk, still pending and not missed",
+      "rule": "every day", "due": "2026-10-14", "today": "2026-10-15",
+      "records": {"2026-10-11": "done", "2026-10-12": "done", "2026-10-13": "done"},
+      "stats": {"current": 3, "best": 3, "pending": true, "atRisk": true},
+      "grids": [{"month": "2026-10", "days": "..........DDDPUUUUUUUUUUUUUUUUU"}]
+    },
+    {
+      "name": "daily with a missed day",
+      "rule": "every day", "due": "2026-10-14", "today": "2026-10-14",
+      "records": {"2026-10-11": "done", "2026-10-13": "done"},
+      "stats": {"current": 1, "best": 1, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-10", "days": "..........DMDPUUUUUUUUUUUUUUUUU"}]
+    },
+    {
+      "name": "daily with a skipped day: the chain holds, the skip does not count",
+      "rule": "every day", "due": "2026-10-14", "today": "2026-10-14",
+      "records": {"2026-10-11": "done", "2026-10-12": "skipped", "2026-10-13": "done"},
+      "stats": {"current": 2, "best": 2, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-10", "days": "..........DSDPUUUUUUUUUUUUUUUUU"}]
+    },
+    {
+      "name": "best is the longest run, current the latest",
+      "rule": "every day", "due": "2026-10-09", "today": "2026-10-09",
+      "records": {"2026-10-01": "done", "2026-10-02": "done", "2026-10-03": "done", "2026-10-04": "done", "2026-10-05": "done", "2026-10-07": "done", "2026-10-08": "done"},
+      "stats": {"current": 2, "best": 5, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-10", "days": "DDDDDMDDPUUUUUUUUUUUUUUUUUUUUUU"}]
+    },
+    {
+      "name": "every mon, wed, fri: unscheduled days are not missed",
+      "rule": "every mon, wed, fri", "due": "2026-10-16", "today": "2026-10-16",
+      "records": {"2026-10-12": "done", "2026-10-14": "done"},
+      "stats": {"current": 2, "best": 2, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-10", "days": "...........D.D.P..U.U.U..U.U.U."}]
+    },
+    {
+      "name": "every weekday: October at a glance with a skipped day",
+      "rule": "every weekday", "due": "2026-10-14", "today": "2026-10-14",
+      "records": {"2026-10-01": "done", "2026-10-02": "done", "2026-10-05": "done", "2026-10-06": "skipped", "2026-10-07": "done", "2026-10-08": "done", "2026-10-09": "done", "2026-10-12": "done", "2026-10-13": "done"},
+      "stats": {"current": 8, "best": 8, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-10", "days": "DD..DSDDD..DDPUU..UUUUU..UUUUU."}, {"month": "2026-09", "days": ".............................."}]
+    },
+    {
+      "name": "every 31st across a short month",
+      "rule": "every 31st", "due": "2026-03-31", "today": "2026-03-10",
+      "records": {"2026-01-31": "done", "2026-02-28": "done"},
+      "stats": {"current": 2, "best": 2, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-02", "days": "...........................D"}, {"month": "2026-04", "days": ".............................U"}]
+    },
+    {
+      "name": "every month anchored at the 31st steps back clamped to month ends",
+      "rule": "every month", "due": "2026-03-31", "today": "2026-03-31",
+      "records": {"2025-12-31": "done", "2026-02-28": "done"},
+      "stats": {"current": 1, "best": 1, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-01", "days": "..............................M"}, {"month": "2026-02", "days": "...........................D"}]
+    },
+    {
+      "name": "every 2 weeks stepping back from the anchor",
+      "rule": "every 2 weeks", "due": "2026-10-14", "today": "2026-10-14",
+      "records": {"2026-09-02": "done", "2026-09-30": "done"},
+      "stats": {"current": 1, "best": 1, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-09", "days": ".D.............M.............D"}, {"month": "2026-10", "days": ".............P.............U..."}]
+    },
+    {
+      "name": "a rule change keeps the days its old records prove",
+      "rule": "every mon, wed, fri", "due": "2026-10-07", "today": "2026-10-07",
+      "records": {"2026-10-01": "done", "2026-10-02": "done", "2026-10-03": "done", "2026-10-04": "done", "2026-10-05": "done", "2026-10-06": "done"},
+      "stats": {"current": 6, "best": 6, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-10", "days": "DDDDDDP.U..U.U.U..U.U.U..U.U.U."}]
+    },
+    {
+      "name": "catch-up after being overdue leaves the skipped-over days missed",
+      "rule": "every day", "due": "2026-10-15", "today": "2026-10-14",
+      "records": {"2026-10-10": "done", "2026-10-11": "done", "2026-10-12": "done"},
+      "stats": {"current": 0, "best": 3, "pending": true, "atRisk": false},
+      "grids": [{"month": "2026-10", "days": ".........DDDMMPUUUUUUUUUUUUUUUU"}]
+    },
+    {
+      "name": "a concurrent completion on the current day counts",
+      "rule": "every day", "due": "2026-10-14", "today": "2026-10-14",
+      "records": {"2026-10-13": "done", "2026-10-14": "done"},
+      "stats": {"current": 2, "best": 2, "pending": false, "atRisk": false}
+    },
+    {
+      "name": "daily across the European spring daylight saving change",
+      "rule": "every day", "due": "2026-03-31", "today": "2026-03-31",
+      "records": {"2026-03-28": "done", "2026-03-29": "done", "2026-03-30": "done"},
+      "stats": {"current": 3, "best": 3, "pending": true, "atRisk": false}
+    },
+    {
+      "name": "daily across the North American autumn daylight saving change",
+      "rule": "every day", "due": "2026-11-02", "today": "2026-11-02",
+      "records": {"2026-10-31": "done", "2026-11-01": "done"},
+      "stats": {"current": 2, "best": 2, "pending": true, "atRisk": false}
+    },
+    {
+      "name": "a new habit with no records has no history",
+      "rule": "every day", "due": "2026-10-14", "today": "2026-10-20",
+      "records": {},
+      "stats": {"current": 0, "best": 0, "pending": true, "atRisk": true},
+      "grids": [{"month": "2026-10", "days": ".............PUUUUUUUUUUUUUUUUU"}]
+    },
+    {
+      "name": "completion-relative rule: no schedule to measure",
+      "rule": "every 3 days after completion", "due": "2026-10-14", "today": "2026-10-14",
+      "records": {"2026-10-11": "done"},
+      "stats": null
+    }
+  ],
+  "previous": [
+    {"rule": "every mon, wed, fri", "due": "2026-10-16", "before": "2026-10-16", "records": ["2026-10-12"], "want": "2026-10-14"},
+    {"rule": "every mon, wed, fri", "due": "2026-10-16", "before": "2026-10-12", "records": ["2026-10-12"], "want": null},
+    {"rule": "every 2 weeks", "due": "2026-10-14", "before": "2026-10-14", "records": ["2026-09-02"], "want": "2026-09-30"},
+    {"rule": "every 31st", "due": "2026-03-31", "before": "2026-03-31", "records": ["2026-01-31"], "want": "2026-02-28"},
+    {"rule": "every day", "due": "2026-10-14", "before": "2026-10-14", "records": ["2026-10-01", "2026-10-13"], "want": "2026-10-13"}
+  ]
+}

@@ -27,7 +27,7 @@ Three choices that follow your account to every device, also when you change the
 
 - **Date format**: **System** (the way this browser writes dates), **Day-month** (`14 Oct`, `14/10/2026`), **Month-day** (`Oct 14`, `10/14/2026`) or **ISO** (`2026-10-14`). Each option shows today's date in that format. Month and weekday names stay in your browser's language.
 - **Time format**: **System**, **12-hour** (`3:00 PM`) or **24-hour** (`15:00`).
-- **First day of the week**: **System**, **Monday**, **Sunday** or **Saturday**. It decides where the Week view and the calendar of a date field start.
+- **First day of the week**: **System**, **Monday**, **Sunday** or **Saturday**. It decides where the Week view and the calendar of a date field start, and which days `this week` and `last week` cover in [filters](filters.md#periods).
 
 The **Preview** shows a due date, a date, a due time, a comment time and this week as they will appear. A change applies at once everywhere in the app, without a reload: task rows, the task detail, reminders, the Day and Week views, comments, history and the lists in Settings. With a numeric date order on **Automatic**, quick add reads dates like `3/11` in your date format too.
 

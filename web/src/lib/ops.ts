@@ -62,7 +62,7 @@ const PROJECT_DEFAULTS: Omit<Project, 'id' | '_clock'> = {
 const TASK_DEFAULTS: Omit<Task, 'id' | '_clock'> = {
   title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [],
   position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, blocked_by: [], recurrence: null, series_id: null,
-  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '',
+  assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null,
 }
 const LABEL_DEFAULTS: Omit<Label, 'id' | '_clock'> = {
   name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null,
@@ -261,6 +261,23 @@ export async function deviceFor(opts: MutateOptions = {}): Promise<string> {
   return opts.origin === 'assistant' ? `assistant:${id}` : id
 }
 
+/**
+ * Who completed a task (OpenSpec change completed-date-filters, design D5): a task
+ * patch that writes `completed_at` without `completed_by` gets it in the same batch,
+ * the signed-in account when completing and null when reopening. A creation that
+ * leaves the task open needs nothing (null is the default). Every completion path
+ * (cascades, bulk, recurring occurrence records, history restores) goes through here.
+ */
+export function withCompletedBy(changes: Change[], actor: string): Change[] {
+  if (!changes.some((c) => c.entity === 'task' && 'completed_at' in c.patch && !('completed_by' in c.patch))) return changes
+  return changes.map((c) => {
+    if (c.entity !== 'task' || !('completed_at' in c.patch) || 'completed_by' in c.patch) return c
+    const done = c.patch.completed_at !== null && c.patch.completed_at !== undefined
+    if (!done && 'created_at' in c.patch) return c
+    return { ...c, patch: { ...c.patch, completed_by: done ? actor || null : null } }
+  })
+}
+
 /** Tables a read-modify-write helper must lock to wrap mutate()/mutateMany() in one transaction. */
 export function mutationTables() {
   return [...entityTables(), db.outbox, db.meta]
@@ -286,14 +303,15 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
       // The pair adds a projection and a merged document: check them too (e2ee).
       checkEncryptedSize(changes)
     }
+    // The author of local edits, read inside the transaction (activity log).
+    const actor = ((await db.meta.get('userId'))?.value as string | undefined) ?? ''
+    changes = withCompletedBy(changes, actor)
     const ops: Op[] = []
     for (const { entity, entityId, patch } of changes) {
       for (const [field, value] of Object.entries(patch)) {
         ops.push({ id: crypto.randomUUID(), entity, entityId, field, value, ts, device })
       }
     }
-    // The author of local edits, read inside the transaction (activity log).
-    const actor = ((await db.meta.get('userId'))?.value as string | undefined) ?? ''
     await applyOps(ops, { actor, local: true })
     // One pending document per field (design D3): a newer state supersedes the queued one.
     const docOps = ops.filter((o) => isDocField(o.entity, o.field))
@@ -636,7 +654,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * different project, and changing a task's project clears its section (board-view).
  */
 // blocked_by stays behind: blockers live in one sharing scope (task-dependencies D5).
-const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'position', 'created_at'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
@@ -658,6 +676,9 @@ function copyTasks(
     // field existed hold undefined, which must never be sent).
     // A copy carries the note's document only when there is one (collaborative-rich-text).
     if (typeof patch.notes_doc !== 'string' || !patch.notes_doc) delete patch.notes_doc
+    // The copy keeps who completed it (completed-date-filters D5); unknown stays null.
+    if (patch.completed_at === null || patch.completed_at === undefined) delete patch.completed_by
+    else patch.completed_by = patch.completed_by ?? null
     if (typeof patch.assignee_id !== 'string') delete patch.assignee_id
     else if (!assignable.has(patch.assignee_id)) patch.assignee_id = null
     patch.project_id = projectId
@@ -829,17 +850,19 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
 
 /**
  * Skip the current occurrence of a series: an ordinary due-date change, no record.
+ * A habit also writes the occurrence record marked `skipped` (OpenSpec `habits`).
  * Returns false (and writes nothing) when the task is not an open series or the
  * current occurrence is the last one before `until`.
  */
-export async function skipOccurrence(id: string, opts: { today?: string } = {}): Promise<boolean> {
+export async function skipOccurrence(id: string, opts: { now?: number; today?: string } = {}): Promise<boolean> {
+  const now = opts.now ?? Date.now()
   const today = opts.today ?? todayISO()
   await getDeviceId()
   let ok = false
   await db.transaction('rw', mutationTables(), async () => {
     const series = await db.tasks.get(id)
     const rule = seriesRule(series)
-    const changes = series && rule ? planSkip(series, rule, today) : null
+    const changes = series && rule ? planSkip(series, rule, now, today) : null
     if (!changes) return
     await mutateMany(changes)
     ok = true

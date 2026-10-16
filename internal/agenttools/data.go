@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -261,13 +262,19 @@ type taskOut struct {
 	EstimateMinutes *int     `json:"estimate_minutes,omitempty"`
 	Completed       bool     `json:"completed"`
 	CompletedAt     *string  `json:"completed_at,omitempty"`
-	CreatedAt       *string  `json:"created_at,omitempty"`
+	// CompletedBy is the account id of whoever completed the task, when known
+	// (OpenSpec change completed-date-filters).
+	CompletedBy *string `json:"completed_by,omitempty"`
+	CreatedAt   *string `json:"created_at,omitempty"`
 	// Shared is true for tasks of a shared project: other members may have
 	// written its text (design D9.6).
 	Shared bool `json:"shared,omitempty"`
 	// Encrypted is true when the title or description is end-to-end encrypted
 	// (OpenSpec `e2ee`) and therefore shown as a placeholder.
 	Encrypted bool `json:"encrypted,omitempty"`
+	// Habit is true for a recurring task tracked as a habit (OpenSpec change
+	// habits, design D7). Read-only: no write tool accepts it.
+	Habit bool `json:"habit,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
@@ -277,8 +284,11 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		ID: str(t, "id"), Untrusted: taskText{Title: str(t, "title"), Labels: []string{}},
 		ProjectID: strPtr(t, "project_id"), ParentID: strPtr(t, "parent_id"),
 		Priority: priority(t), LabelIDs: []string{},
-		Recurrence: strPtr(t, "recurrence"), Completed: !isOpen(t),
+		Recurrence: strPtr(t, "recurrence"), Habit: string(t["habit"]) == "true", Completed: !isOpen(t),
 		CompletedAt: isoTime(num(t, "completed_at")), CreatedAt: isoTime(num(t, "created_at")),
+	}
+	if out.Completed {
+		out.CompletedBy = strPtr(t, "completed_by")
 	}
 	out.Encrypted = e2ee.IsCiphertext(rawStr(t, "title")) || e2ee.IsCiphertext(rawStr(t, "description"))
 	pid := str(t, "project_id")
@@ -510,6 +520,39 @@ func parseZone(tz, name string) (*time.Location, error) {
 		return nil, argErr(name + ": unknown IANA time zone " + fmt.Sprintf("%q", tz))
 	}
 	return loc, nil
+}
+
+// ParseCompletionBound reads one end of a completion range (OpenSpec change
+// completed-date-filters, design D6): a YYYY-MM-DD date (local midnight in loc),
+// an RFC 3339 time or Unix milliseconds, as Unix ms. An empty value is 0 (no
+// bound). The REST task list shares it.
+func ParseCompletionBound(name, v string, loc *time.Location) (int64, error) {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return 0, nil
+	}
+	if loc == nil {
+		loc = time.UTC
+	}
+	if d, err := time.ParseInLocation("2006-01-02", v, loc); err == nil && d.Format("2006-01-02") == v {
+		return d.UnixMilli(), nil
+	}
+	if t, err := time.Parse(time.RFC3339, v); err == nil {
+		return t.UnixMilli(), nil
+	}
+	if ms, err := strconv.ParseInt(v, 10, 64); err == nil && ms > 0 {
+		return ms, nil
+	}
+	return 0, argErr(name + ": must be a date (YYYY-MM-DD), an RFC 3339 time or Unix milliseconds")
+}
+
+// InCompletionRange reports whether a completion time (Unix ms, 0 = open task)
+// falls in [after, before); a zero bound is open. Without bounds every task is in.
+func InCompletionRange(completedAt, after, before int64) bool {
+	if after == 0 && before == 0 {
+		return true
+	}
+	return completedAt != 0 && (after == 0 || completedAt >= after) && (before == 0 || completedAt < before)
 }
 
 func (a args) date(name string) (string, error) {

@@ -48,6 +48,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `labels` | array of strings (label ids, see below) |
 | task | `position`, `created_at` | number |
 | task | `completed_at`, `deleted_at` | number or null |
+| task | `completed_by` | string (account id) or null: who completed the task, written in the same batch as `completed_at` (the signed-in account when completing, null when reopening); null when unknown. Meaningful only while `completed_at` is set. Server-side completions (REST, assistant tools, CalDAV) add it when the batch does not; public link ticks write null (completed-date-filters) |
 | task | `estimate_minutes` | integer 1–10080 (minutes) or null; with `due.time` it forms a calendar block (time-blocking) |
 | task | `deadline` | `"YYYY-MM-DD"` (a date that exists, no time or zone) or null; the day the task must be finished by, separate from the planned `due` (deadlines) |
 | task | `start` | null (anytime), `"someday"` (parked) or `"YYYY-MM-DD"`, the day before which the task is deferred (someday-and-evening) |
@@ -59,6 +60,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `section_id` | string (section id) or null; see [Sections](#sections) |
 | task | `ical_extra` | string or null: opaque iCalendar lines from CalDAV clients, see [CalDAV](#caldav) |
 | task | `notes_doc` | document: `""` or an envelope `"<format>:v<n>:<base64>"` of at most 256 KB (262,144 characters); the note as a mergeable rich-text document, see [Mergeable documents](#mergeable-documents) |
+| task | `habit` | boolean, default false: the series is tracked as a habit, with streaks and a month history derived on the device (habits, see [Habits](recurrence.md#habits)). Not content, so never encrypted |
+| task | `skipped` | boolean, default false: on an occurrence record of a habit, the occurrence was skipped rather than done; such a record is not a completion (habits) |
 | section | `name` | string |
 | section | `project_id` | string (project id, required; never changes) |
 | section | `position`, `created_at` | number |

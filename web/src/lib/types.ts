@@ -124,6 +124,27 @@ export interface Task {
    * batch. Rows synced before the field existed hold undefined; read it with `?? ''`.
    */
   notes_doc?: string
+  /**
+   * The series is tracked as a habit (OpenSpec `habits`): streaks and a month
+   * history are derived on the device from its occurrence records. Only offered for
+   * calendar rules. Rows synced before the field existed hold undefined; read it
+   * with `?? false`.
+   */
+  habit?: boolean
+  /**
+   * On an occurrence record of a habit: the occurrence was skipped, not done
+   * (OpenSpec `habits`, design D2). A skipped record is not a completion: it is
+   * hidden from Completed and `completed` and never counts towards `for N times`.
+   * Read it with `?? false`.
+   */
+  skipped?: boolean
+  /**
+   * Account id of whoever completed the task, or null when unknown (OpenSpec change
+   * `completed-date-filters`, design D5). Written in the same batch as `completed_at`
+   * and cleared on reopen; meaningful only while `completed_at` is set. Optional on
+   * rows stored before the field; read it with `?? null`.
+   */
+  completed_by?: string | null
   _clock: Clock
   /** Local-only end-to-end encryption bookkeeping (OpenSpec `e2ee`). */
   _e2ee?: RowEncryption
@@ -785,7 +806,7 @@ export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
-  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'blocked_by',
+  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'blocked_by', 'completed_by',
 ] as const
 export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const

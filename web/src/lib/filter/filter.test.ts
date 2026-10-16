@@ -203,8 +203,8 @@ describe('parse: errors', () => {
     expect(errorOf('due = someday').message).toBe('Invalid date "someday" at position 7')
     expect(errorOf('due = 2026-02-30').message).toBe('Invalid date "2026-02-30" at position 7')
     expect(errorOf('due = 2026-1-3').message).toBe('Invalid date "2026-1-3" at position 7')
-    expect(errorOf('due > 7').message).toBe('Expected "days" after "7" at position 7')
-    expect(errorOf('due > 7 day').message).toBe('Expected "days" after "7" at position 7')
+    expect(errorOf('due > 7').message).toBe('Expected "days", "weeks" or "months" after "7" at position 7')
+    expect(errorOf('due > 7 day').message).toBe('Expected "days", "weeks" or "months" after "7" at position 7')
     expect(errorOf('due > 7 days ago ago').message).toBe('Expected "&" or "|" before "ago" at position 18')
   })
 })
@@ -504,6 +504,32 @@ describe('evaluate: start, Someday and evening (OpenSpec someday-and-evening 4.1
   })
   it('round-trips through printing', () => {
     expect(show('someday|deferred&start>today')).toBe('(someday | (deferred & start > today))')
+  })
+})
+
+describe('evaluate: habits (OpenSpec habits 4.3)', () => {
+  const ctx: FilterContext = { ...CTX, today: '2026-10-14' }
+  const L: Task[] = [
+    task('habit-today', { habit: true, recurrence: 'every day', due: { date: '2026-10-14' } }),
+    task('habit-overdue', { habit: true, recurrence: 'every day', due: { date: '2026-10-12' } }),
+    task('habit-later', { habit: true, recurrence: 'every friday', due: { date: '2026-10-16' } }),
+    task('series-today', { recurrence: 'every day', due: { date: '2026-10-14' } }),
+    task('done-day', { series_id: 'habit-today', due: { date: '2026-10-13' }, completed_at: at('2026-10-13'), skipped: false }),
+    task('skipped-day', { series_id: 'habit-today', due: { date: '2026-10-12' }, completed_at: at('2026-10-12'), skipped: true }),
+  ]
+  it('habit & due <= today lists open habits due today or overdue', () => {
+    expect(ids('habit & due <= today', L, ctx)).toEqual(sorted('habit-today', 'habit-overdue'))
+    expect(ids('habit', L, ctx)).toEqual(sorted('habit-today', 'habit-overdue', 'habit-later'))
+  })
+  it('completed excludes a skipped record while a done record matches', () => {
+    expect(ids('completed', L, ctx)).toEqual(['done-day'])
+    expect(ids('!open', L, ctx)).toEqual(['done-day'])
+    expect(ids('open | completed', L, ctx)).not.toContain('skipped-day')
+  })
+  it('round-trips through printing', () => {
+    expect(show('habit&!overdue')).toBe('(habit & !overdue)')
+    const ast = parse('habit | @call')!
+    expect(stripPos(parse(printQuery(ast))!)).toEqual(stripPos(ast))
   })
 })
 

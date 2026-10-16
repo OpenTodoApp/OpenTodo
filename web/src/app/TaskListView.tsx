@@ -10,6 +10,7 @@ import { byPosition, compareByPosition, compareDueThenPriority } from '../lib/or
 import { resolveLabels } from '../lib/labels'
 import { createSubtask, createTask, detachOccurrence, setTaskParent, skipOccurrence, unparkTask, updateTask } from '../lib/ops'
 import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from '../lib/subtasks'
+import { habitStatsMap } from '../lib/habits'
 import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
 import { canEditTasks, memberName, roleOf } from '../lib/sharing'
 import { flattenTree, type Tree, type TreeNode } from '../lib/tree'
@@ -38,6 +39,7 @@ import { isActivationTarget, isTypingTarget, useShortcutScope } from './shortcut
 import { Kbd } from './shortcuts/Kbd'
 import { keysOf } from '../lib/shortcuts'
 import { visibleTasks } from '../lib/trash'
+import { LOGBOOK_PAGE, logbookGroups, logbookHeading } from '../lib/logbook'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
 import { useSelection } from './selection'
@@ -81,6 +83,8 @@ interface Group {
   sectionCollapsed?: boolean
   /** Today's Blocked group (task-dependencies): folded unless opened on this device. */
   folded?: boolean
+  /** Always-visible trailing text of the header (the logbook's "3 done"). */
+  note?: string
 }
 
 /** Set in the per-device collapse set when Today's Blocked group is open (it starts folded). */
@@ -129,6 +133,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
+  // Streaks of habits (OpenSpec habits D5): once per list, from the rows it holds.
+  const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
 
   // Duration filter chips (OpenSpec `time-blocking`): per view, per device.
   const filterKey = durationFilterKey(route)
@@ -161,7 +167,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       case 'anytime':
         return all.filter((t) => inAnytime(t, today)).sort(byPosition)
       case 'completed':
-        return all.filter((t) => t.completed_at).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0)).slice(0, 100)
+        // The logbook pages through every completion (completed-date-filters D4);
+        // a habit's skipped occurrence record is not a completion (habits D6).
+        return all.filter((t) => t.completed_at && !t.skipped).sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
       case 'project':
         return all.filter((t) => !t.completed_at && t.project_id === route.id)
       case 'label':
@@ -176,6 +184,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     const keep = durationPredicate(duration)
     return viewTasks.filter(keep)
   }, [viewTasks, duration, filterKey])
+
+  // Completed renders a page of the logbook at a time; a new route starts again.
+  const [logbookLimit, setLogbookLimit] = useState(LOGBOOK_PAGE)
+  useEffect(() => setLogbookLimit(LOGBOOK_PAGE), [route.view])
+  const logbook = useMemo(() => (route.view === 'completed' ? logbookGroups(tasks, logbookLimit) : null), [route.view, tasks, logbookLimit])
 
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed)
   const toggleCollapsed = useCallback((id: string, force?: boolean) => {
@@ -286,6 +299,12 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       }
       return g
     }
+    if (logbook) {
+      // Completed as a logbook: one group per local completion day, newest first.
+      return logbook.groups.map((g) => ({
+        key: g.date, heading: logbookHeading(g.date, today, dt.resolved), note: `${g.tasks.length} done`, rows: g.tasks.map(flatRow),
+      }))
+    }
     if (route.view === 'upcoming') {
       const byDate = new Map<string, Task[]>()
       for (const t of tasks) {
@@ -307,7 +326,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       }))
     }
     return [{ key: 'all', heading: null, rows: tasks.map(flatRow) }]
-  }, [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections])
+  }, [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, blocked, taskMap, projects, projectMap, board, columns, sectionGroups, liveSections, collapsedSections, logbook])
 
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
 
@@ -315,7 +334,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups"); date, project and Later groups collapse per device.
   const doneInProject = useLiveQuery(
-    () => (projectId ? db.tasks.where('project_id').equals(projectId).filter((t) => !!t.completed_at && !t.deleted_at).toArray() : Promise.resolve([] as Task[])),
+    () => (projectId ? db.tasks.where('project_id').equals(projectId).filter((t) => !!t.completed_at && !t.deleted_at && !t.skipped).toArray() : Promise.resolve([] as Task[])),
     [projectId], [] as Task[],
   )
   const doneBySection = useMemo(() => {
@@ -754,6 +773,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         depth={r.depth}
         progress={progress.get(r.task.id)}
         blockedBy={blocked.get(r.task.id)}
+        habit={habits.get(r.task.id)}
         breadcrumb={r.breadcrumb}
         hasChildren={r.hasChildren}
         collapsed={r.collapsed}
@@ -925,12 +945,19 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               {g.folded !== undefined ? (
                 <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(BLOCKED_OPEN_KEY)} tone="muted" />
               ) : g.heading && (
-                <ListGroupHeader title={g.heading} count={g.rows.length} tone={g.key === 'overdue' ? 'danger' : 'default'}
+                <ListGroupHeader title={g.heading} count={g.note ? undefined : g.rows.length} note={g.note} tone={g.key === 'overdue' ? 'danger' : 'default'}
                   collapsed={collapsedGroups.has(groupKey(route.view, g.key))} onToggle={() => setGroupCollapsed(route.view, g.key, !collapsedGroups.has(groupKey(route.view, g.key)))} />
               )}
               {!(g.heading && g.folded === undefined && collapsedGroups.has(groupKey(route.view, g.key))) && <ul>{g.rows.map((r) => renderRow(r))}</ul>}
             </section>
           ))}
+          {logbook && logbook.total > logbookLimit && (
+            <div className="mb-4 flex justify-center">
+              <Button variant="secondary" size="sm" onClick={() => setLogbookLimit((n) => n + LOGBOOK_PAGE)} data-logbook-more>
+                Show more <span className="tabular-nums text-muted">{logbook.total - logbookLimit} older</span>
+              </Button>
+            </div>
+          )}
           {route.view === 'project' && !board && !timeline && projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
         </div>
       {prompt && (

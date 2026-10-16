@@ -196,7 +196,7 @@ func tokenize(src []rune) ([]token, error) {
 }
 
 var (
-	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "blocked": true, "unblocked": true}
+	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "blocked": true, "unblocked": true, "habit": true}
 	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true}
 	weekdays       = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
 )
@@ -302,8 +302,12 @@ func (p *parser) parseTerm(prev *token) error {
 func (p *parser) parseWordTerm(t *token) error {
 	w := strings.ToLower(t.value)
 	p.i++
+	// `completed` is the state keyword unless a comparison follows (OpenSpec
+	// change completed-date-filters, design D3).
+	next := p.peek()
+	dated := w == "completed" && next != nil && (next.typ == tCmp || lower(next) == "before" || lower(next) == "after")
 	switch {
-	case w == "due" || w == "created" || w == "deadline" || w == "start":
+	case w == "due" || w == "created" || w == "deadline" || w == "start" || dated:
 		c := p.peek()
 		ok := c != nil && (c.typ == tCmp || lower(c) == "before" || lower(c) == "after")
 		if !ok {
@@ -340,15 +344,31 @@ func (p *parser) parseDate(after *token) error {
 			return fail(t.pos, `Invalid date "%s" at position %d`, t.raw, t.pos+1)
 		}
 		return nil
-	case digits.MatchString(w):
-		if lower(p.peek()) != "days" {
-			return fail(t.pos, `Expected "days" after "%s" at position %d`, t.raw, t.pos+1)
+	case w == "this" || w == "last" || w == "next":
+		// A period (completed-date-filters D1): this, last or next week or month.
+		if u := lower(p.peek()); u != "week" && u != "month" {
+			return fail(t.pos, `Expected "week" or "month" after "%s" at position %d`, t.raw, t.pos+1)
 		}
 		p.i++
-		if lower(p.peek()) == "ago" {
-			p.i++
-		}
 		return nil
+	case digits.MatchString(w):
+		unit := p.peek()
+		switch lower(unit) {
+		case "days":
+			p.i++
+			if lower(p.peek()) == "ago" {
+				p.i++
+			}
+			return nil
+		case "week", "weeks", "month", "months":
+			p.i++
+			if lower(p.peek()) != "ago" {
+				return fail(unit.pos, `Expected "ago" after "%s" at position %d`, unit.raw, unit.pos+1)
+			}
+			p.i++
+			return nil
+		}
+		return fail(t.pos, `Expected "days", "weeks" or "months" after "%s" at position %d`, t.raw, t.pos+1)
 	}
 	return fail(t.pos, `Invalid date "%s" at position %d`, t.raw, t.pos+1)
 }
