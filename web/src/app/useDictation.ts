@@ -3,7 +3,7 @@ import { type LabelRef, type ProjectRef, resolveLanguages, type QuickAddSettings
 import type { Dictation, DictationView } from '../lib/voice/dictation'
 import { loadVoiceSettings, onVoiceSettingsChange, recognitionLanguage, recognitionTag } from '../lib/voice/settings'
 import { isSupported } from '../lib/voice/support'
-import { isGPending } from './signals'
+import { useShortcutScope } from './shortcuts'
 
 function browserLanguages(): readonly string[] {
   if (typeof navigator === 'undefined') return ['en']
@@ -100,33 +100,11 @@ export function useDictation(opts: {
 
   const active = view.status !== 'idle'
 
-  // Escape stops listening before any other Escape behaviour (closing panels, blurring).
-  useEffect(() => {
-    if (!active) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Escape') return
-      e.preventDefault()
-      e.stopPropagation()
-      dictation.current?.stop()
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [active])
+  // Escape stops listening before any other Escape behaviour (closing panels, blurring): a capturing frame.
+  useShortcutScope('list', { 'list.dictate-stop': () => { dictation.current?.stop() } }, { capture: true, enabled: active })
 
   // Shift+V outside text fields starts dictation into this quick add.
-  useEffect(() => {
-    if (!enabled || !opts.shortcut) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'V' || !e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return
-      const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
-      if (isGPending() || document.querySelector('[role="dialog"]')) return
-      e.preventDefault()
-      start()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  })
+  useShortcutScope('list', { 'list.dictate': () => { start() } }, { enabled: enabled && !!opts.shortcut })
 
   function start() {
     const el = latest.current.inputRef.current

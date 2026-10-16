@@ -10,11 +10,13 @@ card: board
 ---
 # Sections and boards
 
-Sections divide a project into parts, like "Planning", "In progress" and "Waiting", or "Kitchen", "Bathroom" and "Garden". The same project can be shown as a list with headings or as a board with one column per section.
+<picture><source srcset="images/board-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/board-light.webp" alt="The Q4 launch project as a board with the columns No section, Backlog, This week and Review."></picture>
+
+Sections divide a project into parts, like "Planning", "In progress" and "Waiting". The same project can be a list with headings, a board with a column per section, or a timeline of its dates.
 
 ## Add a section
 
-Open a project and select **+ Add section** at the bottom of the list. Type a name and press <kbd>Enter</kbd>. You can add the next one straight away.
+Open a project and select **+ Add section** at the bottom of the list. Type a name and press <kbd>Enter</kbd>.
 
 <picture><source srcset="images/project-list-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-list-light.webp" alt="A project in list layout with the section headings Planning and In progress, each with a task count and a plus button."></picture>
 
@@ -36,19 +38,22 @@ Fold a section with the small arrow next to its name. Folding is remembered on t
 
 ## Switch to a board
 
-At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. Press <kbd>v</kbd> again, or choose **List**, to switch back.
+At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board** and **Timeline**; you can also choose one directly.
 
-<picture><source srcset="images/board-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/board-light.webp" alt="The Q4 launch project as a board with the columns No section, Backlog, This week and Review."></picture>
 
-The choice is remembered for each project on each device. Your laptop can show "Q4 launch" as a board while your phone shows it as a list. On a narrow screen the board scrolls sideways.
+The choice is remembered per project on each device. On a phone the board shows one column at a time: swipe sideways or tap a dot above the columns; "No section" is a column only while it has open tasks.
 
 ## Move cards between columns
 
 - **Drag** a card to another column, or to a place within a column. On a touch screen, press and hold the card first.
-- **Keyboard:** select a card and press <kbd>Shift</kbd>+<kbd>→</kbd> or <kbd>Shift</kbd>+<kbd>←</kbd>. The card stays selected, so you can keep moving it.
+- **Keyboard:** select a card and press <kbd>Shift</kbd>+<kbd>→</kbd> or <kbd>Shift</kbd>+<kbd>←</kbd>.
 - **Panel:** open the task and pick another **Section**.
 
 Moving with the keyboard or the panel puts the card at the bottom of the new column.
+
+## See a project on a timeline
+
+Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it shows): tasks become bars from start to deadline that you drag to reschedule. See [A project on a timeline](project-timeline.md).
 
 ## Get around the board with the keyboard
 

@@ -21,6 +21,7 @@ import { navigate } from './router'
 import { setCurrentFilter } from './listActions'
 import { useBulkList } from './bulk/useBulkList'
 import { useListKeys } from './useListKeys'
+import { useShortcutScope } from './shortcuts'
 import { useToday, useViewerZone } from './useViews'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
@@ -176,13 +177,9 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
       setSelectedId(null)
       inputRef.current?.focus()
     },
-    extra: (e) => {
-      if (e.key !== 's' || !canSave) return false
-      e.preventDefault()
-      setSaving(true)
-      return true
-    },
   })
+  // `s` saves the query as a view (filter.save); the Filter list has no schedule action, so the key reaches this view scope.
+  useShortcutScope('view', { 'filter.save': () => { if (!canSave) return false; setSaving(true) } }, { view: 'filter' })
 
   useEffect(() => {
     if (selectedId) document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
@@ -198,7 +195,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
           <div className="mb-3 border-b border-default pb-2">
             <input
               ref={inputRef}
-              className="input font-mono"
+              className="ui-input font-mono"
               placeholder="@work & due <= tomorrow & p1"
               aria-label="Filter query"
               aria-invalid={!!error}
@@ -214,7 +211,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
               }}
               onKeyDown={onInputKey}
             />
-            <div id="filter-message" className="min-h-5 px-1 pt-1 text-xs" aria-live="polite">
+            <div id="filter-message" className="min-h-5 px-1 pt-1 text-meta" aria-live="polite">
               {error ? (
                 <p role="alert" className="text-danger">{error}</p>
               ) : warnings.length > 0 ? (
@@ -224,13 +221,13 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
           </div>
 
           {!good.ast && <UsageHint />}
-          {result && rows.length === 0 && <p className="px-2 py-8 text-center text-sm text-faint">No task matches this filter.</p>}
+          {result && rows.length === 0 && <p className="px-2 py-8 text-center text-body text-faint">No task matches this filter.</p>}
 
           {bulk.render(selectedId)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label="Filter results">
             {groups.map((g) => (
               <section key={g.key} className="mb-4">
-                <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-faint">{g.heading}</h2>
+                <h2 className="mb-1 px-2 text-meta font-semibold uppercase tracking-wide text-faint">{g.heading}</h2>
                 <ul>
                   {g.tasks.map((t) => (
                     <TaskRow
@@ -268,7 +265,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
       {pickerFor && (
         <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-          <p className="mt-2 px-1 text-[11px] text-faint">Enter toggles or creates · Esc closes</p>
+          <p className="mt-2 px-1 text-hint text-faint">Enter toggles or creates · Esc closes</p>
         </Dialog>
       )}
     </PageBody>
@@ -288,13 +285,13 @@ const HINT: [string[], string][] = [
 
 function UsageHint() {
   return (
-    <div className="rounded-lg border border-dashed border-input p-4 text-sm text-muted">
+    <div className="rounded-control border border-dashed border-input p-4 text-body text-muted">
       <p className="mb-2">Type a query to list matching tasks. Enter jumps to the results, Esc comes back, ↑ / ↓ recall recent queries.</p>
-      <dl className="text-xs">
+      <dl className="text-meta">
         {HINT.map(([terms, d]) => (
           <div key={terms[0]} className="flex flex-col gap-1 border-t border-default py-1.5 sm:flex-row sm:gap-3">
             <dt className="flex flex-wrap gap-1 sm:w-64 sm:shrink-0">
-              {terms.map((t) => <code key={t} className="kbd text-muted">{t}</code>)}
+              {terms.map((t) => <code key={t} className="ui-kbd text-muted">{t}</code>)}
             </dt>
             <dd>{d}</dd>
           </div>

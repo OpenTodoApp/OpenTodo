@@ -21,7 +21,7 @@ describe('MembersView', () => {
   it('lists invitations with a status badge and counts the pending ones', () => {
     const h = html()
     expect(h).toContain('id="members-heading"')
-    expect(h).toContain('data-help-screen="settings/members"')
+    expect(h).not.toContain('data-help-screen')
     expect(h).toContain('data-invitation="i1"')
     expect(h).toContain('>Pending<')
     expect(h).toContain('>Accepted<')

@@ -7,7 +7,7 @@ EXT_ZIP := dist/opentodo-browser-extension.zip
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png
 
-.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots docs-site-check coolify-check coolify-smoke storybook ui-check ui-baselines ui-lint
+.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke storybook ui-check ui-baselines ui-lint
 
 all: build
 
@@ -135,6 +135,12 @@ docs-screenshots: web
 	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=$(DOCS_VERSION)" -o bin/opentodo-docs ./cmd/opentodo
 	OPENTODO_BIN=bin/opentodo-docs node scripts/docs-screenshots.mjs
 	$(MAKE) docs
+
+## Before/after screenshots of the core screens (ux-overhaul O4): the seeded demo fixture at
+## 1280×800 and 390×844, light and dark, as PNGs in dist/screens/ (OUT_DIR to write elsewhere).
+screens: web
+	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=$(DOCS_VERSION)" -o bin/opentodo-docs ./cmd/opentodo
+	OPENTODO_BIN=bin/opentodo-docs node scripts/screens.mjs
 
 ## Site bundle (site-bundle): docs site, screenshots, tokens, icons, changelog and
 ## manifest for the website repository, in dist/opentodo-site-bundle-<version>/ and

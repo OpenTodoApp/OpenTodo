@@ -37,7 +37,7 @@ export function EmailInboxView(p: EmailInboxViewProps) {
   const inbox = p.inbox
   const dirty = inbox !== null && parseAllowlist(p.draft).join('\n') !== inbox.allowlist.join('\n')
   return (
-    <SettingsSection title="Email to task" helpId="settings/email" headingId="email-inbox-heading"
+    <SettingsSection title="Email to task" headingId="email-inbox-heading"
       description="Forward or send any email to your personal address and it becomes a task in your Inbox: the subject is the title, the text is the description, and attachment names are listed.">
       {inbox === null ? (
         !p.error && <Notice>Email to task settings are available when you are online.</Notice>
@@ -63,8 +63,8 @@ export function EmailInboxView(p: EmailInboxViewProps) {
           <SettingRow label="Create tasks from email" description="Mail sent to your address becomes a task. Turn it off to pause without losing the address."
             control={<Switch checked={inbox.enabled} onChange={(on) => { if (!p.busy) p.onToggle(on) }} label="Create tasks from email sent to this address" hideLabel />} />
           <div className="space-y-2 py-3">
-            <label className="block text-sm font-medium text-default" htmlFor="email-inbox-allowlist">Only accept mail from (optional)</label>
-            <textarea id="email-inbox-allowlist" className="input font-mono text-meta" rows={3} value={p.draft}
+            <label className="block text-body font-medium text-default" htmlFor="email-inbox-allowlist">Only accept mail from (optional)</label>
+            <textarea id="email-inbox-allowlist" className="ui-input font-mono text-meta" rows={3} value={p.draft}
               placeholder="you@example.com" onChange={(e) => p.onDraftChange(e.target.value)} />
             <p className="text-meta text-muted">
               One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters

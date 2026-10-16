@@ -113,6 +113,20 @@ describe('token lint', () => {
     expect(found).toEqual([])
   })
 
+  it('the component classes in index.css use the type, radius and shadow tokens', () => {
+    const found = componentLayers(css).flatMap(({ text, line }) =>
+      rawStyles('src/index.css', text).map((f) => ({ ...f, line: f.line + line - 1 })),
+    ).map(format)
+    expect(found).toEqual([])
+  })
+
+  it('the legacy btn-*, .input and .kbd classes stay removed (ux-overhaul task 8.8)', () => {
+    const legacy = [...css.matchAll(/(?<![\w-])\.(?:btn|btn-primary|btn-secondary|btn-ghost|btn-danger|input|kbd)(?![\w-])/g)].map((m) => m[0])
+    expect(legacy).toEqual([])
+    const inScreens = [...uiCode, ...appFiles].flatMap(([path, src]) => rawStyles(path, src)).map(format)
+    expect(inScreens).toEqual([])
+  })
+
   it('screens off the not-yet list use no raw sizes, radii, shadows or legacy classes', () => {
     const skip = new Set(STYLE_NOT_YET_MIGRATED)
     const found = appFiles.filter(([path]) => !skip.has(path)).flatMap(([path, src]) => rawStyles(path, src)).map(format)

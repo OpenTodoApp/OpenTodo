@@ -6,7 +6,8 @@ import { describeDue } from '../../lib/dates'
 import { UNDECRYPTABLE } from '../../lib/e2ee'
 import type { Label, Project, Task, User, View } from '../../lib/types'
 import { navigate } from '../router'
-import { visibleSections } from '../settingsSections'
+import { SETTINGS_SECTIONS, visibleSections } from '../settingsSections'
+import { requestSettingsFocus, visibleEntries } from '../settingsIndex'
 import { openTaskInList } from '../signals'
 import type { Entry } from './entries'
 
@@ -74,5 +75,13 @@ export function buildEntries(src: IndexSource): Entry[] {
       kind: 'settings', key: `settings:${s.id}`, label: `Settings: ${s.label}`, secondary: s.description(src.user!), icon: s.icon,
       run: () => navigate({ view: 'settings', section: s.id }),
     })),
+    // Individual settings (settings-navigation "Settings search"): the same index as the settings list's search.
+    ...(src.user ? visibleEntries(src.user) : []).map((e): Entry => {
+      const section = SETTINGS_SECTIONS.find((s) => s.id === e.section)!
+      return {
+        kind: 'settings', key: `setting:${e.section}:${e.anchor}:${e.label}`, label: `${section.label} › ${e.label}`, secondary: e.description, icon: section.icon, keywords: e.keywords,
+        run: () => { requestSettingsFocus(e.anchor); navigate({ view: 'settings', section: e.section }) },
+      }
+    }),
   ]
 }

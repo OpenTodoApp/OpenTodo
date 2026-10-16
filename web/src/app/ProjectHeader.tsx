@@ -19,6 +19,8 @@ import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 import { closePanel, openPanel, usePanelOccupantKey } from './panel'
 import { PanelFrame } from './PanelFrame'
 import { ProjectMark } from './Sidebar'
+import { useShortcutScope } from './shortcuts'
+import { keysOf } from '../lib/shortcuts'
 import { HUES, hueFor } from '../ui'
 
 /** A "Move to" target: a project, or the top level (id ''). */
@@ -82,7 +84,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
   return [
     ...copies,
     { items: [
-      { kind: 'picker', id: 'move', label: 'Move to', icon: 'folder-input', shortcut: 'm', picker: {
+      { kind: 'picker', id: 'move', label: 'Move to', icon: 'folder-input', shortcut: keysOf('project.move'), picker: {
         title: 'Move to', placeholder: 'Find a project…', emptyText: 'No other project can hold this one',
         source: targets, getKey: (t: MoveTarget) => t.id || '__top__', getLabel: (t: MoveTarget) => t.name, getPath: (t: MoveTarget) => t.path,
         selected: [project.parent_id ?? '__top__'], rankContext: 'project-move',
@@ -91,7 +93,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
       { kind: 'action', id: 'rename', label: 'Rename', icon: 'pencil', onSelect: a.rename },
       { kind: 'confirm', id: 'archive', label: subCount ? 'Archive with sub-projects' : 'Archive', icon: 'archive', confirm: {
         title: `Archive “${project.name}”?`, tone: 'default', confirmLabel: 'Archive',
-        body: `It leaves the sidebar with ${tasksText}${subCount ? ` and ${subCount === 1 ? 'its sub-project' : `its ${subCount} sub-projects`}` : ''}. You can unarchive it from Settings → Projects.`,
+        body: `It leaves the sidebar with ${tasksText}${subCount ? ` and ${subCount === 1 ? 'its sub-project' : `its ${subCount} sub-projects`}` : ''}. You can unarchive it from Settings → Data.`,
         onConfirm: () => archiveProject(project.id).then(() => navigate({ view: 'inbox' })),
       } },
     ] },
@@ -137,9 +139,11 @@ function IconSwatches({ project }: { project: Project }) {
 const ACTIVITY_PANEL = 'project-activity'
 const HISTORY_PANEL = 'project-history'
 
-export function ProjectHeader({ project, userId, actions, layout }: {
+export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   project: Project
   userId?: string
+  /** Below 768 px, a line under the title in the shell's bar (the board's current column). */
+  subtitle?: ReactNode
   /** Page actions rendered after Share (the duration filter, touch Select). */
   actions?: ReactNode
   /** The List/Board control, first among the actions (app-shell "Page template"). */
@@ -182,30 +186,13 @@ export function ProjectHeader({ project, userId, actions, layout }: {
 
   // `m` opens the menu on the Move picker, so a move is reachable without a mouse;
   // Shift+S opens the share dialog (members, roles, leave, transfer); Shift+H the activity.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if ((e.key !== 'm' && e.key !== 'S' && e.key !== 'H') || e.metaKey || e.ctrlKey || e.altKey) return
-      const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
-      if (e.key === 'S') {
-        e.preventDefault()
-        setSharing(true)
-        return
-      }
-      if (e.key === 'H') {
-        e.preventDefault()
-        activityRef.current()
-        return
-      }
-      if (!editable) return
-      e.preventDefault()
-      // `m` opens the menu straight into the "Move to" picker step.
-      setStartPicker('move')
-      setMenuOpen(true)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [editable])
+  // The project's `view` scope (keyboard-shortcuts "Resolved conflicts"): Shift+S shares, Shift+H toggles the activity, `m` moves.
+  useShortcutScope('view', {
+    'project.share': () => setSharing(true),
+    'project.activity': () => activityRef.current(),
+    // `m` opens the menu straight into the "Move to" picker step.
+    'project.move': () => { if (!editable) return false; setStartPicker('move'); setMenuOpen(true) },
+  }, { view: 'project' })
 
   async function save() {
     setEditing(false)
@@ -215,7 +202,7 @@ export function ProjectHeader({ project, userId, actions, layout }: {
 
   const [dialog, setDialog] = useState<'duplicate' | 'template' | null>(null)
   const panels: ActionGroup = { items: [
-    { kind: 'action', id: 'activity', label: 'Activity', icon: 'history', shortcut: 'Shift+H', onSelect: showActivity },
+    { kind: 'action', id: 'activity', label: 'Activity', icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
     { kind: 'action', id: 'history', label: 'History', icon: 'rotate-ccw', onSelect: showHistory },
   ] }
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
@@ -259,16 +246,16 @@ export function ProjectHeader({ project, userId, actions, layout }: {
 
   return (
     <>
-      <PageHeader title={title} leading={<ProjectMark project={project} size="md" />} meta={meta} help="project"
+      <PageHeader title={title} subtitle={subtitle} leading={<ProjectMark project={project} size="md" />} meta={meta} help="project"
         actions={<>
           {layout}
-          <Tooltip label={canManageMembers(role) ? 'Share project' : 'Members'} shortcut="Shift+S">
+          <Tooltip label={canManageMembers(role) ? 'Share project' : 'Members'} shortcut={keysOf('project.share')}>
             <Button variant="ghost" size="sm" icon="users" onClick={() => setSharing(true)} aria-haspopup="dialog" data-project-share>{canManageMembers(role) ? 'Share' : 'Members'}</Button>
           </Tooltip>
           {actions}
         </>}
         menu={<ActionMenu label="Project menu" title={project.name} groups={groups} header={editable ? <><ColourSwatches project={project} /><IconSwatches project={project} /></> : undefined}
-          trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-72"
+          trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-72"
           open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />} />
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} section={sharing === 'public' ? 'public' : undefined}
         onPublicLinks={setPublicLinks} onClose={() => setSharing(false)} />}

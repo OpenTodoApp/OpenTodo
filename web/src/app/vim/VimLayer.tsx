@@ -11,6 +11,8 @@ import type { Project } from '../../lib/types'
 import { navigate, useRoute } from '../router'
 import type { HelpSection } from '../ShortcutHelp'
 import { isGPending, setGPending } from '../signals'
+import { useShortcutScope } from '../shortcuts'
+import { Kbd } from '../shortcuts/Kbd'
 import { listActions } from './actions'
 import { complete, runCommand } from './commands'
 import { createDispatcher, isTextField, type Mode } from './dispatch'
@@ -54,19 +56,22 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
     return () => onHelpSection(null)
   }, [onHelpSection])
 
+  // The Vim machine runs inside the shell's dispatcher as the `vim` scope's
+  // capturing frame (keyboard-shortcuts): it sees every key first, consumes only
+  // its own, and shares the `g` prefix with the dispatcher (`g g` is ours, `g t` is
+  // navigation). The registry lists its bindings under "Vim keybindings".
+  const [machine] = useState(() => createDispatcher({
+    actions: listActions,
+    gPending: isGPending,
+    clearG: () => setGPending(false),
+    commandOpen: () => cmdRef.current,
+    openCommand: () => openCommand(true),
+    focusTitle,
+    onPending: setPending,
+  }))
+  useShortcutScope('vim', {}, { capture: true, any: (e) => machine.handle(e) })
+
   useEffect(() => {
-    const d = createDispatcher({
-      actions: listActions,
-      gPending: isGPending,
-      clearG: () => setGPending(false),
-      commandOpen: () => cmdRef.current,
-      openCommand: () => openCommand(true),
-      focusTitle,
-      onPending: setPending,
-    })
-    const onKey = (e: KeyboardEvent) => void d.handle(e)
-    // Capturing, so it sees keys before Shell's and the list's own listeners.
-    window.addEventListener('keydown', onKey, true)
     // Insert mode follows focus, so it can never disagree with where keys go.
     let t: ReturnType<typeof setTimeout> | undefined
     const onFocus = () => {
@@ -76,7 +81,6 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
     document.addEventListener('focusin', onFocus)
     document.addEventListener('focusout', onFocus)
     return () => {
-      window.removeEventListener('keydown', onKey, true)
       document.removeEventListener('focusin', onFocus)
       document.removeEventListener('focusout', onFocus)
       clearTimeout(t)
@@ -104,7 +108,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
   }
 
   return (
-    <div className="border-t border-default text-xs" data-vim-layer>
+    <div className="border-t border-default text-meta" data-vim-layer>
       {cmdOpen && (
         <form className="flex items-center gap-1 border-b border-default px-3 py-1 font-mono"
           onSubmit={(e) => { e.preventDefault(); void run() }}>
@@ -137,11 +141,11 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
       )}
       <div className="flex items-center gap-2 px-3 py-0.5">
         <span role="status" aria-label="Vim mode" data-vim-mode={mode}
-          className={`rounded px-1.5 font-mono font-semibold ${mode === 'insert' ? 'bg-accent-soft text-on-accent-soft' : mode === 'command' ? 'bg-warning-soft text-on-warning-soft' : 'bg-sunken dark:bg-raised text-muted'}`}>
+          className={`rounded-control px-1.5 font-mono font-semibold ${mode === 'insert' ? 'bg-accent-soft text-on-accent-soft' : mode === 'command' ? 'bg-warning-soft text-on-warning-soft' : 'bg-sunken dark:bg-raised text-muted'}`}>
           {mode.toUpperCase()}
         </span>
         <span className="font-mono text-muted" data-vim-pending>{pending}</span>
-        <span className="ml-auto text-faint"><span className="kbd">:</span> command · <span className="kbd">?</span> help</span>
+        <span className="ml-auto text-faint"><Kbd k=":" /> command · <Kbd k="?" /> help</span>
       </div>
     </div>
   )

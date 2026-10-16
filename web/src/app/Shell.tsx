@@ -7,6 +7,7 @@ import { dismissRejected, useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { CalendarView } from './CalendarView'
+import { MonthView } from './MonthView'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { SavedViewRoute } from './SavedViewView'
@@ -20,9 +21,12 @@ import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { ReminderToasts } from './ReminderToasts'
 import { ArchivePrompt } from './ArchivePrompt'
-import { isGPending, openTaskInList, setGPending } from './signals'
-import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress } from './panel'
-import { listState } from './listActions'
+import { openTaskInList } from './signals'
+import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
+import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress, usePanel } from './panel'
+import { useOverlayDepth } from './overlay'
+import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
+import { QuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { db } from '../lib/db'
@@ -116,84 +120,42 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
 
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [paletteLoaded, setPaletteLoaded] = useState(false)
-  useEffect(() => {
-    // Ctrl/⌘+K opens the palette from everywhere, also while typing in a field,
-    // except in the notes editor, where it inserts a link (search-and-command-palette D1).
-    function onPaletteKey(e: KeyboardEvent) {
-      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 'k') return
-      if ((e.target as HTMLElement | null)?.closest?.('[data-notes-editor], .ProseMirror')) return
-      e.preventDefault()
+  const [showHelp, setShowHelp] = useState(false)
+  // Phone navigation (app-shell): the tab bar and the add button hide while a sheet or the panel is open.
+  const [addOpen, setAddOpen] = useState(false)
+  const addButton = useRef<HTMLButtonElement>(null)
+  const sheetOpen = useOverlayDepth() > 0
+  const panelOpen = !!usePanel()
+  const phoneChrome = !sheetOpen && !panelOpen && !['share', 'invite', 'project-invite', 'reset'].includes(route.view)
+  // The one keydown listener (keyboard-shortcuts "One shortcut registry with
+  // scopes"); the shell owns the `global` scope: the palette, `g` navigation, the
+  // cheat sheet, the sidebar toggle and the assistant.
+  useShortcutDispatcher()
+  const go = (r: Parameters<typeof navigate>[0]) => () => navigate(r)
+  useShortcutScope('global', {
+    'global.palette': (e) => {
+      // Ctrl/⌘+K opens the palette from everywhere, also while typing in a field,
+      // except in the notes editor, where it inserts a link (search-and-command-palette D1).
+      if ((e.target as HTMLElement | null)?.closest?.('[data-notes-editor], .ProseMirror')) return false
       setPaletteLoaded(true)
       setPaletteOpen(true)
-    }
-    window.addEventListener('keydown', onPaletteKey)
-    return () => window.removeEventListener('keydown', onPaletteKey)
-  }, [])
+    },
+    'go.inbox': go({ view: 'inbox' }), 'go.today': go({ view: 'today' }), 'go.upcoming': go({ view: 'upcoming' }), 'go.someday': go({ view: 'someday' }),
+    'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }),
+    'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
+    'go.trash': go({ view: 'trash' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
+    'global.help': () => setShowHelp((v) => !v),
+    // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar"); the calendar's and the timeline's own `[` win there.
+    'global.sidebar': () => {
+      if (!window.matchMedia?.('(min-width: 1024px)').matches) return false
+      toggleSidebarCollapsed()
+    },
+    'global.assistant': () => {
+      if (!showLauncher(assistantStatus())) return false
+      openAssistant()
+    },
+  })
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      const target = e.target as HTMLElement | null
-      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
-      if (typing) return
-      // Pressing Shift on its own (for `g` then Shift+I) must not end the `g` sequence.
-      if (e.key === 'Shift') return
-      if (e.key === 'g') {
-        setGPending(true)
-        return
-      }
-      if (isGPending()) {
-        // Cleared after this event: list and calendar handlers check the flag for the same key.
-        setTimeout(() => setGPending(false), 0)
-        if (e.key === 'i') navigate({ view: 'inbox' })
-        if (e.key === 't') navigate({ view: 'today' })
-        if (e.key === 'u') navigate({ view: 'upcoming' })
-        if (e.key === 'o') navigate({ view: 'someday' })
-        if (e.key === 'n') navigate({ view: 'anytime' })
-        if (e.key === 'c') navigate({ view: 'completed' })
-        if (e.key === 'a') navigate({ view: 'assigned' })
-        if (e.key === 'l') navigate({ view: 'labels' })
-        if (e.key === 'v') navigate({ view: 'views' })
-        if (e.key === 'd') navigate({ view: 'day' })
-        if (e.key === 'w') navigate({ view: 'week' })
-        if (e.key === 'f') {
-          // The Filter view focuses its input on mount; keep this "f" out of it.
-          e.preventDefault()
-          navigate({ view: 'filter' })
-        }
-        if (e.key === 's') navigate({ view: 'settings' })
-        if (e.key === 'x') navigate({ view: 'trash' })
-        // `g f` is the Filter view, so the activity feed is `g h` (activity-feed).
-        if (e.key === 'h') navigate({ view: 'feed' })
-        // `g k`: the Ask screen (assistant-skills; `g a` is Assigned to me).
-        if (e.key === 'k') navigate({ view: 'ask' })
-        // `g i` is the Inbox, so Import is `g` then Shift+I.
-        if (e.key === 'I') navigate({ view: 'import' })
-        // `g` then `?` opens the Help view (user-documentation); `?` alone stays the shortcut list.
-        if (e.key === '?') { e.preventDefault(); navigate({ view: 'help' }) }
-        return
-      }
-      if (e.key === '?') {
-        e.preventDefault()
-        setShowHelp((v) => !v)
-      }
-      // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar");
-      // the calendar keeps `[` / `]` for its range until the shortcut registry lands.
-      if (e.key === '[' && !/^\/(day|week)/.test(location.pathname) && window.matchMedia?.('(min-width: 1024px)').matches) {
-        e.preventDefault()
-        toggleSidebarCollapsed()
-      }
-      // Shift+I opens the assistant (`g` then Shift+I stays Import, handled above).
-      if (e.key === 'I' && showLauncher(assistantStatus())) {
-        e.preventDefault()
-        openAssistant()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
-  const [showHelp, setShowHelp] = useState(false)
   const sidebar = useSidebarLayout()
   const openPalette = () => { setPaletteLoaded(true); setPaletteOpen(true) }
   const vim = useVimEnabled()
@@ -213,26 +175,27 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         </div>
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
-      <main className="flex min-w-0 flex-1 flex-col">
+      <main className="flex min-w-0 flex-1 flex-col md:!pb-0" data-phone-chrome={phoneChrome || undefined}
+        style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + env(safe-area-inset-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />
         {notice && (
-          <div role="status" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-sm text-on-warning-soft md:px-6">
+          <div role="status" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
             <p className="flex-1">{notice}</p>
-            <button className="btn-ghost px-2 py-0.5 text-xs" onClick={() => setNotice(null)}>Dismiss</button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setNotice(null)}>Dismiss</button>
           </div>
         )}
         {rejected && (
-          <div role="alert" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-sm text-on-warning-soft md:px-6">
+          <div role="alert" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
             <p className="flex-1">{describeRejected(rejected)}. The server's values are shown again.</p>
-            <button className="btn-ghost px-2 py-0.5 text-xs" onClick={dismissRejected}>Dismiss</button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={dismissRejected}>Dismiss</button>
           </div>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto">
           {route.view === 'help' ? (
-            <Suspense fallback={<p className="px-4 py-6 text-sm text-muted" role="status">Loading help…</p>}><HelpView page={route.page} q={route.q} /></Suspense>
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">Loading help…</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
-            <SettingsView user={user} onLogout={onLogout} section={route.section} />
+            <SettingsView user={user} onLogout={onLogout} section={route.section} anchor={route.anchor} />
           ) : route.view === 'import' ? (
             <ImportScreen />
           ) : route.view === 'labels' ? (
@@ -253,6 +216,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <AskScreen role={user.role} />
           ) : route.view === 'day' || route.view === 'week' ? (
             <CalendarView mode={route.view} date={route.date} />
+          ) : route.view === 'month' ? (
+            <MonthView date={route.date} />
           ) : (
             // App renders the invite, reset and capture screens itself; a stray /invite, /reset or /share route inside the shell falls back to the Inbox.
             <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'public' || route.view === 'share' ? { view: 'inbox' } : route} />
@@ -265,8 +230,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         )}
       </main>
       <PanelHost user={user} />
-      {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} extraSections={vim && vimHelp ? [vimHelp] : []}
-        context={{ view: route.view, board: !!listState()?.columns(), panelOpen: !!panelTaskId() }} />}
+      {phoneChrome && <TabBar route={route} onSearch={openPalette} onMore={() => setSidebarOpen(true)} moreOpen={sidebarOpen} />}
+      {(phoneChrome || addOpen) && <AddButton ref={addButton} open={addOpen} onClick={() => setAddOpen((v) => !v)} />}
+      <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
+      {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
+        context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense>}
       {assistantLoaded && <Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense>}
       {paletteLoaded && paletteOpen && <Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense>}
@@ -312,7 +280,10 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
     <header className="flex min-h-12 items-center gap-1 border-b border-default px-2 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden" data-phone-bar>
       <IconButton icon="menu" label="Open menu" onClick={onMenu} className="touch-target" />
       {bar?.back && <IconButton icon="arrow-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />}
-      <PageBarTitle>{bar?.title}</PageBarTitle>
+      <div className="min-w-0 flex-1">
+        <PageBarTitle>{bar?.title}</PageBarTitle>
+        {bar?.subtitle && <p className="truncate text-meta text-muted" data-phone-subtitle>{bar.subtitle}</p>}
+      </div>
       <div className="flex shrink-0 items-center gap-1" data-page-actions>
         {bar && <PageActions overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
       </div>

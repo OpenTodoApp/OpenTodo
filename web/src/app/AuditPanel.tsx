@@ -1,4 +1,7 @@
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Skeleton } from '../ui'
+import { Tooltip } from '../ui'
+import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, auditExportUrl, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { Button } from '../ui'
@@ -211,15 +214,15 @@ export function AuditPanel() {
             <AuditTable status={status} events={events} onKeyDown={onTableKey} />
             {cursor && status === 'ready' && (
               <Button variant="secondary" size="sm" onClick={() => void loadMore()} busy={loadingMore}>
-                {loadingMore ? 'Loading…' : 'Load more'}
+                {loadingMore ? 'Fetching more…' : 'Load more'}
               </Button>
             )}
-            <p className="text-meta text-muted">Keyboard: focus the table and press <span className="kbd">e</span> to export with the current filters.</p>
+            <p className="text-meta text-muted">Keyboard: export with the current filters by pressing <Kbd k="e" /> while the table has focus.</p>
           </div>
 
           {settings && (
             <div className="space-y-3 pt-4" data-testid="audit-settings">
-              <h3 className="text-sm font-semibold text-default">Audit settings</h3>
+              <h3 className="text-body font-semibold text-default">Audit settings</h3>
               <SettingRow
                 label="Keep events for"
                 description="Between 7 and 3650 days. Older events are deleted."
@@ -268,7 +271,7 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
   return (
     <div className="overflow-x-auto rounded-control border border-default focus-visible:outline-2 focus-visible:outline-focus"
       tabIndex={0} onKeyDown={onKeyDown} aria-label="Audit events (press e to export)" data-scroll-x>
-      <table className="w-full text-left text-sm">
+      <table className="w-full text-left text-body">
         <thead className="bg-sunken text-meta text-muted dark:bg-raised">
           <tr>
             <th className="px-2 py-1.5 font-medium">Time</th>
@@ -288,8 +291,11 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
               </td>
               <td className="px-2 py-1.5">{eventAccount(ev)}</td>
               <td className="px-2 py-1.5 text-muted">{eventSummary(ev)}</td>
-              <td className="px-2 py-1.5 text-meta text-muted" title={ev.userAgent}>
-                {shortAgent(ev.userAgent)}{ev.ip ? ` · ${ev.ip}` : ''}
+              <td className="px-2 py-1.5 text-meta text-muted">
+                {ev.userAgent ? (
+                  <Tooltip label={ev.userAgent}><span tabIndex={0} className="rounded-chip">{shortAgent(ev.userAgent)}</span></Tooltip>
+                ) : shortAgent(ev.userAgent)}
+                {ev.ip ? ` · ${ev.ip}` : ''}
               </td>
             </tr>
           ))}
@@ -297,7 +303,7 @@ export function AuditTable({ status, events, onKeyDown }: { status: LogStatus; e
             <tr><td colSpan={5} className="px-2 py-3 text-muted">No events match these filters.</td></tr>
           )}
           {status === 'loading' && events.length === 0 && (
-            <tr><td colSpan={5} className="px-2 py-3 text-muted">Loading…</td></tr>
+            <tr><td colSpan={5} className="px-2 py-3"><Skeleton shape="line" count={4} label="Loading events" /></td></tr>
           )}
         </tbody>
       </table>

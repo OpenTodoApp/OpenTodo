@@ -9,14 +9,16 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { commitFiles, formatBytes, isImage, planFiles, useAttachmentLimits } from '../lib/attachments'
 import { db } from '../lib/db'
 import { useDemo } from '../lib/demo'
-import { createTask, planTask } from '../lib/ops'
+import { createTask, planReminders, planTask } from '../lib/ops'
 import { captureFiles, type CapturedFile, isEmptyShare, parseShare, proposedDescription, proposedTitle, titleFromFiles, type SharePayload } from '../lib/share'
 import { deleteInboxEntry, getInboxEntry, type SharedFile } from '../lib/shareInbox'
-import type { Label } from '../lib/types'
+import type { Label, Task } from '../lib/types'
 import { IconButton } from '../ui'
 import { Icon } from '../ui'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { navigate, type Route } from './router'
+import { useShortcutDispatcher, useShortcutScope } from './shortcuts'
+import { Kbd } from './shortcuts/Kbd'
 
 /** How files come with this share: the hand-over store, the extension's message, or lost on the way. */
 export type ShareFiles = { inbox?: string | null; mode?: 'extension' | 'denied' | 'lost' | null }
@@ -127,17 +129,10 @@ export function ShareCapture() {
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
 
-  useEffect(() => {
-    titleRef.current?.focus()
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        leave({ view: 'inbox' })
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  useEffect(() => { titleRef.current?.focus() }, [])
+  // The capture screen renders outside the shell, so it installs the dispatcher itself; Esc leaves without saving.
+  useShortcutDispatcher()
+  useShortcutScope('view', { 'share.escape': () => leave({ view: 'inbox' }) }, { view: 'share' })
 
   async function save(input: QuickAddInput) {
     if (saving) return
@@ -152,7 +147,8 @@ export function ShareCapture() {
         const { id, change } = await planTask(task)
         const asFiles = await Promise.all(attach.map(async (f) => new File([await f.blob.arrayBuffer()], f.name, { type: f.type })))
         const planned = await planFiles(id, asFiles, { projectId: project })
-        await commitFiles(planned, [change])
+        // Typed reminders ride in the same batch, as createTask writes them (quick-add-recurrence D3).
+        await commitFiles(planned, [change, ...planReminders(id, (change.patch as { due: Task['due'] }).due, input.reminders)])
       } else {
         // One mutate: title, parsed attributes, description and project land as one op set, locally first.
         await createTask(task)
@@ -166,16 +162,16 @@ export function ShareCapture() {
 
   return (
     <div className="flex min-h-full justify-center bg-canvas p-4 sm:items-center">
-      <div className="w-full max-w-lg rounded-xl border border-default bg-surface p-5 shadow-sm">
+      <div className="w-full max-w-lg rounded-card border border-default bg-surface p-5 shadow-1">
         <div className="mb-4 flex items-center gap-2">
           <img src="/favicon.svg" alt="" className="h-6 w-6" />
-          <h1 className="text-base font-semibold">Add to OpenTodo</h1>
+          <h1 className="text-body font-semibold">Add to OpenTodo</h1>
         </div>
         {ready && isEmptyShare(payload) && shared.length === 0 && files.mode !== 'extension' && (
-          <p className="mb-3 text-sm text-muted">Nothing was shared. Type a task to add it anyway.</p>
+          <p className="mb-3 text-body text-muted">Nothing was shared. Type a task to add it anyway.</p>
         )}
-        {!ready ? <p className="text-sm text-muted" role="status">Opening the shared files…</p> : (
-        <div className="rounded-md border border-input px-2 focus-within:border-accent focus-within:ring-2 focus-within:ring-focus/30">
+        {!ready ? <p className="text-body text-muted" role="status">Opening the shared files…</p> : (
+        <div className="rounded-control border border-input px-2 focus-within:border-accent focus-within:ring-2 focus-within:ring-focus/30">
           <QuickAdd
             ref={titleRef}
             formId="share-capture"
@@ -189,10 +185,10 @@ export function ShareCapture() {
           />
         </div>
         )}
-        <label className="mt-3 block text-sm">
+        <label className="mt-3 block text-body">
           <span className="mb-1 block text-muted">Description</span>
           <textarea
-            className="input min-h-28 font-normal"
+            className="ui-input min-h-28 font-normal"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             onKeyDown={(e) => {
@@ -203,19 +199,19 @@ export function ShareCapture() {
             }}
           />
         </label>
-        <div className="mt-3 block text-sm">
+        <div className="mt-3 block text-body">
           <span className="mb-1 block text-muted" aria-hidden>Project</span>
           <ProjectPickerField label="Project" projects={projects} value={projectId || null} onChange={(id) => setProjectId(id ?? '')} rankContext="capture.project" />
         </div>
         <SharedFiles files={listed} dropped={captured.dropped} demo={!!demo} disabled={limits?.enabled === false} mode={files.mode ?? null}
           onRemove={(key) => setRemoved((r) => new Set(r).add(key))} />
-        {error && <p className="mt-3 text-sm text-danger" role="alert">{error}</p>}
+        {error && <p className="mt-3 text-body text-danger" role="alert">{error}</p>}
         <div className="mt-4 flex items-center justify-end gap-2">
-          <span className="mr-auto hidden text-xs text-faint sm:inline">
-            <span className="kbd">Enter</span> save · <span className="kbd">Esc</span> cancel
+          <span className="mr-auto hidden text-meta text-faint sm:inline">
+            <Kbd k="Enter" /> saves · <Kbd k="Esc" /> cancels
           </span>
-          <button type="button" className="btn-ghost" onClick={() => leave({ view: 'inbox' })}>Cancel</button>
-          <button type="submit" form="share-capture" className="btn-primary" disabled={saving || !ready}>{saving ? 'Saving…' : 'Save'}</button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={() => leave({ view: 'inbox' })}>Cancel</button>
+          <button type="submit" form="share-capture" className="ui-btn ui-btn--primary ui-btn--md" disabled={saving || !ready}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </div>
     </div>
@@ -239,7 +235,7 @@ function SharedFiles({ files, dropped, demo, disabled, mode, onRemove }: {
   if (dropped) notes.push(`${dropped} more ${dropped === 1 ? 'file was' : 'files were'} left out: a share takes at most 10.`)
   if (!files.length && !notes.length) return null
   return (
-    <div className="mt-3 text-sm" data-testid="shared-files">
+    <div className="mt-3 text-body" data-testid="shared-files">
       {files.length > 0 && !demo && (
         <>
           <span className="mb-1 block text-muted" id="shared-files-label">Files</span>

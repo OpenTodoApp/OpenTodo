@@ -45,4 +45,4 @@
 
 - Add a ROADMAP.md row under "5. Collaboration": "Public and guest links per project | `public-links`" and remove row 13 from "Next: Parity and depth".
 - Add a CHANGELOG.md entry under Unreleased (Added: public links; the `public:` device prefix in history and activity).
-- Archive with `/opsx:archive`, then confirm `npx @fission-ai/openspec validate --all --strict` passes.
+- Archive with `/opsx:archive`, then confirm `npx @fission-ai/openspec validate --all --strict` passes, and add `public-links` to the `specs:` front matter of `docs/public-links.md` (the docs check only accepts capabilities under `openspec/specs/`, so the page lists none until the archive).

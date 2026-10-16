@@ -3,11 +3,15 @@
 ## MODIFIED Requirements
 
 ### Requirement: Board view
-Every project SHALL offer a board view with one column per section ordered by section position, preceded by a "No section" column, each listing the section's open tasks ordered by position with a per-column count and quick-add. Cards SHALL show the task's non-empty custom field values as compact badges (OpenSpec `custom-fields`), at most three with a count for the rest. The list/board choice SHALL be remembered per project per device and SHALL not be synced. The board SHALL render from local data, scroll horizontally on narrow screens, and SHALL be navigable by keyboard.
+Every project SHALL offer a board view with one column per section ordered by section position, preceded by a "No section" column, each listing the section's open tasks ordered by position with a per-column count and quick-add. Cards SHALL show the task's non-empty custom field values as compact badges (OpenSpec `custom-fields`), at most three with a count for the rest. The board SHALL be one of three project layouts (list, board, timeline per `project-timeline`), chosen with the view toggle or by cycling with `v`, remembered per project per device and not synced. The board SHALL render from local data, scroll horizontally on narrow screens, and SHALL be navigable by keyboard.
 
 #### Scenario: Switch to board
 - **WHEN** the user presses the view toggle or `v` in a project
 - **THEN** the project is shown as columns, and the same project opens as a board on the next visit on that device only
+
+#### Scenario: Cycle through the layouts
+- **WHEN** the project is shown as a board and the user presses `v` twice
+- **THEN** the timeline is shown after the first press and the list after the second, and the last choice is remembered for that project on that device
 
 #### Scenario: Keyboard navigation across columns
 - **WHEN** the board is shown and the user presses `l` or Right
@@ -20,3 +24,16 @@ Every project SHALL offer a board view with one column per section ordered by se
 #### Scenario: More than three values
 - **WHEN** a card's task holds five non-empty values
 - **THEN** the card shows the first three in definition order and a "+2" badge whose accessible name lists the rest
+
+#### Scenario: Tall column
+- **WHEN** a column holds more cards than fit the screen height
+- **THEN** that column scrolls inside itself and the page header stays in place
+
+#### Scenario: Board on a phone
+- **WHEN** a project with three sections opens as a board on a 390 px screen
+- **THEN** the first column with open tasks fills most of the width, swiping snaps to the next column and the pager shows three dots
+
+#### Scenario: Card content
+- **WHEN** a task with a date, three labels, an estimate and two comments is shown as a card
+- **THEN** the card shows the title, the date, up to three chips and a footer with the comment count, and nothing else
+

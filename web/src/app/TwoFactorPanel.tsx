@@ -1,16 +1,15 @@
-import { Badge } from '../ui'
+import { Badge, Select, SettingRow, SettingsSection } from '../ui'
 import { Button } from '../ui'
 import { Icon } from '../ui'
 import { MenuItem } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { ListRow } from '../ui'
 import { Notice } from '../ui'
-import { SettingRow, SettingsSection } from '../ui'
 import { Dialog } from './overlay/Dialog'
 import { Menu } from './overlay/Menu'
+import { requestSettingsFocus } from './settingsIndex'
 import { navigate } from './router'
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { HelpHeading } from './help/HelpLink'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
 import { qrMatrix, qrPath } from '../lib/qr'
@@ -59,7 +58,7 @@ export function QrCode({ text, size = 192 }: { text: string; size?: number }) {
   return (
     <svg
       role="img" aria-label="QR code to scan with your authenticator app" width={size} height={size}
-      viewBox={`${-quiet} ${-quiet} ${n + 2 * quiet} ${n + 2 * quiet}`} shapeRendering="crispEdges" className="rounded"
+      viewBox={`${-quiet} ${-quiet} ${n + 2 * quiet} ${n + 2 * quiet}`} shapeRendering="crispEdges" className="rounded-control"
     >
       {/* A QR code stays black on white in every theme so authenticator apps can scan it. */}
       <rect x={-quiet} y={-quiet} width={n + 2 * quiet} height={n + 2 * quiet} fill="#fff" /> {/* token-lint-allow */}
@@ -98,7 +97,7 @@ export interface RecoveryCodesViewProps {
 /** The recovery codes, shown once, with copy, download and an acknowledgement. */
 export function RecoveryCodesView(p: RecoveryCodesViewProps) {
   return (
-    <div className="space-y-3 rounded-md border border-success/40 bg-success-soft p-3 text-sm" data-testid="recovery-codes">
+    <div className="space-y-3 rounded-control border border-success/40 bg-success-soft p-3 text-body" data-testid="recovery-codes">
       <p className="font-medium">Save these recovery codes now. They will not be shown again.</p>
       <p className="text-muted">
         Each code signs you in once if you lose your phone. Keep them somewhere safe, away from this device.
@@ -107,14 +106,14 @@ export function RecoveryCodesView(p: RecoveryCodesViewProps) {
         {p.codes.map((c) => <li key={c}>{c}</li>)}
       </ol>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn-secondary" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy codes'}</button>
-        <button type="button" className="btn-secondary" onClick={p.onDownload}>Download as text</button>
+        <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy codes'}</button>
+        <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={p.onDownload}>Download as text</button>
       </div>
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={p.acknowledged} onChange={(e) => p.onAcknowledge(e.target.checked)} />
         I have saved my recovery codes
       </label>
-      <button type="button" className="btn-primary" disabled={!p.acknowledged} onClick={p.onDone}>Done</button>
+      <button type="button" className="ui-btn ui-btn--primary ui-btn--md" disabled={!p.acknowledged} onClick={p.onDone}>Done</button>
     </div>
   )
 }
@@ -162,30 +161,30 @@ export function EnrolmentStepView(p: EnrolmentStepViewProps) {
   }
   return (
     <div className="space-y-3" data-testid="enrolment-wizard">
-      <ol className="list-decimal space-y-1 pl-5 text-sm text-muted">
+      <ol className="list-decimal space-y-1 pl-5 text-body text-muted">
         <li>Open an authenticator app on your phone (any app that supports time-based codes).</li>
         <li>Scan this QR code, or enter the key by hand.</li>
         <li>Type the six-digit code the app shows.</li>
       </ol>
       <div className="flex flex-wrap items-center gap-4">
         <QrCode text={p.enrollment.uri} />
-        <div className="text-sm">
+        <div className="text-body">
           <p className="text-muted">Key for manual entry (time-based, 6 digits, 30 s):</p>
-          <code className="mt-1 block select-all break-all font-mono text-base" data-testid="manual-key">{groupKey(p.enrollment.secret)}</code>
+          <code className="mt-1 block select-all break-all font-mono text-body" data-testid="manual-key">{groupKey(p.enrollment.secret)}</code>
         </div>
       </div>
       <form className="flex flex-wrap items-end gap-2" onSubmit={submit}>
-        <label className="text-sm">
+        <label className="text-body">
           <span className="mb-1 block text-muted">Code from the app</span>
           <input
-            className="input w-36 font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={7}
+            className="ui-input w-36 font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={7}
             required autoFocus value={p.code} onChange={(e) => p.onCode(e.target.value)} disabled={p.disabled} aria-label="Code from the app"
           />
         </label>
-        <button className="btn-primary" disabled={p.disabled || p.busy}>{p.busy ? 'Checking…' : 'Turn on'}</button>
-        {p.onCancel && <button type="button" className="btn-ghost" onClick={p.onCancel}>Cancel</button>}
+        <button className="ui-btn ui-btn--primary ui-btn--md" disabled={p.disabled || p.busy}>{p.busy ? 'Checking…' : 'Turn on'}</button>
+        {p.onCancel && <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={p.onCancel}>Cancel</button>}
       </form>
-      {p.error && <p className="text-sm text-danger" role="alert">{p.error}</p>}
+      {p.error && <p className="text-body text-danger" role="alert">{p.error}</p>}
     </div>
   )
 }
@@ -231,11 +230,11 @@ export function EnrolmentWizard({ online, onEnrolled, onCancel }: { online: bool
   if (codes) return <RecoveryCodes codes={codes} onDone={onEnrolled} />
   if (!enrollment) {
     return (
-      <div className="space-y-2 text-sm">
+      <div className="space-y-2 text-body">
         {error ? <p className="text-danger" role="alert">{error}</p> : <p className="text-muted">{online ? 'Preparing…' : 'Setting up two-factor authentication needs a connection.'}</p>}
         <div className="flex gap-2">
-          {error && <button type="button" className="btn-primary" disabled={!online} onClick={() => void start()}>Try again</button>}
-          {onCancel && <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>}
+          {error && <button type="button" className="ui-btn ui-btn--primary ui-btn--md" disabled={!online} onClick={() => void start()}>Try again</button>}
+          {onCancel && <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={onCancel}>Cancel</button>}
         </div>
       </div>
     )
@@ -279,7 +278,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
   const st = p.online ? p.status : null
   const few = !!st?.enrolled && st.recoveryCodesRemaining <= 3
   return (
-    <SettingsSection title="Two-factor authentication" helpId="settings/two-factor" headingId="mfa-heading" testId="mfa-panel"
+    <SettingsSection title="Two-factor authentication" headingId="mfa-heading" testId="mfa-panel"
       description="After your password, sign-in asks for a six-digit code from an authenticator app. A passkey that checks your fingerprint, face or PIN skips the code. Your server makes and checks the codes itself.">
       {!p.online && <Notice>You are offline. Two-factor authentication needs a connection to your server.</Notice>}
       {st && (
@@ -300,7 +299,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
 
       {st?.enrolled && (
         <div className="space-y-1 py-3">
-          <h3 className="text-sm font-medium text-default">Remembered browsers</h3>
+          <h3 className="text-body font-medium text-default">Remembered browsers</h3>
           <p className="text-meta text-muted">These browsers skip the code for 30 days after you chose "Remember this device".</p>
           {p.devices && p.devices.length === 0 && <p className="py-2 text-meta text-faint">No remembered browsers.</p>}
           <div className="-mx-3">
@@ -328,7 +327,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
       {p.isOwner && (
         <p className="pt-3 text-meta text-muted" data-testid="mfa-policy-link">
           Server policy: {POLICY_LABEL[p.policy ?? p.status?.policy ?? 'none'].toLowerCase()}.{' '}
-          <a className="text-accent underline" href="/settings/access" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'access' }) }}>Access policies</a>
+          <a className="text-accent underline" href="/settings/people" onClick={(e) => { e.preventDefault(); requestSettingsFocus('access-policies'); navigate({ view: 'settings', section: 'people' }) }}>People → Access policies</a>
         </p>
       )}
     </SettingsSection>
@@ -344,16 +343,16 @@ export function EnrolmentGate({ user, onEnrolled, onLogout }: { user: User; onEn
   const online = useOnline()
   return (
     <div className="flex min-h-full items-center justify-center bg-canvas p-6">
-      <div className="w-full max-w-lg space-y-4 rounded-xl border border-default bg-surface p-6 shadow-sm" data-testid="enrolment-gate">
+      <div className="w-full max-w-lg space-y-4 rounded-card border border-default bg-surface p-6 shadow-1" data-testid="enrolment-gate">
         <div>
-          <h1 className="text-lg font-semibold">Set up two-factor authentication</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="text-h3 font-semibold">Set up two-factor authentication</h1>
+          <p className="mt-1 text-body text-muted">
             The owner of this server requires a second sign-in step for {user.email}. Set it up to continue; your tasks and any changes
             waiting on this device are kept and sync as soon as you are done.
           </p>
         </div>
         <EnrolmentWizard online={online} onEnrolled={onEnrolled} />
-        <button type="button" className="btn-ghost text-xs" onClick={onLogout}>Sign out</button>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={onLogout}>Sign out</button>
       </div>
     </div>
   )
@@ -441,7 +440,7 @@ export function TwoFactorPanel({ user }: { user: User }) {
   )
 }
 
-/** Owner: the server's two-factor policy (Settings → Access policies; same guide section as the panel). */
+/** Owner: the server's two-factor policy (Settings → People; same guide section as the panel). */
 export function MfaPolicyPanelView({ policy, online, busy, error, onPolicy }: {
   policy: MfaPolicy | null
   online: boolean
@@ -450,21 +449,18 @@ export function MfaPolicyPanelView({ policy, online, busy, error, onPolicy }: {
   onPolicy: (p: MfaPolicy) => void
 }) {
   return (
-    <section className="space-y-2" aria-labelledby="mfa-policy-heading" data-testid="mfa-policy-panel">
-      <HelpHeading screen="settings/two-factor" id="mfa-policy-heading" className="font-semibold">Two-factor policy</HelpHeading>
-      <label className="block space-y-1 text-sm">
-        <span className="font-medium">Policy for this server</span>
-        <select className="input max-w-xs" value={policy ?? 'none'} disabled={!online || busy || policy === null}
-          onChange={(e) => onPolicy(e.target.value as MfaPolicy)} aria-label="Two-factor policy for this server">
-          {(Object.keys(POLICY_LABEL) as MfaPolicy[]).map((k) => <option key={k} value={k}>{POLICY_LABEL[k]}</option>)}
-        </select>
-        <span className="block text-xs text-muted">
-          Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until
-          they do. API tokens are never affected.
-        </span>
-      </label>
-      {error && <p className="text-sm text-danger" role="alert">{error}</p>}
-    </section>
+    <SettingsSection title="Two-factor policy" headingId="mfa-policy-heading" testId="mfa-policy-panel"
+      description="Accounts that must use two-factor authentication and have not set it up can still sign in, but can only set it up until they do. API tokens are never affected.">
+      <SettingRow label="Policy for this server" htmlFor="mfa-policy-select"
+        status={policy ? <Badge hue={policy === 'none' ? 'slate' : 'green'}>{POLICY_LABEL[policy]}</Badge> : undefined}
+        control={
+          <Select id="mfa-policy-select" className="max-w-xs" value={policy ?? 'none'} disabled={!online || busy || policy === null}
+            onChange={(e) => onPolicy(e.target.value as MfaPolicy)} aria-label="Two-factor policy for this server">
+            {(Object.keys(POLICY_LABEL) as MfaPolicy[]).map((k) => <option key={k} value={k}>{POLICY_LABEL[k]}</option>)}
+          </Select>
+        } />
+      {error && <p className="py-2 text-meta text-danger" role="alert">{error}</p>}
+    </SettingsSection>
   )
 }
 

@@ -1,0 +1,1658 @@
+{
+ "en": {
+  "code": "en",
+  "dayMonthOrder": "MD",
+  "dayWords": {
+   "today": 0,
+   "tonight": 0,
+   "tomorrow": 1,
+   "tmrw": 1,
+   "day after tomorrow": 2
+  },
+  "weekdays": [
+   [
+    "monday",
+    "mon"
+   ],
+   [
+    "tuesday",
+    "tue",
+    "tues"
+   ],
+   [
+    "wednesday",
+    "wed"
+   ],
+   [
+    "thursday",
+    "thu",
+    "thur",
+    "thurs"
+   ],
+   [
+    "friday",
+    "fri"
+   ],
+   [
+    "saturday",
+    "sat"
+   ],
+   [
+    "sunday",
+    "sun"
+   ]
+  ],
+  "months": [
+   {
+    "names": [
+     "january"
+    ],
+    "abbr": [
+     "jan"
+    ]
+   },
+   {
+    "names": [
+     "february"
+    ],
+    "abbr": [
+     "feb"
+    ]
+   },
+   {
+    "names": [
+     "march"
+    ],
+    "abbr": [
+     "mar"
+    ]
+   },
+   {
+    "names": [
+     "april"
+    ],
+    "abbr": [
+     "apr"
+    ]
+   },
+   {
+    "names": [
+     "may"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "june"
+    ],
+    "abbr": [
+     "jun"
+    ]
+   },
+   {
+    "names": [
+     "july"
+    ],
+    "abbr": [
+     "jul"
+    ]
+   },
+   {
+    "names": [
+     "august"
+    ],
+    "abbr": [
+     "aug"
+    ]
+   },
+   {
+    "names": [
+     "september"
+    ],
+    "abbr": [
+     "sep",
+     "sept"
+    ]
+   },
+   {
+    "names": [
+     "october"
+    ],
+    "abbr": [
+     "oct"
+    ]
+   },
+   {
+    "names": [
+     "november"
+    ],
+    "abbr": [
+     "nov"
+    ]
+   },
+   {
+    "names": [
+     "december"
+    ],
+    "abbr": [
+     "dec"
+    ]
+   }
+  ],
+  "before": [
+   "on",
+   "by",
+   "due"
+  ],
+  "deadlineWords": [
+   "deadline"
+  ],
+  "somedayWords": [
+   "someday",
+   "some day"
+  ],
+  "eveningWords": [
+   "tonight",
+   "this evening"
+  ],
+  "nextBefore": [
+   "next"
+  ],
+  "nextAfter": [],
+  "thisBefore": [
+   "this"
+  ],
+  "inWords": [
+   "in"
+  ],
+  "oneWords": [
+   "a",
+   "an",
+   "one"
+  ],
+  "units": {
+   "minute": [
+    "minute",
+    "minutes",
+    "min",
+    "mins"
+   ],
+   "hour": [
+    "hour",
+    "hours",
+    "hr",
+    "hrs"
+   ],
+   "day": [
+    "day",
+    "days"
+   ],
+   "week": [
+    "week",
+    "weeks",
+    "wk",
+    "wks"
+   ],
+   "month": [
+    "month",
+    "months"
+   ],
+   "year": [
+    "year",
+    "years",
+    "yr",
+    "yrs"
+   ]
+  },
+  "ofWords": [
+   "of"
+  ],
+  "atWords": [
+   "at"
+  ],
+  "hourWords": [
+   "o'clock"
+  ],
+  "hourSuffixH": false,
+  "timeWords": {
+   "noon": "12:00",
+   "midday": "12:00",
+   "midnight": "00:00"
+  },
+  "am": [
+   "am",
+   "a.m."
+  ],
+  "pm": [
+   "pm",
+   "p.m."
+  ],
+  "every": [
+   "every",
+   "each"
+  ],
+  "everyOne": {
+   "daily": "day",
+   "weekly": "week",
+   "monthly": "month",
+   "yearly": "year",
+   "annually": "year"
+  },
+  "weekdayAll": [
+   "weekday",
+   "weekdays",
+   "workday",
+   "workdays"
+  ],
+  "ordinals": {
+   "first": 1,
+   "second": 2,
+   "third": 3,
+   "fourth": 4,
+   "last": -1
+  },
+  "andWords": [
+   "and"
+  ],
+  "afterCompletion": [
+   "after completion",
+   "after done"
+  ],
+  "untilWords": [
+   "until",
+   "till"
+  ],
+  "timesWords": {
+   "before": [
+    "for"
+   ],
+   "after": [
+    "times"
+   ]
+  },
+  "remindWords": [
+   "remind me"
+  ],
+  "beforeWords": [
+   "before",
+   "earlier"
+  ],
+  "afterWords": [
+   "after",
+   "later"
+  ]
+ },
+ "de": {
+  "code": "de",
+  "dayMonthOrder": "DM",
+  "dayWords": {
+   "heute": 0,
+   "heute abend": 0,
+   "morgen": 1,
+   "ubermorgen": 2
+  },
+  "weekdays": [
+   [
+    "montag",
+    "mo."
+   ],
+   [
+    "dienstag",
+    "di."
+   ],
+   [
+    "mittwoch",
+    "mi."
+   ],
+   [
+    "donnerstag",
+    "do."
+   ],
+   [
+    "freitag",
+    "fr."
+   ],
+   [
+    "samstag",
+    "sonnabend",
+    "sa."
+   ],
+   [
+    "sonntag",
+    "so."
+   ]
+  ],
+  "months": [
+   {
+    "names": [
+     "januar",
+     "janner"
+    ],
+    "abbr": [
+     "jan"
+    ]
+   },
+   {
+    "names": [
+     "februar"
+    ],
+    "abbr": [
+     "feb"
+    ]
+   },
+   {
+    "names": [
+     "marz"
+    ],
+    "abbr": [
+     "mar",
+     "mrz"
+    ]
+   },
+   {
+    "names": [
+     "april"
+    ],
+    "abbr": [
+     "apr"
+    ]
+   },
+   {
+    "names": [
+     "mai"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "juni"
+    ],
+    "abbr": [
+     "jun"
+    ]
+   },
+   {
+    "names": [
+     "juli"
+    ],
+    "abbr": [
+     "jul"
+    ]
+   },
+   {
+    "names": [
+     "august"
+    ],
+    "abbr": [
+     "aug"
+    ]
+   },
+   {
+    "names": [
+     "september"
+    ],
+    "abbr": [
+     "sep",
+     "sept"
+    ]
+   },
+   {
+    "names": [
+     "oktober"
+    ],
+    "abbr": [
+     "okt"
+    ]
+   },
+   {
+    "names": [
+     "november"
+    ],
+    "abbr": [
+     "nov"
+    ]
+   },
+   {
+    "names": [
+     "dezember"
+    ],
+    "abbr": [
+     "dez"
+    ]
+   }
+  ],
+  "before": [
+   "am",
+   "bis"
+  ],
+  "deadlineWords": [
+   "frist",
+   "deadline"
+  ],
+  "somedayWords": [
+   "irgendwann"
+  ],
+  "eveningWords": [
+   "heute abend"
+  ],
+  "nextBefore": [
+   "nachsten",
+   "nachste",
+   "nachstes",
+   "kommenden",
+   "kommende"
+  ],
+  "nextAfter": [],
+  "thisBefore": [
+   "diesen",
+   "diese",
+   "dieses"
+  ],
+  "inWords": [
+   "in"
+  ],
+  "oneWords": [
+   "einem",
+   "einer",
+   "eine",
+   "ein"
+  ],
+  "units": {
+   "minute": [
+    "minute",
+    "minuten",
+    "min"
+   ],
+   "hour": [
+    "stunde",
+    "stunden",
+    "std"
+   ],
+   "day": [
+    "tag",
+    "tage",
+    "tagen"
+   ],
+   "week": [
+    "woche",
+    "wochen"
+   ],
+   "month": [
+    "monat",
+    "monate",
+    "monaten"
+   ],
+   "year": [
+    "jahr",
+    "jahre",
+    "jahren"
+   ]
+  },
+  "ofWords": [],
+  "atWords": [
+   "um"
+  ],
+  "hourWords": [
+   "uhr"
+  ],
+  "hourSuffixH": false,
+  "timeWords": {
+   "mittag": "12:00",
+   "mittags": "12:00",
+   "mitternacht": "00:00"
+  },
+  "am": [],
+  "pm": [],
+  "every": [
+   "jeden",
+   "jede",
+   "jedes",
+   "alle"
+  ],
+  "everyOne": {
+   "taglich": "day",
+   "wochentlich": "week",
+   "monatlich": "month",
+   "jahrlich": "year",
+   "werktags": "weekday"
+  },
+  "weekdayAll": [
+   "werktag",
+   "werktage",
+   "arbeitstag",
+   "arbeitstage"
+  ],
+  "ordinals": {
+   "ersten": 1,
+   "erste": 1,
+   "erster": 1,
+   "zweiten": 2,
+   "zweite": 2,
+   "dritten": 3,
+   "dritte": 3,
+   "vierten": 4,
+   "vierte": 4,
+   "letzten": -1,
+   "letzte": -1
+  },
+  "andWords": [
+   "und"
+  ],
+  "afterCompletion": [
+   "nach erledigung",
+   "nach abschluss"
+  ],
+  "untilWords": [
+   "bis zum",
+   "bis"
+  ],
+  "timesWords": {
+   "before": [],
+   "after": [
+    "mal"
+   ]
+  },
+  "remindWords": [
+   "erinnere mich",
+   "erinner mich"
+  ],
+  "beforeWords": [
+   "vorher",
+   "davor",
+   "fruher"
+  ],
+  "afterWords": [
+   "danach",
+   "nachher",
+   "spater"
+  ]
+ },
+ "fr": {
+  "code": "fr",
+  "dayMonthOrder": "DM",
+  "dayWords": {
+   "aujourd'hui": 0,
+   "ce soir": 0,
+   "demain": 1,
+   "apres-demain": 2,
+   "apres demain": 2
+  },
+  "weekdays": [
+   [
+    "lundi",
+    "lun"
+   ],
+   [
+    "mardi",
+    "mar"
+   ],
+   [
+    "mercredi",
+    "mer"
+   ],
+   [
+    "jeudi",
+    "jeu"
+   ],
+   [
+    "vendredi",
+    "ven"
+   ],
+   [
+    "samedi",
+    "sam"
+   ],
+   [
+    "dimanche",
+    "dim"
+   ]
+  ],
+  "months": [
+   {
+    "names": [
+     "janvier"
+    ],
+    "abbr": [
+     "janv"
+    ]
+   },
+   {
+    "names": [
+     "fevrier"
+    ],
+    "abbr": [
+     "fevr",
+     "fev"
+    ]
+   },
+   {
+    "names": [
+     "mars"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "avril"
+    ],
+    "abbr": [
+     "avr"
+    ]
+   },
+   {
+    "names": [
+     "mai"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "juin"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "juillet"
+    ],
+    "abbr": [
+     "juil"
+    ]
+   },
+   {
+    "names": [
+     "aout"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "septembre"
+    ],
+    "abbr": [
+     "sept"
+    ]
+   },
+   {
+    "names": [
+     "octobre"
+    ],
+    "abbr": [
+     "oct"
+    ]
+   },
+   {
+    "names": [
+     "novembre"
+    ],
+    "abbr": [
+     "nov"
+    ]
+   },
+   {
+    "names": [
+     "decembre"
+    ],
+    "abbr": [
+     "dec"
+    ]
+   }
+  ],
+  "before": [
+   "le",
+   "pour"
+  ],
+  "deadlineWords": [
+   "echeance",
+   "deadline"
+  ],
+  "somedayWords": [
+   "un jour"
+  ],
+  "eveningWords": [
+   "ce soir"
+  ],
+  "nextBefore": [],
+  "nextAfter": [
+   "prochain",
+   "prochaine"
+  ],
+  "thisBefore": [
+   "ce",
+   "cette"
+  ],
+  "inWords": [
+   "dans"
+  ],
+  "oneWords": [
+   "un",
+   "une"
+  ],
+  "units": {
+   "minute": [
+    "minute",
+    "minutes",
+    "min"
+   ],
+   "hour": [
+    "heure",
+    "heures"
+   ],
+   "day": [
+    "jour",
+    "jours"
+   ],
+   "week": [
+    "semaine",
+    "semaines"
+   ],
+   "month": [
+    "mois"
+   ],
+   "year": [
+    "an",
+    "ans",
+    "annee",
+    "annees"
+   ]
+  },
+  "ofWords": [],
+  "atWords": [
+   "a",
+   "a"
+  ],
+  "hourWords": [
+   "heures",
+   "heure"
+  ],
+  "hourSuffixH": true,
+  "timeWords": {
+   "midi": "12:00",
+   "minuit": "00:00"
+  },
+  "am": [],
+  "pm": [],
+  "every": [
+   "tous les",
+   "toutes les",
+   "chaque"
+  ],
+  "everyOne": {
+   "quotidiennement": "day",
+   "hebdomadairement": "week",
+   "mensuellement": "month",
+   "annuellement": "year"
+  },
+  "weekdayAll": [
+   "jour ouvre",
+   "jours ouvres",
+   "jour ouvrable",
+   "jours ouvrables"
+  ],
+  "ordinals": {
+   "premier": 1,
+   "premiere": 1,
+   "deuxieme": 2,
+   "second": 2,
+   "seconde": 2,
+   "troisieme": 3,
+   "quatrieme": 4,
+   "dernier": -1,
+   "derniere": -1
+  },
+  "andWords": [
+   "et"
+  ],
+  "afterCompletion": [
+   "apres achevement",
+   "apres completion"
+  ],
+  "untilWords": [
+   "jusqu'au",
+   "jusqu'a"
+  ],
+  "timesWords": {
+   "before": [
+    "pendant"
+   ],
+   "after": [
+    "fois"
+   ]
+  },
+  "remindWords": [
+   "rappelle-moi",
+   "rappelle moi"
+  ],
+  "beforeWords": [
+   "avant",
+   "plus tot"
+  ],
+  "afterWords": [
+   "apres",
+   "plus tard"
+  ]
+ },
+ "it": {
+  "code": "it",
+  "dayMonthOrder": "DM",
+  "dayWords": {
+   "oggi": 0,
+   "stasera": 0,
+   "domani": 1,
+   "dopodomani": 2
+  },
+  "weekdays": [
+   [
+    "lunedi",
+    "lun"
+   ],
+   [
+    "martedi",
+    "mar"
+   ],
+   [
+    "mercoledi",
+    "mer"
+   ],
+   [
+    "giovedi",
+    "gio"
+   ],
+   [
+    "venerdi",
+    "ven"
+   ],
+   [
+    "sabato",
+    "sab"
+   ],
+   [
+    "domenica",
+    "dom"
+   ]
+  ],
+  "months": [
+   {
+    "names": [
+     "gennaio"
+    ],
+    "abbr": [
+     "gen"
+    ]
+   },
+   {
+    "names": [
+     "febbraio"
+    ],
+    "abbr": [
+     "feb"
+    ]
+   },
+   {
+    "names": [
+     "marzo"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "aprile"
+    ],
+    "abbr": [
+     "apr"
+    ]
+   },
+   {
+    "names": [
+     "maggio"
+    ],
+    "abbr": [
+     "mag"
+    ]
+   },
+   {
+    "names": [
+     "giugno"
+    ],
+    "abbr": [
+     "giu"
+    ]
+   },
+   {
+    "names": [
+     "luglio"
+    ],
+    "abbr": [
+     "lug"
+    ]
+   },
+   {
+    "names": [
+     "agosto"
+    ],
+    "abbr": [
+     "ago"
+    ]
+   },
+   {
+    "names": [
+     "settembre"
+    ],
+    "abbr": [
+     "set",
+     "sett"
+    ]
+   },
+   {
+    "names": [
+     "ottobre"
+    ],
+    "abbr": [
+     "ott"
+    ]
+   },
+   {
+    "names": [
+     "novembre"
+    ],
+    "abbr": [
+     "nov"
+    ]
+   },
+   {
+    "names": [
+     "dicembre"
+    ],
+    "abbr": [
+     "dic"
+    ]
+   }
+  ],
+  "before": [
+   "il",
+   "entro",
+   "per"
+  ],
+  "deadlineWords": [
+   "scadenza"
+  ],
+  "somedayWords": [
+   "prima o poi"
+  ],
+  "eveningWords": [
+   "stasera"
+  ],
+  "nextBefore": [
+   "prossimo",
+   "prossima"
+  ],
+  "nextAfter": [
+   "prossimo",
+   "prossima"
+  ],
+  "thisBefore": [
+   "questo",
+   "questa"
+  ],
+  "inWords": [
+   "tra",
+   "fra"
+  ],
+  "oneWords": [
+   "un",
+   "una",
+   "uno"
+  ],
+  "units": {
+   "minute": [
+    "minuto",
+    "minuti",
+    "min"
+   ],
+   "hour": [
+    "ora",
+    "ore"
+   ],
+   "day": [
+    "giorno",
+    "giorni"
+   ],
+   "week": [
+    "settimana",
+    "settimane"
+   ],
+   "month": [
+    "mese",
+    "mesi"
+   ],
+   "year": [
+    "anno",
+    "anni"
+   ]
+  },
+  "ofWords": [],
+  "atWords": [
+   "alle",
+   "all",
+   "all'"
+  ],
+  "hourWords": [],
+  "hourSuffixH": false,
+  "timeWords": {
+   "mezzogiorno": "12:00",
+   "mezzanotte": "00:00"
+  },
+  "am": [],
+  "pm": [],
+  "every": [
+   "ogni",
+   "tutti i",
+   "tutte le"
+  ],
+  "everyOne": {
+   "quotidianamente": "day",
+   "giornalmente": "day",
+   "settimanalmente": "week",
+   "mensilmente": "month",
+   "annualmente": "year"
+  },
+  "weekdayAll": [
+   "giorno feriale",
+   "giorni feriali",
+   "feriale",
+   "feriali"
+  ],
+  "ordinals": {
+   "primo": 1,
+   "prima": 1,
+   "secondo": 2,
+   "seconda": 2,
+   "terzo": 3,
+   "terza": 3,
+   "quarto": 4,
+   "quarta": 4,
+   "ultimo": -1,
+   "ultima": -1
+  },
+  "andWords": [
+   "e"
+  ],
+  "afterCompletion": [
+   "dopo il completamento",
+   "dopo completamento"
+  ],
+  "untilWords": [
+   "fino al",
+   "fino a"
+  ],
+  "timesWords": {
+   "before": [
+    "per"
+   ],
+   "after": [
+    "volte"
+   ]
+  },
+  "remindWords": [
+   "ricordamelo",
+   "ricordami"
+  ],
+  "beforeWords": [
+   "prima"
+  ],
+  "afterWords": [
+   "dopo"
+  ]
+ },
+ "es": {
+  "code": "es",
+  "dayMonthOrder": "DM",
+  "dayWords": {
+   "hoy": 0,
+   "esta noche": 0,
+   "manana": 1,
+   "pasado manana": 2
+  },
+  "weekdays": [
+   [
+    "lunes",
+    "lun"
+   ],
+   [
+    "martes",
+    "mar"
+   ],
+   [
+    "miercoles",
+    "mie",
+    "mie"
+   ],
+   [
+    "jueves",
+    "jue"
+   ],
+   [
+    "viernes",
+    "vie"
+   ],
+   [
+    "sabado",
+    "sab"
+   ],
+   [
+    "domingo",
+    "dom"
+   ]
+  ],
+  "months": [
+   {
+    "names": [
+     "enero"
+    ],
+    "abbr": [
+     "ene"
+    ]
+   },
+   {
+    "names": [
+     "febrero"
+    ],
+    "abbr": [
+     "feb"
+    ]
+   },
+   {
+    "names": [
+     "marzo"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "abril"
+    ],
+    "abbr": [
+     "abr"
+    ]
+   },
+   {
+    "names": [
+     "mayo"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "junio"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "julio"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "agosto"
+    ],
+    "abbr": [
+     "ago"
+    ]
+   },
+   {
+    "names": [
+     "septiembre",
+     "setiembre"
+    ],
+    "abbr": [
+     "sep",
+     "sept",
+     "set"
+    ]
+   },
+   {
+    "names": [
+     "octubre"
+    ],
+    "abbr": [
+     "oct"
+    ]
+   },
+   {
+    "names": [
+     "noviembre"
+    ],
+    "abbr": [
+     "nov"
+    ]
+   },
+   {
+    "names": [
+     "diciembre"
+    ],
+    "abbr": [
+     "dic"
+    ]
+   }
+  ],
+  "before": [
+   "el",
+   "para"
+  ],
+  "deadlineWords": [
+   "fecha limite",
+   "plazo"
+  ],
+  "somedayWords": [
+   "algun dia"
+  ],
+  "eveningWords": [
+   "esta noche"
+  ],
+  "nextBefore": [
+   "proximo",
+   "proxima"
+  ],
+  "nextAfter": [
+   "que viene",
+   "proximo",
+   "proxima"
+  ],
+  "thisBefore": [
+   "este",
+   "esta"
+  ],
+  "inWords": [
+   "en",
+   "dentro de"
+  ],
+  "oneWords": [
+   "un",
+   "una"
+  ],
+  "units": {
+   "minute": [
+    "minuto",
+    "minutos",
+    "min"
+   ],
+   "hour": [
+    "hora",
+    "horas"
+   ],
+   "day": [
+    "dia",
+    "dias"
+   ],
+   "week": [
+    "semana",
+    "semanas"
+   ],
+   "month": [
+    "mes",
+    "meses"
+   ],
+   "year": [
+    "ano",
+    "anos"
+   ]
+  },
+  "ofWords": [
+   "de"
+  ],
+  "atWords": [
+   "a las",
+   "a la"
+  ],
+  "hourWords": [
+   "horas",
+   "hs"
+  ],
+  "hourSuffixH": true,
+  "timeWords": {
+   "mediodia": "12:00",
+   "medianoche": "00:00"
+  },
+  "am": [],
+  "pm": [],
+  "every": [
+   "cada",
+   "todos los",
+   "todas las"
+  ],
+  "everyOne": {
+   "diariamente": "day",
+   "semanalmente": "week",
+   "mensualmente": "month",
+   "anualmente": "year"
+  },
+  "weekdayAll": [
+   "dia laborable",
+   "dias laborables",
+   "laborable",
+   "laborables"
+  ],
+  "ordinals": {
+   "primer": 1,
+   "primero": 1,
+   "primera": 1,
+   "segundo": 2,
+   "segunda": 2,
+   "tercer": 3,
+   "tercero": 3,
+   "tercera": 3,
+   "cuarto": 4,
+   "cuarta": 4,
+   "ultimo": -1,
+   "ultima": -1
+  },
+  "andWords": [
+   "y"
+  ],
+  "afterCompletion": [
+   "despues de completar",
+   "tras completar"
+  ],
+  "untilWords": [
+   "hasta el",
+   "hasta"
+  ],
+  "timesWords": {
+   "before": [
+    "durante"
+   ],
+   "after": [
+    "veces"
+   ]
+  },
+  "remindWords": [
+   "recuerdame"
+  ],
+  "beforeWords": [
+   "antes"
+  ],
+  "afterWords": [
+   "despues"
+  ]
+ },
+ "pt": {
+  "code": "pt",
+  "dayMonthOrder": "DM",
+  "dayWords": {
+   "hoje": 0,
+   "hoje a noite": 0,
+   "amanha": 1,
+   "depois de amanha": 2
+  },
+  "weekdays": [
+   [
+    "segunda-feira",
+    "segunda",
+    "seg"
+   ],
+   [
+    "terca-feira",
+    "terca",
+    "ter"
+   ],
+   [
+    "quarta-feira",
+    "quarta",
+    "qua"
+   ],
+   [
+    "quinta-feira",
+    "quinta",
+    "qui"
+   ],
+   [
+    "sexta-feira",
+    "sexta",
+    "sex"
+   ],
+   [
+    "sabado",
+    "sab"
+   ],
+   [
+    "domingo",
+    "dom"
+   ]
+  ],
+  "months": [
+   {
+    "names": [
+     "janeiro"
+    ],
+    "abbr": [
+     "jan"
+    ]
+   },
+   {
+    "names": [
+     "fevereiro"
+    ],
+    "abbr": [
+     "fev"
+    ]
+   },
+   {
+    "names": [
+     "marco"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "abril"
+    ],
+    "abbr": [
+     "abr"
+    ]
+   },
+   {
+    "names": [
+     "maio"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "junho"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "julho"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "agosto"
+    ],
+    "abbr": [
+     "ago"
+    ]
+   },
+   {
+    "names": [
+     "setembro"
+    ],
+    "abbr": [
+     "set"
+    ]
+   },
+   {
+    "names": [
+     "outubro"
+    ],
+    "abbr": [
+     "out"
+    ]
+   },
+   {
+    "names": [
+     "novembro"
+    ],
+    "abbr": [
+     "nov"
+    ]
+   },
+   {
+    "names": [
+     "dezembro"
+    ],
+    "abbr": [
+     "dez"
+    ]
+   }
+  ],
+  "before": [
+   "na",
+   "no",
+   "ate",
+   "para"
+  ],
+  "deadlineWords": [
+   "prazo"
+  ],
+  "somedayWords": [
+   "algum dia"
+  ],
+  "eveningWords": [
+   "hoje a noite"
+  ],
+  "nextBefore": [
+   "proxima",
+   "proximo"
+  ],
+  "nextAfter": [
+   "que vem",
+   "proxima",
+   "proximo"
+  ],
+  "thisBefore": [
+   "esta",
+   "este",
+   "nesta",
+   "neste"
+  ],
+  "inWords": [
+   "em",
+   "daqui a"
+  ],
+  "oneWords": [
+   "um",
+   "uma"
+  ],
+  "units": {
+   "minute": [
+    "minuto",
+    "minutos",
+    "min"
+   ],
+   "hour": [
+    "hora",
+    "horas"
+   ],
+   "day": [
+    "dia",
+    "dias"
+   ],
+   "week": [
+    "semana",
+    "semanas"
+   ],
+   "month": [
+    "mes",
+    "meses"
+   ],
+   "year": [
+    "ano",
+    "anos"
+   ]
+  },
+  "ofWords": [
+   "de"
+  ],
+  "atWords": [
+   "as",
+   "as",
+   "a"
+  ],
+  "hourWords": [
+   "horas"
+  ],
+  "hourSuffixH": true,
+  "timeWords": {
+   "meio-dia": "12:00",
+   "meia-noite": "00:00"
+  },
+  "am": [],
+  "pm": [],
+  "every": [
+   "toda",
+   "todo",
+   "todas as",
+   "todos os",
+   "cada"
+  ],
+  "everyOne": {
+   "diariamente": "day",
+   "semanalmente": "week",
+   "mensalmente": "month",
+   "anualmente": "year"
+  },
+  "weekdayAll": [
+   "dia util",
+   "dias uteis"
+  ],
+  "ordinals": {
+   "primeiro": 1,
+   "primeira": 1,
+   "segundo": 2,
+   "terceiro": 3,
+   "terceira": 3,
+   "quarto": 4,
+   "ultimo": -1,
+   "ultima": -1
+  },
+  "andWords": [
+   "e"
+  ],
+  "afterCompletion": [
+   "apos a conclusao",
+   "apos conclusao",
+   "depois de concluir"
+  ],
+  "untilWords": [
+   "ate o",
+   "ate ao",
+   "ate"
+  ],
+  "timesWords": {
+   "before": [
+    "por"
+   ],
+   "after": [
+    "vezes"
+   ]
+  },
+  "remindWords": [
+   "lembre-me",
+   "lembra-me",
+   "me lembre"
+  ],
+  "beforeWords": [
+   "antes"
+  ],
+  "afterWords": [
+   "depois",
+   "apos"
+  ]
+ }
+}

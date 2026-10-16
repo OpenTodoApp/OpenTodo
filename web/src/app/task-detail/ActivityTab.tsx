@@ -12,6 +12,7 @@ import { useOnline } from '../../lib/online'
 import { currentUserId, membershipMap, memberName } from '../../lib/sharing'
 import type { ActivityEvent, ActivityKind, Membership, Task } from '../../lib/types'
 import { Avatar } from '../../ui'
+import { Tooltip } from '../../ui'
 import { Button } from '../../ui'
 import { Icon, type IconName } from '../../ui'
 import { EmptyState } from '../../ui'
@@ -45,13 +46,13 @@ function RunItem({ run, name, project, task, onOpenComment, now }: { run: Activi
   const [open, setOpen] = useState(false)
   const first = run.events[0]
   const actor = name(run.actor, first)
-  const pending = run.pending && <span className="ml-1 text-meta italic text-warning" title="Not yet synced">pending</span>
+  const pending = run.pending && <Tooltip label="Not yet synced"><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>pending</span></Tooltip>
   if (run.type === 'comment') {
     return (
       <div className="flex items-center gap-3 text-meta text-muted" data-run="comment">
         <Avatar id={run.actor || 'unknown'} name={actor} size="sm" />
         <Icon name="message-circle" size="sm" className="shrink-0 text-faint" />
-        <button type="button" className="min-w-0 flex-1 rounded-sm text-left hover:underline focus-visible:outline-2 focus-visible:outline-focus"
+        <button type="button" className="min-w-0 flex-1 rounded-chip text-left hover:underline focus-visible:outline-2 focus-visible:outline-focus"
           onClick={() => onOpenComment(first.entityId)}>
           {summarizeRun(run, actor)}
         </button>
@@ -69,7 +70,7 @@ function RunItem({ run, name, project, task, onOpenComment, now }: { run: Activi
         <div className="min-w-0 flex-1 text-default">
           {many ? (
             <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)}
-              className="inline-flex max-w-full items-start gap-1 rounded-sm text-left hover:underline focus-visible:outline-2 focus-visible:outline-focus">
+              className="inline-flex max-w-full items-start gap-1 rounded-chip text-left hover:underline focus-visible:outline-2 focus-visible:outline-focus">
               <Icon name="chevron-right" size="xs" className={`mt-1 shrink-0 transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />
               <span className="user-text">{summarizeRun(run, actor)}</span>
             </button>

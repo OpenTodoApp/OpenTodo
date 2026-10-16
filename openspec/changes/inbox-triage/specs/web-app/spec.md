@@ -21,6 +21,10 @@ Every primary action SHALL be reachable from the keyboard: `q` quick add, `j`/`k
 - **WHEN** focus is in the Filter view's query input and the user presses `Ctrl+K`
 - **THEN** the palette opens and the query text is kept
 
+#### Scenario: Cheat sheet lists the context
+- **WHEN** the user presses `?` in a project list
+- **THEN** the cheat sheet opens with the list shortcuts first, as specified in `keyboard-shortcuts`
+
 ### Requirement: Command line
 In Normal mode `:` SHALL open a one-line command input with completion over `inbox`, `today`, `upcoming`, `completed`, `settings`, `project <name>` (prefix match), `new <title>`, `triage` (the Inbox triage mode, OpenSpec `inbox-triage`), `q` (close panel or clear selection), `sync` and `help`. Enter runs the command, Escape cancels, and an unknown command SHALL show a message without side effects. Commands that write data SHALL use the same local-first path as the equivalent interface action, so they work offline and converge like any edit.
 

@@ -23,9 +23,9 @@ export interface UnlockViewProps {
 export function UnlockView(p: UnlockViewProps) {
   return (
     <div className="flex min-h-full items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-4 rounded-lg border border-default p-6">
-        <h1 className="text-lg font-semibold">Unlock your tasks</h1>
-        <p className="text-sm text-muted">
+      <div className="w-full max-w-md space-y-4 rounded-control border border-default p-6">
+        <h1 className="text-h3 font-semibold">Unlock your tasks</h1>
+        <p className="text-body text-muted">
           Your account uses end-to-end encryption. Enter your encryption {p.kind === 'passphrase' ? 'passphrase' : 'recovery key'} to
           decrypt your tasks on this device. Sync stays paused until then. You only need to do this once per device.
         </p>
@@ -33,22 +33,22 @@ export function UnlockView(p: UnlockViewProps) {
           e.preventDefault()
           p.onSubmit((e.currentTarget.elements.namedItem('secret') as HTMLInputElement).value)
         }}>
-          <label className="block text-sm">{p.kind === 'passphrase' ? 'Passphrase' : 'Recovery key'}
-            <input className={`input mt-1 ${p.kind === 'recovery' ? 'font-mono' : ''}`} name="secret" type={p.kind === 'passphrase' ? 'password' : 'text'}
+          <label className="block text-body">{p.kind === 'passphrase' ? 'Passphrase' : 'Recovery key'}
+            <input className={`ui-input mt-1 ${p.kind === 'recovery' ? 'font-mono' : ''}`} name="secret" type={p.kind === 'passphrase' ? 'password' : 'text'}
               autoComplete={p.kind === 'passphrase' ? 'current-password' : 'off'} spellCheck={false} autoFocus required />
           </label>
-          {p.error && <p role="alert" className="text-sm text-danger">{p.error}</p>}
-          <button className="btn-primary w-full" disabled={p.busy}>{p.busy ? 'Unlocking…' : 'Unlock'}</button>
+          {p.error && <p role="alert" className="text-body text-danger">{p.error}</p>}
+          <button className="ui-btn ui-btn--primary ui-btn--md w-full" disabled={p.busy}>{p.busy ? 'Unlocking…' : 'Unlock'}</button>
         </form>
-        <div className="flex flex-wrap justify-between gap-2 text-sm">
-          <button type="button" className="btn-ghost" onClick={() => p.onKind(p.kind === 'passphrase' ? 'recovery' : 'passphrase')}>
+        <div className="flex flex-wrap justify-between gap-2 text-body">
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={() => p.onKind(p.kind === 'passphrase' ? 'recovery' : 'passphrase')}>
             {p.kind === 'passphrase' ? 'Use the recovery key instead' : 'Use the passphrase instead'}
           </button>
-          <button type="button" className="btn-ghost" onClick={p.onLogout}>Sign out</button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={p.onLogout}>Sign out</button>
         </div>
         {p.lost
           ? <LostKeysConfirm busy={p.busy} onConfirm={p.onConfirmLost} onCancel={() => p.onLost(false)} />
-          : <button type="button" className="text-xs text-muted underline" onClick={() => p.onLost(true)}>I lost both my passphrase and my recovery key</button>}
+          : <button type="button" className="text-meta text-muted underline" onClick={() => p.onLost(true)}>I lost both my passphrase and my recovery key</button>}
       </div>
     </div>
   )

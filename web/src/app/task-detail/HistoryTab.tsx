@@ -4,6 +4,7 @@
 // readable diffs and restore. Read live from the server; offline it says so and
 // shows nothing stale. Loaded lazily with its tab.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { Skeleton } from '../../ui'
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { isNetworkError } from '../../lib/api'
 import { zoneCity } from '../../lib/dates'
@@ -109,7 +110,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
         <Avatar id={who.id || 'unknown'} name={who.name || who.device} size="md" />
         <div className="min-w-0 flex-1">
           <button type="button" aria-expanded={open} onClick={() => setOpen((x) => !x)}
-            className="inline-flex max-w-full items-start gap-1 rounded-sm text-left text-sm font-medium text-default hover:underline focus-visible:outline-2 focus-visible:outline-focus">
+            className="inline-flex max-w-full items-start gap-1 rounded-chip text-left text-body font-medium text-default hover:underline focus-visible:outline-2 focus-visible:outline-focus">
             <Icon name="chevron-right" size="xs" className={`mt-1 shrink-0 transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />
             <span>{summary}</span>
           </button>
@@ -122,7 +123,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
         <div className="ml-11 mt-2 space-y-2">
           <ul className="space-y-2" aria-label={`Changes: ${summary}`}>
             {v.changes.map((c) => (
-              <li key={c.opIds.join(':')} className={`rounded-control border p-2 text-sm ${c.lost ? 'border-dashed border-input bg-sunken' : 'border-default'}`} data-change={c.field}>
+              <li key={c.opIds.join(':')} className={`rounded-control border p-2 text-body ${c.lost ? 'border-dashed border-input bg-sunken' : 'border-default'}`} data-change={c.field}>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="font-medium text-default">{changeLabel(c.field)}</span>
                   {c.lost && <Badge hue="slate" title="Arrived after a newer change and was never applied">not applied</Badge>}
@@ -167,9 +168,9 @@ export function HistoryView(props: HistoryViewProps) {
   if (state === 'offline') return <EmptyState icon="history" title="History needs a connection to the server" body="The history is read from the server; reconnect to see it." />
   if (state === 'empty') return <EmptyState icon="history" title="No history on the server yet" body="Changes appear here once this task has synced." />
   return (
-    <div className="space-y-3 text-sm">
+    <div className="space-y-3 text-body">
       {state === 'error' && <p role="alert" className="text-meta text-danger">History could not be loaded.</p>}
-      {state === 'loading' && versions.length === 0 && <p className="text-meta text-faint">Loading…</p>}
+      {state === 'loading' && versions.length === 0 && <Skeleton shape="line" count={4} label="Loading history" />}
       {message && <p role="status" className="text-meta text-success">{message}</p>}
       {versions.length > 0 && (
         <ol className="space-y-4" aria-label="Versions">
