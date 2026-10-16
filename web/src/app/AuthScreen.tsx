@@ -32,7 +32,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
   // First-run setup guarded by OPENTODO_SETUP_TOKEN (OpenSpec `owner-bootstrap`).
   const needsSetupToken = !!status.setupRequired && !!status.setupTokenRequired && !invite
   // A hosted service's sign-up link carries the tenant's token as ?setup= (multi-tenant-host).
-  const [setupToken, setSetupToken] = useState(() => new URLSearchParams(location.search).get('setup') ?? '')
+  const [setupToken, setSetupToken] = useState(() => typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('setup') ?? '')
   // Single sign-on (OpenSpec `oidc-login`): the provider action on plain sign-in;
   // SSO-only mode hides local sign-in unless the owner uses `?owner=1`.
   const sso = invite ? { provider: null, local: true, breakGlass: false } : ssoLayout(status, typeof location === 'undefined' ? '' : location.search)
