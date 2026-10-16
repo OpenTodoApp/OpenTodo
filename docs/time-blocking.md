@@ -4,11 +4,13 @@ summary: Estimate how long tasks take, then place them on the Day or Week calend
 audience: user
 section: Guides
 specs: [time-blocking]
-screens: [settings/calendar#adjust-the-grid, calendar#open-the-calendar]
+screens: [settings/calendar#adjust-the-grid]
 order: 60
 card: week
 ---
 # Time blocking
+
+<picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, an Unscheduled lane under each day, and planned hours against an 8-hour day in each day's header."></picture>
 
 A to-do list tells you what to do. A calendar tells you when. Time blocking puts the two together: give tasks an estimate, drop them on the Day or Week calendar, and you can see at a glance whether your day is realistic.
 
@@ -20,52 +22,27 @@ The estimate shows on the task row, like `45m` or `1h 30m`.
 
 ## Open the calendar
 
-Choose **Day** or **Week** in the sidebar, or press <kbd>g</kbd> <kbd>d</kbd> or <kbd>g</kbd> <kbd>w</kbd>.
+Choose **Calendar** in the sidebar, then **Day**, **Week** or **Month** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd> or <kbd>g</kbd> <kbd>m</kbd>. Timed tasks are blocks as tall as their estimate; dated tasks without a time wait in the **Unscheduled** lane. See [Day, Week and Month](calendar-views.md#open-the-calendar).
 
-<picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, an Unscheduled lane under each day, and planned hours against an 8-hour day in each day's header."></picture>
+## See the month
 
-- Tasks with a date **and** a time appear as blocks at that time. The block is as tall as the estimate.
-- A timed task without an estimate gets a 30-minute block with a dashed outline.
-- Tasks with a date but no time wait in the **Unscheduled** lane at the top of their day.
-- A red line marks the current time.
+**Month** shows six weeks at a glance, each day with its open tasks and planned total. Drag a task onto another day to move it. See [See the month](calendar-views.md#see-the-month).
 
-Use **‹** and **›** (or <kbd>[</kbd> and <kbd>]</kbd>) to go back and forward, and **Today** (or <kbd>t</kbd>) to come back.
+## Plan a project on a timeline
 
-The Week view starts on your first day of the week, and the hours and block times follow your time format (`9 AM` or `09:00`). Both are set in **Settings → General → Date and time** and follow you to all your devices. Moving a block still sets the same time; only how it is shown changes.
+For work that spans weeks, such as a move, a launch or a trip, switch the project to **Timeline**. Each task is a bar from its start to its deadline, so overlaps and gaps are easy to see, and you can drag bars to reschedule. See [Sections and boards](sections-and-boards.md).
 
 ## Place a task on the calendar
 
-Drag a task from the Unscheduled lane onto a time slot. Its due date and time become that slot. The grid works in 15-minute steps.
-
-To plan from your lists, open the side list with **Plan from a list** and drag tasks from there onto the calendar.
-
-To change how long something takes, drag the bottom edge of its block. Dropping a block back on the Unscheduled lane keeps the date and removes the time.
-
-### With the keyboard
-
-Every move works without a mouse.
-
-1. In Today, a project or any list, select a task and press <kbd>s</kbd>. The Day view opens with the task ready to place.
-2. Move it with the arrow keys: <kbd>↑</kbd> / <kbd>↓</kbd> by 15 minutes, <kbd>←</kbd> / <kbd>→</kbd> by a day.
-3. Press <kbd>Enter</kbd> to place it, or <kbd>Esc</kbd> to cancel.
-
-On the calendar itself, <kbd>j</kbd> / <kbd>k</kbd> select tasks, the arrows move the selected one, <kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>Shift</kbd>+<kbd>↓</kbd> shorten or lengthen it, and <kbd>u</kbd> takes it off the grid while keeping its date.
+Drag a task from the Unscheduled lane onto a time slot, or select it in any list and press <kbd>s</kbd> to place it with the keyboard. Drag the bottom edge of a block to change how long it takes. See [Place tasks on the calendar](place-tasks-on-the-calendar.md#place-a-task-on-the-calendar).
 
 ## See whether the day fits
 
-Each day's header adds up the estimates of its open tasks and compares them with your day length, for example `4h 15m / 8h`. When you've planned more than the day holds, the header is marked as over capacity. That's your cue to move something.
-
-Tasks that overlap in time are shown side by side, with a marker, so nothing hides behind something else.
-
-Completing a task removes its block and lowers the day's total.
-
-<picture><source srcset="images/day-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/day-light.webp" alt="The Day calendar with the day's tasks as blocks between morning and evening."></picture>
+Each day's header adds up the estimates of its open tasks against your day length, for example `4h 15m / 8h`, and is marked when you've planned more than the day holds. See [See whether the day fits](place-tasks-on-the-calendar.md#see-whether-the-day-fits).
 
 ## See your other calendars
 
-When the server owner has turned on [calendar feeds](calendar-feeds.md), you can subscribe to your Google, Outlook or Apple calendars under **Settings → Integrations → Calendar feeds**. Their events then appear in Day and Week: timed events as blocks in the calendar's colour beside your tasks, and all-day events as chips above the unscheduled lane. An event that overlaps a task gets the same overlap marker, so you can see a clash at a glance. Events never count toward the day's total.
-
-Events are read-only. You can't drag, resize or complete them, but you can tab onto one and press Enter to read its time, location and calendar. The **Calendars** button in the toolbar hides them on this device. Offline, the calendar shows the events from the last refresh.
+When the server owner has turned on [calendar feeds](calendar-feeds.md), events from your Google, Outlook or Apple calendars appear in Day and Week beside your tasks: read-only, marked when they overlap a task, and never counted in the day's total. See [Other calendars in Day and Week](other-calendars.md).
 
 ## Adjust the grid
 

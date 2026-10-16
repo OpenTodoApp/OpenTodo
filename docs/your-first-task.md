@@ -1,0 +1,59 @@
+---
+title: Your first task
+summary: The card the Inbox shows on your first visit, adding a task, giving it a date as you type, completing it, and getting the app on your phone.
+audience: user
+section: Get started
+specs: [task-management]
+screens: []
+order: 11
+---
+# Your first task
+
+<picture><source srcset="images/quick-add-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/quick-add-light.webp" alt="Quick add with the line Call Sam about the tiles tomorrow at 4pm #Home @call p2 +15m, and chips for the date, project, label, priority and estimate below it."></picture>
+
+You are signed in (see [Getting started](getting-started.md)). This page adds a task, gives it a date and ticks it off.
+
+## Your first visit
+
+The first time an account opens the app, the Inbox shows a short card with three steps instead of an empty list: add your first task, choose light or dark, and install the app. Every step has a **Skip** button, and **Skip all** closes the card at once. It never comes back on that account, on any of your devices.
+
+The card also offers **Show me around**. It creates one project, "Show me around", with six tasks that demonstrate a date, a deadline, a label, a subtask, a repeat and notes. They are ordinary tasks: edit them, complete them, or delete the project when you are done and it goes to the Trash like any other.
+
+## Add your first task
+
+1. Press <kbd>q</kbd>, or click the **Add a task** box at the top of the list.
+2. Type what you need to do, for example `Call the dentist`.
+3. Press <kbd>Enter</kbd>.
+
+The task appears straight away. The box stays open, so you can type the next one right after.
+
+Where the task goes depends on where you are: in a project it goes into that project, in Today it's due today, and in the Inbox it waits there until you sort it.
+
+## Give it a date
+
+You can schedule a task while you type it. Quick add understands everyday words:
+
+```
+Call the dentist tomorrow at 9am
+```
+
+As you type, small chips appear under the box to show what OpenTodo understood: a date chip for "tomorrow at 9am", and below them the title that will be saved. If a word was picked up by mistake ("May" as in the name, not the month), click the **×** on its chip and it stays part of the title.
+
+The same line can also set a project with `#`, a label with `@`, a priority from `p1` (highest) to `p4`, and how long it will take with `+`, like `+15m`. The [quick add reference](quick-add.md) lists everything it understands, in six languages.
+
+To change the date later, open the task (click it, or select it and press <kbd>Enter</kbd>) and use **Due** in the panel that opens.
+
+## Complete it
+
+When you're done, click the circle next to the task, or select it with <kbd>j</kbd> and <kbd>k</kbd> and press <kbd>c</kbd>. The task leaves the list and moves to **Completed** in the sidebar. Changed your mind? Open Completed and reopen it.
+
+## Get it on your phone
+
+OpenTodo runs in the browser, and you can install it like an app on your phone, tablet or computer. It then opens in its own window and works offline. See [Installing the app](install-app.md).
+
+## Where to go next
+
+- [Tasks and projects](tasks-and-projects.md): notes, subtasks, priorities and organising your work.
+- [Views](views.md): Today, Upcoming, the calendar and views you save yourself.
+- [Recurring tasks and reminders](recurring-and-reminders.md): repeat a task every week and get a nudge on time.
+- [Keyboard shortcuts](keyboard.md): press <kbd>?</kbd> in the app to see them all.

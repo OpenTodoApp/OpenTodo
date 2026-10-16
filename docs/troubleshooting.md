@@ -10,69 +10,53 @@ card: signin
 ---
 # Troubleshooting and FAQ
 
-Most problems have a quick fix. Start with the section that matches what you see. If nothing here helps, the person who runs your server can look at its logs, or you can [open an issue](https://github.com/pixari/opentodo/issues) on GitHub.
+<picture><source srcset="images/sync-status-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/sync-status-light.webp" alt="The status at the top right reads Offline · 12 pending, above an Inbox with the duration filter chips."></picture>
+
+Most problems have a quick fix. Start with the section that matches what you see; each links to the full steps. If nothing helps, whoever runs your server can look at its logs, or you can [open an issue](https://github.com/pixari/opentodo/issues) on GitHub.
 
 ## A task seems to be missing
 
-Check these places, in this order:
-
-1. **A duration filter.** If **Quick wins**, **Under 30 min**, **Over 1 h** or **Unestimated** is on, a chip with that name sits in the list's header and the list shows only matching tasks. Clear it with the chip's × or from the **Filter** action.
-2. **Completed.** It may have been ticked off by accident. Open **Completed** and reopen it.
-3. **Trash.** It may have been deleted, or its project was. See [Trash and history](trash-and-history.md).
-4. **An archived project.** Tasks of archived projects don't appear in Today or Upcoming.
-5. **A folded parent or section.** Select the small arrow to unfold it.
-6. **A shared project you left** or were removed from. Ask its owner.
-
-The **Filter** view with `search: word` (add `& completed` to include finished tasks) searches titles and notes.
+Look for a duration filter chip in the list's header, then in **Completed**, the Trash, archived projects and folded parents. [Where to look, in order](troubleshooting-sync.md#a-task-seems-to-be-missing).
 
 ## Changes don't show up on my other device
 
-- Look at the status at the top right of both devices. **Offline · 3 pending** means the changes are still waiting on that device; they're sent as soon as it's online.
-- Click the status to sync right away.
-- **Sync error**: hover over it to see the reason. If the server is down or being updated, it clears up once the server is back.
-- **Signed out**: your session ended. Sign in again; waiting changes are sent afterwards.
-- **Locked**: your account uses [encryption](e2ee.md). Enter your passphrase on that device.
-
-See [Offline and sync](offline-and-sync.md) for what each status means.
+**Offline · 3 pending** at the top right means the changes are still waiting on that device; click the status to sync right away. [What Sync error, Signed out and Locked mean](troubleshooting-sync.md#changes-dont-show-up-on-my-other-device).
 
 ## I can't sign in
 
-- Check the email address and that Caps Lock is off. Passwords are at least 10 characters.
-- After several failed attempts, the server makes you wait a little before trying again.
-- **Forgot your password?** OpenTodo doesn't send reset emails. Ask the owner or an admin of your server for a reset link. If you are the owner, see [recovering owner access](self-hosting/docker.md#recovering-owner-access).
-- **Lost your two-factor phone?** Use one of your recovery codes instead of the code. Without them, the server owner can reset your two-factor authentication.
+Check the email address and that Caps Lock is off. OpenTodo doesn't send reset emails: ask the owner or an admin of your server. [Forgotten passwords, two-factor phones and the owner account](troubleshooting-sync.md#i-cant-sign-in).
 
 ## The demo says my sandbox expired
 
-Demo sandboxes are deleted after two hours without activity, after 24 hours at most, and every night. Select **Start a new sandbox** to get a fresh one. Nothing from the old sandbox is kept.
+Sandboxes are deleted after two hours without activity. Select **Start a new sandbox**. [How long a sandbox lasts](troubleshooting-sync.md#the-demo-says-my-sandbox-expired).
 
 ## Reminders don't arrive
 
-Inside the app, reminders pop up while it's open. To get them when the app is closed, push notifications must be turned on for each device in **Settings → Notifications**, and on an iPhone only the installed app can receive them. [Notifications](notifications.md#when-notifications-dont-arrive) lists the messages you might see and what to do.
+Push notifications must be on for each device in **Settings → Notifications**. [What to check, and iPhones](troubleshooting-app.md#reminders-dont-arrive).
 
 ## I can't install the app or add a passkey
 
-Both need your server to be on a secure `https://` address. If the browser offers no install option, or **Settings** has no Security section for passkeys, ask whoever runs your server. Instructions per device are in [Installing the app](install-app.md).
+Both need your server to be on a secure `https://` address. [What to ask whoever runs your server](troubleshooting-app.md#i-cant-install-the-app-or-add-a-passkey).
 
 ## Quick add got it wrong
 
-If a word was read as a date, project or priority by mistake, select the **×** on its chip before you press <kbd>Enter</kbd>, or press <kbd>Backspace</kbd> twice at the end of the line. Text in double quotes is never interpreted: `Read "Next Friday"`. You can also switch parsing off in **Settings → Capture → Quick add**. See [Quick add syntax](quick-add.md#preview-chips).
+Select the **×** on the wrong chip, or put the words in double quotes: `Read "Next Friday"`. [More ways to stop it](troubleshooting-app.md#quick-add-got-it-wrong).
 
 ## I can't edit a shared project
 
-Your role in that project is **viewer**, which is read-only. Ask the owner or an admin to make you an editor. See [Sharing and comments](sharing.md#choose-a-role).
+Your role in that project is **viewer**, which is read-only. [Who can change it](troubleshooting-sync.md#i-cant-edit-a-shared-project).
 
 ## I can't share a project with someone
 
-You can only add people who have an account on your server. Ask an admin of the server to [invite them](sharing.md#invite-someone-new) first. Accounts with end-to-end encryption turned on can't share new projects.
+You can only add people who have an account on your server. [Invitations and encrypted accounts](troubleshooting-sync.md#i-cant-share-a-project-with-someone).
 
 ## The app looks out of date
 
-The app updates itself when your server is updated. If something still looks old, close it completely (all tabs or the installed window) and open it again.
+The app updates itself when your server is updated. [What to do if something still looks old](troubleshooting-app.md#the-app-looks-out-of-date).
 
 ## Something went wrong on screen
 
-If a part of the app fails to display, you see a message with a **Reload** button. Your tasks are stored on the device and aren't lost by reloading.
+If a part of the app fails to display, you see a message with a **Reload** button. [Why reloading is safe](troubleshooting-app.md#something-went-wrong-on-screen).
 
 ## Frequently asked questions
 
@@ -90,7 +74,7 @@ No. OpenTodo is a web app that you install from your server's address, and it th
 
 ### Can I use OpenTodo on my own, without a server?
 
-OpenTodo needs a server to sign in and sync, but it can be small: a single container on a Raspberry Pi or a cheap virtual server is enough. To try it first, use the [demo](https://demo.open-todo.app). Setting up a server is described in [Running with Docker](self-hosting/docker.md).
+OpenTodo needs a server to sign in and sync, but it can be small: a single container on a Raspberry Pi or a cheap virtual server is enough. To try it first, use the [demo](https://demo.open-todo.app). See [Running with Docker](self-hosting/docker.md).
 
 ### Can I move my tasks from another task app?
 

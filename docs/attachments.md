@@ -9,6 +9,8 @@ order: 35
 ---
 # Attachments
 
+<picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right, showing the task's title, notes and properties; attachments are added further down the panel."></picture>
+
 A task, or a comment on it, can carry files and links: a receipt, a photo of a whiteboard, a PDF, the link to a design. Open a task and use **Attachments** below its subtasks, or the paperclip in the comment box.
 
 ## Add a file or a link

@@ -3,12 +3,14 @@ title: Account security
 summary: Sign in with a passkey, add two-factor authentication, change your password and check where your account is signed in.
 audience: user
 section: Guides
-specs: [account-access, passkey-auth, mfa, user-administration]
-screens: [settings/password#change-your-password, settings/two-factor#turn-on-two-factor-authentication, settings/security#sign-in-with-a-passkey, settings/sessions#check-recent-sign-ins]
+specs: [account-access, passkey-auth, user-administration]
+screens: [settings/password#change-your-password, settings/security#sign-in-with-a-passkey, settings/sessions#check-recent-sign-ins]
 order: 110
 card: settings-security
 ---
 # Account security
+
+<picture><source srcset="images/settings-passkeys-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-passkeys-light.webp" alt="Settings, Security section with the Passkeys card and an Add passkey button."></picture>
 
 Your password is the starting point. A passkey makes signing in quicker and safer, and two-factor authentication adds a second lock. All of it lives in **Settings**, and none of it involves anyone outside your server.
 
@@ -22,8 +24,6 @@ A passkey lets you sign in with your fingerprint, face or device PIN instead of 
 2. Select **Add passkey** and give it a name you'll recognise, like "Work laptop".
 3. Confirm with your fingerprint, face or PIN when your device asks.
 
-<picture><source srcset="images/settings-passkeys-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-passkeys-light.webp" alt="Settings, Security section with the Passkeys card and an Add passkey button."></picture>
-
 Next time, choose **Sign in with a passkey** on the sign-in screen, or pick it from the suggestions in the email field.
 
 <picture><source srcset="images/signin-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/signin-light.webp" alt="The sign-in screen with email and password fields and a Sign in with a passkey button below."></picture>
@@ -34,28 +34,15 @@ If you don't see the Security section, passkeys aren't available on your server.
 
 ## Turn on two-factor authentication
 
-With two-factor authentication, signing in takes your password plus a six-digit code from an authenticator app on your phone. Any app that supports time-based codes works.
-
-1. Open **Settings → Account → Two-factor authentication** and select **Set up two-factor authentication**.
-2. Scan the QR code with your authenticator app, or type in the key shown under it.
-3. Enter the six-digit code the app shows.
-4. Save the **recovery codes** that appear. They're shown only once: download them as a text file or write them down and keep them somewhere safe.
-
-<picture><source srcset="images/settings-security-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-security-light.webp" alt="Settings, Two-factor authentication section with the status Off and a Set up two-factor authentication button."></picture>
-
-From then on, sign-in asks for a code after your password. Signing in with a passkey skips the code, because the passkey already checks it's you.
+With two-factor authentication, signing in takes your password plus a six-digit code from an authenticator app on your phone. Set it up under **Settings → Account → Two-factor authentication** and save the recovery codes it shows once. Signing in with a passkey skips the code. The steps are in [Two-factor authentication](two-factor.md).
 
 ### Remember this browser
 
-When you enter a code, you can tick **Remember this device for 30 days** so that browser doesn't ask again for a month. The list of remembered browsers is under **Two-factor authentication**, where you can forget them.
+When you enter a code, tick **Remember this device for 30 days** and that browser won't ask again for a month. See [Remember this browser](two-factor.md#remember-this-browser).
 
 ### Recovery codes
 
-Each recovery code works once, in place of a code from the app. Use one if you lose your phone. Settings shows how many you have left and lets you generate a new set, which replaces the old one.
-
-If you lose both your phone and your recovery codes, the owner of your server can reset your two-factor authentication.
-
-Your server's owner can also make two-factor authentication required. If so, you'll be asked to set it up when you sign in, and you can't turn it off.
+Each recovery code works once, in place of a code from the app, if you lose your phone. See [Recovery codes](two-factor.md#recovery-codes).
 
 ## Change your password
 

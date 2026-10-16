@@ -10,6 +10,8 @@ card: board
 ---
 # Sections and boards
 
+<picture><source srcset="images/board-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/board-light.webp" alt="The Q4 launch project as a board with the columns No section, Backlog, This week and Review."></picture>
+
 Sections divide a project into parts, like "Planning", "In progress" and "Waiting", or "Kitchen", "Bathroom" and "Garden". The same project can be shown as a list with headings or as a board with one column per section.
 
 ## Add a section
@@ -38,7 +40,6 @@ Fold a section with the small arrow next to its name. Folding is remembered on t
 
 At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. Press <kbd>v</kbd> again, or choose **List**, to switch back.
 
-<picture><source srcset="images/board-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/board-light.webp" alt="The Q4 launch project as a board with the columns No section, Backlog, This week and Review."></picture>
 
 The choice is remembered for each project on each device. Your laptop can show "Q4 launch" as a board while your phone shows it as a list. On a phone the board shows one column at a time: swipe sideways to the next, or tap one of the dots above the columns; the column's name is shown under the project's name. "No section" appears as a column only while it has open tasks.
 
