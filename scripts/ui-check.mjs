@@ -1,7 +1,10 @@
 // Design-system check (OpenSpec change ui-primitives, design D10), run by
 // `make check`:
 //   1. every component file in web/src/ui has a sibling *.stories.tsx,
-//   2. no emoji or Unicode glyph is used as an icon in web/src/app (use <Icon>).
+//   2. no emoji or Unicode glyph is used as an icon in web/src/app (use <Icon>),
+//   3. no user-facing text in web/src/app and web/src/ui bypasses the message layer
+//      (OpenSpec change app-localization, design D8; scripts/i18n/untranslated.mjs,
+//      exceptions in scripts/i18n/allow.txt).
 // A glyph counts as an icon when it stands alone in a string or JSX text, starts or
 // ends a label ("✓ Complete", "Next ›"), or is a trigger=/icon= prop. Typography
 // inside copy ("Settings → Integrations", "2 × 3") is fine.
@@ -10,6 +13,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { untranslated } from './i18n/untranslated.mjs'
 
 const repo = fileURLToPath(new URL('..', import.meta.url))
 const walk = (dir) => readdirSync(dir).flatMap((n) => {
@@ -61,6 +65,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     ...storyProblems(),
     ...walk(app).filter((f) => f.endsWith('.tsx') && !/\.test\.tsx$/.test(f))
       .flatMap((f) => iconProblems(relative(repo, f), readFileSync(f, 'utf8'))),
+    ...untranslated().map((p) => `${p} (untranslated: wrap it in t() or add it to scripts/i18n/allow.txt)`),
   ]
   if (problems.length) {
     console.error(`ui-check: ${problems.length} problem(s)\n${problems.map((p) => `  - ${p}`).join('\n')}`)

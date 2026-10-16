@@ -1,4 +1,5 @@
 import { Icon, type IconName, PageBody, PageHeader } from '../../ui'
+import { EnglishGuideNote } from './EnglishGuideNote'
 import { Skeleton } from '../../ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { findTopic, helpSections, loadHelp, searchHelp, type HelpBundle } from '../../lib/help'
@@ -78,6 +79,7 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
       {page
         ? <PageHeader title={page.title} meta={version} back={back} />
         : <PageHeader title={t('Help')} meta={version} />}
+      <EnglishGuideNote />
       <div role="search" className="relative max-w-xl">
         <label className="sr-only" htmlFor="help-search">{t('Search help')}</label>
         <input id="help-search" ref={searchRef} type="search" className="ui-input w-full" placeholder={t('Search help, e.g. board, repeat, offline')} value={query}

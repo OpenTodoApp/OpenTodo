@@ -1,4 +1,5 @@
 import { Icon } from '../../ui'
+import { EnglishGuideNote } from './EnglishGuideNote'
 import { Skeleton } from '../../ui'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -49,7 +50,8 @@ export function HelpPanel({ screen, trigger, onClose }: { screen: string; trigge
         <div className="px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
           {failed && <p className="text-body text-muted">{t('Help could not be loaded. Reload the app and try again.')}</p>}
           {!failed && !page && <Skeleton shape="line" count={6} label={t('Loading the guide')} />}
-          {page && <HelpContent page={page} anchor={at?.anchor} onOpen={(slug, anchor) => setAt({ slug, anchor })} />}
+          {page && <EnglishGuideNote />}
+          {page && <div lang="en"><HelpContent page={page} anchor={at?.anchor} onOpen={(slug, anchor) => setAt({ slug, anchor })} /></div>}
         </div>
       </div>
     </div>

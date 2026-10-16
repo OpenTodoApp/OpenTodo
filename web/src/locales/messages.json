@@ -3679,6 +3679,9 @@
   "Integrations": [
     "web/src/app/settingsSections.ts"
   ],
+  "Interface language": [
+    "web/src/app/PreferencesPanels.tsx"
+  ],
   "Invalid date \"{date}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
@@ -3906,6 +3909,7 @@
     "web/src/lib/assistant.ts"
   ],
   "Language": [
+    "web/src/app/PreferencesPanels.tsx",
     "web/src/app/settingsIndex.ts"
   ],
   "Language, start view, date and time, calendar and keyboard": [
@@ -4130,6 +4134,9 @@
   "Loading the guide": [
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/help/HelpView.tsx"
+  ],
+  "Loading the language…": [
+    "web/src/app/PreferencesPanels.tsx"
   ],
   "Loading the list…": [
     "web/src/app/PublicListScreen.tsx"
@@ -7631,6 +7638,9 @@
   "System (as this browser)": [
     "web/src/app/DateTimeSettings.tsx"
   ],
+  "System ({language})": [
+    "web/src/app/PreferencesPanels.tsx"
+  ],
   "System ({weekdayName})": [
     "web/src/app/DateTimeSettings.tsx"
   ],
@@ -7916,6 +7926,9 @@
   "The filter is pinned to the sidebar under Filters.": [
     "web/src/app/FilterView.tsx"
   ],
+  "The guide is in English.": [
+    "web/src/app/help/EnglishGuideNote.tsx"
+  ],
   "The guide to the task panel": [
     "web/src/app/task-detail/TaskDetail.tsx"
   ],
@@ -7928,8 +7941,14 @@
   "The invitation was sent to {sentTo}.": [
     "web/src/app/MembersPanel.tsx"
   ],
+  "The language could not be loaded on this device. Your choice is saved and applies as soon as it can be loaded, for example when you are back online.": [
+    "web/src/app/PreferencesPanels.tsx"
+  ],
   "The language of the app on all your devices": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "The language of the app on all your devices. Your tasks are not translated.": [
+    "web/src/app/PreferencesPanels.tsx"
   ],
   "The last attempt failed ({outcome}); it is retried for six hours": [
     "web/src/app/DigestCard.tsx"

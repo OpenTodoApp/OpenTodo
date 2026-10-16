@@ -28,7 +28,7 @@ import { CaldavPanel } from './CaldavPanel'
 import { CalendarFeedsPanel } from './CalendarFeedsPanel'
 import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
-import { KeyboardSection, StartViewSection } from './PreferencesPanels'
+import { KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
 import { AutoArchiveSection } from './ProjectsSettings'
 import { CaptureSection } from './CaptureSettings'
 import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
@@ -285,6 +285,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
     case 'general':
       return (
         <>
+          <LanguageSection />
           <StartViewSection />
           <DateTimeSection />
           <CalendarSettingsSection />

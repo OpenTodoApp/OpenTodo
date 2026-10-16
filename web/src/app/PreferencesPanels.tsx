@@ -1,4 +1,12 @@
 // Settings → General panels (OpenSpec settings-navigation, settings-redesign D3).
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../lib/db'
+import { readLanguage, setUserPref, USER_PREFS_ID } from '../lib/userPrefs'
+import type { LanguagePref } from '../lib/types'
+import { SHIPPED, nativeName } from '../locales'
+import { Notice } from '../ui'
+import { HelpLink } from './help/HelpLink'
+import { useLanguageStatus, type LanguageStatus } from './LanguageProvider'
 import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
@@ -8,7 +16,42 @@ import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
 import { setShortcutHints, useShortcutHints } from './shortcuts/hints'
 import { Kbd } from './shortcuts/Kbd'
-import { t } from '../lib/i18n'
+import { resolveLanguage, t } from '../lib/i18n'
+
+/** Settings → General → Language (OpenSpec app-localization, design D9): synced, applied without a reload. */
+export function LanguageSection() {
+  const row = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
+  const status = useLanguageStatus()
+  return <LanguageView value={readLanguage(row)} system={nativeName(resolveLanguage('system'))} status={status}
+    onChange={(v) => void setUserPref('language', v)} />
+}
+
+/** Presentational part of the Language panel, rendered without effects for tests and stories. */
+export function LanguageView({ value, system, status = 'ready', onChange }: {
+  value: LanguagePref
+  /** The language `System` resolves to, in its own name. */
+  system: string
+  status?: LanguageStatus
+  onChange: (v: LanguagePref) => void
+}) {
+  return (
+    <SettingsSection title={t('Language')} headingId="language-heading"
+      description={<>{t('The language of the app on all your devices. Your tasks are not translated.')}{' '}<HelpLink screen="settings/language" topic={t('Language')} /></>}>
+      <SettingRow label={t('Interface language')} htmlFor="language-select" control={
+        <Select id="language-select" className="sm:w-56" value={value} onChange={(e) => onChange(e.target.value as LanguagePref)}>
+          <option value="system">{t('System ({language})', { language: system })}</option>
+          {SHIPPED.map((l) => <option key={l.code} value={l.code} lang={l.code}>{l.name}</option>)}
+        </Select>
+      } />
+      {status === 'loading' && <p className="pt-2 text-meta text-muted" role="status" data-language-status="loading">{t('Loading the language…')}</p>}
+      {status === 'failed' && (
+        <div className="pt-2" data-language-status="failed">
+          <Notice tone="danger">{t('The language could not be loaded on this device. Your choice is saved and applies as soon as it can be loaded, for example when you are back online.')}</Notice>
+        </div>
+      )}
+    </SettingsSection>
+  )
+}
 
 export function StartViewSection() {
   const views = useViews()
