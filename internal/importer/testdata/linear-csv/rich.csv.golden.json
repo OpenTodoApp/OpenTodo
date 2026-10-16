@@ -1,0 +1,155 @@
+{
+  "format": "linear-csv",
+  "notes": [],
+  "totals": {
+    "rows": 11,
+    "create": 11,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 3,
+    "newProjects": 2,
+    "newLabels": 3,
+    "newSections": 6,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 0,
+    "entities": 20,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": [
+    {
+      "projectId": "id-0001",
+      "view": "board"
+    },
+    {
+      "projectId": "id-0002",
+      "view": "board"
+    }
+  ],
+  "rows": [
+    {
+      "row": 2,
+      "sourceId": "linear:project:00000000-0000-4000-8000-000000000102",
+      "kind": "project",
+      "title": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "linear:ENG-101",
+      "kind": "task",
+      "title": "Urgent issue",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "linear:ENG-102",
+      "kind": "task",
+      "title": "High issue with labels",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "linear:ENG-103",
+      "kind": "task",
+      "title": "Medium issue assigned to someone else",
+      "project": "Project 1",
+      "outcome": "create",
+      "warnings": [
+        "assignee dropped (only your own account can be assigned by an import)"
+      ]
+    },
+    {
+      "row": 5,
+      "sourceId": "linear:ENG-104",
+      "kind": "task",
+      "title": "Low sub-issue",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "linear:ENG-105",
+      "kind": "task",
+      "title": "Completed issue",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "sourceId": "linear:ENG-106",
+      "kind": "task",
+      "title": "Canceled issue",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "sourceId": "linear:ENG-107",
+      "kind": "task",
+      "title": "Issue with estimate and cycle",
+      "project": "Project 1",
+      "outcome": "create",
+      "warnings": [
+        "estimate (points) dropped (not supported)",
+        "cycle dropped (not supported)"
+      ]
+    },
+    {
+      "row": 9,
+      "sourceId": "linear:ENG-108",
+      "kind": "task",
+      "title": "Issue with milestone and relations",
+      "project": "Project 1",
+      "outcome": "create",
+      "warnings": [
+        "milestone dropped (not supported)",
+        "relations dropped (not supported)"
+      ]
+    },
+    {
+      "row": 10,
+      "sourceId": "linear:team:Team 1",
+      "kind": "project",
+      "title": "Team 1",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "linear:ENG-109",
+      "kind": "task",
+      "title": "Team issue without a project",
+      "project": "Team 1",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0006: name=\"label1\" created_at=1791979200000",
+    "label id-0007: name=\"label2\" created_at=1791979200000",
+    "label id-0015: name=\"canceled\" created_at=1791979200000",
+    "project id-0001: name=\"Project 1\" archived=false created_at=1791979200000",
+    "project id-0002: name=\"Team 1\" archived=false created_at=1791979200000",
+    "section id-0004: name=\"Todo\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0008: name=\"In Progress\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0011: name=\"Backlog\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0013: name=\"Done\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0016: name=\"Canceled\" project_id=\"id-0001\" created_at=1791979200000",
+    "section id-0020: name=\"Triage\" project_id=\"id-0002\" created_at=1791979200000",
+    "task id-0003: title=\"Urgent issue\" description=\"ENG-101\" priority=1 created_at=1790845200000 project_id=\"id-0001\" due={\"date\":\"2026-10-21\"} assignee_id=\"user-1\" labels=[] section_id=\"id-0004\"",
+    "task id-0005: title=\"High issue with labels\" description=\"ENG-102\\n\\nSays \\\"quoted\\\" text\" priority=2 created_at=1790845200000 project_id=\"id-0001\" labels=[\"id-0006\",\"id-0007\"] section_id=\"id-0008\"",
+    "task id-0009: title=\"Medium issue assigned to someone else\" description=\"ENG-103\" priority=3 created_at=1790845200000 project_id=\"id-0001\" labels=[] section_id=\"id-0004\"",
+    "task id-0010: title=\"Low sub-issue\" description=\"ENG-104\" priority=4 created_at=1790845200000 project_id=\"id-0001\" parent_id=\"id-0003\" labels=[] section_id=\"id-0011\"",
+    "task id-0012: title=\"Completed issue\" description=\"ENG-105\" priority=4 created_at=1790845200000 project_id=\"id-0001\" completed_at=1791201600000 labels=[] section_id=\"id-0013\"",
+    "task id-0014: title=\"Canceled issue\" description=\"ENG-106\" priority=4 created_at=1790845200000 project_id=\"id-0001\" completed_at=1791288000000 labels=[\"id-0015\"] section_id=\"id-0016\"",
+    "task id-0017: title=\"Issue with estimate and cycle\" description=\"ENG-107\" priority=3 created_at=1790845200000 project_id=\"id-0001\" labels=[] section_id=\"id-0004\"",
+    "task id-0018: title=\"Issue with milestone and relations\" description=\"ENG-108\" priority=4 created_at=1790845200000 project_id=\"id-0001\" labels=[] section_id=\"id-0011\" blocked_by=[\"id-0005\"]",
+    "task id-0019: title=\"Team issue without a project\" description=\"ENG-109\" priority=4 created_at=1790845200000 project_id=\"id-0002\" labels=[] section_id=\"id-0020\""
+  ]
+}

@@ -185,6 +185,8 @@ type PurgeResult struct {
 	Reminders int `json:"reminders"`
 	// Sections of purged projects (board-view).
 	Sections int `json:"sections"`
+	// Custom field definitions of purged projects (custom-fields); additive.
+	Fields int `json:"fields"`
 	// Comments of purged tasks (comments-and-activity); additive.
 	Comments int `json:"comments"`
 	// Attachments of purged tasks and removed attachments past retention
@@ -492,6 +494,8 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 			res.Reminders++
 		case "section":
 			res.Sections++
+		case "field":
+			res.Fields++
 		case "comment":
 			res.Comments++
 		case "attachment":
@@ -581,6 +585,15 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		}
 		for _, id := range sections {
 			add(purgeTarget{t.scope, "section", id})
+		}
+		// So do its custom field definitions (custom-fields); the values are
+		// task fields and go with the tasks.
+		defs, err := childIDsWhere(ctx, tx, t.scope, "field", "project_id", t.id, false)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range defs {
+			add(purgeTarget{t.scope, "field", id})
 		}
 		// Every member's personal preferences for the project (activity-feed D1)
 		// go too; each lives in its owner's personal scope.

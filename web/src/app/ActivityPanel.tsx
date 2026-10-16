@@ -14,6 +14,7 @@ import { AuditPanel, type LogStatus, NeedsConnection } from './AuditPanel'
 import { AUDIT_LABELS, eventSummary, shortAgent } from './auditFormat'
 import { relativeTime } from './SecurityPanel'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t } from '../lib/i18n'
 
 /**
  * Every user's own recent access events (sign-ins, failed sign-ins against the
@@ -69,22 +70,22 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
   const dt = useDateTimeFormat()
   return (
     <SettingsSection
-      title="Recent activity"
+      title={t('Recent activity')}
       headingId="activity-heading"
       testId="activity-panel"
-      description="Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server."
+      description={t('Sign-ins and token changes on your account over the last 90 days. If you see one you do not recognise, revoke your API tokens and tell the owner of this server.')}
     >
       {status === 'offline' ? (
-        <NeedsConnection what="activity log" />
+        <NeedsConnection what={t('activity log')} />
       ) : (
         <>
           {status === 'error' && <Notice tone="danger">{error}</Notice>}
-          {status === 'loading' && events.length === 0 && <Skeleton shape="line" count={4} label="Loading activity" />}
+          {status === 'loading' && events.length === 0 && <Skeleton shape="line" count={4} label={t('Loading activity')} />}
           {status === 'ready' && events.length === 0 && (
-            <EmptyState icon="history" title="No recent activity." body="Sign-ins and token changes on your account will show up here." />
+            <EmptyState icon="history" title={t('No recent activity.')} body={t('Sign-ins and token changes on your account will show up here.')} />
           )}
           {events.length > 0 && (
-            <div className="-mx-3 space-y-0.5" role="list" aria-label="Recent activity">
+            <div className="-mx-3 space-y-0.5" role="list" aria-label={t('Recent activity')}>
               {events.map((ev) => {
                 const failed = ev.outcome === 'failure'
                 const summary = eventSummary(ev)
@@ -103,7 +104,7 @@ export function ActivityView({ status, events, error, now = Date.now() }: { stat
                           {ev.ip ? ` · ${ev.ip}` : ''}
                         </span>
                       }
-                      badges={failed ? <Badge hue="red">Failed</Badge> : undefined}
+                      badges={failed ? <Badge hue="red">{t('Failed')}</Badge> : undefined}
                     />
                   </div>
                 )

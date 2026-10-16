@@ -196,7 +196,7 @@ func tokenize(src []rune) ([]token, error) {
 }
 
 var (
-	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "blocked": true, "unblocked": true}
+	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "blocked": true, "unblocked": true, "habit": true}
 	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true}
 	weekdays       = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
 )
@@ -294,16 +294,57 @@ func (p *parser) parseTerm(prev *token) error {
 	case tWord:
 		return p.parseWordTerm(t)
 	case tString:
+		// A quoted name followed by a comparison is a custom field term (custom-fields).
+		if p.i+1 < len(p.toks) && p.toks[p.i+1].typ == tCmp {
+			p.i++
+			return p.parseFieldTerm()
+		}
 		return fail(t.pos, `Unexpected text %s at position %d; quote names after "@" or "#", or use search:`, t.raw, t.pos+1)
 	}
 	return p.missingTerm(prev)
 }
 
+var (
+	dateStarts = map[string]bool{"today": true, "tomorrow": true, "yesterday": true, "this": true, "last": true, "next": true}
+	dateUnits  = map[string]bool{"days": true, "week": true, "weeks": true, "month": true, "months": true}
+)
+
+// parseFieldTerm reads `cmp value` after a custom field name (OpenSpec change
+// custom-fields): a quoted text, true or false, a date (anything the date
+// grammar starts with), a number, or any other bare word as text. The field's
+// type is the client's business: the server only checks the shape.
+func (p *parser) parseFieldTerm() error {
+	c := p.peek()
+	p.i++
+	t := p.peek()
+	if t != nil && t.typ == tString {
+		p.i++
+		return nil
+	}
+	if t == nil || t.typ != tWord {
+		return fail(c.pos, `Expected a value after "%s" at position %d`, c.raw, c.pos+1)
+	}
+	w := strings.ToLower(t.value)
+	unit := ""
+	if digits.MatchString(w) && p.i+1 < len(p.toks) {
+		unit = lower(&p.toks[p.i+1])
+	}
+	if dateStarts[w] || weekdays[w] || isoDate.MatchString(w) || dateUnits[unit] {
+		return p.parseDate(c)
+	}
+	p.i++
+	return nil
+}
+
 func (p *parser) parseWordTerm(t *token) error {
 	w := strings.ToLower(t.value)
 	p.i++
+	// `completed` is the state keyword unless a comparison follows (OpenSpec
+	// change completed-date-filters, design D3).
+	next := p.peek()
+	dated := w == "completed" && next != nil && (next.typ == tCmp || lower(next) == "before" || lower(next) == "after")
 	switch {
-	case w == "due" || w == "created" || w == "deadline" || w == "start":
+	case w == "due" || w == "created" || w == "deadline" || w == "start" || dated:
 		c := p.peek()
 		ok := c != nil && (c.typ == tCmp || lower(c) == "before" || lower(c) == "after")
 		if !ok {
@@ -312,15 +353,19 @@ func (p *parser) parseWordTerm(t *token) error {
 		p.i++
 		return p.parseDate(c)
 	case w == "no":
-		if !noKeywords[lower(p.peek())] {
-			return fail(t.pos, `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position %d`, t.pos+1)
+		// A keyword, or any other name: a custom field without a value (custom-fields).
+		if nt := p.peek(); noKeywords[lower(nt)] || (nt != nil && (nt.typ == tWord || nt.typ == tString)) {
+			p.i++
+			return nil
 		}
-		p.i++
-		return nil
+		return fail(t.pos, `Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position %d`, t.pos+1)
 	case simpleKeywords[w]:
 		return nil
 	case anyPriority.MatchString(w):
 		return fail(t.pos, "Priority must be p1, p2, p3 or p4 at position %d", t.pos+1)
+	case next != nil && next.typ == tCmp:
+		// Any other word followed by a comparison names a custom field (custom-fields).
+		return p.parseFieldTerm()
 	}
 	return fail(t.pos, `Unknown term "%s" at position %d`, t.raw, t.pos+1)
 }
@@ -340,15 +385,31 @@ func (p *parser) parseDate(after *token) error {
 			return fail(t.pos, `Invalid date "%s" at position %d`, t.raw, t.pos+1)
 		}
 		return nil
-	case digits.MatchString(w):
-		if lower(p.peek()) != "days" {
-			return fail(t.pos, `Expected "days" after "%s" at position %d`, t.raw, t.pos+1)
+	case w == "this" || w == "last" || w == "next":
+		// A period (completed-date-filters D1): this, last or next week or month.
+		if u := lower(p.peek()); u != "week" && u != "month" {
+			return fail(t.pos, `Expected "week" or "month" after "%s" at position %d`, t.raw, t.pos+1)
 		}
 		p.i++
-		if lower(p.peek()) == "ago" {
-			p.i++
-		}
 		return nil
+	case digits.MatchString(w):
+		unit := p.peek()
+		switch lower(unit) {
+		case "days":
+			p.i++
+			if lower(p.peek()) == "ago" {
+				p.i++
+			}
+			return nil
+		case "week", "weeks", "month", "months":
+			p.i++
+			if lower(p.peek()) != "ago" {
+				return fail(unit.pos, `Expected "ago" after "%s" at position %d`, unit.raw, unit.pos+1)
+			}
+			p.i++
+			return nil
+		}
+		return fail(t.pos, `Expected "days", "weeks" or "months" after "%s" at position %d`, t.raw, t.pos+1)
 	}
 	return fail(t.pos, `Invalid date "%s" at position %d`, t.raw, t.pos+1)
 }

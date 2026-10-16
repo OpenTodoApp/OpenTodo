@@ -2,6 +2,7 @@
 // every extra kilobyte matters on a low-end phone.
 import { useMemo, useSyncExternalStore } from 'react'
 import { readCalendarMode } from '../lib/calendarMode'
+import { displayTargetPath, parseDisplayOptions, parseDisplayTarget, serializeDisplayOptions, type DisplayOptions, type DisplayTarget } from './display/displayOptions'
 
 export type Route =
   | { view: 'inbox' }
@@ -35,6 +36,11 @@ export type Route =
   | { view: 'feed' }
   | { view: 'ask' }
   | { view: 'help'; page?: string; q?: string }
+  // A chrome-free display of one view (display-mode): /display[/today|/upcoming|/project/<id>|/view/<id>]?<options>.
+  | { view: 'display'; target: DisplayTarget; options: DisplayOptions }
+  // Weekly review and Statistics (stats-and-review).
+  | { view: 'review' }
+  | { view: 'stats' }
 
 /** Settings sections, each at /settings/<id> (settings-navigation); nine, in list order. */
 export const SETTINGS_SECTION_IDS = [
@@ -151,6 +157,14 @@ export function parseRoute(pathname: string): Route {
       return parts[1] ? { view: 'public', token: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'label':
       return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
+    case 'display':
+      // Display mode (display-mode D2): an unknown target shows Today; options come from the query.
+      return { view: 'display', target: parseDisplayTarget(parts.slice(1)) ?? { kind: 'today' }, options: parseDisplayOptions(query) }
+    // The weekly review and the statistics (stats-and-review).
+    case 'review':
+      return { view: 'review' }
+    case 'stats':
+      return { view: 'stats' }
     default:
       return { view: 'inbox' }
   }
@@ -210,6 +224,10 @@ export function routePath(r: Route): string {
       return '/ask'
     case 'filter':
       return r.q ? `/filter?q=${encodeURIComponent(r.q)}` : '/filter'
+    case 'display': {
+      const q = serializeDisplayOptions(r.options)
+      return `${displayTargetPath(r.target)}${q ? `?${q}` : ''}`
+    }
     case 'help':
       return `/help${r.page ? `/${encodeURIComponent(r.page)}` : ''}${r.q ? `?q=${encodeURIComponent(r.q)}` : ''}`
     default:
@@ -217,12 +235,20 @@ export function routePath(r: Route): string {
   }
 }
 
+/**
+ * The address the router tracks: the path, plus the query on display routes,
+ * whose presentation options live there (display-mode D2).
+ */
+export function addressOf(loc: Pick<Location, 'pathname' | 'search'>): string {
+  return loc.pathname === '/display' || loc.pathname.startsWith('/display/') ? `${loc.pathname}${loc.search}` : loc.pathname
+}
+
 const listeners = new Set<() => void>()
-let current = typeof location !== 'undefined' ? location.pathname : '/'
+let current = typeof location !== 'undefined' ? addressOf(location) : '/'
 
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
-    current = location.pathname
+    current = addressOf(location)
     listeners.forEach((fn) => fn())
   })
 }

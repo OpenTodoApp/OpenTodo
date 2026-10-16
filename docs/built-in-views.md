@@ -26,10 +26,12 @@ They're at the top of the sidebar. Each has a shortcut: press <kbd>g</kbd>, then
 | **Someday** | Tasks you parked for later, by project | <kbd>g</kbd> <kbd>o</kbd> |
 | **Assigned to me** | Open tasks assigned to you, across projects | <kbd>g</kbd> <kbd>a</kbd> |
 | **Calendar** | Your dated tasks by Day, Week or Month, as you last left it | <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> |
-| **Completed** | What you finished most recently | <kbd>g</kbd> <kbd>c</kbd> |
+| **Completed** | What you finished, newest first, under a heading per day; **Show more** at the end reaches older days | <kbd>g</kbd> <kbd>c</kbd> |
 | **Filter** | Any search you can describe | <kbd>g</kbd> <kbd>f</kbd> |
 | **Trash** | Deleted tasks and projects | <kbd>g</kbd> <kbd>x</kbd> |
 | **Updates** | What changed in your shared projects | <kbd>g</kbd> <kbd>h</kbd> |
+| **Review** | Your [weekly review](review-and-statistics.md) | <kbd>g</kbd> <kbd>r</kbd> |
+| **Statistics** | What you [completed and let slip](review-and-statistics.md#statistics) | <kbd>g</kbd> <kbd>Shift+S</kbd> |
 
 The sidebar keeps Inbox, Today, Upcoming and Calendar at the top; the rest wait in **More** (open it once, it stays open on this device). The numbers next to Inbox, Today and the projects count open tasks. Deferred and parked tasks (see [When a task starts](tasks-and-projects.md#when-a-task-starts)) are not counted.
 

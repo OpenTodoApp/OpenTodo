@@ -2,10 +2,12 @@
 // "Settings search"): every section and the rows people look for, with the id of
 // the element that scrolls into view and takes focus when a result is opened. The
 // settings list's search field and the command palette read the same table.
+import { getHosted } from '../lib/hosted'
 import type { User } from '../lib/types'
 import { matchPrepared, prepare, prepareQuery } from '../ui'
 import type { SettingsSectionId } from './router'
 import { resolveSection, type SettingsSection, visibleSections } from './settingsSections'
+import { msg, translatedList } from '../lib/i18n'
 
 export interface SettingsEntry {
   section: SettingsSectionId
@@ -18,69 +20,76 @@ export interface SettingsEntry {
   keywords?: string
   /** Who sees the row; the section's own visibility applies first. */
   visible?: (user: User) => boolean
+  /** On a hosted service (multi-tenant-host): 'managed' rows belong to the operator and are hidden, 'only' rows exist only there. */
+  hosted?: 'managed' | 'only'
 }
 
 const owner = (u: User) => u.role === 'owner'
 
-export const SETTINGS_INDEX: readonly SettingsEntry[] = [
+export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsEntry, 'label' | 'description'>([
   // Account
-  { section: 'account', label: 'Profile', description: 'Your name, email and role', anchor: 'profile' },
-  { section: 'account', label: 'Sign out of this device', description: 'Removes your tasks from this device after uploading pending changes', anchor: 'session-heading', keywords: 'logout log out' },
-  { section: 'account', label: 'Password', description: 'Change your password', anchor: 'password-heading' },
-  { section: 'account', label: 'Two-factor authentication', description: 'A code from your phone on top of your password, and recovery codes', anchor: 'mfa-heading', keywords: '2fa totp mfa' },
-  { section: 'account', label: 'Passkeys', description: 'Sign in with your fingerprint, face or device PIN', anchor: 'security-heading', keywords: 'webauthn passkey' },
-  { section: 'account', label: 'Linked accounts', description: 'Single sign-on identities linked to your account', anchor: 'linked-heading', keywords: 'sso oidc' },
-  { section: 'account', label: 'End-to-end encryption', description: 'Encrypt your task text on your devices, and keep its recovery key', anchor: 'e2ee-heading', keywords: 'e2ee passphrase recovery key' },
-  { section: 'account', label: 'Recent activity', description: 'Sign-ins and token changes on your account over the last 90 days', anchor: 'activity-heading', keywords: 'sessions sign-ins' },
+  { section: 'account', label: msg('Profile'), description: msg('Your name, email and role'), anchor: 'profile' },
+  { section: 'account', label: msg('Sign out of this device'), description: msg('Removes your tasks from this device after uploading pending changes'), anchor: 'session-heading', keywords: 'logout log out' },
+  { section: 'account', label: msg('Password'), description: msg('Change your password'), anchor: 'password-heading' },
+  { section: 'account', label: msg('Two-factor authentication'), description: msg('A code from your phone on top of your password, and recovery codes'), anchor: 'mfa-heading', keywords: '2fa totp mfa' },
+  { section: 'account', label: msg('Passkeys'), description: msg('Sign in with your fingerprint, face or device PIN'), anchor: 'security-heading', keywords: 'webauthn passkey' },
+  { section: 'account', label: msg('Linked accounts'), description: msg('Single sign-on identities linked to your account'), anchor: 'linked-heading', keywords: 'sso oidc' },
+  { section: 'account', label: msg('End-to-end encryption'), description: msg('Encrypt your task text on your devices, and keep its recovery key'), anchor: 'e2ee-heading', keywords: 'e2ee passphrase recovery key' },
+  { section: 'account', label: msg('Recent activity'), description: msg('Sign-ins and token changes on your account over the last 90 days'), anchor: 'activity-heading', keywords: 'sessions sign-ins' },
   // Appearance
-  { section: 'appearance', label: 'Mode', description: 'System, light or dark', anchor: 'appearance-mode', keywords: 'dark light theme' },
-  { section: 'appearance', label: 'Theme', description: 'The colour of buttons, links and selection', anchor: 'appearance-theme', keywords: 'accent colour color' },
-  { section: 'appearance', label: 'Density', description: 'Comfortable or compact rows', anchor: 'appearance-density', keywords: 'compact rows' },
-  { section: 'appearance', label: 'Sidebar destinations', description: 'Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and Filter sit next to Inbox, Today, Upcoming and Calendar', anchor: 'sidebar-heading', keywords: 'promote more group' },
+  { section: 'appearance', label: msg('Mode'), description: msg('System, light or dark'), anchor: 'appearance-mode', keywords: 'dark light theme' },
+  { section: 'appearance', label: msg('Theme'), description: msg('The colour of buttons, links and selection'), anchor: 'appearance-theme', keywords: 'accent colour color' },
+  { section: 'appearance', label: msg('Density'), description: msg('Comfortable or compact rows'), anchor: 'appearance-density', keywords: 'compact rows' },
+  { section: 'appearance', label: msg('Sidebar destinations'), description: msg('Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and Filter sit next to Inbox, Today, Upcoming and Calendar'), anchor: 'sidebar-heading', keywords: 'promote more group' },
   // General
-  { section: 'general', label: 'Start view', description: 'The view this device opens on', anchor: 'start-view-heading', keywords: 'launch open on' },
-  { section: 'general', label: 'Date format', description: 'Day-month, month-day or ISO', anchor: 'date-time-heading' },
-  { section: 'general', label: 'Time format', description: '12-hour or 24-hour', anchor: 'date-time-heading', keywords: 'clock' },
-  { section: 'general', label: 'First day of the week', description: 'Where the Week view and calendars start', anchor: 'date-time-heading', keywords: 'week start monday sunday' },
-  { section: 'general', label: 'Calendar grid', description: 'When the Day and Week grid starts and ends, and your day length', anchor: 'calendar-heading', keywords: 'capacity hours' },
-  { section: 'general', label: 'Show shortcut hints', description: 'Print the keys in the app, next to quick add and in prompts', anchor: 'shortcut-hints', keywords: 'keyboard shortcuts kbd badges' },
-  { section: 'general', label: 'Vim keybindings', description: 'Keyboard navigation with hjkl', anchor: 'keyboard-heading', keywords: 'keyboard shortcuts' },
+  { section: 'general', label: msg('Language'), description: msg('The language of the app on all your devices'), anchor: 'language-heading', keywords: 'language locale translation sprache langue idioma lingua idioma' },
+  { section: 'general', label: msg('Start view'), description: msg('The view this device opens on'), anchor: 'start-view-heading', keywords: 'launch open on' },
+  { section: 'general', label: msg('Date format'), description: msg('Day-month, month-day or ISO'), anchor: 'date-time-heading' },
+  { section: 'general', label: msg('Time format'), description: msg('12-hour or 24-hour'), anchor: 'date-time-heading', keywords: 'clock' },
+  { section: 'general', label: msg('First day of the week'), description: msg('Where the Week view and calendars start'), anchor: 'date-time-heading', keywords: 'week start monday sunday' },
+  { section: 'general', label: msg('Calendar grid'), description: msg('When the Day and Week grid starts and ends, and your day length'), anchor: 'calendar-heading', keywords: 'capacity hours' },
+  { section: 'general', label: msg('Show shortcut hints'), description: msg('Print the keys in the app, next to quick add and in prompts'), anchor: 'shortcut-hints', keywords: 'keyboard shortcuts kbd badges' },
+  { section: 'general', label: msg('Vim keybindings'), description: msg('Keyboard navigation with hjkl'), anchor: 'keyboard-heading', keywords: 'keyboard shortcuts' },
   // Notifications
-  { section: 'notifications', label: 'Push notifications', description: 'Reminders delivered to this device, and a test', anchor: 'notifications-heading', keywords: 'reminders' },
+  { section: 'notifications', label: msg('Push notifications'), description: msg('Reminders delivered to this device, and a test'), anchor: 'notifications-heading', keywords: 'reminders' },
+  { section: 'notifications', label: msg('Weekly digest'), description: msg('An email on your review day with last week\'s numbers'), anchor: 'email-digest-heading', keywords: 'email summary review statistics' },
   // Capture
-  { section: 'capture', label: 'Quick add', description: 'Natural-language parsing, its languages and the date order', anchor: 'quick-add-heading', keywords: 'natural language parsing' },
-  { section: 'capture', label: 'Voice capture', description: 'Dictate tasks into quick add', anchor: 'voice-settings-heading', keywords: 'dictation microphone' },
-  { section: 'capture', label: 'Bookmarklet and extension', description: 'Save the page you are reading as a task', anchor: 'capture-heading', keywords: 'browser' },
-  { section: 'capture', label: 'Email to task', description: 'Your secret address; emails sent there become tasks', anchor: 'email-inbox-heading', keywords: 'mail inbox' },
+  { section: 'capture', label: msg('Quick add'), description: msg('Natural-language parsing, its languages and the date order'), anchor: 'quick-add-heading', keywords: 'natural language parsing' },
+  { section: 'capture', label: msg('Voice capture'), description: msg('Dictate tasks into quick add'), anchor: 'voice-settings-heading', keywords: 'dictation microphone' },
+  { section: 'capture', label: msg('Bookmarklet and extension'), description: msg('Save the page you are reading as a task'), anchor: 'capture-heading', keywords: 'browser' },
+  { section: 'capture', label: msg('Email to task'), description: msg('Your secret address; emails sent there become tasks'), anchor: 'email-inbox-heading', keywords: 'mail inbox' },
   // Integrations
-  { section: 'integrations', label: 'Calendar apps (CalDAV)', description: 'See your tasks in calendar and reminder apps with an app password', anchor: 'caldav-heading', keywords: 'caldav app password' },
-  { section: 'integrations', label: 'Calendar feeds', description: 'Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app', anchor: 'calendar-feeds-heading', keywords: 'ics subscribe google outlook apple calendar' },
-  { section: 'integrations', label: 'Webhooks', description: 'Send a message to another service when tasks change', anchor: 'webhooks-heading' },
-  { section: 'integrations', label: 'API tokens', description: 'Keys for scripts and the command-line client', anchor: 'tokens-heading', keywords: 'api key cli' },
-  { section: 'integrations', label: 'Assistant', description: 'The in-app assistant: consent, provider, model and usage', anchor: 'ai', keywords: 'ai llm anthropic openai gemini' },
-  { section: 'integrations', label: 'AI assistants (MCP)', description: 'Read-only access for an AI assistant, or a token that can make changes', anchor: 'assistants-heading', keywords: 'mcp claude' },
+  { section: 'integrations', label: msg('Calendar apps (CalDAV)'), description: msg('See your tasks in calendar and reminder apps with an app password'), anchor: 'caldav-heading', keywords: 'caldav app password' },
+  { section: 'integrations', label: msg('Calendar feeds'), description: msg('Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app'), anchor: 'calendar-feeds-heading', keywords: 'ics subscribe google outlook apple calendar' },
+  { section: 'integrations', label: msg('Webhooks'), description: msg('Send a message to another service when tasks change'), anchor: 'webhooks-heading' },
+  { section: 'integrations', label: msg('API tokens'), description: msg('Keys for scripts and the command-line client'), anchor: 'tokens-heading', keywords: 'api key cli' },
+  { section: 'integrations', label: msg('Assistant'), description: msg('The in-app assistant: consent, provider, model and usage'), anchor: 'ai', keywords: 'ai llm anthropic openai gemini' },
+  { section: 'integrations', label: msg('AI assistants (MCP)'), description: msg('Read-only access for an AI assistant, or a token that can make changes'), anchor: 'assistants-heading', keywords: 'mcp claude' },
   // Data
-  { section: 'data', label: 'Export', description: 'Download everything as JSON, or with files as a ZIP', anchor: 'data-heading', keywords: 'backup download json zip' },
-  { section: 'data', label: 'Import', description: 'Bring in tasks from a file or another app', anchor: 'data-heading', keywords: 'todoist things ticktick linear csv' },
-  { section: 'data', label: 'Sync status', description: 'This device’s sync state', anchor: 'data-heading', keywords: 'offline pending' },
-  { section: 'data', label: 'Automatic archiving', description: 'Archive projects after 30 days without open tasks, and restore archived projects', anchor: 'projects-heading', keywords: 'archive archived projects' },
+  { section: 'data', label: msg('Export'), description: msg('Download everything as JSON, or with files as a ZIP'), anchor: 'data-heading', keywords: 'backup download json zip' },
+  { section: 'data', label: msg('Import'), description: msg('Bring in tasks from a file or another app'), anchor: 'data-heading', keywords: 'todoist things ticktick linear csv' },
+  { section: 'data', label: msg('Sync status'), description: msg('This device’s sync state'), anchor: 'data-heading', keywords: 'offline pending' },
+  { section: 'data', label: msg('Automatic archiving'), description: msg('Archive projects after 30 days without open tasks, and restore archived projects'), anchor: 'projects-heading', keywords: 'archive archived projects' },
   // People
-  { section: 'people', label: 'Users', description: 'Everyone with an account, their role and last sign-in', anchor: 'users-heading', keywords: 'admin deactivate reset password' },
-  { section: 'people', label: 'Members', description: 'Invite people with a single-use link', anchor: 'members-heading', keywords: 'invite invitation' },
-  { section: 'people', label: 'Two-factor policy', description: 'Optional, required for the owner, or required for everyone', anchor: 'mfa-policy-heading', visible: owner, keywords: '2fa mfa policy' },
-  { section: 'people', label: 'Single sign-on', description: 'Sign in through your identity provider', anchor: 'sso-heading', visible: owner, keywords: 'sso oidc' },
-  { section: 'people', label: 'Project invite links', description: 'Whether members can bring new people with project links', anchor: 'project-invite-policy-heading', visible: owner, keywords: 'invite policy' },
+  { section: 'people', label: msg('Users'), description: msg('Everyone with an account, their role and last sign-in'), anchor: 'users-heading', keywords: 'admin deactivate reset password' },
+  { section: 'people', label: msg('Members'), description: msg('Invite people with a single-use link'), anchor: 'members-heading', keywords: 'invite invitation' },
+  { section: 'people', label: msg('Two-factor policy'), description: msg('Optional, required for the owner, or required for everyone'), anchor: 'mfa-policy-heading', visible: owner, keywords: '2fa mfa policy' },
+  { section: 'people', label: msg('Single sign-on'), description: msg('Sign in through your identity provider'), anchor: 'sso-heading', visible: owner, keywords: 'sso oidc', hosted: 'managed' },
+  { section: 'people', label: msg('Project invite links'), description: msg('Whether members can bring new people with project links'), anchor: 'project-invite-policy-heading', visible: owner, keywords: 'invite policy' },
   // Server
-  { section: 'server', label: 'Backups', description: 'Scheduled backups, destinations, recent runs and restore', anchor: 'backups-heading', keywords: 's3 webdav restore' },
-  { section: 'server', label: 'Attachments', description: 'Turn attachments on or off and set their size limits', anchor: 'attachments-settings-heading', keywords: 'files upload limit quota' },
-  { section: 'server', label: 'Outgoing email', description: 'The SMTP server this server mails password resets, sign-up confirmations and invitations through, and a test message', anchor: 'outgoing-email-heading', keywords: 'smtp mail sender send test email forgot password' },
-  { section: 'server', label: 'Audit log', description: 'What changed on the server and who did it', anchor: 'audit-heading', keywords: 'audit' },
-]
+  { section: 'server', label: msg('Backups'), description: msg('Scheduled backups, destinations, recent runs and restore'), anchor: 'backups-heading', keywords: 's3 webdav restore', hosted: 'managed' },
+  { section: 'server', label: msg('Attachments'), description: msg('Turn attachments on or off and set their size limits'), anchor: 'attachments-settings-heading', keywords: 'files upload limit quota', hosted: 'managed' },
+  { section: 'server', label: msg('Outgoing email'), description: msg('The SMTP server this server mails password resets, sign-up confirmations and invitations through, and a test message'), anchor: 'outgoing-email-heading', keywords: 'smtp mail sender send test email forgot password', hosted: 'managed' },
+  { section: 'server', label: msg('Download your data'), description: msg('The whole server as one backup archive, to move to your own OpenTodo server'), anchor: 'server-archive-heading', keywords: 'archive export backup leave move self-host', hosted: 'only' },
+  { section: 'server', label: msg('Audit log'), description: msg('What changed on the server and who did it'), anchor: 'audit-heading', keywords: 'audit' },
+], 'label', 'description')
 
 /** The entries this user may open, in list order. */
 export function visibleEntries(user: User): SettingsEntry[] {
   const sections = new Set(visibleSections(user).map((s) => s.id))
-  return SETTINGS_INDEX.filter((e) => sections.has(e.section) && (!e.visible || e.visible(user)))
+  const hosted = getHosted()
+  return SETTINGS_INDEX.filter((e) => sections.has(e.section) && (!e.visible || e.visible(user)) &&
+    (e.hosted === 'managed' ? !hosted : e.hosted === 'only' ? hosted : true))
 }
 
 export interface SettingsHit { section: SettingsSection; entries: SettingsEntry[] }

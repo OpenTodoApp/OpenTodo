@@ -20,6 +20,17 @@ A query SHALL be a boolean expression over terms combined with `&` (and), `|` (o
 - **WHEN** the user enters `#"Client A" & @"follow up"`
 - **THEN** the project named "Client A" and the label named "follow up" are matched, ignoring case
 
+### Requirement: Custom field terms in the grammar
+The grammar SHALL include a custom field term `name cmp value` and `no name` (OpenSpec `custom-fields`), where `name` is a bare word that is not a reserved word of the grammar, or any quoted name. Reserved words (`due`, `created`, `deadline`, `start`, `completed`, `no`, the keywords and `p1` to `p4`) SHALL keep their meaning, so a field with such a name is reachable only through its quoted name.
+
+#### Scenario: Field term with a quoted name
+- **WHEN** the user enters `"Order date" <= friday & cost > 100`
+- **THEN** both terms are parsed as field terms and combined with `&`
+
+#### Scenario: Reserved words stay reserved
+- **WHEN** a project defines a field named "due" and the user enters `due <= tomorrow`
+- **THEN** the term is the due-date term, and the field is reachable only through its quoted name
+
 ### Requirement: Label and project terms
 `@name` SHALL match tasks carrying the label with that name. `#name` SHALL match tasks whose project has that name and `##name` SHALL also match tasks in that project's descendants. `no labels` and `no project` SHALL match tasks with an empty label array or no project. When several labels or projects share a name, the term SHALL match any of them.
 
@@ -36,7 +47,7 @@ A query SHALL be a boolean expression over terms combined with `&` (and), `|` (o
 - **THEN** priority-1 tasks without a project are listed
 
 ### Requirement: Date terms
-`due` and `created` SHALL accept `<`, `<=`, `=`, `>=`, `>`, `before` and `after` against a date expression: `today`, `tomorrow`, `yesterday`, a weekday name (next occurrence including today), an ISO date, or `N days` / `N days ago`. Comparisons SHALL use the viewer's local calendar date; a task without a due date SHALL never match a `due` comparison. `no date`, `overdue`, `today` and `tomorrow` SHALL be keywords.
+`due` and `created` SHALL accept `<`, `<=`, `=`, `>=`, `>`, `before` and `after` against a date expression: `today`, `tomorrow`, `yesterday`, a weekday name (next occurrence including today), an ISO date, `N days` / `N days ago`, or a period (see "Period date expressions"). Comparisons SHALL use the viewer's local calendar date; a task without a due date SHALL never match a `due` comparison. `no date`, `overdue`, `today` and `tomorrow` SHALL be keywords.
 
 #### Scenario: Due by tomorrow
 - **WHEN** today is 2026-10-10 and the user enters `due <= tomorrow`
@@ -50,8 +61,31 @@ A query SHALL be a boolean expression over terms combined with `&` (and), `|` (o
 - **WHEN** the user enters `created > 7 days ago & no date`
 - **THEN** tasks created within the last seven days that have no due date are listed
 
+### Requirement: Period date expressions
+`this|last|next week`, `this|last|next month`, `N weeks ago` and `N months ago` SHALL be ranges of days in every date term; weeks SHALL start on the user's first day of the week, months SHALL be calendar months, and a day SHALL be a one-day range. Against a range, `=` SHALL match days within it, `<` days before it, `<=` up to its end, `>` after it and `>=` from its start. Stored queries SHALL keep the period; evaluation SHALL stay on the device and agree across the user's devices.
+
+#### Scenario: This week with a Monday start
+- **WHEN** the first day of the week is Monday, today is Friday 2026-10-16 and the user enters `due = this week`
+- **THEN** open tasks due from 2026-10-12 to 2026-10-18 are listed
+
+#### Scenario: This week with a Sunday start
+- **WHEN** the first day of the week is Sunday, today is Friday 2026-10-16 and the user enters `due = this week`
+- **THEN** open tasks due from 2026-10-11 to 2026-10-17 are listed
+
+#### Scenario: Comparisons against a period
+- **WHEN** today is 2026-10-16 and the user enters `due >= last month & due < this month`
+- **THEN** open tasks due from 2026-09-01 to 2026-09-30 are listed, and `due <= last month` also lists those due earlier
+
+#### Scenario: Month boundaries
+- **WHEN** today is 2026-03-31 and the user enters `created = last month`
+- **THEN** tasks created from 2026-02-01 to 2026-02-28 in the viewer's zone are listed, and `created = 2 months ago` covers 2026-01-01 to 2026-01-31
+
+#### Scenario: Saved period view offline
+- **WHEN** a view with the query `deadline = next week` is saved on one device and another device opens it while offline a week later
+- **THEN** the second device lists tasks whose deadline falls in the week after its current week, from local data
+
 ### Requirement: Priority, state and search terms
-`p1` to `p4` SHALL match the task priority. `completed` SHALL include completed tasks and `open` only open ones; a query without either SHALL match open tasks only. `subtask` SHALL match tasks that have a parent. `search: text` SHALL match tasks whose title or description contains the text ignoring case, with quotes allowed for several words. Deleted tasks SHALL never match any query.
+`p1` to `p4` SHALL match the task priority. `completed` SHALL include completed tasks and `open` only open ones; a query without either, and without a `completed` date term, SHALL match open tasks only. `subtask` SHALL match tasks that have a parent. `search: text` SHALL match tasks whose title or description contains the text ignoring case, with quotes allowed for several words. Deleted tasks SHALL never match any query.
 
 #### Scenario: Default to open tasks
 - **WHEN** the user enters `p1`
@@ -60,6 +94,21 @@ A query SHALL be a boolean expression over terms combined with `&` (and), `|` (o
 #### Scenario: Text search
 - **WHEN** the user enters `search: "oat milk"`
 - **THEN** tasks whose title or description contains "oat milk" in any letter case are listed
+
+#### Scenario: A completion date term includes completed tasks
+- **WHEN** the user enters `#Work & completed >= this week`
+- **THEN** the tasks of "Work" completed this week are listed, although the query has no `completed` or `open` keyword
+
+### Requirement: Habit terms
+`habit` SHALL match tasks flagged as habits (OpenSpec `habits`). A skipped occurrence record of a habit SHALL match neither `completed` nor `open`, and so no query at all.
+
+#### Scenario: Habits
+- **WHEN** the user enters `habit & due <= today`
+- **THEN** the open habits due today or overdue are listed, evaluated on the device like every query
+
+#### Scenario: Skipped records never match
+- **WHEN** a habit was skipped yesterday and the user enters `completed`
+- **THEN** yesterday's skipped record is not listed, while a day the habit was done is
 
 ### Requirement: Client-side live evaluation
 Queries SHALL be evaluated on the device from local data and SHALL never require a network request. Results SHALL update live as local or synced changes arrive. Evaluation of a query over a few thousand tasks SHALL complete fast enough to keep typing responsive, and the client SHALL debounce evaluation while the user types.
@@ -161,3 +210,22 @@ The Filter view SHALL keep a per-device history of the last 20 distinct queries,
 #### Scenario: Blocker completed on another device
 - **WHEN** `unblocked` is displayed, another device completes a task's last open blocker, and this device syncs
 - **THEN** the task appears in the results without a reload
+
+### Requirement: Completion date terms
+`completed` followed by a comparison and a date expression SHALL compare the viewer's local calendar day of the task's completion time, with the same expressions and range rules as the other date terms; without a comparison `completed` SHALL remain the state keyword. An open task SHALL never match it; completed occurrences of recurring tasks SHALL match. Evaluation SHALL stay on the device from local data and follow synced completions and reopenings.
+
+#### Scenario: What I did last week
+- **WHEN** the first day of the week is Monday, today is 2026-10-16 and the user enters `completed = last week`
+- **THEN** tasks completed from Monday 2026-10-05 00:00 to Sunday 2026-10-11 23:59 in the viewer's zone are listed, and open tasks are not
+
+#### Scenario: Last seven days
+- **WHEN** the user enters `completed >= 7 days ago & #Home`
+- **THEN** tasks of "Home" completed on any of the last seven days or today are listed
+
+#### Scenario: Reopened on another device
+- **WHEN** `completed >= this month` is displayed and another device reopens one of the listed tasks, then this device syncs
+- **THEN** the task leaves the results without a reload
+
+#### Scenario: Missing comparison value
+- **WHEN** the user enters `completed after`
+- **THEN** the message reads `Expected a date after "after" at position 11`

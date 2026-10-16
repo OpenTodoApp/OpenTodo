@@ -4,7 +4,7 @@ import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
 import { describeRejected } from '../lib/sharing'
 import { dismissRejected, useSyncStatus } from '../lib/sync'
-import { canonicalPath, navigate, useRoute } from './router'
+import { canonicalPath, navigate, parseRoute, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { CalendarView } from './CalendarView'
 import { MonthView } from './MonthView'
@@ -38,6 +38,7 @@ import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
 import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from './help/store'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
+import { t } from '../lib/i18n'
 
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
@@ -52,6 +53,9 @@ const HelpPanel = lazy(() => import('./help/HelpBundle').then((m) => ({ default:
 const AssistantRoot = lazy(() => import('./assistant/AssistantRoot'))
 // Command palette (search-and-command-palette D1): its own chunk, fetched on first open.
 const CommandPalette = lazy(() => import('./palette/CommandPalette'))
+// Weekly review and Statistics (stats-and-review D8): one chunk, fetched on first open.
+const ReviewView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.ReviewView })))
+const StatsView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.StatsView })))
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -79,7 +83,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     if (taskParam) {
       if (location.pathname === '/') {
         history.replaceState(null, '', location.pathname)
-        void db.tasks.get(taskParam).then((t) => t && openTaskInList(t))
+        void db.tasks.get(taskParam).then((task) => task && openTaskInList(task))
       } else openTaskPanel(taskParam)
       return
     }
@@ -88,9 +92,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     void resolveStartView().then((start) => {
       if (cancelled || location.pathname !== '/') return
       if (start.kind === 'saved') navigate({ view: 'view', id: start.id }, { replace: true })
+      // A display start view (display-mode D6): the app renders the display instead of the shell.
+      else if (start.kind === 'display') navigate(parseRoute(start.path), { replace: true })
       else {
         if (start.view !== 'inbox') navigate({ view: start.view }, { replace: true })
-        if (start.removed) setNotice('Your start view was deleted, so the Inbox opened instead.')
+        if (start.removed) setNotice(t('Your start view was deleted, so the Inbox opened instead.'))
       }
     })
     return () => {
@@ -147,6 +153,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }),
     'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
     'go.trash': go({ view: 'trash' }), 'go.triage': go({ view: 'triage' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
+    // Weekly review and Statistics (stats-and-review).
+    'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }),
     // `g /` (sidebar-groups): the sidebar's find field; the rail expands and the drawer opens first.
     'go.find': () => sidebarFind.request('open'),
     'global.help': () => setShowHelp((v) => !v),
@@ -187,18 +195,18 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {notice && (
           <div role="status" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
             <p className="flex-1">{notice}</p>
-            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setNotice(null)}>Dismiss</button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setNotice(null)}>{t('Dismiss')}</button>
           </div>
         )}
         {rejected && (
           <div role="alert" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
-            <p className="flex-1">{describeRejected(rejected)}. The server's values are shown again.</p>
-            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={dismissRejected}>Dismiss</button>
+            <p className="flex-1">{t('{rejected}. The server\'s values are shown again.', { rejected: describeRejected(rejected) })}</p>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={dismissRejected}>{t('Dismiss')}</button>
           </div>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto">
           {route.view === 'help' ? (
-            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">Loading help…</p>}><HelpView page={route.page} q={route.q} /></Suspense>
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
             <SettingsView user={user} onLogout={onLogout} section={route.section} anchor={route.anchor} />
           ) : route.view === 'import' ? (
@@ -215,6 +223,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <TrashView />
           ) : route.view === 'task' ? (
             <TaskPage id={route.id} user={user} />
+          ) : route.view === 'review' ? (
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}><ReviewView userId={user.id} /></Suspense>
+          ) : route.view === 'stats' ? (
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'triage' ? (
             <Suspense fallback={null}><TriageView /></Suspense>
           ) : route.view === 'feed' ? (
@@ -226,8 +238,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'month' ? (
             <MonthView date={route.date} />
           ) : (
-            // App renders the invite, reset and capture screens itself; a stray /invite, /reset or /share route inside the shell falls back to the Inbox.
-            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' ? { view: 'inbox' } : route} />
+            // App renders the invite, reset, capture and display screens itself; a stray /invite, /reset, /share or /display route inside the shell falls back to the Inbox.
+            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} />
           )}
         </div>
         {vim && (
@@ -258,7 +270,7 @@ function SidebarResizer({ width }: { width: number }) {
   const dragging = useRef<{ startX: number; startWidth: number } | null>(null)
   const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
   return (
-    <div role="separator" aria-orientation="vertical" aria-label="Resize sidebar" aria-valuemin={SIDEBAR_MIN_REM} aria-valuemax={SIDEBAR_MAX_REM} aria-valuenow={width}
+    <div role="separator" aria-orientation="vertical" aria-label={t('Resize sidebar')} aria-valuemin={SIDEBAR_MIN_REM} aria-valuemax={SIDEBAR_MAX_REM} aria-valuenow={width}
       tabIndex={0} data-sidebar-resizer
       className="hidden w-1 shrink-0 cursor-col-resize self-stretch hover:bg-accent/40 focus-visible:bg-accent focus-visible:outline-none lg:block"
       onPointerDown={(e) => {
@@ -285,7 +297,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
   if (desktop) return null
   return (
     <header className="flex min-h-12 items-center gap-1 border-b border-default px-2 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden" data-phone-bar>
-      <IconButton icon="menu" label="Open menu" onClick={onMenu} className="touch-target" />
+      <IconButton icon="menu" label={t('Open menu')} onClick={onMenu} className="touch-target" />
       {bar?.back && <IconButton icon="arrow-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />}
       <div className="min-w-0 flex-1">
         <PageBarTitle>{bar?.title}</PageBarTitle>

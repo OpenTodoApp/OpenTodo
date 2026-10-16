@@ -17,6 +17,7 @@ import { Notice } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { Dialog } from './overlay/Dialog'
 import { navigate } from './router'
+import { t } from '../lib/i18n'
 
 export type RestoreSourceTab = 'destination' | 'upload'
 
@@ -50,52 +51,52 @@ export function RestoreSectionView(p: RestoreSectionViewProps) {
   return (
     <section className="space-y-3 py-3" aria-labelledby="restore-heading" data-testid="restore-section">
       <div>
-        <h3 id="restore-heading" className="text-body font-medium text-default">Restore from a backup</h3>
+        <h3 id="restore-heading" className="text-body font-medium text-default">{t('Restore from a backup')}</h3>
         <p className="text-meta text-muted">
-          Puts the whole server back to the state in an archive: every account, project, task and the sync log. The server restarts, and everything is checked before anything changes. On a stopped server you can also use the <a className="underline" href="/help/backups" onClick={(e) => { e.preventDefault(); navigate({ view: 'help', page: 'backups' }) }}>command line</a>.
+          {t.rich('Puts the whole server back to the state in an archive: every account, project, task and the sync log. The server restarts, and everything is checked before anything changes. On a stopped server you can also use the <a>command line</a>.', { a: (chunks) => <a className="underline" href="/help/backups" onClick={(e) => { e.preventDefault(); navigate({ view: 'help', page: 'backups' }) }}>{chunks}</a> })}
         </p>
       </div>
-      {p.offline && <Notice tone="warning">Restoring runs on the server and needs a connection.</Notice>}
+      {p.offline && <Notice tone="warning">{t('Restoring runs on the server and needs a connection.')}</Notice>}
 
       {last && (
         <div data-testid="restore-last">
           {last.ok ? (
-            <Notice tone="success" action={p.state?.undoAvailable ? <Button variant="secondary" icon="undo-2" disabled={disabled} busy={p.preparing === 'undo'} onClick={p.onUndo}>Undo last restore</Button> : undefined}>
-              Restored from <span className="user-text font-medium">{last.archive}</span> on {dt.formatInstant(last.finishedAt, 'datetime')}.
+            <Notice tone="success" action={p.state?.undoAvailable ? <Button variant="secondary" icon="undo-2" disabled={disabled} busy={p.preparing === 'undo'} onClick={p.onUndo}>{t('Undo last restore')}</Button> : undefined}>
+              {t.rich('Restored from <span>{archive}</span> on {instant}.', { archive: last.archive, instant: dt.formatInstant(last.finishedAt, 'datetime'), span: (chunks) => <span className="user-text font-medium">{chunks}</span> })}
             </Notice>
           ) : (
             <Notice tone="danger">
-              The restore of <span className="user-text font-medium">{last.archive}</span> on {dt.formatInstant(last.finishedAt, 'datetime')} failed, and the server kept its previous data. {last.error}
+              {t.rich('The restore of <span>{archive}</span> on {instant} failed, and the server kept its previous data. {error}', { archive: last.archive, instant: dt.formatInstant(last.finishedAt, 'datetime'), error: last.error, span: (chunks) => <span className="user-text font-medium">{chunks}</span> })}
             </Notice>
           )}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-4 text-body text-default" role="radiogroup" aria-label="Restore from">
-        {(['destination', 'upload'] as RestoreSourceTab[]).map((t) => (
-          <label key={t} className="flex items-center gap-1.5">
-            <input type="radio" className="accent-(--ot-accent)" name="restore-source" value={t} checked={p.tab === t} disabled={p.offline} onChange={() => p.onTab(t)} />
-            {t === 'destination' ? 'From the backup destination' : 'Upload a file'}
+      <div className="flex flex-wrap gap-4 text-body text-default" role="radiogroup" aria-label={t('Restore from')}>
+        {(['destination', 'upload'] as RestoreSourceTab[]).map((item) => (
+          <label key={item} className="flex items-center gap-1.5">
+            <input type="radio" className="accent-(--ot-accent)" name="restore-source" value={item} checked={p.tab === item} disabled={p.offline} onChange={() => p.onTab(item)} />
+            {item === 'destination' ? t('From the backup destination') : t('Upload a file')}
           </label>
         ))}
       </div>
 
       {p.tab === 'destination' && (
         <div data-testid="restore-archives">
-          {p.archivesError && <Notice tone="danger">{p.archivesError} You can still upload an archive.</Notice>}
-          {!p.archivesError && p.archives === null && <p className="text-meta text-faint">{p.offline ? 'Not available offline.' : 'Loading archives…'}</p>}
-          {p.archives && p.archives.archives.length === 0 && <p className="text-meta text-faint">No archives in <span className="user-text">{p.archives.destination}</span> yet.</p>}
+          {p.archivesError && <Notice tone="danger">{t('{archivesError} You can still upload an archive.', { archivesError: p.archivesError })}</Notice>}
+          {!p.archivesError && p.archives === null && <p className="text-meta text-faint">{p.offline ? t('Not available offline.') : t('Loading archives…')}</p>}
+          {p.archives && p.archives.archives.length === 0 && <p className="text-meta text-faint">{t.rich('No archives in <span>{destination}</span> yet.', { destination: p.archives.destination, span: (chunks) => <span className="user-text">{chunks}</span> })}</p>}
           {p.archives && p.archives.archives.length > 0 && (
-            <ul className="-mx-3" aria-label="Archives in the destination">
+            <ul className="-mx-3" aria-label={t('Archives in the destination')}>
               {p.archives.archives.map((a) => (
                 <li key={a.name}>
                   <ListRow
                     leading={<Icon name="history" size="md" />}
                     label={dt.formatInstant(a.createdAt, 'datetime')}
-                    ariaLabel={`Archive from ${dt.formatInstant(a.createdAt, 'datetime')}, ${formatBytes(a.size)}${a.encrypted ? ', encrypted' : ''}`}
+                    ariaLabel={(a.encrypted ? t('Archive from {instant}, {size}, encrypted', { instant: dt.formatInstant(a.createdAt, 'datetime'), size: formatBytes(a.size) }) : t('Archive from {instant}, {size}', { instant: dt.formatInstant(a.createdAt, 'datetime'), size: formatBytes(a.size) }))}
                     meta={`${formatBytes(a.size)} · ${a.name}`}
-                    badges={<>{a.encrypted && <Badge hue="slate"><Icon name="lock" size="xs" /> encrypted</Badge>}
-                      <Button variant="secondary" disabled={disabled} busy={p.preparing === a.name} onClick={() => p.onPreview(a.name)}>Preview</Button></>}
+                    badges={<>{a.encrypted && <Badge hue="slate"><Icon name="lock" size="xs" /> {t('encrypted')}</Badge>}
+                      <Button variant="secondary" disabled={disabled} busy={p.preparing === a.name} onClick={() => p.onPreview(a.name)}>{t('Preview')}</Button></>}
                   />
                 </li>
               ))}
@@ -106,16 +107,16 @@ export function RestoreSectionView(p: RestoreSectionViewProps) {
 
       {p.tab === 'upload' && (
         <div className="space-y-2" data-testid="restore-upload">
-          <p className="text-meta text-muted">An archive made by OpenTodo (<code className="font-mono">opentodo-….tar.gz</code>, optionally <code className="font-mono">.enc</code>), for example from another server.</p>
-          <input ref={fileInput} type="file" className="sr-only" accept=".tar,.gz,.enc,application/gzip,application/x-tar,application/octet-stream" aria-label="Archive file" tabIndex={-1}
+          <p className="text-meta text-muted">{t.rich('An archive made by OpenTodo ({name}, optionally {suffix}), for example from another server.', { name: <code className="font-mono">opentodo-….tar.gz</code>, suffix: <code className="font-mono">.enc</code> })}</p>
+          <input ref={fileInput} type="file" className="sr-only" accept=".tar,.gz,.enc,application/gzip,application/x-tar,application/octet-stream" aria-label={t('Archive file')} tabIndex={-1}
             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) p.onUpload(f) }} />
-          <Button variant="secondary" icon="upload" disabled={disabled} onClick={() => fileInput.current?.click()}>Choose an archive…</Button>
+          <Button variant="secondary" icon="upload" disabled={disabled} onClick={() => fileInput.current?.click()}>{t('Choose an archive…')}</Button>
           {p.uploadProgress !== null && (
             <div role="status" aria-live="polite" className="text-meta text-muted" data-testid="restore-upload-progress">
-              <progress className="mr-2 align-middle" max={1} value={p.uploadProgress} aria-label="Upload progress" /> Uploading… {Math.round(p.uploadProgress * 100)}%
+              <progress className="mr-2 align-middle" max={1} value={p.uploadProgress} aria-label={t('Upload progress')} />{' '}{t('Uploading… {round}%', { round: Math.round(p.uploadProgress * 100) })}
             </div>
           )}
-          {p.state && p.state.uploadLimit >= 0 && <p className="text-meta text-faint">Up to {formatBytes(p.state.uploadLimit)} with the free space on the server.</p>}
+          {p.state && p.state.uploadLimit >= 0 && <p className="text-meta text-faint">{t('Up to {bytes} with the free space on the server.', { bytes: formatBytes(p.state.uploadLimit) })}</p>}
         </div>
       )}
 
@@ -123,14 +124,14 @@ export function RestoreSectionView(p: RestoreSectionViewProps) {
 
       {copies.length > 0 && (
         <div data-testid="restore-safety-copies">
-          <h4 className="text-meta font-medium text-default">Safety copies ({formatBytes(copiesSize)})</h4>
-          <p className="text-meta text-faint">Each restore keeps the database it replaced. Delete old ones to free space.</p>
-          <ul className="-mx-3" aria-label="Safety copies">
+          <h4 className="text-meta font-medium text-default">{t('Safety copies ({bytes})', { bytes: formatBytes(copiesSize) })}</h4>
+          <p className="text-meta text-faint">{t('Each restore keeps the database it replaced. Delete old ones to free space.')}</p>
+          <ul className="-mx-3" aria-label={t('Safety copies')}>
             {copies.map((c) => (
               <li key={c.name}>
-                <ListRow leading={<Icon name="history" size="md" />} label={`Before the restore of ${dt.formatInstant(c.createdAt, 'datetime')}`} meta={`${formatBytes(c.size)} · ${c.name}`}
-                  ariaLabel={`Safety copy from ${dt.formatInstant(c.createdAt, 'datetime')}, ${formatBytes(c.size)}`}
-                  badges={<Button variant="ghost" icon="trash-2" disabled={p.offline} aria-label={`Delete safety copy ${c.name}`} onClick={() => p.onDeleteCopy(c.name)}>Delete</Button>} />
+                <ListRow leading={<Icon name="history" size="md" />} label={t('Before the restore of {instant}', { instant: dt.formatInstant(c.createdAt, 'datetime') })} meta={`${formatBytes(c.size)} · ${c.name}`}
+                  ariaLabel={t('Safety copy from {instant}, {size}', { instant: dt.formatInstant(c.createdAt, 'datetime'), size: formatBytes(c.size) })}
+                  badges={<Button variant="ghost" icon="trash-2" disabled={p.offline} aria-label={t('Delete safety copy {name}', { name: c.name })} onClick={() => p.onDeleteCopy(c.name)}>{t('Delete')}</Button>} />
               </li>
             ))}
           </ul>
@@ -162,46 +163,46 @@ export function RestoreDialog(p: RestoreDialogProps) {
   const s = p.staged
   const created = s?.manifest?.createdAt ? Date.parse(s.manifest.createdAt) : null
   return (
-    <Dialog title={p.undo ? 'Undo the last restore' : 'Restore from a backup'} onClose={p.onCancel} dismissable={false} size="md" testId="restore-dialog">
+    <Dialog title={p.undo ? t('Undo the last restore') : t('Restore from a backup')} onClose={p.onCancel} dismissable={false} size="md" testId="restore-dialog">
       <div className="space-y-4 text-body text-default">
         {!s && p.askPassphrase && (
           <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); p.onVerify(passphrase) }}>
-            <p><span className="user-text font-medium">{p.archive}</span> is encrypted with a passphrase this server does not have.</p>
-            <Field label="Passphrase">
+            <p>{t.rich('<span>{archive}</span> is encrypted with a passphrase this server does not have.', { archive: p.archive, span: (chunks) => <span className="user-text font-medium">{chunks}</span> })}</p>
+            <Field label={t('Passphrase')}>
               <Input type="password" name="restore-passphrase" autoComplete="off" autoFocus value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
             </Field>
             {p.error && <p role="alert" className="text-meta text-danger">{p.error}</p>}
             <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="secondary" onClick={p.onCancel}>Cancel</Button>
-              <Button type="submit" variant="primary" disabled={passphrase === '' || p.busy} busy={p.busy}>Verify</Button>
+              <Button variant="secondary" onClick={p.onCancel}>{t('Cancel')}</Button>
+              <Button type="submit" variant="primary" disabled={passphrase === '' || p.busy} busy={p.busy}>{t('Verify')}</Button>
             </div>
           </form>
         )}
         {s && (
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); if (word === 'RESTORE') p.onConfirm() }}>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1" data-testid="restore-preview">
-              <dt className="text-muted">{p.undo ? 'Database from' : 'Backup from'}</dt><dd>{created ? dt.formatInstant(created, 'datetime') : 'unknown'}</dd>
-              {s.manifest?.appVersion && <><dt className="text-muted">Made by</dt><dd>OpenTodo {s.manifest.appVersion}</dd></>}
-              <dt className="text-muted">Schema version</dt><dd>{s.manifest?.schemaVersion}</dd>
-              <dt className="text-muted">Size</dt><dd>{formatBytes(s.size)}{s.encrypted ? ' · encrypted' : ''}</dd>
-              {s.counts && <><dt className="text-muted">Contains</dt><dd>{plural(s.counts.accounts, 'account')}, {plural(s.counts.projects, 'project')}, {plural(s.counts.tasks, 'task')}</dd></>}
+              <dt className="text-muted">{p.undo ? t('Database from') : t('Backup from')}</dt><dd>{created ? dt.formatInstant(created, 'datetime') : t('unknown')}</dd>
+              {s.manifest?.appVersion && <><dt className="text-muted">{t('Made by')}</dt><dd>{t('OpenTodo {appVersion}', { appVersion: s.manifest.appVersion })}</dd></>}
+              <dt className="text-muted">{t('Schema version')}</dt><dd>{s.manifest?.schemaVersion}</dd>
+              <dt className="text-muted">{t('Size')}</dt><dd>{formatBytes(s.size)}{s.encrypted ? ` · ${t('encrypted')}` : ''}</dd>
+              {s.counts && <><dt className="text-muted">{t('Contains')}</dt><dd>{t('{accounts, plural, one {# account} other {# accounts}}, {projects, plural, one {# project} other {# projects}}, {tasks, plural, one {# task} other {# tasks}}', { accounts: s.counts.accounts, projects: s.counts.projects, tasks: s.counts.tasks })}</dd></>}
             </dl>
             <div className="rounded-control bg-warning-soft p-3 text-meta text-on-warning-soft" data-testid="restore-consequences">
-              <p className="font-medium">What will happen</p>
+              <p className="font-medium">{t('What will happen')}</p>
               <ul className="ml-4 list-disc space-y-1">
-                <li>The server restarts. Everyone is briefly disconnected.</li>
-                <li>Accounts, passwords, sessions and tokens go back to the state in the backup. Anyone whose session started after it, possibly you, signs in again.</li>
-                <li>Devices sync again. A device that changed something after the backup sends those newer changes back, so they are not lost.</li>
-                <li>The current database is kept as a safety copy, so you can undo this.</li>
+                <li>{t('The server restarts. Everyone is briefly disconnected.')}</li>
+                <li>{t('Accounts, passwords, sessions and tokens go back to the state in the backup. Anyone whose session started after it, possibly you, signs in again.')}</li>
+                <li>{t('Devices sync again. A device that changed something after the backup sends those newer changes back, so they are not lost.')}</li>
+                <li>{t('The current database is kept as a safety copy, so you can undo this.')}</li>
               </ul>
             </div>
-            <Field label="Type RESTORE to confirm">
+            <Field label={t('Type RESTORE to confirm')}>
               <Input name="restore-confirm" autoComplete="off" autoCapitalize="characters" spellCheck={false} value={word} onChange={(e) => setWord(e.target.value)} />
             </Field>
             {p.error && <p role="alert" className="text-meta text-danger">{p.error}</p>}
             <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="secondary" onClick={p.onCancel} data-autofocus>Cancel</Button>
-              <Button type="submit" variant="danger" className="border border-current" disabled={word !== 'RESTORE' || p.busy} busy={p.busy}>Restore and restart</Button>
+              <Button variant="secondary" onClick={p.onCancel} data-autofocus>{t('Cancel')}</Button>
+              <Button type="submit" variant="danger" className="border border-current" disabled={word !== 'RESTORE' || p.busy} busy={p.busy}>{t('Restore and restart')}</Button>
             </div>
           </form>
         )}
@@ -210,20 +211,16 @@ export function RestoreDialog(p: RestoreDialogProps) {
   )
 }
 
-function plural(n: number, word: string): string {
-  return `${new Intl.NumberFormat().format(n)} ${word}${n === 1 ? '' : 's'}`
-}
-
 /** Full-screen status while the server restarts (spec: restore state across the restart). */
 export function RestartScreen({ slow }: { slow: boolean }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-canvas p-6" data-testid="restore-restarting">
       <div className="max-w-sm space-y-3 text-center" role="status" aria-live="assertive">
         <Icon name="loader-circle" size="md" className="mx-auto animate-spin motion-reduce:animate-none" />
-        <p className="text-body font-semibold text-default">Restoring and restarting…</p>
+        <p className="text-body font-semibold text-default">{t('Restoring and restarting…')}</p>
         <p className="text-meta text-muted">{slow
-          ? 'The server is still restarting. If this takes more than a few minutes, check the server log. This page reloads when it is back.'
-          : 'This page reloads when the server is back, usually within a few seconds.'}</p>
+          ? t('The server is still restarting. If this takes more than a few minutes, check the server log. This page reloads when it is back.')
+          : t('This page reloads when the server is back, usually within a few seconds.')}</p>
       </div>
     </div>
   )
@@ -333,7 +330,7 @@ export function RestoreSection({ offline }: { offline: boolean }) {
     } catch (err) {
       setDialogBusy(false)
       // A refused re-authentication leaves the dialog open with the reason.
-      setDialogError(err instanceof ApiError && err.code === 'reauth_required' ? 'Confirm your identity to restore.' : restoreErrorMessage(err))
+      setDialogError(err instanceof ApiError && err.code === 'reauth_required' ? t('Confirm your identity to restore.') : restoreErrorMessage(err))
       if (err instanceof ApiError && err.code === 'not_found') setDialog(null)
       return
     }
@@ -362,8 +359,8 @@ export function RestoreSection({ offline }: { offline: boolean }) {
           error={dialogError} busy={dialogBusy} onVerify={(pw) => void verify(pw)} onConfirm={() => void confirm()} onCancel={cancel} />
       )}
       {deleting && (
-        <ConfirmDialog title="Delete this safety copy?" confirmLabel="Delete safety copy"
-          consequence={<>The database kept before that restore is removed from the server for good: <span className="user-text font-medium">{deleting}</span>.</>}
+        <ConfirmDialog title={t('Delete this safety copy?')} confirmLabel={t('Delete safety copy')}
+          consequence={<>{t.rich('The database kept before that restore is removed from the server for good: <span>{deleting}</span>.', { deleting, span: (chunks) => <span className="user-text font-medium">{chunks}</span> })}</>}
           onConfirm={async () => {
             try {
               await api.deleteSafetyCopy(deleting)

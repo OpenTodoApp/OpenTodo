@@ -8,6 +8,7 @@ import { navigate, routePath, type Route } from './router'
 import { openTask } from './signals'
 import { Popover } from './overlay'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t } from '../lib/i18n'
 
 /**
  * Notification badge and list (OpenSpec `task-assignment`; mentions from
@@ -36,15 +37,15 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
 
   return (
     <>
-      <button ref={ref} className={`ui-btn ui-btn--ghost ui-btn--md touch-target relative text-body ${compact ? 'w-full justify-center px-0' : ''}`} aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open}
+      <button ref={ref} className={`ui-btn ui-btn--ghost ui-btn--md touch-target relative text-body ${compact ? 'w-full justify-center px-0' : ''}`} aria-label={unread ? t('Notifications, {unread} unread', { unread }) : t('Notifications')} aria-expanded={open}
         aria-haspopup="dialog" onClick={() => setOpen((v) => !v)} data-notifications>
         <Icon name="bell" />
         {unread > 0 && (
           <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-danger px-1 text-center text-hint font-semibold leading-4 text-on-accent" data-unread>{unread}</span>
         )}
       </button>
-      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label="Notifications" width="sm:w-80" className="py-1">
-          {list.length === 0 && <p className="px-3 py-2 text-meta text-faint">No notifications.</p>}
+      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={t('Notifications')} width="sm:w-80" className="py-1">
+          {list.length === 0 && <p className="px-3 py-2 text-meta text-faint">{t('No notifications.')}</p>}
           <ul>
             {list.map((n) => (
               <li key={n.id}>
@@ -53,13 +54,13 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt === null ? 'bg-accent' : 'bg-transparent'}`} />
                   <span className="user-text min-w-0 flex-1">
                     {n.kind === 'mentioned' ? (
-                      <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> mentioned you on <strong>{n.payload.taskTitle || 'a task'}</strong>
+                      <span className="block">{t.rich('<b>{actor}</b> mentioned you on <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })}
                         {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-meta text-muted">“{n.payload.excerpt}”</span>}
                       </span>
                     ) : n.kind === 'unblocked' && 'blockerTitle' in n.payload ? (
-                      <span className="block" data-kind="unblocked"><strong>{n.payload.actorName || 'Someone'}</strong> completed <strong>{n.payload.blockerTitle || 'a task'}</strong>: <strong>{n.payload.taskTitle || 'your task'}</strong> is ready to start</span>
+                      <span className="block" data-kind="unblocked">{t.rich('<b>{actor}</b> completed <b2>{blocker}</b2>: <b3>{task}</b3> is ready to start', { actor: n.payload.actorName || t('Someone'), blocker: n.payload.blockerTitle || t('a task'), task: n.payload.taskTitle || t('your task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong>, b3: (chunks) => <strong>{chunks}</strong> })}</span>
                     ) : (
-                      <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> assigned you <strong>{n.payload.taskTitle || 'a task'}</strong></span>
+                      <span className="block">{t.rich('<b>{actor}</b> assigned you <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })}</span>
                     )}
                     <span className="block text-meta text-faint">
                       {n.payload.projectName ? `${n.payload.projectName} · ` : ''}{dt.formatInstant(n.createdAt, 'datetime')}

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { applyOps, resetDeviceId } from './ops'
-import { readUserPrefs, setUserPref } from './userPrefs'
+import { readLanguage, readUserPrefs, setUserPref } from './userPrefs'
 
 let n = 0
 beforeEach(() => {
@@ -40,5 +40,24 @@ describe('user_prefs (date-time-preferences D1)', () => {
     expect((await db.userPrefs.get('me'))?.date_format).toBe('month-day')
     await applyOps([{ id: 'y', entity: 'user_prefs', entityId: 'me', field: 'date_format', value: 'iso', ts: clock.ts - 1, device: 'old' }])
     expect((await db.userPrefs.get('me'))?.date_format).toBe('month-day')
+  })
+})
+
+describe('language (app-localization D1)', () => {
+  it('a shipped code reads back; a missing row or an unknown code reads as system and the row keeps it', async () => {
+    expect(readLanguage(undefined)).toBe('system')
+    await applyOps([{ id: 'l1', entity: 'user_prefs', entityId: 'me', field: 'language', value: 'de', ts: 10, device: 'laptop' }])
+    expect(readLanguage(await db.userPrefs.get('me'))).toBe('de')
+    await applyOps([{ id: 'l2', entity: 'user_prefs', entityId: 'me', field: 'language', value: 'ja', ts: 11, device: 'newer' }])
+    const row = await db.userPrefs.get('me')
+    expect(row?.language).toBe('ja')
+    expect(readLanguage(row)).toBe('system')
+  })
+
+  it('a change made offline applies at once and waits in the outbox', async () => {
+    await setUserPref('language', 'it')
+    expect(readLanguage(await db.userPrefs.get('me'))).toBe('it')
+    const queued = (await db.outbox.toArray()).map(({ entity, entityId, field, value }) => ({ entity, entityId, field, value }))
+    expect(queued).toEqual([{ entity: 'user_prefs', entityId: 'me', field: 'language', value: 'it' }])
   })
 })

@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Skeleton } from '../ui'
 import { AppearanceProvider } from './AppearanceProvider'
 import { DateTimePrefsProvider } from './DateTimePrefsProvider'
+import { LanguageProvider } from './LanguageProvider'
+import { useLanguageVersion, t } from '../lib/i18n'
 import { api, onEnrolmentRequired } from '../lib/api'
 import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
 import { clearLocalData } from '../lib/db'
@@ -27,6 +29,10 @@ import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
 import { clearVimPref } from './vim/prefs'
 import { DEMO_BANNER, DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
+import { setHosted } from '../lib/hosted'
+
+// Display mode (display-mode): its own chunk, fetched when a display route opens.
+const DisplayScreen = lazy(() => import('./display/DisplayScreen').then((m) => ({ default: m.DisplayScreen })))
 
 type Phase =
   | { kind: 'loading' }
@@ -46,11 +52,14 @@ export function App() {
   const [signInNotice, setSignInNotice] = useState<string | undefined>(undefined)
   // The demo sandbox of this browser was deleted (OpenSpec `demo-sandboxes`).
   const [demoExpired, setDemoExpired] = useState(false)
+  // A language change re-renders the whole tree from here (app-localization D3).
+  useLanguageVersion()
 
   const refresh = useCallback(async () => {
     try {
       const status = await api.authStatus()
       setDemo(status.demo)
+      setHosted(status.hosted)
       setOutgoingEmail(status.outgoingEmail?.enabled)
       if (status.authenticated && status.user) {
         localStorage.setItem('opentodo.user', JSON.stringify(status.user))
@@ -66,7 +75,7 @@ export function App() {
         // A demo sandbox that is gone takes its local copy with it (the sign-out path).
         if (await expireSandboxIfGone(status, hadSession, clearDeviceData)) setDemoExpired(true)
         // The session ended because the server was restored from a backup in this tab.
-        if (consumeRestored()) setSignInNotice(RESTORED_NOTICE)
+        if (consumeRestored()) setSignInNotice(t(RESTORED_NOTICE))
         setPhase({ kind: 'anonymous', status })
       }
     } catch {
@@ -140,10 +149,12 @@ export function App() {
   // ReauthHost answers `reauth_required` on any screen (OpenSpec `mfa-totp`).
   return (
     <AppearanceProvider>
-      <DateTimePrefsProvider>
-        <ReauthHost />
-        {screen()}
-      </DateTimePrefsProvider>
+      <LanguageProvider>
+        <DateTimePrefsProvider>
+          <ReauthHost />
+          {screen()}
+        </DateTimePrefsProvider>
+      </LanguageProvider>
     </AppearanceProvider>
   )
 
@@ -154,7 +165,7 @@ export function App() {
     if (route.view === 'public') return <PublicListScreen token={route.token} />
     if (phase.kind === 'loading') {
       // Cold start (task-list-presentation "Skeleton loading"): rows in the row's shape until the local database answers.
-      return <div className="mx-auto w-full max-w-3xl px-4 py-5 md:px-8"><Skeleton shape="row" count={8} label="Loading your tasks" /></div>
+      return <div className="mx-auto w-full max-w-3xl px-4 py-5 md:px-8"><Skeleton shape="row" count={8} label={t('Loading your tasks')} /></div>
     }
     if (route.view === 'reset') {
       return (
@@ -162,7 +173,7 @@ export function App() {
           token={route.token}
           user={phase.kind === 'ready' || phase.kind === 'restricted' ? phase.user : null}
           onDone={() => {
-            setSignInNotice('Your password was changed. Sign in with the new one.')
+            setSignInNotice(t('Your password was changed. Sign in with the new one.'))
             navigate({ view: 'inbox' }, { replace: true })
             void refresh()
           }}
@@ -223,9 +234,9 @@ export function App() {
     if (phase.kind === 'offline-unknown') {
       return (
         <Centered>
-          <p className="font-medium">OpenTodo can't reach the server.</p>
-          <p className="text-body text-muted">Sign in once while online; after that the app works offline.</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md mt-4" onClick={() => void refresh()}>Retry</button>
+          <p className="font-medium">{t('OpenTodo can\'t reach the server.')}</p>
+          <p className="text-body text-muted">{t('Sign in once while online; after that the app works offline.')}</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md mt-4" onClick={() => void refresh()}>{t('Retry')}</button>
         </Centered>
       )
     }
@@ -234,7 +245,7 @@ export function App() {
     }
     if (phase.kind === 'anonymous') {
       // On /share the payload waits in memory; after sign-in the route is still /share.
-      const notice = route.view === 'share' ? 'Sign in to add the shared page to OpenTodo. It is kept on this screen until then.' : signInNotice
+      const notice = route.view === 'share' ? t('Sign in to add the shared page to OpenTodo. It is kept on this screen until then.') : signInNotice
       return <AuthScreen status={phase.status} notice={notice} onAuthenticated={() => void refresh()} />
     }
     // Encrypted account without the key on this device (OpenSpec e2ee, design D5).
@@ -244,17 +255,22 @@ export function App() {
     if (route.view === 'share') {
       return <ShareCapture />
     }
+    if (route.view === 'display') {
+      // Display mode (display-mode D3): the display replaces the shell; sync keeps
+      // running (started above for every signed-in route), so it stays live.
+      return <Suspense fallback={null}><DisplayScreen route={route} /></Suspense>
+    }
     return (
       <>
         {enc.updateRequired && (
           <div role="alert" className="border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft">
-            A newer version of OpenTodo is required to read your data. <button className="underline" onClick={() => window.location.reload()}>Reload to update</button>
+            {t('A newer version of OpenTodo is required to read your data.')}{' '}<button className="underline" onClick={() => window.location.reload()}>{t('Reload to update')}</button>
           </div>
         )}
         {demo ? (
           // The banner takes its own row so the shell still fills the rest of the screen.
           <div className="flex h-full flex-col">
-            <DemoBanner notice={sync.state === 'limited' ? DEMO_LIMIT_NOTICE : undefined} />
+            <DemoBanner notice={sync.state === 'limited' ? t(DEMO_LIMIT_NOTICE) : undefined} />
             <div className="min-h-0 flex-1"><Shell user={phase.user} onLogout={() => void logout()} /></div>
           </div>
         ) : (
@@ -280,7 +296,7 @@ async function clearDeviceData() {
 export function DemoBanner({ notice }: { notice?: string }) {
   return (
     <div role="status" data-testid="demo-banner" className="border-b border-info bg-info-soft px-4 py-1.5 text-center text-body text-on-info-soft">
-      {DEMO_BANNER}
+      {t(DEMO_BANNER)}
       {notice && <span className="mt-0.5 block font-medium text-on-warning-soft" data-testid="demo-limit">{notice}</span>}
     </div>
   )
@@ -305,9 +321,9 @@ export function DemoExpiredScreen({ onStarted }: { onStarted: () => void }) {
   return (
     <Centered>
       <div data-testid="demo-expired" className="max-w-sm">
-        <p className="font-medium">Your demo sandbox has expired</p>
-        <p className="mt-1 text-body text-muted">Sandboxes are deleted after 2 hours of inactivity, a day after they were created, and every night. Its data is gone from the server and from this browser.</p>
-        <button className="ui-btn ui-btn--primary ui-btn--md mt-4" disabled={busy} onClick={() => void start()}>{busy ? 'Please wait…' : 'Start a new sandbox'}</button>
+        <p className="font-medium">{t('Your demo sandbox has expired')}</p>
+        <p className="mt-1 text-body text-muted">{t('Sandboxes are deleted after 2 hours of inactivity, a day after they were created, and every night. Its data is gone from the server and from this browser.')}</p>
+        <button className="ui-btn ui-btn--primary ui-btn--md mt-4" disabled={busy} onClick={() => void start()}>{busy ? t('Please wait…') : t('Start a new sandbox')}</button>
         {error && <p className="mt-3 text-body text-danger" role="alert">{error}</p>}
       </div>
     </Centered>

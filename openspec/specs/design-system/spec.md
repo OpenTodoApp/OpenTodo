@@ -119,7 +119,7 @@ The legacy button, input and keyboard-hint classes SHALL take their colours, rad
 - **THEN** the token lint fails naming the file and line
 
 ### Requirement: Design workbench
-The repository SHALL include a design workbench that runs locally with one command. It SHALL show the foundations (colours with their contrast, type scale, spacing, radii, elevation, motion) and SHALL have a story for every shared UI primitive and pattern, in light and dark. The workbench SHALL be a development tool only and SHALL add nothing to the shipped app or server.
+The repository SHALL include a design workbench that runs locally with one command. It SHALL show the foundations (colours with their contrast, type scale, spacing, radii, elevation, motion) and SHALL have a story for every shared UI primitive and pattern, in light and dark. It SHALL offer a switch over the shipped interface languages (OpenSpec `localization`). The workbench SHALL be a development tool only and SHALL add nothing to the shipped app or server.
 
 #### Scenario: Contributor opens the workbench
 - **WHEN** a contributor runs the workbench command in `web/`
@@ -128,6 +128,10 @@ The repository SHALL include a design workbench that runs locally with one comma
 #### Scenario: Production build untouched
 - **WHEN** the production web app is built
 - **THEN** no workbench code or dependency is included in the output
+
+#### Scenario: Story in German
+- **WHEN** a contributor switches the workbench language to German on the settings-section story at phone width
+- **THEN** the story renders with the German catalog and its layout is unchanged except for text length
 
 ### Requirement: Accessibility gate on stories
 CI SHALL run an automated accessibility audit on every workbench story in light and dark. It SHALL fail on any serious or critical violation.
@@ -421,3 +425,18 @@ Every interactive control in screens SHALL show the token focus ring on keyboard
 #### Scenario: Priority chip focus
 - **WHEN** a keyboard user focuses a priority option
 - **THEN** the token focus ring is shown and the option's border does not change
+
+### Requirement: High-contrast and no-motion presentation
+The tokens SHALL offer a high-contrast override (`data-contrast="high"` on the document root) in which surfaces are pure white or pure black, text reaches at least 7:1 on every surface it is allowed on, soft tints are replaced by outlines, and non-text UI reaches at least 3:1; and a no-motion attribute (`data-motion="none"`) that sets every transition and animation duration to zero. Both SHALL combine with any theme mode and accent and SHALL be covered by the contrast check.
+
+#### Scenario: Override in both modes
+- **WHEN** the root carries `data-contrast="high"` in light mode and then in dark mode
+- **THEN** the canvas is pure white with black text, then pure black with white text, and every allowed text and surface pair measures at least 7:1
+
+#### Scenario: Override pair fails the check
+- **WHEN** a contributor changes a high-contrast text token so a pair falls to 6:1
+- **THEN** the contrast check in `make check` fails and names the pair, the override and the measured ratio
+
+#### Scenario: No motion
+- **WHEN** the root carries `data-motion="none"` and a task is completed
+- **THEN** the row changes state with no transition or animation, as under the system's reduced-motion setting

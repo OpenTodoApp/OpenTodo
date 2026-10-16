@@ -62,7 +62,7 @@ describe('ImportView', () => {
       ],
     }
     const html = render({ preview, fileName: 'tasks.csv' })
-    expect(html).toContain('3 rows: 1 to create · 1 skipped · 1 with errors · 1 possible duplicates')
+    expect(html).toContain('3 rows: 1 to create · 1 skipped · 1 with errors · 1 possible duplicate')
     expect(html).toContain('ignored: color')
     expect(html).toContain('possible duplicate')
     expect(html).toContain('every 3 hours&quot; not supported')

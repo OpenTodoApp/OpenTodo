@@ -10,6 +10,8 @@ import { getDeviceId } from '../lib/ops'
 import { syncNow } from '../lib/sync'
 import type { ChangeSet } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { useFieldDefs } from './useFields'
+import { t } from '../lib/i18n'
 
 /**
  * Revision history of a project (OpenSpec `trash-and-history`; tasks use the task
@@ -27,6 +29,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
   embedded?: boolean
 }) {
   const dt = useDateTimeFormat()
+  useFieldDefs()
   const [open, setOpen] = useState(embedded)
   const [sets, setSets] = useState<ChangeSet[]>([])
   const [before, setBefore] = useState<number | undefined>()
@@ -40,7 +43,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
     for (const p of await db.projects.toArray()) m.set(`project_id:${p.id}`, p.name)
     for (const x of await db.sections.toArray()) m.set(`section_id:${x.id}`, x.name)
     const parents = [...new Set(sets.flatMap((cs) => cs.changes.filter((c) => c.field === 'parent_id').flatMap((c) => [c.from, c.to]).filter((v): v is string => typeof v === 'string')))]
-    for (const t of await db.tasks.bulkGet(parents)) if (t) m.set(`parent_id:${t.id}`, t.title)
+    for (const task of await db.tasks.bulkGet(parents)) if (task) m.set(`parent_id:${task.id}`, task.title)
     return m
   }, [sets], new Map<string, string>())
   const fmt = (field: string, value: unknown) => formatValue(field, value, (f, ref) => refNames.get(`${f}:${ref}`))
@@ -84,7 +87,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
     setMessage(null)
     try {
       const next = await restoreValue(entity, id, field, value)
-      setMessage(`Restored ${field}.`)
+      setMessage(t('Restored {field}.', { field: fieldLabel(field) }))
       onRestored?.(next)
       // The restore is a new op: once it reached the server it is in the history too.
       await syncNow()
@@ -95,20 +98,20 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
   }
 
   return (
-    <section className={embedded ? '' : 'pt-4'} aria-label="History">
+    <section className={embedded ? '' : 'pt-4'} aria-label={t('History')}>
       {!embedded && (
         <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-          <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />History
+          <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${open ? 'rotate-90' : ''}`} />{t('History')}
         </button>
       )}
       {open && (
         <div className="mt-2 text-body">
-          {state === 'offline' && <p className="text-meta text-muted">History needs a connection to the server.</p>}
-          {state === 'error' && <p className="text-meta text-danger">History could not be loaded.</p>}
-          {state === 'empty' && <p className="text-meta text-muted">No history on the server yet.</p>}
-          {state === 'loading' && sets.length === 0 && <Skeleton shape="line" count={4} label="Loading history" />}
+          {state === 'offline' && <p className="text-meta text-muted">{t('History needs a connection to the server.')}</p>}
+          {state === 'error' && <p className="text-meta text-danger">{t('History could not be loaded.')}</p>}
+          {state === 'empty' && <p className="text-meta text-muted">{t('No history on the server yet.')}</p>}
+          {state === 'loading' && sets.length === 0 && <Skeleton shape="line" count={4} label={t('Loading history')} />}
           {message && <p role="status" className="mb-1 text-meta text-success">{message}</p>}
-          <ol className="space-y-2" aria-label="Changes">
+          <ol className="space-y-2" aria-label={t('Changes')}>
             {sets.map((s) => (
               <li key={`${s.ts}:${s.device}`} className="border-l-2 border-default pl-2">
                 <div className="text-meta text-faint">{dt.formatInstant(s.ts, 'datetime')} · {deviceLabel(s, device)}</div>
@@ -117,11 +120,11 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
                     <li key={c.opId} className={`flex flex-wrap items-baseline gap-x-1 ${c.lost ? 'text-faint' : ''}`}>
                       <span className="font-medium">{fieldLabel(c.field)}</span>
                       <span className="break-all">{fmt(c.field, c.from)} → {fmt(c.field, c.to)}</span>
-                      {c.lost && <Tooltip label="Arrived after a newer change and was never applied"><span className="rounded-chip text-meta italic" tabIndex={0}>(lost)</span></Tooltip>}
+                      {c.lost && <Tooltip label={t('Arrived after a newer change and was never applied')}><span className="rounded-chip text-meta italic" tabIndex={0}>{t('(lost)')}</span></Tooltip>}
                       {!readOnly && canRestoreField(entity, c.field) && (
                         <button type="button" className="ml-auto text-meta text-accent underline"
-                          aria-label={`Restore ${fieldLabel(c.field)} to ${fmt(c.field, c.to)}`} onClick={() => void restore(c.field, c.to)}>
-                          Restore this value
+                          aria-label={t('Restore {field} to {value}', { field: fieldLabel(c.field), value: fmt(c.field, c.to) })} onClick={() => void restore(c.field, c.to)}>
+                          {t('Restore this value')}
                         </button>
                       )}
                     </li>
@@ -131,7 +134,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
             ))}
           </ol>
           {before !== undefined && (
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm mt-1 text-meta" onClick={() => void load(before)}>Older changes</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm mt-1 text-meta" onClick={() => void load(before)}>{t('Older changes')}</button>
           )}
         </div>
       )}

@@ -14,6 +14,7 @@ import {
 } from '../lib/nlp'
 import type { Due } from '../lib/types'
 import { useDictation } from './useDictation'
+import { t, msg, translatedMap, preferredLanguages } from '../lib/i18n'
 
 export type { QuickAddInput }
 
@@ -35,15 +36,11 @@ function nowHHMM(d = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-function browserLanguages(): readonly string[] {
-  if (typeof navigator === 'undefined') return ['en']
-  return navigator.languages?.length ? navigator.languages : [navigator.language || 'en']
-}
 
 function dueInWords(due: Due): string {
   const words = describeDue(due)?.label ?? due.date
   const full = formatDate(due.date, 'long')
-  return words.startsWith('Today') || words.startsWith('Tomorrow') ? `${words} · ${full}` : words
+  return words.startsWith(t('Today')) || words.startsWith(t('Tomorrow')) ? `${words} · ${full}` : words
 }
 
 /** How many times quick add has been used on this device, for the guide link's first three uses. */
@@ -88,17 +85,17 @@ function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly 
     case 'reminder': {
       const r = chip.value as ReminderPhrase
       const res = resolveReminder(r, line?.due ?? null, todayISO(), nowHHMM())
-      if (res.kind === 'absolute') return `Remind ${formatDate(res.date, 'long')}, ${res.time}`
-      return line?.due ? describeOffset(res.offsetMinutes) : `${describeOffset(res.offsetMinutes)} · needs a due date`
+      if (res.kind === 'absolute') return t('Remind {date}, {time}', { date: formatDate(res.date, 'long'), time: res.time })
+      return line?.due ? describeOffset(res.offsetMinutes) : `${describeOffset(res.offsetMinutes)} · ${t('needs a due date')}`
     }
     case 'due':
       return dueInWords(chip.value as Due)
     case 'someday':
-      return 'Someday'
+      return t('Someday')
     case 'evening':
-      return 'This Evening'
+      return t('This Evening')
     case 'deadline':
-      return `Deadline ${dueInWords({ date: chip.value as string })}`
+      return t('Deadline {date}', { date: dueInWords({ date: chip.value as string }) })
     case 'project':
       return `#${projectPath(chip.value as string, projects)}`
     case 'label':
@@ -110,7 +107,7 @@ function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly 
   }
 }
 
-const KIND_NAME: Record<Chip['kind'], string> = { due: 'Due', deadline: 'Deadline', someday: 'Someday', evening: 'Evening', project: 'Project', label: 'Label', priority: 'Priority', estimate: 'Estimate', recurrence: 'Repeats', reminder: 'Reminder' }
+const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), evening: msg('Evening'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), recurrence: msg('Repeats'), reminder: msg('Reminder') })
 
 /**
  * Single-line capture. With natural-language parsing on (per-device setting), the
@@ -152,7 +149,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
 
   const parsed = useMemo(() => {
     if (!settings.enabled || !value.trim()) return null
-    const langs = browserLanguages()
+    const langs = preferredLanguages()
     return parse(value, {
       today: todayISO(),
       now: nowHHMM(),
@@ -238,17 +235,17 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
             }
             if (highlight !== null) setHighlight(null)
           }}
-          aria-label={label ?? 'Add a task'}
+          aria-label={label ?? t('Add a task')}
           autoFocus={autoFocus}
           aria-describedby={chips.length ? 'quick-add-preview' : undefined}
         />
         {voice.enabled && (
-          <Tooltip label={voice.listening ? 'Stop dictation' : 'Dictate a task'} shortcut={voice.listening ? 'Esc' : voiceShortcut ? keysOf('list.dictate') : undefined}>
+          <Tooltip label={voice.listening ? t('Stop dictation') : t('Dictate a task')} shortcut={voice.listening ? 'Esc' : voiceShortcut ? keysOf('list.dictate') : undefined}>
             <button
               type="button"
               className={`relative shrink-0 rounded-full p-1.5 ${voice.listening ? 'bg-danger-soft text-danger' : 'text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised'}`}
               aria-pressed={voice.listening}
-              aria-label={voice.listening ? 'Stop dictation' : 'Dictate a task'}
+              aria-label={voice.listening ? t('Stop dictation') : t('Dictate a task')}
               data-voice-button
               // Keep focus and caret in the input: the transcript goes where the caret is.
               onMouseDown={(e) => e.preventDefault()}
@@ -267,7 +264,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           {voice.view.message && (
             <p className="mt-1 flex items-start gap-2 pl-6 text-meta text-on-warning-soft" data-voice-message>
               <span className="flex-1">{voice.view.message}</span>
-              <button type="button" className="underline" onClick={voice.dismissMessage}>Dismiss</button>
+              <button type="button" className="underline" onClick={voice.dismissMessage}>{t('Dismiss')}</button>
             </p>
           )}
         </>
@@ -280,7 +277,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
               const source = c.spans.map((s) => s.text).join(' … ')
               const label = c.kind === 'label' ? findLabel(String(c.value), labels) : undefined
               return (
-                <Tooltip key={c.key} label={`${KIND_NAME[c.kind]} from “${source}”`}>
+                <Tooltip key={c.key} label={t('{kind} from “{source}”', { kind: KIND_NAME[c.kind], source })}>
                 <span
                   data-chip={c.kind}
                   data-hue={CHIP_HUE[c.kind]}
@@ -292,11 +289,11 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                   {c.kind === 'someday' && <Icon name="archive" size="xs" />}
                   {c.kind === 'evening' && <Icon name="moon" size="xs" />}
                   {text}
-                  {c.kind === 'label' && !label && <span className="text-muted" data-new-label>new</span>}
+                  {c.kind === 'label' && !label && <span className="text-muted" data-new-label>{t('new')}</span>}
                   <button
                     type="button"
                     className="-my-1 inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-muted hover:bg-sunken hover:text-default"
-                    aria-label={`Keep “${source}” as text`}
+                    aria-label={t('Keep “{source}” as text', { source })}
                     onClick={() => dismiss(c)}
                   >
                     ×
@@ -306,14 +303,14 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
               )
             })}
             <span className="text-muted" data-testid="quick-add-title">
-              <span className="sr-only">Title: </span>
-              {emptyTitle ? <em>Type a title</em> : <span className="inline-flex items-center gap-1"><Icon name="arrow-right" size="xs" />{parsed?.title}</span>}
+              <span className="sr-only">{t('Title:')}{' '}</span>
+              {emptyTitle ? <em>{t('Type a title')}</em> : <span className="inline-flex items-center gap-1"><Icon name="arrow-right" size="xs" />{parsed?.title}</span>}
             </span>
           </div>
         )}
       </div>
       {/* Contextual help (user-documentation; ux-overhaul "Contextual help"): offered on the first three uses on this device. */}
-      {helpOffered && <div className="-mt-0.5 pl-5"><HelpLink screen="quick-add" topic="Quick add" /></div>}
+      {helpOffered && <div className="-mt-0.5 pl-5"><HelpLink screen="quick-add" topic={t('Quick add')} /></div>}
     </form>
   )
 })

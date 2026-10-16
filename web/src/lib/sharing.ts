@@ -5,6 +5,7 @@
 import { forgetEntities } from './activity'
 import { db, entityTables, getMeta, setMeta } from './db'
 import type { Clock, Entity, Membership, Op, ProjectMember, ProjectRole, Rejection, Task } from './types'
+import { t } from './i18n'
 
 /** The local scope label of a project: its own scope when shared, else the user's personal scope. */
 export function scopeOf(projectId: string | null | undefined, memberships: Map<string, Membership>): string {
@@ -74,6 +75,12 @@ export function memberName(userId: string, memberships: Map<string, Membership>)
 }
 
 export const canEditTasks = (role: ProjectRole): boolean => role !== 'viewer'
+/**
+ * Whether the signed-in account may complete or edit `task` (display-mode D5): its
+ * own data, or a shared project where its cached role is editor or higher. The
+ * same rule the list uses for its read-only notice; the server enforces it too.
+ */
+export const canEditTask = (task: Pick<Task, 'project_id'>, memberships: Map<string, Membership>): boolean => canEditTasks(roleOf(task.project_id, memberships))
 export const canEditProject = (role: ProjectRole): boolean => role === 'owner' || role === 'admin'
 export const canDeleteProject = (role: ProjectRole): boolean => role === 'owner'
 export const canManageMembers = (role: ProjectRole): boolean => role === 'owner' || role === 'admin'
@@ -155,6 +162,7 @@ function tableFor(entity: Entity) {
     case 'project_prefs': return db.prefs
     case 'user_prefs': return db.userPrefs
     case 'attachment': return db.attachments
+    case 'review': return db.review
     default: return db.tasks
   }
 }
@@ -184,10 +192,10 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
       if (!row) continue
       keys.add(`${op.entity}:${op.entityId}`)
       if (op.entity === 'task') {
-        const t = row as unknown as Task
-        if (t.title) tasks.add(t.title)
-        if (t.project_id) {
-          const p = await db.projects.get(t.project_id)
+        const task = row as unknown as Task
+        if (task.title) tasks.add(task.title)
+        if (task.project_id) {
+          const p = await db.projects.get(task.project_id)
           if (p?.name) projects.add(p.name)
         }
       } else if (op.entity === 'project' && typeof row.name === 'string') {
@@ -232,11 +240,11 @@ export async function dropUnconfirmed(keys: string[]): Promise<void> {
 
 /** One line for the user, e.g. "2 changes were not accepted (your role in Home changed): Milk, Bread". */
 export function describeRejected(n: RejectedNotice): string {
-  const what = n.count === 1 ? '1 change was not accepted' : `${n.count} changes were not accepted`
+  const what = t('{n, plural, one {# change was not accepted} other {# changes were not accepted}}', { n: n.count })
   const place = n.projects.join(', ')
   const where = !n.projects.length ? ''
-    : n.assignments === n.count ? ` (the assignee is no longer a member of ${place})`
-      : ` (your role in ${place} changed)`
+    : n.assignments === n.count ? ` ${t('(the assignee is no longer a member of {place})', { place })}`
+      : ` ${t('(your role in {place} changed)', { place })}`
   const tasks = n.tasks.length ? `: ${n.tasks.slice(0, 5).join(', ')}${n.tasks.length > 5 ? '…' : ''}` : ''
   return `${what}${where}${tasks}`
 }

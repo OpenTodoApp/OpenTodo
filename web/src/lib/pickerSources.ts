@@ -10,6 +10,7 @@ import { buildProjectTree } from './projects'
 import { compareByPosition } from './ordering'
 import { buildTree, descendants, flattenTree, type Tree } from './tree'
 import type { Membership, Project, Section, Task } from './types'
+import { t } from './i18n'
 
 /** Key of the Inbox option (the task's `project_id` is null). */
 export const INBOX_KEY = 'inbox'
@@ -90,7 +91,7 @@ export function projectSource(projects: readonly Project[], opts: ProjectSourceO
     const marker: PickerMarker = cur.deleted_at ? 'deleted' : 'archived'
     out.push({ key: cur.id, value: cur.id, label: cur.name, path: rawProjectPath(cur.id, byId), meta: marker, marker, color: cur.color, shared: memberships?.has(cur.id) })
   }
-  if (inbox) out.push({ key: INBOX_KEY, value: null, label: 'Inbox', path: [] })
+  if (inbox) out.push({ key: INBOX_KEY, value: null, label: t('Inbox'), path: [] })
   const tree = buildProjectTree(projects)
   for (const n of flattenTree(tree.roots)) {
     if (exclude?.has(n.id)) continue
@@ -106,22 +107,22 @@ export function projectSource(projects: readonly Project[], opts: ProjectSourceO
  * marked; other completed tasks are not offered.
  */
 export function parentSource(tasks: readonly Task[], task: Pick<Task, 'id' | 'project_id' | 'parent_id'>, sections: readonly Section[] = []): PickerItem[] {
-  const sameProject = tasks.filter((t) => (t.project_id ?? null) === (task.project_id ?? null))
+  const sameProject = tasks.filter((tk) => (tk.project_id ?? null) === (task.project_id ?? null))
   const excluded = descendants(task.id, sameProject)
   excluded.add(task.id)
   const sectionName = new Map(sections.map((s) => [s.id, s.name]))
   const out: PickerItem[] = []
-  const cur = task.parent_id ? tasks.find((t) => t.id === task.parent_id) : undefined
+  const cur = task.parent_id ? tasks.find((tk) => tk.id === task.parent_id) : undefined
   if (cur && (cur.completed_at || cur.deleted_at)) {
     const marker: PickerMarker = cur.deleted_at ? 'deleted' : 'completed'
-    out.push({ key: cur.id, value: cur.id, label: cur.title || 'Untitled', path: [], meta: marker, marker })
+    out.push({ key: cur.id, value: cur.id, label: cur.title || t('Untitled'), path: [], meta: marker, marker })
   }
-  out.push({ key: NONE_KEY, value: null, label: 'No parent', path: [] })
-  const open = sameProject.filter((t) => !t.completed_at && !t.deleted_at && !excluded.has(t.id))
+  out.push({ key: NONE_KEY, value: null, label: t('No parent'), path: [] })
+  const open = sameProject.filter((task) => !task.completed_at && !task.deleted_at && !excluded.has(task.id))
   const tree = buildTree(open)
   for (const n of flattenTree(tree.roots)) {
     const section = n.item.section_id ? sectionName.get(n.item.section_id) : undefined
-    out.push({ key: n.id, value: n.id, label: n.item.title || 'Untitled', path: pathOf(tree, n.id, (t) => t.title || 'Untitled'), meta: section })
+    out.push({ key: n.id, value: n.id, label: n.item.title || t('Untitled'), path: pathOf(tree, n.id, (task) => task.title || t('Untitled')), meta: section })
   }
   return out
 }
@@ -129,5 +130,5 @@ export function parentSource(tasks: readonly Task[], task: Pick<Task, 'id' | 'pr
 /** Section options of `projectId`: "No section", then its live sections in board order. */
 export function sectionSource(sections: readonly Section[], projectId: string | null): PickerItem[] {
   const live = sections.filter((s) => s.project_id === projectId && !s.deleted_at).sort(compareByPosition)
-  return [{ key: NONE_KEY, value: null, label: 'No section', path: [] }, ...live.map((s) => ({ key: s.id, value: s.id, label: s.name, path: [] }))]
+  return [{ key: NONE_KEY, value: null, label: t('No section'), path: [] }, ...live.map((s) => ({ key: s.id, value: s.id, label: s.name, path: [] }))]
 }

@@ -38,12 +38,19 @@ var (
 			"time": map[string]any{"type": "string", "description": "HH:MM (24-hour), optional"},
 			"tz":   map[string]any{"type": "string", "description": "IANA time zone, optional, needs time"},
 		}}
-	priorityProp  = map[string]any{"type": "integer", "minimum": 1, "maximum": 4, "description": "1 is the highest, 4 the default."}
-	labelsProp    = map[string]any{"type": "array", "maxItems": 50, "items": map[string]any{"type": "string"}, "description": "Label names (case-insensitive) or ids; create missing labels with create_label first."}
-	estimateProp  = map[string]any{"type": "integer", "minimum": 1, "maximum": opsync.MaxPositiveInt, "description": "Estimated duration in minutes."}
-	recurProp     = map[string]any{"type": "string", "maxLength": recurrence.MaxLen, "description": "Recurrence rule, e.g. \"every week\" or \"every 2 days\" (see docs/recurrence.md)."}
-	titleProp     = map[string]any{"type": "string", "minLength": 1, "maxLength": 500, "description": "Task title."}
-	descProp      = map[string]any{"type": "string", "maxLength": 20000, "description": "Task description (Markdown)."}
+	priorityProp = map[string]any{"type": "integer", "minimum": 1, "maximum": 4, "description": "1 is the highest, 4 the default."}
+	labelsProp   = map[string]any{"type": "array", "maxItems": 50, "items": map[string]any{"type": "string"}, "description": "Label names (case-insensitive) or ids; create missing labels with create_label first."}
+	estimateProp = map[string]any{"type": "integer", "minimum": 1, "maximum": opsync.MaxPositiveInt, "description": "Estimated duration in minutes."}
+	recurProp    = map[string]any{"type": "string", "maxLength": recurrence.MaxLen, "description": "Recurrence rule, e.g. \"every week\" or \"every 2 days\" (see docs/recurrence.md)."}
+	titleProp    = map[string]any{"type": "string", "minLength": 1, "maxLength": 500, "description": "Task title."}
+	descProp     = map[string]any{"type": "string", "maxLength": 20000, "description": "Task description (Markdown)."}
+	fieldsProp   = map[string]any{"type": "array", "maxItems": opsync.MaxFieldsPerProject,
+		"description": "Custom field values to set (see list_projects for the fields of the task's project, their ids and types). Each value is text read by the field's type: a number for number fields, true or false for checkbox, YYYY-MM-DD for date, one of the options for choice, an http(s) URL for link; null clears the value. An object keyed by field id with typed values is accepted too.",
+		"items": map[string]any{"type": "object", "additionalProperties": false, "required": []string{"id", "value"},
+			"properties": map[string]any{
+				"id":    map[string]any{"type": "string", "description": "Field id."},
+				"value": map[string]any{"type": []string{"string", "null"}, "maxLength": opsync.MaxFieldText, "description": "The value as text, or null to clear."},
+			}}}
 	timezoneWrite = map[string]any{"type": "string", "description": "IANA time zone that decides which day is today when a recurring task without a due date is completed. Default: the server's zone."}
 )
 
@@ -64,6 +71,7 @@ func init() {
 			"labels":           labelsProp,
 			"estimate_minutes": estimateProp,
 			"recurrence":       recurProp,
+			"fields":           fieldsProp,
 		})
 		return writeDef("create_tasks", "Create tasks",
 			fmt.Sprintf("Create up to %d tasks in one call. Returns their ids in order.", PerCall),
@@ -80,12 +88,13 @@ func init() {
 			"labels":           labelsProp,
 			"estimate_minutes": map[string]any{"type": []string{"integer", "null"}, "minimum": 1, "maximum": opsync.MaxPositiveInt, "description": "Estimated minutes, or null to clear."},
 			"recurrence":       map[string]any{"type": []string{"string", "null"}, "maxLength": recurrence.MaxLen, "description": "Recurrence rule, or null to stop repeating."},
+			"fields":           fieldsProp,
 		}
-		desc := fmt.Sprintf("Change the priority, labels, estimate or recurrence of up to %d tasks", PerCall)
+		desc := fmt.Sprintf("Change the priority, labels, estimate, recurrence or custom field values of up to %d tasks", PerCall)
 		if !c.Encrypted {
 			props["title"] = titleProp
 			props["description"] = descProp
-			desc = fmt.Sprintf("Change the title, description, priority, labels, estimate or recurrence of up to %d tasks", PerCall)
+			desc = fmt.Sprintf("Change the title, description, priority, labels, estimate, recurrence or custom field values of up to %d tasks", PerCall)
 		}
 		desc += ". Use schedule_tasks for due dates, move_tasks for projects and complete_tasks to complete."
 		return writeDef("update_tasks", "Update tasks", desc,
@@ -554,7 +563,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	var refused []map[string]any
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
-		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence"); err != nil {
+		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields"); err != nil {
 			return Plan{}, err
 		}
 		title, _, err := it.text("title", true, 500)
@@ -630,6 +639,15 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 				return Plan{}, err
 			}
 		}
+		if it.present("fields") {
+			fp, err := snap.fieldPatch(p, pid, it["fields"], c.Encrypted)
+			if err != nil {
+				return Plan{}, err
+			}
+			for k, v := range fp {
+				patch[k] = v
+			}
+		}
 		if err := checkPatch(p, "task", id, patch); err != nil {
 			return Plan{}, err
 		}
@@ -663,7 +681,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 	seen := map[string]bool{}
 	for i, it := range list {
 		p := fmt.Sprintf("updates[%d].", i)
-		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence"); err != nil {
+		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "fields"); err != nil {
 			return Plan{}, err
 		}
 		id, err := it.str("id")
@@ -706,7 +724,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 				return Plan{}, err
 			}
 		}
-		if len(patch) == 0 {
+		if len(patch) == 0 && !it.present("fields") {
 			return Plan{}, argErr(p + "nothing to change: give at least one field besides id")
 		}
 		if err := checkPatch(p, "task", id, patch); err != nil {
@@ -716,6 +734,22 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 		if t == nil {
 			missing = append(missing, id)
 			continue
+		}
+		// Custom field values (custom-fields D6): checked against the task's project.
+		if it.present("fields") {
+			fp, err := snap.fieldPatch(p, rawStr(t, "project_id"), it["fields"], c.Encrypted)
+			if err != nil {
+				return Plan{}, err
+			}
+			for k, v := range fp {
+				patch[k] = v
+			}
+			if len(patch) == 0 {
+				return Plan{}, argErr(p + "nothing to change: give at least one field besides id")
+			}
+			if err := checkPatch(p, "task", id, patch); err != nil {
+				return Plan{}, err
+			}
 		}
 		role := snap.role(rawStr(t, "project_id"))
 		for f := range patch {

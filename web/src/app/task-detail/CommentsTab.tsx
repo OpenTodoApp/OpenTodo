@@ -21,6 +21,7 @@ import { Markdown } from '../Markdown'
 import { CommentAttachments } from './AttachmentsRow'
 import { Composer } from './Composer'
 import { RelativeTime } from './RelativeTime'
+import { t } from '../../lib/i18n'
 
 /** True on touch screens: comment actions are always shown there instead of on hover. */
 export function useCoarsePointer(): boolean {
@@ -81,7 +82,7 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
     el?.focus({ preventScroll: true })
   }, [focusComment])
 
-  const replyTarget = replyTo ? threads.find((t) => t.root.id === replyTo)?.root : undefined
+  const replyTarget = replyTo ? threads.find((item) => item.root.id === replyTo)?.root : undefined
 
   const startReply = (id: string) => {
     setReplyTo(id)
@@ -92,20 +93,20 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
   }
 
   const renderComment = (c: Comment, isReply: boolean) => {
-    if (c.deleted_at) return <p className="py-1 text-meta italic text-faint" data-comment-deleted>Comment deleted</p>
+    if (c.deleted_at) return <p className="py-1 text-meta italic text-faint" data-comment-deleted>{t('Comment deleted')}</p>
     const author = name(c.author_id)
     return (
-      <article className="group flex gap-3" aria-label={`Comment by ${author}`}>
+      <article className="group flex gap-3" aria-label={t('Comment by {author}', { author })}>
         <Avatar id={c.author_id || 'unknown'} name={author} size={isReply ? 'sm' : 'md'} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2">
             <span className="text-body font-semibold text-default">{author}</span>
             <RelativeTime ts={c.created_at} now={now} className="text-meta" />
-            {c.edited_at && <span className="text-meta text-faint">edited</span>}
+            {c.edited_at && <span className="text-meta text-faint">{t('edited')}</span>}
           </div>
           {editing === c.id ? (
             <div className="mt-1">
-              <Composer id={`edit-${c.id}`} initial={c.body} members={members} me={me} autoFocus submitLabel="Save" label="Edit comment"
+              <Composer id={`edit-${c.id}`} initial={c.body} members={members} me={me} autoFocus submitLabel={t('Save')} label={t('Edit comment')}
                 onCancel={() => setEditing(null)}
                 onSubmit={(body, mentions) => onEdit(c.id, body, mentions).then((ok) => { if (ok) setEditing(null); return ok })} />
             </div>
@@ -114,9 +115,9 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
               {c.body && <Markdown source={c.body} className="user-text mt-0.5 max-w-prose text-body leading-relaxed text-default" />}
               <CommentAttachments list={attachments?.get(c.id) ?? []} />
               <div className={`mt-1 flex flex-wrap gap-1 ${coarse ? '' : 'hover-reveal'}`} data-comment-actions>
-                {!isReply && <Button variant="ghost" size="sm" onClick={() => startReply(c.id)}>Reply</Button>}
-                {canEditComment(c, me) && <Button variant="ghost" size="sm" onClick={() => setEditing(c.id)}>Edit</Button>}
-                {canDeleteComment(c, me, role) && <Button variant="ghost" size="sm" className="text-danger" onClick={() => setDeleting(c.id)}>Delete</Button>}
+                {!isReply && <Button variant="ghost" size="sm" onClick={() => startReply(c.id)}>{t('Reply')}</Button>}
+                {canEditComment(c, me) && <Button variant="ghost" size="sm" onClick={() => setEditing(c.id)}>{t('Edit')}</Button>}
+                {canDeleteComment(c, me, role) && <Button variant="ghost" size="sm" className="text-danger" onClick={() => setDeleting(c.id)}>{t('Delete')}</Button>}
               </div>
             </>
           )}
@@ -131,31 +132,31 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
     <div className={composerHost ? 'space-y-1.5' : 'space-y-1.5 border-t border-default pt-3'} data-composer-block>
       {replyTarget && (
         <div className="flex items-center gap-1 text-meta text-muted" data-reply-target>
-          <span className="min-w-0 truncate">Replying to <strong className="font-medium text-default">{name(replyTarget.author_id)}</strong></span>
-          <IconButton icon="x" size="sm" label="Cancel reply" onClick={() => setReplyTo(null)} />
+          <span className="min-w-0 truncate">{t.rich('Replying to <strong>{name}</strong>', { name: name(replyTarget.author_id), strong: (chunks) => <strong className="font-medium text-default">{chunks}</strong> })}</span>
+          <IconButton icon="x" size="sm" label={t('Cancel reply')} onClick={() => setReplyTo(null)} />
         </div>
       )}
       <Composer ref={composerRef} id="comment-composer" draftTaskId={taskId} members={members} me={me}
-        submitLabel={replyTarget ? 'Reply' : 'Comment'} label={replyTarget ? 'Write a reply' : 'Write a comment'} attach={canAttach}
+        submitLabel={replyTarget ? t('Reply') : t('Comment')} label={replyTarget ? t('Write a reply') : t('Write a comment')} attach={canAttach}
         onSubmit={(body, mentions, files) => onCreate(body, mentions, replyTarget?.id ?? null, files).then((ok) => { if (ok) setReplyTo(null); return ok })} />
     </div>
   ) : (
-    <p className="text-meta text-faint">Sign in to comment.</p>
+    <p className="text-meta text-faint">{t('Sign in to comment.')}</p>
   )
 
   return (
     <div className="space-y-4">
       {threads.length === 0 ? (
-        <p className="text-meta text-faint" data-comments-empty>No comments yet. Ask a question or leave a note; comments work offline.</p>
+        <p className="text-meta text-faint" data-comments-empty>{t('No comments yet. Ask a question or leave a note; comments work offline.')}</p>
       ) : (
-        <ol className="space-y-5" aria-label="Comments">
-          {threads.map((t) => (
-            <li key={t.root.id} id={`comment-${t.root.id}`} tabIndex={-1} data-thread={t.root.id}
-              className={`rounded-control focus-visible:outline-2 focus-visible:outline-focus ${focusComment === t.root.id ? 'bg-accent-soft' : ''}`}>
-              {renderComment(t.root, false)}
-              {t.replies.length > 0 && (
-                <ol className="ml-4 mt-3 space-y-3 border-l-2 border-default pl-4 sm:ml-[1.125rem]" aria-label="Replies">
-                  {t.replies.map((r) => (
+        <ol className="space-y-5" aria-label={t('Comments')}>
+          {threads.map((entry) => (
+            <li key={entry.root.id} id={`comment-${entry.root.id}`} tabIndex={-1} data-thread={entry.root.id}
+              className={`rounded-control focus-visible:outline-2 focus-visible:outline-focus ${focusComment === entry.root.id ? 'bg-accent-soft' : ''}`}>
+              {renderComment(entry.root, false)}
+              {entry.replies.length > 0 && (
+                <ol className="ml-4 mt-3 space-y-3 border-l-2 border-default pl-4 sm:ml-[1.125rem]" aria-label={t('Replies')}>
+                  {entry.replies.map((r) => (
                     <li key={r.id} id={`comment-${r.id}`} tabIndex={-1} data-reply={r.id}>{renderComment(r, true)}</li>
                   ))}
                 </ol>
@@ -167,8 +168,8 @@ export const CommentsView = forwardRef<HTMLTextAreaElement | null, CommentsViewP
       {error && <p role="alert" className="text-meta text-danger">{error}</p>}
       {composerHost ? createPortal(composer, composerHost) : composer}
       {deleting && (
-        <ConfirmDialog title="Delete this comment?" confirmLabel="Delete comment"
-          consequence="Everyone on the task sees “Comment deleted” in its place. Replies stay."
+        <ConfirmDialog title={t('Delete this comment?')} confirmLabel={t('Delete comment')}
+          consequence={t('Everyone on the task sees “Comment deleted” in its place. Replies stay.')}
           onConfirm={() => onDelete(deleting)} onCancel={() => setDeleting(null)} />
       )}
     </div>
@@ -200,7 +201,7 @@ export const CommentsTab = forwardRef<HTMLTextAreaElement | null, CommentsTabPro
   const [error, setError] = useState<string | null>(null)
   useEffect(() => setError(null), [task.id])
 
-  const name = useCallback((id: string) => (id && id === me ? 'You' : memberName(id, memberships) ?? 'Someone'), [me, memberships])
+  const name = useCallback((id: string) => (id && id === me ? t('You') : memberName(id, memberships) ?? t('Someone')), [me, memberships])
   const run = async (fn: () => Promise<unknown>) => {
     setError(null)
     try {

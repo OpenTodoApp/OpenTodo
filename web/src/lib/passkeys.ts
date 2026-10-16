@@ -1,3 +1,4 @@
+import { t } from './i18n'
 // Thin wrapper around the browser credential API for passkeys (OpenSpec change
 // `passkeys`). The server speaks JSON with base64url strings for every binary
 // field; the browser wants ArrayBuffers. This module converts between the two
@@ -97,7 +98,7 @@ export function isCancellation(err: unknown): boolean {
  */
 export class PasskeyDomainError extends Error {
   constructor(readonly rpId: string, readonly host: string) {
-    super(`Passkeys on this server are set up for ${rpId}, but this page is open at ${host}. Open the app at https://${rpId}, or ask the server owner to set OPENTODO_BASE_URL to https://${host}.`)
+    super(t('Passkeys on this server are set up for {rpId}, but this page is open at {host}. Open the app at https://{rpId}, or ask the server owner to set OPENTODO_BASE_URL to https://{host}.', { rpId, host }))
     this.name = 'PasskeyDomainError'
   }
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OpenTodo Capture settings</title>
+  <title data-i18n="optionsTitle">OpenTodo Capture settings</title>
   <style>
     :root { color-scheme: light dark; --fg: #0f172a; --muted: #64748b; --bg: #f8fafc; --card: #fff; --line: #cbd5e1; --accent: #059669; --err: #dc2626; }
     @media (prefers-color-scheme: dark) { :root { --fg: #e2e8f0; --muted: #94a3b8; --bg: #020617; --card: #0f172a; --line: #334155; --err: #f87171; } }
@@ -23,19 +23,19 @@
 </head>
 <body>
   <main>
-    <h1>OpenTodo Capture</h1>
-    <p>Enter the address of your OpenTodo server. The extension opens that server's capture screen for the current page. It stores only this address, holds no password or token and never contacts the server itself.</p>
+    <h1 data-i18n="extName">OpenTodo Capture</h1>
+    <p data-i18n="optionsIntro">Enter the address of your OpenTodo server. The extension opens that server's capture screen for the current page. It stores only this address, holds no password or token and never contacts the server itself.</p>
     <p id="pending" hidden></p>
     <form id="form" novalidate>
-      <label for="server">Server URL</label>
+      <label for="server" data-i18n="serverLabel">Server URL</label>
       <input id="server" name="server" type="url" placeholder="https://todo.example.com" autocomplete="url" required autofocus>
-      <button type="submit">Save</button>
+      <button type="submit" data-i18n="save">Save</button>
     </form>
     <p id="status" role="status" hidden></p>
-    <h2>Screenshots</h2>
-    <p>"Add screenshot to OpenTodo" captures the visible part of a page and hands the image to your server's capture popup, where nothing is saved until you press Save. Handing it over needs access to your server's address, and only that address; the browser asks when you save it.</p>
+    <h2 data-i18n="screenshotsHeading">Screenshots</h2>
+    <p data-i18n="screenshotsIntro">"Add screenshot to OpenTodo" captures the visible part of a page and hands the image to your server's capture popup, where nothing is saved until you press Save. Handing it over needs access to your server's address, and only that address; the browser asks when you save it.</p>
     <p id="screenshots" role="status"></p>
-    <button type="button" id="allow" hidden>Allow screenshots</button>
+    <button type="button" id="allow" data-i18n="allowScreenshots" hidden>Allow screenshots</button>
   </main>
   <script type="module" src="options.js"></script>
 </body>

@@ -82,6 +82,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>s</kbd> | Go to Settings |
 | <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Data → Import data |
 | <kbd>g</kbd> then <kbd>?</kbd> | Open Help: the user guide, offline, with search |
+| <kbd>g</kbd> then <kbd>r</kbd> | Go to the weekly Review |
+| <kbd>g</kbd> then <kbd>Shift+S</kbd> | Go to Statistics: what you completed, created and let slip |
 | <kbd>g</kbd> then <kbd>/</kbd> | Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer) |
 
 ### Tasks in a list
@@ -106,6 +108,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>→</kbd> | Expand the subtasks of the selected task, or the sub-projects of the focused sidebar project |
 | <kbd>v</kbd> | Cycle the current project through list, board and timeline (remembered per project on this device) |
 | <kbd>Shift+S</kbd> | Share the current project: add members by email, change roles, remove, leave, transfer |
+| <kbd>Shift+F</kbd> | Manage the custom fields of the current project: add, rename, reorder, delete |
 | <kbd>Shift+P</kbd> | Edit the current project’s note (Esc saves and closes it) |
 | <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> / <kbd>4</kbd> | Set the priority of the selected task, or of the ticked tasks |
 | <kbd>Shift+L</kbd> | Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates) |
@@ -208,6 +211,17 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>k</kbd> | Back to the previous task |
 | <kbd>Enter</kbd> | Open the task’s panel to edit anything else |
 | <kbd>Esc</kbd> | Close the panel, else back to the Inbox with this task selected |
+
+### Display mode
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>j</kbd> / <kbd>↓</kbd> / <kbd>→</kbd> | Move the focus to the next row, across the day columns |
+| <kbd>k</kbd> / <kbd>↑</kbd> / <kbd>←</kbd> | Move the focus to the previous row |
+| <kbd>Home</kbd> | Focus the first row |
+| <kbd>End</kbd> | Focus the last row |
+| <kbd>Space</kbd> / <kbd>Enter</kbd> | Complete or reopen the focused task (only where you may edit it) |
+| <kbd>Esc</kbd> | Leave display mode for the same view in the app |
 
 ### Comments and notes
 

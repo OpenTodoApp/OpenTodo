@@ -13,7 +13,7 @@ The client SHALL ship a web app manifest and a service worker that precaches the
 - **THEN** the shell loads and shows locally stored tasks
 
 ### Requirement: Standard views
-The client SHALL provide Inbox (open tasks without a project), Today (open tasks due today or earlier, with overdue tasks grouped first), Upcoming (open tasks due after today grouped by date), Completed (most recent completions), and one view per project (its open tasks).
+The client SHALL provide Inbox (open tasks without a project), Today (open tasks due today or earlier, with overdue tasks grouped first), Upcoming (open tasks due after today grouped by date), Completed (completed tasks newest first, grouped by the day they were completed), and one view per project (its open tasks).
 
 #### Scenario: Overdue grouping
 - **WHEN** Today is opened and there are tasks due before today
@@ -57,6 +57,13 @@ Every primary action SHALL be reachable from the keyboard: `q` quick add, `j`/`k
 - **WHEN** the user presses `?` in a project list
 - **THEN** the cheat sheet opens with the list shortcuts first, as specified in `keyboard-shortcuts`
 
+### Requirement: Keyboard navigation to the review and statistics
+Outside text fields, `g` then `r` SHALL open the weekly Review and `g` then `Shift+S` SHALL open Statistics, like the other `g` navigation keys (OpenSpec change `stats-and-review`).
+
+#### Scenario: Navigate to the review and the statistics
+- **WHEN** focus is not in a text field and the user presses `g` then `r`, and later `g` then `Shift+S`
+- **THEN** the Review screen opens, and then the Statistics screen
+
 ### Requirement: Shortcuts come from the registry
 Every shortcut SHALL come from the registry in `keyboard-shortcuts`.
 
@@ -65,11 +72,19 @@ Every shortcut SHALL come from the registry in `keyboard-shortcuts`.
 - **THEN** that binding is declared in the `keyboard-shortcuts` registry, and the cheat sheet lists it from there
 
 ### Requirement: Account screens
-The client SHALL show the owner setup form on a fresh server, a sign-in form otherwise, a sign-up option only when the server allows it, and SHALL show server-side error messages verbatim.
+The client SHALL show the owner setup form on a fresh server, a sign-in form otherwise, a sign-up option only when the server allows it, and SHALL show server-side errors: translated by their code when the client knows the code (OpenSpec `localization`), else the server's message verbatim.
 
 #### Scenario: Setup on fresh server
 - **WHEN** the client loads against a server that reports setup required
 - **THEN** the create-owner form is shown and no sign-in form
+
+#### Scenario: Known error code in the user's language
+- **WHEN** the language is German and sign-in fails with code `invalid_credentials`
+- **THEN** the form shows the German message for that code
+
+#### Scenario: Unknown error code
+- **WHEN** the server answers with a code the client does not know
+- **THEN** the form shows the server's message as received
 
 ### Requirement: Settings
 A settings view SHALL show the signed-in account, let the user download the JSON export, create, list and revoke API tokens, and sign out. Signing out SHALL clear the local copy of the data on that device. The settings are grouped into sections with their own pages, as described by `settings-navigation`.
@@ -326,3 +341,18 @@ The app SHALL offer an Ask screen, reachable from the sidebar and with the keybo
 #### Scenario: Encrypted account
 - **WHEN** a user whose account uses end-to-end encryption opens the Ask screen by its address
 - **THEN** it explains that the assistant cannot read encrypted tasks and shows no composer
+
+### Requirement: Completed logbook
+The Completed view SHALL list completed tasks newest first, grouped by the local day of completion ("Today", "Yesterday", then weekday and date, with the year outside the current year), each group with its count. It SHALL render the newest 100 and offer a keyboard-reachable "Show more" that renders the next 100, with no fixed cap. It SHALL be computed from local data, work offline and follow synced completions and reopenings.
+
+#### Scenario: Grouped by day
+- **WHEN** the user completed two tasks today, one yesterday and one on Monday 2026-10-12, and today is Friday 2026-10-16
+- **THEN** Completed shows "Today" with two tasks, "Yesterday" with one, then a heading for Monday 12 October with one
+
+#### Scenario: Older history is reachable
+- **WHEN** the user has 250 completed tasks and opens Completed
+- **THEN** the newest 100 are listed with "Show more" naming 150 more, and pressing it twice lists all 250
+
+#### Scenario: Offline and synced
+- **WHEN** the device is offline, the user completes a task, and later another device's completion syncs in
+- **THEN** each appears under its completion day without a reload, and reopening a task removes it from its group

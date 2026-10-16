@@ -15,6 +15,7 @@ import {
 } from './crypto'
 import { db, getMeta, setMeta } from './db'
 import type { Entity, EncryptionStatus } from './types'
+import { t, msg } from './i18n'
 
 /** The client's ciphertext-awareness level; the server's minClientVersion is compared with it (design D9). */
 export const CLIENT_VERSION = 1
@@ -34,14 +35,27 @@ export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   comment: ['body'],
   // Attachments (OpenSpec attachments D8): the file bytes are an OTAT1 envelope too.
   attachment: ['name', 'mime', 'url'],
+  // Custom field definitions (OpenSpec custom-fields, design D4).
+  field: ['name', 'options'],
+}
+
+/**
+ * Families of content fields named by a prefix: a task's custom field values
+ * `fields.<id>` (custom-fields D4). Only string values are encrypted (text, link,
+ * date, choice); numbers and checkboxes stay plaintext. Keep in step with
+ * internal/e2ee ContentPrefixes.
+ */
+export const CONTENT_PREFIXES: Partial<Record<Entity, readonly string[]>> = {
+  task: ['fields.'],
 }
 
 export function isContentField(entity: Entity, field: string): boolean {
-  return CONTENT_FIELDS[entity]?.includes(field) ?? false
+  if (CONTENT_FIELDS[entity]?.includes(field)) return true
+  return CONTENT_PREFIXES[entity]?.some((p) => field.startsWith(p) && field.length > p.length) ?? false
 }
 
 /** What a field shows when its ciphertext cannot be decrypted with this device's key. */
-export const UNDECRYPTABLE = '[Cannot decrypt]'
+export const UNDECRYPTABLE = msg('[Cannot decrypt]')
 
 const K_ENABLED = 'e2ee.enabled'
 const K_RECORD = 'e2ee.record'
@@ -58,14 +72,14 @@ export const FAILURE_WINDOW_MS = 60_000
 
 export class UnlockThrottledError extends Error {
   constructor(public retryAt: number) {
-    super(`Too many attempts. Try again in ${Math.max(1, Math.ceil((retryAt - Date.now()) / 1000))} seconds.`)
+    super(t('Too many attempts. Try again in {n, plural, one {# second} other {# seconds}}.', { n: Math.max(1, Math.ceil((retryAt - Date.now()) / 1000)) }))
   }
 }
 
 /** Another device created or changed the key record first (409 encryption_conflict). */
 export class EncryptionConflictError extends Error {
   constructor() {
-    super('Encryption was already set up on another device. Unlock with that passphrase instead.')
+    super(t('Encryption was already set up on another device. Unlock with that passphrase instead.'))
   }
 }
 
@@ -201,7 +215,7 @@ export async function adoptProfile(status: EncryptionStatus | undefined, minClie
 // ---- unlock throttling ----
 
 async function checkThrottle(now: number): Promise<number[]> {
-  const recent = (await getMeta<number[]>(K_FAILURES, [])).filter((t) => now - t < FAILURE_WINDOW_MS)
+  const recent = (await getMeta<number[]>(K_FAILURES, [])).filter((item) => now - item < FAILURE_WINDOW_MS)
   if (recent.length >= MAX_FAILURES) throw new UnlockThrottledError(recent[0] + FAILURE_WINDOW_MS)
   return recent
 }
@@ -228,7 +242,7 @@ async function recordForUnlock(): Promise<KeyRecord> {
     // Offline: fall back to the cached record (offline unlock).
   }
   const cached = await cachedRecord()
-  if (!cached) throw new Error('Encryption is not enabled for this account, or the key record is not available offline.')
+  if (!cached) throw new Error(t('Encryption is not enabled for this account, or the key record is not available offline.'))
   return cached
 }
 
@@ -270,11 +284,17 @@ export function prepareEnable(passphrase: string, opts: { iterations?: number } 
   return createKeyRecord(passphrase, opts)
 }
 
-/** Step 2, after the user saved the recovery key and acknowledged the risk: store the record and keep the key. */
-export async function commitEnable({ record, key }: PreparedEnable): Promise<void> {
+/**
+ * Step 2, after the user saved the recovery key and acknowledged the risk: store the record and keep the key.
+ * `digestDisabled`: the server turned the weekly email digest off (stats-and-review), since it would carry titles.
+ */
+export async function commitEnable({ record, key }: PreparedEnable): Promise<{ digestDisabled: boolean }> {
   let stored: KeyRecord
+  let digestDisabled = false
   try {
-    stored = (await api.putEncryptionKeys(record)).keys
+    const res = await api.putEncryptionKeys(record)
+    stored = res.keys
+    digestDisabled = !!res.digestDisabled
   } catch (err) {
     if (err instanceof ApiError && err.code === 'encryption_conflict') {
       await refreshFromServer().catch(() => undefined)
@@ -285,12 +305,13 @@ export async function commitEnable({ record, key }: PreparedEnable): Promise<voi
   await storeKey(key, stored)
   await setEnabled(true, stored)
   await db.meta.delete(K_DISCARD)
+  return { digestDisabled }
 }
 
 /** Change the passphrase: re-wrap only, no content op (design D1). Needs the current passphrase. */
 export async function changePassphrase(current: string, next: string, opts: { iterations?: number } = {}): Promise<void> {
   const record = await refreshFromServer()
-  if (!record) throw new Error('Encryption is not enabled for this account.')
+  if (!record) throw new Error(t('Encryption is not enabled for this account.'))
   const rewrapped = await attempt(() => rewrapWithPassphrase(record, current, next, opts))
   const stored = (await putOrConflict(rewrapped)).keys
   await setEnabled(true, stored)
@@ -299,7 +320,7 @@ export async function changePassphrase(current: string, next: string, opts: { it
 /** Reset a forgotten passphrase with the recovery key; returns the new recovery key (the old one stops working). */
 export async function resetPassphrase(recoveryKey: string, next: string, opts: { iterations?: number } = {}): Promise<{ recoveryKey: string }> {
   const record = await refreshFromServer()
-  if (!record) throw new Error('Encryption is not enabled for this account.')
+  if (!record) throw new Error(t('Encryption is not enabled for this account.'))
   const reset = await attempt(() => resetWithRecoveryKey(record, recoveryKey, next, opts))
   const stored = (await putOrConflict(reset.record)).keys
   await storeKey(reset.key, stored)
@@ -323,7 +344,7 @@ async function putOrConflict(record: KeyRecord): Promise<{ keys: KeyRecord }> {
  * and re-written; lock() forgets it.
  */
 export async function disableEncryption(): Promise<void> {
-  if (!(await currentKey())) throw new Error('Unlock this device first: content can only be decrypted with the key.')
+  if (!(await currentKey())) throw new Error(t('Unlock this device first: content can only be decrypted with the key.'))
   await api.deleteEncryptionKeys().catch((err) => {
     if (!(err instanceof ApiError && err.status === 404)) throw err
   })
@@ -358,8 +379,8 @@ export function forgetMemoryKeys(): void {
 /** A content value the UI should mark: plaintext on the server while the account encrypts. */
 export function notYetEncrypted(row: { _e2ee?: { wire?: Record<string, string> } } & Record<string, unknown>, entity: Entity, personal = true): boolean {
   if (!snap.enabled || !personal) return false
-  for (const f of CONTENT_FIELDS[entity] ?? []) {
-    const v = row[f]
+  const values = entity === 'task' ? Object.entries((row.fields ?? {}) as Record<string, unknown>).map(([id, v]) => [`fields.${id}`, v] as const) : []
+  for (const [f, v] of [...(CONTENT_FIELDS[entity] ?? []).map((f) => [f, row[f]] as const), ...values]) {
     if (typeof v !== 'string' || v === '' || isEnvelope(v)) continue
     const w = row._e2ee?.wire?.[f]
     if (w !== 'c' && w !== 'x') return true

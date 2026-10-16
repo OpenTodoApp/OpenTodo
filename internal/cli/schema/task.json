@@ -25,6 +25,7 @@
     "position": {"type": "number"},
     "created_at": {"type": "number", "description": "Unix milliseconds"},
     "completed_at": {"type": ["number", "null"]},
+    "completed_by": {"type": ["string", "null"], "description": "account id of whoever completed the task, when known"},
     "deleted_at": {"type": ["number", "null"]},
     "estimate_minutes": {"type": ["integer", "null"]},
     "recurrence": {"type": ["string", "null"]},

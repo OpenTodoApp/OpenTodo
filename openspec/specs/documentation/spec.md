@@ -32,7 +32,7 @@ The docs check SHALL run in CI and fail when generated in-app help is stale, a l
 - **THEN** the commit contains the Markdown and the regenerated in-app help only, and the documentation website is built by CI rather than committed
 
 ### Requirement: User guide
-The documentation SHALL include a guide for people using the app, written as tasks rather than reference: getting started, tasks and projects, views, sections and boards, labels and filters, recurring tasks and reminders, time blocking, sharing and comments, notifications, offline use and sync, installing the app, keyboard shortcuts, account security, import and export, trash and history, settings, and troubleshooting.
+The documentation SHALL include a guide for people using the app, written as tasks rather than reference: getting started, tasks and projects, views, sections and boards, labels and filters, recurring tasks and reminders, time blocking, sharing and comments, notifications, offline use and sync, installing the app, keyboard shortcuts, account security, import and export, trash and history, settings, troubleshooting, and switching from Todoist, Things, TickTick and Linear.
 
 #### Scenario: First steps
 - **WHEN** a new user opens Getting started
@@ -41,6 +41,10 @@ The documentation SHALL include a guide for people using the app, written as tas
 #### Scenario: Keyboard reference matches the app
 - **WHEN** a shortcut is added to the app's shortcut table
 - **THEN** the `?` overlay and the keyboard guide both list it after the next build, with no separate edit
+
+#### Scenario: Switching from another app
+- **WHEN** a Todoist user opens the Todoist switch guide on the website or in the in-app Help
+- **THEN** it shows how to export from Todoist, how to import the file, what carries over, and what is dropped with a warning, matching the importer's documented mapping
 
 ### Requirement: Documentation website
 Every release SHALL ship the documentation as a static website in its site bundle, for the public website to serve under `/docs/`, grouped by audience, with navigation, an "on this page" list, search that runs in the browser over a prebuilt index, the version described, and an "Edit this page" link. Pages SHALL be readable without JavaScript, and no search text SHALL be sent anywhere.

@@ -26,15 +26,17 @@ const (
 	KindInvitation    Kind = "invitation"
 	KindProjectInvite Kind = "project_invite"
 	KindTest          Kind = "test"
+	// KindDigest is the opt-in weekly digest (OpenSpec change stats-and-review).
+	KindDigest Kind = "digest"
 )
 
 // Kinds lists every kind.
-var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindTest}
+var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindTest, KindDigest}
 
 // carriesContent marks kinds that include entity content and must never be
-// built for an account with end-to-end encryption (design D8). None of the
-// current kinds does; the digest in `stats-and-review` will.
-var carriesContent = map[Kind]bool{}
+// built for an account with end-to-end encryption (design D8). Only the
+// weekly digest of `stats-and-review` does: it lists task and project names.
+var carriesContent = map[Kind]bool{KindDigest: true}
 
 // Languages are the supported message languages, English first.
 var Languages = []string{"en", "de", "fr", "es", "it", "pt"}
@@ -50,6 +52,9 @@ type Vars struct {
 	// Existing selects the verify_signup variant for an address that already
 	// has an account.
 	Existing bool
+	// Digest holds the weekly digest's numbers and lists (KindDigest only);
+	// Link is then the review address.
+	Digest *DigestVars
 }
 
 // Message is one message to render and send.
@@ -77,6 +82,8 @@ var templateFS embed.FS
 // to the binary), and a template can never reach a value it is not given.
 type templateData struct {
 	Origin, Email, Link, Expiry, Inviter, Role string
+	// digest fills the digest-only placeholders (KindDigest templates only).
+	digest map[string]string
 }
 
 // placeholder matches `{{.Field}}`, with optional spaces inside the braces.
@@ -87,14 +94,19 @@ var placeholder = regexp.MustCompile(`\{\{\s*\.(\w+)\s*\}\}`)
 // known placeholders, the way template.Must would on a parse error.
 var templates = func() map[string]string {
 	known := map[string]bool{"Origin": true, "Email": true, "Link": true, "Expiry": true, "Inviter": true, "Role": true}
+	digestKnown := map[string]bool{}
+	for _, f := range digestPlaceholders {
+		digestKnown[f] = true
+	}
 	out := map[string]string{}
 	entries, _ := templateFS.ReadDir("templates")
 	for _, e := range entries {
 		raw, _ := templateFS.ReadFile("templates/" + e.Name())
 		name := strings.TrimSuffix(e.Name(), ".txt")
+		isDigest := strings.HasPrefix(name, string(KindDigest)+".")
 		text := placeholder.ReplaceAllStringFunc(string(raw), func(m string) string {
 			field := placeholder.FindStringSubmatch(m)[1]
-			if !known[field] {
+			if !known[field] && !(isDigest && digestKnown[field]) {
 				panic(fmt.Sprintf("mail: template %s uses unknown variable %s", e.Name(), field))
 			}
 			return "{{." + field + "}}"
@@ -109,10 +121,14 @@ var templates = func() map[string]string {
 
 // execute fills a template's placeholders from data.
 func (d templateData) execute(text string) string {
-	return strings.NewReplacer(
+	pairs := []string{
 		"{{.Origin}}", d.Origin, "{{.Email}}", d.Email, "{{.Link}}", d.Link,
 		"{{.Expiry}}", d.Expiry, "{{.Inviter}}", d.Inviter, "{{.Role}}", d.Role,
-	).Replace(text)
+	}
+	for k, v := range d.digest {
+		pairs = append(pairs, "{{."+k+"}}", v)
+	}
+	return strings.NewReplacer(pairs...).Replace(text)
 }
 
 var units = map[string][2][2]string{ // lang → {hours {one, many}, days {one, many}}
@@ -224,6 +240,9 @@ func Render(m Message, origin string) (subject, body string, err error) {
 	}
 	data := templateData{Origin: origin, Email: m.To, Link: m.Vars.Link, Expiry: formatExpiry(m.Vars.Expiry, lang),
 		Inviter: inviter, Role: role}
+	if m.Kind == KindDigest {
+		data.digest = digestValues(m.Vars.Digest, lang)
+	}
 	subject, body, _ = strings.Cut(data.execute(t), "\n")
 	return strings.TrimSpace(subject), strings.TrimLeft(body, "\n"), nil
 }

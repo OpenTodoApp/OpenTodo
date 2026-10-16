@@ -75,6 +75,15 @@ Rules for code under `web/src/ui/`:
 A token switches between light and dark by itself, so a screen needs no `dark:` partner for colour.
 - Before using a new foreground and background combination, add it to `src/ui/tokens/pairs.ts`. `contrast.test.ts` recomputes every pair from `index.css` in both themes and fails with the pair, theme and ratio.
 
+### High contrast and no motion
+
+Two root attributes change the presentation for screens that ask for them (OpenSpec `display-mode`, design-system "High-contrast and no-motion presentation"):
+
+- `data-contrast="high"` on `<html>` overrides the `--ot-*` tokens: every surface is pure white (light) or pure black (dark), text is black or white with secondary text still at 7:1 or more, soft tints become the surface (an outline keeps their shape), borders and the focus ring are full black or white, and the priority and status hues are darkened (light) or lightened (dark) to 7:1 as text and 3:1 as marks. The blocks are `html:root[data-contrast="high"]`, the system-dark branch and `[data-theme="dark"]`; their selectors outrank the mode and accent blocks, so the override combines with any mode and accent. The two dark blocks must stay identical.
+- `data-motion="none"` sets `--duration-ui` and `--duration-emphasis` to `0ms` and makes every transition and animation instant, stricter than the reduced-motion query (colour and opacity do not fade either).
+
+Only the display routes set them, on mount, and remove them on unmount (`useRootPresentation` in `web/src/app/display/displayHooks.ts`); they never touch the user's theme or preferences. `OVERRIDE_PAIRS` in `src/ui/tokens/pairs.ts` holds the override's pairs with raised minimums (7:1 for text and chips, 3:1 for the rest), and `contrast.test.ts` measures them in both modes and names the pair, the override and the ratio when one fails. The workbench shows the override in **Foundations → Colours → High Contrast Override**. The display's large type is not a token: `.display-root` multiplies the type tokens by `--display-scale` (1.35, 1.6 and 2.15 for the `m`, `l` and `xl` sizes), so it still follows the browser's font size.
+
 The legacy classes `.btn-*`, `.input` and `.kbd` are gone: screens use `<Button>`, `<IconButton>`, the field primitives and `<Kbd>` (or the `ui-btn`, `ui-input` and `ui-kbd` classes they render), and `lint.test.ts` fails if a legacy class returns to the stylesheet or a screen.
 
 ## Stored colours
@@ -147,7 +156,7 @@ Action menus use the overlay `Menu` with `kind="menu"` and contain `MenuItem`, `
 
 Storybook is a development tool only: it adds nothing to `internal/web/dist`, the Go binary or the container image, and a unit test fails if the production build contains Storybook code.
 
-- `make storybook` (or `npm run storybook` in `web/`) opens it on http://localhost:6006. The toolbar switches the theme (light, dark, side by side) and the frame width (375 or 1280 px).
+- `make storybook` (or `npm run storybook` in `web/`) opens it on http://localhost:6006. The toolbar switches the theme (light, dark, side by side) and the frame width (375 or 1280 px). A third switch picks the interface language: a story then renders with that language's catalog (loaded the way the app loads it) and `lang` set on the frame, which shows where a longer German or French label wraps. The accessibility gate and the visual baselines always run in English.
 - `npm run build-storybook` writes the static build to `web/storybook-static/` (not committed).
 - **Foundations** shows the colour tokens with their live contrast ratios, the palette, type, spacing, radius, elevation, motion and the component classes.
 

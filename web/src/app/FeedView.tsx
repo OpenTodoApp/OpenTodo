@@ -13,6 +13,7 @@ import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { hueFor, PageBody, PageHeader } from '../ui'
 import { Tooltip } from '../ui'
+import { t } from '../lib/i18n'
 
 /**
  * The activity feed (OpenSpec `activity-feed`): every shared project's recent
@@ -33,7 +34,7 @@ export function FeedView() {
   const pending = useLiveQuery(() => pendingOpIds(), [], new Set<string>())
   const projects = useLiveQuery(() => db.projects.toArray(), [], [] as Project[])
   const taskIds = useMemo(() => [...new Set((local ?? []).map((e) => e.taskId).filter((id): id is string => !!id))], [local])
-  const tasks = useLiveQuery(async () => (await db.tasks.bulkGet(taskIds)).filter((t): t is Task => !!t), [taskIds], [] as Task[])
+  const tasks = useLiveQuery(async () => (await db.tasks.bulkGet(taskIds)).filter((task): task is Task => !!task), [taskIds], [] as Task[])
   // Seen times as they were when the feed opened: those entries keep their dot.
   const [seenAtOpen, setSeenAtOpen] = useState<Map<string, number> | null>(null)
   useEffect(() => {
@@ -73,13 +74,13 @@ export function FeedView() {
     for (const e of older) if (e.actorName) m.set(e.actor, e.actorName)
     return m
   }, [older])
-  const name = useCallback((id: string) => (id && id === me ? 'You' : memberName(id, memberships) ?? names.get(id) ?? 'Someone'), [me, memberships, names])
+  const name = useCallback((id: string) => (id && id === me ? t('You') : memberName(id, memberships) ?? names.get(id) ?? t('Someone')), [me, memberships, names])
   const projectName = useCallback(
-    (id: string | null | undefined, fallback?: string) => (id ? projectById.get(id)?.name ?? fallback ?? 'a shared project' : 'Inbox'),
+    (id: string | null | undefined, fallback?: string) => (id ? projectById.get(id)?.name ?? fallback ?? t('a shared project') : t('Inbox')),
     [projectById],
   )
   const titles = useMemo(() => {
-    const m = new Map(tasks.map((t) => [t.id, t.title]))
+    const m = new Map(tasks.map((tk) => [tk.id, tk.title]))
     for (const e of older) if (e.taskId && e.taskTitle && !m.has(e.taskId)) m.set(e.taskId, e.taskTitle)
     return m
   }, [tasks, older])
@@ -115,62 +116,62 @@ export function FeedView() {
 
   const today = dayOf(Date.now())
   const yesterday = dayOf(Date.now() - 86_400_000)
-  const dayLabel = (d: string) => (d === today ? 'Today' : d === yesterday ? 'Yesterday' : dt.formatDate(d, d.slice(0, 4) === today.slice(0, 4) ? 'heading' : 'long'))
+  const dayLabel = (d: string) => (d === today ? t('Today') : d === yesterday ? t('Yesterday') : dt.formatDate(d, d.slice(0, 4) === today.slice(0, 4) ? 'heading' : 'long'))
   const isNew = (e: ActivityEvent) => !!seenAtOpen && !!e.projectId && e.actor !== me && e.ts > (seenAtOpen.get(e.projectId) ?? Number.POSITIVE_INFINITY)
 
   return (
     <PageBody width="list">
-      <PageHeader title="Updates" meta="What changed in your shared projects" help="updates">
+      <PageHeader title={t('Updates')} meta={t('What changed in your shared projects')} help="updates">
         <label className="flex items-center gap-1 text-meta text-muted">
-          Project
-          <select className="ui-input py-0.5 text-meta" value={project} onChange={(e) => setProject(e.target.value)} aria-label="Filter feed by project">
-            <option value="">All shared projects</option>
+          {t('Project')}
+          <select className="ui-input py-0.5 text-meta" value={project} onChange={(e) => setProject(e.target.value)} aria-label={t('Filter feed by project')}>
+            <option value="">{t('All shared projects')}</option>
             {(shared ?? []).map((id) => <option key={id} value={id}>{projectName(id)}</option>)}
           </select>
         </label>
         <label className="flex items-center gap-1 text-meta text-muted">
-          Person
-          <select className="ui-input py-0.5 text-meta" value={actor} onChange={(e) => setActor(e.target.value)} aria-label="Filter feed by person">
-            <option value="">Everyone</option>
+          {t('Person')}
+          <select className="ui-input py-0.5 text-meta" value={actor} onChange={(e) => setActor(e.target.value)} aria-label={t('Filter feed by person')}>
+            <option value="">{t('Everyone')}</option>
             {actors.map((a) => <option key={a} value={a}>{name(a)}</option>)}
           </select>
         </label>
         <label className="flex items-center gap-1 text-meta text-muted">
-          Kind
-          <select className="ui-input py-0.5 text-meta" value={kind} onChange={(e) => setKind(e.target.value as FeedKind | '')} aria-label="Filter feed by kind">
-            <option value="">All changes</option>
+          {t('Kind')}
+          <select className="ui-input py-0.5 text-meta" value={kind} onChange={(e) => setKind(e.target.value as FeedKind | '')} aria-label={t('Filter feed by kind')}>
+            <option value="">{t('All changes')}</option>
             {FEED_KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
           </select>
         </label>
       </PageHeader>
       {shared && shared.length === 0 ? (
-        <p className="py-12 text-center text-body text-faint">Share a project to see what others change here.</p>
+        <p className="py-12 text-center text-body text-faint">{t('Share a project to see what others change here.')}</p>
       ) : shown.length === 0 && local ? (
-        <p className="py-12 text-center text-body text-faint">No activity{project || actor || kind ? ' matches these filters' : ' on this device yet'}.</p>
+        <p className="py-12 text-center text-body text-faint">{project || actor || kind ? t('No activity matches these filters.') : t('No activity on this device yet.')}</p>
       ) : null}
       <div className="space-y-4">
         {groups.map((g) => (
           <section key={g.day} aria-label={dayLabel(g.day)}>
             <h2 className="mb-1 text-meta font-semibold uppercase tracking-wide text-faint">{dayLabel(g.day)}</h2>
-            <ol className="divide-y divide-(--ot-border)" aria-label="Activity">
+            <ol className="divide-y divide-(--ot-border)" aria-label={t('Activity')}>
               {g.events.map((e) => {
-                const title = e.taskId ? titles.get(e.taskId) || e.taskTitle || 'a task' : null
+                const title = e.taskId ? titles.get(e.taskId) || e.taskTitle || t('a task') : null
                 const p = e.projectId ? projectById.get(e.projectId) : undefined
                 const fresh = isNew(e)
                 return (
                   <li key={e.id} data-feed-id={e.id} data-event={e.kind} data-actor={e.actor} data-unread={fresh || undefined}
                     onClick={() => setSelected(e.id)} onDoubleClick={() => open(e)}
                     className={`flex items-baseline gap-2 px-2 py-1.5 text-body ${e.id === selected ? 'bg-accent-soft' : ''}`}>
-                    <span className={`h-2 w-2 shrink-0 self-center rounded-full ${fresh ? 'bg-accent' : 'bg-transparent'}`} aria-label={fresh ? 'New' : undefined} />
+                    <span className={`h-2 w-2 shrink-0 self-center rounded-full ${fresh ? 'bg-accent' : 'bg-transparent'}`} aria-label={fresh ? t('New') : undefined} />
                     <span className="min-w-0 flex-1">
-                      <strong className="font-medium text-default">{isPublicEvent(e) ? PUBLIC_ACTOR_LABEL : name(e.actor)}</strong>{' '}
+                      <strong className="font-medium text-default">{isPublicEvent(e) ? t(PUBLIC_ACTOR_LABEL) : name(e.actor)}</strong>{' '}
                       <span className="text-muted">{describeEvent(e, name, (id) => projectName(id))}</span>
                       {title && e.entity !== 'project' && (
-                        <> {e.entity === 'comment' ? 'on' : '·'}{' '}
+                        <> {e.entity === 'comment' ? t('on', { context: 'comment' }) : '·'}{' '}
                           <button type="button" className="text-default underline decoration-dotted" onClick={() => open(e)}>{title}</button>
                         </>
                       )}
-                      {isPending(e, pending) && <Tooltip label="Not yet synced"><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>(pending)</span></Tooltip>}
+                      {isPending(e, pending) && <Tooltip label={t('Not yet synced')}><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>{t('(pending)')}</span></Tooltip>}
                       <span className="mt-0.5 flex items-center gap-1 text-meta text-faint">
                         <span className="inline-block h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(p?.color)} aria-hidden />
                         <button type="button" className="hover:underline" onClick={() => e.projectId && navigate({ view: 'project', id: e.projectId })}>
@@ -190,10 +191,10 @@ export function FeedView() {
       </div>
       {more && online && shared && shared.length > 0 && (
         <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm mt-3 text-meta" disabled={state === 'loading'} onClick={() => void loadOlder()}>
-          {state === 'loading' ? 'Fetching older updates…' : 'Load older updates'}
+          {state === 'loading' ? t('Fetching older updates…') : t('Load older updates')}
         </button>
       )}
-      {state === 'error' && <p className="mt-2 text-meta text-danger">Older updates could not be loaded.</p>}
+      {state === 'error' && <p className="mt-2 text-meta text-danger">{t('Older updates could not be loaded.')}</p>}
     </PageBody>
   )
 }

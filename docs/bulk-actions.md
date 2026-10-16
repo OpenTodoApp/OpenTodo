@@ -16,7 +16,7 @@ Tick tasks, then act on all of them in one go.
 ## Tick the tasks
 
 - **Keyboard:** press <kbd>x</kbd> (or <kbd>Space</kbd>) to tick the selected task, <kbd>Shift</kbd>+<kbd>↓</kbd> or <kbd>Shift</kbd>+<kbd>↑</kbd> to extend the range, and <kbd>Ctrl</kbd>+<kbd>A</kbd> (<kbd>⌘</kbd>+<kbd>A</kbd>) to tick the whole list once something is ticked. <kbd>Esc</kbd> clears the ticks (after closing the panel).
-- **Mouse:** a checkbox appears on each row when you point at it; Shift+click ticks a range, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+click ticks one task without opening it.
+- **Mouse:** <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+click a task to tick it without opening it, Shift+click to tick a range. Once a task is ticked, every row shows a checkbox in place of its circle until the selection is cleared; otherwise the circle always completes the task.
 - **Touch:** tap **Select** above the list to show every checkbox, and **Done** when you are finished.
 
 ## Choose an action

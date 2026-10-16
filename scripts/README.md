@@ -50,7 +50,7 @@ npm i -g playwright@1.56.1 && playwright install chromium webkit   # once
 node scripts/e2e-layout.mjs [report-dir]
 ```
 
-Environment: `OPENTODO_URL`, `ENGINES` (default `chromium,webkit`), `WIDTHS` (`360,390,768`), `THEMES` (`light,dark`), `ONLY` (screen names), `CONCURRENCY` (3), `SHOTS=all` (also save a screenshot of every screen and overlay), `CHROMIUM_PATH`, `WEBKIT_PATH`. When you add a screen or an overlay, add it to the `screens()` and `OVERLAYS` tables in the script.
+Environment: `OPENTODO_URL`, `ENGINES` (default `chromium,webkit`), `WIDTHS` (`360,390,768`), `THEMES` (`light,dark`), `ONLY` (screen names), `CONCURRENCY` (3), `SHOTS=all` (also save a screenshot of every screen and overlay), `CHROMIUM_PATH`, `WEBKIT_PATH`, `OPENTODO_LANG` (an interface language such as `de`: the run writes the synced language preference before capturing, to find labels that a longer translation makes overflow). When you add a screen or an overlay, add it to the `screens()` and `OVERLAYS` tables in the script.
 
 Every screen, and every overlay on its own, is also run through axe-core in light and dark; serious and critical issues (colour contrast below WCAG AA, missing names and labels, invalid roles or ARIA) fail the check. The check also covers the in-app Help (OpenSpec change `user-documentation`): Help is opened offline from the service worker's precache (Chromium), and the contextual help panel is opened over the share dialog with an email typed into it, which must still be there after the panel closes. axe-core comes from `web/node_modules` (run `npm ci` in `web/`); the context uses `bypassCSP` so it can be injected.
 
@@ -93,4 +93,17 @@ Records the demo GIF at the top of `README.md` (`docs/screenshots/demo.gif`): na
 make build
 OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
 node scripts/demo-gif.mjs [out.gif]
+```
+
+## `i18n-check.mjs` and `i18n/`
+
+Translation checks (OpenSpec change `app-localization`, design D8; see [docs/translating.md](../docs/translating.md)).
+
+- `node scripts/i18n/extract.mjs --write` collects every message the web app passes to `t()`, `t.rich()`, `<T>` and `msg()` (and the server error table) into `web/src/locales/messages.json`, the translators' source list. Run it after adding or changing a message; `make i18n-check` fails while the list is stale.
+- `node scripts/i18n-check.mjs` (`make i18n-check`, part of `make check`) checks every catalog in `web/src/locales/`: each source message has an entry and no entry is unused, every message parses, a translation keeps the source's placeholders, tags and plural/select arguments and uses only plural categories its language has, and a "Settings → …" path names the translated sections. A catalog not yet listed in `web/src/locales/index.ts` only gets a summary line ("pl: 412 of 3550").
+- `scripts/i18n/untranslated.mjs` is the untranslated-string pass of `make ui-lint`: English text in JSX, in props people read or hear (`aria-label`, `title`, `placeholder`, `label`, …) or rendered as a child in `web/src/app` and `web/src/ui` fails with `file:line`. `scripts/i18n/allow.txt` lists the permanent exceptions (proper nouns, key names, samples).
+
+```bash
+make i18n-check                                   # script tests, then the catalog check
+node --test scripts/i18n/*.test.mjs scripts/i18n-check.test.mjs
 ```

@@ -40,6 +40,19 @@ func TestNoIndexOnlyWhenAsked(t *testing.T) {
 	}
 }
 
+// TestIndexNotRedirected: the service worker precaches index.html and serves it
+// for navigations; WebKit refuses a redirected response there.
+func TestIndexNotRedirected(t *testing.T) {
+	if _, err := fs.Stat(dist, "dist/index.html"); err != nil {
+		t.Skip("web app not built")
+	}
+	rec := httptest.NewRecorder()
+	Handler().ServeHTTP(rec, httptest.NewRequest("GET", "/index.html", nil))
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), "<html") {
+		t.Fatalf("/index.html = %d %q", rec.Code, rec.Header().Get("Location"))
+	}
+}
+
 // TestServiceWorkerNeverCached: sw.js must reach phones on every release, even
 // behind a CDN that would otherwise cache .js files (skipped when not built).
 func TestServiceWorkerNeverCached(t *testing.T) {

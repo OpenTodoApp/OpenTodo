@@ -7,9 +7,12 @@
 import { ApiError } from './api'
 import { db, getMeta, setMeta, type AssistantMessage, type AssistantThread, type AssistantUndo } from './db'
 import { syncNow } from './sync'
-import type { Label, Project, Section, Task } from './types'
+import type { FieldDef, FieldValue, Label, Project, Section, Task } from './types'
+import { formatValue } from './fields'
+import { fieldValueId, readField } from './ops'
 import type { ProposedChange, TurnEvent } from './assistantTypes'
 import { applyBatch, tableOf, undoBatch, type UndoResult } from './undo'
+import { t } from './i18n'
 export { UNDO_KEEP } from './undo'
 
 // ------------------------------------------------------------------ stream
@@ -156,15 +159,18 @@ interface Names {
   projects: Map<string, string>
   labels: Map<string, string>
   sections: Map<string, string>
+  /** Custom field definitions by id (custom-fields), for "Cost → 120". */
+  fields?: Map<string, FieldDef>
   tasks: Map<string, string>
 }
 
 async function loadNames(changes: ProposedChange[]): Promise<Names> {
-  const [projects, labels, sections] = await Promise.all([db.projects.toArray(), db.labels.toArray(), db.sections.toArray()])
+  const [projects, labels, sections, fields] = await Promise.all([db.projects.toArray(), db.labels.toArray(), db.sections.toArray(), db.fields.toArray()])
   const n: Names = {
     projects: new Map(projects.map((p: Project) => [p.id, p.name])),
     labels: new Map(labels.map((l: Label) => [l.id, l.name])),
     sections: new Map(sections.map((s: Section) => [s.id, s.name])),
+    fields: new Map(fields.map((f: FieldDef) => [f.id, f])),
     tasks: new Map(),
   }
   // Entities created in the same proposal are named from their patch.
@@ -190,64 +196,87 @@ export function dueWords(due: unknown): string {
 
 const clip = (s: string, n = 80) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
 
+/** "a task", "a project", … for an entity without a known name. */
+const someEntity = (entity: string) => t('{entity, select, task {a task} project {a project} label {a label} section {a section} comment {a comment} view {a view} field {a field} reminder {a reminder} other {an item}}', { entity })
+/** "New task", "New view", … for a proposed entity of another kind. */
+const newEntity = (entity: string) => t('{entity, select, task {New task} project {New project} label {New label} section {New section} comment {New comment} view {New view} field {New field} reminder {New reminder} other {New item}}', { entity })
+
+/** A custom field value change in words: "Cost → 120", "Client cleared" (custom-fields D6). */
+export function fieldWords(names: Names, id: string, v: unknown): string {
+  const def = names.fields?.get(id)
+  const name = def?.name ?? t('A field')
+  if (v === null || v === undefined || v === '') return t('{name} cleared', { name })
+  const text = def ? formatValue(def, v as FieldValue) : String(v)
+  return `${name} → ${clip(text, 60)}`
+}
+
 /** Every field change of one proposed change, in words. */
 export function describe(c: ProposedChange, local: Record<string, unknown> | undefined, names: Names): { title: string; lines: string[] } {
   const p = c.patch
   const base = { ...(local ?? {}), ...(c.base ?? {}) } as Record<string, unknown>
-  const project = (id: unknown) => (id ? names.projects.get(String(id)) ?? 'a project' : 'Inbox')
+  const project = (id: unknown) => (id ? names.projects.get(String(id)) ?? t('a project') : t('Inbox'))
   if (c.create) {
     switch (c.entity) {
-      case 'project': return { title: `New project: ${String(p.name ?? '')}`, lines: [] }
-      case 'label': return { title: `New label: ${String(p.name ?? '')}`, lines: [] }
+      case 'project': return { title: t('New project: {name}', { name: String(p.name ?? '') }), lines: [] }
+      case 'label': return { title: t('New label: {name}', { name: String(p.name ?? '') }), lines: [] }
       case 'comment': {
-        const task = names.tasks.get(String(p.task_id)) ?? 'a task'
-        return { title: `Comment on “${clip(task, 50)}”`, lines: [clip(String(p.body ?? ''), 140)] }
+        const task = names.tasks.get(String(p.task_id)) ?? t('a task')
+        return { title: t('Comment on “{task}”', { task: clip(task, 50) }), lines: [clip(String(p.body ?? ''), 140)] }
       }
       case 'task': {
         const lines: string[] = []
-        if (p.due) lines.push(`Due ${dueWords(p.due)}`)
-        if (p.priority && p.priority !== 4) lines.push(`Priority P${p.priority}`)
-        if (Array.isArray(p.labels) && p.labels.length) lines.push(`Labels: ${p.labels.map((id) => names.labels.get(String(id)) ?? 'a label').join(', ')}`)
-        if (p.parent_id) lines.push(`Subtask of “${clip(names.tasks.get(String(p.parent_id)) ?? 'a task', 50)}”`)
-        if (p.deleted_at) lines.push('Moved to the Trash')
-        return { title: `New task in ${project(p.project_id)}: ${String(p.title ?? '')}`, lines }
+        if (p.due) lines.push(t('Due {date}', { date: dueWords(p.due) }))
+        if (p.priority && p.priority !== 4) lines.push(t('Priority P{p}', { p: p.priority as number }))
+        if (Array.isArray(p.labels) && p.labels.length) lines.push(t('Labels: {labels}', { labels: p.labels.map((id) => names.labels.get(String(id)) ?? t('a label')).join(', ') }))
+        if (p.parent_id) lines.push(t('Subtask of “{task}”', { task: clip(names.tasks.get(String(p.parent_id)) ?? t('a task'), 50) }))
+        if (p.deleted_at) lines.push(t('Moved to the Trash'))
+        for (const [f, v] of Object.entries(p)) {
+          const fid = fieldValueId(f)
+          if (fid && v !== null) lines.push(fieldWords(names, fid, v))
+        }
+        return { title: t('New task in {project}: {title}', { project: project(p.project_id), title: String(p.title ?? '') }), lines }
       }
     }
-    return { title: `New ${c.entity}`, lines: [] }
+    return { title: newEntity(c.entity), lines: [] }
   }
-  const title = String((local as { title?: string; name?: string } | undefined)?.title ?? (local as { name?: string } | undefined)?.name ?? `a ${c.entity}`)
+  const title = String((local as { title?: string; name?: string } | undefined)?.title ?? (local as { name?: string } | undefined)?.name ?? someEntity(c.entity))
   const lines: string[] = []
   for (const [f, v] of Object.entries(p)) {
+    const fid = fieldValueId(f)
+    if (fid) {
+      lines.push(fieldWords(names, fid, v))
+      continue
+    }
     const old = base[f]
     switch (f) {
-      case 'due': lines.push(`Due ${dueWords(old)} → ${dueWords(v)}`); break
-      case 'completed_at': lines.push(v ? 'Completed' : 'Reopened'); break
-      case 'priority': lines.push(`Priority P${old ?? 4} → P${v}`); break
-      case 'project_id': lines.push(`Moved from ${project(old)} to ${project(v)}`); break
-      case 'section_id': lines.push(v ? `Section: ${names.sections.get(String(v)) ?? 'a section'}` : 'No section'); break
+      case 'due': lines.push(t('Due {from} → {to}', { from: dueWords(old), to: dueWords(v) })); break
+      case 'completed_at': lines.push(v ? t('Completed') : t('Reopened')); break
+      case 'priority': lines.push(t('Priority P{from} → P{to}', { from: String(old ?? 4), to: String(v) })); break
+      case 'project_id': lines.push(t('Moved from {from} to {to}', { from: project(old), to: project(v) })); break
+      case 'section_id': lines.push(v ? t('Section: {name}', { name: names.sections.get(String(v)) ?? t('a section') }) : t('No section')); break
       case 'labels': {
         const before = new Set((old as string[] | null) ?? [])
         const after = new Set((v as string[] | null) ?? [])
-        const name = (id: string) => names.labels.get(id) ?? 'a label'
+        const name = (id: string) => names.labels.get(id) ?? t('a label')
         const add = [...after].filter((x) => !before.has(x)).map((x) => `+${name(x)}`)
         const del = [...before].filter((x) => !after.has(x)).map((x) => `−${name(x)}`)
-        lines.push(`Labels: ${[...add, ...del].join(', ') || 'unchanged'}`)
+        lines.push(t('Labels: {labels}', { labels: [...add, ...del].join(', ') || t('unchanged') }))
         break
       }
-      case 'title': case 'name': lines.push(`Renamed “${clip(String(old ?? ''), 50)}” → “${clip(String(v ?? ''), 50)}”`); break
-      case 'description': lines.push('Description changed'); break
-      case 'estimate_minutes': lines.push(v ? `Estimate ${old ? `${old} min → ` : ''}${v} min` : 'Estimate removed'); break
-      case 'recurrence': lines.push(v ? `Repeats ${v}` : 'Stops repeating'); break
-      case 'deleted_at': lines.push(v ? 'Moved to the Trash' : 'Restored'); break
-      case 'parent_id': lines.push(v ? `Subtask of “${clip(names.tasks.get(String(v)) ?? 'a task', 50)}”` : 'No longer a subtask'); break
+      case 'title': case 'name': lines.push(t('Renamed “{from}” → “{to}”', { from: clip(String(old ?? ''), 50), to: clip(String(v ?? ''), 50) })); break
+      case 'description': lines.push(t('Description changed')); break
+      case 'estimate_minutes': lines.push(v ? (old ? t('Estimate {from} min → {to} min', { from: String(old), to: String(v) }) : t('Estimate {to} min', { to: String(v) })) : t('Estimate removed')); break
+      case 'recurrence': lines.push(v ? t('Repeats {rule}', { rule: String(v) }) : t('Stops repeating')); break
+      case 'deleted_at': lines.push(v ? t('Moved to the Trash') : t('Restored')); break
+      case 'parent_id': lines.push(v ? t('Subtask of “{task}”', { task: clip(names.tasks.get(String(v)) ?? t('a task'), 50) }) : t('No longer a subtask')); break
       case 'blocked_by': {
         const ids = (v as string[] | null) ?? []
-        lines.push(ids.length ? `Waits for ${ids.map((id) => `“${clip(names.tasks.get(id) ?? 'a task', 40)}”`).join(', ')}` : 'Waits for nothing')
+        lines.push(ids.length ? t('Waits for {tasks}', { tasks: ids.map((id) => `“${clip(names.tasks.get(id) ?? t('a task'), 40)}”`).join(', ') }) : t('Waits for nothing'))
         break
       }
-      case 'color': lines.push(`Colour ${String(v)}`); break
+      case 'color': lines.push(t('Colour {name}', { name: String(v) })); break
       case 'position': case 'created_at': case 'notes_doc': break
-      default: lines.push(`${f.replace(/_/g, ' ')} changed`)
+      default: lines.push(t('{field} changed', { field: f.replace(/_/g, ' ') }))
     }
   }
   return { title, lines }
@@ -263,12 +292,12 @@ export async function reviewChangeSet(changes: ProposedChange[]): Promise<Review
   const names = await loadNames(changes)
   for (const c of changes) {
     if (c.entity === 'task' && !names.tasks.has(c.entityId)) {
-      const t = await db.tasks.get(c.entityId)
-      if (t) names.tasks.set(t.id, t.title)
+      const task = await db.tasks.get(c.entityId)
+      if (task) names.tasks.set(task.id, task.title)
     }
     if (c.entity === 'comment' && c.patch.task_id && !names.tasks.has(String(c.patch.task_id))) {
-      const t = await db.tasks.get(String(c.patch.task_id))
-      if (t) names.tasks.set(t.id, t.title)
+      const tk = await db.tasks.get(String(c.patch.task_id))
+      if (tk) names.tasks.set(tk.id, tk.title)
     }
   }
   const review: Review = { items: [], dropped: [] }
@@ -276,13 +305,14 @@ export async function reviewChangeSet(changes: ProposedChange[]): Promise<Review
     const local = (await tableOf(c.entity).get(c.entityId)) as Record<string, unknown> | undefined
     if (!c.create && (!local || local.deleted_at)) {
       const { title } = describe(c, undefined, names)
-      review.dropped.push(`${title === `a ${c.entity}` ? `A ${c.entity}` : `“${title}”`} is no longer on this device, so its change was left out.`)
+      const what = title === someEntity(c.entity) ? title.charAt(0).toUpperCase() + title.slice(1) : `“${title}”`
+      review.dropped.push(t('{what} is no longer on this device, so its change was left out.', { what }))
       continue
     }
     let stale = false
     if (!c.create) {
       for (const [f, b] of Object.entries(c.base ?? {})) {
-        if (!sameValue(local?.[f], b)) stale = true
+        if (!sameValue(local ? readField(local, f) : undefined, b)) stale = true
       }
     }
     const { title, lines } = describe(c, local, names)
@@ -353,8 +383,8 @@ export const THREAD_KEEP = 50
 export const THREAD_DAYS = 30
 
 /** Saves a conversation on this device and applies retention (50 threads, 30 days). */
-export async function saveThread(t: AssistantThread): Promise<void> {
-  await db.assistantThreads.put(t)
+export async function saveThread(item: AssistantThread): Promise<void> {
+  await db.assistantThreads.put(item)
   await pruneThreads()
 }
 
@@ -376,7 +406,7 @@ export async function clearThreads(): Promise<void> {
 
 export function newThread(provider: string): AssistantThread {
   const now = Date.now()
-  return { id: crypto.randomUUID(), title: 'New conversation', messages: [], created_at: now, updated_at: now, provider, usage: { input: 0, output: 0 } }
+  return { id: crypto.randomUUID(), title: t('New conversation'), messages: [], created_at: now, updated_at: now, provider, usage: { input: 0, output: 0 } }
 }
 
 // ------------------------------------------------------------------ messages
@@ -385,36 +415,36 @@ export function newThread(provider: string): AssistantThread {
 export function describeTurnError(err: unknown): string {
   if (err instanceof ApiError) {
     switch (err.code) {
-      case 'consent_required': return 'Accept the disclosure first: the assistant sends task content to the model provider only after you agree.'
-      case 'encryption_enabled': return 'The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.'
+      case 'consent_required': return t('Accept the disclosure first: the assistant sends task content to the model provider only after you agree.')
+      case 'encryption_enabled': return t('The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.')
       case 'assistant_quota': return err.message.charAt(0).toUpperCase() + err.message.slice(1) + '.'
-      case 'turn_in_progress': return 'Another answer is still being written. Wait for it or stop it first.'
-      case 'assistant_busy': return 'The assistant is busy on this server. Try again in a few seconds.'
-      case 'too_large': return 'This conversation is too long. Start a new conversation.'
-      case 'not_found': return 'The assistant is not enabled on this server.'
-      case 'demo_restricted': return 'The assistant is not available on the demo instance.'
-      case 'no_key': return 'No API key is configured for this provider. Ask the server owner.'
+      case 'turn_in_progress': return t('Another answer is still being written. Wait for it or stop it first.')
+      case 'assistant_busy': return t('The assistant is busy on this server. Try again in a few seconds.')
+      case 'too_large': return t('This conversation is too long. Start a new conversation.')
+      case 'not_found': return t('The assistant is not enabled on this server.')
+      case 'demo_restricted': return t('The assistant is not available on the demo instance.')
+      case 'no_key': return t('No API key is configured for this provider. Ask the server owner.')
     }
     return err.message
   }
-  return 'The server is unreachable. The assistant needs a connection.'
+  return t('The server is unreachable. The assistant needs a connection.')
 }
 
 export function describeStreamError(code: string, message: string): string {
   switch (code) {
-    case 'provider_auth': return 'The model provider rejected the API key. The server owner can check it in Settings → Integrations → Assistant.'
-    case 'provider_rate_limited': return 'The model provider is rate limiting requests. Try again in a moment.'
-    case 'timeout': return 'The answer took too long and was stopped.'
+    case 'provider_auth': return t('The model provider rejected the API key. The server owner can check it in Settings → Integrations → Assistant.')
+    case 'provider_rate_limited': return t('The model provider is rate limiting requests. Try again in a moment.')
+    case 'timeout': return t('The answer took too long and was stopped.')
   }
-  return message ? message.charAt(0).toUpperCase() + message.slice(1) + '.' : 'The model provider could not answer.'
+  return message ? message.charAt(0).toUpperCase() + message.slice(1) + '.' : t('The model provider could not answer.')
 }
 
 /** "1,240 tokens · this month 18% of your limit". */
 export function usageLine(u: { input: number; output: number; month_total?: number; cap?: number; own_key?: boolean }): string {
-  const n = (u.input + u.output).toLocaleString('en')
-  if (!u.cap) return u.own_key ? `${n} tokens · your key` : `${n} tokens`
+  const n = u.input + u.output
+  if (!u.cap) return u.own_key ? t('{n, plural, one {# token · your key} other {# tokens · your key}}', { n }) : t('{n, plural, one {# token} other {# tokens}}', { n })
   const pct = Math.min(100, Math.round(((u.month_total ?? 0) / u.cap) * 100))
-  return `${n} tokens · this month ${pct}% of your limit`
+  return t('{n, plural, one {# token · this month {pct}% of your limit} other {# tokens · this month {pct}% of your limit}}', { n, pct })
 }
 
 export type { Task }

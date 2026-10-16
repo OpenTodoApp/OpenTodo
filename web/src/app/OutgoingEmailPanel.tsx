@@ -6,6 +6,7 @@ import { useOnline } from '../lib/online'
 import { setOutgoingEmail } from '../lib/outgoingEmail'
 import type { SmtpSecurity, SmtpSettings, SmtpSettingsInput, SmtpStage, SmtpTestResult } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t, msg, translatedMap } from '../lib/i18n'
 
 // Settings → Server → Outgoing email (OpenSpec change outgoing-email, design D9):
 // the owner's SMTP settings. The card leads with its state; the form opens
@@ -19,12 +20,12 @@ export const SMTP_VARIABLE: Record<string, string> = {
   username: 'OPENTODO_SMTP_USER', password: 'OPENTODO_SMTP_PASSWORD', from: 'OPENTODO_SMTP_FROM',
 }
 
-const STAGE_TEXT: Record<SmtpStage, string> = {
-  connect: 'Could not connect to the mail server',
-  tls: 'The secure connection failed',
-  auth: 'Authentication failed',
-  send: 'The mail server refused the message',
-}
+const STAGE_TEXT = translatedMap<SmtpStage>({
+  connect: msg('Could not connect to the mail server'),
+  tls: msg('The secure connection failed'),
+  auth: msg('Authentication failed'),
+  send: msg('The mail server refused the message'),
+})
 
 export interface SmtpDraft {
   host: string
@@ -74,11 +75,11 @@ export interface OutgoingEmailViewProps {
 
 function TestLine({ outcome, stage, reply, to, at }: { outcome: 'sent' | 'failed'; stage?: SmtpStage; reply?: string; to?: string; at?: number }) {
   if (outcome === 'sent') {
-    return <span data-smtp-test="sent"><Badge hue="green">Test sent</Badge> <span className="text-muted">{to ? `to ${to}` : ''}{at ? ` · ${formatInstant(at, 'datetime')}` : ''}</span></span>
+    return <span data-smtp-test="sent"><Badge hue="green">{t('Test sent')}</Badge> <span className="text-muted">{to ? t('to {to}', { to }) : ''}{at ? ` · ${formatInstant(at, 'datetime')}` : ''}</span></span>
   }
   return (
     <span data-smtp-test="failed" className="block">
-      <Badge hue="red">Test failed</Badge> <span className="text-default">{stage ? STAGE_TEXT[stage] : 'The test failed'}</span>
+      <Badge hue="red">{t('Test failed')}</Badge> <span className="text-default">{stage ? STAGE_TEXT[stage] : t('The test failed')}</span>
       {at ? <span className="text-muted"> · {formatInstant(at, 'datetime')}</span> : null}
       {reply && <code className="mt-1 block break-all rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-meta text-default">{reply}</code>}
     </span>
@@ -90,7 +91,7 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
   const s = p.settings
   const d = p.draft
   const locked = (f: string) => s?.managedBy[f] === 'env'
-  const lockNote = (f: string) => (locked(f) ? `Set by ${SMTP_VARIABLE[f]}` : undefined)
+  const lockNote = (f: string) => (locked(f) ? t('Set by {variable}', { variable: SMTP_VARIABLE[f] }) : undefined)
   const disabled = p.offline || p.busy
   const last = p.test ?? (s?.lastTest ? { ...s.lastTest, to: undefined } : null)
   function submit(e: FormEvent) {
@@ -98,18 +99,18 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
     p.onSave()
   }
   return (
-    <SettingsSection title="Outgoing email" headingId="outgoing-email-heading" testId="outgoing-email-panel"
-      description="Lets this server mail password resets, sign-up confirmations and invitations. Nothing is sent until it is configured.">
+    <SettingsSection title={t('Outgoing email')} headingId="outgoing-email-heading" testId="outgoing-email-panel"
+      description={t('Lets this server mail password resets, sign-up confirmations and invitations. Nothing is sent until it is configured.')}>
       {p.offline ? (
-        <Notice>Outgoing email settings need a connection to the server.</Notice>
+        <Notice>{t('Outgoing email settings need a connection to the server.')}</Notice>
       ) : !s ? null : (
         <>
-          <SettingRow label="Mail server"
-            description={s.configured ? undefined : 'Not configured. With an SMTP server, people can reset a forgotten password themselves, confirm their address when signing up, and receive invitations by email.'}
+          <SettingRow label={t('Mail server')}
+            description={s.configured ? undefined : t('Not configured. With an SMTP server, people can reset a forgotten password themselves, confirm their address when signing up, and receive invitations by email.')}
             status={(
               <span className="block space-y-1">
-                <Badge hue={s.configured ? 'green' : 'slate'}>{s.configured ? 'Configured' : 'Not configured'}</Badge>
-                {s.configured && <span className="block text-muted" data-smtp-summary>{s.host}:{s.port} · from {s.from}</span>}
+                <Badge hue={s.configured ? 'green' : 'slate'}>{s.configured ? t('Configured') : t('Not configured')}</Badge>
+                {s.configured && <span className="block text-muted" data-smtp-summary>{t('{host}:{port} · from {from}', { host: s.host, port: s.port, from: s.from })}</span>}
                 {s.configured && last && (
                   <span className="block">
                     {'stage' in last && last.outcome === 'failed'
@@ -120,54 +121,54 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
               </span>
             )}
             control={<>
-              {s.configured && <Button size="sm" disabled={disabled || !!d} busy={p.busy && !d} onClick={p.onTest}>Send test email</Button>}
-              {!d && <Button size="sm" variant={s.configured ? 'ghost' : 'primary'} disabled={disabled} onClick={p.onConfigure}>Configure</Button>}
+              {s.configured && <Button size="sm" disabled={disabled || !!d} busy={p.busy && !d} onClick={p.onTest}>{t('Send test email')}</Button>}
+              {!d && <Button size="sm" variant={s.configured ? 'ghost' : 'primary'} disabled={disabled} onClick={p.onConfigure}>{t('Configure')}</Button>}
             </>} />
           {s.security === 'none' && s.configured && (
-            <Notice tone="warning">Messages travel unencrypted to the mail server. Use this only for a relay on your own network.</Notice>
+            <Notice tone="warning">{t('Messages travel unencrypted to the mail server. Use this only for a relay on your own network.')}</Notice>
           )}
           {p.error && !d && <Notice tone="danger">{p.error}</Notice>}
           {d && (
             <form className="space-y-3 py-3" onSubmit={submit} data-smtp-form>
               <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
-                <Field label="SMTP server" description={lockNote('host')}>
-                  <Input aria-label="SMTP server" placeholder="smtp.example.com" value={d.host} readOnly={locked('host')} required
+                <Field label={t('SMTP server')} description={lockNote('host')}>
+                  <Input aria-label={t('SMTP server')} placeholder={t('smtp.example.com')} value={d.host} readOnly={locked('host')} required
                     onChange={(e) => p.onDraft({ ...d, host: e.target.value })} data-autofocus />
                 </Field>
-                <Field label="Port" description={lockNote('port')}>
-                  <Input aria-label="Port" inputMode="numeric" placeholder="587" value={d.port} readOnly={locked('port')}
+                <Field label={t('Port')} description={lockNote('port')}>
+                  <Input aria-label={t('Port')} inputMode="numeric" placeholder="587" value={d.port} readOnly={locked('port')}
                     onChange={(e) => p.onDraft({ ...d, port: e.target.value.replace(/\D/g, '') })} />
                 </Field>
               </div>
-              <Field label="Security" description={lockNote('security') ?? 'TLS on port 465, STARTTLS on others. Plain is only for a relay without a password.'}>
-                <Select aria-label="Security" value={d.security} disabled={locked('security')} onChange={(e) => p.onDraft({ ...d, security: e.target.value as SmtpSecurity })}>
-                  <option value="">Automatic</option>
-                  <option value="tls">TLS</option>
-                  <option value="starttls">STARTTLS</option>
-                  <option value="none">None (plain)</option>
+              <Field label={t('Security')} description={lockNote('security') ?? t('TLS on port 465, STARTTLS on others. Plain is only for a relay without a password.')}>
+                <Select aria-label={t('Security')} value={d.security} disabled={locked('security')} onChange={(e) => p.onDraft({ ...d, security: e.target.value as SmtpSecurity })}>
+                  <option value="">{t('Automatic')}</option>
+                  <option value="tls">{t('TLS')}</option>
+                  <option value="starttls">{t('STARTTLS')}</option>
+                  <option value="none">{t('None (plain)')}</option>
                 </Select>
               </Field>
-              {d.security === 'none' && <Notice tone="warning">Without encryption, a user name and password cannot be used, and messages travel in the clear.</Notice>}
-              <Field label="User name" description={lockNote('username') ?? 'Often your full email address. Leave empty for a relay without sign-in.'}>
-                <Input aria-label="User name" autoComplete="off" value={d.username} readOnly={locked('username')} onChange={(e) => p.onDraft({ ...d, username: e.target.value })} />
+              {d.security === 'none' && <Notice tone="warning">{t('Without encryption, a user name and password cannot be used, and messages travel in the clear.')}</Notice>}
+              <Field label={t('User name')} description={lockNote('username') ?? t('Often your full email address. Leave empty for a relay without sign-in.')}>
+                <Input aria-label={t('User name')} autoComplete="off" value={d.username} readOnly={locked('username')} onChange={(e) => p.onDraft({ ...d, username: e.target.value })} />
               </Field>
-              <Field label="Password" description={lockNote('password') ?? (s.passwordSet ? 'Leave empty to keep the saved password.' : 'For Gmail and similar services, an app password.')}>
-                <Input aria-label="Password" type="password" autoComplete="new-password" value={d.password} readOnly={locked('password')}
+              <Field label={t('Password')} description={lockNote('password') ?? (s.passwordSet ? t('Leave empty to keep the saved password.') : t('For Gmail and similar services, an app password.'))}>
+                <Input aria-label={t('Password')} type="password" autoComplete="new-password" value={d.password} readOnly={locked('password')}
                   placeholder={s.passwordSet ? '••••••••' : ''} onChange={(e) => p.onDraft({ ...d, password: e.target.value, clearPassword: false })} />
               </Field>
               {s.passwordSet && !locked('password') && (
                 <label className="flex items-center gap-2 text-meta text-muted">
                   <input type="checkbox" checked={d.clearPassword} onChange={(e) => p.onDraft({ ...d, clearPassword: e.target.checked, password: '' })} />
-                  Remove the saved password
+                  {t('Remove the saved password')}
                 </label>
               )}
-              <Field label="From address" description={lockNote('from') ?? 'For example: OpenTodo <todo@example.com>. Your mail provider may require an address it owns.'}>
-                <Input aria-label="From address" value={d.from} readOnly={locked('from')} required onChange={(e) => p.onDraft({ ...d, from: e.target.value })} />
+              <Field label={t('From address')} description={lockNote('from') ?? t('For example: OpenTodo <todo@example.com>. Your mail provider may require an address it owns.')}>
+                <Input aria-label={t('From address')} value={d.from} readOnly={locked('from')} required onChange={(e) => p.onDraft({ ...d, from: e.target.value })} />
               </Field>
               {p.error && <Notice tone="danger">{p.error}</Notice>}
               <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => p.onDraft(null)}>Cancel</Button>
-                <Button variant="primary" type="submit" busy={p.busy} disabled={p.offline}>Save</Button>
+                <Button variant="ghost" onClick={() => p.onDraft(null)}>{t('Cancel')}</Button>
+                <Button variant="primary" type="submit" busy={p.busy} disabled={p.offline}>{t('Save')}</Button>
               </div>
             </form>
           )}
@@ -179,7 +180,7 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
 
 function describe(err: unknown): string {
   if (err instanceof ApiError) return err.message.charAt(0).toUpperCase() + err.message.slice(1)
-  return 'The server could not be reached.'
+  return t('The server could not be reached.')
 }
 
 /** Loads and saves the owner's outgoing email settings. */

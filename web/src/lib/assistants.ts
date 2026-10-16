@@ -5,6 +5,7 @@
 // locally for the offline view.
 import { ApiError } from './api'
 import { getMeta, setMeta } from './db'
+import { t } from './i18n'
 
 /** `agent`: an assistant token that can make changes through MCP write tools only. */
 export type TokenScope = 'full' | 'read' | 'agent'
@@ -34,8 +35,8 @@ export interface AgentAccess {
 
 /** Label for a token's scope in the token list. */
 export function scopeLabel(scope: TokenScope | undefined): string {
-  if (scope === 'agent') return 'assistant, can make changes'
-  return scope === 'read' ? 'read-only' : 'full access'
+  if (scope === 'agent') return t('assistant, can make changes')
+  return scope === 'read' ? t('read-only') : t('full access')
 }
 
 /** Whether an assistant token that can make changes may be offered. */
@@ -58,11 +59,11 @@ export function connectionSnippet(endpoint: string, token?: string | null): stri
 
 export function describeAssistantsError(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.status === 403 && err.code === 'insufficient_scope') return 'Only you can change this, signed in to the app.'
-    if (err.status === 403) return 'Only the server owner can change the AI assistants settings of this server.'
+    if (err.status === 403 && err.code === 'insufficient_scope') return t('Only you can change this, signed in to the app.')
+    if (err.status === 403) return t('Only the server owner can change the AI assistants settings of this server.')
     return err.message
   }
-  return 'The server is unreachable. This setting lives on the server and needs a connection.'
+  return t('The server is unreachable. This setting lives on the server and needs a connection.')
 }
 
 const CACHE_KEY = 'assistants.status'

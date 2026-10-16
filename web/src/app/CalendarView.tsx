@@ -12,7 +12,7 @@ import {
 } from '../lib/calendar'
 import { useOnline } from '../lib/online'
 import { cachedWindow, ensureEventsFor, eventsStatus, setShowEvents, showEvents } from '../lib/calendarFeeds'
-import { addDaysISO, dueFromView, formatDate, formatHour, formatShort, formatTime as formatWallTime, localDueOf, viewedTask } from '../lib/dates'
+import { addDaysISO, dueFromView, formatDate, formatHour, formatShort, formatTime as formatWallTime, localDueOf, viewedTask, dateLocaleOf } from '../lib/dates'
 import { db, getMeta } from '../lib/db'
 import { formatMinutes } from '../lib/duration'
 import { layoutDay, type DayLayout } from '../lib/layout'
@@ -34,6 +34,7 @@ import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTas
 import { rememberCalendarMode } from '../lib/calendarMode'
 import { useToday, useViewerZone } from './useViews'
 import { visibleTasks } from '../lib/trash'
+import { t } from '../lib/i18n'
 
 /** 48 px per hour, 12 px per 15-minute slot. */
 const PX_PER_MIN = 0.8
@@ -109,9 +110,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   // The grid shows every due in the viewer's zone (absolute-datetimes): zoned dues
   // are converted here and edits are converted back with dueFromView.
   const zone = useViewerZone()
-  const allTasks = useMemo(() => rawTasks.map((t) => viewedTask(t, zone)), [rawTasks, zone])
-  const rawMap = useMemo(() => new Map(rawTasks.map((t) => [t.id, t])), [rawTasks])
-  const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
+  const allTasks = useMemo(() => rawTasks.map((tk) => viewedTask(tk, zone)), [rawTasks, zone])
+  const rawMap = useMemo(() => new Map(rawTasks.map((item) => [item.id, item])), [rawTasks])
+  const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
 
   const shown = useMemo(() => calendarTasks(allTasks, projects, dates[0], dates[dates.length - 1]), [allTasks, projects, dates])
 
@@ -131,11 +132,11 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const days = useMemo<DayData[]>(() => dates.map((d) => {
     const lane: Task[] = []
     const blocks = new Map<string, Block>()
-    for (const t of shown) {
-      if (t.due?.date !== d) continue
-      const b = blockFor(t)
-      if (b) blocks.set(t.id, b)
-      else lane.push(t)
+    for (const task of shown) {
+      if (task.due?.date !== d) continue
+      const b = blockFor(task)
+      if (b) blocks.set(task.id, b)
+      else lane.push(task)
     }
     lane.sort((a, b) => a.priority - b.priority || compareByPosition(a, b))
     // Events share the lanes and the overlap marker with task blocks; capacity never sees them.
@@ -144,7 +145,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   }), [dates, shown, visibleEvents, zone])
 
   /** Keyboard order: each day's lane, then its blocks in time order (tasks only: events are read-only). */
-  const order = useMemo(() => days.flatMap((d) => [...d.lane.map((t) => t.id), ...d.layout.blocks.filter((b) => !isEventId(b.id)).map((b) => b.id)]), [days])
+  const order = useMemo(() => days.flatMap((d) => [...d.lane.map((task) => task.id), ...d.layout.blocks.filter((b) => !isEventId(b.id)).map((b) => b.id)]), [days])
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const openId = usePanelTaskId()
@@ -157,11 +158,11 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   // The Calendar destination remembers Day or Week on this device (ux-overhaul).
   useEffect(() => rememberCalendarMode(mode), [mode])
 
-  const startPlacing = useCallback((t: Task, onDate?: string, gridPrefs: GridPrefs = prefs) => {
-    const d = onDate ?? (t.due?.date && dates.includes(t.due.date) ? t.due.date : dates.includes(today) ? today : dates[0])
+  const startPlacing = useCallback((task: Task, onDate?: string, gridPrefs: GridPrefs = prefs) => {
+    const d = onDate ?? (task.due?.date && dates.includes(task.due.date) ? task.due.date : dates.includes(today) ? today : dates[0])
     const now = new Date()
-    setPlacing({ taskId: t.id, date: d, start: placementStart(t, d, today, now.getHours() * 60 + now.getMinutes(), gridPrefs) })
-    setSelectedId(t.id)
+    setPlacing({ taskId: task.id, date: d, start: placementStart(task, d, today, now.getHours() * 60 + now.getMinutes(), gridPrefs) })
+    setSelectedId(task.id)
   }, [dates, today, prefs])
 
   // `s` from a list sends a task here (placement mode). Read the row and the preferences
@@ -172,8 +173,8 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     const take = () => {
       const id = placementSignal.take()
       if (!id) return
-      void Promise.all([db.tasks.get(id), getMeta<unknown>(GRID_PREFS_META_KEY, null)]).then(([t, raw]) => {
-        if (t && !t.deleted_at && !t.completed_at) startRef.current(viewedTask(t), date ?? today, normalizeGridPrefs(raw))
+      void Promise.all([db.tasks.get(id), getMeta<unknown>(GRID_PREFS_META_KEY, null)]).then(([task, raw]) => {
+        if (task && !task.deleted_at && !task.completed_at) startRef.current(viewedTask(task), date ?? today, normalizeGridPrefs(raw))
       })
     }
     take()
@@ -186,15 +187,15 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   }, [prefs.startHour, mode])
 
   const commit = useCallback((taskId: string, target: DropTarget) => {
-    const t = taskMap.get(taskId)
-    if (!t) return
+    const task = taskMap.get(taskId)
+    if (!task) return
     const stored = rawMap.get(taskId)?.due
     if (target.type === 'slot') {
       const time = toHHMM(target.start)
-      if (t.due?.date !== target.date || t.due?.time !== time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date, time }))
+      if (task.due?.date !== target.date || task.due?.time !== time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date, time }))
     } else if (target.type === 'lane') {
-      if (t.due?.date !== target.date || t.due?.time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date }))
-    } else if (target.estimate !== t.estimate_minutes) {
+      if (task.due?.date !== target.date || task.due?.time) void setDueWithUndo(taskId, dueFromView(stored, { date: target.date }))
+    } else if (target.estimate !== task.estimate_minutes) {
       void updateTask(taskId, { estimate_minutes: target.estimate })
     }
     setSelectedId(taskId)
@@ -209,15 +210,15 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   // Keyboard edits run one after another on the freshest row, so two quick presses
   // move a block two slots even before the live query has re-rendered.
   const queue = useRef<Promise<void>>(Promise.resolve())
-  const edit = useCallback((id: string, fn: (t: Task) => Partial<Omit<Task, 'id' | '_clock'>> | null, after?: (t: Task, patch: Partial<Task>) => void) => {
+  const edit = useCallback((id: string, fn: (task: Task) => Partial<Omit<Task, 'id' | '_clock'>> | null, after?: (task: Task, patch: Partial<Task>) => void) => {
     queue.current = queue.current.then(async () => {
       const raw = await db.tasks.get(id)
       if (!raw || raw.deleted_at) return
-      const t = viewedTask(raw)
-      const patch = fn(t)
+      const task = viewedTask(raw)
+      const patch = fn(task)
       if (!patch) return
       await updateTask(id, 'due' in patch ? { ...patch, due: dueFromView(raw.due, patch.due ?? null) } : patch)
-      after?.(t, patch)
+      after?.(task, patch)
     }).catch(() => undefined)
   }, [])
 
@@ -238,7 +239,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     follow(next.date)
   }
   /** Arrows with no selection pick the first item; with a dated task they run `move`. */
-  const arrows = (move: (t: Task, due: NonNullable<Task['due']>, e: KeyboardEvent) => void) => (e: KeyboardEvent) => {
+  const arrows = (move: (task: Task, due: NonNullable<Task['due']>, e: KeyboardEvent) => void) => (e: KeyboardEvent) => {
     if (placing) return false
     if (!task || !task.due) {
       if (!task && order.length) { setSelectedId(order[0]); return }
@@ -264,26 +265,26 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     'calendar.nudge': (e) => {
       const dir = e.key === 'ArrowUp' ? -1 : 1
       if (placing) { ghost({ ...placing, start: clamp(placing.start + dir * SLOT_MINUTES, 0, LAST_SLOT) }); return }
-      return arrows((t) => {
-        edit(t.id, (x) => x.due ? { due: nudgeDue(x.due, { minutes: dir * SLOT_MINUTES, fallbackStart: placementStart(x, x.due.date, today, nowMinutes, prefs) }) } : null)
+      return arrows((task) => {
+        edit(task.id, (x) => x.due ? { due: nudgeDue(x.due, { minutes: dir * SLOT_MINUTES, fallbackStart: placementStart(x, x.due.date, today, nowMinutes, prefs) }) } : null)
       })(e)
     },
     'calendar.shift-day': (e) => {
       const days = e.key === 'ArrowLeft' ? -1 : 1
       if (placing) { ghost({ ...placing, date: addDaysISO(placing.date, days) }); return }
-      return arrows((t) => {
-        edit(t.id, (x) => (x.due ? { due: nudgeDue(x.due, { days }) } : null), (_, patch) => patch.due && follow(patch.due.date))
+      return arrows((task) => {
+        edit(task.id, (x) => (x.due ? { due: nudgeDue(x.due, { days }) } : null), (_, patch) => patch.due && follow(patch.due.date))
       })(e)
     },
     // Shift+Up shortens, Shift+Down lengthens: the block's lower edge follows the arrow.
-    'calendar.estimate': arrows((t, _due, e) => edit(t.id, (x) => ({ estimate_minutes: stepEstimate(x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES) }))),
+    'calendar.estimate': arrows((task, _due, e) => edit(task.id, (x) => ({ estimate_minutes: stepEstimate(x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES) }))),
     'calendar.next': unlessPlacing(() => setSelectedId(order[Math.min(order.length - 1, idx + 1)] ?? null)),
     'calendar.prev': unlessPlacing(() => setSelectedId(order[Math.max(0, idx - 1)] ?? null)),
     'calendar.range-prev': unlessPlacing(() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))),
     'calendar.range-next': unlessPlacing(() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))),
     'calendar.today': unlessPlacing(() => goTo(today)),
     // Keyboard twin of dropping on the lane: keep the date, clear the time.
-    'calendar.unschedule': unlessPlacing(() => { if (!task?.due || !block) return false; edit(task.id, (t) => (t.due ? { due: { date: t.due.date } } : null)) }),
+    'calendar.unschedule': unlessPlacing(() => { if (!task?.due || !block) return false; edit(task.id, (task) => (task.due ? { due: { date: task.due.date } } : null)) }),
     'calendar.place': unlessPlacing(() => { if (!task?.due) return false; startPlacing(task, task.due.date) }),
     'calendar.edit-estimate': unlessPlacing(() => { if (!task?.due) return false; estimateFocus.request(task.id); setOpenId(task.id) }),
     'calendar.complete': unlessPlacing(() => {
@@ -316,7 +317,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 
   planActions.current = {
     onPointerDown: (e, id) => startDrag(e, { taskId: id, kind: 'move' }),
-    onPlace: (id) => { const t = taskMap.get(id); if (t) startPlacing(t) },
+    onPlace: (id) => { const task = taskMap.get(id); if (task) startPlacing(task) },
     onOpen: (id) => setOpenId(id),
   }
   const togglePlan = () => (planOpen ? closePanel() : openPanel(PLAN_PANEL, () => <PlanPanel actions={planActions} />))
@@ -326,33 +327,33 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         <PageHeader title={title} help="calendar"
           meta={placing ? (
             <span role="status" className="rounded-control bg-success-soft px-2 py-0.5 text-meta text-on-success-soft">
-              Placing <strong>{placingTask?.title || 'task'}</strong> at {formatTime(placing.start)} · arrows move · Enter places · Esc cancels
+              {t.rich('Placing <b>{title}</b> at {time} · arrows move · Enter places · Esc cancels', { title: placingTask?.title || t('task'), time: formatTime(placing.start), b: (chunks) => <strong>{chunks}</strong> })}
             </span>
           ) : status === 'missing' && !online ? (
-            <span data-calendars-status="missing" className="text-meta text-muted">Calendars unavailable offline for these days</span>
+            <span data-calendars-status="missing" className="text-meta text-muted">{t('Calendars unavailable offline for these days')}</span>
           ) : win && (status === 'stale' || (status === 'fresh' && !online)) ? (
-            <span data-calendars-status="stale" className="text-meta text-muted">Calendars as of {formatWallTime(toHHMM(minutesOf(win.fetchedAt)))}</span>
+            <span data-calendars-status="stale" className="text-meta text-muted">{t('Calendars as of {wallTime}', { wallTime: formatWallTime(toHHMM(minutesOf(win.fetchedAt))) })}</span>
           ) : null}
           actions={<>
             {subs.length > 0 && (
               <Button variant="ghost" size="sm" icon="calendar-range" aria-pressed={eventsShown} data-calendars-toggle
-                title={eventsShown ? 'Hide other calendars on this device' : 'Show other calendars on this device'}
+                title={eventsShown ? t('Hide other calendars on this device') : t('Show other calendars on this device')}
                 className={eventsShown ? 'bg-sunken dark:bg-raised' : 'text-muted'}
-                onClick={() => void setShowEvents(!eventsShown)}>Calendars</Button>
+                onClick={() => void setShowEvents(!eventsShown)}>{t('Calendars')}</Button>
             )}
-            <span className="flex items-center" role="group" aria-label="Range">
-              <Button variant="ghost" size="sm" icon="chevron-left" aria-label={mode === 'day' ? 'Previous day' : 'Previous week'} onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} />
-              <Button variant="ghost" size="sm" onClick={() => goTo(today)}>Today</Button>
-              <Button variant="ghost" size="sm" icon="chevron-right" aria-label={mode === 'day' ? 'Next day' : 'Next week'} onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))} />
+            <span className="flex items-center" role="group" aria-label={t('Range')}>
+              <Button variant="ghost" size="sm" icon="chevron-left" aria-label={mode === 'day' ? t('Previous day') : t('Previous week')} onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))} />
+              <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>
+              <Button variant="ghost" size="sm" icon="chevron-right" aria-label={mode === 'day' ? t('Next day') : t('Next week')} onClick={() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))} />
             </span>
             <CalendarRangeSwitch mode={mode} date={date} />
           </>}
-          overflow={<MenuItem label={planOpen ? 'Hide the planning list' : 'Plan from a list'} icon="list" description="Drag tasks onto a time, or press s on one" onSelect={togglePlan} />} />
+          overflow={<MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a time, or press s on one')} onSelect={togglePlan} />} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
 
         {/* Focusable, so the grid scrolls with the keyboard even when no block is in view (axe scrollable-region-focusable). */}
         <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
-          data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? 'Week calendar' : 'Day calendar'}>
+          data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
           {mode === 'week' && !wide ? (
             <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} taskMap={taskMap} projectMap={projectMap} selectedId={selectedId}
               onSelect={(id) => setSelectedId(id)} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} />
@@ -361,7 +362,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
             {/* Sticky header: day name, capacity and the unscheduled lane of each column. */}
             <div className="sticky top-0 z-20 flex border-b border-default bg-surface">
               <div className="w-12 shrink-0 pt-1 text-right text-hint text-faint" aria-hidden>
-                <span className="pr-1">all day</span>
+                <span className="pr-1">{t('all day')}</span>
               </div>
               {days.map((d) => (
                 <DayHeader
@@ -422,9 +423,9 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
 
       {drag && dragTask && (
         <div className="pointer-events-none fixed z-50 max-w-56 truncate rounded-control bg-accent px-2 py-1 text-meta text-on-accent shadow-2" style={{ left: drag.x + 12, top: drag.y + 12 }}>
-          {dragTask.title || 'Untitled'}
+          {dragTask.title || t('Untitled')}
           {drag.target?.type === 'slot' && ` · ${formatTime(drag.target.start)}`}
-          {drag.target?.type === 'lane' && ' · unscheduled'}
+          {drag.target?.type === 'lane' && ` · ${t('unscheduled')}`}
           {drag.target?.type === 'resize' && ` · ${formatMinutes(drag.target.estimate)}`}
         </div>
       )}
@@ -448,15 +449,15 @@ function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, selectedId
   onSelect: (id: string) => void
   onOpen: (id: string) => void
 }) {
-  const row = (t: Task, time: string | null) => (
-    <li key={t.id}>
-      <button type="button" data-cal-id={t.id} data-agenda-task={t.id} onClick={() => onSelect(t.id)} onDoubleClick={() => onOpen(t.id)}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(t.id) } }}
-        className={`flex min-h-11 w-full items-center gap-2 rounded-control px-2 py-1 text-left text-body ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
-        data-hue={hueFor(t.project_id ? projectMap.get(t.project_id)?.color : null)}>
-        <span className="w-14 shrink-0 font-mono text-meta text-muted">{time ?? 'all day'}</span>
-        <span className="min-w-0 flex-1 truncate">{t.title || 'Untitled'}</span>
-        {t.estimate_minutes ? <span className="shrink-0 font-mono text-hint text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
+  const row = (task: Task, time: string | null) => (
+    <li key={task.id}>
+      <button type="button" data-cal-id={task.id} data-agenda-task={task.id} onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(task.id) } }}
+        className={`flex min-h-11 w-full items-center gap-2 rounded-control px-2 py-1 text-left text-body ${selectedId === task.id ? 'bg-accent-soft ring-1 ring-accent' : 'hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
+        data-hue={hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)}>
+        <span className="w-14 shrink-0 font-mono text-meta text-muted">{time ?? t('all day')}</span>
+        <span className="min-w-0 flex-1 truncate">{task.title || t('Untitled')}</span>
+        {task.estimate_minutes ? <span className="shrink-0 font-mono text-hint text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
       </button>
     </li>
   )
@@ -464,7 +465,7 @@ function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, selectedId
     <div className="space-y-3 px-1 py-2" data-week-agenda>
       {days.map((d) => {
         const [y, m, dd] = d.date.split('-').map(Number)
-        const name = new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(new Date(y, m - 1, dd))
+        const name = new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long' }).format(new Date(y, m - 1, dd))
         const load = dayLoad(tasks, d.date, prefs.dayLength)
         const blocks = d.layout.blocks.map((b) => ({ b, t: taskMap.get(b.id) })).filter((x): x is { b: typeof x.b; t: Task } => !!x.t)
         return (
@@ -474,11 +475,11 @@ function WeekAgenda({ days, today, prefs, tasks, taskMap, projectMap, selectedId
               <span className={`font-mono text-hint ${load.over ? 'text-danger' : 'text-muted'}`} data-capacity data-over={load.over || undefined}>{formatLoad(load, prefs.dayLength)}</span>
             </div>
             {d.lane.length === 0 && blocks.length === 0
-              ? <p className="px-2 py-2 text-meta text-faint">Nothing planned</p>
+              ? <p className="px-2 py-2 text-meta text-faint">{t('Nothing planned')}</p>
               : (
                 <ul className="mt-1 space-y-0.5">
-                  {d.lane.map((t) => row(t, null))}
-                  {blocks.map(({ b, t }) => row(t, formatTime(b.start)))}
+                  {d.lane.map((tk) => row(tk, null))}
+                  {blocks.map(({ b, t: item }) => row(item, formatTime(b.start)))}
                 </ul>
               )}
           </section>
@@ -517,7 +518,7 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zon
 }) {
   const load = dayLoad(tasks, day.date, prefs.dayLength)
   const [y, m, d] = day.date.split('-').map(Number)
-  const weekdayName = new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(new Date(y, m - 1, d))
+  const weekdayName = new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'short' }).format(new Date(y, m - 1, d))
   return (
     <div className="min-w-0 flex-1 border-l border-default px-1 pb-1 pt-1" data-day-header={day.date}>
       <div className="flex items-baseline justify-between gap-1 px-1">
@@ -526,7 +527,7 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zon
             {weekdayName} {d}
           </span>
         ) : <span />}
-        <Tooltip label={`${load.over ? 'Over capacity. ' : ''}Planned estimates against a ${formatMinutes(prefs.dayLength)} day${load.unestimated ? `; ${load.unestimated} unestimated (counted as 0)` : ''}`}>
+        <Tooltip label={[load.over ? t('Over capacity.') : '', t('Planned estimates against a {minutes} day', { minutes: formatMinutes(prefs.dayLength) }) + (load.unestimated ? t('; {n} unestimated (counted as 0)', { n: load.unestimated }) : '')].filter(Boolean).join(' ')}>
           <span
             data-capacity
             data-over={load.over || undefined}
@@ -534,36 +535,36 @@ function DayHeader({ day, today, tasks, prefs, showName, selectedId, subMap, zon
             className={`whitespace-nowrap rounded-control px-1 font-mono text-hint ${load.over ? 'bg-danger-soft font-semibold text-danger' : 'text-muted'}`}
           >
             {formatLoad(load, prefs.dayLength)}
-            {load.over && <span className="sr-only"> over capacity</span>}
+            {load.over && <span className="sr-only">{' '}{t('over capacity')}</span>}
             {load.unestimated > 0 && <span className="ml-1 text-faint">+{load.unestimated}?</span>}
           </span>
         </Tooltip>
       </div>
       {day.allDay.length > 0 && (
-        <ul className="mt-1 space-y-0.5" aria-label={`All-day events on ${day.date}`} data-all-day={day.date}>
+        <ul className="mt-1 space-y-0.5" aria-label={t('All-day events on {date}', { date: day.date })} data-all-day={day.date}>
           {day.allDay.map((ev) => <li key={ev.id}><EventChip ev={ev} sub={subMap.get(ev.subscriptionId)} zone={zone} /></li>)}
         </ul>
       )}
       <div
         data-drop-lane={day.date}
-        aria-label={`Unscheduled on ${day.date}`}
+        aria-label={t('Unscheduled on {date}', { date: day.date })}
         className={`mt-1 min-h-8 space-y-0.5 rounded-control border border-dashed p-0.5 ${laneTarget ? 'border-accent bg-accent-soft' : 'border-default'}`}
       >
-        {day.lane.length === 0 && <span className="block px-1 py-1 text-hint text-faint">Unscheduled</span>}
-        {day.lane.map((t) => (
+        {day.lane.length === 0 && <span className="block px-1 py-1 text-hint text-faint">{t('Unscheduled')}</span>}
+        {day.lane.map((task) => (
           <button
-            key={t.id}
+            key={task.id}
             type="button"
-            data-cal-id={t.id}
-            data-lane-task={t.id}
-            onPointerDown={(e) => onPointerDown(e, t.id)}
-            onClick={() => onSelect(t.id)}
-            onDoubleClick={() => onOpen(t.id)}
-            className={`flex w-full touch-manipulation items-center gap-1 truncate rounded-control px-1.5 py-0.5 text-left text-meta ${selectedId === t.id ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
-            data-hue={hueFor(t.project_id ? projectMap.get(t.project_id)?.color : null)}
+            data-cal-id={task.id}
+            data-lane-task={task.id}
+            onPointerDown={(e) => onPointerDown(e, task.id)}
+            onClick={() => onSelect(task.id)}
+            onDoubleClick={() => onOpen(task.id)}
+            className={`flex w-full touch-manipulation items-center gap-1 truncate rounded-control px-1.5 py-0.5 text-left text-meta ${selectedId === task.id ? 'bg-accent-soft ring-1 ring-accent' : 'bg-sunken dark:bg-raised hover:bg-sunken dark:hover:bg-raised'} border-l-3 border-l-hue-solid`}
+            data-hue={hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)}
           >
-            <span className="truncate">{t.title || 'Untitled'}</span>
-            {t.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-hint text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
+            <span className="truncate">{task.title || t('Untitled')}</span>
+            {task.estimate_minutes ? <span className="ml-auto shrink-0 font-mono text-hint text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
           </button>
         ))}
       </div>
@@ -619,13 +620,13 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
           return <EventBlockView key={b.id} block={ev} lane={b.lane} lanes={b.lanes} overlap={b.overlap} pxPerMinute={PX_PER_MIN}
             minHeight={SLOT_MINUTES * PX_PER_MIN} sub={subMap.get(ev.event.subscriptionId)} zone={zone} />
         }
-        const t = taskMap.get(b.id)
+        const task = taskMap.get(b.id)
         const block = day.blocks.get(b.id)
-        if (!t || !block) return null
+        if (!task || !block) return null
         const top = b.start * PX_PER_MIN
         const height = Math.max(SLOT_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN)
         // Project colours render through the palette hue (design-system "Stored colours render through the palette").
-        const hue = hueFor(t.project_id ? projectMap.get(t.project_id)?.color : null)
+        const hue = hueFor(task.project_id ? projectMap.get(task.project_id)?.color : null)
         const selected = selectedId === b.id
         return (
           <div
@@ -637,7 +638,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
             data-hue={hue}
             role="button"
             tabIndex={-1}
-            aria-label={`${t.title || 'Untitled'}, ${formatTime(block.start)}${block.estimated ? ` for ${formatMinutes(t.estimate_minutes!)}` : ', no estimate'}${b.overlap ? ', overlaps another item' : ''}`}
+            aria-label={[task.title || t('Untitled'), block.estimated ? t('{time} for {duration}', { time: formatTime(block.start), duration: formatMinutes(task.estimate_minutes!) }) : t('{time}, no estimate', { time: formatTime(block.start) }), b.overlap ? t('overlaps another item') : ''].filter(Boolean).join(', ')}
             onPointerDown={(e) => {
               // The lowest few pixels (handle and border) resize; the rest moves the block.
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -655,13 +656,13 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
             }}
           >
             <div className="flex items-start gap-1">
-              <span className="min-w-0 flex-1 truncate font-medium">{t.title || 'Untitled'}</span>
+              <span className="min-w-0 flex-1 truncate font-medium">{task.title || t('Untitled')}</span>
               {b.overlap && <span data-overlap-marker className="shrink-0 text-warning" aria-hidden>⧉</span>}
             </div>
             {height >= 30 && (
               <div className="truncate text-hint text-muted">
                 {formatTime(block.start)}–{formatTime(block.end === DAY_MINUTES ? DAY_MINUTES - 1 : block.end)}
-                {block.estimated && <span className="ml-1 font-mono">{formatMinutes(t.estimate_minutes!)}</span>}
+                {block.estimated && <span className="ml-1 font-mono">{formatMinutes(task.estimate_minutes!)}</span>}
               </div>
             )}
             <div
@@ -678,7 +679,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
         const open = expanded === key
         return (
           <div key={key} className="absolute z-20" style={{ top: o.start * PX_PER_MIN, left: `calc(${(o.lane / o.lanes) * 100}% + 2px)`, width: `calc(${100 / o.lanes}% - 4px)` }}>
-            <Tooltip label={`${o.ids.length} more overlapping items`}>
+            <Tooltip label={t('{count} more overlapping items', { count: o.ids.length })}>
               <button
                 type="button"
                 data-overflow={o.ids.length}
@@ -697,11 +698,11 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
                     return (
                       <li key={id} data-overflow-event={ev.event.id} className="flex gap-1 truncate px-1 py-0.5 text-meta text-muted">
                         <span className="font-mono text-hint">{formatTime(ev.start)}</span>
-                        <span className="truncate">{ev.event.summary || 'Busy'}</span>
+                        <span className="truncate">{ev.event.summary || t('Busy')}</span>
                       </li>
                     )
                   }
-                  const t = taskMap.get(id)
+                  const tk = taskMap.get(id)
                   const blk = day.blocks.get(id)
                   return (
                     <li key={id}>
@@ -714,7 +715,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
                         className={`flex w-full gap-1 truncate rounded-control px-1 py-0.5 text-left text-meta ${selectedId === id ? 'bg-accent-soft' : 'hover:bg-sunken dark:hover:bg-raised'}`}
                       >
                         <span className="font-mono text-hint text-muted">{blk ? formatTime(blk.start) : ''}</span>
-                        <span className="truncate">{t?.title || 'Untitled'}</span>
+                        <span className="truncate">{tk?.title || t('Untitled')}</span>
                       </button>
                     </li>
                   )
@@ -732,7 +733,7 @@ function DayColumn({ day, prefs, isToday, nowMinutes, taskMap, projectMap, subMa
           className="pointer-events-none absolute inset-x-0.5 z-30 rounded-control border-2 border-dashed border-accent bg-accent/15 px-1.5 py-0.5 text-meta text-strong"
           style={{ top: preview.start * PX_PER_MIN, height: Math.max(SLOT_MINUTES, Math.min(preview.length, DAY_MINUTES - preview.start)) * PX_PER_MIN }}
         >
-          <span className="font-mono text-hint">{formatTime(preview.start)}</span> <span className="truncate">{preview.title || 'Untitled'}</span>
+          <span className="font-mono text-hint">{formatTime(preview.start)}</span> <span className="truncate">{preview.title || t('Untitled')}</span>
         </div>
       )}
 
@@ -770,53 +771,53 @@ function PlanPanel({ actions }: { actions: React.RefObject<PlanActions> }) {
   const live = projects.filter((p) => !p.archived)
   const archived = useMemo(() => new Set(projects.filter((p) => p.archived).map((p) => p.id)), [projects])
   const list = useMemo(() => {
-    const open = tasks.filter((t) => !t.completed_at && !t.deleted_at && !(t.project_id && archived.has(t.project_id)))
+    const open = tasks.filter((task) => !task.completed_at && !task.deleted_at && !(task.project_id && archived.has(task.project_id)))
     let out: Task[]
-    if (source === 'nodate') out = open.filter((t) => !t.due)
-    else if (source === 'overdue') out = open.filter((t) => t.due && localDueOf(t.due).date < today)
-    else if (source.startsWith('project:')) out = open.filter((t) => t.project_id === source.slice(8))
-    else out = open.filter((t) => t.project_id === null)
+    if (source === 'nodate') out = open.filter((tk) => !tk.due)
+    else if (source === 'overdue') out = open.filter((item) => item.due && localDueOf(item.due).date < today)
+    else if (source.startsWith('project:')) out = open.filter((task) => task.project_id === source.slice(8))
+    else out = open.filter((task) => task.project_id === null)
     return out.sort(compareDueThenPriority).slice(0, 200)
   }, [tasks, archived, source, today])
-  const sourceLabel = source === 'nodate' ? 'No date' : source === 'overdue' ? 'Overdue' : source.startsWith('project:') ? projects.find((p) => p.id === source.slice(8))?.name ?? 'Project' : 'Inbox'
+  const sourceLabel = source === 'nodate' ? t('No date') : source === 'overdue' ? t('Overdue') : source.startsWith('project:') ? projects.find((p) => p.id === source.slice(8))?.name ?? t('Project') : t('Inbox')
   return (
-    <PanelFrame title="Plan" testId="calendar-plan"
+    <PanelFrame title={t('Plan')} testId="calendar-plan"
       actions={(
-        <Menu kind="menu" label="Plan from" title="Plan from" width="sm:w-64" align="end"
+        <Menu kind="menu" label={t('Plan from')} title={t('Plan from')} width="sm:w-64" align="end"
           trigger={<span className="inline-flex items-center gap-1 text-meta"><Icon name="filter" size="xs" />{sourceLabel}<Icon name="chevron-down" size="xs" /></span>}
           triggerClassName="inline-flex min-h-8 items-center rounded-control border border-default px-2.5 py-1 text-muted hover:bg-sunken dark:hover:bg-raised">
-          <MenuItem label="Inbox" icon="inbox" checked={source === 'inbox'} onSelect={() => choose('inbox')} />
-          <MenuItem label="No date" icon="calendar-days" checked={source === 'nodate'} onSelect={() => choose('nodate')} />
-          <MenuItem label="Overdue" icon="hourglass" checked={source === 'overdue'} onSelect={() => choose('overdue')} />
+          <MenuItem label={t('Inbox')} icon="inbox" checked={source === 'inbox'} onSelect={() => choose('inbox')} />
+          <MenuItem label={t('No date')} icon="calendar-days" checked={source === 'nodate'} onSelect={() => choose('nodate')} />
+          <MenuItem label={t('Overdue')} icon="hourglass" checked={source === 'overdue'} onSelect={() => choose('overdue')} />
           {live.length > 0 && <MenuSeparator />}
           {live.length > 0 && (
-            <MenuGroup label="Projects">
+            <MenuGroup label={t('Projects')}>
               {live.map((p) => <MenuItem key={p.id} label={p.name} icon="folder" checked={source === `project:${p.id}`} onSelect={() => choose(`project:${p.id}`)} />)}
             </MenuGroup>
           )}
         </Menu>
       )}>
-      <p className="mb-2 text-meta text-faint">Drag a task onto a time, or focus one and press <span className="ui-kbd">s</span>.</p>
-      <ul className="space-y-0.5" aria-label="Tasks to plan">
-        {list.length === 0 && <li className="px-1 py-2 text-meta text-faint">Nothing here.</li>}
-        {list.map((t) => (
-          <li key={t.id}>
+      <p className="mb-2 text-meta text-faint">{t.rich('Drag a task onto a time, or focus one and press {key}.', { key: <span className="ui-kbd">s</span> })}</p>
+      <ul className="space-y-0.5" aria-label={t('Tasks to plan')}>
+        {list.length === 0 && <li className="px-1 py-2 text-meta text-faint">{t('Nothing here.')}</li>}
+        {list.map((task) => (
+          <li key={task.id}>
             <button
               type="button"
-              data-tray-task={t.id}
-              onPointerDown={(e) => actions.current?.onPointerDown(e, t.id)}
+              data-tray-task={task.id}
+              onPointerDown={(e) => actions.current?.onPointerDown(e, task.id)}
               onKeyDown={(e) => {
                 if (e.key === 's' || e.key === 'Enter') {
                   e.preventDefault()
                   e.stopPropagation()
-                  actions.current?.onPlace(t.id)
+                  actions.current?.onPlace(task.id)
                 }
               }}
-              onDoubleClick={() => actions.current?.onOpen(t.id)}
+              onDoubleClick={() => actions.current?.onOpen(task.id)}
               className="flex w-full cursor-grab touch-manipulation items-center gap-1 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised"
             >
-              <span className="truncate">{t.title || 'Untitled'}</span>
-              {t.estimate_minutes ? <span className="ml-auto shrink-0 text-meta tabular-nums text-muted">{formatMinutes(t.estimate_minutes)}</span> : null}
+              <span className="truncate">{task.title || t('Untitled')}</span>
+              {task.estimate_minutes ? <span className="ml-auto shrink-0 text-meta tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
             </button>
           </li>
         ))}

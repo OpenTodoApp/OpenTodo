@@ -57,7 +57,7 @@ A list view SHALL group its results by project, due date, priority, label or non
 - **THEN** within each group priority-1 tasks come first and priority-4 last
 
 ### Requirement: Start view per device
-The user SHALL be able to choose any built-in or saved view as the start view that opens on launch. The choice SHALL be a per-device preference that persists across reloads and is not synced. If the chosen saved view is deleted, the device SHALL fall back to the Inbox.
+The user SHALL be able to choose any built-in or saved view, or a display route (OpenSpec `display-mode`: Today, Upcoming, a project or a saved view in display mode), as the start view that opens on launch. The choice SHALL be a per-device preference that persists across reloads and is not synced. If the chosen saved view or project is deleted, the device SHALL fall back to the Inbox.
 
 #### Scenario: Open on a saved view
 - **WHEN** the user sets "Work tomorrow" as the start view on their laptop and relaunches the app
@@ -66,6 +66,14 @@ The user SHALL be able to choose any built-in or saved view as the start view th
 #### Scenario: Deleted start view
 - **WHEN** the start view is deleted on another device and this device syncs and relaunches
 - **THEN** the Inbox opens and a notice explains the start view was removed
+
+#### Scenario: Open in display mode
+- **WHEN** the user chooses "Make this the start view on this device" on `/display/today?eink=1` and the tablet restarts
+- **THEN** the app opens straight on that display with the same options, while other devices keep their own start view
+
+#### Scenario: Display of a deleted project
+- **WHEN** the start view is the display of a project that was deleted since
+- **THEN** the Inbox opens with the notice that the start view was removed
 
 ### Requirement: Dashboards
 A view of kind `dashboard` SHALL display up to six panels, each showing a chosen saved list view's name, open-task count and its first ten tasks with an "open view" action, laid out in a responsive grid that stacks on narrow screens. Panels SHALL be added, removed and reordered from the dashboard header, and Tab/Shift+Tab SHALL move between panels with `j`/`k` inside one. A panel whose view was deleted SHALL show a placeholder instead of failing.

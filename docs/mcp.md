@@ -113,8 +113,8 @@ The read tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `op
 
 | Tool | Arguments | Result |
 | --- | --- | --- |
-| `list_projects` | `include_archived` (default false) | `{projects:[{id,untrusted_text:{name,description},encrypted,color,archived,parent_id?,shared,role?,open_count}], inbox_open_count, server_time, _notice}`; `description` is the project's note in Markdown (the placeholder for an encrypted account, with `encrypted: true`) |
-| `list_tasks` | `view` (`all` default, `inbox`, `today`, `upcoming`), `project_id`, `label` (name or id), `priority` (1–4), `due_from`, `due_to` (YYYY-MM-DD, inclusive), `include_completed` (default false), `timezone`, `limit` (≤200), `cursor` | `{tasks:[…], next_cursor, timezone, today, server_time, _notice}` |
+| `list_projects` | `include_archived` (default false) | `{projects:[{id,untrusted_text:{name,description},encrypted,color,archived,parent_id?,shared,role?,open_count,fields:[{id,type,untrusted_text:{name,options?}}]}], inbox_open_count, server_time, _notice}`; `description` is the project's note in Markdown (the placeholder for an encrypted account, with `encrypted: true`); `fields` are the project's live [custom field](custom-fields.md) definitions in order (`options` for a choice field) |
+| `list_tasks` | `view` (`all` default, `inbox`, `today`, `upcoming`), `project_id`, `label` (name or id), `priority` (1–4), `due_from`, `due_to` (YYYY-MM-DD, inclusive), `completed_after`, `completed_before` (YYYY-MM-DD at the start of that day in `timezone`, RFC 3339 or Unix ms; completed tasks in `[after, before)` only), `include_completed` (default false), `timezone`, `limit` (≤200), `cursor` | `{tasks:[…], next_cursor, timezone, today, server_time, _notice}` |
 | `get_task` | `id` (required), `timezone` | `{task, subtasks:[…], comments:[{id,parent_id?,author_id,author_is_you,untrusted_text:{body,author},created_at,edited_at?}], attachments:[{id,untrusted_text:{name,mime?,url?},size?,uploaded,comment_id?,created_at}], timezone, today, server_time, _notice}` |
 | `search_tasks` | `query` (required), `include_completed`, `timezone`, `limit`, `cursor` | like `list_tasks`; matches title or description, case-insensitive |
 | `today_summary` | `timezone` | `{overdue:[…], due_today:[…], counts:{overdue,due_today,inbox,per_project:[{id,untrusted_text:{name},open}]}, timezone, today, server_time, _notice}` |
@@ -128,17 +128,19 @@ A task in a result looks like this (`description`, the note as Markdown text, on
   "id": "0b6f…",
   "untrusted_text": {
     "title": "Water the tomatoes", "description": "…",
-    "project": "Garden", "section": "Beds", "labels": ["outside"], "assignee": "Sam"
+    "project": "Garden", "section": "Beds", "labels": ["outside"], "assignee": "Sam",
+    "fields": { "f-client": "Acme" }
   },
   "project_id": "e34e…", "section_id": "…", "parent_id": null, "priority": 2,
   "due": { "date": "2026-03-11", "time": "01:00", "tz": "Asia/Tokyo", "local_date": "2026-03-10", "local_time": "12:00" },
   "overdue": true, "label_ids": ["9c1d…"], "assignee_id": "…",
   "recurrence": "every week", "estimate_minutes": 30,
-  "completed": false, "created_at": "2026-03-01T08:00:00Z", "shared": true
+  "completed": false, "created_at": "2026-03-01T08:00:00Z", "shared": true,
+  "fields": { "f-cost": 120, "f-paid": true }
 }
 ```
 
-`local_date` and `local_time` appear for due dates pinned to a time zone and give the wall time in the requested `timezone`. Optional fields are left out when empty; `project` is `"Inbox"` for tasks without a project. (Before the write tools, these strings sat directly on the task; they moved into `untrusted_text` with the same names.)
+`local_date` and `local_time` appear for due dates pinned to a time zone and give the wall time in the requested `timezone`. `fields` holds the task's [custom field](custom-fields.md) values for the live definitions of its project, keyed by definition id: numbers, checkboxes and empty values (`null`) directly, text, link, date and choice values in `untrusted_text.fields` (the encrypted placeholder for an encrypted account). Values of definitions of another project or deleted ones are left out. A completed task also carries `completed_at` and, when known, `completed_by` (the account id of whoever completed it). Optional fields are left out when empty; `project` is `"Inbox"` for tasks without a project. (Before the write tools, these strings sat directly on the task; they moved into `untrusted_text` with the same names.)
 
 `attachments` lists the files and links on the task and on the comments shown, without their content: no tool reads a file or adds an attachment. `uploaded` is false for a file that hasn't reached the server yet; a link has a `url` and no `size`.
 
@@ -162,8 +164,8 @@ Every write tool is annotated `readOnlyHint: false`, `openWorldHint: false`; `up
 
 | Tool | Arguments | Notes |
 | --- | --- | --- |
-| `create_tasks` | `items` (1–50: `title` required, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `recurrence`), `client_request_id` | Returns ids in order. `labels` takes names (case-insensitive) or ids. |
-| `update_tasks` | `updates` (1–50: `id` plus any of `title`, `description`, `priority`, `labels`, `estimate_minutes`, `recurrence`) | Unknown fields are refused. |
+| `create_tasks` | `items` (1–50: `title` required, `description`, `project_id`, `section_id`, `parent_id`, `priority`, `due`, `labels`, `estimate_minutes`, `recurrence`, `fields`), `client_request_id` | Returns ids in order. `labels` takes names (case-insensitive) or ids. `fields` sets [custom field](custom-fields.md) values of the task's project, see below. |
+| `update_tasks` | `updates` (1–50: `id` plus any of `title`, `description`, `priority`, `labels`, `estimate_minutes`, `recurrence`, `fields`) | Unknown fields are refused. Each `fields` value is one operation for that field only. |
 | `complete_tasks` | `ids` (1–50), `timezone` | A recurring task records the occurrence and moves to its next date, exactly like completing it in the app. |
 | `reopen_tasks` | `ids` | |
 | `move_tasks` | `ids`, `project_id` (null for the inbox), `section_id` | Tasks cannot move between projects that are shared differently (`scope_change`). A subtask whose parent stays behind becomes a top-level task. |
@@ -174,6 +176,8 @@ Every write tool is annotated `readOnlyHint: false`, `openWorldHint: false`; `up
 | `trash_tasks` | `ids` | Only tasks created with the **same token**; anything else is refused with `not_permitted` and nothing changes. |
 
 There is no tool that deletes permanently, empties the Trash, archives or deletes projects, assigns people, or touches sharing, members, tokens, settings, webhooks, backups, imports or exports, and no setting adds one.
+
+**Custom field values.** `fields` is a list of `{id, value}` items, where `id` is a definition id from `list_projects` and `value` is text read by the field's type (`"120"` for a number, `"true"` or `"false"` for a checkbox, `"2026-10-16"` for a date, one of the options for a choice, an `http(s)` address for a link) or `null` to clear; an object keyed by definition id with typed values (`{"<cost-id>": 120}`, the REST shape) is accepted too. Values are checked against the definitions of the task's project: an unknown or foreign id, or a value of the wrong type, is a `-32602` error naming the field and its type, and nothing changes. No tool defines or deletes custom fields. For an encrypted account, text values are refused with `encryption_enabled`; numbers and checkboxes still work.
 
 **Retries.** `create_tasks`, `create_project` and `create_label` accept a `client_request_id` you choose. The same user, token and request id always produce the same ids, so a retry after a timeout returns the earlier result instead of creating duplicates.
 

@@ -10,6 +10,7 @@ import { HelpContent } from './HelpContent'
 import { HelpHeading, HelpLink } from './HelpLink'
 import { HELP_TASKS, HelpView } from './HelpView'
 import { closeHelp, openHelp } from './store'
+import { applyLanguagePreference } from '../../lib/i18n'
 
 afterEach(() => { document.body.innerHTML = '' })
 
@@ -123,5 +124,21 @@ describe('Help landing (ux-overhaul)', () => {
       expect(bundle.screens[id]?.page, id).toBe(page)
       expect(bundle.screens[id]?.anchor, id).toBeTruthy()
     }
+  })
+})
+
+describe('Help in another interface language (app-localization)', () => {
+  afterEach(async () => { await applyLanguagePreference('en', ['en-US']) })
+
+  it('says the guide is in English in French, and nothing in English', async () => {
+    const en = await render(<HelpView />)
+    await waitFor(() => en.container.querySelector('[data-help-tasks]') !== null)
+    expect(en.container.querySelector('[data-help-english-note]')).toBeNull()
+    await en.unmount()
+    await applyLanguagePreference('fr', ['en-US'])
+    const fr = await render(<HelpView />)
+    await waitFor(() => fr.container.querySelector('[data-help-tasks]') !== null)
+    expect(fr.container.querySelector('[data-help-english-note]')?.textContent).toBe('Le guide est en anglais.')
+    await fr.unmount()
   })
 })

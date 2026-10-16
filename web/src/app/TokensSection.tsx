@@ -16,6 +16,7 @@ import { Dialog } from './overlay/Dialog'
 import { Menu } from './overlay/Menu'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
+import { t } from '../lib/i18n'
 
 /**
  * A secret shown once, with a copy action (API tokens, app passwords). The parent
@@ -33,12 +34,12 @@ export function SecretReveal({ what, secret, testId }: { what: string; secret: s
   }
   return (
     <div className="space-y-2" data-testid="secret-reveal">
-      <Notice tone="success">Copy this {what} now. It will not be shown again.</Notice>
+      <Notice tone="success">{t('Copy this {what} now. It will not be shown again.', { what })}</Notice>
       <div className="flex items-center gap-2">
         <code tabIndex={0} data-testid={testId} className="min-w-0 flex-1 break-all rounded-control border border-default bg-sunken px-3 py-2 font-mono text-meta text-default">{secret}</code>
-        <Button size="sm" icon="copy" onClick={() => void copy()}>{copied === 'yes' ? 'Copied' : 'Copy'}</Button>
+        <Button size="sm" icon="copy" onClick={() => void copy()}>{copied === 'yes' ? t('Copied') : t('Copy')}</Button>
       </div>
-      {copied === 'failed' && <p className="text-meta text-muted">Copying is blocked here; select the text above and copy it.</p>}
+      {copied === 'failed' && <p className="text-meta text-muted">{t('Copying is blocked here; select the text above and copy it.')}</p>}
     </div>
   )
 }
@@ -66,58 +67,58 @@ export interface TokensViewProps {
 /** Pure rendering of Settings → Integrations → API tokens; state lives in TokensSection. */
 export function TokensView(p: TokensViewProps) {
   useDateTimeFormat()
-  const newButton = <Button variant="primary" size="sm" icon="plus" onClick={p.onNew}>New token</Button>
+  const newButton = <Button variant="primary" size="sm" icon="plus" onClick={p.onNew}>{t('New token')}</Button>
   return (
-    <SettingsSection title="API tokens" headingId="tokens-heading" testId="tokens-panel"
-      description="For scripts, the ot command and AI assistants. Send it as Authorization: Bearer <token>.">
+    <SettingsSection title={t('API tokens')} headingId="tokens-heading" testId="tokens-panel"
+      description={t('For scripts, the ot command and AI assistants. Send it as {header}.', { header: 'Authorization: Bearer <token>' })}>
       {p.error && <Notice tone="danger">{p.error}</Notice>}
       {p.tokens && p.tokens.length === 0 && (
-        <EmptyState icon="key-round" title="No API tokens yet"
-          body="A token lets a script, the ot command or an AI assistant use your tasks without your password. You can revoke it any time."
+        <EmptyState icon="key-round" title={t('No API tokens yet')}
+          body={t('A token lets a script, the ot command or an AI assistant use your tasks without your password. You can revoke it any time.')}
           action={newButton} />
       )}
       {p.tokens && p.tokens.length > 0 && (
         <div className="-mx-3">
-          {p.tokens.map((t) => (
-            <ListRow key={t.id} leading={<Icon name="key-round" size="md" />} label={t.name}
-              meta={`Created ${day(t.createdAt)} · ${t.lastUsedAt ? `used ${day(t.lastUsedAt)}` : 'never used'}`}
-              badges={<Badge hue={SCOPE_HUE[t.scope ?? 'full']}>{scopeLabel(t.scope)}</Badge>}
+          {p.tokens.map((token) => (
+            <ListRow key={token.id} leading={<Icon name="key-round" size="md" />} label={token.name}
+              meta={token.lastUsedAt ? t('Created {day} · used {used}', { day: day(token.createdAt), used: day(token.lastUsedAt) }) : t('Created {day} · never used', { day: day(token.createdAt) })}
+              badges={<Badge hue={SCOPE_HUE[token.scope ?? 'full']}>{scopeLabel(token.scope)}</Badge>}
               menu={(
-                <Menu label={`Actions for ${t.name}`} trigger={<Icon name="ellipsis" />} kind="menu"
+                <Menu label={t('Actions for {name}', { name: token.name })} trigger={<Icon name="ellipsis" />} kind="menu"
                   triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
-                  <MenuItem label={`Revoke ${t.name}`} icon="trash-2" danger onSelect={() => p.onRevoke(t)} />
+                  <MenuItem label={t('Revoke {name}', { name: token.name })} icon="trash-2" danger onSelect={() => p.onRevoke(token)} />
                 </Menu>
               )} />
           ))}
         </div>
       )}
       {p.tokens && p.tokens.length > 0 && (
-        <SettingRow label="New token" description="A token is shown once, when you create it." control={newButton} />
+        <SettingRow label={t('New token')} description={t('A token is shown once, when you create it.')} control={newButton} />
       )}
       {p.creating && (
-        <Dialog title={p.secret ? 'Token created' : 'New API token'} onClose={() => p.onCloseNew?.()} size="md">
+        <Dialog title={p.secret ? t('Token created') : t('New API token')} onClose={() => p.onCloseNew?.()} size="md">
           {p.secret ? (
             <div className="space-y-4">
-              <SecretReveal what="token" secret={p.secret} />
-              <div className="flex justify-end"><Button variant="primary" onClick={p.onCloseNew}>Done</Button></div>
+              <SecretReveal what={t('token')} secret={p.secret} />
+              <div className="flex justify-end"><Button variant="primary" onClick={p.onCloseNew}>{t('Done')}</Button></div>
             </div>
           ) : (
             <form className="space-y-4" onSubmit={(e: FormEvent) => { e.preventDefault(); p.onCreate() }}>
-              <Field label="Name" description="Something you will recognise later, such as the device or script.">
-                <Input aria-label="Token name" placeholder="e.g. laptop CLI" value={p.name} onChange={(e) => p.onNameChange(e.target.value)} data-autofocus />
+              <Field label={t('Name')} description={t('Something you will recognise later, such as the device or script.')}>
+                <Input aria-label={t('Token name')} placeholder={t('e.g. laptop CLI')} value={p.name} onChange={(e) => p.onNameChange(e.target.value)} data-autofocus />
               </Field>
-              <Field label="Access"
-                description="Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.">
-                <Select aria-label="Token scope" value={p.scope} onChange={(e) => p.onScopeChange(e.target.value as TokenScope)}>
-                  <option value="full">Full access</option>
-                  <option value="read">Read-only</option>
-                  <option value="agent">AI assistant, can make changes</option>
+              <Field label={t('Access')}
+                description={t('Read-only can read everything you can but is refused on every change. An AI assistant token can change tasks only through the assistant (MCP) tools, and only while the server owner and you allow assistant changes in Settings → AI; it can never create tokens or change settings.')}>
+                <Select aria-label={t('Token scope')} value={p.scope} onChange={(e) => p.onScopeChange(e.target.value as TokenScope)}>
+                  <option value="full">{t('Full access')}</option>
+                  <option value="read">{t('Read-only')}</option>
+                  <option value="agent">{t('AI assistant, can make changes')}</option>
                 </Select>
               </Field>
               {p.error && <Notice tone="danger">{p.error}</Notice>}
               <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={p.onCloseNew}>Cancel</Button>
-                <Button variant="primary" type="submit" busy={p.busy}>Create token</Button>
+                <Button variant="ghost" onClick={p.onCloseNew}>{t('Cancel')}</Button>
+                <Button variant="primary" type="submit" busy={p.busy}>{t('Create token')}</Button>
               </div>
             </form>
           )}
@@ -142,7 +143,7 @@ export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
     try {
       setTokens((await api.listTokens()).tokens)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'You are offline. Tokens are managed on your server.')
+      setError(err instanceof ApiError ? err.message : t('You are offline. Tokens are managed on your server.'))
     }
   }, [])
   useEffect(() => {
@@ -173,8 +174,8 @@ export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
         onRevoke={setRevoking}
       />
       {revoking && (
-        <ConfirmDialog title={`Revoke “${revoking.name}”?`} confirmLabel="Revoke token"
-          consequence="Scripts, apps and assistants using this token stop working at once. You cannot undo this."
+        <ConfirmDialog title={t('Revoke “{name}”?', { name: revoking.name })} confirmLabel={t('Revoke token')}
+          consequence={t('Scripts, apps and assistants using this token stop working at once. You cannot undo this.')}
           onConfirm={() => api.deleteToken(revoking.id).then(load)} onCancel={() => setRevoking(null)} />
       )}
     </>

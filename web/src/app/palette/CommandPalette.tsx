@@ -2,6 +2,7 @@
 // Ctrl/⌘+K that finds any task, project, label, saved view or Settings section from
 // local data and runs any command by name. Lazy chunk, mounted by Shell on first open.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../../lib/db'
 import { pickScores } from '../../lib/pickRank'
@@ -25,6 +26,7 @@ import { groupOf, isStep, KIND_ICON, secondaryOf, type Entry, type Step } from '
 import { filterEntries } from './filterEntries'
 import { buildEntries, makeTaskEntry } from './index'
 import { commandEntries, contextEntries, trailingEntries, type PaletteContext } from './registry'
+import { t } from '../../lib/i18n'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
@@ -47,13 +49,13 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   const views = useLiveQuery(() => db.views.filter((v) => !v.deleted_at).toArray(), [], [] as View[])
   const memberships = useLiveQuery(() => membershipMap(), [])
   const scores = useLiveQuery(() => pickScores('palette'), [], new Map<string, number>())
-  const task = useMemo(() => tasks.find((t) => t.id === taskId), [tasks, taskId])
+  const task = useMemo(() => tasks.find((tk) => tk.id === taskId), [tasks, taskId])
   const sectionInfo = useLiveQuery(async () => {
     if (!task?.section_id || !task.project_id) return undefined
     const sections = (await db.sections.where('project_id').equals(task.project_id).toArray()).filter((s) => !s.deleted_at).sort((a, b) => a.position - b.position)
     const i = sections.findIndex((s) => s.id === task.section_id)
     if (i < 0) return undefined
-    const count = await db.tasks.filter((t) => t.section_id === task.section_id && !t.deleted_at && !t.completed_at).count()
+    const count = await db.tasks.filter((tk) => tk.section_id === task.section_id && !tk.deleted_at && !tk.completed_at).count()
     return { row: sections[i] as Section, first: i === 0, last: i === sections.length - 1, layout: (await loadViewMode(task.project_id)) === 'board' ? 'board' as const : 'list' as const, count }
   }, [task?.section_id, task?.project_id])
 
@@ -61,8 +63,8 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
   const [typed, setTyped] = useState('')
   const [query, setQuery] = useState('')
   useEffect(() => {
-    const t = setTimeout(() => setQuery(typed), DEBOUNCE_MS)
-    return () => clearTimeout(t)
+    const entry = setTimeout(() => setQuery(typed), DEBOUNCE_MS)
+    return () => clearTimeout(entry)
   }, [typed])
 
   const ctx = useMemo<PaletteContext>(() => {
@@ -78,7 +80,7 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
       project: project && canEditProject(role) ? {
         row: project, role, shared: !!memberships?.get(project.id), targets: moveTargets(project, projects),
         subCount: projects.filter((p) => p.parent_id === project.id).length,
-        openTasks: tasks.filter((t) => t.project_id === project.id && !t.completed_at).length,
+        openTasks: tasks.filter((task) => task.project_id === project.id && !task.completed_at).length,
       } : undefined,
       view: view ? { row: view, peers: sorted.filter((v) => v.pinned === view.pinned), isStart: startView === `view:${view.id}` } : undefined,
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position) } : undefined,
@@ -93,13 +95,14 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
     const seen = new Set(context.map((e) => e.key))
     // Recent picks (from the pick history) sit under their own heading.
     const recent = [...scores.keys()].map((k) => source.find((e) => e.key === k)).filter((e): e is Entry => !!e && !seen.has(e.key)).slice(0, RECENT)
-      .map((e): Entry => ({ ...e, group: 'Recent' }))
+      .map((e): Entry => ({ ...e, group: t('Recent') }))
     recent.forEach((e) => seen.add(e.key))
     // Never an empty box: general commands (new task, go to…) fill it up to ten.
     const general = source.filter((e) => e.kind === 'command' && !seen.has(e.key)).slice(0, Math.max(0, RECENT - context.length - recent.length))
     return [...context, ...recent, ...general]
   }, [ctx, scores, source])
-  const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects }, taskEntry), [query, tasks, today, labels, projects, taskEntry])
+  const fieldDefs = useFieldDefs()
+  const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, fields: fieldDefs }, taskEntry), [query, tasks, today, labels, projects, fieldDefs, taskEntry])
 
   const trailing = useMemo(() => trailingEntries(ctx), [ctx])
   const keepOpen = useRef(false)
@@ -135,16 +138,16 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
     )
   }
   return (
-    <Dialog title="Search and commands" label="Search and commands" onClose={onClose} size="md" testId="command-palette">
+    <Dialog title={t('Search and commands')} label={t('Search and commands')} onClose={onClose} size="md" testId="command-palette">
       <div className="space-y-1" data-combobox data-palette>
-        <ComboboxField state={state} label="Search tasks, projects and commands" placeholder="Search or type a command…" expanded autoFocus />
+        <ComboboxField state={state} label={t('Search tasks, projects and commands')} placeholder={t('Search or type a command…')} expanded autoFocus />
         {!state.query.trim() && (
           <p className="flex items-center gap-2 px-1 text-meta text-muted">
-            <span className="min-w-0 flex-1">Type to search, or a command. Filter queries like <code>@errand &amp; p1</code> work too.</span>
-            <HelpLink screen="palette" topic="Search and commands" />
+            <span className="min-w-0 flex-1">{t.rich('Type to search, or a command. Filter queries like {example} work too.', { example: <code>@errand &amp; p1</code> })}</span>
+            <HelpLink screen="palette" topic={t('Search and commands')} />
           </p>
         )}
-        <ComboboxList state={state} label="Results" emptyText="Nothing matches. Try fewer letters, or a filter query."
+        <ComboboxList state={state} label={t('Results')} emptyText={t('Nothing matches. Try fewer letters, or a filter query.')}
           renderLeading={(e) => <Icon name={e.icon ?? KIND_ICON[e.kind]} className="text-faint" />} />
       </div>
     </Dialog>

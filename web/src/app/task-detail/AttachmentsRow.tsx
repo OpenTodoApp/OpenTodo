@@ -15,11 +15,12 @@ import { Button, ConfirmDialog, Icon, IconButton, MenuItem } from '../../ui'
 import { Tooltip } from '../../ui'
 import { Menu } from '../overlay/Menu'
 import { showBulkToast } from '../bulk/toastStore'
+import { t, msg, translatedMap } from '../../lib/i18n'
 
 /** "Pasted image 2026-10-15 14.03.27.png": the name a pasted image gets. */
 export function pastedName(now = new Date(), ext = 'png'): string {
   const p = (n: number) => String(n).padStart(2, '0')
-  return `Pasted image ${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}.${p(now.getMinutes())}.${p(now.getSeconds())}.${ext}`
+  return `${t('Pasted image')} ${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}.${p(now.getMinutes())}.${p(now.getSeconds())}.${ext}`
 }
 
 /** Files on a clipboard or a drop, with pasted images named by date. */
@@ -37,18 +38,18 @@ export function filesFrom(data: DataTransfer | null): File[] {
 
 /** "PDF", "PNG", or the name's extension; "Link" for links. */
 export function typeLabel(a: Pick<Attachment, 'mime' | 'name' | 'url'>): string {
-  if (a.url) return 'Link'
-  const known: Record<string, string> = { 'application/pdf': 'PDF', 'text/plain': 'Text', 'image/svg+xml': 'SVG', 'image/jpeg': 'JPEG' }
+  if (a.url) return t('Link')
+  const known: Record<string, string> = { 'application/pdf': 'PDF', 'text/plain': t('Text'), 'image/svg+xml': 'SVG', 'image/jpeg': 'JPEG' }
   if (known[a.mime]) return known[a.mime]
   const sub = /^(image|audio|video)\/([a-z0-9.+-]+)$/.exec(a.mime)
   if (sub) return sub[2].toUpperCase()
   const ext = /\.([a-z0-9]{1,8})$/i.exec(a.name)
-  return ext ? ext[1].toUpperCase() : 'File'
+  return ext ? ext[1].toUpperCase() : t('File')
 }
 
-const STATE_TEXT: Record<AttachmentState, string> = {
-  link: '', available: '', uploading: 'Uploading', waiting: 'Waiting', pending: 'Uploading on another device',
-}
+const STATE_TEXT = translatedMap<AttachmentState>({
+  link: '', available: '', uploading: msg('Uploading'), waiting: msg('Waiting'), pending: msg('Uploading on another device'),
+})
 
 export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
   taskId: string
@@ -96,7 +97,7 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
     try {
       await queueFiles(taskId, files)
     } catch (err) {
-      setError(err instanceof AttachmentError ? err.message : `Could not add the file: ${String((err as Error)?.message ?? err)}`)
+      setError(err instanceof AttachmentError ? err.message : t('Could not add the file: {reason}', { reason: String((err as Error)?.message ?? err) }))
     }
   }
   const addRef = useRef(add)
@@ -143,11 +144,11 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
     const state = stateOf(a, blobs.get(a.id))
     if (state !== 'link' && !blobs.has(a.id)) {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-        setNotes((n) => ({ ...n, [a.id]: 'Connect to the internet to open this file.' }))
+        setNotes((n) => ({ ...n, [a.id]: t('Connect to the internet to open this file.') }))
         return
       }
       if (state === 'pending') {
-        setNotes((n) => ({ ...n, [a.id]: 'This file is still uploading from another device.' }))
+        setNotes((n) => ({ ...n, [a.id]: t('This file is still uploading from another device.') }))
         return
       }
     }
@@ -155,13 +156,13 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
     try {
       await openAttachment(a, { download })
     } catch (err) {
-      setNotes((n) => ({ ...n, [a.id]: err instanceof AttachmentError ? err.message : 'This file could not be opened.' }))
+      setNotes((n) => ({ ...n, [a.id]: err instanceof AttachmentError ? err.message : t('This file could not be opened.') }))
     }
   }
 
   async function remove(a: Attachment) {
     const undoId = await removeAttachment(a.id, a.name)
-    showBulkToast(`Removed “${a.name}”`, undoId)
+    showBulkToast(t('Removed “{name}”', { name: a.name }), undoId)
     focusItem(Math.max(0, active - 1))
   }
 
@@ -184,14 +185,14 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
   // first file, the drop zone only while files are dragged over the panel
   // (ux-overhaul, "Task panel layout").
   return (
-    <section aria-label="Attachments" data-testid="attachments-row">
+    <section aria-label={t('Attachments')} data-testid="attachments-row">
       {rows.length > 0 && (
         <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted">
-          <Icon name="paperclip" className="text-faint" />Attachments<span className="font-normal text-faint">{rows.length}</span>
+          <Icon name="paperclip" className="text-faint" />{t('Attachments')}<span className="font-normal text-faint">{rows.length}</span>
         </h3>
       )}
       {rows.length > 0 && (
-        <ul ref={listRef} aria-label="Attachments" onKeyDown={onKeyDown} className="mb-2 space-y-0.5">
+        <ul ref={listRef} aria-label={t('Attachments')} onKeyDown={onKeyDown} className="mb-2 space-y-0.5">
           {rows.map((a, i) => (
             <AttachmentItem key={a.id} a={a} blob={blobs.get(a.id)} selected={i === active} missing={missing.has(a.id)} note={notes[a.id]}
               renaming={renaming === a.id} canRename={canRename(a)} canRemove={canRemove(a)}
@@ -203,18 +204,18 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
       )}
       {canAdd && dragging && (
         <p role="status" data-drop-zone className="mb-2 rounded-control border-2 border-dashed border-accent bg-accent-soft px-3 py-4 text-center text-meta text-accent">
-          Drop files to attach them to this task
+          {t('Drop files to attach them to this task')}
         </p>
       )}
       {canAdd && (
         <div className="flex flex-wrap items-center gap-2">
-          <input ref={picker} type="file" multiple hidden aria-label="Choose files to attach" data-testid="attachment-picker"
+          <input ref={picker} type="file" multiple hidden aria-label={t('Choose files to attach')} data-testid="attachment-picker"
             onChange={(e) => { const files = Array.from(e.target.files ?? []); e.target.value = ''; void add(files) }} />
           {!linking && (
-            <Menu kind="menu" label="Attach" align="start" width="sm:w-64" trigger={<span className="inline-flex items-center gap-1.5"><Icon name="paperclip" size="sm" />Attach</span>}
+            <Menu kind="menu" label={t('Attach')} align="start" width="sm:w-64" trigger={<span className="inline-flex items-center gap-1.5"><Icon name="paperclip" size="sm" />{t('Attach')}</span>}
               triggerClassName="ui-btn ui-btn--ghost ui-btn--sm -mx-2 text-muted">
-              <MenuItem label="Choose files…" icon="upload" description="Or paste or drop files on the task" onSelect={() => picker.current?.click()} />
-              <MenuItem label="Add a link…" icon="link" onSelect={() => setLinking(true)} />
+              <MenuItem label={t('Choose files…')} icon="upload" description={t('Or paste or drop files on the task')} onSelect={() => picker.current?.click()} />
+              <MenuItem label={t('Add a link…')} icon="link" onSelect={() => setLinking(true)} />
             </Menu>
           )}
           {linking && <LinkForm onCancel={() => setLinking(false)} onAdd={async (url) => { await queueLink(taskId, url); setLinking(false) }} />}
@@ -222,8 +223,8 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
       )}
       {error && <p role="alert" className="mt-1 text-meta text-danger">{error}</p>}
       {removing && (
-        <ConfirmDialog title="Remove attachment?" consequence={`“${removing.name}” is removed from this task. You can undo right after.`}
-          confirmLabel="Remove" onConfirm={() => remove(removing)} onCancel={() => setRemoving(null)} />
+        <ConfirmDialog title={t('Remove attachment?')} consequence={t('“{name}” is removed from this task. You can undo right after.', { name: removing.name })}
+          confirmLabel={t('Remove')} onConfirm={() => remove(removing)} onCancel={() => setRemoving(null)} />
       )}
     </section>
   )
@@ -235,15 +236,15 @@ function LinkForm({ onAdd, onCancel }: { onAdd: (url: string) => Promise<void>; 
   return (
     <form className="flex min-w-0 flex-1 items-center gap-1" onSubmit={(e) => {
       e.preventDefault()
-      if (!parseLink(value)) { setError('Links start with http:// or https://.'); return }
+      if (!parseLink(value)) { setError(t('Links start with http:// or https://.')); return }
       void onAdd(value).catch((err: Error) => setError(err.message))
     }}>
-      <input autoFocus type="url" inputMode="url" value={value} placeholder="https://…" aria-label="Link address" aria-invalid={!!error}
+      <input autoFocus type="url" inputMode="url" value={value} placeholder={t('https://…')} aria-label={t('Link address')} aria-invalid={!!error}
         aria-describedby={error ? 'attachment-link-error' : undefined}
         onChange={(e) => { setValue(e.target.value); setError(null) }} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
         className="ui-input min-w-0 flex-1 py-1 text-body" />
-      <Button type="submit" size="sm">Add</Button>
-      <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
+      <Button type="submit" size="sm">{t('Add')}</Button>
+      <Button size="sm" variant="ghost" onClick={onCancel}>{t('Cancel')}</Button>
       {error && <span id="attachment-link-error" role="alert" className="w-full text-meta text-danger">{error}</span>}
     </form>
   )
@@ -269,7 +270,7 @@ export function AttachmentItem({ a, blob, selected, missing, note, renaming, can
   const progress = useUploadProgress(a.id)
   const local = useObjectUrl(blob && isImage(a.mime) ? blob.blob : undefined)
   const thumb = isImage(a.mime) && !a.encrypted ? (local ?? (state === 'available' && !missing ? contentUrl(a.id) : null)) : null
-  const status = missing ? 'Missing on the server' : state === 'uploading' && progress !== null ? `Uploading ${Math.round(progress * 100)}%` : STATE_TEXT[state]
+  const status = missing ? t('Missing on the server') : state === 'uploading' && progress !== null ? t('Uploading {percent}%', { percent: Math.round(progress * 100) }) : STATE_TEXT[state]
   const meta = [typeLabel(a), a.url ? safeHost(a.url) : formatBytes(a.size), status].filter(Boolean).join(' · ')
   return (
     <li data-attachment={a.id} aria-current={selected || undefined} onFocus={onSelect}
@@ -288,15 +289,15 @@ export function AttachmentItem({ a, blob, selected, missing, note, renaming, can
         )}
         <p className="truncate text-meta text-faint">{meta}</p>
         {state === 'waiting' && blob?.reason && (
-          <p className="text-meta text-warning">{blob.reason} <button type="button" tabIndex={selected ? 0 : -1} className="underline" onClick={() => void retryUpload(a.id)}>Try again</button></p>
+          <p className="text-meta text-warning">{blob.reason} <button type="button" tabIndex={selected ? 0 : -1} className="underline" onClick={() => void retryUpload(a.id)}>{t('Try again')}</button></p>
         )}
         {note && <p role="status" className="text-meta text-muted">{note}</p>}
       </div>
       <div className="flex shrink-0 items-center">
-        <IconButton icon={a.url ? 'external-link' : 'eye'} label={a.url ? `Open link ${a.name}` : `Open ${a.name}`} size="sm" tabIndex={selected ? 0 : -1} onClick={() => onOpen(false)} />
-        {!a.url && <IconButton icon="download" label={`Download ${a.name}`} size="sm" tabIndex={selected ? 0 : -1} onClick={() => onOpen(true)} />}
-        {canRename && <IconButton icon="pencil" label={`Rename ${a.name}`} size="sm" tabIndex={selected ? 0 : -1} onClick={onRename} />}
-        {canRemove && <IconButton icon="trash-2" label={`Remove ${a.name}`} size="sm" tabIndex={selected ? 0 : -1} onClick={onRemove} />}
+        <IconButton icon={a.url ? 'external-link' : 'eye'} label={a.url ? t('Open link {name}', { name: a.name }) : t('Open {name}', { name: a.name })} size="sm" tabIndex={selected ? 0 : -1} onClick={() => onOpen(false)} />
+        {!a.url && <IconButton icon="download" label={t('Download {name}', { name: a.name })} size="sm" tabIndex={selected ? 0 : -1} onClick={() => onOpen(true)} />}
+        {canRename && <IconButton icon="pencil" label={t('Rename {name}', { name: a.name })} size="sm" tabIndex={selected ? 0 : -1} onClick={onRename} />}
+        {canRemove && <IconButton icon="trash-2" label={t('Remove {name}', { name: a.name })} size="sm" tabIndex={selected ? 0 : -1} onClick={onRemove} />}
       </div>
     </li>
   )
@@ -311,7 +312,7 @@ function RenameField({ initial, onDone }: { initial: string; onDone: (name: stri
     void onDone(name?.trim() || null)
   }
   return (
-    <input autoFocus value={value} aria-label="Attachment name" maxLength={255} className="ui-input w-full py-0.5 text-body"
+    <input autoFocus value={value} aria-label={t('Attachment name')} maxLength={255} className="ui-input w-full py-0.5 text-body"
       onFocus={(e) => { const dot = e.target.value.lastIndexOf('.'); e.target.setSelectionRange(0, dot > 0 ? dot : e.target.value.length) }}
       onChange={(e) => setValue(e.target.value)} onBlur={() => finish(value)}
       onKeyDown={(e) => {
@@ -345,18 +346,18 @@ export function CommentAttachments({ list }: { list: Attachment[] }) {
   async function open(a: Attachment) {
     setNote(null)
     if (!a.url && !(await db.attachmentBlobs.get(a.id))) {
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) return setNote('Connect to the internet to open this file.')
-      if (!a.uploaded_at) return setNote('This file is still uploading.')
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return setNote(t('Connect to the internet to open this file.'))
+      if (!a.uploaded_at) return setNote(t('This file is still uploading.'))
     }
     try {
       await openAttachment(a)
     } catch (err) {
-      setNote(err instanceof AttachmentError ? err.message : 'This file could not be opened.')
+      setNote(err instanceof AttachmentError ? err.message : t('This file could not be opened.'))
     }
   }
   return (
     <div className="mt-1">
-      <ul aria-label="Attached files" className="flex flex-wrap gap-1">
+      <ul aria-label={t('Attached files')} className="flex flex-wrap gap-1">
         {list.map((a) => (
           <li key={a.id} className="max-w-full">
             <Tooltip label={a.name}>
@@ -364,7 +365,7 @@ export function CommentAttachments({ list }: { list: Attachment[] }) {
                 className="flex max-w-full items-center gap-1.5 rounded-control border border-default px-2 py-1 text-meta text-default hover:bg-sunken dark:hover:bg-raised">
                 <Icon name={a.url ? 'link' : isImage(a.mime) ? 'image' : 'file'} size="xs" className="text-faint" />
                 <span className="min-w-0 truncate">{a.name}</span>
-                <span className="shrink-0 text-faint">{a.url ? typeLabel(a) : a.uploaded_at ? formatBytes(a.size) : 'Uploading'}</span>
+                <span className="shrink-0 text-faint">{a.url ? typeLabel(a) : a.uploaded_at ? formatBytes(a.size) : t('Uploading')}</span>
               </button>
             </Tooltip>
           </li>

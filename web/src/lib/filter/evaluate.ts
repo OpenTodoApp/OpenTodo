@@ -3,10 +3,11 @@
 // every compile, so renames are picked up and deleted names degrade to a warning
 // plus an empty match instead of an error (design D3).
 import { blockedMap } from '../dependencies'
-import { localDueOf } from '../dates'
+import { currentDateTime, localDueOf } from '../dates'
 import { descendants } from '../tree'
-import type { Label, Project, Task } from '../types'
-import { parse, resolveDate, shiftISO, type Cmp, type Node } from './parse'
+import type { FieldDef, FieldValue, Label, Project, Task } from '../types'
+import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type Cmp, type DateRange, type Node } from './parse'
+import { t } from '../i18n'
 
 export interface FilterContext {
   /** The viewer's local calendar date, YYYY-MM-DD. */
@@ -15,6 +16,16 @@ export interface FilterContext {
   projects: readonly Project[]
   /** Every live task, for `blocked` and `unblocked` (task-dependencies D6). */
   tasks?: readonly Task[]
+  /**
+   * First day of the week for `this week` and friends, 0 = Sunday. Defaults to the
+   * user's date-time preference snapshot (completed-date-filters D2).
+   */
+  weekStart?: number
+  /**
+   * Custom field definitions (OpenSpec custom-fields) for `name cmp value` and
+   * `no name`; names resolve against the live ones of every project, ignoring case.
+   */
+  fields?: readonly FieldDef[]
 }
 
 export interface CompiledFilter {
@@ -27,7 +38,7 @@ export type FilterResult =
   | { ok: true; empty: boolean; tasks: Task[]; warnings: string[] }
   | { ok: false; error: string; position: number; offset: number }
 
-type Pred = (t: Task) => boolean
+type Pred = (task: Task) => boolean
 
 const NEVER: Pred = () => false
 
@@ -35,7 +46,10 @@ function nameKey(name: string): string {
   return name.trim().toLocaleLowerCase()
 }
 
-/** True when the query mentions `completed` or `open`; otherwise only open tasks match (design D5). */
+/**
+ * True when the query mentions `completed` or `open`, or compares the completion
+ * date (completed-date-filters D3); otherwise only open tasks match (design D5).
+ */
 export function mentionsState(n: Node): boolean {
   switch (n.kind) {
     case 'or':
@@ -45,18 +59,21 @@ export function mentionsState(n: Node): boolean {
       return mentionsState(n.item)
     case 'keyword':
       return n.keyword === 'completed' || n.keyword === 'open'
+    case 'date':
+      return n.field === 'completed'
     default:
       return false
   }
 }
 
-function compareISO(a: string, op: Cmp, b: string): boolean {
+/** A day against a range of days (completed-date-filters D1); a one-day range is a plain comparison. */
+function compareISO(d: string, op: Cmp, r: DateRange): boolean {
   switch (op) {
-    case '<': return a < b
-    case '<=': return a <= b
-    case '=': return a === b
-    case '>=': return a >= b
-    case '>': return a > b
+    case '<': return d < r.start
+    case '<=': return d <= r.end
+    case '=': return d >= r.start && d <= r.end
+    case '>=': return d >= r.start
+    case '>': return d > r.end
   }
 }
 
@@ -66,16 +83,88 @@ function startOfDay(iso: string): number {
   return new Date(y, m - 1, d).getTime()
 }
 
-/** `created <op> date` as a millisecond range check on `created_at` in the viewer's zone. */
-function createdPred(op: Cmp, date: string): Pred {
-  const start = startOfDay(date)
-  const next = startOfDay(shiftISO(date, 1))
-  switch (op) {
-    case '<': return (t) => t.created_at < start
-    case '<=': return (t) => t.created_at < next
-    case '=': return (t) => t.created_at >= start && t.created_at < next
-    case '>=': return (t) => t.created_at >= start
-    case '>': return (t) => t.created_at >= next
+/**
+ * `created <op> date` and `completed <op> date` as a millisecond range check on an
+ * instant in the viewer's zone; a null instant never matches.
+ */
+function instantPred(at: (task: Task) => number | null, op: Cmp, r: DateRange): Pred {
+  const start = startOfDay(r.start)
+  const next = startOfDay(shiftISO(r.end, 1))
+  const test = (ms: number): boolean => {
+    switch (op) {
+      case '<': return ms < start
+      case '<=': return ms < next
+      case '=': return ms >= start && ms < next
+      case '>=': return ms >= start
+      case '>': return ms >= next
+    }
+  }
+  return (tk) => {
+    const ms = at(tk)
+    return ms !== null && ms !== undefined && test(ms)
+  }
+}
+
+
+function isEmptyValue(v: FieldValue | undefined): boolean {
+  return v === null || v === undefined || v === ''
+}
+
+/**
+ * The predicate of one field term against one definition (custom-fields D5):
+ * numbers numerically, dates with the date grammar, text, link and choice with
+ * `=` only ignoring case, checkboxes with `= true` / `= false`. A term the type
+ * cannot answer is a FilterSyntaxError at the operator. Only tasks of the
+ * definition's project are considered, the same values the panel shows.
+ */
+function fieldPred(def: FieldDef, n: Extract<Node, { kind: 'field' }>, today: string, weekStart: number): Pred {
+  const at = n.opPos
+  const value = (task: Task): FieldValue | undefined => (task.project_id === def.project_id ? task.fields?.[def.id] : undefined)
+  const label = `"${n.name}"`
+  switch (def.type) {
+    case 'number': {
+      if (n.value.type !== 'number') throw new FilterSyntaxError(t('Field {name} holds numbers: compare it with a number at position {pos}', { name: label, pos: at + 1 }), at, ['number'])
+      const want = n.value.value
+      const op = n.op
+      return (tk) => {
+        const v = value(tk)
+        if (typeof v !== 'number') return false
+        switch (op) {
+          case '<': return v < want
+          case '<=': return v <= want
+          case '=': return v === want
+          case '>=': return v >= want
+          case '>': return v > want
+        }
+      }
+    }
+    case 'date': {
+      if (n.value.type !== 'date') throw new FilterSyntaxError(t('Field {name} holds dates: compare it with a date at position {pos}', { name: label, pos: at + 1 }), at, ['date'])
+      const range = resolveRange(n.value.date, today, weekStart)
+      const op = n.op
+      return (item) => {
+        const v = value(item)
+        return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && compareISO(v, op, range)
+      }
+    }
+    case 'checkbox': {
+      if (n.op !== '=' || n.value.type !== 'bool') throw new FilterSyntaxError(t('Checkbox fields support "= true" or "= false" only, at position {pos}', { pos: at + 1 }), at, ['"= true"', '"= false"'])
+      const want = n.value.value
+      // An unset checkbox reads as unchecked.
+      return (task) => {
+        const v = value(task)
+        return task.project_id === def.project_id && (want ? v === true : v !== true)
+      }
+    }
+    default: {
+      if (n.op !== '=') throw new FilterSyntaxError(t('{type, select, link {Link} choice {Choice} other {Text}} fields support "=" only, at position {pos}', { type: def.type, pos: at + 1 }), at, ['"="'])
+      // A bare word that reads as a date (`client = today`) still compares as its text.
+      const want = fieldValueText(n.value).toLocaleLowerCase()
+      return (task) => {
+        const v = value(task)
+        return typeof v === 'string' && v.toLocaleLowerCase() === want
+      }
+    }
   }
 }
 
@@ -92,13 +181,18 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
   for (const l of liveLabels) labelsByName.set(nameKey(l.name), [...(labelsByName.get(nameKey(l.name)) ?? []), l.id])
   const projectsByName = new Map<string, string[]>()
   for (const p of liveProjects) projectsByName.set(nameKey(p.name), [...(projectsByName.get(nameKey(p.name)) ?? []), p.id])
+  const fieldsByName = new Map<string, FieldDef[]>()
+  for (const d of ctx.fields ?? []) {
+    if (!d.deleted_at) fieldsByName.set(nameKey(d.name), [...(fieldsByName.get(nameKey(d.name)) ?? []), d])
+  }
   const today = ctx.today
+  const weekStart = ctx.weekStart ?? currentDateTime().weekStart
   const tomorrow = shiftISO(today, 1)
   // Open blockers per task, built once when the query asks (task-dependencies D6).
   let blocked: Map<string, number> | null = null
   const blockedSet = () => {
     if (!blocked) {
-      if (!ctx.tasks) warn('Blocked tasks cannot be told apart here')
+      if (!ctx.tasks) warn(t('Blocked tasks cannot be told apart here'))
       blocked = blockedMap(ctx.tasks ?? [])
     }
     return blocked
@@ -108,101 +202,133 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
     switch (n.kind) {
       case 'or': {
         const ps = n.items.map(build)
-        return (t) => ps.some((p) => p(t))
+        return (task) => ps.some((p) => p(task))
       }
       case 'and': {
         const ps = n.items.map(build)
-        return (t) => ps.every((p) => p(t))
+        return (tk) => ps.every((p) => p(tk))
       }
       case 'not': {
         const p = build(n.item)
-        return (t) => !p(t)
+        return (task) => !p(task)
       }
       case 'label': {
         const ids = labelsByName.get(nameKey(n.name))
         if (!ids) {
-          warn(`No label named "${n.name}"`)
+          warn(t('No label named "{name}"', { name: n.name }))
           return NEVER
         }
         // Several labels may share a name after concurrent creation: any of them matches.
         if (ids.length === 1) {
           const id = ids[0]
-          return (t) => t.labels.includes(id)
+          return (task) => task.labels.includes(id)
         }
         const set = new Set(ids)
-        return (t) => t.labels.some((id) => set.has(id))
+        return (task) => task.labels.some((id) => set.has(id))
       }
       case 'project': {
         const ids = projectsByName.get(nameKey(n.name))
         if (!ids) {
-          warn(`No project named "${n.name}"`)
+          warn(t('No project named "{name}"', { name: n.name }))
           return NEVER
         }
         const set = new Set(ids)
         if (n.descendants) for (const id of ids) for (const d of descendants(id, liveProjects as Project[])) set.add(d)
-        return (t) => t.project_id !== null && set.has(t.project_id)
+        return (task) => task.project_id !== null && set.has(task.project_id)
       }
       case 'priority': {
         const v = n.value
-        return (t) => t.priority === v
+        return (task) => task.priority === v
       }
       case 'date': {
-        const date = resolveDate(n.date, today)
-        if (n.field === 'created') return createdPred(n.op, date)
+        const date = resolveRange(n.date, today, weekStart)
+        if (n.field === 'created') return instantPred((task) => task.created_at, n.op, date)
+        if (n.field === 'completed') return instantPred((task) => task.completed_at, n.op, date)
         const op = n.op
         // A task without a deadline never matches a `deadline` comparison (deadlines D4).
-        if (n.field === 'deadline') return (t) => !!t.deadline && compareISO(t.deadline, op, date)
+        if (n.field === 'deadline') return (task) => !!task.deadline && compareISO(task.deadline, op, date)
         // Only a start date compares; null and Someday never match (someday-and-evening).
-        if (n.field === 'start') return (t) => !!t.start && t.start !== 'someday' && compareISO(t.start, op, date)
+        if (n.field === 'start') return (task) => !!task.start && task.start !== 'someday' && compareISO(task.start, op, date)
         // A task without a due date never matches a `due` comparison.
-        return (t) => t.due !== null && compareISO(localDueOf(t.due).date, op, date)
+        return (task) => task.due !== null && compareISO(localDueOf(task.due).date, op, date)
+      }
+      case 'field': {
+        const defs = fieldsByName.get(nameKey(n.name))
+        if (!defs) {
+          warn(t('No field named "{name}"', { name: n.name }))
+          return NEVER
+        }
+        // Several projects may define the name, with different types: the term
+        // uses every definition it can answer, and fails only when none can.
+        const ps: Pred[] = []
+        let first: unknown = null
+        for (const d of defs) {
+          try {
+            ps.push(fieldPred(d, n, today, weekStart))
+          } catch (e) {
+            first ??= e
+          }
+        }
+        if (ps.length === 0) throw first
+        return (task) => ps.some((p) => p(task))
+      }
+      case 'nofield': {
+        const defs = fieldsByName.get(nameKey(n.name))
+        if (!defs) {
+          warn(t('No field named "{name}"', { name: n.name }))
+          return NEVER
+        }
+        return (task) => defs.some((d) => task.project_id === d.project_id && isEmptyValue(task.fields?.[d.id]))
       }
       case 'search': {
         const needle = n.text.toLocaleLowerCase()
-        return (t) => t.title.toLocaleLowerCase().includes(needle) || t.description.toLocaleLowerCase().includes(needle)
+        return (task) => task.title.toLocaleLowerCase().includes(needle) || task.description.toLocaleLowerCase().includes(needle)
       }
       case 'keyword':
         switch (n.keyword) {
-          case 'overdue': return (t) => t.due !== null && localDueOf(t.due).date < today
-          case 'today': return (t) => t.due !== null && localDueOf(t.due).date === today
-          case 'tomorrow': return (t) => t.due !== null && localDueOf(t.due).date === tomorrow
-          case 'no date': return (t) => t.due === null
-          case 'no time': return (t) => t.due !== null && !t.due.time
-          case 'no project': return (t) => t.project_id === null
-          case 'no labels': return (t) => t.labels.length === 0
-          case 'no deadline': return (t) => !t.deadline
-          case 'no start': return (t) => !t.start
-          case 'someday': return (t) => t.start === 'someday'
-          case 'deferred': return (t) => !!t.start && t.start !== 'someday' && t.start > today
-          case 'evening': return (t) => !!t.evening
-          case 'completed': return (t) => t.completed_at !== null
-          case 'open': return (t) => t.completed_at === null
-          case 'subtask': return (t) => t.parent_id !== null
-          case 'blocked': { const b = blockedSet(); return (t) => b.has(t.id) }
-          case 'unblocked': { const b = blockedSet(); return (t) => !b.has(t.id) }
+          case 'overdue': return (task) => task.due !== null && localDueOf(task.due).date < today
+          case 'today': return (task) => task.due !== null && localDueOf(task.due).date === today
+          case 'tomorrow': return (task) => task.due !== null && localDueOf(task.due).date === tomorrow
+          case 'no date': return (task) => task.due === null
+          case 'no time': return (task) => task.due !== null && !task.due.time
+          case 'no project': return (task) => task.project_id === null
+          case 'no labels': return (task) => task.labels.length === 0
+          case 'no deadline': return (task) => !task.deadline
+          case 'no start': return (task) => !task.start
+          case 'someday': return (task) => task.start === 'someday'
+          case 'deferred': return (task) => !!task.start && task.start !== 'someday' && task.start > today
+          case 'evening': return (task) => !!task.evening
+          // A habit's skipped occurrence record is not a completion (OpenSpec habits, D6).
+          case 'completed': return (task) => task.completed_at !== null && !task.skipped
+          case 'open': return (task) => task.completed_at === null
+          case 'subtask': return (task) => task.parent_id !== null
+          case 'habit': return (task) => task.habit === true
+          case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }
+          case 'unblocked': { const b = blockedSet(); return (task) => !b.has(task.id) }
         }
     }
   }
 
   const pred = build(ast)
   const openOnly = !mentionsState(ast)
+  // Skipped habit records match no query, whatever its terms (habits D6).
   const test: Pred = openOnly
-    ? (t) => !t.deleted_at && t.completed_at === null && pred(t)
-    : (t) => !t.deleted_at && pred(t)
+    ? (task) => !task.deleted_at && task.completed_at === null && pred(task)
+    : (task) => !task.deleted_at && !task.skipped && pred(task)
   return { test, warnings }
 }
 
 /** Parse and evaluate in one step; syntax errors are returned, not thrown. */
 export function runFilter(source: string, tasks: readonly Task[], ctx: FilterContext): FilterResult {
-  let ast: Node | null
   try {
-    ast = parse(source)
+    const ast = parse(source)
+    if (!ast) return { ok: true, empty: true, tasks: [], warnings: [] }
+    // A field term its type cannot answer is reported like a syntax error (custom-fields).
+    const { test, warnings } = compile(ast, ctx.tasks ? ctx : { ...ctx, tasks })
+    return { ok: true, empty: false, tasks: tasks.filter(test), warnings }
   } catch (e) {
     const err = e as { message: string; offset?: number }
     if (typeof err.offset !== 'number') throw e
     return { ok: false, error: err.message, offset: err.offset, position: err.offset + 1 }
   }
-  if (!ast) return { ok: true, empty: true, tasks: [], warnings: [] }
-  const { test, warnings } = compile(ast, ctx.tasks ? ctx : { ...ctx, tasks })
-  return { ok: true, empty: false, tasks: tasks.filter(test), warnings }
 }

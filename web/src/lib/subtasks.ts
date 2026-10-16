@@ -5,6 +5,7 @@
 import { db } from './db'
 import { ancestors, buildTree, type Tree } from './tree'
 import type { Task } from './types'
+import { t } from './i18n'
 
 export interface Progress {
   done: number
@@ -15,10 +16,10 @@ export interface Progress {
 export function progressOf(task: Pick<Task, 'id'>, tasks: Iterable<Task>): Progress {
   let done = 0
   let total = 0
-  for (const t of tasks) {
-    if (t.parent_id !== task.id || t.deleted_at) continue
+  for (const tk of tasks) {
+    if (tk.parent_id !== task.id || tk.deleted_at) continue
     total++
-    if (t.completed_at) done++
+    if (tk.completed_at) done++
   }
   return { done, total }
 }
@@ -26,12 +27,12 @@ export function progressOf(task: Pick<Task, 'id'>, tasks: Iterable<Task>): Progr
 /** Progress of every parent in one pass; parents without children are absent. */
 export function progressMap(tasks: Iterable<Task>): Map<string, Progress> {
   const out = new Map<string, Progress>()
-  for (const t of tasks) {
-    if (!t.parent_id || t.deleted_at) continue
-    const p = out.get(t.parent_id) ?? { done: 0, total: 0 }
+  for (const task of tasks) {
+    if (!task.parent_id || task.deleted_at) continue
+    const p = out.get(task.parent_id) ?? { done: 0, total: 0 }
     p.total++
-    if (t.completed_at) p.done++
-    out.set(t.parent_id, p)
+    if (task.completed_at) p.done++
+    out.set(task.parent_id, p)
   }
   return out
 }
@@ -55,7 +56,7 @@ export function parentState(task: Task, byId: Map<string, Task>): ParentState {
 /** Title of the nearest known parent, for breadcrumbs; null when the parent is unknown locally. */
 export function breadcrumbOf(task: Task, byId: Map<string, Task>): string | null {
   const [parent] = ancestors(task.id, byId)
-  return parent ? parent.title || 'Untitled' : null
+  return parent ? parent.title || t('Untitled') : null
 }
 
 /**

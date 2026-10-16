@@ -1,0 +1,237 @@
+{
+  "format": "ticktick-csv",
+  "notes": [
+    "TickTick backup Version: 7.2"
+  ],
+  "totals": {
+    "rows": 22,
+    "create": 22,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 0,
+    "newProjects": 3,
+    "newLabels": 3,
+    "newSections": 2,
+    "recurring": 1,
+    "reminders": 2,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 0,
+    "entities": 29,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": [
+    {
+      "projectId": "id-0003",
+      "view": "board"
+    }
+  ],
+  "rows": [
+    {
+      "row": 8,
+      "sourceId": "ticktick:t100001",
+      "kind": "task",
+      "title": "Inbox task",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "ticktick:folder:Folder 1",
+      "kind": "project",
+      "title": "Folder 1",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "ticktick:list:Folder 1/List 1",
+      "kind": "project",
+      "title": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "ticktick:t100002",
+      "kind": "task",
+      "title": "High priority task",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "ticktick:t100003",
+      "kind": "task",
+      "title": "Medium priority task",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "sourceId": "ticktick:t100004",
+      "kind": "task",
+      "title": "Low priority task",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "sourceId": "ticktick:t100005",
+      "kind": "task",
+      "title": "Timed task with reminder",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 13,
+      "sourceId": "ticktick:t100006",
+      "kind": "task",
+      "title": "All-day task",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 14,
+      "sourceId": "ticktick:t100007",
+      "kind": "task",
+      "title": "Floating timed task",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 15,
+      "sourceId": "ticktick:t100008",
+      "kind": "task",
+      "title": "Repeating task",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 16,
+      "sourceId": "ticktick:t100009",
+      "kind": "task",
+      "title": "Checklist task",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 16,
+      "sourceId": "ticktick:t100009:item:1",
+      "kind": "task",
+      "title": "Checked item",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 16,
+      "sourceId": "ticktick:t100009:item:2",
+      "kind": "task",
+      "title": "Open item",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 16,
+      "sourceId": "ticktick:t100009:item:3",
+      "kind": "task",
+      "title": "Another open item",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 19,
+      "sourceId": "ticktick:t100010",
+      "kind": "task",
+      "title": "Parent task",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 20,
+      "sourceId": "ticktick:t100011",
+      "kind": "task",
+      "title": "Subtask",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 21,
+      "sourceId": "ticktick:t100012",
+      "kind": "task",
+      "title": "Completed task",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 22,
+      "sourceId": "ticktick:t100013",
+      "kind": "task",
+      "title": "Abandoned task",
+      "project": "List 1",
+      "outcome": "create"
+    },
+    {
+      "row": 23,
+      "sourceId": "ticktick:list:/List 2",
+      "kind": "project",
+      "title": "List 2",
+      "outcome": "create"
+    },
+    {
+      "row": 23,
+      "sourceId": "ticktick:t100014",
+      "kind": "task",
+      "title": "Kanban task 1",
+      "project": "List 2",
+      "outcome": "create"
+    },
+    {
+      "row": 24,
+      "sourceId": "ticktick:t100015",
+      "kind": "task",
+      "title": "Kanban task 2",
+      "project": "List 2",
+      "outcome": "create"
+    },
+    {
+      "row": 25,
+      "sourceId": "ticktick:t100016",
+      "kind": "task",
+      "title": "Kanban task 3",
+      "project": "List 2",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0006: name=\"tag1\" created_at=1791979200000",
+    "label id-0007: name=\"tag2\" created_at=1791979200000",
+    "label id-0024: name=\"canceled\" created_at=1791979200000",
+    "project id-0001: name=\"Folder 1\" archived=false created_at=1791979200000",
+    "project id-0002: name=\"List 1\" archived=false created_at=1791979200000 parent_id=\"id-0001\"",
+    "project id-0003: name=\"List 2\" archived=false created_at=1791979200000",
+    "section id-0026: name=\"Column 1\" project_id=\"id-0003\" created_at=1791979200000",
+    "section id-0028: name=\"Column 2\" project_id=\"id-0003\" created_at=1791979200000",
+    "task id-0004: title=\"Inbox task\" description=\"\" priority=4 created_at=1791964800000 labels=[]",
+    "task id-0005: title=\"High priority task\" description=\"Description 1\" priority=1 created_at=1791964800000 project_id=\"id-0002\" labels=[\"id-0006\",\"id-0007\"]",
+    "task id-0008: title=\"Medium priority task\" description=\"\" priority=2 created_at=1791964800000 project_id=\"id-0002\" labels=[]",
+    "task id-0009: title=\"Low priority task\" description=\"\" priority=3 created_at=1791964800000 project_id=\"id-0002\" labels=[]",
+    "task id-0010: title=\"Timed task with reminder\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0002\" due={\"date\":\"2026-10-21\",\"time\":\"15:30\"} labels=[]",
+    "task id-0012: title=\"All-day task\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0002\" due={\"date\":\"2026-10-21\"} labels=[]",
+    "task id-0014: title=\"Floating timed task\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0002\" due={\"date\":\"2026-10-22\",\"time\":\"09:00\"} labels=[]",
+    "task id-0015: title=\"Repeating task\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0002\" due={\"date\":\"2026-10-19\"} recurrence=\"every monday\" labels=[]",
+    "task id-0016: title=\"Checklist task\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0002\" labels=[]",
+    "task id-0017: title=\"Checked item\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" parent_id=\"id-0016\" completed_at=1791979200000 labels=[]",
+    "task id-0018: title=\"Open item\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" parent_id=\"id-0016\" labels=[]",
+    "task id-0019: title=\"Another open item\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" parent_id=\"id-0016\" labels=[]",
+    "task id-0020: title=\"Parent task\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0002\" labels=[]",
+    "task id-0021: title=\"Subtask\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0002\" parent_id=\"id-0020\" labels=[]",
+    "task id-0022: title=\"Completed task\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0002\" completed_at=1791913500000 labels=[]",
+    "task id-0023: title=\"Abandoned task\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0002\" completed_at=1791799200000 labels=[\"id-0024\"]",
+    "task id-0025: title=\"Kanban task 1\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0003\" labels=[] section_id=\"id-0026\"",
+    "task id-0027: title=\"Kanban task 2\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0003\" labels=[] section_id=\"id-0028\"",
+    "task id-0029: title=\"Kanban task 3\" description=\"\" priority=4 created_at=1791964800000 project_id=\"id-0003\" labels=[] section_id=\"id-0028\"",
+    "reminder id-0011: task_id=\"id-0010\" kind=\"relative\" offset_minutes=-15 fire_at=1792595700000 created_at=1791979200000 delivered_at=null dismissed_at=null",
+    "reminder id-0013: task_id=\"id-0012\" kind=\"relative\" offset_minutes=0 fire_at=1792573200000 created_at=1791979200000 delivered_at=null dismissed_at=null"
+  ]
+}

@@ -190,7 +190,17 @@ func (s *Server) handleTransferProject(w http.ResponseWriter, r *http.Request) {
 // annotateProjects adds the caller's `role` and the `owner_id` to shared
 // projects in REST and export responses. They are read-only annotations, not op
 // fields: stripAnnotations drops them from write bodies.
+//
+// Every REST, export and agent read of a task passes through here too, so this
+// is also where a task's custom field values are folded into its `fields`
+// object (custom-fields D3).
 func (s *Server) annotateProjects(ctx context.Context, entity string, list ...opsync.Entity) error {
+	if entity == "task" {
+		for _, e := range list {
+			foldFieldsInPlace(e)
+		}
+		return nil
+	}
 	if entity != "project" || len(list) == 0 {
 		return nil
 	}

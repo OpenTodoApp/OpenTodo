@@ -1,0 +1,26 @@
+Votre semaine dans OpenTodo : {{.Completed}} terminées
+
+Voici votre récapitulatif hebdomadaire d'OpenTodo sur {{.Origin}}.
+
+La semaine dernière ({{.Week}})
+  Terminées : {{.Completed}}
+  Créées : {{.Created}}
+  Terminées en retard : {{.Late}}
+  Reportées : {{.Slipped}}
+
+En retard
+{{.Overdue}}
+
+À faire dans les sept prochains jours
+{{.Ahead}}
+
+Projets sans prochaine action
+{{.Idle}}
+
+Dernière revue : {{.LastReview}}
+
+Commencez votre revue hebdomadaire :
+
+{{.Link}}
+
+Vous recevez ce message parce que vous avez activé le récapitulatif hebdomadaire pour {{.Email}} dans Réglages, Notifications. Vous pouvez le désactiver à tout moment.

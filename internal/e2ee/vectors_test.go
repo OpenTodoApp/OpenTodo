@@ -156,6 +156,8 @@ func generate(t *testing.T) vectors {
 		{0xa0, "task", "t1", "title", "Dentist"},
 		{0xb0, "task", "6b9f2c1e-3d4a-4f8b-9c2d-1e3f4a5b6c7d", "description", "Ask about the crown — café, \U0001F9B7"},
 		{0xc0, "label", "l1", "name", ""},
+		// A custom field string value (OpenSpec custom-fields, design D4).
+		{0xe0, "task", "t1", "fields.f1", "Acme"},
 	} {
 		nonce := seq(c.nonce, 12)
 		v.Content = append(v.Content, struct {

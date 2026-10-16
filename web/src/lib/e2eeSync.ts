@@ -18,9 +18,10 @@ import { db, entityTables, getMeta, setMeta } from './db'
 import {
   CONTENT_FIELDS, currentKey, isContentField, isEnabled, K_DISCARD, publishEncryption, refreshFromServer, UNDECRYPTABLE,
 } from './e2ee'
-import { getDeviceId, mutateMany, mutationTables, type Change } from './ops'
+import { getDeviceId, mutateMany, mutationTables, readField, FIELD_VALUE_PREFIX, type Change } from './ops'
 import { membershipMap } from './sharing'
 import type { Clock, Entity, Op, RowEncryption } from './types'
+import { t } from './i18n'
 
 export type Wire = 'p' | 'c' | 'x'
 export interface WireInfo {
@@ -32,7 +33,7 @@ export interface WireInfo {
 /** The device holds no key for an encrypted account: nothing may be pulled or pushed. */
 export class LockedError extends Error {
   constructor() {
-    super('This device is locked. Unlock it to sync.')
+    super(t('This device is locked. Unlock it to sync.'))
   }
 }
 
@@ -40,11 +41,11 @@ type Row = Record<string, unknown> & { _clock?: Clock; _e2ee?: RowEncryption }
 type AnyTable = { get(id: string): Promise<Row | undefined>; put(v: Row): Promise<unknown>; toArray(): Promise<Row[]> }
 
 function tableOf(entity: Entity): AnyTable {
-  const t = {
+  const tk = {
     project: db.projects, task: db.tasks, label: db.labels, view: db.views, reminder: db.reminders, section: db.sections,
-    comment: db.comments, project_prefs: db.prefs, user_prefs: db.userPrefs, attachment: db.attachments,
+    comment: db.comments, project_prefs: db.prefs, user_prefs: db.userPrefs, attachment: db.attachments, field: db.fields, review: db.review,
   }[entity]
-  return t as unknown as AnyTable
+  return tk as unknown as AnyTable
 }
 
 /**
@@ -71,6 +72,7 @@ async function personalResolver(batch: Op[]): Promise<(entity: Entity, id: strin
       case 'project': return projectPersonal(id)
       case 'task': return projectPersonal(await ref('task', id, 'project_id'))
       case 'section': return projectPersonal(await ref('section', id, 'project_id'))
+      case 'field': return projectPersonal(await ref('field', id, 'project_id'))
       case 'comment':
       case 'attachment': {
         const taskId = await ref(entity, id, 'task_id')
@@ -239,7 +241,7 @@ export async function normalizeOnSight(inc: Incoming): Promise<number> {
     if (tombstone) {
       if (row.deleted_at == null && 'deleted_at' in row) change.patch.deleted_at = now
     } else {
-      change.patch[op.field] = row[op.field]
+      change.patch[op.field] = readField(row, op.field)
     }
     if (Object.keys(change.patch).length) patches.set(k, change)
   }
@@ -252,7 +254,7 @@ export async function normalizeOnSight(inc: Incoming): Promise<number> {
 // ---- migration job (design D7) ----
 
 const K_MIGRATION = 'e2ee.migration'
-const MIGRATION_ORDER: Entity[] = ['project', 'label', 'section', 'view', 'task', 'comment']
+const MIGRATION_ORDER: Entity[] = ['project', 'label', 'section', 'view', 'field', 'task', 'comment']
 /** Entities re-written per batch (one mutateMany each). */
 export const MIGRATION_BATCH = 200
 
@@ -277,8 +279,10 @@ async function pending(entity: Entity, mode: MigrationState['mode'], after: stri
     // Only the author may write a comment.
     if (entity === 'comment' && row.author_id !== me) continue
     const patch: Record<string, unknown> = {}
-    for (const f of fields) {
-      const v = row[f]
+    // A task's custom field values are content too (custom-fields D4): one entry each.
+    const keys = entity === 'task' ? [...fields, ...Object.keys((row.fields ?? {}) as object).map((id) => FIELD_VALUE_PREFIX + id)] : fields
+    for (const f of keys) {
+      const v = readField(row, f)
       if (typeof v !== 'string' || v === '' || row._e2ee?.raw?.[f]) continue
       if (row._e2ee?.wire?.[f] === target) continue
       patch[f] = v

@@ -89,7 +89,13 @@ func BuildPayload(deliveryID, webhookID, event string, timeMs int64, origin, ent
 		if entity == nil {
 			data[entityKind] = nil
 		} else {
-			data[entityKind] = withoutDocValues(entityKind, entity)
+			e := withoutDocValues(entityKind, entity)
+			if entityKind == "task" {
+				// Custom field values as one object, like the REST API (custom-fields D3);
+				// a change names the value it touched as `fields.<id>`.
+				e = opsync.FoldFieldValues(e)
+			}
+			data[entityKind] = e
 		}
 	}
 	rawData, err := json.Marshal(data)

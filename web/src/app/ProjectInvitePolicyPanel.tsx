@@ -3,6 +3,7 @@ import { Switch } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { api, ApiError } from '../lib/api'
+import { t } from '../lib/i18n'
 
 // Settings → People, owner only (OpenSpec `project-invite-links`):
 // "Members can invite new people with project links". Off by default: then
@@ -17,14 +18,14 @@ export function ProjectInvitePolicyView({ value, busy, error, onChange }: {
   onChange: (on: boolean) => void
 }) {
   return (
-    <SettingsSection title="Project invite links" headingId="project-invite-policy-heading" testId="project-invite-policy"
-      description="Project owners and admins can invite people to a project with a single-use link. Links created by you or an admin can also create an account for someone new.">
+    <SettingsSection title={t('Project invite links')} headingId="project-invite-policy-heading" testId="project-invite-policy"
+      description={t('Project owners and admins can invite people to a project with a single-use link. Links created by you or an admin can also create an account for someone new.')}>
       {value === null ? (
-        <Notice>This setting is available when you are online.</Notice>
+        <Notice>{t('This setting is available when you are online.')}</Notice>
       ) : (
-        <SettingRow label="Members can invite new people with project links"
-          description="Off: links created by members only work for people who already have an account. Applies to links already handed out too, since they are checked when used."
-          control={<Switch checked={value} disabled={busy} onChange={onChange} label="Members can invite new people with project links" hideLabel />} />
+        <SettingRow label={t('Members can invite new people with project links')}
+          description={t('Off: links created by members only work for people who already have an account. Applies to links already handed out too, since they are checked when used.')}
+          control={<Switch checked={value} disabled={busy} onChange={onChange} label={t('Members can invite new people with project links')} hideLabel />} />
       )}
       {error && <Notice tone="danger">{error}</Notice>}
     </SettingsSection>
@@ -48,7 +49,7 @@ export function ProjectInvitePolicyPanel() {
     try {
       setValue((await api.putProjectInviteSettings(on)).membersCanInviteNewPeople)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'The server could not be reached; try again when you are online.')
+      setError(err instanceof ApiError ? err.message : t('The server could not be reached; try again when you are online.'))
     } finally {
       setBusy(false)
     }

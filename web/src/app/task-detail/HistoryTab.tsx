@@ -24,15 +24,17 @@ import { ConfirmDialog } from '../../ui'
 import { EmptyState } from '../../ui'
 import type { HueName } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { useFieldDefs } from '../useFields'
 import { RelativeTime } from './RelativeTime'
+import { t, msg, translatedMap, currentLanguage } from '../../lib/i18n'
 
 const PRIORITY_HUE: Record<number, HueName> = { 1: 'red', 2: 'orange', 3: 'blue', 4: 'slate' }
-const EMPTY_REF: Record<string, string> = { project_id: 'Inbox', parent_id: 'No parent', section_id: 'No section', assignee_id: 'Unassigned' }
+const EMPTY_REF = translatedMap<string>({ project_id: msg('Inbox'), parent_id: msg('No parent'), section_id: msg('No section'), assignee_id: msg('Unassigned') })
 
 /** "due date" → "Due date": field names as row labels. */
 export function changeLabel(field: string): string {
-  const l = field === 'due' ? 'due date' : field === 'description' || field === 'notes_doc' ? 'notes' : field === 'completed_at' ? 'completed'
-    : field === 'deleted_at' ? 'deleted' : field === 'estimate_minutes' ? 'estimate' : fieldLabel(field)
+  const l = field === 'due' ? t('due date') : field === 'description' || field === 'notes_doc' ? t('notes') : field === 'completed_at' ? t('completed')
+    : field === 'deleted_at' ? t('deleted') : field === 'estimate_minutes' ? t('estimate') : fieldLabel(field)
   return l[0].toUpperCase() + l.slice(1)
 }
 
@@ -61,32 +63,32 @@ function Value({ change, value, refName, labels }: { change: VersionChange; valu
   const f = change.field
   if (f in EMPTY_REF) return value == null || value === '' ? EMPTY_REF[f] : typeof value === 'string' ? refName(f, value) ?? 'unknown' : String(value)
   if (f === 'due') {
-    if (!value || typeof value !== 'object') return 'No date'
+    if (!value || typeof value !== 'object') return t('No date')
     const d = value as { date?: string; time?: string; tz?: string }
-    if (!d.date) return 'No date'
+    if (!d.date) return t('No date')
     return [dt.formatDate(d.date, 'compact'), d.time ? dt.formatTime(d.time) : '', d.tz ? `(${zoneCity(d.tz)})` : ''].filter(Boolean).join(' ')
   }
   if (f === 'priority' && typeof value === 'number') return <Badge hue={PRIORITY_HUE[value] ?? 'slate'}>P{value}</Badge>
   if (f === 'labels' && Array.isArray(value)) {
-    if (!value.length) return 'No labels'
+    if (!value.length) return t('No labels')
     return (
       <span className="inline-flex flex-wrap gap-1">
-        {value.map((id) => { const l = labels.get(String(id)); return <Badge key={String(id)} color={l?.color} tone="solid">{l?.name ?? 'Deleted label'}</Badge> })}
+        {value.map((id) => { const l = labels.get(String(id)); return <Badge key={String(id)} color={l?.color} tone="solid">{l?.name ?? t('Deleted label')}</Badge> })}
       </span>
     )
   }
-  if (f === 'notes_doc') return 'Notes edited'
+  if (f === 'notes_doc') return t('Notes edited')
   if (f === 'description') {
-    if (!value) return 'No notes'
+    if (!value) return t('No notes')
     return (
       <span>
-        Notes edited{' '}
-        <button type="button" className="text-meta text-accent underline" aria-expanded={showText} onClick={() => setShowText((v) => !v)}>{showText ? 'Hide text' : 'Show text'}</button>
+        {t('Notes edited')}{' '}
+        <button type="button" className="text-meta text-accent underline" aria-expanded={showText} onClick={() => setShowText((v) => !v)}>{showText ? t('Hide text') : t('Show text')}</button>
         {showText && <span className="user-text mt-1 block whitespace-pre-wrap text-meta">{String(value)}</span>}
       </span>
     )
   }
-  if ((f === 'completed_at' || f === 'deleted_at') && value == null) return 'No'
+  if ((f === 'completed_at' || f === 'deleted_at') && value == null) return t('No')
   if (f.endsWith('_at') && typeof value === 'number') return dt.formatInstant(value, 'datetime')
   return formatValue(f, value)
 }
@@ -121,12 +123,12 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
       </div>
       {open && (
         <div className="ml-11 mt-2 space-y-2">
-          <ul className="space-y-2" aria-label={`Changes: ${summary}`}>
+          <ul className="space-y-2" aria-label={t('Changes: {summary}', { summary })}>
             {v.changes.map((c) => (
               <li key={c.opIds.join(':')} className={`rounded-control border p-2 text-body ${c.lost ? 'border-dashed border-input bg-sunken' : 'border-default'}`} data-change={c.field}>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="font-medium text-default">{changeLabel(c.field)}</span>
-                  {c.lost && <Badge hue="slate" title="Arrived after a newer change and was never applied">not applied</Badge>}
+                  {c.lost && <Badge hue="slate" title={t('Arrived after a newer change and was never applied')}>{t('not applied')}</Badge>}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 break-words">
                   <del className="text-muted line-through decoration-1"><Value change={c} value={c.from} refName={refName} labels={labels} /></del>
@@ -135,26 +137,26 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
                 </div>
                 {!readOnly && canRestoreField('task', c.field) && (
                   <Button variant="ghost" size="sm" className="mt-1" icon="rotate-ccw"
-                    aria-label={`Restore ${changeLabel(c.field).toLowerCase()} to ${valueText(c.field, c.to, refName)}`}
+                    aria-label={t('Restore {field} to {value}', { field: currentLanguage() === 'en' ? changeLabel(c.field).toLowerCase() : changeLabel(c.field), value: valueText(c.field, c.to, refName) })}
                     onClick={() => onRestoreValue(c.field, c.to)}>
-                    Restore this value
+                    {t('Restore this value')}
                   </Button>
                 )}
               </li>
             ))}
           </ul>
           {!readOnly && restorable.length > 0 && (
-            <Button variant="secondary" size="sm" icon="rotate-ccw" onClick={() => setConfirming(true)}>Restore this version</Button>
+            <Button variant="secondary" size="sm" icon="rotate-ccw" onClick={() => setConfirming(true)}>{t('Restore this version')}</Button>
           )}
         </div>
       )}
       {confirming && (
-        <ConfirmDialog tone="default" title="Restore this version?" confirmLabel="Restore"
+        <ConfirmDialog tone="default" title={t('Restore this version?')} confirmLabel={t('Restore')}
           consequence={(
             <div className="space-y-2">
-              <p>These fields go back to this version’s values:</p>
+              <p>{t('These fields go back to this version’s values:')}</p>
               <ul className="list-disc pl-5">{restorable.map((c) => <li key={c.field}>{changeLabel(c.field)}</li>)}</ul>
-              <p className="text-meta text-muted">Each field is restored as its own change, recorded in the history.</p>
+              <p className="text-meta text-muted">{t('Each field is restored as its own change, recorded in the history.')}</p>
             </div>
           )}
           onConfirm={() => onRestoreVersion(v)} onCancel={() => setConfirming(false)} />
@@ -165,19 +167,19 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
 
 export function HistoryView(props: HistoryViewProps) {
   const { state, versions, canLoadOlder, onLoadOlder, message } = props
-  if (state === 'offline') return <EmptyState icon="history" title="History needs a connection to the server" body="The history is read from the server; reconnect to see it." />
-  if (state === 'empty') return <EmptyState icon="history" title="No history on the server yet" body="Changes appear here once this task has synced." />
+  if (state === 'offline') return <EmptyState icon="history" title={t('History needs a connection to the server')} body={t('The history is read from the server; reconnect to see it.')} />
+  if (state === 'empty') return <EmptyState icon="history" title={t('No history on the server yet')} body={t('Changes appear here once this task has synced.')} />
   return (
     <div className="space-y-3 text-body">
-      {state === 'error' && <p role="alert" className="text-meta text-danger">History could not be loaded.</p>}
-      {state === 'loading' && versions.length === 0 && <Skeleton shape="line" count={4} label="Loading history" />}
+      {state === 'error' && <p role="alert" className="text-meta text-danger">{t('History could not be loaded.')}</p>}
+      {state === 'loading' && versions.length === 0 && <Skeleton shape="line" count={4} label={t('Loading history')} />}
       {message && <p role="status" className="text-meta text-success">{message}</p>}
       {versions.length > 0 && (
-        <ol className="space-y-4" aria-label="Versions">
+        <ol className="space-y-4" aria-label={t('Versions')}>
           {versions.map((v) => <li key={v.id}><VersionItem v={v} props={props} /></li>)}
         </ol>
       )}
-      {canLoadOlder && <Button variant="ghost" size="sm" onClick={onLoadOlder}>Older changes</Button>}
+      {canLoadOlder && <Button variant="ghost" size="sm" onClick={onLoadOlder}>{t('Older changes')}</Button>}
     </div>
   )
 }
@@ -192,6 +194,8 @@ export interface HistoryTabProps {
 /** Container: pages the server history and restores fields or whole versions. */
 export function HistoryTab({ taskId, readOnly, onRestored }: HistoryTabProps) {
   const online = useOnline()
+  // Custom field names for "Cost" instead of fields.<id> (custom-fields).
+  useFieldDefs()
   const [sets, setSets] = useState<ChangeSet[]>([])
   const [before, setBefore] = useState<number | undefined>()
   const [state, setState] = useState<HistoryViewProps['state']>('idle')
@@ -206,7 +210,7 @@ export function HistoryTab({ taskId, readOnly, onRestored }: HistoryTabProps) {
     for (const p of await db.projects.toArray()) m.set(`project_id:${p.id}`, p.name)
     for (const x of await db.sections.toArray()) m.set(`section_id:${x.id}`, x.name)
     const parents = [...new Set(sets.flatMap((cs) => cs.changes.filter((c) => c.field === 'parent_id').flatMap((c) => [c.from, c.to]).filter((v): v is string => typeof v === 'string')))]
-    for (const t of await db.tasks.bulkGet(parents)) if (t) m.set(`parent_id:${t.id}`, t.title || 'Untitled')
+    for (const task of await db.tasks.bulkGet(parents)) if (task) m.set(`parent_id:${task.id}`, task.title || t('Untitled'))
     return m
   }, [sets], new Map<string, string>())
 
@@ -242,13 +246,13 @@ export function HistoryTab({ taskId, readOnly, onRestored }: HistoryTabProps) {
   // A public link's tick is written as the link's creator; it reads as the link alone (public-links D6).
   const author = (v: Version) => v.device.startsWith('public:') ? { id: v.device, name: '', device: deviceLabel(v, device) } : ({
     id: v.userId,
-    name: v.userId && v.userId === me ? 'You' : memberName(v.userId, memberMap) ?? 'Someone',
+    name: v.userId && v.userId === me ? t('You') : memberName(v.userId, memberMap) ?? t('Someone'),
     // The name is shown on its own; deviceLabel would add it again for someone else's change.
     device: deviceLabel(v, device),
   })
 
   async function afterRestore(id: string, what: string) {
-    setMessage(`Restored ${what}.`)
+    setMessage(t('Restored {what}.', { what }))
     onRestored?.(id)
     // The restore is a new op: once it reached the server it is in the history too.
     await syncNow()

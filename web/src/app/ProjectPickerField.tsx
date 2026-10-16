@@ -7,6 +7,7 @@ import type { Project } from '../lib/types'
 import { ComboboxPanel } from '../ui'
 import { Icon } from '../ui'
 import { Popover } from './overlay/Popover'
+import { t } from '../lib/i18n'
 
 export interface ProjectPickerFieldProps {
   /** Accessible name of the field and the picker. */
@@ -25,7 +26,7 @@ export interface ProjectPickerFieldProps {
   className?: string
 }
 
-export function ProjectPickerField({ label, projects, value, onChange, rankContext, inbox = true, noneLabel = 'None', disabled, className = '' }: ProjectPickerFieldProps) {
+export function ProjectPickerField({ label, projects, value, onChange, rankContext, inbox = true, noneLabel = t('None'), disabled, className = '' }: ProjectPickerFieldProps) {
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLButtonElement>(null)
   const items = useMemo<PickerItem[]>(() => {
@@ -51,8 +52,8 @@ export function ProjectPickerField({ label, projects, value, onChange, rankConte
       <Popover open={open} onClose={() => setOpen(false)} anchor={anchor} label={label} align="start" width="sm:w-80" className="p-2">
         <ComboboxPanel<PickerItem>
           label={label}
-          placeholder="Find a project…"
-          emptyText="No project matches."
+          placeholder={t('Find a project…')}
+          emptyText={t('No project matches.')}
           source={items}
           getKey={(i) => i.key}
           getLabel={(i) => i.label}

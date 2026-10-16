@@ -15,6 +15,7 @@ import type { Membership, Project } from '../lib/types'
 import { Markdown } from './Markdown'
 import { useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
+import { t } from '../lib/i18n'
 
 const NotesEditor = lazy(() => import('./NotesEditor'))
 
@@ -47,12 +48,12 @@ export function ProjectNote({ project }: { project: Project }) {
 
   if (editing) {
     return (
-      <section aria-label="Project note" className="mb-4 rounded-card border border-default bg-surface p-3" data-project-note="editing">
-        <Suspense fallback={<p className="text-meta text-faint">Loading the editor…</p>}>
+      <section aria-label={t('Project note')} className="mb-4 rounded-card border border-default bg-surface p-3" data-project-note="editing">
+        <Suspense fallback={<p className="text-meta text-faint">{t('Loading the editor…')}</p>}>
           <NotesEditor note={{ ...project, entity: 'project' }} readOnly={false} autoFocus onEscape={() => setEditing(false)} />
         </Suspense>
         <div className="mt-2 flex justify-end">
-          <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Done</Button>
+          <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>{t('Done')}</Button>
         </div>
       </section>
     )
@@ -63,7 +64,7 @@ export function ProjectNote({ project }: { project: Project }) {
     return (
       <div className="mb-3" data-project-note="empty">
         <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-7 items-center gap-1.5 rounded-control px-1.5 py-1 text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised">
-          <Icon name="pencil" size="xs" />Add a note <Kbd k={keysOf('project.note')} only className="ml-1" />
+          <Icon name="pencil" size="xs" />{t('Add a note')} <Kbd k={keysOf('project.note')} only className="ml-1" />
         </button>
       </div>
     )
@@ -71,12 +72,12 @@ export function ProjectNote({ project }: { project: Project }) {
 
   const clipped = tall && folded
   return (
-    <section aria-label="Project note" className="mb-4" data-project-note={clipped ? 'folded' : 'open'}>
+    <section aria-label={t('Project note')} className="mb-4" data-project-note={clipped ? 'folded' : 'open'}>
       <div className="relative">
         <div ref={body} className={`overflow-hidden text-body ${editable ? 'cursor-text rounded-control hover:bg-sunken dark:hover:bg-raised' : ''}`}
           style={clipped ? { maxHeight: FOLD_PX } : undefined}
           {...(editable ? {
-            role: 'button', tabIndex: 0, 'aria-label': `Edit the project note (${keysOf('project.note')})`,
+            role: 'button', tabIndex: 0, 'aria-label': t('Edit the project note ({keys})', { keys: keysOf('project.note') }),
             onClick: (e: React.MouseEvent) => { if (!(e.target as HTMLElement).closest('a')) setEditing(true) },
             onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter') { e.preventDefault(); setEditing(true) } },
           } : {})}>
@@ -87,7 +88,7 @@ export function ProjectNote({ project }: { project: Project }) {
       {tall && (
         <button type="button" className="mt-1 text-meta text-muted hover:text-default hover:underline" aria-expanded={!folded}
           onClick={() => void setMeta(foldKey(project.id), !folded)}>
-          {folded ? 'Show more' : 'Show less'}
+          {folded ? t('Show more') : t('Show less')}
         </button>
       )}
     </section>

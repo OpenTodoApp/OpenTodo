@@ -1,0 +1,8 @@
+# Permanent exceptions to the untranslated-string check (scripts/i18n/untranslated.mjs).
+# One per line: "<path>: <literal>", or "*: <literal>" for any file. Proper nouns, codes,
+# samples and key names only; everything people read goes through t().
+
+# Key names in kbd spans
+web/src/app/LabelsView.tsx: Alt+↑
+web/src/app/LabelsView.tsx: Alt+↓
+web/src/app/TriageView.tsx: Enter

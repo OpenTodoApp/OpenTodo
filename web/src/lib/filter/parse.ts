@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 // Filter query language (OpenSpec change `filter-query-language`): tokenizer,
 // recursive-descent parser and date expressions. Pure and dependency-free; the
 // grammar is documented in docs/filters.md and this file accepts exactly it.
@@ -7,7 +8,11 @@
 //   and     := not ( "&" not )*
 //   not     := "!" not | "(" or ")" | term
 //   term    := "@" name | "##" name | "#" name | "p1".."p4"
-//            | ("due" | "created" | "deadline" | "start") cmp date | keyword | "search:" text
+//            | ("due" | "created" | "deadline" | "start" | "completed") cmp date | keyword | "search:" text
+//            | field cmp value | "no" field          (custom fields, OpenSpec custom-fields)
+//   date    := day | period   (a day is a period of one day; see resolveRange)
+//   field   := a word that is not a reserved word | '"' chars '"'
+//   value   := number | "true" | "false" | date | word | '"' chars '"'
 //
 // Positions in messages are 1-based character columns; `FilterSyntaxError.offset`
 // is the matching 0-based offset for editors.
@@ -68,14 +73,14 @@ export function tokenize(src: string): Token[] {
       if (src[i] === '\\' && i + 1 < n) i++
       s += src[i++]
     }
-    if (i >= n) throw new FilterSyntaxError(`Missing closing quote for the text starting at position ${start + 1}`, start, ['"'])
+    if (i >= n) throw new FilterSyntaxError(t('Missing closing quote for the text starting at position {pos}', { pos: start + 1 }), start, ['"'])
     i++
     return s
   }
   const readName = (what: string, after: string, at: number): string => {
     if (i < n && src[i] === '"') return readString()
     const name = readBare()
-    if (!name) throw new FilterSyntaxError(`Expected a ${what} name after "${after}" at position ${at + 1}`, at, [`${what} name`])
+    if (!name) throw new FilterSyntaxError((what === 'label' ? t('Expected a label name after "{after}" at position {pos}', { after, pos: at + 1 }) : t('Expected a project name after "{after}" at position {pos}', { after, pos: at + 1 })), at, [`${what} name`])
     return name
   }
 
@@ -124,7 +129,7 @@ export function tokenize(src: string): Token[] {
         if (i < n && src[i] === '"') text = readString()
         else text = readBare()
       }
-      if (!text) throw new FilterSyntaxError(`Expected text after "search:" at position ${pos + 1}`, pos, ['text'])
+      if (!text) throw new FilterSyntaxError(t('Expected text after "search:" at position {pos}', { pos: pos + 1 }), pos, ['text'])
       out.push({ type: 'search', text, pos, raw: src.slice(pos, i) })
       continue
     }
@@ -140,13 +145,20 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'habit'
 
-/** today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N. */
+/**
+ * today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N.
+ * A period (OpenSpec change `completed-date-filters`, design D1) is a calendar week
+ * or month relative to the current one: this = 0, last = -1, next = 1, `N weeks ago` = -N.
+ */
 export type DateExpr =
   | { type: 'relative'; days: number }
   | { type: 'weekday'; day: number }
   | { type: 'iso'; date: string }
+  | { type: 'period'; unit: 'week' | 'month'; offset: number }
+
+export type DateField = 'due' | 'created' | 'deadline' | 'start' | 'completed'
 
 export type Node =
   | { kind: 'or'; items: Node[] }
@@ -155,14 +167,28 @@ export type Node =
   | { kind: 'label'; name: string; pos: number }
   | { kind: 'project'; name: string; descendants: boolean; pos: number }
   | { kind: 'priority'; value: Priority }
-  | { kind: 'date'; field: 'due' | 'created' | 'deadline' | 'start'; op: Cmp; date: DateExpr }
+  | { kind: 'date'; field: DateField; op: Cmp; date: DateExpr }
   | { kind: 'keyword'; keyword: Keyword }
   | { kind: 'search'; text: string }
+  /** `name cmp value` over a custom field (custom-fields); `opPos` places type errors. */
+  | { kind: 'field'; name: string; op: Cmp; value: FieldValueExpr; pos: number; opPos: number }
+  /** `no name`: a project defining the field, no value. */
+  | { kind: 'nofield'; name: string; pos: number }
+
+/** The right-hand side of a field term; the field's type decides how it compares. */
+export type FieldValueExpr =
+  | { type: 'number'; value: number }
+  | { type: 'bool'; value: boolean }
+  | { type: 'text'; value: string }
+  | { type: 'date'; date: DateExpr }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
-const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'blocked', 'unblocked'])
+const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'blocked', 'unblocked', 'habit'])
 const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start'] as const
-const CMP_EXPECTED = ['"<"', '"<="', '"="', '">="', '">"', '"before"', '"after"']
+/** Words that start a date expression in a field term's value; a number starts one only before a unit. */
+const DATE_STARTS = new Set(['today', 'tomorrow', 'yesterday', 'this', 'last', 'next'])
+const DATE_UNITS = new Set(['days', 'week', 'weeks', 'month', 'months'])
+const CMP_EXPECTED =['"<"', '"<="', '"="', '">="', '">"', '"before"', '"after"']
 
 // ---- parser ----
 
@@ -174,15 +200,15 @@ export function parse(src: string): Node | null {
   const end = src.length
 
   const peek = (): Token | undefined => tokens[i]
-  const lower = (t: Token | undefined): string => (t && t.type === 'word' ? t.value.toLowerCase() : '')
+  const lower = (tok: Token | undefined): string => (tok && tok.type === 'word' ? tok.value.toLowerCase() : '')
   const fail = (message: string, offset: number, expected: string[]): never => {
     throw new FilterSyntaxError(message, offset, expected)
   }
   /** Error for a missing term; `prev` is the operator or parenthesis just consumed, if any. */
   const missingTerm = (prev: Token | undefined): never => {
-    const t = peek()
-    if (prev) return fail(`Expected a term after "${prev.raw}" at position ${prev.pos + 1}`, prev.pos, ['term'])
-    return fail(`Expected a term at position ${(t ? t.pos : end) + 1}`, t ? t.pos : end, ['term'])
+    const token = peek()
+    if (prev) return fail(t('Expected a term after "{after}" at position {pos}', { after: prev.raw, pos: prev.pos + 1 }), prev.pos, ['term'])
+    return fail(t('Expected a term at position {pos}', { pos: (token ? token.pos : end) + 1 }), token ? token.pos : end, ['term'])
   }
 
   /** `prev` is the "(" that opened this group, so an immediately missing term reports it. */
@@ -205,18 +231,18 @@ export function parse(src: string): Node | null {
   }
 
   function parseNot(prev: Token | undefined): Node {
-    const t = peek()
-    if (!t) return missingTerm(prev)
-    if (t.type === 'not') {
+    const tok = peek()
+    if (!tok) return missingTerm(prev)
+    if (tok.type === 'not') {
       i++
-      return { kind: 'not', item: parseNot(t) }
+      return { kind: 'not', item: parseNot(tok) }
     }
-    if (t.type === 'lparen') {
+    if (tok.type === 'lparen') {
       i++
-      const inner = parseOr(t)
+      const inner = parseOr(tok)
       const close = peek()
-      if (!close) return fail('Missing ")" at end of query', end, ['")"'])
-      if (close.type !== 'rparen') return fail(`Expected "&", "|" or ")" before "${close.raw}" at position ${close.pos + 1}`, close.pos, ['"&"', '"|"', '")"'])
+      if (!close) return fail(t('Missing ")" at end of query'), end, ['")"'])
+      if (close.type !== 'rparen') return fail(t('Expected "&", "|" or ")" before "{before}" at position {pos}', { before: close.raw, pos: close.pos + 1 }), close.pos, ['"&"', '"|"', '")"'])
       i++
       return inner
     }
@@ -224,61 +250,107 @@ export function parse(src: string): Node | null {
   }
 
   function parseTerm(prev: Token | undefined): Node {
-    const t = peek()!
-    switch (t.type) {
+    const tok = peek()!
+    switch (tok.type) {
       case 'label':
         i++
-        return { kind: 'label', name: t.name, pos: t.pos }
+        return { kind: 'label', name: tok.name, pos: tok.pos }
       case 'project':
         i++
-        return { kind: 'project', name: t.name, descendants: t.descendants, pos: t.pos }
+        return { kind: 'project', name: tok.name, descendants: tok.descendants, pos: tok.pos }
       case 'priority':
         i++
-        return { kind: 'priority', value: t.value }
+        return { kind: 'priority', value: tok.value }
       case 'search':
         i++
-        return { kind: 'search', text: t.text }
+        return { kind: 'search', text: tok.text }
       case 'word':
-        return parseWordTerm(t)
+        return parseWordTerm(tok)
       case 'string':
-        return fail(`Unexpected text ${t.raw} at position ${t.pos + 1}; quote names after "@" or "#", or use search:`, t.pos, ['term'])
+        // A quoted name followed by a comparison is a field term (custom-fields).
+        if (tokens[i + 1]?.type === 'cmp') {
+          i++
+          return parseFieldTerm(tok.value, tok.pos)
+        }
+        return fail(t('Unexpected text {text} at position {pos}; quote names after "@" or "#", or use search:', { text: tok.raw, pos: tok.pos + 1 }), tok.pos, ['term'])
       default:
         return missingTerm(prev)
     }
   }
 
-  function parseWordTerm(t: Extract<Token, { type: 'word' }>): Node {
-    const w = t.value.toLowerCase()
+  function parseWordTerm(entry: Extract<Token, { type: 'word' }>): Node {
+    const w = entry.value.toLowerCase()
     i++
-    if (w === 'due' || w === 'created' || w === 'deadline' || w === 'start') {
+    // `completed` is the state keyword unless a comparison follows (completed-date-filters D3).
+    const dated = w === 'completed' && (peek()?.type === 'cmp' || lower(peek()) === 'before' || lower(peek()) === 'after')
+    if (w === 'due' || w === 'created' || w === 'deadline' || w === 'start' || dated) {
       const c = peek()
       let op: Cmp | null = null
       if (c?.type === 'cmp') op = c.op
       else if (lower(c) === 'before') op = '<'
       else if (lower(c) === 'after') op = '>'
-      if (!op || !c) return fail(`Expected a comparison (<, <=, =, >=, >, before or after) after "${t.raw}" at position ${t.pos + 1}`, t.pos, CMP_EXPECTED)
+      if (!op || !c) return fail(t('Expected a comparison (<, <=, =, >=, >, before or after) after "{after}" at position {pos}', { after: entry.raw, pos: entry.pos + 1 }), entry.pos, CMP_EXPECTED)
       i++
       return { kind: 'date', field: w, op, date: parseDate(c) }
     }
     if (w === 'no') {
-      const next = lower(peek())
-      if (!(NO_KEYWORDS as readonly string[]).includes(next)) {
-        return fail(`Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position ${t.pos + 1}`, t.pos, NO_KEYWORDS.map((k) => `"${k}"`))
+      const nt = peek()
+      const next = lower(nt)
+      if ((NO_KEYWORDS as readonly string[]).includes(next)) {
+        i++
+        return { kind: 'keyword', keyword: `no ${next}` as Keyword }
       }
-      i++
-      return { kind: 'keyword', keyword: `no ${next}` as Keyword }
+      // Any other name is a custom field without a value (custom-fields).
+      if (nt && (nt.type === 'word' || nt.type === 'string')) {
+        i++
+        return { kind: 'nofield', name: nt.value, pos: nt.pos }
+      }
+      return fail(t('Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position {pos}', { pos: entry.pos + 1 }), entry.pos, [...NO_KEYWORDS.map((k) => `"${k}"`), 'field name'])
     }
     if (SIMPLE_KEYWORDS.has(w as Keyword)) return { kind: 'keyword', keyword: w as Keyword }
-    if (/^p\d+$/.test(w)) return fail(`Priority must be p1, p2, p3 or p4 at position ${t.pos + 1}`, t.pos, ['"p1"', '"p2"', '"p3"', '"p4"'])
-    return fail(`Unknown term "${t.raw}" at position ${t.pos + 1}`, t.pos, ['term'])
+    if (/^p\d+$/.test(w)) return fail(t('Priority must be p1, p2, p3 or p4 at position {pos}', { pos: entry.pos + 1 }), entry.pos, ['"p1"', '"p2"', '"p3"', '"p4"'])
+    // Any other word followed by a comparison names a custom field (custom-fields).
+    if (peek()?.type === 'cmp') return parseFieldTerm(entry.value, entry.pos)
+    return fail(t('Unknown term "{term}" at position {pos}', { term: entry.raw, pos: entry.pos + 1 }), entry.pos, ['term'])
+  }
+
+  /** `name cmp value` with the name already consumed; the comparison is next. */
+  function parseFieldTerm(name: string, pos: number): Node {
+    const c = tokens[i++] as Extract<Token, { type: 'cmp' }>
+    return { kind: 'field', name, op: c.op, value: parseFieldValue(c), pos, opPos: c.pos }
+  }
+
+  /**
+   * A field term's value: a quoted text, true or false, a date (anything the date
+   * grammar starts with), a number, or any other bare word as text.
+   */
+  function parseFieldValue(after: Token): FieldValueExpr {
+    const tok = peek()
+    if (tok?.type === 'string') {
+      i++
+      return { type: 'text', value: tok.value }
+    }
+    if (!tok || tok.type !== 'word') return fail(t('Expected a value after "{after}" at position {pos}', { after: after.raw, pos: after.pos + 1 }), after.pos, ['value'])
+    const w = tok.value.toLowerCase()
+    if (w === 'true' || w === 'false') {
+      i++
+      return { type: 'bool', value: w === 'true' }
+    }
+    const unit = /^\d+$/.test(w) ? lower(tokens[i + 1]) : ''
+    if (DATE_STARTS.has(w) || (WEEKDAYS as readonly string[]).includes(w) || /^\d{4}-\d{2}-\d{2}$/.test(w) || DATE_UNITS.has(unit)) {
+      return { type: 'date', date: parseDate(after) }
+    }
+    i++
+    if (/^-?\d+(\.\d+)?$/.test(w)) return { type: 'number', value: Number(w) }
+    return { type: 'text', value: tok.value }
   }
 
   function parseDate(after: Token): DateExpr {
-    const t = peek()
-    if (!t || t.type !== 'word') {
-      return fail(`Expected a date after "${after.raw}" at position ${after.pos + 1}`, after.pos, ['date'])
+    const tok = peek()
+    if (!tok || tok.type !== 'word') {
+      return fail(t('Expected a date after "{after}" at position {pos}', { after: after.raw, pos: after.pos + 1 }), after.pos, ['date'])
     }
-    const w = t.value.toLowerCase()
+    const w = tok.value.toLowerCase()
     i++
     if (w === 'today') return { type: 'relative', days: 0 }
     if (w === 'tomorrow') return { type: 'relative', days: 1 }
@@ -286,29 +358,47 @@ export function parse(src: string): Node | null {
     const wd = (WEEKDAYS as readonly string[]).indexOf(w)
     if (wd >= 0) return { type: 'weekday', day: wd }
     if (/^\d{4}-\d{2}-\d{2}$/.test(w)) {
-      if (!validISO(w)) return fail(`Invalid date "${t.raw}" at position ${t.pos + 1}`, t.pos, ['date'])
+      if (!validISO(w)) return fail(t('Invalid date "{date}" at position {pos}', { date: tok.raw, pos: tok.pos + 1 }), tok.pos, ['date'])
       return { type: 'iso', date: w }
     }
-    if (/^\d+$/.test(w)) {
-      const days = Number(w)
-      if (lower(peek()) !== 'days') {
-        return fail(`Expected "days" after "${t.raw}" at position ${t.pos + 1}`, t.pos, ['"days"'])
+    if (w === 'this' || w === 'last' || w === 'next') {
+      const unit = lower(peek())
+      if (unit !== 'week' && unit !== 'month') {
+        return fail(t('Expected "week" or "month" after "{after}" at position {pos}', { after: tok.raw, pos: tok.pos + 1 }), tok.pos, ['"week"', '"month"'])
       }
       i++
-      if (lower(peek()) === 'ago') {
-        i++
-        return { type: 'relative', days: -days }
-      }
-      return { type: 'relative', days }
+      return { type: 'period', unit, offset: w === 'this' ? 0 : w === 'last' ? -1 : 1 }
     }
-    return fail(`Invalid date "${t.raw}" at position ${t.pos + 1}`, t.pos, ['date'])
+    if (/^\d+$/.test(w)) {
+      const n = Number(w)
+      const unitTok = peek()
+      const unit = lower(unitTok)
+      if (unit === 'days') {
+        i++
+        if (lower(peek()) === 'ago') {
+          i++
+          return { type: 'relative', days: -n }
+        }
+        return { type: 'relative', days: n }
+      }
+      if (unit === 'week' || unit === 'weeks' || unit === 'month' || unit === 'months') {
+        i++
+        if (lower(peek()) !== 'ago') {
+          return fail(t('Expected "ago" after "{after}" at position {pos}', { after: unitTok!.raw, pos: unitTok!.pos + 1 }), unitTok!.pos, ['"ago"'])
+        }
+        i++
+        return { type: 'period', unit: unit.startsWith('week') ? 'week' : 'month', offset: n === 0 ? 0 : -n }
+      }
+      return fail(t('Expected "days", "weeks" or "months" after "{after}" at position {pos}', { after: tok.raw, pos: tok.pos + 1 }), tok.pos, ['"days"', '"weeks"', '"months"'])
+    }
+    return fail(t('Invalid date "{date}" at position {pos}', { date: tok.raw, pos: tok.pos + 1 }), tok.pos, ['date'])
   }
 
   const ast = parseOr(undefined)
   const rest = peek()
   if (rest) {
-    if (rest.type === 'rparen') fail(`Unexpected ")" at position ${rest.pos + 1}`, rest.pos, ['"&"', '"|"'])
-    fail(`Expected "&" or "|" before "${rest.raw}" at position ${rest.pos + 1}`, rest.pos, ['"&"', '"|"'])
+    if (rest.type === 'rparen') fail(t('Unexpected ")" at position {pos}', { pos: rest.pos + 1 }), rest.pos, ['"&"', '"|"'])
+    fail(t('Expected "&" or "|" before "{before}" at position {pos}', { before: rest.raw, pos: rest.pos + 1 }), rest.pos, ['"&"', '"|"'])
   }
   return ast
 }
@@ -334,8 +424,39 @@ export function weekdayOf(iso: string): number {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay()
 }
 
-/** Resolve a date expression against the viewer's local calendar date `today` (YYYY-MM-DD). */
-export function resolveDate(expr: DateExpr, today: string): string {
+/** First day of the calendar month `months` away from the month of `iso`. */
+function monthStart(iso: string, months: number): string {
+  const [y, m] = iso.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1 + months, 1))
+  return dt.toISOString().slice(0, 10)
+}
+
+/** An inclusive range of floating dates. */
+export interface DateRange {
+  start: string
+  end: string
+}
+
+/**
+ * Resolve a date expression to the days it denotes, against the viewer's local
+ * calendar date `today` and first day of the week (0 = Sunday). A day expression
+ * is a range of one day; `this week` starts on `weekStart` (completed-date-filters D1).
+ */
+export function resolveRange(expr: DateExpr, today: string, weekStart = 1): DateRange {
+  if (expr.type !== 'period') {
+    const d = resolveDate(expr, today)
+    return { start: d, end: d }
+  }
+  if (expr.unit === 'week') {
+    const start = shiftISO(today, -((weekdayOf(today) - weekStart + 7) % 7) + 7 * expr.offset)
+    return { start, end: shiftISO(start, 6) }
+  }
+  const start = monthStart(today, expr.offset)
+  return { start, end: shiftISO(monthStart(today, expr.offset + 1), -1) }
+}
+
+/** Resolve a date expression against the viewer's local calendar date `today` (YYYY-MM-DD); a period resolves to its first day. */
+export function resolveDate(expr: DateExpr, today: string, weekStart = 1): string {
   switch (expr.type) {
     case 'iso':
       return expr.date
@@ -344,6 +465,8 @@ export function resolveDate(expr: DateExpr, today: string): string {
     case 'weekday':
       // Next occurrence, today included.
       return shiftISO(today, (expr.day - weekdayOf(today) + 7) % 7)
+    case 'period':
+      return resolveRange(expr, today, weekStart).start
   }
 }
 
@@ -353,9 +476,33 @@ function quote(name: string): string {
   return BREAK.test(name) || name === '' ? `"${name.replace(/["\\]/g, (c) => '\\' + c)}"` : name
 }
 
+function quoteAlways(s: string): string {
+  return `"${s.replace(/["\\]/g, (c) => '\\' + c)}"`
+}
+
+/** A field term's value as query text (`client = today` compares with "today"). */
+export function fieldValueText(v: FieldValueExpr): string {
+  return v.type === 'text' ? v.value : v.type === 'date' ? printDate(v.date) : String(v.value)
+}
+
+function printFieldValue(v: FieldValueExpr): string {
+  switch (v.type) {
+    case 'number': return String(v.value)
+    case 'bool': return String(v.value)
+    case 'text': return quoteAlways(v.value)
+    case 'date': return printDate(v.date)
+  }
+}
+
 function printDate(d: DateExpr): string {
   if (d.type === 'iso') return d.date
   if (d.type === 'weekday') return WEEKDAYS[d.day]
+  if (d.type === 'period') {
+    if (d.offset === 0) return `this ${d.unit}`
+    if (d.offset === -1) return `last ${d.unit}`
+    if (d.offset === 1) return `next ${d.unit}`
+    return `${-d.offset} ${d.unit}s ago`
+  }
   if (d.days === 0) return 'today'
   if (d.days === 1) return 'tomorrow'
   if (d.days === -1) return 'yesterday'
@@ -382,5 +529,10 @@ export function printQuery(n: Node): string {
       return n.keyword
     case 'search':
       return `search: ${quote(n.text)}`
+    case 'field':
+      // Field names are always quoted: a bare one could collide with a reserved word.
+      return `${quoteAlways(n.name)} ${n.op} ${printFieldValue(n.value)}`
+    case 'nofield':
+      return `no ${quoteAlways(n.name)}`
   }
 }

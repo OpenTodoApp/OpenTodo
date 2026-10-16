@@ -10,6 +10,7 @@ import { Button, IconButton } from '../../ui'
 import { Icon } from '../../ui'
 import { Popover } from '../overlay'
 import { filesFrom } from './AttachmentsRow'
+import { t } from '../../lib/i18n'
 
 const MAX_LINES = 10
 const LINE_PX = 20
@@ -162,7 +163,7 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
         ref={area}
         rows={2}
         className="ui-input min-h-16 resize-none text-body leading-5"
-        placeholder={members.length ? 'Write a comment… (markdown, @ to mention)' : 'Write a comment… (markdown)'}
+        placeholder={members.length ? t('Write a comment… (markdown, @ to mention)') : t('Write a comment… (markdown)')}
         aria-label={label}
         aria-describedby={`${id}-hint`}
         value={body}
@@ -187,18 +188,18 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
         } : undefined}
       />
       {files.length > 0 && (
-        <ul aria-label="Files to attach" className="mt-1 flex flex-wrap gap-1">
+        <ul aria-label={t('Files to attach')} className="mt-1 flex flex-wrap gap-1">
           {files.map((f, i) => (
             <li key={`${f.name}-${i}`} className="flex max-w-full items-center gap-1 rounded-control bg-sunken py-0.5 pl-2 text-meta text-default">
               <Icon name="paperclip" size="xs" className="text-faint" /><span className="min-w-0 truncate">{f.name}</span>
-              <IconButton icon="x" size="sm" label={`Remove ${f.name}`} onClick={() => setFiles((list) => list.filter((_, j) => j !== i))} />
+              <IconButton icon="x" size="sm" label={t('Remove {name}', { name: f.name })} onClick={() => setFiles((list) => list.filter((_, j) => j !== i))} />
             </li>
           ))}
         </ul>
       )}
       {/* Non-modal: focus stays in the textarea (combobox pattern); a sheet on phones. */}
-      <Popover open={options.length > 0} onClose={() => setClosed(true)} anchor={area} label="Mention a member" modal={false} align="start" role={undefined} className="py-1">
-        <ul id={listId} role="listbox" aria-label="Mention a member">
+      <Popover open={options.length > 0} onClose={() => setClosed(true)} anchor={area} label={t('Mention a member')} modal={false} align="start" role={undefined} className="py-1">
+        <ul id={listId} role="listbox" aria-label={t('Mention a member')}>
           {options.map((m, i) => (
             <li key={m.userId} id={`${listId}-${i}`} role="option" aria-selected={i === active}
               className={`flex min-h-11 cursor-pointer flex-wrap items-center gap-x-1 px-3 py-1 ${i === active ? 'bg-sunken' : ''}`}
@@ -214,13 +215,13 @@ export const Composer = forwardRef<HTMLTextAreaElement | null, ComposerProps>(fu
         </Button>
         {attach && (
           <>
-            <input ref={picker} type="file" multiple hidden aria-label="Choose files for the comment" data-testid="comment-file-picker"
+            <input ref={picker} type="file" multiple hidden aria-label={t('Choose files for the comment')} data-testid="comment-file-picker"
               onChange={(e) => { const picked = Array.from(e.target.files ?? []); e.target.value = ''; setFiles((f) => [...f, ...picked]) }} />
-            <IconButton icon="paperclip" size="sm" label="Attach files" onClick={() => picker.current?.click()} />
+            <IconButton icon="paperclip" size="sm" label={t('Attach files')} onClick={() => picker.current?.click()} />
           </>
         )}
-        {onCancel && <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>}
-        <span id={`${id}-hint`} className="ml-auto text-hint text-faint">Send with <Kbd k={`${key}+Enter`} /></span>
+        {onCancel && <Button variant="ghost" size="sm" onClick={onCancel}>{t('Cancel')}</Button>}
+        <span id={`${id}-hint`} className="ml-auto text-hint text-faint">{t.rich('Send with {keys}', { keys: <Kbd k={`${key}+Enter`} /> })}</span>
       </div>
     </div>
   )

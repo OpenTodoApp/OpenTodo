@@ -7,6 +7,7 @@ import { useWide } from '../../app/overlay/stack'
 import { Icon } from '../Icon'
 import { highlight, type Range } from './match'
 import { useCombobox, type ComboboxConfig, type ComboboxState, type ComboOption } from './useCombobox'
+import { t } from '../../lib/i18n'
 
 /** Windowing threshold and geometry (design D6). */
 export const WINDOW_ABOVE = 200
@@ -54,7 +55,7 @@ export function ComboboxList<T>({ state, renderLeading, emptyText, label }: { st
     return (
       <>
         <ul id={listboxId} role="listbox" aria-label={label} className="sr-only" />
-        <p className="px-3 py-3 text-meta text-muted" role={loading ? 'status' : undefined}>{loading ? 'Loading…' : emptyText ?? 'No matches'}</p>
+        <p className="px-3 py-3 text-meta text-muted" role={loading ? 'status' : undefined}>{loading ? t('Loading…') : emptyText ?? t('No matches')}</p>
       </>
     )
   }
@@ -87,7 +88,7 @@ export function ComboboxList<T>({ state, renderLeading, emptyText, label }: { st
     >
       {windowed && <li role="presentation" aria-hidden="true" style={{ height: options.length * rh }} />}
       {rows}
-      {state.more > 0 && <li role="presentation" className="px-3 py-2 text-meta text-muted" data-more>{state.more} more {state.more === 1 ? 'matches' : 'match'}, keep typing</li>}
+      {state.more > 0 && <li role="presentation" className="px-3 py-2 text-meta text-muted" data-more>{t('{n, plural, one {# more matches, keep typing} other {# more match, keep typing}}', { n: state.more })}</li>}
     </ul>
   )
 }
@@ -110,7 +111,7 @@ function OptionRow<T>({ state, o, i, renderLeading, windowed, rh }: { state: Com
       style={windowed ? { position: 'absolute', top: i * rh + 4, left: 4, right: 4, height: rh } : { minHeight: rh, paddingTop: 6, paddingBottom: 6, paddingLeft: o.kind === 'item' ? 10 + o.depth * 16 : undefined }}
     >
       {o.kind === 'create' ? (
-        <><Icon name="plus" /><span className="truncate">Create “{o.query}”</span></>
+        <>{t.rich('{icon}<span>Create “{query}”</span>', { icon: <Icon name="plus" />, query: o.query, span: (chunks) => <span className="truncate">{chunks}</span> })}</>
       ) : (
         <>
           {renderLeading && <span className="flex shrink-0 items-center">{renderLeading(o.item)}</span>}

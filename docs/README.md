@@ -28,9 +28,11 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Project notes](project-notes.md) | The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it. |
 | [Views](views.md) | Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on. |
 | &nbsp;&nbsp;↳ [The built-in views](built-in-views.md) | What Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Calendar, Completed, Filter, Trash and Updates show, their shortcuts, and the duration filter. |
+| &nbsp;&nbsp;↳ [Weekly review and statistics](review-and-statistics.md) | A guided weekly review with live data, what you completed, created and let slip computed on your device, and an optional weekly digest by email. |
 | &nbsp;&nbsp;↳ [Process the Inbox](process-the-inbox.md) | Walk the Inbox one task at a time and decide each with a single key: today, schedule, move, delegate, label, Someday, complete or trash, with Undo. |
 | &nbsp;&nbsp;↳ [Today and Upcoming](today-and-upcoming.md) | How Today orders overdue, started, evening and blocked tasks, how deadlines and start dates bring tasks in, and how Upcoming lays out the days ahead. |
 | &nbsp;&nbsp;↳ [Saved views](saved-views.md) | Turn a filter query into a view pinned to the sidebar, group and sort it, manage it from its menu, and put up to six views on one dashboard. |
+| &nbsp;&nbsp;↳ [Display mode](display-mode.md) | Show Today, Upcoming, a project or a saved view full screen in large type, for a tablet on the fridge or an e-ink panel on the wall. |
 | [Search and commands](search.md) | One box on Ctrl+K finds any task, project, label, view or setting, runs any command by name, and understands filter queries. |
 | [Sections and boards](sections-and-boards.md) | Split a project into stages with sections, and switch it to a board to move cards between columns by drag or keyboard. |
 | &nbsp;&nbsp;↳ [A project on a timeline](project-timeline.md) | Show a project's tasks as bars from their start to their deadline, drag them to reschedule, and see which tasks wait for which. |
@@ -102,6 +104,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: a private sandbox per visitor, limits, expiry and the nightly reset, what is switched off, Docker and Coolify |
 | [Outgoing email](self-hosting/outgoing-email.md) | Optional SMTP for password resets, verified sign-up and invitations; Settings or `OPENTODO_SMTP_*`, providers, troubleshooting |
 | [Single sign-on](self-hosting/sso.md) | Connecting an OpenID Connect provider, linking, SSO-only mode, break-glass |
+| [Host mode](self-hosting/host-mode.md) | For a hosted service: many tenants in one process by host name, limits, the operator interface |
 | [Backups](backups.md) | Scheduled backups to disk, S3 or WebDAV, encryption, restore, archive format |
 | [Email to task](email.md) | Pointing OpenTodo at an IMAP mailbox, provider notes, protection |
 | [Calendar apps (CalDAV)](caldav.md) | Enabling CalDAV, app passwords, client setup, what maps to what |
@@ -123,6 +126,7 @@ The full list of environment variables is in the [README](../README.md#configura
 | --- | --- |
 | [Architecture](architecture.md) | Data flow, server packages, tables, client modules, build |
 | [Sync protocol](sync.md) | Operations, schema, winner rule, exchange, sharing scopes, live updates, purge |
+| [Translating OpenTodo](translating.md) | How app text is written for translation, catalogs, checks, adding a language, glossary |
 
 ## Project
 

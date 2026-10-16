@@ -6,10 +6,12 @@ import type { View } from '../lib/types'
 import { createView, deleteView, evaluateViews, isDashboard, reorderView, setPinned, setStartView, updateView } from '../lib/views'
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
+import { DEFAULT_DISPLAY_OPTIONS } from './display/displayOptions'
 import { useStartView, useViewData, useViews } from './useViews'
 import { Button, Icon, type IconName, ListGroupHeader, PageBody, PageHeader } from '../ui'
 import { Tooltip } from '../ui'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
+import { t } from '../lib/i18n'
 
 export const viewIcon = (v: View): IconName => (isDashboard(v) ? 'kanban' : 'list')
 
@@ -19,6 +21,8 @@ export interface ViewMenuActions {
   pin: (pinned: boolean) => unknown
   startView: () => unknown
   remove: () => unknown
+  /** Opens the view in display mode (display-mode); offered for list views only. */
+  display?: () => unknown
 }
 
 /**
@@ -31,20 +35,21 @@ export function viewMenuGroups(view: View, peers: View[], isStart: boolean, a: V
   const first = i <= 0
   const last = i < 0 || i === peers.length - 1
   return [
-    { items: [{ kind: 'action', id: 'rename', label: 'Rename', icon: 'pencil', onSelect: a.rename }] },
+    { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', onSelect: a.rename }] },
     { items: [
-      { kind: 'check', id: 'pin', label: 'Pinned to sidebar', icon: 'pin', checked: view.pinned, onSelect: () => a.pin(!view.pinned) },
-      { kind: 'check', id: 'start', label: 'Start view on this device', icon: 'house', checked: isStart, disabled: isStart,
-        reason: 'This view opens when the app starts', onSelect: a.startView },
+      { kind: 'check', id: 'pin', label: t('Pinned to sidebar'), icon: 'pin', checked: view.pinned, onSelect: () => a.pin(!view.pinned) },
+      { kind: 'check', id: 'start', label: t('Start view on this device'), icon: 'house', checked: isStart, disabled: isStart,
+        reason: t('This view opens when the app starts'), onSelect: a.startView },
     ] },
+    ...(a.display && !isDashboard(view) ? [{ items: [{ kind: 'action' as const, id: 'display', label: t('Display mode'), icon: 'monitor' as const, onSelect: a.display }] }] : []),
     { items: [
-      { kind: 'action', id: 'up', label: 'Move up', icon: 'arrow-up', disabled: first, reason: 'Already first', onSelect: () => a.move(-1) },
-      { kind: 'action', id: 'down', label: 'Move down', icon: 'arrow-down', disabled: last, reason: 'Already last', onSelect: () => a.move(1) },
+      { kind: 'action', id: 'up', label: t('Move up'), icon: 'arrow-up', disabled: first, reason: t('Already first'), onSelect: () => a.move(-1) },
+      { kind: 'action', id: 'down', label: t('Move down'), icon: 'arrow-down', disabled: last, reason: t('Already last'), onSelect: () => a.move(1) },
     ] },
-    { items: [{ kind: 'confirm', id: 'delete', label: 'Delete view', icon: 'trash-2', tone: 'danger', confirm: {
-      title: `Delete view “${view.name}”?`,
-      body: 'The view is removed on all your devices. Your tasks are not affected.',
-      confirmLabel: 'Delete view',
+    { items: [{ kind: 'confirm', id: 'delete', label: t('Delete view'), icon: 'trash-2', tone: 'danger', confirm: {
+      title: t('Delete view “{name}”?', { name: view.name }),
+      body: t('The view is removed on all your devices. Your tasks are not affected.'),
+      confirmLabel: t('Delete view'),
       onConfirm: a.remove,
     } }] },
   ]
@@ -63,13 +68,14 @@ export function ViewMenu({ view, align = 'end', className = '' }: { view: View; 
     pin: (p) => setPinned(view.id, p),
     startView: () => setStartView(`view:${view.id}`),
     remove: () => deleteView(view.id),
+    display: () => navigate({ view: 'display', target: { kind: 'view', id: view.id }, options: { ...DEFAULT_DISPLAY_OPTIONS } }),
   })
   return (
     <>
-      <ActionMenu label={`Menu for view ${view.name}`} title={view.name} groups={groups} align={align}
+      <ActionMenu label={t('Menu for view {name}', { name: view.name })} title={view.name} groups={groups} align={align}
         triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
       {renaming && (
-        <NamePrompt title="Rename view" label="View name" initial={view.name} onCancel={() => setRenaming(false)}
+        <NamePrompt title={t('Rename view')} label={t('View name')} initial={view.name} onCancel={() => setRenaming(false)}
           onSubmit={async (name) => { await updateView(view.id, { name }); setRenaming(false) }} />
       )}
     </>
@@ -91,12 +97,12 @@ export function ViewsView() {
         <button className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left text-body" onClick={() => navigate({ view: 'view', id: v.id })}>
           <span className="flex w-5 justify-center text-faint"><Icon name={viewIcon(v)} /></span>
           <span className="truncate font-medium">{v.name}</span>
-          <code className="hidden truncate text-meta text-faint sm:inline">{isDashboard(v) ? `${v.panels.length} panel${v.panels.length === 1 ? '' : 's'}` : v.query}</code>
+          <code className="hidden truncate text-meta text-faint sm:inline">{isDashboard(v) ? t('{n, plural, one {# panel} other {# panels}}', { n: v.panels.length }) : v.query}</code>
           <span className="flex-1" />
-          {s && (s.ok ? <span className="text-meta text-faint">{s.count}</span> : <Tooltip label={s.error}><span className="text-meta text-danger">error</span></Tooltip>)}
+          {s && (s.ok ? <span className="text-meta text-faint">{s.count}</span> : <Tooltip label={s.error}><span className="text-meta text-danger">{t('error')}</span></Tooltip>)}
         </button>
-        <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={() => void setPinned(v.id, !v.pinned)} aria-label={`${v.pinned ? 'Unpin' : 'Pin'} ${v.name}`}>
-          {v.pinned ? 'Unpin' : 'Pin'}
+        <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={() => void setPinned(v.id, !v.pinned)} aria-label={v.pinned ? t('Unpin {name}', { name: v.name }) : t('Pin {name}', { name: v.name })}>
+          {v.pinned ? t('Unpin') : t('Pin')}
         </button>
         <ViewMenu view={v} />
       </li>
@@ -105,20 +111,20 @@ export function ViewsView() {
 
   return (
     <PageBody width="form">
-      <PageHeader title="Filters" meta={views.length} help="filters"
+      <PageHeader title={t('Filters')} meta={views.length} help="filters"
         actions={<>
-          <Button variant="secondary" size="sm" icon="filter" onClick={() => navigate({ view: 'filter' })}>New filter</Button>
-          <Button variant="primary" size="sm" icon="plus" onClick={() => setCreating(true)}>New board</Button>
+          <Button variant="secondary" size="sm" icon="filter" onClick={() => navigate({ view: 'filter' })}>{t('New filter')}</Button>
+          <Button variant="primary" size="sm" icon="plus" onClick={() => setCreating(true)}>{t('New board')}</Button>
         </>} />
       {/* Saved filters and boards of filters (custom-views "Pinned views in the sidebar"); pinned ones first in each. */}
-      <ListGroupHeader title="Saved filters" count={filters.length} />
+      <ListGroupHeader title={t('Saved filters')} count={filters.length} />
       <ul className="mb-5 space-y-0.5">{filters.map(row)}</ul>
-      {filters.length === 0 && <p className="mb-5 px-2 text-body text-faint">None yet. Save a query from the Filter view.</p>}
-      <ListGroupHeader title="Boards" count={boards.length} />
+      {filters.length === 0 && <p className="mb-5 px-2 text-body text-faint">{t('None yet. Save a query from the Filter view.')}</p>}
+      <ListGroupHeader title={t('Boards')} count={boards.length} />
       <ul className="space-y-0.5">{boards.map(row)}</ul>
-      {boards.length === 0 && <p className="px-2 text-body text-faint">None yet.</p>}
+      {boards.length === 0 && <p className="px-2 text-body text-faint">{t('None yet.')}</p>}
       {creating && (
-        <NamePrompt title="New board" label="Board name" confirm="Create" hint="Add up to six saved filters as panels."
+        <NamePrompt title={t('New board')} label={t('Board name')} confirm={t('Create')} hint={t('Add up to six saved filters as panels.')}
           onCancel={() => setCreating(false)}
           onSubmit={async (name) => {
             const id = await createView({ name, kind: 'dashboard' })

@@ -18,7 +18,9 @@ import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
 import type { Clock, Entity, Op, RowEncryption, SyncState } from './types'
 import { currentKey, isEnabled } from './e2ee'
+import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
+import { t } from './i18n'
 
 const BATCH = 500
 /** Poll interval while the live channel is disconnected (the historical default). */
@@ -51,6 +53,10 @@ let timer: ReturnType<typeof setInterval> | null = null
 let started = false
 /** True until notifications were fetched once in this session (task-assignment). */
 let needNotifications = true
+/** When ops held back by a server limit were last offered again (multi-tenant-host). */
+let lastHeldRetry = 0
+/** The last server limit that held ops back in this session. */
+let heldReason: string | null = null
 
 // Live channel state.
 let source: EventSource | null = null
@@ -123,7 +129,7 @@ function isOffline(): boolean {
 }
 
 async function runOnce(): Promise<void> {
-  const pending = await db.outbox.count()
+  const pending = (await db.outbox.count()) + (await heldCount())
   publish({ pending })
   if (isOffline()) {
     publish({ state: 'offline' })
@@ -138,6 +144,13 @@ async function runOnce(): Promise<void> {
   publish({ state: 'syncing', error: null })
   try {
     const device = await getDeviceId()
+    // Ops a server limit held back (multi-tenant-host D5) are offered again
+    // now and then; the server refuses them again while the limit holds.
+    const sinceRetry = Date.now() - lastHeldRetry
+    if (sinceRetry >= HELD_RETRY_MS || sinceRetry < 0) {
+      lastHeldRetry = Date.now()
+      await requeueHeld()
+    }
     // Notifications are refreshed after the first exchange of a session and after
     // any exchange that brought changes (an assignment arrives as an op).
     let received = needNotifications
@@ -160,11 +173,18 @@ async function runOnce(): Promise<void> {
         publish({ state: 'locked', error: null, pending: await db.outbox.count() })
         return
       }
+      // A server limit (multi-tenant-host) refuses ops without judging them: the
+      // device keeps them, unsynced, and sends them again later.
+      const { limited, refused } = splitRejected(res.rejected ?? [])
+      if (limited.length > 0) {
+        await holdOps(sent, limited)
+        heldReason = limited[0].reason
+      }
       // Refused ops (project-sharing): forget their local clocks so the server's
       // values, which travel in res.ops, win; drop rows that only existed here.
-      const { keys, notice } = await forgetRejected(sent, res.rejected ?? [])
+      const { keys, notice } = await forgetRejected(sent, refused)
       // A refused op never happened: drop it from the local activity log too.
-      await forgetActivity((res.rejected ?? []).map((r) => r.id))
+      await forgetActivity(refused.map((r) => r.id))
       await applyOps(incoming.ops, { wire: incoming.wire })
       if (res.ops.length > 0) received = true
       await dropUnconfirmed(keys)
@@ -201,7 +221,14 @@ async function runOnce(): Promise<void> {
     // Shared projects seen for the first time on this device start with everything
     // so far marked as seen (activity-feed), so an upgrade is not a wall of unread.
     await ensureFeedBaselines()
-    publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
+    const held = await heldCount()
+    if (held > 0) {
+      // Everything else is synced; the held changes wait for the limit.
+      publish({ state: 'limited', lastSyncedAt: Date.now(), error: limitMessage(heldReason ?? ''), pending: (await db.outbox.count()) + held })
+    } else {
+      heldReason = null
+      publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
+    }
     // Files wait for their rows to reach the server (attachments D3): send them now.
     void runUploader().catch(() => undefined)
     // An encryption change stopped while re-uploading files continues here.
@@ -220,7 +247,7 @@ async function runOnce(): Promise<void> {
     if (err instanceof ApiError && err.code === 'mfa_enrolment_required') {
       // The owner now requires a second factor for this account. Nothing was
       // accepted, so the outbox stays queued and uploads after enrolment.
-      publish({ state: 'restricted', error: 'Set up two-factor authentication to keep syncing.' })
+      publish({ state: 'restricted', error: t('Set up two-factor authentication to keep syncing.') })
       return
     }
     if (err instanceof LockedError) {
@@ -281,6 +308,7 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
       ['comment', db.comments],
       ['project_prefs', db.prefs],
       ['user_prefs', db.userPrefs],
+      ['review', db.review],
       ['attachment', db.attachments],
     ]
     const me = (await db.meta.get('userId'))?.value

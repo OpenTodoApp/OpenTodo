@@ -308,7 +308,7 @@ func agentCreateTaskCalls(body map[string]json.RawMessage) ([]agenttools.ToolCal
 			if string(v) != "null" {
 				item[k] = v
 			}
-		case (k == "completed_at" || k == "deleted_at" || k == "assignee_id") && string(v) == "null":
+		case (k == "completed_at" || k == "completed_by" || k == "deleted_at" || k == "assignee_id") && string(v) == "null":
 			// Defaults of a new task: nothing to set.
 		default:
 			return nil, refusedField("task", k)

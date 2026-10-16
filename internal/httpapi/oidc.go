@@ -191,6 +191,10 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		s.audit.Record(ctx, audit.LoginFailed("", "", "signup_closed"))
 		s.oidcFail(w, r, "/", "signup_closed")
 		return
+	case errors.Is(err, auth.ErrMemberLimit):
+		s.audit.Record(ctx, audit.LoginFailed("", "", "limit_members"))
+		s.oidcFail(w, r, "/", "limit_members")
+		return
 	case err != nil:
 		s.log.Warn("oidc account mapping failed", "err", err)
 		s.oidcFail(w, r, "/", "oidc_failed")

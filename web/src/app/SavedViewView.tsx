@@ -19,14 +19,16 @@ import { useListKeys } from './useListKeys'
 import { useBulkList } from './bulk/useBulkList'
 import { placeInDay } from './signals'
 import { todayISO } from '../lib/dates'
+import { habitStatsMap } from '../lib/habits'
 import { useViewData, type ViewData } from './useViews'
 import { Dialog } from './overlay'
+import { t, msg, translatedMap } from '../lib/i18n'
 
-const GROUP_LABEL: Record<GroupBy, string> = { project: 'Project', due: 'Due date', priority: 'Priority', label: 'Label', none: 'None' }
-const SORT_LABEL: Record<SortBy, string> = { due: 'Due date', priority: 'Priority', position: 'Manual order', created: 'Created', title: 'Title' }
+const GROUP_LABEL = translatedMap<GroupBy>({ project: msg('Project'), due: msg('Due date'), priority: msg('Priority'), label: msg('Label'), none: msg('None') })
+const SORT_LABEL = translatedMap<SortBy>({ due: msg('Due date'), priority: msg('Priority'), position: msg('Manual order'), created: msg('Created'), title: msg('Title') })
 
 function parseError(src: string): string | null {
-  if (!src.trim()) return 'The query must not be empty'
+  if (!src.trim()) return t('The query must not be empty')
   try {
     parse(src)
     return null
@@ -39,7 +41,7 @@ export function SavedViewRoute({ id }: { id: string }) {
   const data = useViewData()
   const view = data.views.find((v) => v.id === id)
   if (!view) {
-    return <p className="px-4 py-10 text-center text-body text-faint">This view does not exist (it may have been deleted on another device).</p>
+    return <p className="px-4 py-10 text-center text-body text-faint">{t('This view does not exist (it may have been deleted on another device).')}</p>
   }
   return view.kind === 'dashboard' ? <DashboardView key={id} dashboard={view} data={data} /> : <SavedViewView key={id} view={view} data={data} />
 }
@@ -50,9 +52,10 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const result = useMemo(() => runView(view, ctx), [view, ctx])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
-  const taskMap = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks])
+  const taskMap = useMemo(() => new Map(tasks.map((tk) => [tk.id, tk])), [tasks])
   const progress = useMemo(() => progressMap(tasks), [tasks])
   const blocked = useMemo(() => blockedMap(tasks), [tasks])
+  const habits = useMemo(() => habitStatsMap(tasks, ctx.today), [tasks, ctx.today])
 
   // ---- query editing: the input holds a draft; Enter (or Save) confirms it ----
   const [draft, setDraft] = useState(view.query)
@@ -88,7 +91,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
 
   // ---- results and keyboard navigation (a task can appear under several labels) ----
   const groups = result.ok ? result.groups : []
-  const rows = useMemo(() => groups.flatMap((g) => g.tasks.map((t) => ({ key: `${g.key}:${t.id}`, task: t }))), [groups])
+  const rows = useMemo(() => groups.flatMap((g) => g.tasks.map((item) => ({ key: `${g.key}:${item.id}`, task: item }))), [groups])
   const [selected, setSelected] = useState<string | null>(null)
   const openId = usePanelTaskId()
   const setOpenId = setPanelTaskId
@@ -122,72 +125,73 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     <PageBody width="list">
           <PageHeader title={view.name} meta={count !== null ? count : undefined} help="saved-filter"
             leading={<span className="inline-block h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />}
-            actions={<Button variant="ghost" size="sm" icon={view.pinned ? 'pin-off' : 'pin'} onClick={() => void setPinned(view.id, !view.pinned)}>{view.pinned ? 'Unpin' : 'Pin'}</Button>}
+            actions={<Button variant="ghost" size="sm" icon={view.pinned ? 'pin-off' : 'pin'} onClick={() => void setPinned(view.id, !view.pinned)}>{view.pinned ? t('Unpin') : t('Pin')}</Button>}
             menu={<ViewMenu view={view} />} />
 
           <div className="mb-3 border-b border-default pb-2">
             <div className="flex gap-2">
-              <input ref={inputRef} className="ui-input font-mono" aria-label="View query" aria-invalid={!!message} aria-describedby="view-message"
+              <input ref={inputRef} className="ui-input font-mono" aria-label={t('View query')} aria-invalid={!!message} aria-describedby="view-message"
                 autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false}
                 value={draft} onChange={(e) => { setDraft(e.target.value); setDraftError(null) }} onKeyDown={onInputKey} />
-              {dirty && <button className="ui-btn ui-btn--primary ui-btn--sm shrink-0 text-meta" onClick={() => void saveQuery()}>Save</button>}
+              {dirty && <button className="ui-btn ui-btn--primary ui-btn--sm shrink-0 text-meta" onClick={() => void saveQuery()}>{t('Save')}</button>}
             </div>
             <div id="view-message" className="min-h-5 px-1 pt-1 text-meta" aria-live="polite">
               {message ? (
                 <p role="alert" className="text-danger">{message}</p>
               ) : dirty ? (
-                <p className="text-faint">Enter saves the query for every device · Esc discards the change</p>
+                <p className="text-faint">{t('Enter saves the query for every device · Esc discards the change')}</p>
               ) : result.ok && result.warnings.length > 0 ? (
                 <p className="text-warning">{result.warnings.join(' · ')}</p>
               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-meta text-muted">
-              <label className="flex items-center gap-1.5">Group
-                <select className="ui-input w-auto py-1 text-meta" aria-label="Group by" value={opts.groupBy}
+              <label className="flex items-center gap-1.5">{t('Group')}
+                <select className="ui-input w-auto py-1 text-meta" aria-label={t('Group by')} value={opts.groupBy}
                   onChange={(e) => void updateView(view.id, { group_by: e.target.value as GroupBy })}>
                   {GROUP_BY_OPTIONS.map((g) => <option key={g} value={g}>{GROUP_LABEL[g]}</option>)}
                 </select>
               </label>
-              <label className="flex items-center gap-1.5">Sort
-                <select className="ui-input w-auto py-1 text-meta" aria-label="Sort by" value={opts.sortBy}
+              <label className="flex items-center gap-1.5">{t('Sort')}
+                <select className="ui-input w-auto py-1 text-meta" aria-label={t('Sort by')} value={opts.sortBy}
                   onChange={(e) => void updateView(view.id, { sort_by: e.target.value as SortBy })}>
                   {SORT_BY_OPTIONS.map((s) => <option key={s} value={s}>{SORT_LABEL[s]}</option>)}
                 </select>
               </label>
-              <label className="flex items-center gap-1.5">Direction
-                <select className="ui-input w-auto py-1 text-meta" aria-label="Sort direction" value={opts.sortDir}
+              <label className="flex items-center gap-1.5">{t('Direction')}
+                <select className="ui-input w-auto py-1 text-meta" aria-label={t('Sort direction')} value={opts.sortDir}
                   onChange={(e) => void updateView(view.id, { sort_dir: e.target.value as SortDir })}>
-                  <option value="asc">{opts.sortBy === 'priority' ? 'Ascending (p4 first)' : 'Ascending'}</option>
-                  <option value="desc">{opts.sortBy === 'priority' ? 'Descending (p1 first)' : 'Descending'}</option>
+                  <option value="asc">{opts.sortBy === 'priority' ? t('Ascending (p4 first)') : t('Ascending')}</option>
+                  <option value="desc">{opts.sortBy === 'priority' ? t('Descending (p1 first)') : t('Descending')}</option>
                 </select>
               </label>
             </div>
           </div>
 
-          {result.ok && rows.length === 0 && <p className="px-2 py-8 text-center text-body text-faint">No task matches this view.</p>}
+          {result.ok && rows.length === 0 && <p className="px-2 py-8 text-center text-body text-faint">{t('No task matches this view.')}</p>}
 
           {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
-          <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label="View results">
+          <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('View results')}>
             {groups.map((g) => (
               <section key={g.key} data-group={g.key} className="mb-4">
                 {g.heading && <h2 className="mb-1 px-2 text-meta font-semibold uppercase tracking-wide text-faint">{g.heading}</h2>}
                 <ul>
-                  {g.tasks.map((t) => {
-                    const key = `${g.key}:${t.id}`
+                  {g.tasks.map((tk) => {
+                    const key = `${g.key}:${tk.id}`
                     return (
                         <TaskRow
                           key={key}
-                          task={t}
-                          project={t.project_id ? projectMap.get(t.project_id) : undefined}
-                          labels={resolveLabels(t.labels, labelMap)}
+                          task={tk}
+                          project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
+                          labels={resolveLabels(tk.labels, labelMap)}
                           showProject={opts.groupBy !== 'project'}
                           selected={key === selected}
-                          progress={progress.get(t.id)}
-                          blockedBy={blocked.get(t.id)}
-                          breadcrumb={t.parent_id ? breadcrumbOf(t, taskMap) : null}
-                          onToggle={() => void setTaskCompleted(t.id, !t.completed_at)}
-                          onOpen={() => { setSelected(key); setOpenId(t.id) }}
-                          {...bulk.rowProps(t.id)}
+                          progress={progress.get(tk.id)}
+                          blockedBy={blocked.get(tk.id)}
+                          habit={habits.get(tk.id)}
+                          breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
+                          onToggle={() => void setTaskCompleted(tk.id, !tk.completed_at)}
+                          onOpen={() => { setSelected(key); setOpenId(tk.id) }}
+                          {...bulk.rowProps(tk.id)}
                         />
                     )
                   })}
@@ -196,7 +200,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
             ))}
           </div>
       {pickerFor && (
-        <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
+        <Dialog title={t('Labels')} label={t('Labels for task')} onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
         </Dialog>
       )}

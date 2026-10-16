@@ -11,6 +11,7 @@ import { Tabs } from '../../ui'
 import { ActivityTab } from './ActivityTab'
 import { CommentsTab } from './CommentsTab'
 import { useShortcutScope } from '../shortcuts'
+import { t } from '../../lib/i18n'
 
 const HistoryTab = lazy(() => import('./HistoryTab'))
 
@@ -53,9 +54,9 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost 
   const composerRef = useRef<HTMLTextAreaElement | null>(null)
   const count = useLiveQuery(() => db.comments.where('task_id').equals(task.id).filter((c) => !c.deleted_at).count(), [task.id], 0)
 
-  const setTab = (t: TaskTab) => {
-    setTabState(t)
-    writeTaskTab(t)
+  const setTab = (item: TaskTab) => {
+    setTabState(item)
+    writeTaskTab(item)
   }
 
   useEffect(() => setFocusComment(null), [task.id])
@@ -72,15 +73,15 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost 
   }, [focusComposer, tab])
 
   return (
-    <section className="border-t border-default px-4 pb-4 pt-1" aria-label="Comments, activity and history">
-      <Tabs label="Task conversation" value={tab} onChange={(id) => setTab(id as TaskTab)}
-        tabs={[{ id: 'comments', label: 'Comments', count }, { id: 'activity', label: 'Activity' }, { id: 'history', label: 'History' }]}>
+    <section className="border-t border-default px-4 pb-4 pt-1" aria-label={t('Comments, activity and history')}>
+      <Tabs label={t('Task conversation')} value={tab} onChange={(id) => setTab(id as TaskTab)}
+        tabs={[{ id: 'comments', label: t('Comments'), count }, { id: 'activity', label: t('Activity') }, { id: 'history', label: t('History') }]}>
         {tab === 'comments' && <CommentsTab ref={composerRef} task={task} userId={userId} focusComment={focusComment} composerHost={composerHost} />}
         {tab === 'activity' && (
           <ActivityTab task={task} userId={userId} onOpenComment={(id) => { setFocusComment(id); setTab('comments') }} />
         )}
         {tab === 'history' && (
-          <Suspense fallback={<Skeleton shape="line" count={4} label="Loading history" />}>
+          <Suspense fallback={<Skeleton shape="line" count={4} label={t('Loading history')} />}>
             <HistoryTab taskId={task.id} readOnly={readOnly} onRestored={(id) => id !== task.id && onOpen?.(id)} />
           </Suspense>
         )}

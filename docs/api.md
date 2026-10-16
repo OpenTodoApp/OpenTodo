@@ -84,6 +84,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
 | PUT | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes: boolean}` → same shape; recorded as `settings.changed` (`agent.writes`); anything else → 400 `invalid_input`; demo instances → 403 `demo_restricted` |
+| GET | `/api/v1/me/email-digest` | session or `full` token | your weekly email digest settings, see [Weekly digest](#weekly-digest); `read` and `agent` tokens → 403 `insufficient_scope` |
+| PUT | `/api/v1/me/email-digest` | session or `full` token | any of `{enabled, weekday, hour, timeZone, language}` → the same shape; demo instances → 403 `demo_restricted` |
 | GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
 | DELETE | `/api/v1/me/identities/{id}` | yes | 204, or 409 `last_credential` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}` |
@@ -117,13 +119,14 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones |
+| GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones; `?completed_after=…&completed_before=…` for [tasks completed in a range](#tasks-completed-in-a-range) |
 | POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create) |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
 | PATCH | `/api/v1/tasks/{id}` | yes | partial update → task |
 | DELETE | `/api/v1/tasks/{id}` | yes | soft delete (to the Trash) → 204 |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/projects…` | yes | same shape for projects, see [Project fields](#project-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/sections…` | yes | same shape for sections, see [Sections](#sections) |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/fields…` | yes | same shape for custom field definitions, see [Custom fields](#custom-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/labels…` | yes | same shape for labels, see [Label fields](#label-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/views…` | yes | same shape for saved views, see [View fields](#view-fields) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
@@ -387,6 +390,19 @@ Optional SMTP, configured by the owner in **Settings → Server → Outgoing ema
 
 **Verified sign-up** — with open sign-up and outgoing email, `POST /api/v1/auth/register` without an invitation answers 202 `{verificationRequired: true}` and mails a 24-hour link to `/verify/<token>`; an address that already has an account gets a message saying so, with the same answer. `GET /api/v1/auth/verify/{token}` previews `{email, expiresAt}`; `POST` creates the member account and starts a session (201 `{user}`). Unknown, expired, replaced and used tokens answer the same 404 `verification_invalid`.
 
+### Weekly digest
+
+An opt-in email per user on a chosen weekday and hour (OpenSpec `email-digest`): last week's completed, created, completed late and slipped counts, up to 15 overdue tasks, up to 15 tasks due in the next seven days, up to 10 projects without an open task, the last review and a link to `/review`. The numbers follow the same definitions as the device's Statistics ([review-and-statistics.md](review-and-statistics.md#statistics)).
+
+`GET /api/v1/me/email-digest` →
+
+```json
+{"available": true, "encryption": false, "enabled": true, "weekday": 5, "hour": 7, "timeZone": "Europe/Zurich",
+ "language": "de", "nextSendAt": 1761195600000, "lastOutcome": "sent", "lastSentFor": "2026-10-16", "lastAttemptAt": 1760590800000}
+```
+
+`weekday` is 0 (Sunday) to 6, `hour` 0–23 in `timeZone` (an IANA zone), `language` one of `en`, `de`, `fr`, `es`, `it`, `pt`. `available` is false without outgoing email (and on a demo); `encryption` is true for an account with end-to-end encryption. `lastOutcome` is `sent`, `skipped` (the relay failed for the whole six-hour retry window), `encrypted_account`, `rate_limited` or the failed stage. `PUT` takes any of the five editable fields; errors: 404 `smtp_disabled` without outgoing email, 409 `encryption_enabled` for an encrypted account (nothing is stored), 400 `invalid_input` naming the field. Turning on encryption (`PUT /api/v1/encryption/keys` creating the record) turns the digest off and answers `digestDisabled: true`. Sends are recorded as `email.sent` / `email.failed` with kind `digest`.
+
 ### Idempotency keys
 
 `POST /api/v1/{collection}` (tasks, projects, labels, sections, views, reminders) accepts an optional `Idempotency-Key` header: 1 to 128 characters of letters, digits and `. _ : -`. The server derives the new entity's id and the ids of its operations from the key, your account and the collection, so a retry after a timeout cannot create a second entity:
@@ -474,12 +490,27 @@ Every other write route (tokens, settings, sync, sharing and members, invitation
 | `blocked_by` | array of task ids | the tasks this one waits for (at most 50, distinct, never its own id), in the same project sharing; a list that would make the task wait for itself, or an id of a task shared differently, is refused with `400 invalid_input` naming the id. See [Dependencies](sync.md#dependencies) |
 | `recurrence` | string or null | recurrence rule, e.g. `every 3 days after completion` (see [recurrence.md](recurrence.md)); stored in canonical form, `400 invalid_input` when it does not parse or is over 200 characters |
 | `series_id` | string or null | on a completed occurrence record or a detached copy: the id of its recurring series |
+| `habit` | boolean | the recurring task is tracked as a habit: the app shows its streak and month history, computed on each device. Settable like any field; `400 invalid_input` for anything but `true` or `false`. Completing a habit through the API records a done day like any recurring task. See [recurrence.md](recurrence.md#habits) |
+| `skipped` | boolean | set by the app on the occurrence record a skipped habit day writes (that record also has `series_id` and `completed_at`). Such records are returned in lists and the export like any task but are not completions: the app hides them from Completed and `completed` filters, and they never count towards `for N times` |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
 | `section_id` | string or null | section of the task's project; see [Sections](#sections). `400 invalid_input` for an unknown or deleted section or one of another project. Changing `project_id` without naming a section clears it |
 | `ical_extra` | string or null | opaque iCalendar lines a CalDAV client sent that the app does not model (alarms, `X-` properties…); kept so calendar apps do not lose them. See [caldav.md](caldav.md#what-maps-to-what) |
+| `fields` | object | custom field values keyed by field definition id, always present (`{}` when none), values included for definitions that were deleted or belong to another project. On create and PATCH, a partial object: each key is validated against the live definitions of the task's project after the write and merged into the existing values, one operation per key; `null` clears a value. `400 invalid_input` naming the id for an unknown or foreign id or a value of the wrong type; a raw `fields.<id>` key is refused. See [Custom fields](#custom-fields) |
 | `position` | number | sort order inside a list: ascending, ties by id; clients move a task by writing the midpoint between its new neighbours (see [docs/sync.md](sync.md#manual-order)) |
 | `completed_at`, `deleted_at` | unix ms or null | |
+| `completed_by` | string or null | account id of whoever completed the task; null when open or unknown (completions made before this field, imports, public links). A write that sets `completed_at` without it records you; one that clears `completed_at` clears it |
 | `created_at` | unix ms | set by the server on create if missing |
+
+### Tasks completed in a range
+
+`GET /api/v1/tasks` takes `completed_after` and `completed_before` to list only tasks completed at or after the first and before the second. Each is a date `YYYY-MM-DD` (midnight at the start of that day in the zone named by `timezone`, UTC by default), an RFC 3339 time, or Unix milliseconds; either may be left out. With either one, open tasks are left out. An unparseable value, an unknown `timezone`, or the parameters on another collection answer `400 invalid_input` naming the parameter.
+
+```sh
+# What I finished last week (Monday to Sunday, Zurich time)
+curl -sS -H "Authorization: Bearer $T" \
+  "$BASE/api/v1/tasks?completed_after=2026-10-05&completed_before=2026-10-12&timezone=Europe/Zurich" \
+  | jq -r '.tasks[] | "\(.completed_at) \(.title)"'
+```
 
 ### Subtasks
 
@@ -562,6 +593,32 @@ curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":"<section>"}' $BAS
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":null}' $BASE/api/v1/tasks/$TASK
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"missing"}' $BASE/api/v1/sections
 # 400 {"error":{"code":"invalid_input","message":"section.project_id references unknown or deleted project \"missing\""}}
+```
+
+### Custom fields
+
+A custom field definition gives the tasks of one project a typed value (OpenSpec change `custom-fields`, see [the guide](custom-fields.md)). Definitions are soft-deleted like everything else, live in the sharing scope of their project (editors and up may write them, viewers read them) and appear in the export under `fields`, deleted ones included. Tasks carry their values in the `fields` object of [Task fields](#task-fields).
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `name` | string | required, not blank, at most 100 characters, unique in the project ignoring case |
+| `type` | string | required on create: `text`, `number`, `date`, `choice`, `link` or `checkbox`; cannot change afterwards |
+| `project_id` | string | required on create: an existing, non-deleted project; cannot change afterwards |
+| `options` | string | a choice field's options, one per line (at most 50 of 100 characters); `""` for every other type (the default) |
+| `position` | number | ascending order within the project; defaults to now (last) |
+| `created_at` | number | set by the server when omitted |
+| `deleted_at` | number or null | set by `DELETE`; the values on tasks stay, hidden by the app |
+
+A project has at most 30 live definitions; one more is refused with `400 invalid_input` naming the limit. Values must match their definition's type: text of at most 2,000 characters, a finite number, a date `"YYYY-MM-DD"`, one of a choice's options, an `http` or `https` link of at most 2,000 characters, or a boolean; `null` clears. Unknown fields are refused with `400 invalid_input`; requests without credentials get `401 unauthorized`.
+
+```sh
+# Define a number field, set a value on a task, then read it back
+curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Cost","type":"number","project_id":"<project>"}' $BASE/api/v1/fields
+# 201 {"id":"<cost>","name":"Cost","type":"number","options":"","project_id":"<project>","position":1760000000000,"created_at":1760000000000}
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"fields":{"<cost>":120}}' $BASE/api/v1/tasks/$TASK
+# 200 {…,"fields":{"<cost>":120}}
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"fields":{"<cost>":"cheap"}}' $BASE/api/v1/tasks/$TASK
+# 400 {"error":{"code":"invalid_input","message":"task.fields: \"<cost>\" (Cost) must be a number"}}
 ```
 
 ### Label fields
@@ -1207,7 +1264,7 @@ Uploads are `multipart/form-data` with a `file` part. Options go either in one `
 }
 ```
 
-`kind` is `project`, `task`, `label`, `section`, `reminder` or `view`. `outcome` is `create`, `update`, `skip` (reason `exists`, `unchanged`, `deleted`, `already_imported`, `possible_duplicate` or `no_project`) or `error` (with `reason`). `newSections`, `recurring` (tasks with a recurrence rule) and `reminders` count what the import adds; `notes` holds file-level remarks, such as the number of comments in an own export that are not imported. `row` is the line in a CSV file or the position in a JSON array; `version` is set for an own export. At most 5,000 rows are listed, those needing attention first (`truncated: true`); `totals` always counts every row.
+`kind` is `project`, `task`, `label`, `section`, `field`, `reminder` or `view`. `outcome` is `create`, `update`, `skip` (reason `exists`, `unchanged`, `deleted`, `already_imported`, `possible_duplicate` or `no_project`) or `error` (with `reason`). `newSections`, `fields` (custom field definitions), `recurring` (tasks with a recurrence rule) and `reminders` count what the import adds; `notes` holds file-level remarks, such as the number of comments in an own export that are not imported. `row` is the line in a CSV file or the position in a JSON array; `version` is set for an own export. At most 5,000 rows are listed, those needing attention first (`truncated: true`); `totals` always counts every row.
 
 **Start** — `POST /api/v1/import` takes the same upload, re-checks it and returns 202:
 
@@ -1477,6 +1534,14 @@ In `usage`, `month_total` is what counts toward the cap and `cap` is `0` for a t
 
 `changeset` comes at most once, only after `end_turn`, with at most 50 entities: `patch` is what to write, `base` the values it was planned on (for "changed since proposed"), `create` marks new entities, `shared` marks shared projects. The server never applies it: the app applies the confirmed part as ordinary ops with device `assistant:<device-id>`, which `/api/v1/sync` accepts and history labels "Assistant". `done.stop_reason` is `end_turn`, `max_tokens` (with a `message`; no change set), `refusal` (`message`: "The model declined this request."; no change set) or `round_limit` (more than 8 model calls). A failure ends the stream with `event: error` and `{code, message}`: `provider_auth`, `provider_rate_limited`, `provider_error` or `timeout`; never a key. Usage is recorded whatever the outcome.
 
+### Hosted servers
+
+A tenant of a host (see [host mode](self-hosting/host-mode.md)) answers like any server, with these differences. `GET /api/v1/auth/status` adds `"hosted": true`. Settings that belong to the operator answer `403 host_managed` before authentication: `/api/v1/settings/smtp*`, `/api/v1/settings/oidc*` and `/api/v1/backups*` for every method, and writes to `/api/v1/settings/mcp`, `/api/v1/settings/assistant*`, `/api/v1/settings/webhooks` and `/api/v1/settings/attachments`.
+
+`GET /api/v1/export/archive` (owner, session or `full` token; a stale session gets `403 reauth_required`) streams the whole server as a backup archive (`application/gzip`, the format `opentodo restore` reads) and records `export.requested` with format `archive`. Read and agent tokens get `403 insufficient_scope`. The route does not exist on a self-hosted server.
+
+A tenant's limits refuse changes one at a time. On `/api/v1/sync` a refused op appears in `rejected` with reason `limit_storage`, `limit_ops_hour` or `limit_ops_total`; the rest of the batch is applied, and the server does not send its own value back for it, so the device keeps the change and sends it again later. A REST write answers `403` with the reason as code.
+
 ## Examples
 
 Create a task due tomorrow at 9:00 in a project:
@@ -1613,6 +1678,13 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `internal` | 500 | unexpected server error (details only in the server log) |
 | `unavailable` | 503 | backups or webhooks are not available on this server |
 | `demo_busy` | 503 | demo instance: no new sandbox now (live cap reached with none idle for 15 minutes, or the database is above its size limit) |
+| `host_managed` | 403 | hosted server: a setting the operator owns, see [Hosted servers](#hosted-servers) |
+| `limit_storage`, `limit_ops_hour`, `limit_ops_total` | 403 | hosted server: a REST write over the tenant's storage, changes per hour or stored changes; on `/sync` the same codes are per-op `rejected` reasons |
+| `limit_members` | 403 | hosted server: a new account (registration, sign-up confirmation, project invite link, single sign-on) over the tenant's member limit |
+| `limit_import` | 413 | hosted server: an import file over the tenant's import size |
+| `limit_requests` | 429 | hosted server: more requests per minute than the tenant's limit |
+| `suspended` | 503 | hosted server: the operator suspended this tenant; its data is kept |
+| `busy` | 503 | hosted server: every open tenant is in use; try again shortly |
 
 **Sign-in, accounts and credentials**
 

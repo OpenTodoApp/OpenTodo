@@ -43,6 +43,10 @@ type State struct {
 	Sections, Reminders, Views []opsync.Entity
 	// UserPrefs holds the account's own date and time preferences row, if any.
 	UserPrefs []opsync.Entity
+	// Fields are custom field definitions, tombstoned ones included (custom-fields).
+	Fields []opsync.Entity
+	// Review holds the account's own "last weekly review" row, if any.
+	Review []opsync.Entity
 	// Attachments (including removed ones) let own-export rows detect existing ids.
 	Attachments []opsync.Entity
 	// UserID is the importing account (own-export assignees are kept only for it).
@@ -100,9 +104,11 @@ type Totals struct {
 	Deadlines int `json:"deadlines"`
 	// Attachments counts created attachments, files and links (attachments); additive.
 	Attachments int `json:"attachments"`
-	Entities    int `json:"entities"`
-	Written     int `json:"written"`
-	Ops         int `json:"ops"`
+	// Fields counts created live custom field definitions (custom-fields); additive.
+	Fields   int `json:"fields"`
+	Entities int `json:"entities"`
+	Written  int `json:"written"`
+	Ops      int `json:"ops"`
 	// Refused counts ops the sync engine refused for authorization reasons (for
 	// example a shared project whose role changed during the import); additive.
 	Refused int `json:"refused,omitempty"`
@@ -248,7 +254,7 @@ func sectionKey(projectID, name string) string {
 func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID func() string) *Plan {
 	pl := &planner{opts: opts, st: st, now: now.UnixMilli(), newID: newID, position: now.UnixMilli(), files: parsed.Files,
 		byKind: map[string]map[string]opsync.Entity{KindProject: {}, KindLabel: {}, KindTask: {},
-			KindSection: {}, KindReminder: {}, KindView: {}, KindUserPrefs: {}, KindAttachment: {}},
+			KindSection: {}, KindReminder: {}, KindView: {}, KindUserPrefs: {}, KindAttachment: {}, KindField: {}, KindReview: {}},
 		projectByName: map[string]string{}, labelByName: map[string]string{}, fingerprints: map[string]string{},
 		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
 		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}, createdBySource: map[string]string{}}
@@ -256,7 +262,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		st.Remembered = map[string]string{}
 	}
 	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks,
-		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments} {
+		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments, KindField: st.Fields, KindReview: st.Review} {
 		for _, e := range list {
 			id := str(e, "id")
 			pl.byKind[kind][id] = e
@@ -342,6 +348,8 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		}
 		live := isNull(c.value("deleted_at"))
 		switch {
+		case c.created && c.entity == KindField && live:
+			p.Totals.Fields++
 		case c.created && c.entity == KindSection && live:
 			p.Totals.NewSections++
 		case c.entity == KindTask && live && !isNull(c.value("recurrence")):
@@ -433,7 +441,6 @@ func (pl *planner) planOwn(rows []Row) []change {
 			res.Outcome, res.Reason = OutcomeError, row.Err
 			continue
 		}
-		schema := opsync.Schema[row.Kind]
 		names := make([]string, 0, len(row.Entity))
 		for k := range row.Entity {
 			names = append(names, k)
@@ -447,7 +454,7 @@ func (pl *planner) planOwn(rows []Row) []change {
 			if row.Kind == KindProject && (k == "role" || k == "owner_id") {
 				continue // read-only sharing annotations of the export, not data
 			}
-			if _, ok := schema[k]; !ok {
+			if !opsync.KnownField(row.Kind, k) {
 				res.Warnings = append(res.Warnings, fmt.Sprintf("unknown field %q dropped", k))
 				continue
 			}

@@ -1,3 +1,5 @@
+import { errorMessage } from './i18n/errors'
+import { t } from './i18n/catalog'
 import type { AssistantSkill } from './assistantSkills'
 import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
@@ -6,14 +8,18 @@ import type { KeyRecord } from './crypto'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
   ConfigWarning,
-  AppPassword, CaldavSetting, EmailInbox,
+  AppPassword, CaldavSetting, EmailDigest, EmailDigestInput, EmailInbox,
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
 export class ApiError extends Error {
+  /** The server's own message (English, a machine contract). */
+  readonly serverMessage: string
+  /** `message` is translated by code when the client knows it (app-localization D6). */
   constructor(public status: number, public code: string, message: string) {
-    super(message)
+    super(errorMessage(code, message))
+    this.serverMessage = message
   }
 }
 
@@ -105,7 +111,7 @@ function uploadArchive(file: Blob, onProgress?: (fraction: number) => void): Pro
       let data: { error?: { code: string; message: string } } & Partial<StagedRestore> = {}
       try { data = JSON.parse(xhr.responseText || '{}') } catch { /* a proxy's HTML page */ }
       if (xhr.status === 201) return resolve(data as StagedRestore)
-      if (xhr.status === 413) return reject(new ApiError(413, 'proxy_too_large', 'Your reverse proxy refused the upload. Raise its body size limit, or restore from the backup destination instead.'))
+      if (xhr.status === 413) return reject(new ApiError(413, 'proxy_too_large', t('Your reverse proxy refused the upload. Raise its body size limit, or restore from the backup destination instead.')))
       reject(new ApiError(xhr.status, data.error?.code ?? 'error', data.error?.message ?? xhr.statusText))
     }
     xhr.send(file)
@@ -137,6 +143,25 @@ function uploadAttachmentContent(id: string, blob: Blob, onProgress?: (fraction:
   })
 }
 
+/**
+ * The whole server as one backup archive (OpenSpec `multi-tenant-host`: a hosted
+ * owner takes their data away). A stale session is confirmed first, as for any
+ * sensitive request.
+ */
+async function downloadServerArchive(retried = false): Promise<{ blob: Blob; filename: string }> {
+  const res = await fetch('/api/v1/export/archive', { credentials: 'same-origin' })
+  if (!res.ok) {
+    try {
+      await parse(res)
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'reauth_required' && !retried && (await reauthenticate())) return downloadServerArchive(true)
+      throw err
+    }
+  }
+  const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'opentodo-archive.tar.gz'
+  return { blob: await res.blob(), filename: name }
+}
+
 async function parse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T
   const data = await res.json().catch(() => ({}))
@@ -149,6 +174,8 @@ async function parse<T>(res: Response): Promise<T> {
 
 export const api = {
   authStatus: () => request<AuthStatus>('GET', '/api/v1/auth/status'),
+  /** Hosted servers only: the owner's download of the whole server (multi-tenant-host). */
+  downloadServerArchive: () => downloadServerArchive(),
   /** Demo instance (OpenSpec `demo-sandboxes`): create a private sandbox and sign into it. */
   demoSandbox: (token: string) => request<{ user: User }>('POST', '/api/v1/demo/sandbox', { token }),
   /**
@@ -250,7 +277,7 @@ export const api = {
   // CalDAV (OpenSpec change `caldav`): the owner toggle and per-user app passwords.
   // End-to-end encryption (OpenSpec `e2ee`): only wrapped key material ever goes here.
   encryptionKeys: () => request<{ keys: KeyRecord }>('GET', '/api/v1/encryption/keys'),
-  putEncryptionKeys: (record: KeyRecord) => request<{ keys: KeyRecord }>('PUT', '/api/v1/encryption/keys', {
+  putEncryptionKeys: (record: KeyRecord) => request<{ keys: KeyRecord; digestDisabled?: boolean }>('PUT', '/api/v1/encryption/keys', {
     version: record.version, kdf: record.kdf, salt: record.salt, iterations: record.iterations,
     wrappedByPassphrase: record.wrappedByPassphrase, wrappedByRecovery: record.wrappedByRecovery,
   }),
@@ -265,6 +292,9 @@ export const api = {
   emailInbox: () => request<EmailInbox>('GET', '/api/v1/email-inbox'),
   updateEmailInbox: (patch: { enabled?: boolean; allowlist?: string[] }) => request<EmailInbox>('PATCH', '/api/v1/email-inbox', patch),
   rotateEmailInbox: () => request<EmailInbox>('POST', '/api/v1/email-inbox/rotate'),
+  // The weekly email digest (stats-and-review): server data, needs a connection.
+  emailDigest: () => request<EmailDigest>('GET', '/api/v1/me/email-digest'),
+  updateEmailDigest: (patch: EmailDigestInput) => request<EmailDigest>('PUT', '/api/v1/me/email-digest', patch),
   // Passkeys (OpenSpec change `passkeys`). Binary fields are base64url strings.
   passkeyLoginOptions: () => request<{ publicKey: RequestOptionsJSON }>('POST', '/api/v1/auth/passkey/options', {}),
   /** A passkey without user verification on an enrolled account also answers with a challenge. */

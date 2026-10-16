@@ -22,6 +22,8 @@ import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { t } from '../lib/i18n'
+import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
 
 /** Dispatched after the viewer's own role changed (ownership transfer): the app re-reads its profile. */
 export const ACCOUNT_CHANGED_EVENT = 'opentodo:account-changed'
@@ -115,9 +117,9 @@ export function UsersPanel({ user }: { user: User }) {
     const res = await api.issuePasswordReset(u.id)
     setCopied(false)
     setResetLink({ email: u.email, link: res.link, expiresAt: res.expiresAt })
-  }, `Reset link created for ${name(u)}.`)
+  }, t('Reset link created for {name}.', { name: name(u) }))
   async function sendReset(u: AdminUser) {
-    const ok = await run(async () => { await api.sendPasswordReset(u.id) }, `A reset email was sent to ${u.email}.`)
+    const ok = await run(async () => { await api.sendPasswordReset(u.id) }, t('A reset email was sent to {email}.', { email: u.email }))
     setChoosing(null)
     // A failed send leaves no link behind: offer the link to deliver yourself instead.
     if (!ok) setConfirming({ kind: 'reset', user: u })
@@ -142,10 +144,10 @@ export function UsersPanel({ user }: { user: User }) {
         onMfaReset={(u) => setConfirming({ kind: 'mfa', user: u })}
         onOpenDialog={setDialog}
         onDelete={(u, confirmEmail) => {
-          void run(() => api.deleteUser(u.id, confirmEmail), `${u.email} and their data were deleted.`).then((ok) => ok && setDialog(null))
+          void run(() => api.deleteUser(u.id, confirmEmail), t('{email} and their data were deleted.', { email: u.email })).then((ok) => ok && setDialog(null))
         }}
         onTransfer={(u, password) => {
-          void run(() => api.transferOwnership(u.id, password), `${name(u)} is now the owner. You are an admin.`).then((ok) => {
+          void run(() => api.transferOwnership(u.id, password), t('{name} is now the owner. You are an admin.', { name: name(u) })).then((ok) => {
             if (!ok) return
             setDialog(null)
             window.dispatchEvent(new Event(ACCOUNT_CHANGED_EVENT))
@@ -153,20 +155,20 @@ export function UsersPanel({ user }: { user: User }) {
         }}
         onCopy={() => {
           if (!resetLink) return
-          navigator.clipboard.writeText(resetLink.link).then(() => setCopied(true), () => setError('Could not access the clipboard; select the link and copy it manually.'))
+          navigator.clipboard.writeText(resetLink.link).then(() => setCopied(true), () => setError(t('Could not access the clipboard; select the link and copy it manually.')))
         }}
         onDismissLink={() => setResetLink(null)}
       />
       {choosing && (
-        <OverlayDialog title={`Reset the password of ${name(choosing)}?`} onClose={() => setChoosing(null)} size="sm">
+        <OverlayDialog title={t('Reset the password of {name}?', { name: name(choosing) })} onClose={() => setChoosing(null)} size="sm">
           <div className="space-y-4" data-reset-choice>
             <p className="text-meta text-muted">
-              Send a reset link to <strong className="text-default">{choosing.email}</strong>, or create one to deliver yourself. It works once and expires in 24 hours; any earlier link stops working.
+              {t.rich('Send a reset link to <strong>{email}</strong>, or create one to deliver yourself. It works once and expires in 24 hours; any earlier link stops working.', { email: choosing.email, strong: (chunks) => <strong className="text-default">{chunks}</strong> })}
             </p>
             <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="ghost" onClick={() => setChoosing(null)}>Cancel</Button>
-              <Button variant="secondary" disabled={busy} onClick={() => { const u = choosing; setChoosing(null); void createLink(u) }}>Create reset link</Button>
-              <Button variant="primary" busy={busy} onClick={() => sendReset(choosing)}>Send reset email</Button>
+              <Button variant="ghost" onClick={() => setChoosing(null)}>{t('Cancel')}</Button>
+              <Button variant="secondary" disabled={busy} onClick={() => { const u = choosing; setChoosing(null); void createLink(u) }}>{t('Create reset link')}</Button>
+              <Button variant="primary" busy={busy} onClick={() => sendReset(choosing)}>{t('Send reset email')}</Button>
             </div>
           </div>
         </OverlayDialog>
@@ -177,11 +179,11 @@ export function UsersPanel({ user }: { user: User }) {
           onConfirm={() => {
             const { user: u } = confirming
             switch (confirming.kind) {
-              case 'deactivate': return run(() => api.deactivateUser(u.id), `${name(u)} is deactivated.`)
-              case 'reactivate': return run(() => api.reactivateUser(u.id), `${name(u)} can sign in again.`)
+              case 'deactivate': return run(() => api.deactivateUser(u.id), t('{name} is deactivated.', { name: name(u) }))
+              case 'reactivate': return run(() => api.reactivateUser(u.id), t('{name} can sign in again.', { name: name(u) }))
               case 'reset': return createLink(u)
-              case 'role': return run(() => api.setUserRole(u.id, confirming.role), `${name(u)} is now ${confirming.role === 'admin' ? 'an admin' : 'a member'}.`)
-              case 'mfa': return run(() => api.resetMemberMfa(u.id), `Two-factor authentication reset for ${name(u)}.`)
+              case 'role': return run(() => api.setUserRole(u.id, confirming.role), confirming.role === 'admin' ? t('{name} is now an admin.', { name: name(u) }) : t('{name} is now a member.', { name: name(u) }))
+              case 'mfa': return run(() => api.resetMemberMfa(u.id), t('Two-factor authentication reset for {name}.', { name: name(u) }))
             }
           }} />
       )}
@@ -199,21 +201,21 @@ export type PendingAction =
 export function confirmCopy(a: NonNullable<PendingAction>, name: string): { title: string; consequence: string; confirmLabel: string; tone: 'danger' | 'default' } {
   switch (a.kind) {
     case 'deactivate':
-      return { title: `Deactivate ${name}?`, tone: 'danger', confirmLabel: 'Deactivate',
-        consequence: 'They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their data is kept.' }
+      return { title: t('Deactivate {name}?', { name }), tone: 'danger', confirmLabel: t('Deactivate'),
+        consequence: t('They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their data is kept.') }
     case 'reactivate':
-      return { title: `Reactivate ${name}?`, tone: 'default', confirmLabel: 'Reactivate',
-        consequence: 'They can sign in again with their existing password. Revoked tokens are not restored.' }
+      return { title: t('Reactivate {name}?', { name }), tone: 'default', confirmLabel: t('Reactivate'),
+        consequence: t('They can sign in again with their existing password. Revoked tokens are not restored.') }
     case 'reset':
-      return { title: `Create a password reset link for ${name}?`, tone: 'default', confirmLabel: 'Create link',
-        consequence: 'It works once and expires in 24 hours; any earlier link stops working. You deliver it yourself; nothing is emailed.' }
+      return { title: t('Create a password reset link for {name}?', { name }), tone: 'default', confirmLabel: t('Create link'),
+        consequence: t('It works once and expires in 24 hours; any earlier link stops working. You deliver it yourself; nothing is emailed.') }
     case 'role':
       return a.role === 'admin'
-        ? { title: `Make ${name} an admin?`, tone: 'default', confirmLabel: 'Make admin', consequence: 'Admins can invite people and manage members.' }
-        : { title: `Make ${name} a member again?`, tone: 'default', confirmLabel: 'Make member', consequence: 'They can no longer invite people or manage members.' }
+        ? { title: t('Make {name} an admin?', { name }), tone: 'default', confirmLabel: t('Make admin'), consequence: t('Admins can invite people and manage members.') }
+        : { title: t('Make {name} a member again?', { name }), tone: 'default', confirmLabel: t('Make member'), consequence: t('They can no longer invite people or manage members.') }
     case 'mfa':
-      return { title: `Reset two-factor authentication for ${name}?`, tone: 'danger', confirmLabel: 'Reset two-factor',
-        consequence: 'Their authenticator, recovery codes and remembered browsers stop working; they sign in with their password alone.' }
+      return { title: t('Reset two-factor authentication for {name}?', { name }), tone: 'danger', confirmLabel: t('Reset two-factor'),
+        consequence: t('Their authenticator, recovery codes and remembered browsers stop working; they sign in with their password alone.') }
   }
 }
 
@@ -229,7 +231,6 @@ export function AdministrationSections({ user }: { user: User }) {
 }
 
 const ROLE_HUE: Record<AdminUser['role'], HueName> = { owner: 'green', admin: 'indigo', member: 'slate' }
-const ROLE_LABEL: Record<AdminUser['role'], string> = { owner: 'Owner', admin: 'Admin', member: 'Member' }
 
 /** Pure rendering of the Users section; free of effects so tests can render it to markup. */
 export function UsersView(p: UsersViewProps) {
@@ -255,17 +256,19 @@ export function UsersView(p: UsersViewProps) {
   }
 
   return (
-    <SettingsSection title="Users" headingId="users-heading"
-      description={`Everyone with an account on this server. ${isOwner
-        ? 'You can manage every account and choose admins; admins manage members.'
-        : 'As an admin you can deactivate, reset and delete members.'}`}>
-      {p.offline && <Notice>You are offline. User administration needs a connection to the server; nothing about other accounts is kept on this device.</Notice>}
+    <SettingsSection title={t('Users')} headingId="users-heading"
+      description={isOwner
+        ? t('Everyone with an account on this server. You can manage every account and choose admins; admins manage members.')
+        : t('Everyone with an account on this server. As an admin you can deactivate, reset and delete members.')}>
+      {p.offline && <Notice>{t('You are offline. User administration needs a connection to the server; nothing about other accounts is kept on this device.')}</Notice>}
       {p.users && (
-        <SettingRow label="Accounts" status={
+        <SettingRow label={t('Accounts')} status={
           <span data-testid="users-summary">
-            {p.users.length} {p.users.length === 1 ? 'account' : 'accounts'}
-            {admins > 0 && ` · ${admins} ${admins === 1 ? 'admin' : 'admins'}`}
-            {deactivated > 0 && ` · ${deactivated} deactivated`}
+            {[
+              t('{n, plural, one {# account} other {# accounts}}', { n: p.users.length }),
+              admins > 0 ? t('{n, plural, one {# admin} other {# admins}}', { n: admins }) : '',
+              deactivated > 0 ? t('{n} deactivated', { n: deactivated }) : '',
+            ].filter(Boolean).join(' · ')}
           </span>
         } />
       )}
@@ -273,15 +276,14 @@ export function UsersView(p: UsersViewProps) {
         <div className="py-3">
           <Notice tone="success" action={(
             <span className="flex gap-1">
-              <Button size="sm" variant="secondary" icon="copy" onClick={p.onCopy}>{p.copied ? 'Copied' : 'Copy link'}</Button>
-              <Button size="sm" variant="ghost" onClick={p.onDismissLink}>Done</Button>
+              <Button size="sm" variant="secondary" icon="copy" onClick={p.onCopy}>{p.copied ? t('Copied') : t('Copy link')}</Button>
+              <Button size="sm" variant="ghost" onClick={p.onDismissLink}>{t('Done')}</Button>
             </span>
           )}>
-            <p className="font-medium">Reset link for {p.resetLink.email}. Copy it now: it will not be shown again.</p>
+            <p className="font-medium">{t('Reset link for {email}. Copy it now: it will not be shown again.', { email: p.resetLink.email })}</p>
             <code className="block break-all py-1" tabIndex={0}>{p.resetLink.link}</code>
             <p>
-              Deliver it yourself; nothing is emailed. It works once until {dt.formatInstant(p.resetLink.expiresAt, 'datetime')}.
-              API tokens keep working after a reset; deactivate the account instead if it may be compromised.
+              {t('Deliver it yourself; nothing is emailed. It works once until {instant}. API tokens keep working after a reset; deactivate the account instead if it may be compromised.', { instant: dt.formatInstant(p.resetLink.expiresAt, 'datetime') })}
             </p>
           </Notice>
         </div>
@@ -289,7 +291,7 @@ export function UsersView(p: UsersViewProps) {
       {p.notice && <Notice tone="success">{p.notice}</Notice>}
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 
-      <ul className="-mx-3 py-2" aria-label="Users">
+      <ul className="-mx-3 py-2" aria-label={t('Users')}>
         {p.users?.map((u) => {
           const a = rowActions(p.viewer, u)
           const label = u.name || u.email
@@ -297,30 +299,30 @@ export function UsersView(p: UsersViewProps) {
             <li key={u.id} data-user={u.email}>
               <ListRow
                 leading={<Avatar id={u.id} name={label} size="md" />}
-                label={<>{label}{u.id === p.viewer.id && <span className="text-faint"> (you)</span>}</>}
-                ariaLabel={`${label}, ${u.role}, ${u.status}`}
-                meta={`${u.name ? `${u.email} · ` : ''}joined ${dt.formatInstant(u.createdAt, 'date')} · ${u.lastLoginAt ? `last sign-in ${dt.formatInstant(u.lastLoginAt, 'datetime')}` : 'no sign-in since the upgrade'}`}
+                label={<>{label}{u.id === p.viewer.id && <span className="text-faint">{' '}{t('(you)')}</span>}</>}
+                ariaLabel={`${label}, ${ACCOUNT_ROLE_LABEL[u.role]}, ${u.status === 'active' ? t('active') : t('deactivated')}`}
+                meta={[u.name ? u.email : '', t('joined {date}', { date: dt.formatInstant(u.createdAt, 'date') }), u.lastLoginAt ? t('last sign-in {instant}', { instant: dt.formatInstant(u.lastLoginAt, 'datetime') }) : t('no sign-in since the upgrade')].filter(Boolean).join(' · ')}
                 badges={(
                   <>
-                    <Badge hue={ROLE_HUE[u.role]}>{ROLE_LABEL[u.role]}</Badge>
-                    <Badge hue={u.status === 'active' ? 'green' : 'red'} tone="solid">{u.status === 'active' ? 'Active' : 'Deactivated'}</Badge>
+                    <Badge hue={ROLE_HUE[u.role]}>{ACCOUNT_ROLE_LABEL[u.role]}</Badge>
+                    <Badge hue={u.status === 'active' ? 'green' : 'red'} tone="solid">{u.status === 'active' ? t('Active') : t('Deactivated')}</Badge>
                   </>
                 )}
                 onKeyDown={(e) => onRowKey(e, u, a)}
                 menu={hasAnyAction(a) && (
-                  <Menu label={`Actions for ${label}`} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
+                  <Menu label={t('Actions for {label}', { label })} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
                     <MenuGroup>
-                      {a.role && <MenuItem label={a.role === 'admin' ? 'Make admin' : 'Make member'} icon="shield-check" disabled={disabled} onSelect={() => p.onRole(u, a.role!)} />}
-                      {a.deactivate && <MenuItem label="Deactivate" icon="lock" shortcut="D" disabled={disabled} onSelect={() => p.onDeactivate(u)} />}
-                      {a.reactivate && <MenuItem label="Reactivate" icon="rotate-ccw" shortcut="D" disabled={disabled} onSelect={() => p.onReactivate(u)} />}
-                      {a.reset && <MenuItem label="Reset password" icon="key-round" shortcut="R" disabled={disabled} onSelect={() => p.onReset(u)} />}
-                      {a.mfaReset && <MenuItem label="Reset two-factor authentication" icon="shield-check" disabled={disabled} onSelect={() => p.onMfaReset(u)} />}
-                      {a.transfer && <MenuItem label="Transfer ownership" icon="users" disabled={disabled} onSelect={() => p.onOpenDialog({ kind: 'transfer', user: u })} />}
+                      {a.role && <MenuItem label={a.role === 'admin' ? t('Make admin') : t('Make member')} icon="shield-check" disabled={disabled} onSelect={() => p.onRole(u, a.role!)} />}
+                      {a.deactivate && <MenuItem label={t('Deactivate')} icon="lock" shortcut="D" disabled={disabled} onSelect={() => p.onDeactivate(u)} />}
+                      {a.reactivate && <MenuItem label={t('Reactivate')} icon="rotate-ccw" shortcut="D" disabled={disabled} onSelect={() => p.onReactivate(u)} />}
+                      {a.reset && <MenuItem label={t('Reset password')} icon="key-round" shortcut="R" disabled={disabled} onSelect={() => p.onReset(u)} />}
+                      {a.mfaReset && <MenuItem label={t('Reset two-factor authentication')} icon="shield-check" disabled={disabled} onSelect={() => p.onMfaReset(u)} />}
+                      {a.transfer && <MenuItem label={t('Transfer ownership')} icon="users" disabled={disabled} onSelect={() => p.onOpenDialog({ kind: 'transfer', user: u })} />}
                     </MenuGroup>
                     {a.remove && (
                       <>
                         <MenuSeparator />
-                        <MenuItem label="Delete account" icon="trash-2" shortcut="Del" danger disabled={disabled} onSelect={() => p.onOpenDialog({ kind: 'delete', user: u })} />
+                        <MenuItem label={t('Delete account')} icon="trash-2" shortcut="Del" danger disabled={disabled} onSelect={() => p.onOpenDialog({ kind: 'delete', user: u })} />
                       </>
                     )}
                   </Menu>
@@ -330,10 +332,10 @@ export function UsersView(p: UsersViewProps) {
           )
         })}
       </ul>
-      {p.users && p.users.length === 0 && <EmptyState icon="users" title="No accounts" body="Invite someone below to give them an account on this server." />}
-      {p.users === null && !p.offline && <Skeleton shape="row" count={3} label="Loading users" />}
+      {p.users && p.users.length === 0 && <EmptyState icon="users" title={t('No accounts')} body={t('Invite someone below to give them an account on this server.')} />}
+      {p.users === null && !p.offline && <Skeleton shape="row" count={3} label={t('Loading users')} />}
       <p className="pt-2 text-meta text-faint">
-        Keyboard, with a row focused: deactivate or reactivate with <Kbd k="d" />, create a reset link with <Kbd k="r" />, delete with <Kbd k="Delete" />; each asks for confirmation.
+        {t.rich('Keyboard, with a row focused: deactivate or reactivate with {kbd}, create a reset link with {kbd2}, delete with {kbd3}; each asks for confirmation.', { kbd: <Kbd k="d" />, kbd2: <Kbd k="r" />, kbd3: <Kbd k="Delete" /> })}
       </p>
 
       {p.dialog?.kind === 'delete' && (
@@ -361,18 +363,17 @@ export function DeleteDialog({ user, busy, offline, onCancel, onConfirm }: {
     if (matches) onConfirm(user, typed.trim())
   }
   return (
-    <Dialog title={`Delete ${user.email}?`} onCancel={onCancel}>
+    <Dialog title={t('Delete {email}?', { email: user.email })} onCancel={onCancel}>
       <form onSubmit={submit} className="space-y-4">
         <p className="text-body text-default">
-          This permanently deletes the account and all of its data on the server: tasks, projects (including projects it shared with others), sessions and tokens.
-          It cannot be undone; only a backup can bring it back. Copies on their own devices are not wiped.
+          {t('This permanently deletes the account and all of its data on the server: tasks, projects (including projects it shared with others), sessions and tokens. It cannot be undone; only a backup can bring it back. Copies on their own devices are not wiped.')}
         </p>
-        <Field label={<>Type <strong>{user.email}</strong> to confirm</>}>
-          <Input data-autofocus autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} aria-label="Email to confirm deletion" />
+        <Field label={<>{t.rich('Type <strong>{email}</strong> to confirm', { email: user.email, strong: (chunks) => <strong>{chunks}</strong> })}</>}>
+          <Input data-autofocus autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} aria-label={t('Email to confirm deletion')} />
         </Field>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-          <Button type="submit" variant="danger" className="border border-current" disabled={!matches || busy || offline}>Delete account</Button>
+          <Button variant="secondary" onClick={onCancel}>{t('Cancel')}</Button>
+          <Button type="submit" variant="danger" className="border border-current" disabled={!matches || busy || offline}>{t('Delete account')}</Button>
         </div>
       </form>
     </Dialog>
@@ -388,17 +389,17 @@ export function TransferDialog({ user, busy, offline, onCancel, onConfirm }: {
     if (password) onConfirm(user, password)
   }
   return (
-    <Dialog title={`Transfer ownership to ${user.name || user.email}?`} onCancel={onCancel}>
+    <Dialog title={t('Transfer ownership to {name}?', { name: user.name || user.email })} onCancel={onCancel}>
       <form onSubmit={submit} className="space-y-4">
         <p className="text-body text-default">
-          {user.email} becomes the owner of this server with every right, including transferring it back. You become an admin. There is always exactly one owner.
+          {t('{email} becomes the owner of this server with every right, including transferring it back. You become an admin. There is always exactly one owner.', { email: user.email })}
         </p>
-        <Field label="Your password">
+        <Field label={t('Your password')}>
           <Input type="password" data-autofocus autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-          <Button type="submit" variant="primary" disabled={!password || busy || offline}>Transfer ownership</Button>
+          <Button variant="secondary" onClick={onCancel}>{t('Cancel')}</Button>
+          <Button type="submit" variant="primary" disabled={!password || busy || offline}>{t('Transfer ownership')}</Button>
         </div>
       </form>
     </Dialog>
@@ -406,24 +407,24 @@ export function TransferDialog({ user, busy, offline, onCancel, onConfirm }: {
 }
 
 export function describeUserError(err: unknown): string {
-  if (!(err instanceof ApiError)) return 'The server is unreachable. User administration needs a connection.'
+  if (!(err instanceof ApiError)) return t('The server is unreachable. User administration needs a connection.')
   switch (err.code) {
     case 'forbidden':
-      return 'Your role does not allow this action.'
+      return t('Your role does not allow this action.')
     case 'self_action':
-      return 'You cannot do this to your own account.'
+      return t('You cannot do this to your own account.')
     case 'account_deactivated':
-      return 'This account is deactivated. Reactivate it first.'
+      return t('This account is deactivated. Reactivate it first.')
     case 'account_active':
-      return 'This account is already active.'
+      return t('This account is already active.')
     case 'confirmation_mismatch':
-      return 'The email you typed does not match the account.'
+      return t('The email you typed does not match the account.')
     case 'invalid_credentials':
-      return 'Your password is not correct.'
+      return t('Your password is not correct.')
     case 'rate_limited':
-      return 'Too many administrative actions recently. Try again later.'
+      return t('Too many administrative actions recently. Try again later.')
     case 'not_found':
-      return 'This account no longer exists.'
+      return t('This account no longer exists.')
     default:
       return err.message
   }

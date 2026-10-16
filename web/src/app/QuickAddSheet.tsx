@@ -12,6 +12,7 @@ import { taskDefaults } from './listActions'
 import { Popover } from './overlay/Popover'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import type { Route } from './router'
+import { t } from '../lib/i18n'
 
 export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   open: boolean
@@ -30,9 +31,9 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
     onClose()
   }
   return (
-    <Popover open={open} onClose={onClose} anchor={anchor} label="Add a task" side="top" align="end" width="sm:w-96" className="p-3">
+    <Popover open={open} onClose={onClose} anchor={anchor} label={t('Add a task')} side="top" align="end" width="sm:w-96" className="p-3">
       <div data-quick-add-sheet>
-        <QuickAdd autoFocus hideHint placeholder="Add a task…" label="Add a task" projects={projects} labels={labels} onAdd={onAdd} />
+        <QuickAdd autoFocus hideHint placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels} onAdd={onAdd} />
       </div>
     </Popover>
   )

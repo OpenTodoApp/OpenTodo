@@ -51,6 +51,8 @@ The choice is remembered per project on each device. On a phone the board shows 
 
 Moving with the keyboard or the panel puts the card at the bottom of the new column.
 
+Cards show up to three [custom field](custom-fields.md) values as badges, such as **Cost 1,200**, and **+2** for the rest.
+
 ## See a project on a timeline
 
 Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it shows): tasks become bars from start to deadline that you drag to reschedule. See [A project on a timeline](project-timeline.md).

@@ -8,6 +8,7 @@ import { emptyTrash, PENDING_PURGES_KEY, purgeItems, remainingDays, RETENTION_KE
 import type { Membership } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useShortcutScope } from './shortcuts'
+import { t } from '../lib/i18n'
 
 /**
  * The Trash (OpenSpec `trash-and-history`): deleted tasks and projects from local
@@ -16,7 +17,7 @@ import { useShortcutScope } from './shortcuts'
  */
 export function TrashView() {
   const dt = useDateTimeFormat()
-  const tasks = useLiveQuery(() => db.tasks.filter((t) => !!t.deleted_at).toArray(), [], [])
+  const tasks = useLiveQuery(() => db.tasks.filter((task) => !!task.deleted_at).toArray(), [], [])
   const projects = useLiveQuery(() => db.projects.toArray(), [], [])
   const memberships = useLiveQuery(() => db.memberships.toArray(), [], [] as Membership[])
   const retention = useLiveQuery(async () => ((await db.meta.get(RETENTION_KEY))?.value as number | undefined) ?? 30, [], 30)
@@ -24,7 +25,7 @@ export function TrashView() {
   const items = useMemo(() => trashItems(tasks, projects), [tasks, projects])
   const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
   const pendingKeys = useMemo(() => new Set(pending.map((p) => `${p.entity}:${p.id}`)), [pending])
-  const taskById = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks])
+  const taskById = useMemo(() => new Map(tasks.map((tk) => [tk.id, tk])), [tasks])
   const [selected, setSelected] = useState(0)
   const [confirm, setConfirm] = useState<TrashItem | 'all' | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -73,23 +74,23 @@ export function TrashView() {
 
   return (
     <PageBody width="list">
-      <PageHeader title="Trash" help="trash"
-        meta={retention > 0 ? `Deleted permanently after ${retention} days` : 'Kept until you delete them permanently'}
-        actions={items.length > 0 ? <Button variant="ghost" size="sm" className="text-danger" onClick={() => setConfirm('all')}>Empty Trash</Button> : undefined} />
+      <PageHeader title={t('Trash')} help="trash"
+        meta={retention > 0 ? t('Deleted permanently after {retention} days', { retention }) : t('Kept until you delete them permanently')}
+        actions={items.length > 0 ? <Button variant="ghost" size="sm" className="text-danger" onClick={() => setConfirm('all')}>{t('Empty Trash')}</Button> : undefined} />
       {error && <p role="alert" className="mb-3 text-body text-danger">{error}</p>}
       {confirm && (
-        <div role="alertdialog" aria-label="Confirm permanent deletion" className="mb-3 flex flex-wrap items-center gap-2 rounded-control border border-danger bg-danger-soft px-3 py-2 text-body text-on-danger-soft">
+        <div role="alertdialog" aria-label={t('Confirm permanent deletion')} className="mb-3 flex flex-wrap items-center gap-2 rounded-control border border-danger bg-danger-soft px-3 py-2 text-body text-on-danger-soft">
           <span className="flex-1">
-            {confirm === 'all' ? `Permanently delete all ${items.length} items? This cannot be undone.` : `Permanently delete “${confirm.title}”${confirm.entity === 'project' ? ' and its tasks' : ''}? This cannot be undone.`}
+            {confirm === 'all' ? t('{n, plural, one {Permanently delete # item? This cannot be undone.} other {Permanently delete all # items? This cannot be undone.}}', { n: items.length }) : confirm.entity === 'project' ? t('Permanently delete “{title}” and its tasks? This cannot be undone.', { title: confirm.title }) : t('Permanently delete “{title}”? This cannot be undone.', { title: confirm.title })}
           </span>
-          <button className="ui-btn ui-btn--primary ui-btn--sm bg-danger text-meta hover:bg-danger/90" autoFocus onClick={() => void purge(confirm)}>Delete permanently</button>
-          <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setConfirm(null)}>Cancel</button>
+          <button className="ui-btn ui-btn--primary ui-btn--sm bg-danger text-meta hover:bg-danger/90" autoFocus onClick={() => void purge(confirm)}>{t('Delete permanently')}</button>
+          <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setConfirm(null)}>{t('Cancel')}</button>
         </div>
       )}
       {items.length === 0 ? (
-        <p className="py-12 text-center text-body text-faint">The Trash is empty.</p>
+        <p className="py-12 text-center text-body text-faint">{t('The Trash is empty.')}</p>
       ) : (
-        <ul className="divide-y divide-(--ot-border)" aria-label="Deleted items">
+        <ul className="divide-y divide-(--ot-border)" aria-label={t('Deleted items')}>
           {items.map((it, i) => {
             const days = remainingDays(it.deletedAt, retention, now)
             const isPending = pendingKeys.has(`${it.entity}:${it.id}`)
@@ -101,14 +102,17 @@ export function TrashView() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{it.title}</span>
                   <span className="block text-meta text-faint">
-                    {it.entity === 'project' ? 'Project' : it.projectName} · deleted {dt.formatInstant(it.deletedAt, 'datetime')}
-                    {isPending ? ' · pending permanent deletion' : days !== null ? ` · ${days} day${days === 1 ? '' : 's'} left` : ''}
+                    {[
+                      it.entity === 'project' ? t('Project') : it.projectName,
+                      t('deleted {instant}', { instant: dt.formatInstant(it.deletedAt, 'datetime') }),
+                      isPending ? t('pending permanent deletion') : days !== null ? t('{n, plural, one {# day left} other {# days left}}', { n: days }) : '',
+                    ].filter(Boolean).join(' · ')}
                   </span>
                 </span>
                 {ok && (
                   <span className="flex gap-1">
-                    <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void restore(it)}>Restore</button>
-                    <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta text-danger" disabled={isPending} onClick={() => setConfirm(it)}>Delete permanently</button>
+                    <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void restore(it)}>{t('Restore')}</button>
+                    <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta text-danger" disabled={isPending} onClick={() => setConfirm(it)}>{t('Delete permanently')}</button>
                   </span>
                 )}
               </li>

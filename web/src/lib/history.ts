@@ -8,6 +8,8 @@ import { decryptChanges } from './e2ee'
 import { updateProject, updateTask } from './ops'
 import type { ChangeSet, HistoryPage, Membership, Project, Task } from './types'
 import { formatDate, formatInstant } from './dates'
+import { fieldValueLabel } from './fieldNames'
+import { t, msg, translatedMap } from './i18n'
 
 /** One page of history; ciphertext values (OpenSpec e2ee) are decrypted for display. */
 export async function fetchHistory(entity: 'task' | 'project', id: string, before?: number): Promise<HistoryPage> {
@@ -29,13 +31,13 @@ export async function fetchHistory(entity: 'task' | 'project', id: string, befor
  * (shared projects).
  */
 export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_label'>, myDevice: string, myUserId?: string, memberships: Membership[] = []): string {
-  const base = set.device === myDevice ? 'this device'
+  const base = set.device === myDevice ? t('this device')
     : set.device_label ? set.device_label
     : set.device === 'server' ? 'API'
-    : set.device.startsWith('agent:') ? 'AI assistant'
-    : set.device.startsWith('caldav:') ? 'a calendar app (CalDAV)'
-    : set.device.startsWith('public:') ? 'a public link'
-    : `another device (${set.device.slice(0, 4)})`
+    : set.device.startsWith('agent:') ? t('AI assistant')
+    : set.device.startsWith('caldav:') ? t('a calendar app (CalDAV)')
+    : set.device.startsWith('public:') ? t('a public link')
+    : t('another device ({id})', { id: set.device.slice(0, 4) })
   // A guest's tick is written as the link's creator; the label names the link, not them (public-links D6).
   if (set.device.startsWith('public:')) return base
   if (!myUserId || set.userId === myUserId) return base
@@ -54,7 +56,8 @@ export const RESTORABLE: Record<'task' | 'project', readonly string[]> = {
 }
 
 export function canRestoreField(entity: 'task' | 'project', field: string): boolean {
-  return RESTORABLE[entity].includes(field)
+  // A custom field value (custom-fields) is put back like any field: one `fields.<id>` op.
+  return RESTORABLE[entity].includes(field) || (entity === 'task' && fieldValueLabel(field) !== null)
 }
 
 /**
@@ -63,20 +66,20 @@ export function canRestoreField(entity: 'task' | 'project', field: string): bool
  * across sharing scopes as copy + tombstone. Returns the task id afterwards.
  */
 export async function restoreValue(entity: 'task' | 'project', id: string, field: string, value: unknown): Promise<string> {
-  if (!canRestoreField(entity, field)) throw new Error(`${field} cannot be restored`)
+  if (!canRestoreField(entity, field)) throw new Error(t('{field} cannot be restored', { field }))
   if (entity === 'task') return updateTask(id, { [field]: value } as Partial<Omit<Task, 'id' | '_clock'>>)
   await updateProject(id, { [field]: value } as Partial<Omit<Project, 'id' | '_clock'>>)
   return id
 }
 
 /** Reference fields whose ids the timeline shows by name, and their labels. */
-const REF_LABELS: Record<string, string> = { assignee_id: 'assignee', project_id: 'project', section_id: 'section', parent_id: 'parent' }
+const REF_LABELS = translatedMap<string>({ assignee_id: msg('assignee'), project_id: msg('project'), section_id: msg('section'), parent_id: msg('parent') })
 /** Labels of fields whose name alone reads badly. */
-const FIELD_LABELS: Record<string, string> = { blocked_by: 'waiting for', description: 'notes', notes_doc: 'notes' }
+const FIELD_LABELS = translatedMap<string>({ blocked_by: msg('waiting for'), description: msg('notes'), notes_doc: msg('notes') })
 
 /** The label of a field in the timeline (`assignee_id` reads as "assignee"). */
 export function fieldLabel(field: string): string {
-  return REF_LABELS[field] ?? FIELD_LABELS[field] ?? field.replace(/_/g, ' ')
+  return REF_LABELS[field] ?? FIELD_LABELS[field] ?? fieldValueLabel(field) ?? field.replace(/_/g, ' ')
 }
 
 /**
@@ -86,20 +89,20 @@ export function fieldLabel(field: string): string {
  */
 export function formatValue(field: string, value: unknown, names?: (field: string, id: string) => string | undefined): string {
   if (value === null || value === undefined || value === '') return '—'
-  if (field in REF_LABELS && typeof value === 'string' && names) return names(field, value) ?? 'unknown'
+  if (field in REF_LABELS && typeof value === 'string' && names) return names(field, value) ?? t('unknown')
   if (field.endsWith('_at') && typeof value === 'number') return formatInstant(value, 'datetime')
   if (field === 'due' && typeof value === 'object') {
     const d = value as { date?: string; time?: string }
     return [d.date, d.time].filter(Boolean).join(' ')
   }
   if (field === 'deadline' && typeof value === 'string') return formatDate(value, 'compact')
-  if (field === 'start' && typeof value === 'string') return value === 'someday' ? 'Someday' : formatDate(value, 'compact')
-  if (field === 'evening' && typeof value === 'boolean') return value ? 'on' : 'off'
+  if (field === 'start' && typeof value === 'string') return value === 'someday' ? t('Someday') : formatDate(value, 'compact')
+  if (field === 'evening' && typeof value === 'boolean') return value ? t('on') : t('off')
   if (field === 'priority') return `P${String(value)}`
-  if (field === 'estimate_minutes' && typeof value === 'number') return `${value} min`
-  if (field === 'blocked_by' && Array.isArray(value) && names) return value.length ? value.map((id) => names('parent_id', String(id)) ?? 'unknown').join(', ') : '—'
-  if (Array.isArray(value)) return value.length ? `${value.length} item${value.length === 1 ? '' : 's'}` : '—'
-  if (typeof value === 'boolean') return value ? 'yes' : 'no'
+  if (field === 'estimate_minutes' && typeof value === 'number') return t('{value} min', { value })
+  if (field === 'blocked_by' && Array.isArray(value) && names) return value.length ? value.map((id) => names('parent_id', String(id)) ?? t('unknown')).join(', ') : '—'
+  if (Array.isArray(value)) return value.length ? t('{n, plural, one {# item} other {# items}}', { n: value.length }) : '—'
+  if (typeof value === 'boolean') return value ? t('yes') : t('no')
   const s = typeof value === 'string' ? value : JSON.stringify(value)
   return s.length > 80 ? `${s.slice(0, 79)}…` : s
 }

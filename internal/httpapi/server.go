@@ -133,6 +133,8 @@ type Server struct {
 	// idemSalt makes Idempotency-Key ids unguessable (agent-ready-cli D5);
 	// see idempotency.go.
 	idemSalt string
+	// hosted is set for a tenant a host serves (multi-tenant-host); see hosted.go.
+	hosted bool
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -228,6 +230,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	// sign-in flow (anonymous, rate limited); settings and identities require auth.
 	s.registerOIDCRoutes(mux)
 	s.registerMailRoutes(mux)
+	// Weekly email digest settings (stats-and-review).
+	s.registerDigestRoutes(mux)
 	s.registerSignupRoutes(mux)
 	s.registerPublicLinkRoutes(mux)
 
@@ -302,6 +306,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerEmailRoutes(mux)
 	// Demo sandboxes (OpenSpec `demo-sandboxes`): registered on a demo instance only.
 	s.registerDemoRoutes(mux)
+	// Hosted tenants (OpenSpec `multi-tenant-host`): the owner's archive download.
+	s.registerHostedRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
@@ -331,7 +337,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 			web.ServeHTTP(w, r)
 		}))
 	}
-	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(mux))))
+	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(s.hostGuard(mux)))))
 }
 
 // auditContext hands the client address and user agent to the audit recorder.
@@ -575,6 +581,10 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		"oidc":          s.oidcStatus(r.Context()),
 		"outgoingEmail": map[string]bool{"enabled": s.mailEnabled(r.Context())},
 	}
+	if s.hosted {
+		// A hosted tenant (multi-tenant-host D4): the app hides the operator's panels.
+		out["hosted"] = true
+	}
 	if s.demo != nil {
 		// Demo instance (OpenSpec `demo-sandboxes`): a sandbox-creation token, the
 		// sandbox lifetimes and the next reset; no credentials.
@@ -649,6 +659,9 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, auth.ErrSetupTokenInvalid):
 		writeError(w, http.StatusForbidden, "setup_token_invalid", err.Error())
+		return
+	case errors.Is(err, auth.ErrMemberLimit):
+		writeError(w, http.StatusForbidden, "limit_members", err.Error())
 		return
 	case errors.Is(err, auth.ErrSignupClosed):
 		writeError(w, http.StatusForbidden, "signup_closed", err.Error())
@@ -1134,10 +1147,32 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "unknown collection")
 		return
 	}
+	after, before, msg := completionRange(r, entity)
+	if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return
+	}
 	list, err := s.sync.List(r.Context(), userFrom(r.Context()).ID, entity, r.URL.Query().Get("include_deleted") == "true")
 	if err != nil {
 		s.internal(w, err)
 		return
+	}
+	if after != 0 || before != 0 {
+		kept := list[:0]
+		for _, e := range list {
+			var at float64
+			if raw, ok := e["completed_at"]; ok {
+				_ = json.Unmarshal(raw, &at)
+			}
+			// A habit's skipped occurrence record is not a completion (habits D6).
+			if string(e["skipped"]) == "true" {
+				continue
+			}
+			if agenttools.InCompletionRange(int64(at), after, before) {
+				kept = append(kept, e)
+			}
+		}
+		list = kept
 	}
 	if err := s.annotateProjects(r.Context(), entity, list...); err != nil {
 		s.internal(w, err)
@@ -1226,6 +1261,24 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	if entity == "task" {
 		canonicalizeRecurrence(body)
+		// Custom field values become fields.<id> keys before an idempotent
+		// replay compares the planned ops (custom-fields D3).
+		if msg, err := s.checkTaskFields(r.Context(), uid, body, nil); err != nil {
+			s.internal(w, err)
+			return
+		} else if msg != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", msg)
+			return
+		}
+	}
+	if entity == "field" {
+		if msg, err := s.checkField(r.Context(), uid, id, body, nil); err != nil {
+			s.internal(w, err)
+			return
+		} else if msg != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", msg)
+			return
+		}
 	}
 	if entity == "reminder" {
 		if msg, err := s.completeReminderBody(r.Context(), userFrom(r.Context()).ID, body, nil); err != nil {
@@ -1490,6 +1543,26 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", msg)
 		return
 	}
+	// Custom fields (custom-fields D3): task values against the definitions of
+	// the task's project after the write; definitions keep project and type.
+	var fieldMsg string
+	switch entity {
+	case "task":
+		fieldMsg, err = s.checkTaskFields(r.Context(), userFrom(r.Context()).ID, body, existing)
+	case "field":
+		fieldMsg, err = s.checkField(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing)
+	}
+	if err != nil {
+		s.internal(w, err)
+		return
+	} else if fieldMsg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_input", fieldMsg)
+		return
+	}
+	if len(body) == 0 {
+		writeError(w, http.StatusBadRequest, "bad_request", "no fields to update")
+		return
+	}
 	if err := s.validateParent(r.Context(), entity, r.PathValue("id"), body, existing); err != nil {
 		s.parentError(w, err)
 		return
@@ -1701,6 +1774,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["user_prefs"] = prefs
+	// When the caller last finished a weekly review (stats-and-review D4):
+	// personal like user_prefs, restored by an import of an own export.
+	review, err := s.sync.List(r.Context(), uid, "review", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["review"] = review
 	// End-to-end encryption (OpenSpec `e2ee`): content fields above are ciphertext
 	// for an encrypted account; the wrapped key record makes the document
 	// restorable and decryptable elsewhere with the passphrase. null otherwise.

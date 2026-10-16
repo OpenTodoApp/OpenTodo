@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react'
 import { describeDeadline, describeDue, formatDate, localDueOf, todayISO, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
+import { streakLabel, type HabitStats } from '../lib/habits'
 import type { Label, Project, Task } from '../lib/types'
 import { AssigneeChip } from './AssigneePicker'
 import { useAttachmentCount, useCommentCount } from './useCommentCounts'
@@ -20,6 +21,12 @@ import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { completionDelay, prefersReducedMotion } from './motion'
 import { dragFeedback } from './listDrop'
+import { fieldBadges } from '../lib/fields'
+import { useFieldDefs } from './useFields'
+import { t } from '../lib/i18n'
+
+/** Field badges shown on a row before the rest collapse into "+n" (custom-fields). */
+export const MAX_FIELD_BADGES = 3
 
 // Priority tokens (design-system): ring in the priority colour, soft fill behind it.
 const PRIORITY_RING: Record<number, string> = {
@@ -39,7 +46,7 @@ export const MAX_INDENT = 3
 /** The date phrase of a row: the due text with evening and repeat as suffixes ("Today · evening · repeats"). */
 export function dateText(dueLabel: string | null, evening: boolean, recurring: boolean, occurrence = false): string | null {
   if (!dueLabel) return null
-  return [dueLabel, evening ? 'evening' : null, recurring ? 'repeats' : occurrence ? 'occurrence' : null].filter(Boolean).join(' · ')
+  return [dueLabel, evening ? t('evening') : null, recurring ? t('repeats') : occurrence ? t('occurrence') : null].filter(Boolean).join(' · ')
 }
 
 export interface TaskRowProps {
@@ -56,6 +63,8 @@ export interface TaskRowProps {
   progress?: Progress
   /** Open blockers (task-dependencies): above 0 the row is dimmed with a lock marker. */
   blockedBy?: number
+  /** The streak of a habit (OpenSpec habits), computed once by the list: a chip after the repeat indicator. */
+  habit?: HabitStats | null
   /** Title of the parent when the task is shown outside its parent's subtree. */
   breadcrumb?: string | null
   hasChildren?: boolean
@@ -82,9 +91,11 @@ export interface TaskRowProps {
   dropIndicator?: 'before' | 'after' | 'inside' | null
   /** This row is the one being dragged: it lifts (an opacity change under reduced motion). */
   dragging?: boolean
+  /** The columns layout shows field values in cells, so the row leaves out their badges (custom-fields). */
+  hideFieldBadges?: boolean
 }
 
-export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick }: TaskRowProps) {
+export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false }: TaskRowProps) {
   const dt = useDateTimeFormat()
   const due = describeDue(task.due, undefined, undefined, dt.resolved)
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
@@ -94,8 +105,8 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   // task is in Later, or in Today without a date.
   const start = task.start ?? null
   const startText = done || !start ? null
-    : start === 'someday' ? 'Someday'
-    : `${start > todayISO() ? 'Starts' : 'Started'} ${formatDate(start, 'compact', dt.resolved)}`
+    : start === 'someday' ? t('Someday')
+    : start > todayISO() ? t('Starts {date}', { date: formatDate(start, 'compact', dt.resolved) }) : t('Started {date}', { date: formatDate(start, 'compact', dt.resolved) })
   const deadline = done ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   const comments = useCommentCount(task.id)
   const attachments = useAttachmentCount(task.id)
@@ -107,8 +118,13 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   const undecryptable = !!task._e2ee?.raw?.title
   // Evening and repeat are suffixes of the date text, never separate glyphs; with no
   // date they stand on their own in the date tone.
-  const date = dateText(due?.label ?? (task.evening && !done ? 'This evening' : null), !!task.evening && !done && !!due, !!task.recurrence, !!task.series_id)
-  const hasMeta = !!(breadcrumb || date || deadline || startText || (!due && !task.evening && (task.recurrence || task.series_id)) || task.estimate_minutes || (progress && progress.total > 0) || (blockedBy > 0 && !done)
+  const date = dateText(due?.label ?? (task.evening && !done ? t('This evening') : null), !!task.evening && !done && !!due, !!task.recurrence, !!task.series_id)
+  const streak = habit && !done ? habit : null
+  // Custom field values of the task's project (custom-fields): three badges, then "+n".
+  const fieldDefs = useFieldDefs()
+  const badges = hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved)
+  const moreBadges = badges.slice(MAX_FIELD_BADGES)
+  const hasMeta = !!(badges.length > 0 || breadcrumb || date || streak || deadline || startText || (!due && !task.evening && (task.recurrence || task.series_id)) || task.estimate_minutes || (progress && progress.total > 0) || (blockedBy > 0 && !done)
     || (assignee && task.assignee_id) || task.description || comments > 0 || attachments > 0 || labels.length > 0 || (showProject && (project || !task.project_id)))
 
   // Completion feedback: the check mark animates and the row fades within the
@@ -131,34 +147,43 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
 
   const meta = hasMeta && (
     <div className={`${card ? 'mt-1' : 'mt-0.5'} flex flex-wrap items-center gap-x-2 gap-y-0.5`} data-row-meta>
-      {breadcrumb && <NeutralChip icon="corner-down-right" label={`In ${breadcrumb}`} data-breadcrumb="">{breadcrumb}</NeutralChip>}
+      {breadcrumb && <NeutralChip icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb })} data-breadcrumb="">{breadcrumb}</NeutralChip>}
       {date && (
         <ToneText tone={due ? DUE_TONE[due.tone] : 'indigo'} data-date="" data-evening={task.evening && !done ? '' : undefined} data-recurring={task.recurrence ? '' : undefined}
-          label={[date, hint ? `fixed to ${task.due?.tz}` : null].filter(Boolean).join(', ')}>
+          label={[date, hint ? t('fixed to {zone}', { zone: task.due?.tz ?? '' }) : null].filter(Boolean).join(', ')}>
           {date}{hint && <span className="text-faint"> ({hint})</span>}
         </ToneText>
       )}
       {!date && (task.recurrence || task.series_id) && (
-        <ToneText tone="muted" data-recurring={task.recurrence ? '' : undefined}>{task.recurrence ? 'repeats' : 'occurrence'}</ToneText>
+        <ToneText tone="muted" data-recurring={task.recurrence ? '' : undefined}>{task.recurrence ? t('repeats') : t('occurrence')}</ToneText>
+      )}
+      {streak && (
+        <NeutralChip icon="flame" data-streak="" data-at-risk={streak.atRisk ? '' : undefined} label={streakLabel(streak)}>{streak.current}</NeutralChip>
       )}
       {blockedBy > 0 && !done && (
-        <NeutralChip icon="lock" data-blocked="" label={`Blocked by ${blockedBy}`}>{blockedBy}</NeutralChip>
+        <NeutralChip icon="lock" data-blocked="" label={t('Blocked by {blockedBy}', { blockedBy })}>{blockedBy}</NeutralChip>
       )}
       {deadline && (
-        <ToneText tone={DEADLINE_TONE[deadline.tone]} icon="hourglass" data-deadline="" label={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}, ${deadline.label}`}>
+        <ToneText tone={DEADLINE_TONE[deadline.tone]} icon="hourglass" data-deadline="" label={t('Deadline {date}, {label}', { date: formatDate(task.deadline!, 'long', dt.resolved), label: deadline.label })}>
           {deadline.label}
         </ToneText>
       )}
       {startText && <ToneText tone="muted" icon={start === 'someday' ? 'archive' : 'calendar-days'} data-start="">{startText}</ToneText>}
-      {task.estimate_minutes ? <NeutralChip data-estimate="" label={`Estimate ${formatMinutes(task.estimate_minutes)}`}>{formatMinutes(task.estimate_minutes)}</NeutralChip> : null}
-      {progress && progress.total > 0 && <NeutralChip data-progress="" label={`${progress.done} of ${progress.total} subtasks completed`}>{progress.done}/{progress.total}</NeutralChip>}
+      {task.estimate_minutes ? <NeutralChip data-estimate="" label={t('Estimate {minutes}', { minutes: formatMinutes(task.estimate_minutes) })}>{formatMinutes(task.estimate_minutes)}</NeutralChip> : null}
+      {badges.slice(0, MAX_FIELD_BADGES).map((b) => <NeutralChip key={b.def.id} data-field-badge={b.def.id}>{b.text}</NeutralChip>)}
+      {moreBadges.length > 0 && (
+        <NeutralChip data-field-more="" label={t('{count} more fields: {join}', { count: moreBadges.length, join: moreBadges.map((b) => b.text).join(', ') })}>
+          +{moreBadges.length}
+        </NeutralChip>
+      )}
+      {progress && progress.total > 0 && <NeutralChip data-progress="" label={t('{done} of {total} subtasks completed', { done: progress.done, total: progress.total })}>{progress.done}/{progress.total}</NeutralChip>}
       {assignee && task.assignee_id && <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} />}
-      {task.description && <NeutralChip icon="list" label="Has notes" data-notes="" />}
-      {comments > 0 && <NeutralChip icon="message-circle" data-comments="" label={`${comments} comment${comments === 1 ? '' : 's'}`}>{comments}</NeutralChip>}
-      {attachments > 0 && <NeutralChip icon="paperclip" data-attachments="" label={`${attachments} attachment${attachments === 1 ? '' : 's'}`}>{attachments}</NeutralChip>}
+      {task.description && <NeutralChip icon="list" label={t('Has notes')} data-notes="" />}
+      {comments > 0 && <NeutralChip icon="message-circle" data-comments="" label={t('{n, plural, one {# comment} other {# comments}}', { n: comments })}>{comments}</NeutralChip>}
+      {attachments > 0 && <NeutralChip icon="paperclip" data-attachments="" label={t('{n, plural, one {# attachment} other {# attachments}}', { n: attachments })}>{attachments}</NeutralChip>}
       {labels.map((l) => <LabelChip key={l.id} name={l.name} color={l.color} />)}
       {showProject && project && <NeutralChip dot={project.color} data-project="">{project.name}</NeutralChip>}
-      {showProject && !project && !task.project_id && <NeutralChip data-project="">Inbox</NeutralChip>}
+      {showProject && !project && !task.project_id && <NeutralChip data-project="">{t('Inbox')}</NeutralChip>}
     </div>
   )
 
@@ -187,7 +212,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           {onToggleCollapse && hasChildren && (
             <button
               type="button"
-              aria-label={collapsed ? 'Expand subtasks' : 'Collapse subtasks'}
+              aria-label={collapsed ? t('Expand subtasks') : t('Collapse subtasks')}
               aria-expanded={!collapsed}
               onClick={onToggleCollapse}
               className="flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11"
@@ -198,23 +223,25 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
         </span>
       )}
       {/* One slot for both boxes ("Bulk selection does not shift rows"): the task's
-          checkbox, replaced by the selection box on hover, focus or tick, in the same
-          20 px square, so the title never moves. */}
+          checkbox, replaced by the selection box only while a selection is in progress
+          (a row is ticked, or touch Select mode), in the same 20 px square, so the title
+          never moves. Hover and focus never swap them: a click on the circle always
+          completes (row-checkbox-completes). */}
       <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center self-start" data-row-controls data-selecting={onTick && !readOnly && (showCheckbox || ticked) ? '' : undefined}>
         <button
           type="button"
-          aria-label={done ? 'Reopen task' : 'Complete task'}
+          aria-label={done ? t('Reopen task') : t('Complete task')}
           onClick={toggle}
           disabled={readOnly}
-          className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly ? `${showCheckbox || ticked ? 'invisible' : 'group-hover:invisible group-focus-within:invisible'}` : ''}`}
+          className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly && (showCheckbox || ticked) ? 'invisible' : ''}`}
         >
           <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${PRIORITY_RING[task.priority]} ${checked ? 'bg-faint border-input text-on-accent' : 'group-hover/check:bg-success-soft'} ${completing ? 'row-check-pop' : ''}`}>
             {checked && <Icon name="check" size="xs" />}
           </span>
         </button>
         {onTick && !readOnly && (
-          <label className={`absolute inset-0 inline-flex cursor-pointer items-center justify-center ${showCheckbox || ticked ? '' : 'invisible group-hover:visible group-focus-within:visible pointer-coarse:hidden'}`}>
-            <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={`Select ${task.title || 'Untitled'}`} data-tick
+          <label className={`absolute inset-0 cursor-pointer items-center justify-center ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
+            <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={t('Select {title}', { title: task.title || t('Untitled') })} data-tick
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
           </label>
         )}
@@ -226,11 +253,11 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           onOpen(e)
         }}>
         <div className={`user-text text-body ${card ? '' : 'truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
-          {undecryptable ? <span className="italic text-faint" aria-label="This title could not be decrypted with this device's key">{task.title}</span>
-            : task.title || <span className="italic text-faint">Untitled</span>}
+          {undecryptable ? <span className="italic text-faint" aria-label={t('This title could not be decrypted with this device\'s key')}>{task.title}</span>
+            : task.title || <span className="italic text-faint">{t('Untitled')}</span>}
           {unencrypted && (
-            <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft" aria-label="The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.">
-              not yet encrypted
+            <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft" aria-label={t('The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.')}>
+              {t('not yet encrypted')}
             </span>
           )}
         </div>

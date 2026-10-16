@@ -22,7 +22,9 @@
 // ENGINES (default chromium,webkit), WIDTHS (default 360,390,768), THEMES
 // (default light,dark), ONLY (comma-separated screen names), CONCURRENCY
 // (default 3), SHOTS=all (also save a screenshot of every screen and overlay),
-// CHROMIUM_PATH / WEBKIT_PATH (optional executables).
+// CHROMIUM_PATH / WEBKIT_PATH (optional executables), OPENTODO_LANG (an interface
+// language such as de: the synced preference is written before capturing, and
+// signed-out screens start in it too; OpenSpec change app-localization 11.1).
 const pw = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
   const { execSync } = await import('node:child_process')
@@ -58,6 +60,7 @@ const THEMES = (process.env.THEMES ?? 'light,dark').split(',')
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 3)
 const SHOTS_ALL = process.env.SHOTS === 'all'
+const LANG = process.env.OPENTODO_LANG ?? ''
 const PASSWORD = 'correct horse battery staple'
 const MIN_TARGET = 44
 mkdirSync(outDir, { recursive: true })
@@ -111,6 +114,13 @@ async function seed() {
   await T({ title: 'Call the plumber', project_id: home.id, section_id: sections.Waiting, assignee_id: bob.id })
   await T({ title: 'Plan the team offsite', project_id: work.id, due: { date: today, time: '14:00' }, estimate_minutes: 90 })
   await T({ title: 'Submit expense report', project_id: work.id, completed_at: Date.now() - 3600e3 })
+  // Five custom fields on Work (custom-fields): the columns layout at 768 px.
+  const F = {}
+  for (const [i, [name, type, options]] of [['Cost', 'number'], ['Client', 'choice', 'Acme\nGlobex'], ['Order date', 'date'], ['Quote', 'link'], ['Paid', 'checkbox']].entries()) {
+    F[name] = (await A('POST', '/api/v1/fields', { name, type, project_id: work.id, options: options ?? '', position: i + 1 })).id
+  }
+  const offsite = (await A('GET', '/api/v1/tasks')).tasks.find((t) => t.title === 'Plan the team offsite')
+  await A('PATCH', `/api/v1/tasks/${offsite.id}`, { fields: { [F.Cost]: 12500, [F.Client]: 'Acme', [F['Order date']]: today, [F.Quote]: LONG_URL, [F.Paid]: true } })
   // A reminder that is already due: its toast shows on every screen.
   const passport = (await A('GET', '/api/v1/tasks')).tasks.find((t) => t.title === 'Renew passport')
   await A('POST', '/api/v1/reminders', { task_id: passport.id, kind: 'absolute', fire_at: Date.now() - 60e3 })
@@ -152,6 +162,11 @@ async function seed() {
     providers: { compatible: { enabled: true, model: 'fake-model', base_url: `http://127.0.0.1:${llm.address().port}/v1` } } })
   await A('PUT', '/api/v1/me/assistant', { consent: true, provider: 'compatible' })
   await A('POST', '/api/v1/tasks', { title: 'Water the plants', due: { date: new Date(Date.now() - 2 * 86400e3).toISOString().slice(0, 10) } })
+  if (LANG) {
+    // The interface language is a synced preference (user_prefs.language); written
+    // like any device would, so every screen of the run opens in it.
+    await A('POST', '/api/v1/sync', { device: 'layout-check', cursor: 0, ops: [{ id: `lang-${Date.now()}`, entity: 'user_prefs', entityId: 'me', field: 'language', value: LANG, ts: Date.now(), device: 'layout-check' }] })
+  }
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
@@ -171,6 +186,13 @@ function screens(ids) {
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
     { name: 'inbox', path: '/inbox', ready: row('Renew passport'), overlays: ['notifications', 'command-palette', 'help', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
+    // Display mode (display-mode 3.4, 5.1): no shell, large type; high contrast and the largest size included.
+    { name: 'display-today', path: '/display/today', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
+    { name: 'display-today-high-xl', path: '/display/today?contrast=high&size=xl', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
+    { name: 'display-upcoming', path: '/display/upcoming?eink=1', ready: (p) => p.locator('[data-screen="display"] [data-display-columns]').waitFor() },
+    { name: 'display-project', path: `/display/project/${ids.home}?size=xl`, ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
+    { name: 'display-view', path: `/display/view/${ids.view}?contrast=high`, ready: (p) => p.locator('[data-screen="display"] h1').waitFor() },
+    { name: 'public-display', path: `/public/${ids.publicLink}?display=1&eink=1`, anon: true, ready: (p) => p.locator('[data-screen="public/display"] [data-display-row]').first().waitFor() },
     { name: 'triage', path: '/triage', ready: (p) => p.locator('[data-triage-card]').waitFor() },
     { name: 'upcoming', path: '/upcoming', ready: heading('Upcoming') },
     { name: 'assigned', path: '/assigned', ready: row('Pick paint colours') },
@@ -187,6 +209,13 @@ function screens(ids) {
     { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Board' },
     { name: 'timeline', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Timeline' },
+    // Custom fields (custom-fields): five columns at 768 px; below it the layout is not offered.
+    { name: 'columns', path: `/project/${ids.work}`, widths: [768, 1280], overlays: ['fields-dialog'], ready: async (p) => {
+      await row('Plan the team offsite')(p)
+      const toggle = p.locator('[data-columns-toggle]')
+      if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.click()
+      await p.getByRole('table', { name: 'Tasks and fields' }).waitFor()
+    } },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
@@ -367,6 +396,12 @@ const OVERLAYS = {
     await p.getByRole('menuitem', { name: item }).click()
     return { overlay: p.locator(`[data-testid="${name}"]`), kind: 'dialog' }
   }])),
+  // Custom fields (custom-fields): the project menu's Fields… dialog.
+  async 'fields-dialog'(p) {
+    await p.getByRole('button', { name: /^Project/ }).first().click()
+    await p.getByRole('menuitem', { name: 'Fields…' }).click()
+    return { overlay: p.locator('[data-testid="fields-dialog"]'), kind: 'dialog' }
+  },
   async 'template-dialog'(p) {
     await openSidebar(p)
     await p.locator('aside[data-sidebar]').getByRole('button', { name: 'Add or fold projects' }).click()
@@ -719,6 +754,8 @@ async function runCombo(engine, width, theme, ids) {
   try {
     const anonCtx = await browser.newContext(ctxOpts)
     const ctx = await browser.newContext({ ...ctxOpts, storageState: ids.storageState })
+    // First paint in the chosen language (the device mirror the app keeps), also signed out.
+    if (LANG) for (const c of [anonCtx, ctx]) await c.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, LANG)
     const page = await ctx.newPage()
     page.on('dialog', (d) => d.dismiss())
     const pageErrors = []
@@ -729,6 +766,7 @@ async function runCombo(engine, width, theme, ids) {
     for (const s of screens(ids)) {
       if (ONLY && !ONLY.has(s.name)) continue
       if (s.engines && !s.engines.includes(engine)) continue
+      if (s.widths && !s.widths.includes(width)) continue
       const p = s.anon ? await anonCtx.newPage() : page
       // A screen that does not load is retried once (a slow CI machine); the second
       // failure is reported with whether the session was still valid.
@@ -802,7 +840,7 @@ async function runCombo(engine, width, theme, ids) {
         }
       }
       if (s.layout) {
-        await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).click().catch(() => {})
+        await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: s.layout === 'Columns' ? 'Columns' : 'List' }).click().catch(() => {})
       }
       if (s.anon) await p.close()
     }

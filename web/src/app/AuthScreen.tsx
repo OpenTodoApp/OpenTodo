@@ -6,6 +6,8 @@ import type { AuthStatus, InvitationPreview, LoginResult } from '../lib/types'
 import { oidcErrorMessage, ssoLayout, takeQueryParam } from './sso'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
+import { t } from '../lib/i18n'
+import { roleName } from '../lib/roleNames'
 
 /** When set, the screen is the acceptance form of an invitation (OpenSpec `invitations`). */
 export interface InviteContext {
@@ -31,7 +33,8 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
   const [password, setPassword] = useState('')
   // First-run setup guarded by OPENTODO_SETUP_TOKEN (OpenSpec `owner-bootstrap`).
   const needsSetupToken = !!status.setupRequired && !!status.setupTokenRequired && !invite
-  const [setupToken, setSetupToken] = useState('')
+  // A hosted service's sign-up link carries the tenant's token as ?setup= (multi-tenant-host).
+  const [setupToken, setSetupToken] = useState(() => typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('setup') ?? '')
   // Single sign-on (OpenSpec `oidc-login`): the provider action on plain sign-in;
   // SSO-only mode hides local sign-in unless the owner uses `?owner=1`.
   const sso = invite ? { provider: null, local: true, breakGlass: false } : ssoLayout(status, typeof location === 'undefined' ? '' : location.search)
@@ -208,21 +211,21 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
         )}
         {status.setupRequired && !invite && (
           <p className="mb-4 rounded-control bg-accent-soft p-3 text-body text-on-accent-soft">
-            Welcome! Create the owner account for this server. Only you can do this; sign-up closes afterwards unless you open it.
+            {t('Welcome! Create the owner account for this server. Only you can do this; sign-up closes afterwards unless you open it.')}
           </p>
         )}
         {invite?.project && (
           <p className="mb-4 rounded-control bg-accent-soft p-3 text-body text-on-accent-soft" data-testid="project-invite-banner">
-            <strong>{invite.preview.inviterName}</strong> invited you to <strong className="user-text">{invite.project.name}</strong> as {invite.project.role}. Create your account to join.
-            {invite.preview.email && <> This link is for <strong>{invite.preview.email}</strong>.</>}
-            <span className="mt-1 block text-meta opacity-80">The link expires {dt.formatInstant(invite.preview.expiresAt, 'datetime')} and works once.</span>
+            {t.rich('<strong>{inviterName}</strong> invited you to <strong2>{name}</strong2> as {role}. Create your account to join.', { inviterName: invite.preview.inviterName, name: invite.project.name, role: roleName(invite.project.role), strong: (chunks) => <strong>{chunks}</strong>, strong2: (chunks) => <strong className="user-text">{chunks}</strong> })}
+            {invite.preview.email && <>{' '}{t.rich('This link is for <strong>{email}</strong>.', { email: invite.preview.email, strong: (chunks) => <strong>{chunks}</strong> })}</>}
+            <span className="mt-1 block text-meta opacity-80">{t('The link expires {instant} and works once.', { instant: dt.formatInstant(invite.preview.expiresAt, 'datetime') })}</span>
           </p>
         )}
         {invite && !invite.project && (
           <p className="mb-4 rounded-control bg-accent-soft p-3 text-body text-on-accent-soft">
-            <strong>{invite.preview.inviterName}</strong> invited you to join this server. Create your account below.
-            {invite.preview.email && <> This invitation is for <strong>{invite.preview.email}</strong>.</>}
-            <span className="mt-1 block text-meta opacity-80">The link expires {dt.formatInstant(invite.preview.expiresAt, 'datetime')} and works once.</span>
+            {t.rich('<strong>{inviterName}</strong> invited you to join this server. Create your account below.', { inviterName: invite.preview.inviterName, strong: (chunks) => <strong>{chunks}</strong> })}
+            {invite.preview.email && <>{' '}{t.rich('This invitation is for <strong>{email}</strong>.', { email: invite.preview.email, strong: (chunks) => <strong>{chunks}</strong> })}</>}
+            <span className="mt-1 block text-meta opacity-80">{t('The link expires {instant} and works once.', { instant: dt.formatInstant(invite.preview.expiresAt, 'datetime') })}</span>
           </p>
         )}
 
@@ -231,34 +234,34 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
         )}
         {sso.provider && mode === 'login' && sso.local && <OrDivider />}
         {!sso.local && error && <p className="mt-3 text-body text-danger" role="alert">{error}</p>}
-        {!sso.local && <p className="mt-3 text-center text-meta text-muted">This server uses single sign-on for every account.</p>}
+        {!sso.local && <p className="mt-3 text-center text-meta text-muted">{t('This server uses single sign-on for every account.')}</p>}
         {sso.breakGlass && (
           <p className="mb-3 rounded-control bg-warning-soft p-2 text-meta text-on-warning-soft">
-            Owner sign-in: only the server owner can sign in with a password while single sign-on is required.
+            {t('Owner sign-in: only the server owner can sign in with a password while single sign-on is required.')}
           </p>
         )}
 
         {checkEmail && (
           <div className="space-y-3" data-check-email role="status">
-            <p className="text-body font-medium text-strong">Check your email</p>
+            <p className="text-body font-medium text-strong">{t('Check your email')}</p>
             <p className="text-meta text-muted">
-              We sent a link to <strong className="text-default">{checkEmail}</strong>. Open it within 24 hours to create your account. Nothing is created until you do.
+              {t.rich('We sent a link to <strong>{checkEmail}</strong>. Open it within 24 hours to create your account. Nothing is created until you do.', { checkEmail, strong: (chunks) => <strong className="text-default">{chunks}</strong> })}
             </p>
-            {resent && <p className="text-meta text-muted">A new link is on its way; the earlier one no longer works.</p>}
+            {resent && <p className="text-meta text-muted">{t('A new link is on its way; the earlier one no longer works.')}</p>}
             {error && <p className="text-meta text-danger" role="alert">{error}</p>}
-            <button type="button" className="ui-btn ui-btn--secondary ui-btn--md w-full" disabled={busy} onClick={() => void resend()}>Send the link again</button>
-            <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full" onClick={() => { setCheckEmail(null); setMode('login') }}>Back to sign-in</button>
+            <button type="button" className="ui-btn ui-btn--secondary ui-btn--md w-full" disabled={busy} onClick={() => void resend()}>{t('Send the link again')}</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full" onClick={() => { setCheckEmail(null); setMode('login') }}>{t('Back to sign-in')}</button>
           </div>
         )}
         {sso.local && !status.demo && !checkEmail && <form onSubmit={(e) => void submit(e)} className="space-y-3">
           {mode === 'register' && (
             <label className="block text-body">
-              <span className="mb-1 block text-muted">Name</span>
+              <span className="mb-1 block text-muted">{t('Name')}</span>
               <input className="ui-input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" autoFocus={emailLocked} />
             </label>
           )}
           <label className="block text-body">
-            <span className="mb-1 block text-muted">Email {emailLocked && <span className="text-faint">(set by the invitation)</span>}</span>
+            <span className="mb-1 block text-muted">{t('Email')}{' '}{emailLocked && <span className="text-faint">{t('(set by the invitation)')}</span>}</span>
             <input
               className={`ui-input ${emailLocked ? 'bg-sunken dark:bg-raised text-muted' : ''}`}
               type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete={passkeys ? 'username webauthn' : 'email'}
@@ -266,28 +269,29 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
             />
           </label>
           <label className="block text-body">
-            <span className="mb-1 block text-muted">Password {mode === 'register' && <span className="text-faint">(10+ characters)</span>}</span>
+            <span className="mb-1 block text-muted">{t('Password')}{' '}{mode === 'register' && <span className="text-faint">{t('(10+ characters)')}</span>}</span>
             <input className="ui-input" type="password" required minLength={mode === 'register' ? 10 : 1} value={password} onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'} />
           </label>
           {mode === 'login' && !invite && !status.setupRequired && !sso.breakGlass && status.outgoingEmail?.enabled && (
             <p className="-mt-1 text-right text-meta"><a href="/forgot" data-forgot-link className="text-muted underline hover:text-default"
-              onClick={(e) => { e.preventDefault(); navigate({ view: 'forgot' }) }}>Forgot password?</a></p>
+              onClick={(e) => { e.preventDefault(); navigate({ view: 'forgot' }) }}>{t('Forgot password?')}</a></p>
           )}
           {needsSetupToken && (
             <label className="block text-body">
-              <span className="mb-1 block text-muted">Setup token</span>
+              <span className="mb-1 block text-muted">{t('Setup token')}</span>
               <input className="ui-input font-mono" required value={setupToken} onChange={(e) => setSetupToken(e.target.value)}
                 autoComplete="off" spellCheck={false} aria-describedby="setup-token-help" />
               <span id="setup-token-help" className="mt-1 block text-meta text-muted">
-                This server asks for the token its operator configured. Find it in your hosting panel, for example
-                Coolify, this service, Environment Variables, <code>OPENTODO_SETUP_TOKEN</code>.
+                {status.hosted
+                  ? t('Your provider sent this token with the address of your new server.')
+                  : t.rich('This server asks for the token its operator configured. Find it in your hosting panel, for example Coolify, this service, Environment Variables, {variable}.', { variable: <code>OPENTODO_SETUP_TOKEN</code> })}
               </span>
             </label>
           )}
           {error && <p className="text-body text-danger" role="alert">{error}</p>}
           <button className="ui-btn ui-btn--primary ui-btn--md w-full" disabled={busy}>
-            {busy ? 'Please wait…' : mode === 'register' ? (status.setupRequired ? 'Create owner account' : invite?.project ? 'Create account and join' : invite ? 'Accept invitation' : 'Create account') : 'Sign in'}
+            {busy ? t('Please wait…') : mode === 'register' ? (status.setupRequired ? t('Create owner account') : invite?.project ? t('Create account and join') : invite ? t('Accept invitation') : t('Create account')) : t('Sign in')}
           </button>
         </form>}
 
@@ -296,24 +300,24 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
             <OrDivider />
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full border border-input" disabled={busy}
               onClick={() => void signInWithPasskey()}>
-              Sign in with a passkey
+              {t('Sign in with a passkey')}
             </button>
           </>
         )}
 
         {sso.local && !status.setupRequired && status.signupAllowed && !invite && !checkEmail && (
           <button className="ui-btn ui-btn--ghost ui-btn--md mt-3 w-full" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
-            {mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
+            {mode === 'login' ? t('Need an account? Sign up') : t('Have an account? Sign in')}
           </button>
         )}
         {invite && invite.onSignIn && (
           <p className="mt-3 text-center text-meta text-muted">
-            Already have an account here? <button type="button" className="underline" onClick={invite.onSignIn}>Sign in to join</button> instead.
+            {t.rich('Already have an account here? <a>Sign in to join</a> instead.', { a: (chunks) => <button type="button" className="underline" onClick={invite.onSignIn}>{chunks}</button> })}
           </p>
         )}
         {invite && !invite.onSignIn && (
           <p className="mt-3 text-center text-meta text-muted">
-            Already have an account here? <a className="underline" href="/">Sign in</a> instead; invitations are for new accounts only.
+            {t.rich('Already have an account here? <a>Sign in</a> instead; invitations are for new accounts only.', { a: (chunks) => <a className="underline" href="/">{chunks}</a> })}
           </p>
         )}
     </AuthCard>
@@ -326,11 +330,11 @@ export function DemoPanel({ hours, busy, error, onTry }: { hours?: { idle: numbe
   const max = hours?.max ?? 24
   return (
     <div className="mb-4 rounded-control bg-info-soft p-3 text-body text-on-info-soft" data-testid="demo-panel">
-      <p className="font-medium">This is a public demo of OpenTodo.</p>
+      <p className="font-medium">{t('This is a public demo of OpenTodo.')}</p>
       <p className="mt-1 text-meta">
-        You get a private sandbox with sample data that only you can see. It is deleted after {idle} hours of inactivity, after {max} hours at most, and every night. No sign-up; don't store anything personal.
+        {t('You get a private sandbox with sample data that only you can see. It is deleted after {idle} hours of inactivity, after {max} hours at most, and every night. No sign-up; don\'t store anything personal.', { idle, max })}
       </p>
-      <button type="button" className="ui-btn ui-btn--primary ui-btn--md mt-3 w-full" disabled={busy} onClick={onTry}>{busy ? 'Preparing your sandbox…' : 'Try the demo'}</button>
+      <button type="button" className="ui-btn ui-btn--primary ui-btn--md mt-3 w-full" disabled={busy} onClick={onTry}>{busy ? t('Preparing your sandbox…') : t('Try the demo')}</button>
       {error && <p className="mt-2 text-body text-danger" role="alert" data-testid="demo-error">{error}</p>}
     </div>
   )
@@ -341,7 +345,7 @@ export function ProviderSignIn({ name, primary }: { name: string; primary: boole
   return (
     <a href={OIDC_START_URL} className={`${primary ? 'ui-btn ui-btn--primary ui-btn--md' : 'ui-btn ui-btn--secondary ui-btn--md'} flex w-full justify-center`}
       data-testid="sso-sign-in">
-      Sign in with {name}
+      {t('Sign in with {name}', { name })}
     </a>
   )
 }
@@ -349,7 +353,7 @@ export function ProviderSignIn({ name, primary }: { name: string; primary: boole
 function OrDivider() {
   return (
     <div className="my-4 flex items-center gap-3 text-meta text-faint" aria-hidden="true">
-      <span className="h-px flex-1 bg-(--ot-border)" />or<span className="h-px flex-1 bg-(--ot-border)" />
+      <span className="h-px flex-1 bg-(--ot-border)" />{t('or')}<span className="h-px flex-1 bg-(--ot-border)" />
     </div>
   )
 }
@@ -362,12 +366,12 @@ export function AuthCard({ version, children }: { version: string; children: Rea
         <div className="mb-6 flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
           <div>
-            <h1 className="text-h3 font-semibold">OpenTodo</h1>
-            <p className="text-meta text-muted">Your tasks, your server.</p>
+            <h1 className="text-h3 font-semibold">{t('OpenTodo')}</h1>
+            <p className="text-meta text-muted">{t('Your tasks, your server.')}</p>
           </div>
         </div>
         {children}
-        <p className="mt-6 text-center text-meta text-faint">OpenTodo {version} · AGPL-3.0 · no tracking, no telemetry</p>
+        <p className="mt-6 text-center text-meta text-faint">{t('OpenTodo {version} · AGPL-3.0 · no tracking, no telemetry', { version })}</p>
       </div>
     </div>
   )
@@ -396,14 +400,14 @@ export function MfaStepView(p: MfaStepViewProps) {
     <form onSubmit={submit} className="space-y-3" data-testid="mfa-step">
       <p className="text-body text-muted">
         {p.recovery
-          ? 'Enter one of your recovery codes. Each code works once.'
-          : 'Enter the six-digit code from your authenticator app.'}
+          ? t('Enter one of your recovery codes. Each code works once.')
+          : t('Enter the six-digit code from your authenticator app.')}
       </p>
       <label className="block text-body">
-        <span className="mb-1 block text-muted">{p.recovery ? 'Recovery code' : 'Code'}</span>
+        <span className="mb-1 block text-muted">{p.recovery ? t('Recovery code') : t('Code')}</span>
         {p.recovery ? (
           <input className="ui-input font-mono uppercase tracking-wider" autoComplete="off" autoCapitalize="characters" spellCheck={false}
-            required autoFocus value={p.code} onChange={(e) => p.onCode(e.target.value)} placeholder="XXXXX-XXXXX" />
+            required autoFocus value={p.code} onChange={(e) => p.onCode(e.target.value)} placeholder={t('XXXXX-XXXXX')} />
         ) : (
           <input className="ui-input font-mono tracking-widest" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={7}
             required autoFocus value={p.code} onChange={(e) => p.onCode(e.target.value)} />
@@ -411,15 +415,15 @@ export function MfaStepView(p: MfaStepViewProps) {
       </label>
       <label className="flex items-center gap-2 text-body text-muted">
         <input type="checkbox" checked={p.remember} onChange={(e) => p.onRemember(e.target.checked)} />
-        Remember this device for 30 days
+        {t('Remember this device for 30 days')}
       </label>
       {p.error && <p className="text-body text-danger" role="alert">{p.error}</p>}
-      <button className="ui-btn ui-btn--primary ui-btn--md w-full" disabled={p.busy}>{p.busy ? 'Please wait…' : 'Verify'}</button>
+      <button className="ui-btn ui-btn--primary ui-btn--md w-full" disabled={p.busy}>{p.busy ? t('Please wait…') : t('Verify')}</button>
       <div className="flex justify-between gap-2">
         <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => p.onRecovery(!p.recovery)}>
-          {p.recovery ? 'Use a code from the app' : 'Use a recovery code'}
+          {p.recovery ? t('Use a code from the app') : t('Use a recovery code')}
         </button>
-        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={p.onBack}>Back</button>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={p.onBack}>{t('Back')}</button>
       </div>
     </form>
   )
@@ -428,40 +432,45 @@ export function MfaStepView(p: MfaStepViewProps) {
 /** What a failed second step means: retry the code, or start again from the password. */
 export function mfaStepError(err: unknown): { restart: boolean; message: string } {
   if (err instanceof ApiError && err.code === 'mfa_challenge_invalid') {
-    return { restart: true, message: 'Too many wrong codes, or it took too long. Enter your password again.' }
+    return { restart: true, message: t('Too many wrong codes, or it took too long. Enter your password again.') }
   }
   if (err instanceof ApiError && err.code === 'mfa_code_invalid') {
-    return { restart: false, message: 'That code is not valid. Check your authenticator app and try again.' }
+    return { restart: false, message: t('That code is not valid. Check your authenticator app and try again.') }
   }
   return { restart: false, message: describeAuthError(err) }
 }
 
 function passkeyMessage(err: ApiError): string {
-  if (err.code === 'invalid_credentials') return 'That passkey is not registered on this server. Sign in with your password.'
-  if (err.code === 'passkey_challenge_invalid') return 'That took too long. Please try again.'
+  if (err.code === 'invalid_credentials') return t('That passkey is not registered on this server. Sign in with your password.')
+  if (err.code === 'passkey_challenge_invalid') return t('That took too long. Please try again.')
   return describeAuthError(err)
 }
 
 /** Turns an API failure into a sentence a person can act on. */
 export function describeAuthError(err: unknown): string {
-  if (!(err instanceof ApiError)) return 'Something went wrong. Is the server reachable?'
+  if (!(err instanceof ApiError)) return t('Something went wrong. Is the server reachable?')
   switch (err.code) {
     case 'invitation_invalid':
-      return 'This invitation link is no longer valid. It may have expired, been revoked or already been used.'
+      return t('This invitation link is no longer valid. It may have expired, been revoked or already been used.')
     case 'invitation_email_mismatch':
-      return 'This invitation was issued for a different email address.'
+      return t('This invitation was issued for a different email address.')
     case 'email_taken':
-      return 'An account with this email already exists. Sign in instead.'
+      return t('An account with this email already exists. Sign in instead.')
     case 'rate_limited':
-      return 'Too many attempts. Wait a minute and try again.'
+      return t('Too many attempts. Wait a minute and try again.')
     case 'setup_token_invalid':
-      return 'That setup token is not right. Copy OPENTODO_SETUP_TOKEN from your hosting panel and try again.'
+      return t('That setup token is not right. Copy OPENTODO_SETUP_TOKEN from your hosting panel and try again.')
     case 'signup_closed':
-      return 'Sign-up is closed on this server. Ask the owner for an invitation link.'
+      return t('Sign-up is closed on this server. Ask the owner for an invitation link.')
     case 'account_deactivated':
-      return 'This account has been deactivated. Ask the server owner or an admin to reactivate it.'
+      return t('This account has been deactivated. Ask the server owner or an admin to reactivate it.')
     case 'sso_required':
-      return 'This server requires single sign-on for your account. Use the "Sign in with" button instead.'
+      return t('This server requires single sign-on for your account. Use the "Sign in with" button instead.')
+    // A hosted server's limits (OpenSpec `multi-tenant-host`).
+    case 'limit_members':
+      return t('This server has as many members as its plan allows. Ask the owner to make room or upgrade.')
+    case 'limit_requests':
+      return t('This server is receiving too many requests. Wait a minute and try again.')
     default:
       return err.message
   }

@@ -14,6 +14,7 @@ import { RecurrenceField } from '../RecurrenceField'
 import { RemindersField } from '../RemindersField'
 import { parkWithUndo } from '../undoable'
 import { useViewerZone } from '../useViews'
+import { t } from '../../lib/i18n'
 
 export type WhenSegment = 'due' | 'start' | 'deadline' | 'evening' | 'repeat' | 'reminders'
 
@@ -52,44 +53,44 @@ export function WhenControl({ task, readOnly = false, focus = 'due', onDone, onO
 
   return (
     <div ref={root} data-when-control className="space-y-3">
-      <Segment id="due" icon="calendar-days" label="Do on">
+      <Segment id="due" icon="calendar-days" label={t('Do on')}>
         <DueField task={task} readOnly={readOnly} />
       </Segment>
 
-      <Segment id="start" icon="calendar-range" label="Start">
+      <Segment id="start" icon="calendar-range" label={t('Start')}>
         <div className="flex flex-wrap items-start gap-2">
-          <Button variant="ghost" size="sm" aria-pressed={!task.start} onClick={() => void unparkTask(task.id)}>Anytime</Button>
-          <DateField label="Start date" hideLabel className="min-w-44 flex-1" value={task.start && task.start !== 'someday' ? task.start : null}
-            validate={(iso) => (local && iso > local.date ? 'The start must be on or before the due date.' : null)}
+          <Button variant="ghost" size="sm" aria-pressed={!task.start} onClick={() => void unparkTask(task.id)}>{t('Anytime')}</Button>
+          <DateField label={t('Start date')} hideLabel className="min-w-44 flex-1" value={task.start && task.start !== 'someday' ? task.start : null}
+            validate={(iso) => (local && iso > local.date ? t('The start must be on or before the due date.') : null)}
             onChange={(start) => void updateTask(task.id, { start })} />
-          <Button variant="ghost" size="sm" icon="archive" aria-pressed={task.start === 'someday'} onClick={() => void parkWithUndo(task.id)}>Someday</Button>
+          <Button variant="ghost" size="sm" icon="archive" aria-pressed={task.start === 'someday'} onClick={() => void parkWithUndo(task.id)}>{t('Someday')}</Button>
         </div>
       </Segment>
 
-      <Segment id="deadline" icon="hourglass" label="Deadline">
+      <Segment id="deadline" icon="hourglass" label={t('Deadline')}>
         <div className="flex flex-wrap items-start gap-2">
-          <DateField label="Deadline" hideLabel className="min-w-44 flex-1" value={task.deadline ?? null}
+          <DateField label={t('Deadline')} hideLabel className="min-w-44 flex-1" value={task.deadline ?? null}
             onChange={(deadline) => void updateTask(task.id, { deadline })} />
-          {task.deadline && <IconButton icon="x" label="Clear deadline" onClick={() => void updateTask(task.id, { deadline: null })} />}
+          {task.deadline && <IconButton icon="x" label={t('Clear deadline')} onClick={() => void updateTask(task.id, { deadline: null })} />}
         </div>
       </Segment>
 
-      <Segment id="evening" icon="moon" label="Evening">
-        <Switch label="This Evening" description="Listed in the evening group of Today" checked={!!task.evening} disabled={readOnly}
+      <Segment id="evening" icon="moon" label={t('Evening')}>
+        <Switch label={t('This Evening')} description={t('Listed in the evening group of Today')} checked={!!task.evening} disabled={readOnly}
           onChange={(on) => void updateTask(task.id, { evening: on })} />
       </Segment>
 
-      <Segment id="repeat" icon="repeat" label="Repeat">
+      <Segment id="repeat" icon="repeat" label={t('Repeat')}>
         <RecurrenceField task={task} onOpen={onOpen} />
       </Segment>
 
-      <Segment id="reminders" icon="alarm-clock" label="Reminders">
+      <Segment id="reminders" icon="alarm-clock" label={t('Reminders')}>
         <fieldset disabled={readOnly} className="min-w-0"><RemindersField task={task} /></fieldset>
       </Segment>
 
       {onDone && (
         <div className="flex justify-end border-t border-default pt-2">
-          <Button size="sm" onClick={onDone}>Done</Button>
+          <Button size="sm" onClick={onDone}>{t('Done')}</Button>
         </div>
       )}
     </div>

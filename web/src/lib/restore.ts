@@ -1,21 +1,22 @@
 // Web restore helpers (OpenSpec backup-restore-web): error copy, waiting for the
 // server to come back after its restart, and the note on the sign-in screen.
 import { ApiError } from './api'
+import { t, msg } from './i18n'
 
 /** What a failed restore step means, in the owner's words. */
 export function restoreErrorMessage(err: unknown): string {
-  if (!(err instanceof ApiError)) return 'The server is unreachable. Restoring needs a connection.'
+  if (!(err instanceof ApiError)) return t('The server is unreachable. Restoring needs a connection.')
   switch (err.code) {
-    case 'passphrase_required': return 'This archive is encrypted. Enter the passphrase it was made with.'
-    case 'passphrase_invalid': return 'That passphrase does not open this archive.'
-    case 'newer_schema': return `This archive comes from a newer version of OpenTodo. Update this server first. (${err.message})`
-    case 'integrity': return `This is not a usable OpenTodo backup: ${err.message}`
-    case 'insufficient_storage': return `Not enough free disk space on the server: ${err.message}`
-    case 'not_found': return 'This restore is no longer prepared. Choose the archive again.'
-    case 'conflict': return 'A backup is running. Try again when it has finished.'
-    case 'destination_error': return `The backup destination could not be reached: ${err.message}`
-    case 'rate_limited': return 'Too many attempts. Wait a minute and try again.'
-    case 'reauth_required': return 'Confirm your identity to restore.'
+    case 'passphrase_required': return t('This archive is encrypted. Enter the passphrase it was made with.')
+    case 'passphrase_invalid': return t('That passphrase does not open this archive.')
+    case 'newer_schema': return t('This archive comes from a newer version of OpenTodo. Update this server first. ({detail})', { detail: err.serverMessage })
+    case 'integrity': return t('This is not a usable OpenTodo backup: {detail}', { detail: err.serverMessage })
+    case 'insufficient_storage': return t('Not enough free disk space on the server: {detail}', { detail: err.serverMessage })
+    case 'not_found': return t('This restore is no longer prepared. Choose the archive again.')
+    case 'conflict': return t('A backup is running. Try again when it has finished.')
+    case 'destination_error': return t('The backup destination could not be reached: {detail}', { detail: err.serverMessage })
+    case 'rate_limited': return t('Too many attempts. Wait a minute and try again.')
+    case 'reauth_required': return t('Confirm your identity to restore.')
     case 'proxy_too_large': return err.message
     default: return err.message
   }
@@ -44,7 +45,7 @@ export function consumeRestored(): boolean {
   }
 }
 
-export const RESTORED_NOTICE = 'This server was restored from a backup. Sign in again; sessions started after the backup ended.'
+export const RESTORED_NOTICE = msg('This server was restored from a backup. Sign in again; sessions started after the backup ended.')
 
 export interface WaitOptions {
   intervalMs?: number

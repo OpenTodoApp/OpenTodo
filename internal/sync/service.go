@@ -10,6 +10,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/pixari/opentodo/internal/ids"
 	"github.com/pixari/opentodo/internal/notify"
 )
 
@@ -31,7 +32,36 @@ type Service struct {
 	pullBudget int
 	// guard bounds writes on a demo instance (demo-sandboxes D3); nil elsewhere.
 	guard WriteGuard
+	// quota refuses single ops once a hosted tenant reached a limit
+	// (multi-tenant-host D5); nil elsewhere.
+	quota Quota
 }
+
+// Quota bounds what a hosted tenant may store (OpenSpec `multi-tenant-host`,
+// design D5). Admit runs once per batch inside Apply's transaction and returns
+// the check for each op that would be stored: "" admits it, a reason (one of
+// the Reason* limit constants) refuses that op alone, reported in Rejected like
+// any other refusal, so the rest of a device's outbox keeps syncing. Stored is
+// told how many ops were kept once the batch committed.
+type Quota interface {
+	Admit(ctx context.Context, tx *sql.Tx) (func(op Op) string, error)
+	Stored(n int)
+}
+
+// Refusal reasons of a tenant's limits (multi-tenant-host D5).
+const (
+	ReasonLimitStorage  = "limit_storage"
+	ReasonLimitOpsHour  = "limit_ops_hour"
+	ReasonLimitOpsTotal = "limit_ops_total"
+)
+
+// IsLimitReason reports whether a refusal reason names a tenant limit.
+func IsLimitReason(r string) bool {
+	return r == ReasonLimitStorage || r == ReasonLimitOpsHour || r == ReasonLimitOpsTotal
+}
+
+// SetQuota installs the tenant quota (nil removes it). Call it during wiring.
+func (s *Service) SetQuota(q Quota) { s.quota = q }
 
 // WriteGuard bounds what one account may write (OpenSpec change
 // `demo-sandboxes`, design D3). CheckOp runs for every op before the batch's
@@ -181,9 +211,55 @@ func (s *Service) Apply(ctx context.Context, userID string, ops []Op) (ApplyResu
 }
 
 // ApplyStrict is Apply for the REST API: one refused op refuses the whole batch
-// with a *RejectedError and nothing is stored.
+// with a *RejectedError and nothing is stored. A task completion without
+// completed_by gets one for userID (see StampCompletedBy).
 func (s *Service) ApplyStrict(ctx context.Context, userID string, ops []Op) (ApplyResult, error) {
-	return s.apply(ctx, userID, ops, true)
+	return s.apply(ctx, userID, StampCompletedBy(userID, ops), true)
+}
+
+// StampCompletedBy records who completed a task (OpenSpec change
+// completed-date-filters, design D5) for server-side writes: a task completed_at
+// op without a completed_by op for the same task in the batch gains one, set to
+// userID when it completes and to null when it reopens, with the same timestamp
+// and device so both fields resolve to the same winner. A creation that leaves
+// the task open needs nothing. The added op's id derives from the completed_at
+// op's, so a retried batch stays a duplicate. Devices write the field themselves:
+// Apply (the sync path) does not stamp.
+func StampCompletedBy(userID string, ops []Op) []Op {
+	has := map[string]bool{}
+	creates := map[string]bool{}
+	for _, op := range ops {
+		if op.Entity != "task" {
+			continue
+		}
+		switch op.Field {
+		case "completed_by":
+			has[op.EntityID] = true
+		case "created_at":
+			creates[op.EntityID] = true
+		}
+	}
+	var extra []Op
+	for _, op := range ops {
+		if op.Entity != "task" || op.Field != "completed_at" || has[op.EntityID] {
+			continue
+		}
+		done := !nullish(op.Value)
+		if !done && creates[op.EntityID] {
+			continue
+		}
+		value := json.RawMessage("null")
+		if done {
+			value = jsonOf(userID)
+		}
+		has[op.EntityID] = true
+		extra = append(extra, Op{ID: ids.NameID("completed_by", op.ID), Entity: "task", EntityID: op.EntityID,
+			Field: "completed_by", Value: value, TS: op.TS, Device: op.Device})
+	}
+	if len(extra) == 0 {
+		return ops
+	}
+	return append(append(make([]Op, 0, len(ops)+len(extra)), ops...), extra...)
 }
 
 func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict bool) (ApplyResult, error) {
@@ -222,6 +298,12 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	rs.allowComment = func() bool { return s.commentLimiter.allow(userID) }
 	rs.attachmentLimit = attachmentLimit
 	pc := &purgeChecker{ctx: ctx, q: tx, acc: acc, cache: map[string]bool{}}
+	var admit func(Op) string
+	if s.quota != nil && ctx.Value(guardKey{}) == nil {
+		if admit, err = s.quota.Admit(ctx, tx); err != nil {
+			return res, err
+		}
+	}
 	tracker := newChangeTracker(userID)
 	touched := map[string]bool{}
 	var refused, rewritten []Op
@@ -257,12 +339,20 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			res.Duplicates++
 			continue
 		}
+		if reason == "" && admit != nil {
+			reason = admit(op)
+		}
 		if reason != "" {
 			if strict {
 				return ApplyResult{}, &RejectedError{Op: op, Reason: reason, Detail: rs.detail}
 			}
 			res.Rejected = append(res.Rejected, Rejection{ID: op.ID, Reason: reason})
-			refused = append(refused, op)
+			// A limit refusal is not a verdict on the value: the device keeps its
+			// change and sends it again later, so the server's value is not
+			// handed back to overwrite it (multi-tenant-host D5).
+			if !IsLimitReason(reason) {
+				refused = append(refused, op)
+			}
 			continue
 		}
 		// Mentions keep current members only (comments-and-activity D2): the op
@@ -307,6 +397,9 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	}
 	if err := tx.Commit(); err != nil {
 		return res, err
+	}
+	if s.quota != nil && res.Applied > 0 {
+		s.quota.Stored(res.Applied)
 	}
 	changes := tracker.changes()
 	if s.observer != nil && len(changes) > 0 {

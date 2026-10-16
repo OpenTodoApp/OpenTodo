@@ -41,9 +41,9 @@ A file matching none of these is refused with `400 unsupported_format`, naming t
 
 ### Own export (`opentodo`)
 
-The file from **Settings → Data → Download export** or `GET /api/v1/export`. Labels, projects (with their sub-project tree), sections, tasks (with subtasks, completion and tombstones), reminders and saved views are recreated with their original ids and field values, so importing an export into an empty account and exporting again gives an equivalent file (comments aside, see below).
+The file from **Settings → Data → Download export** or `GET /api/v1/export`. Labels, projects (with their sub-project tree), sections, custom field definitions (`fields`, deleted ones included), tasks (with subtasks, completion, tombstones and their `fields` values), reminders and saved views are recreated with their original ids and field values, so importing an export into an empty account and exporting again gives an equivalent file (comments aside, see below).
 
-Because ids are kept, nothing needs remapping: a task's `section_id`, a recurring series and its occurrence records (`series_id`, whose ids are derived from the series id), a reminder's `task_id`, a task's `blocked_by` and a dashboard's `panels` all point at the same entities as before. Every task field is carried: `recurrence` (stored in canonical form, for example `Every  Monday` becomes `every monday`), `series_id`, `section_id`, `notes_doc` (rich-text notes), `due` including a zoned `tz`, `estimate_minutes` and `ical_extra`.
+Because ids are kept, nothing needs remapping: a task's `section_id`, a recurring series and its occurrence records (`series_id`, whose ids are derived from the series id), a reminder's `task_id`, a task's `blocked_by` and a dashboard's `panels` all point at the same entities as before. Every task field is carried: `recurrence` (stored in canonical form, for example `Every  Monday` becomes `every monday`), `series_id`, `section_id`, `notes_doc` (rich-text notes), `due` including a zoned `tz`, `estimate_minutes`, `ical_extra` and every custom field value in `fields`, including values of definitions that were deleted or belong to another project. The preview counts the definitions it creates as `fields`.
 
 What is handled differently, and why:
 
@@ -72,7 +72,7 @@ Todoist exports one project as CSV from the project's menu, and keeps backups of
 | `DESCRIPTION` | the description |
 | `DATE` with `DATE_LANG` | the due date (and time); recurring dates become a rule, see below |
 | `DURATION` in minutes | the estimate |
-| `REMINDER_OFFSET` / `REMINDER_DATE` | a relative or absolute reminder |
+| `REMINDER_OFFSET` / `REMINDER_DATE` | a relative or absolute reminder (an absolute one in the row's `TIMEZONE`) |
 | `note` row | appended to the task's description under "Comments" (with a warning) |
 | `DEADLINE` | the task's [deadline](tasks-and-projects.md#deadlines), read with `DEADLINE_LANG` like `DATE`; a value that cannot be read is kept as a "Deadline: …" line in the description (with a warning) |
 | `RESPONSIBLE` | dropped with a warning |
@@ -95,7 +95,7 @@ TickTick's backup is one CSV, created from its settings (Backup). It starts with
 | `Content` | the description |
 | `Priority` 5 / 3 / 1 / 0 | p1 / p2 / p3 / p4 |
 | `Due Date`, `Is All Day`, `Is Floating`, `Timezone` | the due date (and time) as you saw it in TickTick |
-| `Reminder` | reminders (for example `-PT15M`) |
+| `Reminder` | reminders (for example `-PT15M`); on an all-day task the trigger counts from midnight, so `PT9H` fires at 09:00 on the day |
 | `Repeat` (RRULE) | a recurrence rule, when the grammar can express it |
 | `Status` 2 / -1 | completed / completed with the label `canceled` (abandoned) |
 

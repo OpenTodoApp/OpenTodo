@@ -1,27 +1,29 @@
 // Duration filter (OpenSpec `time-blocking`, design D6): one predicate per kind, shared
 // by the list views' filter chips and reusable by the filter query language.
 import type { Task } from './types'
+import { msg, translatedList } from './i18n'
 
 export type DurationFilter = 'quick' | 'under30' | 'over60' | 'unestimated'
 
-export const DURATION_FILTERS: readonly { kind: DurationFilter; label: string; title: string }[] = [
-  { kind: 'quick', label: 'Quick wins', title: 'Estimated at 15 minutes or less' },
-  { kind: 'under30', label: 'Under 30 min', title: 'Estimated at less than 30 minutes' },
-  { kind: 'over60', label: 'Over 1 h', title: 'Estimated at more than one hour' },
-  { kind: 'unestimated', label: 'Unestimated', title: 'No estimate yet' },
-]
+type DurationOption = { kind: DurationFilter; label: string; title: string }
+export const DURATION_FILTERS: readonly DurationOption[] = translatedList<DurationOption, 'label' | 'title'>([
+  { kind: 'quick', label: msg('Quick wins'), title: msg('Estimated at 15 minutes or less') },
+  { kind: 'under30', label: msg('Under 30 min'), title: msg('Estimated at less than 30 minutes') },
+  { kind: 'over60', label: msg('Over 1 h'), title: msg('Estimated at more than one hour') },
+  { kind: 'unestimated', label: msg('Unestimated'), title: msg('No estimate yet') },
+], 'label', 'title')
 
 /** The minute bound behind each kind; `filter-query-language` maps `estimate <= 15` and friends onto these. */
 export function durationPredicate(kind: DurationFilter): (task: Pick<Task, 'estimate_minutes'>) => boolean {
   switch (kind) {
     case 'quick':
-      return (t) => t.estimate_minutes !== null && t.estimate_minutes <= 15
+      return (tk) => tk.estimate_minutes !== null && tk.estimate_minutes <= 15
     case 'under30':
-      return (t) => t.estimate_minutes !== null && t.estimate_minutes < 30
+      return (item) => item.estimate_minutes !== null && item.estimate_minutes < 30
     case 'over60':
-      return (t) => t.estimate_minutes !== null && t.estimate_minutes > 60
+      return (task) => task.estimate_minutes !== null && task.estimate_minutes > 60
     case 'unestimated':
-      return (t) => t.estimate_minutes === null
+      return (task) => task.estimate_minutes === null
   }
 }
 

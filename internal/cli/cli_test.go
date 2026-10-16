@@ -418,6 +418,12 @@ func TestListFiltersAndOrdering(t *testing.T) {
 		{[]string{"list", "--json"}, []string{"rent0001", "plum0001", "plant001", "dent0001", "book0001"}},
 		{[]string{"list", "--all", "--json"}, []string{"rent0001", "done0001", "plum0001", "plant001", "dent0001", "book0001"}},
 		{[]string{"list", "--limit", "2", "--json"}, []string{"rent0001", "plum0001"}},
+		// Completion range (completed-date-filters): done0001 was completed at 1700000000000.
+		{[]string{"list", "--completed-after", "1699999999999", "--completed-before", "1700000000001", "--json"}, []string{"done0001"}},
+		{[]string{"list", "--completed-after", "2023-11-14T22:13:20Z", "--json"}, []string{"done0001"}},
+		{[]string{"list", "--completed", "--completed-before", "2023-11-14", "--json"}, []string{}},
+		{[]string{"list", "--completed-after", "2023-11-15T00:00:00Z", "--json"}, []string{}},
+		{[]string{"list", "--project", "home", "--completed-after", "2020-01-01", "--json"}, []string{}},
 	}
 	for _, c := range cases {
 		out := h.mustRun(c.args...)
@@ -443,6 +449,12 @@ func TestListFiltersAndOrdering(t *testing.T) {
 	}
 	if code, _, errb = h.run("list", "--today", "--inbox"); code != ExitUsage || !strings.Contains(errb, "choose one") {
 		t.Fatalf("two views: exit %d %q", code, errb)
+	}
+	if code, _, errb = h.run("list", "--completed-after", "lastweek"); code != ExitUsage || !strings.Contains(errb, "--completed-after") || !strings.Contains(errb, "YYYY-MM-DD") {
+		t.Fatalf("bad completion date: exit %d %q", code, errb)
+	}
+	if code, _, errb = h.run("list", "--today", "--completed-after", "2026-10-01"); code != ExitUsage || !strings.Contains(errb, "--today") {
+		t.Fatalf("range with --today: exit %d %q", code, errb)
 	}
 }
 

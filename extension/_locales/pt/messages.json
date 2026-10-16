@@ -1,0 +1,74 @@
+{
+  "extName": {
+    "message": "OpenTodo Capture"
+  },
+  "extDescription": {
+    "message": "Envie a página atual, o título, o texto selecionado ou uma captura de tela para a tela de captura do seu próprio servidor OpenTodo. Sem rastreamento, sem requisições de rede."
+  },
+  "actionTitle": {
+    "message": "Adicionar ao OpenTodo"
+  },
+  "commandDescription": {
+    "message": "Adicionar a página atual ao OpenTodo"
+  },
+  "menuScreenshot": {
+    "message": "Adicionar captura de tela ao OpenTodo"
+  },
+  "optionsTitle": {
+    "message": "Configurações do OpenTodo Capture"
+  },
+  "optionsIntro": {
+    "message": "Informe o endereço do seu servidor OpenTodo. A extensão abre a tela de captura desse servidor para a página atual. Ela guarda apenas este endereço, não guarda senha nem token e nunca contata o servidor por conta própria."
+  },
+  "pendingNote": {
+    "message": "Defina seu servidor para continuar adicionando “$TITLE$”.",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example page"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "esta página"
+  },
+  "serverLabel": {
+    "message": "URL do servidor"
+  },
+  "save": {
+    "message": "Salvar"
+  },
+  "screenshotsHeading": {
+    "message": "Capturas de tela"
+  },
+  "screenshotsIntro": {
+    "message": "“Adicionar captura de tela ao OpenTodo” captura a parte visível de uma página e entrega a imagem à janela de captura do seu servidor, onde nada é salvo até você clicar em Salvar. Para entregá-la, precisa de acesso ao endereço do seu servidor, e só a ele; o navegador pede isso quando você o salva."
+  },
+  "screenshotsAllowed": {
+    "message": "Capturas de tela: permitidas para $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  },
+  "screenshotsNotAllowed": {
+    "message": "Capturas de tela: ainda não permitidas. A extensão precisa de acesso ao seu servidor só para entregar uma captura de tela à janela de captura."
+  },
+  "allowScreenshots": {
+    "message": "Permitir capturas de tela"
+  },
+  "invalidAddress": {
+    "message": "Informe um endereço http:// ou https://, por exemplo https://todo.example.com"
+  },
+  "saved": {
+    "message": "Salvo. As capturas vão para $ORIGIN$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  }
+}

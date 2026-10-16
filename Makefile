@@ -5,9 +5,9 @@ CLI_PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 
 EXT_ZIP := dist/opentodo-browser-extension.zip
 SKILL_ZIP := dist/opentodo-agent-skill.zip
-EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png
+EXT_FILES := manifest.json background.js share-url.js options.html options.js icons/icon-16.png icons/icon-48.png icons/icon-128.png _locales
 
-.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke storybook ui-check ui-baselines ui-lint
+.PHONY: site-bundle all web server cli cli-release cli-smoke skill extension build run dev test test-go test-web test-extension check lint clean docker openspec-validate layout-check docs docs-check docs-screenshots screens docs-site-check coolify-check coolify-smoke storybook ui-check ui-baselines ui-lint i18n-check
 
 all: build
 
@@ -47,7 +47,7 @@ skill:
 extension: test-extension
 	@node -e 'const m = require("./extension/manifest.json"); const opt = JSON.stringify(m.optional_host_permissions ?? []); if (m.host_permissions || m.content_scripts || (opt !== "[]" && opt !== JSON.stringify(["https://*/*", "http://*/*"]))) { console.error("extension/manifest.json must not declare host permissions or content scripts (only the optional http(s) access asked for the server origin)"); process.exit(1) }'
 	@mkdir -p dist && rm -f $(EXT_ZIP)
-	cd extension && zip -q -X ../$(EXT_ZIP) $(EXT_FILES)
+	cd extension && zip -q -X -r ../$(EXT_ZIP) $(EXT_FILES)
 	@echo "  $(EXT_ZIP) ($$(wc -c < $(EXT_ZIP)) bytes)"
 
 build: web server
@@ -108,7 +108,7 @@ test-web:
 	cd web && npm test
 
 test-extension:
-	node --test extension/share-url.test.js
+	node --test extension/share-url.test.js extension/locales.test.js
 
 lint:
 	go vet ./...
@@ -163,12 +163,18 @@ coolify-check:
 coolify-smoke:
 	node scripts/coolify-template-check.mjs --smoke
 
-check: lint test ui-lint docs-check openspec-validate coolify-check
+check: lint test ui-lint i18n-check docs-check openspec-validate coolify-check
 
 ## Design-system check (ui-primitives): stories for every shared component, no
 ## emoji or glyph icons in web/src/app.
 ui-lint:
 	node scripts/ui-check.mjs
+
+## Translation catalogs (app-localization): every shipped catalog complete, no stale
+## or malformed entries, placeholders as in the source; script tests included.
+i18n-check:
+	node --test scripts/i18n/extract.test.mjs scripts/i18n/untranslated.test.mjs scripts/i18n-check.test.mjs
+	node scripts/i18n-check.mjs
 
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t opentodo:$(VERSION) .

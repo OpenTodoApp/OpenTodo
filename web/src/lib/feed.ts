@@ -17,19 +17,20 @@ import { LOCAL_RETENTION, newestFirst, projectActivity } from './activity'
 import { db, getMeta, setMeta } from './db'
 import { mutateMany, type Change } from './ops'
 import type { ActivityEvent, ActivityKind, ActivityPage } from './types'
+import { msg, translatedList } from './i18n'
 
 // ---- kinds (same table as internal/activity/feed.go) ----
 
 export type FeedKind = 'completed' | 'created' | 'commented' | 'assigned' | 'rescheduled' | 'other'
 
-export const FEED_KINDS: { value: FeedKind; label: string }[] = [
-  { value: 'completed', label: 'Completed' },
-  { value: 'created', label: 'Created' },
-  { value: 'commented', label: 'Commented' },
-  { value: 'assigned', label: 'Assigned' },
-  { value: 'rescheduled', label: 'Rescheduled' },
-  { value: 'other', label: 'Other' },
-]
+export const FEED_KINDS: { value: FeedKind; label: string }[] = translatedList<{ value: FeedKind; label: string }, 'label'>([
+  { value: 'completed', label: msg('Completed') },
+  { value: 'created', label: msg('Created') },
+  { value: 'commented', label: msg('Commented') },
+  { value: 'assigned', label: msg('Assigned') },
+  { value: 'rescheduled', label: msg('Rescheduled') },
+  { value: 'other', label: msg('Other') },
+], 'label')
 
 export function feedKindOf(kind: ActivityKind): FeedKind {
   switch (kind) {

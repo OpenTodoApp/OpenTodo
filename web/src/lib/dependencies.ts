@@ -8,6 +8,7 @@ import { db } from './db'
 import { getDeviceId, mutate, mutationTables } from './ops'
 import { membershipMap, scopeOf } from './sharing'
 import type { Membership, Task } from './types'
+import { t } from './i18n'
 
 /** The server's limit on blockers per task. */
 export const MAX_BLOCKED_BY = 50
@@ -163,22 +164,22 @@ export async function setBlockedBy(taskId: string, ids: string[]): Promise<void>
     const task = await db.tasks.get(taskId)
     if (!task || task.deleted_at) throw new Error('Task not found')
     const list = [...new Set(ids)]
-    if (list.length > MAX_BLOCKED_BY) throw new Error(`A task can wait for at most ${MAX_BLOCKED_BY} tasks`)
+    if (list.length > MAX_BLOCKED_BY) throw new Error(t('A task can wait for at most {max} tasks', { max: MAX_BLOCKED_BY }))
     const current = blockersOf(task)
     const added = list.filter((id) => !current.includes(id))
     if (added.length) {
       const all = await db.tasks.toArray()
-      const byId = new Map(all.map((t) => [t.id, t]))
+      const byId = new Map(all.map((x) => [x.id, x]))
       const scope = scopeOf(task.project_id, memberships)
       byId.set(taskId, { ...task, blocked_by: list })
       for (const id of added) {
-        if (id === taskId) throw new Error('A task cannot wait for itself')
+        if (id === taskId) throw new Error(t('A task cannot wait for itself'))
         const other = byId.get(id)
         if (other && scopeOf(other.project_id, memberships) !== scope) {
-          throw new Error(`“${other.title || 'Untitled'}” is in a project shared differently; a task can only wait for tasks shared the same way`)
+          throw new Error(t('“{title}” is in a project shared differently; a task can only wait for tasks shared the same way', { title: other.title || t('Untitled') }))
         }
         if (reaches(id, taskId, byId)) {
-          throw new Error(`“${other?.title || 'That task'}” already waits for this task, so it cannot block it`)
+          throw new Error(t('“{title}” already waits for this task, so it cannot block it', { title: other?.title || t('That task') }))
         }
       }
     }

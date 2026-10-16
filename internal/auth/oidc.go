@@ -120,6 +120,9 @@ func (s *Service) MatchOrProvision(ctx context.Context, id ExternalIdentity, all
 		if !s.allowSignup && !allowProvision {
 			return nil, false, false, ErrSignupClosed
 		}
+		if err := s.checkMemberLimit(ctx, tx); err != nil {
+			return nil, false, false, err
+		}
 		name := strings.TrimSpace(id.Name)
 		u = &User{ID: ids.New(), Email: email, Name: truncate(name, 100), Role: "member", CreatedAt: now}
 		// No password: the account signs in through the provider (an empty hash

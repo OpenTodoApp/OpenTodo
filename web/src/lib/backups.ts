@@ -3,11 +3,17 @@
 // screen still has something to show while offline.
 import { getMeta, setMeta } from './db'
 import type { BackupRun, BackupSettings, BackupStatus } from './types'
-import { formatInstant, formatTime } from './dates'
+import { formatInstant, formatTime, dateLocaleOf } from './dates'
+import { t } from './i18n'
 
 const STATUS_KEY = 'backupStatus'
 
-export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+/** Weekday 0 (Sunday) … 6 as the interface language writes it. */
+export function weekdayName(day: number): string {
+  return new Intl.DateTimeFormat(dateLocaleOf(), { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 9, 11 + day)))
+}
+
+export const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6]
 
 export function defaultBackupSettings(): BackupSettings {
   return {
@@ -39,20 +45,21 @@ export function formatBytes(n: number): string {
 export function scheduleLabel(s: BackupSettings['schedule']): string {
   switch (s.frequency) {
     case 'hourly':
-      return `Every hour at :${s.time.slice(3)}`
+      return t('Every hour at :{minute}', { minute: s.time.slice(3) })
     case 'daily':
-      return `Every day at ${formatTime(s.time)}`
+      return t('Every day at {time}', { time: formatTime(s.time) })
     case 'weekly':
-      return `Every ${WEEKDAYS[s.weekday] ?? 'week'} at ${formatTime(s.time)}`
+      return s.weekday >= 0 && s.weekday <= 6 ? t('Every {weekday} at {time}', { weekday: weekdayName(s.weekday), time: formatTime(s.time) }) : t('Every week at {time}', { time: formatTime(s.time) })
     default:
-      return 'Off'
+      return t('Off')
   }
 }
 
 export function runSummary(r: BackupRun): string {
   const when = formatInstant(r.startedAt, 'datetime')
-  if (r.status === 'running') return `Running since ${when}`
-  if (r.status === 'failed') return `Failed ${when}: ${r.error}`
-  const secs = r.durationMs !== null ? ` in ${(r.durationMs / 1000).toFixed(1)} s` : ''
-  return `Succeeded ${when} · ${formatBytes(r.bytes)}${secs}`
+  if (r.status === 'running') return t('Running since {when}', { when })
+  if (r.status === 'failed') return t('Failed {when}: {error}', { when, error: r.error })
+  return r.durationMs !== null
+    ? t('Succeeded {when} · {size} in {seconds} s', { when, size: formatBytes(r.bytes), seconds: (r.durationMs / 1000).toFixed(1) })
+    : t('Succeeded {when} · {size}', { when, size: formatBytes(r.bytes) })
 }

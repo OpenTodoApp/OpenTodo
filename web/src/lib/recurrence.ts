@@ -1,3 +1,4 @@
+import { t } from './i18n'
 // Recurrence rules (OpenSpec change recurring-tasks): parser, canonical form and
 // next-occurrence calculator. Mirrors internal/recurrence/recurrence.go; both are
 // checked against recurrence.vectors.json, so change them together.
@@ -77,15 +78,15 @@ export function canonicalRule(input: string): string | null {
 }
 
 function parseOrThrow(input: string): Rule {
-  if (input.length > MAX_RULE_LENGTH) throw new RuleError(`longer than ${MAX_RULE_LENGTH} characters`)
+  if (input.length > MAX_RULE_LENGTH) throw new RuleError(t('longer than {n} characters', { n: MAX_RULE_LENGTH }))
   const toks = input.toLowerCase().replaceAll(',', ' , ').split(/\s+/).filter(Boolean)
-  if (toks[0] !== 'every') throw new RuleError('must start with "every"')
+  if (toks[0] !== 'every') throw new RuleError(t('must start with "every"'))
   let i = 1
   const peek = (k = 0) => toks[i + k]
   const ends: Ends = { until: null, count: 0 }
   let rule: Rule
   const tok = peek()
-  if (tok === undefined) throw new RuleError('missing pattern after "every"')
+  if (tok === undefined) throw new RuleError(t('missing pattern after "every"'))
   if (tok === 'day' || tok === 'week' || tok === 'month' || tok === 'year') {
     rule = { kind: 'interval', interval: 1, unit: tok, afterCompletion: false, ...ends }
     i++
@@ -94,9 +95,9 @@ function parseOrThrow(input: string): Rule {
     i++
   } else if (/^[0-9]+$/.test(tok)) {
     const n = positiveInt(tok, MAX_INTERVAL)
-    if (n === null) throw new RuleError(`interval must be from 1 to ${MAX_INTERVAL}`)
+    if (n === null) throw new RuleError(t('interval must be from 1 to {n}', { n: MAX_INTERVAL }))
     const singular = (peek(1) ?? '').replace(/s$/, '')
-    if (!(UNITS as string[]).includes(singular)) throw new RuleError(`expected day(s), week(s), month(s) or year(s) after ${tok}`)
+    if (!(UNITS as string[]).includes(singular)) throw new RuleError(t('expected day(s), week(s), month(s) or year(s) after {word}', { word: tok }))
     rule = { kind: 'interval', interval: n, unit: singular as Unit, afterCompletion: false, ...ends }
     i += 2
   } else if (tok === 'last' && (peek(1) === 'day' || peek(1) === 'weekday')) {
@@ -105,52 +106,52 @@ function parseOrThrow(input: string): Rule {
   } else if (has(WEEKDAY_ALIASES, tok)) {
     let days = 0
     for (;;) {
-      const t = peek()
-      if (!has(WEEKDAY_ALIASES, t)) throw new RuleError(`expected a weekday, got "${t}"`)
-      days |= 1 << WEEKDAY_ALIASES[t]
+      const item = peek()
+      if (!has(WEEKDAY_ALIASES, item)) throw new RuleError(t('expected a weekday, got "{word}"', { word: item }))
+      days |= 1 << WEEKDAY_ALIASES[item]
       i++
       let j = i
       if (toks[j] === ',') j++
       if (toks[j] === 'and') j++
       if (j === i) break
-      if (j >= toks.length) throw new RuleError('expected a weekday after the list separator')
+      if (j >= toks.length) throw new RuleError(t('expected a weekday after the list separator'))
       i = j
     }
     rule = { kind: 'weekdays', days, afterCompletion: false, ...ends }
   } else {
     const word = has(WORD_ORDINALS, tok) ? WORD_ORDINALS[tok] : null
     const num = numericOrdinal(tok)
-    if (word === null && num === null) throw new RuleError(`unknown pattern "${tok}"`)
+    if (word === null && num === null) throw new RuleError(t('unknown pattern "{word}"', { word: tok }))
     const next = peek(1)
     if (has(WEEKDAY_ALIASES, next)) {
       const ordinal = num ?? (word as number)
-      if (ordinal > 4) throw new RuleError('weekday ordinal must be 1st to 4th or last')
+      if (ordinal > 4) throw new RuleError(t('weekday ordinal must be 1st to 4th or last'))
       rule = { kind: 'nthWeekday', ordinal, weekday: WEEKDAY_ALIASES[next], afterCompletion: false, ...ends }
       i += 2
     } else {
-      if (num === null) throw new RuleError(`expected a weekday after "${tok}"`)
+      if (num === null) throw new RuleError(t('expected a weekday after "{word}"', { word: tok }))
       rule = { kind: 'monthDay', monthDay: num, afterCompletion: false, ...ends }
       i++
     }
   }
   if (peek() === 'after') {
-    if (peek(1) !== 'completion') throw new RuleError('expected "completion" after "after"')
-    if (rule.kind !== 'interval') throw new RuleError('"after completion" only applies to day, week, month and year intervals')
+    if (peek(1) !== 'completion') throw new RuleError(t('expected "completion" after "after"'))
+    if (rule.kind !== 'interval') throw new RuleError(t('"after completion" only applies to day, week, month and year intervals'))
     rule.afterCompletion = true
     i += 2
   }
   if (peek() === 'until') {
     const d = peek(1)
-    if (d === undefined || dayNumber(d) === null) throw new RuleError('until needs a date YYYY-MM-DD')
+    if (d === undefined || dayNumber(d) === null) throw new RuleError(t('until needs a date YYYY-MM-DD'))
     rule.until = d
     i += 2
   } else if (peek() === 'for') {
     const n = positiveInt(peek(1), MAX_COUNT)
-    if (n === null || (peek(2) !== 'times' && peek(2) !== 'time')) throw new RuleError(`expected "for N times" with N from 1 to ${MAX_COUNT}`)
+    if (n === null || (peek(2) !== 'times' && peek(2) !== 'time')) throw new RuleError(t('expected "for N times" with N from 1 to {n}', { n: MAX_COUNT }))
     rule.count = n
     i += 3
   }
-  if (i < toks.length) throw new RuleError(`unexpected "${toks[i]}"`)
+  if (i < toks.length) throw new RuleError(t('unexpected "{word}"', { word: toks[i] }))
   return rule
 }
 
@@ -313,18 +314,18 @@ function asRule(rule: Rule | string): Rule {
  */
 export function nextCalendar(rule: Rule | string, due: string | null, today: string): string {
   const r = asRule(rule)
-  const t = mustDate(today, 'today')
-  const d = due ? mustDate(due, 'due') : t
+  const item = mustDate(today, 'today')
+  const d = due ? mustDate(due, 'due') : item
   let c = firstAfter(r, d)
-  if (c >= t) return formatDate(c)
-  if (r.kind !== 'interval') return formatDate(firstAfter(r, t))
+  if (c >= item) return formatDate(c)
+  if (r.kind !== 'interval') return formatDate(firstAfter(r, item))
   if (r.unit === 'day' || r.unit === 'week') {
     const size = r.unit === 'week' ? 7 * r.interval : r.interval
-    return formatDate(d + size * (Math.floor((t - d) / size) + 1))
+    return formatDate(d + size * (Math.floor((item - d) / size) + 1))
   }
   for (let k = 2; ; k++) {
     c = step(r, d, k)
-    if (c > t) return formatDate(c)
+    if (c > item) return formatDate(c)
   }
 }
 

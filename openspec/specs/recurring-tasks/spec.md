@@ -73,7 +73,7 @@ A rule MAY end on a date (`until YYYY-MM-DD`) or after a number of completed occ
 - **THEN** both show one ninth completion and the same tenth occurrence due, and the series ends after that tenth completion
 
 ### Requirement: Skip an occurrence
-The user SHALL be able to skip the current occurrence from the detail panel and the keyboard. Skipping SHALL move the task to the next occurrence without creating a completed occurrence record and SHALL be an ordinary due-date change, so it works offline and converges by last-writer-wins.
+The user SHALL be able to skip the current occurrence from the detail panel and the keyboard. Skipping SHALL move the task to the next occurrence and SHALL be an ordinary due-date change, so it works offline and converges by last-writer-wins. For a task that is not a habit, skipping SHALL create no occurrence record.
 
 #### Scenario: Skip this week
 - **WHEN** the user skips a task with `every monday` due 2026-10-12
@@ -82,6 +82,17 @@ The user SHALL be able to skip the current occurrence from the detail panel and 
 #### Scenario: Skip on two devices
 - **WHEN** two devices skip the same occurrence offline and sync
 - **THEN** every device shows the task due on the same next occurrence, not two steps ahead
+
+### Requirement: Skipping a habit
+For a habit (OpenSpec `habits`), skipping SHALL also write the occurrence record of the skipped date marked `skipped`, with the derived record id, so concurrent skips converge to one record. Such a record SHALL not count towards `for N times`, whether the count is taken on a device or by the server.
+
+#### Scenario: Skip a habit
+- **WHEN** the user skips a habit with `every monday` due 2026-10-12
+- **THEN** its due date becomes 2026-10-19, nothing is added to Completed, and the 12th shows as skipped in the habit's history
+
+#### Scenario: Skipped habit record does not count
+- **WHEN** a habit with `every day for 2 times` is skipped on the first day and completed on the next two
+- **THEN** the series ends with the second completion, on every device and when the completion comes through the API
 
 ### Requirement: Series edits and detached occurrences
 Edits to a recurring task's title, description, project, priority, labels, due time or rule SHALL apply to the series, because the series is the task. The detail panel SHALL offer "This occurrence only", which SHALL create a standalone copy of the task for the current occurrence (no rule, `series_id` set) and move the series to its next occurrence. The copy's id SHALL be derived from the series id and the occurrence date so concurrent detaching converges.

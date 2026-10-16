@@ -1,4 +1,4 @@
-import { Button, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
+import { Badge, Button, Icon, IconButton, type IconName, isIconName, MenuItem, MenuSeparator, SidebarGroup, SidebarGroupAction, SidebarItem } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -16,6 +16,7 @@ import { db } from '../lib/db'
 import { todayISO } from '../lib/dates'
 import { createProject } from '../lib/ops'
 import { USER_PREFS_ID } from '../lib/userPrefs'
+import { REVIEW_ID, reviewAgo, reviewDue } from '../lib/review'
 import { NotificationBell } from './NotificationBell'
 import { SyncStatus } from './SyncStatus'
 import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, readCollapsed, toggleCollapsedProject, type ProjectNode } from '../lib/projects'
@@ -35,6 +36,7 @@ import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
 import { formatUnread, unreadCounts, type UnreadCounts } from '../lib/feed'
 import { matchSidebar } from '../lib/sidebarFind'
 import { sidebarFind } from './signals'
+import { t } from '../lib/i18n'
 
 
 /** Indentation per level in the sidebar; capped so a deep tree still fits a 360 px screen. */
@@ -71,6 +73,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   const assistant = useAssistantStatus()
   // Promoted destinations (appearance preferences, synced): read with the rest of the row.
   const prefsRow = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
+  const review = useLiveQuery(() => db.review.get(REVIEW_ID), [])
   const appearance = useMemo(() => readAppearance(prefsRow), [prefsRow])
   const [moreOpen, setMoreOpenState] = useState(() => readOpen(MORE_KEY, false))
   const setMoreOpen = (open: boolean) => { setMoreOpenState(open); writeOpen(MORE_KEY, open) }
@@ -108,7 +111,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   // activity log and the synced seen markers, so it moves with every sync.
   const unread = useLiveQuery(() => unreadCounts(), [], { byProject: new Map(), total: 0 } as UnreadCounts)
 
-  const openTasks = useLiveQuery(() => visibleTasks().then((l) => l.filter((t) => !t.completed_at)), [], [])
+  const openTasks = useLiveQuery(() => visibleTasks().then((l) => l.filter((task) => !task.completed_at)), [], [])
   const zone = useViewerZone()
   const counts = useMemo(() => {
     const today = todayISO()
@@ -116,12 +119,12 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
     let due = 0
     let assigned = 0
     // Deferred and parked tasks are not counted (someday-and-evening D2).
-    const active = openTasks.filter((t) => openCount(t, today))
-    for (const t of active) {
-      if (t.project_id === null) inbox++
-      if (t.assignee_id === user.id) assigned++
+    const active = openTasks.filter((tk) => openCount(tk, today))
+    for (const task of active) {
+      if (task.project_id === null) inbox++
+      if (task.assignee_id === user.id) assigned++
     }
-    for (const t of openTasks) if (inToday(t, today)) due++
+    for (const item of openTasks) if (inToday(item, today)) due++
     return { inbox, today: due, assigned, byProject: openCountsByProject(active, tree, collapsed_) }
   }, [openTasks, tree, collapsed_, user.id, zone])
 
@@ -253,9 +256,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
         const d = current
         const row = d ? treeRef.current.nodes.get(d.id) : undefined
         if (!d || !row) return
-        const t = dropTarget({ id: row.id, parent: row.parent, expanded: row.children.length > 0 && !collapsedRef.current.has(row.id) }, d.zone)
-        if (t.parent_id) void toggleCollapsedProject(t.parent_id, false)
-        void moveProjectTo(n.id, t)
+        const entry = dropTarget({ id: row.id, parent: row.parent, expanded: row.children.length > 0 && !collapsedRef.current.has(row.id) }, d.zone)
+        if (entry.parent_id) void toggleCollapsedProject(entry.parent_id, false)
+        void moveProjectTo(n.id, entry)
       },
       onEnd: () => show(null),
     })
@@ -296,19 +299,28 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
   // collapsed by default on this device; a promoted destination (appearance
   // preferences, synced) leaves it for the primary items.
   const promoted = appearance.sidebar ?? []
-  const unreadBadge = unread.total > 0 ? <UnreadBadge n={unread.total} label="unread updates" /> : undefined
-  const more: { id: Promotable | 'ask'; node: ReactNode }[] = [
-    { id: 'anytime', node: item({ view: 'anytime' }, 'Anytime', 'layers') },
-    { id: 'someday', node: item({ view: 'someday' }, 'Someday', 'archive') },
+  const unreadBadge = unread.total > 0 ? <UnreadBadge n={unread.total} label={t('unread updates')} /> : undefined
+  // The weekly review (stats-and-review): when the last one was, and a marker once it is due.
+  const due = reviewDue(review?.completed_at)
+  const reviewBadge = due
+    ? <span data-review-due><Badge hue="orange">{t('Due')}</Badge><span className="sr-only">{`: ${t('the last weekly review was {ago}', { ago: reviewAgo(review?.completed_at) })}`}</span></span>
+    : <span className="text-hint text-faint" data-review-ago>{reviewAgo(review?.completed_at)}</span>
+  const more: { id: Promotable | 'ask' | 'review' | 'stats'; node: ReactNode }[] = [
+    { id: 'anytime', node: item({ view: 'anytime' }, t('Anytime'), 'layers') },
+    { id: 'someday', node: item({ view: 'someday' }, t('Someday'), 'archive') },
     // Assigned to me only where tasks can be assigned: when the account shares a project.
-    ...(sharedIds.size > 0 ? [{ id: 'assigned' as const, node: item({ view: 'assigned' }, 'Assigned to me', 'user-check') }] : []),
-    { id: 'completed', node: item({ view: 'completed' }, 'Completed', 'circle-check-big') },
-    ...(sharedIds.size > 0 ? [{ id: 'feed' as const, node: item({ view: 'feed' }, 'Updates', 'newspaper', undefined, unreadBadge) }] : []),
-    { id: 'trash', node: item({ view: 'trash' }, 'Trash', 'trash-2') },
-    { id: 'filter', node: item({ view: 'filter' }, 'Filter', 'filter') },
-    ...(assistant?.available ? [{ id: 'ask' as const, node: item({ view: 'ask' }, 'Ask', 'message-circle') }] : []),
+    ...(sharedIds.size > 0 ? [{ id: 'assigned' as const, node: item({ view: 'assigned' }, t('Assigned to me'), 'user-check') }] : []),
+    { id: 'completed', node: item({ view: 'completed' }, t('Completed'), 'circle-check-big') },
+    { id: 'review', node: item({ view: 'review' }, t('Review'), 'clipboard-check', undefined, reviewBadge) },
+    { id: 'stats', node: item({ view: 'stats' }, t('Statistics'), 'chart-column') },
+    ...(sharedIds.size > 0 ? [{ id: 'feed' as const, node: item({ view: 'feed' }, t('Updates'), 'newspaper', undefined, unreadBadge) }] : []),
+    { id: 'trash', node: item({ view: 'trash' }, t('Trash'), 'trash-2') },
+    { id: 'filter', node: item({ view: 'filter' }, t('Filter'), 'filter') },
+    ...(assistant?.available ? [{ id: 'ask' as const, node: item({ view: 'ask' }, t('Ask'), 'message-circle') }] : []),
   ]
   const primaryExtra = more.filter((m) => m.id !== 'ask' && promoted.includes(m.id as Promotable))
+  // A due review shows on the closed More heading too, so the marker is never hidden.
+  const moreBadge = unreadBadge ?? (due ? <span data-review-due-more><Badge hue="orange">{t('Review due')}</Badge></span> : undefined)
   const rest = more.filter((m) => !primaryExtra.includes(m))
   const calendarMode = readCalendarMode()
 
@@ -320,29 +332,29 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
       <div className={`shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))] ${collapsed ? 'px-1.5' : 'px-3'}`}>
         <div className={`mb-4 flex items-center gap-2 ${collapsed ? 'justify-center' : 'px-1'}`}>
           <img src="/favicon.svg" alt="" className="h-7 w-7" />
-          {!collapsed && <span className="font-semibold">OpenTodo</span>}
+          {!collapsed && <span className="font-semibold">{t('OpenTodo')}</span>}
         </div>
-        <nav className="space-y-0.5" aria-label="Primary" data-sidebar-primary>
-          {item({ view: 'inbox' }, 'Inbox', 'inbox', counts.inbox)}
-          {item({ view: 'today' }, 'Today', 'calendar-check', counts.today)}
-          {item({ view: 'upcoming' }, 'Upcoming', 'calendar-days')}
-          {item({ view: calendarMode }, 'Calendar', 'calendar-range')}
+        <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
+          {item({ view: 'inbox' }, t('Inbox'), 'inbox', counts.inbox)}
+          {item({ view: 'today' }, t('Today'), 'calendar-check', counts.today)}
+          {item({ view: 'upcoming' }, t('Upcoming'), 'calendar-days')}
+          {item({ view: calendarMode }, t('Calendar'), 'calendar-range')}
           {primaryExtra.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
         </nav>
-        <SidebarGroup title="More" collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={unreadBadge} collapsed={collapsed} tight testId="sidebar-more">
+        <SidebarGroup title={t('More')} collapsible open={moreOpen} onToggle={() => setMoreOpen(!moreOpen)} badge={moreBadge} collapsed={collapsed} tight testId="sidebar-more">
           {rest.map((m) => <Fragment key={m.id}>{m.node}</Fragment>)}
         </SidebarGroup>
       </div>
       <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll>
       {finding && !collapsed && (
         <div className="pt-3" data-sidebar-find>
-          <input ref={findInput} className="ui-input py-1.5 text-body" type="search" placeholder="Find a project, label or filter…" aria-label="Find in the sidebar"
+          <input ref={findInput} className="ui-input py-1.5 text-body" type="search" placeholder={t('Find a project, label or filter…')} aria-label={t('Find in the sidebar')}
             value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onFindKey} enterKeyHint="go" autoComplete="off" />
-          {found?.empty && <p className="px-2 pt-2 text-meta text-faint" role="status">Nothing matches.</p>}
+          {found?.empty && <p className="px-2 pt-2 text-meta text-faint" role="status">{t('Nothing matches.')}</p>}
         </div>
       )}
-      {groupShown(shownViews.length) && <SidebarGroup title="Filters" collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={pinnedViews.length} collapsed={collapsed}
-        actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label="All filters">All</SidebarGroupAction>}>
+      {groupShown(shownViews.length) && <SidebarGroup title={t('Filters')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={pinnedViews.length} collapsed={collapsed}
+        actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All filters')}>{t('All')}</SidebarGroupAction>}>
         {shownViews.map((v) => {
           const active = route.view === 'view' && route.id === v.id
           const c = viewCounts.get(v.id)
@@ -358,19 +370,19 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
           )
         })}
         {pinnedViews.length === 0 && !collapsed && !found && (
-          <p className="px-2 py-1 text-meta text-faint">Save a filter to pin it here.</p>
+          <p className="px-2 py-1 text-meta text-faint">{t('Save a filter to pin it here.')}</p>
         )}
       </SidebarGroup>}
       {/* Projects stays while finding: its header holds the field's opener. */}
-      {(finding || groupShown(shownRows.length)) && <SidebarGroup title="Projects" collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
-        <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label="Find in the sidebar" aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
-        <Menu kind="menu" label="Add or fold projects" title="Projects" trigger={<Icon name="plus" size="xs" />}
+      {(finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>
+        <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label={t('Find in the sidebar')} aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
+        <Menu kind="menu" label={t('Add or fold projects')} title={t('Projects')} trigger={<Icon name="plus" size="xs" />}
           triggerClassName="rounded-chip px-1.5 py-0.5 text-hint font-medium normal-case text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised" width="sm:w-56">
-          <MenuItem label="New project" icon="plus" onSelect={startAdding} />
-          <MenuItem label="From a template…" icon="copy" onSelect={requestTemplateDialog} />
+          <MenuItem label={t('New project')} icon="plus" onSelect={startAdding} />
+          <MenuItem label={t('From a template…')} icon="copy" onSelect={requestTemplateDialog} />
           <MenuSeparator />
-          <MenuItem label="Collapse all" icon="chevrons-down-up" onSelect={() => void collapseAllProjects(projects)} />
-          <MenuItem label="Expand all" icon="chevrons-up-down" onSelect={() => void expandAllProjects()} />
+          <MenuItem label={t('Collapse all')} icon="chevrons-down-up" onSelect={() => void collapseAllProjects(projects)} />
+          <MenuItem label={t('Expand all')} icon="chevrons-up-down" onSelect={() => void expandAllProjects()} />
         </Menu>
       </>)}>
         <ul role="tree">
@@ -392,7 +404,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
                 {!collapsed && (
                   <span className="flex h-6 w-4 shrink-0 items-center justify-center">
                     {has && (
-                      <button type="button" tabIndex={-1} aria-label={isCollapsed ? `Expand ${p.name}` : `Collapse ${p.name}`}
+                      <button type="button" tabIndex={-1} aria-label={isCollapsed ? t('Expand {name}', { name: p.name }) : t('Collapse {name}', { name: p.name })}
                         onClick={() => void toggleCollapsedProject(n.id)}
                         className="flex h-5 w-4 items-center justify-center rounded-chip text-meta text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11">
                         <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${isCollapsed ? '' : 'rotate-90'}`} />
@@ -412,11 +424,11 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
                   label={p.name}
                   leading={<ProjectMark project={p} />}
                   badge={<>
-                    {sharedIds.has(n.id) && <span className="text-faint" aria-label="Shared project"><Icon name="users" size={14} /></span>}
-                    {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label="unread changes" /> : null}
+                    {sharedIds.has(n.id) && <span className="text-faint" aria-label={t('Shared project')}><Icon name="users" size={14} /></span>}
+                    {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label={t('unread changes')} /> : null}
                   </>}
                   count={count}
-                  aria-description={count && isCollapsed && has ? 'Open tasks including sub-projects' : undefined}
+                  aria-description={count && isCollapsed && has ? t('Open tasks including sub-projects') : undefined}
                 />
               </li>
             )
@@ -424,40 +436,40 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, colla
         </ul>
         {adding && !collapsed && (
           <form onSubmit={(e) => void submit(e)} className="space-y-1 px-1 pt-1">
-            <input className="ui-input" autoFocus placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)}
+            <input className="ui-input" autoFocus placeholder={t('Project name')} value={name} onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Escape' && setAdding(false)} />
-            <ProjectPickerField label="Parent project" projects={projects} value={parentId || null} onChange={(id) => setParentId(id ?? '')}
-              rankContext="project.parent" inbox={false} noneLabel="Top level" className="py-1 text-meta" />
+            <ProjectPickerField label={t('Parent project')} projects={projects} value={parentId || null} onChange={(id) => setParentId(id ?? '')}
+              rankContext="project.parent" inbox={false} noneLabel={t('Top level')} className="py-1 text-meta" />
             <div className="flex gap-1">
-              <Button type="submit" variant="primary" size="sm" className="flex-1">Create</Button>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>Cancel</Button>
+              <Button type="submit" variant="primary" size="sm" className="flex-1">{t('Create')}</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>{t('Cancel')}</Button>
             </div>
           </form>
         )}
-        {projects.length === 0 && !adding && !collapsed && <p className="px-2 py-1 text-meta text-faint">No projects yet.</p>}
+        {projects.length === 0 && !adding && !collapsed && <p className="px-2 py-1 text-meta text-faint">{t('No projects yet.')}</p>}
       </SidebarGroup>}
-      {groupShown(shownLabels.length) && <SidebarGroup title="Labels" collapsible open={isOpen('labels')} onToggle={() => toggleGroup('labels')} count={labels.length} collapsed={collapsed}
+      {groupShown(shownLabels.length) && <SidebarGroup title={t('Labels')} collapsible open={isOpen('labels')} onToggle={() => toggleGroup('labels')} count={labels.length} collapsed={collapsed}
         actions={<>
-          <SidebarGroupAction active={route.view === 'labels'} onClick={() => navigate({ view: 'labels' })} aria-label="All labels">All</SidebarGroupAction>
-          <SidebarGroupAction onClick={() => { setGroupOpen('labels', true); setAddingLabel(true) }} aria-label="New label"><Icon name="plus" size="xs" /></SidebarGroupAction>
+          <SidebarGroupAction active={route.view === 'labels'} onClick={() => navigate({ view: 'labels' })} aria-label={t('All labels')}>{t('All')}</SidebarGroupAction>
+          <SidebarGroupAction onClick={() => { setGroupOpen('labels', true); setAddingLabel(true) }} aria-label={t('New label')}><Icon name="plus" size="xs" /></SidebarGroupAction>
         </>}>
         {!collapsed && shownLabels.map((l) => <LabelRow key={l.id} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} findActive={isActiveMatch('label', l.id)} />)}
         {addingLabel && !collapsed && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
-        {labels.length === 0 && !addingLabel && !collapsed && !found && <p className="px-2 py-1 text-meta text-faint">No labels yet.</p>}
+        {labels.length === 0 && !addingLabel && !collapsed && !found && <p className="px-2 py-1 text-meta text-faint">{t('No labels yet.')}</p>}
       </SidebarGroup>}
       </div>
       {/* Pinned footer (app-shell "No desktop top bar"): Help, search, notifications, the sync dot, the account, collapse. */}
       <div className={`flex shrink-0 flex-col gap-0.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-footer>
-        <SidebarItem icon="circle-help" label="Help" active={route.view === 'help'} collapsed={collapsed} onClick={() => navigate({ view: 'help' })} />
-        {onSearch && <SidebarItem icon="search" label="Search and commands" collapsed={collapsed} onClick={onSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />}
+        <SidebarItem icon="circle-help" label={t('Help')} active={route.view === 'help'} collapsed={collapsed} onClick={() => navigate({ view: 'help' })} />
+        {onSearch && <SidebarItem icon="search" label={t('Search and commands')} collapsed={collapsed} onClick={onSearch} aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-palette-button />}
         <div className={`flex items-center gap-0.5 ${collapsed ? 'flex-col' : ''}`}>
           <NotificationBell compact={collapsed} />
-          {onAssistant && <IconButton icon="message-circle" label="Assistant" shortcut={keysOf('global.assistant')} size="sm" onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
-          {onShortcuts && <IconButton icon="keyboard" label="Keyboard shortcuts" shortcut={keysOf('global.help')} size="sm" onClick={onShortcuts} aria-haspopup="dialog" data-shortcuts-button />}
+          {onAssistant && <IconButton icon="message-circle" label={t('Assistant')} shortcut={keysOf('global.assistant')} size="sm" onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
+          {onShortcuts && <IconButton icon="keyboard" label={t('Keyboard shortcuts')} shortcut={keysOf('global.help')} size="sm" onClick={onShortcuts} aria-haspopup="dialog" data-shortcuts-button />}
           <SyncStatus compact={collapsed} />
           {!collapsed && <span className="flex-1" />}
           {onToggleCollapse && (
-            <IconButton icon={collapsed ? 'panel-left-open' : 'panel-left-close'} label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} shortcut={keysOf('global.sidebar')} size="sm"
+            <IconButton icon={collapsed ? 'panel-left-open' : 'panel-left-close'} label={collapsed ? t('Expand sidebar') : t('Collapse sidebar')} shortcut={keysOf('global.sidebar')} size="sm"
               className="hidden lg:inline-flex" onClick={onToggleCollapse} data-sidebar-collapse aria-pressed={collapsed} />
           )}
         </div>

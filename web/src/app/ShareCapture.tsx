@@ -19,6 +19,7 @@ import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { navigate, type Route } from './router'
 import { useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
+import { t } from '../lib/i18n'
 
 /** How files come with this share: the hand-over store, the extension's message, or lost on the way. */
 export type ShareFiles = { inbox?: string | null; mode?: 'extension' | 'denied' | 'lost' | null }
@@ -165,18 +166,18 @@ export function ShareCapture() {
       <div className="w-full max-w-lg rounded-card border border-default bg-surface p-5 shadow-1">
         <div className="mb-4 flex items-center gap-2">
           <img src="/favicon.svg" alt="" className="h-6 w-6" />
-          <h1 className="text-body font-semibold">Add to OpenTodo</h1>
+          <h1 className="text-body font-semibold">{t('Add to OpenTodo')}</h1>
         </div>
         {ready && isEmptyShare(payload) && shared.length === 0 && files.mode !== 'extension' && (
-          <p className="mb-3 text-body text-muted">Nothing was shared. Type a task to add it anyway.</p>
+          <p className="mb-3 text-body text-muted">{t('Nothing was shared. Type a task to add it anyway.')}</p>
         )}
-        {!ready ? <p className="text-body text-muted" role="status">Opening the shared files…</p> : (
+        {!ready ? <p className="text-body text-muted" role="status">{t('Opening the shared files…')}</p> : (
         <div className="rounded-control border border-input px-2 focus-within:border-accent focus-within:ring-2 focus-within:ring-focus/30">
           <QuickAdd
             ref={titleRef}
             formId="share-capture"
-            placeholder="Task title"
-            label="Task title"
+            placeholder={t('Task title')}
+            label={t('Task title')}
             initialValue={proposedTitle(payload) || titleFromFiles(listed)}
             hideHint
             projects={projects}
@@ -186,7 +187,7 @@ export function ShareCapture() {
         </div>
         )}
         <label className="mt-3 block text-body">
-          <span className="mb-1 block text-muted">Description</span>
+          <span className="mb-1 block text-muted">{t('Description')}</span>
           <textarea
             className="ui-input min-h-28 font-normal"
             value={description}
@@ -200,18 +201,18 @@ export function ShareCapture() {
           />
         </label>
         <div className="mt-3 block text-body">
-          <span className="mb-1 block text-muted" aria-hidden>Project</span>
-          <ProjectPickerField label="Project" projects={projects} value={projectId || null} onChange={(id) => setProjectId(id ?? '')} rankContext="capture.project" />
+          <span className="mb-1 block text-muted" aria-hidden>{t('Project')}</span>
+          <ProjectPickerField label={t('Project')} projects={projects} value={projectId || null} onChange={(id) => setProjectId(id ?? '')} rankContext="capture.project" />
         </div>
         <SharedFiles files={listed} dropped={captured.dropped} demo={!!demo} disabled={limits?.enabled === false} mode={files.mode ?? null}
           onRemove={(key) => setRemoved((r) => new Set(r).add(key))} />
         {error && <p className="mt-3 text-body text-danger" role="alert">{error}</p>}
         <div className="mt-4 flex items-center justify-end gap-2">
           <span className="mr-auto hidden text-meta text-faint sm:inline">
-            <Kbd k="Enter" /> saves · <Kbd k="Esc" /> cancels
+            {t.rich('{enter} saves · {esc} cancels', { enter: <Kbd k="Enter" />, esc: <Kbd k="Esc" /> })}
           </span>
-          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={() => leave({ view: 'inbox' })}>Cancel</button>
-          <button type="submit" form="share-capture" className="ui-btn ui-btn--primary ui-btn--md" disabled={saving || !ready}>{saving ? 'Saving…' : 'Save'}</button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={() => leave({ view: 'inbox' })}>{t('Cancel')}</button>
+          <button type="submit" form="share-capture" className="ui-btn ui-btn--primary ui-btn--md" disabled={saving || !ready}>{saving ? t('Saving…') : t('Save')}</button>
         </div>
       </div>
     </div>
@@ -228,17 +229,17 @@ function SharedFiles({ files, dropped, demo, disabled, mode, onRemove }: {
   onRemove: (key: string) => void
 }) {
   const notes: string[] = []
-  if (mode === 'denied') notes.push('The screenshot could not be handed over. Allow the extension to reach your server in its options, then try again.')
-  if (mode === 'lost') notes.push('The shared files did not arrive: open the app once so it can receive files, then share again.')
-  if (files.length && demo) notes.push('Files are not attached on this demo instance.')
-  else if (files.length && disabled) notes.push('Attachments are turned off on this server, so the files are not attached.')
-  if (dropped) notes.push(`${dropped} more ${dropped === 1 ? 'file was' : 'files were'} left out: a share takes at most 10.`)
+  if (mode === 'denied') notes.push(t('The screenshot could not be handed over. Allow the extension to reach your server in its options, then try again.'))
+  if (mode === 'lost') notes.push(t('The shared files did not arrive: open the app once so it can receive files, then share again.'))
+  if (files.length && demo) notes.push(t('Files are not attached on this demo instance.'))
+  else if (files.length && disabled) notes.push(t('Attachments are turned off on this server, so the files are not attached.'))
+  if (dropped) notes.push(t('{n, plural, one {# more file was left out: a share takes at most 10.} other {# more files were left out: a share takes at most 10.}}', { n: dropped }))
   if (!files.length && !notes.length) return null
   return (
     <div className="mt-3 text-body" data-testid="shared-files">
       {files.length > 0 && !demo && (
         <>
-          <span className="mb-1 block text-muted" id="shared-files-label">Files</span>
+          <span className="mb-1 block text-muted" id="shared-files-label">{t('Files')}</span>
           <ul aria-labelledby="shared-files-label" className="space-y-1">
             {files.map((f) => <SharedFileRow key={f.key} file={f} onRemove={() => onRemove(f.key)} />)}
           </ul>
@@ -262,7 +263,7 @@ function SharedFileRow({ file, onRemove }: { file: CapturedFile; onRemove: () =>
         <p className="truncate text-meta text-faint">{file.type} · {formatBytes(file.size)}</p>
         {file.refused && <p className="text-meta text-danger">{file.refused}</p>}
       </div>
-      <IconButton icon="x" size="sm" label={`Remove ${file.name}`} onClick={onRemove} />
+      <IconButton icon="x" size="sm" label={t('Remove {name}', { name: file.name })} onClick={onRemove} />
     </li>
   )
 }

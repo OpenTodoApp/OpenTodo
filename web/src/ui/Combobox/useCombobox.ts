@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { pickScores, rankBy, recordPick } from '../../lib/pickRank'
 import { matchPrepared, prepare, prepareQuery, type Match } from './match'
+import { t } from '../../lib/i18n'
 
 export type AsyncSource<T> = (query: string, signal: AbortSignal) => Promise<{ items: T[]; hasMore?: boolean }>
 
@@ -79,14 +80,14 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
     const req = ++requestId.current
     const ctl = new AbortController()
     setLoading(true)
-    const t = setTimeout(() => {
+    const entry = setTimeout(() => {
       source(query, ctl.signal).then((res) => {
         if (req !== requestId.current) return
         setAsyncItems(res.items)
         setLoading(false)
       }, () => { if (req === requestId.current) setLoading(false) })
     }, ASYNC_DEBOUNCE_MS)
-    return () => { clearTimeout(t); ctl.abort() }
+    return () => { clearTimeout(entry); ctl.abort() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, isAsync(cfg.source) ? cfg.source : null])
 
@@ -119,7 +120,7 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
       } else if (cfg.getPath && scores.size > 0) {
         // A tree keeps its shape; recent picks are offered on top as their own group.
         const recent = rankBy(rest.filter((i) => scores.has(cfg.getKey(i))), cfg.getKey, scores).slice(0, RECENT_IN_TREE)
-          .map((i) => ({ ...toOption(i, empty, 0), group: 'Recent', key: `recent:${cfg.getKey(i)}` } as ComboOption<T>))
+          .map((i) => ({ ...toOption(i, empty, 0), group: t('Recent'), key: `recent:${cfg.getKey(i)}` } as ComboOption<T>))
         out = [...pins, ...recent, ...rest.map((i) => toOption(i, empty))]
       } else {
         out = [...pins, ...rankBy(rest, cfg.getKey, scores).map((i) => toOption(i, empty))]
@@ -158,8 +159,8 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
   const resultCount = options.filter((o) => o.kind === 'item').length
   useEffect(() => {
     if (!query.trim()) { setAnnouncement(''); return }
-    const t = setTimeout(() => setAnnouncement(resultCount === 0 ? 'No matches' : `${resultCount} ${resultCount === 1 ? 'result' : 'results'} available`), ANNOUNCE_MS)
-    return () => clearTimeout(t)
+    const x1 = setTimeout(() => setAnnouncement(resultCount === 0 ? t('No matches') : t('{n, plural, one {# result available} other {# results available}}', { n: resultCount })), ANNOUNCE_MS)
+    return () => clearTimeout(x1)
   }, [resultCount, query])
 
   const pick = async (opt: ComboOption<T> | undefined) => {

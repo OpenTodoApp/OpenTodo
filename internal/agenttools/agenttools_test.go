@@ -695,20 +695,27 @@ func TestCompleteAndReopen(t *testing.T) {
 	if isOpenEntity(f.get("u1", "t1")) {
 		t.Fatal("t1 open")
 	}
+	// Who completed it (completed-date-filters D5): the token's user.
+	if by := string(f.get("u1", "t1")["completed_by"]); by != `"u1"` {
+		t.Fatalf("t1 completed_by = %s", by)
+	}
 	series := f.get("u1", "s1")
 	if !isOpenEntity(series) || string(series["due"]) != `{"date":"2026-10-19"}` {
 		t.Fatalf("series = %v", series)
 	}
 	occ := f.get("u1", opsync.OccurrenceID("s1", "2026-10-12"))
-	if occ == nil || isOpenEntity(occ) || string(occ["series_id"]) != `"s1"` {
+	if occ == nil || isOpenEntity(occ) || string(occ["series_id"]) != `"s1"` || string(occ["completed_by"]) != `"u1"` {
 		t.Fatalf("occurrence = %v", occ)
+	}
+	if by, has := series["completed_by"]; has && string(by) != "null" {
+		t.Fatalf("series completed_by = %s", by)
 	}
 	out = f.mustCall(c, "complete_tasks", map[string]any{"ids": []string{"t1"}})
 	if out["changed"] != 0 {
 		t.Fatalf("second complete = %v", out)
 	}
 	f.mustCall(c, "reopen_tasks", map[string]any{"ids": []string{"t1"}})
-	if !isOpenEntity(f.get("u1", "t1")) {
+	if !isOpenEntity(f.get("u1", "t1")) || string(f.get("u1", "t1")["completed_by"]) != "null" {
 		t.Fatal("not reopened")
 	}
 }
@@ -854,5 +861,30 @@ func TestProjectNoteInListProjects(t *testing.T) {
 	// update_project still only renames and recolours.
 	if _, err := f.reg.Plan(context.Background(), c, "update_project", json.RawMessage(`{"id":"p1","description":"x"}`), nil); !isArgErr(err) {
 		t.Fatalf("update_project with description = %v", err)
+	}
+}
+
+// TestHabitInResults (OpenSpec change habits, design D7): results carry
+// habit: true, update_tasks refuses habit, and complete_tasks records a done
+// occurrence of a habit like any recurring task.
+func TestHabitInResults(t *testing.T) {
+	f := newFixture(t)
+	f.task("u1", "h1", "Meditate", map[string]any{"recurrence": "every day", "habit": true, "due": map[string]any{"date": "2026-10-12"}})
+	c := agent("u1")
+	out := f.mustCall(c, "get_task", map[string]any{"id": "h1"})
+	raw, _ := json.Marshal(out)
+	if !strings.Contains(string(raw), `"habit":true`) {
+		t.Fatalf("get_task without habit: %s", raw)
+	}
+	if _, err := f.call(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": "h1", "habit": false}}}); !isArgErr(err) {
+		t.Fatalf("update_tasks accepted habit: %v", err)
+	}
+	f.mustCall(c, "complete_tasks", map[string]any{"ids": []string{"h1"}})
+	occ := f.get("u1", opsync.OccurrenceID("h1", "2026-10-12"))
+	if occ == nil || isOpenEntity(occ) || string(occ["skipped"]) == "true" || string(occ["habit"]) == "true" {
+		t.Fatalf("occurrence = %v", occ)
+	}
+	if s := f.get("u1", "h1"); string(s["habit"]) != "true" || string(s["due"]) != `{"date":"2026-10-13"}` {
+		t.Fatalf("series = %v", s)
 	}
 }

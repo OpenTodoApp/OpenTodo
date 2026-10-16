@@ -12,6 +12,7 @@ import { assignableIn, currentUserId, membershipMap, scopeOf } from './sharing'
 import { descendants } from './tree'
 import type { Membership, Priority, Task } from './types'
 import { applyBatch } from './undo'
+import { t } from './i18n'
 
 /** Changes merged by entity: a task reached twice (ticked and under a ticked parent) gets one patch. */
 export function mergeChanges(changes: Change[]): Change[] {
@@ -25,28 +26,28 @@ export function mergeChanges(changes: Change[]): Change[] {
 }
 
 /** True when every task is completed: the batch reopens instead of completing. */
-export const allCompleted = (tasks: readonly Task[]): boolean => tasks.length > 0 && tasks.every((t) => !!t.completed_at)
+export const allCompleted = (tasks: readonly Task[]): boolean => tasks.length > 0 && tasks.every((task) => !!task.completed_at)
 
 /** Complete the open tasks (series roll forward, subtrees complete), or reopen when all are completed. */
 export function planComplete(tasks: readonly Task[], all: Task[], now: number, today: string): Change[] {
   if (allCompleted(tasks)) return planReopen(tasks)
   const out: Change[] = []
-  for (const t of tasks) {
-    if (t.completed_at) continue
-    const rule = seriesRule(t)
-    const plan = rule ? planCompletion(t, rule, all, now, today) : null
+  for (const task of tasks) {
+    if (task.completed_at) continue
+    const rule = seriesRule(task)
+    const plan = rule ? planCompletion(task, rule, all, now, today) : null
     if (plan && plan.kind === 'roll') out.push(...plan.changes)
-    else out.push(...planCompletePlain(t.id, all, now))
+    else out.push(...planCompletePlain(task.id, all, now))
   }
   return mergeChanges(out)
 }
 
 export function planReopen(tasks: readonly Task[]): Change[] {
-  return tasks.filter((t) => t.completed_at).map((t) => ({ entity: 'task', entityId: t.id, patch: { completed_at: null } }))
+  return tasks.filter((task) => task.completed_at).map((tk) => ({ entity: 'task', entityId: tk.id, patch: { completed_at: null } }))
 }
 
 export function planPriority(tasks: readonly Task[], p: Priority): Change[] {
-  return tasks.filter((t) => t.priority !== p).map((t) => ({ entity: 'task', entityId: t.id, patch: { priority: p } }))
+  return tasks.filter((task) => task.priority !== p).map((tk) => ({ entity: 'task', entityId: tk.id, patch: { priority: p } }))
 }
 
 export type DuePick = 'today' | 'tomorrow' | 'next-week' | null | string
@@ -61,37 +62,37 @@ export function dateOfPick(pick: Exclude<DuePick, null>, today = todayISO()): st
 
 /** Reschedule; an existing time and zone are kept. No date ends a recurrence; a date un-parks. */
 export function planDue(tasks: readonly Task[], pick: DuePick, today = todayISO()): Change[] {
-  return tasks.map((t): Change => {
-    if (pick === null) return { entity: 'task', entityId: t.id, patch: t.recurrence ? { due: null, recurrence: null } : { due: null } }
+  return tasks.map((task): Change => {
+    if (pick === null) return { entity: 'task', entityId: task.id, patch: task.recurrence ? { due: null, recurrence: null } : { due: null } }
     const date = dateOfPick(pick, today)
-    const due = t.due?.time ? { ...t.due, date } : { date }
-    return { entity: 'task', entityId: t.id, patch: t.start === 'someday' ? { due, start: null } : { due } }
+    const due = task.due?.time ? { ...task.due, date } : { date }
+    return { entity: 'task', entityId: task.id, patch: task.start === 'someday' ? { due, start: null } : { due } }
   })
 }
 
 /** Add a label to (or remove it from) every task, from each task's current array. */
 export function planLabels(tasks: readonly Task[], labelId: string, add: boolean): Change[] {
-  return tasks.flatMap((t): Change[] => {
-    const has = t.labels.includes(labelId)
+  return tasks.flatMap((task): Change[] => {
+    const has = task.labels.includes(labelId)
     if (add === has) return []
-    return [{ entity: 'task', entityId: t.id, patch: { labels: add ? [...t.labels, labelId] : t.labels.filter((l) => l !== labelId) } }]
+    return [{ entity: 'task', entityId: task.id, patch: { labels: add ? [...task.labels, labelId] : task.labels.filter((l) => l !== labelId) } }]
   })
 }
 
 /** Move to the Trash with their subtrees, one tombstone per task. */
 export function planTrash(tasks: readonly Task[], all: Task[], now: number): Change[] {
   const ids = new Set<string>()
-  for (const t of tasks) {
-    ids.add(t.id)
-    for (const d of descendants(t.id, all)) ids.add(d)
+  for (const task of tasks) {
+    ids.add(task.id)
+    for (const d of descendants(task.id, all)) ids.add(d)
   }
   return [...ids].map((id) => ({ entity: 'task', entityId: id, patch: { deleted_at: now } }))
 }
 
 /** Ticked tasks whose ancestor is also ticked move with it, not on their own. */
 function topmost(tasks: readonly Task[], all: Task[]): Task[] {
-  const ticked = new Set(tasks.map((t) => t.id))
-  return tasks.filter((t) => ![...ticked].some((other) => other !== t.id && descendants(other, all).has(t.id)))
+  const ticked = new Set(tasks.map((task) => task.id))
+  return tasks.filter((tk) => ![...ticked].some((other) => other !== tk.id && descendants(other, all).has(tk.id)))
 }
 
 export type MoveTarget = { projectId: string | null; sectionId?: string | null }
@@ -100,16 +101,16 @@ export type MoveTarget = { projectId: string | null; sectionId?: string | null }
 export function planMoveGroups(tasks: readonly Task[], all: Task[], target: MoveTarget,
   memberships: Map<string, Membership>, me: string | null, now = Date.now()): { task: Task; changes: Change[] }[] {
   const out: { task: Task; changes: Change[] }[] = []
-  for (const t of topmost(tasks, all)) {
-    const sameProject = (t.project_id ?? null) === target.projectId
+  for (const tk of topmost(tasks, all)) {
+    const sameProject = (tk.project_id ?? null) === target.projectId
     if (sameProject) {
-      if (target.sectionId !== undefined && (t.section_id ?? null) !== target.sectionId) out.push({ task: t, changes: [{ entity: 'task', entityId: t.id, patch: { section_id: target.sectionId } }] })
+      if (target.sectionId !== undefined && (tk.section_id ?? null) !== target.sectionId) out.push({ task: tk, changes: [{ entity: 'task', entityId: tk.id, patch: { section_id: target.sectionId } }] })
       continue
     }
     const patch: Partial<Task> = { project_id: target.projectId, ...(target.sectionId !== undefined ? { section_id: target.sectionId } : {}) }
-    const cross = scopeOf(t.project_id, memberships) !== scopeOf(target.projectId, memberships)
+    const cross = scopeOf(tk.project_id, memberships) !== scopeOf(target.projectId, memberships)
       ? { assignable: assignableIn(target.projectId, memberships, me) } : undefined
-    out.push({ task: t, changes: planProjectChange(t, all, patch, cross, now).changes })
+    out.push({ task: tk, changes: planProjectChange(tk, all, patch, cross, now).changes })
   }
   return out
 }
@@ -121,7 +122,7 @@ export function planMove(tasks: readonly Task[], all: Task[], target: MoveTarget
 }
 
 export function planAssign(tasks: readonly Task[], userId: string | null): Change[] {
-  return tasks.filter((t) => (t.assignee_id ?? null) !== userId).map((t) => ({ entity: 'task', entityId: t.id, patch: { assignee_id: userId } }))
+  return tasks.filter((task) => (task.assignee_id ?? null) !== userId).map((tk) => ({ entity: 'task', entityId: tk.id, patch: { assignee_id: userId } }))
 }
 
 /**
@@ -143,9 +144,9 @@ export async function toProposed(changes: Change[], memberships?: Map<string, Me
 
 /** Live rows of the ticked ids (in the given order) and every live task, read together. */
 export async function readTicked(ids: readonly string[]): Promise<{ tasks: Task[]; all: Task[] }> {
-  const all = await db.tasks.filter((t) => !t.deleted_at).toArray()
-  const byId = new Map(all.map((t) => [t.id, t]))
-  return { tasks: ids.map((id) => byId.get(id)).filter((t): t is Task => !!t), all }
+  const all = await db.tasks.filter((task) => !task.deleted_at).toArray()
+  const byId = new Map(all.map((tk) => [tk.id, tk]))
+  return { tasks: ids.map((id) => byId.get(id)).filter((item): item is Task => !!item), all }
 }
 
 export type BulkAction =
@@ -155,17 +156,16 @@ export type BulkAction =
   | { kind: 'label'; labelId: string; add: boolean }
   | { kind: 'trash' }
 
-const count = (n: number) => `${n} ${n === 1 ? 'task' : 'tasks'}`
 
 /** The undo toast's words for an action on n tasks. */
 export function bulkLabel(a: BulkAction | { kind: 'reopen' }, n: number): string {
   switch (a.kind) {
-    case 'complete': return `${count(n)} completed`
-    case 'reopen': return `${count(n)} reopened`
-    case 'priority': return `Priority ${a.priority} set on ${count(n)}`
-    case 'due': return a.pick === null ? `Date removed from ${count(n)}` : `${count(n)} rescheduled`
-    case 'label': return a.add ? `Label added to ${count(n)}` : `Label removed from ${count(n)}`
-    case 'trash': return `${count(n)} moved to the Trash`
+    case 'complete': return t('{n, plural, one {# task completed} other {# tasks completed}}', { n })
+    case 'reopen': return t('{n, plural, one {# task reopened} other {# tasks reopened}}', { n })
+    case 'priority': return t('{n, plural, one {Priority {p} set on # task} other {Priority {p} set on # tasks}}', { n, p: a.priority })
+    case 'due': return a.pick === null ? t('{n, plural, one {Date removed from # task} other {Date removed from # tasks}}', { n }) : t('{n, plural, one {# task rescheduled} other {# tasks rescheduled}}', { n })
+    case 'label': return a.add ? t('{n, plural, one {Label added to # task} other {Label added to # tasks}}', { n }) : t('{n, plural, one {Label removed from # task} other {Label removed from # tasks}}', { n })
+    case 'trash': return t('{n, plural, one {# task moved to the Trash} other {# tasks moved to the Trash}}', { n })
   }
 }
 
@@ -186,7 +186,7 @@ export async function applyBulk(ids: readonly string[], action: BulkAction, opts
     case 'complete': {
       const reopen = allCompleted(tasks)
       changes = planComplete(tasks, all, now, today)
-      label = bulkLabel(reopen ? { kind: 'reopen' } : action, reopen ? tasks.length : tasks.filter((t) => !t.completed_at).length)
+      label = bulkLabel(reopen ? { kind: 'reopen' } : action, reopen ? tasks.length : tasks.filter((task) => !task.completed_at).length)
       break
     }
     case 'priority': changes = planPriority(tasks, action.priority); label = bulkLabel(action, tasks.length); break
@@ -239,6 +239,6 @@ export async function reviewAssign(ids: readonly string[], userId: string | null
 /** The one shared project every ticked task is in, or null (Assign needs it). */
 export function commonSharedProject(tasks: readonly Task[], memberships: Map<string, Membership>): string | null {
   const p = tasks[0]?.project_id ?? null
-  if (!p || !memberships.has(p) || tasks.some((t) => t.project_id !== p)) return null
+  if (!p || !memberships.has(p) || tasks.some((task) => task.project_id !== p)) return null
   return p
 }

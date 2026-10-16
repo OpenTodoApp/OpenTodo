@@ -10,6 +10,7 @@ import {
   currentDateTime, formatDate, formatHour, formatInstant, formatTime, setDateTime, weekDays, weekStartOf,
   type DateStyle, type InstantStyle, type ResolvedDateTime,
 } from '../lib/dates'
+import { useLanguageVersion } from '../lib/i18n'
 import { readUserPrefs, USER_PREFS_ID, type DateTimePrefs } from '../lib/userPrefs'
 
 interface DateTimeContextValue {
@@ -22,7 +23,9 @@ const DateTimeContext = createContext<DateTimeContextValue | null>(null)
 export function DateTimePrefsProvider({ children }: { children: ReactNode }) {
   const row = useLiveQuery(() => db.userPrefs.get(USER_PREFS_ID), [])
   const prefs = readUserPrefs(row)
-  const key = `${prefs.date_format}|${prefs.time_format}|${prefs.week_start}`
+  // The interface language decides what `system` means and the month names (app-localization D4).
+  const lang = useLanguageVersion()
+  const key = `${prefs.date_format}|${prefs.time_format}|${prefs.week_start}|${lang}`
   // The snapshot is updated during render, before any child formats a date.
   const value = useMemo<DateTimeContextValue>(() => ({ prefs, resolved: setDateTime(prefs) }), [key])
   return <DateTimeContext.Provider value={value}>{children}</DateTimeContext.Provider>

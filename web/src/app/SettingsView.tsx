@@ -11,6 +11,7 @@ import { CalendarSettingsSection } from './CalendarSettings'
 import { PasswordSection } from './PasswordSection'
 import { AdministrationSections } from './UsersPanel'
 import { NotificationsSettings } from './NotificationsSettings'
+import { DigestCard } from './DigestCard'
 import { ActivityPanel } from './ActivityPanel'
 import { AuditPanel } from './AuditPanel'
 import { SecurityPanel } from './SecurityPanel'
@@ -27,14 +28,18 @@ import { CaldavPanel } from './CaldavPanel'
 import { CalendarFeedsPanel } from './CalendarFeedsPanel'
 import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
-import { KeyboardSection, StartViewSection } from './PreferencesPanels'
+import { KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
 import { AutoArchiveSection } from './ProjectsSettings'
 import { CaptureSection } from './CaptureSettings'
 import { AttachmentSettingsPanel } from './AttachmentSettingsPanel'
 import { OutgoingEmailPanel } from './OutgoingEmailPanel'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
-import { DEMO_RESTRICTED_NOTE, useDemo } from '../lib/demo'
+import { useDemo } from '../lib/demo'
+import { useHosted } from '../lib/hosted'
+import { ServerArchivePanel } from './ServerArchivePanel'
+import { t } from '../lib/i18n'
+import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
 
 // Settings → Integrations → Assistant (in-app-assistant): part of the lazy assistant code.
 const AssistantSettingsSection = lazy(() => import('./assistant/AssistantSettings'))
@@ -102,7 +107,7 @@ export function SettingsView({ user, onLogout, section, anchor }: { user: User; 
   if (!page) {
     return (
       <PageBody width="form" className="space-y-6" data-settings-overview>
-        <PageHeader title="Settings" titleRef={headingRef} titleTabIndex={-1} help="settings" sticky={false} />
+        <PageHeader title={t('Settings')} titleRef={headingRef} titleTabIndex={-1} help="settings" sticky={false} />
         <SettingsList user={user} />
       </PageBody>
     )
@@ -110,13 +115,13 @@ export function SettingsView({ user, onLogout, section, anchor }: { user: User; 
   return (
     <div ref={pageRef} className="mx-auto max-w-6xl px-4 py-6 outline-none md:px-8 lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-10" data-settings-section={page.id}>
       {twoColumn && (
-        <aside className="hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:pr-1" aria-label="Settings">
+        <aside className="hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:pr-1" aria-label={t('Settings')}>
           <SettingsList user={user} current={page.id} compact />
         </aside>
       )}
       <div className="min-w-0 space-y-6 lg:max-w-2xl">
         <PageHeader title={page.label} titleRef={headingRef} titleTabIndex={-1} help={PAGE_HELP_SCREENS[page.id]} sticky={false}
-          back={{ label: 'Settings', href: routePath({ view: 'settings' }), onClick: () => navigate({ view: 'settings' }), hideFrom: 'lg' }} />
+          back={{ label: t('Settings'), href: routePath({ view: 'settings' }), onClick: () => navigate({ view: 'settings' }), hideFrom: 'lg' }} />
         <SectionContent section={page} user={user} onLogout={onLogout} />
       </div>
     </div>
@@ -134,7 +139,7 @@ export function SettingsList({ user, current, compact = false }: { user: User; c
       <ProfileCard user={user} compact={compact} />
       <SettingsSearch user={user} />
       {!compact && <ConfigWarningsNotice user={user} />}
-      <nav aria-label="Settings sections" className={compact ? 'space-y-4' : 'space-y-6'}>
+      <nav aria-label={t('Settings sections')} className={compact ? 'space-y-4' : 'space-y-6'}>
         {groupedSections(user).map(({ group, sections }) => (
           <section key={group.id} aria-labelledby={`group-${group.id}`}>
             <h2 id={`group-${group.id}`} className={`${compact ? 'px-2.5 pb-1' : 'mb-2 px-1'} text-hint font-semibold uppercase tracking-wide text-faint`}>{group.label}</h2>
@@ -165,8 +170,7 @@ export function SettingsList({ user, current, compact = false }: { user: User; c
         ))}
       </nav>
       <p className={`text-meta text-faint ${compact ? 'px-2.5' : ''}`}>
-        OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.
-        <a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">Source code</a>
+        {t('OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.')}<a className="ml-1 underline" href="https://github.com/pixari/opentodo" target="_blank" rel="noreferrer">{t('Source code')}</a>
       </p>
     </div>
   )
@@ -195,10 +199,10 @@ function SettingsSearch({ user }: { user: User }) {
   return (
     <form role="search" onSubmit={submit} className="space-y-2" data-settings-search>
       <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKey}
-        placeholder="Search settings" aria-label="Search settings" autoComplete="off" />
+        placeholder={t('Search settings')} aria-label={t('Search settings')} autoComplete="off" />
       {query.trim() && (
-        <ul ref={listRef} className="rounded-card border border-default bg-surface p-1 shadow-1" aria-label="Matching settings" data-settings-results>
-          {hits.length === 0 && <li className="px-2 py-2 text-meta text-muted">No setting matches “{query.trim()}”.</li>}
+        <ul ref={listRef} className="rounded-card border border-default bg-surface p-1 shadow-1" aria-label={t('Matching settings')} data-settings-results>
+          {hits.length === 0 && <li className="px-2 py-2 text-meta text-muted">{t('No setting matches “{trim}”.', { trim: query.trim() })}</li>}
           {hits.map((h: SettingsHit) => (
             <li key={h.section.id}>
               <ResultLink section={h.section} onOpen={() => open(h.section.id)} />
@@ -228,7 +232,6 @@ function ResultLink({ section, onOpen }: { section: SettingsSection; onOpen: () 
   )
 }
 
-const ROLE_LABEL: Record<User['role'], string> = { owner: 'Owner', admin: 'Admin', member: 'Member' }
 
 /** Who is signed in: avatar initials, name, email and role (the list and Account). */
 export function ProfileCard({ user, compact = false }: { user: User; compact?: boolean }) {
@@ -239,7 +242,7 @@ export function ProfileCard({ user, compact = false }: { user: User; compact?: b
         <p className="user-text truncate text-body font-semibold text-default">{user.name || user.email}</p>
         <p className="user-text truncate text-meta text-muted">{user.email}</p>
       </div>
-      <Badge hue={user.role === 'owner' ? 'green' : user.role === 'admin' ? 'indigo' : 'slate'}>{ROLE_LABEL[user.role]}</Badge>
+      <Badge hue={user.role === 'owner' ? 'green' : user.role === 'admin' ? 'indigo' : 'slate'}>{ACCOUNT_ROLE_LABEL[user.role]}</Badge>
     </div>
   )
 }
@@ -247,7 +250,10 @@ export function ProfileCard({ user, compact = false }: { user: User; compact?: b
 /** The cards of one section; on a demo instance the refused ones are disabled under one note. */
 function SectionContent({ section, user, onLogout }: { section: SettingsSection; user: User; onLogout: () => void }) {
   const demo = !!useDemo()
+  // A hosted service's operator owns the server-level settings (multi-tenant-host D4).
+  const hosted = useHosted()
   const isOwner = user.role === 'owner'
+  const ownsServer = isOwner && !hosted
   const refused = demo ? (section.demo?.(user) ?? []) : []
   const note = refused.length > 0 ? <DemoRestrictedNote features={refused} /> : null
   switch (section.id) {
@@ -279,6 +285,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
     case 'general':
       return (
         <>
+          <LanguageSection />
           <StartViewSection />
           <DateTimeSection />
           <CalendarSettingsSection />
@@ -286,7 +293,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
         </>
       )
     case 'notifications':
-      return <>{note}<DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled></>
+      return <>{note}<DemoDisabled on={demo}><NotificationsSettings /><DigestCard /></DemoDisabled></>
     case 'capture':
       return (
         <>
@@ -306,13 +313,13 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
           <DemoDisabled on={demo}>
             <CaldavPanel isOwner={isOwner} email={user.email} />
             <CalendarFeedsPanel isOwner={isOwner} />
-            <WebhooksPanel isOwner={isOwner} />
+            <WebhooksPanel isOwner={ownsServer} />
             <TokensSection />
           </DemoDisabled>
           <Anchor id="ai">
             <DemoDisabled on={demo}>
-              <Suspense fallback={null}><AssistantSettingsSection isOwner={isOwner} /></Suspense>
-              <AssistantsPanel isOwner={isOwner} />
+              <Suspense fallback={null}><AssistantSettingsSection isOwner={ownsServer} /></Suspense>
+              <AssistantsPanel isOwner={ownsServer} />
             </DemoDisabled>
           </Anchor>
         </>
@@ -334,7 +341,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
             <Anchor id="access-policies">
               <DemoDisabled on={demo}>
                 <MfaPolicyPanel />
-                <SsoPanel />
+                {!hosted && <SsoPanel />}
                 <ProjectInvitePolicyPanel />
               </DemoDisabled>
             </Anchor>
@@ -345,10 +352,17 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
       return (
         <>
           {note}
-          <DemoDisabled on={demo}><BackupsPanel /></DemoDisabled>
-          <AttachmentSettingsPanel />
-          {/* Outgoing email (outgoing-email change): the owner's SMTP settings; a demo instance never builds the mailer. */}
-          <DemoDisabled on={demo}><OutgoingEmailPanel /></DemoDisabled>
+          {hosted ? (
+            // Hosted: backups, attachment limits and outgoing email are the operator's; the owner can take the data away.
+            <ServerArchivePanel />
+          ) : (
+            <>
+              <DemoDisabled on={demo}><BackupsPanel /></DemoDisabled>
+              <AttachmentSettingsPanel />
+              {/* Outgoing email (outgoing-email change): the owner's SMTP settings; a demo instance never builds the mailer. */}
+              <DemoDisabled on={demo}><OutgoingEmailPanel /></DemoDisabled>
+            </>
+          )}
           <Anchor id="audit-log"><AuditPanel /></Anchor>
         </>
       )
@@ -370,17 +384,15 @@ function DemoDisabled({ on, children }: { on: boolean; children: ReactNode }) {
 export const DEMO_RESTRICTED_FEATURES = [
   'password and two-factor authentication', 'passkeys', 'end-to-end encryption', 'push notifications', 'linked accounts',
   'users and invitations', 'single sign-on', 'calendar apps (CalDAV)', 'calendar feeds', 'webhooks', 'email to task', 'backups',
-  'outgoing email', 'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
+  'outgoing email', 'the weekly digest', 'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
 ]
 
 /** The demo note once at the top of a page, naming the rows whose controls are disabled. */
 function DemoRestrictedNote({ features }: { features: string[] }) {
-  const many = features.length > 1
   return (
     <div data-testid="demo-restricted">
       <Notice tone="info">
-        <span className="font-medium">Demo instance.</span> Here, {joinList(features)} {many ? 'are' : 'is'} {DEMO_RESTRICTED_NOTE.toLowerCase().replace(/\.$/, '')}; the rows are shown with their controls disabled.
-        This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Run your own server to use {many ? 'them' : 'it'}; it takes one container.
+        {t.rich('{n, plural, one {<b>Demo instance.</b> Here, {features} is disabled on this demo instance; the rows are shown with their controls disabled. This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Run your own server to use it; it takes one container.} other {<b>Demo instance.</b> Here, {features} are disabled on this demo instance; the rows are shown with their controls disabled. This sandbox is private to you and is deleted after 2 hours of inactivity, and every night. Run your own server to use them; it takes one container.}}', { n: features.length, features: joinList(features.map((x) => t(x))), b: (chunks) => <span className="font-medium">{chunks}</span> })}
       </Notice>
     </div>
   )

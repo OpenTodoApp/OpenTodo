@@ -8,6 +8,7 @@ import { applyBatch } from '../../lib/undo'
 import { ChangeSetReview } from '../assistant/ChangeSetReview'
 import { Dialog } from '../overlay/Dialog'
 import { showBulkToast } from './toastStore'
+import { t } from '../../lib/i18n'
 
 export function BulkReview({ title, plan, onClose, onApplied }: { title: string; plan: ReviewPlan; onClose: () => void; onApplied?: () => void }) {
   const [review, setReview] = useState<Review | null>(null)
@@ -18,7 +19,7 @@ export function BulkReview({ title, plan, onClose, onApplied }: { title: string;
     setBusy(true)
     const checked = review.items.filter((i) => i.checked).map((i) => i.change.entityId)
     const total = review.items.length
-    const label = checked.length === total ? `${total} ${total === 1 ? 'change' : 'changes'} applied` : `${checked.length} of ${total} changes applied`
+    const label = checked.length === total ? t('{n, plural, one {# change applied} other {# changes applied}}', { n: total }) : t('{n} of {total} changes applied', { n: checked.length, total })
     const entry = await applyBatch(await plan.resolve(checked), { source: 'bulk', label })
     showBulkToast(label, entry?.id ?? null)
     onApplied?.()
@@ -31,7 +32,7 @@ export function BulkReview({ title, plan, onClose, onApplied }: { title: string;
           <ChangeSetReview review={review} result={null} busy={busy}
             onToggle={(i, checked) => setReview({ ...review, items: review.items.map((it, j) => (j === i ? { ...it, checked } : it)) })}
             onApply={() => void apply()} onDiscard={onClose} onUndo={() => {}} />
-        ) : <p className="text-body text-muted" role="status">Preparing the changes…</p>}
+        ) : <p className="text-body text-muted" role="status">{t('Preparing the changes…')}</p>}
       </div>
     </Dialog>
   )

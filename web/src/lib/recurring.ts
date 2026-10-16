@@ -24,14 +24,16 @@ export function occurrenceDate(series: Task, today: string): string {
 
 /**
  * Completed occurrence records of a series: live tasks pointing at it whose id is
- * the one derived from their own due date. Detached copies (different id scheme)
- * and reopened records (no completed_at) are not counted, so the `for N times`
+ * the one derived from their own due date. Detached copies (different id scheme),
+ * reopened records (no completed_at) and skipped habit records are not counted, so the `for N times`
  * count converges with the records themselves, without a separate counter.
  */
 export function completedOccurrences(seriesId: string, tasks: Iterable<Task>, exceptDate?: string): number {
   let n = 0
   for (const t of tasks) {
     if (t.series_id !== seriesId || !t.completed_at || t.deleted_at || !t.due) continue
+    // A habit's skipped record is not a completion (OpenSpec habits, design D2).
+    if (t.skipped) continue
     if (t.due.date === exceptDate) continue
     if (t.id === occurrenceId(seriesId, t.due.date)) n++
   }
@@ -74,6 +76,9 @@ function copyOf(series: Task, now: number): Record<string, unknown> {
     ...(series.deadline ? { deadline: series.deadline } : {}),
     ...(series.start ? { start: series.start } : {}),
     ...(series.evening ? { evening: true } : {}),
+    // Custom field values, null included, as the server's record (custom-fields);
+    // mutateMany writes one `fields.<id>` op each.
+    ...(series.fields && Object.keys(series.fields).length ? { fields: { ...series.fields } } : {}),
   }
 }
 
@@ -95,10 +100,15 @@ export function planCompletion(series: Task, rule: Rule, tasks: Iterable<Task>, 
   return {
     kind: 'roll', recordId, next,
     changes: [
-      { entity: 'task', entityId: recordId, patch: { ...copyOf(series, now), due: series.due ?? { date }, completed_at: now } },
+      { entity: 'task', entityId: recordId, patch: { ...occurrenceRecord(series, date, now), ...(series.habit ? { skipped: false } : {}) } },
       { entity: 'task', entityId: series.id, patch: moveDates(series, next, today) },
     ],
   }
+}
+
+/** The completed record of the series' current occurrence (shared by completion and a habit's skip). */
+function occurrenceRecord(series: Task, date: string, now: number): Record<string, unknown> {
+  return { ...copyOf(series, now), due: series.due ?? { date }, completed_at: now }
 }
 
 /**
@@ -112,9 +122,23 @@ export function nextOnSkip(series: Task, rule: Rule, today: string): string | nu
   return rule.until && next > rule.until ? null : next
 }
 
-export function planSkip(series: Task, rule: Rule, today: string): Change[] | null {
+/**
+ * Skipping the current occurrence moves the series on. For a habit it also writes
+ * the occurrence record (same derived id a completion writes) marked `skipped`, in
+ * the same batch, so a skipped day is distinguishable from a missed one and two
+ * devices skipping (or one completing, one skipping) converge to one record
+ * (OpenSpec habits, design D2). A plain series writes only the due change.
+ */
+export function planSkip(series: Task, rule: Rule, now: number, today: string): Change[] | null {
   const next = nextOnSkip(series, rule, today)
-  return next ? [{ entity: 'task', entityId: series.id, patch: moveDates(series, next, today) }] : null
+  if (!next) return null
+  const move: Change = { entity: 'task', entityId: series.id, patch: moveDates(series, next, today) }
+  if (!series.habit) return [move]
+  const date = occurrenceDate(series, today)
+  return [
+    { entity: 'task', entityId: occurrenceId(series.id, date), patch: { ...occurrenceRecord(series, date, now), skipped: true } },
+    move,
+  ]
 }
 
 /** "This occurrence only": a standalone copy of the current occurrence, and the series moves on. */

@@ -3,7 +3,7 @@ title: Recurring task rules
 summary: The repeat rule grammar, how the next date is worked out, and what completing, skipping and detaching do.
 audience: user
 section: Reference
-specs: [recurring-tasks]
+specs: [recurring-tasks, habits]
 screens: []
 order: 30
 ---
@@ -97,6 +97,11 @@ in Someday clears its due date and so ends the repetition.
 - **Skip** (`Shift+K`, or *Skip* in the detail panel): moves the task to the next
   occurrence without recording a completion. Completion-relative rules skip as if
   completed today. Skipping the last occurrence is not possible; complete or delete it.
+  For a [habit](#habits), a skip also writes that day's occurrence record marked
+  `skipped`, in the same batch as the move, so the history can tell a skipped day
+  from a missed one. A skipped record is not a completion: it is not listed in
+  Completed, does not match `completed` filters and does not count towards
+  `for N times`. A task that is not a habit skips exactly as before, with no record.
 - **This occurrence only** (`Shift+O`, or the button in the detail panel): makes a
   standalone copy of the current occurrence, without a rule, and moves the series
   to its next occurrence. Edit or move the copy freely.
@@ -115,7 +120,22 @@ the next due date is a pure function of the rule and dates every device shares.
 Two devices that complete the same occurrence offline therefore write the same
 record and the same next due date, and end with one Completed entry once they
 sync. A `for N times` count is the number of occurrence records, so it converges
-without a counter.
+without a counter; skipped records of a habit are left out of the count on every
+device and on the server.
+
+A habit's skip writes the same record id a completion writes, with every field of
+the record in one batch under one timestamp. Two devices that skip the same day
+therefore end with one skipped record, and when one device completes a day while
+another skips it, per-field last-writer-wins keeps the later batch whole: the day
+reads as done or as skipped, never as a mix, and the streak is unbroken either
+way. A completion through the REST API, CalDAV or an assistant writes no
+`skipped` field; if it lands after a device's skip of the same day, the record
+keeps `skipped: true` with the server's completion time, and the day still reads
+as skipped.
+
+Skipped a day by mistake? Set the task's date back to that day and complete it:
+the completion writes the same record with `skipped: false`, so the day reads as
+done. The history grid itself is read-only.
 
 The REST API behaves the same: `PATCH /api/v1/tasks/{id}` with a non-null
 `completed_at` on a recurring task records the occurrence and moves the task (see
@@ -124,3 +144,53 @@ The REST API behaves the same: `PATCH /api/v1/tasks/{id}` with a non-null
 Clients older than this feature keep working: they store the new fields without
 showing them and complete a recurring task as a plain completion, which is
 recovered by reopening it on an updated device.
+
+## Habits
+
+A recurring task with a calendar rule (any rule except `after completion`) can be
+tracked as a habit: turn on **Track as a habit** under the repeat rule in the
+detail panel. The task stays an ordinary recurring task; the flag is the boolean
+`habit` field, synced like any other. Its streaks and month history are computed
+on each device from the series and its occurrence records
+(`web/src/lib/habits.ts`, pinned by `web/src/lib/habits.vectors.json`); nothing
+about them is stored and the server computes nothing, so two devices with the same
+rows show the same numbers, offline too. A task whose rule is removed or made
+completion-relative keeps the flag but shows no habit statistics until it has a
+calendar rule again.
+
+The rules:
+
+- **Scheduled days** are the dates the rule matches plus every date that has an
+  occurrence record: a record proves the day was scheduled even if the rule
+  changed since. Weekday and month rules match the date itself; interval rules
+  (`every day`, `every 2 weeks`, `every month`) step back from the current due
+  date by the interval, months clamped to the month's length (`every month` due on
+  the 31st was due on 28 February). Days before the habit's first record are not
+  part of its history.
+- **Done** and **skipped** days have a record. A **missed** day is a scheduled day
+  before the current occurrence without one.
+- The **current occurrence** (the task's due date) is **pending**: it never breaks
+  the streak, whatever today is. Once the day has passed the streak chip says it
+  is at risk.
+- The **streak** counts done days walking back from the scheduled day before the
+  current occurrence, until the first missed day. A skipped day keeps the chain
+  without adding to it. Unscheduled days (Tuesday for `every mon, wed, fri`)
+  are never missed.
+- The **best** streak is the longest such run in the habit's history.
+
+Catching up after being overdue leaves missed days, because that is what
+happened: `every day` due Monday and completed on Wednesday records Monday and
+moves to Thursday, so Tuesday and Wednesday read as missed and the streak starts
+again. A rule change rewrites only which past days without a record read as
+missed; done and skipped days stay.
+
+The month grid marks each day as done (check mark), skipped (dash), missed
+(dashed outline), pending (circle) or upcoming, with the date and state as each
+day's accessible name ("6 October, skipped"). Arrow keys move by a day or a
+week, Home and End jump to the month's first and last day, and Page Up and Page
+Down change the month.
+
+The REST API, CalDAV and assistant tools complete a habit like any recurring task,
+which records a done day; none of them skips. The API reads and writes `habit`
+as a plain boolean, assistant results carry `habit: true`, and CalDAV serves a
+habit as an ordinary recurring VTODO.

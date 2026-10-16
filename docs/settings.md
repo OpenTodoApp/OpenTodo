@@ -43,7 +43,7 @@ How the app behaves: [Settings: App](settings-app.md).
 
 ### General
 
-[General](settings-app.md#general): the start view, date and time, the calendar grid and the keyboard options.
+[General](settings-app.md#general): the [language](language.md), start view, date and time, calendar grid and keyboard.
 
 #### Date and time
 
@@ -51,7 +51,7 @@ How the app behaves: [Settings: App](settings-app.md).
 
 ### Notifications
 
-[Notifications](notifications.md): push notifications for reminders on this device, and a test that shows whether they arrive.
+[Notifications](notifications.md): push notifications for reminders on this device, and a test that shows whether they arrive. The [weekly digest](review-and-statistics.md#weekly-digest-by-email) emails last week's numbers on your review day.
 
 ### Capture
 

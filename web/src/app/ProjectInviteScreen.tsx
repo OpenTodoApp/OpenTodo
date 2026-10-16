@@ -7,6 +7,8 @@ import { AuthScreen } from './AuthScreen'
 import { navigate } from './router'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
+import { t } from '../lib/i18n'
+import { roleName } from '../lib/roleNames'
 
 // Screen behind /invite/p/<token> (OpenSpec `project-invite-links`): previews a
 // project invite link, lets a signed-in person join, and offers a visitor
@@ -23,9 +25,9 @@ export function rememberPendingInvite(token: string) {
 /** Reads and clears a remembered link. */
 export function takePendingInvite(): string | null {
   try {
-    const t = sessionStorage.getItem(PENDING_PROJECT_INVITE)
-    if (t) sessionStorage.removeItem(PENDING_PROJECT_INVITE)
-    return t
+    const item = sessionStorage.getItem(PENDING_PROJECT_INVITE)
+    if (item) sessionStorage.removeItem(PENDING_PROJECT_INVITE)
+    return item
   } catch {
     return null
   }
@@ -95,7 +97,7 @@ export function ProjectInviteScreen({ token, user, status, onAuthenticated, onLo
     } catch (err) {
       if (err instanceof ApiError && err.code === 'already_member') setJoin({ kind: 'already-member' })
       else if (err instanceof ApiError && err.code === 'invitation_invalid') setState({ kind: 'invalid' })
-      else if (isNetworkError(err)) setJoin({ kind: 'error', message: 'The server could not be reached. Joining needs a connection; try again when you are online.' })
+      else if (isNetworkError(err)) setJoin({ kind: 'error', message: t('The server could not be reached. Joining needs a connection; try again when you are online.') })
       else setJoin({ kind: 'error', message: (err as ApiError).message })
     }
   }
@@ -104,7 +106,7 @@ export function ProjectInviteScreen({ token, user, status, onAuthenticated, onLo
   if (state.kind === 'ready' && !user && status && step !== 'choose') {
     const preview = state.preview
     form = step === 'signin' ? (
-      <AuthScreen status={status} notice={`Sign in to join “${preview.projectName}”. You come back to this link afterwards.`} onAuthenticated={() => onAuthenticated()} />
+      <AuthScreen status={status} notice={t('Sign in to join “{projectName}”. You come back to this link afterwards.', { projectName: preview.projectName })} onAuthenticated={() => onAuthenticated()} />
     ) : (
       <AuthScreen
         status={status}
@@ -147,33 +149,33 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
   useDateTimeFormat()
   switch (state.kind) {
     case 'loading':
-      return <Card title="Checking your invite link…"><p className="text-body text-muted">One moment.</p></Card>
+      return <Card title={t('Checking your invite link…')}><p className="text-body text-muted">{t('One moment.')}</p></Card>
     case 'offline':
       return (
-        <Card title="You seem to be offline">
-          <p className="text-body text-muted">Joining a project needs a connection to the server. The page will retry when the network returns.</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry now</button>
+        <Card title={t('You seem to be offline')}>
+          <p className="text-body text-muted">{t('Joining a project needs a connection to the server. The page will retry when the network returns.')}</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry now')}</button>
         </Card>
       )
     case 'invalid':
       return (
-        <Card title="This invite link is no longer valid">
-          <p className="text-body text-muted">It may have expired, been revoked or already been used, or the project is gone. Ask the person who invited you for a new link.</p>
-          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{user ? 'Back to my tasks' : 'Go to sign-in'}</a>
+        <Card title={t('This invite link is no longer valid')}>
+          <p className="text-body text-muted">{t('It may have expired, been revoked or already been used, or the project is gone. Ask the person who invited you for a new link.')}</p>
+          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{user ? t('Back to my tasks') : t('Go to sign-in')}</a>
         </Card>
       )
     case 'rate-limited':
       return (
-        <Card title="Too many attempts">
-          <p className="text-body text-muted">Wait a minute, then try again.</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry</button>
+        <Card title={t('Too many attempts')}>
+          <p className="text-body text-muted">{t('Wait a minute, then try again.')}</p>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry')}</button>
         </Card>
       )
     case 'error':
       return (
-        <Card title="Something went wrong">
+        <Card title={t('Something went wrong')}>
           <p className="text-body text-danger">{state.message}</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>Retry</button>
+          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry')}</button>
         </Card>
       )
   }
@@ -181,56 +183,56 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
   if (!user && step !== 'choose' && form) return <>{form}</>
   const summary = (
     <div className="rounded-control bg-accent-soft p-3 text-body text-on-accent-soft" data-testid="project-invite-summary">
-      <p><strong>{p.inviterName}</strong> invited you to the project <strong className="user-text">{p.projectName}</strong> as <strong>{p.role}</strong>.</p>
-      {p.email && <p className="mt-1">This link is for <strong>{p.email}</strong>.</p>}
-      <p className="mt-1 text-meta opacity-80">It expires {when(p.expiresAt)} and works once.</p>
+      <p>{t.rich('<strong>{inviterName}</strong> invited you to the project <strong2>{projectName}</strong2> as <strong3>{role}</strong3>.', { inviterName: p.inviterName, projectName: p.projectName, role: roleName(p.role), strong: (chunks) => <strong>{chunks}</strong>, strong2: (chunks) => <strong className="user-text">{chunks}</strong>, strong3: (chunks) => <strong>{chunks}</strong> })}</p>
+      {p.email && <p className="mt-1">{t.rich('This link is for <strong>{email}</strong>.', { email: p.email, strong: (chunks) => <strong>{chunks}</strong> })}</p>}
+      <p className="mt-1 text-meta opacity-80">{t('It expires {when} and works once.', { when: when(p.expiresAt) })}</p>
     </div>
   )
   if (user) {
     const already = p.alreadyMember || join.kind === 'already-member'
     const mismatch = !!p.email && p.email.toLowerCase() !== user.email.toLowerCase()
     return (
-      <Card title={already ? 'You are already a member' : <>Join <span className="user-text">{p.projectName}</span></>}>
+      <Card title={already ? t('You are already a member') : <>{t.rich('Join <span>{projectName}</span>', { projectName: p.projectName, span: (chunks) => <span className="user-text">{chunks}</span> })}</>}>
         {summary}
-        <p className="text-body text-muted">Signed in as <strong>{user.name || user.email}</strong>.</p>
+        <p className="text-body text-muted">{t.rich('Signed in as <b>{name}</b>.', { name: user.name || user.email, b: (chunks) => <strong>{chunks}</strong> })}</p>
         {already ? (
           <>
-            <p className="text-body text-muted" role="status">You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.</p>
-            <a className="ui-btn ui-btn--primary ui-btn--md" href="/">Back to my tasks</a>
+            <p className="text-body text-muted" role="status">{t('You are on this project already, so the link stays unused. Forward it to the person it was meant for, or ignore it.')}</p>
+            <a className="ui-btn ui-btn--primary ui-btn--md" href="/">{t('Back to my tasks')}</a>
           </>
         ) : mismatch ? (
           <>
-            <p className="text-body text-warning" role="alert">This link was issued for {p.email}, but you are signed in as {user.email}. Sign out and sign in with that address to join.</p>
+            <p className="text-body text-warning" role="alert">{t('This link was issued for {email}, but you are signed in as {email2}. Sign out and sign in with that address to join.', { email: p.email, email2: user.email })}</p>
             <div className="flex flex-wrap gap-2">
-              <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onLogout}>Sign out</button>
-              <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">Back to my tasks</a>
+              <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onLogout}>{t('Sign out')}</button>
+              <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{t('Back to my tasks')}</a>
             </div>
           </>
         ) : (
           <>
             {join.kind === 'error' && <p className="text-body text-danger" role="alert">{join.message}</p>}
             <div className="flex flex-wrap gap-2">
-              <button className="ui-btn ui-btn--primary ui-btn--md" autoFocus disabled={join.kind === 'busy'} onClick={onJoin}>{join.kind === 'busy' ? 'Joining…' : 'Join project'}</button>
-              <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">Not now</a>
+              <button className="ui-btn ui-btn--primary ui-btn--md" autoFocus disabled={join.kind === 'busy'} onClick={onJoin}>{join.kind === 'busy' ? t('Joining…') : t('Join project')}</button>
+              <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{t('Not now')}</a>
             </div>
-            <p className="text-meta text-muted">Not you? <button type="button" className="underline" onClick={onLogout}>Sign out</button> and use another account.</p>
+            <p className="text-meta text-muted">{t.rich('Not you? <a>Sign out</a> and use another account.', { a: (chunks) => <button type="button" className="underline" onClick={onLogout}>{chunks}</button> })}</p>
           </>
         )}
       </Card>
     )
   }
   return (
-    <Card title={<>Join <span className="user-text">{p.projectName}</span></>}>
+    <Card title={<>{t.rich('Join <span>{projectName}</span>', { projectName: p.projectName, span: (chunks) => <span className="user-text">{chunks}</span> })}</>}>
       {summary}
       <div className="flex flex-col gap-2">
-        <button className="ui-btn ui-btn--primary ui-btn--md w-full" autoFocus onClick={onSignIn}>I have an account: sign in to join</button>
+        <button className="ui-btn ui-btn--primary ui-btn--md w-full" autoFocus onClick={onSignIn}>{t('I have an account: sign in to join')}</button>
         {p.canCreateAccount && (
-          <button className="ui-btn ui-btn--ghost ui-btn--md w-full border border-input" onClick={onRegister}>Create an account</button>
+          <button className="ui-btn ui-btn--ghost ui-btn--md w-full border border-input" onClick={onRegister}>{t('Create an account')}</button>
         )}
       </div>
       {!p.canCreateAccount && (
         <p className="text-body text-muted" data-testid="account-needed">
-          You need an account on this server first. Ask {p.inviterName} or the server owner for one, then open this link again and sign in.
+          {t('You need an account on this server first. Ask {inviterName} or the server owner for one, then open this link again and sign in.', { inviterName: p.inviterName })}
         </p>
       )}
     </Card>
@@ -243,7 +245,7 @@ function Card({ title, children }: { title: ReactNode; children: ReactNode }) {
       <main className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-5 shadow-1 sm:p-6">
         <div className="flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="h-9 w-9" />
-          <p className="text-h3 font-semibold">OpenTodo</p>
+          <p className="text-h3 font-semibold">{t('OpenTodo')}</p>
         </div>
         <h1 className="font-medium">{title}</h1>
         {children}

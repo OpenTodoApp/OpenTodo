@@ -6,6 +6,7 @@ import { db, getMeta, setMeta } from './db'
 import { mutate, mutateMany, type Change } from './ops'
 import { byPosition, planStep, positionAtEnd } from './ordering'
 import type { Section, Task } from './types'
+import { t } from './i18n'
 
 /** Live sections of a project, in display order. */
 export async function projectSections(projectId: string): Promise<Section[]> {
@@ -16,7 +17,7 @@ export async function projectSections(projectId: string): Promise<Section[]> {
 /** A new section goes last in its project. Returns its id. Works offline. */
 export async function createSection(projectId: string, name: string): Promise<string> {
   const trimmed = name.trim()
-  if (!trimmed) throw new Error('a section needs a name')
+  if (!trimmed) throw new Error(t('a section needs a name'))
   const id = crypto.randomUUID()
   const siblings = await projectSections(projectId)
   await mutate('section', id, {
@@ -55,9 +56,9 @@ export async function reorderSection(id: string, delta: -1 | 1 | 'top' | 'bottom
 export async function deleteSection(id: string): Promise<void> {
   const s = await db.sections.get(id)
   if (!s || s.deleted_at) return
-  const tasks = await db.tasks.where('section_id').equals(id).filter((t) => !t.deleted_at && !t.completed_at).toArray()
+  const tasks = await db.tasks.where('section_id').equals(id).filter((task) => !task.deleted_at && !task.completed_at).toArray()
   const changes: Change[] = [{ entity: 'section', entityId: id, patch: { deleted_at: Date.now() } }]
-  for (const t of tasks) changes.push({ entity: 'task', entityId: t.id, patch: { section_id: null } })
+  for (const tk of tasks) changes.push({ entity: 'task', entityId: tk.id, patch: { section_id: null } })
   await mutateMany(changes)
 }
 
@@ -84,12 +85,12 @@ export async function moveTaskToSection(id: string, sectionId: string | null): P
   if (!task || task.deleted_at) throw new Error('task not found')
   if (sectionId !== null) {
     const s = await db.sections.get(sectionId)
-    if (!s || s.deleted_at || s.project_id !== task.project_id) throw new Error('section is not in the task’s project')
+    if (!s || s.deleted_at || s.project_id !== task.project_id) throw new Error(t('section is not in the task’s project'))
   }
   const map = await sectionMap(task.project_id)
   const column = task.project_id
     ? await db.tasks.where('project_id').equals(task.project_id)
-      .filter((t) => !t.deleted_at && !t.completed_at && t.id !== id && effectiveSection(t, map) === sectionId).toArray()
+      .filter((tk) => !tk.deleted_at && !tk.completed_at && tk.id !== id && effectiveSection(tk, map) === sectionId).toArray()
     : []
   await mutate('task', id, { section_id: sectionId, position: positionAtEnd(column) })
 }
@@ -121,7 +122,7 @@ export function groupBySection<T extends Pick<Task, 'id' | 'position' | 'created
   const live = sections.filter((s) => s.project_id === projectId && !s.deleted_at).sort(byPosition)
   const groups: SectionGroup<T>[] = [{ section: null, key: '', tasks: [] }, ...live.map((s) => ({ section: s, key: s.id, tasks: [] as T[] }))]
   const index = new Map(groups.map((g, i) => [g.key, i]))
-  for (const t of tasks) groups[index.get(effectiveSection(t, map) ?? '') ?? 0].tasks.push(t)
+  for (const task of tasks) groups[index.get(effectiveSection(task, map) ?? '') ?? 0].tasks.push(task)
   for (const g of groups) g.tasks.sort(byPosition)
   return groups
 }
@@ -174,5 +175,20 @@ export async function setSectionCollapsed(projectId: string, key: string, collap
   return list
 }
 
+const columnsKey = (projectId: string) => `list-columns:${projectId}`
+
+/**
+ * The list's columns layout (OpenSpec custom-fields, "Columns layout in the list
+ * view"): one column per field, remembered per project on this device, never
+ * synced. It is a layout of the list, so `v` still cycles list, board, timeline.
+ */
+export async function loadListColumns(projectId: string): Promise<boolean> {
+  return (await getMeta<unknown>(columnsKey(projectId), false)) === true
+}
+
+export async function saveListColumns(projectId: string, on: boolean): Promise<void> {
+  await setMeta(columnsKey(projectId), on)
+}
+
 /** Meta keys the UI subscribes to with useLiveQuery. */
-export const prefKeys = { mode: modeKey, collapsed: collapsedKey }
+export const prefKeys = { mode: modeKey, collapsed: collapsedKey, columns: columnsKey }
