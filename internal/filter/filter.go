@@ -198,7 +198,10 @@ func tokenize(src []rune) ([]token, error) {
 var (
 	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "blocked": true, "unblocked": true}
 	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true}
-	weekdays       = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
+	// reserved are the words a bare custom field name may not be (custom-fields);
+	// a quoted name may be anything.
+	reserved = map[string]bool{"due": true, "created": true, "deadline": true, "start": true, "no": true, "search": true}
+	weekdays = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
 )
 
 type parser struct {
@@ -294,9 +297,43 @@ func (p *parser) parseTerm(prev *token) error {
 	case tWord:
 		return p.parseWordTerm(t)
 	case tString:
+		// A quoted name followed by a comparison is a custom field term, also for reserved words.
+		if p.i+1 < len(p.toks) && isCmp(&p.toks[p.i+1]) {
+			p.i++
+			return p.parseFieldTerm()
+		}
 		return fail(t.pos, `Unexpected text %s at position %d; quote names after "@" or "#", or use search:`, t.raw, t.pos+1)
 	}
 	return p.missingTerm(prev)
+}
+
+// isCmp reports a comparison: an operator, or the words "before" and "after".
+func isCmp(t *token) bool {
+	return t != nil && (t.typ == tCmp || lower(t) == "before" || lower(t) == "after")
+}
+
+// parseFieldTerm checks `name cmp value` with the comparison next (custom-fields).
+// The field's type is known only where the query is evaluated, so any value is
+// accepted here: text, a number, true / false or a date.
+func (p *parser) parseFieldTerm() error {
+	c := &p.toks[p.i]
+	p.i++
+	v := p.peek()
+	if v == nil || (v.typ != tWord && v.typ != tString) {
+		return fail(c.pos, `Expected a value after "%s" at position %d`, c.raw, c.pos+1)
+	}
+	if v.typ == tString {
+		p.i++
+		return nil
+	}
+	w := strings.ToLower(v.value)
+	dateLike := w == "today" || w == "tomorrow" || w == "yesterday" || weekdays[w] || isoDate.MatchString(w) ||
+		(digits.MatchString(w) && p.i+1 < len(p.toks) && lower(&p.toks[p.i+1]) == "days")
+	if dateLike {
+		return p.parseDate(c)
+	}
+	p.i++
+	return nil
 }
 
 func (p *parser) parseWordTerm(t *token) error {
@@ -312,6 +349,11 @@ func (p *parser) parseWordTerm(t *token) error {
 		p.i++
 		return p.parseDate(c)
 	case w == "no":
+		// `no <field name>` (custom-fields): a quoted name, or any other unreserved word.
+		if n := p.peek(); n != nil && (n.typ == tString || (n.typ == tWord && !noKeywords[lower(n)] && !reserved[lower(n)] && !simpleKeywords[lower(n)])) {
+			p.i++
+			return nil
+		}
 		if !noKeywords[lower(p.peek())] {
 			return fail(t.pos, `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position %d`, t.pos+1)
 		}
@@ -321,6 +363,9 @@ func (p *parser) parseWordTerm(t *token) error {
 		return nil
 	case anyPriority.MatchString(w):
 		return fail(t.pos, "Priority must be p1, p2, p3 or p4 at position %d", t.pos+1)
+	case isCmp(p.peek()):
+		// Any other word followed by a comparison names a custom field.
+		return p.parseFieldTerm()
 	}
 	return fail(t.pos, `Unknown term "%s" at position %d`, t.raw, t.pos+1)
 }

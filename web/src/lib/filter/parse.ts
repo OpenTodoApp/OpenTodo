@@ -158,11 +158,27 @@ export type Node =
   | { kind: 'date'; field: 'due' | 'created' | 'deadline' | 'start'; op: Cmp; date: DateExpr }
   | { kind: 'keyword'; keyword: Keyword }
   | { kind: 'search'; text: string }
+  /** A custom field term `name cmp value` (custom-fields); the type is known only at compile time. */
+  | { kind: 'field'; name: string; quoted: boolean; op: Cmp; value: FieldLit; pos: number }
+  /** `no name`: tasks of a project defining the field, without a value. */
+  | { kind: 'nofield'; name: string; quoted: boolean; pos: number }
+
+/** A field term's value as typed: text, a number, true / false, or a date expression. */
+export type FieldLit =
+  | { type: 'text'; value: string; quoted: boolean }
+  | { type: 'number'; value: number; raw: string }
+  | { type: 'bool'; value: boolean }
+  | { type: 'date'; date: DateExpr }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
 const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'blocked', 'unblocked'])
 const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start'] as const
 const CMP_EXPECTED = ['"<"', '"<="', '"="', '">="', '">"', '"before"', '"after"']
+/** Words a bare field name may not be (custom-fields: reserved words stay reserved; quote the name). */
+const RESERVED = new Set(['due', 'created', 'deadline', 'start', 'no', 'search', ...SIMPLE_KEYWORDS])
+export function isReserved(word: string): boolean {
+  return RESERVED.has(word.toLowerCase())
+}
 
 // ---- parser ----
 
@@ -241,6 +257,8 @@ export function parse(src: string): Node | null {
       case 'word':
         return parseWordTerm(t)
       case 'string':
+        // A quoted name followed by a comparison is a field term, also for reserved words ("due").
+        if (isCmp(tokens[i + 1])) { i++; return parseFieldTerm(t.value, true, t.pos) }
         return fail(`Unexpected text ${t.raw} at position ${t.pos + 1}; quote names after "@" or "#", or use search:`, t.pos, ['term'])
       default:
         return missingTerm(prev)
@@ -261,7 +279,11 @@ export function parse(src: string): Node | null {
       return { kind: 'date', field: w, op, date: parseDate(c) }
     }
     if (w === 'no') {
-      const next = lower(peek())
+      const nt = peek()
+      const next = lower(nt)
+      // `no <field name>` (custom-fields): any other word, or a quoted name.
+      if (nt?.type === 'string') { i++; return { kind: 'nofield', name: nt.value, quoted: true, pos: nt.pos } }
+      if (nt?.type === 'word' && !(NO_KEYWORDS as readonly string[]).includes(next) && !isReserved(next)) { i++; return { kind: 'nofield', name: nt.value, quoted: false, pos: nt.pos } }
       if (!(NO_KEYWORDS as readonly string[]).includes(next)) {
         return fail(`Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position ${t.pos + 1}`, t.pos, NO_KEYWORDS.map((k) => `"${k}"`))
       }
@@ -270,7 +292,32 @@ export function parse(src: string): Node | null {
     }
     if (SIMPLE_KEYWORDS.has(w as Keyword)) return { kind: 'keyword', keyword: w as Keyword }
     if (/^p\d+$/.test(w)) return fail(`Priority must be p1, p2, p3 or p4 at position ${t.pos + 1}`, t.pos, ['"p1"', '"p2"', '"p3"', '"p4"'])
+    // Any other word followed by a comparison names a custom field (custom-fields).
+    if (isCmp(peek())) return parseFieldTerm(t.value, false, t.pos)
     return fail(`Unknown term "${t.raw}" at position ${t.pos + 1}`, t.pos, ['term'])
+  }
+
+  /** A comparison: an operator, or the words "before" / "after". */
+  function isCmp(t: Token | undefined): boolean {
+    return !!t && (t.type === 'cmp' || lower(t) === 'before' || lower(t) === 'after')
+  }
+
+  /** `name cmp value`, the comparison token next. */
+  function parseFieldTerm(name: string, quoted: boolean, pos: number): Node {
+    const c = tokens[i++]
+    const op: Cmp = c.type === 'cmp' ? c.op : lower(c) === 'before' ? '<' : '>'
+    const v = peek()
+    if (!v || (v.type !== 'word' && v.type !== 'string')) return fail(`Expected a value after "${c.raw}" at position ${c.pos + 1}`, c.pos, ['value'])
+    if (v.type === 'string') { i++; return { kind: 'field', name, quoted, op, value: { type: 'text', value: v.value, quoted: true }, pos } }
+    const w = v.value.toLowerCase()
+    if (w === 'true' || w === 'false') { i++; return { kind: 'field', name, quoted, op, value: { type: 'bool', value: w === 'true' }, pos } }
+    const numeric = /^-?\d+(?:[.,]\d+)?$/.test(w)
+    const dateLike = w === 'today' || w === 'tomorrow' || w === 'yesterday' || (WEEKDAYS as readonly string[]).includes(w) || /^\d{4}-\d{2}-\d{2}$/.test(w)
+      || (/^\d+$/.test(w) && tokens[i + 1]?.type === 'word' && (tokens[i + 1] as Extract<Token, { type: 'word' }>).value.toLowerCase() === 'days')
+    if (dateLike) return { kind: 'field', name, quoted, op, value: { type: 'date', date: parseDate(c) }, pos }
+    i++
+    if (numeric) return { kind: 'field', name, quoted, op, value: { type: 'number', value: Number(w.replace(',', '.')), raw: v.value }, pos }
+    return { kind: 'field', name, quoted, op, value: { type: 'text', value: v.value, quoted: false }, pos }
   }
 
   function parseDate(after: Token): DateExpr {
@@ -349,6 +396,20 @@ export function resolveDate(expr: DateExpr, today: string): string {
 
 // ---- printing (tests, debugging, future saved views) ----
 
+/** A field name as typed back: quoted when it holds a break character or is a reserved word. */
+function fieldName(name: string, quoted: boolean): string {
+  return quoted || BREAK.test(name) || isReserved(name) || /^p[1-4]$/i.test(name) ? `"${name.replace(/["\\]/g, (c) => '\\' + c)}"` : name
+}
+
+function printLit(v: FieldLit): string {
+  switch (v.type) {
+    case 'text': return v.quoted || BREAK.test(v.value) || v.value === '' ? `"${v.value.replace(/["\\]/g, (c) => '\\' + c)}"` : v.value
+    case 'number': return v.raw
+    case 'bool': return String(v.value)
+    case 'date': return printDate(v.date)
+  }
+}
+
 function quote(name: string): string {
   return BREAK.test(name) || name === '' ? `"${name.replace(/["\\]/g, (c) => '\\' + c)}"` : name
 }
@@ -382,5 +443,9 @@ export function printQuery(n: Node): string {
       return n.keyword
     case 'search':
       return `search: ${quote(n.text)}`
+    case 'field':
+      return `${fieldName(n.name, n.quoted)} ${n.op} ${printLit(n.value)}`
+    case 'nofield':
+      return `no ${fieldName(n.name, n.quoted)}`
   }
 }

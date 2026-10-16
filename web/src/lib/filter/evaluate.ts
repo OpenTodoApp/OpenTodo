@@ -5,8 +5,8 @@
 import { blockedMap } from '../dependencies'
 import { localDueOf } from '../dates'
 import { descendants } from '../tree'
-import type { Label, Project, Task } from '../types'
-import { parse, resolveDate, shiftISO, type Cmp, type Node } from './parse'
+import type { FieldDef, Label, Project, Task } from '../types'
+import { FilterSyntaxError, parse, resolveDate, shiftISO, type Cmp, type FieldLit, type Node } from './parse'
 
 export interface FilterContext {
   /** The viewer's local calendar date, YYYY-MM-DD. */
@@ -15,7 +15,21 @@ export interface FilterContext {
   projects: readonly Project[]
   /** Every live task, for `blocked` and `unblocked` (task-dependencies D6). */
   tasks?: readonly Task[]
+  /** Custom field definitions (custom-fields), for field terms. */
+  fields?: readonly FieldDef[]
 }
+
+function compareNumber(a: number, op: Cmp, b: number): boolean {
+  switch (op) {
+    case '<': return a < b
+    case '<=': return a <= b
+    case '=': return a === b
+    case '>=': return a >= b
+    case '>': return a > b
+  }
+}
+
+const TEXT_TYPES = new Set(['text', 'link', 'choice'])
 
 export interface CompiledFilter {
   test: (task: Task) => boolean
@@ -76,6 +90,30 @@ function createdPred(op: Cmp, date: string): Pred {
     case '=': return (t) => t.created_at >= start && t.created_at < next
     case '>=': return (t) => t.created_at >= start
     case '>': return (t) => t.created_at >= next
+  }
+}
+
+/** How one field term's literal compares with a stored value, by the definition's type. */
+function fieldMatcher(lit: FieldLit, op: Cmp, today: string): (d: FieldDef, v: unknown) => boolean {
+  return (d, v) => {
+    switch (d.type) {
+      case 'number': {
+        const want = lit.type === 'number' ? lit.value : lit.type === 'text' ? Number(lit.value.replace(',', '.')) : NaN
+        return typeof v === 'number' && Number.isFinite(want) && compareNumber(v, op, want)
+      }
+      case 'date': {
+        if (typeof v !== 'string') return false
+        const want = lit.type === 'date' ? resolveDate(lit.date, today) : lit.type === 'text' && /^\d{4}-\d{2}-\d{2}$/.test(lit.value) ? lit.value : null
+        return !!want && compareISO(v, op, want)
+      }
+      case 'checkbox':
+        return op === '=' && lit.type === 'bool' && (v === true) === lit.value
+      default: {
+        if (op !== '=' || v === null || v === undefined) return false
+        const want = lit.type === 'text' ? lit.value : lit.type === 'number' ? lit.raw : lit.type === 'bool' ? String(lit.value) : null
+        return want !== null && String(v).toLocaleLowerCase() === want.toLocaleLowerCase()
+      }
+    }
   }
 }
 
@@ -161,6 +199,36 @@ export function compile(ast: Node, ctx: FilterContext): CompiledFilter {
         const needle = n.text.toLocaleLowerCase()
         return (t) => t.title.toLocaleLowerCase().includes(needle) || t.description.toLocaleLowerCase().includes(needle)
       }
+      case 'field':
+      case 'nofield': {
+        // Live definitions of that name in any project the user sees (custom-fields D7).
+        const defs = (ctx.fields ?? []).filter((d) => !d.deleted_at && nameKey(d.name) === nameKey(n.name))
+        if (!defs.length) {
+          warn(`No field is named "${n.name}"`)
+          return NEVER
+        }
+        const byProject = new Map(defs.map((d) => [d.project_id, d]))
+        if (n.kind === 'nofield') {
+          return (t) => {
+            const d = t.project_id ? byProject.get(t.project_id) : undefined
+            if (!d) return false
+            const v = t.fields?.[d.id]
+            return v === null || v === undefined || v === '' || (d.type === 'checkbox' && v === false)
+          }
+        }
+        const { op, value: lit } = n
+        if (op !== '=' && defs.every((d) => TEXT_TYPES.has(d.type))) {
+          throw new FilterSyntaxError(`Text fields support = only: "${n.name}" at position ${n.pos + 1}`, n.pos, ['"="'])
+        }
+        if (defs.every((d) => d.type === 'checkbox') && (op !== '=' || lit.type !== 'bool')) {
+          throw new FilterSyntaxError(`Checkbox fields compare with = true or = false: "${n.name}" at position ${n.pos + 1}`, n.pos, ['"= true"', '"= false"'])
+        }
+        const match = fieldMatcher(lit, op, today)
+        return (t) => {
+          const d = t.project_id ? byProject.get(t.project_id) : undefined
+          return !!d && match(d, t.fields?.[d.id] ?? null)
+        }
+      }
       case 'keyword':
         switch (n.keyword) {
           case 'overdue': return (t) => t.due !== null && localDueOf(t.due).date < today
@@ -203,6 +271,14 @@ export function runFilter(source: string, tasks: readonly Task[], ctx: FilterCon
     return { ok: false, error: err.message, offset: err.offset, position: err.offset + 1 }
   }
   if (!ast) return { ok: true, empty: true, tasks: [], warnings: [] }
-  const { test, warnings } = compile(ast, ctx.tasks ? ctx : { ...ctx, tasks })
+  let compiled: CompiledFilter
+  try {
+    compiled = compile(ast, ctx.tasks ? ctx : { ...ctx, tasks })
+  } catch (e) {
+    // Type errors of field terms (custom-fields) read like syntax errors.
+    if (!(e instanceof FilterSyntaxError)) throw e
+    return { ok: false, error: e.message, offset: e.offset, position: e.offset + 1 }
+  }
+  const { test, warnings } = compiled
   return { ok: true, empty: false, tasks: tasks.filter(test), warnings }
 }

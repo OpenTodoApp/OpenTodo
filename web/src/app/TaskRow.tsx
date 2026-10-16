@@ -2,7 +2,8 @@ import { Icon } from '../ui'
 import { describeDeadline, describeDue, formatDate, localDueOf, todayISO, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
-import type { Label, Project, Task } from '../lib/types'
+import type { FieldDef, Label, Project, Task } from '../lib/types'
+import { fieldBadges, formatValue } from '../lib/fields'
 import { LabelChip } from './LabelPicker'
 import { AssigneeChip } from './AssigneePicker'
 import { useAttachmentCount, useCommentCount } from './useCommentCounts'
@@ -36,9 +37,13 @@ const DEADLINE_TONE = {
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
 export const MAX_INDENT = 3
 
-export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, ticked = false, showCheckbox = false, onTick }: {
+export function TaskRow({ task, project, fieldDefs = [], fieldColumns = false, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, ticked = false, showCheckbox = false, onTick }: {
   task: Task
   project?: Project
+  /** Live custom field definitions of the task's project, in order (custom-fields): values show as badges. */
+  fieldDefs?: readonly FieldDef[]
+  /** The project's columns layout: values render as cells instead of badges (custom-fields). */
+  fieldColumns?: boolean
   /** Already resolved: unknown and deleted label ids are not in this list. */
   labels?: Label[]
   /** Display name of the assignee, given only for tasks in shared projects (task-assignment). */
@@ -95,8 +100,10 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   const shared = useLiveQuery(async () => (enc.enabled && task.project_id ? !!(await db.memberships.get(task.project_id)) : false), [enc.enabled, task.project_id], false)
   const unencrypted = notYetEncrypted(task as unknown as Record<string, unknown>, 'task', !shared)
   const undecryptable = !!task._e2ee?.raw?.title
+  // Custom field values (custom-fields): up to three badges, or cells in the columns layout.
+  const badges = fieldColumns ? null : fieldBadges(fieldDefs, task.fields)
   // The metadata line is rendered only when there is metadata (single-line rows otherwise).
-  const hasMeta = !!(breadcrumb || due || deadline || startChip || (task.evening && !done) || task.recurrence || task.series_id || task.estimate_minutes || (blockedBy > 0 && !done)
+  const hasMeta = !!((badges && badges.shown.length > 0) || breadcrumb || due || deadline || startChip || (task.evening && !done) || task.recurrence || task.series_id || task.estimate_minutes || (blockedBy > 0 && !done)
     || (assignee && task.assignee_id) || task.description || comments > 0 || attachments > 0 || labels.length > 0 || (showProject && (project || !task.project_id)))
   return (
     <li
@@ -151,7 +158,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           {done && <Icon name="check" size="xs" />}
         </span>
       </button>
-      <button type="button" className="min-w-0 flex-1 text-left"
+      <button type="button" className={`min-w-0 flex-1 text-left ${fieldColumns ? 'md:min-w-56' : ''}`}
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).
           if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
@@ -225,8 +232,23 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
             </span>
           )}
           {showProject && !project && !task.project_id && <span className="text-faint">Inbox</span>}
+          {badges && badges.shown.map((b) => (
+            <span key={b.id} className="max-w-48 truncate rounded-chip bg-sunken px-1.5 text-hint text-muted dark:bg-raised" data-field-badge={b.id}>{b.text}</span>
+          ))}
+          {badges && badges.rest.length > 0 && (
+            <span className="rounded-chip bg-sunken px-1.5 text-hint text-muted dark:bg-raised" data-field-more><span aria-hidden="true">+{badges.rest.length}</span><span className="sr-only">{`${badges.rest.length} more: ${badges.rest.join(', ')}`}</span></span>
+          )}
         </div>}
       </button>
+      {fieldColumns && fieldDefs.map((d) => {
+        const text = formatValue(d, task.fields?.[d.id] ?? null)
+        return (
+          <span key={d.id} className="hidden w-28 shrink-0 truncate px-2 text-meta text-default md:block" data-field-cell={d.id}>
+            <span className="sr-only">{d.name}: </span>
+            {d.type === 'checkbox' ? (text === 'Yes' ? <><Icon name="check" size="xs" /><span className="sr-only">Yes</span></> : <span className="sr-only">empty</span>) : text || <span className="sr-only">empty</span>}
+          </span>
+        )
+      })}
     </li>
   )
 }

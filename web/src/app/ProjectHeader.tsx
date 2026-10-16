@@ -4,11 +4,12 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../lib/db'
 import { archiveProject, deleteProject, moveProject, updateProject } from '../lib/ops'
 import { buildProjectTree, descendantIds } from '../lib/projects'
-import { canDeleteProject, canEditProject, canManageMembers } from '../lib/sharing'
+import { canDeleteProject, canEditProject, canEditTasks, canManageMembers } from '../lib/sharing'
 import { flattenTree } from '../lib/tree'
 import type { Project, ProjectRole } from '../lib/types'
 import { navigate } from './router'
 import { ShareDialog } from './ShareDialog'
+import { FieldsDialog } from './FieldsDialog'
 import { DuplicateProjectDialog, SaveTemplateDialog } from './TemplateDialogs'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
@@ -163,13 +164,16 @@ export function ProjectHeader({ project, userId, actions, layout }: {
   const showActivity = () => (occupant === ACTIVITY_PANEL ? closePanel() : openPanel(ACTIVITY_PANEL, () => <PanelFrame title="Activity" testId="project-activity"><ProjectActivity project={project} /></PanelFrame>))
   const showHistory = () => (occupant === HISTORY_PANEL ? closePanel() : openPanel(HISTORY_PANEL, () => <PanelFrame title="History" testId="project-history"><HistoryPanel entity="project" id={project.id} readOnly={!editable} embedded /></PanelFrame>))
   const activityRef = useRef(showActivity)
+  // Read by the Shift+F handler: whether this role manages the project's fields.
+  const fieldsRef = useRef(canEditTasks(role))
+  fieldsRef.current = canEditTasks(role)
   activityRef.current = showActivity
 
   // `m` opens the menu on the Move picker, so a move is reachable without a mouse;
   // Shift+S opens the share dialog (members, roles, leave, transfer); Shift+H the activity.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if ((e.key !== 'm' && e.key !== 'S' && e.key !== 'H') || e.metaKey || e.ctrlKey || e.altKey) return
+      if ((e.key !== 'm' && e.key !== 'S' && e.key !== 'H' && e.key !== 'F') || e.metaKey || e.ctrlKey || e.altKey) return
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
       if (e.key === 'S') {
@@ -180,6 +184,12 @@ export function ProjectHeader({ project, userId, actions, layout }: {
       if (e.key === 'H') {
         e.preventDefault()
         activityRef.current()
+        return
+      }
+      if (e.key === 'F') {
+        if (!fieldsRef.current) return
+        e.preventDefault()
+        setDialog('fields')
         return
       }
       if (!editable) return
@@ -198,7 +208,10 @@ export function ProjectHeader({ project, userId, actions, layout }: {
     else setName(project.name)
   }
 
-  const [dialog, setDialog] = useState<'duplicate' | 'template' | null>(null)
+  const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
+  // Custom fields (custom-fields "Managing definitions"): editors and above, Shift+F.
+  const managesFields = canEditTasks(role)
+  const fieldsGroup: ActionGroup = { items: managesFields ? [{ kind: 'action', id: 'fields', label: 'Fields…', icon: 'list', shortcut: 'Shift+F', onSelect: () => setDialog('fields') }] : [] }
   const panels: ActionGroup = { items: [
     { kind: 'action', id: 'activity', label: 'Activity', icon: 'history', shortcut: 'Shift+H', onSelect: showActivity },
     { kind: 'action', id: 'history', label: 'History', icon: 'rotate-ccw', onSelect: showHistory },
@@ -207,6 +220,7 @@ export function ProjectHeader({ project, userId, actions, layout }: {
   const groups: ActionGroup[] = [
     ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks },
       { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template') }),
+    fieldsGroup,
     panels,
   ]
 
@@ -249,6 +263,7 @@ export function ProjectHeader({ project, userId, actions, layout }: {
           trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-72"
           open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />} />
       {sharing && <ShareDialog project={project} userId={userId ?? ''} cached={membership} onClose={() => setSharing(false)} />}
+      {dialog === 'fields' && <FieldsDialog project={project} onClose={() => setDialog(null)} />}
       {dialog === 'duplicate' && <DuplicateProjectDialog project={project} shared={!!membership} onClose={() => setDialog(null)} />}
       {dialog === 'template' && <SaveTemplateDialog project={project} onClose={() => setDialog(null)} />}
     </>

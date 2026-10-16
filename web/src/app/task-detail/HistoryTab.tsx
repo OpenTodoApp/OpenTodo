@@ -127,7 +127,7 @@ function VersionItem({ v, props }: { v: Version; props: HistoryViewProps }) {
                   <span className="font-medium text-default">{changeLabel(c.field)}</span>
                   {c.lost && <Badge hue="slate" title="Arrived after a newer change and was never applied">not applied</Badge>}
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 break-words">
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 user-text min-w-0">
                   <del className="text-muted line-through decoration-1"><Value change={c} value={c.from} refName={refName} labels={labels} /></del>
                   <Icon name="arrow-right" size="xs" className="shrink-0 text-faint" />
                   <ins className="font-medium text-default no-underline"><Value change={c} value={c.to} refName={refName} labels={labels} /></ins>

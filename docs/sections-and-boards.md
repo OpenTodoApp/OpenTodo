@@ -36,11 +36,13 @@ Fold a section with the small arrow next to its name. Folding is remembered on t
 
 ## Switch to a board
 
-At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board** and **Timeline**; you can also choose one directly.
+At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board** and **Timeline**, and **Columns** when the project has [custom fields](tasks-and-projects.md#custom-fields) and the window is at least 768 px wide; you can also choose one directly.
 
 <picture><source srcset="images/board-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/board-light.webp" alt="The Q4 launch project as a board with the columns No section, Backlog, This week and Review."></picture>
 
 The choice is remembered for each project on each device. Your laptop can show "Q4 launch" as a board while your phone shows it as a list. On a narrow screen the board scrolls sideways.
+
+A card shows the same details as a list row, including up to three [custom field](tasks-and-projects.md#custom-fields) values as badges.
 
 ## Move cards between columns
 

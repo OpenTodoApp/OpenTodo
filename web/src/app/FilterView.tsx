@@ -14,7 +14,7 @@ import { buildProjectTree } from '../lib/projects'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { createView } from '../lib/views'
 import { ancestors, flattenTree } from '../lib/tree'
-import type { Label, Project, Task } from '../lib/types'
+import type { FieldDef, Label, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
 import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
@@ -60,6 +60,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const projects = useLiveQuery(() => db.projects.filter((p) => !p.deleted_at).toArray(), [], [] as Project[])
   const labels = useLiveQuery(() => db.labels.toArray(), [], [] as Label[])
   const allTasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
+  const fieldDefs = useLiveQuery(() => db.fields.toArray(), [], [] as FieldDef[])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const taskMap = useMemo(() => new Map(allTasks.map((t) => [t.id, t])), [allTasks])
@@ -77,10 +78,16 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     if (!good.ast) return null
     // Like the other cross-project views, tasks of archived projects stay out.
     const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-    const { test, warnings } = compile(good.ast, { today, labels, projects, tasks: allTasks })
-    const tasks = allTasks.filter((t) => !(t.project_id && archived.has(t.project_id)) && test(t))
-    return { tasks, warnings }
-  }, [good, allTasks, labels, projects, today, zone])
+    let compiled: ReturnType<typeof compile>
+    try {
+      compiled = compile(good.ast, { today, labels, projects, tasks: allTasks, fields: fieldDefs })
+    } catch (e) {
+      // A field term of the wrong type (custom-fields): shown like a syntax error.
+      return { tasks: [] as Task[], warnings: [] as string[], error: (e as Error).message }
+    }
+    const tasks = allTasks.filter((t) => !(t.project_id && archived.has(t.project_id)) && compiled.test(t))
+    return { tasks, warnings: compiled.warnings, error: null as string | null }
+  }, [good, allTasks, labels, projects, today, zone, fieldDefs])
 
   const groups = useMemo<Group[]>(() => {
     if (!result) return []
@@ -188,7 +195,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     if (selectedId) document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [selectedId])
 
-  const error = parsed.ok ? null : parsed.error
+  const error = parsed.ok ? (result?.error ?? null) : parsed.error
   const warnings = !error && good.src === debounced ? result?.warnings ?? [] : []
 
   return (
@@ -223,7 +230,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             </div>
           </div>
 
-          {!good.ast && <UsageHint />}
+          {!good.ast && <UsageHint fieldNames={[...new Set(fieldDefs.filter((d) => !d.deleted_at).map((d) => d.name))].sort((a, b) => a.localeCompare(b))} />}
           {result && rows.length === 0 && <p className="px-2 py-8 text-center text-sm text-faint">No task matches this filter.</p>}
 
           {bulk.render(selectedId)}
@@ -286,7 +293,7 @@ const HINT: [string[], string][] = [
   [['&', '|', '!', '( )'], 'and, or, not, grouping · quote names with spaces: @"follow up"'],
 ]
 
-function UsageHint() {
+function UsageHint({ fieldNames = [] }: { fieldNames?: string[] }) {
   return (
     <div className="rounded-lg border border-dashed border-input p-4 text-sm text-muted">
       <p className="mb-2">Type a query to list matching tasks. Enter jumps to the results, Esc comes back, ↑ / ↓ recall recent queries.</p>
@@ -299,6 +306,15 @@ function UsageHint() {
             <dd>{d}</dd>
           </div>
         ))}
+        <div className="flex flex-col gap-1 border-t border-default py-1.5 sm:flex-row sm:gap-3">
+          <dt className="flex flex-wrap gap-1 sm:w-64 sm:shrink-0">
+            {['cost > 100', 'client = "Acme"', 'no cost'].map((t) => <code key={t} className="kbd text-muted">{t}</code>)}
+          </dt>
+          <dd>
+            Custom fields by name (numbers and dates compare, text matches with =); quote a name that is also a keyword.
+            {fieldNames.length > 0 && <span className="block text-faint" data-filter-fields>Your fields: {fieldNames.join(', ')}</span>}
+          </dd>
+        </div>
       </dl>
     </div>
   )

@@ -192,7 +192,9 @@ describe('parse: errors', () => {
     expect(errorOf('p0 | p1').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('"milk"').message).toBe('Unexpected text "milk" at position 1; quote names after "@" or "#", or use search:')
     expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1')
-    expect(errorOf('no dates').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"'])
+    // `no <word>` names a custom field (custom-fields); a reserved word after "no" is still an error.
+    expect(errorOf('no today').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"'])
+    expect(parse('no dates')).toEqual({ kind: 'nofield', name: 'dates', quoted: false, pos: 3 })
   })
 
   it('reports incomplete date terms', () => {

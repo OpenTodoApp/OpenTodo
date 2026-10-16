@@ -128,11 +128,14 @@ export function groupBySection<T extends Pick<Task, 'id' | 'position' | 'created
 
 // ---- per-device preferences (never synced) ----
 
-export type ProjectViewMode = 'list' | 'board' | 'timeline'
+/** `columns` (custom-fields): the list with a cell per custom field, offered only when the project has fields. */
+export type ProjectViewMode = 'list' | 'board' | 'timeline' | 'columns'
 
 /** The `v` cycle: list → board → timeline → list (month-and-timeline-views). */
-export function nextViewMode(mode: ProjectViewMode): ProjectViewMode {
-  return mode === 'list' ? 'board' : mode === 'board' ? 'timeline' : 'list'
+export function nextViewMode(mode: ProjectViewMode, columns = false): ProjectViewMode {
+  if (mode === 'list') return 'board'
+  if (mode === 'board') return 'timeline'
+  return mode === 'timeline' && columns ? 'columns' : 'list'
 }
 
 const modeKey = (projectId: string) => `view-mode:${projectId}`
@@ -141,7 +144,7 @@ const collapsedKey = (projectId: string) => `collapsed-sections:${projectId}`
 export async function loadViewMode(projectId: string): Promise<ProjectViewMode> {
   // Unknown values (an older or newer device's) read as the list.
   const v = await getMeta<string>(modeKey(projectId), 'list')
-  return v === 'board' || v === 'timeline' ? v : 'list'
+  return v === 'board' || v === 'timeline' || v === 'columns' ? v : 'list'
 }
 
 export async function saveViewMode(projectId: string, mode: ProjectViewMode): Promise<void> {

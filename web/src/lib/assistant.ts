@@ -7,7 +7,9 @@
 import { ApiError } from './api'
 import { db, getMeta, setMeta, type AssistantMessage, type AssistantThread, type AssistantUndo } from './db'
 import { syncNow } from './sync'
-import type { Label, Project, Section, Task } from './types'
+import type { FieldDef, FieldValue, Label, Project, Section, Task } from './types'
+import { formatValue } from './fields'
+import { FIELD_PREFIX } from './ops'
 import type { ProposedChange, TurnEvent } from './assistantTypes'
 import { applyBatch, tableOf, undoBatch, type UndoResult } from './undo'
 export { UNDO_KEEP } from './undo'
@@ -157,15 +159,18 @@ interface Names {
   labels: Map<string, string>
   sections: Map<string, string>
   tasks: Map<string, string>
+  /** Custom field definitions by id, for "Cost → 120". */
+  fields: Map<string, FieldDef>
 }
 
 async function loadNames(changes: ProposedChange[]): Promise<Names> {
-  const [projects, labels, sections] = await Promise.all([db.projects.toArray(), db.labels.toArray(), db.sections.toArray()])
+  const [projects, labels, sections, fields] = await Promise.all([db.projects.toArray(), db.labels.toArray(), db.sections.toArray(), db.fields.toArray()])
   const n: Names = {
     projects: new Map(projects.map((p: Project) => [p.id, p.name])),
     labels: new Map(labels.map((l: Label) => [l.id, l.name])),
     sections: new Map(sections.map((s: Section) => [s.id, s.name])),
     tasks: new Map(),
+    fields: new Map(fields.map((d: FieldDef) => [d.id, d])),
   }
   // Entities created in the same proposal are named from their patch.
   for (const c of changes) {
@@ -186,6 +191,15 @@ export function dueWords(due: unknown): string {
   const [y, m, day] = d.date.split('-').map(Number)
   const text = Number.isFinite(y) ? DAY.format(new Date(Date.UTC(y, m - 1, day))).replace(',', '') : d.date
   return d.time ? `${text} ${d.time}` : text
+}
+
+/** A custom field value change in words: "Cost → 120", "Client cleared"; unknown definitions fall back to the id. */
+function fieldWords(def: FieldDef | undefined, id: string, v: unknown): string {
+  const name = def?.name ?? id
+  if (v === null || v === undefined || v === '') return `${name} cleared`
+  if (def?.type === 'checkbox') return v === true ? `${name} checked` : `${name} cleared`
+  const text = def ? formatValue(def, v as FieldValue) : String(v)
+  return `${name} → ${clip(text, 60)}`
 }
 
 const clip = (s: string, n = 80) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
@@ -210,6 +224,7 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
         if (Array.isArray(p.labels) && p.labels.length) lines.push(`Labels: ${p.labels.map((id) => names.labels.get(String(id)) ?? 'a label').join(', ')}`)
         if (p.parent_id) lines.push(`Subtask of “${clip(names.tasks.get(String(p.parent_id)) ?? 'a task', 50)}”`)
         if (p.deleted_at) lines.push('Moved to the Trash')
+        for (const [f, v] of Object.entries(p)) if (f.startsWith(FIELD_PREFIX) && v !== null && v !== undefined) lines.push(fieldWords(names.fields.get(f.slice(FIELD_PREFIX.length)), f.slice(FIELD_PREFIX.length), v))
         return { title: `New task in ${project(p.project_id)}: ${String(p.title ?? '')}`, lines }
       }
     }
@@ -247,7 +262,9 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
       }
       case 'color': lines.push(`Colour ${String(v)}`); break
       case 'position': case 'created_at': case 'notes_doc': break
-      default: lines.push(`${f.replace(/_/g, ' ')} changed`)
+      default:
+        if (f.startsWith(FIELD_PREFIX)) { lines.push(fieldWords(names.fields.get(f.slice(FIELD_PREFIX.length)), f.slice(FIELD_PREFIX.length), v)); break }
+        lines.push(`${f.replace(/_/g, ' ')} changed`)
     }
   }
   return { title, lines }

@@ -1,7 +1,9 @@
 import { DESKTOP_HEADER_QUERY, IconButton, PageActions, PageBarTitle, useMediaQuery, usePageBar } from '../ui'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import type { User } from '../lib/types'
+import type { FieldDef, User } from '../lib/types'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { resolveStartView } from '../lib/views'
+import { setFieldNames } from '../lib/fieldNames'
 import { describeRejected } from '../lib/sharing'
 import { dismissRejected, useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, useRoute } from './router'
@@ -51,6 +53,9 @@ const CommandPalette = lazy(() => import('./palette/CommandPalette'))
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
+  // Field names for history and activity labels (custom-fields).
+  const fieldDefs = useLiveQuery(() => db.fields.toArray(), [], [] as FieldDef[])
+  useEffect(() => setFieldNames(fieldDefs.filter((d) => !d.deleted_at).map((d) => [d.id, d.name])), [fieldDefs])
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   // Changes the server refused after a role change (project-sharing).

@@ -4,7 +4,7 @@ summary: Add and edit tasks, write notes, break work into subtasks, set prioriti
 audience: user
 section: Guides
 specs: [task-management, project-organization, subtasks, manual-ordering, rich-text-editing, entity-pickers, deadlines, start-dates, bulk-actions, task-dependencies]
-screens: [quick-add#add-a-task, project#organise-with-projects, task-panel#edit-a-task]
+screens: [quick-add#add-a-task, project#organise-with-projects, task-panel#edit-a-task, fields-dialog#custom-fields]
 order: 10
 card: project-list
 ---
@@ -194,6 +194,19 @@ To duplicate one task with its open subtasks, select it and press <kbd>Shift</kb
 ### When a project is done
 
 When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → Projects** (each device has its own setting). To bring an archived project back, open **Settings → Projects** and select **Restore** next to it under **Archived projects**; see [Trash and history](trash-and-history.md#bring-back-an-archived-project).
+
+## Custom fields
+
+A project can have up to 30 fields of its own, such as a cost, a client or a link to a quote. Every task in the project gets them.
+
+- **Define them.** Choose **Fields…** in the project menu (or press <kbd>Shift</kbd>+<kbd>F</kbd> on the project's page). Give each field a name and a type: **Text**, **Number**, **Date**, **Choice** (a list of options, one per line), **Link** or **Checkbox**. Names are unique within a project, ignoring case. Rename a field in place. To reorder, use the arrows or press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd> while a field has focus. Editors and owners manage fields; viewers see the values but not the dialog.
+- **Fill them in.** The task panel shows a **Fields** group under the task's properties. A number takes your browser's decimal separator (`12,5` or `12.5`). A date uses the usual date picker. A choice offers its options plus **Clear**. A link has a button that opens it in a new tab. Press <kbd>Enter</kbd> or leave a field to save it. A value that doesn't fit the type shows an error and isn't saved. Values work offline. When two devices change different fields of one task, both changes are kept. When they change the same field, the later change wins.
+- **See them in lists.** Up to three values show as small badges on each row and board card, followed by "+2" if there are more. From 768 px wide, the project's layout switch also offers **Columns**: one column per field next to the task title. If the fields don't all fit, the list scrolls sideways. Your choice of layout is remembered for each project on each device. Editing still happens in the task panel.
+- **Moving a task** to a project without the same field hides that value, but doesn't delete it. Move the task back and the value is there again.
+- **Renaming an option** of a choice field in place (same line, new text) updates every task of the project that held the old option.
+- **Deleting a field** asks first and says how many tasks hold a value for it. The values stay in the tasks' history.
+
+Find tasks by their fields with [filter queries](filters.md#custom-fields): `cost > 100`, `client = "Acme"`, `no quote`.
 
 ## Put things in order
 

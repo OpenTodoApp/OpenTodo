@@ -2,6 +2,7 @@
 // design D6; activity-log "Grouped activity runs"). Presentation only: events are
 // never changed, only folded into runs of consecutive events by one actor on one
 // task, each within the window of the previous one. Comment events stay single.
+import { fieldLabel } from './history'
 import type { ActivityEvent, ActivityKind } from './types'
 
 export const RUN_WINDOW_MS = 10 * 60_000
@@ -76,6 +77,8 @@ function partsOf(ev: ActivityEvent): Part[] {
       for (const c of ev.changes) {
         if (c.field === 'title') parts.push({ order: 2, verb: 'renamed the task' })
         else if (FIELD_NOUNS[c.field]) parts.push({ order: FIELD_NOUNS[c.field][0], noun: FIELD_NOUNS[c.field][1] })
+        // A custom field value (custom-fields) reads by the definition's name.
+        else if (c.field.startsWith('fields.')) parts.push({ order: 8, noun: fieldLabel(c.field) })
       }
       return parts.length ? parts : [{ order: 10, verb: 'edited the task' }]
     }

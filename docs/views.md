@@ -105,4 +105,5 @@ Each device can open on a different view: your laptop on a "Work" view, your pho
 
 - Subtasks show up on their own in Today and Upcoming, with their parent's name next to them, so you see exactly what's due.
 - Views that sort by date (Today, Upcoming, labels, filters) can't be reordered by hand. Projects and the Inbox can.
-- [Filter queries](filters.md) has ten ready-made examples to copy.
+- [Filter queries](filters.md) has ready-made examples to copy.
+- A view can use a project's [custom fields](tasks-and-projects.md#custom-fields), for example `cost > 1000 & due <= 7 days` as a "Big jobs this week" view.

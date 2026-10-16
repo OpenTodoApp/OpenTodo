@@ -71,12 +71,20 @@ describe('words', () => {
     expect(usageLine({ input: 1, output: 1 })).toBe('2 tokens')
   })
   it('describes each change in words', () => {
-    const names = { projects: new Map([['g', 'Garden']]), labels: new Map([['l1', 'errand']]), sections: new Map(), tasks: new Map() }
+    const names = { projects: new Map([['g', 'Garden']]), labels: new Map([['l1', 'errand']]), sections: new Map(), tasks: new Map(), fields: new Map() }
     const d = describeChange({ entity: 'task', entityId: 't', patch: { due: due('2026-10-16'), completed_at: 5, priority: 1, project_id: 'g', labels: ['l1'] }, base: { due: due('2026-10-14'), priority: 4, project_id: null, labels: [] } },
       { title: 'Water plants' }, names)
     expect(d.title).toBe('Water plants')
     expect(d.lines).toEqual(['Due Wed 14 Oct → Fri 16 Oct', 'Completed', 'Priority P4 → P1', 'Moved from Inbox to Garden', 'Labels: +errand'])
     expect(describeChange({ entity: 'task', entityId: 'n', create: true, patch: { title: 'Buy seeds', project_id: 'g' } }, undefined, names).title).toBe('New task in Garden: Buy seeds')
+  })
+  it('names custom field values from local definitions', () => {
+    const def = (id: string, name: string, type: string) => ({ id, project_id: 'g', name, type, options: '', position: 'a', created_at: 0, deleted_at: null }) as never
+    const names = { projects: new Map([['g', 'Garden']]), labels: new Map(), sections: new Map(), tasks: new Map(),
+      fields: new Map([['f1', def('f1', 'Cost', 'number')], ['f2', def('f2', 'Client', 'choice')], ['f3', def('f3', 'Paid', 'checkbox')]]) }
+    const d = describeChange({ entity: 'task', entityId: 't', patch: { 'fields.f1': 120, 'fields.f2': null, 'fields.f3': true, 'fields.zz': 'x' } }, { title: 'Quote' }, names)
+    expect(d.lines).toEqual(['Cost → 120', 'Client cleared', 'Paid checked', 'zz → x'])
+    expect(describeChange({ entity: 'task', entityId: 'n', create: true, patch: { title: 'Fence', project_id: 'g', 'fields.f1': 80 } }, undefined, names).lines).toEqual(['Cost → 80'])
   })
   it('compares values regardless of key order', () => {
     expect(sameValue({ date: 'x', time: 'y' }, { time: 'y', date: 'x' })).toBe(true)

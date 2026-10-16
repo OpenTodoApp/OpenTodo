@@ -23,6 +23,7 @@ Encrypted, in your personal data (Inbox, your own projects, labels, saved views)
 | project | `name` |
 | label | `name` |
 | section | `name` |
+| custom field | `name`, `options` (a choice field's list), and on a task each text, link, date and choice value (`fields.<id>`); number and checkbox values stay plaintext |
 | saved view | `name`, `query` |
 | comment | `body` (your comments on your own tasks) |
 | attachment | `name`, `mime` (the file type), `url` (a link's address), and the file itself, as an encrypted file (see below) |

@@ -1,6 +1,6 @@
-import { Icon } from '../ui'
+import { Icon, useMediaQuery } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, Fragment, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
 import { duplicateTask } from '../lib/templates'
 import { db } from '../lib/db'
@@ -13,11 +13,12 @@ import { breadcrumbOf, buildTaskTree, parentReadyToComplete, progressMap } from 
 import { DURATION_FILTERS, durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../lib/filters'
 import { canEditTasks, memberName, roleOf } from '../lib/sharing'
 import { flattenTree, type Tree, type TreeNode } from '../lib/tree'
-import type { AccountRole, Label, Priority, Project, Section, Task } from '../lib/types'
+import type { AccountRole, FieldDef, Label, Priority, Project, Section, Task } from '../lib/types'
 import { TodayAskAction } from './assistant/AskEntry'
 import { beginDrag } from '../lib/dnd'
 import { moveTask, moveTaskBy } from '../lib/move'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
+import { liveFields } from '../lib/fields'
 import { effectiveSection, groupBySection, loadCollapsedSections, loadViewMode, moveTaskToSection, nextViewMode, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { TimelineView } from './TimelineView'
 import { BoardView, sectionTarget, type BoardColumn } from './BoardView'
@@ -54,7 +55,20 @@ type ListRoute = Exclude<Route, { view: 'trash' } | { view: 'feed' } | { view: '
 
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 /** The project layouts, in `v` order (month-and-timeline-views). */
-const LAYOUT_LABEL: Record<ProjectViewMode, string> = { list: 'List', board: 'Board', timeline: 'Timeline' }
+/**
+ * The columns layout scrolls sideways on its own when the fields do not fit
+ * (custom-fields): the title keeps 14rem, each field 7rem plus its gap.
+ */
+function ColumnsFrame({ on, fields, children }: { on: boolean; fields: number; children: ReactNode }) {
+  if (!on) return <>{children}</>
+  return (
+    <div className="-mx-2 overflow-x-auto px-2" data-scroll-x data-columns-frame>
+      <div style={{ minWidth: `${18 + fields * 7.5}rem` }}>{children}</div>
+    </div>
+  )
+}
+
+const LAYOUT_LABEL: Record<ProjectViewMode, string> = { list: 'List', board: 'Board', timeline: 'Timeline', columns: 'Columns' }
 
 interface Row {
   task: Task
@@ -205,6 +219,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   )
   const board = !!projectId && viewMode === 'board'
   const timeline = !!projectId && viewMode === 'timeline'
+  // Custom fields (custom-fields): definitions by project for badges, and the columns
+  // layout, offered from 768 px when the project defines fields.
+  const allFieldDefs = useLiveQuery(() => db.fields.toArray(), [], [] as FieldDef[])
+  const fieldDefsOf = useCallback((pid: string | null) => liveFields(pid, allFieldDefs), [allFieldDefs])
+  const wide = useMediaQuery('(min-width: 768px)')
+  const projectFieldDefs = projectId ? fieldDefsOf(projectId) : []
+  const columnsAvailable = wide && projectFieldDefs.length > 0
+  const columnsLayout = !!projectId && viewMode === 'columns' && columnsAvailable
   const projectEditable = !!projectId && canEditTasks(roleOf(projectId, memberMap))
   const sectionMap = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections])
   /** Top-level tasks of the project bucketed by section: list headings and board columns. */
@@ -345,7 +367,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const [addingTo, setAddingTo] = useState<string | null>(null)
 
   const toggleViewMode = useCallback(() => {
-    if (projectId) void saveViewMode(projectId, nextViewMode(viewMode))
+    if (projectId) void saveViewMode(projectId, nextViewMode(viewMode, columnsAvailable))
   }, [projectId, viewMode])
   const chooseViewMode = useCallback((m: ProjectViewMode) => {
     if (projectId && m !== viewMode) void saveViewMode(projectId, m)
@@ -856,6 +878,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       <TaskRow
         task={r.task}
         project={r.task.project_id ? projectMap.get(r.task.project_id) : undefined}
+        fieldDefs={fieldDefsOf(r.task.project_id)}
+        fieldColumns={columnsLayout}
         labels={resolveLabels(r.task.labels, labelMap)}
         assignee={r.task.assignee_id && r.task.project_id && memberMap.has(r.task.project_id)
           ? (r.task.assignee_id === userId ? 'You' : memberName(r.task.assignee_id, memberMap) ?? 'Former member') : null}
@@ -927,15 +951,15 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   return (
     <div className="min-w-0 px-4 py-5 md:px-8">
-        <div className={board || timeline ? 'mx-auto' : 'mx-auto max-w-3xl'} data-list-page>
+        <div className={board || timeline || columnsLayout ? 'mx-auto' : 'mx-auto max-w-3xl'} data-list-page>
           {route.view === 'project' && currentProject ? (
             <ProjectHeader project={currentProject} userId={userId} actions={pageActions}
               layout={(
                 <span className="flex rounded-control border border-default text-meta" role="group" aria-label="Project layout">
-                  {(['list', 'board', 'timeline'] as const).map((m) => (
+                  {(columnsAvailable ? ['list', 'board', 'timeline', 'columns'] as const : ['list', 'board', 'timeline'] as const).map((m, i, all) => (
                     <Tooltip key={m} label={LAYOUT_LABEL[m]} shortcut="v">
-                      <button type="button" aria-pressed={viewMode === m} onClick={() => chooseViewMode(m)}
-                        className={`${m === 'list' ? 'rounded-l-control' : m === 'timeline' ? 'rounded-r-control' : ''} px-2 py-1 ${viewMode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
+                      <button type="button" aria-pressed={viewMode === m || (m === 'list' && viewMode === 'columns' && !columnsAvailable)} onClick={() => chooseViewMode(m)}
+                        className={`${i === 0 ? 'rounded-l-control' : i === all.length - 1 ? 'rounded-r-control' : ''} px-2 py-1 ${viewMode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
                         {LAYOUT_LABEL[m]}
                       </button>
                     </Tooltip>
@@ -972,6 +996,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
 
           {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
+          <ColumnsFrame on={columnsLayout} fields={projectFieldDefs.length}>
+          {columnsLayout && (
+            // The columns layout's header (custom-fields); each cell also carries its field name.
+            <div className="flex items-center gap-2 border-b border-default px-2 py-1 text-hint font-semibold uppercase tracking-wide text-faint" aria-hidden data-field-header>
+              <span className="min-w-56 flex-1 pl-13">Task</span>
+              {projectFieldDefs.map((d) => <span key={d.id} className="w-28 shrink-0 truncate px-2" data-field-column={d.id}>{d.name}</span>)}
+            </div>
+          )}
           {rows.length === 0 && !(board || liveSections.length > 0) && (duration ? (
             <p className="px-2 py-8 text-center text-sm text-faint">
               No task matches this duration filter. <button className="underline" onClick={() => chooseDuration(null)}>Clear the filter</button>
@@ -1030,6 +1062,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               {!(g.heading && g.folded === undefined && collapsedGroups.has(groupKey(route.view, g.key))) && <ul>{g.rows.map((r) => renderRow(r))}</ul>}
             </section>
           ))}
+          </ColumnsFrame>
           {route.view === 'project' && !board && !timeline && projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
         </div>
       {prompt && (

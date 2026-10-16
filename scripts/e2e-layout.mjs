@@ -113,6 +113,13 @@ async function seed() {
   // A reminder that is already due: its toast shows on every screen.
   const passport = (await A('GET', '/api/v1/tasks')).tasks.find((t) => t.title === 'Renew passport')
   await A('POST', '/api/v1/reminders', { task_id: passport.id, kind: 'absolute', fire_at: Date.now() - 60e3 })
+  // Five custom fields on the project (custom-fields): badges on rows and cards, and
+  // the columns layout at 768 px.
+  const F = {}
+  for (const [name, type, options] of [['Cost', 'number'], ['Client', 'choice', 'Acme Kitchens\nGlobex'], ['Quote', 'link'], ['Ordered', 'date'], ['Approved', 'checkbox']]) {
+    F[name] = (await A('POST', '/api/v1/fields', { name, type, project_id: home.id, ...(options ? { options } : {}) })).id
+  }
+  await A('PATCH', `/api/v1/tasks/${quotes.id}`, { fields: { [F.Cost]: 12500, [F.Client]: 'Acme Kitchens', [F.Quote]: LONG_URL, [F.Ordered]: today, [F.Approved]: true } })
   const trashed = await T({ title: 'Old shopping list' })
   await A('DELETE', `/api/v1/tasks/${trashed.id}`)
 
@@ -181,9 +188,11 @@ function screens(ids) {
     { name: 'updates', path: '/updates', ready: heading('Updates') },
     // The old address still opens Updates (ux-overhaul vocabulary).
     { name: 'activity-redirect', path: '/activity', ready: heading('Updates') },
-    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template'] },
+    { name: 'project', path: `/project/${ids.home}`, ready: row('Pick paint colours'), overlays: ['project-menu', 'project-move-picker', 'section-menu', 'share', 'share-invite-link', 'mention-picker', 'assignee-picker', 'help-panel', 'project-picker', 'parent-picker', 'section-picker', 'zone-control', 'task-history', 'blocked-by-picker', 'duplicate-project', 'save-template', 'fields-dialog'] },
     { name: 'board', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Board' },
     { name: 'timeline', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Timeline' },
+    // Columns are offered from 768 px only (custom-fields).
+    { name: 'columns', path: `/project/${ids.home}`, ready: row('Pick paint colours'), layout: 'Columns', minWidth: 768 },
     { name: 'saved-view', path: `/view/${ids.view}`, ready: heading(/Deep work/), overlays: ['view-header-menu'] },
     { name: 'dashboard', path: `/view/${ids.dashboard}`, ready: heading(/Weekly review/) },
     { name: 'label', path: `/label/${ids.label}`, ready: row('Renew passport') },
@@ -356,7 +365,7 @@ const OVERLAYS = {
     return { overlay: overlayLoc(p), trigger, kind: 'popover' }
   },
   // Project templates: the project menu's dialogs and the sidebar's From a template.
-  ...Object.fromEntries([['duplicate-project', 'Duplicate…'], ['save-template', 'Save as template…']].map(([name, item]) => [name, async (p) => {
+  ...Object.fromEntries([['duplicate-project', 'Duplicate…'], ['save-template', 'Save as template…'], ['fields-dialog', 'Fields…']].map(([name, item]) => [name, async (p) => {
     await p.getByRole('button', { name: /^Project/ }).first().click()
     await p.getByRole('menuitem', { name: item }).click()
     return { overlay: p.locator(`[data-testid="${name}"]`), kind: 'dialog' }
@@ -723,6 +732,7 @@ async function runCombo(engine, width, theme, ids) {
     for (const s of screens(ids)) {
       if (ONLY && !ONLY.has(s.name)) continue
       if (s.engines && !s.engines.includes(engine)) continue
+      if (s.minWidth && width < s.minWidth) continue
       const p = s.anon ? await anonCtx.newPage() : page
       // A screen that does not load is retried once (a slow CI machine); the second
       // failure is reported with whether the session was still valid.

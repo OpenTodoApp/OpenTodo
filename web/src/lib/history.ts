@@ -3,6 +3,7 @@
 // offline the panel says it needs a connection instead of showing stale data.
 // Restoring an earlier value is an ordinary edit with the current clock, so it
 // applies locally at once, appears in the history itself and converges by LWW.
+import { fieldNameOf } from './fieldNames'
 import { api } from './api'
 import { decryptChanges } from './e2ee'
 import { updateProject, updateTask } from './ops'
@@ -72,6 +73,8 @@ const FIELD_LABELS: Record<string, string> = { blocked_by: 'waiting for' }
 
 /** The label of a field in the timeline (`assignee_id` reads as "assignee"). */
 export function fieldLabel(field: string): string {
+  // Custom field values (custom-fields): the definition's name, falling back to "field".
+  if (field.startsWith('fields.')) return fieldNameOf(field.slice('fields.'.length)) ?? 'field'
   return REF_LABELS[field] ?? FIELD_LABELS[field] ?? field.replace(/_/g, ' ')
 }
 

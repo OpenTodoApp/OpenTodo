@@ -92,6 +92,10 @@ The export carries `fields` (definitions, tombstones included) beside `sections`
 
 A formula needs the same answer on every device and on the server from entities that arrive in any order and may be missing (a value whose definition is late, a task in a project the viewer cannot see), which the op log does not promise; it also needs an expression language, its errors and its migration. A rollup is a view concern: a sum over the tasks of a project is computed from rows already on the device, and if wanted it is a footer in the columns layout, with no data change. Both are deferred, not planned.
 
+### Interface budget (added after ux-overhaul)
+
+The change adds one menu entry and its shortcut (**Fields…**, <kbd>Shift</kbd>+<kbd>F</kbd>, editors and above), one dialog, one group in the task panel's properties (present only when the task's project has fields), up to three badges plus "+n" on the row's existing metadata line, and a fourth option in the existing List | Board | Timeline control (only with live fields and from 768 px). It adds no sidebar entry, no chrome row above a list and no new task property chip. The columns layout's only extra scroll region is a `data-scroll-x` frame around the list, like the board's columns, and its header row scrolls with it, so it is not sticky inside that frame. The project header's action row now wraps when it is wider than the page, so the extra layout option never pushes the page sideways at 768 px. The shortcut is in the registry under tasks.
+
 ## Risks / Trade-offs
 
 - **[A prefix family is a new concept in `Validate`]** → One helper (`fieldKind`) behind the exact lookup; every reader that iterates `Schema` is listed in the tasks and tested with a `fields.<id>` op in the sync, activity, history, webhook and e2ee test suites. The op format is unchanged: a field name is still a string.

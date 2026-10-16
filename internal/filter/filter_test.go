@@ -73,7 +73,7 @@ func TestFilterParserRejects(t *testing.T) {
 		"!":                  `Expected a term after "!" at position 1`,
 		"()":                 `Expected a term after "(" at position 1`,
 		`"loose text"`:       `Unexpected text "loose text" at position 1; quote names after "@" or "#", or use search:`,
-		"no idea":            `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1`,
+		"no today":           `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1`,
 		"due < someday":      `Invalid date "someday" at position 7`,
 		"due < 2026-02-30":   `Invalid date "2026-02-30" at position 7`,
 		"due <":              `Expected a date after "<" at position 5`,
@@ -95,6 +95,27 @@ func TestFilterParserRejects(t *testing.T) {
 		}
 		if se.Position() != se.Offset+1 {
 			t.Errorf("%q: position %d offset %d", q, se.Position(), se.Offset)
+		}
+	}
+}
+
+// Custom field terms (custom-fields): accepted with any value; reserved words stay reserved unless quoted.
+func TestFilterParserFieldTerms(t *testing.T) {
+	for _, q := range []string{`cost > 100`, `client = "Acme"`, `client = acme`, `"Order date" <= friday`, `ordered before 2026-11-01`, `ordered <= 7 days`,
+		`paid = true`, `no cost`, `no "Order date"`, `"due" = x`, `cost >= -2,5 & !approved = false`} {
+		if err := Parse(q); err != nil {
+			t.Errorf("%q: %v", q, err)
+		}
+	}
+	for q, want := range map[string]string{
+		`cost >`:          `Expected a value after ">" at position 6`,
+		`cost = (`:        `Expected a value after "=" at position 6`,
+		`no today`:        `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1`,
+		`ordered < 3 dys`: `Expected "&" or "|" before "dys" at position 13`,
+	} {
+		err := Parse(q)
+		if err == nil || err.Error() != want {
+			t.Errorf("%q: got %v, want %q", q, err, want)
 		}
 	}
 }

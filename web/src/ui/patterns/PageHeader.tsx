@@ -98,7 +98,7 @@ export function PageHeader({ title, meta, leading, actions, overflow, menu, help
           ? <H ref={titleRef} tabIndex={titleTabIndex} className="min-w-0 truncate text-h1 font-semibold text-strong outline-none" data-page-title>{title}</H>
           : <H ref={titleRef} tabIndex={titleTabIndex} className="flex min-w-0 items-center text-h1 font-semibold text-strong outline-none" data-page-title>{title}</H>}
         {meta && <span className="min-w-0 text-meta text-muted" data-page-meta>{meta}</span>}
-        <div className="ml-auto flex shrink-0 items-center gap-1" data-page-actions>
+        <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1" data-page-actions>
           <PageActions actions={actions} overflow={overflow} menu={menu} help={help} />
         </div>
       </div>}

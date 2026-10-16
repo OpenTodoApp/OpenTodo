@@ -30,6 +30,8 @@ term     := "@" name                       label
           | ("due" | "created" | "deadline" | "start") cmp date
           | keyword
           | "search:" text
+          | field cmp value                custom field
+          | "no" field                     custom field without a value
 cmp      := "<" | "<=" | "=" | ">=" | ">" | "before" | "after"
 date     := "today" | "tomorrow" | "yesterday" | weekday | YYYY-MM-DD
           | INT "days" | INT "days ago"
@@ -37,6 +39,8 @@ weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturd
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
           | "someday" | "deferred" | "evening" | "blocked" | "unblocked"
+field    := word | '"' chars '"'            not a reserved word unless quoted
+value    := NUMBER | "true" | "false" | date | text
 name     := word | '"' chars '"'
 text     := word | '"' chars '"'
 ```
@@ -84,6 +88,8 @@ text     := word | '"' chars '"'
 | `completed` | completed tasks |
 | `open` | open (not completed) tasks |
 | `search: text` | title or notes contain the text, ignoring case; quote several words: `search: "oat milk"` |
+| `field <cmp> value` | tasks whose [custom field](#custom-fields) of that name compares as asked |
+| `no field` | tasks in a project that has the field, with no value in it |
 
 ### Open, completed and deleted tasks
 
@@ -107,6 +113,18 @@ Dates compare **calendar days** in your local time zone, the same way Today and 
 
 Names are looked up every time the query runs, so renaming a label or project is picked up immediately. When several labels or projects share a name (two devices can create the same name while offline), the term matches any of them. A name that matches nothing is **not** an error: the view shows a warning such as `No label named "errands"`, that term matches no task, and the rest of the query still works. A saved or remembered query therefore survives a rename or deletion.
 
+### Custom fields
+
+A [custom field](tasks-and-projects.md#custom-fields) is named by itself: `cost > 100`, `client = "Acme"`, `"Order date" <= friday`. The name ignores case and matches the field of that name in every project that has one. Put names with spaces in double quotes. A quoted name is always a field, so a field called "due" is written `"due" = …`. Unquoted, `due`, `created`, `deadline`, `start`, `date`, `project`, `labels`, `time`, the keywords and `search` keep their usual meaning.
+
+- **Number** fields take every comparison: `cost >= 1000`.
+- **Date** fields take every comparison and the usual dates: `"Order date" before 2026-11-01`, `ordered <= 7 days`.
+- **Text**, **Choice** and **Link** fields take `=` only, ignoring case: `client = acme`. Another comparison is an error (`Text fields support = only`).
+- **Checkbox** fields take `= true` or `= false`. A task with an empty checkbox matches `= false`.
+- `no client` lists the tasks of projects that have a Client field, but no value in it. Tasks in other projects don't match.
+
+A name that no project uses gives no results and a note under the input (`No field is named "budget"`). The Filter view's usage hint lists the field names you have.
+
 ## Errors
 
 A query that does not follow the grammar shows a message under the input, and the previous results stay on screen until the query is valid again. Positions count characters from 1:
@@ -120,7 +138,7 @@ A query that does not follow the grammar shows a message under the input, and th
 | `p5` | `Priority must be p1, p2, p3 or p4 at position 1` |
 | `due today` | `Expected a comparison (<, <=, =, >=, >, before or after) after "due" at position 1` |
 | `due > 7` | `Expected "days" after "7" at position 7` |
-| `no idea` | `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1` |
+| `no today` | `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1` |
 
 An empty query shows a short usage hint and no results.
 
@@ -230,4 +248,16 @@ blocked
 
 ```filter
 unblocked & today
+```
+
+### 15. Kitchen quotes over a budget
+
+```filter
+#Kitchen & cost > 5000 & !approved = true
+```
+
+### 16. Client work with no quote link yet
+
+```filter
+client = "Acme Kitchens" & no quote
 ```

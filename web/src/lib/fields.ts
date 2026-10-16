@@ -202,3 +202,18 @@ export async function tasksWithValue(id: string): Promise<number> {
   if (!def) return 0
   return db.tasks.where('project_id').equals(def.project_id).filter((t: Task) => !t.deleted_at && (t.fields ?? {})[id] != null).count()
 }
+
+/**
+ * A row's badges (custom-fields "Board view"): the non-empty values in definition
+ * order, "Name value" (a checked box reads as its name), at most three shown and
+ * the rest named for the "+n" badge's accessible name.
+ */
+export function fieldBadges(defs: readonly Pick<FieldDef, 'id' | 'name' | 'type' | 'options'>[], values: Record<string, FieldValue> | undefined, max = 3): { shown: { id: string; text: string }[]; rest: string[] } {
+  const all: { id: string; text: string }[] = []
+  for (const d of defs) {
+    const v = values?.[d.id]
+    if (v === null || v === undefined || v === '' || v === false) continue
+    all.push({ id: d.id, text: d.type === 'checkbox' ? d.name : `${d.name} ${formatValue(d, v)}` })
+  }
+  return { shown: all.slice(0, max), rest: all.slice(max).map((b) => b.text) }
+}
