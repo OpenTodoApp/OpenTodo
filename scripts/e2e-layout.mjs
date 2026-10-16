@@ -858,6 +858,11 @@ async function runCombo(engine, width, theme, ids) {
   log(`  ${tag}: ${checked} screens and overlays checked`)
 }
 
+// Whether an overlay closes: waits for it to leave instead of a fixed pause, so a
+// loaded runner (four browsers at once in CI) does not report a slow re-render as
+// an overlay that stays open.
+const closes = (overlay) => overlay.waitFor({ state: 'hidden', timeout: 2000 }).then(() => true, () => false)
+
 async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructive, escapes = 1 }, fail, shot) {
   await overlay.waitFor({ state: 'visible', timeout: 5000 })
   await p.waitForTimeout(250)
@@ -896,8 +901,8 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
     }
   }
   // Escape closes (a picker step needs two: back, then close), focus returns to the trigger.
-  for (let i = 0; i < escapes; i++) { await p.keyboard.press('Escape'); await p.waitForTimeout(150) }
-  if (await overlay.isVisible().catch(() => false)) await fail(p, screen, name, 'does not close with Escape')
+  for (let i = 0; i < escapes; i++) { if (i) await p.waitForTimeout(150); await p.keyboard.press('Escape') }
+  if (!(await closes(overlay))) await fail(p, screen, name, 'does not close with Escape')
   else if (trigger) {
     const back = await trigger.evaluate((el) => el === document.activeElement || el.contains(document.activeElement)).catch(() => false)
     if (!back) await fail(p, screen, name, 'focus does not return to the trigger after Escape')
@@ -908,8 +913,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
   await overlay.waitFor({ state: 'visible', timeout: 5000 })
   if (geo.hasClose) {
     await overlay.locator('[data-overlay-close], button[aria-label="Close"]').first().click()
-    await p.waitForTimeout(150)
-    if (await overlay.isVisible().catch(() => false)) { await fail(p, screen, name, 'does not close with its close button'); await p.keyboard.press('Escape') }
+    if (!(await closes(overlay))) { await fail(p, screen, name, 'does not close with its close button'); await p.keyboard.press('Escape') }
   } else if (kind === 'dialog') {
     await fail(p, screen, name, 'dialog has no close button')
     await p.keyboard.press('Escape')
@@ -935,8 +939,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
       if (inert) { pt = q; break }
     }
     await p.mouse.click(pt.x, pt.y)
-    await p.waitForTimeout(200)
-    if (await overlay.isVisible().catch(() => false)) { await fail(p, screen, name, 'does not close with a tap outside'); await p.keyboard.press('Escape') }
+    if (!(await closes(overlay))) { await fail(p, screen, name, 'does not close with a tap outside'); await p.keyboard.press('Escape') }
   }
 }
 
