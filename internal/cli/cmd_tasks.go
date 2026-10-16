@@ -3,10 +3,15 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"sort"
 	"strings"
+	"time"
+
+	"github.com/pixari/opentodo/internal/quickadd"
+	"github.com/pixari/opentodo/internal/recurrence"
 )
 
 // stringList is a repeatable string flag.
@@ -360,6 +365,11 @@ type taskFlags struct {
 	title, project, dueWord, clock, note string
 	priority                             int
 	labels                               stringList
+	repeat                               string
+	// add only (quick-add-recurrence D6)
+	remind  stringList
+	natural bool
+	lang    string
 }
 
 func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
@@ -372,6 +382,12 @@ func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
 	fs.IntVar(&f.priority, "priority", 0, "1 (highest) to 4 (lowest)")
 	fs.Var(&f.labels, "label", "label (repeatable; edit replaces the list)")
 	fs.StringVar(&f.note, "note", "", "description")
+	fs.StringVar(&f.repeat, "repeat", "", "recurrence rule, e.g. \"every monday\" (edit: `none` clears)")
+	if !edit {
+		fs.Var(&f.remind, "remind", "reminder: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)")
+		fs.BoolVar(&f.natural, "natural", false, "parse the title like the app's quick add (dates, #project, @label, p1, every …, remind me …)")
+		fs.StringVar(&f.lang, "lang", "", "languages for --natural and --remind, e.g. de,en (default: the locale, English always)")
+	}
 }
 
 // validateLocal checks everything that needs no server round trip.
@@ -384,7 +400,37 @@ func (f *taskFlags) validateLocal(set map[string]bool) error {
 			return err
 		}
 	}
+	if set["repeat"] && !strings.EqualFold(f.repeat, "none") {
+		if _, err := recurrence.Canonicalize(f.repeat); err != nil {
+			return usageErr("--repeat: %v", err)
+		}
+	}
 	return nil
+}
+
+// quickLanguages are the --lang languages, else the locale's (LC_ALL,
+// LC_MESSAGES, LANG); English is always added by the parser.
+func (a *App) quickLanguages(flagValue string) []string {
+	if flagValue != "" {
+		return strings.Split(flagValue, ",")
+	}
+	for _, k := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
+		if v := a.Getenv(k); v != "" && v != "C" && v != "POSIX" {
+			return []string{strings.SplitN(v, ".", 2)[0]}
+		}
+	}
+	return nil
+}
+
+func (a *App) quickContext(langs []string, projects []project) quickadd.Context {
+	now := a.Now()
+	var ps []quickadd.Project
+	for _, p := range projects {
+		ps = append(ps, quickadd.Project{ID: p.ID, Name: p.Name, Archived: p.Archived})
+	}
+	// The CLI cannot read the user's preferences: weeks start on Monday and
+	// numeric dates follow the first language (design D7).
+	return quickadd.Context{Today: localDate(now), Now: now.Format("15:04"), Languages: langs, Projects: ps}
 }
 
 func visited(fs *flag.FlagSet) map[string]bool {
@@ -414,7 +460,19 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err != nil {
 		return err
 	}
+	langs := a.quickLanguages(f.lang)
+	var phrases []quickadd.Reminder
+	for _, p := range f.remind {
+		r, ok := quickadd.ParseReminder(p, a.quickContext(langs, nil))
+		if !ok {
+			return usageErr("--remind %q: use an offset such as \"30 min before\" or a moment such as \"at 9\" or \"tomorrow at 9\"", p)
+		}
+		phrases = append(phrases, r)
+	}
 	body := map[string]any{"title": title}
+	if set["repeat"] {
+		body["recurrence"], _ = recurrence.Canonicalize(f.repeat)
+	}
 	if set["due"] || set["time"] {
 		d := due{}
 		if set["due"] {
@@ -442,6 +500,53 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err != nil {
 		return err
 	}
+	labelRefs := []string(f.labels)
+	if f.natural {
+		// Parse the line like quick add; explicit flags win over what it says.
+		var projects []project
+		if strings.Contains(title, "#") {
+			if projects, err = c.projects(ctx); err != nil {
+				return err
+			}
+		}
+		r := quickadd.Parse(title, a.quickContext(langs, projects))
+		if r.Title == "" {
+			return usageErr("--natural: the line has no title left after its attributes")
+		}
+		body["title"] = r.Title
+		if r.Due != nil && body["due"] == nil {
+			d := due{Date: r.Due.Date}
+			if r.Due.Time != "" {
+				d.Time = &r.Due.Time
+			}
+			body["due"] = d
+		}
+		if r.ProjectID != "" && f.project == "" {
+			body["project_id"] = r.ProjectID
+		}
+		if len(labelRefs) == 0 {
+			labelRefs = r.Labels
+		}
+		if r.Priority > 0 && !set["priority"] {
+			body["priority"] = r.Priority
+		}
+		if r.EstimateMinutes > 0 {
+			body["estimate_minutes"] = r.EstimateMinutes
+		}
+		if r.Recurrence != "" && !set["repeat"] {
+			body["recurrence"] = r.Recurrence
+		}
+		if r.Deadline != "" {
+			body["deadline"] = r.Deadline
+		}
+		if r.Someday {
+			body["start"] = "someday"
+		}
+		if r.Evening {
+			body["evening"] = true
+		}
+		phrases = append(r.Reminders, phrases...)
+	}
 	if f.project != "" && !strings.EqualFold(f.project, "none") {
 		projects, err := c.projects(ctx)
 		if err != nil {
@@ -453,8 +558,8 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		}
 		body["project_id"] = p.ID
 	}
-	if len(f.labels) > 0 {
-		ids, err := c.resolveLabels(ctx, f.labels)
+	if len(labelRefs) > 0 {
+		ids, err := c.resolveLabels(ctx, labelRefs)
 		if err != nil {
 			return err
 		}
@@ -464,13 +569,68 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if err != nil {
 		return err
 	}
+	var created task
+	_ = json.Unmarshal(raw, &created)
+	waiting, err := a.createReminders(ctx, c, created.ID, body, phrases, set["idempotency-key"], *key)
+	if err != nil {
+		return err
+	}
 	if g.json {
 		return a.printJSON(json.RawMessage(raw))
 	}
-	var created task
-	_ = json.Unmarshal(raw, &created)
 	fmt.Fprintln(a.Stdout, created.ID)
+	if waiting > 0 {
+		fmt.Fprintf(a.Stderr, "%d reminder(s) will fire once the task has a due date\n", waiting)
+	}
 	return nil
+}
+
+// createReminders posts one reminder per phrase after the task, resolved
+// against its due like quick add (design D6). With an idempotency key K the
+// n-th reminder sends K.r<n>, so a retry converges to one set. It returns how
+// many relative reminders wait for a due date.
+func (a *App) createReminders(ctx context.Context, c *client, taskID string, body map[string]any, phrases []quickadd.Reminder, keyed bool, key string) (int, error) {
+	if len(phrases) == 0 {
+		return 0, nil
+	}
+	now := a.Now()
+	dueDate, dueTime := "", ""
+	if d, ok := body["due"].(due); ok {
+		dueDate = d.Date
+		if d.Time != nil {
+			dueTime = *d.Time
+		}
+	}
+	waiting := 0
+	for n, p := range phrases {
+		res := quickadd.Resolve(p, dueDate, dueTime, localDate(now), now.Format("15:04"))
+		rb := map[string]any{"task_id": taskID}
+		if res.Relative {
+			rb["kind"], rb["offset_minutes"] = "relative", res.OffsetMinutes
+			if dueDate == "" {
+				waiting++
+			}
+		} else {
+			at, err := time.ParseInLocation("2006-01-02 15:04", res.Date+" "+res.Time, now.Location())
+			if err != nil {
+				return 0, err
+			}
+			rb["kind"], rb["fire_at"] = "absolute", at.UnixMilli()
+		}
+		var headers map[string]string
+		if keyed {
+			headers = map[string]string{"Idempotency-Key": fmt.Sprintf("%s.r%d", key, n+1)}
+		}
+		if _, _, err := c.do(ctx, "POST", "/reminders", rb, headers); err != nil {
+			var ee *exitError
+			if errors.As(err, &ee) {
+				return 0, &exitError{code: ee.code, jsonCode: ee.jsonCode, envelope: ee.envelope,
+					msg: fmt.Sprintf("%s (the task was created: %s; add the reminder in the app or with the API)", ee.msg, taskID)}
+			}
+			return 0, fmt.Errorf("%w (the task was created: %s)", err, taskID)
+		}
+	}
+	return waiting, nil
 }
 
 func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
@@ -501,6 +661,13 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if set["note"] {
 		patch["description"] = f.note
 	}
+	if set["repeat"] {
+		if strings.EqualFold(f.repeat, "none") || f.repeat == "" {
+			patch["recurrence"] = nil
+		} else {
+			patch["recurrence"], _ = recurrence.Canonicalize(f.repeat)
+		}
+	}
 	clearDue := set["due"] && strings.EqualFold(f.dueWord, "none")
 	newDate := ""
 	if set["due"] && !clearDue {
@@ -508,8 +675,8 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 	}
-	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] {
-		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note")
+	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] {
+		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat")
 	}
 	c, _, err := a.connect(g)
 	if err != nil {

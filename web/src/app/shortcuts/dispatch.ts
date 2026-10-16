@@ -25,7 +25,7 @@ export interface ScopeFrame {
   capture?: boolean
 }
 
-const DEPTH: Record<ShortcutScope, number> = { vim: 8, editor: 7, panel: 6, board: 5, list: 4, calendar: 4, view: 3, global: 2 }
+const DEPTH: Record<ShortcutScope, number> = { vim: 8, editor: 7, panel: 6, board: 5, timeline: 5, list: 4, calendar: 4, view: 3, global: 2 }
 const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta'])
 const PREFIX_MS = 800
 

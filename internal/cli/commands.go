@@ -71,6 +71,13 @@ var (
 		{Name: "priority", Type: "int", Enum: []string{"1", "2", "3", "4"}, Description: "1 (highest) to 4 (lowest)"},
 		{Name: "label", Type: "string_list", Description: "label name or id, repeatable (created when missing; edit replaces the list)"},
 		{Name: "note", Type: "string", Description: "description"},
+		{Name: "repeat", Type: "string", Description: "recurrence rule in any spelling of the grammar, sent canonical (edit: none clears)"},
+	}
+	// addOnlyFields are the quick-add flags of `ot add` (quick-add-recurrence D6).
+	addOnlyFields = []flagSpec{
+		{Name: "remind", Type: "string_list", Description: "reminder without the reminder word: \"30 min before\", \"at 9\", \"tomorrow at 9\" (repeatable)"},
+		{Name: "natural", Type: "bool", Description: "parse the title like the app's quick add: dates, #project, @label, p1, +30m, every …, remind me …"},
+		{Name: "lang", Type: "string", Description: "languages for --natural and --remind, e.g. de,en (default: the locale; English always)"},
 	}
 	refsArg = []argSpec{{Name: "ref", Required: true, Repeatable: true}}
 )
@@ -94,7 +101,7 @@ var cmdSpecs = []cmdSpec{
 	{Name: "inbox", Summary: "alias for `ot list --inbox`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},
 	{Name: "upcoming", Summary: "alias for `ot list --upcoming`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},
 	{Name: "add", Summary: "create a task and print its id", Args: []argSpec{{Name: "title", Required: true, Repeatable: true}},
-		Flags: append(append([]flagSpec{}, taskFields...), idemFlag), Writes: true, DryRun: true, IdempotencyKey: true, Output: ref("task")},
+		Flags: append(append(append([]flagSpec{}, taskFields...), addOnlyFields...), idemFlag), Writes: true, DryRun: true, IdempotencyKey: true, Output: ref("task")},
 	{Name: "edit", Summary: "change a task (values equal to the current ones send nothing)", Args: []argSpec{{Name: "ref", Required: true}},
 		Flags: append([]flagSpec{{Name: "title", Type: "string", Description: "new title"}}, taskFields...), Writes: true, DryRun: true, Output: ref("task")},
 	{Name: "done", Summary: "complete one or more tasks", Args: refsArg, Writes: true, DryRun: true, Output: oneOrMany("task_result")},
