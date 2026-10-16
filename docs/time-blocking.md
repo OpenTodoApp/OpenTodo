@@ -3,7 +3,7 @@ title: Time blocking
 summary: Estimate how long tasks take, then place them on the Day or Week calendar to see whether your plan fits the day.
 audience: user
 section: Guides
-specs: [time-blocking]
+specs: [time-blocking, month-view]
 screens: [settings/calendar#adjust-the-grid]
 order: 60
 card: week
@@ -22,7 +22,7 @@ The estimate shows on the task row, like `45m` or `1h 30m`.
 
 ## Open the calendar
 
-Choose **Calendar** in the sidebar, then **Day**, **Week** or **Month** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd> or <kbd>g</kbd> <kbd>m</kbd>. Timed tasks are blocks as tall as their estimate; dated tasks without a time wait in the **Unscheduled** lane. See [Day, Week and Month](calendar-views.md#open-the-calendar).
+Choose **Calendar** in the sidebar, then **Day**, **Week** or **Month** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd> or <kbd>g</kbd> <kbd>m</kbd>. Timed tasks are blocks as tall as their estimate; dated tasks without a time wait in the **Unscheduled** lane. The sidebar opens the calendar the way you last left it on this device. See [Day, Week and Month](calendar-views.md#open-the-calendar).
 
 ## See the month
 
@@ -30,7 +30,7 @@ Choose **Calendar** in the sidebar, then **Day**, **Week** or **Month** in its h
 
 ## Plan a project on a timeline
 
-For work that spans weeks, such as a move, a launch or a trip, switch the project to **Timeline**. Each task is a bar from its start to its deadline, so overlaps and gaps are easy to see, and you can drag bars to reschedule. See [Sections and boards](sections-and-boards.md).
+For work that spans weeks, such as a move, a launch or a trip, switch the project to **Timeline**. Each task is a bar from its start to its deadline, so overlaps and gaps are easy to see, and you can drag bars to reschedule. See [Sections and boards](sections-and-boards.md#see-a-project-on-a-timeline).
 
 ## Place a task on the calendar
 

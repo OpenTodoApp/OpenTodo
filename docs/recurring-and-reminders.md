@@ -18,7 +18,7 @@ Some tasks come back: pay the rent, water the plants, the weekly one-to-one. Mak
 
 Open the task and type a rule into **Repeat**, such as `every week`. A list of suggestions appears as you type. Under the field you'll see the next three dates, so you can check the rule does what you meant.
 
-Rules are set in the task panel. Quick add doesn't read them: typing `every monday` there doesn't make a task repeat. Add the task first, then open it and set **Repeat**.
+Set a rule in the task panel under **Repeat**, or type it straight into quick add: `Water plants every Monday` creates the task with the rule and its first date. See [Repeat and remind](quick-add.md#repeat-and-remind) for the phrases in each language.
 
 Repeating tasks show a ↻ symbol on the row. To stop repeating, select the **×** next to the rule.
 

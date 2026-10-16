@@ -31,7 +31,7 @@ Two extras work with any of these:
 - **After completion:** `every 2 weeks after completion` counts from the day you actually finish, not from the due date. Good for things like "change the water filter".
 - **An end:** add `until 2026-12-31` or `for 10 times` to stop the series.
 
-Rules are in English, whichever language you use for dates in quick add. Every detail is in the [recurring task rules](recurrence.md) reference.
+Rules are stored in English, whichever language you typed them in. Every detail is in the [recurring task rules](recurrence.md) reference.
 
 ## Complete, skip or split off one occurrence
 

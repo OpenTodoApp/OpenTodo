@@ -7,6 +7,7 @@ import { dismissRejected, useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { CalendarView } from './CalendarView'
+import { MonthView } from './MonthView'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { SavedViewRoute } from './SavedViewView'
@@ -141,10 +142,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     },
     'go.inbox': go({ view: 'inbox' }), 'go.today': go({ view: 'today' }), 'go.upcoming': go({ view: 'upcoming' }), 'go.someday': go({ view: 'someday' }),
     'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }),
-    'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
+    'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
     'go.trash': go({ view: 'trash' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
     'global.help': () => setShowHelp((v) => !v),
-    // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar"); the calendar's own `[` wins there.
+    // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar"); the calendar's and the timeline's own `[` win there.
     'global.sidebar': () => {
       if (!window.matchMedia?.('(min-width: 1024px)').matches) return false
       toggleSidebarCollapsed()
@@ -215,6 +216,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <AskScreen role={user.role} />
           ) : route.view === 'day' || route.view === 'week' ? (
             <CalendarView mode={route.view} date={route.date} />
+          ) : route.view === 'month' ? (
+            <MonthView date={route.date} />
           ) : (
             // App renders the invite, reset and capture screens itself; a stray /invite, /reset or /share route inside the shell falls back to the Inbox.
             <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'share' ? { view: 'inbox' } : route} />
@@ -231,7 +234,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {(phoneChrome || addOpen) && <AddButton ref={addButton} open={addOpen} onClick={() => setAddOpen((v) => !v)} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
-        context={{ view: route.view, board: hasScope('board'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
+        context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense>}
       {assistantLoaded && <Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense>}
       {paletteLoaded && paletteOpen && <Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense>}

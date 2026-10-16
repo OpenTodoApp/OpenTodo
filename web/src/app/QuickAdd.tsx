@@ -9,8 +9,8 @@ import { describeDue, formatDate, todayISO } from '../lib/dates'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { createLabel, LabelExistsError } from '../lib/labels'
 import {
-  chipAtCaret, type Chip, dismissChip, findLabel, formatMinutes, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, parse,
-  type ProjectRef, type QuickAddInput, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span, toTaskInput,
+  chipAtCaret, type Chip, describeOffset, dismissChip, findLabel, formatMinutes, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, parse,
+  type ProjectRef, type QuickAddInput, rebaseDismissed, type ReminderPhrase, resolveDayMonthOrder, resolveLanguages, resolveReminder, type Span, toTaskInput,
 } from '../lib/nlp'
 import type { Due } from '../lib/types'
 import { useDictation } from './useDictation'
@@ -27,6 +27,8 @@ const CHIP_HUE: Record<Chip['kind'], HueName> = {
   label: 'cyan',
   priority: 'orange',
   estimate: 'green',
+  recurrence: 'teal',
+  reminder: 'yellow',
 }
 
 function nowHHMM(d = new Date()): string {
@@ -78,8 +80,17 @@ function projectPath(id: string, projects: readonly ProjectRef[]): string {
   return names.join(' › ') || '?'
 }
 
-function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly LabelRef[]): string {
+function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly LabelRef[], line?: { due: Due | null; datedByPhrase: boolean }): string {
   switch (chip.kind) {
+    case 'recurrence':
+      // Without a typed date the series starts on the rule's first occurrence (quick-add-recurrence D4).
+      return line?.due && !line.datedByPhrase ? `${String(chip.value)} · ${formatDate(line.due.date, 'long')}` : String(chip.value)
+    case 'reminder': {
+      const r = chip.value as ReminderPhrase
+      const res = resolveReminder(r, line?.due ?? null, todayISO(), nowHHMM())
+      if (res.kind === 'absolute') return `Remind ${formatDate(res.date, 'long')}, ${res.time}`
+      return line?.due ? describeOffset(res.offsetMinutes) : `${describeOffset(res.offsetMinutes)} · needs a due date`
+    }
     case 'due':
       return dueInWords(chip.value as Due)
     case 'someday':
@@ -99,7 +110,7 @@ function chipText(chip: Chip, projects: readonly ProjectRef[], labels: readonly 
   }
 }
 
-const KIND_NAME: Record<Chip['kind'], string> = { due: 'Due', deadline: 'Deadline', someday: 'Someday', evening: 'Evening', project: 'Project', label: 'Label', priority: 'Priority', estimate: 'Estimate' }
+const KIND_NAME: Record<Chip['kind'], string> = { due: 'Due', deadline: 'Deadline', someday: 'Someday', evening: 'Evening', project: 'Project', label: 'Label', priority: 'Priority', estimate: 'Estimate', recurrence: 'Repeats', reminder: 'Reminder' }
 
 /**
  * Single-line capture. With natural-language parsing on (per-device setting), the
@@ -265,7 +276,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
         {chips.length > 0 && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-6 text-meta">
             {chips.map((c, i) => {
-              const text = chipText(c, projects, labels)
+              const text = chipText(c, projects, labels, parsed ? { due: parsed.due, datedByPhrase: chips.some((x) => x.kind === 'due') } : undefined)
               const source = c.spans.map((s) => s.text).join(' … ')
               const label = c.kind === 'label' ? findLabel(String(c.value), labels) : undefined
               return (
