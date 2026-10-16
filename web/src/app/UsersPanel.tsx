@@ -3,6 +3,7 @@ import { Skeleton } from '../ui'
 import { Kbd } from './shortcuts/Kbd'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
+import { useOutgoingEmail } from '../lib/outgoingEmail'
 import { hasAnyAction, isAdministrator, rowActions, type RowActions } from '../lib/roles'
 import { MembersPanel } from './MembersPanel'
 import type { AdminUser, User } from '../lib/types'
@@ -107,6 +108,20 @@ export function UsersPanel({ user }: { user: User }) {
 
   const name = (u: AdminUser) => u.name || u.email
   const [confirming, setConfirming] = useState<PendingAction>(null)
+  // With outgoing email, a reset offers mailing the link instead of handling it (outgoing-email D6).
+  const mail = useOutgoingEmail()
+  const [choosing, setChoosing] = useState<AdminUser | null>(null)
+  const createLink = (u: AdminUser) => run(async () => {
+    const res = await api.issuePasswordReset(u.id)
+    setCopied(false)
+    setResetLink({ email: u.email, link: res.link, expiresAt: res.expiresAt })
+  }, `Reset link created for ${name(u)}.`)
+  async function sendReset(u: AdminUser) {
+    const ok = await run(async () => { await api.sendPasswordReset(u.id) }, `A reset email was sent to ${u.email}.`)
+    setChoosing(null)
+    // A failed send leaves no link behind: offer the link to deliver yourself instead.
+    if (!ok) setConfirming({ kind: 'reset', user: u })
+  }
 
   return (
     <>
@@ -122,7 +137,7 @@ export function UsersPanel({ user }: { user: User }) {
         dialog={dialog}
         onDeactivate={(u) => setConfirming({ kind: 'deactivate', user: u })}
         onReactivate={(u) => setConfirming({ kind: 'reactivate', user: u })}
-        onReset={(u) => setConfirming({ kind: 'reset', user: u })}
+        onReset={(u) => (mail ? setChoosing(u) : setConfirming({ kind: 'reset', user: u }))}
         onRole={(u, role) => setConfirming({ kind: 'role', user: u, role })}
         onMfaReset={(u) => setConfirming({ kind: 'mfa', user: u })}
         onOpenDialog={setDialog}
@@ -142,6 +157,20 @@ export function UsersPanel({ user }: { user: User }) {
         }}
         onDismissLink={() => setResetLink(null)}
       />
+      {choosing && (
+        <OverlayDialog title={`Reset the password of ${name(choosing)}?`} onClose={() => setChoosing(null)} size="sm">
+          <div className="space-y-4" data-reset-choice>
+            <p className="text-meta text-muted">
+              Send a reset link to <strong className="text-default">{choosing.email}</strong>, or create one to deliver yourself. It works once and expires in 24 hours; any earlier link stops working.
+            </p>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="ghost" onClick={() => setChoosing(null)}>Cancel</Button>
+              <Button variant="secondary" disabled={busy} onClick={() => { const u = choosing; setChoosing(null); void createLink(u) }}>Create reset link</Button>
+              <Button variant="primary" busy={busy} onClick={() => sendReset(choosing)}>Send reset email</Button>
+            </div>
+          </div>
+        </OverlayDialog>
+      )}
       {confirming && (
         <ConfirmDialog {...confirmCopy(confirming, name(confirming.user))}
           onCancel={() => setConfirming(null)}
@@ -150,12 +179,7 @@ export function UsersPanel({ user }: { user: User }) {
             switch (confirming.kind) {
               case 'deactivate': return run(() => api.deactivateUser(u.id), `${name(u)} is deactivated.`)
               case 'reactivate': return run(() => api.reactivateUser(u.id), `${name(u)} can sign in again.`)
-              case 'reset':
-                return run(async () => {
-                  const res = await api.issuePasswordReset(u.id)
-                  setCopied(false)
-                  setResetLink({ email: u.email, link: res.link, expiresAt: res.expiresAt })
-                }, `Reset link created for ${name(u)}.`)
+              case 'reset': return createLink(u)
               case 'role': return run(() => api.setUserRole(u.id, confirming.role), `${name(u)} is now ${confirming.role === 'admin' ? 'an admin' : 'a member'}.`)
               case 'mfa': return run(() => api.resetMemberMfa(u.id), `Two-factor authentication reset for ${name(u)}.`)
             }
@@ -193,7 +217,7 @@ export function confirmCopy(a: NonNullable<PendingAction>, name: string): { titl
   }
 }
 
-/** The Users and Members sections, shown to the owner and admins only. */
+/** The Users and Members sections for the owner and admins (Settings → People). */
 export function AdministrationSections({ user }: { user: User }) {
   if (!isAdministrator(user)) return null
   return (

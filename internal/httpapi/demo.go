@@ -137,6 +137,8 @@ var demoRules = []demoRule{
 	{"Invitations", true, prefix("/api/v1/invitations")},
 	{"User administration", true, prefix("/api/v1/users")},
 	{"Password resets", false, prefix("/api/v1/password-resets")},
+	{"Password resets", false, prefix("/api/v1/auth/password-reset")},
+	{"Sign-up", false, prefix("/api/v1/auth/verify")},
 	{"Changing the password", true, exact("/api/v1/me/password")},
 	{"Linked accounts", true, prefix("/api/v1/me/identities")},
 	{"API tokens", true, prefix("/api/v1/tokens")},
@@ -148,6 +150,7 @@ var demoRules = []demoRule{
 	{"Attachments", false, prefix("/api/v1/attachments")},
 	{"Attachments", false, taskAttachments},
 	{"Attachments", false, exact("/api/v1/settings/attachments")},
+	{"Outgoing email", false, prefix("/api/v1/settings/smtp")},
 	// Public links publish data to anyone (public-links D9): every method.
 	{"Public links", false, projectPublicLinks},
 	{"Public links", false, prefix("/api/v1/public")},

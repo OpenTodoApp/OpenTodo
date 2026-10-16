@@ -1,0 +1,9 @@
+Confirmez votre compte OpenTodo
+
+Ceci est une confirmation d'inscription d'OpenTodo.
+
+Quelqu'un s'est inscrit sur {{.Origin}} avec {{.Email}}. Pour créer le compte, ouvrez ce lien et appuyez sur le bouton de la page :
+
+{{.Link}}
+
+Le lien expire dans {{.Expiry}}. Si vous ne vous êtes pas inscrit, ignorez ce message : aucun compte n'est créé.

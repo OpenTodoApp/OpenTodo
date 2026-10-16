@@ -1,0 +1,5 @@
+Mensaje de prueba de OpenTodo
+
+Este es un mensaje de prueba del servidor de OpenTodo {{.Origin}}.
+
+El correo saliente funciona: los restablecimientos de contraseña, las confirmaciones de registro y las invitaciones ya se pueden enviar por correo. No hace falta hacer nada.

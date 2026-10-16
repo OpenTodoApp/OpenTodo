@@ -63,9 +63,9 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
   {
     id: 'server', label: 'Server', group: 'server', icon: 'upload',
-    description: () => 'Backups, attachments and the audit log',
+    description: () => 'Backups, attachments, outgoing email and the audit log',
     visible: owner,
-    demo: () => ['backups'],
+    demo: () => ['backups', 'outgoing email'],
   },
 ]
 

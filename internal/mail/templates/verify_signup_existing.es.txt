@@ -1,0 +1,7 @@
+Tu registro en OpenTodo
+
+Este es un mensaje de registro de OpenTodo.
+
+Alguien intentó registrarse en {{.Origin}} con {{.Email}}, pero esta dirección ya tiene una cuenta. Para iniciar sesión, abre la dirección del servidor indicada arriba. Si olvidaste tu contraseña, usa «¿Olvidaste tu contraseña?» en la pantalla de inicio de sesión.
+
+Si no fuiste tú, puedes ignorar este mensaje: no ha cambiado nada.

@@ -1,0 +1,9 @@
+Confirm your OpenTodo account
+
+This is a sign-up confirmation from OpenTodo.
+
+Someone signed up at {{.Origin}} with {{.Email}}. To create the account, open this link and press the button on the page:
+
+{{.Link}}
+
+The link expires in {{.Expiry}}. If you did not sign up, you can ignore this message: no account is created.

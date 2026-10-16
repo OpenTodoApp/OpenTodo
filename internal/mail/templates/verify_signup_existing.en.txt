@@ -1,0 +1,7 @@
+Your OpenTodo sign-up
+
+This is a sign-up message from OpenTodo.
+
+Someone tried to sign up at {{.Origin}} with {{.Email}}, but this address already has an account. To sign in, go to the server's address above. If you forgot your password, use "Forgot password?" on the sign-in screen.
+
+If this was not you, you can ignore this message: nothing has changed.

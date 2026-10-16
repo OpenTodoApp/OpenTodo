@@ -35,11 +35,14 @@ import (
 	"github.com/pixari/opentodo/internal/calfeed"
 	"github.com/pixari/opentodo/internal/config"
 	"github.com/pixari/opentodo/internal/demo"
+	"github.com/pixari/opentodo/internal/e2ee"
 	"github.com/pixari/opentodo/internal/email"
 	"github.com/pixari/opentodo/internal/httpapi"
+	"github.com/pixari/opentodo/internal/mail"
 	"github.com/pixari/opentodo/internal/mcp"
 	"github.com/pixari/opentodo/internal/notify"
 	"github.com/pixari/opentodo/internal/push"
+	"github.com/pixari/opentodo/internal/settings"
 	"github.com/pixari/opentodo/internal/store"
 	opsync "github.com/pixari/opentodo/internal/sync"
 	"github.com/pixari/opentodo/internal/web"
@@ -201,6 +204,17 @@ func run() error {
 	// private-network policy; the server sets the switch and the notifier.
 	calWorker := &calfeed.Worker{Store: calfeed.NewStore(db), Fetcher: calfeed.NewFetcher(hooks.AllowPrivate, version), Log: log}
 	opts = append(opts, httpapi.WithCalendarFeeds(calWorker))
+	// Outgoing email (docs/self-hosting/outgoing-email.md): never on a demo
+	// instance; otherwise configured in Settings or by OPENTODO_SMTP_*.
+	if !cfg.Demo {
+		ehlo := ""
+		if cfg.BaseURL != nil {
+			ehlo = cfg.BaseURL.Hostname()
+		}
+		mailSvc := mail.New(settings.New(db), cfg.DataDir, mail.Options{Env: cfg.SMTP, Audit: authSvc.Audit(), Log: log,
+			E2EE: e2ee.NewStore(db), Transport: &mail.Transport{LocalName: ehlo}})
+		opts = append(opts, httpapi.WithMail(mailSvc))
+	}
 	var demoSvc *demo.Service
 	if cfg.Demo {
 		// Provision the hidden owner, drop the shared accounts of the first demo
@@ -235,6 +249,8 @@ func run() error {
 	workerDone := make(chan struct{})
 	jobsStarted, releaseJobs := runJobsWhenLeader(ctx, cfg.DataDir, log, jobsRetry, func() {
 		// Prune audit events past the owner's retention at startup and hourly.
+		// Expired pending sign-ups (outgoing-email) go on the same tick.
+		authSvc.Audit().AlsoPrune(authSvc.PruneSignups)
 		go authSvc.Audit().RunPruner(ctx, audit.PruneInterval)
 		if !cfg.Demo {
 			backups.Start(ctx)

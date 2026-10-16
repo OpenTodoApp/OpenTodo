@@ -27,6 +27,8 @@ type Recorder struct {
 	db  *sql.DB
 	log *slog.Logger
 	now func() time.Time
+	// alsoPrune runs on every pruner tick (see AlsoPrune).
+	alsoPrune []func(context.Context) (int64, error)
 }
 
 // New returns a Recorder on db. log receives recorder failures (nil: slog.Default()).

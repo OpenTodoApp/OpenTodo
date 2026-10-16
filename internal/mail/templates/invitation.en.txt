@@ -1,0 +1,9 @@
+{{.Inviter}} invited you to OpenTodo
+
+This is an invitation to OpenTodo.
+
+{{.Inviter}} invited {{.Email}} to the OpenTodo server at {{.Origin}}. To create your account, open this link:
+
+{{.Link}}
+
+The link expires in {{.Expiry}}. If you do not know {{.Inviter}}, you can ignore this message.

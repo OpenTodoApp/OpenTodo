@@ -42,6 +42,15 @@ func (r *Recorder) Prune(ctx context.Context) (int64, error) {
 	}
 }
 
+// AlsoPrune adds a cleanup of other expired server rows (pending sign-ups) to
+// the pruner's tick, so the server keeps one hourly background loop. Call it
+// before RunPruner.
+func (r *Recorder) AlsoPrune(fn func(context.Context) (int64, error)) {
+	if r != nil {
+		r.alsoPrune = append(r.alsoPrune, fn)
+	}
+}
+
 // RunPruner prunes once immediately and then every interval until ctx is done.
 // Run it in its own goroutine.
 func (r *Recorder) RunPruner(ctx context.Context, interval time.Duration) {
@@ -54,6 +63,11 @@ func (r *Recorder) RunPruner(ctx context.Context, interval time.Duration) {
 			r.log.Error("audit: prune failed", "err", err)
 		} else if n > 0 {
 			r.log.Info("audit: pruned expired events", "count", n)
+		}
+		for _, fn := range r.alsoPrune {
+			if _, err := fn(ctx); err != nil && ctx.Err() == nil {
+				r.log.Error("prune failed", "err", err)
+			}
 		}
 	}
 	run()

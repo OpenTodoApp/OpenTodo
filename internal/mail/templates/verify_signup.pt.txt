@@ -1,0 +1,9 @@
+Confirme sua conta do OpenTodo
+
+Esta é uma confirmação de cadastro do OpenTodo.
+
+Alguém se cadastrou em {{.Origin}} com {{.Email}}. Para criar a conta, abra este link e clique no botão da página:
+
+{{.Link}}
+
+O link expira em {{.Expiry}}. Se não se cadastrou, pode ignorar esta mensagem: nenhuma conta é criada.

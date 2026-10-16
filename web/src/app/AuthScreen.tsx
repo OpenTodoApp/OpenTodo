@@ -5,6 +5,7 @@ import { sandboxErrorMessage, startSandbox } from '../lib/demo'
 import type { AuthStatus, InvitationPreview, LoginResult } from '../lib/types'
 import { oidcErrorMessage, ssoLayout, takeQueryParam } from './sso'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { navigate } from './router'
 
 /** When set, the screen is the acceptance form of an invitation (OpenSpec `invitations`). */
 export interface InviteContext {
@@ -37,6 +38,9 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
   // A failed provider callback returns here with ?error=<code>.
   const [error, setError] = useState<string | null>(() => oidcErrorMessage(takeQueryParam('error'), sso.provider ?? undefined))
   const [busy, setBusy] = useState(false)
+  // Verified sign-up (OpenSpec outgoing-email): the address a confirmation link was mailed to.
+  const [checkEmail, setCheckEmail] = useState<string | null>(null)
+  const [resent, setResent] = useState(false)
   const emailLocked = !!invite?.preview.email
   // Passkeys are offered only on plain sign-in (not setup, not invitation
   // acceptance), when the server and browser support them.
@@ -114,10 +118,29 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
         const res = invite?.project
           ? await api.register(email, name, password, undefined, invite.token)
           : await api.register(email, name, password, invite?.token, undefined, needsSetupToken ? setupToken.trim() : undefined)
+        if (res && 'verificationRequired' in res && res.verificationRequired) {
+          setCheckEmail(email.trim())
+          setResent(false)
+          return
+        }
         onAuthenticated({ projectId: res?.projectId })
       } else {
         afterFirstFactor(await api.login(email, password))
       }
+    } catch (err) {
+      setError(describeAuthError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /** Posts the same registration again: a new link replaces the earlier one (rate limited by the server). */
+  async function resend() {
+    setBusy(true)
+    setError(null)
+    try {
+      await api.register(email, name, password)
+      setResent(true)
     } catch (err) {
       setError(describeAuthError(err))
     } finally {
@@ -215,7 +238,19 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
           </p>
         )}
 
-        {sso.local && !status.demo && <form onSubmit={(e) => void submit(e)} className="space-y-3">
+        {checkEmail && (
+          <div className="space-y-3" data-check-email role="status">
+            <p className="text-body font-medium text-strong">Check your email</p>
+            <p className="text-meta text-muted">
+              We sent a link to <strong className="text-default">{checkEmail}</strong>. Open it within 24 hours to create your account. Nothing is created until you do.
+            </p>
+            {resent && <p className="text-meta text-muted">A new link is on its way; the earlier one no longer works.</p>}
+            {error && <p className="text-meta text-danger" role="alert">{error}</p>}
+            <button type="button" className="ui-btn ui-btn--secondary ui-btn--md w-full" disabled={busy} onClick={() => void resend()}>Send the link again</button>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full" onClick={() => { setCheckEmail(null); setMode('login') }}>Back to sign-in</button>
+          </div>
+        )}
+        {sso.local && !status.demo && !checkEmail && <form onSubmit={(e) => void submit(e)} className="space-y-3">
           {mode === 'register' && (
             <label className="block text-body">
               <span className="mb-1 block text-muted">Name</span>
@@ -235,6 +270,10 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
             <input className="ui-input" type="password" required minLength={mode === 'register' ? 10 : 1} value={password} onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'} />
           </label>
+          {mode === 'login' && !invite && !status.setupRequired && !sso.breakGlass && status.outgoingEmail?.enabled && (
+            <p className="-mt-1 text-right text-meta"><a href="/forgot" data-forgot-link className="text-muted underline hover:text-default"
+              onClick={(e) => { e.preventDefault(); navigate({ view: 'forgot' }) }}>Forgot password?</a></p>
+          )}
           {needsSetupToken && (
             <label className="block text-body">
               <span className="mb-1 block text-muted">Setup token</span>
@@ -262,7 +301,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
           </>
         )}
 
-        {sso.local && !status.setupRequired && status.signupAllowed && !invite && (
+        {sso.local && !status.setupRequired && status.signupAllowed && !invite && !checkEmail && (
           <button className="ui-btn ui-btn--ghost ui-btn--md mt-3 w-full" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
             {mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
           </button>

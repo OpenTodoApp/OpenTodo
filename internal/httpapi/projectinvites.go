@@ -11,6 +11,7 @@ import (
 	"github.com/pixari/opentodo/internal/audit"
 	"github.com/pixari/opentodo/internal/auth"
 	"github.com/pixari/opentodo/internal/e2ee"
+	"github.com/pixari/opentodo/internal/mail"
 	"github.com/pixari/opentodo/internal/settings"
 	opsync "github.com/pixari/opentodo/internal/sync"
 )
@@ -74,6 +75,7 @@ func (s *Server) handleCreateProjectInvite(w http.ResponseWriter, r *http.Reques
 		Role           string   `json:"role"`
 		Email          string   `json:"email"`
 		ExpiresInHours *float64 `json:"expiresInHours"`
+		Send           bool     `json:"send"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
@@ -101,6 +103,10 @@ func (s *Server) handleCreateProjectInvite(w http.ResponseWriter, r *http.Reques
 	if !shared && s.refuseIfEncrypted(w, r, "sharing is not available for accounts with end-to-end encryption yet") {
 		return
 	}
+	msg, ok := s.inviteMessage(w, r, in.Send, in.Email, mail.KindProjectInvite, u, in.Role)
+	if !ok {
+		return
+	}
 	if !s.projectInviteLimiter.allow(u.ID) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many invite links created, try again later")
 		return
@@ -117,11 +123,26 @@ func (s *Server) handleCreateProjectInvite(w http.ResponseWriter, r *http.Reques
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{
+	link := s.publicOrigin(r) + "/invite/p/" + secret
+	out := map[string]any{
 		"invite":      inv,
-		"link":        s.publicOrigin(r) + "/invite/p/" + secret,
+		"link":        link,
 		"newAccounts": s.auth.MayCreateAccount(u.Role, s.membersMayInvite(ctx)),
-	})
+	}
+	if in.Send {
+		// The message names the inviter and the role, never the project: its
+		// name is content (design D6).
+		msg.Vars.Link, msg.Vars.Expiry = link, ttl
+		if err := s.mail.Send(ctx, msg); err != nil {
+			if rerr := s.auth.RevokeProjectInvite(context.WithoutCancel(ctx), u.ID, r.PathValue("id"), inv.ID); rerr != nil {
+				s.log.Error("revoke unsent project invite", "err", rerr)
+			}
+			s.mailSendError(w, err)
+			return
+		}
+		out["sent"] = true
+	}
+	writeJSON(w, http.StatusCreated, out)
 }
 
 func (s *Server) handleListProjectInvites(w http.ResponseWriter, r *http.Request) {
@@ -331,14 +352,15 @@ func (s *Server) handlePutProjectInviteSettings(w http.ResponseWriter, r *http.R
 }
 
 // redactPath keeps link secrets out of the request log: a path segment that
-// carries an invitation or project invite secret is replaced.
+// carries an invitation, project invite, sign-up verification or reset secret
+// is replaced.
 func redactPath(p string) string {
 	if !strings.Contains(p, "/ot") {
 		return p
 	}
 	parts := strings.Split(p, "/")
 	for i, part := range parts {
-		if strings.HasPrefix(part, auth.ProjectInviteSecretPrefix) || strings.HasPrefix(part, "oti_") || strings.HasPrefix(part, auth.PublicLinkSecretPrefix) {
+		if strings.HasPrefix(part, auth.ProjectInviteSecretPrefix) || strings.HasPrefix(part, "oti_") || strings.HasPrefix(part, "otv_") || strings.HasPrefix(part, "otr_") || strings.HasPrefix(part, auth.PublicLinkSecretPrefix) {
 			parts[i] = "[redacted]"
 		}
 	}

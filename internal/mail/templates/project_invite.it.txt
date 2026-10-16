@@ -1,0 +1,9 @@
+{{.Inviter}} ti ha invitato in un progetto condiviso
+
+Questo è un invito a un progetto condiviso in OpenTodo.
+
+{{.Inviter}} ha invitato {{.Email}} a unirsi a un progetto come {{.Role}} sul server OpenTodo {{.Origin}}. Per unirti, apri questo link:
+
+{{.Link}}
+
+Il link scade tra {{.Expiry}}. Se non conosci {{.Inviter}}, puoi ignorare questo messaggio.
