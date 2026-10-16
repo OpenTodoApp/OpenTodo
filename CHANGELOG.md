@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Unraid template.** A Community Applications template sets up the container on Unraid: the release image, the Web UI on port 8080, the appdata folder on `/data`, and the optional settings with descriptions; nothing is required. Until it is listed in **Apps**, add it from the template URL. The guide covers appdata permissions (the image ignores `PUID` and `PGID`), https behind a reverse proxy, updates and backups. ([Unraid](docs/self-hosting/unraid.md))
+
 ### Fixed
 
 - **Settings no longer scroll past the end of the page.** On General, Integrations, People and Server, the whole app could be scrolled up and away, leaving an empty page below the last card. Labels that are only read out by screen readers sat outside the scrolling area and stretched the page; they now stay inside it. The layout check fails any screen where the page itself scrolls.

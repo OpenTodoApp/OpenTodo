@@ -11,11 +11,12 @@
 // (deploy/coolify/upstream/). No dependencies: the template is parsed by a strict parser for the YAML subset it uses.
 
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { configVariables, latestRelease } from './deploy/common.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 export const PATHS = {
@@ -136,22 +137,8 @@ export function parseHeader(text) {
 // ---- inputs --------------------------------------------------------------------------------------------
 
 /** The newest released version in CHANGELOG.md (`## [X.Y.Z] - date`). */
-export function latestRelease(changelog) {
-  const m = /^## \[(\d+)\.(\d+)\.(\d+)\]/m.exec(changelog)
-  if (!m) throw new Error('CHANGELOG.md has no released version')
-  return { major: m[1], minor: m[2], patch: m[3] }
-}
-
-/** Every OPENTODO_* name written as a string literal in internal/config (tests excluded). */
-export function configVariables(root = ROOT) {
-  const dir = join(root, PATHS.configDir)
-  const names = new Set()
-  for (const f of readdirSync(dir)) {
-    if (!f.endsWith('.go') || f.endsWith('_test.go')) continue
-    for (const m of readFileSync(join(dir, f), 'utf8').matchAll(/"(OPENTODO_[A-Z0-9_]+)"/g)) names.add(m[1])
-  }
-  return names
-}
+// Shared with every platform template (scripts/deploy/common.mjs, OpenSpec change unraid-template).
+export { configVariables, latestRelease }
 
 function read(rel, root = ROOT) {
   const p = join(root, rel)
