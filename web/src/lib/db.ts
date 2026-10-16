@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { Attachment, CalendarEvent, CalendarSubscription, ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, UserPrefs, View } from './types'
+import type { Attachment, FieldDef, CalendarEvent, CalendarSubscription, ActivityEntry, AppNotification, Comment, Label, Membership, Op, Project, ProjectPrefs, Reminder, Section, Task, UserPrefs, View } from './types'
 
 export interface OutboxOp extends Op {
   /** Local insertion order; used to acknowledge sent ops. */
@@ -89,6 +89,8 @@ class OpenTodoDB extends Dexie {
   reminders!: Table<Reminder, string>
   /** Sections of projects (board-view). */
   sections!: Table<Section, string>
+  /** Custom field definitions (OpenSpec custom-fields), a child of the project like sections. */
+  fields!: Table<FieldDef, string>
   /** Cached project memberships (project-sharing): server data adopted on every sync, never written as ops. */
   memberships!: Table<Membership, string>
   /** Cached in-app notifications (task-assignment): server data, refreshed after sync, never ops. */
@@ -342,6 +344,33 @@ class OpenTodoDB extends Dexie {
       calendarEvents: 'id, subscriptionId, start.date',
       calendarSubscriptions: 'id',
     })
+    // v18 (custom-fields): the synced `field` definitions, a child of the project
+    // like sections. Task values live on the task row. Additive; every store is
+    // redeclared.
+    this.version(18).stores({
+      projects: 'id, position',
+      tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
+      labels: 'id, position',
+      views: 'id, position',
+      reminders: 'id, task_id, fire_at',
+      sections: 'id, [project_id+position], project_id',
+      fields: 'id, [project_id+position], project_id',
+      outbox: '++local, id',
+      meta: 'key',
+      memberships: 'projectId',
+      notifications: 'id, createdAt',
+      comments: 'id, task_id',
+      activity: 'id, [projectKey+ts], taskId, entityId',
+      prefs: 'id',
+      assistantThreads: 'id, updated_at',
+      assistantUndo: 'id, created_at',
+      pickHistory: 'id, context',
+      userPrefs: 'id',
+      attachments: 'id, task_id, comment_id',
+      attachmentBlobs: 'id',
+      calendarEvents: 'id, subscriptionId, start.date',
+      calendarSubscriptions: 'id',
+    })
   }
 }
 
@@ -358,7 +387,7 @@ export function useDatabase(name: string): OpenTodoDB {
  * folds ops into (comments-and-activity); applyOps and mutateMany lock all of them.
  */
 export function entityTables() {
-  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.comments, db.prefs, db.userPrefs, db.attachments, db.activity]
+  return [db.projects, db.tasks, db.labels, db.views, db.reminders, db.sections, db.fields, db.comments, db.prefs, db.userPrefs, db.attachments, db.activity]
 }
 
 export async function getMeta<T>(key: string, fallback: T): Promise<T> {

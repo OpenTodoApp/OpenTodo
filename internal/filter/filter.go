@@ -294,9 +294,46 @@ func (p *parser) parseTerm(prev *token) error {
 	case tWord:
 		return p.parseWordTerm(t)
 	case tString:
+		// A quoted name followed by a comparison is a custom field term (custom-fields).
+		if p.i+1 < len(p.toks) && p.toks[p.i+1].typ == tCmp {
+			p.i++
+			return p.parseFieldTerm()
+		}
 		return fail(t.pos, `Unexpected text %s at position %d; quote names after "@" or "#", or use search:`, t.raw, t.pos+1)
 	}
 	return p.missingTerm(prev)
+}
+
+var (
+	dateStarts = map[string]bool{"today": true, "tomorrow": true, "yesterday": true, "this": true, "last": true, "next": true}
+	dateUnits  = map[string]bool{"days": true, "week": true, "weeks": true, "month": true, "months": true}
+)
+
+// parseFieldTerm reads `cmp value` after a custom field name (OpenSpec change
+// custom-fields): a quoted text, true or false, a date (anything the date
+// grammar starts with), a number, or any other bare word as text. The field's
+// type is the client's business: the server only checks the shape.
+func (p *parser) parseFieldTerm() error {
+	c := p.peek()
+	p.i++
+	t := p.peek()
+	if t != nil && t.typ == tString {
+		p.i++
+		return nil
+	}
+	if t == nil || t.typ != tWord {
+		return fail(c.pos, `Expected a value after "%s" at position %d`, c.raw, c.pos+1)
+	}
+	w := strings.ToLower(t.value)
+	unit := ""
+	if digits.MatchString(w) && p.i+1 < len(p.toks) {
+		unit = lower(&p.toks[p.i+1])
+	}
+	if dateStarts[w] || weekdays[w] || isoDate.MatchString(w) || dateUnits[unit] {
+		return p.parseDate(c)
+	}
+	p.i++
+	return nil
 }
 
 func (p *parser) parseWordTerm(t *token) error {
@@ -316,15 +353,19 @@ func (p *parser) parseWordTerm(t *token) error {
 		p.i++
 		return p.parseDate(c)
 	case w == "no":
-		if !noKeywords[lower(p.peek())] {
-			return fail(t.pos, `Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position %d`, t.pos+1)
+		// A keyword, or any other name: a custom field without a value (custom-fields).
+		if nt := p.peek(); noKeywords[lower(nt)] || (nt != nil && (nt.typ == tWord || nt.typ == tString)) {
+			p.i++
+			return nil
 		}
-		p.i++
-		return nil
+		return fail(t.pos, `Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position %d`, t.pos+1)
 	case simpleKeywords[w]:
 		return nil
 	case anyPriority.MatchString(w):
 		return fail(t.pos, "Priority must be p1, p2, p3 or p4 at position %d", t.pos+1)
+	case next != nil && next.typ == tCmp:
+		// Any other word followed by a comparison names a custom field (custom-fields).
+		return p.parseFieldTerm()
 	}
 	return fail(t.pos, `Unknown term "%s" at position %d`, t.raw, t.pos+1)
 }

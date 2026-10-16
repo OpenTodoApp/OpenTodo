@@ -204,7 +204,7 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, error) {
 	st := &State{Remembered: map[string]string{}, UserID: uid}
 	for kind, dst := range map[string]*[]opsync.Entity{KindProject: &st.Projects, KindLabel: &st.Labels, KindTask: &st.Tasks,
-		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views, KindUserPrefs: &st.UserPrefs, KindAttachment: &st.Attachments} {
+		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views, KindUserPrefs: &st.UserPrefs, KindAttachment: &st.Attachments, KindField: &st.Fields} {
 		list, err := s.sync.List(ctx, uid, kind, true)
 		if err != nil {
 			return nil, err
@@ -544,7 +544,7 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	undoKinds := []string{KindAttachment, KindReminder, KindTask, KindSection, KindProject, KindLabel, KindView}
+	undoKinds := []string{KindAttachment, KindReminder, KindTask, KindField, KindSection, KindProject, KindLabel, KindView}
 	created := map[string]map[string]bool{}
 	for _, k := range undoKinds {
 		created[k] = map[string]bool{}

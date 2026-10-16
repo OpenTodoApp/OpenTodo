@@ -8,7 +8,10 @@
 //   not     := "!" not | "(" or ")" | term
 //   term    := "@" name | "##" name | "#" name | "p1".."p4"
 //            | ("due" | "created" | "deadline" | "start" | "completed") cmp date | keyword | "search:" text
+//            | field cmp value | "no" field          (custom fields, OpenSpec custom-fields)
 //   date    := day | period   (a day is a period of one day; see resolveRange)
+//   field   := a word that is not a reserved word | '"' chars '"'
+//   value   := number | "true" | "false" | date | word | '"' chars '"'
 //
 // Positions in messages are 1-based character columns; `FilterSyntaxError.offset`
 // is the matching 0-based offset for editors.
@@ -166,11 +169,25 @@ export type Node =
   | { kind: 'date'; field: DateField; op: Cmp; date: DateExpr }
   | { kind: 'keyword'; keyword: Keyword }
   | { kind: 'search'; text: string }
+  /** `name cmp value` over a custom field (custom-fields); `opPos` places type errors. */
+  | { kind: 'field'; name: string; op: Cmp; value: FieldValueExpr; pos: number; opPos: number }
+  /** `no name`: a project defining the field, no value. */
+  | { kind: 'nofield'; name: string; pos: number }
+
+/** The right-hand side of a field term; the field's type decides how it compares. */
+export type FieldValueExpr =
+  | { type: 'number'; value: number }
+  | { type: 'bool'; value: boolean }
+  | { type: 'text'; value: string }
+  | { type: 'date'; date: DateExpr }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
 const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'blocked', 'unblocked', 'habit'])
 const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start'] as const
-const CMP_EXPECTED = ['"<"', '"<="', '"="', '">="', '">"', '"before"', '"after"']
+/** Words that start a date expression in a field term's value; a number starts one only before a unit. */
+const DATE_STARTS = new Set(['today', 'tomorrow', 'yesterday', 'this', 'last', 'next'])
+const DATE_UNITS = new Set(['days', 'week', 'weeks', 'month', 'months'])
+const CMP_EXPECTED =['"<"', '"<="', '"="', '">="', '">"', '"before"', '"after"']
 
 // ---- parser ----
 
@@ -249,6 +266,11 @@ export function parse(src: string): Node | null {
       case 'word':
         return parseWordTerm(t)
       case 'string':
+        // A quoted name followed by a comparison is a field term (custom-fields).
+        if (tokens[i + 1]?.type === 'cmp') {
+          i++
+          return parseFieldTerm(t.value, t.pos)
+        }
         return fail(`Unexpected text ${t.raw} at position ${t.pos + 1}; quote names after "@" or "#", or use search:`, t.pos, ['term'])
       default:
         return missingTerm(prev)
@@ -271,16 +293,55 @@ export function parse(src: string): Node | null {
       return { kind: 'date', field: w, op, date: parseDate(c) }
     }
     if (w === 'no') {
-      const next = lower(peek())
-      if (!(NO_KEYWORDS as readonly string[]).includes(next)) {
-        return fail(`Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position ${t.pos + 1}`, t.pos, NO_KEYWORDS.map((k) => `"${k}"`))
+      const nt = peek()
+      const next = lower(nt)
+      if ((NO_KEYWORDS as readonly string[]).includes(next)) {
+        i++
+        return { kind: 'keyword', keyword: `no ${next}` as Keyword }
       }
-      i++
-      return { kind: 'keyword', keyword: `no ${next}` as Keyword }
+      // Any other name is a custom field without a value (custom-fields).
+      if (nt && (nt.type === 'word' || nt.type === 'string')) {
+        i++
+        return { kind: 'nofield', name: nt.value, pos: nt.pos }
+      }
+      return fail(`Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position ${t.pos + 1}`, t.pos, [...NO_KEYWORDS.map((k) => `"${k}"`), 'field name'])
     }
     if (SIMPLE_KEYWORDS.has(w as Keyword)) return { kind: 'keyword', keyword: w as Keyword }
     if (/^p\d+$/.test(w)) return fail(`Priority must be p1, p2, p3 or p4 at position ${t.pos + 1}`, t.pos, ['"p1"', '"p2"', '"p3"', '"p4"'])
+    // Any other word followed by a comparison names a custom field (custom-fields).
+    if (peek()?.type === 'cmp') return parseFieldTerm(t.value, t.pos)
     return fail(`Unknown term "${t.raw}" at position ${t.pos + 1}`, t.pos, ['term'])
+  }
+
+  /** `name cmp value` with the name already consumed; the comparison is next. */
+  function parseFieldTerm(name: string, pos: number): Node {
+    const c = tokens[i++] as Extract<Token, { type: 'cmp' }>
+    return { kind: 'field', name, op: c.op, value: parseFieldValue(c), pos, opPos: c.pos }
+  }
+
+  /**
+   * A field term's value: a quoted text, true or false, a date (anything the date
+   * grammar starts with), a number, or any other bare word as text.
+   */
+  function parseFieldValue(after: Token): FieldValueExpr {
+    const t = peek()
+    if (t?.type === 'string') {
+      i++
+      return { type: 'text', value: t.value }
+    }
+    if (!t || t.type !== 'word') return fail(`Expected a value after "${after.raw}" at position ${after.pos + 1}`, after.pos, ['value'])
+    const w = t.value.toLowerCase()
+    if (w === 'true' || w === 'false') {
+      i++
+      return { type: 'bool', value: w === 'true' }
+    }
+    const unit = /^\d+$/.test(w) ? lower(tokens[i + 1]) : ''
+    if (DATE_STARTS.has(w) || (WEEKDAYS as readonly string[]).includes(w) || /^\d{4}-\d{2}-\d{2}$/.test(w) || DATE_UNITS.has(unit)) {
+      return { type: 'date', date: parseDate(after) }
+    }
+    i++
+    if (/^-?\d+(\.\d+)?$/.test(w)) return { type: 'number', value: Number(w) }
+    return { type: 'text', value: t.value }
   }
 
   function parseDate(after: Token): DateExpr {
@@ -414,6 +475,24 @@ function quote(name: string): string {
   return BREAK.test(name) || name === '' ? `"${name.replace(/["\\]/g, (c) => '\\' + c)}"` : name
 }
 
+function quoteAlways(s: string): string {
+  return `"${s.replace(/["\\]/g, (c) => '\\' + c)}"`
+}
+
+/** A field term's value as query text (`client = today` compares with "today"). */
+export function fieldValueText(v: FieldValueExpr): string {
+  return v.type === 'text' ? v.value : v.type === 'date' ? printDate(v.date) : String(v.value)
+}
+
+function printFieldValue(v: FieldValueExpr): string {
+  switch (v.type) {
+    case 'number': return String(v.value)
+    case 'bool': return String(v.value)
+    case 'text': return quoteAlways(v.value)
+    case 'date': return printDate(v.date)
+  }
+}
+
 function printDate(d: DateExpr): string {
   if (d.type === 'iso') return d.date
   if (d.type === 'weekday') return WEEKDAYS[d.day]
@@ -449,5 +528,10 @@ export function printQuery(n: Node): string {
       return n.keyword
     case 'search':
       return `search: ${quote(n.text)}`
+    case 'field':
+      // Field names are always quoted: a bare one could collide with a reserved word.
+      return `${quoteAlways(n.name)} ${n.op} ${printFieldValue(n.value)}`
+    case 'nofield':
+      return `no ${quoteAlways(n.name)}`
   }
 }

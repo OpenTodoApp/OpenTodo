@@ -76,6 +76,9 @@ function copyOf(series: Task, now: number): Record<string, unknown> {
     ...(series.deadline ? { deadline: series.deadline } : {}),
     ...(series.start ? { start: series.start } : {}),
     ...(series.evening ? { evening: true } : {}),
+    // Custom field values, null included, as the server's record (custom-fields);
+    // mutateMany writes one `fields.<id>` op each.
+    ...(series.fields && Object.keys(series.fields).length ? { fields: { ...series.fields } } : {}),
   }
 }
 

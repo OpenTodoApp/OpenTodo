@@ -30,10 +30,13 @@ type snapshot struct {
 	// sectionProject maps a section id onto its project id (write validation).
 	sectionProject map[string]string
 	labelList      []opsync.Entity
+	// fieldDefs maps a project id onto its live custom field definitions in
+	// position order (custom-fields).
+	fieldDefs map[string][]opsync.Entity
 }
 
 func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
-	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, sectionProject: map[string]string{}}
+	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, sectionProject: map[string]string{}, fieldDefs: map[string][]opsync.Entity{}}
 	var err error
 	if snap.projList, err = r.sync.List(ctx, userID, "project", false); err != nil {
 		return nil, err
@@ -56,6 +59,14 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 	for _, sec := range sections {
 		snap.sections[str(sec, "id")] = str(sec, "name")
 		snap.sectionProject[str(sec, "id")] = rawStr(sec, "project_id")
+	}
+	defs, err := r.sync.List(ctx, userID, "field", false)
+	if err != nil {
+		return nil, err
+	}
+	for _, d := range defs {
+		pid := rawStr(d, "project_id")
+		snap.fieldDefs[pid] = append(snap.fieldDefs[pid], d)
 	}
 	if snap.tasks, err = r.sync.List(ctx, userID, "task", false); err != nil {
 		return nil, err
@@ -245,6 +256,9 @@ type taskText struct {
 	Section     string   `json:"section,omitempty"`
 	Labels      []string `json:"labels"`
 	Assignee    string   `json:"assignee,omitempty"`
+	// Fields holds the string custom field values (text, link, date, choice)
+	// keyed by definition id: people wrote them (custom-fields).
+	Fields map[string]string `json:"fields,omitempty"`
 }
 
 type taskOut struct {
@@ -275,6 +289,10 @@ type taskOut struct {
 	// Habit is true for a recurring task tracked as a habit (OpenSpec change
 	// habits, design D7). Read-only: no write tool accepts it.
 	Habit bool `json:"habit,omitempty"`
+	// Fields holds the number, checkbox and empty (null) custom field values of
+	// the task's project's definitions keyed by definition id; string values are
+	// in untrusted_text.fields (custom-fields).
+	Fields map[string]any `json:"fields"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
@@ -316,6 +334,7 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 	if m := int(num(t, "estimate_minutes")); m > 0 {
 		out.EstimateMinutes = &m
 	}
+	out.Fields, out.Untrusted.Fields = snap.fieldValues(t)
 	if d := taskDue(t); d != nil {
 		o := &dueOut{due: *d}
 		date, clock := localDue(d, loc)
@@ -326,6 +345,150 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		out.Overdue = isOpen(t) && date < today
 	}
 	return out
+}
+
+// ---- custom fields (OpenSpec custom-fields, design D6) ----
+
+// fieldOut is a custom field definition as assistants see it: its name is
+// user text, its options too.
+type fieldOut struct {
+	ID        string    `json:"id"`
+	Type      string    `json:"type"`
+	Untrusted fieldText `json:"untrusted_text"`
+}
+
+type fieldText struct {
+	Name    string   `json:"name"`
+	Options []string `json:"options,omitempty"`
+}
+
+func (snap *snapshot) renderFields(pid string) []fieldOut {
+	out := []fieldOut{}
+	for _, d := range snap.fieldDefs[pid] {
+		f := fieldOut{ID: str(d, "id"), Type: str(d, "type"), Untrusted: fieldText{Name: str(d, "name")}}
+		if f.Type == "choice" {
+			if opts := rawStr(d, "options"); e2ee.IsCiphertext(opts) {
+				f.Untrusted.Options = []string{e2ee.Placeholder}
+			} else {
+				f.Untrusted.Options = opsync.FieldOptions(opts)
+			}
+		}
+		out = append(out, f)
+	}
+	return out
+}
+
+// fieldValues splits the values a task holds for its project's live
+// definitions: numbers, booleans and nulls, and strings (user text; an
+// encrypted one reads as the placeholder). Values of other definitions stay in
+// the data and are not shown, like in the app.
+func (snap *snapshot) fieldValues(t opsync.Entity) (map[string]any, map[string]string) {
+	plain := map[string]any{}
+	var text map[string]string
+	for _, d := range snap.fieldDefs[rawStr(t, "project_id")] {
+		id := str(d, "id")
+		raw, ok := t[opsync.FieldValuePrefix+id]
+		if !ok {
+			continue
+		}
+		var v any
+		if json.Unmarshal(raw, &v) != nil {
+			continue
+		}
+		if s, isStr := v.(string); isStr {
+			if text == nil {
+				text = map[string]string{}
+			}
+			text[id] = e2ee.Display(s)
+			continue
+		}
+		plain[id] = v
+	}
+	return plain, text
+}
+
+// fieldPatch validates a `fields` argument against the live definitions of the
+// project a task is in (after the write) and returns one patch entry per value.
+//
+// Two spellings are accepted: an object keyed by field id with typed values
+// (`{"<id>": 120}`, the REST shape), and the list the tool schema advertises,
+// `[{"id": "<id>", "value": "120"}]`, whose values are strings (or null)
+// read by the field's type, because strict tool modes take neither an
+// id-keyed map nor a value of several types.
+func (snap *snapshot) fieldPatch(prefix, pid string, raw json.RawMessage, encrypted bool) (map[string]json.RawMessage, error) {
+	defs := map[string]opsync.Entity{}
+	for _, d := range snap.fieldDefs[pid] {
+		defs[str(d, "id")] = d
+	}
+	var values map[string]json.RawMessage
+	if strings.HasPrefix(strings.TrimSpace(string(raw)), "[") {
+		var list []struct {
+			ID    string  `json:"id"`
+			Value *string `json:"value"`
+		}
+		if json.Unmarshal(raw, &list) != nil || len(list) > opsync.MaxFieldsPerProject {
+			return nil, argErr(fmt.Sprintf("%sfields: must be a list of at most %d {id, value} items (see list_projects)", prefix, opsync.MaxFieldsPerProject))
+		}
+		values = map[string]json.RawMessage{}
+		for _, it := range list {
+			v, err := fieldFromText(defs[it.ID], it.Value)
+			if err != nil {
+				return nil, argErr(fmt.Sprintf("%sfields.%s: %v", prefix, it.ID, err))
+			}
+			values[it.ID] = v
+		}
+	} else if json.Unmarshal(raw, &values) != nil || values == nil {
+		return nil, argErr(prefix + "fields: must be a list of {id, value} items or an object keyed by field id (see list_projects)")
+	}
+	ids := make([]string, 0, len(values))
+	for id := range values {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := map[string]json.RawMessage{}
+	for _, id := range ids {
+		d, ok := defs[id]
+		if _, valid := opsync.FieldValueID(opsync.FieldValuePrefix + id); !ok || !valid {
+			return nil, argErr(fmt.Sprintf("%sfields.%s: no such field in the task's project (see list_projects)", prefix, id))
+		}
+		if msg := opsync.CheckFieldValue(d, values[id]); msg != "" {
+			return nil, argErr(fmt.Sprintf("%sfields.%s: the %s field %s", prefix, id, str(d, "type"), msg))
+		}
+		// An encrypted account's string values are content the server cannot
+		// encrypt (e2ee D7): numbers and checkboxes still work.
+		if encrypted && strings.HasPrefix(strings.TrimSpace(string(values[id])), `"`) {
+			return nil, encryptionErr()
+		}
+		out[opsync.FieldValuePrefix+id] = values[id]
+	}
+	return out, nil
+}
+
+// fieldFromText reads a list item's string value by its field's type: a number
+// for number fields, true or false for checkboxes, the text otherwise; nil
+// clears. An unknown definition passes the text on to be refused by id.
+func fieldFromText(def opsync.Entity, v *string) (json.RawMessage, error) {
+	if v == nil {
+		return nullRaw, nil
+	}
+	s := strings.TrimSpace(*v)
+	switch str(def, "type") {
+	case "number":
+		n, err := strconv.ParseFloat(s, 64)
+		if err != nil || math.IsInf(n, 0) || math.IsNaN(n) {
+			return nil, fmt.Errorf("the number field must be a number, got %q", *v)
+		}
+		return raw(n), nil
+	case "checkbox":
+		switch strings.ToLower(s) {
+		case "true":
+			return json.RawMessage("true"), nil
+		case "false":
+			return json.RawMessage("false"), nil
+		}
+		return nil, fmt.Errorf("the checkbox field must be true or false, got %q", *v)
+	}
+	return raw(*v), nil
 }
 
 // ---- ordering and cursors ----

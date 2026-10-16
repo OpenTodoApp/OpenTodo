@@ -10,6 +10,7 @@ import { currentUserId, memberName, membershipMap } from '../lib/sharing'
 import type { ActivityEvent, Membership, Project, Task } from '../lib/types'
 import { openTask } from './signals'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { useFieldDefs } from './useFields'
 
 /**
  * A project's activity (OpenSpec `comments-and-activity`; ux-overhaul): every
@@ -19,6 +20,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
  * Shift+H; both filters are ordinary selects, so they are reachable with Tab.
  */
 export function ProjectActivity({ project }: { project: Project }) {
+  useFieldDefs() // "changed Cost" rather than fields.<id> (custom-fields)
   return <ActivityList project={project} />
 }
 

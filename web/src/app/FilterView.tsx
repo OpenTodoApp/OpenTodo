@@ -7,7 +7,8 @@ import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMe
 import { blockedMap } from '../lib/dependencies'
 import { db } from '../lib/db'
 import { compareDueThenPriority } from '../lib/ordering'
-import { addFilterHistory, compile, getFilterHistory, parse, type Node } from '../lib/filter'
+import { addFilterHistory, compile, fieldSuggestions, getFilterHistory, parse, type Node } from '../lib/filter'
+import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
 import { buildProjectTree } from '../lib/projects'
@@ -79,14 +80,24 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
 
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
 
-  const result = useMemo(() => {
+  const fieldDefs = useFieldDefs()
+  const compiled = useMemo(() => {
     if (!good.ast) return null
+    try {
+      return { ok: true as const, ...compile(good.ast, { today, labels, projects, tasks: allTasks, weekStart, fields: fieldDefs }) }
+    } catch (e) {
+      // A custom field term its type cannot answer (custom-fields): shown like a syntax error.
+      return { ok: false as const, error: (e as Error).message }
+    }
+  }, [good, allTasks, labels, projects, today, zone, weekStart, fieldDefs])
+  const result = useMemo(() => {
+    if (!compiled || !compiled.ok) return null
     // Like the other cross-project views, tasks of archived projects stay out.
     const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-    const { test, warnings } = compile(good.ast, { today, labels, projects, tasks: allTasks, weekStart })
-    const tasks = allTasks.filter((t) => !(t.project_id && archived.has(t.project_id)) && test(t))
-    return { tasks, warnings }
-  }, [good, allTasks, labels, projects, today, zone, weekStart])
+    const tasks = allTasks.filter((t) => !(t.project_id && archived.has(t.project_id)) && compiled.test(t))
+    return { tasks, warnings: compiled.warnings }
+  }, [compiled, allTasks, projects])
+  const suggestions = useMemo(() => fieldSuggestions(query, fieldDefs), [query, fieldDefs])
 
   const groups = useMemo<Group[]>(() => {
     if (!result) return []
@@ -190,7 +201,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     if (selectedId) document.querySelector(`[data-task-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [selectedId])
 
-  const error = parsed.ok ? null : parsed.error
+  const error = parsed.ok ? (compiled && !compiled.ok && good.src === debounced ? compiled.error : null) : parsed.error
   const warnings = !error && good.src === debounced ? result?.warnings ?? [] : []
 
   return (
@@ -223,6 +234,17 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
                 <p className="text-warning">{warnings.join(' · ')}</p>
               ) : null}
             </div>
+            {suggestions.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1 px-1 pt-1 text-meta" role="group" aria-label="Field names">
+                <span className="text-faint">Fields:</span>
+                {suggestions.map((s) => (
+                  <Button key={s.name} variant="ghost" size="sm" onClick={() => {
+                    setQuery(s.query)
+                    inputRef.current?.focus()
+                  }}>{s.name}</Button>
+                ))}
+              </div>
+            )}
           </div>
 
           {!good.ast && <UsageHint />}

@@ -20,7 +20,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 ```json
 {
   "id": "0d1f…",                 // unique per op (UUID v4)
-  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "section" | "comment" | "project_prefs" | "user_prefs"
+  "entity": "task",              // "task" | "project" | "label" | "view" | "reminder" | "section" | "field" | "comment" | "attachment" | "project_prefs" | "user_prefs"
   "entityId": "8c2a…",           // UUID of the entity
   "field": "title",              // must be in the schema for the entity
   "value": "Buy oat milk",       // JSON, type-checked per field
@@ -62,10 +62,16 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `notes_doc` | document: `""` or an envelope `"<format>:v<n>:<base64>"` of at most 256 KB (262,144 characters); the note as a mergeable rich-text document, see [Mergeable documents](#mergeable-documents) |
 | task | `habit` | boolean, default false: the series is tracked as a habit, with streaks and a month history derived on the device (habits, see [Habits](recurrence.md#habits)). Not content, so never encrypted |
 | task | `skipped` | boolean, default false: on an occurrence record of a habit, the occurrence was skipped rather than done; such a record is not a completion (habits) |
+| task | `fields.<id>` | a custom field value: null, a string, a finite number or a boolean; objects and arrays are refused. `<id>` is a field definition id of 1–64 characters `[A-Za-z0-9_-]`. One op per field, so values converge key by key; see [Custom fields](#custom-fields) |
 | section | `name` | string |
 | section | `project_id` | string (project id, required; never changes) |
 | section | `position`, `created_at` | number |
 | section | `deleted_at` | number or null |
+| field | `name`, `options` | string: a custom field definition's name and, for a choice field, its options one per line |
+| field | `type` | string: `text`, `number`, `date`, `choice`, `link` or `checkbox`; never changes (custom-fields) |
+| field | `project_id` | string (project id, required; never changes) |
+| field | `position`, `created_at` | number |
+| field | `deleted_at` | number or null |
 | label | `name`, `color` | string |
 | label | `position`, `created_at` | number |
 | label | `deleted_at` | number or null |
@@ -212,6 +218,17 @@ A `section` is a named, ordered container inside one project (OpenSpec change `b
 - **Unknown entities.** Clients skip ops for entities they do not know (an installed, not yet refreshed PWA receiving `section` ops), so future entities never break an older shell; a resync re-delivers them.
 - **Purge.** Sections are not Trash items; purging a project purges its sections (live or deleted) with it.
 
+### Custom fields
+
+A `field` is a typed custom field definition of one project (OpenSpec change `custom-fields`): a name, a type, the options of a choice field, a position. A task holds its values as the family of op fields `fields.<id>`, one per definition id, so each value is its own last-writer-wins register: two devices editing different fields of one task offline both keep their edit, and the same field edited twice resolves by `(ts, device)` for that field alone. `null` clears a value.
+
+- **Scope and roles.** A definition lives in the sharing scope of its project like a section (sharing relabels it, a `project_id` op into another scope is refused with `scope_change`). Editors, admins and the owner may write definitions; viewers are refused with `forbidden`. Values are task fields and follow the task's role rule.
+- **Validation.** The server checks only the shape of a value (`null`, a string within the value limit, a finite number or a boolean) and never looks the definition up: a value and its definition may arrive in any order, and a value whose definition was deleted is still valid. Type conformance, the 30-definition limit per project and unique names (ignoring case) are checked by clients, the REST API and the assistant tools. Two devices creating the same name offline end with two definitions; both are shown and a filter matches either.
+- **Display rule.** A device shows only the live definitions of the task's current project. A value of a deleted definition or of another project stays in the data, is exported, and reappears when the task returns to a project that defines it; no display rule ever writes. A value that no longer fits its definition's type is shown as text with a note until the next edit.
+- **Client fold.** Clients keep the values as a `fields` map on the task row (`applyOps` folds `fields.<id>` into it, with the clock under the op field name) and write a partial map that becomes one op per key. The REST API, the export and webhook deliveries present the same map as a `fields` object.
+- **Occurrence records** of a recurring task and detached copies carry every `fields.<id>` of the series, on the device and on the server alike, so both write the same record.
+- **Purge.** Definitions are not Trash items; purging a project purges its definitions with it.
+
 ### Manual order
 
 Tasks (per project section, per parent's subtasks, and in the Inbox), sections and sidebar projects (per parent) are ordered by hand through their existing `position` number (OpenSpec change `manual-ordering`). Nothing about the op format changes; this is the rule every client applies to that field.
@@ -234,7 +251,7 @@ A `view` is a saved filter query with its presentation options (OpenSpec `custom
 
 ### Encrypted values
 
-For an account with [end-to-end encryption](e2ee.md), the content fields of its personal scope — task `title`, `description`, `ical_extra`, `notes_doc`; project, label and section `name`; view `name` and `query`; comment `body` — carry ciphertext: a string `"enc:v1:" + base64url(nonce(12) || AES-256-GCM ciphertext || tag(16))` whose additional authenticated data is `entity + "\0" + entityId + "\0" + field`. The protocol, the schema, the value types and limits are unchanged: the server validates the envelope as an ordinary string and never decrypts it, and last-writer-wins picks winners by `(ts, device)` exactly as for plaintext (two encryptions of the same text differ, which is irrelevant because values are never compared). Devices encrypt at upload and decrypt before applying; a value that does not authenticate for its location (wrong key, tampering, or moved to another entity or field) is kept as the winning op but shown as a placeholder. Shared project scopes are never encrypted. Plaintext content that reaches an encrypted account (REST, email, import) is re-written as ciphertext by the next unlocked device that applies it; once ciphertext wins, nothing is re-written again. `POST /api/v1/encryption/purge-history` deletes superseded ops of the content fields in the personal scope; winners stay, so convergence and cursors are unaffected.
+For an account with [end-to-end encryption](e2ee.md), the content fields of its personal scope — task `title`, `description`, `ical_extra`, `notes_doc` and every string value `fields.<id>` (text, link, date and choice; numbers and booleans stay plaintext); project, label and section `name`; a custom field definition's `name` and `options`; view `name` and `query`; comment `body` — carry ciphertext: a string `"enc:v1:" + base64url(nonce(12) || AES-256-GCM ciphertext || tag(16))` whose additional authenticated data is `entity + "\0" + entityId + "\0" + field`. The protocol, the schema, the value types and limits are unchanged: the server validates the envelope as an ordinary string and never decrypts it, and last-writer-wins picks winners by `(ts, device)` exactly as for plaintext (two encryptions of the same text differ, which is irrelevant because values are never compared). Devices encrypt at upload and decrypt before applying; a value that does not authenticate for its location (wrong key, tampering, or moved to another entity or field) is kept as the winning op but shown as a placeholder. Shared project scopes are never encrypted. Plaintext content that reaches an encrypted account (REST, email, import) is re-written as ciphertext by the next unlocked device that applies it; once ciphertext wins, nothing is re-written again. `POST /api/v1/encryption/purge-history` deletes superseded ops of the content fields in the personal scope; winners stay, so convergence and cursors are unaffected.
 
 ## Winner rule
 
@@ -353,7 +370,7 @@ Deleting a project writes only the project's tombstone (plus moving its direct s
 
 ## Purge
 
-Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task and section that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's), their comments and their attachments (with the files, after commit) are purged too, and so are every member's `project_prefs` of a purged project.
+Purge is the one operation that removes data from the log, and it is not an op (an op would live in the log it removes). An authenticated request (`DELETE /api/v1/{tasks|projects}/{id}/purge`, `POST /api/v1/trash/purge`, or the server's retention job) deletes the entity's rows from `ops`, `op_scopes` and `scope_fields` and inserts a marker into `purges` (`scope_id`, `entity`, `entity_id`, `seq`). Only entities whose `deleted_at` is set can be purged. Purging a project purges every task, section and custom field definition that references it in the same scope; purging a task purges its deleted descendants; reminders of purged tasks (every member's), their comments and their attachments (with the files, after commit) are purged too, and so are every member's `project_prefs` of a purged project.
 
 Three rules keep replicas convergent:
 

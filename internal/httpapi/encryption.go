@@ -141,7 +141,7 @@ func (s *Server) handlePurgeEncryptionHistory(w http.ResponseWriter, r *http.Req
 		writeError(w, http.StatusConflict, "encryption_disabled", "enable end-to-end encryption before purging content history")
 		return
 	}
-	n, err := s.sync.PurgeSupersededContent(r.Context(), uid, e2ee.ContentFields)
+	n, err := s.sync.PurgeSupersededContent(r.Context(), uid, e2ee.AllContentFields())
 	if err != nil {
 		s.internal(w, err)
 		return

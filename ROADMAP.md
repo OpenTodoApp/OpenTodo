@@ -46,6 +46,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | Filter by completion date (`completed = last week`), period dates (this, last or next week or month) and a Completed logbook (closes #86) | `completed-date-filters` |
 | Trash with restore, auto-archive of completed projects, revision history from the op log | `trash-and-history` |
 | Drag-and-drop ordering | `manual-ordering` |
+| Custom fields per project: text, number, date, choice, link and checkbox values on tasks, in the panel, on cards, as columns and in filters | `custom-fields` |
 | Appearance: light, dark or system, and eight colour themes, synced to every device | `theming` |
 
 ### 4. Time management
@@ -75,7 +76,7 @@ New work starts the same way: `openspec new change <name>` or `/opsx:propose "<i
 | --- | --- |
 | JSON export | `bootstrap-core-platform` |
 | JSON / CSV import, including export files from popular commercial task apps | `data-import` |
-| Import Todoist, Things, TickTick and Linear exports as they are, with a switch guide for each | `named-importers` |
+| Import Todoist, Things, TickTick and Linear exports as they are, with a switch guide for each (Linear estimates are still dropped with a warning; a follow-up can now map them to a number field of `custom-fields`) | `named-importers` |
 | Scheduled backups to local disk, S3 or WebDAV | `backups` |
 | CalDAV two-way sync (Apple Reminders, Thunderbird, Android via DAVx⁵) | `caldav` |
 | Outbound webhooks (Home Assistant, Telegram, n8n) | `webhooks` |
@@ -144,7 +145,7 @@ Nineteen candidates for after the design refresh, in a suggested order: the firs
 | 15 | **Shipped.** **Quick add for recurrence and reminders**: "every Monday", "every 3 days after completion", "remind me at 9" | `quick-add-recurrence` | Six languages like the rest of the parser, a chip that shows the rule in words, the same grammar in `ot add`. Open issue #6; the only quick-add gap people hit daily |
 | 16 | **Shipped.** **Project notes**: a description and a pinned note on every project | `project-notes` | Additive `notes_doc` on projects, the same collaborative editor as task notes, shown at the top of the list and the board; the place for the brief, the address, the shopping rules. Todoist and Things both have it; the GTD and household templates need it |
 | 17 | **Shipped.** **Inbox triage**: process the Inbox one task at a time, keyboard only | `inbox-triage` | A focused mode (<kbd>g</kbd> <kbd>t</kbd>): one task, its notes, and single-key decisions: do now, schedule, move, delegate, someday, trash; progress "4 of 17". No new data, just a flow. The website's GTD and inbox-zero guides, built in |
-| 18 | **Custom fields**: typed columns per project, such as cost, client, effort or a link | `custom-fields` | Field definitions on the project (text, number, date, choice, link, checkbox), values in an additive `fields` map on tasks, shown in the detail panel, as board badges and as table columns; filterable (`cost > 100`), exported and importable. Linear's and Asana's answer to "a task is more than a title", kept small by refusing formulas and rollups |
+| 18 | **Shipped.** **Custom fields per project**: typed columns per project, such as cost, client, effort or a link | `custom-fields` | Field definitions on the project (text, number, date, choice, link, checkbox), values in an additive `fields` map on tasks, shown in the detail panel, as board badges and as table columns; filterable (`cost > 100`), exported and importable. Linear's and Asana's answer to "a task is more than a title", kept small by refusing formulas and rollups |
 | 19 | **Shipped.** **Habits with streaks and a month history**: recurring tasks that track streaks and allow a skip without breaking the chain | `habits` | An additive `habit` flag on a recurring task with a calendar rule; streaks and a month heat-map are computed on the device from the occurrence records the series already writes, and a skip of a habit leaves a record marked `skipped`, so "skip today" keeps the streak while missed days do not. A `habit` filter keyword lists them. TickTick's habit tracker without a second app |
 
 Considered and set aside for now, so they are not forgotten: a desktop app for macOS and Windows (a thin shell around the embedded server, the single-person answer to "nothing to run"), phone apps from the same web app, a focus timer with time tracking, rules, groups, importers for Microsoft To Do, Google Tasks, Apple Reminders, Trello, Asana and Any.do, custom keyboard shortcuts, saved views shared with a project's members, board swimlanes and column limits, end-to-end encryption for shared projects, a Markdown vault for Obsidian and plain-text people, and scheduled assistant routines. **Hosted OpenTodo** stays after the parity work, as the `multi-tenant-host` proposal says.

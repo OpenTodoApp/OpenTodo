@@ -8,6 +8,7 @@ import { onViewerZoneChange, todayISO, viewerZone } from '../lib/dates'
 import type { Label, Project, Task, View } from '../lib/types'
 import { activeViews, getStartView, type StartView, type ViewContext } from '../lib/views'
 import { visibleTasks } from '../lib/trash'
+import { useFieldDefs } from './useFields'
 
 /**
  * The viewer's IANA zone (absolute-datetimes); components that show zoned dues
@@ -55,7 +56,8 @@ export function useViewData(): ViewData {
   const tasks = useLiveQuery(() => visibleTasks(), [], [] as Task[])
   const zone = useViewerZone()
   // A new context on a zone change re-groups zoned dues (absolute-datetimes).
-  const ctx = useMemo(() => ({ today, labels, projects, tasks }), [today, labels, projects, tasks, zone])
+  const fields = useFieldDefs()
+  const ctx = useMemo(() => ({ today, labels, projects, tasks, fields }), [today, labels, projects, tasks, fields, zone])
   return { views, projects, labels, tasks, ctx }
 }
 

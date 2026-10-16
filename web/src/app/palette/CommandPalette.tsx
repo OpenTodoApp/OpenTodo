@@ -2,6 +2,7 @@
 // Ctrl/⌘+K that finds any task, project, label, saved view or Settings section from
 // local data and runs any command by name. Lazy chunk, mounted by Shell on first open.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { db } from '../../lib/db'
 import { pickScores } from '../../lib/pickRank'
@@ -99,7 +100,8 @@ export default function CommandPalette({ user, onClose, showShortcuts }: { user:
     const general = source.filter((e) => e.kind === 'command' && !seen.has(e.key)).slice(0, Math.max(0, RECENT - context.length - recent.length))
     return [...context, ...recent, ...general]
   }, [ctx, scores, source])
-  const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects }, taskEntry), [query, tasks, today, labels, projects, taskEntry])
+  const fieldDefs = useFieldDefs()
+  const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, fields: fieldDefs }, taskEntry), [query, tasks, today, labels, projects, fieldDefs, taskEntry])
 
   const trailing = useMemo(() => trailingEntries(ctx), [ctx])
   const keepOpen = useRef(false)

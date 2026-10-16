@@ -155,6 +155,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'project.move', keys: ['m'], description: 'Move the current project under another project or to the top level', section: 'trash', scope: 'view', views: ['project'] },
   { id: 'project.view-mode', keys: ['v'], description: 'Cycle the current project through list, board and timeline (remembered per project on this device)', section: 'tasks', scope: 'view', views: ['project'] },
   { id: 'project.share', keys: ['Shift+S'], description: 'Share the current project: add members by email, change roles, remove, leave, transfer', section: 'tasks', scope: 'view', views: ['project'] },
+  // Custom fields (custom-fields): define the project's fields; editors and above.
+  { id: 'project.fields', keys: ['Shift+F'], description: 'Manage the custom fields of the current project: add, rename, reorder, delete', section: 'tasks', scope: 'view', views: ['project'] },
   // The project note (project-notes D4): Shift+P is free in every scope a project hosts; Shift+N defers a task.
   { id: 'project.note', keys: ['Shift+P'], description: 'Edit the current project’s note (Esc saves and closes it)', section: 'tasks', scope: 'view', views: ['project'] },
   { id: 'list.priority', keys: ['1', '2', '3', '4'], description: 'Set the priority of the selected task, or of the ticked tasks', section: 'tasks', scope: 'list' },

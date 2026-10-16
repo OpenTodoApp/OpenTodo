@@ -30,7 +30,7 @@ OpenTodo doesn't come with an AI of its own and never sends your tasks anywhere 
 
 ## What every option has in common
 
-Every option is off until someone says yes, can reach only tasks, projects, labels and comments, records every change in history where you can undo it, has limits on how much it may change, treats text in tasks as data rather than instructions, and respects end-to-end encryption. The details are in [What AI assistants can and can't do](ai-limits.md).
+Every option is off until someone says yes, can reach only tasks (with their [custom field](custom-fields.md) values), projects, labels and comments, records every change in history where you can undo it, has limits on how much it may change, treats text in tasks as data rather than instructions, and respects end-to-end encryption. The details are in [What AI assistants can and can't do](ai-limits.md).
 
 ## Privacy
 

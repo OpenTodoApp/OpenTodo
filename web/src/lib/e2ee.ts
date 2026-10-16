@@ -34,10 +34,23 @@ export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   comment: ['body'],
   // Attachments (OpenSpec attachments D8): the file bytes are an OTAT1 envelope too.
   attachment: ['name', 'mime', 'url'],
+  // Custom field definitions (OpenSpec custom-fields, design D4).
+  field: ['name', 'options'],
+}
+
+/**
+ * Families of content fields named by a prefix: a task's custom field values
+ * `fields.<id>` (custom-fields D4). Only string values are encrypted (text, link,
+ * date, choice); numbers and checkboxes stay plaintext. Keep in step with
+ * internal/e2ee ContentPrefixes.
+ */
+export const CONTENT_PREFIXES: Partial<Record<Entity, readonly string[]>> = {
+  task: ['fields.'],
 }
 
 export function isContentField(entity: Entity, field: string): boolean {
-  return CONTENT_FIELDS[entity]?.includes(field) ?? false
+  if (CONTENT_FIELDS[entity]?.includes(field)) return true
+  return CONTENT_PREFIXES[entity]?.some((p) => field.startsWith(p) && field.length > p.length) ?? false
 }
 
 /** What a field shows when its ciphertext cannot be decrypted with this device's key. */
@@ -358,8 +371,8 @@ export function forgetMemoryKeys(): void {
 /** A content value the UI should mark: plaintext on the server while the account encrypts. */
 export function notYetEncrypted(row: { _e2ee?: { wire?: Record<string, string> } } & Record<string, unknown>, entity: Entity, personal = true): boolean {
   if (!snap.enabled || !personal) return false
-  for (const f of CONTENT_FIELDS[entity] ?? []) {
-    const v = row[f]
+  const values = entity === 'task' ? Object.entries((row.fields ?? {}) as Record<string, unknown>).map(([id, v]) => [`fields.${id}`, v] as const) : []
+  for (const [f, v] of [...(CONTENT_FIELDS[entity] ?? []).map((f) => [f, row[f]] as const), ...values]) {
     if (typeof v !== 'string' || v === '' || isEnvelope(v)) continue
     const w = row._e2ee?.wire?.[f]
     if (w !== 'c' && w !== 'x') return true

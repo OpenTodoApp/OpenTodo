@@ -17,7 +17,7 @@ All application endpoints SHALL live under `/api/v1/` and SHALL exchange JSON. E
 - **THEN** the response is a 400 with code `bad_request`
 
 ### Requirement: Collection endpoints
-The API SHALL expose `projects` and `tasks` collections with list, get, create, patch and delete. Lists SHALL exclude soft-deleted items unless `include_deleted=true` is given. Create SHALL return the stored entity with its generated id and defaults.
+The API SHALL expose `projects`, `tasks` and `fields` collections with list, get, create, patch and delete. Lists SHALL exclude soft-deleted items unless `include_deleted=true` is given. Create SHALL return the stored entity with its generated id and defaults.
 
 #### Scenario: Create a task via the API
 - **WHEN** a script POSTs `{"title":"Buy milk"}` to `/api/v1/tasks` with a bearer token
@@ -30,6 +30,21 @@ The API SHALL expose `projects` and `tasks` collections with list, get, create, 
 #### Scenario: Delete is a tombstone
 - **WHEN** a DELETE succeeds
 - **THEN** the response is 204, a subsequent GET of that id is 404, and the item is still present in the export with `deleted_at` set
+
+### Requirement: Custom field values on tasks
+A task SHALL carry its custom field values as a `fields` object keyed by definition id in every read, an empty object when it holds none, and SHALL accept the same object in create and patch (OpenSpec `custom-fields`); the per-field operations behind it SHALL NOT appear as separate keys.
+
+#### Scenario: A new task has an empty fields object
+- **WHEN** a script POSTs `{"title":"Buy milk"}` to `/api/v1/tasks` with a bearer token
+- **THEN** the created task carries an empty `fields` object
+
+#### Scenario: Patch a custom field value
+- **WHEN** a script PATCHes `/api/v1/tasks/{id}` with `{"fields":{"<cost-id>":120}}`
+- **THEN** the response is 200 with `"fields":{"<cost-id>":120}` merged into the task's existing values, one operation is recorded for that field only, and devices receive it on their next sync
+
+#### Scenario: Unknown definition id
+- **WHEN** the `fields` object names an id that is no live definition of the task's project
+- **THEN** the response is 400 `invalid_input` naming the id and nothing changes
 
 ### Requirement: Write-through to the operation log
 Every API write SHALL be recorded as operations stamped with server time, with device `server` for sessions and `full` tokens, `agent:<token-id>` for `agent` tokens and `public:<link-id>` for ticks through a public link (OpenSpec `public-links`), so devices receive API-originated changes on their next sync and last-writer-wins applies uniformly. Concurrent offline device edits converge with them like any other op.

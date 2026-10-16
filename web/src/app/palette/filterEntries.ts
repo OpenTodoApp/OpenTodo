@@ -35,7 +35,12 @@ export function filterEntries(text: string, tasks: readonly Task[], ctx: FilterC
     return []
   }
   if (!ast || !hasFilterTerm(ast)) return []
-  const { test } = compile(ast, { ...ctx, tasks })
+  let test: (t: Task) => boolean
+  try {
+    test = compile(ast, { ...ctx, tasks }).test
+  } catch {
+    return []
+  }
   const hidden = new Set(ctx.projects.filter((p) => p.archived).map((p) => p.id))
   const matches = tasks.filter((t) => (!t.project_id || !hidden.has(t.project_id)) && test(t))
   return [

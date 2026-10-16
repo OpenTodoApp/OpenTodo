@@ -229,6 +229,11 @@ const shots = [
     await go(p, demoBase, '/inbox'); await openProject(p, 'Q4 launch')
     await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'Board' }).click(); await settle(p, 800)
   }, async after(p) { await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).click().catch(() => {}) } },
+  // Custom fields (custom-fields): the Side project's list in the columns layout.
+  { name: 'custom-fields', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Side project')
+    await p.locator('[data-columns-toggle]').click(); await p.getByRole('table', { name: 'Tasks and fields' }).waitFor(); await p.mouse.move(700, 700); await settle(p, 800)
+  }, async after(p) { await p.locator('[data-columns-toggle]').click().catch(() => {}) } },
   { name: 'sidebar', server: D, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Overdue' }).waitFor())
     return clipOf(p, sidebar(p), 0)

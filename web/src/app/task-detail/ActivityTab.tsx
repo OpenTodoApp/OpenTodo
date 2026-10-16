@@ -17,6 +17,7 @@ import { Button } from '../../ui'
 import { Icon, type IconName } from '../../ui'
 import { EmptyState } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
+import { useFieldDefs } from '../useFields'
 import { RelativeTime } from './RelativeTime'
 
 const KIND_ICON: Record<ActivityKind, IconName> = {
@@ -124,6 +125,7 @@ export function ActivityView({ runs, name, project, task, onOpenComment, canLoad
 /** Container: local events, pending ops and server paging. */
 export function ActivityTab({ task, userId, onOpenComment }: { task: Task; userId?: string; onOpenComment: (commentId: string) => void }) {
   const online = useOnline()
+  useFieldDefs() // "changed Cost" rather than fields.<id> (custom-fields)
   const storedMe = useLiveQuery(() => currentUserId(), [], null)
   const me = userId ?? storedMe
   const memberships = useLiveQuery(() => membershipMap(), [], new Map<string, Membership>())

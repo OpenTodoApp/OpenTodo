@@ -191,8 +191,8 @@ describe('parse: errors', () => {
     expect(errorOf('p5').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('p0 | p1').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('"milk"').message).toBe('Unexpected text "milk" at position 1; quote names after "@" or "#", or use search:')
-    expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline" or "start" after "no" at position 1')
-    expect(errorOf('no dates').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"'])
+    expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline", "start" or a field name after "no" at position 1')
+    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', 'field name'])
   })
 
   it('reports incomplete date terms', () => {

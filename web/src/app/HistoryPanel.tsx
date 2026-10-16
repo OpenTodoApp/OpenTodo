@@ -10,6 +10,7 @@ import { getDeviceId } from '../lib/ops'
 import { syncNow } from '../lib/sync'
 import type { ChangeSet } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { useFieldDefs } from './useFields'
 
 /**
  * Revision history of a project (OpenSpec `trash-and-history`; tasks use the task
@@ -27,6 +28,7 @@ export function HistoryPanel({ entity, id, readOnly = false, onRestored, embedde
   embedded?: boolean
 }) {
   const dt = useDateTimeFormat()
+  useFieldDefs()
   const [open, setOpen] = useState(embedded)
   const [sets, setSets] = useState<ChangeSet[]>([])
   const [before, setBefore] = useState<number | undefined>()

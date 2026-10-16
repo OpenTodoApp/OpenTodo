@@ -103,7 +103,67 @@ const (
 	// kIDList is an array of at most MaxBlockedBy distinct, non-empty ids of at
 	// most MaxIDLen characters (task.blocked_by, OpenSpec change task-dependencies).
 	kIDList
+	// kFieldValue is a custom field value (OpenSpec change custom-fields, design
+	// D2): null, a string (bounded by MaxValueBytes like every value), a finite
+	// JSON number or a boolean. Objects and arrays are refused. The server never
+	// checks a value against its definition: clients, REST and the assistant
+	// tools do, so a value and its definition may arrive in any order.
+	kFieldValue
 )
+
+// FieldValuePrefix starts the name of a task's custom field value op
+// (`fields.<definition id>`, OpenSpec change custom-fields, design D2). It is the
+// only family of op field names not listed in Schema one by one.
+const FieldValuePrefix = "fields."
+
+// MaxFieldIDLen bounds the definition id inside a `fields.<id>` name.
+const MaxFieldIDLen = 64
+
+// MaxFieldsPerProject is the number of live field definitions a project may
+// have; the dialog, REST and the assistant tools enforce it (Validate sees one
+// op and no other entity).
+const MaxFieldsPerProject = 30
+
+// FieldValueID returns the definition id of a task op field named
+// `fields.<id>`, where id is 1–64 characters of [A-Za-z0-9_-].
+func FieldValueID(field string) (string, bool) {
+	id, ok := strings.CutPrefix(field, FieldValuePrefix)
+	if !ok || id == "" || len(id) > MaxFieldIDLen {
+		return "", false
+	}
+	for _, c := range id {
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-') {
+			return "", false
+		}
+	}
+	return id, true
+}
+
+// fieldKind resolves an op field name: exact Schema entries first, then the
+// task's `fields.<id>` family.
+func fieldKind(entity, field string) (kind, bool) {
+	fields, ok := Schema[entity]
+	if !ok {
+		return 0, false
+	}
+	if k, ok := fields[field]; ok {
+		return k, true
+	}
+	if entity == "task" {
+		if _, ok := FieldValueID(field); ok {
+			return kFieldValue, true
+		}
+	}
+	return 0, false
+}
+
+// KnownField reports whether entity.field may be written: a Schema entry or a
+// task's custom field value (`fields.<id>`). Readers that ask "is this a field
+// of the schema" use it instead of indexing Schema.
+func KnownField(entity, field string) bool {
+	_, ok := fieldKind(entity, field)
+	return ok
+}
 
 // docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
 // version, e.g. "ydoc:v1:" (a Yjs update) or "enc:v1:" (e2ee ciphertext).
@@ -237,6 +297,21 @@ var Schema = map[string]map[string]kind{
 		"created_at": kNumber,
 		"deleted_at": kNullableNumber,
 	},
+	// field: a custom field definition of one project (OpenSpec change
+	// custom-fields, design D1). Like a section it lives in its project's sharing
+	// scope and project_id never changes after creation; type is fixed too (the
+	// REST API refuses a change). type is text|number|date|choice|link|checkbox,
+	// carried as a string so a later type is additive; options holds a choice
+	// field's options, one per line. Values live on the task as `fields.<id>`.
+	"field": {
+		"name":       kString,
+		"project_id": kID,
+		"type":       kString,
+		"options":    kString,
+		"position":   kNumber,
+		"created_at": kNumber,
+		"deleted_at": kNullableNumber,
+	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {
 		"name":       kString,
@@ -352,7 +427,7 @@ var Schema = map[string]map[string]kind{
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
@@ -368,11 +443,10 @@ func Validate(op Op) error {
 	if op.TS <= 0 {
 		return fmt.Errorf("%w: ts must be a positive unix millisecond timestamp", ErrInvalidOp)
 	}
-	fields, ok := Schema[op.Entity]
-	if !ok {
+	if _, ok := Schema[op.Entity]; !ok {
 		return fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, op.Entity)
 	}
-	k, ok := fields[op.Field]
+	k, ok := fieldKind(op.Entity, op.Field)
 	if !ok {
 		return fmt.Errorf("%w: unknown field %q for %s", ErrInvalidOp, op.Field, op.Entity)
 	}
@@ -598,6 +672,20 @@ func checkKind(k kind, raw json.RawMessage) error {
 		var s string
 		if err := json.Unmarshal(raw, &s); isNull || err != nil || !ValidDoc(s) {
 			return fmt.Errorf(`must be "" or a document envelope "<format>:v<n>:<base64>" of at most %d characters`, MaxDocBytes)
+		}
+	case kFieldValue:
+		var v any
+		if err := json.Unmarshal(raw, &v); err != nil {
+			return errors.New("must be null, a string, a number or a boolean")
+		}
+		switch x := v.(type) {
+		case nil, bool, float64:
+		case string:
+			if !utf8.ValidString(x) {
+				return errors.New("must be valid text")
+			}
+		default:
+			return errors.New("must be null, a string, a number or a boolean")
 		}
 	case kInstant:
 		if isNull {
