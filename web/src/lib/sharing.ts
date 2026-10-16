@@ -74,6 +74,12 @@ export function memberName(userId: string, memberships: Map<string, Membership>)
 }
 
 export const canEditTasks = (role: ProjectRole): boolean => role !== 'viewer'
+/**
+ * Whether the signed-in account may complete or edit `task` (display-mode D5): its
+ * own data, or a shared project where its cached role is editor or higher. The
+ * same rule the list uses for its read-only notice; the server enforces it too.
+ */
+export const canEditTask = (task: Pick<Task, 'project_id'>, memberships: Map<string, Membership>): boolean => canEditTasks(roleOf(task.project_id, memberships))
 export const canEditProject = (role: ProjectRole): boolean => role === 'owner' || role === 'admin'
 export const canDeleteProject = (role: ProjectRole): boolean => role === 'owner'
 export const canManageMembers = (role: ProjectRole): boolean => role === 'owner' || role === 'admin'

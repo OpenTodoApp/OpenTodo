@@ -478,10 +478,19 @@ export function dashboardPanels(dashboard: View, views: View[], summaries: Map<s
 
 export const START_VIEW_KEY = 'startView'
 
-/** Built-in views that can be a start view, plus `view:<id>` for a saved view. */
+/**
+ * Built-in views that can be a start view, plus `view:<id>` for a saved view and
+ * `display:<path>` for a display route with its options (OpenSpec `display-mode`).
+ */
 export const BUILTIN_START_VIEWS = ['inbox', 'today', 'upcoming', 'completed', 'filter'] as const
 export type BuiltinStartView = (typeof BUILTIN_START_VIEWS)[number]
-export type StartView = BuiltinStartView | `view:${string}`
+export type StartView = BuiltinStartView | `view:${string}` | `display:${string}`
+
+/** The display start views offered in Settings; projects and saved views are pinned from the display itself. */
+export const DISPLAY_START_VIEWS = [
+  { value: 'display:/display/today', label: 'Display: Today' },
+  { value: 'display:/display/upcoming', label: 'Display: Upcoming' },
+] as const satisfies readonly { value: StartView; label: string }[]
 
 export async function getStartView(): Promise<StartView> {
   return getMeta<StartView>(START_VIEW_KEY, 'inbox')
@@ -494,20 +503,52 @@ export async function setStartView(v: StartView): Promise<void> {
 export type ResolvedStart =
   | { kind: 'builtin'; view: BuiltinStartView; removed: boolean }
   | { kind: 'saved'; id: string }
+  /** A display route (`/display/...?...`), to be parsed by the router. */
+  | { kind: 'display'; path: string }
+
+/** The project or saved view a display start path names, or null for Today and Upcoming. */
+function displayEntity(path: string): { kind: 'project' | 'view'; id: string } | null | 'invalid' {
+  const [p] = path.split('?')
+  const parts = p.split('/').filter(Boolean)
+  if (parts[0] !== 'display') return 'invalid'
+  if (parts.length === 1 || ((parts[1] === 'today' || parts[1] === 'upcoming') && parts.length === 2)) return null
+  if ((parts[1] === 'project' || parts[1] === 'view') && parts[2] && parts.length === 3) {
+    try {
+      return { kind: parts[1], id: decodeURIComponent(parts[2]) }
+    } catch {
+      return 'invalid'
+    }
+  }
+  return 'invalid'
+}
 
 /**
- * The start view to open on launch. A saved view that is missing or deleted (for
- * example deleted on another device) falls back to the Inbox with `removed: true`,
- * and the preference is reset so the notice is shown once.
+ * The start view to open on launch. A saved view, or the project or view of a
+ * display, that is missing or deleted (for example deleted on another device)
+ * falls back to the Inbox with `removed: true`, and the preference is reset so
+ * the notice is shown once.
  */
 export async function resolveStartView(): Promise<ResolvedStart> {
   const v = await getStartView()
+  const removed = async (): Promise<ResolvedStart> => {
+    await setStartView('inbox')
+    return { kind: 'builtin', view: 'inbox', removed: true }
+  }
   if (typeof v === 'string' && v.startsWith('view:')) {
     const id = v.slice('view:'.length)
     const view = await db.views.get(id)
     if (view && !view.deleted_at) return { kind: 'saved', id }
-    await setStartView('inbox')
-    return { kind: 'builtin', view: 'inbox', removed: true }
+    return removed()
+  }
+  if (typeof v === 'string' && v.startsWith('display:')) {
+    const path = v.slice('display:'.length)
+    const entity = displayEntity(path)
+    if (entity === 'invalid') return removed()
+    if (entity) {
+      const row = entity.kind === 'project' ? await db.projects.get(entity.id) : await db.views.get(entity.id)
+      if (!row || row.deleted_at) return removed()
+    }
+    return { kind: 'display', path }
   }
   return { kind: 'builtin', view: (BUILTIN_START_VIEWS as readonly string[]).includes(v) ? (v as BuiltinStartView) : 'inbox', removed: false }
 }

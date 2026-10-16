@@ -11,6 +11,7 @@ import { canDeleteProject, canEditProject, canManageMembers } from '../lib/shari
 import { flattenTree } from '../lib/tree'
 import type { Project, ProjectRole } from '../lib/types'
 import { navigate } from './router'
+import { DEFAULT_DISPLAY_OPTIONS } from './display/displayOptions'
 import { ShareDialog } from './ShareDialog'
 import { DuplicateProjectDialog, SaveTemplateDialog } from './TemplateDialogs'
 import { HistoryPanel } from './HistoryPanel'
@@ -204,6 +205,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle }: {
   const panels: ActionGroup = { items: [
     { kind: 'action', id: 'activity', label: 'Activity', icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
     { kind: 'action', id: 'history', label: 'History', icon: 'rotate-ccw', onSelect: showHistory },
+    // Display mode (display-mode D6): the project in large type, without the shell.
+    { kind: 'action', id: 'display', label: 'Display mode', icon: 'monitor', onSelect: () => navigate({ view: 'display', target: { kind: 'project', id: project.id }, options: { ...DEFAULT_DISPLAY_OPTIONS } }) },
   ] }
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [

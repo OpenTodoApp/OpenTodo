@@ -4,7 +4,7 @@ import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
 import { describeRejected } from '../lib/sharing'
 import { dismissRejected, useSyncStatus } from '../lib/sync'
-import { canonicalPath, navigate, useRoute } from './router'
+import { canonicalPath, navigate, parseRoute, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { CalendarView } from './CalendarView'
 import { MonthView } from './MonthView'
@@ -86,6 +86,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     void resolveStartView().then((start) => {
       if (cancelled || location.pathname !== '/') return
       if (start.kind === 'saved') navigate({ view: 'view', id: start.id }, { replace: true })
+      // A display start view (display-mode D6): the app renders the display instead of the shell.
+      else if (start.kind === 'display') navigate(parseRoute(start.path), { replace: true })
       else {
         if (start.view !== 'inbox') navigate({ view: start.view }, { replace: true })
         if (start.removed) setNotice('Your start view was deleted, so the Inbox opened instead.')
@@ -222,8 +224,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'month' ? (
             <MonthView date={route.date} />
           ) : (
-            // App renders the invite, reset and capture screens itself; a stray /invite, /reset or /share route inside the shell falls back to the Inbox.
-            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' ? { view: 'inbox' } : route} />
+            // App renders the invite, reset, capture and display screens itself; a stray /invite, /reset, /share or /display route inside the shell falls back to the Inbox.
+            <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'reset' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} />
           )}
         </div>
         {vim && (

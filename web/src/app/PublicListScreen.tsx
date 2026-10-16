@@ -3,6 +3,10 @@
 // allows it. No sign-in, no sync and no local copy: the list is read from the
 // server, refreshed every 30 seconds while the page is visible and after a tick.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Clock, useNow } from './display/Clock'
+import { DisplayColumn, type DisplayRowData } from './display/DisplayColumn'
+import { parseDisplayOptions, type DisplayOptions } from './display/displayOptions'
+import { useDisplayKeys, useRootPresentation, useWakeLock } from './display/displayHooks'
 import { hueFor, Notice } from '../ui'
 import { ApiError, isNetworkError, publicApi } from '../lib/api'
 import { formatShort, formatTime } from '../lib/dates'
@@ -98,6 +102,13 @@ export function PublicListScreen({ token }: { token: string }) {
 
   const list = state.kind === 'ready' ? state.list : null
   const groups = useMemo(() => (list ? publicGroups(list) : []), [list])
+  // Display mode (display-mode "Public link display"): `display=1` with the presentation options.
+  const [display] = useState(() => publicDisplayOptions(typeof location === 'undefined' ? '' : location.search))
+  const updatedLine = stale ? 'Could not refresh: you seem to be offline. Showing the last list; it updates when the connection returns.' : updatedAt ? `Updated ${formatTime(`${String(new Date(updatedAt).getHours()).padStart(2, '0')}:${String(new Date(updatedAt).getMinutes()).padStart(2, '0')}`)}` : ''
+
+  if (display) {
+    return <PublicDisplay options={display} state={state} groups={groups} pending={pending} error={error} updatedLine={updatedLine} onToggle={(t, done) => void toggle(t, done)} />
+  }
 
   return (
     <main className="min-h-full bg-canvas" data-screen="public/list">
@@ -160,12 +171,89 @@ export function PublicListScreen({ token }: { token: string }) {
                 </section>
               ))}
             </div>
-            <p className="mt-4 text-meta text-faint" role="status" data-public-updated>
-              {stale ? 'Could not refresh: you seem to be offline. Showing the last list; it updates when the connection returns.' : updatedAt ? `Updated ${formatTime(`${String(new Date(updatedAt).getHours()).padStart(2, '0')}:${String(new Date(updatedAt).getMinutes()).padStart(2, '0')}`)}` : ''}
-            </p>
+            <p className="mt-4 text-meta text-faint" role="status" data-public-updated>{updatedLine}</p>
             <p className="mt-6 text-hint text-faint">Shared with OpenTodo. Notes, labels and names of the people on this project are not shown.</p>
           </>
         )}
+      </div>
+    </main>
+  )
+}
+
+/** The display options of a public page, or null without `display=1` (display-mode D7). */
+export function publicDisplayOptions(search: string): DisplayOptions | null {
+  const q = new URLSearchParams(search)
+  return q.get('display') === '1' ? parseDisplayOptions(q) : null
+}
+
+const PUBLIC_NOTICE = {
+  tick: 'This list is public: anyone with the link can see it and tick items.',
+  read: 'This list is public and read-only: anyone with the link can see it.',
+}
+
+/**
+ * The public page on a display (display-mode D7): the display's type scale, clock
+ * and rows, with the public notice; the data path stays the public read route and
+ * its polling. Nothing is stored on the device.
+ */
+function PublicDisplay({ options, state, groups, pending, error, updatedLine, onToggle }: {
+  options: DisplayOptions
+  state: State
+  groups: ReturnType<typeof publicGroups>
+  pending: Record<string, boolean>
+  error: string | null
+  updatedLine: string
+  onToggle: (t: Task, completed: boolean) => void
+}) {
+  const now = useNow(options.seconds)
+  useRootPresentation(options)
+  useWakeLock()
+  const list = state.kind === 'ready' ? state.list : null
+  const byId = useMemo(() => new Map((list?.tasks ?? []).map((t) => [t.id, t])), [list])
+  const columns = useMemo(() => groups.map((g) => ({
+    id: g.id ?? 'none',
+    heading: g.name,
+    rows: g.rows.map(({ task: t, depth }): DisplayRowData => ({
+      key: `${g.id ?? 'none'}:${t.id}`, id: t.id, title: t.title, priority: t.priority, depth,
+      done: t.id in pending ? pending[t.id] : t.completed_at !== null,
+      due: t.due ? `${formatShort(t.due.date)}${t.due.time ? ` ${formatTime(t.due.time)}` : ''}` : null,
+      editable: list?.rights === 'tick',
+    })),
+  })), [groups, pending, list])
+  const rows = useMemo(() => columns.flatMap((c) => c.rows), [columns])
+  const toggle = useCallback((r: DisplayRowData) => {
+    const t = byId.get(r.id)
+    if (t && r.editable) onToggle(t, !r.done)
+  }, [byId, onToggle])
+  const { focusKey, setFocusKey } = useDisplayKeys(rows, toggle)
+
+  return (
+    <main className="display-root" data-screen="public/display" data-size={options.size}>
+      <div className="mx-auto flex w-full max-w-screen-2xl flex-1 flex-col gap-6 px-4 py-4 md:px-8 md:py-6">
+        <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+          <Clock now={now} seconds={options.seconds} />
+          {list && <h1 className="display-title user-text min-w-0">{list.projectName}</h1>}
+        </header>
+        {state.kind === 'loading' && <p className="display-meta">Loading the list…</p>}
+        {state.kind === 'invalid' && <p className="display-task" data-public-invalid>This link no longer works. Ask whoever shared it for a new one.</p>}
+        {state.kind === 'rate-limited' && <Notice tone="warning">Too many requests from this network. Wait a minute, then reload the page.</Notice>}
+        {state.kind === 'unreachable' && <Notice tone="warning">The server could not be reached. The list appears when the connection returns.</Notice>}
+        {list && (
+          <>
+            <Notice tone={list.rights === 'tick' ? 'warning' : 'info'}>{PUBLIC_NOTICE[list.rights === 'tick' ? 'tick' : 'read']}</Notice>
+            {error && <Notice tone="danger">{error}</Notice>}
+            {columns.length === 0 ? (
+              <p className="display-task">Nothing left to do on this list.</p>
+            ) : (
+              <div className="space-y-6">
+                {columns.map((c) => (
+                  <DisplayColumn key={c.id} id={c.id} heading={c.heading} rows={c.rows} focusKey={focusKey} onFocusRow={setFocusKey} onToggle={toggle} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+        <p className="display-meta mt-auto" role="status" data-public-updated>{updatedLine}</p>
       </div>
     </main>
   )

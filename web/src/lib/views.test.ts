@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { refreshViewerZone } from './dates'
 import { getMeta, useDatabase } from './db'
-import { applyOps, getDeviceId, resetDeviceId } from './ops'
+import { applyOps, createProject, deleteProject, getDeviceId, resetDeviceId } from './ops'
 import type { Label, Op, Project, Task, View } from './types'
 import {
   MAX_PANELS, START_VIEW_KEY, addPanel, compareTasks, createView, dashboardPanels, deleteView, evaluateViews, groupTasks,
@@ -308,5 +308,33 @@ describe('start view', () => {
     expect(await resolveStartView()).toEqual({ kind: 'builtin', view: 'inbox', removed: false })
     await setStartView('view:never-existed')
     expect(await resolveStartView()).toMatchObject({ view: 'inbox', removed: true })
+  })
+
+  // OpenSpec display-mode, task 4.2 (custom-views "Start view per device", display routes).
+  it('opens a display start view with its options', async () => {
+    await setStartView('display:/display/today?eink=1')
+    expect(await resolveStartView()).toEqual({ kind: 'display', path: '/display/today?eink=1' })
+    await setStartView('display:/display')
+    expect(await resolveStartView()).toEqual({ kind: 'display', path: '/display' })
+    const pid = await createProject({ name: 'Groceries' })
+    await setStartView(`display:/display/project/${pid}?size=xl`)
+    expect(await resolveStartView()).toEqual({ kind: 'display', path: `/display/project/${pid}?size=xl` })
+    const vid = await createView({ name: 'Fridge', query: 'today' })
+    await setStartView(`display:/display/view/${vid}`)
+    expect(await resolveStartView()).toEqual({ kind: 'display', path: `/display/view/${vid}` })
+  })
+
+  it('falls back to the Inbox with the notice when the display names a deleted project or view, or is malformed', async () => {
+    const pid = await createProject({ name: 'Groceries' })
+    await setStartView(`display:/display/project/${pid}`)
+    await deleteProject(pid)
+    expect(await resolveStartView()).toEqual({ kind: 'builtin', view: 'inbox', removed: true })
+    expect(await getMeta(START_VIEW_KEY, null)).toBe('inbox')
+    await setStartView('display:/display/view/missing')
+    expect(await resolveStartView()).toEqual({ kind: 'builtin', view: 'inbox', removed: true })
+    await setStartView('display:/settings')
+    expect(await resolveStartView()).toEqual({ kind: 'builtin', view: 'inbox', removed: true })
+    await setStartView('display:/display/project/a/b')
+    expect(await resolveStartView()).toEqual({ kind: 'builtin', view: 'inbox', removed: true })
   })
 })

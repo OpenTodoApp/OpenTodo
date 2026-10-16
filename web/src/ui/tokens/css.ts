@@ -27,6 +27,22 @@ export function parseThemes(css: string) {
   return { light, darkMedia, darkAttr }
 }
 
+/**
+ * The high-contrast override (display-mode D4): the raw values of its three
+ * blocks, and the full token set of each mode with the override laid over it.
+ */
+export function parseContrastOverride(css: string) {
+  const base = parseThemes(css)
+  const light = declarations(block(css, 'html:root[data-contrast="high"] {').body)
+  const darkMedia = declarations(block(css, 'html:root[data-contrast="high"]:not([data-theme="light"]) {').body)
+  const darkAttr = declarations(block(css, 'html:root[data-contrast="high"][data-theme="dark"] {').body)
+  return {
+    raw: { light, darkMedia, darkAttr },
+    light: { ...base.light, ...light },
+    dark: { ...base.darkAttr, ...darkAttr },
+  }
+}
+
 export interface AccentTokens {
   /** The raw values the accent declares, by token name, per mode. */
   rawLight: ThemeTokens

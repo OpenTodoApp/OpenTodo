@@ -28,6 +28,10 @@ The page shows the project's name, its open tasks by section with subtasks under
 
 Ticks reach everyone's devices on their next sync. In a task's [history](task-history.md#see-what-changed-on-a-task), its Activity tab, a project's activity and [Updates](comments-and-activity.md#see-what-others-changed) they show **Public link** as the person, not the member who created the link.
 
+## Show it on a display
+
+Add `?display=1` to the link to show the list full screen in large type with a clock, for a tablet or an e-ink panel that has no account on it. The [display options](display-mode.md#make-it-readable) work here too: `/public/<link>?display=1&eink=1` is high contrast with nothing moving. The banner stays, the list refreshes every 30 seconds, and nothing is stored on the device.
+
 ## See and revoke links
 
 While a project has an active public link, its header shows a **Public** badge. Select it to see the links, with their rights, expiry and when each was last opened. **Revoke** stops a link at once.

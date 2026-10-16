@@ -3,7 +3,7 @@ title: Views
 summary: Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on.
 audience: user
 section: Guides
-specs: [web-app, custom-views, app-shell]
+specs: [web-app, custom-views, app-shell, display-mode]
 screens: [settings/start-view#choose-where-the-app-opens]
 order: 20
 card: upcoming
@@ -50,9 +50,13 @@ Describe what you want in the **Filter** view, press <kbd>s</kbd> and name it. T
 
 A dashboard puts up to six saved views side by side, for a morning review on one screen. See [Build a dashboard](saved-views.md#build-a-dashboard).
 
+## Display mode
+
+**Display mode** shows Today, Upcoming, a project or a saved view full screen in large type with a clock, for a tablet on the fridge or an e-ink panel. Open it from the view's header or menu. See [Display mode](display-mode.md).
+
 ## Choose where the app opens
 
-Each device can open on a different view: your laptop on a "Work" view, your phone on Today. Pick it in **Settings → General → Start view**, or from a saved view's menu with **Start view on this device**. If that view is deleted later, the device opens on the Inbox and tells you why.
+Each device can open on a different view: your laptop on a "Work" view, your phone on Today, a tablet on a display. Pick it in **Settings → General → Start view**, or from a saved view's menu with **Start view on this device**. If that view is deleted later, the device opens on the Inbox and tells you why.
 
 ## Tips
 
