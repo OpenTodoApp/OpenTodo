@@ -188,10 +188,10 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
   if (unreadable) {
     return (
       <div className="space-y-1">
-        <p role="note" className="text-xs text-warning">
+        <p role="note" className="text-meta text-warning">
           This note's formatting could not be read on this device; its text is shown instead.
         </p>
-        <div className="rounded-md border border-default p-3 text-sm">
+        <div className="rounded-control border border-default p-3 text-body">
           <Markdown source={task.description} />
         </div>
       </div>
@@ -200,8 +200,8 @@ export default function NotesEditor({ task, readOnly }: { task: Task; readOnly: 
   return (
     <div className="space-y-1">
       <div ref={host} className="notes-host" data-notes-editing={editing || undefined} />
-      {sizeNote && <p role="status" className="text-xs text-warning">{sizeNote}</p>}
-      {error && <p role="alert" className="text-xs text-danger">{error}</p>}
+      {sizeNote && <p role="status" className="text-meta text-warning">{sizeNote}</p>}
+      {error && <p role="alert" className="text-meta text-danger">{error}</p>}
     </div>
   )
 }

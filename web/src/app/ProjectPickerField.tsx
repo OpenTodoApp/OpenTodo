@@ -39,7 +39,7 @@ export function ProjectPickerField({ label, projects, value, onChange, rankConte
 
   return (
     <>
-      <button ref={anchor} type="button" className={`input flex items-center gap-2 text-left ${className}`} disabled={disabled}
+      <button ref={anchor} type="button" className={`ui-input flex items-center gap-2 text-left ${className}`} disabled={disabled}
         aria-label={`${label}: ${shown}`} aria-haspopup="dialog" aria-expanded={open}
         onClick={() => setOpen(true)}
         onKeyDown={(e) => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); setOpen(true) } }}>

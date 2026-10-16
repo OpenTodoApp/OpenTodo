@@ -12,6 +12,7 @@ import { db, type AttachmentBlob } from '../../lib/db'
 import { useDemo } from '../../lib/demo'
 import type { Attachment, ProjectRole } from '../../lib/types'
 import { Button, ConfirmDialog, Icon, IconButton, MenuItem } from '../../ui'
+import { Tooltip } from '../../ui'
 import { Menu } from '../overlay/Menu'
 import { showBulkToast } from '../bulk/toastStore'
 
@@ -240,7 +241,7 @@ function LinkForm({ onAdd, onCancel }: { onAdd: (url: string) => Promise<void>; 
       <input autoFocus type="url" inputMode="url" value={value} placeholder="https://…" aria-label="Link address" aria-invalid={!!error}
         aria-describedby={error ? 'attachment-link-error' : undefined}
         onChange={(e) => { setValue(e.target.value); setError(null) }} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
-        className="input min-w-0 flex-1 py-1 text-sm" />
+        className="ui-input min-w-0 flex-1 py-1 text-body" />
       <Button type="submit" size="sm">Add</Button>
       <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
       {error && <span id="attachment-link-error" role="alert" className="w-full text-meta text-danger">{error}</span>}
@@ -279,9 +280,11 @@ export function AttachmentItem({ a, blob, selected, missing, note, renaming, can
       </span>
       <div className="min-w-0 flex-1">
         {renaming ? <RenameField initial={a.name} onDone={onRenamed} /> : (
-          <button type="button" data-attachment-open tabIndex={selected ? 0 : -1} className="block w-full truncate rounded-control text-left text-sm text-default hover:underline" onClick={() => onOpen(false)} title={a.name}>
-            {a.name}
-          </button>
+          <Tooltip label={a.name}>
+            <button type="button" data-attachment-open tabIndex={selected ? 0 : -1} className="block w-full truncate rounded-control text-left text-body text-default hover:underline" onClick={() => onOpen(false)}>
+              {a.name}
+            </button>
+          </Tooltip>
         )}
         <p className="truncate text-meta text-faint">{meta}</p>
         {state === 'waiting' && blob?.reason && (
@@ -308,7 +311,7 @@ function RenameField({ initial, onDone }: { initial: string; onDone: (name: stri
     void onDone(name?.trim() || null)
   }
   return (
-    <input autoFocus value={value} aria-label="Attachment name" maxLength={255} className="input w-full py-0.5 text-sm"
+    <input autoFocus value={value} aria-label="Attachment name" maxLength={255} className="ui-input w-full py-0.5 text-body"
       onFocus={(e) => { const dot = e.target.value.lastIndexOf('.'); e.target.setSelectionRange(0, dot > 0 ? dot : e.target.value.length) }}
       onChange={(e) => setValue(e.target.value)} onBlur={() => finish(value)}
       onKeyDown={(e) => {
@@ -356,12 +359,14 @@ export function CommentAttachments({ list }: { list: Attachment[] }) {
       <ul aria-label="Attached files" className="flex flex-wrap gap-1">
         {list.map((a) => (
           <li key={a.id} className="max-w-full">
-            <button type="button" onClick={() => void open(a)} title={a.name}
-              className="flex max-w-full items-center gap-1.5 rounded-control border border-default px-2 py-1 text-meta text-default hover:bg-sunken dark:hover:bg-raised">
-              <Icon name={a.url ? 'link' : isImage(a.mime) ? 'image' : 'file'} size="xs" className="text-faint" />
-              <span className="min-w-0 truncate">{a.name}</span>
-              <span className="shrink-0 text-faint">{a.url ? typeLabel(a) : a.uploaded_at ? formatBytes(a.size) : 'Uploading'}</span>
-            </button>
+            <Tooltip label={a.name}>
+              <button type="button" onClick={() => void open(a)}
+                className="flex max-w-full items-center gap-1.5 rounded-control border border-default px-2 py-1 text-meta text-default hover:bg-sunken dark:hover:bg-raised">
+                <Icon name={a.url ? 'link' : isImage(a.mime) ? 'image' : 'file'} size="xs" className="text-faint" />
+                <span className="min-w-0 truncate">{a.name}</span>
+                <span className="shrink-0 text-faint">{a.url ? typeLabel(a) : a.uploaded_at ? formatBytes(a.size) : 'Uploading'}</span>
+              </button>
+            </Tooltip>
           </li>
         ))}
       </ul>

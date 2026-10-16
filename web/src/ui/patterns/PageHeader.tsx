@@ -124,7 +124,7 @@ export function PageActions({ actions, overflow, menu, help }: Pick<PageHeaderPr
       {actions}
       {menu}
       {overflow && (
-        <Menu kind="menu" label="More actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-60">
+        <Menu kind="menu" label="More actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
           {overflow}
         </Menu>
       )}

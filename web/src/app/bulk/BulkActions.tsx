@@ -12,6 +12,7 @@ import { projectSource, sectionSource, type PickerItem } from '../../lib/pickerS
 import { membershipMap } from '../../lib/sharing'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
 import { Icon } from '../../ui'
+import { Tooltip } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
 import { Dialog } from '../overlay/Dialog'
@@ -139,11 +140,13 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
 }) {
   if (ids.length === 0) return null
   return (
-    <div className="mb-2 flex items-center gap-2 rounded-lg border border-accent/40 bg-accent-soft px-3 py-1.5 text-sm" data-selection-bar>
+    <div className="mb-2 flex items-center gap-2 rounded-control border border-accent/40 bg-accent-soft px-3 py-1.5 text-body" data-selection-bar>
       <span role="status" className="min-w-0 flex-1 font-medium text-on-accent-soft">{ids.length} selected</span>
       <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
-        trigger={<>Actions <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="btn-ghost px-2 py-1 text-sm" />
-      <button type="button" className="btn-ghost px-2 py-1 text-sm" onClick={onClear} title="Clear the selection (Esc)"><Icon name="x" />Clear</button>
+        trigger={<>Actions <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />
+      <Tooltip label="Clear the selection" shortcut="Esc">
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />Clear</button>
+      </Tooltip>
     </div>
   )
 }

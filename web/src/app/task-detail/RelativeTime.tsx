@@ -1,5 +1,6 @@
-// Relative time with the absolute time in the user's format on hover and focus
-// (OpenSpec task-detail-redesign: comments, activity and history).
+// Relative time with the absolute time in the user's format in a tooltip on hover
+// and focus (OpenSpec task-detail-redesign: comments, activity and history).
+import { Tooltip } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 
 /** "just now", "5 min ago", "2 h ago", "3 d ago", else the date in the user's format. */
@@ -15,17 +16,19 @@ export function relativeLabel(ts: number, now: number, date: (ms: number) => str
   return date(ts)
 }
 
-/** Focusable so keyboard users get the absolute time too: it is the element's text for screen readers and shown while focused. */
+/** Focusable so keyboard users get the absolute time too: it is the element's text for screen readers and the tooltip while focused. */
 export function RelativeTime({ ts, now = Date.now(), className = '' }: { ts: number; now?: number; className?: string }) {
   const dt = useDateTimeFormat()
   const abs = dt.formatInstant(ts, 'datetime')
   const rel = relativeLabel(ts, now, (ms) => dt.formatInstant(ms, 'date'))
   return (
-    <time dateTime={new Date(ts).toISOString()} title={abs} tabIndex={0}
-      className={`group/time rounded-sm text-faint focus-visible:outline-2 focus-visible:outline-focus ${className}`}>
-      <span className="group-focus/time:hidden" aria-hidden="true">{rel}</span>
-      {/* The absolute time is the text assistive technology reads, and is shown while focused. */}
-      <span className="sr-only group-focus/time:not-sr-only">{abs}</span>
-    </time>
+    <Tooltip label={abs}>
+      <time dateTime={new Date(ts).toISOString()} tabIndex={0}
+        className={`rounded-chip text-faint focus-visible:outline-2 focus-visible:outline-focus ${className}`}>
+        <span aria-hidden="true">{rel}</span>
+        {/* The absolute time is the text assistive technology reads; sighted users get it from the tooltip. */}
+        <span className="sr-only">{abs}</span>
+      </time>
+    </Tooltip>
   )
 }

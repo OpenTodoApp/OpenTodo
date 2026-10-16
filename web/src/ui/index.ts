@@ -5,6 +5,7 @@
 export * from './Avatar'
 export * from './Button'
 export * from './Card'
+export * from './Chips'
 export * from './Combobox/Combobox'
 export * from './Combobox/match'
 export * from './Combobox/useCombobox'

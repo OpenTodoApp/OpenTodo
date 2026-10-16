@@ -81,13 +81,13 @@ export function RemindersField({ task }: { task: Task }) {
           }
           return (
             <li key={r.id} data-reminder-id={r.id}
-              className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 pl-2.5 pr-0.5 text-sm ${isDismissed(r) ? 'text-faint' : 'text-default'}`}>
+              className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 pl-2.5 pr-0.5 text-body ${isDismissed(r) ? 'text-faint' : 'text-default'}`}>
               <Icon name="bell" className={fired && !isDismissed(r) ? 'text-accent' : 'text-faint'} />
               <span className="min-w-0 truncate">
                 {r.kind !== 'absolute' ? <>{name} <span className="text-meta text-muted" data-testid="reminder-time">{when}</span></> : <span data-testid="reminder-time">{when}</span>}
                 {state && <span className="text-meta text-muted"> · {state}</span>}
               </span>
-              <Menu kind="menu" label={`Actions for reminder ${name}`} trigger={<Icon name="ellipsis" />} triggerClassName="btn-ghost rounded-full px-1.5 py-1" width="sm:w-56">
+              <Menu kind="menu" label={`Actions for reminder ${name}`} trigger={<Icon name="ellipsis" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm rounded-full px-1.5 py-1" width="sm:w-56">
                 <MenuItem label="Edit" icon="pencil" onSelect={() => setEditing(r.id)} />
                 {fired && !isDismissed(r) && <MenuItem label="Snooze 10 minutes" icon="clock" onSelect={() => void run(() => snoozeReminder(r.id, '10m'))} />}
                 {fired && !isDismissed(r) && <MenuItem label="Dismiss" icon="check" onSelect={() => void run(() => dismissReminder(r.id))} />}
@@ -100,7 +100,7 @@ export function RemindersField({ task }: { task: Task }) {
       </ul>
       {adding === null ? (
         <Menu kind="menu" label="Add reminder" align="start" width="sm:w-64"
-          trigger={<><Icon name="plus" />Add reminder</>} triggerClassName="btn-ghost px-2 py-1 text-sm text-accent">
+          trigger={<><Icon name="plus" />Add reminder</>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body text-accent">
           <MenuGroup label="Before the due time">
             {RELATIVE_PRESETS.map((p) => (
               <MenuItem key={p.minutes} label={p.label} icon="bell" description={task.due ? undefined : 'Fires once the task has a due date'}
@@ -181,7 +181,7 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
       onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
     >
       {initial && (
-        <select className="input w-auto py-1" aria-label="Reminder kind" value={kind} onChange={(e) => setKind(e.target.value as Reminder['kind'])}>
+        <select className="ui-input w-auto py-1" aria-label="Reminder kind" value={kind} onChange={(e) => setKind(e.target.value as Reminder['kind'])}>
           <option value="relative">Relative</option>
           {(task.deadline || initial.kind === 'deadline') && <option value="deadline">Before the deadline</option>}
           <option value="absolute">At a time</option>
@@ -189,17 +189,17 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
       )}
       {kind !== 'absolute' ? (
         <>
-          <input className="input w-20 py-1" type="number" min={0} aria-label="Offset amount" value={amount} autoFocus onChange={(e) => setAmount(e.target.value)} />
-          <select className="input w-auto py-1" aria-label="Offset unit" value={unit} onChange={(e) => setUnit(e.target.value as '1' | '60' | '1440')}>
+          <input className="ui-input w-20 py-1" type="number" min={0} aria-label="Offset amount" value={amount} autoFocus onChange={(e) => setAmount(e.target.value)} />
+          <select className="ui-input w-auto py-1" aria-label="Offset unit" value={unit} onChange={(e) => setUnit(e.target.value as '1' | '60' | '1440')}>
             <option value="1">minutes</option>
             <option value="60">hours</option>
             <option value="1440">days</option>
           </select>
-          <select className="input w-auto py-1" aria-label="Before or after" value={direction} onChange={(e) => setDirection(e.target.value as 'before' | 'after')}>
+          <select className="ui-input w-auto py-1" aria-label="Before or after" value={direction} onChange={(e) => setDirection(e.target.value as 'before' | 'after')}>
             <option value="before">before</option>
             <option value="after">after</option>
           </select>
-          {kind === 'deadline' && <span className="text-sm text-muted">the deadline</span>}
+          {kind === 'deadline' && <span className="text-body text-muted">the deadline</span>}
         </>
       ) : (
         <>
@@ -208,9 +208,9 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
           <TimeField label="Reminder time" hideLabel value={moment.time} onChange={(time) => time && setMoment((m) => ({ ...m, time }))} />
         </>
       )}
-      <button type="submit" className="btn-primary px-2 py-1 text-xs">Save</button>
-      <button type="button" className="btn-ghost px-2 py-1 text-xs" onClick={onCancel}>Cancel</button>
-      {error && <p className="w-full text-xs text-danger">{error}</p>}
+      <button type="submit" className="ui-btn ui-btn--primary ui-btn--sm px-2 py-1 text-meta">Save</button>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={onCancel}>Cancel</button>
+      {error && <p className="w-full text-meta text-danger">{error}</p>}
     </form>
   )
 }

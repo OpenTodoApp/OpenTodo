@@ -44,11 +44,11 @@ export function AttachmentSettingsView({ value, online, busy, error, saved, onSa
         control={<Switch label="Allow attachments" hideLabel checked={draft?.enabled ?? true} disabled={disabled}
           onChange={(enabled) => draft && setDraft({ ...draft, enabled })} />} />
       <SettingRow label="Size per file" htmlFor="attachments-max-file" description={`In MB, from 1 to ${MAX_FILE_MB}. Larger files are refused before they are sent.`}
-        control={<input id="attachments-max-file" type="number" min={1} max={MAX_FILE_MB} step={1} className="input w-28" disabled={disabled}
+        control={<input id="attachments-max-file" type="number" min={1} max={MAX_FILE_MB} step={1} className="ui-input w-28" disabled={disabled}
           value={draft ? (Number.isNaN(draft.max_file_mb) ? '' : draft.max_file_mb) : ''}
           onChange={(e) => draft && setDraft({ ...draft, max_file_mb: num(e.target.value) })} />} />
       <SettingRow label="Total per account" htmlFor="attachments-quota" description="In MB; 0 means no total. Removing a file frees its space at once."
-        control={<input id="attachments-quota" type="number" min={0} max={MAX_QUOTA_MB} step={1} className="input w-28" disabled={disabled}
+        control={<input id="attachments-quota" type="number" min={0} max={MAX_QUOTA_MB} step={1} className="ui-input w-28" disabled={disabled}
           value={draft ? (Number.isNaN(draft.quota_mb) ? '' : draft.quota_mb) : ''}
           onChange={(e) => draft && setDraft({ ...draft, quota_mb: num(e.target.value) })} />} />
       <div className="flex flex-wrap items-center gap-3 pt-3">

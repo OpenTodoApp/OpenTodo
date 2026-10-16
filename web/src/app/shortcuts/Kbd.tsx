@@ -5,7 +5,7 @@ import { useShortcutHints } from './hints'
 
 export function Kbd({ k, only = false, className = '' }: { k: string; only?: boolean; className?: string }) {
   const on = useShortcutHints()
-  if (on) return <kbd className={`kbd ${className}`.trim()}>{k}</kbd>
+  if (on) return <kbd className={`ui-kbd ${className}`.trim()}>{k}</kbd>
   if (only) return null
   return <span className={className || undefined}>{k}</span>
 }

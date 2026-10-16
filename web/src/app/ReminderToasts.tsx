@@ -72,7 +72,7 @@ export function ReminderToasts() {
           key={d.reminder.id}
           role="alertdialog"
           aria-label={`Reminder: ${d.task.title || 'Untitled'}`}
-          className="pointer-events-auto rounded-lg border border-warning bg-surface p-3 shadow-lg"
+          className="pointer-events-auto rounded-control border border-warning bg-surface p-3 shadow-2"
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
               e.stopPropagation()
@@ -82,21 +82,21 @@ export function ReminderToasts() {
         >
           <div className="flex items-start gap-2">
             <span className="pt-0.5 text-muted"><Icon name="alarm-clock" /></span>
-            <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)} title="Open task">
-              <p className="line-clamp-2 user-text text-sm font-medium">{d.task.title || 'Untitled'}</p>
-              <p className="text-xs text-muted">Reminder · {dt.formatInstant(d.reminder.fire_at as number, 'datetime')}</p>
+            <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)}>
+              <p className="line-clamp-2 user-text text-body font-medium">{d.task.title || 'Untitled'}</p>
+              <p className="text-meta text-muted">Reminder · {dt.formatInstant(d.reminder.fire_at as number, 'datetime')}</p>
             </button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
-            <button ref={i === 0 ? firstButton : undefined} type="button" className="btn-secondary px-2 py-0.5 text-xs" onClick={() => void act(d, '10m')}>Snooze 10 min</button>
-            <button type="button" className="btn-secondary px-2 py-0.5 text-xs" onClick={() => void act(d, '1h')}>1 hour</button>
-            <button type="button" className="btn-secondary px-2 py-0.5 text-xs" onClick={() => void act(d, 'tomorrow')}>Tomorrow 09:00</button>
+            <button ref={i === 0 ? firstButton : undefined} type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, '10m')}>Snooze 10 min</button>
+            <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, '1h')}>1 hour</button>
+            <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, 'tomorrow')}>Tomorrow 09:00</button>
             <div className="flex-1" />
-            <button type="button" className="btn-primary px-2 py-0.5 text-xs" onClick={() => void act(d, 'dismiss')}>Dismiss</button>
+            <button type="button" className="ui-btn ui-btn--primary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, 'dismiss')}>Dismiss</button>
           </div>
         </div>
       ))}
-      {due.length > 4 && <p className="pointer-events-auto text-right text-xs text-muted">+{due.length - 4} more reminders</p>}
+      {due.length > 4 && <p className="pointer-events-auto text-right text-meta text-muted">+{due.length - 4} more reminders</p>}
     </ToastRegion>
   )
 }

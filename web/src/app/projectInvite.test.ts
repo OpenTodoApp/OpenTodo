@@ -72,7 +72,7 @@ describe('InviteLinksView', () => {
     const html = links({ open: true, offline: true, invites: [pending] })
     expect(html).toContain('need')
     expect(html).toContain('connection')
-    expect(html).toMatch(/<button class="btn-primary[^"]*"[^>]*disabled=""/)
+    expect(html).toMatch(/<button class="ui-btn ui-btn--primary[^"]*"[^>]*disabled=""/)
     expect(html).toMatch(/aria-label="Revoke[^"]*"[^>]*>Revoke|disabled=""[^>]*aria-label="Revoke/)
   })
 })

@@ -86,7 +86,7 @@ export function CaldavView(p: CaldavViewProps) {
               OPENTODO_BASE_URL before connecting devices outside your home network.
             </Notice>
           )}
-          <details className="py-3 text-sm">
+          <details className="py-3 text-body">
             <summary className="cursor-pointer font-medium text-default">How to connect a calendar app</summary>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
               <li><strong className="text-default">Apple Reminders</strong> (iPhone, iPad, Mac): Settings → Calendar → Accounts → Add Account → Other → Add CalDAV Account. Server: the address above, then your email and an app password.</li>
@@ -100,7 +100,7 @@ export function CaldavView(p: CaldavViewProps) {
       <div className="space-y-2 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-medium text-default">App passwords</h3>
+            <h3 className="text-body font-medium text-default">App passwords</h3>
             <p className="text-meta text-muted">One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.</p>
           </div>
           {newButton}

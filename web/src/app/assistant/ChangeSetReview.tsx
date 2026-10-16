@@ -43,10 +43,10 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
   const headingId = useId()
   if (p.result) {
     return (
-      <div className="rounded-lg border border-default p-3 text-sm" data-assistant-result>
+      <div className="rounded-control border border-default p-3 text-body" data-assistant-result>
         <p role="status">{appliedSummary(p.result)}</p>
         {p.result.undoId && !p.result.undone && !p.result.discarded && (
-          <button type="button" className="btn-ghost mt-2 border border-input" onClick={p.onUndo} aria-busy={p.busy}>Undo</button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md mt-2 border border-input" onClick={p.onUndo} aria-busy={p.busy}>Undo</button>
         )}
       </div>
     )
@@ -62,24 +62,24 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
   }
   return (
     <div ref={p.regionRef} role="group" aria-labelledby={headingId} onKeyDown={onKeyDown} data-assistant-review
-      className="space-y-2 rounded-lg border border-accent/40 bg-accent-soft p-3">
-      <h3 id={headingId} className="text-sm font-semibold">
+      className="space-y-2 rounded-control border border-accent/40 bg-accent-soft p-3">
+      <h3 id={headingId} className="text-body font-semibold">
         Proposed changes ({review.items.length})
       </h3>
-      <p className="text-xs text-muted">Nothing changes until you apply: apply the checked items with <Kbd k="Enter" />, discard with <Kbd k="Esc" />.</p>
-      {review.dropped.map((d) => <p key={d} className="text-xs text-muted">{d}</p>)}
+      <p className="text-meta text-muted">Nothing changes until you apply: apply the checked items with <Kbd k="Enter" />, discard with <Kbd k="Esc" />.</p>
+      {review.dropped.map((d) => <p key={d} className="text-meta text-muted">{d}</p>)}
       <ul className="space-y-1" aria-label="Proposed changes">
         {review.items.map((item, i) => {
           const label = `${item.title}${item.lines.length ? ': ' + item.lines.join('; ') : ''}`
           return (
             <li key={item.change.entity + item.change.entityId}>
-              <label className="flex items-start gap-2 rounded-md p-1.5 text-sm hover:bg-surface/60 dark:hover:bg-raised">
+              <label className="flex items-start gap-2 rounded-control p-1.5 text-body hover:bg-surface/60 dark:hover:bg-raised">
                 <input type="checkbox" className="mt-1 h-4 w-4 shrink-0" checked={item.checked} onChange={(e) => p.onToggle(i, e.target.checked)}
                   aria-label={label + (item.state === 'stale' ? ' (changed since proposed)' : '') + (item.shared ? ' (shared project)' : '')} />
                 <span className="min-w-0 flex-1 user-text">
                   <span className="font-medium">{item.title}</span>
-                  {item.shared && <span className="ml-1.5 rounded border border-info px-1 text-[11px] font-medium text-on-info-soft">shared</span>}
-                  {item.state === 'stale' && <span className="ml-1.5 rounded border border-warning px-1 text-[11px] font-medium text-on-warning-soft">changed since proposed</span>}
+                  {item.shared && <span className="ml-1.5 rounded-control border border-info px-1 text-hint font-medium text-on-info-soft">shared</span>}
+                  {item.state === 'stale' && <span className="ml-1.5 rounded-control border border-warning px-1 text-hint font-medium text-on-warning-soft">changed since proposed</span>}
                   {item.lines.map((l) => <span key={l} className="block text-muted">{l}</span>)}
                 </span>
               </label>
@@ -88,10 +88,10 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
         })}
       </ul>
       <div className="flex flex-wrap gap-2 pt-1">
-        <button type="button" className="btn-primary" onClick={p.onApply} disabled={checked === 0} aria-busy={p.busy} data-assistant-apply>
+        <button type="button" className="ui-btn ui-btn--primary ui-btn--md" onClick={p.onApply} disabled={checked === 0} aria-busy={p.busy} data-assistant-apply>
           Apply {checked === review.items.length ? 'all' : `${checked} of ${review.items.length}`}
         </button>
-        <button type="button" className="btn-secondary" onClick={p.onDiscard}>Discard</button>
+        <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={p.onDiscard}>Discard</button>
       </div>
     </div>
   )

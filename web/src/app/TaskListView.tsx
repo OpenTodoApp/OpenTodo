@@ -1,4 +1,4 @@
-import { Icon } from '../ui'
+import { Button, EmptyState as EmptyStatePattern, Icon, type IconName } from '../ui'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { type FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { blockedMap } from '../lib/dependencies'
@@ -41,7 +41,8 @@ import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
 import { useSelection } from './selection'
 import { BulkActionsMenu, runBulk, SelectionBar } from './bulk/BulkActions'
-import { Dialog } from './overlay'
+import { Dialog, useFinePointer } from './overlay'
+import { FirstRunCard, useFirstRun } from './FirstRun'
 import { Menu } from './overlay/Menu'
 import { ListGroupHeader, MenuItem, MenuSeparator, PageHeader, Tooltip } from '../ui'
 import { groupKey, setGroupCollapsed, useCollapsedGroups } from './collapsedGroups'
@@ -222,6 +223,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     () => (sectionGroups ?? []).filter((g) => g.key !== '' || g.tasks.length > 0).map((g) => ({ key: g.key, section: g.section, cards: g.tasks })), [sectionGroups],
   )
   const [currentColumn, setCurrentColumn] = useState<string | null>(null)
+  // The row being dragged lifts (task-list-presentation "Drag feedback").
+  const [draggingId, setDraggingId] = useState<string | null>(null)
 
   const groups = useMemo<Group[]>(() => {
     const later: Group[] = laterTasks.length
@@ -344,6 +347,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   /** Task whose assignee picker (Shift+A) is open (task-assignment). */
   const [assignFor, setAssignFor] = useState<string | null>(null)
   const quickAddRef = useRef<HTMLInputElement>(null)
+  const focusQuickAdd = useCallback(() => quickAddRef.current?.focus(), [])
+  // The first run (first-run "Three-step first run"): the Inbox shows the card instead of its empty state.
+  const showFirstRun = useFirstRun() && route.view === 'inbox'
   /** Section whose quick add is open ('' = "No section"), board-view. */
   const [addingTo, setAddingTo] = useState<string | null>(null)
 
@@ -396,6 +402,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     }
     beginDrag(e, {
       label: task.title,
+      onStart: () => setDraggingId(task.id),
       onMove: (target, _x, y) => {
         const id = target?.startsWith('task:') ? target.slice('task:'.length) : null
         const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, !dragState.current.board) : null
@@ -417,7 +424,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         } else return
         setSelectedId(task.id)
       },
-      onEnd: () => show(null),
+      onEnd: () => { show(null); setDraggingId(null) },
     })
   }, [manual, moveToSection])
 
@@ -752,6 +759,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         onPointerDown={manual ? (e) => startDrag(e, r.task) : undefined}
         dropKey={manual ? `task:${r.task.id}` : undefined}
         dropIndicator={dropAt?.id === r.task.id ? dropAt.zone : null}
+        dragging={draggingId === r.task.id}
         onToggle={() => void toggleComplete(r.task.id, !r.task.completed_at)}
         onToggleCollapse={treeView && !board ? () => toggleCollapsed(r.task.id) : undefined}
         onOpen={() => {
@@ -777,7 +785,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     <>
       {route.view === 'today' && <TodayAskAction role={userRole} />}
       {route.view !== 'completed' && rows.length > 0 && (
-        <button type="button" className="btn-ghost hidden px-2 py-1 text-sm pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm hidden px-2 py-1 text-body pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={() => setSelectMode((v) => !v)} data-select-mode>
           {selectMode ? 'Done' : 'Select'}
         </button>
       )}
@@ -791,14 +799,14 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   if (route.view === 'project' && projects.length > 0 && !currentProject) {
     return (
-      <div className="p-6 text-sm text-muted">
+      <div className="p-6 text-body text-muted">
         This project no longer exists. <button className="underline" onClick={() => navigate({ view: 'inbox' })}>Go to Inbox</button>
       </div>
     )
   }
   if (route.view === 'label' && labels.length > 0 && (!currentLabel || currentLabel.deleted_at)) {
     return (
-      <div className="p-6 text-sm text-muted">
+      <div className="p-6 text-body text-muted">
         This label no longer exists. <button className="underline" onClick={() => navigate({ view: 'labels' })}>All labels</button>
       </div>
     )
@@ -833,14 +841,16 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <div className="mb-3 border-b border-default pb-2">
               {projectReadOnly ? (
                 <>
-                  <input className="input" disabled aria-label="Quick add (read-only)" placeholder="You can view this project but not add tasks" />
-                  <p role="note" className="mt-1 text-xs text-muted">Read-only: you are a viewer of this shared project.</p>
+                  <input className="ui-input" disabled aria-label="Quick add (read-only)" placeholder="You can view this project but not add tasks" />
+                  <p role="note" className="mt-1 text-meta text-muted">Read-only: you are a viewer of this shared project.</p>
                 </>
               ) : (
                 <QuickAdd ref={quickAddRef} onAdd={onAdd} projects={projects} labels={labels} placeholder={placeholderFor(route, currentProject, currentLabel)} voiceShortcut />
               )}
             </div>
           )}
+
+          {showFirstRun && <FirstRunCard onFocusQuickAdd={focusQuickAdd} />}
 
           <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actionsOpen && ticked.length > 0}
             onMenuOpenChange={(v) => { setActionsOpen(v); if (!v) setActionsPicker(null) }} startPicker={actionsPicker} />
@@ -851,11 +861,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
 
           {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
-          {rows.length === 0 && !(board || liveSections.length > 0) && (duration ? (
-            <p className="px-2 py-8 text-center text-sm text-faint">
-              No task matches this duration filter. <button className="underline" onClick={() => chooseDuration(null)}>Clear the filter</button>
-            </p>
-          ) : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} />)}
+          {rows.length === 0 && !showFirstRun && !(board || liveSections.length > 0) && (duration ? (
+            <EmptyStatePattern icon="filter" title="No task matches this duration filter"
+              action={<Button size="sm" variant="secondary" onClick={() => chooseDuration(null)}>Clear the filter</Button>} />
+          ) : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={projectReadOnly} onAdd={focusQuickAdd} />)}
 
           {board && currentProject ? (
             <BoardView
@@ -874,7 +883,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} />
           ) : groups.map((g, gi) => g.section !== undefined && currentProject ? (
             // Project list grouped by section (board-view): headings are drop targets.
-            <section key={g.key} className="mb-3 rounded-md data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(g.section?.id ?? '')}>
+            <section key={g.key} className="mb-3 rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(g.section?.id ?? '')}>
               <SectionHeader
                 section={g.section}
                 count={g.count ?? 0}
@@ -914,23 +923,23 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         </div>
       {prompt && (
         <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-default bg-surface px-4 py-2 text-sm shadow-lg">
+          <div className="flex flex-wrap items-center gap-3 rounded-control border border-default bg-surface px-4 py-2 text-body shadow-2">
             <span className="user-text min-w-0">All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
-            <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>
-            <button className="btn-ghost text-xs" onClick={() => setPrompt(null)}>Keep open <Kbd k="Esc" only className="ml-1" /></button>
+            <button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={acceptPrompt}>Complete <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>
+            <button className="ui-btn ui-btn--ghost ui-btn--sm text-meta" onClick={() => setPrompt(null)}>Keep open <Kbd k="Esc" only className="ml-1" /></button>
           </div>
         </div>
       )}
       {assignFor && userId && (
         <Dialog title="Assign" label="Assign task" onClose={() => setAssignFor(null)}>
           <AssigneePicker taskId={assignFor} userId={userId} onClose={() => setAssignFor(null)} />
-          <p className="mt-2 px-1 text-[11px] text-faint">Type to filter · Enter assigns · Esc closes</p>
+          <p className="mt-2 px-1 text-hint text-faint">Type to filter · Enter assigns · Esc closes</p>
         </Dialog>
       )}
       {pickerFor && (
         <Dialog title="Labels" label="Labels for task" onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-          <p className="mt-2 px-1 text-[11px] text-faint">Enter toggles or creates · Esc closes</p>
+          <p className="mt-2 px-1 text-hint text-faint">Enter toggles or creates · Esc closes</p>
         </Dialog>
       )}
     </div>
@@ -957,7 +966,7 @@ function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number;
       <span className="text-accent">+</span>
       <input
         ref={ref}
-        className="input py-1"
+        className="ui-input py-1"
         placeholder={`Add a subtask to ${parent.title || 'this task'}…`}
         aria-label="Add a subtask"
         value={value}
@@ -992,14 +1001,14 @@ function DurationFilterControl({ active, onChange }: { active: DurationFilter | 
   return (
     <span className="flex items-center gap-1" data-duration-filter>
       {current && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-xs font-medium text-on-accent-soft" data-duration-active>
+        <span className="inline-flex items-center gap-1 rounded-full border border-accent bg-accent-soft py-0.5 pl-2.5 pr-1 text-meta font-medium text-on-accent-soft" data-duration-active>
           {current.label}
-          <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label="Clear filter" title="Clear filter" onClick={() => onChange(null)} data-clear-duration>
+          <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label="Clear filter" onClick={() => onChange(null)} data-clear-duration>
             <Icon name="x" size="xs" />
           </button>
         </span>
       )}
-      <Menu kind="menu" label="Filter" title="Filter by duration" trigger={<Icon name="filter" />} triggerClassName={`btn-ghost touch-target px-2 py-1 ${active ? 'text-accent' : ''}`} width="sm:w-56">
+      <Menu kind="menu" label="Filter" title="Filter by duration" trigger={<Icon name="filter" />} triggerClassName={`ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 ${active ? 'text-accent' : ''}`} width="sm:w-56">
         {DURATION_FILTERS.map((f) => (
           <MenuItem key={f.kind} label={f.label} description={f.title} checked={active === f.kind} onSelect={() => onChange(active === f.kind ? null : f.kind)} />
         ))}
@@ -1031,22 +1040,42 @@ function placeholderFor(route: ListRoute, project?: Project, label?: Label): str
   }
 }
 
-function EmptyState({ view, waiting = 0 }: { view: ListRoute['view']; waiting?: number }) {
+// Empty states name the action first (first-run spec): an icon, one sentence, one
+// button that does it, and the key hint on a second line only with a fine pointer.
+const EMPTY: Record<ListRoute['view'], { icon: IconName; title: string }> = {
+  inbox: { icon: 'inbox', title: 'Your Inbox is empty' },
+  today: { icon: 'sun', title: 'Nothing due today' },
+  upcoming: { icon: 'calendar-days', title: 'Nothing scheduled yet' },
+  someday: { icon: 'coffee', title: 'Nothing parked for later' },
+  anytime: { icon: 'layers', title: 'Nothing to do whenever' },
+  completed: { icon: 'circle-check-big', title: 'Nothing completed yet' },
+  project: { icon: 'folder', title: 'This project has no open tasks' },
+  label: { icon: 'tag', title: 'No open task carries this label' },
+  assigned: { icon: 'user-check', title: 'Nothing is assigned to you' },
+}
+
+function EmptyState({ view, waiting = 0, readOnly = false, onAdd }: { view: ListRoute['view']; waiting?: number; readOnly?: boolean; onAdd: () => void }) {
+  const fine = useFinePointer()
+  const { icon, title } = EMPTY[view]
   // Everything due today waits for other tasks (task-dependencies): say so.
-  if (view === 'today' && waiting > 0) {
-    return <p className="px-2 py-8 text-center text-sm text-faint">Nothing is ready to start today: {waiting === 1 ? 'one task is' : `${waiting} tasks are`} waiting for other tasks below.</p>
-  }
-  const text = {
-    inbox: 'Your Inbox is empty. Press q to capture something.',
-    today: 'Nothing due today. Enjoy the calm, or pull something in from Upcoming.',
-    upcoming: 'No scheduled tasks. Add a due date to a task and it will show up here.',
-    someday: 'Nothing parked. Select a task and press n to put it here for later.',
-    anytime: 'Nothing to do whenever. Tasks without a date or a start show up here.',
-    completed: 'Nothing completed yet. Completed tasks show up here for a while.',
-    project: 'This project has no open tasks.',
-    label: 'No open task carries this label. Select a task and press L to add it.',
-    assigned: 'Nothing is assigned to you. Select a task and press Shift+A to assign it.',
-  }[view]
-  return <p className="px-2 py-8 text-center text-sm text-faint">{text}</p>
+  const body = view === 'today' && waiting > 0
+    ? `${waiting === 1 ? 'One task is' : `${waiting} tasks are`} waiting for other tasks below.`
+    : undefined
+  const action = view === 'completed'
+    ? { label: 'Open Today', run: () => navigate({ view: 'today' }), hint: <>Press <kbd className="ui-kbd">g</kbd> then <kbd className="ui-kbd">t</kbd> to open Today</> }
+    : readOnly
+      ? { label: 'Open Inbox', run: () => navigate({ view: 'inbox' }), hint: <>Press <kbd className="ui-kbd">g</kbd> then <kbd className="ui-kbd">i</kbd> to open the Inbox</> }
+      : { label: 'Add a task', run: onAdd, hint: <>Press <kbd className="ui-kbd">q</kbd> to add a task</> }
+  return (
+    <div data-empty-state={view}>
+      <EmptyStatePattern icon={icon} title={body ? 'Nothing is ready to start today' : title} body={body}
+        action={(
+          <>
+            <Button size="sm" variant="secondary" data-empty-action onClick={action.run}>{action.label}</Button>
+            {fine && <p className="mt-2 text-meta text-faint" data-empty-hint>{action.hint}</p>}
+          </>
+        )} />
+    </div>
+  )
 }
 

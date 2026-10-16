@@ -61,11 +61,11 @@ function matches(q: string, keys: string, description: string): boolean {
 
 function Rows({ rows, mono = false }: { rows: [string, string][]; mono?: boolean }) {
   return (
-    <table className="w-full table-fixed text-sm">
+    <table className="w-full table-fixed text-body">
       <tbody>
         {rows.map(([k, d], i) => (
           <tr key={`${i}-${k}`} className="border-t border-default">
-            <td className="w-2/5 py-1.5 pr-3 align-top">{mono ? <code className="break-words text-xs">{k}</code> : <span className="kbd inline-block break-words">{k}</span>}</td>
+            <td className="w-2/5 py-1.5 pr-3 align-top">{mono ? <code className="break-words text-meta">{k}</code> : <span className="ui-kbd inline-block break-words">{k}</span>}</td>
             <td className="py-1.5 text-muted">{d}</td>
           </tr>
         ))}
@@ -106,44 +106,44 @@ export function ShortcutHelp({ onClose, extraSections = [], context, vim = extra
     <Dialog title="Keyboard shortcuts" onClose={onClose} size="lg" className="!pt-2" testId="shortcut-help">
       <div role="search" className="mb-2">
         <label className="sr-only" htmlFor="shortcut-search">Search shortcuts</label>
-        <input id="shortcut-search" type="search" className="input w-full" placeholder="Search by key or action" value={query} autoFocus
+        <input id="shortcut-search" type="search" className="ui-input w-full" placeholder="Search by key or action" value={query} autoFocus
           onChange={(e) => setQuery(e.target.value)} data-shortcut-search />
       </div>
       <p className="sr-only" aria-live="polite">{q ? `${groups.reduce((n, g) => n + g.rows.length, 0) + extras.reduce((n, s) => n + s.rows.length, 0) + quickAdd.length} shortcuts` : ''}</p>
       <div className="sm:max-h-[calc(80dvh-9rem)] sm:overflow-y-auto sm:overscroll-contain" data-shortcut-sheet tabIndex={0} role="region" aria-label="Shortcuts">
-        {empty && <p className="py-6 text-center text-sm text-muted">No shortcut matches “{q}”.</p>}
+        {empty && <p className="py-6 text-center text-body text-muted">No shortcut matches “{q}”.</p>}
         <div className="grid gap-x-6 md:grid-cols-2">
           {groups.map((g, i) => (
             <section key={g.id} data-help-section={g.title} data-context-section={i < contextCount && !q ? '' : undefined} className="mb-2 break-inside-avoid">
-              <h3 className="mb-1 mt-3 text-sm font-semibold">{g.title}{i < contextCount && !q ? <span className="ml-2 text-xs font-normal text-faint">here</span> : null}</h3>
+              <h3 className="mb-1 mt-3 text-body font-semibold">{g.title}{i < contextCount && !q ? <span className="ml-2 text-meta font-normal text-faint">here</span> : null}</h3>
               <Rows rows={g.rows} />
             </section>
           ))}
           {extras.map((sec) => (
             <section key={sec.title} data-help-section={sec.title} className="mb-2">
-              <h3 className="mb-1 mt-3 text-sm font-semibold">{sec.title}</h3>
-              {sec.note && <p className="mb-2 text-xs text-muted">{sec.note}</p>}
+              <h3 className="mb-1 mt-3 text-body font-semibold">{sec.title}</h3>
+              {sec.note && <p className="mb-2 text-meta text-muted">{sec.note}</p>}
               <Rows rows={sec.rows} mono={sec.mono} />
             </section>
           ))}
           {quickAdd.length > 0 && (
             <section data-help-section="Quick add syntax" className="mb-2">
-              <h3 className="mb-1 mt-3 text-sm font-semibold">Quick add syntax</h3>
+              <h3 className="mb-1 mt-3 text-body font-semibold">Quick add syntax</h3>
               <Rows rows={quickAdd} mono />
             </section>
           )}
         </div>
       </div>
       {!vim && (
-        <p className="mt-3 text-xs text-muted" data-vim-hint>Prefer modal editing? Vim keybindings can be enabled in Settings → General → Keyboard.</p>
+        <p className="mt-3 text-meta text-muted" data-vim-hint>Prefer modal editing? Vim keybindings can be enabled in Settings → General → Keyboard.</p>
       )}
-      <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+      <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-meta">
         <a className="touch-target inline-flex items-center text-muted underline" href="/help/quick-add"
           onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help', page: 'quick-add' }) }}>Full quick add syntax</a>
         <a className="touch-target inline-flex items-center text-muted underline" href="/help/keyboard"
           onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help', page: 'keyboard' }) }}>Keyboard guide</a>
         <a className="touch-target inline-flex items-center text-muted underline" href="/help"
-          onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help' }) }}>Open Help (<span className="kbd mx-0.5">g</span> <span className="kbd mx-0.5">?</span>)</a>
+          onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help' }) }}>Open Help (<span className="ui-kbd mx-0.5">g</span> <span className="ui-kbd mx-0.5">?</span>)</a>
       </p>
     </Dialog>
   )

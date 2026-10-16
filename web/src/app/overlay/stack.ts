@@ -149,15 +149,29 @@ export function trapTab(e: KeyboardEvent | React.KeyboardEvent, panel: HTMLEleme
 // ------------------------------------------------------------------ viewport
 
 const WIDE = '(min-width: 640px)'
-function subscribeWide(cb: () => void) {
-  const mq = window.matchMedia(WIDE)
-  mq.addEventListener('change', cb)
-  return () => mq.removeEventListener('change', cb)
+const FINE = '(pointer: fine)'
+const subscribers = new Map<string, (cb: () => void) => () => void>()
+function mediaSubscriber(query: string) {
+  let fn = subscribers.get(query)
+  if (!fn) {
+    fn = (cb: () => void) => {
+      const mq = window.matchMedia(query)
+      mq.addEventListener('change', cb)
+      return () => mq.removeEventListener('change', cb)
+    }
+    subscribers.set(query, fn)
+  }
+  return fn
 }
 
 /** False below 640 px, where popovers open as bottom sheets and dialogs full screen. */
 export function useWide(): boolean {
-  return useSyncExternalStore(subscribeWide, () => window.matchMedia(WIDE).matches, () => true)
+  return useSyncExternalStore(mediaSubscriber(WIDE), () => window.matchMedia(WIDE).matches, () => true)
+}
+
+/** True with a mouse or trackpad (first-run "Empty states name the action first"): key hints are printed only then. */
+export function useFinePointer(): boolean {
+  return useSyncExternalStore(mediaSubscriber(FINE), () => window.matchMedia(FINE).matches, () => false)
 }
 
 /**

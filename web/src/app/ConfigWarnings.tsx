@@ -31,7 +31,7 @@ export function ConfigWarningList({ warnings }: { warnings: ConfigWarning[] }) {
   if (warnings.length === 0) return null
   return (
     <section aria-labelledby="config-warnings-heading" data-testid="config-warnings"
-      className="space-y-2 rounded-card border border-default bg-warning-soft p-4 text-sm text-on-warning-soft shadow-1">
+      className="space-y-2 rounded-card border border-default bg-warning-soft p-4 text-body text-on-warning-soft shadow-1">
       <h2 id="config-warnings-heading" className="flex items-center gap-2 font-semibold">
         <Icon name="alarm-clock" />
         {warnings.length === 1 ? 'Server configuration warning' : 'Server configuration warnings'}

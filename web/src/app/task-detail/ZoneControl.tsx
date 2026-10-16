@@ -8,6 +8,7 @@ import { dueToInstant, fixDueToZone, isKnownZone, localDueOf, releaseDue, setDue
 import { updateTask } from '../../lib/ops'
 import type { Due, Task } from '../../lib/types'
 import { Button } from '../../ui'
+import { Tooltip } from '../../ui'
 import { ComboboxPanel } from '../../ui'
 import { Icon } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
@@ -119,21 +120,22 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
 
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
-      <button
-        ref={chip}
-        type="button"
-        className="ui-btn ui-btn--secondary ui-btn--sm"
-        aria-label={`Time zone: ${text}`}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-keyshortcuts={readOnly ? undefined : ZONE_TOGGLE_KEY}
-        aria-describedby={canFix ? undefined : `zone-reason-${task.id}`}
-        disabled={readOnly || !canFix}
-        title={canFix ? `Time zone (${ZONE_TOGGLE_KEY} toggles)` : reason}
-        onClick={() => setOpen(true)}
-      >
-        <Icon name="globe" size="sm" />{text}
-      </button>
+      <Tooltip label={canFix ? 'Time zone' : reason} shortcut={canFix ? ZONE_TOGGLE_KEY : undefined}>
+        <button
+          ref={chip}
+          type="button"
+          className="ui-btn ui-btn--secondary ui-btn--sm"
+          aria-label={`Time zone: ${text}`}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-keyshortcuts={readOnly ? undefined : ZONE_TOGGLE_KEY}
+          aria-describedby={canFix ? undefined : `zone-reason-${task.id}`}
+          disabled={readOnly || !canFix}
+          onClick={() => setOpen(true)}
+        >
+          <Icon name="globe" size="sm" />{text}
+        </button>
+      </Tooltip>
       {!canFix && due && <span id={`zone-reason-${task.id}`} className="text-meta text-faint">{reason}</span>}
       <Popover open={open} onClose={close} anchor={chip} label="Time zone" align="start" width="sm:w-80" className="space-y-3 p-3">
         <div className="space-y-2 text-meta">

@@ -39,7 +39,7 @@ export function SavedViewRoute({ id }: { id: string }) {
   const data = useViewData()
   const view = data.views.find((v) => v.id === id)
   if (!view) {
-    return <p className="px-4 py-10 text-center text-sm text-faint">This view does not exist (it may have been deleted on another device).</p>
+    return <p className="px-4 py-10 text-center text-body text-faint">This view does not exist (it may have been deleted on another device).</p>
   }
   return view.kind === 'dashboard' ? <DashboardView key={id} dashboard={view} data={data} /> : <SavedViewView key={id} view={view} data={data} />
 }
@@ -127,12 +127,12 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
 
           <div className="mb-3 border-b border-default pb-2">
             <div className="flex gap-2">
-              <input ref={inputRef} className="input font-mono" aria-label="View query" aria-invalid={!!message} aria-describedby="view-message"
+              <input ref={inputRef} className="ui-input font-mono" aria-label="View query" aria-invalid={!!message} aria-describedby="view-message"
                 autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false}
                 value={draft} onChange={(e) => { setDraft(e.target.value); setDraftError(null) }} onKeyDown={onInputKey} />
-              {dirty && <button className="btn-primary shrink-0 text-xs" onClick={() => void saveQuery()}>Save</button>}
+              {dirty && <button className="ui-btn ui-btn--primary ui-btn--sm shrink-0 text-meta" onClick={() => void saveQuery()}>Save</button>}
             </div>
-            <div id="view-message" className="min-h-5 px-1 pt-1 text-xs" aria-live="polite">
+            <div id="view-message" className="min-h-5 px-1 pt-1 text-meta" aria-live="polite">
               {message ? (
                 <p role="alert" className="text-danger">{message}</p>
               ) : dirty ? (
@@ -141,21 +141,21 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 <p className="text-warning">{result.warnings.join(' · ')}</p>
               ) : null}
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-meta text-muted">
               <label className="flex items-center gap-1.5">Group
-                <select className="input w-auto py-1 text-xs" aria-label="Group by" value={opts.groupBy}
+                <select className="ui-input w-auto py-1 text-meta" aria-label="Group by" value={opts.groupBy}
                   onChange={(e) => void updateView(view.id, { group_by: e.target.value as GroupBy })}>
                   {GROUP_BY_OPTIONS.map((g) => <option key={g} value={g}>{GROUP_LABEL[g]}</option>)}
                 </select>
               </label>
               <label className="flex items-center gap-1.5">Sort
-                <select className="input w-auto py-1 text-xs" aria-label="Sort by" value={opts.sortBy}
+                <select className="ui-input w-auto py-1 text-meta" aria-label="Sort by" value={opts.sortBy}
                   onChange={(e) => void updateView(view.id, { sort_by: e.target.value as SortBy })}>
                   {SORT_BY_OPTIONS.map((s) => <option key={s} value={s}>{SORT_LABEL[s]}</option>)}
                 </select>
               </label>
               <label className="flex items-center gap-1.5">Direction
-                <select className="input w-auto py-1 text-xs" aria-label="Sort direction" value={opts.sortDir}
+                <select className="ui-input w-auto py-1 text-meta" aria-label="Sort direction" value={opts.sortDir}
                   onChange={(e) => void updateView(view.id, { sort_dir: e.target.value as SortDir })}>
                   <option value="asc">{opts.sortBy === 'priority' ? 'Ascending (p4 first)' : 'Ascending'}</option>
                   <option value="desc">{opts.sortBy === 'priority' ? 'Descending (p1 first)' : 'Descending'}</option>
@@ -164,13 +164,13 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
             </div>
           </div>
 
-          {result.ok && rows.length === 0 && <p className="px-2 py-8 text-center text-sm text-faint">No task matches this view.</p>}
+          {result.ok && rows.length === 0 && <p className="px-2 py-8 text-center text-body text-faint">No task matches this view.</p>}
 
           {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label="View results">
             {groups.map((g) => (
               <section key={g.key} data-group={g.key} className="mb-4">
-                {g.heading && <h2 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-faint">{g.heading}</h2>}
+                {g.heading && <h2 className="mb-1 px-2 text-meta font-semibold uppercase tracking-wide text-faint">{g.heading}</h2>}
                 <ul>
                   {g.tasks.map((t) => {
                     const key = `${g.key}:${t.id}`

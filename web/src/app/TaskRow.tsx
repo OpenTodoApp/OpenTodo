@@ -1,15 +1,25 @@
-import { Icon } from '../ui'
+// The task row and card (OpenSpec change ux-overhaul, task-list-presentation "One
+// row anatomy", "Metadata language", "Completion feedback", "Bulk selection does
+// not shift rows", "Drag feedback"; design D7). One row in every list: a fixed
+// leading slot (the collapse chevron only on rows with children), one checkbox
+// slot (the task's checkbox, or the selection box in its place on hover, focus or
+// tick), the title, and a metadata line only when there is metadata, built from
+// three styles: ToneText for the date and the deadline, LabelChip, NeutralChip
+// for counts and the project. The board card is the same data as a card.
+import { Icon, LabelChip, NeutralChip, ToneText, type Tone } from '../ui'
+import { useEffect, useRef, useState } from 'react'
 import { describeDeadline, describeDue, formatDate, localDueOf, todayISO, zoneHint } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import type { Progress } from '../lib/subtasks'
 import type { Label, Project, Task } from '../lib/types'
-import { LabelChip } from './LabelPicker'
 import { AssigneeChip } from './AssigneePicker'
 import { useAttachmentCount, useCommentCount } from './useCommentCounts'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { completionDelay, prefersReducedMotion } from './motion'
+import { dragFeedback } from './listDrop'
 
 // Priority tokens (design-system): ring in the priority colour, soft fill behind it.
 const PRIORITY_RING: Record<number, string> = {
@@ -19,24 +29,20 @@ const PRIORITY_RING: Record<number, string> = {
   4: 'border-p4 bg-p4-soft',
 }
 
-const DUE_TONE = {
-  overdue: 'text-danger',
-  today: 'text-success',
-  soon: 'text-(--ot-hue-violet-text)',
-  later: 'text-muted',
-}
-
+const DUE_TONE: Record<'overdue' | 'today' | 'soon' | 'later', Tone> = { overdue: 'danger', today: 'success', soon: 'violet', later: 'muted' }
 // Deadline countdown tones (OpenSpec change deadlines, design D2).
-const DEADLINE_TONE = {
-  overdue: 'text-danger',
-  soon: 'text-warning',
-  later: 'text-muted',
-}
+const DEADLINE_TONE: Record<'overdue' | 'soon' | 'later', Tone> = { overdue: 'danger', soon: 'warning', later: 'muted' }
 
 /** Indentation stops growing after this level so deep trees stay readable on phones. */
 export const MAX_INDENT = 3
 
-export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, ticked = false, showCheckbox = false, onTick }: {
+/** The date phrase of a row: the due text with evening and repeat as suffixes ("Today · evening · repeats"). */
+export function dateText(dueLabel: string | null, evening: boolean, recurring: boolean, occurrence = false): string | null {
+  if (!dueLabel) return null
+  return [dueLabel, evening ? 'evening' : null, recurring ? 'repeats' : occurrence ? 'occurrence' : null].filter(Boolean).join(' · ')
+}
+
+export interface TaskRowProps {
   task: Task
   project?: Project
   /** Already resolved: unknown and deleted label ids are not in this list. */
@@ -74,7 +80,11 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   dropKey?: string
   /** Where the dragged task would land relative to this row (manual-ordering). */
   dropIndicator?: 'before' | 'after' | 'inside' | null
-}) {
+  /** This row is the one being dragged: it lifts (an opacity change under reduced motion). */
+  dragging?: boolean
+}
+
+export function TaskRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, card = false, onPointerDown, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick }: TaskRowProps) {
   const dt = useDateTimeFormat()
   const due = describeDue(task.due, undefined, undefined, dt.resolved)
   // A zoned due seen from another zone shows its original time and zone (absolute-datetimes).
@@ -83,9 +93,9 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   // Start dates, Someday and This Evening (someday-and-evening D2): chips say why a
   // task is in Later, or in Today without a date.
   const start = task.start ?? null
-  const startChip = done || !start ? null
-    : start === 'someday' ? { icon: 'archive' as const, label: 'Someday' }
-    : { icon: 'calendar-days' as const, label: `${start > todayISO() ? 'Starts' : 'Started'} ${formatDate(start, 'compact', dt.resolved)}` }
+  const startText = done || !start ? null
+    : start === 'someday' ? 'Someday'
+    : `${start > todayISO() ? 'Starts' : 'Started'} ${formatDate(start, 'compact', dt.resolved)}`
   const deadline = done ? null : describeDeadline(task.deadline, undefined, task.due ? localDueOf(task.due).date : null)
   const comments = useCommentCount(task.id)
   const attachments = useAttachmentCount(task.id)
@@ -95,9 +105,63 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
   const shared = useLiveQuery(async () => (enc.enabled && task.project_id ? !!(await db.memberships.get(task.project_id)) : false), [enc.enabled, task.project_id], false)
   const unencrypted = notYetEncrypted(task as unknown as Record<string, unknown>, 'task', !shared)
   const undecryptable = !!task._e2ee?.raw?.title
-  // The metadata line is rendered only when there is metadata (single-line rows otherwise).
-  const hasMeta = !!(breadcrumb || due || deadline || startChip || (task.evening && !done) || task.recurrence || task.series_id || task.estimate_minutes || (blockedBy > 0 && !done)
+  // Evening and repeat are suffixes of the date text, never separate glyphs; with no
+  // date they stand on their own in the date tone.
+  const date = dateText(due?.label ?? (task.evening && !done ? 'This evening' : null), !!task.evening && !done && !!due, !!task.recurrence, !!task.series_id)
+  const hasMeta = !!(breadcrumb || date || deadline || startText || (!due && !task.evening && (task.recurrence || task.series_id)) || task.estimate_minutes || (progress && progress.total > 0) || (blockedBy > 0 && !done)
     || (assignee && task.assignee_id) || task.description || comments > 0 || attachments > 0 || labels.length > 0 || (showProject && (project || !task.project_id)))
+
+  // Completion feedback: the check mark animates and the row fades within the
+  // emphasis duration before the row leaves or re-sorts; under reduced motion only
+  // the opacity fades. Reopening is immediate.
+  const [completing, setCompleting] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(timer.current), [])
+  useEffect(() => { if (done) setCompleting(false) }, [done])
+  const toggle = () => {
+    if (done || completing) { onToggle(); return }
+    const delay = completionDelay()
+    if (delay === 0) { onToggle(); return }
+    setCompleting(true)
+    timer.current = setTimeout(() => { setCompleting(false); onToggle() }, delay)
+  }
+  const checked = done || completing
+  const feedback = dragFeedback(prefersReducedMotion())
+  const lift = dragging ? feedback.lift : ''
+
+  const meta = hasMeta && (
+    <div className={`${card ? 'mt-1' : 'mt-0.5'} flex flex-wrap items-center gap-x-2 gap-y-0.5`} data-row-meta>
+      {breadcrumb && <NeutralChip icon="corner-down-right" label={`In ${breadcrumb}`} data-breadcrumb="">{breadcrumb}</NeutralChip>}
+      {date && (
+        <ToneText tone={due ? DUE_TONE[due.tone] : 'indigo'} data-date="" data-evening={task.evening && !done ? '' : undefined} data-recurring={task.recurrence ? '' : undefined}
+          label={[date, hint ? `fixed to ${task.due?.tz}` : null].filter(Boolean).join(', ')}>
+          {date}{hint && <span className="text-faint"> ({hint})</span>}
+        </ToneText>
+      )}
+      {!date && (task.recurrence || task.series_id) && (
+        <ToneText tone="muted" data-recurring={task.recurrence ? '' : undefined}>{task.recurrence ? 'repeats' : 'occurrence'}</ToneText>
+      )}
+      {blockedBy > 0 && !done && (
+        <NeutralChip icon="lock" data-blocked="" label={`Blocked by ${blockedBy}`}>{blockedBy}</NeutralChip>
+      )}
+      {deadline && (
+        <ToneText tone={DEADLINE_TONE[deadline.tone]} icon="hourglass" data-deadline="" label={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}, ${deadline.label}`}>
+          {deadline.label}
+        </ToneText>
+      )}
+      {startText && <ToneText tone="muted" icon={start === 'someday' ? 'archive' : 'calendar-days'} data-start="">{startText}</ToneText>}
+      {task.estimate_minutes ? <NeutralChip data-estimate="" label={`Estimate ${formatMinutes(task.estimate_minutes)}`}>{formatMinutes(task.estimate_minutes)}</NeutralChip> : null}
+      {progress && progress.total > 0 && <NeutralChip data-progress="" label={`${progress.done} of ${progress.total} subtasks completed`}>{progress.done}/{progress.total}</NeutralChip>}
+      {assignee && task.assignee_id && <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} />}
+      {task.description && <NeutralChip icon="list" label="Has notes" data-notes="" />}
+      {comments > 0 && <NeutralChip icon="message-circle" data-comments="" label={`${comments} comment${comments === 1 ? '' : 's'}`}>{comments}</NeutralChip>}
+      {attachments > 0 && <NeutralChip icon="paperclip" data-attachments="" label={`${attachments} attachment${attachments === 1 ? '' : 's'}`}>{attachments}</NeutralChip>}
+      {labels.map((l) => <LabelChip key={l.id} name={l.name} color={l.color} />)}
+      {showProject && project && <NeutralChip dot={project.color} data-project="">{project.name}</NeutralChip>}
+      {showProject && !project && !task.project_id && <NeutralChip data-project="">Inbox</NeutralChip>}
+    </div>
+  )
+
   return (
     <li
       data-task-id={task.id}
@@ -105,19 +169,20 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
       data-drop-target={dropKey}
       data-draggable={onPointerDown ? '' : undefined}
       data-ticked={ticked || undefined}
+      data-completing={completing || undefined}
+      data-dragging={dragging || undefined}
       onPointerDown={onPointerDown}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
-      className={`group relative flex items-start gap-2 rounded-md px-2 row-pad ${dropIndicator === 'inside' ? 'ring-2 ring-accent' : ''} ${card ? `border border-default shadow-sm ${selected ? '' : 'bg-surface'}` : ''} ${ticked ? 'bg-accent-soft' : selected ? 'bg-sunken dark:bg-raised' : 'hover:bg-canvas dark:hover:bg-raised'} ${selected ? 'ring-1 ring-accent/50' : ''}`}
+      className={`group relative flex items-start gap-2 rounded-control px-2 transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2 border border-default bg-surface shadow-1' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'bg-sunken dark:bg-raised ring-1 ring-accent/50') : card ? '' : 'hover:bg-canvas dark:hover:bg-raised'} ${completing ? 'opacity-50' : ''} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
-        // 2 px drop indicator between rows (manual-ordering design D5).
+        // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
         <span aria-hidden="true" data-drop-indicator={dropIndicator}
-          className={`pointer-events-none absolute inset-x-0 h-0.5 rounded bg-accent ${dropIndicator === 'before' ? '-top-px' : '-bottom-px'}`} />
+          className={`${feedback.line} ${dropIndicator === 'before' ? '-top-px' : '-bottom-px'}`} />
       )}
       {!card && (
-        // Every list reserves the same leading slot (ux-overhaul, task-list-presentation
-        // "One row anatomy"), so checkboxes line up across tree and flat views; the
-        // chevron appears only on rows with children.
+        // Every list reserves the same leading slot ("One row anatomy"), so checkboxes line
+        // up across tree and flat views; the chevron appears only on rows with children.
         <span className="mt-0.5 flex h-5 w-4 shrink-0 items-center justify-center" data-leading-slot>
           {onToggleCollapse && hasChildren && (
             <button
@@ -125,108 +190,57 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
               aria-label={collapsed ? 'Expand subtasks' : 'Collapse subtasks'}
               aria-expanded={!collapsed}
               onClick={onToggleCollapse}
-              className="flex h-5 w-4 items-center justify-center rounded text-xs text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised"
+              className="flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11"
             >
               <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
             </button>
           )}
         </span>
       )}
-      {onTick && !readOnly && (
-        // Bulk selection (bulk-edit D3): on hover, on the cursor row, and always while
-        // anything is ticked or touch Select mode is on; 44 px on touch.
-        <label className={`touch-target mt-0.5 inline-flex shrink-0 cursor-pointer items-center justify-center self-start pointer-coarse:-my-2.5 ${showCheckbox || ticked || selected ? '' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 pointer-coarse:hidden'}`}>
-          <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={`Select ${task.title || 'Untitled'}`} data-tick
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
-        </label>
-      )}
-      <button
-        type="button"
-        aria-label={done ? 'Reopen task' : 'Complete task'}
-        onClick={onToggle}
-        disabled={readOnly}
-        className="group/check touch-target inline-flex items-center justify-center mt-0.5 shrink-0 self-start rounded-full pointer-coarse:-my-2.5 pointer-coarse:-ml-3 pointer-coarse:-mr-1"
-      >
-        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${PRIORITY_RING[task.priority]} ${done ? 'bg-faint border-input text-on-accent' : 'group-hover/check:bg-success-soft'}`}>
-          {done && <Icon name="check" size="xs" />}
-        </span>
-      </button>
+      {/* One slot for both boxes ("Bulk selection does not shift rows"): the task's
+          checkbox, replaced by the selection box on hover, focus or tick, in the same
+          20 px square, so the title never moves. */}
+      <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center self-start" data-row-controls data-selecting={onTick && !readOnly && (showCheckbox || ticked) ? '' : undefined}>
+        <button
+          type="button"
+          aria-label={done ? 'Reopen task' : 'Complete task'}
+          onClick={toggle}
+          disabled={readOnly}
+          className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-coarse:-m-3 ${onTick && !readOnly ? `${showCheckbox || ticked ? 'invisible' : 'group-hover:invisible group-focus-within:invisible'}` : ''}`}
+        >
+          <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${PRIORITY_RING[task.priority]} ${checked ? 'bg-faint border-input text-on-accent' : 'group-hover/check:bg-success-soft'} ${completing ? 'row-check-pop' : ''}`}>
+            {checked && <Icon name="check" size="xs" />}
+          </span>
+        </button>
+        {onTick && !readOnly && (
+          <label className={`absolute inset-0 inline-flex cursor-pointer items-center justify-center ${showCheckbox || ticked ? '' : 'invisible group-hover:visible group-focus-within:visible pointer-coarse:hidden'}`}>
+            <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={`Select ${task.title || 'Untitled'}`} data-tick
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
+          </label>
+        )}
+      </span>
       <button type="button" className="min-w-0 flex-1 text-left"
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).
           if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
           onOpen(e)
         }}>
-        <div className={`truncate text-sm ${done ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`}>
-          {undecryptable ? <span className="italic text-faint" title="This title could not be decrypted with this device's key">{task.title}</span>
+        <div className={`user-text text-body ${card ? '' : 'truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 ? 'text-muted' : ''}`} data-row-title>
+          {undecryptable ? <span className="italic text-faint" aria-label="This title could not be decrypted with this device's key">{task.title}</span>
             : task.title || <span className="italic text-faint">Untitled</span>}
           {unencrypted && (
-            <span className="ml-2 rounded bg-warning-soft px-1.5 py-0.5 align-middle text-[11px] text-on-warning-soft" title="The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.">
+            <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft" aria-label="The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.">
               not yet encrypted
             </span>
           )}
-          {progress && progress.total > 0 && (
-            <span className="ml-2 rounded bg-sunken dark:bg-raised px-1.5 py-0.5 align-middle font-mono text-[11px] text-muted" title="Completed subtasks">
-              {progress.done}/{progress.total}
-            </span>
-          )}
         </div>
-        {hasMeta && <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs" data-row-meta>
-          {breadcrumb && <span className="inline-flex min-w-0 items-center gap-1 text-faint" title="Parent task"><Icon name="corner-down-right" size="xs" /><span className="truncate">{breadcrumb}</span></span>}
-          {due && <span className={DUE_TONE[due.tone]}>{due.label}{hint && <> <span className="text-faint" title={`Fixed to ${task.due!.tz}`}>({hint})</span></>}</span>}
-          {blockedBy > 0 && !done && (
-            <span className="inline-flex items-center gap-0.5 text-muted" data-blocked title={`Waiting for ${blockedBy} ${blockedBy === 1 ? 'task' : 'tasks'}`} aria-label={`Blocked by ${blockedBy}`}>
-              <Icon name="lock" size="xs" />{blockedBy}
-            </span>
-          )}
-          {deadline && (
-            <span className={`inline-flex items-center gap-0.5 ${DEADLINE_TONE[deadline.tone]}`} data-deadline
-              title={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}`} aria-label={`Deadline ${formatDate(task.deadline!, 'long', dt.resolved)}, ${deadline.label}`}>
-              <Icon name="hourglass" size="xs" />{deadline.label}
-            </span>
-          )}
-          {startChip && (
-            <span className="inline-flex items-center gap-0.5 text-muted" data-start>
-              <Icon name={startChip.icon} size="xs" />{startChip.label}
-            </span>
-          )}
-          {task.evening && !done && (
-            <span className="text-(--ot-hue-indigo-text)" title="This Evening" aria-label="This Evening" data-evening><Icon name="moon" size="xs" /></span>
-          )}
-          {task.recurrence ? (
-            <span className="text-muted" title={`Repeats ${task.recurrence}`} aria-label={`Repeats ${task.recurrence}`} data-recurring><Icon name="repeat" size="xs" /></span>
-          ) : task.series_id ? (
-            <span className="text-faint" title="Occurrence of a recurring task" aria-label="Occurrence of a recurring task"><Icon name="repeat" size="xs" /></span>
-          ) : null}
-          {task.estimate_minutes ? (
-            <span className="rounded bg-sunken dark:bg-raised px-1.5 font-mono text-[11px] text-muted" title="Estimate" data-estimate>
-              {formatMinutes(task.estimate_minutes)}
-            </span>
-          ) : null}
-          {assignee && task.assignee_id && <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} />}
-          {task.description && <span className="text-faint" title="Has notes" aria-label="Has notes"><Icon name="list" size="xs" /></span>}
-          {comments > 0 && (
-            <span className="text-faint" title={`${comments} comment${comments === 1 ? '' : 's'}`} aria-label={`${comments} comment${comments === 1 ? '' : 's'}`} data-comments>
-              <span className="inline-flex items-center gap-0.5"><Icon name="message-circle" size="xs" />{comments}</span>
-            </span>
-          )}
-          {attachments > 0 && (
-            <span className="text-faint" title={`${attachments} attachment${attachments === 1 ? '' : 's'}`} aria-label={`${attachments} attachment${attachments === 1 ? '' : 's'}`} data-attachments>
-              <span className="inline-flex items-center gap-0.5"><Icon name="paperclip" size="xs" />{attachments}</span>
-            </span>
-          )}
-          {labels.length > 0 && (
-            <span className="flex flex-wrap gap-1">{labels.map((l) => <LabelChip key={l.id} label={l} />)}</span>
-          )}
-          {showProject && project && (
-            <span className="flex items-center gap-1 text-muted">
-              <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: project.color }} />
-              {project.name}
-            </span>
-          )}
-          {showProject && !project && !task.project_id && <span className="text-faint">Inbox</span>}
-        </div>}
+        {meta}
       </button>
     </li>
   )
+}
+
+/** The board card: the same row data as a card (sections-and-boards "Card content"). */
+export function TaskCard(props: Omit<TaskRowProps, 'card'>) {
+  return <TaskRow {...props} card />
 }

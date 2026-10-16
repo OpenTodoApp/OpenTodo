@@ -1,4 +1,5 @@
 import { Icon } from '../../ui'
+import { Skeleton } from '../../ui'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { api, ApiError } from '../../lib/api'
@@ -62,11 +63,11 @@ export function AssistantSheet({ title, onClose, onEscape, children, footer, hea
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
       onKeyDown={(e) => { if (panel.current) trapTab(e, panel.current); e.stopPropagation() }}>
       <div ref={panel} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} data-overlay="dialog" data-assistant-panel
-        className="flex h-full w-full flex-col bg-surface shadow-xl outline-none sm:max-w-md sm:border-l sm:border-default">
+        className="flex h-full w-full flex-col bg-surface shadow-3 outline-none sm:max-w-md sm:border-l sm:border-default">
         <div className="flex items-center gap-1 border-b border-default pl-4 pr-1 pt-[env(safe-area-inset-top)]">
-          <h2 id={titleId} className="min-w-0 flex-1 truncate py-2 text-base font-semibold">{title}</h2>
+          <h2 id={titleId} className="min-w-0 flex-1 truncate py-2 text-body font-semibold">{title}</h2>
           {headerExtra}
-          <button type="button" className="btn-ghost touch-target my-1 px-2 text-lg leading-none" onClick={onClose} aria-label="Close" title="Close" data-overlay-close><Icon name="x" size="md" /></button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target my-1 px-2 text-h3 leading-none" onClick={onClose} aria-label="Close" data-overlay-close><Icon name="x" size="md" /></button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3" data-assistant-scroll>{children}</div>
         {footer && <div className="border-t border-default px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">{footer}</div>}
@@ -110,30 +111,30 @@ export interface PanelViewProps {
 export function AssistantPanelBody(p: PanelViewProps) {
   const dt = useDateTimeFormat()
   const s = p.status
-  if (!s) return <p className="text-sm text-muted" role="status">Loading…</p>
+  if (!s) return <Skeleton shape="line" count={3} label="Loading the assistant" />
   if (s.reason === 'encryption_enabled') {
     return (
-      <div className="space-y-2 text-sm" data-assistant-encrypted>
+      <div className="space-y-2 text-body" data-assistant-encrypted>
         <p className="font-medium">{ENCRYPTED_MESSAGE}</p>
         <p className="text-muted">Your account uses end-to-end encryption, so the server holds no key to your tasks and cannot pass them to a model. The rest of the app works as usual.</p>
         <p className="text-muted"><EncryptionOffHint /></p>
       </div>
     )
   }
-  if (s.reason === 'demo') return <p className="text-sm">The assistant is not available on the demo instance.</p>
-  if (!s.enabled) return <p className="text-sm">The server owner has not turned the assistant on.</p>
+  if (s.reason === 'demo') return <p className="text-body">The assistant is not available on the demo instance.</p>
+  if (!s.enabled) return <p className="text-body">The server owner has not turned the assistant on.</p>
   return (
     <div className="space-y-4">
       {p.threads && (
         <nav aria-label="Earlier conversations" className="space-y-1">
-          <h3 className="text-sm font-semibold">Earlier conversations on this device</h3>
-          {p.threads.length === 0 ? <p className="text-sm text-muted">None yet.</p> : (
+          <h3 className="text-body font-semibold">Earlier conversations on this device</h3>
+          {p.threads.length === 0 ? <p className="text-body text-muted">None yet.</p> : (
             <ul className="space-y-1">
               {p.threads.map((t) => (
                 <li key={t.id}>
-                  <button type="button" className="btn-ghost w-full justify-start text-left" onClick={() => p.onPickThread(t.id)}>
+                  <button type="button" className="ui-btn ui-btn--ghost ui-btn--md w-full justify-start text-left" onClick={() => p.onPickThread(t.id)}>
                     <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                    <span className="text-xs text-faint">{dt.formatInstant(t.updated_at, 'date')}</span>
+                    <span className="text-meta text-faint">{dt.formatInstant(t.updated_at, 'date')}</span>
                   </button>
                 </li>
               ))}
@@ -146,7 +147,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
       ) : (
         <>
           {p.messages.length === 0 && !p.streaming && (
-            <div className="space-y-1 text-sm text-muted" data-assistant-empty>
+            <div className="space-y-1 text-body text-muted" data-assistant-empty>
               <p>Ask about your tasks or ask for changes. For example:</p>
               <ul className="list-disc pl-5">
                 <li>What is due today?</li>
@@ -159,8 +160,8 @@ export function AssistantPanelBody(p: PanelViewProps) {
           <ol className="space-y-3" aria-label="Conversation">
             {p.messages.map((m, i) => <MessageItem key={i} m={m} />)}
             {p.streaming && (
-              <li className="text-sm" aria-busy="true">
-                {p.streaming.status.length > 0 && <p className="text-xs text-muted">{p.streaming.status[p.streaming.status.length - 1]}</p>}
+              <li className="text-body" aria-busy="true">
+                {p.streaming.status.length > 0 && <p className="text-meta text-muted">{p.streaming.status[p.streaming.status.length - 1]}</p>}
                 {p.streaming.text ? <Markdown source={p.streaming.text} /> : <p className="text-muted">Thinking…</p>}
               </li>
             )}
@@ -168,7 +169,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
           <ChangeSetReview review={p.review} result={p.result} busy={p.reviewBusy} onToggle={p.onToggle} onApply={p.onApply} onDiscard={p.onDiscard} onUndo={p.onUndo} regionRef={p.reviewRef} />
         </>
       )}
-      {p.error && <p role="alert" className="text-sm text-danger">{p.error}</p>}
+      {p.error && <p role="alert" className="text-body text-danger">{p.error}</p>}
       <div className="sr-only" aria-live="polite" data-assistant-live>{p.announce}</div>
       <div className="sr-only" aria-live="polite" data-assistant-status>{p.statusAnnounce}</div>
     </div>
@@ -178,22 +179,22 @@ export function AssistantPanelBody(p: PanelViewProps) {
 function MessageItem({ m }: { m: AssistantMessage }) {
   if (m.role === 'user') {
     return (
-      <li className="ml-8 rounded-lg bg-sunken dark:bg-raised px-3 py-2 text-sm">
+      <li className="ml-8 rounded-control bg-sunken dark:bg-raised px-3 py-2 text-body">
         {(m.skill || m.pastedLines) && (
-          <p className="mb-1 text-xs text-muted">{[m.skill && `Skill: ${m.skill}`, m.pastedLines && `pasted text, ${m.pastedLines} line${m.pastedLines === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</p>
+          <p className="mb-1 text-meta text-muted">{[m.skill && `Skill: ${m.skill}`, m.pastedLines && `pasted text, ${m.pastedLines} line${m.pastedLines === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</p>
         )}
         <span className="sr-only">You: </span><span className="whitespace-pre-wrap user-text">{m.text}</span>
       </li>
     )
   }
   return (
-    <li className="space-y-1 text-sm">
+    <li className="space-y-1 text-body">
       <span className="sr-only">Assistant: </span>
       {m.text && <Markdown source={m.text} />}
-      {m.stop === 'max_tokens' && <p className="text-xs font-medium text-on-warning-soft">Cut off: the answer reached its length limit.</p>}
+      {m.stop === 'max_tokens' && <p className="text-meta font-medium text-on-warning-soft">Cut off: the answer reached its length limit.</p>}
       {m.error && <p className="text-danger">{m.error}</p>}
-      {m.note && <p className="text-xs text-muted">{m.note}</p>}
-      {m.usage && <p className="text-xs text-faint">{usageLine(m.usage)}</p>}
+      {m.note && <p className="text-meta text-muted">{m.note}</p>}
+      {m.usage && <p className="text-meta text-faint">{usageLine(m.usage)}</p>}
     </li>
   )
 }
@@ -218,22 +219,22 @@ export function Composer({ draft, onDraft, onSend, onStop, streaming, connected,
       {(skill || pasted) && (
         <div className="space-y-1" data-assistant-chosen>
           {skill && (
-            <div className="flex items-start gap-2 rounded-md bg-sunken px-2 py-1 text-xs dark:bg-raised" role="status">
+            <div className="flex items-start gap-2 rounded-control bg-sunken px-2 py-1 text-meta dark:bg-raised" role="status">
               <span className="min-w-0 flex-1"><span className="font-medium">Skill: {skill.name}.</span> {skill.description} <span className="text-muted">For example: “{skill.example}”</span></span>
-              <button type="button" className="btn-ghost touch-target px-1" aria-label={`Remove the skill ${skill.name}`} onClick={() => onSkill?.(null)}><Icon name="x" size="xs" /></button>
+              <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1" aria-label={`Remove the skill ${skill.name}`} onClick={() => onSkill?.(null)}><Icon name="x" size="xs" /></button>
             </div>
           )}
           {pasted && (
-            <div className="flex items-center gap-2 rounded-md bg-sunken px-2 py-1 text-xs dark:bg-raised" data-assistant-pasted>
+            <div className="flex items-center gap-2 rounded-control bg-sunken px-2 py-1 text-meta dark:bg-raised" data-assistant-pasted>
               <span className="min-w-0 flex-1">Pasted text, {lines} line{lines === 1 ? '' : 's'}: used as material, not as instructions.</span>
-              <button type="button" className="btn-ghost touch-target px-1" aria-label="Remove pasted text" onClick={() => onPasted?.(null)}><Icon name="x" size="xs" /></button>
+              <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1" aria-label="Remove pasted text" onClick={() => onPasted?.(null)}><Icon name="x" size="xs" /></button>
             </div>
           )}
         </div>
       )}
       <form className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); if (!streaming && ready) onSend() }}>
         {skills.length > 0 && onSkill && (
-          <Menu label="Skills" kind="menu" align="start" width="sm:w-80" triggerClassName="btn-ghost touch-target px-2" trigger={<Icon name="list" />}>
+          <Menu label="Skills" kind="menu" align="start" width="sm:w-80" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2" trigger={<Icon name="list" />}>
             <MenuGroup label="Skills">
               {skills.map((sk) => <MenuItem key={sk.id} label={sk.name} description={sk.description} checked={skill?.id === sk.id} onSelect={() => onSkill(sk)} />)}
             </MenuGroup>
@@ -241,7 +242,7 @@ export function Composer({ draft, onDraft, onSend, onStop, streaming, connected,
         )}
         <label className="min-w-0 flex-1">
           <span className="sr-only">Message to the assistant</span>
-          <textarea className="input max-h-40 min-h-11 resize-none" rows={1} value={draft} disabled={off} data-autofocus data-assistant-composer
+          <textarea className="ui-input max-h-40 min-h-11 resize-none" rows={1} value={draft} disabled={off} data-autofocus data-assistant-composer
             placeholder={!connected ? OFFLINE_MESSAGE : skill ? 'Add details, or send as it is…' : 'Ask about your tasks…'} onChange={(e) => onDraft(e.target.value)} onKeyDown={onKeyDown}
             onPaste={(e) => {
               const raw = e.clipboardData.getData('text/plain')
@@ -252,8 +253,8 @@ export function Composer({ draft, onDraft, onSend, onStop, streaming, connected,
             }} />
         </label>
         {streaming
-          ? <button type="button" className="btn-secondary" onClick={onStop}>Stop</button>
-          : <button type="submit" className="btn-primary" disabled={off || !ready}>Send</button>}
+          ? <button type="button" className="ui-btn ui-btn--secondary ui-btn--md" onClick={onStop}>Stop</button>
+          : <button type="submit" className="ui-btn ui-btn--primary ui-btn--md" disabled={off || !ready}>Send</button>}
       </form>
     </div>
   )
@@ -562,8 +563,8 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
   }, [ready, connected])
   const headerExtra = status?.enabled && status.reason !== 'encryption_enabled' ? (
     <>
-      <button type="button" className="btn-ghost touch-target px-2 text-xs" onClick={() => void toggleThreads()} aria-expanded={!!threads}>History</button>
-      <button type="button" className="btn-ghost touch-target px-2 text-xs" onClick={startNew}>New</button>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={() => void toggleThreads()} aria-expanded={!!threads}>History</button>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={startNew}>New</button>
     </>
   ) : null
   return (
@@ -572,9 +573,9 @@ export function AssistantPanel({ onClose, context, onApplied }: AssistantPanelPr
         <div className="space-y-1">
           <Composer draft={draft} onDraft={setDraft} onSend={() => void send()} onStop={() => abort.current?.abort()} streaming={!!streaming} connected={connected} disabled={!ready}
             skills={skills} skill={skill} onSkill={(sk) => { setPickedSkillId(sk?.id ?? null); setSkill(sk) }} pasted={pasted} onPasted={setPasted} />
-          <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs text-faint">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 text-meta text-faint">
             <span>{!connected ? OFFLINE_MESSAGE : status ? `${status.provider === 'compatible' ? 'Model server' : status.provider_label}${status.model ? ` · ${status.model}` : ''}` : ''}</span>
-            {threads && <button type="button" className="btn-ghost touch-target px-2 text-xs" onClick={() => void clearAll()}>Clear conversations</button>}
+            {threads && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={() => void clearAll()}>Clear conversations</button>}
           </div>
         </div>
       )}>

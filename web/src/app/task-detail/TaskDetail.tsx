@@ -9,6 +9,7 @@ import { progressOf } from '../../lib/subtasks'
 import { duplicateTask } from '../../lib/templates'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { IconButton, DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
+import { Tooltip } from '../../ui'
 import { Badge } from '../../ui'
 import { Icon } from '../../ui'
 import { MenuItem, MenuSeparator } from '../../ui'
@@ -143,7 +144,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
         />
         {progress.total > 0 && <Badge hue="slate" title="Completed subtasks">{progress.done}/{progress.total}</Badge>}
         {copied && <span role="status" className="text-meta text-muted">Link copied</span>}
-        <Menu kind="menu" label="Task actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="btn-ghost touch-target px-2 py-1.5" width="sm:w-60">
+        <Menu kind="menu" label="Task actions" trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
           <MenuItem label="Copy link" icon="link" onSelect={copyLink} />
           <MenuItem label="Help" icon="circle-help" description="The guide to the task panel" onSelect={() => openHelp('task-panel')} />
           {!page && <MenuItem label="Expand" icon="external-link" description="Open the task as a page" onSelect={() => navigate({ view: 'task', id: task.id })} />}
@@ -164,15 +165,19 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
       <div className={page ? 'min-w-0' : 'min-w-0 flex-1 overflow-y-auto'}>
         <div className="min-w-0 space-y-4 p-4">
           {parent && (
-            <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(parent.id)} title="Open parent task">
-              <Icon name="corner-down-right" />{parent.title || 'Untitled'}
-              {parent.deleted_at ? ' (deleted)' : parent.completed_at && !task.completed_at ? ' (completed)' : ''}
-            </button>
+            <Tooltip label="Open parent task">
+              <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(parent.id)}>
+                <Icon name="corner-down-right" />{parent.title || 'Untitled'}
+                {parent.deleted_at ? ' (deleted)' : parent.completed_at && !task.completed_at ? ' (completed)' : ''}
+              </button>
+            </Tooltip>
           )}
           {series && (
-            <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(series.id)} title="Open the recurring task">
-              <Icon name="repeat" />{task.completed_at ? 'Completed occurrence' : 'Single occurrence'} of {series.title || 'Untitled'}{series.deleted_at ? ' (deleted)' : ''}
-            </button>
+            <Tooltip label="Open the recurring task">
+              <button type="button" className="flex items-center gap-1 text-meta text-faint hover:text-default" onClick={() => onOpen?.(series.id)}>
+                <Icon name="repeat" />{task.completed_at ? 'Completed occurrence' : 'Single occurrence'} of {series.title || 'Untitled'}{series.deleted_at ? ' (deleted)' : ''}
+              </button>
+            </Tooltip>
           )}
           <NotesBoundary task={task} readOnly={readOnly}>
             <Suspense fallback={<NotesPreview text={task.description} />}>

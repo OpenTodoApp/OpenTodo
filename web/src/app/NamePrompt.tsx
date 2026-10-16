@@ -25,13 +25,13 @@ export function NamePrompt({ title, label, initial = '', confirm = 'Save', hint,
   return (
     <Dialog title={title} label={title} onClose={onCancel}>
       <form onSubmit={(e) => void submit(e)}>
-        <input className="input" autoFocus aria-label={label} placeholder={label} value={name}
+        <input className="ui-input" autoFocus aria-label={label} placeholder={label} value={name}
           onChange={(e) => { setName(e.target.value); setError(null) }} />
-        {error && <p role="alert" className="mt-1 text-xs text-danger">{error}</p>}
-        {hint && <p className="mt-1 text-xs text-faint">{hint}</p>}
+        {error && <p role="alert" className="mt-1 text-meta text-danger">{error}</p>}
+        {hint && <p className="mt-1 text-meta text-faint">{hint}</p>}
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" className="btn-ghost text-sm" onClick={onCancel}>Cancel</button>
-          <button type="submit" className="btn-primary text-sm">{confirm}</button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md text-body" onClick={onCancel}>Cancel</button>
+          <button type="submit" className="ui-btn ui-btn--primary ui-btn--md text-body">{confirm}</button>
         </div>
       </form>
     </Dialog>

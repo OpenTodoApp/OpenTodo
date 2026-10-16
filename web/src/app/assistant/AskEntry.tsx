@@ -56,7 +56,7 @@ export function AskScreen({ role }: { role?: AccountRole }) {
       {mode === 'composer' && (
         <>
           <AskComposer skills={skills} onAsk={ask} examples={false} autoFocus />
-          <h2 className="mb-2 mt-6 text-sm font-semibold">Skills</h2>
+          <h2 className="mb-2 mt-6 text-body font-semibold">Skills</h2>
           <ul className="grid gap-3 sm:grid-cols-2" aria-label="Skills">
             {skills.map((s) => (
               <li key={s.id}>

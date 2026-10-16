@@ -36,15 +36,15 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
 
   return (
     <>
-      <button ref={ref} className={`btn-ghost touch-target relative text-sm ${compact ? 'w-full justify-center px-0' : ''}`} aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open}
+      <button ref={ref} className={`ui-btn ui-btn--ghost ui-btn--md touch-target relative text-body ${compact ? 'w-full justify-center px-0' : ''}`} aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'} aria-expanded={open}
         aria-haspopup="dialog" onClick={() => setOpen((v) => !v)} data-notifications>
         <Icon name="bell" />
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-danger px-1 text-center text-[10px] font-semibold leading-4 text-on-accent" data-unread>{unread}</span>
+          <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-danger px-1 text-center text-hint font-semibold leading-4 text-on-accent" data-unread>{unread}</span>
         )}
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label="Notifications" width="sm:w-80" className="py-1">
-          {list.length === 0 && <p className="px-3 py-2 text-xs text-faint">No notifications.</p>}
+          {list.length === 0 && <p className="px-3 py-2 text-meta text-faint">No notifications.</p>}
           <ul>
             {list.map((n) => (
               <li key={n.id}>
@@ -54,14 +54,14 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                   <span className="user-text min-w-0 flex-1">
                     {n.kind === 'mentioned' ? (
                       <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> mentioned you on <strong>{n.payload.taskTitle || 'a task'}</strong>
-                        {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-xs text-muted">“{n.payload.excerpt}”</span>}
+                        {'excerpt' in n.payload && n.payload.excerpt && <span className="block truncate text-meta text-muted">“{n.payload.excerpt}”</span>}
                       </span>
                     ) : n.kind === 'unblocked' && 'blockerTitle' in n.payload ? (
                       <span className="block" data-kind="unblocked"><strong>{n.payload.actorName || 'Someone'}</strong> completed <strong>{n.payload.blockerTitle || 'a task'}</strong>: <strong>{n.payload.taskTitle || 'your task'}</strong> is ready to start</span>
                     ) : (
                       <span className="block"><strong>{n.payload.actorName || 'Someone'}</strong> assigned you <strong>{n.payload.taskTitle || 'a task'}</strong></span>
                     )}
-                    <span className="block text-xs text-faint">
+                    <span className="block text-meta text-faint">
                       {n.payload.projectName ? `${n.payload.projectName} · ` : ''}{dt.formatInstant(n.createdAt, 'datetime')}
                     </span>
                   </span>

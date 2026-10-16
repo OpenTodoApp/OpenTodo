@@ -2,6 +2,7 @@ import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, us
 import { keysOf } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 import type { HueName } from '../ui'
+import { Tooltip } from '../ui'
 import { Icon } from '../ui'
 import { HelpLink } from './help/HelpLink'
 import { describeDue, formatDate, todayISO } from '../lib/dates'
@@ -206,10 +207,10 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   return (
     <form id={formId} onSubmit={(e) => void submit(e)}>
       <div className="flex items-center gap-2">
-        <span className="text-xl leading-none text-accent">+</span>
+        <span className="text-h2 leading-none text-accent">+</span>
         <input
           ref={inputRef}
-          className="input border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent"
+          className="ui-input border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent"
           placeholder={placeholder}
           value={value}
           onChange={(e) => change(e.target.value)}
@@ -242,28 +243,29 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           aria-describedby={chips.length ? 'quick-add-preview' : undefined}
         />
         {voice.enabled && (
-          <button
-            type="button"
-            className={`relative shrink-0 rounded-full p-1.5 ${voice.listening ? 'bg-danger-soft text-danger' : 'text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised'}`}
-            aria-pressed={voice.listening}
-            aria-label={voice.listening ? 'Stop dictation' : 'Dictate a task'}
-            title={voice.listening ? 'Stop dictation (Esc)' : voiceShortcut ? `Dictate a task (${keysOf('list.dictate')})` : 'Dictate a task'}
-            data-voice-button
-            // Keep focus and caret in the input: the transcript goes where the caret is.
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={voice.toggle}
-          >
-            {voice.listening && <span className="absolute inset-0 animate-ping rounded-full bg-danger/40 motion-reduce:hidden" aria-hidden="true" />}
-            <Icon name="mic" className="relative" />
-          </button>
+          <Tooltip label={voice.listening ? 'Stop dictation' : 'Dictate a task'} shortcut={voice.listening ? 'Esc' : voiceShortcut ? keysOf('list.dictate') : undefined}>
+            <button
+              type="button"
+              className={`relative shrink-0 rounded-full p-1.5 ${voice.listening ? 'bg-danger-soft text-danger' : 'text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised'}`}
+              aria-pressed={voice.listening}
+              aria-label={voice.listening ? 'Stop dictation' : 'Dictate a task'}
+              data-voice-button
+              // Keep focus and caret in the input: the transcript goes where the caret is.
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={voice.toggle}
+            >
+              {voice.listening && <span className="absolute inset-0 animate-ping rounded-full bg-danger/40 motion-reduce:hidden" aria-hidden="true" />}
+              <Icon name="mic" className="relative" />
+            </button>
+          </Tooltip>
         )}
-        {!hideHint && hints && <span className="kbd hidden sm:inline" data-quick-add-hint>{keysOf('list.quick-add')}</span>}
+        {!hideHint && hints && <span className="ui-kbd hidden sm:inline" data-quick-add-hint>{keysOf('list.quick-add')}</span>}
       </div>
       {voice.enabled && (
         <>
           <span className="sr-only" role="status" aria-live="polite" data-voice-status>{voice.view.announcement}</span>
           {voice.view.message && (
-            <p className="mt-1 flex items-start gap-2 pl-6 text-xs text-on-warning-soft" data-voice-message>
+            <p className="mt-1 flex items-start gap-2 pl-6 text-meta text-on-warning-soft" data-voice-message>
               <span className="flex-1">{voice.view.message}</span>
               <button type="button" className="underline" onClick={voice.dismissMessage}>Dismiss</button>
             </p>
@@ -272,16 +274,15 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
       )}
       <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
         {chips.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-6 text-xs">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-6 text-meta">
             {chips.map((c, i) => {
               const text = chipText(c, projects, labels, parsed ? { due: parsed.due, datedByPhrase: chips.some((x) => x.kind === 'due') } : undefined)
               const source = c.spans.map((s) => s.text).join(' … ')
               const label = c.kind === 'label' ? findLabel(String(c.value), labels) : undefined
               return (
+                <Tooltip key={c.key} label={`${KIND_NAME[c.kind]} from “${source}”`}>
                 <span
-                  key={c.key}
                   data-chip={c.kind}
-                  title={`${KIND_NAME[c.kind]} from “${source}”`}
                   data-hue={CHIP_HUE[c.kind]}
                   className={`inline-flex items-center gap-1 rounded-full border border-hue-solid/40 bg-hue-soft py-0.5 pl-2 pr-1 text-hue ${highlight === i ? 'ring-2 ring-focus' : ''}`}
                 >
@@ -291,16 +292,17 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
                   {c.kind === 'someday' && <Icon name="archive" size="xs" />}
                   {c.kind === 'evening' && <Icon name="moon" size="xs" />}
                   {text}
-                  {c.kind === 'label' && !label && <span className="opacity-60" data-new-label>new</span>}
+                  {c.kind === 'label' && !label && <span className="text-muted" data-new-label>new</span>}
                   <button
                     type="button"
-                    className="rounded-full px-1 leading-none opacity-60 hover:bg-sunken hover:opacity-100"
+                    className="-my-1 inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-muted hover:bg-sunken hover:text-default"
                     aria-label={`Keep “${source}” as text`}
                     onClick={() => dismiss(c)}
                   >
                     ×
                   </button>
                 </span>
+                </Tooltip>
               )
             })}
             <span className="text-muted" data-testid="quick-add-title">

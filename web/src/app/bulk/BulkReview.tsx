@@ -31,7 +31,7 @@ export function BulkReview({ title, plan, onClose, onApplied }: { title: string;
           <ChangeSetReview review={review} result={null} busy={busy}
             onToggle={(i, checked) => setReview({ ...review, items: review.items.map((it, j) => (j === i ? { ...it, checked } : it)) })}
             onApply={() => void apply()} onDiscard={onClose} onUndo={() => {}} />
-        ) : <p className="text-sm text-muted" role="status">Preparing the changes…</p>}
+        ) : <p className="text-body text-muted" role="status">Preparing the changes…</p>}
       </div>
     </Dialog>
   )

@@ -108,7 +108,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
   }
 
   return (
-    <div className="border-t border-default text-xs" data-vim-layer>
+    <div className="border-t border-default text-meta" data-vim-layer>
       {cmdOpen && (
         <form className="flex items-center gap-1 border-b border-default px-3 py-1 font-mono"
           onSubmit={(e) => { e.preventDefault(); void run() }}>
@@ -141,7 +141,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
       )}
       <div className="flex items-center gap-2 px-3 py-0.5">
         <span role="status" aria-label="Vim mode" data-vim-mode={mode}
-          className={`rounded px-1.5 font-mono font-semibold ${mode === 'insert' ? 'bg-accent-soft text-on-accent-soft' : mode === 'command' ? 'bg-warning-soft text-on-warning-soft' : 'bg-sunken dark:bg-raised text-muted'}`}>
+          className={`rounded-control px-1.5 font-mono font-semibold ${mode === 'insert' ? 'bg-accent-soft text-on-accent-soft' : mode === 'command' ? 'bg-warning-soft text-on-warning-soft' : 'bg-sunken dark:bg-raised text-muted'}`}>
           {mode.toUpperCase()}
         </span>
         <span className="font-mono text-muted" data-vim-pending>{pending}</span>

@@ -3,6 +3,7 @@
 // this device; Shift+C switches to Comments and focuses the composer. History is
 // a separate chunk, loaded when its tab is first opened.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { Skeleton } from '../../ui'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { db } from '../../lib/db'
 import type { Task } from '../../lib/types'
@@ -79,7 +80,7 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost 
           <ActivityTab task={task} userId={userId} onOpenComment={(id) => { setFocusComment(id); setTab('comments') }} />
         )}
         {tab === 'history' && (
-          <Suspense fallback={<p className="text-meta text-faint">Loading…</p>}>
+          <Suspense fallback={<Skeleton shape="line" count={4} label="Loading history" />}>
             <HistoryTab taskId={task.id} readOnly={readOnly} onRestored={(id) => id !== task.id && onOpen?.(id)} />
           </Suspense>
         )}

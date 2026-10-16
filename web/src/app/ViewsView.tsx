@@ -8,6 +8,7 @@ import { NamePrompt } from './NamePrompt'
 import { navigate } from './router'
 import { useStartView, useViewData, useViews } from './useViews'
 import { Button, Icon, type IconName, ListGroupHeader, PageBody, PageHeader } from '../ui'
+import { Tooltip } from '../ui'
 import { ActionMenu, type ActionGroup } from './menus/ActionMenu'
 
 export const viewIcon = (v: View): IconName => (isDashboard(v) ? 'kanban' : 'list')
@@ -66,7 +67,7 @@ export function ViewMenu({ view, align = 'end', className = '' }: { view: View; 
   return (
     <>
       <ActionMenu label={`Menu for view ${view.name}`} title={view.name} groups={groups} align={align}
-        triggerClassName={`touch-target rounded px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
+        triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
       {renaming && (
         <NamePrompt title="Rename view" label="View name" initial={view.name} onCancel={() => setRenaming(false)}
           onSubmit={async (name) => { await updateView(view.id, { name }); setRenaming(false) }} />
@@ -86,15 +87,15 @@ export function ViewsView() {
   const row = (v: View) => {
     const s = summaries.get(v.id)
     return (
-      <li key={v.id} className="group flex items-center gap-2 rounded-md hover:bg-sunken dark:hover:bg-raised">
-        <button className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left text-sm" onClick={() => navigate({ view: 'view', id: v.id })}>
+      <li key={v.id} className="group flex items-center gap-2 rounded-control hover:bg-sunken dark:hover:bg-raised">
+        <button className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left text-body" onClick={() => navigate({ view: 'view', id: v.id })}>
           <span className="flex w-5 justify-center text-faint"><Icon name={viewIcon(v)} /></span>
           <span className="truncate font-medium">{v.name}</span>
-          <code className="hidden truncate text-xs text-faint sm:inline">{isDashboard(v) ? `${v.panels.length} panel${v.panels.length === 1 ? '' : 's'}` : v.query}</code>
+          <code className="hidden truncate text-meta text-faint sm:inline">{isDashboard(v) ? `${v.panels.length} panel${v.panels.length === 1 ? '' : 's'}` : v.query}</code>
           <span className="flex-1" />
-          {s && (s.ok ? <span className="text-xs text-faint">{s.count}</span> : <span className="text-xs text-danger" title={s.error}>error</span>)}
+          {s && (s.ok ? <span className="text-meta text-faint">{s.count}</span> : <Tooltip label={s.error}><span className="text-meta text-danger">error</span></Tooltip>)}
         </button>
-        <button className="btn-ghost px-2 py-1 text-xs" onClick={() => void setPinned(v.id, !v.pinned)} aria-label={`${v.pinned ? 'Unpin' : 'Pin'} ${v.name}`}>
+        <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-meta" onClick={() => void setPinned(v.id, !v.pinned)} aria-label={`${v.pinned ? 'Unpin' : 'Pin'} ${v.name}`}>
           {v.pinned ? 'Unpin' : 'Pin'}
         </button>
         <ViewMenu view={v} />
