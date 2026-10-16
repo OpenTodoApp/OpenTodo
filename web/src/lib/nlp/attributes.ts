@@ -84,9 +84,9 @@ export function matchPriority(token: string): Priority | null {
  * (an active language writes clock times as "15h"). Out-of-range values do not match.
  */
 export function matchDuration(token: string, opts: { bareHourIsTime: boolean }): number | null {
-  const item = token.replace(/[,;]+$/, '').toLowerCase()
-  const plus = item.startsWith('+')
-  const body = plus ? item.slice(1) : item
+  const t = token.replace(/[,;]+$/, '').toLowerCase()
+  const plus = t.startsWith('+')
+  const body = plus ? t.slice(1) : t
   if (!body) return null
   let minutes: number | null = null
   let m: RegExpExecArray | null

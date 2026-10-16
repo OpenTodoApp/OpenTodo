@@ -13,6 +13,7 @@ import {
   GROUP_BY_OPTIONS, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_KINDS,
   type GroupBy, type Project, type SortBy, type SortDir, type Task, type View, type ViewKind,
 } from './types'
+import { t, msg } from './i18n'
 
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
 // One definition shared by the list, its grouping and the sidebar count.
@@ -123,7 +124,7 @@ export function activeViews(views: View[]): View[] {
 /** Throws a readable error when a list view's query does not parse; dashboards carry no query. */
 function checkQuery(query: string, kind: ViewKind): void {
   if (kind === 'dashboard') return
-  if (!query.trim()) throw new Error('The query must not be empty')
+  if (!query.trim()) throw new Error(t('The query must not be empty'))
   parse(query) // FilterSyntaxError carries the message shown by the Filter view
 }
 
@@ -145,7 +146,7 @@ export interface NewView {
 /** Create a view, last in sidebar order. Pinned unless told otherwise (the Filter view's "Save view"). */
 export async function createView(input: NewView): Promise<string> {
   const name = input.name.trim()
-  if (!name) throw new Error('A view needs a name')
+  if (!name) throw new Error(t('A view needs a name'))
   const kind = input.kind ?? 'list'
   const query = kind === 'dashboard' ? '' : (input.query ?? '').trim()
   checkQuery(query, kind)
@@ -178,7 +179,7 @@ export async function updateView(id: string, patch: ViewPatch): Promise<void> {
   for (const [k, v] of Object.entries(patch)) if ((view as unknown as Record<string, unknown>)[k] !== v) next[k] = v
   if (typeof next.name === 'string') {
     next.name = next.name.trim()
-    if (!next.name) throw new Error('A view needs a name')
+    if (!next.name) throw new Error(t('A view needs a name'))
   }
   if (typeof next.query === 'string') {
     next.query = next.query.trim()
@@ -304,7 +305,7 @@ function compileView(view: Pick<View, 'query'>, ctx: FilterContext): Compiled | 
   } catch (e) {
     return { ok: false, error: (e as Error).message }
   }
-  if (!ast) return { ok: false, error: 'This view has no query' }
+  if (!ast) return { ok: false, error: t('This view has no query') }
   // Like the Filter view and the other cross-project views, tasks of archived projects stay out.
   const archived = new Set(ctx.projects.filter((p) => p.archived && !p.deleted_at).map((p) => p.id))
   let compiled: ReturnType<typeof compile>
@@ -364,7 +365,7 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext):
       return tasks.length ? [{ key: 'all', heading: '', tasks }] : []
     case 'priority':
       for (const tk of tasks) put(`p${tk.priority}`, tk)
-      return emit([1, 2, 3, 4].map((p) => [`p${p}`, `Priority ${p}`]))
+      return emit([1, 2, 3, 4].map((p) => [`p${p}`, t('Priority {p}', { p })]))
     case 'due': {
       const today = ctx.today
       const tomorrow = addDaysISO(today, 1)
@@ -382,9 +383,9 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext):
         }
       }
       return emit([
-        ['overdue', 'Overdue'], ['today', 'Today'], ['tomorrow', 'Tomorrow'],
+        ['overdue', t('Overdue')], ['today', t('Today')], ['tomorrow', t('Tomorrow')],
         ...[...dates].sort().map((d): [string, string] => [d, formatDateHeading(d, today)]),
-        ['none', 'No date'],
+        ['none', t('No date')],
       ])
     }
     case 'label': {
@@ -396,7 +397,7 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext):
         if (own.length === 0) put('none', tVar)
         for (const id of own) put(id, tVar)
       }
-      return emit([...labels.map((l): [string, string] => [l.id, l.name]), ['none', 'No label']])
+      return emit([...labels.map((l): [string, string] => [l.id, l.name]), ['none', t('No label')]])
     }
     case 'project': {
       const projects = ctx.projects.filter((p) => !p.deleted_at) as Project[]
@@ -404,10 +405,10 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: FilterContext):
       for (const tVar of tasks) put(tVar.project_id && byId.has(tVar.project_id) ? tVar.project_id : tVar.project_id ? 'unknown' : 'inbox', tVar)
       const path = (id: string) => [...ancestors(id, byId).reverse(), byId.get(id)!].map((p) => p.name).join(' › ')
       // Inbox first, then projects in sidebar (tree) order.
-      const order: [string, string][] = [['inbox', 'Inbox']]
+      const order: [string, string][] = [['inbox', t('Inbox')]]
       for (const n of flattenTree(buildProjectTree(projects).roots)) order.push([n.id, path(n.id)])
       for (const p of projects) if (!order.some(([k]) => k === p.id)) order.push([p.id, path(p.id)])
-      order.push(['unknown', 'Other'])
+      order.push(['unknown', t('Other')])
       return emit(order)
     }
   }
@@ -495,8 +496,8 @@ export type StartView = BuiltinStartView | `view:${string}` | `display:${string}
 
 /** The display start views offered in Settings; projects and saved views are pinned from the display itself. */
 export const DISPLAY_START_VIEWS = [
-  { value: 'display:/display/today', label: 'Display: Today' },
-  { value: 'display:/display/upcoming', label: 'Display: Upcoming' },
+  { value: 'display:/display/today', label: msg('Display: Today') },
+  { value: 'display:/display/upcoming', label: msg('Display: Upcoming') },
 ] as const satisfies readonly { value: StartView; label: string }[]
 
 export async function getStartView(): Promise<StartView> {

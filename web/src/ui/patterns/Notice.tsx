@@ -12,10 +12,10 @@ const TONE: Record<NoticeTone, { icon: IconName; className: string }> = {
 export type NoticeTone = 'info' | 'success' | 'warning' | 'danger'
 
 export function Notice({ tone = 'info', children, action }: { tone?: NoticeTone; children: ReactNode; action?: ReactNode }) {
-  const item = TONE[tone]
+  const t = TONE[tone]
   return (
-    <div role={tone === 'danger' ? 'alert' : 'status'} className={`flex items-start gap-2 rounded-control px-3 py-2 text-meta ${item.className}`}>
-      <span className="mt-0.5 shrink-0"><Icon name={item.icon} /></span>
+    <div role={tone === 'danger' ? 'alert' : 'status'} className={`flex items-start gap-2 rounded-control px-3 py-2 text-meta ${t.className}`}>
+      <span className="mt-0.5 shrink-0"><Icon name={t.icon} /></span>
       <div className="min-w-0 flex-1">{children}</div>
       {action && <div className="shrink-0">{action}</div>}
     </div>

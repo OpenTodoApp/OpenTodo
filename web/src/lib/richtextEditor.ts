@@ -20,6 +20,7 @@ import { type Command, EditorState, Plugin, PluginKey, type Transaction } from '
 import type * as Y from 'yjs'
 import { LINK_REL, safeHref } from './markdown'
 import { MAX_DOC_CHARS, parseMarkdown, toModel, updateBody, type Marks, type RNode, type Run } from './richtext'
+import { msg, translatedList } from './i18n'
 
 // ---- schema ----
 
@@ -269,23 +270,23 @@ export function linkCommand(ask: (current: string) => string | null): Command {
 const mod = typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform) ? 'Cmd' : 'Ctrl'
 
 /** Keyboard shortcuts, listed for the help overlay (`keys` use ProseMirror names). */
-export const SHORTCUTS: { keys: string; label: string }[] = [
-  { keys: 'Mod-b', label: 'Bold' },
-  { keys: 'Mod-i', label: 'Italic' },
-  { keys: 'Mod-Shift-x', label: 'Strikethrough' },
-  { keys: 'Mod-e', label: 'Inline code' },
-  { keys: 'Mod-k', label: 'Link' },
-  { keys: 'Mod-Alt-1', label: 'Heading 1 (2, 3 for smaller)' },
-  { keys: 'Mod-Alt-0', label: 'Normal text' },
-  { keys: 'Mod-Shift-8', label: 'Bullet list' },
-  { keys: 'Mod-Shift-7', label: 'Numbered list' },
-  { keys: 'Mod-Shift-9', label: 'Check list' },
-  { keys: 'Mod-Enter', label: 'Check / uncheck item' },
-  { keys: 'Tab', label: 'Indent list item (Shift-Tab: outdent)' },
-  { keys: 'Shift-Enter', label: 'Line break' },
-  { keys: 'Mod-z', label: 'Undo (Mod-Shift-z: redo)' },
-  { keys: 'Escape', label: 'Leave the notes' },
-]
+export const SHORTCUTS: { keys: string; label: string }[] = translatedList([
+  { keys: 'Mod-b', label: msg('Bold') },
+  { keys: 'Mod-i', label: msg('Italic') },
+  { keys: 'Mod-Shift-x', label: msg('Strikethrough') },
+  { keys: 'Mod-e', label: msg('Inline code') },
+  { keys: 'Mod-k', label: msg('Link') },
+  { keys: 'Mod-Alt-1', label: msg('Heading 1 (2, 3 for smaller)') },
+  { keys: 'Mod-Alt-0', label: msg('Normal text') },
+  { keys: 'Mod-Shift-8', label: msg('Bullet list') },
+  { keys: 'Mod-Shift-7', label: msg('Numbered list') },
+  { keys: 'Mod-Shift-9', label: msg('Check list') },
+  { keys: 'Mod-Enter', label: msg('Check / uncheck item') },
+  { keys: 'Tab', label: msg('Indent list item (Shift-Tab: outdent)') },
+  { keys: 'Shift-Enter', label: msg('Line break') },
+  { keys: 'Mod-z', label: msg('Undo (Mod-Shift-z: redo)') },
+  { keys: 'Escape', label: msg('Leave the notes') },
+], 'label')
 
 /** A shortcut as shown to people: Mod becomes Ctrl or Cmd. */
 export function shortcutLabel(keys: string): string {

@@ -1,3 +1,4 @@
+import { t } from './i18n'
 // Shared-content capture (OpenSpec `share-capture`): parse and sanitise what the
 // share sheet, the bookmarklet or the browser extension hands to `/share`. Pure
 // functions only; nothing here writes data or touches the network. The payload is
@@ -118,7 +119,7 @@ export function bookmarklet(origin: string): string {
   const code =
     `(function(){var e=encodeURIComponent,s=String(window.getSelection?getSelection():'').slice(0,16384),` +
     `u=${base}+'?url='+e(location.href)+'&title='+e(document.title)+(s?'&text='+e(s):'');` +
-    `if(!window.open(u,'opentodo-capture','popup,width=480,height=640'))alert('Allow pop-ups for this site to capture it to OpenTodo.')})()`
+    `if(!window.open(u,'opentodo-capture','popup,width=480,height=640'))alert(${JSON.stringify(t('Allow pop-ups for this site to capture it to OpenTodo.'))})})()`
   return `javascript:${code}`
 }
 
@@ -141,7 +142,7 @@ export interface CapturedFile {
 export function captureFiles(files: { name: string; type: string; blob: Blob }[], maxBytes: number | null, format: (n: number) => string): { files: CapturedFile[]; dropped: number } {
   const out = files.slice(0, MAX_SHARED_FILES).map((f, i): CapturedFile => ({
     key: `${i}-${f.name}`, name: f.name || 'file', type: f.type || 'application/octet-stream', size: f.blob.size, blob: f.blob,
-    refused: maxBytes !== null && f.blob.size > maxBytes ? `Too large: files may be at most ${format(maxBytes)} on this server.` : undefined,
+    refused: maxBytes !== null && f.blob.size > maxBytes ? t('Too large: files may be at most {max} on this server.', { max: format(maxBytes) }) : undefined,
   }))
   return { files: out, dropped: Math.max(0, files.length - MAX_SHARED_FILES) }
 }

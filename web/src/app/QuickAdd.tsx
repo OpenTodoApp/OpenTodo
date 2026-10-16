@@ -14,7 +14,7 @@ import {
 } from '../lib/nlp'
 import type { Due } from '../lib/types'
 import { useDictation } from './useDictation'
-import { t, msg, translatedMap } from '../lib/i18n'
+import { t, msg, translatedMap, preferredLanguages } from '../lib/i18n'
 
 export type { QuickAddInput }
 
@@ -36,10 +36,6 @@ function nowHHMM(d = new Date()): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-function browserLanguages(): readonly string[] {
-  if (typeof navigator === 'undefined') return ['en']
-  return navigator.languages?.length ? navigator.languages : [navigator.language || 'en']
-}
 
 function dueInWords(due: Due): string {
   const words = describeDue(due)?.label ?? due.date
@@ -153,7 +149,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
 
   const parsed = useMemo(() => {
     if (!settings.enabled || !value.trim()) return null
-    const langs = browserLanguages()
+    const langs = preferredLanguages()
     return parse(value, {
       today: todayISO(),
       now: nowHHMM(),

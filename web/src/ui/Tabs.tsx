@@ -21,7 +21,7 @@ export function Tabs({ tabs, value, onChange, label, children }: TabsProps) {
   const base = useId()
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
   const move = (e: KeyboardEvent) => {
-    const i = tabs.findIndex((item) => item.id === value)
+    const i = tabs.findIndex((t) => t.id === value)
     const next = e.key === 'ArrowRight' ? (i + 1) % tabs.length
       : e.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length
       : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1
@@ -33,25 +33,25 @@ export function Tabs({ tabs, value, onChange, label, children }: TabsProps) {
   return (
     <div>
       <div role="tablist" aria-label={label} onKeyDown={move} className="flex gap-1 border-b border-default">
-        {tabs.map((entry) => {
-          const selected = entry.id === value
+        {tabs.map((t) => {
+          const selected = t.id === value
           return (
             <button
-              key={entry.id}
-              ref={(el) => { refs.current[entry.id] = el }}
+              key={t.id}
+              ref={(el) => { refs.current[t.id] = el }}
               type="button"
               role="tab"
-              id={`${base}-tab-${entry.id}`}
+              id={`${base}-tab-${t.id}`}
               aria-selected={selected}
               aria-controls={`${base}-panel`}
               tabIndex={selected ? 0 : -1}
-              onClick={() => onChange(entry.id)}
+              onClick={() => onChange(t.id)}
               className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-body font-medium transition duration-(--duration-ui)
                 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus
                 ${selected ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-default'}`}
             >
-              {entry.label}
-              {entry.count != null && <span className="rounded-full bg-sunken px-1.5 text-hint text-muted">{entry.count}</span>}
+              {t.label}
+              {t.count != null && <span className="rounded-full bg-sunken px-1.5 text-hint text-muted">{t.count}</span>}
             </button>
           )
         })}

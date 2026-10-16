@@ -3,6 +3,7 @@
 // input's text and caret, and receives view updates. The transcript only ever
 // becomes input text; saving stays the quick-add Enter handler.
 import { type RecognitionCallbacks, type RecognitionSession, startRecognition, type VoiceErrorKind } from './recognition'
+import { t } from '../i18n'
 
 export type DictationStatus = 'idle' | 'starting' | 'listening'
 
@@ -31,11 +32,11 @@ export interface DictationHost {
 export type Recognizer = (opts: { lang?: string } & RecognitionCallbacks) => RecognitionSession
 
 export const MESSAGES = {
-  denied: 'Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.',
-  unavailable: 'Voice capture is unavailable right now. Typing works as usual.',
-  noMicrophone: 'No microphone was found. Connect one, or keep typing.',
-  language: (name: string) => `This browser cannot recognise ${name}; listening in the browser’s default language instead.`,
-} as const
+  get denied() { return t('Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.') },
+  get unavailable() { return t('Voice capture is unavailable right now. Typing works as usual.') },
+  get noMicrophone() { return t('No microphone was found. Connect one, or keep typing.') },
+  language: (name: string) => t('This browser cannot recognise {name}; listening in the browser’s default language instead.', { name }),
+}
 
 /** Tags the engine rejected this session; the fallback notice is shown once per tag. */
 const unsupportedTags = new Set<string>()

@@ -16,6 +16,7 @@ import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHAR
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
 import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
+import { t } from './i18n'
 
 let devicePromise: Promise<string> | null = null
 
@@ -495,7 +496,7 @@ async function reminderFollowUps(changes: Change[]): Promise<Change[]> {
 /** A content value too long to fit the server's value limit once encrypted (OpenSpec e2ee, design D3). */
 export class PlaintextTooLongError extends Error {
   constructor(public entity: Entity, public entityId: string, public field: string) {
-    super(`This ${field === 'title' || field === 'name' ? field : 'text'} is too long to encrypt (at most ${MAX_PLAINTEXT_BYTES.toLocaleString('en')} bytes). Shorten it and try again.`)
+    super(t('{field, select, title {This title} name {This name} other {This text}} is too long to encrypt (at most {max, number} bytes). Shorten it and try again.', { field, max: MAX_PLAINTEXT_BYTES }))
   }
 }
 
@@ -562,10 +563,10 @@ export async function moveProject(id: string, parentId: string | null): Promise<
   if (parentId === project.parent_id) return
   const all = await liveProjects()
   if (parentId !== null) {
-    if (parentId === id) throw new Error('a project cannot be its own parent')
+    if (parentId === id) throw new Error(t('a project cannot be its own parent'))
     const parent = all.find((p) => p.id === parentId)
     if (!parent || parent.archived) throw new Error('parent project not found')
-    if (isDescendant(parentId, id, all)) throw new Error('parent cannot be a descendant of the project')
+    if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the project'))
   }
   await mutate('project', id, { parent_id: parentId, position: lastAmongProjectSiblings(all, id, parentId) })
 }
@@ -684,11 +685,11 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
   if (parentId === task.parent_id) return
   const all = await liveTasks()
   if (parentId !== null) {
-    if (parentId === id) throw new Error('a task cannot be its own parent')
+    if (parentId === id) throw new Error(t('a task cannot be its own parent'))
     const parent = all.find((tk) => tk.id === parentId)
     if (!parent) throw new Error('parent task not found')
-    if (parent.project_id !== task.project_id) throw new Error('parent must be in the same project')
-    if (isDescendant(parentId, id, all)) throw new Error('parent cannot be a descendant of the task')
+    if (parent.project_id !== task.project_id) throw new Error(t('parent must be in the same project'))
+    if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the task'))
   }
   let position = Date.now()
   for (const item of all) {
@@ -991,7 +992,7 @@ export async function deleteProject(id: string): Promise<void> {
   const project = await db.projects.get(id)
   const memberships = await membershipMap()
   const shared = memberships.has(id)
-  if (shared && roleOf(id, memberships) !== 'owner') throw new Error('only the owner can delete a shared project')
+  if (shared && roleOf(id, memberships) !== 'owner') throw new Error(t('only the owner can delete a shared project'))
   const changes: Change[] = []
   const now = Date.now()
   if (shared) {
@@ -1051,7 +1052,7 @@ export async function restoreProject(id: string): Promise<void> {
   if (!project) throw new Error('project not found')
   if (!project.deleted_at) return
   const memberships = await membershipMap()
-  if (memberships.has(id) && roleOf(id, memberships) !== 'owner') throw new Error('only the owner can restore a shared project')
+  if (memberships.has(id) && roleOf(id, memberships) !== 'owner') throw new Error(t('only the owner can restore a shared project'))
   await mutate('project', id, { deleted_at: null })
 }
 

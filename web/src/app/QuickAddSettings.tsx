@@ -6,7 +6,7 @@ import {
   BUNDLED_LANGUAGES, dayMonthOrderSource, type DayMonthOrderSource, loadQuickAddSettings, type QuickAddSettings, resolveLanguages, saveQuickAddSettings,
 } from '../lib/nlp'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { t, msg, translatedMap } from '../lib/i18n'
+import { t, msg, translatedMap, preferredLanguages } from '../lib/i18n'
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English', de: 'Deutsch', fr: 'Français', it: 'Italiano', es: 'Español', pt: 'Português',
@@ -23,9 +23,6 @@ export function automaticOrderLabel(order: 'DM' | 'MD', source: DayMonthOrderSou
   return t('Automatic: {order}, {source}', { order: order === 'DM' ? t('day-month') : t('month-day'), source: SOURCE[source] })
 }
 
-function browserLanguages(): readonly string[] {
-  return navigator.languages?.length ? navigator.languages : [navigator.language || 'en']
-}
 
 /** Settings section for natural-language quick add; stored on this device only. */
 export function QuickAddSettingsSection() {
@@ -34,7 +31,7 @@ export function QuickAddSettingsSection() {
     setS(next)
     saveQuickAddSettings(next)
   }
-  const browser = browserLanguages()
+  const browser = preferredLanguages()
   const active = resolveLanguages(s, browser)
   const followBrowser = s.languages === null
   // An automatic order follows the date format preference before the language (date-time-preferences D6).

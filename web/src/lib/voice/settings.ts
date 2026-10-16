@@ -64,8 +64,8 @@ export function recognitionLanguage(s: VoiceSettings, quickAddLanguages: readonl
  * when it has one ("de-AT" stays Austrian), else a default region.
  */
 export function recognitionTag(code: string, browser: readonly string[]): string {
-  const own = browser.find((item) => {
-    const [lang, region] = item.split(/[-_]/)
+  const own = browser.find((t) => {
+    const [lang, region] = t.split(/[-_]/)
     return lang.toLowerCase() === code && !!region
   })
   return own ? own.replace('_', '-') : DEFAULT_REGION[code] ?? code

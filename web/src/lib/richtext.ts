@@ -234,8 +234,8 @@ function knownMarks(attrs: Record<string, unknown> | undefined): Marks {
 
 function runsOf(texts: Y.XmlText[]): Run[] {
   const runs: Run[] = []
-  for (const item of texts) {
-    for (const d of item.toDelta() as { insert: unknown; attributes?: Record<string, unknown> }[]) {
+  for (const t of texts) {
+    for (const d of t.toDelta() as { insert: unknown; attributes?: Record<string, unknown> }[]) {
       if (typeof d.insert !== 'string' || !d.insert) continue
       pushRun(runs, d.insert, knownMarks(d.attributes))
     }
@@ -322,12 +322,12 @@ function attrsFor(marks: Marks): Record<string, unknown> {
 function fillElement(el: Y.XmlElement, node: RNode): void {
   for (const [k, v] of Object.entries(node.attrs)) if (v !== null && v !== undefined) el.setAttribute(k, v as string)
   if (TEXTBLOCKS.has(node.type)) {
-    const item = new Y.XmlText()
-    el.insert(0, [item])
+    const t = new Y.XmlText()
+    el.insert(0, [t])
     let pos = 0
     for (const r of node.runs ?? []) {
       if (!r.text) continue
-      item.insert(pos, r.text, attrsFor(r.marks))
+      t.insert(pos, r.text, attrsFor(r.marks))
       pos += r.text.length
     }
   } else insertModel(el, 0, node.content ?? [])
@@ -394,28 +394,28 @@ export function updateBody(parent: Y.XmlFragment | Y.XmlElement, target: RNode[]
 }
 
 /** Update one stored node in place; false when it must be replaced. */
-function updateNode(y: Y.XmlElement | Y.XmlText, item: RNode): boolean {
+function updateNode(y: Y.XmlElement | Y.XmlText, t: RNode): boolean {
   if (y instanceof Y.XmlText) {
-    if (item.type !== 'paragraph') return false
-    updateText(y, item.runs ?? [])
+    if (t.type !== 'paragraph') return false
+    updateText(y, t.runs ?? [])
     return true
   }
   const name = y.nodeName
   const known = TEXTBLOCKS.has(name) || CONTAINERS.has(name)
-  if (known && name !== item.type) return false
+  if (known && name !== t.type) return false
   const kids = y.toArray() as (Y.XmlElement | Y.XmlText)[]
   if (!known) {
     // An unknown node edited as a paragraph: keep the element (and its unknown
     // attributes) when it is a plain text holder, otherwise replace it.
-    if (item.type !== 'paragraph' || !kids.every((k) => k instanceof Y.XmlText)) return false
+    if (t.type !== 'paragraph' || !kids.every((k) => k instanceof Y.XmlText)) return false
   }
-  for (const k of KNOWN_ATTRS[item.type] ?? []) {
-    const want = item.attrs[k] ?? null
+  for (const k of KNOWN_ATTRS[t.type] ?? []) {
+    const want = t.attrs[k] ?? null
     const have = y.getAttribute(k) ?? null
     if (want === null && have !== null) y.removeAttribute(k)
     else if (want !== null && want !== have) y.setAttribute(k, want as string)
   }
-  if (TEXTBLOCKS.has(item.type)) {
+  if (TEXTBLOCKS.has(t.type)) {
     let text = kids.find((k): k is Y.XmlText => k instanceof Y.XmlText)
     if (!text) {
       text = new Y.XmlText()
@@ -427,8 +427,8 @@ function updateNode(y: Y.XmlElement | Y.XmlText, item: RNode): boolean {
       const at = y.toArray().indexOf(k)
       if (at >= 0) y.delete(at, 1)
     }
-    updateText(text, item.runs ?? [])
-  } else updateBody(y, item.content ?? [])
+    updateText(text, t.runs ?? [])
+  } else updateBody(y, t.content ?? [])
   return true
 }
 

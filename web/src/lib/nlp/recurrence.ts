@@ -38,17 +38,17 @@ function anyUnitAt(tokens: readonly Token[], i: number, v: Vocabulary): boolean 
 function weekdayPluralAt(tokens: readonly Token[], i: number, v: Vocabulary): number {
   const wd = weekdayAt(tokens, i, v)
   if (wd >= 0) return wd
-  const tok = tokens[i]
-  if (!tok || tok.quoted || !tok.norm.endsWith('s') || tok.norm.length < 4) return -1
-  return weekdayAt([{ ...tok, norm: tok.norm.slice(0, -1) }], 0, v)
+  const t = tokens[i]
+  if (!t || t.quoted || !t.norm.endsWith('s') || t.norm.length < 4) return -1
+  return weekdayAt([{ ...t, norm: t.norm.slice(0, -1) }], 0, v)
 }
 
 /** An ordinal at i: a day number with a suffix ("2nd", "15.", "3º") or an ordinal word. */
 function ordinalAt(tokens: readonly Token[], i: number, v: Vocabulary): { n: number; value: number } | null {
-  const tok = tokens[i]
-  if (!tok || tok.quoted) return null
-  if (!/^\d+$/.test(tok.norm)) {
-    const d = dayNumber(tok)
+  const t = tokens[i]
+  if (!t || t.quoted) return null
+  if (!/^\d+$/.test(t.norm)) {
+    const d = dayNumber(t)
     if (d) return { n: 1, value: d }
   }
   const word = lookupAt(tokens, i, v.ordinals, `${v.code}:ord`)

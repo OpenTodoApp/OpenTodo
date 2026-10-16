@@ -70,14 +70,14 @@ export function serializeDisplayOptions(o: DisplayOptions): string {
 }
 
 /** The path of a display target, without options. */
-export function displayTargetPath(item: DisplayTarget): string {
-  switch (item.kind) {
+export function displayTargetPath(t: DisplayTarget): string {
+  switch (t.kind) {
     case 'today':
     case 'upcoming':
-      return `/display/${item.kind}`
+      return `/display/${t.kind}`
     case 'project':
     case 'view':
-      return `/display/${item.kind}/${encodeURIComponent(item.id)}`
+      return `/display/${t.kind}/${encodeURIComponent(t.id)}`
   }
 }
 

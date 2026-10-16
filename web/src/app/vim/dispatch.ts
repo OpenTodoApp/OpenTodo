@@ -37,16 +37,16 @@ const NON_TEXT = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'ran
 
 /** Insert mode: a text entry control has focus (the same set the default handlers treat as typing, minus toggles and buttons). */
 export function isTextField(el: EventTarget | Element | null | undefined): boolean {
-  const item = el as (HTMLElement & { type?: string }) | null | undefined
-  if (!item || typeof item.tagName !== 'string') return false
-  if (item.tagName === 'INPUT') return !NON_TEXT.has((item.type ?? 'text').toLowerCase())
-  return item.tagName === 'TEXTAREA' || item.tagName === 'SELECT' || !!item.isContentEditable
+  const t = el as (HTMLElement & { type?: string }) | null | undefined
+  if (!t || typeof t.tagName !== 'string') return false
+  if (t.tagName === 'INPUT') return !NON_TEXT.has((t.type ?? 'text').toLowerCase())
+  return t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || !!t.isContentEditable
 }
 
 /** Fields inside a dialog (pickers, confirmations) keep their own Escape, which closes the dialog. */
 function inDialog(el: EventTarget | null): boolean {
-  const item = el as Element | null
-  return !!item?.closest?.('[role="dialog"], [aria-modal="true"]')
+  const t = el as Element | null
+  return !!t?.closest?.('[role="dialog"], [aria-modal="true"]')
 }
 
 export const PENDING_TIMEOUT = 1000

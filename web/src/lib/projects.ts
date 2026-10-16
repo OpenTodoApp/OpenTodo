@@ -62,9 +62,9 @@ export function subtreeOpenCounts(tasks: Iterable<Task>, tree: ProjectTree): Map
 
 function ownOpenCounts(tasks: Iterable<Task>): Map<string, number> {
   const own = new Map<string, number>()
-  for (const task of tasks) {
-    if (task.deleted_at || task.completed_at || !task.project_id) continue
-    own.set(task.project_id, (own.get(task.project_id) ?? 0) + 1)
+  for (const t of tasks) {
+    if (t.deleted_at || t.completed_at || !t.project_id) continue
+    own.set(t.project_id, (own.get(t.project_id) ?? 0) + 1)
   }
   return own
 }

@@ -11,8 +11,8 @@ export interface RowMenuHandlers {
   move?: (to: -1 | 1 | 'top' | 'bottom') => void
 }
 
-function typing(item: EventTarget | null): boolean {
-  const el = item as HTMLElement | null
+function typing(t: EventTarget | null): boolean {
+  const el = t as HTMLElement | null
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)
 }
 

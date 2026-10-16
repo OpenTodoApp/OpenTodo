@@ -41,16 +41,16 @@ interface TaskContext {
 
 async function taskContext(projectId: string | null): Promise<TaskContext> {
   const all = projectId
-    ? await db.tasks.where('project_id').equals(projectId).filter((task) => !task.deleted_at).toArray()
-    : await db.tasks.filter((tk) => !tk.deleted_at && !tk.project_id).toArray()
+    ? await db.tasks.where('project_id').equals(projectId).filter((t) => !t.deleted_at).toArray()
+    : await db.tasks.filter((t) => !t.deleted_at && !t.project_id).toArray()
   const sections = projectId ? await db.sections.where('project_id').equals(projectId).toArray() : []
-  return { all, tree: buildTree(all.filter((item) => !item.completed_at)), sections: new Map(sections.map((s) => [s.id, s])) }
+  return { all, tree: buildTree(all.filter((t) => !t.completed_at)), sections: new Map(sections.map((s) => [s.id, s])) }
 }
 
 /** The list a task belongs to: its parent's subtasks, or the top-level tasks of one section. */
 function taskSiblings(ctx: TaskContext, parent: string | null, section: string | null): Task[] {
   if (parent !== null) return (ctx.tree.nodes.get(parent)?.children ?? []).map((n) => n.item)
-  return ctx.tree.roots.map((n) => n.item).filter((task) => effectiveSection(task, ctx.sections) === section)
+  return ctx.tree.roots.map((n) => n.item).filter((t) => effectiveSection(t, ctx.sections) === section)
 }
 
 function toChanges(entity: Entity, plan: PositionChange[], extra: Record<string, unknown> = {}, movedId?: string): Change[] {

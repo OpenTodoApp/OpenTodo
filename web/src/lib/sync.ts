@@ -20,6 +20,7 @@ import type { Clock, Entity, Op, RowEncryption, SyncState } from './types'
 import { currentKey, isEnabled } from './e2ee'
 import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
 import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
+import { t } from './i18n'
 
 const BATCH = 500
 /** Poll interval while the live channel is disconnected (the historical default). */
@@ -246,7 +247,7 @@ async function runOnce(): Promise<void> {
     if (err instanceof ApiError && err.code === 'mfa_enrolment_required') {
       // The owner now requires a second factor for this account. Nothing was
       // accepted, so the outbox stays queued and uploads after enrolment.
-      publish({ state: 'restricted', error: 'Set up two-factor authentication to keep syncing.' })
+      publish({ state: 'restricted', error: t('Set up two-factor authentication to keep syncing.') })
       return
     }
     if (err instanceof LockedError) {

@@ -75,7 +75,7 @@ export function App() {
         // A demo sandbox that is gone takes its local copy with it (the sign-out path).
         if (await expireSandboxIfGone(status, hadSession, clearDeviceData)) setDemoExpired(true)
         // The session ended because the server was restored from a backup in this tab.
-        if (consumeRestored()) setSignInNotice(RESTORED_NOTICE)
+        if (consumeRestored()) setSignInNotice(t(RESTORED_NOTICE))
         setPhase({ kind: 'anonymous', status })
       }
     } catch {

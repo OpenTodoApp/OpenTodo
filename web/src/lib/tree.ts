@@ -35,9 +35,9 @@ type Rec = { id: string; parent_id?: string | null; position?: number; created_a
 
 function defaults<T>(opts?: Partial<TreeOptions<T>>): TreeOptions<T> {
   return {
-    id: opts?.id ?? ((item) => (item as unknown as Rec).id),
-    parentId: opts?.parentId ?? ((entry) => (entry as unknown as Rec).parent_id ?? null),
-    clockOf: opts?.clockOf ?? ((x1) => (x1 as unknown as Rec)._clock?.parent_id),
+    id: opts?.id ?? ((t) => (t as unknown as Rec).id),
+    parentId: opts?.parentId ?? ((t) => (t as unknown as Rec).parent_id ?? null),
+    clockOf: opts?.clockOf ?? ((t) => (t as unknown as Rec)._clock?.parent_id),
     compare: opts?.compare ?? ((a, b) => {
       const ra = a as unknown as Rec
       const rb = b as unknown as Rec

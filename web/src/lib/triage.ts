@@ -3,6 +3,7 @@
 // arrive meanwhile, minus tasks that leave it. Pure; the view feeds it the live
 // tasks and renders the current one.
 import type { Task } from './types'
+import { t } from './i18n'
 
 export interface TriageState {
   /** The queue in order: the Inbox order when the mode opened, arrivals appended. */
@@ -79,7 +80,7 @@ export function progress(state: TriageState): { n: number; total: number; done: 
 /** What the live region says for the task on screen: "4 of 17: Call the plumber". */
 export function positionText(state: TriageState, title: string): string {
   const p = progress(state)
-  return `${p.n} of ${p.total}: ${title}`
+  return t('{n} of {total}: {title}', { n: p.n, total: p.total, title })
 }
 
 export type Outcome =
@@ -95,13 +96,13 @@ export type Outcome =
 /** The words announced for a decision, before the next task is announced. */
 export function outcomeText(o: Outcome): string {
   switch (o.kind) {
-    case 'completed': return 'Completed.'
-    case 'trashed': return 'Moved to the Trash.'
-    case 'scheduled': return `Scheduled for ${o.date}.`
-    case 'moved': return `Moved to ${o.project}.`
-    case 'delegated': return `Assigned to ${o.person}.`
-    case 'someday': return 'Parked for someday.'
-    case 'skipped': return 'Skipped.'
-    case 'left': return 'This task was moved elsewhere.'
+    case 'completed': return t('Completed.')
+    case 'trashed': return t('Moved to the Trash.')
+    case 'scheduled': return t('Scheduled for {date}.', { date: o.date })
+    case 'moved': return t('Moved to {project}.', { project: o.project })
+    case 'delegated': return t('Assigned to {name}.', { name: o.person })
+    case 'someday': return t('Parked for someday.')
+    case 'skipped': return t('Skipped.')
+    case 'left': return t('This task was moved elsewhere.')
   }
 }

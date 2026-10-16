@@ -2,21 +2,22 @@ import { ApiError } from './api'
 import { getMeta, setMeta } from './db'
 import type { Webhook, WebhookDelivery, WebhookEvent } from './types'
 import { formatInstant } from './dates'
+import { t, msg } from './i18n'
 
 /** Subscribable events in display order, with labels for the Settings screen. */
 export const WEBHOOK_EVENTS: { event: WebhookEvent; label: string }[] = [
-  { event: 'task.created', label: 'Task created' },
-  { event: 'task.updated', label: 'Task updated' },
-  { event: 'task.completed', label: 'Task completed' },
-  { event: 'task.reopened', label: 'Task reopened' },
-  { event: 'task.deleted', label: 'Task deleted' },
-  { event: 'project.created', label: 'Project created' },
-  { event: 'project.updated', label: 'Project updated' },
-  { event: 'project.archived', label: 'Project archived' },
-  { event: 'project.deleted', label: 'Project deleted' },
+  { event: 'task.created', label: msg('Task created') },
+  { event: 'task.updated', label: msg('Task updated') },
+  { event: 'task.completed', label: msg('Task completed') },
+  { event: 'task.reopened', label: msg('Task reopened') },
+  { event: 'task.deleted', label: msg('Task deleted') },
+  { event: 'project.created', label: msg('Project created') },
+  { event: 'project.updated', label: msg('Project updated') },
+  { event: 'project.archived', label: msg('Project archived') },
+  { event: 'project.deleted', label: msg('Project deleted') },
   // Imports are reported once per job, not once per task (harden-server-edges).
-  { event: 'import.completed', label: 'Import completed' },
-  { event: 'import.undone', label: 'Import undone' },
+  { event: 'import.completed', label: msg('Import completed') },
+  { event: 'import.undone', label: msg('Import undone') },
 ]
 
 export type WebhookTone = 'ok' | 'warn' | 'off'
@@ -24,12 +25,12 @@ export type WebhookTone = 'ok' | 'warn' | 'off'
 /** Status line for a webhook row: active, failing, paused by the user or disabled by the server. */
 export function webhookStatus(h: Webhook): { label: string; tone: WebhookTone } {
   if (!h.enabled) {
-    if (h.disabledReason === 'too_many_failures') return { label: 'Disabled after repeated failures', tone: 'warn' }
-    if (h.disabledReason) return { label: `Disabled: ${h.disabledReason}`, tone: 'warn' }
-    return { label: 'Paused', tone: 'off' }
+    if (h.disabledReason === 'too_many_failures') return { label: t('Disabled after repeated failures'), tone: 'warn' }
+    if (h.disabledReason) return { label: t('Disabled: {reason}', { reason: h.disabledReason }), tone: 'warn' }
+    return { label: t('Paused'), tone: 'off' }
   }
-  if (h.consecutiveFailures > 0) return { label: `Active, ${h.consecutiveFailures} failed in a row`, tone: 'warn' }
-  return { label: 'Active', tone: 'ok' }
+  if (h.consecutiveFailures > 0) return { label: t('Active, {n} failed in a row', { n: h.consecutiveFailures }), tone: 'warn' }
+  return { label: t('Active'), tone: 'ok' }
 }
 
 /**
@@ -61,10 +62,10 @@ export function deliveryOutcome(d: WebhookDelivery): string {
   const parts: string[] = []
   if (d.statusCode !== null) parts.push(`HTTP ${d.statusCode}`)
   if (d.error && !(d.statusCode !== null && d.error === `HTTP ${d.statusCode}`)) {
-    parts.push(d.error === 'private_target' ? 'refused: private network target' : d.error)
+    parts.push(d.error === 'private_target' ? t('refused: private network target') : d.error)
   }
   if (d.durationMs !== null) parts.push(`${d.durationMs} ms`)
-  if (d.status === 'retry' && d.nextAttemptAt) parts.push(`next try ${formatInstant(d.nextAttemptAt, 'datetime')}`)
+  if (d.status === 'retry' && d.nextAttemptAt) parts.push(t('next try {instant}', { instant: formatInstant(d.nextAttemptAt, 'datetime') }))
   return parts.join(' · ')
 }
 
@@ -72,12 +73,12 @@ export function deliveryOutcome(d: WebhookDelivery): string {
 export function describeWebhookError(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.code === 'private_target') {
-      return 'That address is on a private network (LAN, localhost or similar). The server owner can allow private network targets below.'
+      return t('That address is on a private network (LAN, localhost or similar). The server owner can allow private network targets below.')
     }
-    if (err.code === 'limit_reached') return 'You already have the maximum of 20 webhooks.'
+    if (err.code === 'limit_reached') return t('You already have the maximum of 20 webhooks.')
     return err.message
   }
-  return 'The server is unreachable. Webhooks are managed on the server and need a connection.'
+  return t('The server is unreachable. Webhooks are managed on the server and need a connection.')
 }
 
 // The last fetched list is cached in the local meta table (cleared on sign-out)

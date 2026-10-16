@@ -6,6 +6,7 @@ import { db, getMeta, setMeta } from './db'
 import { mutate, mutateMany, type Change } from './ops'
 import { byPosition, planStep, positionAtEnd } from './ordering'
 import type { Section, Task } from './types'
+import { t } from './i18n'
 
 /** Live sections of a project, in display order. */
 export async function projectSections(projectId: string): Promise<Section[]> {
@@ -16,7 +17,7 @@ export async function projectSections(projectId: string): Promise<Section[]> {
 /** A new section goes last in its project. Returns its id. Works offline. */
 export async function createSection(projectId: string, name: string): Promise<string> {
   const trimmed = name.trim()
-  if (!trimmed) throw new Error('a section needs a name')
+  if (!trimmed) throw new Error(t('a section needs a name'))
   const id = crypto.randomUUID()
   const siblings = await projectSections(projectId)
   await mutate('section', id, {
@@ -84,7 +85,7 @@ export async function moveTaskToSection(id: string, sectionId: string | null): P
   if (!task || task.deleted_at) throw new Error('task not found')
   if (sectionId !== null) {
     const s = await db.sections.get(sectionId)
-    if (!s || s.deleted_at || s.project_id !== task.project_id) throw new Error('section is not in the task’s project')
+    if (!s || s.deleted_at || s.project_id !== task.project_id) throw new Error(t('section is not in the task’s project'))
   }
   const map = await sectionMap(task.project_id)
   const column = task.project_id

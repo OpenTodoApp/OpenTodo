@@ -13,7 +13,7 @@ import { Field, Input } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { Popover } from '../overlay/Popover'
 import { parseDateInput } from './parse'
-import { t } from '../../lib/i18n'
+import { t, preferredLanguages } from '../../lib/i18n'
 
 export interface DateFieldProps {
   /** `YYYY-MM-DD`, or null when empty. */
@@ -32,7 +32,7 @@ export interface DateFieldProps {
 
 /** The browser's languages for relative words, as quick add reads them. */
 export function inputLanguages(): string[] {
-  const browser = typeof navigator === 'undefined' ? ['en'] : navigator.languages?.length ? [...navigator.languages] : [navigator.language || 'en']
+  const browser = preferredLanguages()
   return resolveLanguages(loadQuickAddSettings(), browser)
 }
 

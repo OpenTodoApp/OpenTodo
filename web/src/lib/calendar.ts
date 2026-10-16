@@ -150,7 +150,7 @@ export function allDayEvents(events: readonly CalendarEvent[], date: string): Ca
 /** Open, live tasks due in [from, to] (inclusive ISO dates), leaving out archived projects. */
 export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], from: string, to: string): Task[] {
   const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-  return tasks.filter((task) => !task.deleted_at && !task.completed_at && task.due && task.due.date >= from && task.due.date <= to && !(task.project_id && archived.has(task.project_id)))
+  return tasks.filter((t) => !t.deleted_at && !t.completed_at && t.due && t.due.date >= from && t.due.date <= to && !(t.project_id && archived.has(t.project_id)))
 }
 
 export interface DayLoad {
@@ -164,9 +164,9 @@ export interface DayLoad {
 export function dayLoad(tasks: readonly Pick<Task, 'due' | 'estimate_minutes' | 'completed_at' | 'deleted_at'>[], date: string, dayLength: number): DayLoad {
   let planned = 0
   let unestimated = 0
-  for (const task of tasks) {
-    if (task.completed_at || task.deleted_at || task.due?.date !== date) continue
-    if (task.estimate_minutes) planned += task.estimate_minutes
+  for (const t of tasks) {
+    if (t.completed_at || t.deleted_at || t.due?.date !== date) continue
+    if (t.estimate_minutes) planned += t.estimate_minutes
     else unestimated++
   }
   return { planned, unestimated, over: planned > dayLength }

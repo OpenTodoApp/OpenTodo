@@ -6,12 +6,13 @@
 import { resolveRange, shiftISO, weekdayOf } from './filter/parse'
 import { todayISO } from './dates'
 import type { Membership, Project, Task } from './types'
+import { t, msg, translatedMap } from './i18n'
 
 export type PeriodKind = 'this-week' | 'last-week' | '4-weeks' | '12-weeks'
 export const PERIOD_KINDS: readonly PeriodKind[] = ['this-week', 'last-week', '4-weeks', '12-weeks']
-export const PERIOD_LABELS: Record<PeriodKind, string> = {
-  'this-week': 'This week', 'last-week': 'Last week', '4-weeks': 'Last 4 weeks', '12-weeks': 'Last 12 weeks',
-}
+export const PERIOD_LABELS = translatedMap<PeriodKind>({
+  'this-week': msg('This week'), 'last-week': msg('Last week'), '4-weeks': msg('Last 4 weeks'), '12-weeks': msg('Last 12 weeks'),
+})
 
 /** An inclusive range of local days; `weeks` is the number of weeks it spans (1, 4 or 12). */
 export interface Period {
@@ -158,7 +159,7 @@ export function compute<T extends StatTask>(input: StatsInput<T>, period: Pick<P
   }
   const names = new Map(input.projects.map((p) => [p.id, p.name]))
   const ranked = [...projectCounts.entries()]
-    .map(([id, count]) => ({ id, name: id ? names.get(id) ?? 'Project' : 'Inbox', count }))
+    .map(([id, count]) => ({ id, name: id ? names.get(id) ?? t('Project') : t('Inbox'), count }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
   const perProject = ranked.slice(0, 5)
   const rest = ranked.slice(5).reduce((n, p) => n + p.count, 0)

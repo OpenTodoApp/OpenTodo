@@ -30,12 +30,12 @@ export function occurrenceDate(series: Task, today: string): string {
  */
 export function completedOccurrences(seriesId: string, tasks: Iterable<Task>, exceptDate?: string): number {
   let n = 0
-  for (const task of tasks) {
-    if (task.series_id !== seriesId || !task.completed_at || task.deleted_at || !task.due) continue
+  for (const t of tasks) {
+    if (t.series_id !== seriesId || !t.completed_at || t.deleted_at || !t.due) continue
     // A habit's skipped record is not a completion (OpenSpec habits, design D2).
-    if (task.skipped) continue
-    if (task.due.date === exceptDate) continue
-    if (task.id === occurrenceId(seriesId, task.due.date)) n++
+    if (t.skipped) continue
+    if (t.due.date === exceptDate) continue
+    if (t.id === occurrenceId(seriesId, t.due.date)) n++
   }
   return n
 }

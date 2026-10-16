@@ -5,6 +5,7 @@
 import { forgetEntities } from './activity'
 import { db, entityTables, getMeta, setMeta } from './db'
 import type { Clock, Entity, Membership, Op, ProjectMember, ProjectRole, Rejection, Task } from './types'
+import { t } from './i18n'
 
 /** The local scope label of a project: its own scope when shared, else the user's personal scope. */
 export function scopeOf(projectId: string | null | undefined, memberships: Map<string, Membership>): string {
@@ -239,11 +240,11 @@ export async function dropUnconfirmed(keys: string[]): Promise<void> {
 
 /** One line for the user, e.g. "2 changes were not accepted (your role in Home changed): Milk, Bread". */
 export function describeRejected(n: RejectedNotice): string {
-  const what = n.count === 1 ? '1 change was not accepted' : `${n.count} changes were not accepted`
+  const what = t('{n, plural, one {# change was not accepted} other {# changes were not accepted}}', { n: n.count })
   const place = n.projects.join(', ')
   const where = !n.projects.length ? ''
-    : n.assignments === n.count ? ` (the assignee is no longer a member of ${place})`
-      : ` (your role in ${place} changed)`
+    : n.assignments === n.count ? ` ${t('(the assignee is no longer a member of {place})', { place })}`
+      : ` ${t('(your role in {place} changed)', { place })}`
   const tasks = n.tasks.length ? `: ${n.tasks.slice(0, 5).join(', ')}${n.tasks.length > 5 ? '…' : ''}` : ''
   return `${what}${where}${tasks}`
 }

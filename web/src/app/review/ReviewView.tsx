@@ -127,7 +127,7 @@ export function ReviewView({ userId }: { userId?: string }) {
                 label: (
                   <span className="inline-flex items-center gap-1.5" data-step={s}>
                     {steps.done[s] && <Icon name="check" size="sm" />}
-                    {t(STEP_TITLES[s])}
+                    {STEP_TITLES[s]}
                     <span className="sr-only">{steps.done[s] ? `, ${t('done')}` : `, ${t('{n} left', { n: steps.left[s] })}`}</span>
                   </span>
                 ),

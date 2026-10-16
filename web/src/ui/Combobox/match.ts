@@ -58,12 +58,12 @@ function prefixRanges(text: string, starts: number[], words: string[]): Range[] 
 }
 
 function fuzzy(text: string, q: string): { gaps: number; ranges: Range[] } | null {
-  const item = text.length > 64 ? text.slice(0, 64) : text
+  const t = text.length > 64 ? text.slice(0, 64) : text
   const ranges: Range[] = []
   let gaps = 0
   let ti = 0
   for (const ch of q) {
-    const at = item.indexOf(ch, ti)
+    const at = t.indexOf(ch, ti)
     if (at < 0) return null
     if (ranges.length && ranges[ranges.length - 1][1] === at) ranges[ranges.length - 1][1] = at + 1
     else {

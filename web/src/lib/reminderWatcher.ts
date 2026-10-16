@@ -76,9 +76,9 @@ export async function checkReminders(now = Date.now()): Promise<DueReminder[]> {
   if (reminders.length === 0) return []
   const ids = [...new Set(reminders.map((r) => r.task_id))]
   const tasks = new Map<string, Task>()
-  for (const task of await db.tasks.bulkGet(ids)) if (task) tasks.set(task.id, task)
+  for (const t of await db.tasks.bulkGet(ids)) if (t) tasks.set(t.id, t)
   const projects = new Map<string, ProjectLink>()
-  if ([...tasks.values()].some((tk) => tk.project_id)) {
+  if ([...tasks.values()].some((t) => t.project_id)) {
     for (const p of await db.projects.toArray()) projects.set(p.id, p)
   }
   return dueReminders(reminders, tasks, now, await getMeta<ShownSet>(SHOWN_KEY, {}), projects)
@@ -130,14 +130,14 @@ export function startReminderWatcher(onChange: Listener, opts: { intervalMs?: nu
     try {
       do {
         again = false
-        const item = now()
-        const due = await checkReminders(item)
+        const t = now()
+        const due = await checkReminders(t)
         const key = due.map((d) => `${d.reminder.id}@${d.reminder.fire_at}:${d.task.title}`).join('|')
         if (key !== last && !stopped) {
           last = key
           onChange(due)
         }
-        await armNext(item)
+        await armNext(t)
       } while (again && !stopped)
     } catch {
       // The store can be closed during sign-out; the next tick tries again.
@@ -146,11 +146,11 @@ export function startReminderWatcher(onChange: Listener, opts: { intervalMs?: nu
     }
   }
 
-  async function armNext(entry: number) {
+  async function armNext(t: number) {
     if (next) clearTimeout(next)
     next = null
-    const upcoming = await db.reminders.where('fire_at').between(entry, entry + interval, false, true).first()
-    if (upcoming?.fire_at != null && !stopped) next = setTimeout(() => void run(), Math.max(0, upcoming.fire_at - entry) + 50)
+    const upcoming = await db.reminders.where('fire_at').between(t, t + interval, false, true).first()
+    if (upcoming?.fire_at != null && !stopped) next = setTimeout(() => void run(), Math.max(0, upcoming.fire_at - t) + 50)
   }
 
   const timer = setInterval(() => void run(), interval)

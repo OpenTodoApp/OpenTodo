@@ -34,13 +34,13 @@ export function archiveCandidates(
   memberships: Map<string, Membership> = new Map(), skip: Set<string> = new Set(),
 ): Project[] {
   const stats = new Map<string, { total: number; open: number; last: number }>()
-  for (const task of tasks) {
-    if (task.deleted_at || !task.project_id) continue
-    const s = stats.get(task.project_id) ?? { total: 0, open: 0, last: 0 }
+  for (const t of tasks) {
+    if (t.deleted_at || !t.project_id) continue
+    const s = stats.get(t.project_id) ?? { total: 0, open: 0, last: 0 }
     s.total++
-    if (!task.completed_at) s.open++
-    else s.last = Math.max(s.last, task.completed_at)
-    stats.set(task.project_id, s)
+    if (!t.completed_at) s.open++
+    else s.last = Math.max(s.last, t.completed_at)
+    stats.set(t.project_id, s)
   }
   const out: Project[] = []
   for (const p of projects) {
@@ -64,7 +64,7 @@ export async function projectFinishedBy(taskId: string): Promise<Project | null>
   const project = await db.projects.get(task.project_id)
   if (!project || project.deleted_at || project.archived) return null
   if (!canEditProject(roleOf(project.id, await membershipMap()))) return null
-  const open = await db.tasks.where('project_id').equals(project.id).filter((tk) => !tk.deleted_at && !tk.completed_at).count()
+  const open = await db.tasks.where('project_id').equals(project.id).filter((t) => !t.deleted_at && !t.completed_at).count()
   return open === 0 ? project : null
 }
 
@@ -117,9 +117,9 @@ export function archivedProjects(
   const all = [...projects]
   const byId = new Map(all.map((p) => [p.id, p]))
   const open = new Map<string, number>()
-  for (const task of tasks) {
-    if (task.deleted_at || task.completed_at || !task.project_id) continue
-    open.set(task.project_id, (open.get(task.project_id) ?? 0) + 1)
+  for (const t of tasks) {
+    if (t.deleted_at || t.completed_at || !t.project_id) continue
+    open.set(t.project_id, (open.get(t.project_id) ?? 0) + 1)
   }
   return all
     .filter((p) => p.archived && !p.deleted_at)

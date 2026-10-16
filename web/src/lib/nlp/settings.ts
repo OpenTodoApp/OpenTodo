@@ -54,9 +54,14 @@ export function onQuickAddSettingsChange(fn: () => void): () => void {
   }
 }
 
-/** The language tags handed to the parser: the explicit list, or the browser's. */
-export function resolveLanguages(s: QuickAddSettings, browser: readonly string[]): string[] {
-  return activeLanguages(s.languages !== null ? s.languages : browser)
+/**
+ * The language tags handed to the parser: the device's explicit list, else the
+ * interface language (app-localization D5; omitted or 'system' when none is
+ * chosen) followed by the browser's languages. English is always active.
+ */
+export function resolveLanguages(s: QuickAddSettings, browser: readonly string[], language?: string | null): string[] {
+  if (s.languages !== null) return activeLanguages(s.languages)
+  return activeLanguages(language && language !== 'system' ? [language, ...browser] : browser)
 }
 
 /** Where the numeric date order came from, for the quick-add settings panel. */
@@ -86,7 +91,7 @@ export function resolveDayMonthOrder(s: QuickAddSettings, browser: readonly stri
 }
 
 function languageDayMonthOrder(s: QuickAddSettings, browser: readonly string[]): DayMonthOrder {
-  const first = (s.languages !== null ? s.languages[0] : browser.find((item) => item.toLowerCase().split(/[-_]/)[0] in VOCABULARIES)) ?? 'en'
+  const first = (s.languages !== null ? s.languages[0] : browser.find((t) => t.toLowerCase().split(/[-_]/)[0] in VOCABULARIES)) ?? 'en'
   const [lang, region] = first.toLowerCase().split(/[-_]/)
   if (lang === 'en') return !region || region === 'us' ? 'MD' : 'DM'
   return VOCABULARIES[lang]?.dayMonthOrder ?? 'MD'

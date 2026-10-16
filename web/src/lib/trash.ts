@@ -11,6 +11,7 @@ import { forgetEntities } from './activity'
 import { api, ApiError, isNetworkError } from './api'
 import { db, entityTables, getMeta, setMeta } from './db'
 import type { Entity, Project, Task } from './types'
+import { t } from './i18n'
 
 /** Ids of every deleted project in a list. */
 export function deletedProjectIds(projects: Iterable<Pick<Project, 'id' | 'deleted_at'>>): Set<string> {
@@ -46,12 +47,12 @@ export function trashItems(tasks: Iterable<Task>, projects: Iterable<Project>): 
   const out: TrashItem[] = []
   for (const p of projects) {
     byId.set(p.id, p)
-    if (p.deleted_at) out.push({ entity: 'project', id: p.id, title: p.name || 'Untitled project', deletedAt: p.deleted_at, color: p.color })
+    if (p.deleted_at) out.push({ entity: 'project', id: p.id, title: p.name || t('Untitled project'), deletedAt: p.deleted_at, color: p.color })
   }
   for (const task of tasks) {
     if (!task.deleted_at) continue
     const project = task.project_id ? byId.get(task.project_id) : undefined
-    out.push({ entity: 'task', id: task.id, title: task.title || 'Untitled', deletedAt: task.deleted_at, projectName: project ? project.name : 'Inbox' })
+    out.push({ entity: 'task', id: task.id, title: task.title || t('Untitled'), deletedAt: task.deleted_at, projectName: project ? project.name : t('Inbox') })
   }
   return out.sort((a, b) => b.deletedAt - a.deletedAt || (a.id < b.id ? -1 : 1))
 }

@@ -11,13 +11,13 @@ import { formatDate, formatHour, formatInstant } from '../lib/dates'
 import { useDemo } from '../lib/demo'
 import type { EmailDigest, EmailDigestInput } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { t, currentLocale } from '../lib/i18n'
+import { t, currentLocale, preferredLanguages } from '../lib/i18n'
 
 /** The digest's languages, as the server's message templates (internal/mail). */
 export const DIGEST_LANGUAGES: Record<string, string> = { en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', it: 'Italiano', pt: 'Português' }
 
 /** The browser's first supported language (primary subtag), else English (design D7). */
-export function browserDigestLanguage(languages: readonly string[] = typeof navigator === 'undefined' ? [] : navigator.languages ?? [navigator.language]): string {
+export function browserDigestLanguage(languages: readonly string[] = preferredLanguages()): string {
   for (const l of languages) {
     const primary = l.toLowerCase().split('-')[0]
     if (primary in DIGEST_LANGUAGES) return primary

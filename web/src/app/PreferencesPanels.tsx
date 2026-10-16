@@ -41,7 +41,7 @@ export function StartViewView({ views, startView, onChange }: { views: View[]; s
           )}
           {/* Display mode (display-mode D6): opens full screen in large type. */}
           <optgroup label={t('Display mode')}>
-            {DISPLAY_START_VIEWS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+            {DISPLAY_START_VIEWS.map((d) => <option key={d.value} value={d.value}>{t(d.label)}</option>)}
             {pinnedDisplay && <option value={pinnedDisplay}>{t('Display pinned on this device')}</option>}
           </optgroup>
         </Select>

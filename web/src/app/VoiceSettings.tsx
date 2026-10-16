@@ -9,7 +9,7 @@ import { BUNDLED_LANGUAGES, loadQuickAddSettings, resolveLanguages } from '../li
 import { loadVoiceSettings, onVoiceSettingsChange, saveVoiceSettings, type VoiceSettings } from '../lib/voice/settings'
 import { isSupported } from '../lib/voice/support'
 import { Dialog } from './overlay'
-import { t } from '../lib/i18n'
+import { t, preferredLanguages } from '../lib/i18n'
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English', de: 'Deutsch', fr: 'Français', it: 'Italiano', es: 'Español', pt: 'Português',
@@ -38,7 +38,7 @@ export function VoiceSettingsSection() {
     setS(next)
     saveVoiceSettings(next)
   }
-  const browser = navigator.languages?.length ? navigator.languages : [navigator.language || 'en']
+  const browser = preferredLanguages()
   const followed = resolveLanguages(loadQuickAddSettings(), browser)[0] ?? 'en'
 
   return (

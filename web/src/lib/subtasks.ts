@@ -5,6 +5,7 @@
 import { db } from './db'
 import { ancestors, buildTree, type Tree } from './tree'
 import type { Task } from './types'
+import { t } from './i18n'
 
 export interface Progress {
   done: number
@@ -55,7 +56,7 @@ export function parentState(task: Task, byId: Map<string, Task>): ParentState {
 /** Title of the nearest known parent, for breadcrumbs; null when the parent is unknown locally. */
 export function breadcrumbOf(task: Task, byId: Map<string, Task>): string | null {
   const [parent] = ancestors(task.id, byId)
-  return parent ? parent.title || 'Untitled' : null
+  return parent ? parent.title || t('Untitled') : null
 }
 
 /**

@@ -10,13 +10,14 @@ import { mutateMany, type Change } from './ops'
 import { compareByPosition, planMove } from './ordering'
 import { descendants } from './tree'
 import type { Due, Label, Project, Section, Task } from './types'
+import { t } from './i18n'
 
 /** The device-side ceiling of one copy (design D4); larger files go through Import. */
 export const MAX_TEMPLATE_TASKS = 1000
 
 export class TemplateTooLargeError extends Error {
   constructor(public count: number) {
-    super(`This holds ${count} tasks; a copy can make at most ${MAX_TEMPLATE_TASKS}. Load larger files with Settings → Data → Import.`)
+    super(t('This holds {count} tasks; a copy can make at most {max}. Load larger files with Settings → Data → Import.', { count, max: MAX_TEMPLATE_TASKS }))
   }
 }
 
@@ -322,7 +323,7 @@ export function summarise(tree: TemplateTree): { projects: number; sections: num
 export function treeFromFile(doc: unknown): TemplateTree {
   const d = doc as Partial<TemplateFile> | null
   if (!d || typeof d !== 'object' || d.format !== 'opentodo-export' || typeof d.version !== 'number' || d.version < 1) {
-    throw new TemplateFileError('This is not an OpenTodo template.')
+    throw new TemplateFileError(t('This is not an OpenTodo template.'))
   }
   const rows = (k: keyof TemplateFile) => (Array.isArray(d[k]) ? (d[k] as FileRow[]) : [])
   const live = (r: FileRow) => !r.deleted_at
@@ -333,8 +334,8 @@ export function treeFromFile(doc: unknown): TemplateTree {
   const projectIds = new Set(projects.map((p) => p.id))
   const sectionIds = new Set(sections.map((s) => s.id))
   for (const entry of tasks) {
-    if (entry.project_id && !projectIds.has(String(entry.project_id))) throw new TemplateFileError(`A task names a project that is not in the file (${String(entry.title ?? entry.id)}).`)
-    if (entry.section_id && !sectionIds.has(String(entry.section_id))) throw new TemplateFileError(`A task names a section that is not in the file (${String(entry.title ?? entry.id)}).`)
+    if (entry.project_id && !projectIds.has(String(entry.project_id))) throw new TemplateFileError(t('A task names a project that is not in the file ({task}).', { task: String(entry.title ?? entry.id) }))
+    if (entry.section_id && !sectionIds.has(String(entry.section_id))) throw new TemplateFileError(t('A task names a section that is not in the file ({task}).', { task: String(entry.title ?? entry.id) }))
   }
   const labelName = new Map(labels.map((l) => [l.id, String(l.name ?? '')]))
   const pos = (r: FileRow) => (typeof r.position === 'number' ? r.position : 0)
