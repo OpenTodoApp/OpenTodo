@@ -1,3 +1,4 @@
+import Dexie from 'dexie'
 import { t } from './i18n'
 // Mergeable document fields (OpenSpec change `collaborative-rich-text`) and the
 // lazy loader for the code that understands them. This module stays tiny and
@@ -39,15 +40,33 @@ export type RichText = typeof import('./richtext')
 
 let loaded: RichText | null = null
 let loading: Promise<RichText> | null = null
+let importer: () => Promise<RichText> = () => import('./richtext')
 
-/** Load lib/richtext.ts (and Yjs) once; later calls resolve immediately. */
+/**
+ * Load lib/richtext.ts (and Yjs) once; later calls resolve immediately. The
+ * first load is a network fetch: awaited inside a Dexie transaction (the
+ * encryption migration wraps each batch of mutateMany in one) it would let
+ * IndexedDB auto-commit that transaction, and the next write would fail with
+ * "Transaction has already completed" (issue #96). Dexie.waitFor keeps the
+ * transaction alive until the module is here.
+ */
 export function loadRichText(): Promise<RichText> {
   if (loaded) return Promise.resolve(loaded)
   if (!loading) {
-    loading = import('./richtext').then((m) => (loaded = m))
+    loading = importer().then((m) => (loaded = m))
     loading.catch(() => (loading = null))
   }
-  return loading
+  return Dexie.currentTransaction ? Dexie.waitFor(loading) : loading
+}
+
+/**
+ * Forget the loaded module, as a fresh page load would, and optionally stand in
+ * for the network fetch that brings it (tests only).
+ */
+export function resetRichTextForTests(load?: () => Promise<RichText>): void {
+  loaded = null
+  loading = null
+  importer = load ?? (() => import('./richtext'))
 }
 
 /** The module when it is already loaded (synchronous use inside transactions). */
