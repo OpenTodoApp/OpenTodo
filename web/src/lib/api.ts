@@ -7,7 +7,7 @@ import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptio
 import type {
   ConfigWarning,
   AppPassword, CaldavSetting, EmailInbox,
-  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User,
+  AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput,
 } from './types'
 
@@ -289,6 +289,12 @@ export const api = {
     request<{ invite: ProjectInvite; link: string; newAccounts: boolean; sent?: boolean }>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/invites`, input),
   revokeProjectInvite: (projectId: string, id: string) =>
     request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/invites/${encodeURIComponent(id)}`),
+  // Public links (OpenSpec `public-links`): managed by the project's owner and admins; the link is returned once.
+  listPublicLinks: (projectId: string) => request<{ links: PublicLink[] }>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/public-links`),
+  createPublicLink: (projectId: string, input: { rights: 'view' | 'tick'; name?: string; expiresInDays?: number }) =>
+    request<PublicLink & { link: string }>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/public-links`, input),
+  revokePublicLink: (projectId: string, id: string) =>
+    request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/public-links/${encodeURIComponent(id)}`),
   previewProjectInvite: (token: string) => request<ProjectInvitePreview>('GET', `/api/v1/project-invites/${encodeURIComponent(token)}`),
   acceptProjectInvite: (token: string) =>
     request<{ projectId: string; role: ProjectRole }>('POST', `/api/v1/project-invites/${encodeURIComponent(token)}/accept`, {}),
@@ -452,3 +458,18 @@ export const OIDC_START_URL = '/api/v1/auth/oidc/start'
 export function isNetworkError(err: unknown): boolean {
   return !(err instanceof ApiError)
 }
+
+/**
+ * The guest side of a public link (OpenSpec `public-links`, design D8): no
+ * cookies are sent, even from a browser that holds a session, so the answer is
+ * the same for everyone.
+ */
+export const publicApi = {
+  list: async (token: string): Promise<PublicList> =>
+    parse<PublicList>(await fetch(`/api/v1/public/${encodeURIComponent(token)}`, { credentials: 'omit', cache: 'no-store' })),
+  tick: async (token: string, taskId: string, completed: boolean): Promise<{ taskId: string; completed_at: number | null }> =>
+    parse(await fetch(`/api/v1/public/${encodeURIComponent(token)}/tick`, {
+      method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId, completed }),
+    })),
+}
+

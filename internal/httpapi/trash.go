@@ -64,7 +64,13 @@ func (s *Server) historyHandler(entity string) http.HandlerFunc {
 // personal, so other members of a shared project see only the generic label.
 func (s *Server) labelAgentChanges(ctx context.Context, viewerID string, sets []opsync.ChangeSet) error {
 	names := map[string]string{}
+	public := s.publicLabeler(viewerID)
 	for i := range sets {
+		// A guest's tick through a public link (public-links D6).
+		if l := public.label(ctx, sets[i].Device); l != "" {
+			sets[i].DeviceLabel = l
+			continue
+		}
 		// In-app assistant writes are applied by the user's own device after
 		// review (in-app-assistant): the same label for every viewer.
 		if strings.HasPrefix(sets[i].Device, opsync.AssistantDevicePrefix) {

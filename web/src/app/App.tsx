@@ -17,6 +17,7 @@ import { ProjectInviteScreen, takePendingInvite } from './ProjectInviteScreen'
 import { ResetScreen } from './ResetScreen'
 import { ForgotScreen, VerifyScreen } from './EmailScreens'
 import { setOutgoingEmail } from '../lib/outgoingEmail'
+import { PublicListScreen } from './PublicListScreen'
 import { ACCOUNT_CHANGED_EVENT } from './UsersPanel'
 import { ReauthHost } from './ReauthDialog'
 import { ENROLMENT_EVENT } from './SyncStatus'
@@ -108,7 +109,7 @@ export function App() {
   }, [sync.state, phase.kind, refresh])
 
   useEffect(() => {
-    if (phase.kind === 'ready' && route.view !== 'invite' && route.view !== 'reset' && route.view !== 'verify') startSync()
+    if (phase.kind === 'ready' && route.view !== 'invite' && route.view !== 'reset' && route.view !== 'verify' && route.view !== 'public') startSync()
     else stopSync()
   }, [phase.kind, route.view])
 
@@ -148,6 +149,9 @@ export function App() {
 
   // The screen for the current phase and route; ReauthHost above serves all of them.
   function screen() {
+    // A public link (public-links) needs no account and never syncs: it renders
+    // before the sign-in state is even known.
+    if (route.view === 'public') return <PublicListScreen token={route.token} />
     if (phase.kind === 'loading') {
       // Cold start (task-list-presentation "Skeleton loading"): rows in the row's shape until the local database answers.
       return <div className="mx-auto w-full max-w-3xl px-4 py-5 md:px-8"><Skeleton shape="row" count={8} label="Loading your tasks" /></div>

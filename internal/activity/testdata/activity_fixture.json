@@ -608,6 +608,17 @@
       "events": []
     },
     {
+      "name": "a public tick next to the creator's edit stays its own event (public-links)",
+      "ops": [
+        {"id":"pl1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"title","value":"Milk (2 l)","ts":400000,"device":"da"},
+        {"id":"pl2","seq":2,"actor":"alice","entity":"task","entityId":"t1","field":"completed_at","value":401000,"ts":401000,"device":"public:link1"}
+      ],
+      "events": [
+        {"id":"pl1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":400000,"opIds":["pl1"],"changes":[{"field":"title","from":null,"to":"Milk (2 l)"}]},
+        {"id":"pl2","kind":"completed","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":401000,"opIds":["pl2"],"changes":[{"field":"completed_at","from":null,"to":401000}],"device":"public:link1"}
+      ]
+    },
+    {
       "name": "a deadline edit is an edited event (deadlines)",
       "ops": [
         {"id":"dl1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"deadline","value":"2026-11-20","ts":200000,"device":"da"}

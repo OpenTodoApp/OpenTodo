@@ -292,6 +292,8 @@ func (s *Service) Deactivate(ctx context.Context, actorID, targetID string) (*Ad
 			// Project invite links too (OpenSpec `project-invite-links`).
 			{"UPDATE project_invites SET revoked_at = ? WHERE created_by = ? AND accepted_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
 			{"UPDATE password_resets SET revoked_at = ? WHERE user_id = ? AND used_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
+			// Public links too (OpenSpec `public-links`).
+			{"UPDATE public_links SET revoked_at = ? WHERE created_by = ? AND revoked_at IS NULL", []any{now, target.ID}},
 		} {
 			if _, err := tx.ExecContext(ctx, st.q, st.args...); err != nil {
 				return err

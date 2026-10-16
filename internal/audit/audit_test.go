@@ -31,6 +31,8 @@ func allConstructors() []Event {
 		Logout("u"),
 		EmailSent("o", "u", "password_reset", "u@example.com"),
 		EmailFailed("", "", "verify_signup", "x@example.com", "rate_limited"),
+		PublicLinkCreated("o", "pl1", "p1", "tick"),
+		PublicLinkRevoked("o", "pl1", "p1"),
 		AgentWrite("u", "complete_tasks", "t", "Desk assistant", 3),
 		AgentWrite("u", "create_tasks", "t", "Desk assistant", 0).Failed("writes_disabled_by_user"),
 		MFAEnrolled("u", "totp"),

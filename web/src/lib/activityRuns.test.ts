@@ -67,3 +67,16 @@ describe('shared activity fixture', () => {
     }
   })
 })
+
+describe('public link ticks (public-links D6)', () => {
+  it('never join the link creator’s own run and read as the link', async () => {
+    const { isPublicEvent, PUBLIC_ACTOR_LABEL } = await import('./activity')
+    const own = ev('completed', 'u1', 2000)
+    const tick: ActivityEvent = { ...ev('completed', 'u1', 1000), id: 'p1', device: 'public:link1' }
+    const runs = groupRuns([own, tick])
+    expect(runs).toHaveLength(2)
+    expect(isPublicEvent(runs[1].events[0])).toBe(true)
+    expect(isPublicEvent(runs[0].events[0])).toBe(false)
+    expect(PUBLIC_ACTOR_LABEL).toBe('Public link')
+  })
+})

@@ -145,6 +145,11 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/projects/{id}/invites` | owner, admin of the project, fresh | `{role, email?, expiresInHours?, send?}` → 201 `{invite, link, newAccounts, sent?}` (link shown once; `send` mails it to `email`) |
 | DELETE | `/api/v1/projects/{id}/invites/{inviteId}` | owner, admin of the project | revoke a pending link → 204 |
 | POST | `/api/v1/project-invites/{token}/accept` | yes | join the project as the signed-in account → `{projectId, role}` |
+| GET | `/api/v1/projects/{id}/public-links` | owner, admin of the project | active public links `{links:[…]}`, see [Public links](#public-links) |
+| POST | `/api/v1/projects/{id}/public-links` | owner, admin of the project, fresh | `{rights, name?, expiresInDays?}` → 201 the link with `link` (shown once) |
+| DELETE | `/api/v1/projects/{id}/public-links/{linkId}` | owner, admin of the project | revoke → 204 |
+| GET | `/api/v1/public/{token}` | none | a public list `{projectName, projectColor, rights, sections, tasks, serverTime}` |
+| POST | `/api/v1/public/{token}/tick` | none (a `tick` link) | `{taskId, completed}` → `{taskId, completed_at}` |
 | GET | `/api/v1/settings/project-invites` | yes | `{membersCanInviteNewPeople}` (the owner switch) |
 | PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
 | POST | `/api/v1/sync` | yes (not `read`) | device sync, see [sync.md](sync.md#exchange); the response carries the log `generation` |
@@ -890,6 +895,8 @@ The server records security-relevant events in its own database (never synced to
 | `password.reset_completed` | success | actor = account | `reset_id` |
 | `email.sent` | success | actor = the account that caused it (none for anonymous requests), target = recipient account when known | `email_kind` (`verify_signup`, `password_reset`, `invitation`, `project_invite`, `test`), `email` (recipient); never the link |
 | `email.failed` | failure | as `email.sent` | `email_kind`, `email`, `reason` (`connect`, `tls`, `auth`, `send`, `rate_limited`, `encrypted_account`) |
+| `public_link.created` | success | actor = creator | `public_link_id`, `shared_project_id`, `link_rights` (`view` or `tick`); never the secret or the name |
+| `public_link.revoked` | success | actor = owner or admin of the project | `public_link_id`, `shared_project_id` |
 | `password.changed` | success | actor = user | |
 | `owner.transferred` | success | actor = previous owner, target = new owner | `from` (`owner`), `to` (`admin`): the previous owner's role change |
 | `backup.created` | success or failure | actor = owner for "Back up now", none for scheduled runs | `backup_id` (the run id), `reason` (`run_failed`) on failure |
@@ -1009,6 +1016,29 @@ curl -sS "$OT/api/v1/auth/register" -H 'Content-Type: application/json' \
 ```
 
 The account, the membership and the spend commit in one transaction, so a link creates at most one account. A link may create an account when its creator is the server owner or an admin, when open sign-up is on, or when the owner turned on **Members can invite new people with project links** (`PUT /api/v1/settings/project-invites` `{"membersCanInviteNewPeople": true}`; off by default; any signed-in account can read it with `GET`). Otherwise the answer is 403 `project_invite_not_allowed` and the person signs in with an existing account first. In SSO-only mode registration answers 403 `sso_required`; the person signs in through the provider and then joins. Other errors as for invitations (`invitation_email_mismatch`, `email_taken`, `invalid_input`); in every error case the link stays pending.
+
+### Public links
+
+A project's owner or an admin can publish the project as a list that anyone with the link can open without an account: read-only (`view`) or with checkboxes (`tick`). Links are reusable until revoked or expired, are server data (never synced, never exported) and need a connection.
+
+**Create** — `POST /api/v1/projects/{id}/public-links` (a fresh session or a full token) with `{"rights": "tick", "name": "Grandma", "expiresInDays": 30}`: `rights` is `view` or `tick`, `name` an optional label of at most 60 characters shown only to the project's managers, `expiresInDays` 1–90 or absent for no expiry. 201:
+
+```json
+{"id": "01J…", "projectId": "…", "rights": "tick", "name": "Grandma", "createdBy": "…", "createdByName": "Alice",
+ "createdAt": 1760000000000, "expiresAt": null, "lastUsedAt": null, "link": "https://todo.example.com/public/otl_…"}
+```
+
+The `link` carries the secret and is returned only here; the server keeps a hash. Errors: 400 `invalid_input` naming the field, 403 `forbidden` for viewers and editors, 404 `not_found` for non-members, 409 `encryption_enabled` for an unshared project of an account with end-to-end encryption, 429 `rate_limited` after 20 links an hour.
+
+**List and revoke** — `GET` answers `{links: [...]}` with the active links (no secrets, with `lastUsedAt`); `DELETE …/public-links/{linkId}` revokes (204; 404 `not_found` for an unknown id).
+
+**The list** — `GET /api/v1/public/{token}` needs no authentication and ignores a session cookie, so everyone gets the same answer: `projectName`, `projectColor`, `rights`, `sections` (`id`, `name`, `position`) and `tasks` with only `id`, `title`, `due`, `priority`, `section_id`, `parent_id`, `position` and `completed_at`: open tasks and those completed in the last 24 hours. No description, notes, labels or assignee are ever included.
+
+**Tick** — `POST /api/v1/public/{token}/tick` with `{"taskId": "…", "completed": true}` completes (or with `false` reopens) a task of the list and answers `{taskId, completed_at}`. A repeating task records the occurrence and moves to its next date, as when the API completes it. The change is an ordinary op by the link's creator from the device `public:<link-id>`: history labels it "Public link (*name*)" for the project's owner and admins and "Public link" for everyone else, and activity shows "Public link" as the actor. Errors: 403 `forbidden` on a `view` link, 404 `not_found` for a task that is not on the list, 400 `invalid_input` without `completed`.
+
+**Unusable links** — an unknown, expired or revoked secret, a creator who was deactivated or is no longer the project's owner or admin, a deleted or archived project, or an unshared project whose creator turned on encryption all answer the same 404 `link_invalid`. The link is not deleted: unarchiving the project or restoring the role makes it work again. Devices cannot send ops with a `public:` device (400 `invalid_op`).
+
+**Limits and headers** — per link 120 reads and 60 ticks a minute, per client address 120 public requests a minute; an unknown secret counts against the sign-in window (10 a minute per address). Public responses and the `/public/…` page carry `X-Robots-Tag: noindex, nofollow`, `Referrer-Policy: no-referrer` and `Cache-Control: no-store`, and the request log never shows the secret.
 
 ### Assignment and notifications
 
@@ -1622,6 +1652,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 
 | Code | Status | Where |
 | --- | --- | --- |
+| `link_invalid` | 404 | an unknown, expired, revoked or no longer usable [public link](#public-links) |
 | `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
 | `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
 | `user_not_found` | 404 | adding a project member by an email that has no account |

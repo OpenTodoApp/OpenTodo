@@ -317,6 +317,8 @@ export interface ActivityEvent {
   ts: number
   opIds: string[]
   changes: ActivityChange[]
+  /** Only for a public link's ticks: the device public:<link-id> (public-links). */
+  device?: string
   /** Server pages only: display names resolved by the server. */
   actorName?: string
   taskTitle?: string
@@ -915,6 +917,7 @@ export const AUDIT_EVENT_NAMES = [
   'email_inbox.created', 'email_inbox.rotated', 'email_inbox.updated',
   'invitation.created', 'invitation.accepted', 'invitation.revoked',
   'project_invite.created', 'project_invite.revoked', 'project_invite.accepted',
+  'public_link.created', 'public_link.revoked',
   'role.changed', 'settings.changed',
   'identity.linked', 'identity.unlinked',
   'export.requested', 'audit.exported',
@@ -1197,3 +1200,27 @@ export interface AppNotification {
   readAt: number | null
   readPending?: boolean
 }
+
+/** A public link as its managers see it (OpenSpec `public-links`); never the secret. */
+export interface PublicLink {
+  id: string
+  projectId: string
+  rights: 'view' | 'tick'
+  name: string | null
+  createdBy: string
+  createdByName?: string
+  createdAt: number
+  expiresAt: number | null
+  lastUsedAt: number | null
+}
+
+/** What a guest sees through a public link: the project's open tasks (and those completed in the last day). */
+export interface PublicList {
+  projectName: string
+  projectColor: string
+  rights: 'view' | 'tick'
+  sections: { id: string; name: string; position: number }[]
+  tasks: { id: string; title: string; due: Due | null; priority: Priority; section_id: string | null; parent_id: string | null; position: number; completed_at: number | null }[]
+  serverTime: number
+}
+

@@ -560,6 +560,12 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 		{"GET", "/api/v1/settings/smtp"},
 		{"PUT", "/api/v1/settings/smtp"},
 		{"POST", "/api/v1/settings/smtp/test"},
+		// Public links (public-links 2.7): every method.
+		{"GET", "/api/v1/projects/" + shared + "/public-links"},
+		{"POST", "/api/v1/projects/" + shared + "/public-links"},
+		{"DELETE", "/api/v1/projects/" + shared + "/public-links/x"},
+		{"GET", "/api/v1/public/otl_x"},
+		{"POST", "/api/v1/public/otl_x/tick"},
 		// Attachments (attachments 2.4): every method.
 		{"GET", "/api/v1/settings/attachments"},
 		{"PUT", "/api/v1/settings/attachments"},
