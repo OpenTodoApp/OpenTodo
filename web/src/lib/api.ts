@@ -1,3 +1,5 @@
+import { errorMessage } from './i18n/errors'
+import { t } from './i18n/catalog'
 import type { AssistantSkill } from './assistantSkills'
 import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
@@ -12,8 +14,12 @@ import type {
 } from './types'
 
 export class ApiError extends Error {
+  /** The server's own message (English, a machine contract). */
+  readonly serverMessage: string
+  /** `message` is translated by code when the client knows it (app-localization D6). */
   constructor(public status: number, public code: string, message: string) {
-    super(message)
+    super(errorMessage(code, message))
+    this.serverMessage = message
   }
 }
 
@@ -105,7 +111,7 @@ function uploadArchive(file: Blob, onProgress?: (fraction: number) => void): Pro
       let data: { error?: { code: string; message: string } } & Partial<StagedRestore> = {}
       try { data = JSON.parse(xhr.responseText || '{}') } catch { /* a proxy's HTML page */ }
       if (xhr.status === 201) return resolve(data as StagedRestore)
-      if (xhr.status === 413) return reject(new ApiError(413, 'proxy_too_large', 'Your reverse proxy refused the upload. Raise its body size limit, or restore from the backup destination instead.'))
+      if (xhr.status === 413) return reject(new ApiError(413, 'proxy_too_large', t('Your reverse proxy refused the upload. Raise its body size limit, or restore from the backup destination instead.')))
       reject(new ApiError(xhr.status, data.error?.code ?? 'error', data.error?.message ?? xhr.statusText))
     }
     xhr.send(file)

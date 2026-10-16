@@ -326,6 +326,8 @@ export interface ProjectPrefs {
 
 /** Date and time preference values (OpenSpec `date-time-preferences`); unknown values read as 'system'. */
 export type DateFormatPref = 'system' | 'day-month' | 'month-day' | 'iso'
+/** Interface language preference (app-localization D1): 'system' or a shipped language code. */
+export type LanguagePref = 'system' | 'en' | 'de' | 'fr' | 'es' | 'it' | 'pt'
 export type TimeFormatPref = 'system' | '12h' | '24h'
 export type WeekStartPref = 'system' | 'mon' | 'sun' | 'sat'
 
@@ -344,6 +346,8 @@ export interface UserPrefs {
   density: string
   /** The first-run card (ux-overhaul, first-run): "done" once finished or skipped on any device. */
   first_run: string
+  /** Interface language (app-localization D1): 'system' or a shipped code; unknown values read as 'system'. */
+  language: string
   _clock: Clock
 }
 

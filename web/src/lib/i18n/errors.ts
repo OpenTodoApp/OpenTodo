@@ -1,0 +1,116 @@
+// Server errors by code (OpenSpec change app-localization, design D6). The server
+// keeps its JSON envelope {error:{code,message}} in English, a machine contract;
+// the client shows a translated message for every code it knows and the server's
+// own message, as received, for a code it does not know (a newer server).
+//
+// In English the server's message is shown as before: it is already English and
+// often more specific than the per-code text. Codes whose meaning depends on the
+// request (invalid_input, bad_request, forbidden, …) keep the server's detail
+// after a translated lead-in.
+import { currentLanguage, msg, t } from './catalog'
+
+/** One translatable message per code; `{detail}` is the server's English message. */
+export const ERROR_MESSAGES: Record<string, string> = {
+  account_active: msg('This account is already active.'),
+  account_deactivated: msg('This account has been deactivated. Ask the server owner or an admin.'),
+  already_member: msg('This account is already a member of the project.'),
+  already_uploaded: msg('This file is already stored.'),
+  assistant_busy: msg('The assistant is busy on this server. Try again in a few seconds.'),
+  assistant_disabled: msg('The assistant is not enabled on this server.'),
+  attachment_mismatch: msg('The upload does not match the attachment. Try again.'),
+  attachment_too_large: msg('The file is larger than this server allows ({detail}).'),
+  attachments_disabled: msg('Attachments are turned off on this server.'),
+  attachments_unavailable: msg('This server has no file store.'),
+  bad_origin: msg('The request was rejected because it came from another site.'),
+  bad_request: msg('The server could not read the request: {detail}'),
+  confirmation_mismatch: msg('The email you typed does not match the account.'),
+  conflict: msg('This conflicts with another change: {detail}'),
+  consent_required: msg('Read which data is sent to the assistant and accept it first.'),
+  demo_busy: msg('The demo is busy. Try again in a moment.'),
+  demo_expired: msg('Your demo sandbox has expired.'),
+  demo_limit: msg('This demo sandbox has reached its limit. Try again later.'),
+  demo_restricted: msg('This is disabled on the demo instance.'),
+  demo_token: msg('This demo link is not valid.'),
+  destination_error: msg('The backup destination answered with an error: {detail}'),
+  email_disabled: msg('Email to task is not enabled on this server.'),
+  email_failed: msg('The email could not be sent; nothing was created. Try again or create a link to copy.'),
+  email_taken: msg('An account with this email already exists.'),
+  encryption_conflict: msg('The encryption key was created or changed on another device. Unlock with the existing passphrase.'),
+  encryption_disabled: msg('End-to-end encryption is not enabled for this account.'),
+  encryption_enabled: msg('Not available with end-to-end encryption: {detail}'),
+  feeds_disabled: msg('Calendar feeds are not enabled on this server.'),
+  forbidden: msg('You are not allowed to do this: {detail}'),
+  idempotency_conflict: msg('This request was already sent with different content.'),
+  identity_taken: msg('This identity is already linked to another account.'),
+  insufficient_scope: msg('This token or session is not allowed to do this: {detail}'),
+  insufficient_storage: msg('The server does not have enough disk space.'),
+  integrity: msg('The archive is damaged: {detail}'),
+  internal: msg('Something went wrong on the server. Try again.'),
+  invalid_credentials: msg('The email or password is not correct.'),
+  invalid_file: msg('The file could not be read: {detail}'),
+  invalid_input: msg('The server did not accept this: {detail}'),
+  invalid_op: msg('The server refused a change: {detail}'),
+  invitation_email_mismatch: msg('This invite link was issued for a different email address.'),
+  invitation_invalid: msg('This invite link is not valid.'),
+  invitation_spent: msg('This invite link has already been used.'),
+  last_credential: msg('This is the last way to sign in to the account. Add another before removing it.'),
+  limit_reached: msg('You have reached the limit: {detail}'),
+  link_invalid: msg('This link is no longer valid.'),
+  managed_by_env: msg('This setting is managed by the server configuration.'),
+  method_not_allowed: msg('This request is not allowed here.'),
+  mfa_already_enrolled: msg('Two-factor authentication is already turned on for this account.'),
+  mfa_challenge_invalid: msg('The sign-in attempt expired or had too many wrong codes. Enter your password again.'),
+  mfa_code_invalid: msg('The code is not valid. Check that your device’s clock is set automatically and try again.'),
+  mfa_enrolment_required: msg('Set up two-factor authentication to continue: the server owner requires it for this account.'),
+  mfa_not_enrolled: msg('Two-factor authentication is not turned on for this account.'),
+  mfa_required_by_policy: msg('The server owner requires two-factor authentication for this account.'),
+  newer_schema: msg('This archive comes from a newer version of OpenTodo. Upgrade the server first.'),
+  no_key: msg('No API key is configured for this assistant.'),
+  not_a_member: msg('You are not a member of this project.'),
+  not_acceptable: msg('The server cannot answer in the requested format.'),
+  not_deleted: msg('Only items in the Trash can be deleted permanently. Delete it first.'),
+  not_found: msg('Not found. It may have been deleted.'),
+  oidc_disabled: msg('Single sign-on is not configured on this server.'),
+  oidc_email_unverified: msg('The sign-in provider did not confirm a verified email address.'),
+  oidc_failed: msg('Single sign-on failed. Try again.'),
+  oidc_state_invalid: msg('Sign in again before linking an account.'),
+  owner_must_transfer: msg('The owner cannot leave the project. Transfer ownership to another member first.'),
+  passkey_challenge_invalid: msg('The passkey request expired or was already used. Try again.'),
+  passkeys_unavailable: msg('Passkeys are not available on this server: it must be served over HTTPS.'),
+  passphrase_invalid: msg('The passphrase does not open this archive.'),
+  passphrase_required: msg('This archive is encrypted. Enter its passphrase.'),
+  private_target: msg('This address is on a private network. The server owner can allow private targets.'),
+  project_invite_not_allowed: msg('This link can only be used by people who already have an account on this server. Sign in first, or ask the server owner for an account.'),
+  provider_changed: msg('The provider changed. Read the updated disclosure and accept again.'),
+  quota_exceeded: msg('This upload would go over your attachment storage.'),
+  rate_limited: msg('Too many attempts. Try again later.'),
+  reauth_required: msg('Confirm your password or a code to continue.'),
+  reset_invalid: msg('This password reset link is not valid.'),
+  scope_change: msg('This change would move the item out of its project’s sharing.'),
+  self_action: msg('You cannot do this to your own account.'),
+  session_required: msg('This needs a signed-in browser session, not an API token.'),
+  setup_token_invalid: msg('The setup token is missing or wrong.'),
+  signup_closed: msg('Sign-up is disabled on this server.'),
+  smtp_disabled: msg('Outgoing email is not available on this server.'),
+  sso_required: msg('This server requires signing in with single sign-on.'),
+  too_large: msg('This is too large for the server: {detail}'),
+  turn_in_progress: msg('Another answer is still being written. Wait for it or stop it first.'),
+  unauthorized: msg('Sign in to continue.'),
+  unavailable: msg('This is not available on this server.'),
+  unhealthy: msg('The server’s database is unavailable.'),
+  unknown_skill: msg('There is no skill with this id.'),
+  unsupported_format: msg('The file matches no supported format.'),
+  unsupported_protocol_version: msg('The server does not support this protocol version.'),
+  user_not_found: msg('No account with this email exists on this server.'),
+  verification_invalid: msg('This confirmation link is no longer valid.'),
+}
+
+/**
+ * The message to show for a server error: the server's own text in English or for
+ * an unknown code, else the translated message for the code.
+ */
+export function errorMessage(code: string | null | undefined, fallback: string): string {
+  if (currentLanguage() === 'en' || !code) return fallback
+  const source = ERROR_MESSAGES[code]
+  return source ? t(source, { detail: fallback }) : fallback
+}

@@ -96,7 +96,7 @@ export const ATTACHMENT_DEFAULTS: Omit<Attachment, 'id' | '_clock'> = {
 /** project_prefs (activity-feed): 0 means "never marked"; the feed then uses the device's baseline. */
 const PROJECT_PREFS_DEFAULTS: Omit<ProjectPrefs, 'id' | '_clock'> = { feed_seen_at: 0 }
 /** user_prefs (date-time-preferences): every preference follows the browser until the user picks one. */
-export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', first_run: '' }
+export const USER_PREFS_DEFAULTS: Omit<UserPrefs, 'id' | '_clock'> = { date_format: 'system', time_format: 'system', week_start: 'system', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', first_run: '', language: 'system' }
 /** review (stats-and-review D4): 0 means "never finished". */
 export const REVIEW_DEFAULTS: Omit<Review, 'id' | '_clock'> = { completed_at: 0 }
 const DEFAULTS: Record<Entity, Record<string, unknown>> = {

@@ -7,7 +7,7 @@ import (
 
 const prefsOwnExport = `{"format":"opentodo-export","version":1,
   "projects":[],"tasks":[],"labels":[],"sections":[],"reminders":[],"views":[],"comments":[],
-  "user_prefs":[{"id":"me","date_format":"iso","time_format":"24h","week_start":"sun","theme_mode":"dark","theme_accent":"indigo"}],
+  "user_prefs":[{"id":"me","date_format":"iso","time_format":"24h","week_start":"sun","theme_mode":"dark","theme_accent":"indigo","language":"de"}],
   "encryption":null}`
 
 // TestOwnExportRestoresUserPrefs (date-time-preferences D1): an own export brings
@@ -24,7 +24,7 @@ func TestOwnExportRestoresUserPrefs(t *testing.T) {
 		t.Fatalf("user_prefs: %v %v", row, err)
 	}
 	if str(row, "date_format") != "iso" || str(row, "time_format") != "24h" || str(row, "week_start") != "sun" ||
-		str(row, "theme_mode") != "dark" || str(row, "theme_accent") != "indigo" {
+		str(row, "theme_mode") != "dark" || str(row, "theme_accent") != "indigo" || str(row, "language") != "de" {
 		t.Fatalf("restored prefs = %v", row)
 	}
 

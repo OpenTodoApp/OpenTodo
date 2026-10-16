@@ -3,7 +3,7 @@
 // through ops like any other data, so a change works offline, reaches the user's
 // other devices and converges per field by last-writer-wins.
 import { mutate, USER_PREFS_DEFAULTS } from './ops'
-import type { DateFormatPref, TimeFormatPref, UserPrefs, WeekStartPref } from './types'
+import type { DateFormatPref, LanguagePref, TimeFormatPref, UserPrefs, WeekStartPref } from './types'
 
 export const USER_PREFS_ID = 'me'
 
@@ -24,10 +24,22 @@ export function readUserPrefs(row: Partial<UserPrefs> | null | undefined): DateT
   }
 }
 
-export const DEFAULT_PREFS: DateTimePrefs = { ...USER_PREFS_DEFAULTS }
+export const DEFAULT_PREFS: DateTimePrefs = {
+  date_format: USER_PREFS_DEFAULTS.date_format, time_format: USER_PREFS_DEFAULTS.time_format, week_start: USER_PREFS_DEFAULTS.week_start,
+}
+
+/** Interface language values (app-localization D1): 'system' and the shipped language codes. */
+export const LANGUAGES: readonly LanguagePref[] = ['system', 'en', 'de', 'fr', 'es', 'it', 'pt']
+
+/** The stored interface language; a missing row or a code this build does not ship reads as 'system', without rewriting the row. */
+export function readLanguage(row: Partial<UserPrefs> | null | undefined): LanguagePref {
+  return pick(LANGUAGES, row?.language)
+}
+
+type SettablePrefs = DateTimePrefs & { language: LanguagePref }
 
 /** Changes one preference through the op log (offline-safe). */
-export function setUserPref<K extends keyof DateTimePrefs>(field: K, value: DateTimePrefs[K]): Promise<void> {
+export function setUserPref<K extends keyof SettablePrefs>(field: K, value: SettablePrefs[K]): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { [field]: value })
 }
 
