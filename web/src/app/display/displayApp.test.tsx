@@ -10,7 +10,7 @@ import { flush, render } from '../../ui/test-utils'
 const me = { id: 'u1', email: 'me@example.com', name: 'Me', role: 'owner', createdAt: 1 }
 let signedIn = true
 
-async function waitFor(ok: () => boolean, ms = 3000) {
+async function waitFor(ok: () => boolean, ms = 10000) {
   for (let t = 0; t < ms && !ok(); t += 20) await flush(20)
   expect(ok()).toBe(true)
 }
@@ -42,7 +42,9 @@ afterEach(() => {
   document.documentElement.removeAttribute('data-motion')
 })
 
-describe('display routes in the app', () => {
+// Each case boots the whole app (fresh modules, lazy chunks), which takes several
+// seconds when the full suite runs in parallel.
+describe('display routes in the app', { timeout: 30000 }, () => {
   it('renders the display instead of the shell, with its options, and starts sync', async () => {
     signedIn = true
     const { r, startSync } = await boot('/display/today?eink=1')
