@@ -398,7 +398,7 @@ const OVERLAYS = {
   }])),
   // Custom fields (custom-fields): the project menu's Fields… dialog.
   async 'fields-dialog'(p) {
-    await p.getByRole('button', { name: /^Project/ }).first().click()
+    await p.getByRole('button', { name: 'Project menu' }).first().click()
     await p.getByRole('menuitem', { name: 'Fields…' }).click()
     return { overlay: p.locator('[data-testid="fields-dialog"]'), kind: 'dialog' }
   },
