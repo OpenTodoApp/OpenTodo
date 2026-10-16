@@ -106,6 +106,17 @@ describe('HistoryTab', () => {
     await v.unmount()
   })
 
+  it('labels a public link tick as the link, not as the member who created it', async () => {
+    const tick = { ...set(NOW - MIN, [{ field: 'completed_at', from: null, to: NOW - MIN }], 'public:l1', 'me'), device_label: 'Public link (Grandma)' }
+    fetchHistory.mockResolvedValue(page([tick]))
+    const v = await render(<HistoryTab taskId="t1" readOnly={false} />)
+    await settle()
+    const meta = [...v.container.querySelectorAll('[data-version] div.text-meta')].pop()!.textContent!
+    expect(meta).toMatch(/^Public link \(Grandma\) · /)
+    expect(meta).not.toContain('You')
+    await v.unmount()
+  })
+
   it('says offline without asking the server and lists no versions', async () => {
     vi.stubGlobal('navigator', { ...navigator, onLine: false })
     const v = await render(<HistoryTab taskId="t1" readOnly={false} />)

@@ -601,6 +601,7 @@ func TestRedactPath(t *testing.T) {
 		"/api/v1/project-invites/otp_abc/accept": "/api/v1/project-invites/[redacted]/accept",
 		"/api/v1/invitations/oti_xyz":            "/api/v1/invitations/[redacted]",
 		"/api/v1/tasks/01HX":                     "/api/v1/tasks/01HX",
+		"/api/v1/public/otl_secret/tick":         "/api/v1/public/[redacted]/tick",
 	} {
 		if got := redactPath(in); got != want {
 			t.Errorf("redactPath(%q) = %q, want %q", in, got, want)

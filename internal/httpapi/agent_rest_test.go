@@ -83,6 +83,7 @@ var anonymousByDesign = map[string]bool{
 	"POST /api/v1/auth/login": true, "POST /api/v1/auth/logout": true, "POST /api/v1/auth/register": true,
 	"POST /api/v1/auth/mfa": true, "POST /api/v1/auth/passkey": true, "POST /api/v1/auth/passkey/options": true,
 	"POST /api/v1/password-resets/{token}": true, "POST /api/v1/demo/sandbox": true,
+	"POST /api/v1/public/{token}/tick": true,
 }
 
 // conditional routes are registered only when their feature is on (web push,
