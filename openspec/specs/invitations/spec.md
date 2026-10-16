@@ -28,6 +28,17 @@ An account with the owner or admin role SHALL be able to create an invitation th
 - **WHEN** the body carries `expiresInHours` outside 1–720 or an `email` that is not a valid address
 - **THEN** the response is a 400 `invalid_input` error naming the field
 
+### Requirement: Invitation mailed on request
+With `"send": true`, an email and outgoing email configured, the server SHALL also mail the link to that address.
+
+#### Scenario: Invitation sent by email
+- **WHEN** an admin posts `{"email":"bob@example.com","send":true}` on a server with outgoing email
+- **THEN** the response is 201 with the link and `sent: true`, bob@example.com receives an `invitation` message naming the admin, and `invitation.created` and `email.sent` are recorded
+
+#### Scenario: Send without an email, unconfigured or failing
+- **WHEN** `send` is true without an `email`, or outgoing email is not configured, or the message cannot be sent
+- **THEN** the response is 400 `invalid_input`, 409 `smtp_disabled` or 502 `email_failed` respectively and no pending invitation remains
+
 ### Requirement: Invitation list and revocation
 The owner and admins SHALL be able to list all invitations through `GET /api/v1/invitations` with status (`pending`, `accepted`, `expired`, `revoked`), creator, bound email, timestamps and the accepting account, and to revoke a pending one through `DELETE /api/v1/invitations/{id}`. Secrets SHALL never appear in the list. Revocation takes effect on the server immediately; the server is the only replica, so no convergence is involved.
 
@@ -95,6 +106,17 @@ The web app SHALL show the owner and admins a Members section in Settings that l
 #### Scenario: Offline settings
 - **WHEN** the owner opens the Members section without a network connection
 - **THEN** the create and revoke controls are disabled and a message explains that invitations need a connection
+
+### Requirement: Send by email in the invitation form
+When outgoing email is configured and an email is given, the form SHALL offer "Send by email", on by default, and report that the message was sent.
+
+#### Scenario: Create and send
+- **WHEN** outgoing email is configured and the owner creates an invitation for bob@example.com with "Send by email" on
+- **THEN** the panel says the invitation was sent to bob@example.com and still shows the link once with its copy button
+
+#### Scenario: No outgoing email
+- **WHEN** the authentication status reports `outgoingEmail.enabled: false`
+- **THEN** the form shows no "Send by email" option
 
 ### Requirement: Acceptance screen
 Opening `/invite/<token>` in the web app SHALL show the preview (inviter, bound email, expiry) and a registration form whose email field is pre-filled and locked when the invitation is bound. On success the app SHALL proceed to the signed-in shell. When a user is already signed in, the screen SHALL offer to sign out before accepting rather than attaching the invitation to the current account.

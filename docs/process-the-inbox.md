@@ -3,7 +3,7 @@ title: Process the Inbox
 summary: Walk the Inbox one task at a time and decide each with a single key, today, schedule, move, delegate, label, Someday, complete or trash, with Undo and offline.
 audience: user
 section: Guides
-specs: [web-app]
+specs: [inbox-triage, web-app]
 screens: [inbox/triage]
 order: 22
 ---

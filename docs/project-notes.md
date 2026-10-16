@@ -3,8 +3,7 @@ title: Project notes
 summary: The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it.
 audience: user
 section: Guides
-# `project-notes` is this page's capability; it is named here once the change is archived (the docs check knows live specs only).
-specs: [project-organization, rich-text-editing]
+specs: [project-notes, project-organization, rich-text-editing]
 screens: []
 order: 18
 ---

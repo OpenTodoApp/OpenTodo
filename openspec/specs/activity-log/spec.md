@@ -17,7 +17,7 @@ Every operation served to a device SHALL carry the account id of its author, sta
 - **THEN** the stored and served author is the submitting account
 
 ### Requirement: Activity events derived from operations
-The activity log SHALL be derived only from the operation log; no separate event is written for a data change. Each operation SHALL map to an event naming the actor, the entity, the field changed, the old and new values when known, and the time, with consecutive operations by the same actor on the same entity within a short window folded into one event. Derivation SHALL give the same result on the server and on a device holding the same operations.
+The activity log SHALL be derived only from the operation log; no separate event is written for a data change. Each operation SHALL map to an event naming the actor, the entity, the field changed, the old and new values when known, the time and the device it came from, with consecutive operations by the same actor on the same entity within a short window folded into one event.
 
 #### Scenario: Create folded into one event
 - **WHEN** a task is created, which produces one operation per field
@@ -26,6 +26,20 @@ The activity log SHALL be derived only from the operation log; no separate event
 #### Scenario: Meaningful field changes
 - **WHEN** a task is completed, rescheduled, reassigned, moved to another project or commented on
 - **THEN** each appears as a distinct event wording the change, such as "completed", "moved the due date to 2026-10-12", "assigned to Bob", "commented"
+
+### Requirement: Public link operations form their own events
+Operations written through a public link (device `public:<link-id>`, OpenSpec `public-links`) SHALL form their own events, attributed to the link and never folded into the creator's events.
+
+#### Scenario: Public tick next to the creator's edit
+- **WHEN** the link creator reschedules a task and, two seconds later, a guest completes it through the link
+- **THEN** the activity shows two events: "rescheduled" by the creator and "completed" by the public link, with the second carrying device `public:<link-id>`
+
+### Requirement: Activity derivation matches on server and device
+Derivation SHALL give the same result on the server and on a device holding the same operations.
+
+#### Scenario: Same result on server and device
+- **WHEN** a device holding the same operations as the server derives the events of that task
+- **THEN** it derives the same two events with the same ids
 
 ### Requirement: Per-task activity
 The task detail panel SHALL show the task's activity in its Activity tab in reverse chronological order, with comment events as compact one-line entries, built from the operations already in local storage so it is available offline, and extended with older history from the server when online and more exists.

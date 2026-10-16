@@ -21,7 +21,7 @@ A signed-in user SHALL be able to enable encryption from Settings. The device SH
 - **THEN** the response is a 401 `unauthorized` error for the anonymous request and a 409 `encryption_conflict` error for the second device, whose client then prompts for the existing passphrase instead
 
 ### Requirement: Encrypted and plaintext fields
-For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project, label and section names; saved view names and queries; comment bodies; attachment names, types and links) and the bytes of its attachment files before they leave the device. Scheduling, ordering and structure fields SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
+For an encrypted account the device SHALL encrypt the user-written text of its personal scope (task title, description and calendar extras; project names, descriptions and notes; label and section names; saved view names and queries; comment bodies; attachment names, types and links) and the bytes of its attachment files before they leave the device. Scheduling, ordering and structure fields SHALL stay plaintext; shared projects SHALL NOT be encrypted. The split SHALL be documented.
 
 #### Scenario: Plaintext fields
 - **WHEN** an encrypted account changes `due`, `priority`, `completed_at`, `deleted_at`, `created_at`, `position`, `project_id`, `parent_id`, `section_id`, a task's `labels` id list, or a project's `color` or `archived`
@@ -38,6 +38,10 @@ For an encrypted account the device SHALL encrypt the user-written text of its p
 #### Scenario: Shared project stays plaintext
 - **WHEN** an encrypted account edits a task in a project shared with other accounts
 - **THEN** the operation carries the plaintext title, readable by every member
+
+#### Scenario: Project note is ciphertext
+- **WHEN** an encrypted account writes a note on one of its own projects
+- **THEN** the `description` and `notes_doc` operations carry ciphertext strings, the `notes_doc` ciphertext fits the document size limit, and the project's `position` stays plaintext
 
 #### Scenario: Attachment in the personal scope
 - **WHEN** an encrypted account attaches `receipt.pdf` to a task in its Inbox
@@ -175,3 +179,18 @@ For an encrypted account the task feed SHALL serve every event with the placehol
 #### Scenario: Subscription unchanged
 - **WHEN** an encrypted account subscribes to a calendar URL
 - **THEN** the events are fetched, stored on the server and drawn in the grid next to the decrypted tasks, and the panel notes that external events are not encrypted
+
+### Requirement: Encrypted projects cannot be published
+An account with encryption on SHALL NOT create a public link for a project it has not shared (409 `encryption_enabled`), because the server holds only ciphertext for it. A public link of an unshared project whose creator enables encryption later SHALL answer 404 `link_invalid` from then on, so ciphertext never reaches a guest. Links on shared projects, which are plaintext, are unaffected.
+
+#### Scenario: Creation refused
+- **WHEN** an encrypted account creates a public link for an unshared project
+- **THEN** the response is 409 `encryption_enabled` and no link exists
+
+#### Scenario: Encryption enabled after publishing
+- **WHEN** the owner of a published, unshared project enables encryption and a guest reloads the page
+- **THEN** the response is 404 `link_invalid` and the page says the link no longer works
+
+#### Scenario: Shared project
+- **WHEN** an encrypted account that is an admin of a shared project creates a public link for it
+- **THEN** the link works and serves the plaintext titles every member sees

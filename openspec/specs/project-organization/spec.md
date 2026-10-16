@@ -6,11 +6,18 @@ Defines projects as the containers tasks live in, the Inbox as the default conta
 ## Requirements
 
 ### Requirement: Project fields
-A project SHALL have a name, a colour, a sort position, an archived flag, an optional parent project, creation time and optional deletion time. A project whose parent is unset SHALL be a top-level project; a project whose parent is set SHALL be a sub-project of that parent, to any depth. The parent reference SHALL be stored and synced as the existing `parent_id` field, so edits made offline are applied locally at once and converge under per-field last-writer-wins.
+A project SHALL have a name, a colour, a sort position, an archived flag, an optional parent project, creation time, optional deletion time, and a note held as a Markdown `description` with its mergeable `notes_doc` document (see `project-notes`).
 
 #### Scenario: Create a project
 - **WHEN** the user creates a project with a name
-- **THEN** it appears in the sidebar immediately as a top-level project with an assigned colour and opens as the current view
+- **THEN** it appears in the sidebar immediately as a top-level project with an assigned colour and an empty note, and opens as the current view
+
+#### Scenario: Project synced before the note existed
+- **WHEN** a device holds a project row received before the note fields existed
+- **THEN** the project reads as having an empty note, and no operation is written until someone edits it
+
+### Requirement: Sub-projects through the parent reference
+A project whose parent is unset SHALL be a top-level project; a project whose parent is set SHALL be a sub-project of that parent, to any depth. The parent reference SHALL be stored and synced as the existing `parent_id` field, so edits made offline are applied locally at once and converge under per-field last-writer-wins.
 
 #### Scenario: Create a sub-project
 - **WHEN** the user creates a project from within an existing project's view or chooses a parent in the create form

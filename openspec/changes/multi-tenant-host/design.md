@@ -63,6 +63,8 @@ Exceeding a limit refuses the write with a clear error and leaves sync otherwise
 ### D6. Outgoing email (phase 2)
 SMTP with the standard library (`net/smtp` with STARTTLS or TLS), configured by optional `OPENTODO_SMTP_*` variables or owner settings with the password in the secrets directory, like the IMAP password. It enables verified self-service sign-up and self-service password reset. Sending is rate limited per address and per account. Failures are logged and audited, never retried in a tight loop. Without SMTP, nothing changes.
 
+Shipped in the `outgoing-email` change (`openspec/specs/outgoing-email/`). The decisions as shipped: owner settings through `GET`/`PUT /api/v1/settings/smtp` with `OPENTODO_SMTP_*` overriding and locking each field; the password only in the secrets directory; five message kinds (`verify_signup`, `password_reset`, `invitation`, `project_invite`, `test`), plain text in the six quick-add languages; limits of 5 messages of one kind per address per hour and 100 per hour in total; synchronous sending with a 15-second timeout, no queue or retry, `email.sent`/`email.failed` audit events; no task content for accounts with end-to-end encryption. A host reads the same settings from host configuration (3.3).
+
 ### D7. Tenant lifecycle and portability
 The operator interface is authenticated with a host-level token, never reachable from a tenant's host name. It can:
 - create a tenant (empty, or from a backup archive)

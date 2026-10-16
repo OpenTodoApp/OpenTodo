@@ -21,7 +21,7 @@ A project SHALL have exactly one `owner` and any number of members with the role
 - **THEN** Bob's device keeps showing the project read-write until it syncs, and after the sync it shows the project read-only with the viewer role
 
 ### Requirement: Role permissions
-A `viewer` SHALL read the project and its tasks. An `editor` SHALL additionally create, edit, complete and delete tasks in the project. An `admin` SHALL additionally rename, recolour and archive the project and manage members other than the owner. Only the `owner` SHALL delete the project, transfer ownership and change or remove admins. Every write SHALL be checked on the server regardless of what the client allowed, and a refused write SHALL leave the server state unchanged on every device.
+A `viewer` SHALL read the project and its tasks. An `editor` SHALL additionally create, edit, complete and delete tasks in the project, and edit the project's note (`description` and `notes_doc`). An `admin` SHALL additionally rename, recolour and archive the project and manage members other than the owner. Only the `owner` SHALL delete the project, transfer ownership and change or remove admins.
 
 #### Scenario: Viewer tries to edit
 - **WHEN** a viewer's device submits an operation changing a task title in the shared project
@@ -34,6 +34,17 @@ A `viewer` SHALL read the project and its tasks. An `editor` SHALL additionally 
 #### Scenario: Admin manages members
 - **WHEN** an admin changes a viewer to editor and removes another editor
 - **THEN** both changes take effect, while the same admin changing the owner's role is refused with a 403 `forbidden` error
+
+#### Scenario: Editor edits the project note
+- **WHEN** an editor of a shared project changes its note and syncs
+- **THEN** the server stores the note operations and every member sees the new note after their next sync
+
+### Requirement: Writes are checked on the server
+Every write SHALL be checked on the server regardless of what the client allowed, and a refused write SHALL leave the server state unchanged on every device.
+
+#### Scenario: Viewer cannot edit the note
+- **WHEN** a viewer's device submits a `description` or `notes_doc` operation for the shared project
+- **THEN** the server refuses it with reason `forbidden`, the stored note is unchanged, and the viewer's device reverts to the server's value
 
 ### Requirement: Shared project reaches every member
 Once a project is shared, its current state and the full history of its operations SHALL be delivered to each member's devices through the ordinary sync exchange, and operations written by any member SHALL reach every other member's devices. Members' concurrent and offline edits SHALL converge under the same per-field last-writer-wins rule as a single user's devices.
@@ -133,11 +144,19 @@ The client SHALL mark shared projects in the sidebar, show the member list and r
 - **THEN** the member is added without any mouse interaction and appears in the member list
 
 ### Requirement: Project invite link creation
-The project's owner or an admin SHALL create a single-use link through `POST /api/v1/projects/{id}/invites` with role `viewer` or `editor` (`admin` only for the owner), an optional email and an expiry of 1–720 hours (default 168). The secret SHALL be returned once and stored only as a hash. Links are server-side data, never ops: they never sync and need a connection.
+The project's owner or an admin SHALL create a single-use link through `POST /api/v1/projects/{id}/invites` with role `viewer` or `editor` (`admin` only for the owner), an optional email and an expiry of 1–720 hours (default 168). The secret SHALL be returned once and stored only as a hash. With `"send": true`, an email and outgoing email configured, the server SHALL also mail the link to that address. Links are server-side data, never ops: they never sync and need a connection.
 
 #### Scenario: Owner creates a link
 - **WHEN** the owner posts `{"role":"editor"}` to the project's invites route
 - **THEN** the response is 201 with the link's `id`, `role`, `expiresAt` and a `link` ending in `/invite/p/<secret>` that is never returned again
+
+#### Scenario: Link sent by email
+- **WHEN** the owner posts `{"role":"editor","email":"bob@example.com","send":true}` on a server with outgoing email
+- **THEN** the response is 201 with the link and `sent: true`, bob@example.com receives a `project_invite` message naming the inviter and the project's role but not the project's name, and `project_invite.created` and `email.sent` are recorded
+
+#### Scenario: Send without an email, unconfigured or failing
+- **WHEN** `send` is true without an `email`, or outgoing email is not configured, or the message cannot be sent
+- **THEN** the response is 400 `invalid_input`, 409 `smtp_disabled` or 502 `email_failed` respectively and no pending link remains
 
 #### Scenario: Admin cannot grant admin
 - **WHEN** a project admin creates a link with role `admin`
@@ -213,11 +232,15 @@ A signed-in account SHALL join through `POST /api/v1/project-invites/{token}/acc
 - **THEN** the response is 401 `unauthorized`
 
 ### Requirement: Invite links in the share dialog
-The share dialog SHALL offer the owner and admins an "Invite with a link" section: role, optional email and expiry, a created link shown once with a copy button and a notice, whether it can create accounts, and the pending links with revoke. Every action SHALL work with the keyboard. Offline, the controls SHALL be disabled with an explanation.
+The share dialog SHALL offer the owner and admins an "Invite with a link" section: role, optional email and expiry, a created link shown once with a copy button and a notice, whether it can create accounts, and the pending links with revoke. When outgoing email is configured and an email is given, it SHALL offer "Send by email", on by default. Every action SHALL work with the keyboard. Offline, the controls SHALL be disabled with an explanation.
 
 #### Scenario: Create and copy
 - **WHEN** the owner creates a link in the share dialog
 - **THEN** the link is shown with a copy button and a notice that it will not be shown again, and it appears in the pending list
+
+#### Scenario: Create and send
+- **WHEN** outgoing email is configured and the owner creates a link for bob@example.com with "Send by email" on
+- **THEN** the dialog says the link was sent to bob@example.com, shows it once with its copy button, and lists it as pending
 
 #### Scenario: Viewer sees no section
 - **WHEN** a viewer or editor opens the member list

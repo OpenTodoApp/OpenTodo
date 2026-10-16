@@ -63,7 +63,7 @@ A section page SHALL use the page header with the section's name, and its sectio
 - **THEN** focus is on the "Notifications" heading of the new page
 
 ### Requirement: Sections follow the user's role
-Each row SHALL be shown to the same roles as before. People (users, invitations, members, access policies, single sign-on) SHALL be listed to the owner and admins; access policies and single sign-on inside it, and the Server section (backups, attachments, audit log), SHALL be shown to the owner only. Opening a section the role does not see SHALL open the first visible section.
+Each row SHALL be shown to the same roles as before. People (users, invitations, members, access policies, single sign-on) SHALL be listed to the owner and admins; access policies and single sign-on inside it, and the Server section (backups, attachments, outgoing email, audit log), SHALL be shown to the owner only. Opening a section the role does not see SHALL open the first visible section.
 
 #### Scenario: Member and administration
 - **WHEN** a member opens `/settings/people`
@@ -75,11 +75,18 @@ Each row SHALL be shown to the same roles as before. People (users, invitations,
 
 #### Scenario: Owner-only backups
 - **WHEN** the owner opens Settings
-- **THEN** the list shows People with access policies and single sign-on, and Server with backups, attachments and the audit log
+- **THEN** the list shows People with access policies and single sign-on, and Server with backups, attachments, outgoing email and the audit log
 
 #### Scenario: Owner-only audit log
 - **WHEN** an admin opens `/settings/server`
-- **THEN** the Account section is shown and no audit log is reachable anywhere in Settings
+- **THEN** the Account section is shown and no audit log and no Outgoing email card is reachable anywhere in Settings
+
+### Requirement: Outgoing email card on the Server page
+The Outgoing email card SHALL sit on the Server page between Attachments and the audit log, and its state (configured or not, the server and From address, the last test) SHALL read as a badge and text beside its row's label.
+
+#### Scenario: Owner sees outgoing email
+- **WHEN** the owner opens `/settings/server`
+- **THEN** the Outgoing email card is shown after Attachments and before the audit log, the list describes Server as backups, attachments, outgoing email and the audit log, and searching Settings for "SMTP" or "outgoing email" opens that card
 
 ### Requirement: Demo instance sections
 On a demo instance every section SHALL be listed and every row shown; rows the demo refuses SHALL have their controls disabled with the existing demo note once at the top of the page naming them. No section SHALL be hidden or replaced by a note.
@@ -106,6 +113,10 @@ Each Settings page SHALL have one Help action in its page header that opens the 
 #### Scenario: Moved panel keeps its screen id
 - **WHEN** something opens contextual help for screen `settings/two-factor`
 - **THEN** the Account guide opens at its two-factor section
+
+#### Scenario: Outgoing email help
+- **WHEN** something opens contextual help for screen `settings/outgoing-email`
+- **THEN** the Server guide opens at its Server section, which describes the Outgoing email card
 
 ### Requirement: Settings groups
 The section list SHALL show sections in this order and in these groups. You: Account, Appearance. App: General, Notifications, Capture. Data: Integrations, Data. Server: People, Server. Groups SHALL be labelled headings, a group with no visible section SHALL be omitted, and each group's list SHALL be exposed to assistive technology under its heading.

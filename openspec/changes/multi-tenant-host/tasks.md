@@ -10,9 +10,11 @@ Phases may be split into separate changes when scheduled (design "Migration Plan
 
 ## 2. Outgoing email (phase 2)
 
-- [ ] 2.1 Implement SMTP sending with the standard library (TLS and STARTTLS), optional `OPENTODO_SMTP_*` variables and owner settings, the password in `secrets/`, a test message action, and rate limits and audit events. Verify unit tests against an in-process SMTP test server, and that with no configuration nothing is sent. Run `go test ./...`.
-- [ ] 2.2 Add verified self-service sign-up and "Forgot password" (routes with rate limits, `400` on malformed bodies, neutral answers, single-use expiring links, session revocation). Verify `httpapi` tests for each scenario in `specs/account-access`, web tests for the screens, `npm test` and `npm run build`.
-- [ ] 2.3 Document SMTP in `docs/self-hosting/` and the reset flow in `docs/account-security.md`. Verify `make docs-check`.
+Shipped as the `outgoing-email` change (archived 2026-10-16): live specs `openspec/specs/outgoing-email/` plus the account-access, invitations, project-sharing, user-administration, self-hosting, settings-navigation, demo-mode and audit-log requirements it added. Host mode (3.3) reads the same `smtp.*` settings from host configuration.
+
+- [x] 2.1 Implement SMTP sending with the standard library (TLS and STARTTLS), optional `OPENTODO_SMTP_*` variables and owner settings, the password in `secrets/`, a test message action, and rate limits and audit events. Verify unit tests against an in-process SMTP test server, and that with no configuration nothing is sent. Run `go test ./...`.
+- [x] 2.2 Add verified self-service sign-up and "Forgot password" (routes with rate limits, `400` on malformed bodies, neutral answers, single-use expiring links, session revocation). Verify `httpapi` tests for each scenario in `specs/account-access`, web tests for the screens, `npm test` and `npm run build`.
+- [x] 2.3 Document SMTP in `docs/self-hosting/` and the reset flow in `docs/account-security.md`. Verify `make docs-check`.
 
 ## 3. Host mode (phase 3)
 

@@ -3,7 +3,7 @@ title: Public links
 summary: Share a project's list with anyone who has the link, no account needed: view-only or with ticking, named, with an optional expiry, and revoked in one click.
 audience: user
 section: Guides
-specs: []
+specs: [public-links]
 screens: []
 order: 74
 ---

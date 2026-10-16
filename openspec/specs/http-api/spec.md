@@ -32,7 +32,7 @@ The API SHALL expose `projects` and `tasks` collections with list, get, create, 
 - **THEN** the response is 204, a subsequent GET of that id is 404, and the item is still present in the export with `deleted_at` set
 
 ### Requirement: Write-through to the operation log
-Every API write SHALL be recorded as operations stamped with server time, with device `server` for sessions and `full` tokens and `agent:<token-id>` for `agent` tokens, so devices receive API-originated changes on their next sync and last-writer-wins applies uniformly. Concurrent offline device edits converge with them like any other op.
+Every API write SHALL be recorded as operations stamped with server time, with device `server` for sessions and `full` tokens, `agent:<token-id>` for `agent` tokens and `public:<link-id>` for ticks through a public link (OpenSpec `public-links`), so devices receive API-originated changes on their next sync and last-writer-wins applies uniformly. Concurrent offline device edits converge with them like any other op.
 
 #### Scenario: API write reaches devices
 - **WHEN** a task is created through the API and a device syncs afterwards
@@ -42,12 +42,20 @@ Every API write SHALL be recorded as operations stamped with server time, with d
 - **WHEN** an `agent` token creates a task through `POST /api/v1/tasks` with both assistant switches on
 - **THEN** the stored ops carry device `agent:<token-id>` and the task's history shows the assistant label
 
+#### Scenario: Public tick is attributed
+- **WHEN** a guest completes a task through a public tick link
+- **THEN** the stored op carries device `public:<link-id>`, the link creator's account as actor and server time, and the task's history shows the public link label
+
 ### Requirement: Sync endpoint
-`POST /api/v1/sync` SHALL accept `{device, cursor, ops}` and return `{applied, duplicates, ops, cursor, hasMore, serverTime}`. A missing device id SHALL be a 400 error. At most 1000 operations SHALL be accepted or returned per request.
+`POST /api/v1/sync` SHALL accept `{device, cursor, ops}` and return `{applied, duplicates, ops, cursor, hasMore, serverTime}`. A missing device id SHALL be a 400 error. At most 1000 operations SHALL be accepted or returned per request. A request whose device, or any submitted op's device, starts with a server-reserved prefix (`agent:`, `caldav:`, `public:`) SHALL be refused with 400 `invalid_op` and nothing stored.
 
 #### Scenario: Oversized batch
 - **WHEN** a request carries more than 1000 operations
 - **THEN** the response is 400 with code `invalid_op`
+
+#### Scenario: Reserved device prefix
+- **WHEN** a device submits a request with device `public:abc`, or an op whose device is `caldav:abc`
+- **THEN** the response is 400 `invalid_op` and nothing is stored
 
 ### Requirement: Export
 `GET /api/v1/export` SHALL return every project and task of the authenticated user, soft-deleted ones included, and their attachments' metadata as one JSON document with a format name and version, served as a download. With `format=zip` it SHALL stream a ZIP holding that document as `export.json` and each stored file the user can read under `attachments/<id>/<name>`, without buffering files in memory. Both forms require authentication.
