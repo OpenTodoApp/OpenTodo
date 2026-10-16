@@ -725,7 +725,7 @@ select.ui-input { @apply truncate; contain: layout paint; }
 .display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; font-size: calc(var(--text-body) * var(--display-scale)); line-height: 1.35; }
 .display-root[data-size="m"] { --display-scale: 1.35; }
 .display-root[data-size="xl"] { --display-scale: 2.15; }
-.display-clock { @apply font-semibold text-strong; font-size: calc(var(--text-h1) * var(--display-scale) * 1.75); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.display-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-h1) * var(--display-scale) * 1.75), 16vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
 .display-date { @apply text-muted; font-size: calc(var(--text-h2) * var(--display-scale)); line-height: 1.25; }
 .display-title { @apply font-semibold text-strong; font-size: calc(var(--text-h2) * var(--display-scale)); line-height: 1.2; }
 .display-heading { @apply font-semibold text-strong; font-size: calc(var(--text-h3) * var(--display-scale)); line-height: 1.3; }
