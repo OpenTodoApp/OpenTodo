@@ -82,6 +82,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>s</kbd> | Go to Settings |
 | <kbd>g</kbd> then <kbd>Shift+I</kbd> | Go to Settings → Data → Import data |
 | <kbd>g</kbd> then <kbd>?</kbd> | Open Help: the user guide, offline, with search |
+| <kbd>g</kbd> then <kbd>r</kbd> | Go to the weekly Review |
+| <kbd>g</kbd> then <kbd>Shift+S</kbd> | Go to Statistics: what you completed, created and let slip |
 
 ### Tasks in a list
 

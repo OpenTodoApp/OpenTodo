@@ -62,7 +62,7 @@ In a shared project a completed task SHALL count for the account that completed 
 - **THEN** the first counts and the second does not, because who completed a task decides; of the older tasks, those assigned to the user or unassigned count and those assigned to another member do not
 
 ### Requirement: Breakdowns and charts
-The Statistics screen SHALL show completions per day of the period, per weekday (for 4 and 12 weeks) and per project (the five projects with most completions and "other"), each as a chart with an accessible text alternative (a table or list carrying the same values) and no library-rendered image. The charts SHALL respect light and dark themes and SHALL use no colour alone to convey a value.
+The Statistics screen SHALL show completions per day of the period (up to 4 weeks), per week and per weekday (for 4 and 12 weeks) and per project (the five projects with most completions and "other"), each as a chart with an accessible text alternative (a table or list carrying the same values) and no library-rendered image. The charts SHALL respect light and dark themes and SHALL use no colour alone to convey a value.
 
 #### Scenario: Per-day chart
 - **WHEN** this week is shown on Wednesday

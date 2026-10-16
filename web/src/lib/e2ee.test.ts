@@ -21,6 +21,8 @@ const { server, MockApiError } = vi.hoisted(() => {
     /** Number of further sync calls that fail like a dropped connection. */
     failNext: 0,
     calls: [] as { device: string; ops: Op[] }[],
+    /** The account has the weekly email digest on (stats-and-review): enabling encryption turns it off. */
+    digestOn: false,
   }
   return { server, MockApiError }
 })
@@ -48,8 +50,11 @@ vi.mock('./api', () => ({
     },
     putEncryptionKeys: async (r: KeyRecord) => {
       if (r.version !== (server.record?.version ?? 0) + 1) throw new MockApiError(409, 'encryption_conflict', 'conflict')
+      const created = !server.record
       server.record = { ...r, createdAt: server.record?.createdAt ?? Date.now() + server.seq, updatedAt: Date.now() }
-      return { keys: structuredClone(server.record) }
+      const digestDisabled = created && server.digestOn
+      if (digestDisabled) server.digestOn = false
+      return { keys: structuredClone(server.record), ...(digestDisabled ? { digestDisabled: true } : {}) }
     },
     deleteEncryptionKeys: async () => {
       if (!server.record) throw new MockApiError(404, 'encryption_disabled', 'not enabled')
@@ -64,7 +69,7 @@ import { decryptValue, isEnvelope, MAX_PLAINTEXT_BYTES } from './crypto'
 import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED } from './docfields'
 import { db, getMeta, setMeta, useDatabase } from './db'
 import {
-  changePassphrase, currentKey, disableEncryption, enableEncryption, EncryptionConflictError, encryptionSnapshot, loadEncryptionState, lock,
+  changePassphrase, commitEnable, currentKey, prepareEnable, disableEncryption, enableEncryption, EncryptionConflictError, encryptionSnapshot, loadEncryptionState, lock,
   MAX_FAILURES, notYetEncrypted, resetPassphrase, unlock, UnlockThrottledError, UNDECRYPTABLE,
 } from './e2ee'
 import { decryptIncoming, MIGRATION_BATCH, normalizeOnSight, prepareOutgoing, runMigration, startMigration } from './e2eeSync'
@@ -101,6 +106,7 @@ beforeEach(() => {
   server.record = null
   server.failNext = 0
   server.calls = []
+  server.digestOn = false
 })
 afterEach(() => vi.useRealTimers())
 
@@ -471,5 +477,18 @@ describe('server reads shown in the UI', () => {
     expect(changes.map((c) => [c.from, c.to])).toEqual([['Dentist', 'Dentist'], [null, { date: '2026-10-11' }], [UNDECRYPTABLE, '']])
     const page = await decryptActivityPage({ events: [{ entity: 'task' as const, entityId: 't1', taskId: 't1', taskTitle: title, changes: [] }] })
     expect(page.events[0].taskTitle).toBe('Dentist')
+  })
+})
+
+describe('weekly digest (stats-and-review)', () => {
+  it('enabling encryption reports that the server turned the digest off', async () => {
+    await on('A')
+    server.digestOn = true
+    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: true })
+  })
+
+  it('reports nothing when no digest was on', async () => {
+    await on('A')
+    expect(await commitEnable(await prepareEnable(PASS, FAST))).toEqual({ digestDisabled: false })
   })
 })

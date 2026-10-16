@@ -270,11 +270,17 @@ export function prepareEnable(passphrase: string, opts: { iterations?: number } 
   return createKeyRecord(passphrase, opts)
 }
 
-/** Step 2, after the user saved the recovery key and acknowledged the risk: store the record and keep the key. */
-export async function commitEnable({ record, key }: PreparedEnable): Promise<void> {
+/**
+ * Step 2, after the user saved the recovery key and acknowledged the risk: store the record and keep the key.
+ * `digestDisabled`: the server turned the weekly email digest off (stats-and-review), since it would carry titles.
+ */
+export async function commitEnable({ record, key }: PreparedEnable): Promise<{ digestDisabled: boolean }> {
   let stored: KeyRecord
+  let digestDisabled = false
   try {
-    stored = (await api.putEncryptionKeys(record)).keys
+    const res = await api.putEncryptionKeys(record)
+    stored = res.keys
+    digestDisabled = !!res.digestDisabled
   } catch (err) {
     if (err instanceof ApiError && err.code === 'encryption_conflict') {
       await refreshFromServer().catch(() => undefined)
@@ -285,6 +291,7 @@ export async function commitEnable({ record, key }: PreparedEnable): Promise<voi
   await storeKey(key, stored)
   await setEnabled(true, stored)
   await db.meta.delete(K_DISCARD)
+  return { digestDisabled }
 }
 
 /** Change the passphrase: re-wrap only, no content op (design D1). Needs the current passphrase. */

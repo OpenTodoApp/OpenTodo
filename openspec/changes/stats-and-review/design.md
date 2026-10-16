@@ -55,7 +55,7 @@ Periods reuse the filter grammar's period resolution: `this week` and `last week
 
 ### D4. `review` entity for the finish time
 
-New personal entity `review` with one `kNumber` field `completed_at` (Unix ms, like `project_prefs.feed_seen_at`), entity id `"me"`, in `internal/sync/ops.go` `Schema`. The default branch of the scope resolver places it in the author's personal scope, so the server needs only the schema entry. Client: `Review` type in `lib/types.ts`, defaults in `lib/ops.ts`, Dexie table `review: 'id'` in the next free version (every store redeclared, as the existing versions do), entity maps in `lib/e2eeSync.ts` and `lib/assistant.ts`, the JSON export (a `review` array beside the `Plural` collections, restored on import of an own export, as `user_prefs`), `docs/sync.md`, and an op in the activity fixture that must produce no event. Not content: stays out of `e2ee.ContentFields` and `CONTENT_FIELDS`. Not in `opsync.Plural`: no REST collection.
+New personal entity `review` with one `kNumber` field `completed_at` (Unix ms, like `project_prefs.feed_seen_at`), entity id `"me"`, in `internal/sync/ops.go` `Schema`. The default branch of the scope resolver places it in the author's personal scope, so the server needs only the schema entry. Client: `Review` type in `lib/types.ts`, defaults in `lib/ops.ts`, Dexie table `review: 'id'` in the next free version (v18; every store redeclared, as the existing versions do), the entity-to-table maps in `lib/ops.ts`, `lib/e2eeSync.ts`, `lib/sharing.ts`, `lib/undo.ts` and the reseed list in `lib/sync.ts` (`lib/assistant.ts` no longer keeps such a map), the JSON export (a `review` array beside the `Plural` collections, restored on import of an own export, as `user_prefs`), `docs/sync.md`, and an op in the activity fixture that must produce no event. Not content: stays out of `e2ee.ContentFields` and `CONTENT_FIELDS`. Not in `opsync.Plural`: no REST collection.
 
 - **Alternative: a field on `user_prefs`.** Rejected: that spec defines `user_prefs` as three date and time preferences; a review marker there would need a delta on an unrelated capability.
 - **Alternative: per-device `meta`.** Rejected: "last review" is a fact about the person; the phone must not say a review is due after the laptop finished one.
@@ -85,7 +85,8 @@ The `digest` kind joins `internal/mail/templates` in the six languages. The lang
 - `router.ts`: `/stats` and `/review`; the shortcut registry (`lib/shortcuts.ts`): `go.review` (`g r`) and `go.stats` (`g Shift+S`) in the `go` section, bound in `Shell.tsx`'s global scope next to the other `go.*` handlers; the cheat sheet and `docs/keyboard.md` are generated from the registry.
 - `StatsView` and `ReviewView` are `React.lazy` chunks like `AssistantSettingsSection` (`SettingsView.tsx:229`), with a `Suspense` fallback.
 - `NotificationsSettings` gets a `DigestCard` (state-first, weekday and hour selects opened from "Change", zone and language shown, outcomes from the server, offline and unavailable states, help id `settings/email-digest`).
-- Help ids `review` and `stats` for the screens; the user guide page `docs/review-and-statistics.md` with `specs: [statistics, weekly-review, email-digest]` and `screens:` entries so the docs check covers the new capabilities.
+- Help ids `review` and `stats` for the screens (a `HelpLink` in the step text and under the period chooser); the digest card has no help id of its own, because settings cards carry no help link (settings-navigation): the Notifications page's Help and `docs/settings-app.md` lead to the digest section. The user guide page `docs/review-and-statistics.md` with `specs: [statistics, weekly-review, email-digest]` and `screens:` entries so the docs check covers the new capabilities.
+- The sidebar's Review entry sits in More after Completed, with Statistics; while a review is due the closed More heading carries the marker too, so it is never hidden.
 
 ## Risks / Trade-offs
 
@@ -94,7 +95,7 @@ The `digest` kind joins `internal/mail/templates` in the six languages. The lang
 - **[Week boundaries differ between device and server]** → Both read the same `week_start` (`user_prefs`) and the server uses the stored `time_zone`; the fixture pins the arithmetic; the digest says which week it covers.
 - **[Digest reveals titles to the mailbox]** → Opt-in, plain language in the card ("the message contains task titles"), never for encrypted accounts, and the transport's audit records the send without content.
 - **[`g S` is a two-key chord with Shift]** → Same precedent as `g I`; the shortcut list and `?` help document it.
-- **[Size]** → No dependency. Lazy chunk about 25 kB minified for the two screens; main bundle +3 kB; Go about 600 lines plus templates; one ticker goroutine on the leader; no measurable memory change.
+- **[Size]** → No dependency. Measured: the lazy `ReviewBundle` chunk is 14.4 kB minified (5.4 kB gzip) for the two screens; the main bundle grew by 4.1 kB minified (1.5 kB gzip: the sidebar entry, the digest card, the chords, the `review` entity and the statistics definitions the sidebar's marker shares); two icons were added to the vendored set (`chart-column`, `clipboard-check`). Go: about 900 lines including the digest templates; one ticker goroutine on the leader; no measurable memory change.
 
 ## Migration Plan
 

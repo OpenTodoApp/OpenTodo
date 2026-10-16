@@ -11,6 +11,7 @@ import { CalendarSettingsSection } from './CalendarSettings'
 import { PasswordSection } from './PasswordSection'
 import { AdministrationSections } from './UsersPanel'
 import { NotificationsSettings } from './NotificationsSettings'
+import { DigestCard } from './DigestCard'
 import { ActivityPanel } from './ActivityPanel'
 import { AuditPanel } from './AuditPanel'
 import { SecurityPanel } from './SecurityPanel'
@@ -286,7 +287,7 @@ function SectionContent({ section, user, onLogout }: { section: SettingsSection;
         </>
       )
     case 'notifications':
-      return <>{note}<DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled></>
+      return <>{note}<DemoDisabled on={demo}><NotificationsSettings /><DigestCard /></DemoDisabled></>
     case 'capture':
       return (
         <>
@@ -370,7 +371,7 @@ function DemoDisabled({ on, children }: { on: boolean; children: ReactNode }) {
 export const DEMO_RESTRICTED_FEATURES = [
   'password and two-factor authentication', 'passkeys', 'end-to-end encryption', 'push notifications', 'linked accounts',
   'users and invitations', 'single sign-on', 'calendar apps (CalDAV)', 'calendar feeds', 'webhooks', 'email to task', 'backups',
-  'outgoing email', 'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
+  'outgoing email', 'the weekly digest', 'the assistant', 'AI assistants (MCP)', 'API tokens', 'import', 'sharing changes',
 ]
 
 /** The demo note once at the top of a page, naming the rows whose controls are disabled. */

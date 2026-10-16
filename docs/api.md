@@ -84,6 +84,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/me/activity` | yes | `{events:[…]}`: your own access events, last 90 days, at most 100 |
 | GET | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes, owner_allows_writes, mcp_enabled}`: your "Allow AI assistants to make changes" switch; `read` and `agent` tokens → 403 `insufficient_scope` |
 | PUT | `/api/v1/me/agent-access` | session or `full` token | `{allow_writes: boolean}` → same shape; recorded as `settings.changed` (`agent.writes`); anything else → 400 `invalid_input`; demo instances → 403 `demo_restricted` |
+| GET | `/api/v1/me/email-digest` | session or `full` token | your weekly email digest settings, see [Weekly digest](#weekly-digest); `read` and `agent` tokens → 403 `insufficient_scope` |
+| PUT | `/api/v1/me/email-digest` | session or `full` token | any of `{enabled, weekday, hour, timeZone, language}` → the same shape; demo instances → 403 `demo_restricted` |
 | GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
 | DELETE | `/api/v1/me/identities/{id}` | yes | 204, or 409 `last_credential` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}` |
@@ -386,6 +388,19 @@ Optional SMTP, configured by the owner in **Settings → Server → Outgoing ema
 **Forgot password** — `POST /api/v1/auth/password-reset` with `{"email": "…"}` always answers 202 after at least 200 ms; for an active account outside SSO-only mode it issues a 24-hour reset link (revoking earlier ones) and mails it. Use the link with the [reset routes](#user-administration).
 
 **Verified sign-up** — with open sign-up and outgoing email, `POST /api/v1/auth/register` without an invitation answers 202 `{verificationRequired: true}` and mails a 24-hour link to `/verify/<token>`; an address that already has an account gets a message saying so, with the same answer. `GET /api/v1/auth/verify/{token}` previews `{email, expiresAt}`; `POST` creates the member account and starts a session (201 `{user}`). Unknown, expired, replaced and used tokens answer the same 404 `verification_invalid`.
+
+### Weekly digest
+
+An opt-in email per user on a chosen weekday and hour (OpenSpec `email-digest`): last week's completed, created, completed late and slipped counts, up to 15 overdue tasks, up to 15 tasks due in the next seven days, up to 10 projects without an open task, the last review and a link to `/review`. The numbers follow the same definitions as the device's Statistics ([review-and-statistics.md](review-and-statistics.md#statistics)).
+
+`GET /api/v1/me/email-digest` →
+
+```json
+{"available": true, "encryption": false, "enabled": true, "weekday": 5, "hour": 7, "timeZone": "Europe/Zurich",
+ "language": "de", "nextSendAt": 1761195600000, "lastOutcome": "sent", "lastSentFor": "2026-10-16", "lastAttemptAt": 1760590800000}
+```
+
+`weekday` is 0 (Sunday) to 6, `hour` 0–23 in `timeZone` (an IANA zone), `language` one of `en`, `de`, `fr`, `es`, `it`, `pt`. `available` is false without outgoing email (and on a demo); `encryption` is true for an account with end-to-end encryption. `lastOutcome` is `sent`, `skipped` (the relay failed for the whole six-hour retry window), `encrypted_account`, `rate_limited` or the failed stage. `PUT` takes any of the five editable fields; errors: 404 `smtp_disabled` without outgoing email, 409 `encryption_enabled` for an encrypted account (nothing is stored), 400 `invalid_input` naming the field. Turning on encryption (`PUT /api/v1/encryption/keys` creating the record) turns the digest off and answers `digestDisabled: true`. Sends are recorded as `email.sent` / `email.failed` with kind `digest`.
 
 ### Idempotency keys
 

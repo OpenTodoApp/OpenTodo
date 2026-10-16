@@ -52,6 +52,9 @@ const HelpPanel = lazy(() => import('./help/HelpBundle').then((m) => ({ default:
 const AssistantRoot = lazy(() => import('./assistant/AssistantRoot'))
 // Command palette (search-and-command-palette D1): its own chunk, fetched on first open.
 const CommandPalette = lazy(() => import('./palette/CommandPalette'))
+// Weekly review and Statistics (stats-and-review D8): one chunk, fetched on first open.
+const ReviewView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.ReviewView })))
+const StatsView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.StatsView })))
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
@@ -145,6 +148,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }),
     'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
     'go.trash': go({ view: 'trash' }), 'go.triage': go({ view: 'triage' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
+    // Weekly review and Statistics (stats-and-review).
+    'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }),
     'global.help': () => setShowHelp((v) => !v),
     // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar"); the calendar's and the timeline's own `[` win there.
     'global.sidebar': () => {
@@ -211,6 +216,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <TrashView />
           ) : route.view === 'task' ? (
             <TaskPage id={route.id} user={user} />
+          ) : route.view === 'review' ? (
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">Loading the review…</p>}><ReviewView userId={user.id} /></Suspense>
+          ) : route.view === 'stats' ? (
+            <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">Loading statistics…</p>}><StatsView /></Suspense>
           ) : route.view === 'triage' ? (
             <Suspense fallback={null}><TriageView /></Suspense>
           ) : route.view === 'feed' ? (

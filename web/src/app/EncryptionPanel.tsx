@@ -312,7 +312,9 @@ export function EncryptionPanel() {
       onAcknowledge={(v) => mode.kind === 'recovery' && setMode({ ...mode, acknowledged: v })}
       onEnable={() => void run(async () => {
         if (!prepared) throw new Error('Start again: choose a passphrase.')
-        await commitEnable(prepared)
+        const { digestDisabled } = await commitEnable(prepared)
+        // The weekly email digest would carry task titles: the server turned it off (stats-and-review).
+        const digestNote = digestDisabled ? ' Your weekly email digest was turned off, because it would contain your task titles.' : ''
         setPrepared(null)
         setMode({ kind: 'idle' })
         await startMigration('encrypt')
@@ -322,10 +324,10 @@ export function EncryptionPanel() {
           await runFileMigration('encrypt')
         } catch (err) {
           if (!(err instanceof FileMigrationPaused)) throw err
-          setNotice('Encryption is on. Your content was re-written as ciphertext; your files continue encrypting when you are online.')
+          setNotice(`Encryption is on. Your content was re-written as ciphertext; your files continue encrypting when you are online.${digestNote}`)
           return
         }
-        setNotice('Encryption is on. Your content was re-written as ciphertext and is being uploaded.')
+        setNotice(`Encryption is on. Your content was re-written as ciphertext and is being uploaded.${digestNote}`)
       })}
       onChange={(current, next, confirm) => void run(async () => {
         checkNew(next, confirm)

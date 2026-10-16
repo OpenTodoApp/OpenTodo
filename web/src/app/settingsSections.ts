@@ -41,8 +41,8 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   { id: 'general', label: 'General', group: 'app', icon: 'settings', description: () => 'Start view, date and time, calendar and keyboard' },
   {
     id: 'notifications', label: 'Notifications', group: 'app', icon: 'bell',
-    description: () => 'Push notifications for reminders on this device',
-    demo: () => ['push notifications'],
+    description: () => 'Push notifications for reminders on this device, and the weekly digest by email',
+    demo: () => ['push notifications', 'the weekly digest'],
   },
   {
     id: 'capture', label: 'Capture', group: 'app', icon: 'send',

@@ -220,6 +220,9 @@ const shots = [
     return { x: b.x, y: h1.y - 16, width: b.width, height: 250 }
   } },
   { name: 'triage', server: D, async run(p) { await go(p, demoBase, '/triage', () => p.locator('[data-triage-card]').waitFor()); await settle(p, 300) } },
+  // stats-and-review: the weekly review on its first unfinished step, and Statistics.
+  { name: 'review', server: D, async run(p) { await go(p, demoBase, '/review', () => p.locator('[role="tab"][aria-selected="true"]').waitFor()); await settle(p, 300) } },
+  { name: 'stats', server: D, async run(p) { await go(p, demoBase, '/stats', () => p.locator('[data-period-chooser]').waitFor()); await settle(p, 300) } },
   { name: 'upcoming', server: D, card: true, async run(p) { await go(p, demoBase, '/upcoming', () => p.getByRole('heading', { name: 'Tomorrow' }).first().waitFor()) } },
   { name: 'project-list', server: D, card: true, async run(p) { await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation') } },
   { name: 'task-detail', server: D, async run(p) { await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen') } },

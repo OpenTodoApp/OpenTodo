@@ -131,6 +131,9 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.settings', keys: ['g s'], description: 'Go to Settings', section: 'go', scope: 'global' },
   { id: 'go.import', keys: ['g Shift+I'], description: 'Go to Settings → Data → Import data', section: 'go', scope: 'global' },
   { id: 'go.help', keys: ['g ?'], description: 'Open Help: the user guide, offline, with search', section: 'go', scope: 'global' },
+  // Weekly review and Statistics (stats-and-review).
+  { id: 'go.review', keys: ['g r'], description: 'Go to the weekly Review', section: 'go', scope: 'global' },
+  { id: 'go.stats', keys: ['g Shift+S'], description: 'Go to Statistics: what you completed, created and let slip', section: 'go', scope: 'global' },
 
   // ---- tasks in a list
   { id: 'list.down', keys: ['j', '↓'], description: 'Move the selection down', section: 'tasks', scope: 'list' },

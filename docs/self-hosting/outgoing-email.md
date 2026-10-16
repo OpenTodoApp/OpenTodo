@@ -76,6 +76,10 @@ A demo instance (`OPENTODO_DEMO=true`) never sends email, whatever is configured
 
 Messages are written in the language of the browser that caused them (English, German, French, Spanish, Italian or Portuguese; English otherwise). An invitation uses the language of the person who sent it.
 
+## Weekly digest
+
+With outgoing email configured, each user can opt in to a weekly digest in **Settings → Notifications** ([user guide](../review-and-statistics.md#weekly-digest-by-email)). The server sends it on the user's chosen weekday and hour in their time zone, from one background pass every 5 minutes. A failed send is retried every 15 minutes for six hours, then given up and recorded as `email.failed` with reason `skipped`; a restart never sends a second digest for the same day. Digests count towards the per-recipient limit but not the server-wide one, so a busy digest morning never blocks a password reset. The digest contains task and project names, so it is never built for an account with end-to-end encryption. Without `OPENTODO_BASE_URL` the review link uses the address the user saved the setting from.
+
 ## Limits
 
 At most 5 messages of one kind to one address per hour, and 100 messages per hour for the whole server. A message over a limit is not sent and is recorded in the audit log. Sending is immediate and never retried: if the SMTP server cannot be reached, an invitation or reset sent by email is not created and the screen says so, so you can try again or copy a link instead.

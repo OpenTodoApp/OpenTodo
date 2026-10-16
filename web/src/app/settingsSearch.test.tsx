@@ -25,7 +25,8 @@ afterEach(() => { document.body.innerHTML = ''; vi.restoreAllMocks(); vi.unstubA
 describe('index', () => {
   it('finds rows by label, description and keywords, grouped under their section', () => {
     const hits = searchSettings('week', member)
-    expect(hits.map((h) => h.section.id)).toEqual(['general'])
+    // "week" also finds the weekly digest (stats-and-review) under Notifications.
+    expect(hits.map((h) => h.section.id)).toEqual(['general', 'notifications'])
     expect(hits[0].entries[0].label).toBe('First day of the week')
     expect(searchSettings('passkey', member)[0].entries[0]).toMatchObject({ section: 'account', label: 'Passkeys', anchor: 'security-heading' })
     expect(searchSettings('2fa', member).flatMap((h) => h.entries.map((e) => e.label))).toContain('Two-factor authentication')

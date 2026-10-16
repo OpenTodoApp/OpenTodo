@@ -35,6 +35,9 @@ export type Route =
   | { view: 'feed' }
   | { view: 'ask' }
   | { view: 'help'; page?: string; q?: string }
+  // Weekly review and Statistics (stats-and-review).
+  | { view: 'review' }
+  | { view: 'stats' }
 
 /** Settings sections, each at /settings/<id> (settings-navigation); nine, in list order. */
 export const SETTINGS_SECTION_IDS = [
@@ -151,6 +154,11 @@ export function parseRoute(pathname: string): Route {
       return parts[1] ? { view: 'public', token: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'label':
       return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
+    // The weekly review and the statistics (stats-and-review).
+    case 'review':
+      return { view: 'review' }
+    case 'stats':
+      return { view: 'stats' }
     default:
       return { view: 'inbox' }
   }

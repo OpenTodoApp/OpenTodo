@@ -79,6 +79,14 @@ export function reviewDue(completedAt: number | null | undefined, now = Date.now
   return !completedAt || now - completedAt > REVIEW_INTERVAL_MS
 }
 
+/** When the last review was, in words: "today", "yesterday", "9 days ago" or "never". */
+export function reviewAgo(completedAt: number | null | undefined, now = Date.now()): string {
+  if (!completedAt) return 'never'
+  const day = (ms: number) => { const d = new Date(ms); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) }
+  const days = Math.max(0, Math.round((day(now) - day(completedAt)) / 86_400_000))
+  return days === 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`
+}
+
 /** Records a finished review through the op log (offline-safe; the latest finish wins on every device). */
 export function finishReview(now = Date.now()): Promise<void> {
   return mutate('review', REVIEW_ID, { completed_at: now })
