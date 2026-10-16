@@ -171,9 +171,12 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
     expect(complete.className).not.toMatch(/invisible/)
     const tickLabel = r.container.querySelector('[data-tick]')!.closest('label')!
     expect(tickLabel.className).toMatch(/\bhidden\b/)
+    // Only one display utility: `inline-flex` beside `hidden` would win and cover the circle.
+    expect(tickLabel.className).not.toMatch(/inline-flex/)
     expect(tickLabel.className).not.toMatch(/group-hover|group-focus-within/)
     await r.rerender(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => { toggled++ }} onOpen={() => {}} onTick={() => {}} showCheckbox /></ul>)
     expect(r.container.querySelector('button[aria-label="Complete task"]')!.className).toMatch(/invisible/)
+    expect(r.container.querySelector('[data-tick]')!.closest('label')!.className).toMatch(/inline-flex/)
     expect(r.container.querySelector('[data-tick]')!.closest('label')!.className).not.toMatch(/\bhidden\b/)
     expect(toggled).toBe(0)
     await r.unmount()

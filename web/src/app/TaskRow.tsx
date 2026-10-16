@@ -240,7 +240,7 @@ export function TaskRow({ task, project, labels = [], assignee, assignedToMe = f
           </span>
         </button>
         {onTick && !readOnly && (
-          <label className={`absolute inset-0 inline-flex cursor-pointer items-center justify-center ${showCheckbox || ticked ? '' : 'hidden'}`}>
+          <label className={`absolute inset-0 cursor-pointer items-center justify-center ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
             <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={t('Select {title}', { title: task.title || t('Untitled') })} data-tick
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
           </label>
