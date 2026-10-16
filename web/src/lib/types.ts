@@ -1,8 +1,8 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'review'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'review']
 
 export interface Op {
   id: string
@@ -314,6 +314,18 @@ export interface UserPrefs {
 }
 
 export type ThemeModePref = 'system' | 'light' | 'dark'
+
+/**
+ * When the user last finished a weekly review (OpenSpec change `stats-and-review`,
+ * design D4): the synced personal `review` entity, one row with id "me". Not
+ * content: never encrypted, and it derives no activity event.
+ */
+export interface Review {
+  id: string
+  /** Unix ms of the latest finish; 0 = never. */
+  completed_at: number
+  _clock: Clock
+}
 
 export type ActivityKind =
   | 'created' | 'completed' | 'reopened' | 'deleted' | 'restored' | 'rescheduled' | 'assigned' | 'unassigned'

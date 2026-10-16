@@ -43,6 +43,8 @@ type State struct {
 	Sections, Reminders, Views []opsync.Entity
 	// UserPrefs holds the account's own date and time preferences row, if any.
 	UserPrefs []opsync.Entity
+	// Review holds the account's own "last weekly review" row, if any.
+	Review []opsync.Entity
 	// Attachments (including removed ones) let own-export rows detect existing ids.
 	Attachments []opsync.Entity
 	// UserID is the importing account (own-export assignees are kept only for it).
@@ -248,7 +250,7 @@ func sectionKey(projectID, name string) string {
 func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID func() string) *Plan {
 	pl := &planner{opts: opts, st: st, now: now.UnixMilli(), newID: newID, position: now.UnixMilli(), files: parsed.Files,
 		byKind: map[string]map[string]opsync.Entity{KindProject: {}, KindLabel: {}, KindTask: {},
-			KindSection: {}, KindReminder: {}, KindView: {}, KindUserPrefs: {}, KindAttachment: {}},
+			KindSection: {}, KindReminder: {}, KindView: {}, KindUserPrefs: {}, KindReview: {}, KindAttachment: {}},
 		projectByName: map[string]string{}, labelByName: map[string]string{}, fingerprints: map[string]string{},
 		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
 		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}, createdBySource: map[string]string{}}
@@ -256,7 +258,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		st.Remembered = map[string]string{}
 	}
 	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks,
-		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments} {
+		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindUserPrefs: st.UserPrefs, KindReview: st.Review, KindAttachment: st.Attachments} {
 		for _, e := range list {
 			id := str(e, "id")
 			pl.byKind[kind][id] = e

@@ -45,6 +45,9 @@ const (
 	// KindUserPrefs is the date and time preferences row (OpenSpec change
 	// date-time-preferences): restored from an own export, never undone.
 	KindUserPrefs = "user_prefs"
+	// KindReview is the "last weekly review" row (OpenSpec change
+	// stats-and-review): restored from an own export like user_prefs, never undone.
+	KindReview = "review"
 	// KindAttachment is a file or link attachment (OpenSpec change attachments).
 	KindAttachment = "attachment"
 )
