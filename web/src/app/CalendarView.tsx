@@ -24,7 +24,8 @@ import { completeWithUndo, setDueWithUndo } from './undoable'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
 import { CalendarRangeSwitch } from './CalendarRange'
-import { estimateFocus, isGPending, placement as placementSignal } from './signals'
+import { estimateFocus, placement as placementSignal } from './signals'
+import { isActivationTarget, isTypingTarget, useShortcutScope } from './shortcuts'
 import { Menu } from './overlay/Menu'
 import { PanelFrame } from './PanelFrame'
 import { closePanel, openPanel, setPanelTaskId, usePanelOccupantKey, usePanelTaskId } from './panel'
@@ -222,124 +223,71 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     if (!dates.includes(d)) goTo(d)
   }, [dates, goTo])
 
-  // Keyboard (design D4): selection, moves, estimate, placement mode.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey || isGPending()) return
-      const target = e.target as HTMLElement | null
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
-        if (e.key === 'Escape') target.blur()
-        return
-      }
-      if (placing) {
-        const p = placing
-        let next: Placement | null = null
-        switch (e.key) {
-          case 'ArrowUp': next = { ...p, start: clamp(p.start - SLOT_MINUTES, 0, LAST_SLOT) }; break
-          case 'ArrowDown': next = { ...p, start: clamp(p.start + SLOT_MINUTES, 0, LAST_SLOT) }; break
-          case 'ArrowLeft': next = { ...p, date: addDaysISO(p.date, -1) }; break
-          case 'ArrowRight': next = { ...p, date: addDaysISO(p.date, 1) }; break
-          case 'Enter':
-            e.preventDefault()
-            commit(p.taskId, { type: 'slot', date: p.date, start: p.start })
-            setPlacing(null)
-            return
-          case 'Escape':
-            e.preventDefault()
-            setPlacing(null)
-            return
-          default:
-            return
-        }
-        e.preventDefault()
-        setPlacing(next)
-        follow(next.date)
-        return
-      }
-      if (e.key === 'Escape') {
-        if (expanded) setExpanded(null)
-        else if (openId) setOpenId(null)
-        else setSelectedId(null)
-        return
-      }
-      if (document.querySelector('[role="dialog"]')) return
-      const idx = selectedId ? order.indexOf(selectedId) : -1
-      const task = selectedId ? taskMap.get(selectedId) : undefined
-      const block = task ? days.find((d) => d.date === task.due?.date)?.blocks.get(task.id) : undefined
-      switch (e.key) {
-        case 'j':
-          e.preventDefault()
-          setSelectedId(order[Math.min(order.length - 1, idx + 1)] ?? null)
-          return
-        case 'k':
-          e.preventDefault()
-          setSelectedId(order[Math.max(0, idx - 1)] ?? null)
-          return
-        case '[':
-          goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))
-          return
-        case ']':
-          goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))
-          return
-        case 't':
-          goTo(today)
-          return
-      }
-      if (!task || !task.due) {
-        // Nothing selected: arrows pick the first item.
-        if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key) && order.length && !task) {
-          e.preventDefault()
-          setSelectedId(order[0])
-        }
-        return
-      }
-      const due = task.due
-      switch (e.key) {
-        case 'ArrowUp':
-        case 'ArrowDown': {
-          e.preventDefault()
-          const dir = e.key === 'ArrowUp' ? -1 : 1
-          if (e.shiftKey) {
-            // Shift+Up shortens, Shift+Down lengthens: the block's lower edge follows the arrow.
-            edit(task.id, (t) => ({ estimate_minutes: stepEstimate(t.estimate_minutes, dir * SLOT_MINUTES) }))
-          } else {
-            edit(task.id, (t) => t.due ? { due: nudgeDue(t.due, { minutes: dir * SLOT_MINUTES, fallbackStart: placementStart(t, t.due.date, today, nowMinutes, prefs) }) } : null)
-          }
-          return
-        }
-        case 'ArrowLeft':
-        case 'ArrowRight': {
-          e.preventDefault()
-          const days = e.key === 'ArrowLeft' ? -1 : 1
-          edit(task.id, (t) => (t.due ? { due: nudgeDue(t.due, { days }) } : null), (_, patch) => patch.due && follow(patch.due.date))
-          return
-        }
-        case 'Enter':
-          e.preventDefault()
-          setOpenId(task.id)
-          return
-        case 'u':
-          // Keyboard twin of dropping on the lane: keep the date, clear the time.
-          if (block) edit(task.id, (t) => (t.due ? { due: { date: t.due.date } } : null))
-          return
-        case 'p':
-          e.preventDefault()
-          startPlacing(task, due.date)
-          return
-        case 'e':
-          e.preventDefault()
-          estimateFocus.request(task.id)
-          setOpenId(task.id)
-          return
-        case 'c':
-          void completeWithUndo(task.id, true)
-          setSelectedId(order[idx + 1] ?? order[idx - 1] ?? null)
-          return
-      }
+  // Keyboard (design D4; keyboard-shortcuts "One shortcut registry with scopes"):
+  // the `calendar` scope. In placement mode the arrows, Enter and Esc drive the
+  // ghost and every other key waits; otherwise selection, moves, estimate.
+  const idx = selectedId ? order.indexOf(selectedId) : -1
+  const task = selectedId ? taskMap.get(selectedId) : undefined
+  const block = task ? days.find((d) => d.date === task.due?.date)?.blocks.get(task.id) : undefined
+  const ghost = (next: Placement) => {
+    setPlacing(next)
+    follow(next.date)
+  }
+  /** Arrows with no selection pick the first item; with a dated task they run `move`. */
+  const arrows = (move: (t: Task, due: NonNullable<Task['due']>, e: KeyboardEvent) => void) => (e: KeyboardEvent) => {
+    if (placing) return false
+    if (!task || !task.due) {
+      if (!task && order.length) { setSelectedId(order[0]); return }
+      return false
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [placing, expanded, openId, selectedId, order, taskMap, days, anchor, mode, today, nowMinutes, prefs, commit, edit, follow, goTo, startPlacing])
+    move(task, task.due, e)
+  }
+  const unlessPlacing = (fn: () => boolean | void) => () => (placing ? false : fn())
+  useShortcutScope('calendar', {
+    'calendar.escape': (e) => {
+      const target = e.target as HTMLElement | null
+      if (isTypingTarget(target)) { target!.blur(); return }
+      if (placing) setPlacing(null)
+      else if (expanded) setExpanded(null)
+      else if (openId) setOpenId(null)
+      else setSelectedId(null)
+    },
+    'calendar.open': (e) => {
+      if (placing) { commit(placing.taskId, { type: 'slot', date: placing.date, start: placing.start }); setPlacing(null); return }
+      if (!task || isActivationTarget(e.target)) return false
+      setOpenId(task.id)
+    },
+    'calendar.nudge': (e) => {
+      const dir = e.key === 'ArrowUp' ? -1 : 1
+      if (placing) { ghost({ ...placing, start: clamp(placing.start + dir * SLOT_MINUTES, 0, LAST_SLOT) }); return }
+      return arrows((t) => {
+        edit(t.id, (x) => x.due ? { due: nudgeDue(x.due, { minutes: dir * SLOT_MINUTES, fallbackStart: placementStart(x, x.due.date, today, nowMinutes, prefs) }) } : null)
+      })(e)
+    },
+    'calendar.shift-day': (e) => {
+      const days = e.key === 'ArrowLeft' ? -1 : 1
+      if (placing) { ghost({ ...placing, date: addDaysISO(placing.date, days) }); return }
+      return arrows((t) => {
+        edit(t.id, (x) => (x.due ? { due: nudgeDue(x.due, { days }) } : null), (_, patch) => patch.due && follow(patch.due.date))
+      })(e)
+    },
+    // Shift+Up shortens, Shift+Down lengthens: the block's lower edge follows the arrow.
+    'calendar.estimate': arrows((t, _due, e) => edit(t.id, (x) => ({ estimate_minutes: stepEstimate(x.estimate_minutes, (e.key === 'ArrowUp' ? -1 : 1) * SLOT_MINUTES) }))),
+    'calendar.next': unlessPlacing(() => setSelectedId(order[Math.min(order.length - 1, idx + 1)] ?? null)),
+    'calendar.prev': unlessPlacing(() => setSelectedId(order[Math.max(0, idx - 1)] ?? null)),
+    'calendar.range-prev': unlessPlacing(() => goTo(addDaysISO(anchor, mode === 'day' ? -1 : -7))),
+    'calendar.range-next': unlessPlacing(() => goTo(addDaysISO(anchor, mode === 'day' ? 1 : 7))),
+    'calendar.today': unlessPlacing(() => goTo(today)),
+    // Keyboard twin of dropping on the lane: keep the date, clear the time.
+    'calendar.unschedule': unlessPlacing(() => { if (!task?.due || !block) return false; edit(task.id, (t) => (t.due ? { due: { date: t.due.date } } : null)) }),
+    'calendar.place': unlessPlacing(() => { if (!task?.due) return false; startPlacing(task, task.due.date) }),
+    'calendar.edit-estimate': unlessPlacing(() => { if (!task?.due) return false; estimateFocus.request(task.id); setOpenId(task.id) }),
+    'calendar.complete': unlessPlacing(() => {
+      if (!task?.due) return false
+      void completeWithUndo(task.id, true)
+      setSelectedId(order[idx + 1] ?? order[idx - 1] ?? null)
+    }),
+  })
 
   // Keep the selection (or the placement ghost) on screen.
   useEffect(() => {

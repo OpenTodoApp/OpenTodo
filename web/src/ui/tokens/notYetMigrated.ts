@@ -16,12 +16,10 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/AuthScreen.tsx',
   'src/app/BackupsPanel.tsx',
   'src/app/CaldavPanel.tsx',
-  'src/app/CalendarSettings.tsx',
   'src/app/CalendarView.tsx',
   'src/app/CaptureSettings.tsx',
   'src/app/ConfigWarnings.tsx',
   'src/app/DashboardView.tsx',
-  'src/app/DataSettings.tsx',
   'src/app/DateTimeSettings.tsx',
   'src/app/DueField.tsx',
   'src/app/EmailInboxPanel.tsx',
@@ -37,12 +35,10 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/LabelPicker.tsx',
   'src/app/LabelsView.tsx',
   'src/app/Markdown.tsx',
-  'src/app/MembersPanel.tsx',
   'src/app/NamePrompt.tsx',
   'src/app/NotesEditor.tsx',
   'src/app/NotificationBell.tsx',
   'src/app/NotificationsSettings.tsx',
-  'src/app/PreferencesPanels.tsx',
   'src/app/ProjectActivity.tsx',
   'src/app/ProjectInviteScreen.tsx',
   'src/app/ProjectPickerField.tsx',
@@ -67,9 +63,7 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/TrashView.tsx',
   'src/app/TwoFactorPanel.tsx',
   'src/app/UnlockScreen.tsx',
-  'src/app/UsersPanel.tsx',
   'src/app/ViewsView.tsx',
-  'src/app/VoiceSettings.tsx',
   'src/app/WebhooksPanel.tsx',
   'src/app/assistant/AskEntry.tsx',
   'src/app/assistant/AssistantConsent.tsx',
@@ -86,6 +80,7 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/menus/ActionMenu.tsx',
   'src/app/overlay/Dialog.tsx',
   'src/app/overlay/Popover.tsx',
+  'src/app/shortcuts/Kbd.tsx',
   'src/app/task-detail/ActivityTab.tsx',
   'src/app/task-detail/AttachmentsRow.tsx',
   'src/app/task-detail/CommentsTab.tsx',
@@ -94,7 +89,7 @@ export const STYLE_NOT_YET_MIGRATED: readonly string[] = [
   'src/app/task-detail/RelativeTime.tsx',
   'src/app/vim/VimLayer.tsx',
 ]
-export const STYLE_NOT_YET_MIGRATED_MAX = 87
+export const STYLE_NOT_YET_MIGRATED_MAX = 82
 
 /** Files with a native `title` attribute on an HTML element (the Tooltip primitive replaces it). */
 export const TITLE_NOT_YET_MIGRATED: readonly string[] = [

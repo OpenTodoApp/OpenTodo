@@ -1,4 +1,5 @@
 import { useId, type KeyboardEvent, type RefObject } from 'react'
+import { Kbd } from '../shortcuts/Kbd'
 import type { Review } from '../../lib/assistant'
 
 export interface ReviewResult {
@@ -65,7 +66,7 @@ export function ChangeSetReview(p: ChangeSetReviewProps) {
       <h3 id={headingId} className="text-sm font-semibold">
         Proposed changes ({review.items.length})
       </h3>
-      <p className="text-xs text-muted">Nothing changes until you apply. <span className="kbd">Enter</span> applies the checked items, <span className="kbd">Esc</span> discards.</p>
+      <p className="text-xs text-muted">Nothing changes until you apply: apply the checked items with <Kbd k="Enter" />, discard with <Kbd k="Esc" />.</p>
       {review.dropped.map((d) => <p key={d} className="text-xs text-muted">{d}</p>)}
       <ul className="space-y-1" aria-label="Proposed changes">
         {review.items.map((item, i) => {

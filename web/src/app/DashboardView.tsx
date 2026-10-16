@@ -4,7 +4,7 @@
 // panels, j / k move inside one.
 import { blockedMap } from '../lib/dependencies'
 import { Button, Icon, PageBody, PageHeader } from '../ui'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
 import { setTaskCompleted } from '../lib/ops'
 import type { Label, Project, View } from '../lib/types'
@@ -13,7 +13,8 @@ import { setPanelTaskId, usePanelTaskId } from './panel'
 import { TaskRow } from './TaskRow'
 import { navigate } from './router'
 import { ViewMenu } from './ViewsView'
-import { isTyping, type ViewData } from './useViews'
+import type { ViewData } from './useViews'
+import { isActivationTarget, useShortcutScope } from './shortcuts'
 
 export function DashboardView({ dashboard, data }: { dashboard: View; data: ViewData }) {
   const { views, projects, labels, ctx } = data
@@ -40,55 +41,41 @@ export function DashboardView({ dashboard, data }: { dashboard: View; data: View
   }
   const focusPanel = (i: number) => gridRef.current?.querySelector<HTMLElement>(`[data-panel-index="${i}"]`)?.focus()
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e) || openId || document.querySelector('[role="dialog"]')) {
-        if (e.key === 'Escape' && openId) setOpenId(null)
-        return
-      }
-      const active = document.activeElement as HTMLElement | null
-      const inGrid = !!active && !!gridRef.current?.contains(active)
-      const onPage = !active || active === document.body
-      if (e.key === 'Tab' && (inGrid || onPage) && panels.length > 0) {
-        e.preventDefault()
-        const cur = focusIdx ?? (e.shiftKey ? panels.length : -1)
-        focusPanel((cur + (e.shiftKey ? panels.length - 1 : 1)) % panels.length)
-        return
-      }
-      if (focusIdx === null || !inGrid) return
-      const panel = panels[focusIdx]
-      const tasks = panel?.kind === 'view' && panel.summary.ok ? panel.summary.tasks : []
-      const cur = selected?.panel === focusIdx ? selected.task : -1
-      switch (e.key) {
-        case 'j':
-        case 'ArrowDown':
-          e.preventDefault()
-          if (tasks.length) setSelected({ panel: focusIdx, task: Math.min(tasks.length - 1, cur + 1) })
-          break
-        case 'k':
-        case 'ArrowUp':
-          e.preventDefault()
-          if (tasks.length) setSelected({ panel: focusIdx, task: Math.max(0, cur - 1) })
-          break
-        case 'Enter':
-          e.preventDefault()
-          if (cur >= 0 && tasks[cur]) setOpenId(tasks[cur].id)
-          else if (panel?.kind === 'view') navigate({ view: 'view', id: panel.id })
-          break
-        case 'o':
-          if (panel?.kind === 'view') navigate({ view: 'view', id: panel.id })
-          break
-        case 'c':
-          if (cur >= 0 && tasks[cur]) void setTaskCompleted(tasks[cur].id, !tasks[cur].completed_at)
-          break
-        case 'Escape':
-          setSelected(null)
-          break
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [panels, focusIdx, selected, openId])
+  // The dashboard's `view` scope: Tab moves between panels, j / k inside the focused
+  // panel, Enter opens, o opens the view, c completes, Esc clears; nothing while a task is open.
+  const grid = () => {
+    const active = document.activeElement as HTMLElement | null
+    return { inGrid: !!active && !!gridRef.current?.contains(active), onPage: !active || active === document.body }
+  }
+  const focused = () => {
+    if (openId || focusIdx === null || !grid().inGrid) return null
+    const panel = panels[focusIdx]
+    const tasks = panel?.kind === 'view' && panel.summary.ok ? panel.summary.tasks : []
+    return { panel, tasks, cur: selected?.panel === focusIdx ? selected.task : -1, at: focusIdx }
+  }
+  useShortcutScope('view', {
+    'dashboard.panels': (e) => {
+      const { inGrid, onPage } = grid()
+      if (openId || !(inGrid || onPage) || panels.length === 0) return false
+      const cur = focusIdx ?? (e.shiftKey ? panels.length : -1)
+      focusPanel((cur + (e.shiftKey ? panels.length - 1 : 1)) % panels.length)
+    },
+    'dashboard.down': () => { const f = focused(); if (!f || !f.tasks.length) return false; setSelected({ panel: f.at, task: Math.min(f.tasks.length - 1, f.cur + 1) }) },
+    'dashboard.up': () => { const f = focused(); if (!f || !f.tasks.length) return false; setSelected({ panel: f.at, task: Math.max(0, f.cur - 1) }) },
+    'dashboard.open': (e) => {
+      const f = focused()
+      if (!f || isActivationTarget(e.target)) return false
+      if (f.cur >= 0 && f.tasks[f.cur]) setOpenId(f.tasks[f.cur].id)
+      else if (f.panel?.kind === 'view') navigate({ view: 'view', id: f.panel.id })
+    },
+    'dashboard.open-view': () => { const f = focused(); if (f?.panel?.kind !== 'view') return false; navigate({ view: 'view', id: f.panel.id }) },
+    'dashboard.complete': () => { const f = focused(); if (!f || f.cur < 0 || !f.tasks[f.cur]) return false; void setTaskCompleted(f.tasks[f.cur].id, !f.tasks[f.cur].completed_at) },
+    'dashboard.escape': () => {
+      if (openId) { setOpenId(null); return }
+      if (!focused()) return false
+      setSelected(null)
+    },
+  }, { view: 'dashboard' })
 
   return (
     <PageBody width="full">

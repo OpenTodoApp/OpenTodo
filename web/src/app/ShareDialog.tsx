@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Kbd } from './shortcuts/Kbd'
 import { HelpLink } from './help/HelpLink'
 import { api, ApiError } from '../lib/api'
 import { canManage, grantableRoles } from '../lib/sharing'
@@ -129,7 +130,7 @@ export function ShareDialog({ project, userId, cached, onClose }: {
           <span>Adding by email works for accounts on this server; invite anyone else with a link. Labels stay personal.</span>
           <HelpLink screen="share-dialog" topic="Sharing projects" />
         </p>
-        <button className="btn-ghost mt-3 w-full" onClick={onClose}>Close <span className="kbd ml-1">Esc</span></button>
+        <button className="btn-ghost mt-3 w-full" onClick={onClose}>Close <Kbd k="Esc" only className="ml-1" /></button>
     </Dialog>
   )
 }

@@ -21,9 +21,9 @@ import { ImportScreen } from './ImportScreen'
 import { SettingsView } from './SettingsView'
 import { ReminderToasts } from './ReminderToasts'
 import { ArchivePrompt } from './ArchivePrompt'
-import { isGPending, openTaskInList, setGPending } from './signals'
+import { openTaskInList } from './signals'
+import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, openTaskPanel, panelTaskId, taskIdFromAddress } from './panel'
-import { listState } from './listActions'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { db } from '../lib/db'
@@ -117,85 +117,36 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
 
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [paletteLoaded, setPaletteLoaded] = useState(false)
-  useEffect(() => {
-    // Ctrl/⌘+K opens the palette from everywhere, also while typing in a field,
-    // except in the notes editor, where it inserts a link (search-and-command-palette D1).
-    function onPaletteKey(e: KeyboardEvent) {
-      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 'k') return
-      if ((e.target as HTMLElement | null)?.closest?.('[data-notes-editor], .ProseMirror')) return
-      e.preventDefault()
+  const [showHelp, setShowHelp] = useState(false)
+  // The one keydown listener (keyboard-shortcuts "One shortcut registry with
+  // scopes"); the shell owns the `global` scope: the palette, `g` navigation, the
+  // cheat sheet, the sidebar toggle and the assistant.
+  useShortcutDispatcher()
+  const go = (r: Parameters<typeof navigate>[0]) => () => navigate(r)
+  useShortcutScope('global', {
+    'global.palette': (e) => {
+      // Ctrl/⌘+K opens the palette from everywhere, also while typing in a field,
+      // except in the notes editor, where it inserts a link (search-and-command-palette D1).
+      if ((e.target as HTMLElement | null)?.closest?.('[data-notes-editor], .ProseMirror')) return false
       setPaletteLoaded(true)
       setPaletteOpen(true)
-    }
-    window.addEventListener('keydown', onPaletteKey)
-    return () => window.removeEventListener('keydown', onPaletteKey)
-  }, [])
+    },
+    'go.inbox': go({ view: 'inbox' }), 'go.today': go({ view: 'today' }), 'go.upcoming': go({ view: 'upcoming' }), 'go.someday': go({ view: 'someday' }),
+    'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }),
+    'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
+    'go.trash': go({ view: 'trash' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
+    'global.help': () => setShowHelp((v) => !v),
+    // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar"); the calendar's and the timeline's own `[` win there.
+    'global.sidebar': () => {
+      if (!window.matchMedia?.('(min-width: 1024px)').matches) return false
+      toggleSidebarCollapsed()
+    },
+    'global.assistant': () => {
+      if (!showLauncher(assistantStatus())) return false
+      openAssistant()
+    },
+  })
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      const target = e.target as HTMLElement | null
-      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
-      if (typing) return
-      // Pressing Shift on its own (for `g` then Shift+I) must not end the `g` sequence.
-      if (e.key === 'Shift') return
-      if (e.key === 'g') {
-        setGPending(true)
-        return
-      }
-      if (isGPending()) {
-        // Cleared after this event: list and calendar handlers check the flag for the same key.
-        setTimeout(() => setGPending(false), 0)
-        if (e.key === 'i') navigate({ view: 'inbox' })
-        if (e.key === 't') navigate({ view: 'today' })
-        if (e.key === 'u') navigate({ view: 'upcoming' })
-        if (e.key === 'o') navigate({ view: 'someday' })
-        if (e.key === 'n') navigate({ view: 'anytime' })
-        if (e.key === 'c') navigate({ view: 'completed' })
-        if (e.key === 'a') navigate({ view: 'assigned' })
-        if (e.key === 'l') navigate({ view: 'labels' })
-        if (e.key === 'v') navigate({ view: 'views' })
-        if (e.key === 'd') navigate({ view: 'day' })
-        if (e.key === 'w') navigate({ view: 'week' })
-        if (e.key === 'm') navigate({ view: 'month' })
-        if (e.key === 'f') {
-          // The Filter view focuses its input on mount; keep this "f" out of it.
-          e.preventDefault()
-          navigate({ view: 'filter' })
-        }
-        if (e.key === 's') navigate({ view: 'settings' })
-        if (e.key === 'x') navigate({ view: 'trash' })
-        // `g f` is the Filter view, so the activity feed is `g h` (activity-feed).
-        if (e.key === 'h') navigate({ view: 'feed' })
-        // `g k`: the Ask screen (assistant-skills; `g a` is Assigned to me).
-        if (e.key === 'k') navigate({ view: 'ask' })
-        // `g i` is the Inbox, so Import is `g` then Shift+I.
-        if (e.key === 'I') navigate({ view: 'import' })
-        // `g` then `?` opens the Help view (user-documentation); `?` alone stays the shortcut list.
-        if (e.key === '?') { e.preventDefault(); navigate({ view: 'help' }) }
-        return
-      }
-      if (e.key === '?') {
-        e.preventDefault()
-        setShowHelp((v) => !v)
-      }
-      // `[` collapses the sidebar to icons from 1024 px (app-shell "Resizable sidebar");
-      // the calendar keeps `[` / `]` for its range until the shortcut registry lands.
-      if (e.key === '[' && !/^\/(day|week|month)/.test(location.pathname) && !document.querySelector('[data-timeline]') && window.matchMedia?.('(min-width: 1024px)').matches) {
-        e.preventDefault()
-        toggleSidebarCollapsed()
-      }
-      // Shift+I opens the assistant (`g` then Shift+I stays Import, handled above).
-      if (e.key === 'I' && showLauncher(assistantStatus())) {
-        e.preventDefault()
-        openAssistant()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
-  const [showHelp, setShowHelp] = useState(false)
   const sidebar = useSidebarLayout()
   const openPalette = () => { setPaletteLoaded(true); setPaletteOpen(true) }
   const vim = useVimEnabled()
@@ -269,8 +220,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         )}
       </main>
       <PanelHost user={user} />
-      {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} extraSections={vim && vimHelp ? [vimHelp] : []}
-        context={{ view: route.view, board: !!listState()?.columns() || !!document.querySelector('[data-timeline]'), panelOpen: !!panelTaskId() }} />}
+      {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
+        context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense>}
       {assistantLoaded && <Suspense fallback={null}><AssistantRoot context={() => ({ view: route.view })} /></Suspense>}
       {paletteLoaded && paletteOpen && <Suspense fallback={null}><CommandPalette user={user} onClose={() => setPaletteOpen(false)} showShortcuts={() => setShowHelp(true)} /></Suspense>}

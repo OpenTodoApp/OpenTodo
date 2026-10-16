@@ -97,7 +97,7 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
       className="pointer-events-none fixed z-[70] max-w-64 rounded-chip border border-default bg-raised px-2 py-1 text-meta text-default shadow-2"
       style={pos ? { top: pos.top, left: pos.left } : { top: -9999, left: -9999 }}>
       <span>{label}</span>
-      {shortcut && <kbd className="ui-kbd ml-2">{shortcut}</kbd>}
+      {shortcut && <><span className="mx-1 text-faint"> · </span><kbd className="ui-kbd">{shortcut}</kbd></>}
     </div>
   ) : null
 

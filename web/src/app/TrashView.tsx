@@ -7,6 +7,7 @@ import { canDeleteProject, canEditTasks, roleOf } from '../lib/sharing'
 import { emptyTrash, PENDING_PURGES_KEY, purgeItems, remainingDays, RETENTION_KEY, trashItems, type PurgeRequest, type TrashItem } from '../lib/trash'
 import type { Membership } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
+import { useShortcutScope } from './shortcuts'
 
 /**
  * The Trash (OpenSpec `trash-and-history`): deleted tasks and projects from local
@@ -59,27 +60,16 @@ export function TrashView() {
     if (selected >= items.length && items.length > 0) setSelected(items.length - 1)
   }, [items.length, selected])
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return
-      if (confirm) {
-        if (e.key === 'Enter') {
-          e.preventDefault()
-          void purge(confirm)
-        } else if (e.key === 'Escape') setConfirm(null)
-        return
-      }
-      const it = items[selected]
-      if (e.key === 'j') setSelected((i) => Math.min(i + 1, items.length - 1))
-      else if (e.key === 'k') setSelected((i) => Math.max(i - 1, 0))
-      else if (e.key === 'r' && it && allowed(it)) void restore(it)
-      else if (e.key === 'Delete' && it && allowed(it)) setConfirm(it)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  })
+  // The Trash's `view` scope: j / k select, r restores, Delete asks, Enter confirms, Esc cancels.
+  const it = items[selected]
+  useShortcutScope('view', {
+    'trash.down': () => { if (confirm) return false; setSelected((i) => Math.min(i + 1, items.length - 1)) },
+    'trash.up': () => { if (confirm) return false; setSelected((i) => Math.max(i - 1, 0)) },
+    'trash.restore': () => { if (confirm || !it || !allowed(it)) return false; void restore(it) },
+    'trash.purge': () => { if (confirm || !it || !allowed(it)) return false; setConfirm(it) },
+    'trash.confirm': () => { if (!confirm) return false; void purge(confirm) },
+    'trash.escape': () => { if (!confirm) return false; setConfirm(null) },
+  }, { view: 'trash' })
 
   return (
     <PageBody width="list">

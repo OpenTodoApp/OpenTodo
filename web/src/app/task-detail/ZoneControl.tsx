@@ -3,7 +3,7 @@
 // explains both modes, fixes the due to the viewer's zone or releases it, and fixes
 // it to any IANA zone with a preview of how it reads in the viewer's zone. Every
 // change is one ordinary due edit through updateTask; `z` toggles as before.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { dueToInstant, fixDueToZone, isKnownZone, localDueOf, releaseDue, setDueZone, zoneCity } from '../../lib/dates'
 import { updateTask } from '../../lib/ops'
 import type { Due, Task } from '../../lib/types'
@@ -12,7 +12,8 @@ import { ComboboxPanel } from '../../ui'
 import { Icon } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { Popover } from '../overlay/Popover'
-import { isTyping, useViewerZone } from '../useViews'
+import { useViewerZone } from '../useViews'
+import { useShortcutScope } from '../shortcuts'
 
 /** `z` with the panel open (not typing) toggles the zone; listed in the shortcut help. */
 export const ZONE_TOGGLE_KEY = 'z'
@@ -87,18 +88,8 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
     write(zoned ? releaseDue(due, zone) : fixDueToZone(due, zone))
   }
 
-  // The `z` shortcut, moved here unchanged from DueField (absolute-datetimes).
-  useEffect(() => {
-    if (readOnly) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== ZONE_TOGGLE_KEY || e.metaKey || e.ctrlKey || e.altKey || isTyping(e)) return
-      if (document.querySelector('[role="dialog"]')) return
-      e.preventDefault()
-      toggleZone()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  })
+  // The `z` shortcut (absolute-datetimes), now the `panel.zone` registry entry.
+  useShortcutScope('panel', { 'panel.zone': () => { if (readOnly) return false; toggleZone() } })
 
   const items = useMemo<ZoneItem[]>(() => {
     if (!open) return []

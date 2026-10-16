@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { describeEvent, isPending, mergeOlder, pendingOpIds } from '../lib/activity'
 import { isNetworkError } from '../lib/api'
 import { db } from '../lib/db'
@@ -8,8 +8,8 @@ import { useOnline } from '../lib/online'
 import { currentUserId, memberName, membershipMap } from '../lib/sharing'
 import type { ActivityEvent, Membership, Project, Task } from '../lib/types'
 import { navigate } from './router'
-import { isGPending, openTaskInList } from './signals'
-import { isTyping } from './useViews'
+import { openTaskInList } from './signals'
+import { isActivationTarget, useShortcutScope } from './shortcuts'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { hueFor, PageBody, PageHeader } from '../ui'
 
@@ -89,28 +89,12 @@ export function FeedView() {
     else if (e.projectId) navigate({ view: 'project', id: e.projectId })
   }, [])
 
-  const keys = useRef({ shown, selected, open })
-  keys.current = { shown, selected, open }
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e) || isGPending()) return
-      if (document.querySelector('[role="dialog"]')) return
-      const { shown, selected, open } = keys.current
-      const idx = shown.findIndex((x) => x.id === selected)
-      if (e.key === 'j' || e.key === 'ArrowDown') {
-        e.preventDefault()
-        setSelected(shown[Math.min(shown.length - 1, idx + 1)]?.id ?? null)
-      } else if (e.key === 'k' || e.key === 'ArrowUp') {
-        e.preventDefault()
-        setSelected(shown[Math.max(0, idx - 1)]?.id ?? null)
-      } else if (e.key === 'Enter' && idx >= 0) {
-        e.preventDefault()
-        open(shown[idx])
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  const idx = shown.findIndex((x) => x.id === selected)
+  useShortcutScope('view', {
+    'feed.down': () => setSelected(shown[Math.min(shown.length - 1, idx + 1)]?.id ?? null),
+    'feed.up': () => setSelected(shown[Math.max(0, idx - 1)]?.id ?? null),
+    'feed.open': (e) => { if (idx < 0 || isActivationTarget(e.target)) return false; open(shown[idx]) },
+  }, { view: 'feed' })
   useEffect(() => {
     if (selected) document.querySelector(`[data-feed-id="${CSS.escape(selected)}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [selected])

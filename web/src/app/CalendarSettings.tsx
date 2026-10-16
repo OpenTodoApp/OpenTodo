@@ -1,4 +1,6 @@
 import { setMeta } from '../lib/db'
+import { keysOf } from '../lib/shortcuts'
+import { Kbd } from './shortcuts/Kbd'
 import { GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from '../lib/calendar'
 import { formatMinutes } from '../lib/duration'
 import { Select } from '../ui'
@@ -19,8 +21,7 @@ export function CalendarSettingsView({ prefs, onSave }: { prefs: GridPrefs; onSa
   const lengths = DAY_LENGTHS.includes(prefs.dayLength) ? DAY_LENGTHS : [...DAY_LENGTHS, prefs.dayLength].sort((a, b) => a - b)
   return (
     <SettingsSection title="Calendar" headingId="calendar-heading" description={
-      <>Working hours and day length for the Day and Week views (<span className="kbd">g</span> <span className="kbd">d</span>,{' '}
-        <span className="kbd">g</span> <span className="kbd">w</span>). Each device keeps its own; they are not synced.</>
+      <>Working hours and day length for the Day and Week views (go to them with <Kbd k={keysOf('go.day')} /> and <Kbd k={keysOf('go.week')} />). Each device keeps its own; they are not synced.</>
     }>
       <SettingRow label="Grid starts" htmlFor="grid-start" control={
         <Select id="grid-start" className="sm:w-32" aria-label="Grid start hour" value={prefs.startHour}

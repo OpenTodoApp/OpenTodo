@@ -23,7 +23,7 @@ import { Dialog } from './overlay/Dialog'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { QuickAdd } from './QuickAdd'
 import { navigate } from './router'
-import { isGPending } from './signals'
+import { useShortcutScope } from './shortcuts'
 import { setDueWithUndo } from './undoable'
 import { useToday, useViewerZone } from './useViews'
 
@@ -110,61 +110,37 @@ export function MonthView({ date }: { date?: string }) {
     setFocused(d)
   }, [viewedMap, rawMap])
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey || isGPending()) return
-      const target = e.target as HTMLElement | null
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) return
-      if (document.querySelector('[role="dialog"]')) return
-      const idx = selectedId ? order.indexOf(selectedId) : -1
-      const task = selectedId ? rawMap.get(selectedId) : undefined
-      const arrows: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }
-      if (e.key in arrows) {
-        e.preventDefault()
-        if (task && !e.shiftKey) {
-          if (editable(task)) move(task.id, arrows[e.key])
-        } else focusDay(addDaysISO(focused, arrows[e.key]))
-        return
-      }
-      switch (e.key) {
-        case 'j':
-        case 'k': {
-          e.preventDefault()
-          const next = order[e.key === 'j' ? Math.min(order.length - 1, idx + 1) : Math.max(0, idx - 1)] ?? null
-          setSelectedId(next)
-          const d = next ? viewedMap.get(next)?.due?.date : undefined
-          if (d) setFocused(d)
-          return
-        }
-        case 'Enter':
-          if (selectedId) {
-            e.preventDefault()
-            setPanelTaskId(selectedId)
-          }
-          return
-        case 'Escape':
-          if (expanded) setExpanded(null)
-          else if (openId) setPanelTaskId(null)
-          else setSelectedId(null)
-          return
-        case 'q':
-          e.preventDefault()
-          setAdding(focused)
-          return
-        case '[':
-          goTo(addMonthsISO(anchor, -1))
-          return
-        case ']':
-          goTo(addMonthsISO(anchor, 1))
-          return
-        case 't':
-          goTo(today)
-          return
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [selectedId, order, rawMap, viewedMap, editable, move, focusDay, focused, expanded, openId, goTo, anchor, today])
+  // The Month view's keys are `view` entries of the shortcut registry (keyboard-
+  // shortcuts "One shortcut registry with scopes"): the dispatcher keeps them out
+  // of text fields and dialogs and runs the `g` sequences first.
+  const idx = selectedId ? order.indexOf(selectedId) : -1
+  const selectedTask = selectedId ? rawMap.get(selectedId) : undefined
+  const ARROWS: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }
+  const step = (dir: 'next' | 'prev') => {
+    const next = order[dir === 'next' ? Math.min(order.length - 1, idx + 1) : Math.max(0, idx - 1)] ?? null
+    setSelectedId(next)
+    const d = next ? viewedMap.get(next)?.due?.date : undefined
+    if (d) setFocused(d)
+  }
+  useShortcutScope('view', {
+    // With a task selected the arrows move it (a day or a week); otherwise, or with Shift, they move the focused day.
+    'month.move': (e) => {
+      if (selectedTask) { if (editable(selectedTask)) move(selectedTask.id, ARROWS[e.key]) } else focusDay(addDaysISO(focused, ARROWS[e.key]))
+    },
+    'month.focus': (e) => focusDay(addDaysISO(focused, ARROWS[e.key])),
+    'month.next': () => step('next'),
+    'month.prev': () => step('prev'),
+    'month.open': () => { if (!selectedId) return false; setPanelTaskId(selectedId) },
+    'month.escape': () => {
+      if (expanded) setExpanded(null)
+      else if (openId) setPanelTaskId(null)
+      else setSelectedId(null)
+    },
+    'month.quick-add': () => setAdding(focused),
+    'month.range-prev': () => goTo(addMonthsISO(anchor, -1)),
+    'month.range-next': () => goTo(addMonthsISO(anchor, 1)),
+    'month.today': () => goTo(today),
+  }, { view: 'month' })
 
   // The focused cell takes the browser focus while the grid has it (roving tabindex).
   useEffect(() => {

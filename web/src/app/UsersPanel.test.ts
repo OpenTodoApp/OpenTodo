@@ -70,11 +70,12 @@ describe('UsersView', () => {
     expect(html).toContain('API tokens keep working')
   })
 
-  it('documents the keyboard actions', () => {
+  it('documents the keyboard actions, the action first and the key as plain text while hints are off', () => {
     const html = render()
-    expect(html).toContain('<span class="kbd">d</span>')
-    expect(html).toContain('<span class="kbd">r</span>')
-    expect(html).toContain('<span class="kbd">Delete</span>')
+    expect(html).toContain('deactivate or reactivate with <span>d</span>')
+    expect(html).toContain('create a reset link with <span>r</span>')
+    expect(html).toContain('delete with <span>Delete</span>')
+    expect(html).not.toContain('class="kbd"')
   })
 
   it('names what each confirmation changes', () => {

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import { keysOf } from '../../lib/shortcuts'
+import { Kbd } from '../shortcuts/Kbd'
 import { api, ApiError } from '../../lib/api'
 import { clearThreads, getAutoApply, setAutoApply } from '../../lib/assistant'
 import { refreshAssistantStatus, setAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
@@ -414,7 +416,7 @@ export function UserAssistantSettings(p: UserViewProps) {
             <span className="block">Provider: <strong>{s.provider_label}</strong>{s.model ? ` (${s.model})` : ''}{s.source === 'own' ? ', with your own key' : ''}.</span>
             <span className="flex flex-wrap items-center gap-2 text-muted">
               <Badge hue={s.consented ? 'green' : 'slate'}>{s.consented ? 'Accepted' : 'Not accepted yet'}</Badge>
-              {s.consented ? 'You accepted what is sent.' : 'You have not accepted yet; the assistant asks before your first message.'} Open it with <span className="kbd">Shift+I</span>.
+              {s.consented ? 'You accepted what is sent.' : 'You have not accepted yet; the assistant asks before your first message.'} Open it with <Kbd k={keysOf('global.assistant')} />.
             </span>
           </span>
         )}

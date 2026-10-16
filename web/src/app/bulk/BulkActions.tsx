@@ -3,6 +3,8 @@
 // the shared ActionMenu so its items, pickers, shortcuts and disabled reasons work
 // like every other object menu. Moves and assignments go through the review (D6).
 import { useLiveQuery } from 'dexie-react-hooks'
+import { keysOf } from '../../lib/shortcuts'
+import { Kbd } from '../shortcuts/Kbd'
 import { useMemo, useState } from 'react'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan } from '../../lib/bulk'
 import { db } from '../../lib/db'
@@ -43,11 +45,11 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const run = (action: BulkAction) => () => runBulk(ids, action)
   return [
     { items: [
-      { kind: 'action', id: 'complete', label: reopen ? 'Reopen' : 'Complete', icon: 'check', shortcut: 'c', onSelect: run({ kind: 'complete' }) },
+      { kind: 'action', id: 'complete', label: reopen ? 'Reopen' : 'Complete', icon: 'check', shortcut: keysOf('list.complete'), onSelect: run({ kind: 'complete' }) },
     ] },
     { label: 'Priority', items: ([1, 2, 3, 4] as Priority[]).map((p) => ({ kind: 'action' as const, id: `p${p}`, label: `Priority ${p}`, icon: 'flag' as const, shortcut: String(p), onSelect: run({ kind: 'priority', priority: p }) })) },
     { items: [
-      { kind: 'picker', id: 'labels', label: 'Labels', icon: 'tag', shortcut: 'L', disabled: live.length === 0, reason: 'There are no labels yet', picker: {
+      { kind: 'picker', id: 'labels', label: 'Labels', icon: 'tag', shortcut: keysOf('list.labels'), disabled: live.length === 0, reason: 'There are no labels yet', picker: {
         title: 'Labels', placeholder: 'Add to all, or remove from all…', source: live, multiple: true, selected: common, rankContext: 'label',
         getKey: (l: Label) => l.id, getLabel: (l: Label) => l.name,
         onPick: (l: Label) => { void runBulk(ids, { kind: 'label', labelId: l.id, add: !common.includes(l.id) }) },
@@ -71,13 +73,13 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
         getKey: itemKey, getLabel: itemLabel,
         onPick: (i: PickerItem) => { a.review(`Move ${tasksWord(n)} to ${i.value ? i.label : 'No section'}`, reviewMove(ids, { projectId, sectionId: i.value })) },
       } },
-      { kind: 'picker', id: 'assign', label: 'Assign', icon: 'user-check', shortcut: 'Shift+A', disabled: !shared, reason: 'Tasks must be in one shared project', picker: {
+      { kind: 'picker', id: 'assign', label: 'Assign', icon: 'user-check', shortcut: keysOf('list.assign'), disabled: !shared, reason: 'Tasks must be in one shared project', picker: {
         title: 'Assign', placeholder: 'Find a member…', source: [{ userId: '', name: 'Unassigned', email: '' }, ...members] as { userId: string; name: string; email: string }[],
         getKey: (m: { userId: string }) => m.userId || 'none', getLabel: (m: { name: string; email: string }) => m.name || m.email, rankContext: `assignee:${shared ?? ''}`,
         onPick: (m: { userId: string; name: string; email: string }) => { a.review(m.userId ? `Assign ${tasksWord(n)} to ${m.name || m.email}` : `Unassign ${tasksWord(n)}`, reviewAssign(ids, m.userId || null)) },
       } },
     ] },
-    { items: [{ kind: 'action', id: 'trash', label: 'Move to Trash', icon: 'trash-2', shortcut: 'Delete', tone: 'danger', onSelect: run({ kind: 'trash' }) }] },
+    { items: [{ kind: 'action', id: 'trash', label: 'Move to Trash', icon: 'trash-2', shortcut: keysOf('list.delete'), tone: 'danger', onSelect: run({ kind: 'trash' }) }] },
   ]
 }
 
@@ -140,7 +142,7 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
     <div className="mb-2 flex items-center gap-2 rounded-lg border border-accent/40 bg-accent-soft px-3 py-1.5 text-sm" data-selection-bar>
       <span role="status" className="min-w-0 flex-1 font-medium text-on-accent-soft">{ids.length} selected</span>
       <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
-        trigger={<>Actions <span className="kbd ml-1">.</span></>} triggerClassName="btn-ghost px-2 py-1 text-sm" />
+        trigger={<>Actions <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="btn-ghost px-2 py-1 text-sm" />
       <button type="button" className="btn-ghost px-2 py-1 text-sm" onClick={onClear} title="Clear the selection (Esc)"><Icon name="x" />Clear</button>
     </div>
   )

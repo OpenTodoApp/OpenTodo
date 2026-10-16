@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { keysOf } from '../lib/shortcuts'
+import { Kbd } from './shortcuts/Kbd'
 import { Button } from '../ui'
 import { Select } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
@@ -38,25 +40,13 @@ export function VoiceSettingsSection() {
   const browser = navigator.languages?.length ? navigator.languages : [navigator.language || 'en']
   const followed = resolveLanguages(loadQuickAddSettings(), browser)[0] ?? 'en'
 
-  useEffect(() => {
-    if (!confirming) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.stopPropagation()
-        setConfirming(false)
-      }
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [confirming])
-
   return (
     <SettingsSection title="Voice capture" headingId="voice-settings-heading"
       description="Speak a task instead of typing it. Applies to this device only.">
       <SettingRow label="Dictate tasks into quick add" description={
         <span id="voice-settings-note">
           {supported
-            ? <>A microphone button appears in quick add, and <span className="kbd">Shift+V</span> starts dictation. Spoken words become quick-add text (“hashtag home priority two” → <code>#home p2</code>); nothing is saved until you press Enter.</>
+            ? <>A microphone button appears in quick add, and dictation also starts with <Kbd k={keysOf('list.dictate')} />. Spoken words become quick-add text (“hashtag home priority two” → <code>#home p2</code>); nothing is saved until you press Enter.</>
             : 'This browser does not provide speech recognition, so voice capture is not available here. Typing works as usual.'}
         </span>
       } control={

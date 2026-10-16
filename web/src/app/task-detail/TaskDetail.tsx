@@ -1,9 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Component, type FormEvent, type KeyboardEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, type FormEvent, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import { db } from '../../lib/db'
 import { markTaskNotificationsRead } from '../../lib/notifications'
-import { createSubtask, updateTask } from '../../lib/ops'
+import { createSubtask, updateTask, skipOccurrence } from '../../lib/ops'
 import { membershipMap, roleOf } from '../../lib/sharing'
 import { progressOf } from '../../lib/subtasks'
 import { duplicateTask } from '../../lib/templates'
@@ -14,7 +14,8 @@ import { Icon } from '../../ui'
 import { MenuItem, MenuSeparator } from '../../ui'
 import { Markdown } from '../Markdown'
 import { Menu } from '../overlay/Menu'
-import { isTyping } from '../useViews'
+import { useShortcutScope } from '../shortcuts'
+import { keysOf } from '../../lib/shortcuts'
 import { openHelp } from '../help/store'
 import { navigate } from '../router'
 import { completeWithUndo, deleteWithUndo } from '../undoable'
@@ -74,6 +75,19 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
     void markTaskNotificationsRead(taskId)
   }, [taskId])
 
+  // The `panel` scope while focus is inside the panel (keyboard-shortcuts "Innermost
+  // scope wins"): 1–4 set the open task's priority, Shift+K skips its occurrence.
+  useShortcutScope('panel', {
+    'panel.priority': (e) => {
+      if (!task || readOnly) return false
+      void updateTask(task.id, { priority: Number(e.key) as Priority })
+    },
+    'panel.skip': () => {
+      if (!task || readOnly || !task.recurrence) return false
+      void skipOccurrence(task.id)
+    },
+  }, { within: () => panel.current })
+
   if (!task) return null
 
   // assistant-skills: "Break this down" runs the skill with this task as its subject.
@@ -89,21 +103,11 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
   const copyLink = () => {
     void navigator.clipboard?.writeText(taskLink(task.id)).then(() => setCopied(true), () => {})
   }
-  // 1–4 set the priority while focus is in the panel but not in a text field.
-  const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
-    if (readOnly || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.nativeEvent)) return
-    if (e.key >= '1' && e.key <= '4') {
-      e.preventDefault()
-      e.stopPropagation()
-      void updateTask(task.id, { priority: Number(e.key) as Priority })
-    }
-  }
-
   const page = variant === 'page'
   const done = !!task.completed_at
   const ring = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }[task.priority] ?? 'border-p4'
   return (
-    <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant} onKeyDown={onKeyDown}
+    <aside ref={panel} data-detail-for={task.id} data-detail-variant={variant}
       className={page
         ? 'mx-auto flex w-full max-w-3xl min-w-0 flex-col'
         : 'fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 lg:static lg:w-[26rem] lg:max-w-none lg:shadow-none min-[1440px]:w-[30rem]'}>
@@ -134,7 +138,7 @@ export function TaskDetail({ taskId, userId, projects, labelMap, onClose, onOpen
           {!page && <MenuItem label="Expand" icon="external-link" description="Open the task as a page" onSelect={() => navigate({ view: 'task', id: task.id })} />}
           {parent && <MenuItem label="Open parent task" icon="corner-down-right" onSelect={() => onOpen?.(parent.id)} />}
           {series && <MenuItem label="Open recurring task" icon="repeat" onSelect={() => onOpen?.(series.id)} />}
-          {!readOnly && <MenuItem label="Duplicate" icon="copy" shortcut="Shift+D" onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
+          {!readOnly && <MenuItem label="Duplicate" icon="copy" shortcut={keysOf('list.duplicate')} onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
           {!readOnly && assistant?.available && <MenuItem label="Break this down" icon="list" onSelect={breakDown} />}
           {!readOnly && <MenuSeparator />}
           {!readOnly && <MenuItem label="Delete" icon="trash-2" danger onSelect={remove} />}

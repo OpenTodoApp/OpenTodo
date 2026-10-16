@@ -1,5 +1,7 @@
 // Settings → Data: export, import and sync status (OpenSpec settings-navigation; settings-redesign D3).
 import { useEffect } from 'react'
+import { keysOf } from '../lib/shortcuts'
+import { Kbd } from './shortcuts/Kbd'
 import { formatBytes, refreshLimits, useAttachmentLimits } from '../lib/attachments'
 import { useSyncStatus } from '../lib/sync'
 import { DEMO_RESTRICTED_NOTE } from '../lib/demo'
@@ -62,7 +64,7 @@ export function YourDataView({ demo, isOwner, sync, attachments = null }: { demo
           status={<span data-testid="attachment-usage">{usageText(attachments)}</span>} />
       )}
       <SettingRow label="Import"
-        description={<>An OpenTodo export, a CSV file or another task manager’s JSON export (<span className="kbd">g</span> <span className="kbd">Shift+I</span>).</>}
+        description={<>An OpenTodo export, a CSV file or another task manager’s JSON export (open this with <Kbd k={keysOf('go.import')} />).</>}
         status={demo ? <span id="demo-import-note" className="text-muted">Import: {DEMO_RESTRICTED_NOTE}</span> : undefined}
         control={demo
           ? <Button size="sm" disabled aria-describedby="demo-import-note">Import data…</Button>

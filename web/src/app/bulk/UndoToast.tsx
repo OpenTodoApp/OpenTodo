@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { undoBatch } from '../../lib/undo'
 import { ToastRegion } from '../overlay'
 import { hideBulkToast, updateBulkToast, useBulkToast } from './toastStore'
+import { useShortcutScope } from '../shortcuts'
 
 export const TOAST_MS = 10_000
 
@@ -20,19 +21,8 @@ export function UndoToast() {
     const t = setTimeout(() => hideBulkToast(toast.key), toast.ttl ?? TOAST_MS)
     return () => clearTimeout(t)
   }, [toast])
-  useEffect(() => {
-    if (!toast?.undoId) return
-    const undoId = toast.undoId
-    function onKey(e: KeyboardEvent) {
-      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'z') return
-      const t = e.target as HTMLElement | null
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
-      e.preventDefault()
-      void undoToast(undoId)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [toast?.undoId])
+  const undoId = toast?.undoId ?? null
+  useShortcutScope('global', { 'global.undo-bulk': () => { if (!undoId) return false; void undoToast(undoId) } }, { enabled: !!undoId })
   if (!toast) return null
   return (
     <ToastRegion label="Last action">

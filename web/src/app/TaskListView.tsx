@@ -16,7 +16,7 @@ import { flattenTree, type Tree, type TreeNode } from '../lib/tree'
 import type { AccountRole, Label, Priority, Project, Section, Task } from '../lib/types'
 import { TodayAskAction } from './assistant/AskEntry'
 import { beginDrag } from '../lib/dnd'
-import { moveTask, moveTaskBy } from '../lib/move'
+import { moveTask, moveTaskBy, type Step } from '../lib/move'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from './listDrop'
 import { effectiveSection, groupBySection, loadCollapsedSections, loadViewMode, moveTaskToSection, nextViewMode, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
 import { TimelineView } from './TimelineView'
@@ -32,12 +32,14 @@ import { navigate, type Route } from './router'
 import { ProjectHeader } from './ProjectHeader'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { SubProjects } from './SubProjects'
-import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, isGPending, openTask, placeInDay } from './signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, openTask, placeInDay } from './signals'
+import { isActivationTarget, isTypingTarget, useShortcutScope } from './shortcuts'
+import { Kbd } from './shortcuts/Kbd'
+import { keysOf } from '../lib/shortcuts'
 import { visibleTasks } from '../lib/trash'
 import { useViewerZone } from './useViews'
 import { registerListState, taskDefaults } from './listActions'
 import { useSelection } from './selection'
-import { useVimEnabled } from './vim/prefs'
 import { BulkActionsMenu, runBulk, SelectionBar } from './bulk/BulkActions'
 import { Dialog } from './overlay'
 import { Menu } from './overlay/Menu'
@@ -320,7 +322,6 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   }, [doneInProject, sectionMap])
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
   const collapsedGroups = useCollapsedGroups()
-  const vimEnabled = useVimEnabled()
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const tickRows = useMemo(() => rows.map((r) => r.task.id), [rows])
   const readOnlyId = useCallback((id: string) => isReadOnly(taskMap.get(id)), [isReadOnly, taskMap])
@@ -516,291 +517,167 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     void setTaskParent(row.task.id, grandparent).catch(() => undefined)
   }, [tree])
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
+  // Keyboard (keyboard-shortcuts "One shortcut registry with scopes"): the `list`
+  // scope, the `board` scope on a board and the project's `view` scope; the
+  // dispatcher resolves the key, these handlers act on the selection. A handler
+  // returns false when it does not apply, so the key keeps its default.
+  const idx = rows.findIndex((r) => r.task.id === selectedId)
+  const row = idx >= 0 ? rows[idx] : undefined
+  // A viewer may navigate and open tasks of a shared project, never change them.
+  const writable = !!row && !isReadOnly(row.task)
+  const leaveSidebar = () => {
+    // Selecting tasks moves keyboard attention to the list: a sidebar project left
+    // focused by a click must not take the next Alt+Up/Down (manual-ordering).
+    if ((document.activeElement as HTMLElement | null)?.closest?.('nav[aria-label="Projects"]')) (document.activeElement as HTMLElement).blur()
+  }
+  const openFor = (focus: { request(id: string): void }) => () => {
+    if (!row || !writable) return false
+    focus.request(row.task.id)
+    setOpenId(row.task.id)
+  }
+  const extend = (dir: 1 | -1) => () => {
+    const order = board ? (columns.find((c) => c.cards.some((t) => t.id === selectedId))?.cards.map((t) => t.id) ?? tickRows) : tickRows
+    const at = selectedId ? order.indexOf(selectedId) : -1
+    const next = order[Math.max(0, Math.min(order.length - 1, at + dir))]
+    if (!next) return false
+    if (selection.ticked.size === 0 && selectedId) selection.toggle(selectedId)
+    selection.extendTo(next, order)
+    setSelectedId(next)
+  }
+  const moveBy = (how: Step) => () => {
+    // Keyboard moves (manual-ordering): only in manually ordered views; the selection stays on the moved task; edges do nothing.
+    if (!manual || !selectedId) return false
+    void moveTaskBy(selectedId, how)
+  }
+  useShortcutScope('view', { 'project.view-mode': () => { if (!projectId) return false; toggleViewMode() } }, { view: route.view })
+  useShortcutScope('list', {
+    'list.quick-add': () => { if (projectReadOnly) return false; quickAddRef.current?.focus() },
+    'list.escape': (e) => {
       const target = e.target as HTMLElement | null
-      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
-      if (e.altKey && !e.metaKey && !e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-        // Keyboard moves (manual-ordering): Alt+Up/Down one place, with Shift to the
-        // top / bottom of the task's list. Only in manually ordered views, never
-        // while typing; the selection stays on the moved task; edges do nothing.
-        if (typing || isGPending() || !manual || !selectedId || document.querySelector('[role="dialog"]')) return
-        e.preventDefault()
-        const up = e.key === 'ArrowUp'
-        void moveTaskBy(selectedId, e.shiftKey ? (up ? 'top' : 'bottom') : up ? -1 : 1)
-        return
-      }
-      // Ctrl/⌘+A selects every row once something is ticked (bulk-edit D2); before
-      // that it keeps selecting the page's text.
-      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'a' && !typing && selection.ticked.size > 0 && !document.querySelector('[role="dialog"]')) {
-        e.preventDefault()
-        selection.selectAll()
-        return
-      }
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      if (e.key === 'Escape') {
-        if (typing) (target as HTMLElement).blur()
-        else if (pickerFor) setPickerFor(null)
-        else if (assignFor) setAssignFor(null)
-        else if (prompt) setPrompt(null)
-        else if (addingUnder) setAddingUnder(null)
-        else if (openId) setOpenId(null)
-        else if (selection.ticked.size) selection.clear()
-        else setSelectedId(null)
-        return
-      }
-      if (typing || isGPending()) return
-      if (['j', 'k', 'ArrowDown', 'ArrowUp'].includes(e.key) && (document.activeElement as HTMLElement | null)?.closest?.('nav[aria-label="Projects"]')) {
-        // Selecting tasks moves keyboard attention to the list: a sidebar project left
-        // focused by a click must not take the next Alt+Up/Down (manual-ordering).
-        (document.activeElement as HTMLElement).blur()
-      }
-      const idx = rows.findIndex((r) => r.task.id === selectedId)
-      const row = idx >= 0 ? rows[idx] : undefined
-      // A viewer may navigate and open tasks of a shared project, never change them.
-      if (row && isReadOnly(row.task) && ['a', 'A', 'Tab', 'c', 'L', '1', '2', '3', '4', 'Delete', 'Backspace', 'n', 'N', 'E', 'd'].includes(e.key)) return
-      if (e.key === 'q' && projectReadOnly) return
-      // Bulk selection and actions (bulk-edit D2, D3).
-      if ((e.key === 'x' || e.key === ' ') && row) {
-        e.preventDefault()
-        selection.toggle(row.task.id)
-        return
-      }
-      const extend = e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || (!vimEnabled && (e.key === 'J' || e.key === 'K')))
-      if (extend) {
-        e.preventDefault()
-        const order = board ? (columns.find((c) => c.cards.some((t) => t.id === selectedId))?.cards.map((t) => t.id) ?? tickRows) : tickRows
-        const at = selectedId ? order.indexOf(selectedId) : -1
-        const next = order[Math.max(0, Math.min(order.length - 1, at + (e.key === 'ArrowDown' || e.key === 'J' ? 1 : -1)))]
-        if (!next) return
-        if (selection.ticked.size === 0 && selectedId) selection.toggle(selectedId)
-        selection.extendTo(next, order)
-        setSelectedId(next)
-        return
-      }
-      if (e.key === '.') {
-        if (ticked.length || selectedId) { e.preventDefault(); openActions() }
-        return
-      }
-      if (ticked.length) {
-        switch (e.key) {
-          case 'c': e.preventDefault(); void runBulk(ticked, { kind: 'complete' }); return
-          case '1': case '2': case '3': case '4': e.preventDefault(); void runBulk(ticked, { kind: 'priority', priority: Number(e.key) as Priority }); return
-          case 'L': e.preventDefault(); openActions('labels'); return
-          case 'A': e.preventDefault(); openActions('assign'); return
-          case 'Delete': case 'Backspace': e.preventDefault(); void runBulk(ticked, { kind: 'trash' }); return
+      if (isTypingTarget(target)) target!.blur()
+      else if (pickerFor) setPickerFor(null)
+      else if (assignFor) setAssignFor(null)
+      else if (prompt) setPrompt(null)
+      else if (addingUnder) setAddingUnder(null)
+      else if (openId) setOpenId(null)
+      else if (selection.ticked.size) selection.clear()
+      else setSelectedId(null)
+    },
+    'list.move-up': moveBy(-1), 'list.move-down': moveBy(1), 'list.move-top': moveBy('top'), 'list.move-bottom': moveBy('bottom'),
+    // Ctrl/⌘+A selects every row once something is ticked (bulk-edit D2); before that it keeps selecting the page's text.
+    'list.select-all': () => { if (selection.ticked.size === 0) return false; selection.selectAll() },
+    'list.tick': () => { if (!row) return false; selection.toggle(row.task.id) },
+    'list.extend-down': extend(1), 'list.extend-up': extend(-1),
+    'list.actions': () => { if (!ticked.length && !selectedId) return false; openActions() },
+    'list.down': () => { leaveSidebar(); setSelectedId(rows[Math.min(rows.length - 1, idx + 1)]?.task.id ?? null) },
+    'list.up': () => { leaveSidebar(); setSelectedId(rows[Math.max(0, idx - 1)]?.task.id ?? null) },
+    'list.collapse': () => {
+      if (!row || !treeView) return false
+      if (row.hasChildren && !row.collapsed) toggleCollapsed(row.task.id, true)
+      else if (row.parent) setSelectedId(row.parent)
+    },
+    'list.expand': () => {
+      if (!row || !treeView) return false
+      if (row.hasChildren && row.collapsed) toggleCollapsed(row.task.id, false)
+    },
+    'list.open': (e) => {
+      if (prompt) { acceptPrompt(); return }
+      // Enter on a focused button or link is that control's own (the panel's tabs, a version's expander).
+      if (!selectedId || isActivationTarget(e.target)) return false
+      setOpenId(selectedId)
+    },
+    'list.add-subtask': () => {
+      if (!row || !writable) return false
+      toggleCollapsed(row.task.id, false)
+      setAddingUnder(row.task.id)
+    },
+    'list.indent': () => { if (!row || !writable || !treeView) return false; indent(row, idx) },
+    'list.outdent': () => { if (!row || !writable || !treeView) return false; outdent(row) },
+    'list.complete': () => {
+      if (ticked.length) { void runBulk(ticked, { kind: 'complete' }); return }
+      if (!row || !writable) return false
+      void toggleComplete(row.task.id, !row.task.completed_at)
+    },
+    'list.priority': (e) => {
+      const priority = Number(e.key) as Priority
+      if (ticked.length) { void runBulk(ticked, { kind: 'priority', priority }); return }
+      if (!selectedId || (row && !writable)) return false
+      void updateTask(selectedId, { priority })
+    },
+    'list.labels': () => {
+      if (ticked.length) { openActions('labels'); return }
+      if (!row || !writable) return false
+      setPickerFor(row.task.id)
+    },
+    'list.assign': () => {
+      if (ticked.length) { openActions('assign'); return }
+      if (!row || !writable || !userId) return false
+      setAssignFor(row.task.id)
+    },
+    'list.delete': () => {
+      if (ticked.length) { void runBulk(ticked, { kind: 'trash' }); return }
+      if (!selectedId || (row && !writable)) return false
+      void deleteWithUndo(selectedId)
+      setSelectedId(rows[idx + 1]?.task.id ?? rows[idx - 1]?.task.id ?? null)
+    },
+    'list.skip': () => {
+      // Skip the current occurrence of the selected (or open) recurring task.
+      const id = row?.task.id ?? openId
+      if (!id) return false
+      void skipOccurrence(id)
+    },
+    'list.detach': () => {
+      // "This occurrence only": detach a standalone copy and open it.
+      const id = row?.task.id ?? openId
+      if (!id) return false
+      void detachOccurrence(id).then((copy) => {
+        if (copy) {
+          setSelectedId(copy)
+          setOpenId(copy)
         }
-      }
-      if (e.key === 'v' && projectId) {
-        // List / board toggle, remembered per project on this device (board-view).
-        e.preventDefault()
-        toggleViewMode()
-        return
-      }
-      if (board) {
-        const col = columns.findIndex((c) => c.cards.some((t) => t.id === selectedId))
-        const pos = col >= 0 ? columns[col].cards.findIndex((t) => t.id === selectedId) : -1
-        const firstCard = (from: number, dir: 1 | -1) => {
-          for (let i = from; i >= 0 && i < columns.length; i += dir) if (columns[i].cards.length) return columns[i].cards[0].id
-          return null
-        }
-        switch (e.key) {
-          case 'j':
-          case 'ArrowDown':
-          case 'k':
-          case 'ArrowUp': {
-            e.preventDefault()
-            const down = e.key === 'j' || e.key === 'ArrowDown'
-            if (col < 0) setSelectedId(firstCard(0, 1))
-            else setSelectedId(columns[col].cards[Math.max(0, Math.min(columns[col].cards.length - 1, pos + (down ? 1 : -1)))].id)
-            return
-          }
-          case 'h':
-          case 'l':
-          case 'ArrowLeft':
-          case 'ArrowRight': {
-            e.preventDefault()
-            const dir = e.key === 'h' || e.key === 'ArrowLeft' ? -1 : 1
-            if (e.shiftKey && e.key.startsWith('Arrow')) {
-              // Shift+←/→ moves the selected card to the adjacent column; it stays selected.
-              const target = columns[col + dir]
-              if (row && col >= 0 && target && projectEditable) moveToSection(row.task, target.key)
-              return
-            }
-            if (col < 0) setSelectedId(firstCard(0, 1))
-            else setSelectedId(firstCard(col + dir, dir) ?? selectedId)
-            return
-          }
-          case 'a':
-            // On the board, `a` opens the quick add of the selected card's column.
-            if (projectEditable) {
-              e.preventDefault()
-              setAddingTo(col >= 0 ? columns[col].key : '')
-            }
-            return
-          case 'Tab':
-            return
-        }
-      }
-      switch (e.key) {
-        case 'q':
-          e.preventDefault()
-          quickAddRef.current?.focus()
-          break
-        case 'j':
-        case 'ArrowDown':
-          e.preventDefault()
-          setSelectedId(rows[Math.min(rows.length - 1, idx + 1)]?.task.id ?? null)
-          break
-        case 'k':
-        case 'ArrowUp':
-          e.preventDefault()
-          setSelectedId(rows[Math.max(0, idx - 1)]?.task.id ?? null)
-          break
-        case 'ArrowLeft':
-          if (!row || !treeView) break
-          e.preventDefault()
-          if (row.hasChildren && !row.collapsed) toggleCollapsed(row.task.id, true)
-          else if (row.parent) setSelectedId(row.parent)
-          break
-        case 'ArrowRight':
-          if (!row || !treeView) break
-          e.preventDefault()
-          if (row.hasChildren && row.collapsed) toggleCollapsed(row.task.id, false)
-          break
-        case 'Enter':
-          if (prompt) {
-            e.preventDefault()
-            acceptPrompt()
-          } else if (selectedId) setOpenId(selectedId)
-          break
-        case 'a':
-          if (row) {
-            e.preventDefault()
-            toggleCollapsed(row.task.id, false)
-            setAddingUnder(row.task.id)
-          }
-          break
-        case 'Tab':
-          if (row && treeView) {
-            e.preventDefault()
-            if (e.shiftKey) outdent(row)
-            else indent(row, idx)
-          }
-          break
-        case 'c':
-          if (row) void toggleComplete(row.task.id, !row.task.completed_at)
-          break
-        case 'S': {
-          // Skip the current occurrence of the selected (or open) recurring task.
-          const id = row?.task.id ?? openId
-          if (id) {
-            e.preventDefault()
-            void skipOccurrence(id)
-          }
-          break
-        }
-        case 'O': {
-          // "This occurrence only": detach a standalone copy and open it.
-          const id = row?.task.id ?? openId
-          if (id) {
-            e.preventDefault()
-            void detachOccurrence(id).then((copy) => {
-              if (copy) {
-                setSelectedId(copy)
-                setOpenId(copy)
-              }
-            })
-          }
-          break
-        }
-        case 'L':
-          if (row) {
-            e.preventDefault()
-            setPickerFor(row.task.id)
-          }
-          break
-        case 'A':
-          if (row && userId) {
-            e.preventDefault()
-            setAssignFor(row.task.id)
-          }
-          break
-        case 's':
-          // Placement mode in the Day view (OpenSpec `time-blocking`).
-          if (row && !row.task.completed_at) {
-            e.preventDefault()
-            placeInDay(row.task, todayISO())
-          }
-          break
-        case 'e':
-          if (row) {
-            e.preventDefault()
-            estimateFocus.request(row.task.id)
-            setOpenId(row.task.id)
-          }
-          break
-        case 'n':
-          // Park or un-park (someday-and-evening D5).
-          if (row) {
-            e.preventDefault()
-            void (row.task.start === 'someday' ? unparkTask(row.task.id) : parkWithUndo(row.task.id))
-          }
-          break
-        case 'N':
-          if (row) {
-            e.preventDefault()
-            deferFocus.request(row.task.id)
-            setOpenId(row.task.id)
-          }
-          break
-        case 'E':
-          if (row) {
-            e.preventDefault()
-            void updateTask(row.task.id, { evening: !row.task.evening })
-          }
-          break
-        case 'd':
-          if (row) {
-            e.preventDefault()
-            deadlineFocus.request(row.task.id)
-            setOpenId(row.task.id)
-          }
-          break
-        case 'D':
-          // Duplicate the task and its open subtasks right below it (project-templates D6).
-          if (row && !isReadOnly(row.task)) {
-            e.preventDefault()
-            void duplicateTask(row.task.id).then((id) => setSelectedId(id))
-          }
-          break
-        case 'b':
-          if (row && !isReadOnly(row.task)) {
-            e.preventDefault()
-            blockedByFocus.request(row.task.id)
-            setOpenId(row.task.id)
-          }
-          break
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-          if (selectedId) void updateTask(selectedId, { priority: Number(e.key) as Priority })
-          break
-        case 'Delete':
-        case 'Backspace':
-          if (selectedId) {
-            e.preventDefault()
-            void deleteWithUndo(selectedId)
-            setSelectedId(rows[idx + 1]?.task.id ?? rows[idx - 1]?.task.id ?? null)
-          }
-          break
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [rows, selectedId, openId, addingUnder, prompt, pickerFor, assignFor, userId, treeView, toggleCollapsed, toggleComplete, acceptPrompt, indent, outdent, isReadOnly, projectReadOnly,
-    projectId, board, columns, projectEditable, toggleViewMode, moveToSection, manual, selection, ticked, tickRows, vimEnabled, openActions])
+      })
+    },
+    // Placement mode in the Day view (OpenSpec `time-blocking`).
+    'list.schedule': () => { if (!row || row.task.completed_at) return false; placeInDay(row.task, todayISO()) },
+    'list.estimate': () => { if (!row) return false; estimateFocus.request(row.task.id); setOpenId(row.task.id) },
+    'list.deadline': openFor(deadlineFocus),
+    'list.defer': openFor(deferFocus),
+    'list.blocked-by': openFor(blockedByFocus),
+    // Park or un-park (someday-and-evening D5).
+    'list.park': () => { if (!row || !writable) return false; void (row.task.start === 'someday' ? unparkTask(row.task.id) : parkWithUndo(row.task.id)) },
+    'list.evening': () => { if (!row || !writable) return false; void updateTask(row.task.id, { evening: !row.task.evening }) },
+    // Duplicate the task and its open subtasks right below it (project-templates D6).
+    'list.duplicate': () => { if (!row || !writable) return false; void duplicateTask(row.task.id).then((id) => setSelectedId(id)) },
+  })
+  const col = board ? columns.findIndex((c) => c.cards.some((t) => t.id === selectedId)) : -1
+  const pos = col >= 0 ? columns[col].cards.findIndex((t) => t.id === selectedId) : -1
+  const firstCard = (from: number, dir: 1 | -1) => {
+    for (let i = from; i >= 0 && i < columns.length; i += dir) if (columns[i].cards.length) return columns[i].cards[0].id
+    return null
+  }
+  const boardStep = (dir: 1 | -1) => () => {
+    if (col < 0) setSelectedId(firstCard(0, 1))
+    else setSelectedId(columns[col].cards[Math.max(0, Math.min(columns[col].cards.length - 1, pos + dir))].id)
+  }
+  const boardColumn = (dir: 1 | -1) => () => {
+    if (col < 0) setSelectedId(firstCard(0, 1))
+    else setSelectedId(firstCard(col + dir, dir) ?? selectedId)
+  }
+  const boardMove = (dir: 1 | -1) => () => {
+    // Shift+←/→ moves the selected card to the adjacent column; it stays selected.
+    const target = columns[col + dir]
+    if (row && col >= 0 && target && projectEditable) moveToSection(row.task, target.key)
+  }
+  useShortcutScope('board', {
+    'board.down': boardStep(1), 'board.up': boardStep(-1),
+    'board.column-prev': boardColumn(-1), 'board.column-next': boardColumn(1),
+    'board.move-prev': boardMove(-1), 'board.move-next': boardMove(1),
+    // On the board, `a` opens the quick add of the selected card's column.
+    'board.add': () => { if (!projectEditable) return false; setAddingTo(col >= 0 ? columns[col].key : '') },
+    // Cards are not nested: Tab keeps moving focus and never reaches the list's indent.
+    'board.indent': () => undefined,
+  }, { enabled: board })
+
 
   // List actions for the optional Vim layer (vim-keybindings, design D3); getters
   // read the latest render through a ref so the registration happens once.
@@ -933,7 +810,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               layout={(
                 <span className="flex rounded-control border border-default text-meta" role="group" aria-label="Project layout">
                   {(['list', 'board', 'timeline'] as const).map((m) => (
-                    <Tooltip key={m} label={LAYOUT_LABEL[m]} shortcut="v">
+                    <Tooltip key={m} label={LAYOUT_LABEL[m]} shortcut={keysOf('project.view-mode')}>
                       <button type="button" aria-pressed={viewMode === m} onClick={() => chooseViewMode(m)}
                         className={`${m === 'list' ? 'rounded-l-control' : m === 'timeline' ? 'rounded-r-control' : ''} px-2 py-1 ${viewMode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
                         {LAYOUT_LABEL[m]}
@@ -1036,8 +913,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-default bg-surface px-4 py-2 text-sm shadow-lg">
             <span className="user-text min-w-0">All subtasks done. Complete <strong>{prompt.title || 'Untitled'}</strong> too?</span>
-            <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <span className="kbd ml-1 border-on-accent/40 bg-accent-hover text-on-accent">Enter</span></button>
-            <button className="btn-ghost text-xs" onClick={() => setPrompt(null)}>Keep open <span className="kbd ml-1">Esc</span></button>
+            <button className="btn-primary text-xs" onClick={acceptPrompt}>Complete <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>
+            <button className="btn-ghost text-xs" onClick={() => setPrompt(null)}>Keep open <Kbd k="Esc" only className="ml-1" /></button>
           </div>
         </div>
       )}

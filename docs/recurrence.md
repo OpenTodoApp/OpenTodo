@@ -94,7 +94,7 @@ in Someday clears its due date and so ends the repetition.
 - **Complete**: a completed copy of the current occurrence (the *occurrence
   record*) goes to Completed, and the task moves to its next occurrence. When the
   end condition is reached the task completes like any other task.
-- **Skip** (`Shift+S`, or *Skip* in the detail panel): moves the task to the next
+- **Skip** (`Shift+K`, or *Skip* in the detail panel): moves the task to the next
   occurrence without recording a completion. Completion-relative rules skip as if
   completed today. Skipping the last occurrence is not possible; complete or delete it.
 - **This occurrence only** (`Shift+O`, or the button in the detail panel): makes a

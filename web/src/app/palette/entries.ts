@@ -26,6 +26,8 @@ export interface Entry {
   shortcut?: string
   /** Words the entry also matches on, never shown (the old name of a renamed page). */
   keywords?: string
+  /** The group heading this entry is listed under when it is not its kind's ("Recent"). */
+  group?: string
   /** Runs the entry. A returned step keeps the palette open on it. */
   run: () => unknown | Promise<unknown>
 }
@@ -34,6 +36,15 @@ export interface Entry {
 export function secondaryOf(e: Entry): string | undefined {
   const parts = [e.marker, e.secondary, e.shortcut].filter(Boolean)
   return parts.length ? parts.join(' · ') : undefined
+}
+
+/** Section headings of the palette (keyboard-shortcuts / search-and-command-palette: Recent, Tasks, Projects, Labels, Filters, Commands, Settings). */
+export const KIND_GROUP: Record<EntryKind, string> = {
+  command: 'Commands', task: 'Tasks', project: 'Projects', label: 'Labels', view: 'Filters', settings: 'Settings', filter: 'Filters',
+}
+
+export function groupOf(e: Entry): string {
+  return e.group ?? KIND_GROUP[e.kind]
 }
 
 export const KIND_ICON: Record<EntryKind, IconName> = {
