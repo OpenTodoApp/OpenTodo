@@ -272,6 +272,8 @@ func (s *Server) projectInviteError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusNotFound, "invitation_invalid", auth.ErrInvitationInvalid.Error())
 	case errors.Is(err, auth.ErrInvitationEmailMismatch):
 		writeError(w, http.StatusForbidden, "invitation_email_mismatch", "this invite link was issued for a different email address")
+	case errors.Is(err, auth.ErrMemberLimit):
+		writeError(w, http.StatusForbidden, "limit_members", err.Error())
 	case errors.Is(err, opsync.ErrAlreadyMember):
 		writeError(w, http.StatusConflict, "already_member", "you are already a member of this project")
 	case errors.Is(err, auth.ErrProjectInviteNotAllowed):

@@ -133,6 +133,8 @@ type Server struct {
 	// idemSalt makes Idempotency-Key ids unguessable (agent-ready-cli D5);
 	// see idempotency.go.
 	idemSalt string
+	// hosted is set for a tenant a host serves (multi-tenant-host); see hosted.go.
+	hosted bool
 }
 
 // WithBackups (an Option, see webhooks.go) enables the owner-only /api/v1/backups routes.
@@ -302,6 +304,8 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 	s.registerEmailRoutes(mux)
 	// Demo sandboxes (OpenSpec `demo-sandboxes`): registered on a demo instance only.
 	s.registerDemoRoutes(mux)
+	// Hosted tenants (OpenSpec `multi-tenant-host`): the owner's archive download.
+	s.registerHostedRoutes(mux)
 	mux.Handle("POST /api/v1/sync", s.requireAuth(s.handleSync))
 	mux.Handle("GET /api/v1/sync/events", s.requireAuth(s.handleEvents))
 	mux.Handle("GET /api/v1/export", s.requireAuth(s.handleExport))
@@ -331,7 +335,7 @@ func New(cfg config.Config, authSvc *auth.Service, syncSvc *opsync.Service, web 
 			web.ServeHTTP(w, r)
 		}))
 	}
-	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(mux))))
+	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(s.hostGuard(mux)))))
 }
 
 // auditContext hands the client address and user agent to the audit recorder.
@@ -575,6 +579,10 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		"oidc":          s.oidcStatus(r.Context()),
 		"outgoingEmail": map[string]bool{"enabled": s.mailEnabled(r.Context())},
 	}
+	if s.hosted {
+		// A hosted tenant (multi-tenant-host D4): the app hides the operator's panels.
+		out["hosted"] = true
+	}
 	if s.demo != nil {
 		// Demo instance (OpenSpec `demo-sandboxes`): a sandbox-creation token, the
 		// sandbox lifetimes and the next reset; no credentials.
@@ -649,6 +657,9 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, auth.ErrSetupTokenInvalid):
 		writeError(w, http.StatusForbidden, "setup_token_invalid", err.Error())
+		return
+	case errors.Is(err, auth.ErrMemberLimit):
+		writeError(w, http.StatusForbidden, "limit_members", err.Error())
 		return
 	case errors.Is(err, auth.ErrSignupClosed):
 		writeError(w, http.StatusForbidden, "signup_closed", err.Error())

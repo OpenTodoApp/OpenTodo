@@ -32,7 +32,36 @@ type Service struct {
 	pullBudget int
 	// guard bounds writes on a demo instance (demo-sandboxes D3); nil elsewhere.
 	guard WriteGuard
+	// quota refuses single ops once a hosted tenant reached a limit
+	// (multi-tenant-host D5); nil elsewhere.
+	quota Quota
 }
+
+// Quota bounds what a hosted tenant may store (OpenSpec `multi-tenant-host`,
+// design D5). Admit runs once per batch inside Apply's transaction and returns
+// the check for each op that would be stored: "" admits it, a reason (one of
+// the Reason* limit constants) refuses that op alone, reported in Rejected like
+// any other refusal, so the rest of a device's outbox keeps syncing. Stored is
+// told how many ops were kept once the batch committed.
+type Quota interface {
+	Admit(ctx context.Context, tx *sql.Tx) (func(op Op) string, error)
+	Stored(n int)
+}
+
+// Refusal reasons of a tenant's limits (multi-tenant-host D5).
+const (
+	ReasonLimitStorage  = "limit_storage"
+	ReasonLimitOpsHour  = "limit_ops_hour"
+	ReasonLimitOpsTotal = "limit_ops_total"
+)
+
+// IsLimitReason reports whether a refusal reason names a tenant limit.
+func IsLimitReason(r string) bool {
+	return r == ReasonLimitStorage || r == ReasonLimitOpsHour || r == ReasonLimitOpsTotal
+}
+
+// SetQuota installs the tenant quota (nil removes it). Call it during wiring.
+func (s *Service) SetQuota(q Quota) { s.quota = q }
 
 // WriteGuard bounds what one account may write (OpenSpec change
 // `demo-sandboxes`, design D3). CheckOp runs for every op before the batch's
@@ -269,6 +298,12 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	rs.allowComment = func() bool { return s.commentLimiter.allow(userID) }
 	rs.attachmentLimit = attachmentLimit
 	pc := &purgeChecker{ctx: ctx, q: tx, acc: acc, cache: map[string]bool{}}
+	var admit func(Op) string
+	if s.quota != nil && ctx.Value(guardKey{}) == nil {
+		if admit, err = s.quota.Admit(ctx, tx); err != nil {
+			return res, err
+		}
+	}
 	tracker := newChangeTracker(userID)
 	touched := map[string]bool{}
 	var refused, rewritten []Op
@@ -304,12 +339,20 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			res.Duplicates++
 			continue
 		}
+		if reason == "" && admit != nil {
+			reason = admit(op)
+		}
 		if reason != "" {
 			if strict {
 				return ApplyResult{}, &RejectedError{Op: op, Reason: reason, Detail: rs.detail}
 			}
 			res.Rejected = append(res.Rejected, Rejection{ID: op.ID, Reason: reason})
-			refused = append(refused, op)
+			// A limit refusal is not a verdict on the value: the device keeps its
+			// change and sends it again later, so the server's value is not
+			// handed back to overwrite it (multi-tenant-host D5).
+			if !IsLimitReason(reason) {
+				refused = append(refused, op)
+			}
 			continue
 		}
 		// Mentions keep current members only (comments-and-activity D2): the op
@@ -354,6 +397,9 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	}
 	if err := tx.Commit(); err != nil {
 		return res, err
+	}
+	if s.quota != nil && res.Applied > 0 {
+		s.quota.Stored(res.Applied)
 	}
 	changes := tracker.changes()
 	if s.observer != nil && len(changes) > 0 {
